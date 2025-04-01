@@ -172,10 +172,13 @@ class Context:
         context._streaming_queue = context._deserialize_queue(
             data["streaming_queue"], serializer
         )
-        context._events_buffer = {
-            k: [serializer.deserialize(ev) for ev in v]
-            for k, v in data["events_buffer"].items()
-        }
+        context._events_buffer = defaultdict(
+            list,
+            {
+                k: [serializer.deserialize(ev) for ev in v]
+                for k, v in data["events_buffer"].items()
+            },
+        )
         if len(context._events_buffer) == 0:
             context._events_buffer = defaultdict(list)
         context._accepted_events = data["accepted_events"]

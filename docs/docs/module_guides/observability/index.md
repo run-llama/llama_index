@@ -165,6 +165,61 @@ llama_index.core.set_global_handler("arize_phoenix")
 - [Auto-Retrieval Guide with Pinecone and Arize Phoenix](https://docs.llamaindex.ai/en/latest/examples/vector_stores/pinecone_auto_retriever/?h=phoenix)
 - [Arize Phoenix Tracing Tutorial](https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/tracing/llama_index_tracing_tutorial.ipynb)
 
+### Langfuse 🪢
+
+[Langfuse](https://langfuse.com/docs) is an open source LLM engineering platform to help teams collaboratively debug, analyze and iterate on their LLM Applications. With the Langfuse integration, you can track and monitor performance, traces, and metrics of your LlamaIndex application. Detailed [traces](https://langfuse.com/docs/tracing) of the context augmentation and the LLM querying processes are captured and can be inspected directly in the Langfuse UI.
+
+#### Usage Pattern
+
+Make sure you have both `llama-index` and `langfuse` installed.
+
+```bash
+pip install llama-index langfuse
+```
+
+At the root of your LlamaIndex application, register Langfuse's `LlamaIndexInstrumentor`. When instantiating `LlamaIndexInstrumentor`, make sure to configure your Langfuse API keys and the Host URL correctly via environment variables or constructor arguments.
+
+```python
+import os
+
+# Get keys for your project from the project settings page: https://cloud.langfuse.com
+os.environ["LANGFUSE_PUBLIC_KEY"] = "pk-lf-..."
+os.environ["LANGFUSE_SECRET_KEY"] = "sk-lf-..."
+os.environ["LANGFUSE_HOST"] = "https://cloud.langfuse.com"  # 🇪🇺 EU region
+# os.environ["LANGFUSE_HOST"] = "https://us.cloud.langfuse.com" # 🇺🇸 US region
+```
+
+```python
+from langfuse.llama_index import LlamaIndexInstrumentor
+
+# Get your keys from the Langfuse project settings page and set them as environment variables
+# or pass them as arguments when initializing the instrumentor
+
+instrumentor = LlamaIndexInstrumentor()
+
+# Automatically trace all LlamaIndex operations
+instrumentor.start()
+
+# ... your LlamaIndex index creation ...
+index.as_query_engine().query("What is the capital of France?")
+
+# Flush events to langfuse
+instrumentor.flush()
+```
+
+You can now see the logs of your LlamaIndex application in Langfuse:
+
+[LlamaIndex example trace](https://langfuse.com/images/cookbook/integration-llamaindex-workflows/llamaindex-trace.gif)
+
+_[Example trace link in Langfuse](https://cloud.langfuse.com/project/cloramnkj0002jz088vzn1ja4/traces/6f554d6b-a2bc-4fba-904f-aa54de2897ca?display=preview)_
+
+#### Example Guides
+
+- [Langfuse Documentation](https://langfuse.com/docs/integrations/llama-index/get-started)
+- [End-to-end example notebook](https://langfuse.com/docs/integrations/llama-index/example-python-instrumentation-module)
+- [Tracing LlamaIndex Agents](https://langfuse.com/docs/integrations/llama-index/workflows)
+- [Analyze and Debug LlamaIndex Applications with PostHog and Langfuse](https://docs.llamaindex.ai/en/stable/examples/observability/LangfuseMistralPostHog/)
+
 ### Literal AI
 
 [Literal AI](https://literalai.com/) is the go-to LLM evaluation and observability solution, enabling engineering and product teams to ship LLM applications reliably, faster and at scale. This is possible through a collaborative development cycle involving prompt engineering, LLM observability, LLM evaluation and LLM monitoring. Conversation Threads and Agent Runs can be automatically logged on Literal AI.
@@ -294,7 +349,7 @@ These partner integrations use our legacy `CallbackManager` or third-party calls
 
 ### Langfuse
 
-[Langfuse](https://langfuse.com/docs) is an open source LLM engineering platform to help teams collaboratively debug, analyze and iterate on their LLM Applications. With the Langfuse integration, you can seamlessly track and monitor performance, traces, and metrics of your LlamaIndex application. Detailed [traces](https://langfuse.com/docs/tracing) of the LlamaIndex context augmentation and the LLM querying processes are captured and can be inspected directly in the Langfuse UI.
+This integration is deprecated. We recommend using the new instrumentation-based integration with Langfuse as described [here](https://langfuse.com/docs/integrations/llama-index/get-started).
 
 #### Usage Pattern
 

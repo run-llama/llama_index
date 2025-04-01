@@ -9,42 +9,35 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.indices.managed.llama_cloud"
+import_path = "llama_index.llms.asi"
 
 [tool.llamahub.class_authors]
-LlamaCloudIndex = "llama-index"
-
-[tool.llamahub.secondary_class_authors]
-LlamaCloudRetriever = "llama-index"
+ASI = "Fetch.ai Inc."
 
 [tool.mypy]
 disallow_untyped_defs = true
-# Remove venv skip when integrated with pre-commit
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
-explicit_package_bases = true
 ignore_missing_imports = true
-namespace_packages = true
-plugins = "pydantic.mypy"
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Logan Markewich <logan@llamaindex.ai>"]
-description = "llama-index indices llama-cloud integration"
+authors = ["Fetch.ai Inc. <info@fetch.ai>"]
+description = "llama-index llms asi integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-indices-managed-llama-cloud"
+name = "llama-index-llms-asi"
 readme = "README.md"
-version = "0.6.10"
+version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-llama-cloud = "^0.1.13"
+llama-index-llms-openai-like = "^0.3.1"
 llama-index-core = "^0.12.0"
+requests = ">=2.31.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
 jupyter = "^1.0.0"
-llama-index-embeddings-openai = "^0.3.1"
 mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
