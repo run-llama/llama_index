@@ -8,7 +8,12 @@ from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.base.llms.generic_utils import (
     messages_to_prompt as default_messages_to_prompt,
 )
-from llama_index.core.base.llms.types import ContentBlock, TextBlock, ImageBlock
+from llama_index.core.base.llms.types import (
+    ContentBlock,
+    TextBlock,
+    ImageBlock,
+    AudioBlock,
+)
 from llama_index.core.llms import ChatMessage
 from llama_index.core.prompts.base import BasePromptTemplate
 from llama_index.core.types import BaseOutputParser
@@ -57,6 +62,7 @@ class RichPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
         **kwargs: Any,
     ) -> str:
         del llm  # unused
+
         if self.is_chat_template:
             messages = self.format_messages(**kwargs)
 
@@ -65,7 +71,12 @@ class RichPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
 
             return default_messages_to_prompt(messages)
         else:
-            return Prompt(self.template_str).text(data=kwargs)
+            all_kwargs = {
+                **self.kwargs,
+                **kwargs,
+            }
+            mapped_all_kwargs = self._map_all_vars(all_kwargs)
+            return Prompt(self.template_str).text(data=mapped_all_kwargs)
 
     def format_messages(
         self, llm: Optional[BaseLLM] = None, **kwargs: Any
@@ -94,6 +105,10 @@ class RichPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
                         llama_blocks.append(TextBlock(text=bank_block.text))
                     elif bank_block.type == BanksContentBlockType.image_url:
                         llama_blocks.append(ImageBlock(url=bank_block.image_url.url))
+                    elif bank_block.type == BanksContentBlockType.audio:
+                        llama_blocks.append(
+                            AudioBlock(audio=bank_block.input_audio.data)
+                        )
                     else:
                         raise ValueError(
                             f"Unsupported content block type: {bank_block.type}"

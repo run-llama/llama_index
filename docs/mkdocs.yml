@@ -522,8 +522,6 @@ nav:
           - ./examples/prompts/advanced_prompts.ipynb
           - ./examples/prompts/emotion_prompt.ipynb
           - ./examples/prompts/prompt_mixin.ipynb
-          - ./examples/prompts/prompt_optimization.ipynb
-          - ./examples/prompts/prompts_rag.ipynb
       - Property Graph:
           - ./examples/property_graph/graph_store.ipynb
           - ./examples/property_graph/property_graph_advanced.ipynb
@@ -2803,8 +2801,10 @@ plugins:
         ./examples/prompts/advanced_prompts.html: https://docs.llamaindex.ai/en/stable/examples/prompts/advanced_prompts/
         ./examples/prompts/emotion_prompt.html: https://docs.llamaindex.ai/en/stable/examples/prompts/emotion_prompt/
         ./examples/prompts/prompt_mixin.html: https://docs.llamaindex.ai/en/stable/examples/prompts/prompt_mixin/
-        ./examples/prompts/prompt_optimization.html: https://docs.llamaindex.ai/en/stable/examples/prompts/prompt_optimization/
-        ./examples/prompts/prompts_rag.html: https://docs.llamaindex.ai/en/stable/examples/prompts/prompts_rag/
+        ./examples/prompts/prompt_optimization.html: https://docs.llamaindex.ai/en/stable/module_guides/models/prompts/
+        ./examples/prompts/prompt_optimization/index.html: https://docs.llamaindex.ai/en/stable/module_guides/models/prompts/
+        ./examples/prompts/prompts_rag.html: https://docs.llamaindex.ai/en/stable/module_guides/models/prompts/
+        ./examples/prompts/prompts_rag/index.html: https://docs.llamaindex.ai/en/stable/module_guides/models/prompts/
         ./examples/query_engine/CustomRetrievers.html: https://docs.llamaindex.ai/en/stable/examples/query_engine/CustomRetrievers/
         ./examples/query_engine/JSONalyze_query_engine.html: https://docs.llamaindex.ai/en/stable/examples/query_engine/JSONalyze_query_engine/
         ./examples/query_engine/JointQASummary.html: https://docs.llamaindex.ai/en/stable/examples/query_engine/JointQASummary/
