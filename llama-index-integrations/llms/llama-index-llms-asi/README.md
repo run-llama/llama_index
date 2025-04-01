@@ -87,15 +87,16 @@ response = await llm.achat(messages)
 print(response)
 
 # Async streaming completion (falls back to regular completion)
-async for chunk in llm.astream_complete(
+async for chunk in await llm.astream_complete(
     "Tell me about artificial intelligence."
 ):
     print(chunk.text, end="", flush=True)
 
 # Async streaming chat (handles ASI's unique streaming format)
-async for chunk in llm.astream_chat(messages):
-    if hasattr(chunk, "delta") and chunk.delta.strip():
-        print(chunk.delta, end="", flush=True)
+# Note: This follows the same pattern as OpenAI's implementation
+stream = await llm.astream_chat(messages)
+async for chunk in stream:
+    print(chunk.delta, end="", flush=True)
 ```
 
 ## API Key
@@ -110,6 +111,29 @@ You need an API key to use ASI's API. You can provide it in two ways:
 Currently, this integration supports the following models:
 
 - `asi1-mini`: A powerful language model for various natural language processing tasks.
+
+## OpenAI Compatibility
+
+ASI is designed to be a drop-in replacement for OpenAI in LlamaIndex applications. Developers can easily switch from OpenAI to ASI by simply changing the LLM initialization:
+
+```python
+# From this (OpenAI)
+from llama_index.llms.openai import OpenAI
+llm = OpenAI(api_key=openai_api_key, model="gpt-3.5-turbo")
+
+# To this (ASI)
+from llama_index.llms.asi import ASI
+llm = ASI(api_key=asi_api_key, model="asi1-mini")
+```
+
+The rest of your code remains unchanged, including:
+- Regular completions with `llm.complete()`
+- Chat with `llm.chat()`
+- Streaming chat with `for chunk in llm.stream_chat()`
+- Async streaming with `stream = await llm.astream_chat()` followed by `async for chunk in stream`
+- Multi-turn conversations
+
+ASI works seamlessly with other LlamaIndex components, such as using OpenAI embeddings for vector search while using ASI as the LLM for generating responses.
 
 ## Development
 
@@ -150,4 +174,3 @@ Linting and code formatting can be executed with make.
 ```bash
 make format
 make lint
-```
