@@ -290,25 +290,26 @@ class WatsonxLLM(FunctionCallingLLM):
 
     @property
     def metadata(self) -> LLMMetadata:
-        if self.model_id:
+        if self.model_id and self._context_window is None:
             model_id = self.model_id
-            context_window = self.model_info.get("model_limits", {}).get(
+            self._context_window = self.model_info.get("model_limits", {}).get(
                 "max_sequence_length"
             )
-        else:
+        elif self._context_window is None:
             model_id = self.deployment_info.get("entity", {}).get("base_model_id")
-            context_window = (
+            self._context_window = (
                 self._model._client.foundation_models.get_model_specs(model_id=model_id)
                 .get("model_limits", {})
                 .get("max_sequence_length")
             )
 
         return LLMMetadata(
-            context_window=context_window
-            or self._context_window
-            or DEFAULT_CONTEXT_WINDOW,
+            context_window=self._context_window or DEFAULT_CONTEXT_WINDOW,
             num_output=self.max_new_tokens or DEFAULT_MAX_TOKENS,
-            model_name=model_id or self._model.deployment_id,
+            model_name=self.model_id
+            or self.deployment_info.get("entity", {}).get(
+                "base_model_id", self._model.deployment_id
+            ),
         )
 
     @property
