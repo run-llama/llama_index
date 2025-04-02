@@ -548,6 +548,8 @@
   "GraphQLToolSpec": "llama_index.tools.graphql",
   "PlaygroundsSubgraphConnectorToolSpec": "llama_index.tools.playgrounds",
   "PlaygroundsSubgraphInspectorToolSpec": "llama_index.tools.playgrounds",
+  "DappierAIRecommendationsToolSpec": "llama_index.tools.dappier",
+  "DappierRealTimeSearchToolSpec": "llama_index.tools.dappier",
   "ClipEmbedding": "llama_index.embeddings.clip",
   "AnyscaleEmbedding": "llama_index.embeddings.anyscale",
   "LLMRailsEmbedding": "llama_index.embeddings.llm_rails",

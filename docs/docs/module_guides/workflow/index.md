@@ -464,7 +464,7 @@ class MyWorkflow(Workflow):
         return StopEvent(result=result)
 ```
 
-You can see the [API docs](../../api_reference/workflow/retry_policy/) for a detailed description of the policies
+You can see the [API docs](../../api_reference/workflow/retry_policy.md) for a detailed description of the policies
 available in the framework. If you can't find a policy that's suitable for your use case, you can easily write a
 custom one. The only requirement for custom policies is to write a Python class that respects the `RetryPolicy`
 protocol. In other words, your custom policy class must have a method with the following signature:
@@ -686,6 +686,7 @@ tools in a workflow.
 - [Function Calling Agent](../../examples/workflow/function_calling_agent.ipynb) is a great example of how to use the
 LlamaIndex framework primitives in a workflow, keeping it small and tidy even in complex scenarios like function
 calling.
+- [CodeAct Agent](../../examples/agent/from_scratch_code_act_agent.ipynb) is a great example of how to create a CodeAct Agent from scratch.
 - [Human In The Loop: Story Crafting](../../examples/workflow/human_in_the_loop_story_crafting.ipynb) is a powerful
 example showing how workflow runs can be interactive and stateful. In this case, to collect input from a human.
 - [Reliable Structured Generation](../../examples/workflow/reflection.ipynb) shows how to implement loops in a

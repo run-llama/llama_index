@@ -16,12 +16,12 @@ print(response)
 
 **Tutorials**
 
-- [Starter Tutorial](../../../getting_started/starter_example/)
+- [Starter Tutorial](../../../getting_started/starter_example.md)
 - [Basic Usage Pattern](../querying/querying.md)
 
 **Guides**
 
-- [Example](../../../examples/vector_stores/SimpleIndexDemo/) ([Notebook](../../../examples/vector_stores/SimpleIndexDemo/))
+- [Example Notebook](../../../examples/vector_stores/SimpleIndexDemo.ipynb))
 
 ## Summarization
 
@@ -103,7 +103,7 @@ response = query_engine.query(
 
 **Guides**
 
-- [Router Query Engine Guide](../../../examples/query_engine/RouterQueryEngine) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/docs/examples/query_engine/RouterQueryEngine.ipynb))
+- [Router Query Engine Guide](../../../examples/query_engine/RetrieverRouterQueryEngine.ipynb)
 
 ## Compare/Contrast Queries
 
@@ -121,7 +121,7 @@ This module will help break down a complex query into a simpler one over your ex
 
 **Guides**
 
-- [Query Transformations](../../../optimizing/advanced_retrieval/query_transformations/)
+- [Query Transformations](../../../optimizing/advanced_retrieval/query_transformations.md)
 
 You can also rely on the LLM to _infer_ whether to perform compare/contrast queries (see Multi Document Queries below).
 
@@ -134,29 +134,23 @@ sub-queries against sub-documents before synthesizing the final answer.
 To do this, first define an index for each document/data source, and wrap it with a `QueryEngineTool` (similar to above):
 
 ```python
-from llama_index.core.tools import QueryEngineTool, ToolMetadata
+from llama_index.core.tools import QueryEngineTool
 
 query_engine_tools = [
-    QueryEngineTool(
+    QueryEngineTool.from_defaults(
         query_engine=sept_engine,
-        metadata=ToolMetadata(
-            name="sept_22",
-            description="Provides information about Uber quarterly financials ending September 2022",
-        ),
+        name="sept_22",
+        description="Provides information about Uber quarterly financials ending September 2022",
     ),
-    QueryEngineTool(
+    QueryEngineTool.from_defaults(
         query_engine=june_engine,
-        metadata=ToolMetadata(
-            name="june_22",
-            description="Provides information about Uber quarterly financials ending June 2022",
-        ),
+        name="june_22",
+        description="Provides information about Uber quarterly financials ending June 2022",
     ),
-    QueryEngineTool(
+    QueryEngineTool.from_defaults(
         query_engine=march_engine,
-        metadata=ToolMetadata(
-            name="march_22",
-            description="Provides information about Uber quarterly financials ending March 2022",
-        ),
+        name="march_22",
+        description="Provides information about Uber quarterly financials ending March 2022",
     ),
 ]
 ```
@@ -176,9 +170,9 @@ This makes it especially well-suited for compare/contrast queries across documen
 
 **Guides**
 
-- [Sub Question Query Engine (Intro)](../../../examples/query_engine/sub_question_query_engine/)
-- [10Q Analysis (Uber)](../../../examples/usecases/10q_sub_question)
-- [10K Analysis (Uber and Lyft)](../../../examples/usecases/10k_sub_question)
+- [Sub Question Query Engine (Intro)](../../../examples/query_engine/sub_question_query_engine.ipynb)
+- [10Q Analysis (Uber)](../../../examples/usecases/10k_sub_question.ipynb)
+- [10K Analysis (Uber and Lyft)](../../../examples/usecases/10k_sub_question.ipynb)
 
 ## Multi-Step Queries
 
@@ -191,8 +185,8 @@ query the index, and then ask followup questions.
 
 **Guides**
 
-- [Query Transformations](../../../optimizing/advanced_retrieval/query_transformations)
-- [Multi-Step Query Decomposition](../../../examples/query_transformations/HyDEQueryTransformDemo) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs/docs/examples/query_transformations/HyDEQueryTransformDemo.ipynb))
+- [Query Transformations](../../../optimizing/advanced_retrieval/query_transformations.md)
+- [Multi-Step Query Decomposition](../../../examples/query_transformations/HyDEQueryTransformDemo.ipynb)
 
 ## Temporal Queries
 
@@ -203,9 +197,9 @@ LlamaIndex can support queries that require an understanding of time. It can do 
 
 **Guides**
 
-- [Postprocessing Guide](../../../module_guides/querying/node_postprocessors/node_postprocessors)
-- [Prev/Next Postprocessing](../../../examples/node_postprocessor/PrevNextPostprocessorDemo)
-- [Recency Postprocessing](../../../examples/node_postprocessor/RecencyPostprocessorDemo)
+- [Postprocessing Guide](../../../module_guides/querying/node_postprocessors/node_postprocessors.md)
+- [Prev/Next Postprocessing](../../../examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb)
+- [Recency Postprocessing](../../../examples/node_postprocessor/RecencyPostprocessorDemo.ipynb)
 
 ## Additional Resources
 

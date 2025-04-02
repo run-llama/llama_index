@@ -524,6 +524,8 @@
   "ExaToolSpec": "llama_index.tools.exa",
   "DuckDuckGoSearchToolSpec": "llama_index.tools.duckduckgo",
   "CogniswitchToolSpec": "llama_index.tools.cogniswitch",
+  "DappierAIRecommendationsToolSpec": "llama_index.tools.dappier",
+  "DappierRealTimeSearchToolSpec": "llama_index.tools.dappier",
   "AzureCVToolSpec": "llama_index.tools.azure_cv",
   "CV_URL_TMPL": "llama_index.tools.azure_cv",
   "NotionToolSpec": "llama_index.tools.notion",

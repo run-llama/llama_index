@@ -1,7 +1,11 @@
 from abc import ABCMeta
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union, cast
 
-from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
+from llama_index.core.agent.workflow.base_agent import (
+    BaseWorkflowAgent,
+    DEFAULT_AGENT_NAME,
+    DEFAULT_AGENT_DESCRIPTION,
+)
 from llama_index.core.agent.workflow.function_agent import FunctionAgent
 from llama_index.core.agent.workflow.react_agent import ReActAgent
 from llama_index.core.agent.workflow.workflow_events import (
@@ -11,7 +15,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentSetup,
     AgentOutput,
 )
-from llama_index.core.llms import ChatMessage
+from llama_index.core.llms import ChatMessage, TextBlock
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
@@ -92,6 +96,19 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         if not agents:
             raise ValueError("At least one agent must be provided")
 
+        # Raise an error if any agent has no name or no description
+        if len(agents) > 1 and any(
+            agent.name == DEFAULT_AGENT_NAME for agent in agents
+        ):
+            raise ValueError("All agents must have a name in a multi-agent workflow")
+
+        if len(agents) > 1 and any(
+            agent.description == DEFAULT_AGENT_DESCRIPTION for agent in agents
+        ):
+            raise ValueError(
+                "All agents must have a description in a multi-agent workflow"
+            )
+
         self.agents = {cfg.name: cfg for cfg in agents}
         if len(agents) == 1:
             root_agent = agents[0].name
@@ -166,6 +183,10 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         self, current_agent: BaseWorkflowAgent
     ) -> Optional[AsyncBaseTool]:
         """Creates a handoff tool for the given agent."""
+        # Do not create a handoff tool if there is only one agent
+        if len(self.agents) == 1:
+            return None
+
         agent_info = {cfg.name: cfg.description for cfg in self.agents.values()}
 
         # Filter out agents that the current agent cannot handoff to
@@ -273,24 +294,26 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             memory.set(chat_history)
 
         # Then add user message if it exists
-        current_state = await ctx.get("state")
         if user_msg:
-            # Add the state to the user message if it exists
-            if current_state:
-                user_msg.content = self.state_prompt.format(
-                    state=current_state, msg=user_msg.content
-                )
             await memory.aput(user_msg)
-            await ctx.set("user_msg_str", user_msg.content)
+            content_str = "\n".join(
+                [
+                    block.text
+                    for block in user_msg.blocks
+                    if isinstance(block, TextBlock)
+                ]
+            )
+            await ctx.set("user_msg_str", content_str)
         elif chat_history:
             # If no user message, use the last message from chat history as user_msg_str
-            last_msg = chat_history[-1].content or ""
-            await ctx.set("user_msg_str", last_msg)
-
-            if current_state:
-                chat_history[-1].content = self.state_prompt.format(
-                    state=current_state, msg=chat_history[-1].content
-                )
+            content_str = "\n".join(
+                [
+                    block.text
+                    for block in chat_history[-1].blocks
+                    if isinstance(block, TextBlock)
+                ]
+            )
+            await ctx.set("user_msg_str", content_str)
         else:
             raise ValueError("Must provide either user_msg or chat_history")
 
@@ -314,6 +337,14 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 *llm_input,
             ]
 
+        state = await ctx.get("state", default=None)
+        if state:
+            # update last message with current state
+            for block in llm_input[-1].blocks[::-1]:
+                if isinstance(block, TextBlock):
+                    block.text = self.state_prompt.format(state=state, msg=block.text)
+                    break
+
         return AgentSetup(
             input=llm_input,
             current_agent_name=ev.current_agent_name,
@@ -324,7 +355,8 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         """Run the agent."""
         memory: BaseMemory = await ctx.get("memory")
         agent = self.agents[ev.current_agent_name]
-        tools = await self.get_tools(ev.current_agent_name, ev.input[-1].content or "")
+        user_msg_str = await ctx.get("user_msg_str")
+        tools = await self.get_tools(ev.current_agent_name, user_msg_str or "")
 
         agent_output = await agent.take_step(
             ctx,

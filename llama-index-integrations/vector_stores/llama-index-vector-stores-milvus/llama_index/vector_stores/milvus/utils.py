@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict
+from typing import List, Dict, Any
+import uuid
 import sys
 import logging
 from enum import Enum
@@ -15,15 +16,31 @@ from typing import (
     Optional,
     Union,
 )
+
 from llama_index.core.vector_stores.types import (
     FilterCondition,
-)
-from llama_index.core.vector_stores.types import (
     MetadataFilters,
     FilterOperator,
 )
+from llama_index.core.vector_stores.utils import DEFAULT_TEXT_KEY
+
 
 logger = logging.getLogger(__name__)
+
+try:
+    from pymilvus import Function as BaseMilvusBuiltInFunction
+    from pymilvus import FunctionType
+except ImportError:
+    error_info = (
+        "Cannot import built-in function from PyMilvus. "
+        "To use Milvus built-in function, "
+        "you may need to upgrade pymilvus to the latest version:\n"
+        "pip install pymilvus -U\n"
+    )
+    logger.warning(error_info)
+
+
+DEFAULT_SPARSE_EMBEDDING_KEY = "sparse_embedding"
 
 
 class FilterOperatorFunction(str, Enum):
@@ -97,7 +114,12 @@ def parse_filter_value(filter_value: any, is_text_match: bool = False):
         # Per Milvus, "only prefix pattern match like ab% and equal match like ab(no wildcards) are supported"
         return f"'{filter_value!s}%'"
 
-    return f"'{filter_value!s}'" if isinstance(filter_value, str) else str(filter_value)
+    if isinstance(filter_value, str):
+        # Escape single quotes in strings
+        filter_value = filter_value.replace("'", "''")
+        return f"'{filter_value!s}'"
+
+    return str(filter_value)
 
 
 def parse_standard_filters(standard_filters: MetadataFilters = None):
@@ -168,9 +190,23 @@ class BaseSparseEmbeddingFunction(ABC):
     def encode_queries(self, queries: List[str]) -> List[Dict[int, float]]:
         pass
 
+    async def async_encode_queries(self, queries: List[str]) -> List[Dict[int, float]]:
+        """
+        Encode queries asynchronously. Use sync method if not implemented.
+        """
+        return self.encode_queries(queries)
+
     @abstractmethod
     def encode_documents(self, documents: List[str]) -> List[Dict[int, float]]:
         pass
+
+    async def async_encode_documents(
+        self, documents: List[str]
+    ) -> List[Dict[int, float]]:
+        """
+        Encode documents asynchronously. Use sync method if not implemented.
+        """
+        return self.encode_documents(documents)
 
 
 class BGEM3SparseEmbeddingFunction(BaseSparseEmbeddingFunction):
@@ -209,3 +245,39 @@ class BGEM3SparseEmbeddingFunction(BaseSparseEmbeddingFunction):
 
 def get_default_sparse_embedding_function() -> BGEM3SparseEmbeddingFunction:
     return BGEM3SparseEmbeddingFunction()
+
+
+class BM25BuiltInFunction(BaseMilvusBuiltInFunction):
+    """BM25 function built in Milvus."""
+
+    def __init__(
+        self,
+        input_field_names: Union[str, List[str]] = DEFAULT_TEXT_KEY,
+        output_field_names: Union[str, List[str]] = DEFAULT_SPARSE_EMBEDDING_KEY,
+        function_name: str = None,
+        function_description: str = "",
+        function_params: Optional[Dict] = None,
+        analyzer_params: Optional[Dict[Any, Any]] = None,
+        enable_match: bool = False,
+    ):
+        if not function_name:
+            function_name = f"bm25_function_{str(uuid.uuid4())[:8]}"
+        super().__init__(
+            function_name,
+            FunctionType.BM25,
+            input_field_names,
+            output_field_names,
+            function_description,
+            function_params,
+        )
+        self.analyzer_params = analyzer_params
+        self.enable_match = enable_match
+
+    def get_field_kwargs(self) -> dict:
+        field_schema_kwargs: Dict[Any, Any] = {
+            "enable_analyzer": True,
+            "enable_match": self.enable_match,
+        }
+        if self.analyzer_params is not None:
+            field_schema_kwargs["analyzer_params"] = self.analyzer_params
+        return field_schema_kwargs
