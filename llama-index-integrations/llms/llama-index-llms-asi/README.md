@@ -61,10 +61,11 @@ The ASI integration has different streaming implementations for completion and c
   - Content that may appear in different locations within the response structure
 
 Our enhanced implementation:
-  - Checks multiple possible locations for content (choices array, delta object, etc.)
-  - Filters out empty chunks to provide a clean streaming experience
-  - Handles all ASI response formats consistently
-  - Matches OpenAI's API patterns for seamless integration
+
+- Checks multiple possible locations for content (choices array, delta object, etc.)
+- Filters out empty chunks to provide a clean streaming experience
+- Handles all ASI response formats consistently
+- Matches OpenAI's API patterns for seamless integration
 
 ```python
 # Streaming completion (falls back to regular completion)
@@ -123,14 +124,17 @@ ASI is designed to be a drop-in replacement for OpenAI in LlamaIndex application
 ```python
 # From this (OpenAI)
 from llama_index.llms.openai import OpenAI
+
 llm = OpenAI(api_key=openai_api_key, model="gpt-3.5-turbo")
 
 # To this (ASI)
 from llama_index.llms.asi import ASI
+
 llm = ASI(api_key=asi_api_key, model="asi1-mini")
 ```
 
 The rest of your code remains unchanged, including:
+
 - Regular completions with `llm.complete()`
 - Chat with `llm.chat()`
 - Streaming chat with `for chunk in llm.stream_chat()`
@@ -170,8 +174,7 @@ query_engine = index.as_query_engine(llm=llm)
 
 # Query with streaming
 response = query_engine.query(
-    "What information is in these documents?",
-    streaming=True
+    "What information is in these documents?", streaming=True
 )
 
 # Process streaming response

@@ -91,11 +91,12 @@ class ASI(OpenAILike):
         This implementation filters out empty chunks and only yields
         chunks with actual content.
         """
+
         def gen() -> ChatResponseGen:
             raw_stream = super(OpenAILike, self).stream_chat(messages, **kwargs)
             accumulated_content = ""
             for chunk in raw_stream:
-                delta_content = "" 
+                delta_content = ""
                 # Extract content from the chunk
                 if hasattr(chunk, "raw") and chunk.raw:
                     # Check for content in choices array
@@ -103,14 +104,17 @@ class ASI(OpenAILike):
                         choice = chunk.raw["choices"][0]
                         if isinstance(choice, dict):
                             if "delta" in choice and isinstance(choice["delta"], dict):
-                                if "content" in choice["delta"] and choice["delta"]["content"]:
+                                if (
+                                    "content" in choice["delta"]
+                                    and choice["delta"]["content"]
+                                ):
                                     delta_content = choice["delta"]["content"]
                 # Check for content in delta directly
                 if not delta_content and hasattr(chunk, "delta"):
                     if hasattr(chunk.delta, "content") and chunk.delta.content:
                         delta_content = chunk.delta.content
                     elif isinstance(chunk.delta, str) and chunk.delta:
-                        delta_content = chunk.delta  
+                        delta_content = chunk.delta
                 if delta_content:
                     response = ChatResponse(
                         message=ChatMessage(
@@ -122,6 +126,7 @@ class ASI(OpenAILike):
                     )
                     accumulated_content += delta_content
                     yield response
+
         return gen()
 
     async def astream_chat(
@@ -141,7 +146,7 @@ class ASI(OpenAILike):
             raw_stream = await super(OpenAILike, self).astream_chat(messages, **kwargs)
             accumulated_content = ""
             async for chunk in raw_stream:
-                delta_content = "" 
+                delta_content = ""
                 # Extract content from the chunk
                 if hasattr(chunk, "raw") and chunk.raw:
                     # Check for content in choices array
@@ -149,7 +154,10 @@ class ASI(OpenAILike):
                         choice = chunk.raw["choices"][0]
                         if isinstance(choice, dict):
                             if "delta" in choice and isinstance(choice["delta"], dict):
-                                if "content" in choice["delta"] and choice["delta"]["content"]:
+                                if (
+                                    "content" in choice["delta"]
+                                    and choice["delta"]["content"]
+                                ):
                                     delta_content = choice["delta"]["content"]
                 # Check for content in delta directly
                 if not delta_content and hasattr(chunk, "delta"):
@@ -168,5 +176,6 @@ class ASI(OpenAILike):
                     )
                     accumulated_content += delta_content
                     yield response
+
         # Return the async generator function as a coroutine to match OpenAI's pattern
         return gen()
