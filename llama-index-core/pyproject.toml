@@ -76,8 +76,8 @@ eval-type-backport = {python = "<3.10", version = "^0.2.0"}
 
 [tool.poetry.group.dev.dependencies]
 black = {extras = ["jupyter"], version = ">=23.7.0,<=24.3.0"}
-boto3 = "1.33.6"  # needed for tests
-botocore = ">=1.33.13"
+boto3 = "1.37.25"  # needed for tests
+botocore = ">=1.37.25"
 codespell = {extras = ["toml"], version = ">=v2.2.6"}
 docker = "^7.0.0"
 ipython = "8.10.0"
