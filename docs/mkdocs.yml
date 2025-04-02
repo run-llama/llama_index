@@ -1420,7 +1420,6 @@ nav:
           - ./api_reference/readers/minio.md
           - ./api_reference/readers/mondaydotcom.md
           - ./api_reference/readers/mongodb.md
-          - ./api_reference/readers/myscale.md
           - ./api_reference/readers/notion.md
           - ./api_reference/readers/nougat_ocr.md
           - ./api_reference/readers/obsidian.md
@@ -2403,7 +2402,6 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-novita
             - ../llama-index-integrations/llms/llama-index-llms-netmind
             - ../llama-index-integrations/tools/llama-index-tools-dappier
-            - ../llama-index-integrations/readers/llama-index-readers-myscale
             - ../llama-index-integrations/llms/llama-index-llms-asi
   - redirects:
       redirect_maps:
