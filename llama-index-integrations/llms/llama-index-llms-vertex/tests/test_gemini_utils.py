@@ -103,8 +103,9 @@ def test_convert_chat_message_with_empty_text_block():
         role=MessageRole.USER,
         blocks=[TextBlock(text="")],
     )
-    with pytest.raises(ValueError, match="TextBlock must contain text"):
-        convert_chat_message_to_gemini_content(message=message, is_history=True)
+    result = convert_chat_message_to_gemini_content(message=message, is_history=True)
+    assert result.role == "user"
+    assert len(result.parts) == 0
 
 
 def test_convert_chat_message_with_invalid_image_block():

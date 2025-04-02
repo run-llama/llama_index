@@ -21,14 +21,14 @@ def convert_chat_message_to_gemini_content(
 ) -> Any:
     from vertexai.preview.generative_models import Content, Part
 
-    def _convert_block_to_part(block: Union[TextBlock, ImageBlock]) -> Part:
+    def _convert_block_to_part(block: Union[TextBlock, ImageBlock]) -> Part | None:
         from vertexai.preview.generative_models import Image
 
         if isinstance(block, TextBlock):
             if block.text:
                 return Part.from_text(block.text)
             else:
-                raise ValueError("TextBlock must contain text")
+                return None
         elif isinstance(block, ImageBlock):
             if block.path:
                 image = Image.load_from_file(block.path)
@@ -54,7 +54,11 @@ def convert_chat_message_to_gemini_content(
     else:
         if not isinstance(message.blocks, list):
             raise ValueError("message.blocks must be a list of content blocks")
-        parts = [_convert_block_to_part(block) for block in message.blocks]
+        parts = [
+            part
+            for part in (_convert_block_to_part(block) for block in message.blocks)
+            if part is not None
+        ]
 
     if is_history:
         return Content(
