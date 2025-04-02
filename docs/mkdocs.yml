@@ -97,6 +97,8 @@ nav:
           - ./examples/agent/agent_workflow_research_assistant.ipynb
           - ./examples/agent/anthropic_agent.ipynb
           - ./examples/agent/bedrock_converse_agent.ipynb
+          - ./examples/agent/code_act_agent.ipynb
+          - ./examples/agent/from_scratch_code_act_agent.ipynb
           - ./examples/agent/memory/chat_memory_buffer.ipynb
           - ./examples/agent/memory/composable_memory.ipynb
           - ./examples/agent/memory/summary_memory_buffer.ipynb
@@ -522,6 +524,7 @@ nav:
           - ./examples/prompts/advanced_prompts.ipynb
           - ./examples/prompts/emotion_prompt.ipynb
           - ./examples/prompts/prompt_mixin.ipynb
+          - ./examples/prompts/rich_prompt_template_features.ipynb
       - Property Graph:
           - ./examples/property_graph/graph_store.ipynb
           - ./examples/property_graph/property_graph_advanced.ipynb
@@ -987,6 +990,7 @@ nav:
           - ./api_reference/llms/alibabacloud_aisearch.md
           - ./api_reference/llms/anthropic.md
           - ./api_reference/llms/anyscale.md
+          - ./api_reference/llms/asi.md
           - ./api_reference/llms/azure_inference.md
           - ./api_reference/llms/azure_openai.md
           - ./api_reference/llms/bedrock.md
@@ -1417,6 +1421,7 @@ nav:
           - ./api_reference/readers/minio.md
           - ./api_reference/readers/mondaydotcom.md
           - ./api_reference/readers/mongodb.md
+          - ./api_reference/readers/myscale.md
           - ./api_reference/readers/notion.md
           - ./api_reference/readers/nougat_ocr.md
           - ./api_reference/readers/obsidian.md
@@ -2399,8 +2404,11 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-novita
             - ../llama-index-integrations/llms/llama-index-llms-netmind
             - ../llama-index-integrations/tools/llama-index-tools-dappier
+            - ../llama-index-integrations/readers/llama-index-readers-myscale
+            - ../llama-index-integrations/llms/llama-index-llms-asi
   - redirects:
       redirect_maps:
+        ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
         ./api_reference/agent/coa/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
         ./api_reference/agent/dashscope/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
         ./api_reference/agent/function/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
@@ -2411,7 +2419,6 @@ plugins:
         ./api_reference/agent/openai_legacy/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
         ./api_reference/agent/react/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
         ./api_reference/agent/workflow/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
-        ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
         ./changes/deprecated_terms.html: https://docs.llamaindex.ai/en/stable/changes/deprecated_terms/
         ./community/faq/chat_engines.html: https://docs.llamaindex.ai/en/stable/community/faq/chat_engines/
         ./community/faq/documents_and_nodes.html: https://docs.llamaindex.ai/en/stable/community/faq/documents_and_nodes/
