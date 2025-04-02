@@ -9,10 +9,10 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.storage.kvstore.gel"
+import_path = "llama_index.storage.docstore.gel"
 
 [tool.llamahub.class_authors]
-gelKVStore = "llama-index"
+GelDocumentStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -22,21 +22,21 @@ python_version = "3.8"
 
 [tool.poetry]
 authors = ["Your Name <you@example.com>"]
-description = "llama-index kvstore gel integration"
+description = "llama-index docstore gel integration"
 exclude = ["**/BUILD"]
 license = "MIT"
-name = "llama-index-storage-kvstore-gel"
+name = "llama-index-storage-docstore-gel"
 readme = "README.md"
 version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
+llama-index-storage-kvstore-gel = "^0.1.0"
 llama-index-core = "^0.12.0"
 gel = ">=3.0.1"
 jinja2 = ">=3.1.4"
 
 [tool.poetry.group.dev.dependencies]
-docker = "^7.0.0"
 ipython = "8.10.0"
 jupyter = "^1.0.0"
 mypy = "0.991"

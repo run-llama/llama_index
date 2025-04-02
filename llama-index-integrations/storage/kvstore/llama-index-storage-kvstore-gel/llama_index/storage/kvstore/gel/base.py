@@ -109,8 +109,8 @@ GET_QUERY = format_query(
 GET_ALL_QUERY = format_query(
     """
     select Record {
-        key := .key,
-        value := .value
+        key,
+        value
     }
     filter .namespace = <str>$namespace;
     """
@@ -263,7 +263,7 @@ class GelKVStore(BaseKVStore):
             GET_ALL_QUERY,
             namespace=collection,
         )
-        return {result.key: result.value for result in results}
+        return {result.key: json.loads(result.value) for result in results}
 
     async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
         """Get all values from the store.
@@ -276,7 +276,7 @@ class GelKVStore(BaseKVStore):
             GET_ALL_QUERY,
             namespace=collection,
         )
-        return {result.key: result.value for result in results}
+        return {result.key: json.loads(result.value) for result in results}
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
         """Delete a value from the store.
