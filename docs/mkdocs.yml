@@ -183,7 +183,6 @@ nav:
           - ./examples/data_connectors/MboxReaderDemo.ipynb
           - ./examples/data_connectors/MilvusReaderDemo.ipynb
           - ./examples/data_connectors/MongoDemo.ipynb
-          - ./examples/data_connectors/MyScaleReaderDemo.ipynb
           - ./examples/data_connectors/NotionDemo.ipynb
           - ./examples/data_connectors/ObsidianReaderDemo.ipynb
           - ./examples/data_connectors/PathwayReaderDemo.ipynb
@@ -2567,7 +2566,6 @@ plugins:
         ./examples/data_connectors/MboxReaderDemo.html: https://docs.llamaindex.ai/en/stable/examples/data_connectors/MboxReaderDemo/
         ./examples/data_connectors/MilvusReaderDemo.html: https://docs.llamaindex.ai/en/stable/examples/data_connectors/MilvusReaderDemo/
         ./examples/data_connectors/MongoDemo.html: https://docs.llamaindex.ai/en/stable/examples/data_connectors/MongoDemo/
-        ./examples/data_connectors/MyScaleReaderDemo.html: https://docs.llamaindex.ai/en/stable/examples/data_connectors/MyScaleReaderDemo/
         ./examples/data_connectors/NotionDemo.html: https://docs.llamaindex.ai/en/stable/examples/data_connectors/NotionDemo/
         ./examples/data_connectors/ObsidianReaderDemo.html: https://docs.llamaindex.ai/en/stable/examples/data_connectors/ObsidianReaderDemo/
         ./examples/data_connectors/PathwayReaderDemo.html: https://docs.llamaindex.ai/en/stable/examples/data_connectors/PathwayReaderDemo/
