@@ -29,8 +29,7 @@ class NovitaAI(OpenAILike):
 
     How to Integrate Novita AI API with LlamaIndex
     Step 1: Visit [Model Library](https://novita.ai/llm-api) on Novita AI and select a model of interest.
-
-    ![images/Step1VisitModelLibraryonNovitaAIandselectamodelofinterest.png](https://mintlify.s3.us-west-1.amazonaws.com/novitaai/images/Step1VisitModelLibraryonNovitaAIandselectamodelofinterest.png)
+      ![images/Step1VisitModelLibraryonNovitaAIandselectamodelofinterest.png](https://mintlify.s3.us-west-1.amazonaws.com/novitaai/images/Step1VisitModelLibraryonNovitaAIandselectamodelofinterest.png)
 
     Step 2: Navigate to the demo page of the chosen model and click the `Code` button on the right.
       ![images/Step2NavigatetothedemopageofthechosenmodelandclicktheCodebuttonontheright.png](https://mintlify.s3.us-west-1.amazonaws.com/novitaai/images/Step2NavigatetothedemopageofthechosenmodelandclicktheCodebuttonontheright.png)
