@@ -20,7 +20,7 @@ def draw_all_possible_flows(
     filename: str = "workflow_all_flows.html",
     notebook: bool = False,
 ) -> None:
-        """Draws all possible flows of the workflow."""
+    """Draws all possible flows of the workflow."""
     from pyvis.network import Network
 
     net = Network(directed=True, height="750px", width="100%")
