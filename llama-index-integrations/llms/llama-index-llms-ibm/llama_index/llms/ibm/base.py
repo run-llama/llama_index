@@ -306,7 +306,10 @@ class WatsonxLLM(FunctionCallingLLM):
         return LLMMetadata(
             context_window=self._context_window or DEFAULT_CONTEXT_WINDOW,
             num_output=self.max_new_tokens or DEFAULT_MAX_TOKENS,
-            model_name=self.model_id or self._model.deployment_id,
+            model_name=self.model_id
+            or self.deployment_info.get("entity", {}).get(
+                "base_model_id", self._model.deployment_id
+            ),
         )
 
     @property
