@@ -58,9 +58,13 @@ The ASI integration has different streaming implementations for completion and c
 - **Streaming Chat**: ASI supports streaming for chat, but with a unique format that includes:
   - Many empty content chunks during the "thinking" phase
   - Custom fields like `thought` and `init_thought` that contain intermediate reasoning
-  - Actual content appearing later in the stream
+  - Content that may appear in different locations within the response structure
 
-Our implementation processes this format to filter out empty chunks and extract meaningful content, providing a clean streaming experience.
+Our enhanced implementation:
+  - Checks multiple possible locations for content (choices array, delta object, etc.)
+  - Filters out empty chunks to provide a clean streaming experience
+  - Handles all ASI response formats consistently
+  - Matches OpenAI's API patterns for seamless integration
 
 ```python
 # Streaming completion (falls back to regular completion)
@@ -87,15 +91,16 @@ response = await llm.achat(messages)
 print(response)
 
 # Async streaming completion (falls back to regular completion)
-async for chunk in llm.astream_complete(
+async for chunk in await llm.astream_complete(
     "Tell me about artificial intelligence."
 ):
     print(chunk.text, end="", flush=True)
 
 # Async streaming chat (handles ASI's unique streaming format)
-async for chunk in llm.astream_chat(messages):
-    if hasattr(chunk, "delta") and chunk.delta.strip():
-        print(chunk.delta, end="", flush=True)
+# Note: This follows the same pattern as OpenAI's implementation
+stream = await llm.astream_chat(messages)
+async for chunk in stream:
+    print(chunk.delta, end="", flush=True)
 ```
 
 ## API Key
@@ -110,6 +115,71 @@ You need an API key to use ASI's API. You can provide it in two ways:
 Currently, this integration supports the following models:
 
 - `asi1-mini`: A powerful language model for various natural language processing tasks.
+
+## OpenAI Compatibility
+
+ASI is designed to be a drop-in replacement for OpenAI in LlamaIndex applications. Developers can easily switch from OpenAI to ASI by simply changing the LLM initialization:
+
+```python
+# From this (OpenAI)
+from llama_index.llms.openai import OpenAI
+llm = OpenAI(api_key=openai_api_key, model="gpt-3.5-turbo")
+
+# To this (ASI)
+from llama_index.llms.asi import ASI
+llm = ASI(api_key=asi_api_key, model="asi1-mini")
+```
+
+The rest of your code remains unchanged, including:
+- Regular completions with `llm.complete()`
+- Chat with `llm.chat()`
+- Streaming chat with `for chunk in llm.stream_chat()`
+- Async streaming with `stream = await llm.astream_chat()` followed by `async for chunk in stream`
+- Multi-turn conversations
+
+ASI works seamlessly with other LlamaIndex components, such as using OpenAI embeddings for vector search while using ASI as the LLM for generating responses.
+
+### Complete RAG Example
+
+Here's a complete example showing how to use ASI as a drop-in replacement for OpenAI in a RAG application:
+
+```python
+from llama_index.llms.asi import ASI
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core.node_parser import SentenceSplitter
+
+# Load documents
+documents = SimpleDirectoryReader("./data").load_data()
+
+# Create parser
+parser = SentenceSplitter(chunk_size=1024)
+
+# Create embeddings model (still using OpenAI for embeddings)
+embedding_model = OpenAIEmbedding(model="text-embedding-3-small")
+
+# Create ASI LLM (instead of OpenAI)
+llm = ASI(model="asi1-mini", api_key="your_asi_api_key")
+
+# Create index
+nodes = parser.get_nodes_from_documents(documents)
+index = VectorStoreIndex(nodes, embed_model=embedding_model)
+
+# Create query engine with ASI as the LLM
+query_engine = index.as_query_engine(llm=llm)
+
+# Query with streaming
+response = query_engine.query(
+    "What information is in these documents?",
+    streaming=True
+)
+
+# Process streaming response
+for token in response.response_gen:
+    print(token, end="", flush=True)
+```
+
+This example demonstrates how you can use ASI as the LLM while still using OpenAI for embeddings, showing the flexibility of the integration.
 
 ## Development
 
