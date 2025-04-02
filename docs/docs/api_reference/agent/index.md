@@ -1,6 +1,4 @@
-# Core Agent Classes
-
-## Base Types
+# Agent Classes
 
 ::: llama_index.core.agent.workflow
     options:
@@ -9,6 +7,7 @@
         - BaseWorkflowAgent
         - FunctionAgent
         - ReActAgent
+        - CodeActAgent
         - AgentInput
         - AgentStream
         - AgentOutput
