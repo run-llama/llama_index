@@ -1,4 +1,5 @@
 import functools
+from json.decoder import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -979,7 +980,7 @@ class OpenAI(FunctionCallingLLM):
             # this should handle both complete and partial jsons
             try:
                 argument_dict = parse_partial_json(tool_call.function.arguments)
-            except ValueError:
+            except (ValueError, TypeError, JSONDecodeError):
                 argument_dict = {}
 
             tool_selections.append(
