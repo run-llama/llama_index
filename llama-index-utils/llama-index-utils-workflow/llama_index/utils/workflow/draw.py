@@ -33,7 +33,7 @@ def draw_all_possible_flows(
     step_config: Optional[StepConfig] = None
 
     # Only one kind of `StopEvent` is allowed in a `Workflow`.
-    # Assuming that `Workflow` is vaidated before drawing, it's enough to find the first one.
+    # Assuming that `Workflow` is validated before drawing, it's enough to find the first one.
     current_stop_event = None
     for step_name, step_func in steps.items():
         step_config = getattr(step_func, "__step_config", None)
@@ -60,7 +60,7 @@ def draw_all_possible_flows(
         for event_type in step_config.accepted_events:
             if event_type == StopEvent and event_type != current_stop_event:
                 continue
-            
+
             net.add_node(
                 event_type.__name__,
                 label=event_type.__name__,
@@ -78,7 +78,7 @@ def draw_all_possible_flows(
                 color="#90EE90",
                 shape="ellipse",
             )  # Light green for events
-                
+
             if issubclass(return_type, InputRequiredEvent):
                 # add node for conceptual external step
                 net.add_node(
