@@ -203,12 +203,13 @@ def messages_to_converse_messages(
                     "role": message.role.value,
                     "content": [{"text": message.content}],
                 }
-                if ("cachePoint" in message.additional_kwargs
+                if (
+                    "cachePoint" in message.additional_kwargs
                     or "cache_control" in message.additional_kwargs
                 ):
                     # https://docs.aws.amazon.com/bedrock/latest/userguide/prompt-caching.html
                     converse_message["content"].append(
-                        {"cachePoint": { "type": "default" }}
+                        {"cachePoint": {"type": "default"}}
                     )
 
                 converse_messages.append(converse_message)
