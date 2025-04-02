@@ -33,6 +33,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from .workflow import Workflow
 
 T = TypeVar("T", bound=Event)
+EventBuffer = Dict[str, List[Event]]
 
 
 class Context:
@@ -93,7 +94,7 @@ class Context:
         # Streaming machinery
         self._streaming_queue: asyncio.Queue = asyncio.Queue()
         # Step-specific instance
-        self._events_buffer: Dict[str, List[Event]] = defaultdict(list)
+        self._event_buffers: Dict[str, EventBuffer] = {}
 
     def _serialize_queue(self, queue: asyncio.Queue, serializer: BaseSerializer) -> str:
         queue_items = list(queue._queue)  # type: ignore
@@ -294,7 +295,7 @@ class Context:
         return f"{ev_type.__module__}.{ev_type.__name__}"
 
     def collect_events(
-        self, ev: Event, expected: List[Type[Event]]
+        self, ev: Event, expected: List[Type[Event]], buffer_id: Optional[str] = None
     ) -> Optional[List[Event]]:
         """Collects events for buffering in workflows.
 
@@ -305,25 +306,44 @@ class Context:
         Args:
             ev (Event): The current event to add to the buffer.
             expected (List[Type[Event]]): List of expected event types to collect.
+            buffer_id (str): A unique identifier for the events collected. Ideally this should be
+            the step name, so to avoid any interference between different steps. If not provided,
+            a stable identifier will be created using the list of expected events.
 
         Returns:
             Optional[List[Event]]: List of collected events in the order of expected types if all
                                   expected events are found; otherwise None.
         """
-        self._events_buffer[self._get_full_path(type(ev))].append(ev)
+        if buffer_id is None:
+            # Create a stable identifier by sorting the full paths of expected event types
+            buffer_id = ":".join(
+                sorted(self._get_full_path(e_type) for e_type in expected)
+            )
+
+        if buffer_id not in self._event_buffers:
+            self._event_buffers[buffer_id] = defaultdict(list)
+
+        event_type_path = self._get_full_path(type(ev))
+        self._event_buffers[buffer_id][event_type_path].append(ev)
 
         retval: List[Event] = []
         for e_type in expected:
-            e_instance_list = self._events_buffer.get(self._get_full_path(e_type))
+            e_type_path = self._get_full_path(e_type)
+            e_instance_list = self._event_buffers[buffer_id].get(e_type_path, [])
             if e_instance_list:
                 retval.append(e_instance_list.pop(0))
+            else:
+                # We already know we don't have all the events
+                break
 
         if len(retval) == len(expected):
             return retval
 
         # put back the events if unable to collect all
-        for ev in retval:
-            self._events_buffer[self._get_full_path(type(ev))].append(ev)
+        for i, ev_to_restore in enumerate(retval):
+            e_type = type(retval[i])
+            e_type_path = self._get_full_path(e_type)
+            self._event_buffers[buffer_id][e_type_path].append(ev_to_restore)
 
         return None
 
@@ -480,6 +500,9 @@ class Context:
             if type(ev) not in config.accepted_events:
                 continue
 
+            if step.__name__ == "make_intermediate_1":
+                print(f"popped {type(ev)}")
+
             # do we need to wait for the step flag?
             if stepwise:
                 await self._step_flags[name].wait()
@@ -517,6 +540,7 @@ class Context:
                         new_ev = await instrumented_step(**kwargs)
                         kwargs.clear()
                         break  # exit the retrying loop
+
                     except WorkflowDone:
                         await self.remove_from_in_progress(name=name, ev=ev)
                         raise
