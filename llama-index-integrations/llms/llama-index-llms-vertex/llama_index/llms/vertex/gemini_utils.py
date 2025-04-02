@@ -21,7 +21,7 @@ def convert_chat_message_to_gemini_content(
 ) -> Any:
     from vertexai.preview.generative_models import Content, Part
 
-    def _convert_block_to_part(block: Union[TextBlock, ImageBlock]) -> Part | None:
+    def _convert_block_to_part(block: Union[TextBlock, ImageBlock]) -> Optional[Part]:
         from vertexai.preview.generative_models import Image
 
         if isinstance(block, TextBlock):
