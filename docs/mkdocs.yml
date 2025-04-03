@@ -183,6 +183,7 @@ nav:
           - ./examples/data_connectors/MboxReaderDemo.ipynb
           - ./examples/data_connectors/MilvusReaderDemo.ipynb
           - ./examples/data_connectors/MongoDemo.ipynb
+          - ./examples/data_connectors/MyScaleReaderDemo.ipynb
           - ./examples/data_connectors/NotionDemo.ipynb
           - ./examples/data_connectors/ObsidianReaderDemo.ipynb
           - ./examples/data_connectors/PathwayReaderDemo.ipynb
@@ -923,6 +924,7 @@ nav:
           - ./api_reference/embeddings/ollama.md
           - ./api_reference/embeddings/opea.md
           - ./api_reference/embeddings/openai.md
+          - ./api_reference/embeddings/openai_like.md
           - ./api_reference/embeddings/oracleai.md
           - ./api_reference/embeddings/premai.md
           - ./api_reference/embeddings/sagemaker_endpoint.md
@@ -1420,6 +1422,7 @@ nav:
           - ./api_reference/readers/minio.md
           - ./api_reference/readers/mondaydotcom.md
           - ./api_reference/readers/mongodb.md
+          - ./api_reference/readers/myscale.md
           - ./api_reference/readers/notion.md
           - ./api_reference/readers/nougat_ocr.md
           - ./api_reference/readers/obsidian.md
@@ -2403,6 +2406,8 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-netmind
             - ../llama-index-integrations/tools/llama-index-tools-dappier
             - ../llama-index-integrations/llms/llama-index-llms-asi
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-openai-like
+            - ../llama-index-integrations/readers/llama-index-readers-myscale
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
