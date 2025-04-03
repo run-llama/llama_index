@@ -1,3 +1,5 @@
+# pants requires this import to recognize the dep
+import pytest_asyncio  # noqa: F401
 from llama_index.core import Document
 import asyncio
 import pytest

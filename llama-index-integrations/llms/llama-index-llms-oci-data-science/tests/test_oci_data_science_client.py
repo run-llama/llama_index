@@ -1,3 +1,5 @@
+# pants requires this import to recognize the dep
+import pytest_asyncio  # noqa: F401
 import json
 from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, Mock, patch

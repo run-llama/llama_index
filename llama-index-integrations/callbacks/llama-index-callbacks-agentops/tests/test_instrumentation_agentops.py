@@ -1,3 +1,5 @@
+# pants requires this import to recognize the dep
+import pytest_asyncio  # noqa: F401
 import pytest
 import uuid
 import llama_index.core.instrumentation as instrument

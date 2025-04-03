@@ -1,3 +1,5 @@
+# pants requires this import to recognize the dep
+import pytest_asyncio  # noqa: F401
 import os
 from typing import Any, AsyncGenerator, Generator, Optional
 from unittest.mock import AsyncMock, MagicMock, patch

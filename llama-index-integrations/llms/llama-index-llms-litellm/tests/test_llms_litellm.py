@@ -1,3 +1,5 @@
+# pants requires this import to recognize the dep
+import pytest_asyncio  # noqa: F401
 from decimal import Decimal
 import httpx
 from llama_index.core.base.llms.base import BaseLLM

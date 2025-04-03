@@ -1,3 +1,5 @@
+# pants requires this import to recognize the dep
+import pytest_asyncio  # noqa: F401
 import pytest
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import Event, StartEvent, StopEvent

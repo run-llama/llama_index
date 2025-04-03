@@ -1,3 +1,5 @@
+# pants requires this import to recognize the dep
+import pytest_asyncio  # noqa: F401
 from typing import Any, AsyncGenerator, Coroutine, Dict, List, Optional, Sequence, Union
 
 import pytest

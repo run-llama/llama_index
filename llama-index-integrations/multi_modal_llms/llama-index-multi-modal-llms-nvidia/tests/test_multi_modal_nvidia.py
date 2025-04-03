@@ -1,3 +1,5 @@
+# pants requires this import to recognize the dep
+import pytest_asyncio  # noqa: F401
 from llama_index.core.multi_modal_llms.base import MultiModalLLM
 from llama_index.multi_modal_llms.nvidia import NVIDIAMultiModal
 from llama_index.multi_modal_llms.nvidia.utils import (

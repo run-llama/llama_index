@@ -1,3 +1,5 @@
+# pants requires this import to recognize the dep
+import pytest_asyncio  # noqa: F401
 from http import HTTPStatus
 from types import SimpleNamespace
 from typing import AsyncGenerator, List, Sequence

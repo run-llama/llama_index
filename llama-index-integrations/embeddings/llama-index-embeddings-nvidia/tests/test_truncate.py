@@ -1,3 +1,5 @@
+# pants requires this import to recognize the dep
+import pytest_asyncio  # noqa: F401
 import pytest
 import respx
 from llama_index.embeddings.nvidia import NVIDIAEmbedding

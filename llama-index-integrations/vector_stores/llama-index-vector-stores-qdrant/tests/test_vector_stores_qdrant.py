@@ -1,3 +1,5 @@
+# pants requires this import to recognize the dep
+import pytest_asyncio  # noqa: F401
 import pytest
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import (

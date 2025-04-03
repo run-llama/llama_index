@@ -1,3 +1,6 @@
+# pants requires this import to recognize the dep
+import pytest_asyncio  # noqa: F401
+
 """Test Bedrock multi-modal LLM."""
 import json
 from io import BytesIO

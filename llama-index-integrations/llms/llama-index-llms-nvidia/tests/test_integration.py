@@ -1,3 +1,5 @@
+# pants requires this import to recognize the dep
+import pytest_asyncio  # noqa: F401
 import pytest
 from llama_index.core.base.llms.types import (
     ChatMessage,
