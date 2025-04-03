@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import tempfile
 from typing import Any, Dict, List, Union, Optional
+from urllib.parse import quote
 
 import requests
 from llama_index.core.readers import SimpleDirectoryReader, FileSystemReaderMixin
@@ -763,7 +764,9 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         # Get the file ID
         # remove the site_name prefix
         parts = [part for part in input_file.parts if part != self.sharepoint_site_name]
-        file_path = "/".join(parts)
+        # URI escape each part of the path
+        escaped_parts = [quote(part) for part in parts]
+        file_path = "/".join(escaped_parts)
         endpoint = f"{self._drive_id_endpoint}/{self._drive_id}/root:/{file_path}"
 
         response = self._send_get_with_retry(endpoint)
