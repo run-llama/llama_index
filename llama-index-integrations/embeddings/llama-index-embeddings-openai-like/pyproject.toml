@@ -31,8 +31,7 @@ version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-openai = ">=1.1.0"
-llama-index-core = "^0.12.0"
+llama-index-embeddings-openai = "^0.3.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
