@@ -2,7 +2,7 @@ import time
 import http.client
 import json
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.callbacks.base import CallbackManager
@@ -10,93 +10,95 @@ from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 
 
 class GalaxiaClient:
-    def __init__(self, api_url, api_key, knowledge_base_id, n_retries, wait_time):
+    def __init__(
+        self,
+        api_url: str,
+        api_key: str,
+        knowledge_base_id: str,
+        n_retries: int,
+        wait_time: int,
+    ):
         self.api_url = api_url
         self.api_key = api_key
         self.knowledge_base_id = knowledge_base_id
         self.n_retries = n_retries
         self.wait_time = wait_time
 
-        self.headers = {
-            'X-Api-Key': api_key,
-            'Content-Type': "application/json"
-        }
+        self.headers = {"X-Api-Key": api_key, "Content-Type": "application/json"}
 
-
-    def initalize(self, conn, question):
-        payload = "{\n  \"algorithmVersion\":\"%s\",\n  \"text\":\"%s\" \n}" % (
-            self.knowledge_base_id,
-            question.replace('"', '\\"')
-        )
-        
+    def initialize(
+        self,
+        conn: http.client.HTTPSConnection,
+        question: str,
+    ) -> dict:
+        payload_0 = '{\n  "algorithmVersion":"%s",\n' % self.knowledge_base_id
+        payload_1 = '  "text":"%s" \n}' % question.replace('"', '\\"')
+        payload = payload_0 + payload_1
         conn.request("POST", "/analyze/initialize", payload, self.headers)
-        
         res = conn.getresponse()
         data = res.read()
-        result = json.loads(data.decode("utf-8"))
-        return result
-    
-    
-    def check_status(self, conn, init_res):
-        payload = "{\n  \"operationId\": \"%s\"\n}" % init_res['operationId']
-        
+        return json.loads(data.decode("utf-8"))
+
+    def check_status(
+        self,
+        conn: http.client.HTTPSConnection,
+        init_res: dict,
+    ) -> dict:
+        payload = '{\n "operationId": "%s"\n}' % init_res["operationId"]
         conn.request("POST", "/analyze/status", payload, self.headers)
-        
+
         res = conn.getresponse()
         data = res.read()
-        result = json.loads(data.decode("utf-8"))
-        return result
-    
-    
-    def get_result(self, conn, init_res):
-        payload = "{\n  \"operationId\": \"%s\"\n}" % init_res['operationId']
-        
+        return json.loads(data.decode("utf-8"))
+
+    def get_result(self, conn: http.client.HTTPSConnection, init_res: dict) -> dict:
+        payload = '{\n "operationId": "%s"\n}' % init_res["operationId"]
         conn.request("POST", "/analyze/result", payload, self.headers)
-        
+
         res = conn.getresponse()
         data = res.read()
-        result = json.loads(data.decode("utf-8"))
-        return result
+        return json.loads(data.decode("utf-8"))
 
-
-    def retrieve(self, query):
+    def retrieve(
+        self,
+        query: str,
+    ) -> Union[dict, None]:
         conn = http.client.HTTPSConnection(self.api_url)
 
         flag_init = False
         for i in range(self.n_retries):
-            init_res = self.initalize(conn, query)
+            init_res = self.initialize(conn, query)
 
-            if 'operationId' in init_res.keys():
+            if "operationId" in init_res:
                 flag_init = True
                 break
 
-            time.sleep(self.wait_time*i)
+            time.sleep(self.wait_time * i)
 
         if not flag_init:
             # failed to init
             return None
 
         flag_proc = False
-        for i in range(1, self.n_retries+1):
-            time.sleep(self.wait_time*i)
+        for i in range(1, self.n_retries + 1):
+            time.sleep(self.wait_time * i)
             status = self.check_status(conn, init_res)
 
-            if status['status'] == 'processed':
+            if status["status"] == "processed":
                 flag_proc = True
                 break
 
         if flag_proc:
             res = self.get_result(conn, init_res)
-            return res['result']['resultItems']
+            return res["result"]["resultItems"]
 
         else:
             # failed to process
             return None
 
 
-
 class GalaxiaRetriever(BaseRetriever):
-    """Galaxia knowledge retriever
+    """Galaxia knowledge retriever.
 
     before using the API create your knowledge base here:
     beta.cloud.smabbler.com/
@@ -134,7 +136,7 @@ class GalaxiaRetriever(BaseRetriever):
         api_key: str,
         knowledge_base_id: str,
         n_retries: int = 20,
-        wait_time: int = 5,
+        wait_time: int = 2,
         callback_manager: Optional[CallbackManager] = None,
     ):
         self._client = GalaxiaClient(
@@ -144,14 +146,12 @@ class GalaxiaRetriever(BaseRetriever):
         super().__init__(callback_manager)
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        """ """
         query = query_bundle.query_str
         response = self._client.retrieve(query)
 
         if response is None:
             return []
 
-        score = 1
         node_with_score = []
 
         for res in response:
@@ -160,8 +160,8 @@ class GalaxiaRetriever(BaseRetriever):
                     node=TextNode(
                         text=res["category"],
                         metadata={
-                            "model":res['model'],
-                            "file":res['group'],
+                            "model": res["model"],
+                            "file": res["group"],
                         },
                     ),
                     score=res["rank"],

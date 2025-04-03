@@ -6,14 +6,16 @@ from llama_index.retrievers.galaxia import GalaxiaRetriever
 def test_retrieve():
     mock_client = MagicMock()
     mock_client.retrieve.return_value = [
-        {'group': 'test_file.txt',
-          'text': 'test question?',
-          'model': 'human_model_name',
-          'category': '* retrieved text',
-          'result': '* retrieved',
-          'rank': 0.55,
-          'confidence': 'Medium',
-          'cells': []},
+        {
+            "group": "test_file.txt",
+            "text": "test question?",
+            "model": "human_model_name",
+            "category": "* retrieved text",
+            "result": "* retrieved",
+            "rank": 0.55,
+            "confidence": "Medium",
+            "cells": [],
+        },
     ]
 
     gr = GalaxiaRetriever("", "", "")
@@ -28,8 +30,8 @@ def test_retrieve():
                 id_="fbfee559-068c-4017-bd87-835e6da12a47",
                 embedding=None,
                 metadata={
-                    "model":"human_model_name",
-                    'file':"test_file.txt",
+                    "model": "human_model_name",
+                    "file": "test_file.txt",
                 },
                 excluded_embed_metadata_keys=[],
                 excluded_llm_metadata_keys=[],
