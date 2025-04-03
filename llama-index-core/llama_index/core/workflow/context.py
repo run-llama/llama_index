@@ -294,6 +294,18 @@ class Context:
     def _get_full_path(self, ev_type: Type[Event]) -> str:
         return f"{ev_type.__module__}.{ev_type.__name__}"
 
+    def _get_event_buffer_id(self, events: List[Type[Event]]) -> str:
+        # Try getting the current task name
+        current_task = asyncio.current_task()
+        if current_task:
+            t_name = current_task.get_name()
+            # Do not use the default value 'Task'
+            if t_name != "Task":
+                return t_name
+
+        # Fall back to creating a stable identifier from expected events
+        return ":".join(sorted(self._get_full_path(e_type) for e_type in events))
+
     def collect_events(
         self, ev: Event, expected: List[Type[Event]], buffer_id: Optional[str] = None
     ) -> Optional[List[Event]]:
@@ -314,11 +326,7 @@ class Context:
             Optional[List[Event]]: List of collected events in the order of expected types if all
                                   expected events are found; otherwise None.
         """
-        if buffer_id is None:
-            # Create a stable identifier by sorting the full paths of expected event types
-            buffer_id = ":".join(
-                sorted(self._get_full_path(e_type) for e_type in expected)
-            )
+        buffer_id = buffer_id or self._get_event_buffer_id(expected)
 
         if buffer_id not in self._event_buffers:
             self._event_buffers[buffer_id] = defaultdict(list)
@@ -499,9 +507,6 @@ class Context:
             ev = await self._queues[name].get()
             if type(ev) not in config.accepted_events:
                 continue
-
-            if step.__name__ == "make_intermediate_1":
-                print(f"popped {type(ev)}")
 
             # do we need to wait for the step flag?
             if stepwise:
