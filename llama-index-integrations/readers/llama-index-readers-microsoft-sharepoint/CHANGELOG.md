@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## [0.5.1] - 2025-04-02
+
+- Fix issue with folder path encoding when a file path contains special characters
+
 ## [0.1.7] - 2024-04-03
 
 - Use recursive strategy by default for reading from a folder
