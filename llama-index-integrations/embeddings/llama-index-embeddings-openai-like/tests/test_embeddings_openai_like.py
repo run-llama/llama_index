@@ -9,7 +9,7 @@ def test_openai_embedding_class():
 
 def test_init():
     embed_model = OpenAILikeEmbedding(
-        model="model-name",
+        model_name="model-name",
         api_key="fake",
         api_base="http://localhost:1234/v1",
         embed_batch_size=1,
@@ -19,7 +19,7 @@ def test_init():
     assert embed_model.api_base == "http://localhost:1234/v1"
     assert embed_model.embed_batch_size == 1
 
-    embed_model = OpenAILikeEmbedding(
-        model_name="model-name",
-    )
-    assert embed_model.model_name == "model-name"
+    with pytest.raises(ValueError):
+        embed_model = OpenAILikeEmbedding(
+            model_name="model-name",
+        )
