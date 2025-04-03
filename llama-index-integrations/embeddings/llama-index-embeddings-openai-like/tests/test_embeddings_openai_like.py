@@ -1,3 +1,4 @@
+import pytest
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.embeddings.openai_like import OpenAILikeEmbedding
 
