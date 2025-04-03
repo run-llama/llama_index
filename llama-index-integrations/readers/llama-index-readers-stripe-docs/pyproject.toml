@@ -29,7 +29,7 @@ license = "GPL-3.0-or-later"
 maintainers = ["amorriscode"]
 name = "llama-index-readers-stripe-docs"
 readme = "README.md"
-version = "0.3.0"
+version = "0.3.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
