@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 
 OT = TypeVar("OT")
 
-RELEVANCE_THRESHOLD = 0.2
+RELEVANCE_THRESHOLD = 0.15
 
 
 class ObjectRetriever(ChainableMixin, Generic[OT]):
