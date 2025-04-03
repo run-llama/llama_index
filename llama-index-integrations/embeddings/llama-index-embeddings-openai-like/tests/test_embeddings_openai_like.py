@@ -22,5 +22,5 @@ def test_init():
 
     with pytest.raises(ValueError):
         embed_model = OpenAILikeEmbedding(
-            model_name="model-name",
+            model="model-name",
         )
