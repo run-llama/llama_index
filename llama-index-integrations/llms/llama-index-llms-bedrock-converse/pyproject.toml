@@ -27,7 +27,7 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-bedrock-converse"
 readme = "README.md"
-version = "0.4.14"
+version = "0.4.15"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
@@ -39,6 +39,8 @@ llama-index-core = "^0.12.0"
 ipython = "8.10.0"
 jupyter = "^1.0.0"
 mypy = "0.991"
+numpy = "^1.26.0"
+pillow = "^10.0.0"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
 pytest = ">=7.2.1"
