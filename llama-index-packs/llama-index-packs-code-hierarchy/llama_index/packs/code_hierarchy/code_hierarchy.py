@@ -623,6 +623,9 @@ class CodeHierarchyNodeParser(NodeParser):
                             [original_node], show_progress=show_progress, **kwargs
                         )
 
+                        if not new_split_nodes:
+                            continue
+
                         # Force the first new_split_node to have the
                         # same id as the original_node
                         new_split_nodes[0].id_ = original_node.id_
