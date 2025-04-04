@@ -296,12 +296,16 @@ class Context:
 
     def _get_event_buffer_id(self, events: List[Type[Event]]) -> str:
         # Try getting the current task name
-        current_task = asyncio.current_task()
-        if current_task:
-            t_name = current_task.get_name()
-            # Do not use the default value 'Task'
-            if t_name != "Task":
-                return t_name
+        try:
+            current_task = asyncio.current_task()
+            if current_task:
+                t_name = current_task.get_name()
+                # Do not use the default value 'Task'
+                if t_name != "Task":
+                    return t_name
+        except RuntimeError as e:
+            # This is a sync step, fallback to using events list
+            pass
 
         # Fall back to creating a stable identifier from expected events
         return ":".join(sorted(self._get_full_path(e_type) for e_type in events))
