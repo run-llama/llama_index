@@ -569,6 +569,7 @@ class BedrockConverse(FunctionCallingLLM):
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         tool_choice: Optional[dict] = None,
+        cache_tool_spec: bool = True,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Prepare the arguments needed to let the LLM chat with tools."""
@@ -586,6 +587,9 @@ class BedrockConverse(FunctionCallingLLM):
             # https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolChoice.html
             # e.g. { "auto": {} }
             tool_config["toolChoice"] = tool_choice
+
+        if cache_tool_spec:
+            tool_config["tools"].append({"cachePoint": {"type": "default"}})
 
         return {
             "messages": chat_history,
