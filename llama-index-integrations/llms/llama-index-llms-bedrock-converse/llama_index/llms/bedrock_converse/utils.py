@@ -9,7 +9,15 @@ from tenacity import (
     wait_exponential,
 )
 
-from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    MessageRole,
+    ImageBlock,
+    TextBlock,
+    ContentBlock,
+    AudioBlock,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -59,6 +67,7 @@ BEDROCK_MODELS = {
     "mistral.mistral-large-2407-v1:0": 32000,
     "ai21.jamba-1-5-mini-v1:0": 256000,
     "ai21.jamba-1-5-large-v1:0": 256000,
+    "deepseek.r1-v1:0": 128000,
 }
 
 BEDROCK_FUNCTION_CALLING_MODELS = (
@@ -103,6 +112,7 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "meta.llama3-2-11b-instruct-v1:0",
     "meta.llama3-2-90b-instruct-v1:0",
     "meta.llama3-3-70b-instruct-v1:0",
+    "deepseek.r1-v1:0",
 )
 
 
@@ -160,6 +170,51 @@ def __merge_common_role_msgs(
     return postprocessed_messages
 
 
+def _content_block_to_bedrock_format(
+    block: ContentBlock, role: MessageRole
+) -> Optional[Dict[str, Any]]:
+    """Convert content block to AWS Bedrock Converse API required format."""
+    if isinstance(block, TextBlock):
+        return {
+            "text": block.text,
+        }
+    elif isinstance(block, ImageBlock):
+        if role != MessageRole.USER:
+            logger.warning(
+                "Bedrock Converse API only supports image blocks for user messages."
+            )
+            return None
+        # NOTE: Bedrock Converse API accepts raw image bytes directly
+        # No need to convert the image to base64 or UTF-8 format
+        # The image will be passed to the API in its raw binary form
+        img_format = __get_img_format_from_image_mimetype(block.image_mimetype)
+        raw_image_bytes = block.resolve_image(as_base64=False).read()
+        return {"image": {"format": img_format, "source": {"bytes": raw_image_bytes}}}
+    elif isinstance(block, AudioBlock):
+        logger.warning("Audio blocks are not supported in Bedrock Converse API.")
+        return None
+    else:
+        logger.warning(f"Unsupported block type: {type(block)}")
+        return None
+
+
+def __get_img_format_from_image_mimetype(image_mimetype: str) -> str:
+    """Get the image format from the image mimetype."""
+    mapping = {
+        "image/jpeg": "jpeg",
+        "image/png": "png",
+        "image/gif": "gif",
+        "image/webp": "webp",
+    }
+    img_format = mapping.get(image_mimetype)
+    if img_format is None:
+        logger.warning(
+            f"Unsupported image mimetype: {image_mimetype}. Bedrock Converse API only supports {', '.join(mapping.keys())}, defaulting to png."
+        )
+        return "png"
+    return img_format
+
+
 def messages_to_converse_messages(
     messages: Sequence[ChatMessage],
 ) -> Tuple[Sequence[Dict[str, Any]], str]:
@@ -178,9 +233,8 @@ def messages_to_converse_messages(
     system_prompt = ""
     for message in messages:
         if message.role == MessageRole.SYSTEM:
-            # get the system prompt
             system_prompt += message.content + "\n"
-        elif message.role == MessageRole.FUNCTION or message.role == MessageRole.TOOL:
+        elif message.role in [MessageRole.FUNCTION, MessageRole.TOOL]:
             # convert tool output to the AWS Bedrock Converse format
             content = {
                 "toolResult": {
@@ -192,24 +246,32 @@ def messages_to_converse_messages(
                     ],
                 }
             }
-            status = message.additional_kwargs.get("status")
-            if status:
+            if status := message.additional_kwargs.get("status"):
                 content["toolResult"]["status"] = status
             converse_messages.append(
                 {
-                    "role": "user",
+                    "role": MessageRole.USER.value,  # bedrock converse api requires the role to be user
                     "content": [content],
                 }
             )
         else:
-            if message.content:
-                # get the text of the message
+            content = []
+            for block in message.blocks:
+                bedrock_format_block = _content_block_to_bedrock_format(
+                    block=block,
+                    role=message.role,
+                )
+                if bedrock_format_block:
+                    content.append(bedrock_format_block)
+
+            if content:
                 converse_messages.append(
                     {
                         "role": message.role.value,
-                        "content": [{"text": message.content}],
+                        "content": content,
                     }
                 )
+
         # convert tool calls to the AWS Bedrock Converse format
         # NOTE tool calls might show up within any message,
         # e.g. within assistant message or in consecutive tool calls,

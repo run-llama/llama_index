@@ -1,7 +1,7 @@
-"""ClickHouse vector store.
+"""
+ClickHouse vector store.
 
 An index that is built on top of an existing ClickHouse cluster.
-
 """
 
 import importlib
@@ -10,6 +10,7 @@ import logging
 import re
 from typing import Any, Dict, List, Optional, cast
 
+from llama_index.core import Settings
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import (
     BaseNode,
@@ -20,13 +21,11 @@ from llama_index.core.schema import (
 )
 from llama_index.core.utils import iter_batch
 from llama_index.core.vector_stores.types import (
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
-    BasePydanticVectorStore,
 )
-from llama_index.core import Settings
-
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +50,7 @@ def escape_str(value: str) -> str:
 
 
 def format_list_to_string(lst: List) -> str:
-    return "[" + ",".join(str(item) for item in lst) + "]"
+    return "[" + ",".join(escape_str(str(item)) for item in lst) + "]"
 
 
 DISTANCE_MAPPING = {
@@ -62,7 +61,8 @@ DISTANCE_MAPPING = {
 
 
 class ClickHouseSettings:
-    """ClickHouse Client Configuration.
+    """
+    ClickHouse Client Configuration.
 
     Args:
         table (str): Table name to operate on.
@@ -115,7 +115,8 @@ class ClickHouseSettings:
 
 
 class ClickHouseVectorStore(BasePydanticVectorStore):
-    """ClickHouse Vector Store.
+    """
+    ClickHouse Vector Store.
     In this vector store, embeddings and docs are stored within an existing
     ClickHouse cluster.
     During query time, the index uses ClickHouse to query for the top
@@ -279,7 +280,7 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
             settings["allow_experimental_annoy_index"] = "1"
         schema_ = f"""
             CREATE TABLE IF NOT EXISTS {self._config.database}.{self._config.table}(
-                {",".join([f'{k} {v["type"]}' for k, v in self._column_config.items()])},
+                {",".join([f"{k} {v['type']}" for k, v in self._column_config.items()])},
                 CONSTRAINT vector_length CHECK length(vector) = {dimension},
                 {index}
             ) ENGINE = MergeTree ORDER BY id
@@ -310,56 +311,79 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
     def _build_text_search_statement(
         self, query_str: str, similarity_top_k: int
     ) -> str:
-        # TODO: We could make this overridable
-        tokens = _default_tokenizer(query_str)
-        terms_pattern = [f"\\b(?i){x}\\b" for x in tokens]
-        column_keys = self._column_config.keys()
+        safe_tokens = []
+        for token in _default_tokenizer(query_str):
+            # First escape regex special characters
+            regex_escaped = re.escape(token)
+            # Then escape for SQL string
+            sql_escaped = escape_str(regex_escaped)
+            safe_tokens.append(sql_escaped)
+
+        terms_pattern = [f"\\\\b(?i){token}\\\\b" for token in safe_tokens]
+        joined_tokens_pattern = escape_str("|".join(safe_tokens))
+        column_keys = [k for k in self._column_config if k != "vector"]
+        column_list = ",".join(column_keys)
         return (
-            f"SELECT {','.join(filter(lambda k: k != 'vector', column_keys))}, "
-            f"score FROM {self._config.database}.{self._config.table} WHERE score > 0 "
+            f"SELECT {column_list}, score "
+            f"FROM {self._config.database}.{self._config.table} WHERE score > 0 "
             f"ORDER BY length(multiMatchAllIndices(text, {terms_pattern})) "
             f"AS score DESC, "
-            f"log(1 + countMatches(text, '\\b(?i)({'|'.join(tokens)})\\b')) "
+            f"log(1 + countMatches(text, '\\\\b(?i)({joined_tokens_pattern})\\\\b')) "
             f"AS d2 DESC limit {similarity_top_k}"
         )
 
     def _build_hybrid_search_statement(
         self, stage_one_sql: str, query_str: str, similarity_top_k: int
     ) -> str:
-        # TODO: We could make this overridable
-        tokens = _default_tokenizer(query_str)
-        terms_pattern = [f"\\b(?i){x}\\b" for x in tokens]
-        column_keys = self._column_config.keys()
+        safe_tokens = []
+        for token in _default_tokenizer(query_str):
+            # First escape regex special characters
+            regex_escaped = re.escape(token)
+            # Then escape for SQL string
+            sql_escaped = escape_str(regex_escaped)
+            safe_tokens.append(sql_escaped)
+
+        terms_pattern = [f"\\\\b(?i){token}\\\\b" for token in safe_tokens]
+        joined_tokens_pattern = escape_str("|".join(safe_tokens))
+        column_keys = [k for k in self._column_config if k != "vector"]
+        column_list = ",".join(column_keys)
         return (
-            f"SELECT {','.join(filter(lambda k: k != 'vector', column_keys))}, "
-            f"score FROM ({stage_one_sql}) tempt "
+            f"SELECT {column_list}, score "
+            f"FROM ({stage_one_sql}) tempt "
             f"ORDER BY length(multiMatchAllIndices(text, {terms_pattern})) "
             f"AS d1 DESC, "
-            f"log(1 + countMatches(text, '\\\\b(?i)({'|'.join(tokens)})\\\\b')) "
+            f"log(1 + countMatches(text, '\\\\\\\\b(?i)({joined_tokens_pattern})\\\\\\\\b')) "
             f"AS d2 DESC limit {similarity_top_k}"
         )
 
     def _append_meta_filter_condition(
         self, where_str: Optional[str], exact_match_filter: list
     ) -> str:
-        filter_str = " AND ".join(
-            f"JSONExtractString("
-            f"{self.metadata_column}, '{filter_item.key}') "
-            f"= '{filter_item.value}'"
-            for filter_item in exact_match_filter
-        )
-        if where_str is None:
-            where_str = filter_str
-        else:
-            where_str = f"{where_str} AND " + filter_str
-        return where_str
+        if not exact_match_filter:
+            return where_str or ""
+
+        filter_conditions = []
+        for filter_item in exact_match_filter:
+            # Use JSONExtractString function with properly escaped keys and values
+            key = escape_str(filter_item.key)
+            value = escape_str(filter_item.value)
+            filter_conditions.append(
+                f"JSONExtractString({self.metadata_column}, '{key}') = '{value}'"
+            )
+
+        filter_str = " AND ".join(filter_conditions)
+
+        if not where_str:
+            return filter_str
+        return f"{where_str} AND {filter_str}"
 
     def add(
         self,
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -382,9 +406,8 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
         """
-        self._client.command(
-            f"DELETE FROM {self._config.database}.{self._config.table} WHERE doc_id='{ref_doc_id}'"
-        )
+        query = f"DELETE FROM {self._config.database}.{self._config.table} WHERE doc_id = %(ref_doc_id)s"
+        self._client.command(query, parameters={"ref_doc_id": ref_doc_id})
 
     def drop(self) -> None:
         """Drop ClickHouse table."""
@@ -395,7 +418,8 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
     def query(
         self, query: VectorStoreQuery, where: Optional[str] = None, **kwargs: Any
     ) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): query

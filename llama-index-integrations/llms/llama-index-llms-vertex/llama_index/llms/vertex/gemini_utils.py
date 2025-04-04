@@ -1,8 +1,7 @@
-import base64
-from typing import Any, Dict, Union, Optional
+from typing import Any, Union, Optional
 from vertexai.generative_models._generative_models import SafetySettingsType
 from google.cloud.aiplatform_v1beta1.types import content as gapic_content_types
-from llama_index.core.llms import ChatMessage, MessageRole
+from llama_index.core.llms import ChatMessage, MessageRole, ImageBlock, TextBlock
 
 
 def is_gemini_model(model: str) -> bool:
@@ -22,29 +21,27 @@ def convert_chat_message_to_gemini_content(
 ) -> Any:
     from vertexai.preview.generative_models import Content, Part
 
-    def _convert_gemini_part_to_prompt(part: Union[str, Dict]) -> Part:
-        from vertexai.preview.generative_models import Image, Part
+    def _convert_block_to_part(block: Union[TextBlock, ImageBlock]) -> Optional[Part]:
+        from vertexai.preview.generative_models import Image
 
-        if isinstance(part, str):
-            return Part.from_text(part)
-
-        if not isinstance(part, Dict):
-            raise ValueError(
-                f"Message's content is expected to be a dict, got {type(part)}!"
-            )
-        if part["type"] == "text":
-            return Part.from_text(part["text"])
-        elif part["type"] == "image_url":
-            path = part["image_url"]
-            if path.startswith("gs://"):
-                raise ValueError("Only local image path is supported!")
-            elif path.startswith("data:image/jpeg;base64,"):
-                image = Image.from_bytes(base64.b64decode(path[23:]))
+        if isinstance(block, TextBlock):
+            if block.text:
+                return Part.from_text(block.text)
             else:
-                image = Image.load_from_file(path)
+                return None
+        elif isinstance(block, ImageBlock):
+            if block.path:
+                image = Image.load_from_file(block.path)
+            elif block.image:
+                image = Image.from_bytes(block.image)
+            elif block.url:
+                base64_bytes = block.resolve_image(as_base64=False).read()
+                image = Image.from_bytes(base64_bytes)
+            else:
+                raise ValueError("ImageBlock must have either path, url, or image data")
+            return Part.from_image(image)
         else:
-            raise ValueError("Only text and image_url types are supported!")
-        return Part.from_image(image)
+            raise ValueError(f"Unsupported block type: {type(block).__name__}")
 
     if (
         message.content == "" or message.content is None
@@ -55,14 +52,13 @@ def convert_chat_message_to_gemini_content(
             for tool_call in tool_calls
         ]
     else:
-        raw_content = message.content
-
-        if raw_content is None:
-            raw_content = ""
-        if isinstance(raw_content, str):
-            raw_content = [raw_content]
-
-        parts = [_convert_gemini_part_to_prompt(part) for part in raw_content]
+        if not isinstance(message.blocks, list):
+            raise ValueError("message.blocks must be a list of content blocks")
+        parts = [
+            part
+            for part in (_convert_block_to_part(block) for block in message.blocks)
+            if part is not None
+        ]
 
     if is_history:
         return Content(

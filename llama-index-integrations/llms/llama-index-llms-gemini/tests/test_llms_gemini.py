@@ -216,3 +216,19 @@ def test_deeply_nested_structured_generation() -> None:
     assert schema.columns
     assert schema.columns[0].columns
     assert schema.columns[0].columns[0].name
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
+)
+def test_stream_complete_text_and_delta() -> None:
+    gemini = Gemini(model="models/gemini-1.5-flash")
+    prompt = "List three types of software testing strategies in a few words each."
+    responses = list(gemini.stream_complete(prompt=prompt))
+    assert len(responses) >= 2  # Ensure multiple chunks
+
+    accumulated_text = ""
+    for i, response in enumerate(responses):
+        assert response.delta  # Delta should be non-empty
+        accumulated_text += response.delta
+        assert response.text == accumulated_text  # Text should accumulate

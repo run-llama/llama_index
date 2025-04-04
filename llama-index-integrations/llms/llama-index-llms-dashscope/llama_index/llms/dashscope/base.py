@@ -1,7 +1,18 @@
 """DashScope llm api."""
 
 from http import HTTPStatus
-from typing import Any, AsyncGenerator, Dict, List, Optional, Sequence, Tuple
+import json
+from typing import (
+    Any,
+    AsyncGenerator,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    TYPE_CHECKING,
+)
 from pydantic import ConfigDict
 
 from llama_index.core.base.llms.types import (
@@ -16,16 +27,21 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
+from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.core.llms.custom import CustomLLM
+from llama_index.core.tools import ToolSelection
 from llama_index.llms.dashscope.utils import (
     chat_message_to_dashscope_messages,
     dashscope_response_to_chat_response,
     dashscope_response_to_completion_response,
 )
+
+
+if TYPE_CHECKING:
+    from llama_index.core.tools.types import BaseTool
 
 
 class DashScopeGenerationModels:
@@ -111,6 +127,7 @@ async def astream_call_with_messages(
     model: str,
     messages: List[Dict],
     parameters: Optional[Dict] = None,
+    tools: Optional[List[Dict]] = None,
     api_key: Optional[str] = None,
     **kwargs: Any,
 ) -> AsyncGenerator[Any, None]:
@@ -124,7 +141,7 @@ async def astream_call_with_messages(
         )
 
     response = await AioGeneration.call(
-        model=model, messages=messages, api_key=api_key, **parameters
+        model=model, messages=messages, tools=tools, api_key=api_key, **parameters
     )
     if not hasattr(response, "__aiter__"):
         raise TypeError(
@@ -135,7 +152,7 @@ async def astream_call_with_messages(
         yield partial_response
 
 
-class DashScope(CustomLLM):
+class DashScope(FunctionCallingLLM):
     """DashScope LLM.
 
     Examples:
@@ -265,6 +282,85 @@ class DashScope(CustomLLM):
             is_chat_model=True,
             is_function_calling_model=self.is_function_calling_model,
         )
+
+    def _prepare_chat_with_tools(
+        self,
+        tools: Sequence["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        tools_spec = [self._convert_tool_to_dashscope_format(tool) for tool in tools]
+
+        messages = []
+        if chat_history:
+            messages.extend(chat_history)
+        if user_msg:
+            if isinstance(user_msg, str):
+                messages.append(ChatMessage(role="user", content=user_msg))
+            else:
+                messages.append(user_msg)
+        return {
+            "messages": messages,
+            "tools": tools_spec,
+            "stream": True,
+            **kwargs,
+        }
+
+    def _convert_tool_to_dashscope_format(self, tool: "BaseTool") -> Dict:
+        params = tool.metadata.get_parameters_dict()
+        properties, required_fields, param_type = (
+            params["properties"],
+            params.get("required", []),
+            params.get("type"),
+        )
+
+        return {
+            "type": "function",
+            "function": {
+                "name": tool.metadata.name,
+                "description": tool.metadata.description,
+                "parameters": {
+                    "type": param_type,
+                    "properties": properties,
+                },
+                "required": required_fields,
+            },
+        }
+
+    def get_tool_calls_from_response(
+        self,
+        response: "ChatResponse",
+        error_on_no_tool_call: bool = True,
+        **kwargs: Any,
+    ) -> List[ToolSelection]:
+        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+        if len(tool_calls) < 1:
+            if error_on_no_tool_call:
+                raise ValueError(
+                    f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+                )
+            else:
+                return []
+
+        tool_selections = []
+        for tool_call in tool_calls:
+            argument_dict = (
+                json.loads(tool_call["function"]["arguments"])
+                if isinstance(tool_call["function"]["arguments"], str)
+                else tool_call["function"]["arguments"]
+            )
+            tool_selections.append(
+                ToolSelection(
+                    tool_id=tool_call["id"],
+                    tool_name=tool_call["function"]["name"],
+                    tool_kwargs=argument_dict,
+                )
+            )
+
+        return tool_selections
 
     def _get_default_parameters(self) -> Dict:
         params: Dict[Any, Any] = {}
@@ -473,6 +569,8 @@ class DashScope(CustomLLM):
     ) -> ChatResponseGen:
         """Asynchronously stream chat results from DashScope."""
         parameters = self._get_default_parameters()
+        tools = kwargs.pop("tools", None)
+
         parameters.update(kwargs)
         parameters["incremental_output"] = True
         parameters["result_format"] = "message"
@@ -483,21 +581,45 @@ class DashScope(CustomLLM):
         async_responses = astream_call_with_messages(
             model=self.model_name,
             messages=dashscope_messages,
+            format=format,
+            tools=tools,
             api_key=self.api_key,
             parameters=parameters,
         )
 
         async def gen() -> AsyncGenerator[ChatResponse, None]:
             content = ""
+            all_tool_calls = {}
             async for response in async_responses:
                 if response.status_code == HTTPStatus.OK:
                     top_choice = response.output.choices[0]
                     role = top_choice["message"]["role"]
                     incremental_output = top_choice["message"].get("content", "")
+                    tool_calls = top_choice["message"].get("tool_calls", [])
                     content += incremental_output
 
+                    for tool_call in tool_calls:
+                        index = tool_call["index"]
+                        if index is None:
+                            continue
+                        if index not in all_tool_calls:
+                            all_tool_calls[index] = tool_call
+                        else:
+                            function_args = str(
+                                tool_call["function"].get("arguments", "").strip()
+                            )
+                            if function_args:
+                                all_tool_calls[index]["function"][
+                                    "arguments"
+                                ] += function_args
                     yield ChatResponse(
-                        message=ChatMessage(role=role, content=content),
+                        message=ChatMessage(
+                            role=role,
+                            content=content,
+                            additional_kwargs={
+                                "tool_calls": list(all_tool_calls.values())
+                            },
+                        ),
                         delta=incremental_output,
                         raw=response,
                     )

@@ -1,7 +1,8 @@
 import asyncio
 import logging
 import time
-from typing import Type
+import sys
+from typing import Type, Union
 from unittest import mock
 
 import pytest
@@ -220,7 +221,7 @@ async def test_workflow_num_workers():
         @step
         async def original_step(
             self, ctx: Context, ev: StartEvent
-        ) -> OneTestEvent | LastEvent:
+        ) -> Union[OneTestEvent, LastEvent]:
             await ctx.set("num_to_collect", 3)
             ctx.send_event(OneTestEvent(test_param="test1"))
             ctx.send_event(OneTestEvent(test_param="test2"))
@@ -238,7 +239,7 @@ async def test_workflow_num_workers():
 
         @step
         async def final_step(
-            self, ctx: Context, ev: AnotherTestEvent | LastEvent
+            self, ctx: Context, ev: Union[AnotherTestEvent, LastEvent]
         ) -> StopEvent:
             n = await ctx.get("num_to_collect")
             events = ctx.collect_events(ev, [AnotherTestEvent] * n)
@@ -740,6 +741,10 @@ async def test_workflow_run_num_concurrent(
     desired_max_concurrent_runs: int,
     expected_exception: Type,
 ):
+    # skip test if python version is 3.9 or lower
+    if sys.version_info < (3, 10):
+        pytest.skip("Skipping test for Python 3.9 or lower")
+
     async def _poll_workflow(
         wf: DummyWorkflowForConcurrentRunsTest, desired_max_concurrent_runs: int
     ) -> None:
@@ -796,6 +801,46 @@ async def test_custom_stop_event():
     assert wf._start_event_class == MyStart
     assert wf._stop_event_class == MyStop
     result: MyStop = await wf.run(query="foo")
+    assert result.outcome == "Workflow completed"
+
+    # ensure that streaming exits
+    handler = wf.run(query="foo")
+    async for event in handler.stream_events():
+        await asyncio.sleep(0.1)
+
+    _ = await handler
+
+
+@pytest.mark.asyncio()
+async def test_workflow_stream_events_exits():
+    class CustomEventsWorkflow(Workflow):
+        @step
+        async def start_step(self, ev: MyStart) -> OneTestEvent:
+            return OneTestEvent()
+
+        @step
+        async def middle_step(self, ev: OneTestEvent) -> LastEvent:
+            return LastEvent()
+
+        @step
+        async def end_step(self, ev: LastEvent) -> MyStop:
+            return MyStop(outcome="Workflow completed")
+
+    wf = CustomEventsWorkflow()
+    handler = wf.run(query="foo")
+
+    async def _stream_events():
+        async for event in handler.stream_events():
+            continue
+
+        return await handler
+
+    stream_task = asyncio.create_task(_stream_events())
+
+    result = await asyncio.wait_for(
+        stream_task,
+        timeout=1,
+    )
     assert result.outcome == "Workflow completed"
 
 

@@ -1,5 +1,197 @@
 # ChangeLog
 
+## [2025-04-01]
+
+### `llama-index-core` [0.12.28]
+
+- add a code act agent + docs + from-scratch guide (#18329)
+- fix template var mapping for `RichPromptTemplate`, add docs (#18309)
+- Support multi-modal agents in `AgentWorkflow` / `ReActAgent` / `FunctionAgent` / `CodeActAgent` (#18330)
+- fix include Node metadata in hash calculation in new node class (#18303)
+- Fix `Context._events_queue` when loaded from `Context.from_dict` (#18304)
+- docs: add Langfuse instrumentation (#18321)
+
+### `llama-index-embeddings-fastembed` [0.3.1]
+
+- add providers kwarg (#18310)
+
+### `llama-index-graph-stores-memgraph` [0.3.1]
+
+- Update Memgraph integration to latest syntax (#18319)
+
+### `llama-index-indices-managed-llama-cloud` [0.6.10]
+
+- misc fixes in constructing client (#18323)
+
+### `llama-index-llms-asi` [0.1.0]
+
+- add asi llm integration (#18292)
+
+### `llama-index-llms-dashscope` [0.3.2]
+
+- Update DashScope integration with new tool handling and dependency version bump (#18311)
+
+### `llama-index-llms-ipex-llm` [0.3.1]
+
+- fix IpexLLM constructor error (#18200)
+
+### `llama-index-llms-litellm` [0.4.1]
+
+- LiteLLM: better support tools streaming, and support multimodal inputs (#18314)
+
+### `llama-index-readers-obsidian` [0.5.1]
+
+- fix: prevent path traversal from symlinks (#18320)
+
+### `llama-index-readers-papers` [0.3.1]
+
+- fix: make filename hashing more robust (#18318)
+
+### `llama-index-tools-mcp` [0.1.1]
+
+- Fixed case when `json_type` is a list (multiple possible types) (#18306)
+
+### `llama-index-vector-stores-clickhouse` [0.4.1]
+
+- fix: patch multiple sql-injection vulnerabilities (#18316)
+
+### `llama-index-vector-stores-couchbase` [0.3.1]
+
+- fix: patch multiple sql-injection vulnerabilities (#18316)
+
+### `llama-index-vector-stores-deeplake` [0.3.3]
+
+- fix: patch multiple sql-injection vulnerabilities (#18316)
+
+### `llama-index-vector-stores-jaguar` [0.3.1]
+
+- fix: patch multiple sql-injection vulnerabilities (#18316)
+
+### `llama-index-vector-stores-lantern` [0.3.1]
+
+- fix: patch multiple sql-injection vulnerabilities (#18316)
+
+### `llama-index-vector-stores-nile` [0.2.2]
+
+- fix: patch multiple sql-injection vulnerabilities (#18316)
+
+### `llama-index-vector-stores-milvus` [0.7.2]
+
+- [bugfix] Milvus create index when existed (#18315)
+- Add more unit tests for milvus vector store (#18331)
+
+### `llama-index-vector-stores-oracledb` [0.2.1]
+
+- fix: patch multiple sql-injection vulnerabilities (#18316)
+
+### `llama-index-vector-stores-singlestoredb` [0.3.1]
+
+- fix: patch multiple sql-injection vulnerabilities (#18316)
+
+## [2025-03-28]
+
+### `llama-index-core` [0.12.27]
+
+- optimize initial imports by lazily importing and loading nltk data (#18289)
+- support postponed type hints in workflow step signatures (#18225)
+
+### `llama-index-llms-litellm` [0.3.1]
+
+- feat: added tool calling support for LiteLLM (#18235)
+
+### `llama-index-llms-openai` [0.3.29]
+
+- Add `OpenAIResponses` class to support OpenAI's responses API (#18300)
+- type safe structured predict in overridden methods (#18290)
+
+### `llama-index-tools-dappier` [0.1.0]
+
+- Add Dappier Real Time Search and AI Recommendations Tools (#18211)
+
+### `llama-index-vector-stores-milvus` [0.7.1]
+
+- Milvus Vector Store: Support full-text search by BM25 (#18281)
+- Fix Milvus vector store to handle text field retrieval
+
+## [2025-03-26]
+
+### `llama-index-core` [0.12.26]
+
+- simplify FunctionAgent/ReActAgent usage for single-agent workflows (#18227)
+- Introduce RichPromptTemplate for jinja-like templating (#18178)
+- add implementation for structured llm reranker (#18216)
+
+### `llama-index-embeddings-azure-openai` [0.3.2]
+
+- Fix `api_base` and `azure_deployment` mutually exclusive in `AzureOpenAIEmbedding` class (#18219)
+- Fix `api_base` parameter in `AzureOpenAIEmbedding` class (#18191)
+
+### `llama-index-finetuning` [0.3.1]
+
+- Update to SentenceTransformersFinetuneEngine to expose transformer checkpoint related arguments (#18194)
+
+### `llama-index-llms-dashscope` [0.3.1]
+
+- add `astream_chat` and `astream_complete` for dashscope llm (#18196)
+
+### `llama-index-llms-bedrock` [0.3.8]
+
+- deprecate older google and bedrock packages (#18210)
+- add Bedrock application inference profile support (#18213)
+- Fixed provider-resolution for foundation-model ARNs (#18283)
+
+### `llama-index-llms-bedrock-converse` [0.4.12]
+
+- Do not append None to chat history in bedrock converse (#18206)
+- Add new apac bedrock llms (#18045)
+- handle chat message as user msg in converse chat with tools (#18187)
+
+### `llama-index-llms-gemini` [0.4.13]
+
+- Ensure `stream_complete` accumulates text and sets delta (#18246)
+
+### `llama-index-llms-google-genai` [0.1.6]
+
+- deprecate older google and bedrock packages (#18210)
+- fix google genai tool description (#18242)
+- fix: support anyof, optional and union in google-genai (#18231)
+
+### `llama-index-llms-openai` [0.3.27]
+
+- add o1-pro support (#18207)
+- improve default image quality in openai llm (#18258)
+
+### `llama-index-llms-text-generation-inference` [0.3.2]
+
+- Fix `model_name` validation error in TextGenerationInference, its not requested from TGI endpoint and results in exception (#18234)
+
+### `llama-index-llms-vertx` [0.4.4]
+
+- deprecate older google and bedrock packages (#18210)
+- Vertex LLM does not handle FunctionCall tools (#18201)
+
+### `llama-index-readers-file` [0.4.7]
+
+- feat: improve data retrieval by adding headers with the columns for pandas excel reader (#18233)
+
+### `llama-index-storage-chat-store-dynomodb` [0.3.1]
+
+- feat: Add TTL support for DynamoDB chat store (#18084)
+
+### `llama-index-storage-chat-store-redis` [0.4.1]
+
+- Fix Runtime Warning for Coroutine never awaited in Redis chat store (#18274)
+
+### `llama-index-vector-stores-milvus` [0.6.1]
+
+- Escape single quotes in milvus filters (#18244)
+- Speed up Milvus async_add (#18243)
+
+### `llama-index-vector-stores-qdrant` [0.6.0]
+
+- update qdrant to always prefer named vectors (#18192)
+- bump qdrant version python deps (#18273)
+
 ## [2025-03-18]
 
 ### `llama-index-core` [0.12.25]

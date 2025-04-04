@@ -2,9 +2,6 @@ import re
 import string
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-
 from llama_index.core.node_parser.interface import NodeParser
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks.base import CallbackManager
@@ -16,7 +13,7 @@ from llama_index.core.node_parser.node_utils import (
 )
 from llama_index.core.node_parser.text.utils import split_by_sentence_tokenizer
 from llama_index.core.schema import BaseNode, Document, NodeRelationship
-from llama_index.core.utils import get_tqdm_iterable
+from llama_index.core.utils import get_tqdm_iterable, globals_helper
 
 DEFAULT_OG_TEXT_METADATA_KEY = "original_text"
 
@@ -59,7 +56,7 @@ class LanguageConfig:
                 "Spacy is not installed, please install it with `pip install spacy`."
             )
         self.nlp = spacy.load(self.spacy_model)  # type: ignore
-        self.stopwords = set(stopwords.words(self.language))  # type: ignore
+        self.stopwords = set(globals_helper.stopwords)  # type: ignore
 
 
 class SemanticDoubleMergingSplitterNodeParser(NodeParser):
@@ -394,7 +391,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
         # Remove punctuations
         text = text.translate(str.maketrans("", "", string.punctuation))
         # Remove stopwords
-        tokens = word_tokenize(text)
+        tokens = globals_helper.punkt_tokenizer.tokenize(text)
         filtered_words = [w for w in tokens if w not in self.language_config.stopwords]
 
         return " ".join(filtered_words)

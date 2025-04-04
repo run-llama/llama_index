@@ -78,7 +78,6 @@ nav:
           - Q&A Patterns: ./understanding/putting_it_all_together/q_and_a/
           - Chatbots: ./understanding/putting_it_all_together/chatbots/
           - Structured data: ./understanding/putting_it_all_together/structured_data/
-          - Agents: ./understanding/putting_it_all_together/agents.md
   - Use Cases:
       - ./use_cases/index.md
       - Prompting: ./use_cases/prompting.md
@@ -93,47 +92,30 @@ nav:
       - Agents:
           - ./examples/agent/Chatbot_SEC.ipynb
           - ./examples/agent/agent_builder.ipynb
-          - ./examples/agent/agent_runner/agent_around_query_pipeline_with_HyDE_for_PDFs.ipynb
-          - ./examples/agent/agent_runner/agent_runner.ipynb
-          - ./examples/agent/agent_runner/agent_runner_rag_controllable.ipynb
-          - ./examples/agent/agent_runner/query_pipeline_agent.ipynb
           - ./examples/agent/agent_workflow_basic.ipynb
           - ./examples/agent/agent_workflow_multi.ipynb
-          - ./examples/agent/agentic_rag_using_vertex_ai.ipynb
-          - ./examples/agent/agentic_rag_with_llamaindex_and_vertexai_managed_index.ipynb
+          - ./examples/agent/agent_workflow_research_assistant.ipynb
           - ./examples/agent/anthropic_agent.ipynb
           - ./examples/agent/bedrock_converse_agent.ipynb
-          - ./examples/agent/coa_agent.ipynb
-          - ./examples/agent/custom_agent.ipynb
-          - ./examples/agent/dashscope_agent.ipynb
-          - ./examples/agent/introspective_agent_toxicity_reduction.ipynb
-          - ./examples/agent/lats_agent.ipynb
-          - ./examples/agent/llm_compiler.ipynb
+          - ./examples/agent/code_act_agent.ipynb
+          - ./examples/agent/from_scratch_code_act_agent.ipynb
+          - ./examples/agent/memory/chat_memory_buffer.ipynb
           - ./examples/agent/memory/composable_memory.ipynb
+          - ./examples/agent/memory/summary_memory_buffer.ipynb
           - ./examples/agent/memory/vector_memory.ipynb
           - ./examples/agent/mistral_agent.ipynb
           - ./examples/agent/multi_document_agents-v1.ipynb
-          - ./examples/agent/multi_document_agents.ipynb
           - ./examples/agent/nvidia_agent.ipynb
           - ./examples/agent/nvidia_document_research_assistant_for_blog_creation.ipynb
           - ./examples/agent/nvidia_sub_question_query_engine.ipynb
-          - ./examples/agent/openai_agent.ipynb
           - ./examples/agent/openai_agent_context_retrieval.ipynb
           - ./examples/agent/openai_agent_lengthy_tools.ipynb
-          - ./examples/agent/openai_agent_parallel_function_calling.ipynb
           - ./examples/agent/openai_agent_query_cookbook.ipynb
-          - ./examples/agent/openai_agent_query_plan.ipynb
           - ./examples/agent/openai_agent_retrieval.ipynb
-          - ./examples/agent/openai_agent_tool_call_parser.ipynb
           - ./examples/agent/openai_agent_with_query_engine.ipynb
-          - ./examples/agent/openai_assistant_agent.ipynb
-          - ./examples/agent/openai_assistant_query_cookbook.ipynb
-          - ./examples/agent/openai_forced_function_call.ipynb
-          - ./examples/agent/openai_retrieval_benchmark.ipynb
           - ./examples/agent/react_agent.ipynb
           - ./examples/agent/react_agent_with_query_engine.ipynb
           - ./examples/agent/return_direct_agent.ipynb
-          - ./examples/agent/structured_planner.ipynb
       - Chat Engines:
           - ./examples/chat_engine/chat_engine_best.ipynb
           - ./examples/chat_engine/chat_engine_condense_plus_context.ipynb
@@ -386,6 +368,7 @@ nav:
           - ./examples/llm/ollama_gemma.ipynb
           - ./examples/llm/openai.ipynb
           - ./examples/llm/openai_json_vs_function_calling.ipynb
+          - ./examples/llm/openai_responses.ipynb
           - ./examples/llm/openllm.ipynb
           - ./examples/llm/openrouter.ipynb
           - ./examples/llm/openvino-genai.ipynb
@@ -497,6 +480,7 @@ nav:
           - ./examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb
           - ./examples/node_postprocessor/RecencyPostprocessorDemo.ipynb
           - ./examples/node_postprocessor/SentenceTransformerRerank.ipynb
+          - ./examples/node_postprocessor/Structured-LLMReranker-Lyft-10k.ipynb
           - ./examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb
           - ./examples/node_postprocessor/VoyageAIRerank.ipynb
           - ./examples/node_postprocessor/ibm_watsonx.ipynb
@@ -508,6 +492,7 @@ nav:
       - Observability:
           - ./examples/observability/AimCallback.ipynb
           - ./examples/observability/HoneyHiveLlamaIndexTracer.ipynb
+          - ./examples/observability/Langfuse-Instrumentation.ipynb
           - ./examples/observability/LangfuseCallbackHandler.ipynb
           - ./examples/observability/LangfuseMistralPostHog.ipynb
           - ./examples/observability/LlamaDebugHandler.ipynb
@@ -539,8 +524,7 @@ nav:
           - ./examples/prompts/advanced_prompts.ipynb
           - ./examples/prompts/emotion_prompt.ipynb
           - ./examples/prompts/prompt_mixin.ipynb
-          - ./examples/prompts/prompt_optimization.ipynb
-          - ./examples/prompts/prompts_rag.ipynb
+          - ./examples/prompts/rich_prompt_template_features.ipynb
       - Property Graph:
           - ./examples/property_graph/graph_store.ipynb
           - ./examples/property_graph/property_graph_advanced.ipynb
@@ -665,6 +649,7 @@ nav:
           - ./examples/vector_stores/LanternAutoRetriever.ipynb
           - ./examples/vector_stores/LanternIndexDemo.ipynb
           - ./examples/vector_stores/LindormDemo.ipynb
+          - ./examples/vector_stores/MilvusFullTextSearchDemo.ipynb
           - ./examples/vector_stores/MilvusHybridIndexDemo.ipynb
           - ./examples/vector_stores/MilvusIndexDemo.ipynb
           - ./examples/vector_stores/MilvusOperatorFunctionDemo.ipynb
@@ -830,9 +815,7 @@ nav:
               - ./module_guides/querying/structured_outputs/pydantic_program.md
       - Agents:
           - ./module_guides/deploying/agents/index.md
-          - ./module_guides/deploying/agents/usage_pattern.md
-          - ./module_guides/deploying/agents/agent_runner.md
-          - ./module_guides/deploying/agents/modules.md
+          - ./module_guides/deploying/agents/memory.md
           - ./module_guides/deploying/agents/tools.md
       - Workflows:
           - ./module_guides/workflow/index.md
@@ -865,17 +848,7 @@ nav:
   - API Reference:
       - ./api_reference/index.md
       - Agents:
-          - ./api_reference/agent/coa.md
-          - ./api_reference/agent/dashscope.md
-          - ./api_reference/agent/function.md
           - ./api_reference/agent/index.md
-          - ./api_reference/agent/introspective.md
-          - ./api_reference/agent/lats.md
-          - ./api_reference/agent/llm_compiler.md
-          - ./api_reference/agent/openai.md
-          - ./api_reference/agent/openai_legacy.md
-          - ./api_reference/agent/react.md
-          - ./api_reference/agent/workflow.md
       - Callbacks:
           - ./api_reference/callbacks/agentops.md
           - ./api_reference/callbacks/aim.md
@@ -951,6 +924,7 @@ nav:
           - ./api_reference/embeddings/ollama.md
           - ./api_reference/embeddings/opea.md
           - ./api_reference/embeddings/openai.md
+          - ./api_reference/embeddings/openai_like.md
           - ./api_reference/embeddings/oracleai.md
           - ./api_reference/embeddings/premai.md
           - ./api_reference/embeddings/sagemaker_endpoint.md
@@ -1017,6 +991,7 @@ nav:
           - ./api_reference/llms/alibabacloud_aisearch.md
           - ./api_reference/llms/anthropic.md
           - ./api_reference/llms/anyscale.md
+          - ./api_reference/llms/asi.md
           - ./api_reference/llms/azure_inference.md
           - ./api_reference/llms/azure_openai.md
           - ./api_reference/llms/bedrock.md
@@ -1650,7 +1625,6 @@ nav:
               - ./api_reference/storage/vector_store/metal.md
               - ./api_reference/storage/vector_store/milvus.md
               - ./api_reference/storage/vector_store/mongodb.md
-              - ./api_reference/storage/vector_store/myscale.md
               - ./api_reference/storage/vector_store/neo4jvector.md
               - ./api_reference/storage/vector_store/neptune.md
               - ./api_reference/storage/vector_store/nile.md
@@ -1697,6 +1671,7 @@ nav:
           - ./api_reference/tools/chatgpt_plugin.md
           - ./api_reference/tools/code_interpreter.md
           - ./api_reference/tools/cogniswitch.md
+          - ./api_reference/tools/dappier.md
           - ./api_reference/tools/database.md
           - ./api_reference/tools/docker_code.md
           - ./api_reference/tools/duckduckgo.md
@@ -1858,7 +1833,6 @@ plugins:
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-cassandra
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-zep
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-rocksetdb
-            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-myscale
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-tencentvectordb
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-milvus
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-neo4jvector
@@ -1929,6 +1903,8 @@ plugins:
             - ../llama-index-integrations/tools/llama-index-tools-openai
             - ../llama-index-integrations/tools/llama-index-tools-graphql
             - ../llama-index-integrations/tools/llama-index-tools-playgrounds
+            - ../llama-index-integrations/tools/llama-index-tools-dappier-ai-recommendations
+            - ../llama-index-integrations/tools/llama-index-tools-dappier-real-time-search
             - ../llama-index-integrations/embeddings/llama-index-embeddings-clip
             - ../llama-index-integrations/embeddings/llama-index-embeddings-anyscale
             - ../llama-index-integrations/embeddings/llama-index-embeddings-llm-rails
@@ -2089,7 +2065,6 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-faiss
             - ../llama-index-integrations/readers/llama-index-readers-dad-jokes
             - ../llama-index-integrations/readers/llama-index-readers-patentsview
-            - ../llama-index-integrations/readers/llama-index-readers-myscale
             - ../llama-index-integrations/readers/llama-index-readers-guru
             - ../llama-index-integrations/readers/llama-index-readers-linear
             - ../llama-index-integrations/readers/llama-index-readers-telegram
@@ -2429,9 +2404,23 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-netmind
             - ../llama-index-integrations/llms/llama-index-llms-novita
             - ../llama-index-integrations/llms/llama-index-llms-netmind
+            - ../llama-index-integrations/tools/llama-index-tools-dappier
+            - ../llama-index-integrations/llms/llama-index-llms-asi
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-openai-like
+            - ../llama-index-integrations/readers/llama-index-readers-myscale
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
+        ./api_reference/agent/coa/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
+        ./api_reference/agent/dashscope/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
+        ./api_reference/agent/function/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
+        ./api_reference/agent/introspective/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
+        ./api_reference/agent/lats/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
+        ./api_reference/agent/llm_compiler/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
+        ./api_reference/agent/openai/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
+        ./api_reference/agent/openai_legacy/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
+        ./api_reference/agent/react/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
+        ./api_reference/agent/workflow/index.html: https://docs.llamaindex.ai/en/stable/api_reference/agent/
         ./changes/deprecated_terms.html: https://docs.llamaindex.ai/en/stable/changes/deprecated_terms/
         ./community/faq/chat_engines.html: https://docs.llamaindex.ai/en/stable/community/faq/chat_engines/
         ./community/faq/documents_and_nodes.html: https://docs.llamaindex.ai/en/stable/community/faq/documents_and_nodes/
@@ -2487,26 +2476,45 @@ plugins:
         ./examples/agent/Chatbot_SEC.html: https://docs.llamaindex.ai/en/stable/examples/agent/Chatbot_SEC/
         ./examples/agent/agent_builder.html: https://docs.llamaindex.ai/en/stable/examples/agent/agent_builder/
         ./examples/agent/agent_runner/agent_around_query_pipeline_with_HyDE_for_PDFs.html: https://docs.llamaindex.ai/en/stable/examples/agent/agent_runner/agent_around_query_pipeline_with_HyDE_for_PDFs/
+        ./examples/agent/agent_runner/agent_around_query_pipeline_with_HyDE_for_PDFs/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./examples/agent/agent_runner/agent_runner.html: https://docs.llamaindex.ai/en/stable/examples/agent/agent_runner/agent_runner/
+        ./examples/agent/agent_runner/agent_runner/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./examples/agent/agent_runner/agent_runner_rag.html: https://docs.llamaindex.ai/en/stable/examples/agent/agent_runner/agent_runner_rag/
         ./examples/agent/agent_runner/agent_runner_rag_controllable.html: https://docs.llamaindex.ai/en/stable/examples/agent/agent_runner/agent_runner_rag_controllable/
+        ./examples/agent/agent_runner/agent_runner_rag_controllable/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./examples/agent/agent_runner/query_pipeline_agent.html: https://docs.llamaindex.ai/en/stable/examples/agent/agent_runner/query_pipeline_agent/
-        ./examples/agent/custom_agent.html: https://docs.llamaindex.ai/en/stable/examples/agent/custom_agent/
+        ./examples/agent/agent_runner/query_pipeline_agent/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/agentic_rag_using_vertex_ai/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/agentic_rag_with_llamaindex_and_vertexai_managed_index/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/coa_agent/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/custom_agent.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/custom_agent/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/dashscope_agent/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/introspective_agent_toxicity_reduction/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/lats_agent/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/llm_compiler/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./examples/agent/multi_document_agents-v1.html: https://docs.llamaindex.ai/en/stable/examples/agent/multi_document_agents-v1/
         ./examples/agent/multi_document_agents.html: https://docs.llamaindex.ai/en/stable/examples/agent/multi_document_agents/
-        ./examples/agent/openai_agent.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_agent/
-        ./examples/agent/openai_agent_context_retrieval.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_agent_context_retrieval/
-        ./examples/agent/openai_agent_parallel_function_calling.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_agent_parallel_function_calling/
+        ./examples/agent/multi_document_agents/index.html: https://docs.llamaindex.ai/en/stable/examples/agent/multi_document_agents-v1/
+        ./examples/agent/openai_agent.html: https://docs.llamaindex.ai/en/stable/examples/workflow/function_calling_agent/
+        ./examples/agent/openai_agent/index.html: https://docs.llamaindex.ai/en/stable/examples/workflow/function_calling_agent/
+        ./examples/agent/openai_agent_context_retrieval.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/openai_agent_parallel_function_calling.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/openai_agent_parallel_function_calling/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./examples/agent/openai_agent_query_cookbook.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_agent_query_cookbook/
         ./examples/agent/openai_agent_query_plan.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_agent_query_plan/
+        ./examples/agent/openai_agent_query_plan/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./examples/agent/openai_agent_retrieval.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_agent_retrieval/
+        ./examples/agent/openai_agent_tool_call_parser/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./examples/agent/openai_agent_with_query_engine.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_agent_with_query_engine/
-        ./examples/agent/openai_assistant_agent.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_assistant_agent/
-        ./examples/agent/openai_assistant_query_cookbook.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_assistant_query_cookbook/
+        ./examples/agent/openai_assistant_agent.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
+        ./examples/agent/openai_assistant_query_cookbook.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./examples/agent/openai_forced_function_call.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_forced_function_call/
+        ./examples/agent/openai_forced_function_call/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./examples/agent/openai_retrieval_benchmark.html: https://docs.llamaindex.ai/en/stable/examples/agent/openai_retrieval_benchmark/
         ./examples/agent/react_agent.html: https://docs.llamaindex.ai/en/stable/examples/agent/react_agent/
         ./examples/agent/react_agent_with_query_engine.html: https://docs.llamaindex.ai/en/stable/examples/agent/react_agent_with_query_engine/
+        ./examples/agent/structured_planner/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./examples/callbacks/AimCallback.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/AimCallback/
         ./examples/callbacks/AimCallback.md: https://docs.llamaindex.ai/en/stable/examples/observability/AimCallback/
         ./examples/callbacks/HoneyHiveLlamaIndexTracer.html: https://docs.llamaindex.ai/en/stable/examples/callbacks/HoneyHiveLlamaIndexTracer/
@@ -2561,7 +2569,6 @@ plugins:
         ./examples/data_connectors/MboxReaderDemo.html: https://docs.llamaindex.ai/en/stable/examples/data_connectors/MboxReaderDemo/
         ./examples/data_connectors/MilvusReaderDemo.html: https://docs.llamaindex.ai/en/stable/examples/data_connectors/MilvusReaderDemo/
         ./examples/data_connectors/MongoDemo.html: https://docs.llamaindex.ai/en/stable/examples/data_connectors/MongoDemo/
-        ./examples/data_connectors/MyScaleReaderDemo.html: https://docs.llamaindex.ai/en/stable/examples/data_connectors/MyScaleReaderDemo/
         ./examples/data_connectors/NotionDemo.html: https://docs.llamaindex.ai/en/stable/examples/data_connectors/NotionDemo/
         ./examples/data_connectors/ObsidianReaderDemo.html: https://docs.llamaindex.ai/en/stable/examples/data_connectors/ObsidianReaderDemo/
         ./examples/data_connectors/PathwayReaderDemo.html: https://docs.llamaindex.ai/en/stable/examples/data_connectors/PathwayReaderDemo/
@@ -2802,8 +2809,10 @@ plugins:
         ./examples/prompts/advanced_prompts.html: https://docs.llamaindex.ai/en/stable/examples/prompts/advanced_prompts/
         ./examples/prompts/emotion_prompt.html: https://docs.llamaindex.ai/en/stable/examples/prompts/emotion_prompt/
         ./examples/prompts/prompt_mixin.html: https://docs.llamaindex.ai/en/stable/examples/prompts/prompt_mixin/
-        ./examples/prompts/prompt_optimization.html: https://docs.llamaindex.ai/en/stable/examples/prompts/prompt_optimization/
-        ./examples/prompts/prompts_rag.html: https://docs.llamaindex.ai/en/stable/examples/prompts/prompts_rag/
+        ./examples/prompts/prompt_optimization.html: https://docs.llamaindex.ai/en/stable/module_guides/models/prompts/
+        ./examples/prompts/prompt_optimization/index.html: https://docs.llamaindex.ai/en/stable/module_guides/models/prompts/
+        ./examples/prompts/prompts_rag.html: https://docs.llamaindex.ai/en/stable/module_guides/models/prompts/
+        ./examples/prompts/prompts_rag/index.html: https://docs.llamaindex.ai/en/stable/module_guides/models/prompts/
         ./examples/query_engine/CustomRetrievers.html: https://docs.llamaindex.ai/en/stable/examples/query_engine/CustomRetrievers/
         ./examples/query_engine/JSONalyze_query_engine.html: https://docs.llamaindex.ai/en/stable/examples/query_engine/JSONalyze_query_engine/
         ./examples/query_engine/JointQASummary.html: https://docs.llamaindex.ai/en/stable/examples/query_engine/JointQASummary/
@@ -2938,6 +2947,7 @@ plugins:
         ./getting_started/starter_example_local.html: https://docs.llamaindex.ai/en/stable/getting_started/starter_example_local/
         ./getting_started/starter_projects.html: https://docs.llamaindex.ai/en/stable/getting_started/starter_projects/
         ./module_guides/deploying/agents/agent_runner.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/agent_runner/
+        ./module_guides/deploying/agents/agent_runner/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./module_guides/deploying/agents/modules.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/modules/
         ./module_guides/deploying/agents/root.html: module_guides/deploying/agents/index.md
         ./module_guides/deploying/agents/tools/llamahub_tools_guide.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/tools/
@@ -2945,6 +2955,7 @@ plugins:
         ./module_guides/deploying/agents/tools/usage_pattern.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/tools/
         ./module_guides/deploying/agents/tools/usage_pattern/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/tools/
         ./module_guides/deploying/agents/usage_pattern.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/usage_pattern/
+        ./module_guides/deploying/agents/usage_pattern/index.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/
         ./module_guides/deploying/chat_engines/modules.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/chat_engines/modules/
         ./module_guides/deploying/chat_engines/root.html: module_guides/deploying/chat_engines/index.md
         ./module_guides/deploying/chat_engines/usage_pattern.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/chat_engines/usage_pattern/
@@ -3039,6 +3050,7 @@ plugins:
         ./optimizing/production_rag.html: https://docs.llamaindex.ai/en/stable/optimizing/production_rag/
         ./presentations/past_presentations.html: https://docs.llamaindex.ai/en/stable/presentations/past_presentations/
         ./understanding/agent/basic_agent/index.html: https://docs.llamaindex.ai/en/stable/understanding/agent/
+        ./understanding/agent/multi_agents/index.html: https://docs.llamaindex.ai/en/stable/understanding/agent/multi_agent/
         ./understanding/deployment/deployment.html: https://docs.llamaindex.ai/en/stable/understanding/deployment/deployment/
         ./understanding/evaluating/cost_analysis/root.html: understanding/evaluating/cost_analysis/index.md
         ./understanding/evaluating/cost_analysis/usage_pattern.html: https://docs.llamaindex.ai/en/stable/understanding/evaluating/cost_analysis/usage_pattern/
