@@ -70,7 +70,7 @@ SQ   SEQUENCE   320 AA;  34642 MW;  9E110808B6E328E0 CRC64;
 //"""
 
 
-@pytest.fixture
+@pytest.fixture()
 def test_file() -> str:
     with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".dat") as f:
         f.write(create_test_record())
@@ -158,7 +158,7 @@ DE   RecName: Full=Uncharacterized protein 003L;
 //"""
 
 
-@pytest.fixture
+@pytest.fixture()
 def test_file_multiple() -> str:
     with tempfile.NamedTemporaryFile(mode="w", delete=False, suffix=".dat") as f:
         f.write(create_two_test_records())

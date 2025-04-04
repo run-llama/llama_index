@@ -365,7 +365,7 @@ class UniProtReader(BaseReader):
         """Read UniProt records from file."""
         current_record = []
 
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             for line in f:
                 if line.startswith("//"):
                     if current_record:
@@ -391,7 +391,7 @@ class UniProtReader(BaseReader):
         """
         count = 0
 
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             for line in f:
                 if line.startswith("//"):
                     count += 1
