@@ -1,5 +1,6 @@
 import asyncio
 import json
+import sys
 from typing import Optional, Union
 from unittest import mock
 
@@ -150,6 +151,10 @@ async def test_empty_inprogress_when_workflow_done(workflow):
 
 @pytest.mark.asyncio()
 async def test_wait_for_event(ctx):
+    # skip test if python version is 3.9 or lower
+    if sys.version_info < (3, 10):
+        pytest.skip("Skipping test for Python 3.9 or lower")
+
     wait_job = asyncio.create_task(ctx.wait_for_event(Event))
     await asyncio.sleep(0.01)
     ctx.send_event(Event(msg="foo"))
@@ -159,6 +164,10 @@ async def test_wait_for_event(ctx):
 
 @pytest.mark.asyncio()
 async def test_wait_for_event_with_requirements(ctx):
+    # skip test if python version is 3.9 or lower
+    if sys.version_info < (3, 10):
+        pytest.skip("Skipping test for Python 3.9 or lower")
+
     wait_job = asyncio.create_task(ctx.wait_for_event(Event, {"msg": "foo"}))
     await asyncio.sleep(0.01)
     ctx.send_event(Event(msg="bar"))
