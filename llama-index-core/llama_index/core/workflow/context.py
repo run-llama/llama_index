@@ -176,15 +176,16 @@ class Context:
         context._streaming_queue = context._deserialize_queue(
             data["streaming_queue"], serializer
         )
-        context._events_buffer = defaultdict(
-            list,
-            {
-                k: [serializer.deserialize(ev) for ev in v]
-                for k, v in data["events_buffer"].items()
-            },
-        )
-        if len(context._events_buffer) == 0:
-            context._events_buffer = defaultdict(list)
+        context._event_buffers = {}
+        context._event_buffers = {}
+        for buffer_id, type_events_map in data["events_buffer"].items():
+            context._event_buffers[buffer_id] = {}
+            for event_type, events_list in type_events_map.items():
+                context._event_buffers[buffer_id][event_type] = [
+                    serializer.deserialize(ev) for ev in events_list
+                ]
+        if len(context._event_buffers) == 0:
+            context._event_buffers = defaultdict(lambda: defaultdict(list))
         context._accepted_events = data["accepted_events"]
         context._waiter_id = data.get("waiter_id", str(uuid.uuid4()))
         context._broker_log = [serializer.deserialize(ev) for ev in data["broker_log"]]
