@@ -20,7 +20,7 @@ def test_init():
     assert embed_model.api_base == "http://localhost:1234/v1"
     assert embed_model.embed_batch_size == 1
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         embed_model = OpenAILikeEmbedding(
             model="model-name",
         )
