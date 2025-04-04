@@ -146,8 +146,11 @@ class Context:
             },
             "stepwise": self.stepwise,
             "events_buffer": {
-                k: [serializer.serialize(ev) for ev in v]
-                for k, v in self._events_buffer.items()
+                k: {
+                    inner_k: [serializer.serialize(ev) for ev in inner_v]
+                    for inner_k, inner_v in v.items()
+                }
+                for k, v in self._event_buffers.items()
             },
             "in_progress": {
                 k: [serializer.serialize(ev) for ev in v]
