@@ -203,6 +203,26 @@ async def test_wait_for_event_in_workflow():
     assert result == "bar"
 
 
+@pytest.mark.asyncio()
+async def test_prompt_and_wait(ctx):
+    prompt_id = "test_prompt_and_wait"
+    prompt_event = InputRequiredEvent(prefix="test_prompt_and_wait")
+    expected_event = HumanResponseEvent
+    requirements = {"waiter_id": "test_prompt_and_wait"}
+    timeout = 10
+
+    waiting_task = asyncio.create_task(
+        ctx.prompt_and_wait(
+            prompt_id, prompt_event, expected_event, requirements, timeout
+        )
+    )
+    await asyncio.sleep(0.01)
+    ctx.send_event(HumanResponseEvent(response="foo", waiter_id="test_prompt_and_wait"))
+
+    result = await waiting_task
+    assert result.response == "foo"
+
+
 class Waiter1(Event):
     msg: str
 
