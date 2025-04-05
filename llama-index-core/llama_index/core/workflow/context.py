@@ -396,7 +396,6 @@ class Context:
 
         if waiter_id not in self._queues:
             self._queues[waiter_id] = asyncio.Queue()
-            self._num_waiters[waiter_id] += 1
 
         while True:
             event = await asyncio.wait_for(
@@ -409,6 +408,34 @@ class Context:
                     return event
                 else:
                     continue
+
+    async def prompt_and_wait(
+        self,
+        prompt_id: str,
+        prompt_event: Event,
+        expected_event: Type[T],
+        requirements: Optional[Dict[str, Any]] = None,
+        timeout: Optional[float] = 2000,
+    ) -> T:
+        """Asynchronously wait for a specific event type to be received.
+
+        Args:
+            prompt_id: A unique identifier for the operation.
+            prompt_event: The event to send to the output event stream.
+            expected_event: The type of event to wait for.
+            requirements: Optional dict of requirements the event must match.
+            timeout: Optional timeout in seconds. Defaults to 2000s.
+
+        Returns:
+            The event type that was requested once it is received.
+        """
+        prompt_id = f"waiting_for_{prompt_id}"
+        existing_wait = await self.get(prompt_id, default=None)
+        if existing_wait is None:
+            self.write_event_to_stream(prompt_event)
+            await self.set(prompt_id, True)
+
+        return await self.wait_for_event(expected_event, requirements, timeout)
 
     def write_event_to_stream(self, ev: Optional[Event]) -> None:
         self._streaming_queue.put_nowait(ev)
