@@ -1,5 +1,7 @@
 # Perplexity API Tool for LlamaIndex
 
+Perplexity's Sonar API is a lightweight, fast, and affordable generative search solution that delivers real-time, web-connected research with factual answers and citations—ideal for integrating question-and-answer features into your applications. 
+
 This tool provides a simple interface to interact with the Perplexity API (using the Sonar model) within the LlamaIndex framework. It lets you search the web with customizable parameters.
 
 For more details on the Perplexity API and Sonar model, please refer to the official [Perplexity Documentation](https://docs.perplexity.ai/home).
