@@ -2,7 +2,6 @@ import asyncio
 import functools
 import json
 import time
-import uuid
 import warnings
 from collections import defaultdict
 from typing import (
@@ -180,7 +179,6 @@ class Context:
         if len(context._events_buffer) == 0:
             context._events_buffer = defaultdict(list)
         context._accepted_events = data["accepted_events"]
-        context._waiter_id = data.get("waiter_id", str(uuid.uuid4()))
         context._broker_log = [serializer.deserialize(ev) for ev in data["broker_log"]]
         context.is_running = data["is_running"]
         # load back up whatever was in the queue as well as the events whose steps
