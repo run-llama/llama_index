@@ -125,7 +125,7 @@ Traceloop.init()
 
 #### Guides
 
-- [OpenLLMetry](../../examples/callbacks/OpenLLMetry.ipynb)
+- [OpenLLMetry](../../examples/observability/OpenLLMetry.ipynb)
 
 ![](../../_static/integrations/openllmetry.png)
 
