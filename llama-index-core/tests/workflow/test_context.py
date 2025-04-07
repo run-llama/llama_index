@@ -243,7 +243,9 @@ class ResultEvent(Event):
 
 class WaitingWorkflow(Workflow):
     @step
-    async def spawn_waiters(self, ctx: Context, ev: StartEvent) -> Waiter1 | Waiter2:
+    async def spawn_waiters(
+        self, ctx: Context, ev: StartEvent
+    ) -> Union[Waiter1, Waiter2]:
         ctx.send_event(Waiter1(msg="foo"))
         ctx.send_event(Waiter2(msg="bar"))
 

@@ -376,8 +376,12 @@ class Context:
     ) -> T:
         """Asynchronously wait for a specific event type to be received.
 
+        If provided, `waiter_event` will be written to the event stream to let the caller know that we're waiting for a response.
+
         Args:
             event_type: The type of event to wait for
+            waiter_event: The event to emit to the event stream to let the caller know that we're waiting for a response
+            waiter_id: A unique identifier for this specific wait call. It helps ensure that we only send one `waiter_event` for each `waiter_id`.
             requirements: Optional dict of requirements the event must match
             timeout: Optional timeout in seconds. Defaults to 2000s.
 
