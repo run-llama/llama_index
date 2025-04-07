@@ -554,7 +554,7 @@ class CodeHierarchyNodeParser(NodeParser):
         except Exception as e:
             print(
                 f"Could not get parser for language {self.language}. Check "
-                "https://github.com/grantjenks/py-tree-sitter-languages#license "
+                "https://github.com/Goldziher/tree-sitter-language-pack?tab=readme-ov-file#available-languages "
                 "for a list of valid languages."
             )
             raise e  # noqa: TRY201

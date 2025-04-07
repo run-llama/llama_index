@@ -83,7 +83,7 @@ class CodeSplitter(TextSplitter):
             except Exception:
                 print(
                     f"Could not get parser for language {language}. Check "
-                    "https://github.com/Goldziher/tree-sitter-language-pack?tab=readme-ov-file#available-languages"
+                    "https://github.com/Goldziher/tree-sitter-language-pack?tab=readme-ov-file#available-languages "
                     "for a list of valid languages."
                 )
                 raise
