@@ -2,7 +2,6 @@ import asyncio
 import functools
 import json
 import time
-import uuid
 import warnings
 from collections import defaultdict
 from typing import (
@@ -66,8 +65,7 @@ class Context:
         self._globals: Dict[str, Any] = {}
 
     def _init_broker_data(self) -> None:
-        self._waiter_id = str(uuid.uuid4())
-        self._queues: Dict[str, asyncio.Queue] = {self._waiter_id: asyncio.Queue()}
+        self._queues: Dict[str, asyncio.Queue] = {}
         self._tasks: Set[asyncio.Task] = set()
         self._broker_log: List[Event] = []
         self._cancel_flag: asyncio.Event = asyncio.Event()
@@ -154,7 +152,6 @@ class Context:
             },
             "accepted_events": self._accepted_events,
             "broker_log": [serializer.serialize(ev) for ev in self._broker_log],
-            "waiter_id": self._waiter_id,
             "is_running": self.is_running,
         }
 
@@ -182,7 +179,6 @@ class Context:
         if len(context._events_buffer) == 0:
             context._events_buffer = defaultdict(list)
         context._accepted_events = data["accepted_events"]
-        context._waiter_id = data.get("waiter_id", str(uuid.uuid4()))
         context._broker_log = [serializer.deserialize(ev) for ev in data["broker_log"]]
         context.is_running = data["is_running"]
         # load back up whatever was in the queue as well as the events whose steps
@@ -373,13 +369,19 @@ class Context:
     async def wait_for_event(
         self,
         event_type: Type[T],
+        waiter_event: Optional[Event] = None,
+        waiter_id: Optional[str] = None,
         requirements: Optional[Dict[str, Any]] = None,
         timeout: Optional[float] = 2000,
     ) -> T:
         """Asynchronously wait for a specific event type to be received.
 
+        If provided, `waiter_event` will be written to the event stream to let the caller know that we're waiting for a response.
+
         Args:
             event_type: The type of event to wait for
+            waiter_event: The event to emit to the event stream to let the caller know that we're waiting for a response
+            waiter_id: A unique identifier for this specific wait call. It helps ensure that we only send one `waiter_event` for each `waiter_id`.
             requirements: Optional dict of requirements the event must match
             timeout: Optional timeout in seconds. Defaults to 2000s.
 
@@ -391,17 +393,35 @@ class Context:
         """
         requirements = requirements or {}
 
+        # Generate a unique key for the waiter
+        event_str = self._get_full_path(event_type)
+        requirements_str = str(requirements)
+        waiter_id = waiter_id or f"waiter_{event_str}_{requirements_str}"
+
+        if waiter_id not in self._queues:
+            self._queues[waiter_id] = asyncio.Queue()
+
+        # send the waiter event if it's not already sent
+        if waiter_event is not None:
+            is_waiting = await self.get(waiter_id, default=False)
+            if not is_waiting:
+                await self.set(waiter_id, True)
+                self.write_event_to_stream(waiter_event)
+
         while True:
-            event = await asyncio.wait_for(
-                self._queues[self._waiter_id].get(), timeout=timeout
-            )
-            if type(event) is event_type:
-                if all(
-                    event.get(k, default=None) == v for k, v in requirements.items()
-                ):
-                    return event
-                else:
-                    continue
+            try:
+                event = await asyncio.wait_for(
+                    self._queues[waiter_id].get(), timeout=timeout
+                )
+                if type(event) is event_type:
+                    if all(
+                        event.get(k, default=None) == v for k, v in requirements.items()
+                    ):
+                        return event
+                    else:
+                        continue
+            finally:
+                await self.set(waiter_id, False)
 
     def write_event_to_stream(self, ev: Optional[Event]) -> None:
         self._streaming_queue.put_nowait(ev)
