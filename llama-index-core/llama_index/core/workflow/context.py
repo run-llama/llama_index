@@ -404,7 +404,7 @@ class Context:
             is_waiting = await self.get(waiter_id, default=False)
             if not is_waiting:
                 await self.set(waiter_id, True)
-                self.send_event(waiter_event)
+                self.write_event_to_stream(waiter_event)
 
         while True:
             try:
