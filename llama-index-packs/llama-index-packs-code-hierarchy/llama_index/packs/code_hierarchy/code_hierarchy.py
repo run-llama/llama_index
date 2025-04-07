@@ -535,15 +535,15 @@ class CodeHierarchyNodeParser(NodeParser):
         out: List[BaseNode] = []
 
         try:
-            import tree_sitter_languages
+            import tree_sitter_language_pack
         except ImportError:
             raise ImportError(
                 "Please install tree_sitter_languages to use CodeSplitter."
             )
 
         try:
-            parser = tree_sitter_languages.get_parser(self.language)
-            language = tree_sitter_languages.get_language(self.language)
+            parser = tree_sitter_language_pack.get_parser(self.language)
+            language = tree_sitter_language_pack.get_language(self.language)
 
             # Construct the path to the SCM file
             scm_fname = os.path.join(
