@@ -649,6 +649,7 @@ nav:
           - ./examples/vector_stores/LanternAutoRetriever.ipynb
           - ./examples/vector_stores/LanternIndexDemo.ipynb
           - ./examples/vector_stores/LindormDemo.ipynb
+          - ./examples/vector_stores/MilvusAsyncAPIDemo.ipynb
           - ./examples/vector_stores/MilvusFullTextSearchDemo.ipynb
           - ./examples/vector_stores/MilvusHybridIndexDemo.ipynb
           - ./examples/vector_stores/MilvusIndexDemo.ipynb
