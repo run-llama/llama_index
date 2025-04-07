@@ -174,7 +174,9 @@ async def test_wait_for_event_with_requirements(ctx):
     if sys.version_info < (3, 10):
         pytest.skip("Skipping test for Python 3.9 or lower")
 
-    wait_job = asyncio.create_task(ctx.wait_for_event(Event, {"msg": "foo"}))
+    wait_job = asyncio.create_task(
+        ctx.wait_for_event(Event, requirements={"msg": "foo"})
+    )
     await asyncio.sleep(0.01)
     ctx.send_event(Event(msg="bar"))
     ctx.send_event(Event(msg="foo"))
@@ -212,8 +214,12 @@ async def test_prompt_and_wait(ctx):
     timeout = 10
 
     waiting_task = asyncio.create_task(
-        ctx.prompt_and_wait(
-            prompt_id, prompt_event, expected_event, requirements, timeout
+        ctx.wait_for_event(
+            expected_event,
+            waiter_id=prompt_id,
+            waiter_event=prompt_event,
+            timeout=timeout,
+            requirements=requirements,
         )
     )
     await asyncio.sleep(0.01)

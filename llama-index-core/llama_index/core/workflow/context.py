@@ -371,6 +371,8 @@ class Context:
     async def wait_for_event(
         self,
         event_type: Type[T],
+        waiter_event: Optional[Event] = None,
+        waiter_id: Optional[str] = None,
         requirements: Optional[Dict[str, Any]] = None,
         timeout: Optional[float] = 2000,
     ) -> T:
@@ -392,50 +394,32 @@ class Context:
         # Generate a unique key for the waiter
         event_str = self._get_full_path(event_type)
         requirements_str = str(requirements)
-        waiter_id = f"waiter_{event_str}_{requirements_str}"
+        waiter_id = waiter_id or f"waiter_{event_str}_{requirements_str}"
 
         if waiter_id not in self._queues:
             self._queues[waiter_id] = asyncio.Queue()
 
+        # send the waiter event if it's not already sent
+        if waiter_event is not None:
+            is_waiting = await self.get(waiter_id, default=False)
+            if not is_waiting:
+                await self.set(waiter_id, True)
+                self.send_event(waiter_event)
+
         while True:
-            event = await asyncio.wait_for(
-                self._queues[waiter_id].get(), timeout=timeout
-            )
-            if type(event) is event_type:
-                if all(
-                    event.get(k, default=None) == v for k, v in requirements.items()
-                ):
-                    return event
-                else:
-                    continue
-
-    async def prompt_and_wait(
-        self,
-        prompt_id: str,
-        prompt_event: Event,
-        expected_event: Type[T],
-        requirements: Optional[Dict[str, Any]] = None,
-        timeout: Optional[float] = 2000,
-    ) -> T:
-        """Asynchronously wait for a specific event type to be received.
-
-        Args:
-            prompt_id: A unique identifier for the operation.
-            prompt_event: The event to send to the output event stream.
-            expected_event: The type of event to wait for.
-            requirements: Optional dict of requirements the event must match.
-            timeout: Optional timeout in seconds. Defaults to 2000s.
-
-        Returns:
-            The event type that was requested once it is received.
-        """
-        prompt_id = f"waiting_for_{prompt_id}"
-        existing_wait = await self.get(prompt_id, default=None)
-        if existing_wait is None:
-            self.write_event_to_stream(prompt_event)
-            await self.set(prompt_id, True)
-
-        return await self.wait_for_event(expected_event, requirements, timeout)
+            try:
+                event = await asyncio.wait_for(
+                    self._queues[waiter_id].get(), timeout=timeout
+                )
+                if type(event) is event_type:
+                    if all(
+                        event.get(k, default=None) == v for k, v in requirements.items()
+                    ):
+                        return event
+                    else:
+                        continue
+            finally:
+                await self.set(waiter_id, False)
 
     def write_event_to_stream(self, ev: Optional[Event]) -> None:
         self._streaming_queue.put_nowait(ev)
