@@ -538,7 +538,7 @@ class CodeHierarchyNodeParser(NodeParser):
             import tree_sitter_language_pack
         except ImportError:
             raise ImportError(
-                "Please install tree_sitter_languages to use CodeSplitter."
+                "Please install tree_sitter_language_pack to use CodeSplitter."
             )
 
         try:
