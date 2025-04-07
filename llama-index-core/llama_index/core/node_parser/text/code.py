@@ -72,12 +72,12 @@ class CodeSplitter(TextSplitter):
 
         if parser is None:
             try:
-                import tree_sitter_languages  # pants: no-infer-dep
+                import tree_sitter_language_pack  # pants: no-infer-dep
 
-                parser = tree_sitter_languages.get_parser(language)
+                parser = tree_sitter_language_pack.get_parser(language)
             except ImportError:
                 raise ImportError(
-                    "Please install tree_sitter_languages to use CodeSplitter."
+                    "Please install tree_sitter_language_pack to use CodeSplitter."
                     "Or pass in a parser object."
                 )
             except Exception:
