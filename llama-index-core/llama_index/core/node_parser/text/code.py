@@ -74,7 +74,7 @@ class CodeSplitter(TextSplitter):
             try:
                 import tree_sitter_language_pack  # pants: no-infer-dep
 
-                parser = tree_sitter_language_pack.get_parser(language)
+                parser = tree_sitter_language_pack.get_parser(language)  # type: ignore
             except ImportError:
                 raise ImportError(
                     "Please install tree_sitter_language_pack to use CodeSplitter."
