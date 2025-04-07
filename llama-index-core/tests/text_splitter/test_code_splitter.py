@@ -5,7 +5,7 @@ import pytest
 from typing import List
 
 try:
-    import tree_sitter  # noqa
+    import tree_sitter_language_pack  # noqa
     from llama_index.core.text_splitter import CodeSplitter
 
     SHOULD_SKIP = False
