@@ -510,7 +510,7 @@ def to_openai_message_dicts(
             message_dicts = to_openai_responses_message_dict(
                 message,
                 drop_none=drop_none,
-                model=model,
+                model="o3-mini",  # hardcode to ensure developer messages are used
             )
             if isinstance(message_dicts, list):
                 final_message_dicts.extend(message_dicts)
