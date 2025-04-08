@@ -26,6 +26,9 @@ report = ["console", "html", "xml"]
 [python]
 interpreter_constraints = [">=3.9,<4.0"]
 
+[python.resolves]
+python-default.exclude_patterns = ["hf-xet"]
+
 [python-infer]
 ambiguity_resolution = "by_source_root"
 
