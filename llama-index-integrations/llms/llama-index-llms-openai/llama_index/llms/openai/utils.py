@@ -257,6 +257,10 @@ def is_chat_model(model: str) -> bool:
 
 
 def is_function_calling_model(model: str) -> bool:
+    # default to True for models that are not in the ALL_AVAILABLE_MODELS dict
+    if model not in ALL_AVAILABLE_MODELS:
+        return True
+
     # checking whether the model is fine-tuned or not.
     # fine-tuned model names these days look like:
     # ft:gpt-3.5-turbo:acemeco:suffix:abc123
@@ -510,7 +514,7 @@ def to_openai_message_dicts(
             message_dicts = to_openai_responses_message_dict(
                 message,
                 drop_none=drop_none,
-                model=model,
+                model="o3-mini",  # hardcode to ensure developer messages are used
             )
             if isinstance(message_dicts, list):
                 final_message_dicts.extend(message_dicts)
