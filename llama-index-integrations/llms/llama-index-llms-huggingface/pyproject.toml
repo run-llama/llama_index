@@ -12,7 +12,6 @@ contains_example = false
 import_path = "llama_index.llms.huggingface"
 
 [tool.llamahub.class_authors]
-HuggingFaceInferenceAPI = "llama-index"
 HuggingFaceLLM = "llama-index"
 
 [tool.mypy]
