@@ -62,9 +62,13 @@ async def handoff(ctx: Context, to_agent: str, reason: str) -> str:
     """Handoff control of that chat to the given agent."""
     agents: list[str] = await ctx.get("agents")
     current_agent_name: str = await ctx.get("current_agent_name")
+    can_handoff_to: dict[str, list[str]] = await ctx.get("can_handoff_to")
     if to_agent not in agents:
         valid_agents = ", ".join([x for x in agents if x != current_agent_name])
         return f"Agent {to_agent} not found. Please select a valid agent to hand off to. Valid agents: {valid_agents}"
+
+    if to_agent not in can_handoff_to.get(current_agent_name, []):
+        return f"Agent {to_agent} cannot hand off to {current_agent_name}. Please select a valid agent to hand off to."
 
     await ctx.set("next_agent", to_agent)
     handoff_output_prompt = await ctx.get(
@@ -242,6 +246,14 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             await ctx.set("memory", default_memory)
         if not await ctx.get("agents", default=None):
             await ctx.set("agents", list(self.agents.keys()))
+        if not await ctx.get("can_handoff_to", default=None):
+            await ctx.set(
+                "can_handoff_to",
+                {
+                    agent: agent_cfg.can_handoff_to
+                    for agent, agent_cfg in self.agents.items()
+                },
+            )
         if not await ctx.get("state", default=None):
             await ctx.set("state", self.initial_state)
         if not await ctx.get("current_agent_name", default=None):
