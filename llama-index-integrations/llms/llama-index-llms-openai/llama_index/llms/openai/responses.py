@@ -247,6 +247,10 @@ class OpenAIResponses(FunctionCallingLLM):
         default=None,
         description="The effort to use for reasoning models.",
     )
+    context_window: Optional[int] = Field(
+        default=None,
+        description="The context window override for the model.",
+    )
 
     _client: SyncOpenAI = PrivateAttr()
     _aclient: AsyncOpenAI = PrivateAttr()
@@ -281,6 +285,7 @@ class OpenAIResponses(FunctionCallingLLM):
         async_http_client: Optional[httpx.AsyncClient] = None,
         openai_client: Optional[SyncOpenAI] = None,
         async_openai_client: Optional[AsyncOpenAI] = None,
+        context_window: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -316,6 +321,7 @@ class OpenAIResponses(FunctionCallingLLM):
             default_headers=default_headers,
             call_metadata=call_metadata,
             strict=strict,
+            context_window=context_window,
             **kwargs,
         )
 
@@ -339,7 +345,8 @@ class OpenAIResponses(FunctionCallingLLM):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=openai_modelname_to_contextsize(self._get_model_name()),
+            context_window=self.context_window
+            or openai_modelname_to_contextsize(self._get_model_name()),
             num_output=self.max_output_tokens or -1,
             is_chat_model=True,
             is_function_calling_model=is_function_calling_model(

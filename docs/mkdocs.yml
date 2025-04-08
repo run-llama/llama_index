@@ -1864,7 +1864,6 @@ plugins:
             - ../llama-index-integrations/retrievers/llama-index-retrievers-pathway
             - ../llama-index-integrations/retrievers/llama-index-retrievers-bm25
             - ../llama-index-integrations/retrievers/llama-index-retrievers-you
-            - ../llama-index-integrations/indices/llama-index-indices-managed-zilliz
             - ../llama-index-integrations/indices/llama-index-indices-managed-llama-cloud
             - ../llama-index-integrations/indices/llama-index-indices-managed-colbert
             - ../llama-index-integrations/indices/llama-index-indices-managed-vectara

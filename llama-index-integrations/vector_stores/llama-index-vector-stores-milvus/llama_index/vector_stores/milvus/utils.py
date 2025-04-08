@@ -116,7 +116,7 @@ def parse_filter_value(filter_value: any, is_text_match: bool = False):
 
     if isinstance(filter_value, str):
         # Escape single quotes in strings
-        filter_value = filter_value.replace("'", "''")
+        filter_value = filter_value.replace("'", "\\'")
         return f"'{filter_value!s}'"
 
     return str(filter_value)
