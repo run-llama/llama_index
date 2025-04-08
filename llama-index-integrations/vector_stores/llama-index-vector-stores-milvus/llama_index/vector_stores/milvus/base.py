@@ -278,6 +278,13 @@ class MilvusVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> None:
         """Init params."""
+        #URI validation patch for local file paths 
+        if uri.startswith("./") or uri.endswith(".db"):
+            raise ValueError(
+                f"Invalid URI '{uri}'. Milvus expects a URI to a running server, "
+                f"e.g., 'http://localhost:19530'. File paths like SQLite (.db) are not supported."
+            )
+            
         super().__init__(
             collection_name=collection_name,
             enable_dense=enable_dense,

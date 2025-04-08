@@ -635,6 +635,10 @@ class TestMilvusSync:
     def test_milvus_clear(self, vector_store: MilvusVectorStore):
         vector_store.clear()
         assert not vector_store.client.has_collection(COLLECTION_NAME)
+        
+    def test_invalid_uri_path():
+        with pytest.raises(ValueError):
+            MilvusVectorStore(uri="./test.db", dim=2, collection_name="test")
 
     def test_get_nodes(self, vector_store: MilvusVectorStore):
         node1 = TextNode(
