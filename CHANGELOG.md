@@ -1,5 +1,76 @@
 # ChangeLog
 
+## [2024-04-08]
+
+### `llama-index-core` [0.12.29]
+
+- better enforce agent handoffs in AgentWorkflow (#18399)
+- waiting for events refactor to handle multiple `wait_for_event` calls (#18226)
+- fix: 🐛 Replace broken and discontinued `tree_sitter_languages` with `tree_sitter_language_pack` (#18387)
+- Fix the costly pop(0) in SentenceSplitter when parsing numerous texts (#18359)
+
+### `llama-index-embeddings-openai-like` [0.1.0]
+
+- Add OpenAILikeEmbedding, update docs (#18364)
+
+### `llama-index-llms-bedrock-converse` [0.4.15]
+
+- feature: add multi-modal support for bedrock converse (#18373)
+- support bedrock converse deepseek r1 (#18371)
+
+### `llama-index-llms-ibm` [0.3.4]
+
+- cache watsonx context window (#18350)
+
+### `llama-index-llms-openai` [0.3.31]
+
+- fix openai json decode error (#18352)
+- enable openai responses override (#18402)
+
+### `llama-index-llms-vertex` [0.4.6]
+
+- Add ImageBlock and TextBlock support for Gemini models (#18344)
+
+### `llama-index-graph-stores-kuzu` [0.7.0]
+
+- Update to Kuzu 0.9.0 (#18382)
+
+### `llama-index-indices-managed-llama-cloud` [0.6.11]
+
+- remove org id kwarg (#18355)
+
+### `llama-index-readers-microsoft-sharepoint` [0.5.1]
+
+- Fix Sharepoint folder path encoding issue (#18357)
+
+### `llama-index-readers-papers` [0.3.2]
+
+- fix: use defusexml instead of xml.etree (#18362)
+
+### `llama-index-readers-stripe-docs` [0.3.1]
+
+- fix: use defusexml instead of xml.etree (#18362)
+
+### `llama-index-readers-uniprot` [0.1.0]
+
+- Add uniprot reader (#18356)
+
+### `llama-index-readers-web` [0.3.9]
+
+- fix: use defusexml instead of xml.etree (#18362)
+
+### `llama-index-retrievers-galaxia` [0.1.0]
+
+- Add GalaxiaRetriever (#18317)
+
+### `llama-index-vector-stores-azureaisearch` [0.3.7]
+
+- chore: add title and keywords to semantic config (#18354)
+
+### `llama-index-utils-workflow` [0.3.1]
+
+- Fix `draw_all_possible_flows` for custom StopEvents (#18347)
+
 ## [2025-04-01]
 
 ### `llama-index-core` [0.12.28]
