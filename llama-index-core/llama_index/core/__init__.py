@@ -129,8 +129,6 @@ __all__ = [
     "Response",
     "Document",
     "SimpleDirectoryReader",
-    "VellumPredictor",
-    "VellumPromptRegistry",
     "MockEmbedding",
     "SQLDatabase",
     "SQLDocumentContextBuilder",
