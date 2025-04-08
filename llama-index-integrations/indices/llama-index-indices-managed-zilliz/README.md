@@ -1,1 +1,0 @@
-# LlamaIndex Managed Integration: Zilliz
