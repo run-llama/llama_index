@@ -189,7 +189,6 @@ class Context:
                     ]
 
             context._accepted_events = data["accepted_events"]
-            context._waiter_id = data.get("waiter_id", str(uuid.uuid4()))
             context._broker_log = [
                 serializer.deserialize(ev) for ev in data["broker_log"]
             ]
