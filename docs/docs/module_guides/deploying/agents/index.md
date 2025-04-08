@@ -66,6 +66,44 @@ response = await agent.run(..., memory=memory)
 
 You can read more about configuring memory in the [memory guide](./memory.md)
 
+## Multi-Modal Agents
+
+Some LLMs will support multiple modalities, such as images and text. Using chat messages with content blocks, we can pass in images to an agent for reasoning.
+
+For example, imagine you had a screenshot of the [slide from this presentation](https://docs.google.com/presentation/d/1wy3nuO9ezGS4R99mzP3Q3yvrjAkZ26OGI2NjfqtwAaE/edit?usp=sharing).
+
+You can pass this image to an agent for reasoning, and see that it reads the image and acts accordingly.
+
+```python
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.core.llms import ChatMessage, ImageBlock, TextBlock
+from llama_index.llms.openai import OpenAI
+
+llm = OpenAI(model="gpt-4o-mini", api_key="sk-...")
+
+
+def add(a: int, b: int) -> int:
+    """Useful for adding two numbers together."""
+    return a + b
+
+
+workflow = FunctionAgent(
+    tools=[add],
+    llm=llm,
+)
+
+msg = ChatMessage(
+    role="user",
+    blocks=[
+        TextBlock(text="Follow what the image says."),
+        ImageBlock(path="./screenshot.png"),
+    ],
+)
+
+response = await workflow.run(msg)
+print(str(response))
+```
+
 ## Multi-Agent Systems
 
 You can combine agents into a multi-agent system, where each agent is able to hand off control to another agent to coordinate while completing tasks.
@@ -82,7 +120,7 @@ Read on to learn more about [multi-agent systems](../../../understanding/agent/m
 
 ## Manual Agents
 
-While the agent classes like `FunctionAgent`, `ReActAgent`, and `AgentWorkflow` abstract away a lot of details, sometimes its desirable to build your own lower-level agents.
+While the agent classes like `FunctionAgent`, `ReActAgent`, `CodeActAgent`, and `AgentWorkflow` abstract away a lot of details, sometimes its desirable to build your own lower-level agents.
 
 Using the `LLM` objects directly, you can quickly implement a basic agent loop, while having full control over how the tool calling and error handling works.
 

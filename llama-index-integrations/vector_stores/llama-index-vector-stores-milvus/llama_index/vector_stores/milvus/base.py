@@ -1196,7 +1196,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         if self.index_management == IndexManagement.NO_VALIDATION:
             return
         elif self.index_management == IndexManagement.CREATE_IF_NOT_EXISTS:
-            if len(self.client.list_indexes(self.collection_name)) == 0:
+            if len(self.client.list_indexes(self.collection_name)) > 0:
                 return
             else:
                 index_params = self.client.prepare_index_params()

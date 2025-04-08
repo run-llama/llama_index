@@ -1,7 +1,8 @@
 import asyncio
 import logging
 import time
-from typing import Type
+import sys
+from typing import Type, Union
 from unittest import mock
 
 import pytest
@@ -238,7 +239,7 @@ async def test_workflow_num_workers():
         @step
         async def original_step(
             self, ctx: Context, ev: StartEvent
-        ) -> OneTestEvent | LastEvent:
+        ) -> Union[OneTestEvent, LastEvent]:
             await ctx.set("num_to_collect", 3)
             ctx.send_event(OneTestEvent(test_param="test1"))
             ctx.send_event(OneTestEvent(test_param="test2"))
@@ -256,7 +257,7 @@ async def test_workflow_num_workers():
 
         @step
         async def final_step(
-            self, ctx: Context, ev: AnotherTestEvent | LastEvent
+            self, ctx: Context, ev: Union[AnotherTestEvent, LastEvent]
         ) -> StopEvent:
             n = await ctx.get("num_to_collect")
             events = ctx.collect_events(ev, [AnotherTestEvent] * n)
@@ -758,6 +759,10 @@ async def test_workflow_run_num_concurrent(
     desired_max_concurrent_runs: int,
     expected_exception: Type,
 ):
+    # skip test if python version is 3.9 or lower
+    if sys.version_info < (3, 10):
+        pytest.skip("Skipping test for Python 3.9 or lower")
+
     async def _poll_workflow(
         wf: DummyWorkflowForConcurrentRunsTest, desired_max_concurrent_runs: int
     ) -> None:

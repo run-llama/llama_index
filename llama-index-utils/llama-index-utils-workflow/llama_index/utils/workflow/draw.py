@@ -24,15 +24,6 @@ def draw_all_possible_flows(
 
     net = Network(directed=True, height="750px", width="100%")
 
-    # Add the nodes + edge for stop events
-    net.add_node(
-        StopEvent.__name__,
-        label=StopEvent.__name__,
-        color="#FFA07A",
-        shape="ellipse",
-    )
-    net.add_node("_done", label="_done", color="#ADD8E6", shape="box")
-
     # Add nodes from all steps
     steps = get_steps_from_class(workflow)
     if not steps:
@@ -40,7 +31,23 @@ def draw_all_possible_flows(
         steps = get_steps_from_instance(workflow)
 
     step_config: Optional[StepConfig] = None
-    net_has_external_step_node: bool = False
+
+    # Only one kind of `StopEvent` is allowed in a `Workflow`.
+    # Assuming that `Workflow` is validated before drawing, it's enough to find the first one.
+    current_stop_event = None
+    for step_name, step_func in steps.items():
+        step_config = getattr(step_func, "__step_config", None)
+        if step_config is None:
+            continue
+
+        for return_type in step_config.return_types:
+            if issubclass(return_type, StopEvent):
+                current_stop_event = return_type
+                break
+
+        if current_stop_event:
+            break
+
     for step_name, step_func in steps.items():
         step_config = getattr(step_func, "__step_config", None)
         if step_config is None:
@@ -51,6 +58,9 @@ def draw_all_possible_flows(
         )  # Light blue for steps
 
         for event_type in step_config.accepted_events:
+            if event_type == StopEvent and event_type != current_stop_event:
+                continue
+
             net.add_node(
                 event_type.__name__,
                 label=event_type.__name__,
@@ -59,26 +69,24 @@ def draw_all_possible_flows(
             )  # Light green for events
 
         for return_type in step_config.return_types:
-            print(f"{return_type}", flush=True)
             if return_type == type(None):
                 continue
 
-            if issubclass(return_type, InputRequiredEvent):
-                net.add_node(
-                    return_type.__name__,
-                    label=return_type.__name__,
-                    color="#90EE90",
-                    shape="ellipse",
-                )  # Light green for events
+            net.add_node(
+                return_type.__name__,
+                label=return_type.__name__,
+                color="#90EE90",
+                shape="ellipse",
+            )  # Light green for events
 
-                if not net_has_external_step_node:
-                    # add node for conceptual external step
-                    net.add_node(
-                        f"external_step",
-                        label="external_step",
-                        color="#BEDAE4",
-                        shape="box",
-                    )
+            if issubclass(return_type, InputRequiredEvent):
+                # add node for conceptual external step
+                net.add_node(
+                    f"external_step",
+                    label="external_step",
+                    color="#BEDAE4",
+                    shape="box",
+                )
 
     # Add edges from all steps
     for step_name, step_func in steps.items():
@@ -95,7 +103,10 @@ def draw_all_possible_flows(
                 net.add_edge(return_type.__name__, f"external_step")
 
         for event_type in step_config.accepted_events:
-            net.add_edge(event_type.__name__, step_name)
+            if step_name == "_done" and issubclass(event_type, StopEvent):
+                net.add_edge(current_stop_event.__name__, step_name)
+            else:
+                net.add_edge(event_type.__name__, step_name)
 
             if issubclass(event_type, HumanResponseEvent):
                 net.add_edge(
