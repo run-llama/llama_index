@@ -23,7 +23,12 @@ from llama_index.core.instrumentation.dispatcher import Dispatcher
 from .checkpointer import CheckpointCallback
 from .context_serializers import BaseSerializer, JsonSerializer
 from .decorators import StepConfig
-from .errors import WorkflowCancelledByUser, WorkflowDone, WorkflowRuntimeError
+from .errors import (
+    ContextSerdeError,
+    WorkflowCancelledByUser,
+    WorkflowDone,
+    WorkflowRuntimeError,
+)
 from .events import Event, InputRequiredEvent
 from .service import ServiceManager
 from .types import RunResultT
@@ -32,6 +37,7 @@ if TYPE_CHECKING:  # pragma: no cover
     from .workflow import Workflow
 
 T = TypeVar("T", bound=Event)
+EventBuffer = Dict[str, List[Event]]
 
 
 class Context:
@@ -91,7 +97,7 @@ class Context:
         # Streaming machinery
         self._streaming_queue: asyncio.Queue = asyncio.Queue()
         # Step-specific instance
-        self._events_buffer: Dict[str, List[Event]] = defaultdict(list)
+        self._event_buffers: Dict[str, EventBuffer] = {}
 
     def _serialize_queue(self, queue: asyncio.Queue, serializer: BaseSerializer) -> str:
         queue_items = list(queue._queue)  # type: ignore
@@ -142,9 +148,12 @@ class Context:
                 k: self._serialize_queue(v, serializer) for k, v in self._queues.items()
             },
             "stepwise": self.stepwise,
-            "events_buffer": {
-                k: [serializer.serialize(ev) for ev in v]
-                for k, v in self._events_buffer.items()
+            "event_buffers": {
+                k: {
+                    inner_k: [serializer.serialize(ev) for ev in inner_v]
+                    for inner_k, inner_v in v.items()
+                }
+                for k, v in self._event_buffers.items()
             },
             "in_progress": {
                 k: [serializer.serialize(ev) for ev in v]
@@ -164,33 +173,39 @@ class Context:
     ) -> "Context":
         serializer = serializer or JsonSerializer()
 
-        context = cls(workflow, stepwise=data["stepwise"])
-        context._globals = context._deserialize_globals(data["globals"], serializer)
-        context._streaming_queue = context._deserialize_queue(
-            data["streaming_queue"], serializer
-        )
-        context._events_buffer = defaultdict(
-            list,
-            {
-                k: [serializer.deserialize(ev) for ev in v]
-                for k, v in data["events_buffer"].items()
-            },
-        )
-        if len(context._events_buffer) == 0:
-            context._events_buffer = defaultdict(list)
-        context._accepted_events = data["accepted_events"]
-        context._broker_log = [serializer.deserialize(ev) for ev in data["broker_log"]]
-        context.is_running = data["is_running"]
-        # load back up whatever was in the queue as well as the events whose steps
-        # were in progress when the serialization of the Context took place
-        context._queues = {
-            k: context._deserialize_queue(
-                v, serializer, prefix_queue_objs=data["in_progress"].get(k, [])
+        try:
+            context = cls(workflow, stepwise=data["stepwise"])
+            context._globals = context._deserialize_globals(data["globals"], serializer)
+            context._streaming_queue = context._deserialize_queue(
+                data["streaming_queue"], serializer
             )
-            for k, v in data["queues"].items()
-        }
-        context._in_progress = defaultdict(list)
-        return context
+
+            context._event_buffers = {}
+            for buffer_id, type_events_map in data["event_buffers"].items():
+                context._event_buffers[buffer_id] = {}
+                for event_type, events_list in type_events_map.items():
+                    context._event_buffers[buffer_id][event_type] = [
+                        serializer.deserialize(ev) for ev in events_list
+                    ]
+
+            context._accepted_events = data["accepted_events"]
+            context._broker_log = [
+                serializer.deserialize(ev) for ev in data["broker_log"]
+            ]
+            context.is_running = data["is_running"]
+            # load back up whatever was in the queue as well as the events whose steps
+            # were in progress when the serialization of the Context took place
+            context._queues = {
+                k: context._deserialize_queue(
+                    v, serializer, prefix_queue_objs=data["in_progress"].get(k, [])
+                )
+                for k, v in data["queues"].items()
+            }
+            context._in_progress = defaultdict(list)
+            return context
+        except KeyError as e:
+            msg = "Error creating a Context instance: the provided payload has a wrong or old format."
+            raise ContextSerdeError(msg) from e
 
     async def set(self, key: str, value: Any, make_private: bool = False) -> None:
         """Store `value` into the Context under `key`.
@@ -289,8 +304,24 @@ class Context:
     def _get_full_path(self, ev_type: Type[Event]) -> str:
         return f"{ev_type.__module__}.{ev_type.__name__}"
 
+    def _get_event_buffer_id(self, events: List[Type[Event]]) -> str:
+        # Try getting the current task name
+        try:
+            current_task = asyncio.current_task()
+            if current_task:
+                t_name = current_task.get_name()
+                # Do not use the default value 'Task'
+                if t_name != "Task":
+                    return t_name
+        except RuntimeError as e:
+            # This is a sync step, fallback to using events list
+            pass
+
+        # Fall back to creating a stable identifier from expected events
+        return ":".join(sorted(self._get_full_path(e_type) for e_type in events))
+
     def collect_events(
-        self, ev: Event, expected: List[Type[Event]]
+        self, ev: Event, expected: List[Type[Event]], buffer_id: Optional[str] = None
     ) -> Optional[List[Event]]:
         """Collects events for buffering in workflows.
 
@@ -301,25 +332,40 @@ class Context:
         Args:
             ev (Event): The current event to add to the buffer.
             expected (List[Type[Event]]): List of expected event types to collect.
+            buffer_id (str): A unique identifier for the events collected. Ideally this should be
+            the step name, so to avoid any interference between different steps. If not provided,
+            a stable identifier will be created using the list of expected events.
 
         Returns:
             Optional[List[Event]]: List of collected events in the order of expected types if all
                                   expected events are found; otherwise None.
         """
-        self._events_buffer[self._get_full_path(type(ev))].append(ev)
+        buffer_id = buffer_id or self._get_event_buffer_id(expected)
+
+        if buffer_id not in self._event_buffers:
+            self._event_buffers[buffer_id] = defaultdict(list)
+
+        event_type_path = self._get_full_path(type(ev))
+        self._event_buffers[buffer_id][event_type_path].append(ev)
 
         retval: List[Event] = []
         for e_type in expected:
-            e_instance_list = self._events_buffer.get(self._get_full_path(e_type))
+            e_type_path = self._get_full_path(e_type)
+            e_instance_list = self._event_buffers[buffer_id].get(e_type_path, [])
             if e_instance_list:
                 retval.append(e_instance_list.pop(0))
+            else:
+                # We already know we don't have all the events
+                break
 
         if len(retval) == len(expected):
             return retval
 
         # put back the events if unable to collect all
-        for ev in retval:
-            self._events_buffer[self._get_full_path(type(ev))].append(ev)
+        for i, ev_to_restore in enumerate(retval):
+            e_type = type(retval[i])
+            e_type_path = self._get_full_path(e_type)
+            self._event_buffers[buffer_id][e_type_path].append(ev_to_restore)
 
         return None
 
@@ -537,6 +583,7 @@ class Context:
                         new_ev = await instrumented_step(**kwargs)
                         kwargs.clear()
                         break  # exit the retrying loop
+
                     except WorkflowDone:
                         await self.remove_from_in_progress(name=name, ev=ev)
                         raise
