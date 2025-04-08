@@ -80,6 +80,7 @@ from llama_index.core.program.utils import FlexibleModel
 from llama_index.llms.openai.utils import (
     O1_MODELS,
     create_retry_decorator,
+    is_function_calling_model,
     openai_modelname_to_contextsize,
     resolve_openai_credentials,
     resolve_tool_choice,
@@ -348,7 +349,9 @@ class OpenAIResponses(FunctionCallingLLM):
             or openai_modelname_to_contextsize(self._get_model_name()),
             num_output=self.max_output_tokens or -1,
             is_chat_model=True,
-            is_function_calling_model=True,
+            is_function_calling_model=is_function_calling_model(
+                model=self._get_model_name()
+            ),
             model_name=self.model,
         )
 

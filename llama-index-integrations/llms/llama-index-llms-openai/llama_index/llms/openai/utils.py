@@ -257,6 +257,10 @@ def is_chat_model(model: str) -> bool:
 
 
 def is_function_calling_model(model: str) -> bool:
+    # default to True for models that are not in the ALL_AVAILABLE_MODELS dict
+    if model not in ALL_AVAILABLE_MODELS:
+        return True
+
     # checking whether the model is fine-tuned or not.
     # fine-tuned model names these days look like:
     # ft:gpt-3.5-turbo:acemeco:suffix:abc123
