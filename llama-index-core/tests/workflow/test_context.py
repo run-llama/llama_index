@@ -5,7 +5,7 @@ from unittest import mock
 
 import pytest
 from llama_index.core.workflow.decorators import StepConfig, step
-from llama_index.core.workflow.errors import WorkflowRuntimeError
+from llama_index.core.workflow.errors import ContextSerdeError, WorkflowRuntimeError
 from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.workflow import (
     Context,
@@ -199,3 +199,24 @@ async def test_clear(ctx):
     ctx.clear()
     res = await ctx.get("test_key", default=None)
     assert res is None
+
+
+def test_serialization_roundtrip(ctx, workflow):
+    assert Context.from_dict(workflow, ctx.to_dict())
+
+
+def test_old_serialization(ctx, workflow):
+    old_payload = {
+        "globals": {},
+        "streaming_queue": "[]",
+        "queues": {"test_id": "[]"},
+        "stepwise": False,
+        "events_buffer": {},
+        "in_progress": {},
+        "accepted_events": [],
+        "broker_log": [],
+        "waiter_id": "test_id",
+        "is_running": False,
+    }
+    with pytest.raises(ContextSerdeError):
+        Context.from_dict(workflow, old_payload)

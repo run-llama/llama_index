@@ -24,7 +24,12 @@ from llama_index.core.instrumentation.dispatcher import Dispatcher
 from .checkpointer import CheckpointCallback
 from .context_serializers import BaseSerializer, JsonSerializer
 from .decorators import StepConfig
-from .errors import WorkflowCancelledByUser, WorkflowDone, WorkflowRuntimeError
+from .errors import (
+    ContextSerdeError,
+    WorkflowCancelledByUser,
+    WorkflowDone,
+    WorkflowRuntimeError,
+)
 from .events import Event, InputRequiredEvent
 from .service import ServiceManager
 from .types import RunResultT
@@ -145,7 +150,7 @@ class Context:
                 k: self._serialize_queue(v, serializer) for k, v in self._queues.items()
             },
             "stepwise": self.stepwise,
-            "events_buffer": {
+            "event_buffers": {
                 k: {
                     inner_k: [serializer.serialize(ev) for ev in inner_v]
                     for inner_k, inner_v in v.items()
@@ -171,35 +176,40 @@ class Context:
     ) -> "Context":
         serializer = serializer or JsonSerializer()
 
-        context = cls(workflow, stepwise=data["stepwise"])
-        context._globals = context._deserialize_globals(data["globals"], serializer)
-        context._streaming_queue = context._deserialize_queue(
-            data["streaming_queue"], serializer
-        )
-        context._event_buffers = {}
-        context._event_buffers = {}
-        for buffer_id, type_events_map in data["events_buffer"].items():
-            context._event_buffers[buffer_id] = {}
-            for event_type, events_list in type_events_map.items():
-                context._event_buffers[buffer_id][event_type] = [
-                    serializer.deserialize(ev) for ev in events_list
-                ]
-        if len(context._event_buffers) == 0:
-            context._event_buffers = defaultdict(lambda: defaultdict(list))
-        context._accepted_events = data["accepted_events"]
-        context._waiter_id = data.get("waiter_id", str(uuid.uuid4()))
-        context._broker_log = [serializer.deserialize(ev) for ev in data["broker_log"]]
-        context.is_running = data["is_running"]
-        # load back up whatever was in the queue as well as the events whose steps
-        # were in progress when the serialization of the Context took place
-        context._queues = {
-            k: context._deserialize_queue(
-                v, serializer, prefix_queue_objs=data["in_progress"].get(k, [])
+        try:
+            context = cls(workflow, stepwise=data["stepwise"])
+            context._globals = context._deserialize_globals(data["globals"], serializer)
+            context._streaming_queue = context._deserialize_queue(
+                data["streaming_queue"], serializer
             )
-            for k, v in data["queues"].items()
-        }
-        context._in_progress = defaultdict(list)
-        return context
+
+            context._event_buffers = {}
+            for buffer_id, type_events_map in data["event_buffers"].items():
+                context._event_buffers[buffer_id] = {}
+                for event_type, events_list in type_events_map.items():
+                    context._event_buffers[buffer_id][event_type] = [
+                        serializer.deserialize(ev) for ev in events_list
+                    ]
+
+            context._accepted_events = data["accepted_events"]
+            context._waiter_id = data.get("waiter_id", str(uuid.uuid4()))
+            context._broker_log = [
+                serializer.deserialize(ev) for ev in data["broker_log"]
+            ]
+            context.is_running = data["is_running"]
+            # load back up whatever was in the queue as well as the events whose steps
+            # were in progress when the serialization of the Context took place
+            context._queues = {
+                k: context._deserialize_queue(
+                    v, serializer, prefix_queue_objs=data["in_progress"].get(k, [])
+                )
+                for k, v in data["queues"].items()
+            }
+            context._in_progress = defaultdict(list)
+            return context
+        except KeyError as e:
+            msg = "Error creating a Context instance: the provided payload has a wrong or old format."
+            raise ContextSerdeError(msg) from e
 
     async def set(self, key: str, value: Any, make_private: bool = False) -> None:
         """Store `value` into the Context under `key`.
