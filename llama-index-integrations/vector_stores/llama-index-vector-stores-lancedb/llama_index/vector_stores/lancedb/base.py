@@ -156,7 +156,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
     overfetch_factor: Optional[int]
 
     _table_name: Optional[str] = PrivateAttr()
-    _connection: Any = PrivateAttr()
+    _connection: lancedb.DBConnection = PrivateAttr()
     _table: Any = PrivateAttr()
     _metadata_keys: Any = PrivateAttr()
     _fts_index: Any = PrivateAttr()
@@ -247,9 +247,12 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                     "`table` has to be a lancedb.db.LanceTable or lancedb.remote.table.RemoteTable object."
                 )
         else:
-            if self._table_exists():
-                self._table = self._connection.open_table(table_name)
-            else:
+            try:
+                if self._table_exists() and self.mode != "overwrite":
+                    self._table = self._connection.open_table(table_name)
+                else:
+                    self._table = None
+            except ValueError:
                 self._table = None
 
     @property
