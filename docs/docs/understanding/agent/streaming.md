@@ -26,8 +26,8 @@ tavily_tool = TavilyToolSpec(api_key=os.getenv("TAVILY_API_KEY"))
 Now we'll create an agent using that tool and an LLM that we initialized just like we did previously.
 
 ```python
-workflow = AgentWorkflow.from_tools_or_functions(
-    tavily_tool.to_tool_list(),
+workflow = FunctionAgent(
+    tools=tavily_tool.to_tool_list(),
     llm=llm,
     system_prompt="You're a helpful assistant that can search the web for information.",
 )

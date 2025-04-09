@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Callable, List, Sequence, Optional, Union
+from typing import Callable, List, Sequence, Optional, Union, Any
 
 from llama_index.core.agent.workflow.workflow_events import (
     AgentOutput,
@@ -18,6 +18,11 @@ from llama_index.core.tools import BaseTool, AsyncBaseTool, FunctionTool
 from llama_index.core.workflow import Context
 from llama_index.core.objects import ObjectRetriever
 from llama_index.core.settings import Settings
+from llama_index.core.workflow.checkpointer import CheckpointCallback
+from llama_index.core.workflow.handler import WorkflowHandler
+
+DEFAULT_AGENT_NAME = "Agent"
+DEFAULT_AGENT_DESCRIPTION = "An agent that can perform a task"
 
 
 def get_default_llm() -> LLM:
@@ -29,14 +34,15 @@ class BaseWorkflowAgent(BaseModel, PromptMixin, ABC):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    name: str = Field(description="The name of the agent")
+    name: str = Field(default=DEFAULT_AGENT_NAME, description="The name of the agent")
     description: str = Field(
-        description="The description of what the agent does and is responsible for"
+        default=DEFAULT_AGENT_DESCRIPTION,
+        description="The description of what the agent does and is responsible for",
     )
     system_prompt: Optional[str] = Field(
         default=None, description="The system prompt for the agent"
     )
-    tools: Optional[List[BaseTool]] = Field(
+    tools: Optional[List[Union[BaseTool, Callable]]] = Field(
         default=None, description="The tools that the agent can use"
     )
     tool_retriever: Optional[ObjectRetriever] = Field(
@@ -109,3 +115,16 @@ class BaseWorkflowAgent(BaseModel, PromptMixin, ABC):
         self, ctx: Context, output: AgentOutput, memory: BaseMemory
     ) -> AgentOutput:
         """Finalize the agent's execution."""
+
+    @abstractmethod
+    def run(
+        self,
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        memory: Optional[BaseMemory] = None,
+        ctx: Optional[Context] = None,
+        stepwise: bool = False,
+        checkpoint_callback: Optional[CheckpointCallback] = None,
+        **workflow_kwargs: Any,
+    ) -> WorkflowHandler:
+        """Run the agent."""

@@ -11,6 +11,7 @@ from llama_cloud import (
     PipelineCreateTransformConfig,
     PipelineType,
     Project,
+    Retriever,
 )
 from llama_cloud.core import remove_none_from_dict
 from llama_cloud.client import LlamaCloud, AsyncLlamaCloud
@@ -28,6 +29,28 @@ def default_embedding_config() -> PipelineCreateEmbeddingConfig:
 
 def default_transform_config() -> PipelineCreateTransformConfig:
     return AutoTransformConfig()
+
+
+def resolve_retriever(
+    client: LlamaCloud,
+    project: Project,
+    retriever_name: Optional[str] = None,
+    retriever_id: Optional[str] = None,
+) -> Optional[Retriever]:
+    if retriever_id:
+        return client.retrievers.get_retriever(
+            retriever_id=retriever_id, project_id=project.id
+        )
+    elif retriever_name:
+        retrievers = client.retrievers.list_retrievers(
+            project_id=project.id, name=retriever_name
+        )
+        return next(
+            (retriever for retriever in retrievers if retriever.name == retriever_name),
+            None,
+        )
+    else:
+        return None
 
 
 def resolve_project(

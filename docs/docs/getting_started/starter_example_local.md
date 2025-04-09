@@ -39,7 +39,7 @@ Let's start with a simple example using an agent that can perform basic multipli
 
 ```python
 import asyncio
-from llama_index.core.agent.workflow import AgentWorkflow
+from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.llms.ollama import Ollama
 
 
@@ -50,8 +50,8 @@ def multiply(a: float, b: float) -> float:
 
 
 # Create an agent workflow with our calculator tool
-agent = AgentWorkflow.from_tools_or_functions(
-    [multiply],
+agent = FunctionAgent(
+    tools=[multiply],
     llm=Ollama(model="llama3.1", request_timeout=360.0),
     system_prompt="You are a helpful assistant that can multiply two numbers.",
 )

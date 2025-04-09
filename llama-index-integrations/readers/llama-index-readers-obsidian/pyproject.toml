@@ -28,7 +28,7 @@ license = "MIT"
 maintainers = ["bitsofchris", "hursh-desai"]
 name = "llama-index-readers-obsidian"
 readme = "README.md"
-version = "0.5.0"
+version = "0.5.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"

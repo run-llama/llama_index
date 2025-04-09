@@ -173,20 +173,20 @@ async def test_checkpointer_with_stepwise(
     handler = workflow_checkpointer.run(stepwise=True)
     assert handler.ctx
 
-    event = await handler.run_step()
-    assert event
+    events = await handler.run_step()
+    assert events
     assert len(workflow_checkpointer.checkpoints[stepwise_run_id]) == 1
-    handler.ctx.send_event(event)
+    handler.ctx.send_event(events[0])
 
-    event = await handler.run_step()
-    assert event
+    events = await handler.run_step()
+    assert events
     assert len(workflow_checkpointer.checkpoints[stepwise_run_id]) == 2
-    handler.ctx.send_event(event)
+    handler.ctx.send_event(events[0])
 
-    event = await handler.run_step()
-    assert event
+    events = await handler.run_step()
+    assert events
     assert len(workflow_checkpointer.checkpoints[stepwise_run_id]) == 3
-    handler.ctx.send_event(event)
+    handler.ctx.send_event(events[0])
 
     _ = await handler.run_step()
     result = await handler

@@ -135,9 +135,19 @@ class LlamaCloudIndex(BaseManagedIndex):
         # initialize clients
         self._httpx_client = httpx_client
         self._async_httpx_client = async_httpx_client
-        self._client = get_client(api_key, base_url, app_url, timeout, httpx_client)
+        self._client = get_client(
+            api_key=api_key,
+            base_url=base_url,
+            app_url=app_url,
+            timeout=timeout,
+            httpx_client=httpx_client,
+        )
         self._aclient = get_aclient(
-            api_key, base_url, app_url, timeout, async_httpx_client
+            api_key=api_key,
+            base_url=base_url,
+            app_url=app_url,
+            timeout=timeout,
+            httpx_client=async_httpx_client,
         )
 
         self.organization_id = organization_id

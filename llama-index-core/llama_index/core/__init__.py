@@ -1,6 +1,6 @@
 """Init file of LlamaIndex."""
 
-__version__ = "0.12.22"
+__version__ = "0.12.29"
 
 import logging
 from logging import NullHandler
@@ -129,8 +129,6 @@ __all__ = [
     "Response",
     "Document",
     "SimpleDirectoryReader",
-    "VellumPredictor",
-    "VellumPromptRegistry",
     "MockEmbedding",
     "SQLDatabase",
     "SQLDocumentContextBuilder",

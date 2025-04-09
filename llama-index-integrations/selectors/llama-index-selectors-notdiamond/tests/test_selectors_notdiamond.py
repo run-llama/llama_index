@@ -39,7 +39,6 @@ def nd_selector(session_id):
 
     llm_configs = [
         LLMConfig(provider="openai", model="gpt-4o"),
-        LLMConfig(provider="anthropic", model="claude-3-opus-20240229"),
     ]
 
     # mocking out model_select calls on client
@@ -81,15 +80,15 @@ class TestNotDiamondSelector:
         assert openai_mock.is_called
 
     @pytest.mark.asyncio()
-    @patch("llama_index.llms.anthropic.Anthropic")
-    async def test_aselect(self, anthropic_mock, nd_selector, choices, session_id):
-        """_aselect should call anthropic, as mocked."""
-        anthropic_mock.return_value = MagicMock()
-        anthropic_mock.return_value.chat.return_value.message.content = "vector_index"
+    @patch("llama_index.llms.openai.OpenAI")
+    async def test_aselect(self, openai_mock, nd_selector, choices, session_id):
+        """_aselect should call openai, as mocked."""
+        openai_mock.return_value = MagicMock()
+        openai_mock.return_value.chat.return_value.message.content = "vector_index"
 
         query = "How can I cook a vegan variant of deviled eggs?"
         result = await nd_selector._aselect(choices, QueryBundle(query_str=query))
         assert result.session_id == session_id
-        assert str(result.llm) == "anthropic/claude-3-opus-20240229"
+        assert str(result.llm) == "openai/gpt-4o"
         assert result.selections[0].index == 1
-        assert anthropic_mock.is_called
+        assert openai_mock.is_called

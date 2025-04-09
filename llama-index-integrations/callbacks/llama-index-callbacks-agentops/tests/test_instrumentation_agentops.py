@@ -1,19 +1,12 @@
 import pytest
 import uuid
 import llama_index.core.instrumentation as instrument
-from agentops import LLMEvent, ToolEvent, ErrorEvent
+from agentops import LLMEvent
 from typing import (
     Any,
-    Dict,
-    AsyncGenerator,
-    Coroutine,
     Generator,
-    List,
-    Optional,
     Sequence,
-    Union,
 )
-from llama_index.core.agent.function_calling.step import FunctionCallingAgentWorker
 from llama_index.core.agent.runner.base import AgentRunner
 from llama_index.core.agent.types import (
     BaseAgentWorker,
@@ -24,9 +17,9 @@ from llama_index.core.agent.types import (
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
-    ChatResponseGen,
     CompletionResponse,
     LLMMetadata,
+    MessageRole,
 )
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.chat_engine.types import (
@@ -34,12 +27,10 @@ from llama_index.core.chat_engine.types import (
     StreamingAgentChatResponse,
 )
 from llama_index.core.llms.callbacks import llm_chat_callback
-from llama_index.core.llms.chatml_utils import completion_to_prompt, messages_to_prompt
 from llama_index.core.llms.custom import CustomLLM
-from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import LLM, ToolSelection
 from llama_index.core.tools.function_tool import FunctionTool
-from llama_index.core.tools.types import BaseTool, ToolMetadata
+from llama_index.core.tools.types import ToolMetadata
 from llama_index.callbacks.agentops import AgentOpsHandler
 from unittest.mock import patch, MagicMock
 
@@ -84,86 +75,6 @@ class MockLLM(CustomLLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> Generator[CompletionResponse, None, None]:
         ...
-
-
-class MockFunctionCallingLLM(FunctionCallingLLM):
-    model: str = Field(default=MOCK_MODEL_NAME)
-    use_tools: bool = Field(default=False)
-
-    @property
-    def metadata(self) -> LLMMetadata:
-        return LLMMetadata()
-
-    @llm_chat_callback()
-    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        return ChatResponse(message=ChatMessage(content=MOCK_AGENT_RESPONSE))
-
-    def complete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> CompletionResponse:
-        ...
-
-    def stream_complete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> Generator[CompletionResponse, None, None]:
-        ...
-
-    def achat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> Coroutine[Any, Any, ChatResponse]:
-        ...
-
-    def acomplete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> Coroutine[Any, Any, CompletionResponse]:
-        ...
-
-    def astream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> Coroutine[Any, Any, AsyncGenerator[ChatResponse, None]]:
-        ...
-
-    def astream_complete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> Coroutine[Any, Any, AsyncGenerator[CompletionResponse, None]]:
-        ...
-
-    def complete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> CompletionResponse:
-        ...
-
-    def stream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseGen:
-        ...
-
-    def stream_complete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> ChatResponseGen:
-        ...
-
-    @property
-    def metadata(self) -> LLMMetadata:
-        return LLMMetadata(is_function_calling_model=True)
-
-    def _prepare_chat_with_tools(
-        self,
-        tools: List["BaseTool"],
-        user_msg: Optional[Union[str, ChatMessage]] = None,
-        chat_history: Optional[List[ChatMessage]] = None,
-        verbose: bool = False,
-        allow_parallel_tool_calls: bool = False,
-        tool_choice: Union[str, dict] = "auto",
-        **kwargs: Any,
-    ) -> Dict[str, Any]:
-        """Prepare chat with tools."""
-        return {"messages": chat_history}
-
-    def get_tool_calls_from_response(
-        self, response: ChatResponse, error_on_no_tool_call: bool = True, **kwargs: Any
-    ) -> List[ToolSelection]:
-        return [MOCK_TOOL_SELECTION] if self.use_tools else []
 
 
 class MockAgentWorker(BaseAgentWorker):
@@ -226,22 +137,6 @@ def mock_error_throwing_agent() -> AgentRunner:
     return AgentRunner(agent_worker=MockAgentWorker(llm=llm))
 
 
-@pytest.fixture()
-def mock_basic_function_calling_agent() -> AgentRunner:
-    return AgentRunner(
-        agent_worker=FunctionCallingAgentWorker.from_tools(llm=MockFunctionCallingLLM())
-    )
-
-
-@pytest.fixture()
-def mock_function_calling_agent() -> AgentRunner:
-    llm = MockFunctionCallingLLM()
-    llm.use_tools = True
-    return AgentRunner(
-        agent_worker=FunctionCallingAgentWorker.from_tools(tools=[MOCK_TOOL], llm=llm)
-    )
-
-
 def test_class():
     names_of_base_classes = [b.__name__ for b in AgentOpsHandler.__mro__]
     assert AgentOpsHandler.__name__ in names_of_base_classes
@@ -249,19 +144,11 @@ def test_class():
 
 @pytest.mark.asyncio()
 @pytest.mark.parametrize("method", ["chat", "achat", "stream_chat", "astream_chat"])
-@pytest.mark.parametrize(
-    "agent_runner_fixture", ["mock_agent", "mock_basic_function_calling_agent"]
-)
+@pytest.mark.parametrize("agent_runner_fixture", ["mock_agent"])
 @patch("llama_index.callbacks.agentops.base.AOClient")
 async def test_agentops_event_handler_emits_llmevents(
     mock_ao_client: MagicMock, method: str, agent_runner_fixture: str, request
 ):
-    # Function calling agent doesn't support stream chat, skip these tests
-    if agent_runner_fixture == "mock_basic_function_calling_agent" and (
-        method == "stream_chat" or method == "astream_chat"
-    ):
-        pytest.skip("Stream not supported for function calling agent")
-
     agent_runner: AgentRunner = request.getfixturevalue(agent_runner_fixture)
 
     mock_ao_client_instance = MagicMock()
@@ -280,90 +167,16 @@ async def test_agentops_event_handler_emits_llmevents(
     else:
         await agent_runner.astream_chat(MOCK_AGENT_PROMPT)
 
-    # We expect one LLMEvent for the prompt, then one for the LLM response
+    # We expect one LLMEvent for the prompt and response
     calls_to_agentops = mock_ao_client_instance.record.call_args_list
-    assert len(calls_to_agentops) == 2
-    agent_start_chat_event: LLMEvent = calls_to_agentops[0][0][0]
-    agent_end_chat_event: LLMEvent = calls_to_agentops[1][0][0]
+    assert len(calls_to_agentops) == 1
+    agent_event: LLMEvent = calls_to_agentops[0][0][0]
 
-    expected_agent_prompt = messages_to_prompt([ChatMessage(content=MOCK_AGENT_PROMPT)])
-    expected_agent_completion = completion_to_prompt(MOCK_AGENT_RESPONSE)
-    assert agent_start_chat_event.prompt == expected_agent_prompt
-    assert not agent_start_chat_event.completion
-    assert agent_start_chat_event.model == MOCK_MODEL_NAME
-    assert agent_end_chat_event.prompt == expected_agent_prompt
-    assert agent_end_chat_event.completion == expected_agent_completion
-    assert agent_end_chat_event.model == MOCK_MODEL_NAME
-
-
-@pytest.mark.asyncio()
-@pytest.mark.parametrize("method", ["chat", "achat"])
-@patch("llama_index.callbacks.agentops.base.AOClient")
-async def test_agentops_event_handler_emits_toolevents(
-    mock_ao_client: MagicMock, method: str, mock_function_calling_agent: AgentRunner
-):
-    mock_ao_client_instance = MagicMock()
-    mock_ao_client.return_value = mock_ao_client_instance
-
-    # Initialize the AgentOps handler
-    AgentOpsHandler.init()
-
-    # Initiate a chat with the agent
-    if method == "chat":
-        mock_function_calling_agent.chat(MOCK_AGENT_PROMPT)
-    else:
-        await mock_function_calling_agent.achat(MOCK_AGENT_PROMPT)
-
-    # Expect event for user query, LLM response, then LLM tool call
-    calls_to_agentops = mock_ao_client_instance.record.call_args_list
-    assert len(calls_to_agentops) == 3
-    agent_start_chat_event: LLMEvent = calls_to_agentops[0][0][0]
-    agent_end_chat_event: LLMEvent = calls_to_agentops[1][0][0]
-    agent_tool_event: ToolEvent = calls_to_agentops[2][0][0]
-
-    expected_agent_prompt = messages_to_prompt([ChatMessage(content=MOCK_AGENT_PROMPT)])
-    expected_agent_completion = completion_to_prompt(MOCK_AGENT_RESPONSE)
-    expected_tool_event_name = MOCK_TOOL_NAME
-    assert agent_start_chat_event.prompt == expected_agent_prompt
-    assert not agent_start_chat_event.completion
-    assert agent_start_chat_event.model == MOCK_MODEL_NAME
-    assert agent_end_chat_event.prompt == expected_agent_prompt
-    assert agent_end_chat_event.completion == expected_agent_completion
-    assert agent_end_chat_event.model == MOCK_MODEL_NAME
-    assert agent_tool_event.name == expected_tool_event_name
-
-
-@pytest.mark.asyncio()
-@pytest.mark.parametrize("method", ["chat", "achat", "stream_chat", "astream_chat"])
-@patch("llama_index.callbacks.agentops.base.AOClient")
-async def test_agentops_event_handler_emits_errorevents(
-    mock_ao_client: MagicMock, method: str, mock_error_throwing_agent: AgentRunner
-):
-    mock_ao_client_instance = MagicMock()
-    mock_ao_client.return_value = mock_ao_client_instance
-
-    # Initialize the AgentOps handler
-    AgentOpsHandler.init()
-
-    # Initiate a chat with the agent
-    with pytest.raises(Exception):
-        if method == "chat":
-            mock_error_throwing_agent.chat(MOCK_AGENT_PROMPT)
-        elif method == "achat":
-            await mock_error_throwing_agent.achat(MOCK_AGENT_PROMPT)
-        elif method == "stream_chat":
-            mock_error_throwing_agent.stream_chat(MOCK_AGENT_PROMPT)
-        else:
-            await mock_error_throwing_agent.astream_chat(MOCK_AGENT_PROMPT)
-
-    # We expect one LLMEvent for the prompt, then an ErrorEvent for the exception thrown
-    calls_to_agentops = mock_ao_client_instance.record.call_args_list
-    assert len(calls_to_agentops) == 2
-    agent_start_chat_event: LLMEvent = calls_to_agentops[0][0][0]
-    agent_error_event: ErrorEvent = calls_to_agentops[1][0][0]
-
-    expected_agent_prompt = messages_to_prompt([ChatMessage(content=MOCK_AGENT_PROMPT)])
-    assert agent_start_chat_event.prompt == expected_agent_prompt
-    assert not agent_start_chat_event.completion
-    assert agent_start_chat_event.model == MOCK_MODEL_NAME
-    assert agent_error_event.details == MOCK_EXCEPTION_MESSAGE
+    expected_agent_prompt = [{"content": MOCK_AGENT_PROMPT, "role": MessageRole.USER}]
+    expected_agent_completion = {
+        "content": MOCK_AGENT_RESPONSE,
+        "role": MessageRole.USER,
+    }
+    assert agent_event.prompt == expected_agent_prompt
+    assert agent_event.model == MOCK_MODEL_NAME
+    assert agent_event.completion == expected_agent_completion

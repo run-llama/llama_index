@@ -1,4 +1,5 @@
 from unittest.mock import patch, MagicMock
+
 from llama_index.memory.mem0.base import Mem0Memory, Mem0Context
 from llama_index.core.memory.chat_memory_buffer import ChatMessage, MessageRole
 from llama_index.memory.mem0.utils import (
@@ -14,8 +15,8 @@ def test_mem0_memory_from_client():
     # Mock arguments for MemoryClient
     api_key = "test_api_key"
     host = "test_host"
-    organization = "test_org"
-    project = "test_project"
+    org_id = "test_org"
+    project_id = "test_project"
     search_msg_limit = 10  # Add this line
 
     # Patch MemoryClient
@@ -28,14 +29,14 @@ def test_mem0_memory_from_client():
             context=context,
             api_key=api_key,
             host=host,
-            organization=organization,
-            project=project,
+            org_id=org_id,
+            project_id=project_id,
             search_msg_limit=search_msg_limit,  # Add this line
         )
 
         # Assert that MemoryClient was called with the correct arguments
         MockMemoryClient.assert_called_once_with(
-            api_key=api_key, host=host, organization=organization, project=project
+            api_key=api_key, host=host, org_id=org_id, project_id=project_id
         )
 
         # Assert that the returned object is an instance of Mem0Memory
@@ -88,8 +89,8 @@ def test_mem0_memory_set():
     # Mock arguments for MemoryClient
     api_key = "test_api_key"
     host = "test_host"
-    organization = "test_org"
-    project = "test_project"
+    org_id = "test_org"
+    project_id = "test_project"
 
     # Patch MemoryClient
     with patch("llama_index.memory.mem0.base.MemoryClient") as MockMemoryClient:
@@ -101,8 +102,8 @@ def test_mem0_memory_set():
             context=context,
             api_key=api_key,
             host=host,
-            organization=organization,
-            project=project,
+            org_id=org_id,
+            project_id=project_id,
         )
 
         # Create a list of alternating user and assistant messages
@@ -155,8 +156,8 @@ def test_mem0_memory_get():
     # Mock arguments for MemoryClient
     api_key = "test_api_key"
     host = "test_host"
-    organization = "test_org"
-    project = "test_project"
+    org_id = "test_org"
+    project_id = "test_project"
 
     # Patch MemoryClient
     with patch("llama_index.memory.mem0.base.MemoryClient") as MockMemoryClient:
@@ -168,8 +169,8 @@ def test_mem0_memory_get():
             context=context,
             api_key=api_key,
             host=host,
-            organization=organization,
-            project=project,
+            org_id=org_id,
+            project_id=project_id,
         )
 
         # Set dummy chat history
@@ -240,8 +241,8 @@ def test_mem0_memory_put():
     # Mock arguments for MemoryClient
     api_key = "test_api_key"
     host = "test_host"
-    organization = "test_org"
-    project = "test_project"
+    org_id = "test_org"
+    project_id = "test_project"
 
     # Patch MemoryClient
     with patch("llama_index.memory.mem0.base.MemoryClient") as MockMemoryClient:
@@ -253,8 +254,8 @@ def test_mem0_memory_put():
             context=context,
             api_key=api_key,
             host=host,
-            organization=organization,
-            project=project,
+            org_id=org_id,
+            project_id=project_id,
         )
 
         # Create a test message

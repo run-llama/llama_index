@@ -29,12 +29,13 @@ license = "MIT"
 maintainers = ["thejessezhang"]
 name = "llama-index-readers-papers"
 readme = "README.md"
-version = "0.3.0"
+version = "0.3.2"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
 arxiv = "^2.1.0"
 llama-index-core = "^0.12.0"
+defusedxml = "^0.7.1"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

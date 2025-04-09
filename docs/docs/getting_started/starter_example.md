@@ -22,7 +22,7 @@ set OPENAI_API_KEY=XXXXX
 ```
 
 !!! tip
-    If you are using an OpenAI-Compatible API, you can use the `OpenAILike` LLM class. You can find more information in the [OpenAILike LLM](https://docs.llamaindex.ai/en/stable/api_reference/llms/openai_like/#llama_index.llms.openai_like.OpenAILike) integration.
+    If you are using an OpenAI-Compatible API, you can use the `OpenAILike` LLM class. You can find more information in the [OpenAILike LLM](https://docs.llamaindex.ai/en/stable/api_reference/llms/openai_like/) integration and [OpenAILike Embeddings](https://docs.llamaindex.ai/en/stable/api_reference/embeddings/openai_like/) integration.
 
 ## Basic Agent Example
 
@@ -30,7 +30,7 @@ Let's start with a simple example using an agent that can perform basic multipli
 
 ```python
 import asyncio
-from llama_index.core.agent.workflow import AgentWorkflow
+from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.llms.openai import OpenAI
 
 
@@ -41,8 +41,8 @@ def multiply(a: float, b: float) -> float:
 
 
 # Create an agent workflow with our calculator tool
-agent = AgentWorkflow.from_tools_or_functions(
-    [multiply],
+agent = FunctionAgent(
+    tools=[multiply],
     llm=OpenAI(model="gpt-4o-mini"),
     system_prompt="You are a helpful assistant that can multiply two numbers.",
 )
@@ -111,7 +111,7 @@ Our modified `starter.py` should look like this:
 
 ```python
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
-from llama_index.core.agent.workflow import AgentWorkflow
+from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.llms.openai import OpenAI
 import asyncio
 import os
@@ -134,8 +134,8 @@ async def search_documents(query: str) -> str:
 
 
 # Create an enhanced workflow with both tools
-agent = AgentWorkflow.from_tools_or_functions(
-    [multiply, search_documents],
+agent = FunctionAgent(
+    tools=[multiply, search_documents],
     llm=OpenAI(model="gpt-4o-mini"),
     system_prompt="""You are a helpful assistant that can perform calculations
     and search through documents to answer questions.""",

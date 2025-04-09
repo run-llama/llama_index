@@ -73,6 +73,8 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
             Defaults to None.
         num_workers (int, optional): The number of workers to use for async embedding calls.
             Defaults to None.
+        show_progress_bar (bool, optional): Whether to show a progress bar.
+            Defaults to False.
         **model_kwargs: Other model kwargs to use
         tokenizer_name (Optional[str], optional): "Deprecated"
         pooling (str, optional): "Deprecated"
@@ -110,7 +112,9 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
     cache_folder: Optional[str] = Field(
         description="Cache folder for Hugging Face files.", default=None
     )
-
+    show_progress_bar: bool = Field(
+        description="Whether to show a progress bar.", default=False
+    )
     _model: SentenceTransformer = PrivateAttr()
     _device: str = PrivateAttr()
     _parallel_process: bool = PrivateAttr()
@@ -134,6 +138,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         parallel_process: bool = False,
         target_devices: Optional[List[str]] = None,
+        show_progress_bar: bool = False,
         **model_kwargs,
     ):
         device = device or infer_torch_device()
@@ -178,6 +183,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
             normalize=normalize,
             query_instruction=query_instruction,
             text_instruction=text_instruction,
+            show_progress_bar=show_progress_bar,
         )
         self._device = device
         self._model = model
@@ -222,6 +228,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
                     batch_size=self.embed_batch_size,
                     prompt_name=prompt_name,
                     normalize_embeddings=self.normalize,
+                    show_progress_bar=self.show_progress_bar,
                 )
                 self._model.stop_multi_process_pool(pool=pool)
             else:
@@ -230,6 +237,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
                     batch_size=self.embed_batch_size,
                     prompt_name=prompt_name,
                     normalize_embeddings=self.normalize,
+                    show_progress_bar=self.show_progress_bar,
                 )
             return emb.tolist()
         except Exception as e:

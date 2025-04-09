@@ -33,14 +33,14 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
-from llama_index.core.program.utils import process_streaming_objects
+from llama_index.core.llms.llm import ToolSelection, Model
+from llama_index.core.program.utils import process_streaming_objects, FlexibleModel
 from llama_index.core.prompts import PromptTemplate
-from llama_index.core.tools import ToolSelection
 from llama_index.core.types import PydanticProgramMode
 
 if TYPE_CHECKING:
@@ -533,11 +533,11 @@ class Ollama(FunctionCallingLLM):
     @dispatcher.span
     def structured_predict(
         self,
-        output_cls: Type[BaseModel],
+        output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> BaseModel:
+    ) -> Model:
         if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
             llm_kwargs = llm_kwargs or {}
             llm_kwargs["format"] = output_cls.model_json_schema()
@@ -554,11 +554,11 @@ class Ollama(FunctionCallingLLM):
     @dispatcher.span
     async def astructured_predict(
         self,
-        output_cls: Type[BaseModel],
+        output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> BaseModel:
+    ) -> Model:
         if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
             llm_kwargs = llm_kwargs or {}
             llm_kwargs["format"] = output_cls.model_json_schema()
@@ -575,11 +575,11 @@ class Ollama(FunctionCallingLLM):
     @dispatcher.span
     def stream_structured_predict(
         self,
-        output_cls: Type[BaseModel],
+        output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> Generator[Union[BaseModel, List[BaseModel]], None, None]:
+    ) -> Generator[Union[Model, FlexibleModel], None, None]:
         """Stream structured predictions as they are generated.
 
         Args:
@@ -594,11 +594,11 @@ class Ollama(FunctionCallingLLM):
         if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
 
             def gen(
-                output_cls: Type[BaseModel],
+                output_cls: Type[Model],
                 prompt: PromptTemplate,
                 llm_kwargs: Dict[str, Any],
                 prompt_args: Dict[str, Any],
-            ) -> Generator[Union[BaseModel, List[BaseModel]], None, None]:
+            ) -> Generator[Union[Model, FlexibleModel], None, None]:
                 llm_kwargs = llm_kwargs or {}
                 llm_kwargs["format"] = output_cls.model_json_schema()
 
@@ -631,20 +631,20 @@ class Ollama(FunctionCallingLLM):
     @dispatcher.span
     async def astream_structured_predict(
         self,
-        output_cls: Type[BaseModel],
+        output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> AsyncGenerator[Union[BaseModel, List[BaseModel]], None]:
+    ) -> AsyncGenerator[Union[Model, FlexibleModel], None]:
         """Async version of stream_structured_predict."""
         if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
 
             async def gen(
-                output_cls: Type[BaseModel],
+                output_cls: Type[Model],
                 prompt: PromptTemplate,
                 llm_kwargs: Dict[str, Any],
                 prompt_args: Dict[str, Any],
-            ) -> AsyncGenerator[Union[BaseModel, List[BaseModel]], None]:
+            ) -> AsyncGenerator[Union[Model, FlexibleModel], None]:
                 llm_kwargs = llm_kwargs or {}
                 llm_kwargs["format"] = output_cls.model_json_schema()
 

@@ -1,5 +1,5 @@
 import uuid
-from typing import List, Sequence, cast
+from typing import List, Sequence, Optional, cast
 
 from llama_index.core.agent.react.formatter import ReActChatFormatter
 from llama_index.core.agent.react.output_parser import ReActOutputParser
@@ -10,6 +10,7 @@ from llama_index.core.agent.react.types import (
     ResponseReasoningStep,
 )
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
+from llama_index.core.agent.workflow.single_agent_workflow import SingleAgentRunnerMixin
 from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
     AgentOutput,
@@ -27,12 +28,13 @@ from llama_index.core.tools import AsyncBaseTool
 from llama_index.core.workflow import Context
 
 
-def default_formatter() -> ReActChatFormatter:
+def default_formatter(fields: Optional[dict] = None) -> ReActChatFormatter:
     """Sets up a default formatter so that the proper react header is set."""
-    return ReActChatFormatter.from_defaults(context="some context")
+    fields = fields or {}
+    return ReActChatFormatter.from_defaults(context=fields.get("system_prompt", None))
 
 
-class ReActAgent(BaseWorkflowAgent):
+class ReActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
     """React agent implementation."""
 
     reasoning_key: str = "current_reasoning"
