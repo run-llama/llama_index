@@ -265,6 +265,9 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 "handoff_output_prompt", self.handoff_output_prompt.get_template()
             )
 
+        # always set to false initially
+        await ctx.set("formatted_input_with_state", False)
+
     async def _call_tool(
         self,
         ctx: Context,
@@ -343,7 +346,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         """Main agent handling logic."""
         current_agent_name = ev.current_agent_name
         agent = self.agents[current_agent_name]
-        llm_input = ev.input
+        llm_input = [*ev.input]
 
         if agent.system_prompt:
             llm_input = [
@@ -352,12 +355,16 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             ]
 
         state = await ctx.get("state", default=None)
-        if state:
+        formatted_input_with_state = await ctx.get(
+            "formatted_input_with_state", default=False
+        )
+        if state and not formatted_input_with_state:
             # update last message with current state
             for block in llm_input[-1].blocks[::-1]:
                 if isinstance(block, TextBlock):
                     block.text = self.state_prompt.format(state=state, msg=block.text)
                     break
+            await ctx.set("formatted_input_with_state", True)
 
         return AgentSetup(
             input=llm_input,
