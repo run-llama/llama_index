@@ -19,7 +19,7 @@ from llama_index.retrievers.galaxia import GalaxiaRetriever
 from llama_index.core.schema import QueryBundle
 
 retriever = GalaxiaRetriever(
-    api_url="https://beta.api.smabbler.com",
+    api_url="beta.api.smabbler.com",
     api_key="<key>",
     knowledge_base_id="<knowledge_base_id>",
 )
