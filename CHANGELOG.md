@@ -9,6 +9,10 @@
 - fix: 🐛 Replace broken and discontinued `tree_sitter_languages` with `tree_sitter_language_pack` (#18387)
 - Fix the costly pop(0) in SentenceSplitter when parsing numerous texts (#18359)
 
+### `llama-index-embeddings-huggingface` [0.5.3]
+
+- add option to toggle progress bars in HuggingFaceEmbedding (#18404)
+
 ### `llama-index-embeddings-openai-like` [0.1.0]
 
 - Add OpenAILikeEmbedding, update docs (#18364)
@@ -66,6 +70,10 @@
 ### `llama-index-vector-stores-azureaisearch` [0.3.7]
 
 - chore: add title and keywords to semantic config (#18354)
+
+### `llama-index-vector-stores-lancedb` [0.3.2]
+
+- fix overwrite vs append logic in LanceDB (#18405)
 
 ### `llama-index-utils-workflow` [0.3.1]
 

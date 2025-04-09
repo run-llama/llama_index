@@ -1470,6 +1470,7 @@ nav:
           - ./api_reference/readers/trello.md
           - ./api_reference/readers/twitter.md
           - ./api_reference/readers/txtai.md
+          - ./api_reference/readers/uniprot.md
           - ./api_reference/readers/upstage.md
           - ./api_reference/readers/weather.md
           - ./api_reference/readers/weaviate.md
@@ -1499,6 +1500,7 @@ nav:
           - ./api_reference/retrievers/bedrock.md
           - ./api_reference/retrievers/bm25.md
           - ./api_reference/retrievers/duckdb_retriever.md
+          - ./api_reference/retrievers/galaxia.md
           - ./api_reference/retrievers/index.md
           - ./api_reference/retrievers/kendra.md
           - ./api_reference/retrievers/keyword.md
@@ -2409,6 +2411,8 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-asi
             - ../llama-index-integrations/embeddings/llama-index-embeddings-openai-like
             - ../llama-index-integrations/readers/llama-index-readers-myscale
+            - ../llama-index-integrations/retrievers/llama-index-retrievers-galaxia
+            - ../llama-index-integrations/readers/llama-index-readers-uniprot
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
