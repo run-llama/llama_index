@@ -113,7 +113,7 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
         metric: Optional[str] = None,
         log_level: int = logging.WARN,
         properties: Optional[Dict] = None,
-        overwrite: bool = False,
+        overwrite: bool = True,
         **kwargs: Any,
     ) -> None:
         # ApertureDB imports
@@ -269,15 +269,6 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
             nodes: List[TextNode] List of text nodes
             kwargs: Additional arguments to pass to add
         """
-        ## Overwrite the existing descriptor set
-        if self._overwrite:
-            try:
-                self.delete()
-            except Exception as e:
-                self.logger.exception(
-                    "Failed to overwrite", exc_info=True, stack_info=True
-                )
-
         ids = []
         data = []
 
@@ -353,11 +344,20 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
 
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=similarities)
 
-    def delete(self) -> Optional[bool]:
+    def delete_(self) -> Optional[bool]:
         """
         Delete embeddings (if present) from the vectorstore by vector_store name.
 
         Returns:
             True if the deletion was successful, False otherwise
         """
-        return self._utils.remove_descriptorset(self._descriptor_set)
+        query = [
+            {
+                "DeleteDescriptor": {
+                    "set": self._descriptor_set,
+                }
+            }
+        ]
+
+        result, _ = self._utils.execute(query)
+        return result
