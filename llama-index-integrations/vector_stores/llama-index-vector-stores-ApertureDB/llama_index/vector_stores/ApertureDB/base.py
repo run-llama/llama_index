@@ -5,17 +5,21 @@ ApertureDB vector store index.
 
 from __future__ import annotations
 
+import json
 import logging
+import numpy as np
 
 from pydantic import PrivateAttr
 from typing_extensions import override
 from llama_index.core.schema import TextNode
 from typing import Any, Dict, List, Optional
-from llama_index.core.vector_stores import (VectorStoreQuery, VectorStoreQueryResult,)
-from llama_index.core.vector_stores.types import BasePydanticVectorStore
+from llama_index.core.vector_stores.types import (
+    BasePydanticVectorStore,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
+)
 
-import json
-import numpy as np
+
 from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
     metadata_dict_to_node,
@@ -23,9 +27,10 @@ from llama_index.core.vector_stores.utils import (
 from llama_index.core.schema import MetadataMode
 from aperturedb.ParallelLoader import ParallelLoader
 
+# Default descriptorset name
 DESCRIPTOR_SET = "llamaindex"
 
-## Defaults as defined in the Langchain-ApertureDB integration
+## Defaults as defined in the ApertureDB SDK
 ENGINE = "HNSW"
 METRIC = "CS"
 
@@ -35,8 +40,8 @@ BATCHSIZE = 1000
 PROPERTY_PREFIX = "lm_"
 
 TEXT_PROPERTY = "text"  # Property name for the text
-
 UNIQUEID_PROPERTY = "uniqueid"  # Property name for the unique id
+
 
 class ApertureDBVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
@@ -46,37 +51,71 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
     _client = PrivateAttr()
     _execute_query = PrivateAttr()
 
-    """ Constructor to instantiate ApertureDB vectorstore object
+    """
+    ApertureDB vectorstore.
+
+    This VectorStore uses DescriptorSet to store the embeddings and metadata.
+
+    Query is run with FindDescriptor to find k most similar embeddings.
 
     Args:
-            embeddings (Embeddings): Embedding function.
+        embeddings (Embeddings): Embedding function.
 
-            descriptor_set (str, optional): Descriptor set name. Defaults to "llamaindex".
+        descriptor_set (str, optional): Descriptor set name. Defaults to "llamaindex".
 
-            dimensions (Optional[int], optional):   Number of dimensions of the embeddings.
-                                                    Defaults to None.
-            engine (str, optional): Engine to use.
-                                    Defaults to "HNSW" for new descriptorsets.
+        dimensions (Optional[int], optional):   Number of dimensions of the embeddings.
+            Defaults to None.
 
-            metric (str, optional): Metric to use. Defaults to "CS" for new descriptorsets.
+        engine (str, optional): Engine to use.
+            Defaults to "HNSW" for new descriptorsets.
 
-            log_level (int, optional): Logging level. Defaults to logging.WARN.
-            overwrite (bool, optional): Default set to True. Will overwrite existing descriptor set.
+        metric (str, optional): Metric to use. Defaults to "CS" for new descriptorsets.
 
+        log_level (int, optional): Logging level. Defaults to logging.WARN.
+        overwrite (bool, optional): Default set to True. Will overwrite existing descriptor set.
+    Example:
+
+        ```python
+        # Get the data for running the example
+        # mkdir -p 'data/paul_graham/'
+        # wget 'https://raw.githubusercontent.com/run-llama/llama_index/main/docs/docs/examples/data/paul_graham/paul_graham_essay.txt' -O 'data/paul_graham/paul_graham_essay.txt'
+
+        from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+        from llama_index.core import StorageContext
+        from llama_index.vector_stores.ApertureDB import ApertureDBVectorStore
+
+        adb_client = ApertureDBVectorStore(dimensions=1536)
+        storage_context = StorageContext.from_defaults(vector_store=adb_client)
+
+
+        documents = SimpleDirectoryReader("./data/paul_graham/").load_data()
+        index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
+
+        query_engine = index.as_query_engine()
+        query_str = [
+            "What did the author do growing up?",
+            "What did the author do after his time at Viaweb?"
+        ]
+        for qs in query_str:
+            response = query_engine.query(qs)
+            print(f"{qs=}\r\n")
+            print(response)
+        ```
     """
-    @override
-    def __init__(self,
-                    descriptor_set: str = DESCRIPTOR_SET,
-                    embeddings: Any = None,
-                    dimensions: Optional[int] = None,
-                    engine: Optional[str] = None,
-                    metric: Optional[str] = None,
-                    log_level: int = logging.WARN,
-                    properties: Optional[Dict] = None,
-                    overwrite:bool = True,
-                    **kwargs: Any,
-            ) -> None:
 
+    @override
+    def __init__(
+        self,
+        descriptor_set: str = DESCRIPTOR_SET,
+        embeddings: Any = None,
+        dimensions: Optional[int] = None,
+        engine: Optional[str] = None,
+        metric: Optional[str] = None,
+        log_level: int = logging.WARN,
+        properties: Optional[Dict] = None,
+        overwrite: bool = True,
+        **kwargs: Any,
+    ) -> None:
         # ApertureDB imports
         try:
             from aperturedb.Utils import Utils
@@ -86,7 +125,7 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
         except ImportError:
             raise ImportError(
                 "ApertureDB is not installed. Please install it using "
-                "'pip install aperturedb'"
+                "'pip install --upgrade aperturedb'"
             )
 
         super().__init__(**kwargs)
@@ -98,7 +137,7 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
         self._metric = metric
         self._properties = properties
         self._overwrite = overwrite
-        #TODO: Either standardize this or remove it.
+        # TODO: Either standardize this or remove it.
         self._embedding_function = embeddings
 
         ## Returns a client for the database
@@ -113,11 +152,11 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
             self.logger.exception("Failed to connect to ApertureDB")
             raise
 
-        self._find_or_add_descriptor_set()      ## Call to find or add a descriptor set
+        self._find_or_add_descriptor_set()  ## Call to find or add a descriptor set
 
     @classmethod
     def class_name(cls) -> str:
-        return "ApertureDB"
+        return "ApertureDBVectorStore"
 
     @property
     def client(self) -> Any:
@@ -125,8 +164,10 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
         return self._client
 
     def _find_or_add_descriptor_set(self) -> None:
+        """
+        Checks if the descriptor set exists, if not, creates it.
+        """
         descriptor_set = self._descriptor_set
-        """Checks if the descriptor set exists, if not, creates it"""
         find_ds_query = [
             {
                 "FindDescriptorSet": {
@@ -138,7 +179,9 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
                 }
             }
         ]
-        _, response, _ = self._execute_query(client=self._client, query=find_ds_query, blobs=[])
+        _, response, _ = self._execute_query(
+            client=self._client, query=find_ds_query, blobs=[]
+        )
         n_entities = (
             len(response[0]["FindDescriptorSet"]["entities"])
             if "entities" in response[0]["FindDescriptorSet"]
@@ -188,8 +231,12 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
             if self._metric is None:
                 self._metric = METRIC
             if self._dimensions is None:
-                assert self._embedding_function is not None, "Dimensions or embedding function must be provided"
-                self._dimensions = len(self._embedding_function.get_text_embedding("test"))   ## Very well written
+                assert (
+                    self._embedding_function is not None
+                ), "Dimensions or embedding function must be provided"
+                self._dimensions = len(
+                    self._embedding_function.get_text_embedding("test")
+                )
 
             properties = (
                 {PROPERTY_PREFIX + k: v for k, v in self._properties.items()}
@@ -210,50 +257,55 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
             self._utils.create_entity_index("_DescriptorSet", "_name")
             self._utils.create_entity_index("_Descriptor", UNIQUEID_PROPERTY)
 
-    def add(self, nodes: List[TextNode]) -> List[str]:
+    def add(
+        self,
+        nodes: List[TextNode],
+        **kwargs: Any,
+    ) -> List[str]:
+        """
+        Adds a list of nodes as Descriptors to the Descriptorset.
 
-        """ Adds a list of Llamaindex nodes to the vector store. Return the ids
         Args:
-            texts: List of text strings
-            embedding: Embeddings object as for constructing the vectorstore
-            metadatas: Optional list of metadatas associated with the texts.
-            kwargs: Additional arguments to pass to the constructor
+            nodes: List[TextNode] List of text nodes
+            kwargs: Additional arguments to pass to add
         """
         ## Overwrite the existing descriptor set
-        if self._overwrite == True:
+        if self._overwrite:
             try:
                 self.delete()
-            except:
-                self.logger.exception("Failed to overwrite")
+            except Exception as e:
+                self.logger.exception(
+                    "Failed to overwrite", exc_info=True, stack_info=True
+                )
 
         ids = []
         data = []
 
         for node in nodes:
+            metadata = node_to_metadata_dict(
+                node, remove_text=False, flat_metadata=self.flat_metadata
+            )
 
-            metadata = node_to_metadata_dict(node,
-                                            remove_text=False,
-                                            flat_metadata=self.flat_metadata)
-
-            properties = {  "uniqueid": node.node_id,
-                            "text": node.get_content(metadata_mode=MetadataMode.NONE) or "",
-                            "metadata": json.dumps(metadata),
-                    }
+            properties = {
+                UNIQUEID_PROPERTY: node.node_id,
+                "text": node.get_content(metadata_mode=MetadataMode.NONE) or "",
+                "metadata": json.dumps(metadata),
+            }
             for k, v in metadata.items():
                 properties[PROPERTY_PREFIX + k] = v
 
             command = {
-                        "AddDescriptor": {
-                            "set": self._descriptor_set,
-                            "properties": properties,   ## I can add nodes/metadata here.
-                            "if_not_found": {
-                                "uniqueid": ["==", node.node_id]
-                            }
-                        }
-                    }
+                "AddDescriptor": {
+                    "set": self._descriptor_set,
+                    "properties": properties,  ## Can add arbitrary key value pairs here.
+                    "if_not_found": {UNIQUEID_PROPERTY: ["==", node.node_id]},
+                }
+            }
 
             query = [command]
-            blobs = [np.array(node.embedding, dtype=np.float32).tobytes()]   ## And convert the already calculated embeddings into blobs here
+            blobs = [
+                np.array(node.embedding, dtype=np.float32).tobytes()
+            ]  ## And convert the already calculated embeddings into blobs here
             data.append((query, blobs))
             ids.append(node.node_id)
 
@@ -266,30 +318,28 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
         self._utils.remove_descriptorset(descriptor_set_name)
 
     def get_descriptor_set(self) -> List[str]:
-        """Return a list of existing descriptor sets in the Apeture database"""
+        """
+        Return a list of existing descriptor sets in ApertureDB.
+        """
         return self._utils.get_descriptorset_list()
 
-    def get(self, text_id: str) -> List[float]:
-        """Get embedding."""
-        # return self.node_dict[text_id]
-        pass
-
     def query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
-
-        """Return nodes as response."""
+        """
+        Return nodes as response.
+        """
         ## VectorStoreQuery has query_embedding, similarity_top_k and mode
-        self._descriptors.find_similar(set=self._descriptor_set,
-                                 vector=query.query_embedding,
-                                 k_neighbors=query.similarity_top_k,
-                                 distances=True,
-                                 )
+        self._descriptors.find_similar(
+            set=self._descriptor_set,
+            vector=query.query_embedding,
+            k_neighbors=query.similarity_top_k,
+            distances=True,
+        )
 
         nodes = []
         ids: List[str] = []
         similarities: List[float] = []
 
         for d in self._descriptors:
-
             metadata = json.loads(d["metadata"])
             node = metadata_dict_to_node(metadata)
 
@@ -301,26 +351,13 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
             ids.append(d.get("id"))
             similarities.append(d["_distance"])
 
-        return VectorStoreQueryResult(nodes = nodes, ids = ids, similarities = similarities)
-
-    def mmr_query(self, query:VectorStoreQuery) -> VectorStoreQueryResult:
-        pass
+        return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=similarities)
 
     def delete(self) -> Optional[bool]:
-
-        """Delete embeddings (if present) from the vectorstore by vector_store name.
+        """
+        Delete embeddings (if present) from the vectorstore by vector_store name.
 
         Returns:
             True if the deletion was successful, False otherwise
         """
-
-        query = [
-            {
-                "DeleteDescriptor": {
-                    "set": self._descriptor_set,
-                }
-            }
-        ]
-
-        result, _ = self._utils.execute(query)
-        return result
+        return self._utils.remove_descriptorset(self._descriptor_set)
