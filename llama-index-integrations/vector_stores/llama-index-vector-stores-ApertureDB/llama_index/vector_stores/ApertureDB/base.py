@@ -113,7 +113,7 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
         metric: Optional[str] = None,
         log_level: int = logging.WARN,
         properties: Optional[Dict] = None,
-        overwrite: bool = True,
+        overwrite: bool = False,
         **kwargs: Any,
     ) -> None:
         # ApertureDB imports
