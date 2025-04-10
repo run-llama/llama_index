@@ -387,6 +387,7 @@ class OpenAIResponses(FunctionCallingLLM):
         }
 
     def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
+        initial_tools = self.built_in_tools or []
         model_kwargs = {
             "model": self.model,
             "include": self.include,
@@ -396,7 +397,7 @@ class OpenAIResponses(FunctionCallingLLM):
             "previous_response_id": self._previous_response_id,
             "store": self.store,
             "temperature": self.temperature,
-            "tools": self.built_in_tools,
+            "tools": [*initial_tools, *kwargs.pop("tools", [])],
             "top_p": self.top_p,
             "truncation": self.truncation,
             "user": self.user,
@@ -405,13 +406,6 @@ class OpenAIResponses(FunctionCallingLLM):
         if self.model in O1_MODELS and self.reasoning_effort is not None:
             # O1 models support reasoning_effort of low, medium, high
             model_kwargs["reasoning_effort"] = {"effort": self.reasoning_effort}
-
-        # add tools or extend openai tools
-        if "tools" in kwargs:
-            if isinstance(model_kwargs["tools"], list):
-                model_kwargs["tools"].extend(kwargs.pop("tools"))
-            else:
-                model_kwargs["tools"] = kwargs.pop("tools")
 
         # priority is class args > additional_kwargs > runtime args
         model_kwargs.update(self.additional_kwargs)
