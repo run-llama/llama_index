@@ -179,7 +179,7 @@ class TestWasonxLLMInference:
                 }
             },
             TEST_CONTEXT_WINDOW,
-            TEST_MAX_SEQUENCE_LENGTH,
+            TEST_CONTEXT_WINDOW,
             id="max_sequence_length_with_context_window",
         ),
         pytest.param(

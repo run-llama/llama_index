@@ -93,6 +93,8 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 - [Lantern](../../examples/vector_stores/LanternIndexDemo.ipynb)
 - [Metal](../../examples/vector_stores/MetalIndexDemo.ipynb)
 - [Milvus](../../examples/vector_stores/MilvusIndexDemo.ipynb)
+- [Milvus Async API](../../examples/vector_stores/MilvusAsyncAPIDemo.ipynb)
+- [Milvus Full-Text Search](../../examples/vector_stores/MilvusFullTextSearchDemo.ipynb)
 - [Milvus Hybrid Search](../../examples/vector_stores/MilvusHybridIndexDemo.ipynb)
 - [MyScale](../../examples/vector_stores/MyScaleIndexDemo.ipynb)
 - [ElasticSearch](../../examples/vector_stores/ElasticsearchIndexDemo.ipynb)

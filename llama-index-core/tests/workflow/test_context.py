@@ -1,12 +1,19 @@
 import asyncio
 import json
-from typing import Optional, Union
+import sys
+from typing import List, Optional, Union
 from unittest import mock
 
 import pytest
-from llama_index.core.workflow.decorators import step
-from llama_index.core.workflow.errors import WorkflowRuntimeError
-from llama_index.core.workflow.events import Event, StartEvent, StopEvent
+from llama_index.core.workflow.decorators import StepConfig, step
+from llama_index.core.workflow.errors import ContextSerdeError, WorkflowRuntimeError
+from llama_index.core.workflow.events import (
+    Event,
+    HumanResponseEvent,
+    InputRequiredEvent,
+    StartEvent,
+    StopEvent,
+)
 from llama_index.core.workflow.workflow import (
     Context,
     Workflow,
@@ -85,7 +92,15 @@ def test_send_event_to_non_existent_step(ctx):
 
 
 def test_send_event_to_wrong_step(ctx):
-    ctx._workflow._get_steps = mock.MagicMock(return_value={"step": mock.MagicMock()})
+    ctx._step_configs["step"] = StepConfig(  # type: ignore[attr-defined]
+        accepted_events=[],
+        event_name="test_event",
+        return_types=[],
+        context_parameter="",
+        num_workers=99,
+        requested_services=[],
+        retry_policy=None,
+    )
 
     with pytest.raises(
         WorkflowRuntimeError,
@@ -94,20 +109,22 @@ def test_send_event_to_wrong_step(ctx):
         ctx.send_event(Event(), "step")
 
 
-def test_send_event_to_step(ctx):
+def test_send_event_to_step(workflow):
     step2 = mock.MagicMock()
     step2.__step_config.accepted_events = [Event]
 
-    ctx._workflow._get_steps = mock.MagicMock(
+    workflow._get_steps = mock.MagicMock(
         return_value={"step1": mock.MagicMock(), "step2": step2}
     )
+
+    ctx = Context(workflow=workflow)
     ctx._queues = {"step1": mock.MagicMock(), "step2": mock.MagicMock()}
 
     ev = Event(foo="bar")
     ctx.send_event(ev, "step2")
 
-    ctx._queues["step1"].put_nowait.assert_not_called()
-    ctx._queues["step2"].put_nowait.assert_called_with(ev)
+    ctx._queues["step1"].put_nowait.assert_not_called()  # type: ignore
+    ctx._queues["step2"].put_nowait.assert_called_with(ev)  # type: ignore
 
 
 def test_get_result(ctx):
@@ -140,6 +157,10 @@ async def test_empty_inprogress_when_workflow_done(workflow):
 
 @pytest.mark.asyncio()
 async def test_wait_for_event(ctx):
+    # skip test if python version is 3.9 or lower
+    if sys.version_info < (3, 10):
+        pytest.skip("Skipping test for Python 3.9 or lower")
+
     wait_job = asyncio.create_task(ctx.wait_for_event(Event))
     await asyncio.sleep(0.01)
     ctx.send_event(Event(msg="foo"))
@@ -149,7 +170,13 @@ async def test_wait_for_event(ctx):
 
 @pytest.mark.asyncio()
 async def test_wait_for_event_with_requirements(ctx):
-    wait_job = asyncio.create_task(ctx.wait_for_event(Event, {"msg": "foo"}))
+    # skip test if python version is 3.9 or lower
+    if sys.version_info < (3, 10):
+        pytest.skip("Skipping test for Python 3.9 or lower")
+
+    wait_job = asyncio.create_task(
+        ctx.wait_for_event(Event, requirements={"msg": "foo"})
+    )
     await asyncio.sleep(0.01)
     ctx.send_event(Event(msg="bar"))
     ctx.send_event(Event(msg="foo"))
@@ -176,3 +203,145 @@ async def test_wait_for_event_in_workflow():
 
     result = await handler
     assert result == "bar"
+
+
+@pytest.mark.asyncio()
+async def test_prompt_and_wait(ctx):
+    prompt_id = "test_prompt_and_wait"
+    prompt_event = InputRequiredEvent(prefix="test_prompt_and_wait")
+    expected_event = HumanResponseEvent
+    requirements = {"waiter_id": "test_prompt_and_wait"}
+    timeout = 10
+
+    waiting_task = asyncio.create_task(
+        ctx.wait_for_event(
+            expected_event,
+            waiter_id=prompt_id,
+            waiter_event=prompt_event,
+            timeout=timeout,
+            requirements=requirements,
+        )
+    )
+    await asyncio.sleep(0.01)
+    ctx.send_event(HumanResponseEvent(response="foo", waiter_id="test_prompt_and_wait"))
+
+    result = await waiting_task
+    assert result.response == "foo"
+
+
+class Waiter1(Event):
+    msg: str
+
+
+class Waiter2(Event):
+    msg: str
+
+
+class ResultEvent(Event):
+    result: str
+
+
+class WaitingWorkflow(Workflow):
+    @step
+    async def spawn_waiters(
+        self, ctx: Context, ev: StartEvent
+    ) -> Union[Waiter1, Waiter2]:
+        ctx.send_event(Waiter1(msg="foo"))
+        ctx.send_event(Waiter2(msg="bar"))
+
+    @step
+    async def waiter_one(self, ctx: Context, ev: Waiter1) -> ResultEvent:
+        ctx.write_event_to_stream(InputRequiredEvent(prefix="waiter_one"))
+
+        ev: HumanResponseEvent = await ctx.wait_for_event(
+            HumanResponseEvent, {"waiter_id": "waiter_one"}
+        )
+        return ResultEvent(result=ev.response)
+
+    @step
+    async def waiter_two(self, ctx: Context, ev: Waiter2) -> ResultEvent:
+        ctx.write_event_to_stream(InputRequiredEvent(prefix="waiter_two"))
+
+        ev: HumanResponseEvent = await ctx.wait_for_event(
+            HumanResponseEvent, {"waiter_id": "waiter_two"}
+        )
+        return ResultEvent(result=ev.response)
+
+    @step
+    async def collect_waiters(self, ctx: Context, ev: ResultEvent) -> StopEvent:
+        events: Optional[List[ResultEvent]] = ctx.collect_events(
+            ev, [ResultEvent, ResultEvent]
+        )
+        if events is None:
+            return None
+
+        return StopEvent(result=[e.result for e in events])
+
+
+@pytest.mark.asyncio()
+async def test_wait_for_multiple_events_in_workflow():
+    workflow = WaitingWorkflow()
+    handler = workflow.run()
+    async for ev in handler.stream_events():
+        if isinstance(ev, InputRequiredEvent) and ev.prefix == "waiter_one":
+            handler.ctx.send_event(
+                HumanResponseEvent(response="foo", waiter_id="waiter_one")
+            )
+        elif isinstance(ev, InputRequiredEvent) and ev.prefix == "waiter_two":
+            handler.ctx.send_event(
+                HumanResponseEvent(response="bar", waiter_id="waiter_two")
+            )
+
+    result = await handler
+    assert result == ["foo", "bar"]
+
+    # serialize and resume
+    ctx_dict = handler.ctx.to_dict()
+    ctx = Context.from_dict(workflow, ctx_dict)
+    handler = workflow.run(ctx=ctx)
+    async for ev in handler.stream_events():
+        if isinstance(ev, InputRequiredEvent) and ev.prefix == "waiter_one":
+            handler.ctx.send_event(
+                HumanResponseEvent(response="fizz", waiter_id="waiter_one")
+            )
+        elif isinstance(ev, InputRequiredEvent) and ev.prefix == "waiter_two":
+            handler.ctx.send_event(
+                HumanResponseEvent(response="buzz", waiter_id="waiter_two")
+            )
+
+    result = await handler
+    assert result == ["fizz", "buzz"]
+
+
+def test_get_holding_events(ctx):
+    ctx._step_events_holding = None
+    assert ctx.get_holding_events() == []
+
+
+@pytest.mark.asyncio()
+async def test_clear(ctx):
+    await ctx.set("test_key", 42)
+    ctx.clear()
+    res = await ctx.get("test_key", default=None)
+    assert res is None
+
+
+def test_serialization_roundtrip(ctx, workflow):
+    assert Context.from_dict(workflow, ctx.to_dict())
+
+
+def test_old_serialization(ctx, workflow):
+    old_payload = {
+        "globals": {},
+        "streaming_queue": "[]",
+        "queues": {"test_id": "[]"},
+        "stepwise": False,
+        "events_buffer": {},
+        "in_progress": {},
+        "accepted_events": [],
+        "broker_log": [],
+        "waiter_id": "test_id",
+        "is_running": False,
+    }
+    with pytest.raises(ContextSerdeError):
+        Context.from_dict(workflow, old_payload)

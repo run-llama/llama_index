@@ -1,6 +1,7 @@
 from typing import Any, List
 
 import pytest
+from llama_index.core.agent.workflow import AgentInput
 from llama_index.core.agent.workflow.function_agent import FunctionAgent
 from llama_index.core.agent.workflow.multi_agent_workflow import AgentWorkflow
 from llama_index.core.agent.workflow.react_agent import ReActAgent
@@ -14,7 +15,7 @@ from llama_index.core.llms import (
 )
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.tools import FunctionTool, ToolSelection
-from llama_index.core.workflow import WorkflowRuntimeError
+from llama_index.core.workflow import Context, WorkflowRuntimeError
 
 
 class MockLLM(MockLLM):
@@ -323,14 +324,35 @@ async def test_invalid_handoff():
 @pytest.mark.asyncio()
 async def test_workflow_with_state():
     """Test workflow with state management."""
+
+    async def modify_state(ctx: Context):
+        state = await ctx.get("state")
+        state["counter"] += 1
+        await ctx.set("state", state)
+        return f"State updated to {state}"
+
     agent = FunctionAgent(
         name="agent",
         description="test",
+        tools=[modify_state],
         llm=MockLLM(
             responses=[
                 ChatMessage(
+                    role=MessageRole.ASSISTANT,
+                    content="handing off",
+                    additional_kwargs={
+                        "tool_calls": [
+                            ToolSelection(
+                                tool_id="one",
+                                tool_name="modify_state",
+                                tool_kwargs={},
+                            )
+                        ]
+                    },
+                ),
+                ChatMessage(
                     role=MessageRole.ASSISTANT, content="Current state processed"
-                )
+                ),
             ],
         ),
     )
@@ -342,8 +364,12 @@ async def test_workflow_with_state():
     )
 
     handler = workflow.run(user_msg="test")
-    async for _ in handler.stream_events():
-        pass
+    async for ev in handler.stream_events():
+        if isinstance(ev, AgentInput):
+            for msg in ev.input:
+                if msg.role == MessageRole.USER:
+                    # ensure we've only formatted the input once
+                    assert len(msg.content.split("Current state:")) == 2
 
     response = await handler
     assert response is not None
