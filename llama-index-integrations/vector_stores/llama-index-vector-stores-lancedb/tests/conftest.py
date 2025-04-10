@@ -1,8 +1,10 @@
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.lancedb import LanceDBVectorStore
 from llama_index.core import VectorStoreIndex
+import lance  # noqa: F401
 import pytest
 import pytest_asyncio
+
 
 try:
     from llama_index.embeddings.huggingface import HuggingFaceEmbedding

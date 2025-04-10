@@ -22,7 +22,7 @@ Here's the [full module guide for prompts](../module_guides/models/prompts/index
 
 ### Advanced
 - [Variable Mappings, Functions, Partials](../examples/prompts/advanced_prompts.ipynb)
-- [Few-shot Examples, RAG](../examples/prompts/prompts_rag.ipynb)
+- [RichPromptTemplate Features](../../../examples/prompts/rich_prompt_template_features.ipynb)
 
 ## Prompt Chains and Pipelines
 

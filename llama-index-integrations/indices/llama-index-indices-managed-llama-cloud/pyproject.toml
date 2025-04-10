@@ -34,7 +34,7 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-indices-managed-llama-cloud"
 readme = "README.md"
-version = "0.6.9"
+version = "0.6.11"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"

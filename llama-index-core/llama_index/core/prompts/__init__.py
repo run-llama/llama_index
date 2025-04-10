@@ -10,6 +10,7 @@ from llama_index.core.prompts.base import (
     PromptType,
     SelectorPromptTemplate,
 )
+from llama_index.core.prompts.rich import RichPromptTemplate
 from llama_index.core.prompts.display_utils import display_prompt_dict
 
 __all__ = [
@@ -23,4 +24,5 @@ __all__ = [
     "ChatMessage",
     "MessageRole",
     "display_prompt_dict",
+    "RichPromptTemplate",
 ]

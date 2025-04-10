@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Any, List, Optional, Union, TypeVar
+from typing import Any, Callable, Dict, List, Optional, Union, TypeVar
 
 from llama_index.core.llms import ChatMessage
 from llama_index.core.memory import BaseMemory
@@ -16,6 +16,13 @@ class SingleAgentRunnerMixin(ABC):
     """Mixin class for executing a single agent within a workflow system.
     This class provides the necessary interface for running a single agent.
     """
+
+    def _get_steps(self) -> Dict[str, Callable]:
+        """Returns all the steps from the prebuilt workflow."""
+        from llama_index.core.agent.workflow import AgentWorkflow
+
+        instance = AgentWorkflow(agents=[self])  # type: ignore
+        return instance._get_steps()
 
     def run(
         self: T,

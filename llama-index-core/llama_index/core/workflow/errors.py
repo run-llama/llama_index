@@ -24,3 +24,7 @@ class WorkflowStepDoesNotExistError(Exception):
 
 class WorkflowConfigurationError(Exception):
     pass
+
+
+class ContextSerdeError(Exception):
+    pass

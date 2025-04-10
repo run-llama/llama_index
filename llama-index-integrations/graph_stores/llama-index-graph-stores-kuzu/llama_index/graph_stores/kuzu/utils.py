@@ -127,7 +127,7 @@ def create_relation_tables(
     for src, rel_label, dst in relationship_schema:
         create_entity_relationship_table(connection, rel_label, src, dst)
 
-    ddl = "CREATE REL TABLE GROUP IF NOT EXISTS MENTIONS ("
+    ddl = "CREATE REL TABLE IF NOT EXISTS MENTIONS ("
     table_names = []
     for entity in entities:
         table_names.append(f"FROM Chunk TO {entity}")
