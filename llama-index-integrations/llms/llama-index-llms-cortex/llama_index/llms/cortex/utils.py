@@ -1,7 +1,7 @@
 import base64
 import hashlib
 from datetime import datetime, timedelta, timezone
-
+import os
 import jwt
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization import (
@@ -9,6 +9,18 @@ from cryptography.hazmat.primitives.serialization import (
     PublicFormat,
     load_pem_private_key,
 )
+
+SCS_TOKEN_PATH = "/snowflake/session/token"
+
+
+def read_default_scs_token() -> str:
+    with open(SCS_TOKEN_PATH) as fp:
+        return fp.read()
+
+
+def is_scs_environment() -> bool:
+    # this path exists on SCS environments and contains the default OAUTH token
+    return os.path.exists(SCS_TOKEN_PATH)
 
 
 def generate_sf_jwt(sf_account: str, sf_user: str, sf_private_key_filepath: str) -> str:
