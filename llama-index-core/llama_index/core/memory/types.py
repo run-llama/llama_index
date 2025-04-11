@@ -1,3 +1,4 @@
+import asyncio
 from abc import abstractmethod
 from typing import Any, List, Optional
 
@@ -11,10 +12,7 @@ DEFAULT_CHAT_STORE_KEY = "chat_history"
 
 
 class BaseMemory(BaseComponent):
-    """Base class for all memory types.
-
-    NOTE: The interface for memory is not yet finalized and is subject to change.
-    """
+    """Base class for all memory types."""
 
     @classmethod
     def class_name(cls) -> str:
@@ -33,9 +31,19 @@ class BaseMemory(BaseComponent):
     def get(self, input: Optional[str] = None, **kwargs: Any) -> List[ChatMessage]:
         """Get chat history."""
 
+    async def aget(
+        self, input: Optional[str] = None, **kwargs: Any
+    ) -> List[ChatMessage]:
+        """Get chat history."""
+        return await asyncio.to_thread(self.get, input=input, **kwargs)
+
     @abstractmethod
     def get_all(self) -> List[ChatMessage]:
         """Get all chat history."""
+
+    async def aget_all(self) -> List[ChatMessage]:
+        """Get all chat history."""
+        return await asyncio.to_thread(self.get_all)
 
     @abstractmethod
     def put(self, message: ChatMessage) -> None:
@@ -43,7 +51,7 @@ class BaseMemory(BaseComponent):
 
     async def aput(self, message: ChatMessage) -> None:
         """Put chat history."""
-        self.put(message)
+        await asyncio.to_thread(self.put, message)
 
     def put_messages(self, messages: List[ChatMessage]) -> None:
         """Put chat history."""
@@ -52,23 +60,27 @@ class BaseMemory(BaseComponent):
 
     async def aput_messages(self, messages: List[ChatMessage]) -> None:
         """Put chat history."""
-        for message in messages:
-            await self.aput(message)
+        await asyncio.to_thread(self.put_messages, messages)
 
     @abstractmethod
     def set(self, messages: List[ChatMessage]) -> None:
         """Set chat history."""
 
+    async def aset(self, messages: List[ChatMessage]) -> None:
+        """Set chat history."""
+        await asyncio.to_thread(self.set, messages)
+
     @abstractmethod
     def reset(self) -> None:
         """Reset chat history."""
 
+    async def areset(self) -> None:
+        """Reset chat history."""
+        await asyncio.to_thread(self.reset)
+
 
 class BaseChatStoreMemory(BaseMemory):
-    """Base class for any .
-
-    NOTE: The interface for memory is not yet finalized and is subject to change.
-    """
+    """Base class for storing multi-tenant chat history."""
 
     chat_store: SerializeAsAny[BaseChatStore] = Field(default_factory=SimpleChatStore)
     chat_store_key: str = Field(default=DEFAULT_CHAT_STORE_KEY)
@@ -98,6 +110,20 @@ class BaseChatStoreMemory(BaseMemory):
         """Get all chat history."""
         return self.chat_store.get_messages(self.chat_store_key)
 
+    async def aget_all(self) -> List[ChatMessage]:
+        """Get all chat history."""
+        return await self.chat_store.aget_messages(self.chat_store_key)
+
+    def get(self, input: Optional[str] = None, **kwargs: Any) -> List[ChatMessage]:
+        """Get chat history."""
+        return self.chat_store.get_messages(self.chat_store_key, **kwargs)
+
+    async def aget(
+        self, input: Optional[str] = None, **kwargs: Any
+    ) -> List[ChatMessage]:
+        """Get chat history."""
+        return await self.chat_store.aget_messages(self.chat_store_key, **kwargs)
+
     def put(self, message: ChatMessage) -> None:
         """Put chat history."""
         # ensure everything is serialized
@@ -112,6 +138,15 @@ class BaseChatStoreMemory(BaseMemory):
         """Set chat history."""
         self.chat_store.set_messages(self.chat_store_key, messages)
 
+    async def aset(self, messages: List[ChatMessage]) -> None:
+        """Set chat history."""
+        # ensure everything is serialized
+        await self.chat_store.aset_messages(self.chat_store_key, messages)
+
     def reset(self) -> None:
         """Reset chat history."""
         self.chat_store.delete_messages(self.chat_store_key)
+
+    async def areset(self) -> None:
+        """Reset chat history."""
+        await self.chat_store.adelete_messages(self.chat_store_key)

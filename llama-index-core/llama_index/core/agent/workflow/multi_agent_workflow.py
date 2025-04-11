@@ -308,7 +308,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
 
         # First set chat history if it exists
         if chat_history:
-            memory.set(chat_history)
+            await memory.aset(chat_history)
 
         # Then add user message if it exists
         if user_msg:
@@ -335,7 +335,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             raise ValueError("Must provide either user_msg or chat_history")
 
         # Get all messages from memory
-        input_messages = memory.get()
+        input_messages = await memory.aget()
 
         # send to the current agent
         current_agent_name: str = await ctx.get("current_agent_name")
@@ -526,7 +526,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 return StopEvent(result=result)
 
         user_msg_str = await ctx.get("user_msg_str")
-        input_messages = memory.get(input=user_msg_str)
+        input_messages = await memory.aget(input=user_msg_str)
 
         # get this again, in case it changed
         agent_name = await ctx.get("current_agent_name")
