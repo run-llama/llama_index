@@ -26,14 +26,15 @@ Next we'll create a tool that performs a hypothetical dangerous task. There are 
 async def dangerous_task(ctx: Context) -> str:
     """A dangerous task that requires human confirmation."""
 
-    # emit a waiter event (InputRequiredEvent here)
-    # and wait until we see a HumanResponseEvent
+    # emit an event to the external stream to be captured
     ctx.write_event_to_stream(
         InputRequiredEvent(
             prefix="Are you sure you want to proceed? ",
             user_name="Laurie"
         )
     )
+
+    # wait until we see a HumanResponseEvent
     response = await ctx.wait_for_event(
         HumanResponseEvent, requirements={"user_name": "Laurie"}
     )
