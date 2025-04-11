@@ -18,10 +18,8 @@ from llama_index.core.workflow import (
 ```
 
 Next we'll create a tool that performs a hypothetical dangerous task. There are a couple of new things happening here:
-
+* `write_event_to_stream` is used to emit an event to the external stream to be captured
 * `wait_for_event` is used to wait for a HumanResponseEvent.
-* The `waiter_event` is the event that is written to the event stream, to let the caller know that we're waiting for a response.
-* `waiter_id` is a unique identifier for this specific wait call. It helps ensure that we only send one `waiter_event` for each `waiter_id`.
 * The `requirements` argument is used to specify that we want to wait for a HumanResponseEvent with a specific `user_name`.
 
 ```python
@@ -30,15 +28,14 @@ async def dangerous_task(ctx: Context) -> str:
 
     # emit a waiter event (InputRequiredEvent here)
     # and wait until we see a HumanResponseEvent
-    question = "Are you sure you want to proceed? "
+    ctx.write_event_to_stream(
+        InputRequiredEvent(
+            prefix="Are you sure you want to proceed? ",
+            user_name="Laurie"
+        )
+    )
     response = await ctx.wait_for_event(
-        HumanResponseEvent,
-        waiter_id=question,
-        waiter_event=InputRequiredEvent(
-            prefix=question,
-            user_name="Laurie",
-        ),
-        requirements={"user_name": "Laurie"},
+        HumanResponseEvent, requirements={"user_name": "Laurie"}
     )
 
     # act on the input from the event
