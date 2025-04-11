@@ -1,3 +1,4 @@
+import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
@@ -65,6 +66,7 @@ class BaseNodePostprocessor(ChainableMixin, BaseComponent, DispatcherSpanMixin, 
         self,
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
+        query_str: Optional[str] = None,
     ) -> List[NodeWithScore]:
         """Postprocess nodes (async)."""
         if query_str is not None and query_bundle is not None:
