@@ -35,7 +35,7 @@ class Perplexity(LLM):
         pplx_api_key = "your-perplexity-api-key"
 
         llm = Perplexity(
-            api_key=pplx_api_key, model="llama-3.1-sonar-small-128k-online", temperature=0.5
+            api_key=pplx_api_key, model="sonar-pro", temperature=0.5
         )
 
         messages_dict = [
@@ -49,7 +49,10 @@ class Perplexity(LLM):
         ```
     """
 
-    model: str = Field(description="The Perplexity model to use.")
+    model: str = Field(
+        default="sonar-pro",
+        description="The Perplexity model to use. (Default updated to 'sonar-pro')",
+    )
     temperature: float = Field(description="The temperature to use during generation.")
     max_tokens: Optional[int] = Field(
         default=None,
@@ -75,10 +78,14 @@ class Perplexity(LLM):
     headers: Dict[str, str] = Field(
         default_factory=dict, description="Headers for API requests."
     )
+    enable_search_classifier: bool = Field(
+        default=True,
+        description="Whether to enable the search classifier. Default is True.",
+    )
 
     def __init__(
         self,
-        model: str = "llama-3.1-sonar-small-128k-online",
+        model: str = "sonar-pro",
         temperature: float = 0.1,
         max_tokens: Optional[int] = None,
         api_key: Optional[str] = None,
@@ -92,6 +99,7 @@ class Perplexity(LLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        enable_search_classifier: bool = True,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -116,6 +124,7 @@ class Perplexity(LLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+            enable_search_classifier=enable_search_classifier,
             **kwargs,
         )
 
@@ -131,8 +140,7 @@ class Perplexity(LLM):
                 if self.context_window is not None
                 else self._get_context_window()
             ),
-            num_output=self.max_tokens
-            or -1,  # You can replace this with the appropriate value
+            num_output=self.max_tokens or -1,
             is_chat_model=self._is_chat_model(),
             model_name=self.model,
         )
@@ -143,16 +151,16 @@ class Perplexity(LLM):
             "llama-3.1-sonar-small-128k-online": 127072,
             "llama-3.1-sonar-large-128k-online": 127072,
             "llama-3.1-sonar-huge-128k-online": 127072,
+            "sonar-pro": 127072,
         }
-        return model_context_windows.get(
-            self.model, 127072
-        )  # Default to 127072 tokens if model is not found
+        return model_context_windows.get(self.model, 127072)
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
         """Get all data for the request as a dictionary."""
         base_kwargs = {
             "model": self.model,
             "temperature": self.temperature,
+            "enable_search_classifier": self.enable_search_classifier,
         }
         if self.max_tokens is not None:
             base_kwargs["max_tokens"] = self.max_tokens
@@ -257,7 +265,6 @@ class Perplexity(LLM):
             messages.insert(0, {"role": "system", "content": self.system_prompt})
         payload = {
             "model": self.model,
-            # "prompt": prompt,
             "messages": messages,
             "stream": True,
             **self._get_all_kwargs(**kwargs),
@@ -271,9 +278,7 @@ class Perplexity(LLM):
                 ) as response:
                     response.raise_for_status()
                     text = ""
-                    for line in response.iter_lines(
-                        decode_unicode=True
-                    ):  # decode lines to Unicode
+                    for line in response.iter_lines(decode_unicode=True):
                         if line.startswith("data:"):
                             data = json.loads(line[5:])
                             delta = data["choices"][0]["message"]["content"]
@@ -347,9 +352,7 @@ class Perplexity(LLM):
                     url, json=payload, headers=self.headers, stream=True
                 ) as response:
                     response.raise_for_status()
-                    for line in response.iter_lines(
-                        decode_unicode=True
-                    ):  # decode lines to Unicode
+                    for line in response.iter_lines(decode_unicode=True):
                         if line.startswith("data:"):
                             data = json.loads(line[5:])
                             delta = data["choices"][0]["delta"]["content"]
