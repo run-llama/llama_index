@@ -48,7 +48,7 @@ class TestAWSBedrockRerank(TestCase):
         gcp_param = json.loads(os.getenv("GOOGLE_CLOUD_CREDENTIALS", None))
         google_credentials = service_account.Credentials.from_service_account_info(gcp_param)
         reranker_client = discoveryengine.RankServiceClient(credentials=google_credentials)
-        reranker = GoogleGenAIRerank(client=reranker_client, num_results=2)
+        reranker = GoogleRerank(client=reranker_client, num_results=2)
 
         with mock.patch.object(
             reranker_client, "rerank", return_value=exp_rerank_response
