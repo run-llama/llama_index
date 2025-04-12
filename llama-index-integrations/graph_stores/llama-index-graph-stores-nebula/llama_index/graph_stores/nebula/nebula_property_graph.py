@@ -358,7 +358,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
             params[f"all_id"] = ids
         if properties:
             for i, prop in enumerate(properties):
-                cypher_statement += f"e.Prop__.`{prop}` == $property_{i} AND "
+                cypher_statement += f"e.Props__.`{prop}` == $property_{i} AND "
                 params[f"property_{i}"] = properties[prop]
             cypher_statement = cypher_statement[:-5]  # Remove trailing AND
 

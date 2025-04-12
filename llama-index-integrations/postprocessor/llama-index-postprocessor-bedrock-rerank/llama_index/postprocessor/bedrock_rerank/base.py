@@ -18,7 +18,7 @@ class Models(str, Enum):
     COHERE_RERANK_V3_5 = "cohere.rerank-v3-5:0"
 
 
-class AWSBedrockRerank(BaseNodePostprocessor):
+class BedrockRerank(BaseNodePostprocessor):
     top_n: int = Field(default=2, description="Top N nodes to return.")
     rerank_model_name: str = Field(
         default=Models.COHERE_RERANK_V3_5.value,
@@ -254,3 +254,7 @@ class AWSBedrockRerank(BaseNodePostprocessor):
 
         dispatcher.event(ReRankEndEvent(nodes=new_nodes))
         return new_nodes
+
+
+# backwards compatibility name change
+AWSBedrockRerank = BedrockRerank

@@ -5,6 +5,7 @@ We support integrations with OpenAI, Anthropic, Hugging Face, PaLM, and more.
 - [AI21](../../../examples/llm/ai21.ipynb)
 - [Anthropic](../../../examples/llm/anthropic.ipynb)
 - [AnyScale](../../../examples/llm/anyscale.ipynb)
+- [ASI](../../../examples/llm/asi1.ipynb)
 - [Azure OpenAI](../../../examples/llm/azure_openai.ipynb)
 - [Bedrock](../../../examples/llm/bedrock.ipynb)
 - [Clarifai](../../../examples/llm/clarifai.ipynb)

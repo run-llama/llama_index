@@ -1,5 +1,24 @@
 # ChangeLog
 
+## [2025-04-10]
+
+### `llama-index-core` [0.12.30]
+
+- Fix multi-agent state formatting (#18417)
+- use to_thread for async reader methods by default (#18418)
+
+### `llama-index-callbacks-arize-pheonix` [0.5.0]
+
+- Connect new phoenix tracing option for separate context (#18415)
+
+### `llama-index-graph-stores-nebula` [0.4.1]
+
+- fix nebula properties get (#18423)
+
+### `llama-index-llms-openai` [0.3.33]
+
+- Actually fix pass-by-reference errors in OpenAIResponses (#18420)
+
 ## [2024-04-08]
 
 ### `llama-index-core` [0.12.29]
