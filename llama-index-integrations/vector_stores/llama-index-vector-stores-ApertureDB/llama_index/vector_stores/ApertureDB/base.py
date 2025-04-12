@@ -344,7 +344,7 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
 
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=similarities)
 
-    def delete_(self) -> Optional[bool]:
+    def delete(self) -> Optional[bool]:
         """
         Delete embeddings (if present) from the vectorstore by vector_store name.
 
