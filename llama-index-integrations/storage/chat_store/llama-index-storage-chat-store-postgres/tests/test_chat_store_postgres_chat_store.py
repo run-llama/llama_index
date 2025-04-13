@@ -3,7 +3,7 @@ from typing import Dict, Generator, Union
 import pytest
 import docker
 from docker.models.containers import Container
-from llama_index.core.llms import ChatMessage
+from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock
 from llama_index.core.storage.chat_store.base import BaseChatStore
 from llama_index.storage.chat_store.postgres import PostgresChatStore
 
@@ -260,3 +260,32 @@ async def test_async_delete_last_message(postgres_chat_store: PostgresChatStore)
 
     assert len(remaining_messages) == 1
     assert remaining_messages[0].content == "First async message"
+
+
+@pytest.mark.skipif(no_packages, reason="ayncpg, pscopg and sqlalchemy not installed")
+@pytest.mark.asyncio()
+async def test_async_multimodal_messages(postgres_chat_store: PostgresChatStore):
+    key = "test_async_multimodal"
+    image_url = "https://images.unsplash.com/photo-1579546929518-9e396f3cc809"
+
+    messages = [
+        ChatMessage(
+            role="user",
+            blocks=[
+                TextBlock(text="describe the image."),
+                ImageBlock(url=image_url),
+            ],
+        )
+    ]
+
+    await postgres_chat_store.aset_messages(key, messages)
+
+    retrieved_messages = await postgres_chat_store.aget_messages(key)
+
+    assert len(retrieved_messages) == 1
+    assert retrieved_messages[0].role == "user"
+    assert len(retrieved_messages[0].blocks) == 2
+    assert isinstance(retrieved_messages[0].blocks[0], TextBlock)
+    assert retrieved_messages[0].blocks[0].text == "describe the image."
+    assert isinstance(retrieved_messages[0].blocks[1], ImageBlock)
+    assert retrieved_messages[0].blocks[1].url == image_url
