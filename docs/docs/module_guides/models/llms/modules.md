@@ -15,6 +15,7 @@ We support integrations with OpenAI, Anthropic, Hugging Face, PaLM, and more.
 - [EverlyAI](../../../examples/llm/everlyai.ipynb)
 - [Fireworks](../../../examples/llm/fireworks.ipynb)
 - [Friendli](../../../examples/llm/friendli.ipynb)
+- [Gemini](../../../examples/llm/google_genai.ipynb)
 - [Gradient](../../../examples/llm/gradient_base_model.ipynb)
 - [Gradient Model Adapter](../../../examples/llm/gradient_model_adapter.ipynb)
 - [Groq](../../../examples/llm/groq.ipynb)
