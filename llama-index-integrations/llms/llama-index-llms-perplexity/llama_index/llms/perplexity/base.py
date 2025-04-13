@@ -51,7 +51,7 @@ class Perplexity(LLM):
 
     model: str = Field(
         default="sonar-pro",
-        description="The Perplexity model to use. (Default updated to 'sonar-pro')",
+        description="The Perplexity model to use.",
     )
     temperature: float = Field(description="The temperature to use during generation.")
     max_tokens: Optional[int] = Field(
@@ -80,13 +80,13 @@ class Perplexity(LLM):
     )
     enable_search_classifier: bool = Field(
         default=True,
-        description="Whether to enable the search classifier. Default is True.",
+        description="Whether to enable the search classifier. Default is False.",
     )
 
     def __init__(
         self,
         model: str = "sonar-pro",
-        temperature: float = 0.1,
+        temperature: float = 0.2,
         max_tokens: Optional[int] = None,
         api_key: Optional[str] = None,
         api_base: Optional[str] = "https://api.perplexity.ai",
@@ -99,7 +99,7 @@ class Perplexity(LLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
-        enable_search_classifier: bool = True,
+        enable_search_classifier: bool = False,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -148,11 +148,13 @@ class Perplexity(LLM):
     def _get_context_window(self) -> int:
         # Check https://docs.perplexity.ai/guides/model-cards for latest model information
         model_context_windows = {
-            "llama-3.1-sonar-small-128k-online": 127072,
-            "llama-3.1-sonar-large-128k-online": 127072,
-            "llama-3.1-sonar-huge-128k-online": 127072,
-            "sonar-pro": 127072,
-        }
+        "sonar-deep-research": 127072,
+        "sonar-reasoning-pro": 127072,
+        "sonar-reasoning": 127072,
+        "sonar": 127072,
+        "r1-1776": 127072,
+        "sonar-pro": 200000,
+                                }
         return model_context_windows.get(self.model, 127072)
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
