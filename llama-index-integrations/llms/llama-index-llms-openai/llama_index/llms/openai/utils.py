@@ -92,6 +92,13 @@ GPT4_MODELS: Dict[str, int] = {
     # 0314 models
     "gpt-4-0314": 8192,
     "gpt-4-32k-0314": 32768,
+    # GPT 4.1 Models
+    "gpt-4.1": 1047576,
+    "gpt-4.1-mini": 1047576,
+    "gpt-4.1-nano": 1047576,
+    "gpt-4.1-2025-04-14": 1047576,
+    "gpt-4.1-mini-2025-04-14": 1047576,
+    "gpt-4.1-nano-2025-04-14": 1047576,
 }
 
 AZURE_TURBO_MODELS: Dict[str, int] = {
