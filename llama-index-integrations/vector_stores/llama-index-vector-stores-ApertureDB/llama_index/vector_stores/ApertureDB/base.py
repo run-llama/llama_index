@@ -76,31 +76,41 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
     Example:
 
         ```python
-        # Get the data for running the example
-        # mkdir -p 'data/paul_graham/'
-        # wget 'https://raw.githubusercontent.com/run-llama/llama_index/main/docs/docs/examples/data/paul_graham/paul_graham_essay.txt' -O 'data/paul_graham/paul_graham_essay.txt'
+            # Get the data for running the example
+            # mkdir -p 'data/paul_graham/'
+            # wget 'https://raw.githubusercontent.com/run-llama/llama_index/main/docs/docs/examples/data/paul_graham/paul_graham_essay.txt' -O 'data/paul_graham/paul_graham_essay.txt'
 
-        from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
-        from llama_index.core import StorageContext
-        from llama_index.vector_stores.ApertureDB import ApertureDBVectorStore
+            from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+            from llama_index.core import StorageContext
+            from llama_index.vector_stores.ApertureDB import ApertureDBVectorStore
 
-        adb_client = ApertureDBVectorStore(dimensions=1536)
-        storage_context = StorageContext.from_defaults(vector_store=adb_client)
+            adb_client = ApertureDBVectorStore(dimensions=1536)
+            storage_context = StorageContext.from_defaults(vector_store=adb_client)
 
 
-        documents = SimpleDirectoryReader("./data/paul_graham/").load_data()
-        index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
+            documents = SimpleDirectoryReader("./data/paul_graham/").load_data()
+            index = VectorStoreIndex.from_documents(documents, storage_context=storage_context)
 
-        query_engine = index.as_query_engine()
-        query_str = [
-            "What did the author do growing up?",
-            "What did the author do after his time at Viaweb?"
-        ]
-        for qs in query_str:
-            response = query_engine.query(qs)
-            print(f"{qs=}\r\n")
-            print(response)
-        ```
+            query_engine = index.as_query_engine()
+
+            def run_queries(query_engine):
+                query_str = [
+                    "What did the author do growing up?",
+                    "What did the author do after his time at Viaweb?"
+                ]
+                for qs in query_str:
+                    response = query_engine.query(qs)
+                    print(f"{qs=}\r\n")
+                    print(response)
+
+            run_queries(query_engine)
+
+            # Delete the first document from the index.
+            # This particular example folder has just 1 document.
+            # Deleting it would cause the queries to return empty results.
+            index.delete(documents[0].doc_id)
+
+            run_queries(query_engine)
     """
 
     @override
@@ -344,20 +354,32 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
 
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=similarities)
 
-    def delete(self) -> Optional[bool]:
+    def delete(self, ref_doc_id, **delete_kwargs) -> None:
         """
-        Delete embeddings (if present) from the vectorstore by vector_store name.
+        Delete embeddings (if present) from the vectorstore confined the given ref_doc_id.
+        They should additionally be confined to the descriptor set in use.
+
+        Args:
+            ref_doc_id: The document ID to delete.
+            delete_kwargs: Additional arguments to pass to delete
 
         Returns:
-            True if the deletion was successful, False otherwise
+            None
         """
+        ref_property_key_name = "ref_doc_id"
         query = [
             {
                 "DeleteDescriptor": {
+                    "constraints": {
+                        PROPERTY_PREFIX + ref_property_key_name: ["==", ref_doc_id]
+                    },
                     "set": self._descriptor_set,
                 }
             }
         ]
 
         result, _ = self._utils.execute(query)
-        return result
+        assert len(result) == 1, f"Failed to delete descriptor {result=}"
+        assert (
+            result[0]["DeleteDescriptor"]["status"] == 0
+        ), f"Failed to delete descriptor {result=}"

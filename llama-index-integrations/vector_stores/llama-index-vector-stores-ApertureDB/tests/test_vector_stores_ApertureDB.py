@@ -17,15 +17,7 @@ class MockConnector:
         self.queries.append(args[0])
         response, blobs = [], []
         if "FindDescriptorSet" in args[0][0]:
-            response = [
-                {
-                    "FindDescriptorSet": {
-                        "response": 0,
-                        "status": 0,
-                        "result": 0,
-                    }
-                }
-            ]
+            response = [{"FindDescriptorSet": {"returned": 0, "status": 0}}]
             if self.exists:
                 response[0]["FindDescriptorSet"]["entities"] = [
                     {
@@ -36,6 +28,9 @@ class MockConnector:
                 ]
             else:
                 response[0]["FindDescriptorSet"]["entities"] = []
+
+        if "DeleteDescriptor" in args[0][0]:
+            response = [{"DeleteDescriptor": {"returned": 0, "status": 0}}]
         print("query response:", response)
         return response, blobs
 
@@ -83,3 +78,21 @@ def test_vector_store_initialize_noop_when_DS_does_not_exist(monkeypatch):
     ]
     for i, query in enumerate(expected_queries):
         assert query in store.client.queries[i][0]
+
+
+def test_vector_store_delete_confines_queries_to_ref_doc_id(monkeypatch):
+    monkeypatch.setattr(
+        aperturedb.CommonLibrary,
+        "create_connector",
+        lambda *args, **kwargs: MockConnector(True),
+    )
+    store = ApertureDBVectorStore(dimensions=1024)
+    store.delete("doc_id")
+    expected_queries = ["GetStatus", "FindDescriptorSet", "DeleteDescriptor"]
+    for i, query in enumerate(expected_queries):
+        assert query in store.client.queries[i][0]
+        if query == "DeleteDescriptor":
+            constraints = store.client.queries[i][0]["DeleteDescriptor"]["constraints"]
+            assert "lm_ref_doc_id" in constraints
+            assert constraints["lm_ref_doc_id"] == ["==", "doc_id"]
+            assert store.client.queries[i][0]["DeleteDescriptor"]["set"] == "llamaindex"
