@@ -344,8 +344,7 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
         Adds all in-progress messages to memory.
         """
         scratchpad: List[ChatMessage] = await ctx.get(self.scratchpad_key, default=[])
-        for msg in scratchpad:
-            await memory.aput(msg)
+        await memory.aput_messages(scratchpad)
 
         # reset scratchpad
         await ctx.set(self.scratchpad_key, [])
