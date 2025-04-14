@@ -288,4 +288,4 @@ async def test_async_multimodal_messages(postgres_chat_store: PostgresChatStore)
     assert isinstance(retrieved_messages[0].blocks[0], TextBlock)
     assert retrieved_messages[0].blocks[0].text == "describe the image."
     assert isinstance(retrieved_messages[0].blocks[1], ImageBlock)
-    assert retrieved_messages[0].blocks[1].url == image_url
+    assert str(retrieved_messages[0].blocks[1].url) == image_url
