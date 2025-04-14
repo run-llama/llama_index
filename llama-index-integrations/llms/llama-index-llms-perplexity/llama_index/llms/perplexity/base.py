@@ -148,13 +148,13 @@ class Perplexity(LLM):
     def _get_context_window(self) -> int:
         # Check https://docs.perplexity.ai/guides/model-cards for latest model information
         model_context_windows = {
-        "sonar-deep-research": 127072,
-        "sonar-reasoning-pro": 127072,
-        "sonar-reasoning": 127072,
-        "sonar": 127072,
-        "r1-1776": 127072,
-        "sonar-pro": 200000,
-                                }
+            "sonar-deep-research": 127072,
+            "sonar-reasoning-pro": 127072,
+            "sonar-reasoning": 127072,
+            "sonar": 127072,
+            "r1-1776": 127072,
+            "sonar-pro": 200000,
+        }
         return model_context_windows.get(self.model, 127072)
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
