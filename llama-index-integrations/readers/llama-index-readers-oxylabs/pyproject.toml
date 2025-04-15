@@ -1,0 +1,56 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+# Feel free to un-skip examples, and experimental, you will just need to
+# work through many typos (--write-changes and --interactive will help)
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.readers.oxylabs"
+
+[tool.llamahub.class_authors]
+OxylabsReader = "oxy-rostyslav"
+
+[tool.mypy]
+disallow_untyped_defs = true
+# Remove venv skip when integrated with pre-commit
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
+ignore_missing_imports = true
+python_version = "3.8"
+
+[tool.poetry]
+authors = ["Rostyslav Borovyk <rostyslav.borovyk@oxylabs.io>"]
+description = "llama-index readers oxylabs integration"
+license = "MIT"
+name = "llama-index-readers-oxylabs"
+packages = [{include = "llama_index/"}]
+readme = "README.md"
+version = "0.1.1"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+llama-index-core = "^0.12.0"
+httpx = "^0.28.1"
+lxml = "^5.3.2"
+lxml-html-clean = "^0.4.2"
+markdownify = "^1.1.0"
+oxylabs = "^2.0.0"
+
+[tool.poetry.group.dev.dependencies]
+black = "^25.1.0"
+mypy = "^1.15.0"
+pytest = "^8.3.5"
+pytest-asyncio = "^0.26.0"
+ruff = "^0.11.5"
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "session"
+markers = [
+    "integration: marks integration tests",
+    "unit: marks unit tests",
+]
