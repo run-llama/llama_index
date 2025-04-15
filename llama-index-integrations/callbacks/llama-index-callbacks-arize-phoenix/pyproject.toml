@@ -28,10 +28,10 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-callbacks-arize-phoenix"
 readme = "README.md"
-version = "0.5.0"
+version = "0.5.1"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.13"
+python = ">=3.9,<3.14"
 openinference-instrumentation-llama-index = ">=4.1.0"
 llama-index-core = "^0.12.0"
 
