@@ -96,3 +96,19 @@ def test_vector_store_delete_confines_queries_to_ref_doc_id(monkeypatch):
             assert "lm_ref_doc_id" in constraints
             assert constraints["lm_ref_doc_id"] == ["==", "doc_id"]
             assert store.client.queries[i][0]["DeleteDescriptor"]["set"] == "llamaindex"
+
+
+def test_vector_store_clear_deletes_all_descriptors(monkeypatch):
+    monkeypatch.setattr(
+        aperturedb.CommonLibrary,
+        "create_connector",
+        lambda *args, **kwargs: MockConnector(True),
+    )
+    store = ApertureDBVectorStore(dimensions=1024)
+    store.clear()
+    expected_queries = ["GetStatus", "FindDescriptorSet", "DeleteDescriptor"]
+    for i, query in enumerate(expected_queries):
+        assert query in store.client.queries[i][0]
+        if query == "DeleteDescriptor":
+            assert "constraints" not in store.client.queries[i][0]["DeleteDescriptor"]
+            assert store.client.queries[i][0]["DeleteDescriptor"]["set"] == "llamaindex"

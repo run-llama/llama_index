@@ -15,6 +15,7 @@ from llama_index.core.schema import TextNode
 from typing import Any, Dict, List, Optional
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
+    MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -316,6 +317,12 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
         return ids
 
     def delete_vector_store(self, descriptor_set_name: str) -> None:
+        """
+        Delete a descriptor set from ApertureDB.
+
+        Args:
+            descriptor_set_name: The name of the descriptor set to delete.
+        """
         self._utils.remove_descriptorset(descriptor_set_name)
 
     def get_descriptor_set(self) -> List[str]:
@@ -354,7 +361,7 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
 
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=similarities)
 
-    def delete(self, ref_doc_id, **delete_kwargs) -> None:
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Delete embeddings (if present) from the vectorstore confined the given ref_doc_id.
         They should additionally be confined to the descriptor set in use.
@@ -383,3 +390,38 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
         assert (
             result[0]["DeleteDescriptor"]["status"] == 0
         ), f"Failed to delete descriptor {result=}"
+
+    def clear(self) -> None:
+        """
+        Delete all descriptors in the specified descriptor set.
+        """
+        query = [
+            {
+                "DeleteDescriptor": {
+                    "set": self._descriptor_set,
+                }
+            }
+        ]
+
+        result, _ = self._utils.execute(query)
+        assert len(result) == 1, f"Failed to delete descriptor {result=}"
+        assert (
+            result[0]["DeleteDescriptor"]["status"] == 0
+        ), f"Failed to delete descriptor {result=}"
+
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> List[str]:
+        """Delete nodes from vector store."""
+        return super().delete_nodes(node_ids, filters, **delete_kwargs)
+
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[TextNode]:
+        """Get nodes from vector store."""
+        return super().get_nodes(node_ids, filters)
