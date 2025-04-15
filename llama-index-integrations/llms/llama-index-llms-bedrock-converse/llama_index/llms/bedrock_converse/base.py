@@ -325,6 +325,10 @@ class BedrockConverse(FunctionCallingLLM):
             response
         )
 
+        dict_response = dict(response)
+        # Add Bedrock's token count to usage dict to match OpenAI's format
+        dict_response["usage"] = self._get_response_token_counts(dict_response)
+
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
@@ -335,7 +339,7 @@ class BedrockConverse(FunctionCallingLLM):
                     "status": status,
                 },
             ),
-            raw=dict(response),
+            raw=dict_response,
             additional_kwargs=self._get_response_token_counts(dict(response)),
         )
 
@@ -367,6 +371,10 @@ class BedrockConverse(FunctionCallingLLM):
             **all_kwargs,
         )
 
+        dict_response = dict(response)
+        # Add Bedrock's token count to usage dict to match OpenAI's format
+        dict_response["usage"] = self._get_response_token_counts(dict_response)
+
         def gen() -> ChatResponseGen:
             content = {}
             role = MessageRole.ASSISTANT
@@ -392,7 +400,7 @@ class BedrockConverse(FunctionCallingLLM):
                             },
                         ),
                         delta=content_delta.get("text", ""),
-                        raw=response,
+                        raw=dict_response,
                         additional_kwargs=self._get_response_token_counts(
                             dict(response)
                         ),
@@ -417,7 +425,7 @@ class BedrockConverse(FunctionCallingLLM):
                                 "status": status,
                             },
                         ),
-                        raw=response,
+                        raw=dict_response,
                         additional_kwargs=self._get_response_token_counts(
                             dict(response)
                         ),
@@ -458,6 +466,10 @@ class BedrockConverse(FunctionCallingLLM):
             response
         )
 
+        dict_response = dict(response)
+        # Add Bedrock's token count to usage dict to match OpenAI's format
+        dict_response["usage"] = self._get_response_token_counts(dict_response)
+
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
@@ -468,7 +480,7 @@ class BedrockConverse(FunctionCallingLLM):
                     "status": status,
                 },
             ),
-            raw=dict(response),
+            raw=dict_response,
             additional_kwargs=self._get_response_token_counts(dict(response)),
         )
 
