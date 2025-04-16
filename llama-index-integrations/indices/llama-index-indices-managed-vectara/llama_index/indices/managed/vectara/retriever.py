@@ -422,8 +422,7 @@ class VectaraRetriever(BaseRetriever):
         if response.status_code != 200:
             result = response.json()
             if response.status_code == 400:
-
-                if 'messages' in result:
+                if "messages" in result:
                     _logger.error(
                         f"Query failed (code {response.status_code}), reason {result['messages'][0]}"
                     )
@@ -553,7 +552,7 @@ class VectaraRetriever(BaseRetriever):
 
         result = response.json()
         if response.status_code != 200:
-            if 'messages' in result:
+            if "messages" in result:
                 _logger.error(
                     f"Query failed (code {response.status_code}), reason {result['messages'][0]}"
                 )
