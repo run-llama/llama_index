@@ -6,7 +6,7 @@
 
 ## Usage
 
-Using `GelChatStore`, you can store your chat history remotely, without having to worry about manually persisting and loading the chat history.
+Using `GelChatStore`, you can persist your chat history automatically and not have to worry about saving and loading it manually.
 
 ```python
 from llama_index.storage.chat_store.gel import GelChatStore 
