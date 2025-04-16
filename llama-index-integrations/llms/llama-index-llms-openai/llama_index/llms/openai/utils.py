@@ -46,6 +46,10 @@ O1_MODELS: Dict[str, int] = {
     "o1-mini-2024-09-12": 128000,
     "o3-mini": 200000,
     "o3-mini-2025-01-31": 200000,
+    "o3": 200000,
+    "o3-2025-04-16": 200000,
+    "o4-mini": 200000,
+    "o4-mini-2025-04-16": 200000,
 }
 
 O1_MODELS_WITHOUT_FUNCTION_CALLING = {
