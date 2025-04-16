@@ -26,23 +26,16 @@ If that's the case, please run 'gel project init' to get started.
 MISSING_RECORD_TYPE_TEMPLATE = """
 Error: Record type {{record_type}} is missing from the Gel schema.
 
-In order to use the LangChain integration, ensure you put the following in dbschema/default.gel:
-
-    using extension pgvector;
+In order to use the LlamaIndex integration, ensure you put the following in dbschema/default.gel:
 
     module default {
         type {{record_type}} {
-            required collection: str;
-            text: str;
-            embedding: ext::pgvector::vector<1536>;
-            external_id: str {
-                constraint exclusive;
-            };
-            metadata: json;
+            required key: str;
+            required namespace: str;
+            value: json;
 
-            index ext::pgvector::hnsw_cosine(m := 16, ef_construction := 128)
-                on (.embedding)
-        } 
+            constraint exclusive on ((.key, .namespace));
+        }
     }
 
 Remember that you also need to run a migration:
@@ -129,22 +122,48 @@ class GelKVStore(BaseKVStore):
     def __init__(self, record_type: str = "Record") -> None:
         self.record_type = record_type
 
-        self._sync_client = gel.create_client()
-        self._async_client = gel.create_async_client()
+        self._sync_client = None
+        self._async_client = None
 
-        try:
-            self._sync_client.ensure_connected()
-        except gel.errors.ClientConnectionError as e:
-            _logger.error(NO_PROJECT_MESSAGE)
-            raise e
+    def get_sync_client(self):
+        if self._sync_client is None:
+            self._sync_client = gel.create_client()
 
-        try:
-            self._sync_client.query(f"select {self.record_type};")
-        except gel.errors.InvalidReferenceError as e:
-            _logger.error(
-                Template(MISSING_RECORD_TYPE_TEMPLATE).render(record_type="Record")
-            )
-            raise e
+            try:
+                self._sync_client.ensure_connected()
+            except gel.errors.ClientConnectionError as e:
+                _logger.error(NO_PROJECT_MESSAGE)
+                raise e
+
+            try:
+                self._sync_client.query(f"select {self.record_type};")
+            except gel.errors.InvalidReferenceError as e:
+                _logger.error(
+                    Template(MISSING_RECORD_TYPE_TEMPLATE).render(record_type=self.record_type)
+                )
+                raise e
+
+        return self._sync_client
+
+    async def get_async_client(self):
+        if self._async_client is None:
+            self._async_client = gel.create_async_client()
+
+            try:
+                await self._async_client.ensure_connected()
+            except gel.errors.ClientConnectionError as e:
+                _logger.error(NO_PROJECT_MESSAGE)
+                raise e
+
+            try:
+                await self._async_client.query(f"select {self.record_type};")
+            except gel.errors.InvalidReferenceError as e:
+                _logger.error(
+                    Template(MISSING_RECORD_TYPE_TEMPLATE).render(record_type=self.record_type)
+                )
+                raise e
+
+        return self._async_client
 
     def put(
         self,
@@ -160,7 +179,8 @@ class GelKVStore(BaseKVStore):
             collection (str): collection name
 
         """
-        self._sync_client.query(
+        client = self.get_sync_client()
+        client.query(
             PUT_QUERY,
             key=key,
             namespace=collection,
@@ -181,7 +201,8 @@ class GelKVStore(BaseKVStore):
             collection (str): collection name
 
         """
-        await self._async_client.query(
+        client = await self.get_async_client()
+        await client.query(
             PUT_QUERY,
             key=key,
             namespace=collection,
@@ -198,7 +219,8 @@ class GelKVStore(BaseKVStore):
             kv_pairs[pos : pos + batch_size]
             for pos in range(0, len(kv_pairs), batch_size)
         ):
-            self._sync_client.query(
+            client = self.get_sync_client()
+            client.query(
                 PUT_ALL_QUERY,
                 data=json.dumps([{"key": key, "value": value} for key, value in chunk]),
                 namespace=collection,
@@ -214,7 +236,8 @@ class GelKVStore(BaseKVStore):
             kv_pairs[pos : pos + batch_size]
             for pos in range(0, len(kv_pairs), batch_size)
         ):
-            await self._async_client.query(
+            client = await self.get_async_client()
+            await client.query(
                 PUT_ALL_QUERY,
                 data=json.dumps([{"key": key, "value": value} for key, value in chunk]),
                 namespace=collection,
@@ -228,7 +251,8 @@ class GelKVStore(BaseKVStore):
             collection (str): collection name
 
         """
-        result = self._sync_client.query_single(
+        client = self.get_sync_client()
+        result = client.query_single(
             GET_QUERY,
             key=key,
             namespace=collection,
@@ -245,7 +269,8 @@ class GelKVStore(BaseKVStore):
             collection (str): collection name
 
         """
-        result = await self._async_client.query_single(
+        client = await self.get_async_client()
+        result = await client.query_single(
             GET_QUERY,
             key=key,
             namespace=collection,
@@ -259,7 +284,8 @@ class GelKVStore(BaseKVStore):
             collection (str): collection name
 
         """
-        results = self._sync_client.query(
+        client = self.get_sync_client()
+        results = client.query(
             GET_ALL_QUERY,
             namespace=collection,
         )
@@ -272,7 +298,8 @@ class GelKVStore(BaseKVStore):
             collection (str): collection name
 
         """
-        results = await self._async_client.query(
+        client = await self.get_async_client()
+        results = await client.query(
             GET_ALL_QUERY,
             namespace=collection,
         )
@@ -286,7 +313,8 @@ class GelKVStore(BaseKVStore):
             collection (str): collection name
 
         """
-        result = self._sync_client.query(
+        client = self.get_sync_client()
+        result = client.query(
             DELETE_QUERY,
             key=key,
             namespace=collection,
@@ -301,7 +329,8 @@ class GelKVStore(BaseKVStore):
             collection (str): collection name
 
         """
-        result = await self._async_client.query(
+        client = await self.get_async_client()
+        result = await client.query(
             DELETE_QUERY,
             key=key,
             namespace=collection,
