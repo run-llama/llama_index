@@ -1,6 +1,6 @@
 # CHANGELOG — llama-index-indices-managed-vectara
 
-## [0.4.2]
+## [0.4.3]
 
 Added llm_name argument.
 
