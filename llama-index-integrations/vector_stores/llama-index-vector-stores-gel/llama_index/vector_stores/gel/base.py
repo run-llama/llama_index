@@ -4,7 +4,6 @@ from typing import (
     List,
     Optional,
     Sequence,
-    Union,
 )
 
 from llama_index.core.schema import BaseNode, TextNode
@@ -48,10 +47,12 @@ In order to use the LangChain integration, ensure you put the following in dbsch
     using extension pgvector;
 
     module default {
+        scalar type EmbeddingVector extending ext::pgvector::vector<1536>;
+
         type {{record_type}} {
             required collection: str;
             text: str;
-            embedding: ext::pgvector::vector<1536>;
+            embedding: EmbeddingVector;
             external_id: str {
                 constraint exclusive;
             };
@@ -59,7 +60,7 @@ In order to use the LangChain integration, ensure you put the following in dbsch
 
             index ext::pgvector::hnsw_cosine(m := 16, ef_construction := 128)
                 on (.embedding)
-        } 
+        }
     }
 
 Remember that you also need to run a migration:
@@ -220,28 +221,53 @@ class GelVectorStore(BasePydanticVectorStore):
             record_type=record_type,
         )
 
-        self._sync_client = gel.create_client()
-        self._async_client = gel.create_async_client()
+        self._sync_client = None
+        self._async_client = None
 
-        try:
-            self._sync_client.ensure_connected()
-        except gel.errors.ClientConnectionError as e:
-            _logger.error(NO_PROJECT_MESSAGE)
-            raise e
+    def get_sync_client(self):
+        if self._sync_client is None:
+            self._sync_client = gel.create_client()
 
-        try:
-            self._sync_client.query(f"select {self.record_type};")
-        except gel.errors.InvalidReferenceError as e:
-            _logger.error(
-                Template(MISSING_RECORD_TYPE_TEMPLATE).render(record_type="Record")
-            )
-            raise e
+            try:
+                self._sync_client.ensure_connected()
+            except gel.errors.ClientConnectionError as e:
+                _logger.error(NO_PROJECT_MESSAGE)
+                raise e
 
+            try:
+                self._sync_client.query(f"select {self.record_type};")
+            except gel.errors.InvalidReferenceError as e:
+                _logger.error(
+                    Template(MISSING_RECORD_TYPE_TEMPLATE).render(record_type=self.record_type)
+                )
+                raise e
+
+        return self._sync_client
+
+    async def get_async_client(self):
+        if self._async_client is None:
+            self._async_client = gel.create_async_client()
+
+            try:
+                await self._async_client.ensure_connected()
+            except gel.errors.ClientConnectionError as e:
+                _logger.error(NO_PROJECT_MESSAGE)
+                raise e
+
+            try:
+                await self._async_client.query(f"select {self.record_type};")
+            except gel.errors.InvalidReferenceError as e:
+                _logger.error(
+                    Template(MISSING_RECORD_TYPE_TEMPLATE).render(record_type=self.record_type)
+                )
+                raise e
+
+        return self._async_client
 
     @property
-    def client(self) -> Union[gel.AsyncIOClient, gel.Client]:
+    def client(self) -> Any:
         """Get client."""
-        return self._sync_client
+        return self.get_sync_client()
 
     def get_nodes(
         self,
@@ -253,7 +279,9 @@ class GelVectorStore(BasePydanticVectorStore):
         if node_ids is None:
             return []
 
-        results = self._sync_client.query(
+        client = self.get_sync_client()
+
+        results = client.query(
             SELECT_BY_DOC_ID_QUERY.render(record_type=self.record_type),
             external_ids=node_ids,
         )
@@ -274,7 +302,9 @@ class GelVectorStore(BasePydanticVectorStore):
         if node_ids is None:
             return []
 
-        results = await self._async_client.query(
+        client = await self.get_async_client()
+
+        results = await client.query(
             SELECT_BY_DOC_ID_QUERY.render(record_type=self.record_type),
             external_ids=node_ids,
         )
@@ -296,8 +326,10 @@ class GelVectorStore(BasePydanticVectorStore):
         """Add nodes to vector store."""
         inserted_ids = []
 
+        client = self.get_sync_client()
+
         for node in nodes:
-            result = self._sync_client.query(
+            result = client.query(
                 INSERT_QUERY.render(record_type=self.record_type),
                 collection_name=self.collection_name,
                 external_id=node.id_,
@@ -312,8 +344,10 @@ class GelVectorStore(BasePydanticVectorStore):
     async def aadd(self, nodes: Sequence[BaseNode], **kwargs: Any) -> List[str]:
         inserted_ids = []
 
+        client = await self.get_async_client()
+
         for node in nodes:
-            result = await self._async_client.query(
+            result = await client.query(
                 INSERT_QUERY.render(record_type=self.record_type),
                 collection_name=self.collection_name,
                 external_id=node.id_,
@@ -327,14 +361,18 @@ class GelVectorStore(BasePydanticVectorStore):
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Delete nodes using with ref_doc_id."""
-        result = self._sync_client.query(
+        client = self.get_sync_client()
+
+        result = client.query(
             DELETE_BY_IDS_QUERY.render(record_type=self.record_type),
             collection_name=self.collection_name,
             external_ids=[ref_doc_id],
         )
 
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        result = await self._async_client.query(
+        client = await self.get_async_client()
+
+        result = await client.query(
             DELETE_BY_IDS_QUERY.render(record_type=self.record_type),
             collection_name=self.collection_name,
             external_ids=[ref_doc_id],
@@ -342,14 +380,18 @@ class GelVectorStore(BasePydanticVectorStore):
 
     def clear(self) -> None:
         """Clear all nodes from configured vector store."""
-        result = self._sync_client.query(
+        client = self.get_sync_client()
+
+        result = client.query(
             DELETE_ALL_QUERY.render(record_type=self.record_type),
             collection_name=self.collection_name,
         )
 
     async def aclear(self) -> None:
         """Clear all nodes from configured vector store."""
-        result = await self._async_client.query(
+        client = await self.get_async_client()
+
+        result = await client.query(
             DELETE_ALL_QUERY.render(record_type=self.record_type),
             collection_name=self.collection_name,
         )
@@ -368,7 +410,9 @@ class GelVectorStore(BasePydanticVectorStore):
             record_type=self.record_type, filter_clause=filter_clause
         )
 
-        results = self._sync_client.query(
+        client = self.get_sync_client()
+
+        results = client.query(
             rendered_query,
             query_embedding=query.query_embedding,
             collection_name=self.collection_name,
@@ -404,7 +448,9 @@ class GelVectorStore(BasePydanticVectorStore):
             record_type=self.record_type, filter_clause=filter_clause
         )
 
-        results = await self._async_client.query(
+        client = await self.get_async_client()
+
+        results = await client.query(
             rendered_query,
             query_embedding=query.query_embedding,
             collection_name=self.collection_name,
@@ -427,4 +473,3 @@ class GelVectorStore(BasePydanticVectorStore):
 
     def persist(self, persist_path: str, fs) -> None:
         _logger.warning("GelVectorStore.persist() is a no-op")
-        pass
