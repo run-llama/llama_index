@@ -23,23 +23,15 @@ If that's the case, please run 'gel project init' to get started.
 MISSING_RECORD_TYPE_TEMPLATE = """
 Error: Record type {{record_type}} is missing from the Gel schema.
 
-In order to use the LangChain integration, ensure you put the following in dbschema/default.gel:
-
-    using extension pgvector;
+In order to use the LlamaIndex integration, ensure you put the following in dbschema/default.gel:
 
     module default {
         type {{record_type}} {
-            required collection: str;
-            text: str;
-            embedding: ext::pgvector::vector<1536>;
-            external_id: str {
+            required key: str {
                 constraint exclusive;
-            };
-            metadata: json;
-
-            index ext::pgvector::hnsw_cosine(m := 16, ef_construction := 128)
-                on (.embedding)
-        } 
+            }
+            value: array<json>;
+        }
     }
 
 Remember that you also need to run a migration:
@@ -153,26 +145,53 @@ class GelChatStore(BaseChatStore):
     ):
         super().__init__(record_type=record_type)
 
-        self._sync_client = gel.create_client()
-        self._async_client = gel.create_async_client()
+        self._sync_client = None
+        self._async_client = None
 
-        try:
-            self._sync_client.ensure_connected()
-        except gel.errors.ClientConnectionError as e:
-            _logger.error(NO_PROJECT_MESSAGE)
-            raise e
+    def get_sync_client(self):
+        if self._sync_client is None:
+            self._sync_client = gel.create_client()
 
-        try:
-            self._sync_client.query(f"select {self.record_type};")
-        except gel.errors.InvalidReferenceError as e:
-            _logger.error(
-                Template(MISSING_RECORD_TYPE_TEMPLATE).render(record_type="Record")
-            )
-            raise e
+            try:
+                self._sync_client.ensure_connected()
+            except gel.errors.ClientConnectionError as e:
+                _logger.error(NO_PROJECT_MESSAGE)
+                raise e
+
+            try:
+                self._sync_client.query(f"select {self.record_type};")
+            except gel.errors.InvalidReferenceError as e:
+                _logger.error(
+                    Template(MISSING_RECORD_TYPE_TEMPLATE).render(record_type=self.record_type)
+                )
+                raise e
+
+        return self._sync_client
+
+    async def get_async_client(self):
+        if self._async_client is None:
+            self._async_client = gel.create_async_client()
+
+            try:
+                await self._async_client.ensure_connected()
+            except gel.errors.ClientConnectionError as e:
+                _logger.error(NO_PROJECT_MESSAGE)
+                raise e
+
+            try:
+                await self._async_client.query(f"select {self.record_type};")
+            except gel.errors.InvalidReferenceError as e:
+                _logger.error(
+                    Template(MISSING_RECORD_TYPE_TEMPLATE).render(record_type=self.record_type)
+                )
+                raise e
+
+        return self._async_client
 
     def set_messages(self, key: str, messages: list[ChatMessage]) -> None:
         """Set messages for a key."""
-        self._sync_client.query(
+        client = self.get_sync_client()
+        client.query(
             SET_MESSAGES_QUERY,
             key=key,
             value=[message.model_dump_json() for message in messages],
@@ -180,7 +199,8 @@ class GelChatStore(BaseChatStore):
 
     async def aset_messages(self, key: str, messages: list[ChatMessage]) -> None:
         """Async version of Get messages for a key."""
-        await self._async_client.query(
+        client = await self.get_async_client()
+        await client.query(
             SET_MESSAGES_QUERY,
             key=key,
             value=[message.model_dump_json() for message in messages],
@@ -188,54 +208,66 @@ class GelChatStore(BaseChatStore):
 
     def get_messages(self, key: str) -> list[ChatMessage]:
         """Get messages for a key."""
-        result = self._sync_client.query_single(GET_MESSAGES_QUERY, key=key) or []
+        client = self.get_sync_client()
+        result = client.query_single(GET_MESSAGES_QUERY, key=key) or []
         return [ChatMessage.model_validate_json(message) for message in result]
 
     async def aget_messages(self, key: str) -> list[ChatMessage]:
         """Async version of Get messages for a key."""
-        result = await self._async_client.query_single(GET_MESSAGES_QUERY, key=key) or []
+        client = await self.get_async_client()
+        result = await client.query_single(GET_MESSAGES_QUERY, key=key) or []
         return [ChatMessage.model_validate_json(message) for message in result]
 
     def add_message(self, key: str, message: ChatMessage) -> None:
         """Add a message for a key."""
-        self._sync_client.query(ADD_MESSAGE_QUERY, key=key, value=[message.model_dump_json()])
+        client = self.get_sync_client()
+        client.query(ADD_MESSAGE_QUERY, key=key, value=[message.model_dump_json()])
 
     async def async_add_message(self, key: str, message: ChatMessage) -> None:
         """Async version of Add a message for a key."""
-        await self._async_client.query(ADD_MESSAGE_QUERY, key=key, value=[message.model_dump_json()])
+        client = await self.get_async_client()
+        await client.query(ADD_MESSAGE_QUERY, key=key, value=[message.model_dump_json()])
 
     def delete_messages(self, key: str) -> Optional[list[ChatMessage]]:
         """Delete messages for a key."""
-        self._sync_client.query(DELETE_MESSAGES_QUERY, key=key)
+        client = self.get_sync_client()
+        client.query(DELETE_MESSAGES_QUERY, key=key)
 
     async def adelete_messages(self, key: str) -> Optional[list[ChatMessage]]:
         """Async version of Delete messages for a key."""
-        await self._async_client.query(DELETE_MESSAGES_QUERY, key=key)
+        client = await self.get_async_client()
+        await client.query(DELETE_MESSAGES_QUERY, key=key)
 
     def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Delete specific message for a key."""
-        result = self._sync_client.query_single(DELETE_MESSAGE_QUERY, key=key, idx=idx)
+        client = self.get_sync_client()
+        result = client.query_single(DELETE_MESSAGE_QUERY, key=key, idx=idx)
         return ChatMessage.model_validate_json(result) if result else None
 
     async def adelete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Async version of Delete specific message for a key."""
-        result = await self._async_client.query_single(DELETE_MESSAGE_QUERY, key=key, idx=idx)
+        client = await self.get_async_client()
+        result = await client.query_single(DELETE_MESSAGE_QUERY, key=key, idx=idx)
         return ChatMessage.model_validate_json(result) if result else None
 
     def delete_last_message(self, key: str) -> Optional[ChatMessage]:
         """Delete last message for a key."""
-        result = self._sync_client.query_single(DELETE_LAST_MESSAGE_QUERY, key=key)
+        client = self.get_sync_client()
+        result = client.query_single(DELETE_LAST_MESSAGE_QUERY, key=key)
         return ChatMessage.model_validate_json(result) if result else None
 
     async def adelete_last_message(self, key: str) -> Optional[ChatMessage]:
         """Async version of Delete last message for a key."""
-        result = await self._async_client.query_single(DELETE_LAST_MESSAGE_QUERY, key=key)
+        client = await self.get_async_client()
+        result = await client.query_single(DELETE_LAST_MESSAGE_QUERY, key=key)
         return ChatMessage.model_validate_json(result) if result else None
 
     def get_keys(self) -> list[str]:
         """Get all keys."""
-        return self._sync_client.query(GET_KEYS_QUERY)
+        client = self.get_sync_client()
+        return client.query(GET_KEYS_QUERY)
 
     async def aget_keys(self) -> list[str]:
         """Async version of Get all keys."""
-        return await self._async_client.query(GET_KEYS_QUERY)
+        client = await self.get_async_client()
+        return await client.query(GET_KEYS_QUERY)

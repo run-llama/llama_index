@@ -42,7 +42,7 @@ If that's the case, please run 'gel project init' to get started.
 MISSING_RECORD_TYPE_TEMPLATE = """
 Error: Record type {{record_type}} is missing from the Gel schema.
 
-In order to use the LangChain integration, ensure you put the following in dbschema/default.gel:
+In order to use the LlamaIndex integration, ensure you put the following in dbschema/default.gel:
 
     using extension pgvector;
 
