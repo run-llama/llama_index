@@ -7,11 +7,7 @@ from typing import Any, Optional, Dict
 import sys
 
 from mistralai import Mistral
-from mistralai.models import (
-    JobsAPIRoutesFineTuningGetFineTuningJobResponse,
-    WandbIntegration,
-    CompletionTrainingParametersIn,
-)
+from mistralai.models import DetailedJobOut, WandbIntegration, TrainingParameters
 
 from llama_index.core.llms.llm import LLM
 from llama_index.finetuning.callbacks.finetuning_handler import (
@@ -97,7 +93,7 @@ class MistralAIFinetuneEngine(BaseLLMFinetuneEngine):
                     training_files=[train_file.id],
                     validation_files=[eval_file.id] if self.validation_path else None,
                     model=self.base_model,
-                    hyperparameters=CompletionTrainingParametersIn(
+                    hyperparameters=TrainingParameters(
                         training_steps=self.training_steps,
                         learning_rate=self.learning_rate,
                     ),
@@ -123,9 +119,7 @@ class MistralAIFinetuneEngine(BaseLLMFinetuneEngine):
         if self._verbose:
             print(info_str)
 
-    def get_current_job(
-        self,
-    ) -> Optional[JobsAPIRoutesFineTuningGetFineTuningJobResponse]:
+    def get_current_job(self) -> Optional[DetailedJobOut]:
         """Get current job."""
         # validate that it works
         if not self._start_job:
