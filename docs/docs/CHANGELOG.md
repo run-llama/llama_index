@@ -1,5 +1,54 @@
 # ChangeLog
 
+## [2025-04-16]
+
+### `llama-index-core` [0.12.31]
+
+- Fix/memory multimodal content serialization (#18447)
+- add async to memory and postprocessor base classes (#18438)
+
+### `llama-index-callbacks-arize-pheonix` [0.5.1]
+
+- llama index callbacks arize phoenix python version bump (#18466)
+
+### `llama-index-graph-stores-nebula` [0.4.2]
+
+- fix nebula index ddl (#18461)
+
+### `llama-index-indices-managed-vectara` [0.4.3]
+
+- Added `llm_name` argument for Vectara (#18472)
+
+### `llama-index-llms-cohere` [0.4.1]
+
+- expand cohere model support (#18440)
+
+### `llama-index-llms-llama-api` [0.4.0]
+
+- Fix LlamaAPI integration by wrapping OpenAI (#18437)
+
+### `llama-index-llms-perplexity` [0.3.3]
+
+- Update Perplexity Implementation for new models (#18442)
+
+### `llama-index-llms-openai` [0.3.37]
+
+- Added model names for OpenAI 4.1 support (#18456)
+- o3 and o4-mini support (#18473)
+- Don't create a sync openai client when using async methods with Azure (#18471)
+
+### `llama-index-storage-chat-store-sqlite` [0.1.0]
+
+- Feat add sqlite chat store (#18432)
+
+### `llama-index-vector-stores-ApertureDB` [0.0.1]
+
+- Add ApertureDB vector store (#18428)
+
+### `llama-index-vector-stores-elasticsearch` [0.4.3]
+
+- implement missing BasePydanticVectorStore methods (#18454)
+
 ## [2025-04-10]
 
 ### `llama-index-core` [0.12.30]

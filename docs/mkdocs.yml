@@ -313,6 +313,7 @@ nav:
           - ./examples/llm/anthropic.ipynb
           - ./examples/llm/anthropic_prompt_caching.ipynb
           - ./examples/llm/anyscale.ipynb
+          - ./examples/llm/asi1.ipynb
           - ./examples/llm/azure_inference.ipynb
           - ./examples/llm/azure_openai.ipynb
           - ./examples/llm/bedrock.ipynb
@@ -1536,6 +1537,7 @@ nav:
               - ./api_reference/storage/chat_store/postgres.md
               - ./api_reference/storage/chat_store/redis.md
               - ./api_reference/storage/chat_store/simple.md
+              - ./api_reference/storage/chat_store/sqlite.md
               - ./api_reference/storage/chat_store/tablestore.md
               - ./api_reference/storage/chat_store/upstash.md
           - Docstore:
@@ -1591,6 +1593,7 @@ nav:
           - Storage:
               - ./api_reference/storage/storage_context.md
           - Vector Store:
+              - ./api_reference/storage/vector_store/ApertureDB.md
               - ./api_reference/storage/vector_store/alibabacloud_opensearch.md
               - ./api_reference/storage/vector_store/analyticdb.md
               - ./api_reference/storage/vector_store/astra_db.md
@@ -2412,6 +2415,8 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-myscale
             - ../llama-index-integrations/retrievers/llama-index-retrievers-galaxia
             - ../llama-index-integrations/readers/llama-index-readers-uniprot
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-ApertureDB
+            - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-sqlite
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
