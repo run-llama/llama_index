@@ -156,20 +156,36 @@ class Cortex(CustomLLM):
         def exactly_one_non_null(input: List):
             return sum([x is not None for x in input]) == 1
 
-        if not exactly_one_non_null([private_key_file, jwt_token, session]):
-            raise ValueError("May only set 1 of the 3 authentication parameters.")
+        if (
+            not exactly_one_non_null([private_key_file, jwt_token, session])
+            and not is_spcs_environment()
+        ):
+            raise ValueError(
+                "Must set exactly 1 of the 3 authentication parameters, OR be in an SPCS environment."
+            )
 
         # jwt auth
-        if jwt_token and os.path.isfile(jwt_token):
-            with open(jwt_token) as fp:
-                self.jwt_token = fp.read()
-        else:
-            self.jwt_token = jwt_token
+        if jwt_token:
+            if os.path.isfile(jwt_token):
+                with open(jwt_token) as fp:
+                    self.jwt_token = fp.read()
+            else:
+                self.jwt_token = jwt_token
 
         # private key auth
-        self.private_key_file = private_key_file or os.environ.get(
-            "SNOWFLAKE_KEY_FILE", None
-        )
+        if private_key_file:
+            self.private_key_file = private_key_file or os.environ.get(
+                "SNOWFLAKE_KEY_FILE", None
+            )
+
+        # if no auth method specified and in SPCS environment, use the SPCS default session token
+        if (
+            private_key_file is None
+            and jwt_token is None
+            and session is None
+            and is_spcs_environment()
+        ):
+            self.jwt_token = get_default_spcs_token()
 
         self.session = session
         self.model = model
@@ -234,8 +250,12 @@ class Cortex(CustomLLM):
 
     @property
     def snowflake_api_endpoint(self) -> str:
-        if is_scs_environment():
-            base_url = os.environ["SNOWFLAKE_HOST"].replace("-", "_")
+        if is_spcs_environment():
+            base_url = "https://" + os.environ.get("SNOWFLAKE_HOST").replace(
+                "snowflake",
+                os.environ.get("SNOWFLAKE_ACCOUNT").lower().replace("_", "-"),
+                1,
+            )
         else:
             base_url = "https://{self.account}.snowflakecomputing.com"
         return base_url
@@ -370,8 +390,6 @@ class Cortex(CustomLLM):
             return self.session.connection.rest.token
         elif self.private_key_file:
             return generate_sf_jwt(self.account, self.user, self.private_key_file)
-        elif is_spcs_environment():
-            return get_default_spcs_token()
         else:
             raise ValueError(
                 "llama-index Cortex LLM Error: No authentication method set."
