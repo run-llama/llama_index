@@ -41,6 +41,33 @@ DEFAULT_MODEL = "llama3.2-1b"
 DEFAULT_TEMP = 0.0
 DEFAULT_TOP_P = 1.0
 
+# This is waiting on a support request from Snowflake to get exact numbers.
+# This was created based on pubilically available information in the meantime.
+# https://docsbot.ai/models
+model_specs = {
+    "claude-3-5-sonnet": {"context_window": 200_000, "max_output": 4096},
+    "llama4-maverick": {"context_window": 1_000_000, "max_output": None},
+    "llama3.2-1b": {"context_window": 128_000, "max_output": None},
+    "llama3.2-3b": {"context_window": 128_000, "max_output": None},
+    "llama3.1-8b": {"context_window": 128_000, "max_output": None},
+    "llama3.1-70b": {"context_window": 128_000, "max_output": None},
+    "llama3.3-70b": {"context_window": 128_000, "max_output": None},
+    "snowflake-llama-3.3-70b": {"context_window": 128_000, "max_output": None},
+    "llama3.1-405b": {"context_window": 128_000, "max_output": None},
+    "snowflake-llama-3.1-405b": {"context_window": None, "max_output": None},
+    "snowflake-arctic": {"context_window": None, "max_output": None},
+    "deepseek-r1": {"context_window": 64_000, "max_output": 8_192},
+    "reka-core": {"context_window": 128_000, "max_output": None},
+    "reka-flash": {"context_window": 128_000, "max_output": None},
+    "mistral-large2": {"context_window": 128_000, "max_output": 8_192},
+    "mixtral-8x7b": {"context_window": 32000, "max_output": None},
+    "mistral-7b": {"context_window": 32000, "max_output": None},
+    "jamba-instruct": {"context_window": None, "max_output": None},
+    "jamba-1.5-mini": {"context_window": None, "max_output": None},
+    "jamba-1.5-large": {"context_window": None, "max_output": None},
+    "gemma-7b": {"context_window": 8_192, "max_output": None},
+}
+
 
 class Cortex(CustomLLM):
     """
@@ -90,6 +117,9 @@ class Cortex(CustomLLM):
     )
     model: str = Field(default=DEFAULT_MODEL, description="The model to use.")
 
+    jwt_token: str = Field(default=None, description="JWT token data or filepath")
+    session: Optional[Any] = Field(default=None, description="Snowpark Session object.")
+
     def __init__(
         self,
         model: str = DEFAULT_MODEL,
@@ -97,7 +127,7 @@ class Cortex(CustomLLM):
         account: Optional[str] = None,
         private_key_file: Optional[str] = None,
         jwt_token: Optional[str] = None,
-        session: "Optional[snowflake.snowpark.Session]" = None,
+        session: Optional[Any] = None,
         callback_manager: Optional[CallbackManager] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
     ) -> None:
@@ -107,7 +137,7 @@ class Cortex(CustomLLM):
         AUTHENTICATION:
         The recommended way to connect is installing 'snowflake-snowpark-python' then using a snowflake.snowpark.Session object
 
-        There are 3 authentication params, each optional:
+        There are 4 authentication params, each optional:
             If on Snowpark Container Services, you can leave all 3 blank. The default OAUTH token will be used.
             :param private_key_file: Path to a private key file
             :param session: A snowflake Snowpark Session object.
@@ -126,14 +156,15 @@ class Cortex(CustomLLM):
         def exactly_one_non_null(input: List):
             return sum([x is not None for x in input]) == 1
 
-        if not exactly_one_non_null(private_key_file, jwt_token, session):
+        if not exactly_one_non_null([private_key_file, jwt_token, session]):
             raise ValueError("May only set 1 of the 3 authentication parameters.")
 
         # jwt auth
         if jwt_token and os.path.isfile(jwt_token):
             with open(jwt_token) as fp:
-                jwt_token = fp.read()
-        self.jwt_token = jwt_token
+                self.jwt_token = fp.read()
+        else:
+            self.jwt_token = jwt_token
 
         # private key auth
         self.private_key_file = private_key_file or os.environ.get(
