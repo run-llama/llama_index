@@ -322,7 +322,7 @@ class CodeHierarchyNodeParser(NodeParser):
             start_byte = node.start_byte
         if end_byte is None:
             end_byte = node.end_byte
-        return text[start_byte:end_byte].strip()
+        return bytes(text, "utf-8")[start_byte:end_byte].decode().strip()
 
     def _chunk_node(
         self,
