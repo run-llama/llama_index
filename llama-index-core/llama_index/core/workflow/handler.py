@@ -114,7 +114,7 @@ class WorkflowHandler(asyncio.Future[RunResultT]):
 
                 # notify unblocked task that we're ready to accept next event
                 async with self.ctx._step_condition:
-                    self.ctx._step_condition.notify()
+                    self.ctx._step_condition.notify_all()
 
                 # Wait to be notified that the new_ev has been written
                 async with self.ctx._step_event_written:
