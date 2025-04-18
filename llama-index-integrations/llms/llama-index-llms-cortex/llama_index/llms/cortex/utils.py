@@ -10,17 +10,17 @@ from cryptography.hazmat.primitives.serialization import (
     load_pem_private_key,
 )
 
-SCS_TOKEN_PATH = "/snowflake/session/token"
+SPCS_TOKEN_PATH = "/snowflake/session/token"
 
 
-def read_default_scs_token() -> str:
-    with open(SCS_TOKEN_PATH) as fp:
+def get_default_spcs_token() -> str:
+    with open(SPCS_TOKEN_PATH) as fp:
         return fp.read()
 
 
-def is_scs_environment() -> bool:
+def is_spcs_environment() -> bool:
     # this path exists on SCS environments and contains the default OAUTH token
-    return os.path.exists(SCS_TOKEN_PATH)
+    return os.path.exists(SPCS_TOKEN_PATH)
 
 
 def generate_sf_jwt(sf_account: str, sf_user: str, sf_private_key_filepath: str) -> str:

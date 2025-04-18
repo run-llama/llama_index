@@ -30,8 +30,8 @@ from llama_index.core.llms.callbacks import (
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.llms.cortex.utils import (
     generate_sf_jwt,
-    is_scs_environment,
-    read_default_scs_token,
+    is_spcs_environment,
+    get_default_spcs_token,
 )
 from typing import List
 
@@ -235,7 +235,7 @@ class Cortex(CustomLLM):
     @property
     def snowflake_api_endpoint(self) -> str:
         if is_scs_environment():
-            base_url = os.environ["SNOWFLAKE_HOST"]
+            base_url = os.environ["SNOWFLAKE_HOST"].replace("-", "_")
         else:
             base_url = "https://{self.account}.snowflakecomputing.com"
         return base_url
@@ -362,7 +362,7 @@ class Cortex(CustomLLM):
         return gen()
 
     def _generate_auth_token(self) -> str:
-        # priate key file hhas to be checked 2nd to last,
+        # private key file has to be checked 2nd to last,
         # it can be set merely due to an env variable existing
         if self.jwt_token:
             return self.jwt_token
@@ -370,8 +370,8 @@ class Cortex(CustomLLM):
             return self.session.connection.rest.token
         elif self.private_key_file:
             return generate_sf_jwt(self.account, self.user, self.private_key_file)
-        elif is_scs_environment():
-            return read_default_scs_token()
+        elif is_spcs_environment():
+            return get_default_spcs_token()
         else:
             raise ValueError(
                 "llama-index Cortex LLM Error: No authentication method set."
