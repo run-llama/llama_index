@@ -93,7 +93,7 @@ class OpenVINOGenAILLM(CustomLLM):
     def __init__(
         self,
         model_path: str,
-        config: Optional[dict] = None,
+        config: Optional[dict] = {},
         tokenizer: Optional[Any] = None,
         device: Optional[str] = "CPU",
         query_wrapper_prompt: Union[str, PromptTemplate] = "{query_str}",
@@ -258,7 +258,7 @@ class OpenVINOGenAILLM(CustomLLM):
 
         super().__init__(
             tokenizer=tokenizer,
-            model_name=model_path,
+            model_path=model_path,
             device=device,
             query_wrapper_prompt=query_wrapper_prompt,
             is_chat_model=is_chat_model,
