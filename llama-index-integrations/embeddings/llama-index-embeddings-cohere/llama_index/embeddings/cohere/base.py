@@ -25,6 +25,7 @@ class CohereAIModelName(str, Enum):
     ENGLISH_V2 = "embed-english-v2.0"
     ENGLISH_LIGHT_V2 = "embed-english-light-v2.0"
     MULTILINGUAL_V2 = "embed-multilingual-v2.0"
+    EMBED_V4="embed-v4.0"
 
 
 class CohereAIInputType(str, Enum):
@@ -47,6 +48,13 @@ CAT = CohereAITruncate
 
 # This list would be used for model name and input type validation
 VALID_MODEL_INPUT_TYPES = {
+    CAMN.EMBED_V4: [
+        None,
+        CAIT.SEARCH_QUERY,
+        CAIT.SEARCH_DOCUMENT,
+        CAIT.CLASSIFICATION,
+        CAIT.CLUSTERING,
+    ],
     CAMN.ENGLISH_V3: [
         None,
         CAIT.SEARCH_QUERY,
@@ -80,6 +88,11 @@ VALID_MODEL_INPUT_TYPES = {
     CAMN.MULTILINGUAL_V2: [None],
 }
 
+# v4 models support input type parameter 
+V4_MODELS=[
+    CAMN.EMBED_V4
+]
+
 # v3 models require an input_type field
 # supported models for multimodal embeddings
 V3_MODELS = [
@@ -92,6 +105,7 @@ V3_MODELS = [
 # This list would be used for model name and embedding types validation
 # Embedding type can be float/ int8/ uint8/ binary/ ubinary based on model.
 VALID_MODEL_EMBEDDING_TYPES = {
+    CAMN.EMBED_V4: ["float", "int8", "uint8", "binary", "ubinary"],
     CAMN.ENGLISH_V3: ["float", "int8", "uint8", "binary", "ubinary"],
     CAMN.ENGLISH_LIGHT_V3: ["float", "int8", "uint8", "binary", "ubinary"],
     CAMN.MULTILINGUAL_V3: ["float", "int8", "uint8", "binary", "ubinary"],
@@ -249,11 +263,35 @@ class CohereEmbedding(MultiModalEmbedding):
         """Validate image format."""
         return file_type.lower() in SUPPORTED_IMAGE_FORMATS
 
-    def _embed(self, texts: List[str], input_type: str) -> List[List[float]]:
+    def _embed(self, 
+               texts: Optional[List[str]]= None, 
+               input_type: str ="search_document",
+               inputs: Optional[List[dict]] = None) -> List[List[float]]:
         """Embed sentences using Cohere."""
         client = self._get_client()
 
-        if self.model_name in V3_MODELS:
+        if self.model_name in V4_MODELS:
+            if inputs is not None:
+                result = client.embed(
+                    inputs=inputs,
+                    input_type=self.input_type or input_type,
+                    embedding_types=[self.embedding_type],
+                    model=self.model_name,
+                    truncate=self.truncate,
+                    ).embeddings
+            elif texts is not None:
+                wrapped_inputs = [
+                    {"content": [{"type": "text", "text": t}]} for t in texts
+                    ]
+            result = client.embed(
+                inputs=wrapped_inputs,
+                input_type=self.input_type or input_type,
+                embedding_types=[self.embedding_type],
+                model=self.model_name,
+                truncate=self.truncate,
+                ).embeddings
+            
+        elif self.model_name in V3_MODELS:
             result = client.embed(
                 texts=texts,
                 input_type=self.input_type or input_type,
@@ -261,6 +299,7 @@ class CohereEmbedding(MultiModalEmbedding):
                 model=self.model_name,
                 truncate=self.truncate,
             ).embeddings
+
         else:
             result = client.embed(
                 texts=texts,
@@ -270,10 +309,35 @@ class CohereEmbedding(MultiModalEmbedding):
             ).embeddings
         return getattr(result, self.embedding_type, None)
 
-    async def _aembed(self, texts: List[str], input_type: str) -> List[List[float]]:
+    async def _aembed(self, 
+                      texts: Optional[List[str]] = None,
+                      input_type: str = "search_document",
+                      inputs: Optional[List[dict]] = None,
+                      ) -> List[List[float]]:
         """Embed sentences using Cohere."""
         async_client = self._get_async_client()
 
+        if self.model_name == CAMN.EMBED_V4:
+            if inputs is not None:
+                result = await async_client.embed(
+                    inputs=inputs,
+                    input_type=self.input_type or input_type,
+                    embedding_types=[self.embedding_type],
+                    model=self.model_name,
+                    truncate=self.truncate,
+                    ).embeddings
+            elif texts is not None:
+                wrapped_inputs = [
+                    {"content": [{"type": "text", "text": t}]} for t in texts
+                    ]
+                result = await async_client.embed(
+                    inputs=wrapped_inputs,
+                    input_type=self.input_type or input_type,
+                    embedding_types=[self.embedding_type],
+                    model=self.model_name,
+                    truncate=self.truncate,
+                    ).embeddings
+                
         if self.model_name in V3_MODELS:
             result = (
                 await async_client.embed(
@@ -295,37 +359,78 @@ class CohereEmbedding(MultiModalEmbedding):
             ).embeddings
         return getattr(result, self.embedding_type, None)
 
-    def _embed_image(self, image_path: ImageType, input_type: str) -> List[float]:
+    def _embed_image(self, 
+                     image_path: ImageType, 
+                     input_type: str) -> List[float]:
         """Embed images using Cohere."""
-        if self.model_name not in V3_MODELS:
+
+        if self.model_name not in V3_MODELS and self.model_name != CAMN.EMBED_V4:
             raise ValueError(
-                f"{self.model_name} is not a valid multi-modal embedding model. Supported models are {V3_MODELS}"
+                f"{self.model_name} is not a valid multi-modal embedding model. Supported models are {V3_MODELS} and embed-v4.0"
             )
+        
         client = self._get_client()
         processed_image = self._image_to_base64_data_url(image_path)
-        return client.embed(
-            model=self.model_name,
-            images=[processed_image],
-            input_type=input_type,
-        ).embeddings
+
+        # Implementation for Embed-v4.0 
+        if self.model_name==CAMN.EMBED_V4:
+            inputs = [
+                {
+                    "content": [
+                        {"type": "image_url", "image_url": processed_image}
+                        ]
+                }
+            ]
+            return client.embed(
+                inputs=inputs,
+                input_type=input_type,
+                embedding_types=[self.embedding_type],
+                model=self.model_name,
+                truncate=self.truncate,
+                ).embeddings
+            
+        else: 
+            return client.embed(
+                model=self.model_name,
+                images=[processed_image],
+                input_type=input_type,
+                ).embeddings
 
     async def _aembed_image(
         self, image_path: ImageType, input_type: str
     ) -> List[float]:
         """Embed images using Cohere."""
-        if self.model_name not in V3_MODELS:
+        if self.model_name not in V3_MODELS and self.model_name != CAMN.EMBED_V4:
             raise ValueError(
-                f"{self.model_name} is not a valid multi-modal embedding model. Supported models are {V3_MODELS}"
+                f"{self.model_name} is not a valid multi-modal embedding model. Supported models are {V3_MODELS} and embed-v4.0"
             )
         async_client = self._get_async_client()
         processed_image = self._image_to_base64_data_url(image_path)
-        return (
-            await async_client.embed(
-                model=self.model_name,
-                images=[processed_image],
-                input_type=input_type,
-            )
-        ).embeddings
+
+        if self.model_name==CAMN.EMBED_V4:
+            inputs = [
+                {
+                    "content": [
+                        {"type": "image_url", "image_url": processed_image}
+                        ]
+                }
+            ]
+            return (
+                await async_client.embed(
+                    inputs=inputs,
+                    input_type=input_type,
+                    embedding_types=[self.embedding_type],
+                    model=self.model_name,
+                )
+            ).embeddings
+        else:
+            return (
+                await async_client.embed(
+                    model=self.model_name,
+                    images=[processed_image],
+                    input_type=input_type,
+                )
+            ).embeddings
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding. For query embeddings, input_type='search_query'."""
