@@ -313,3 +313,102 @@ async def test_astream_chat_mock(mock_cortex_llm):
 
         assert full_response == "Mocked streamed chat"
         mock_astream_chat.assert_called_once_with(messages)
+
+
+## SESSION RELATED TESTS
+import pytest
+from unittest.mock import Mock, patch
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    CompletionResponse,
+    MessageRole,
+)
+from llama_index.llms.cortex import Cortex
+
+
+class MockSession:
+    """Mock Snowpark session object with the expected structure."""
+
+    def __init__(self, token=None) -> None:
+        # Create the nested structure that matches what Cortex expects
+        self.connection = Mock()
+        self.connection.rest = Mock()
+        self.connection.rest.token = token or "mock_jwt_token"
+
+
+@pytest.fixture()
+def mock_session():
+    """Create a mock session with a token."""
+    return MockSession()
+
+
+@pytest.fixture()
+def mock_cortex_with_session(mock_session):
+    """Create a Cortex instance that uses the mock session for authentication."""
+    return Cortex(user="test_user", account="test_account", session=mock_session)
+
+
+def test_session_auth_token_generation(mock_session):
+    """Test that Cortex correctly extracts the token from a session object."""
+    cortex = Cortex(
+        model="llama3.2-1b",
+        user="test_user",
+        account="test_account",
+        session=mock_session,
+    )
+
+    # Test the token extraction
+    token = cortex._generate_auth_token()
+    assert token == mock_session.connection.rest.token
+    assert token == "mock_jwt_token"
+
+
+def test_complete_with_session_auth(mock_cortex_with_session):
+    """Test the complete method using session authentication."""
+    with patch("requests.post") as mock_post:
+        # Configure the mock to return a properly formed response
+        mock_response = Mock()
+        mock_response.iter_lines.return_value = [
+            b'data: {"choices":[{"delta":{"content":"Hello"}}]}',
+            b'data: {"choices":[{"delta":{"content":" world"}}]}',
+        ]
+        mock_post.return_value = mock_response
+
+        response = mock_cortex_with_session.complete("Test prompt")
+
+        # Verify the response was processed correctly
+        assert isinstance(response, CompletionResponse)
+        assert response.text == "Hello world"
+
+        # Verify the request had the correct authorization header
+        args, kwargs = mock_post.call_args
+        headers = kwargs.get("headers", {})
+        assert "Authorization" in headers
+        assert headers["Authorization"] == "Bearer mock_jwt_token"
+
+
+def test_chat_with_session_auth(mock_cortex_with_session):
+    """Test the chat method using session authentication."""
+    with patch("requests.post") as mock_post:
+        # Configure the mock to return a properly formed response
+        mock_response = Mock()
+        mock_response.iter_lines.return_value = [
+            b'data: {"choices":[{"delta":{"content":"Hello"}}]}',
+            b'data: {"choices":[{"delta":{"content":" from Cortex"}}]}',
+        ]
+        mock_post.return_value = mock_response
+
+        messages = [ChatMessage(role=MessageRole.USER, content="Hi")]
+        response = mock_cortex_with_session.chat(messages)
+
+        # Verify the response was processed correctly
+        assert isinstance(response, ChatResponse)
+        assert response.message.content == "Hello from Cortex"
+        assert response.message.role == MessageRole.ASSISTANT
+
+        # Verify the request had the correct authorization header
+        args, kwargs = mock_post.call_args
+        headers = kwargs.get("headers", {})
+        assert "Authorization" in headers
+        assert headers["Authorization"] == "Bearer mock_jwt_token"
