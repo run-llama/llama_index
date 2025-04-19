@@ -112,7 +112,7 @@ class VectaraIndex(BaseManagedIndex):
 
     def __del__(self) -> None:
         """Attempt to close the session when the object is garbage collected."""
-        if self._session:
+        if hasattr(self, "_session") and self._session:
             self._session.close()
             self._session = None
 
