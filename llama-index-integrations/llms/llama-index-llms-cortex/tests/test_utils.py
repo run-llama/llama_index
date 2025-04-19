@@ -3,7 +3,55 @@ from unittest.mock import mock_open, patch
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
 
-from llama_index.llms.cortex.utils import generate_sf_jwt
+from llama_index.llms.cortex.utils import (
+    generate_sf_jwt,
+    is_spcs_environment,
+    get_spcs_base_url,
+    get_default_spcs_token,
+    SPCS_TOKEN_PATH,
+)
+import os
+
+
+def test_spcs_utils():
+    # Setup environment variables
+    os.environ["SNOWFLAKE_HOST"] = "snowflake.example-spcs-host.com"
+    os.environ["SNOWFLAKE_ACCOUNT"] = "abcdef_ghijkl"
+
+    # Test get_spcs_base_url
+    expected_url = "https://abcdef-ghijkl.example-spcs-host.com"
+
+    # Mock the path check to ensure we're not in SPCS environment
+    with patch("os.path.exists", return_value=False):
+        # Test that ValueError is raised when not in SPCS environment
+        try:
+            get_spcs_base_url()
+            assert AssertionError("ValueError not raised when not in SPCS environment")
+        except ValueError:
+            pass
+
+    # Mock the path check to pretend we're in SPCS environment
+    with patch("os.path.exists", return_value=True):
+        # Test that base URL is correctly formed
+        base_url = get_spcs_base_url()
+        assert base_url == expected_url
+
+    # Test is_spcs_environment
+    with patch("os.path.exists", return_value=True):
+        assert is_spcs_environment()
+    with patch("os.path.exists", return_value=False):
+        assert not is_spcs_environment()
+
+    # Test get_default_spcs_token
+    fake_token = "fake-jwt-token-for-testing"
+    with patch("builtins.open", mock_open(read_data=fake_token)) as mock_file:
+        token = get_default_spcs_token()
+        assert token == fake_token
+        mock_file.assert_called_once_with(SPCS_TOKEN_PATH)
+
+    # Clean up environment variables
+    del os.environ["SNOWFLAKE_HOST"]
+    del os.environ["SNOWFLAKE_ACCOUNT"]
 
 
 def test_generate_sf_jwt():
