@@ -32,6 +32,7 @@ from llama_index.llms.cortex.utils import (
     generate_sf_jwt,
     is_spcs_environment,
     get_default_spcs_token,
+    get_spcs_base_url,
 )
 from typing import List
 
@@ -194,8 +195,8 @@ class Cortex(CustomLLM):
 
         # Set reasonable default max output and context window based on known data
         specs = model_specs.get(self.model, {})
-        self.context_window = specs.get("context_window") | DEFAULT_CONTEXT_WINDOW
-        self.max_output = specs.get("max_output") | DEFAULT_MAX_TOKENS
+        self.context_window = specs.get("context_window", DEFAULT_CONTEXT_WINDOW)
+        self.max_tokens = specs.get("max_output", DEFAULT_MAX_TOKENS)
 
     def get_token_counting_handler(self) -> TokenCountingHandler:
         # https://docs.snowflake.com/en/sql-reference/functions/count_tokens-snowflake-cortex
@@ -255,11 +256,7 @@ class Cortex(CustomLLM):
     @property
     def snowflake_api_endpoint(self) -> str:
         if is_spcs_environment():
-            base_url = "https://" + os.environ.get("SNOWFLAKE_HOST").replace(
-                "snowflake",
-                os.environ.get("SNOWFLAKE_ACCOUNT").lower().replace("_", "-"),
-                1,
-            )
+            return get_spcs_base_url()
         else:
             base_url = "https://{self.account}.snowflakecomputing.com"
         return base_url
