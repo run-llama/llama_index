@@ -13,7 +13,7 @@ from llama_index.core.llms.callbacks import llm_completion_callback, CallbackMan
 from llama_index.core.llms.custom import CustomLLM
 from llama_index.core.bridge.pydantic import PrivateAttr, Field
 
-from cleanlab_studio import Studio
+from cleanlab_tlm import TLM
 
 DEFAULT_CONTEXT_WINDOW = 131072
 DEFAULT_MAX_TOKENS = 512
@@ -76,14 +76,22 @@ class CleanlabTLM(CustomLLM):
                     self.context_window = 8192
                 elif self.model == "gpt-3.5-turbo-16k":
                     self.context_window = 16385
-                elif self.model in ["gpt-4o-mini", "gpt-4o", "o1-preview"]:
+                elif self.model in ["gpt-4o-mini", "gpt-4o", "o1-preview", "o1-mini"]:
                     self.context_window = 131072
+                elif self.model in ["o3-mini", "o1"]:
+                    self.context_window = 204800
                 elif self.model in [
                     "claude-3-haiku",
-                    "claude-3-sonnet",
+                    "claude-3.5-haiku",
                     "claude-3.5-sonnet",
+                    "claude-3.5-sonnet-v2",
+                    "claude-3.7-sonnet",
                 ]:
                     self.context_window = 204800
+                elif self.model in "nova-micro":
+                    self.context_window = 131072
+                elif self.model in ["nova-lite", "nova-pro"]:
+                    self.context_window = 307200
                 else:
                     # ValueError is raised by Studio object for non-supported models
                     # Set context_window to dummy (default) value
@@ -107,9 +115,10 @@ class CleanlabTLM(CustomLLM):
 
         api_key = get_from_param_or_env("api_key", api_key, "CLEANLAB_API_KEY")
 
-        studio = Studio(api_key=api_key)
-        self._client = studio.TLM(
-            quality_preset=self.quality_preset, options=options if use_options else None
+        self._client = TLM(
+            api_key=api_key,
+            quality_preset=self.quality_preset,
+            options=options if use_options else None,
         )
 
     @classmethod
@@ -128,7 +137,7 @@ class CleanlabTLM(CustomLLM):
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         # Prompt TLM for a response and trustworthiness score
-        response: Dict[str, str] = self._client.prompt(prompt)
+        response = self._client.prompt(prompt)
 
         return CompletionResponse(
             text=response["response"],
