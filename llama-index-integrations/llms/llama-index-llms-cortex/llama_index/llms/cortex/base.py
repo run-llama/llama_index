@@ -108,11 +108,11 @@ class Cortex(CustomLLM):
         default=os.environ.get("SNOWFLAKE_KEY_FILE", None),
     )
     context_window: int = Field(
-        default=DEFAULT_CONTEXT_WINDOW,
+        default=None,
         description="The maximum number of context tokens for the model.",
     )
     max_tokens: int = Field(
-        default=DEFAULT_MAX_TOKENS,
+        default=None,
         description="The maximum number of tokens to generate in response.",
     )
     model: str = Field(default=DEFAULT_MODEL, description="The model to use.")
@@ -192,6 +192,11 @@ class Cortex(CustomLLM):
         self.user = user or os.environ.get("SNOWFLAKE_USERNAME", None)
         self.account = account or os.environ.get("SNOWFLAKE_ACCOUNT", None)
 
+        # Set reasonable default max output and context window based on known data
+        specs = model_specs.get(self.model, {})
+        self.context_window = specs.get("context_window") | DEFAULT_CONTEXT_WINDOW
+        self.max_output = specs.get("max_output") | DEFAULT_MAX_TOKENS
+
     def get_token_counting_handler(self) -> TokenCountingHandler:
         # https://docs.snowflake.com/en/sql-reference/functions/count_tokens-snowflake-cortex
         # https://docs.llamaindex.ai/en/stable/api_reference/callbacks/token_counter/
@@ -236,7 +241,6 @@ class Cortex(CustomLLM):
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
         return LLMMetadata(
-            # TODO: add method to get model context window/size
             context_window=self.context_window,
             num_output=self.max_tokens,
             is_chat_model=True,

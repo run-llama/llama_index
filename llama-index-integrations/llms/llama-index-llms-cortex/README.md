@@ -8,7 +8,11 @@ Integrate with Snowflake Cortex API.
 1. Snowpark Session object (recommended way)
    this allows authentication via Snowpark Container Services default token, via Oauth,
    password, private key, web browser, or any other method.
+
+   Guide to creating sessions: https://docs.snowflake.com/en/developer-guide/snowpark/python/creating-session
+
 2. Path to a private key file
+
 3. JWT token
 
 ## Installation
@@ -51,7 +55,7 @@ connection_parameters = {
     "database": "<your snowflake database>",
     "schema": "<your snowflake schema",
     "warehouse": "<your snowflake warehouse>",
-    "authenticator": "JWT_AUTHENtICATOR",
+    "authenticator": "JWT_AUTHENTICATOR",
 }
 session = Session.builder.configs(connection_parameters).create()
 
@@ -85,7 +89,7 @@ connection_parameters = {
     "schema": "<your snowflake schema",
     "warehouse": "<your snowflake warehouse>",
     "token": cortex_utils.get_default_spcs_token(),
-    "authenticator": "JWT_AUTHENtICATOR",
+    "authenticator": "JWT_AUTHENTICATOR",
 }
 session = Session.builder.configs(connection_parameters).create()
 
