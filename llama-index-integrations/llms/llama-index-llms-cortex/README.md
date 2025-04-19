@@ -11,7 +11,7 @@ Integrate with Snowflake Cortex API.
 
    Guide to creating sessions: https://docs.snowflake.com/en/developer-guide/snowpark/python/creating-session
 
-2. Path to a private key file
+2. Path to a private key file. Encrypted private keys unsupported. For encrypted keys: use a Snowpark Session instead, with the 'private_key_file_pwd' parameter.
 
 3. JWT token
 
