@@ -36,10 +36,15 @@ from cohere.types import (
 
 
 COMMAND_MODELS = {
+    "command-a-03-2025": 256000,
+    "command-r7b-12-2024": 128000,
     "command-r": 128000,
+    "command-r-08-2024": 128000,
     "command-r-plus": 128000,
+    "command-r-plus-04-2024": 128000,
+    "command-r-plus-08-2024": 128000,
     "command": 4096,
-    "command-nightly": 4096,
+    "command-nightly": 128000,
     "command-light": 4096,
     "command-light-nightly": 4096,
     "c4ai-aya-expanse-32b": 128000,
@@ -51,11 +56,29 @@ GENERATION_MODELS = {"base": 2048, "base-light": 2048}
 REPRESENTATION_MODELS = {
     "embed-english-light-v2.0": 512,
     "embed-english-v2.0": 512,
+    "embed-english-v3.0": 512,
     "embed-multilingual-v2.0": 256,
+    "embed-english-light-v3.0": 512,
+    "embed-multilingual-v3.0": 512,
+    "embed-multilingual-light-v3.0": 512,
 }
 
-FUNCTION_CALLING_MODELS = {"command-r", "command-r-plus"}
-ALL_AVAILABLE_MODELS = {**COMMAND_MODELS, **GENERATION_MODELS, **REPRESENTATION_MODELS}
+FUNCTION_CALLING_MODELS = {
+    "command-a-03-2025",
+    "command-r7b-12-2024",
+    "command-r",
+    "command-r-08-2024",
+    "command-r-plus",
+    "command-r-plus-04-2024",
+    "command-r-plus-08-2024",
+}
+
+ALL_AVAILABLE_MODELS = {
+    **COMMAND_MODELS,
+    **GENERATION_MODELS,
+    **REPRESENTATION_MODELS,
+}
+
 CHAT_MODELS = {**COMMAND_MODELS}
 
 JSON_TO_PYTHON_TYPES = {

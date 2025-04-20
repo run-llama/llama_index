@@ -46,6 +46,10 @@ O1_MODELS: Dict[str, int] = {
     "o1-mini-2024-09-12": 128000,
     "o3-mini": 200000,
     "o3-mini-2025-01-31": 200000,
+    "o3": 200000,
+    "o3-2025-04-16": 200000,
+    "o4-mini": 200000,
+    "o4-mini-2025-04-16": 200000,
 }
 
 O1_MODELS_WITHOUT_FUNCTION_CALLING = {
@@ -92,6 +96,13 @@ GPT4_MODELS: Dict[str, int] = {
     # 0314 models
     "gpt-4-0314": 8192,
     "gpt-4-32k-0314": 32768,
+    # GPT 4.1 Models
+    "gpt-4.1": 1047576,
+    "gpt-4.1-mini": 1047576,
+    "gpt-4.1-nano": 1047576,
+    "gpt-4.1-2025-04-14": 1047576,
+    "gpt-4.1-mini-2025-04-14": 1047576,
+    "gpt-4.1-nano-2025-04-14": 1047576,
 }
 
 AZURE_TURBO_MODELS: Dict[str, int] = {
