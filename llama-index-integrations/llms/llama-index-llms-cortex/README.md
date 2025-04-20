@@ -105,3 +105,9 @@ completion_response = llm.complete(
 )
 print(completion_response)
 ```
+
+## TODO
+
+1 snowflake token counting
+2 database/list of snowflake supported models with context windows + output lengths
+3 True streaming support instead of buffering all responses for the streamiung methods

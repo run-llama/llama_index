@@ -1,7 +1,3 @@
-# TODO
-# snowflake token counting
-# database/list of snowflake supported models with context windows + output lengths
-
 import json
 import os
 from typing import Any, Dict, Optional, Sequence
