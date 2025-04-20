@@ -27,7 +27,7 @@ from llama_index.core.llms.callbacks import (
     llm_completion_callback,
 )
 
-from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
+from llama_index.core.callbacks import CallbackManager
 from llama_index.llms.cortex.utils import (
     generate_sf_jwt,
     is_spcs_environment,
@@ -73,6 +73,11 @@ model_specs = {
 class Cortex(CustomLLM):
     """
     Cortex LLM.
+
+    This class provides an interface to Snowflake's Cortex LLM service.
+    HTTP errors from the API (including invalid model names) will raise
+    requests.exceptions.HTTPError for synchronous methods or
+    aiohttp.ClientResponseError for asynchronous methods.
 
     Examples:
         `pip install llama-index-llms-cortex`
@@ -136,7 +141,8 @@ class Cortex(CustomLLM):
         Implements all Snowflake Cortex LLMs.
 
         AUTHENTICATION:
-        The recommended way to connect is installing 'snowflake-snowpark-python' then using a snowflake.snowpark.Session object
+        The recommended way to connect is to install a 'snowflake-snowpark-python', then sue a snowflake.snowpark.Session object
+        Env vars SNOWFLAKE_ACCOUNT and SNOWFLAKE_USERNAME must be set or passed in as params.
 
         There are 4 authentication params, each optional:
             If on Snowpark Container Services, you can leave all 3 blank. The default OAUTH token will be used.
@@ -144,9 +150,7 @@ class Cortex(CustomLLM):
             :param session: A snowflake Snowpark Session object.
             :param jwt_token: a str or filepath containing a jwt token. This can be an OAUTH token.
 
-        If none are set it will look for a variable SNOWFLAKE_PRIVATE_KEY
-
-        If /that/ isn't set, it will check if you're in an SCS container, an duse the default OAUTH token located at nowflake/session/token
+        If that isn't set, it will check if you're in an SCS container, an duse the default OAUTH token located at snowflake/session/token
 
         """
         super().__init__(
@@ -195,48 +199,8 @@ class Cortex(CustomLLM):
 
         # Set reasonable default max output and context window based on known data
         specs = model_specs.get(self.model, {})
-        self.context_window = specs.get("context_window", DEFAULT_CONTEXT_WINDOW)
-        self.max_tokens = specs.get("max_output", DEFAULT_MAX_TOKENS)
-
-    def get_token_counting_handler(self) -> TokenCountingHandler:
-        # https://docs.snowflake.com/en/sql-reference/functions/count_tokens-snowflake-cortex
-        # https://docs.llamaindex.ai/en/stable/api_reference/callbacks/token_counter/
-        # https://docs.snowflake.com/en/developer-guide/sql-api/index
-
-        jwt = self._generate_auth_token()
-
-        async def handler(text: str) -> int:
-            sql = f"SNOWFLAKE.CORTEX.COUNT_TOKENS( {self.model} , {text} )"
-            url = self.snowflake_sql_endpoint
-            headers = (
-                {
-                    "X-Snowflake-Authorization-Token-Type": "KEYPAIR_JWT",
-                    "Authorization": f"Bearer {jwt}",
-                    "Content-Type": "application/json",
-                    "Accept": "application/json, text/event-stream",
-                },
-            )
-            json = {"statement": sql}
-            api_response = requests.post(url, headers, json)
-
-            if api_response.status_code == 200:
-                result = api_response.json()
-                single_value = result["data"][0][0]
-                try:
-                    return int(single_value)
-                except ValueError:
-                    # TODO: better way to log error in llama index?
-                    import logging
-
-                    logging.error(
-                        f"could not convert {result} from snowflake token counting attempt to an int"
-                    )
-                    return -1
-            else:
-                # TODO: communicate HTTP error code somehow?
-                return -1
-
-        return handler
+        self.context_window = specs.get("context_window") or DEFAULT_CONTEXT_WINDOW
+        self.max_tokens = specs.get("max_output") or DEFAULT_MAX_TOKENS
 
     @property
     def metadata(self) -> LLMMetadata:
@@ -250,20 +214,16 @@ class Cortex(CustomLLM):
         )
 
     @property
-    def snowflake_sql_endpoint(self) -> str:
-        return self.cortex_complete_endpoint + "/api/v2/statements"
-
-    @property
     def snowflake_api_endpoint(self) -> str:
         if is_spcs_environment():
             return get_spcs_base_url()
         else:
-            base_url = "https://{self.account}.snowflakecomputing.com"
+            base_url = f"https://{self.account}.snowflakecomputing.com"
         return base_url
 
     @property
     def cortex_complete_endpoint(self) -> str:
-        append = "api/v2/cortex/inference:complete"
+        append = "/api/v2/cortex/inference:complete"
         return self.snowflake_api_endpoint + append
 
     def _make_completion_payload(
@@ -299,6 +259,7 @@ class Cortex(CustomLLM):
         api_response = requests.post(
             **self._make_completion_payload(prompt, formatted, **kwargs), stream=True
         )
+        api_response.raise_for_status()
         responses = []
         for line in api_response.iter_lines(decode_unicode=True):
             if line:
@@ -318,6 +279,7 @@ class Cortex(CustomLLM):
             api_response = await session.post(
                 **self._make_completion_payload(prompt, formatted, **kwargs)
             )
+            await api_response.raise_for_status()
             responses = []
             async for line in api_response.content:
                 line = line.decode()
@@ -340,6 +302,7 @@ class Cortex(CustomLLM):
         api_response = requests.post(
             **self._make_completion_payload(prompt, formatted, **kwargs), stream=True
         )
+        api_response.raise_for_status()
 
         def gen() -> CompletionResponseGen:
             text = ""
@@ -365,6 +328,7 @@ class Cortex(CustomLLM):
             api_response = await session.post(
                 **self._make_completion_payload(prompt, formatted, **kwargs)
             )
+            await api_response.raise_for_status()
             # buffer data
             lines = []
             async for line in api_response.content:
@@ -434,6 +398,7 @@ class Cortex(CustomLLM):
         api_response = requests.post(
             **self._make_chat_payload(messages, **kwargs), stream=True
         )
+        api_response.raise_for_status()
         responses = []
         for line in api_response.iter_lines(decode_unicode=True):
             if line:
@@ -458,6 +423,7 @@ class Cortex(CustomLLM):
             api_response = await session.post(
                 **self._make_chat_payload(messages, **kwargs)
             )
+            await api_response.raise_for_status()
             responses = []
             async for line in api_response.content:
                 line = line.decode()
@@ -484,6 +450,7 @@ class Cortex(CustomLLM):
         api_response = requests.post(
             **self._make_chat_payload(messages, **kwargs), stream=True
         )
+        api_response.raise_for_status()
 
         def gen() -> ChatResponseGen:
             text = ""
@@ -513,6 +480,7 @@ class Cortex(CustomLLM):
             api_response = await session.post(
                 **self._make_chat_payload(messages, **kwargs)
             )
+            await api_response.raise_for_status()
             # buffer data
             lines = []
             async for line in api_response.content:

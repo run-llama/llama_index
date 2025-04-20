@@ -24,6 +24,16 @@ def cortex_llm() -> Cortex:
     return Cortex(user=user, account=account, private_key_file=key_file)
 
 
+def test_cortex_metadata(cortex_llm):
+    """Test that the LLM metadata is correctly configured."""
+    metadata = cortex_llm.metadata
+
+    assert metadata.model_name == "llama3.2-1b"
+    assert metadata.is_chat_model is True
+    assert metadata.context_window == 128000
+    assert metadata.num_output == 4096
+
+
 def test_complete(cortex_llm):
     response = cortex_llm.complete("hello", temperature=0, max_tokens=2)
     assert isinstance(response, CompletionResponse)
