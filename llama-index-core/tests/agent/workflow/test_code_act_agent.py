@@ -166,4 +166,4 @@ async def test_code_act_agent_tool_handling(
     # Finalize
     final_output = await agent.finalize(ctx, output, mock_memory)
     assert isinstance(final_output, AgentOutput)
-    assert mock_memory.aput.called  # Verify memory was updated
+    assert mock_memory.aput_messages.called  # Verify memory was updated

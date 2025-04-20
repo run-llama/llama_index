@@ -78,7 +78,7 @@ from llama_index.llms.openai.utils import (
     to_openai_message_dicts,
     update_tool_calls,
 )
-from openai import AsyncOpenAI, AzureOpenAI
+from openai import AsyncOpenAI, AzureOpenAI, AsyncAzureOpenAI
 from openai import OpenAI as SyncOpenAI
 from openai.types.chat.chat_completion_chunk import (
     ChatCompletionChunk,
@@ -341,9 +341,6 @@ class OpenAI(FunctionCallingLLM):
             model_name = model_name.split(":")[1]
         return model_name
 
-    def _is_azure_client(self) -> bool:
-        return isinstance(self._get_client(), AzureOpenAI)
-
     @classmethod
     def class_name(cls) -> str:
         return "openai_llm"
@@ -531,7 +528,7 @@ class OpenAI(FunctionCallingLLM):
                 if len(response.choices) > 0:
                     delta = response.choices[0].delta
                 else:
-                    if self._is_azure_client():
+                    if isinstance(client, AzureOpenAI):
                         continue
                     else:
                         delta = ChoiceDelta()
@@ -800,7 +797,7 @@ class OpenAI(FunctionCallingLLM):
                         continue
                     delta = response.choices[0].delta
                 else:
-                    if self._is_azure_client():
+                    if isinstance(aclient, AsyncAzureOpenAI):
                         continue
                     else:
                         delta = ChoiceDelta()
