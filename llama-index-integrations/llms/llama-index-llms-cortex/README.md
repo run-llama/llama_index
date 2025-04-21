@@ -109,5 +109,4 @@ print(completion_response)
 ## TODO
 
 1 snowflake token counting
-2 database/list of snowflake supported models with context windows + output lengths
-3 True streaming support instead of buffering all responses for the streamiung methods
+2 Pull metadata for snowflake models from Snowflake official documentation (support ticket is out, they said they'll get back to me 4-20-2025)
