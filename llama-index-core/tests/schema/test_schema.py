@@ -281,6 +281,11 @@ def test_image_document_embeddings():
     assert doc.text_resource.embeddings == {"dense": [1.0, 2.0, 3.0]}
 
 
+def test_image_document_path_serialization():
+    doc = ImageDocument(image_path=Path("test.png"))
+    assert doc.model_dump()["image_resource"]["path"] == "test.png"
+
+
 def test_image_block_resolve_image(png_1px: bytes, png_1px_b64: bytes):
     doc = ImageDocument()
     assert doc.resolve_image().read() == b""

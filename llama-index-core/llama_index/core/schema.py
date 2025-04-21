@@ -45,6 +45,7 @@ from llama_index.core.bridge.pydantic import (
     SerializeAsAny,
     SerializerFunctionWrapHandler,
     ValidationInfo,
+    field_serializer,
     field_validator,
     model_serializer,
 )
@@ -564,6 +565,14 @@ class MediaResource(BaseModel):
                 return ftype.mime
 
         return v
+
+    @field_serializer("path")
+    def serialize_path(
+        self, path: Optional[Path], _info: ValidationInfo
+    ) -> Optional[str]:
+        if path is None:
+            return path
+        return str(path)
 
     @property
     def hash(self) -> str:
