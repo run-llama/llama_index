@@ -285,6 +285,9 @@ def test_image_document_path_serialization():
     doc = ImageDocument(image_path=Path("test.png"))
     assert doc.model_dump()["image_resource"]["path"] == "test.png"
 
+    new_doc = ImageDocument(**doc.model_dump())
+    assert new_doc.image_resource.path == Path("test.png")
+
 
 def test_image_block_resolve_image(png_1px: bytes, png_1px_b64: bytes):
     doc = ImageDocument()

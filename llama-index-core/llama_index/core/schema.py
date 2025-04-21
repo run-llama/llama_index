@@ -1024,7 +1024,7 @@ class Document(Node):
             else:
                 data["metadata"] = value
 
-        if "text" in data:
+        if data.get("text"):
             text = data.pop("text")
             if "text_resource" in data:
                 text_resource = (
