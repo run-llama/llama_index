@@ -320,25 +320,21 @@ class Cortex(CustomLLM):
     async def _astream_complete(
         self, prompt, formatted=False, **kwargs
     ) -> CompletionResponseAsyncGen:
-        async with aiohttp.ClientSession() as session:
-            api_response = await session.post(
-                **self._make_completion_payload(prompt, formatted, **kwargs)
-            )
-            await api_response.raise_for_status()
-            # buffer data
-            lines = []
-            async for line in api_response.content:
-                line = line.decode()
-                if line and (line != "\n"):
-                    lines.append(line)
-
         async def gen() -> CompletionResponseAsyncGen:
-            text = ""
-            for line in lines:
-                line_json = json.loads(line[len("data: ") :].strip("\n"))
-                line_delta = line_json["choices"][0]["delta"].get("content", "")
-                text += line_delta
-                yield CompletionResponse(text=text, delta=line_delta, raw=line_json)
+            async with aiohttp.ClientSession() as session:
+                api_response = await session.post(
+                    **self._make_completion_payload(prompt, formatted, **kwargs)
+                )
+                text = ""
+                async for line in api_response.content:
+                    line = line.decode()
+                    if line and (line != "\n") and line.startswith("data: "):
+                        line_json = json.loads(line[len("data: ") :].strip("\n"))
+                        line_delta = line_json["choices"][0]["delta"].get("content", "")
+                        text += line_delta
+                        yield CompletionResponse(
+                            text=text, delta=line_delta, raw=line_json
+                        )
 
         return gen()
 
