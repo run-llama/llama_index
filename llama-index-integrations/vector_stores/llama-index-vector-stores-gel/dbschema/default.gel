@@ -1,5 +1,5 @@
 using extension pgvector;
-                                    
+
 module default {
     scalar type EmbeddingVector extending ext::pgvector::vector<10>;
 
@@ -14,5 +14,5 @@ module default {
 
         index ext::pgvector::hnsw_cosine(m := 16, ef_construction := 128)
             on (.embedding)
-    } 
+    }
 }

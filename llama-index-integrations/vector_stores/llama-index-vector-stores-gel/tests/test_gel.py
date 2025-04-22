@@ -81,7 +81,7 @@ NODES = [
 ]
 
 
-@pytest.fixture
+@pytest.fixture()
 def vectorstore() -> GelVectorStore:
     vectorstore = GelVectorStore()
     vectorstore.clear()
@@ -339,8 +339,8 @@ def test_clear(vectorstore: GelVectorStore):
     assert len(vectorstore.get_nodes()) == 0
 
 
-async def test_aadd(vectorstore: GelVectorStore):
-    inserted_ids = await vectorstore.aadd(NODES)
+async def test_async_add(vectorstore: GelVectorStore):
+    inserted_ids = await vectorstore.async_add(NODES)
 
     assert len(inserted_ids) == len(NODES)
 
@@ -351,7 +351,7 @@ async def test_aadd(vectorstore: GelVectorStore):
 
 
 async def test_aquery(vectorstore: GelVectorStore):
-    inserted_ids = await vectorstore.aadd(NODES)
+    inserted_ids = await vectorstore.async_add(NODES)
 
     query = VectorStoreQuery(
         query_embedding=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -366,7 +366,7 @@ async def test_aquery(vectorstore: GelVectorStore):
 
 
 async def test_aget_nodes(vectorstore: GelVectorStore):
-    inserted_ids = await vectorstore.aadd(NODES)
+    inserted_ids = await vectorstore.async_add(NODES)
     results = await vectorstore.aget_nodes(node_ids=["1", "2"])
 
     assert len(results) == 2
@@ -378,7 +378,7 @@ async def test_aget_nodes(vectorstore: GelVectorStore):
 
 
 async def test_adelete(vectorstore: GelVectorStore):
-    inserted_ids = await vectorstore.aadd(NODES)
+    inserted_ids = await vectorstore.async_add(NODES)
     await vectorstore.adelete(ref_doc_id="1")
     results = await vectorstore.aget_nodes(node_ids=["1"])
     assert len(results) == 0

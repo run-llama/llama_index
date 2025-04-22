@@ -1,1 +1,1 @@
-# LlamaIndex Vector_Stores Integration: Gel 
+# LlamaIndex Vector_Stores Integration: Gel

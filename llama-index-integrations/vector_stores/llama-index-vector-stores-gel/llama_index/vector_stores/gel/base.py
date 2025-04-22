@@ -74,7 +74,7 @@ try:
     import gel
 except ImportError as e:
     _logger.error(IMPORT_ERROR_MESSAGE)
-    raise e
+    raise
 
 
 def format_query(text: str) -> Template:
@@ -245,7 +245,7 @@ class GelVectorStore(BasePydanticVectorStore):
                 self._sync_client.ensure_connected()
             except gel.errors.ClientConnectionError as e:
                 _logger.error(NO_PROJECT_MESSAGE)
-                raise e
+                raise
 
             try:
                 self._sync_client.query(f"select {self.record_type};")
@@ -255,7 +255,7 @@ class GelVectorStore(BasePydanticVectorStore):
                         record_type=self.record_type
                     )
                 )
-                raise e
+                raise
 
         return self._sync_client
 
@@ -268,7 +268,7 @@ class GelVectorStore(BasePydanticVectorStore):
                 await self._async_client.ensure_connected()
             except gel.errors.ClientConnectionError as e:
                 _logger.error(NO_PROJECT_MESSAGE)
-                raise e
+                raise
 
             try:
                 await self._async_client.query(f"select {self.record_type};")
@@ -278,7 +278,7 @@ class GelVectorStore(BasePydanticVectorStore):
                         record_type=self.record_type
                     )
                 )
-                raise e
+                raise
 
         return self._async_client
 
@@ -360,7 +360,7 @@ class GelVectorStore(BasePydanticVectorStore):
 
         return inserted_ids
 
-    async def aadd(self, nodes: Sequence[BaseNode], **kwargs: Any) -> List[str]:
+    async def async_add(self, nodes: Sequence[BaseNode], **kwargs: Any) -> List[str]:
         """Async version of add."""
         inserted_ids = []
 
