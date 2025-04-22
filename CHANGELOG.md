@@ -1,5 +1,28 @@
 # ChangeLog
 
+## [2025-04-21]
+
+### `llama-index-core` [0.12.32]
+
+- Fix media resource serialization (#18496)
+- fix react agent prompt updates (#18494)
+
+### `llama-index-indices-managed-vectara` [0.4.4]
+
+- Close "session" in VectaraIndex on GC (#18484)
+
+### `llama-index-llms-openai` [0.3.38]
+
+- allow content blocks in openai assistant messages (#18495)
+
+### `llama-index-llms-openvino-genai` [0.1.1]
+
+- fix the openvino llm initialize issue (#18481)
+
+### `llama-index-vector-stores-milvus` [0.8.0]
+
+- MilvusVectorStore: BM25 as default sparse embedding function (#18460)
+
 ## [2025-04-16]
 
 ### `llama-index-core` [0.12.31]
