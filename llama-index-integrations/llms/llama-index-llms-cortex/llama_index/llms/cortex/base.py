@@ -154,6 +154,10 @@ class Cortex(CustomLLM):
             callback_manager=callback_manager,
         )
 
+        private_key_file = private_key_file or os.environ.get(
+            "SNOWFLAKE_KEY_FILE", None
+        )
+
         def exactly_one_non_null(input: List):
             return sum([x is not None for x in input]) == 1
 
@@ -175,9 +179,7 @@ class Cortex(CustomLLM):
 
         # private key auth
         if private_key_file:
-            self.private_key_file = private_key_file or os.environ.get(
-                "SNOWFLAKE_KEY_FILE", None
-            )
+            self.private_key_file = private_key_file
 
         # if no auth method specified and in SPCS environment, use the SPCS default session token
         if (
