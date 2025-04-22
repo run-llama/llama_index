@@ -83,3 +83,4 @@ You can find a few examples of memory in action below:
 - [Chat Summary Memory Buffer](../../../examples/agent/memory/summary_memory_buffer.ipynb)
 - [Composable Memory](../../../examples/agent/memory/composable_memory.ipynb)
 - [Vector Memory](../../../examples/agent/memory/vector_memory.ipynb)
+- [Mem0 Memory](../../../examples/memory/Mem0Memory.ipynb)
