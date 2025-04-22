@@ -1,3 +1,3 @@
-from llama_index.postprocessor.google_rerank.base import GoogleReranker
+from llama_index.postprocessor.google_rerank.base import GoogleRerank
 
-__all__ = ["GoogleGenAIReranker"]
+__all__ = ["GoogleRerank"]

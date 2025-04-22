@@ -1,7 +1,7 @@
 import os
 import json
 from enum import Enum
-from typing import Any, List, Optional, TypedDict
+from typing import Any, List, Optional
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CBEventType, EventPayload
@@ -13,16 +13,22 @@ from llama_index.core.instrumentation.events.rerank import (
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 
-import google.auth
+from google.oauth2 import service_account
 from google.cloud import discoveryengine_v1 as discoveryengine
+
+
+GOOGLE_SERVICE_ACCOUNT_INFO = json.load(
+    open(
+        "/home/mdcir/Desktop/llama_index/llama-index-integrations/postprocessor/llama-index-postprocessor-google-rerank/llama_index/postprocessor/google_rerank/google-service-account.json"
+    )
+)
+GOOGLE_CREDENTIALS = service_account.Credentials.from_service_account_info(
+    GOOGLE_SERVICE_ACCOUNT_INFO
+)
 
 
 dispatcher = get_dispatcher(__name__)
 
-class VertexAIConfig(TypedDict):
-    credentials: Optional[google.auth.credentials.Credentials] = None
-    project: Optional[str] = None
-    location: Optional[str] = None
 
 class Models(str, Enum):
     SEMANTIC_RERANK_512_003 = "semantic-ranker-512-003"
@@ -42,7 +48,6 @@ class GoogleRerank(BaseNodePostprocessor):
         top_n: int = 2,
         rerank_model_name: str = Models.SEMANTIC_RERANK_512_003.value,
         client: Optional[discoveryengine.RankServiceClient] = None,
-        vertexai_config: Optional[VertexAIConfig] = None,
         ranking_config: Optional[Any] = "default_ranking_config",
         **kwargs: Any,
     ):
@@ -50,31 +55,18 @@ class GoogleRerank(BaseNodePostprocessor):
         self.top_n = top_n
         self.rerank_model_name = rerank_model_name
 
-        project = (vertexai_config or {}).get("project") or os.getenv(
-            "GOOGLE_CLOUD_PROJECT", None
-        )
-        credentials = json.loads((vertexai_config or {}).get("credentials") or os.getenv(
-            "GOOGLE_CLOUD_CREDENTIALS", None
-        ))
-        location = (vertexai_config or {}).get("location") or os.getenv(
-            "GOOGLE_CLOUD_LOCATION", None
-        )
-
-        if client is not None:
+        if client:
             self._client = client
-            self._ranking_config = client.ranking_config_path(
-                project=project,
-                location=location,
-                ranking_config=ranking_config,
+        else:
+            self._client = discoveryengine.RankServiceClient(
+                credentials=GOOGLE_CREDENTIALS
             )
 
-        elif vertexai_config is not None:
-            self._client = discoveryengine.RankServiceClient(credentials=credentials)
-            self._ranking_config = self._client.ranking_config_path(
-                project=project,
-                location=location,
-                ranking_config=ranking_config,
-            )
+        self._ranking_config = self._client.ranking_config_path(
+            project=GOOGLE_SERVICE_ACCOUNT_INFO["project_id"],
+            location="global",
+            ranking_config=ranking_config,
+        )
 
     @classmethod
     def class_name(cls) -> str:
@@ -129,18 +121,18 @@ class GoogleRerank(BaseNodePostprocessor):
                     model=self.rerank_model_name,
                     top_n=self.top_n,
                     query=query_bundle.query_str,
-                    records=text_sources
+                    records=text_sources,
                 )
                 response = self._client.rank(request=request)
 
-                results = response["records"]
+                results = response.records
             except Exception as e:
                 raise RuntimeError(f"Failed to invoke VertexAI model: {e}")
 
             new_nodes = []
             for result in results:
-                index = int(result["id"])
-                relevance_score = result.get("score", 0.0)
+                index = int(result.id)
+                relevance_score = result.score
                 new_node_with_score = NodeWithScore(
                     node=nodes[index].node,
                     score=relevance_score,

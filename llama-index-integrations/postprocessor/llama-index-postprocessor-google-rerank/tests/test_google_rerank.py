@@ -1,9 +1,4 @@
-import os
-import json
 from unittest import TestCase, mock
-
-from google.oauth2 import service_account
-from google.cloud import discoveryengine_v1 as discoveryengine
 
 from llama_index.core.postprocessor.types import (
     BaseNodePostprocessor,
@@ -14,7 +9,7 @@ from llama_index.core.schema import TextNode
 from llama_index.postprocessor.google_rerank import GoogleRerank
 
 
-class TestAWSBedrockRerank(TestCase):
+class TestGoogleRerank(TestCase):
     def test_class(self):
         names_of_base_classes = [b.__name__ for b in GoogleRerank.__mro__]
         self.assertIn(BaseNodePostprocessor.__name__, names_of_base_classes)
@@ -45,13 +40,10 @@ class TestAWSBedrockRerank(TestCase):
             NodeWithScore(node=TextNode(id_="4", text="last 2"), score=0.8),
         ]
 
-        gcp_param = json.loads(os.getenv("GOOGLE_CLOUD_CREDENTIALS", None))
-        google_credentials = service_account.Credentials.from_service_account_info(gcp_param)
-        reranker_client = discoveryengine.RankServiceClient(credentials=google_credentials)
-        reranker = GoogleRerank(client=reranker_client, num_results=2)
+        reranker = GoogleRerank()
 
         with mock.patch.object(
-            reranker_client, "rerank", return_value=exp_rerank_response
+            reranker._client, "rerank", return_value=exp_rerank_response
         ):
             query_bundle = QueryBundle(query_str="last")
 
