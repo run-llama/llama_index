@@ -9,7 +9,7 @@
 Using `GelChatStore`, you can persist your chat history automatically and not have to worry about saving and loading it manually.
 
 ```python
-from llama_index.storage.chat_store.gel import GelChatStore 
+from llama_index.storage.chat_store.gel import GelChatStore
 from llama_index.core.memory import ChatMemoryBuffer
 
 chat_store = GelChatStore()

@@ -1,1 +1,1 @@
-# LlamaIndex Docstore Integration: Gel 
+# LlamaIndex Docstore Integration: Gel

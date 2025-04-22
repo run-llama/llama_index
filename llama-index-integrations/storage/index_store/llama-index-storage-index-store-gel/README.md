@@ -1,1 +1,1 @@
-# LlamaIndex Index_Store Integration: Gel 
+# LlamaIndex Index_Store Integration: Gel

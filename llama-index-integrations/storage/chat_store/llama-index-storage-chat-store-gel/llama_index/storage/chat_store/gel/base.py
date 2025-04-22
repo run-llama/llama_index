@@ -45,7 +45,7 @@ try:
     import gel
 except ImportError as e:
     _logger.error(IMPORT_ERROR_MESSAGE)
-    raise e
+    raise
 
 
 def format_query(text: str) -> str:
@@ -167,7 +167,7 @@ class GelChatStore(BaseChatStore):
                 self._sync_client.ensure_connected()
             except gel.errors.ClientConnectionError as e:
                 _logger.error(NO_PROJECT_MESSAGE)
-                raise e
+                raise
 
             try:
                 self._sync_client.query(f"select {self.record_type};")
@@ -177,7 +177,7 @@ class GelChatStore(BaseChatStore):
                         record_type=self.record_type
                     )
                 )
-                raise e
+                raise
 
         return self._sync_client
 
@@ -190,7 +190,7 @@ class GelChatStore(BaseChatStore):
                 await self._async_client.ensure_connected()
             except gel.errors.ClientConnectionError as e:
                 _logger.error(NO_PROJECT_MESSAGE)
-                raise e
+                raise
 
             try:
                 await self._async_client.query(f"select {self.record_type};")
@@ -200,7 +200,7 @@ class GelChatStore(BaseChatStore):
                         record_type=self.record_type
                     )
                 )
-                raise e
+                raise
 
         return self._async_client
 

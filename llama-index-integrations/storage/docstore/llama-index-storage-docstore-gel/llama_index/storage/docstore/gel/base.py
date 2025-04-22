@@ -25,4 +25,3 @@ class GelDocumentStore(KVDocumentStore):
     ) -> None:
         """Init a GelDocumentStore."""
         super().__init__(gel_kvstore, namespace=namespace, batch_size=batch_size)
-
