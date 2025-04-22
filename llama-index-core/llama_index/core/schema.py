@@ -566,7 +566,7 @@ class MediaResource(BaseModel):
 
         return v
 
-    @field_serializer("path")
+    @field_serializer("path")  # type: ignore
     def serialize_path(
         self, path: Optional[Path], _info: ValidationInfo
     ) -> Optional[str]:
