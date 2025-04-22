@@ -141,6 +141,7 @@ DELETE_ALL_QUERY = format_query(
 
 
 def get_filter_clause(filters: MetadataFilters) -> str:
+    """Convert metadata filters to Gel query filter clause."""
     subclauses = []
     for filter in filters.filters:
         if isinstance(filter, MetadataFilters):
@@ -204,6 +205,11 @@ def get_filter_clause(filters: MetadataFilters) -> str:
 
 
 class GelVectorStore(BasePydanticVectorStore):
+    """Gel-backed vector store implementation.
+
+    Stores and retrieves vectors using Gel database with pgvector extension.
+    """
+
     stores_text: bool = True
     collection_name: str
     record_type: str
@@ -216,6 +222,12 @@ class GelVectorStore(BasePydanticVectorStore):
         collection_name: str = "default",
         record_type: str = "Record",
     ):
+        """Initialize GelVectorStore.
+
+        Args:
+            collection_name: Name of the collection to store vectors in
+            record_type: The record type name in Gel schema
+        """
         super().__init__(
             collection_name=collection_name,
             record_type=record_type,
@@ -225,6 +237,7 @@ class GelVectorStore(BasePydanticVectorStore):
         self._async_client = None
 
     def get_sync_client(self):
+        """Get or initialize a synchronous Gel client."""
         if self._sync_client is None:
             self._sync_client = gel.create_client()
 
@@ -238,13 +251,16 @@ class GelVectorStore(BasePydanticVectorStore):
                 self._sync_client.query(f"select {self.record_type};")
             except gel.errors.InvalidReferenceError as e:
                 _logger.error(
-                    Template(MISSING_RECORD_TYPE_TEMPLATE).render(record_type=self.record_type)
+                    Template(MISSING_RECORD_TYPE_TEMPLATE).render(
+                        record_type=self.record_type
+                    )
                 )
                 raise e
 
         return self._sync_client
 
     async def get_async_client(self):
+        """Get or initialize an asynchronous Gel client."""
         if self._async_client is None:
             self._async_client = gel.create_async_client()
 
@@ -258,7 +274,9 @@ class GelVectorStore(BasePydanticVectorStore):
                 await self._async_client.query(f"select {self.record_type};")
             except gel.errors.InvalidReferenceError as e:
                 _logger.error(
-                    Template(MISSING_RECORD_TYPE_TEMPLATE).render(record_type=self.record_type)
+                    Template(MISSING_RECORD_TYPE_TEMPLATE).render(
+                        record_type=self.record_type
+                    )
                 )
                 raise e
 
@@ -298,6 +316,7 @@ class GelVectorStore(BasePydanticVectorStore):
     async def aget_nodes(
         self, node_ids: List[str] | None = None, filters: MetadataFilters | None = None
     ) -> List[BaseNode]:
+        """Async version of get_nodes."""
         assert filters is None, "Filters are not supported in get_nodes"
         if node_ids is None:
             return []
@@ -342,6 +361,7 @@ class GelVectorStore(BasePydanticVectorStore):
         return inserted_ids
 
     async def aadd(self, nodes: Sequence[BaseNode], **kwargs: Any) -> List[str]:
+        """Async version of add."""
         inserted_ids = []
 
         client = await self.get_async_client()
@@ -370,6 +390,7 @@ class GelVectorStore(BasePydanticVectorStore):
         )
 
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """Async version of delete."""
         client = await self.get_async_client()
 
         result = await client.query(
@@ -436,6 +457,7 @@ class GelVectorStore(BasePydanticVectorStore):
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
+        """Async version of query."""
         assert query.query_embedding is not None, "query_embedding is required"
 
         filter_clause = (

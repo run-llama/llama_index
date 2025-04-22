@@ -120,12 +120,24 @@ class GelKVStore(BaseKVStore):
     """Gel Key-Value store."""
 
     def __init__(self, record_type: str = "Record") -> None:
+        """Initialize GelKVStore.
+
+        Args:
+            record_type: The name of the record type in Gel schema.
+        """
         self.record_type = record_type
 
         self._sync_client = None
         self._async_client = None
 
     def get_sync_client(self):
+        """Get or initialize a synchronous Gel client.
+
+        Ensures the client is connected and the record type exists.
+
+        Returns:
+            A connected synchronous Gel client.
+        """
         if self._sync_client is None:
             self._sync_client = gel.create_client()
 
@@ -139,13 +151,22 @@ class GelKVStore(BaseKVStore):
                 self._sync_client.query(f"select {self.record_type};")
             except gel.errors.InvalidReferenceError as e:
                 _logger.error(
-                    Template(MISSING_RECORD_TYPE_TEMPLATE).render(record_type=self.record_type)
+                    Template(MISSING_RECORD_TYPE_TEMPLATE).render(
+                        record_type=self.record_type
+                    )
                 )
                 raise e
 
         return self._sync_client
 
     async def get_async_client(self):
+        """Get or initialize an asynchronous Gel client.
+
+        Ensures the client is connected and the record type exists.
+
+        Returns:
+            A connected asynchronous Gel client.
+        """
         if self._async_client is None:
             self._async_client = gel.create_async_client()
 
@@ -159,7 +180,9 @@ class GelKVStore(BaseKVStore):
                 await self._async_client.query(f"select {self.record_type};")
             except gel.errors.InvalidReferenceError as e:
                 _logger.error(
-                    Template(MISSING_RECORD_TYPE_TEMPLATE).render(record_type=self.record_type)
+                    Template(MISSING_RECORD_TYPE_TEMPLATE).render(
+                        record_type=self.record_type
+                    )
                 )
                 raise e
 
@@ -215,6 +238,13 @@ class GelKVStore(BaseKVStore):
         collection: str = DEFAULT_COLLECTION,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
+        """Store multiple key-value pairs in batches.
+
+        Args:
+            kv_pairs: List of (key, value) tuples to store.
+            collection: Namespace for the keys.
+            batch_size: Number of pairs to store in each batch.
+        """
         for chunk in (
             kv_pairs[pos : pos + batch_size]
             for pos in range(0, len(kv_pairs), batch_size)
@@ -232,6 +262,13 @@ class GelKVStore(BaseKVStore):
         collection: str = DEFAULT_COLLECTION,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
+        """Async version of put_all.
+
+        Args:
+            kv_pairs: List of (key, value) tuples to store.
+            collection: Namespace for the keys.
+            batch_size: Number of pairs to store in each batch.
+        """
         for chunk in (
             kv_pairs[pos : pos + batch_size]
             for pos in range(0, len(kv_pairs), batch_size)
