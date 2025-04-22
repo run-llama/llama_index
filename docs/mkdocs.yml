@@ -3059,6 +3059,7 @@ plugins:
         ./optimizing/production_rag.html: https://docs.llamaindex.ai/en/stable/optimizing/production_rag/
         ./presentations/past_presentations.html: https://docs.llamaindex.ai/en/stable/presentations/past_presentations/
         ./understanding/agent/basic_agent/index.html: https://docs.llamaindex.ai/en/stable/understanding/agent/
+        ./understanding/agent/rag_agent.html: https://docs.llamaindex.ai/en/stable/understanding/agent/
         ./understanding/agent/multi_agents/index.html: https://docs.llamaindex.ai/en/stable/understanding/agent/multi_agent/
         ./understanding/deployment/deployment.html: https://docs.llamaindex.ai/en/stable/understanding/deployment/deployment/
         ./understanding/evaluating/cost_analysis/root.html: understanding/evaluating/cost_analysis/index.md
