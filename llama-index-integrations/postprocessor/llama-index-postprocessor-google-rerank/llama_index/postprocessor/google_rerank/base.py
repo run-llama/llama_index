@@ -17,11 +17,7 @@ from google.oauth2 import service_account
 from google.cloud import discoveryengine_v1 as discoveryengine
 
 
-GOOGLE_SERVICE_ACCOUNT_INFO = json.load(
-    open(
-        "/home/mdcir/Desktop/llama_index/llama-index-integrations/postprocessor/llama-index-postprocessor-google-rerank/llama_index/postprocessor/google_rerank/google-service-account.json"
-    )
-)
+GOOGLE_SERVICE_ACCOUNT_INFO = json.load(open("google-service-account.json"))
 GOOGLE_CREDENTIALS = service_account.Credentials.from_service_account_info(
     GOOGLE_SERVICE_ACCOUNT_INFO
 )
