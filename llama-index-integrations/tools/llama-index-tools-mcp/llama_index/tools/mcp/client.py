@@ -21,11 +21,10 @@ class BasicMCPClient(ClientSession):
         self.env = env
 
     @asynccontextmanager
-    async def _run_session(self):
-        timeout = timedelta(seconds=30)
+    async def _run_session(self, timeout: int=30):
         if urlparse(self.command_or_url).scheme in ("http", "https"):
             async with sse_client(self.command_or_url) as streams:
-                async with ClientSession(*streams, read_timeout_seconds=timeout) as session:
+                async with ClientSession(*streams, read_timeout_seconds=timedelta(seconds=timeout) as session:
                     await session.initialize()
                     yield session
         else:
@@ -33,7 +32,7 @@ class BasicMCPClient(ClientSession):
                 command=self.command_or_url, args=self.args, env=self.env
             )
             async with stdio_client(server_parameters) as streams:
-                async with ClientSession(*stream, read_timeout_seconds=timeouts) as session:
+                async with ClientSession(*stream, read_timeout_seconds=timedelta(seconds=timeout)) as session:
                     await session.initialize()
                     yield session
 
