@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 
 class DBEmbeddingRow(NamedTuple):
-    node_id: str  # FIXME: verify this type hint
+    node_id: str
     text: str
     metadata: dict
     similarity: float
@@ -138,7 +138,6 @@ class PGVectorStore(BasePydanticVectorStore):
             table_name="paul_graham_essay",
             embed_dim=1536  # openai embedding dimension
             use_halfvec=True  # Enable half precision
-
         )
         ```
     """
@@ -166,18 +165,20 @@ class PGVectorStore(BasePydanticVectorStore):
 
     _base: Any = PrivateAttr()
     _table_class: Any = PrivateAttr()
-    _engine: Any = PrivateAttr()
-    _session: Any = PrivateAttr()
-    _async_engine: Any = PrivateAttr()
-    _async_session: Any = PrivateAttr()
+    _engine: Optional[sqlalchemy.engine.Engine] = PrivateAttr(default=None)
+    _session: sqlalchemy.orm.Session = PrivateAttr()
+    _async_engine: Optional[sqlalchemy.ext.asyncio.AsyncEngine] = PrivateAttr(
+        default=None
+    )
+    _async_session: sqlalchemy.ext.asyncio.AsyncSession = PrivateAttr()
     _is_initialized: bool = PrivateAttr(default=False)
 
     def __init__(
         self,
-        connection_string: Union[str, sqlalchemy.engine.URL],
-        async_connection_string: Union[str, sqlalchemy.engine.URL],
-        table_name: str,
-        schema_name: str,
+        connection_string: Optional[Union[str, sqlalchemy.engine.URL]] = None,
+        async_connection_string: Optional[Union[str, sqlalchemy.engine.URL]] = None,
+        table_name: Optional[str] = None,
+        schema_name: Optional[str] = None,
         hybrid_search: bool = False,
         text_search_config: str = "english",
         embed_dim: int = 1536,
@@ -189,6 +190,8 @@ class PGVectorStore(BasePydanticVectorStore):
         create_engine_kwargs: Optional[Dict[str, Any]] = None,
         initialization_fail_on_error: bool = False,
         use_halfvec: bool = False,
+        engine: Optional[sqlalchemy.engine.Engine] = None,
+        async_engine: Optional[sqlalchemy.ext.asyncio.AsyncEngine] = None,
     ) -> None:
         """Constructor.
 
@@ -209,9 +212,11 @@ class PGVectorStore(BasePydanticVectorStore):
                 which turns off HNSW search.
             create_engine_kwargs (Optional[Dict[str, Any]], optional): Engine parameters to pass to create_engine. Defaults to None.
             use_halfvec (bool, optional): If `True`, use half-precision vectors. Defaults to False.
+            engine (Optional[sqlalchemy.engine.Engine], optional): SQLAlchemy engine instance to use. Defaults to None.
+            async_engine (Optional[sqlalchemy.ext.asyncio.AsyncEngine], optional): SQLAlchemy async engine instance to use. Defaults to None.
         """
-        table_name = table_name.lower()
-        schema_name = schema_name.lower()
+        table_name = table_name.lower() if table_name else "llamaindex"
+        schema_name = schema_name.lower() if schema_name else "public"
 
         if hybrid_search and text_search_config is None:
             raise ValueError(
@@ -253,14 +258,26 @@ class PGVectorStore(BasePydanticVectorStore):
             use_halfvec=use_halfvec,
         )
 
+        # both engine and async_engine must be provided, or both must be None
+        if engine is not None and async_engine is not None:
+            self._engine = engine
+            self._async_engine = async_engine
+        elif engine is None and async_engine is None:
+            pass
+        else:
+            raise ValueError(
+                "Both engine and async_engine must be provided, or both must be None"
+            )
+
     async def close(self) -> None:
         if not self._is_initialized:
             return
 
         self._session.close_all()
-        self._engine.dispose()
-
-        await self._async_engine.dispose()
+        if self._engine:
+            self._engine.dispose()
+        if self._async_engine:
+            await self._async_engine.dispose()
 
     @classmethod
     def class_name(cls) -> str:
@@ -352,12 +369,12 @@ class PGVectorStore(BasePydanticVectorStore):
         from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
         from sqlalchemy.orm import sessionmaker
 
-        self._engine = create_engine(
+        self._engine = self._engine or create_engine(
             self.connection_string, echo=self.debug, **self.create_engine_kwargs
         )
         self._session = sessionmaker(self._engine)
 
-        self._async_engine = create_async_engine(
+        self._async_engine = self._async_engine or create_async_engine(
             self.async_connection_string, **self.create_engine_kwargs
         )
         self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)  # type: ignore
