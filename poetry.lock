@@ -1814,14 +1814,14 @@ llama-index-llms-openai = ">=0.3.0,<0.4.0"
 
 [[package]]
 name = "llama-index-core"
-version = "0.12.32"
+version = "0.12.33"
 description = "Interface between LLMs and your data"
 optional = false
 python-versions = "<4.0,>=3.9"
 groups = ["main"]
 files = [
-    {file = "llama_index_core-0.12.32-py3-none-any.whl", hash = "sha256:4cad0be8c31cc8a0250d68205b3c193e5f97f3a33b3ecc2d81df365aa23d120e"},
-    {file = "llama_index_core-0.12.32.tar.gz", hash = "sha256:7fae277ae88e0fd9507ee06b6ddb96b72ad2f57e4695047dd5e6d68014a0b6b9"},
+    {file = "llama_index_core-0.12.33-py3-none-any.whl", hash = "sha256:adf5a0a5c74cfa57f90cb3699949a5592aa1a6f8b86bf463c602b485619f1192"},
+    {file = "llama_index_core-0.12.33.tar.gz", hash = "sha256:1324332ae3aa3fd3309e93566c1881c32e889591013fa5e17ac74f7441a70804"},
 ]
 
 [package.dependencies]
@@ -1844,7 +1844,7 @@ PyYAML = ">=6.0.1"
 requests = ">=2.31.0"
 SQLAlchemy = {version = ">=1.4.49", extras = ["asyncio"]}
 tenacity = ">=8.2.0,<8.4.0 || >8.4.0,<10.0.0"
-tiktoken = ">=0.3.3"
+tiktoken = ">=0.9.0"
 tqdm = ">=4.66.1,<5.0.0"
 typing-extensions = ">=4.5.0"
 typing-inspect = ">=0.8.0"
@@ -5149,4 +5149,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9,<4.0"
-content-hash = "3f55f9e13a3e4d3213bcf25bfe64c4d5f91f938146e314f0df379e4f3b305210"
+content-hash = "daf12cffd2a7d2dab5e919658766770d493aff0c7babb36a3b70aed8d9cefb73"
