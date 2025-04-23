@@ -15,6 +15,7 @@ Jaguar Vector Store.
 import datetime
 import json
 import logging
+import re
 from typing import Any, List, Optional, Sequence, Tuple, Union, cast
 
 from jaguardb_http_client.JaguarHttpClient import JaguarHttpClient
@@ -104,11 +105,12 @@ class JaguarVectorStore(BasePydanticVectorStore):
         return self._jag
 
     def _sanitize_input(self, value: str) -> str:
-        """Sanitize input to prevent SQL injection."""
-        forbidden_chars = ['"', ";", "--", "/*", "*/"]
-        sanitized = value.replace("'", "\\'")
-        for char in forbidden_chars:
-            sanitized = sanitized.replace(char, "")
+        # Remove any characters not in the whitelist
+        sanitized = re.sub(r'[^a-zA-Z0-9_\-]', '', value)
+        
+        if sanitized != value:
+            logger.warning(f"Input sanitized: '{value}' -> '{sanitized}'")
+            
         return sanitized
 
     def add(
@@ -144,13 +146,11 @@ class JaguarVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
         """
         podstore = self._pod + "." + self._store
-        q = (
-            "delete from "
-            + podstore
-            + " where zid='"
-            + self._sanitize_input(ref_doc_id)
-            + "'"
-        )
+        
+        sanitized_id = self._sanitize_input(ref_doc_id)
+        
+        # Build and execute the query
+        q = f"delete from {podstore} where zid='{sanitized_id}'"
         self.run(q)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
@@ -163,6 +163,14 @@ class JaguarVectorStore(BasePydanticVectorStore):
         """
         embedding = query.query_embedding
         k = query.similarity_top_k
+        
+        # Safely handle the where clause if present
+        where_clause = kwargs.get("where")
+        if where_clause:
+            # Sanitize where clause
+            sanitized_where = self._sanitize_input(where_clause)
+            kwargs["where"] = sanitized_where
+            
         (nodes, ids, simscores) = self.similarity_search_with_score(
             embedding, k=k, form="node", **kwargs
         )
@@ -198,6 +206,9 @@ class JaguarVectorStore(BasePydanticVectorStore):
             True if successful; False if not successful
         """
         podstore = self._pod + "." + self._store
+        
+        # Sanitize the metadata fields
+        sanitized_metadata = self._sanitize_input(metadata_fields)
 
         """
         v:text column is required.
@@ -207,7 +218,7 @@ class JaguarVectorStore(BasePydanticVectorStore):
         q += f" ({self._vector_index} vector({self._vector_dimension},"
         q += f" '{self._vector_type}'),"
         q += f"  v:text char({text_size}),"
-        q += self._sanitize_input(metadata_fields) + ")"
+        q += sanitized_metadata + ")"
         self.run(q)
 
     def add_text(
@@ -237,13 +248,14 @@ class JaguarVectorStore(BasePydanticVectorStore):
         Returns:
             id from adding the text into the vectorstore
         """
-        text = self._sanitize_input(text)
         vcol = self._vector_index
         filecol = kwargs.get("file_column", "")
         text_tag = kwargs.get("text_tag", "")
 
+        # Sanitize the text input
+        sanitized_text = text
         if text_tag != "":
-            text = text_tag + " " + text
+            sanitized_text = text_tag + " " + sanitized_text
 
         podstorevcol = self._pod + "." + self._store + "." + vcol
         q = "textcol " + podstorevcol
@@ -253,45 +265,53 @@ class JaguarVectorStore(BasePydanticVectorStore):
         textcol = js["data"]
 
         zid = ""
+        # Prepare vector values and sanitize
+        str_vec = [str(x) for x in embedding]
+        sanitized_vector = ",".join(str_vec)
+        
         if metadata is None:
-            ### no metadata and no files to upload
-            str_vec = [str(x) for x in embedding]
-            values_comma = self._sanitize_input(",".join(str_vec))
+            # No metadata and no files to upload
             podstore = self._pod + "." + self._store
-            q = "insert into " + podstore + " ("
-            q += vcol + "," + textcol + ") values ('" + values_comma
-            q += "','" + text + "')"
+            q = f"insert into {podstore} ({vcol},{textcol}) values ('{sanitized_vector}','{sanitized_text}')"
             js = self.run(q, False)
             zid = js["zid"]
         else:
-            str_vec = [str(x) for x in embedding]
             nvec, vvec, filepath = self._parseMeta(metadata, filecol)
             if filecol != "":
                 rc = self._jag.postFile(self._token, filepath, 1)
                 if not rc:
                     return ""
-            names_comma = ",".join(nvec)
-            names_comma += "," + vcol
-            names_comma = self._sanitize_input(names_comma)
-            ## col1,col2,col3,vecl
-
-            if vvec is not None and len(vvec) > 0:
-                values_comma = "'" + "','".join(vvec) + "'"
-            else:
-                values_comma = "'" + "','".join(vvec) + "'"
-
-            ### 'va1','val2','val3'
-            values_comma += ",'" + ",".join(str_vec) + "'"
-            values_comma = self._sanitize_input(values_comma)
-            ### 'v1,v2,v3'
+                
+            # Sanitize metadata field names and values
+            sanitized_names = []
+            sanitized_values = []
+            for i, name in enumerate(nvec):
+                sanitized_name = self._sanitize_input(name)
+                sanitized_names.append(sanitized_name)
+                
+                if i < len(vvec):
+                    sanitized_value = vvec[i]
+                    if isinstance(sanitized_value, str):
+                        sanitized_value = self._sanitize_input(sanitized_value)
+                    sanitized_values.append(str(sanitized_value))
+                    
+            # Build the query
             podstore = self._pod + "." + self._store
-            q = "insert into " + podstore + " ("
-            q += names_comma + "," + textcol + ") values (" + values_comma
-            q += ",'" + text + "')"
+            
+            # Create column list: metadata fields + vector + textcol
+            cols = ",".join(sanitized_names + [vcol, textcol])
+            
+            # Create values list: metadata values + vector + text
+            values = "'" + "','".join(sanitized_values) + "'"
+            values += f",'{sanitized_vector}','{sanitized_text}'"
+            
+            q = f"insert into {podstore} ({cols}) values ({values})"
+            
             if filecol != "":
                 js = self.run(q, True)
             else:
                 js = self.run(q, False)
+            
             zid = js["zid"]
 
         return zid
@@ -325,15 +345,16 @@ class JaguarVectorStore(BasePydanticVectorStore):
         vtype = self._vector_type
         if embedding is None:
             return ([], [], [])
+            
+        # Convert embedding to string and sanitize
         str_embeddings = [str(f) for f in embedding]
-        qv_comma = self._sanitize_input(",".join(str_embeddings))
+        sanitized_vector = ",".join(str_embeddings)
+        
         podstore = self._pod + "." + self._store
         q = (
             "select similarity("
             + vcol
-            + ",'"
-            + qv_comma
-            + "','topk="
+            + f",'{sanitized_vector}','topk="
             + str(k)
             + ",fetch_k="
             + str(fetch_k)
@@ -342,16 +363,30 @@ class JaguarVectorStore(BasePydanticVectorStore):
         )
         q += ",with_score=yes,with_text=yes"
         if args is not None:
+            # Sanitize args if it's a string
+            if isinstance(args, str):
+                args = self._sanitize_input(args)
             q += "," + args
 
         if metadata_fields is not None:
-            x = "&".join(metadata_fields)
+            # Sanitize metadata fields if they're strings
+            sanitized_fields = []
+            for field in metadata_fields:
+                if isinstance(field, str):
+                    sanitized_fields.append(self._sanitize_input(field))
+                else:
+                    sanitized_fields.append(field)
+            
+            x = "&".join(sanitized_fields)
             q += ",metadata=" + x
 
         q += "') from " + podstore
 
+        # Sanitize and add where clause if provided
         if where is not None:
-            q += " where " + self._sanitize_input(where)
+            sanitized_where = self._sanitize_input(where)
+            if sanitized_where:
+                q += " where " + sanitized_where
 
         jarr = self.run(q)
 
@@ -411,11 +446,14 @@ class JaguarVectorStore(BasePydanticVectorStore):
         """
         vcol = self._vector_index
         vtype = self._vector_type
+        
+        # Convert embedding to string and sanitize
         str_embeddings = [str(f) for f in node.get_embedding()]
-        qv_comma = ",".join(str_embeddings)
+        sanitized_vector = ",".join(str_embeddings)
+        
         podstore = self._pod + "." + self._store
-        q = "select anomalous(" + vcol + ", '" + qv_comma + "', 'type=" + vtype + "')"
-        q += " from " + podstore
+        q = f"select anomalous({vcol}, '{sanitized_vector}', 'type={vtype}')"
+        q += f" from {podstore}"
 
         js = self.run(q)
         if isinstance(js, list) and len(js) == 0:
