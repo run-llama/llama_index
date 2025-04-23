@@ -35,6 +35,13 @@ class CleanlabTLM(CustomLLM):
         resp = llm.complete("Who is Paul Graham?")
         print(resp)
         ```
+
+    Arguments:
+    `quality_preset` and `options` are configuration settings you can optionally specify to improve latency or accuracy.
+
+    More information can be found here:
+        https://help.cleanlab.ai/tlm/
+
     """
 
     model: str = Field(
