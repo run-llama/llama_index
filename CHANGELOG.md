@@ -4,7 +4,7 @@
 
 ### `llama-index-core` [0.12.33]
 
-- bundle newer tiktoken encodings, bump min tiktoken version
+- bundle newer tiktoken encodings, bump min tiktoken version (#18509)
 
 ### `llama-index-vector-stores-milvus` [0.8.1]
 
