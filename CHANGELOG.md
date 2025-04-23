@@ -2,7 +2,7 @@
 
 ## [2024-04-23]
 
-### `llama-index-core` [0.12.33/0.12.33.post1]
+### `llama-index-core` [0.12.33 / 0.12.33.post1]
 
 - bundle newer tiktoken encodings, bump min tiktoken version (#18509)
 
