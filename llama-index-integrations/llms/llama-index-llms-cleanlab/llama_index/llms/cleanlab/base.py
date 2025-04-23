@@ -15,34 +15,10 @@ from llama_index.core.bridge.pydantic import PrivateAttr, Field
 
 from cleanlab_tlm import TLM
 
-DEFAULT_CONTEXT_WINDOW = 131072
-DEFAULT_MAX_TOKENS = 512
 DEFAULT_MODEL = "gpt-4o-mini"
-
-MAP_MODEL_CONTEXT_WINDOW = {
-    # OpenAI
-    "gpt-4": 8192,
-    "gpt-3.5-turbo-16k": 16384,
-    "gpt-4o-mini": 131072,
-    "gpt-4o": 131072,
-    "o1-mini": 131072,
-    "o3-mini": 204800,
-    "o1": 204800,
-    "gpt-4.1": 1047576,
-    "gpt-4.1-mini": 1047576,
-    "gpt-4.1-nano": 1047576,
-    "o3": 204800,
-    # Anthropic
-    "claude-3-haiku": 204800,
-    "claude-3.5-haiku": 204800,
-    "claude-3.5-sonnet": 204800,
-    "claude-3.5-sonnet-v2": 204800,
-    "claude-3.7-sonnet": 204800,
-    # Amazon
-    "nova-micro": 131072,
-    "nova-lite": 307200,
-    "nova-pro": 307200,
-}
+DEFAULT_QUALITY_PRESET = "medium"
+DEFAULT_CONTEXT_WINDOW = 70000
+DEFAULT_MAX_TOKENS = 512
 
 
 class CleanlabTLM(CustomLLM):
@@ -61,17 +37,17 @@ class CleanlabTLM(CustomLLM):
         ```
     """
 
-    context_window: int = Field(
-        default=DEFAULT_CONTEXT_WINDOW,
-        description="The maximum number of context tokens for the model.",
+    model: str = Field(
+        default=DEFAULT_MODEL,
+        description="Base LLM to use with TLM.",
     )
     max_tokens: int = Field(
         default=DEFAULT_MAX_TOKENS,
         description="The maximum number of tokens to generate in TLM response.",
     )
-    model: str = Field(default=DEFAULT_MODEL, description="The base model to use.")
     quality_preset: str = Field(
-        default="medium", description="Pre-defined configuration to use for TLM."
+        default=DEFAULT_QUALITY_PRESET,
+        description="Pre-defined configuration to use for TLM.",
     )
     log: dict = Field(
         default_factory=dict, description="Metadata to log from TLM response."
@@ -92,32 +68,22 @@ class CleanlabTLM(CustomLLM):
         )
 
         self.quality_preset = quality_preset
-        self._configure_model(options)
+        self.max_tokens = (
+            options.get("max_tokens")
+            if options and "max_tokens" in options
+            else DEFAULT_MAX_TOKENS
+        )
+        self.model = (
+            options.get("model") if options and "model" in options else DEFAULT_MODEL
+        )
+        if options and options.get("log") and "explanation" in options["log"]:
+            self.log["explanation"] = True
 
         api_key = get_from_param_or_env("api_key", api_key, "CLEANLAB_API_KEY")
 
         self._client = TLM(
             api_key=api_key, quality_preset=self.quality_preset, options=options
         )
-
-    def _configure_model(self, options: Optional[Dict]) -> None:
-        """Configure model-specific parameters based on provided options."""
-        if options and options.get("model"):
-            self.model = options["model"]
-        else:
-            self.model = DEFAULT_MODEL
-
-        self.context_window = MODEL_CONTEXT_WINDOWS.get(
-            self.model, DEFAULT_CONTEXT_WINDOW
-        )
-        self.max_tokens = (
-            options.get("max_tokens")
-            if options and "max_tokens" in options
-            else DEFAULT_MAX_TOKENS
-        )
-
-        if options and options.get("log") and "explanation" in options["log"]:
-            self.log["explanation"] = True
 
     @classmethod
     def class_name(cls) -> str:
@@ -127,7 +93,7 @@ class CleanlabTLM(CustomLLM):
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
         return LLMMetadata(
-            context_window=self.context_window,
+            context_window=DEFAULT_CONTEXT_WINDOW,
             num_output=self.max_tokens,
             model_name=self.model,
         )
