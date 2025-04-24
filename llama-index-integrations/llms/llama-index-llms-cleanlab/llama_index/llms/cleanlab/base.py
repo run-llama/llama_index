@@ -80,9 +80,6 @@ class CleanlabTLM(CustomLLM):
             if options and "max_tokens" in options
             else DEFAULT_MAX_TOKENS
         )
-        self.model = (
-            options.get("model") if options and "model" in options else DEFAULT_MODEL
-        )
         if options and options.get("log") and "explanation" in options["log"]:
             self.log["explanation"] = True
 
@@ -91,6 +88,7 @@ class CleanlabTLM(CustomLLM):
         self._client = TLM(
             api_key=api_key, quality_preset=self.quality_preset, options=options
         )
+        self.model = self._client.get_model_name()
 
     @classmethod
     def class_name(cls) -> str:
