@@ -1,5 +1,6 @@
 import subprocess
 import pytest
+import pytest_asyncio
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
@@ -85,6 +86,13 @@ NODES = [
 def vectorstore() -> GelVectorStore:
     vectorstore = GelVectorStore()
     vectorstore.clear()
+    return vectorstore
+
+
+@pytest_asyncio.fixture()
+async def vectorstore_async() -> GelVectorStore:
+    vectorstore = GelVectorStore()
+    await vectorstore.aclear()
     return vectorstore
 
 
@@ -339,48 +347,48 @@ def test_clear(vectorstore: GelVectorStore):
     assert len(vectorstore.get_nodes()) == 0
 
 
-async def test_async_add(vectorstore: GelVectorStore):
-    inserted_ids = await vectorstore.async_add(NODES)
+async def test_async_add(vectorstore_async: GelVectorStore):
+    inserted_ids = await vectorstore_async.async_add(NODES)
 
     assert len(inserted_ids) == len(NODES)
 
     for node in NODES:
         assert node.id_ in inserted_ids
 
-    await vectorstore.aclear()
+    await vectorstore_async.aclear()
 
 
-async def test_aquery(vectorstore: GelVectorStore):
-    inserted_ids = await vectorstore.async_add(NODES)
+async def test_aquery(vectorstore_async: GelVectorStore):
+    inserted_ids = await vectorstore_async.async_add(NODES)
 
     query = VectorStoreQuery(
         query_embedding=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         similarity_top_k=1,
     )
-    results = await vectorstore.aquery(query)
+    results = await vectorstore_async.aquery(query)
 
     assert len(results.nodes) == 1
     assert results.nodes[0].id_ == "1"
 
-    await vectorstore.aclear()
+    await vectorstore_async.aclear()
 
 
-async def test_aget_nodes(vectorstore: GelVectorStore):
-    inserted_ids = await vectorstore.async_add(NODES)
-    results = await vectorstore.aget_nodes(node_ids=["1", "2"])
+async def test_aget_nodes(vectorstore_async: GelVectorStore):
+    inserted_ids = await vectorstore_async.async_add(NODES)
+    results = await vectorstore_async.aget_nodes(node_ids=["1", "2"])
 
     assert len(results) == 2
     assert results[0].id_ == "1"
     assert results[1].id_ == "2"
 
-    assert len(await vectorstore.aget_nodes()) == 0
-    await vectorstore.aclear()
+    assert len(await vectorstore_async.aget_nodes()) == 0
+    await vectorstore_async.aclear()
 
 
-async def test_adelete(vectorstore: GelVectorStore):
-    inserted_ids = await vectorstore.async_add(NODES)
-    await vectorstore.adelete(ref_doc_id="1")
-    results = await vectorstore.aget_nodes(node_ids=["1"])
+async def test_adelete(vectorstore_async: GelVectorStore):
+    inserted_ids = await vectorstore_async.async_add(NODES)
+    await vectorstore_async.adelete(ref_doc_id="1")
+    results = await vectorstore_async.aget_nodes(node_ids=["1"])
     assert len(results) == 0
 
-    await vectorstore.aclear()
+    await vectorstore_async.aclear()

@@ -1,6 +1,7 @@
 import subprocess
 from typing import Generator
 import pytest
+import pytest_asyncio
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store.base import BaseChatStore
 from llama_index.storage.chat_store.gel import GelChatStore
@@ -28,6 +29,20 @@ def gel_chat_store() -> Generator[GelChatStore, None, None]:
             keys = chat_store.get_keys()
             for key in keys:
                 chat_store.delete_messages(key)
+
+
+@pytest_asyncio.fixture()
+async def gel_chat_store_async():
+    # New instance of the GelKVStore client to use it in async mode
+    chat_store = None
+    try:
+        chat_store = GelChatStore()
+        yield chat_store
+    finally:
+        if chat_store:
+            keys = await chat_store.aget_keys()
+            for key in keys:
+                await chat_store.adelete_messages(key)
 
 
 def test_gel_add_message(gel_chat_store: GelChatStore):
@@ -109,88 +124,88 @@ def test_delete_last_message(gel_chat_store: GelChatStore):
 
 
 @pytest.mark.asyncio()
-async def test_async_gel_add_message(gel_chat_store: GelChatStore):
+async def test_async_gel_add_message(gel_chat_store_async: GelChatStore):
     key = "test_async_add_key"
 
     message = ChatMessage(content="async_add_message_test", role="user")
-    await gel_chat_store.async_add_message(key, message=message)
+    await gel_chat_store_async.async_add_message(key, message=message)
 
-    result = await gel_chat_store.aget_messages(key)
+    result = await gel_chat_store_async.aget_messages(key)
 
     assert result[0].content == "async_add_message_test" and result[0].role == "user"
 
 
 @pytest.mark.asyncio()
-async def test_async_set_and_retrieve_messages(gel_chat_store: GelChatStore):
+async def test_async_set_and_retrieve_messages(gel_chat_store_async: GelChatStore):
     messages = [
         ChatMessage(content="First async message", role="user"),
         ChatMessage(content="Second async message", role="user"),
     ]
     key = "test_async_set_key"
-    await gel_chat_store.aset_messages(key, messages)
+    await gel_chat_store_async.aset_messages(key, messages)
 
-    retrieved_messages = await gel_chat_store.aget_messages(key)
+    retrieved_messages = await gel_chat_store_async.aget_messages(key)
     assert len(retrieved_messages) == 2
     assert retrieved_messages[0].content == "First async message"
     assert retrieved_messages[1].content == "Second async message"
 
 
 @pytest.mark.asyncio()
-async def test_async_delete_messages(gel_chat_store: GelChatStore):
+async def test_async_delete_messages(gel_chat_store_async: GelChatStore):
     messages = [ChatMessage(content="Async message to delete", role="user")]
     key = "test_async_delete_key"
-    await gel_chat_store.aset_messages(key, messages)
+    await gel_chat_store_async.aset_messages(key, messages)
 
-    await gel_chat_store.adelete_messages(key)
-    retrieved_messages = await gel_chat_store.aget_messages(key)
+    await gel_chat_store_async.adelete_messages(key)
+    retrieved_messages = await gel_chat_store_async.aget_messages(key)
     assert retrieved_messages == []
 
 
 @pytest.mark.asyncio()
-async def test_async_delete_specific_message(gel_chat_store: GelChatStore):
+async def test_async_delete_specific_message(gel_chat_store_async: GelChatStore):
     messages = [
         ChatMessage(content="Async keep me", role="user"),
         ChatMessage(content="Async delete me", role="user"),
     ]
     key = "test_adelete_message_key"
-    await gel_chat_store.aset_messages(key, messages)
+    await gel_chat_store_async.aset_messages(key, messages)
 
-    deleted_message = await gel_chat_store.adelete_message(key, 1)
-    retrieved_messages = await gel_chat_store.aget_messages(key)
+    deleted_message = await gel_chat_store_async.adelete_message(key, 1)
+    retrieved_messages = await gel_chat_store_async.aget_messages(key)
     assert len(retrieved_messages) == 1
     assert retrieved_messages[0].content == "Async keep me"
     assert deleted_message.content == "Async delete me"
 
 
 @pytest.mark.asyncio()
-async def test_async_get_keys(gel_chat_store: GelChatStore):
+async def test_async_get_keys(gel_chat_store_async: GelChatStore):
     # Add some test data
-    await gel_chat_store.aset_messages(
+    await gel_chat_store_async.aset_messages(
         "async_key1", [ChatMessage(content="Test1", role="user")]
     )
-    await gel_chat_store.aset_messages(
+    await gel_chat_store_async.aset_messages(
         "async_key2", [ChatMessage(content="Test2", role="user")]
     )
 
-    keys = await gel_chat_store.aget_keys()
+    keys = await gel_chat_store_async.aget_keys()
     assert "async_key1" in keys
     assert "async_key2" in keys
 
 
 @pytest.mark.asyncio()
-async def test_async_delete_last_message(gel_chat_store: GelChatStore):
+async def test_async_delete_last_message(gel_chat_store_async: GelChatStore):
     key = "test_async_delete_last_message"
     messages = [
         ChatMessage(content="First async message", role="user"),
         ChatMessage(content="Last async message", role="user"),
     ]
-    await gel_chat_store.aset_messages(key, messages)
+    await gel_chat_store_async.aset_messages(key, messages)
 
-    deleted_message = await gel_chat_store.adelete_last_message(key)
+    deleted_message = await gel_chat_store_async.adelete_last_message(key)
 
     assert deleted_message.content == "Last async message"
 
-    remaining_messages = await gel_chat_store.aget_messages(key)
+    remaining_messages = await gel_chat_store_async.aget_messages(key)
 
     assert len(remaining_messages) == 1
     assert remaining_messages[0].content == "First async message"

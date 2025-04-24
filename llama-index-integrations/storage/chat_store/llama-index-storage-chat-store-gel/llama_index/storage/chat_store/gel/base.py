@@ -160,6 +160,12 @@ class GelChatStore(BaseChatStore):
 
     def get_sync_client(self):
         """Get or initialize a synchronous Gel client."""
+        if self._async_client is not None:
+            raise RuntimeError(
+                "GelChatStore has already been used in async mode. "
+                "If you were intentionally trying to use different IO modes at the same time, "
+                "please create a new instance instead."
+            )
         if self._sync_client is None:
             self._sync_client = gel.create_client()
 
@@ -183,6 +189,12 @@ class GelChatStore(BaseChatStore):
 
     async def get_async_client(self):
         """Get or initialize an asynchronous Gel client."""
+        if self._sync_client is not None:
+            raise RuntimeError(
+                "GelChatStore has already been used in sync mode. "
+                "If you were intentionally trying to use different IO modes at the same time, "
+                "please create a new instance instead."
+            )
         if self._async_client is None:
             self._async_client = gel.create_async_client()
 
