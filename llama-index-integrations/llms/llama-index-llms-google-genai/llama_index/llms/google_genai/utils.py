@@ -265,7 +265,6 @@ def prepare_chat_params(
         - next_msg: the next message to send
         - chat_kwargs: processed keyword arguments for chat creation
     """
-    breakpoint()
     merged_messages = merge_neighboring_same_role_messages(messages)
     initial_history = list(map(chat_message_to_gemini, merged_messages))
 
