@@ -36,7 +36,9 @@ def node_to_metadata_dict(
     flat_metadata: bool = False,
 ) -> Dict[str, Any]:
     """Common logic for saving Node data into metadata dict."""
-    node_dict = node.dict()
+    # Using mode="json" here because BaseNode may have fields of type bytes (e.g. images in ImageBlock),
+    # which would cause serialization issues.
+    node_dict = node.model_dump(mode="json")
     metadata: Dict[str, Any] = node_dict.get("metadata", {})
 
     if flat_metadata:

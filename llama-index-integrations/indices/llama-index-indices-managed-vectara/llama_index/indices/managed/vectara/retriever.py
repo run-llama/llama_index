@@ -134,6 +134,7 @@ class VectaraRetriever(BaseRetriever):
         prompt_text: Optional[str] = None,
         max_response_chars: Optional[int] = None,
         max_tokens: Optional[int] = None,
+        llm_name: Optional[str] = None,
         temperature: Optional[float] = None,
         frequency_penalty: Optional[float] = None,
         presence_penalty: Optional[float] = None,
@@ -204,6 +205,7 @@ class VectaraRetriever(BaseRetriever):
             self._prompt_text = prompt_text
             self._max_response_chars = max_response_chars
             self._max_tokens = max_tokens
+            self._llm_name = llm_name
             self._temperature = temperature
             self._frequency_penalty = frequency_penalty
             self._presence_penalty = presence_penalty
@@ -336,6 +338,8 @@ class VectaraRetriever(BaseRetriever):
                 model_parameters["frequency_penalty"] = self._frequency_penalty
             if self._presence_penalty:
                 model_parameters["presence_penalty"] = self._presence_penalty
+            if self._llm_name:
+                model_parameters["llm_name"] = self._llm_name
 
             if len(model_parameters) > 0:
                 summary_config["model_parameters"] = model_parameters
@@ -418,13 +422,14 @@ class VectaraRetriever(BaseRetriever):
         if response.status_code != 200:
             result = response.json()
             if response.status_code == 400:
-                _logger.error(
-                    f"Query failed (code {response.status_code}), reason {result['field_errors']}"
-                )
-            else:
-                _logger.error(
-                    f"Query failed (code {response.status_code}), reason {result['messages'][0]}"
-                )
+                if "messages" in result:
+                    _logger.error(
+                        f"Query failed (code {response.status_code}), reason {result['messages'][0]}"
+                    )
+                else:
+                    _logger.error(
+                        f"Query failed (code {response.status_code}), err response {result}"
+                    )
             return None
 
         def process_chunks(response):
@@ -547,13 +552,13 @@ class VectaraRetriever(BaseRetriever):
 
         result = response.json()
         if response.status_code != 200:
-            if response.status_code == 400:
+            if "messages" in result:
                 _logger.error(
-                    f"Query failed (code {response.status_code}), reason {result['field_errors']}"
+                    f"Query failed (code {response.status_code}), reason {result['messages'][0]}"
                 )
             else:
                 _logger.error(
-                    f"Query failed (code {response.status_code}), reason {result['messages'][0]}"
+                    f"Query failed (code {response.status_code}), err response {result}"
                 )
             return [], {"text": ""}, ""
 

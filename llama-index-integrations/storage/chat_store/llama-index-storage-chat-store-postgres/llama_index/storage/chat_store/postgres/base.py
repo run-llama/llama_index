@@ -1,4 +1,3 @@
-import json
 from typing import Any, Optional
 from urllib.parse import urlparse
 
@@ -193,7 +192,7 @@ class PostgresChatStore(BaseChatStore):
 
             params = {
                 "key": key,
-                "value": [json.dumps(message.dict()) for message in messages],
+                "value": [message.model_dump_json() for message in messages],
             }
 
             # Execute the bulk upsert
@@ -215,7 +214,7 @@ class PostgresChatStore(BaseChatStore):
 
             params = {
                 "key": key,
-                "value": [json.dumps(message.dict()) for message in messages],
+                "value": [message.model_dump_json() for message in messages],
             }
 
             # Execute the bulk upsert
@@ -258,7 +257,7 @@ class PostgresChatStore(BaseChatStore):
                     value = array_cat({self._table_class.__tablename__}.value, :value);
                 """
             )
-            params = {"key": key, "value": [json.dumps(message.dict())]}
+            params = {"key": key, "value": [message.model_dump_json()]}
             session.execute(stmt, params)
             session.commit()
 
@@ -274,7 +273,7 @@ class PostgresChatStore(BaseChatStore):
                     value = array_cat({self._table_class.__tablename__}.value, :value);
                 """
             )
-            params = {"key": key, "value": [json.dumps(message.dict())]}
+            params = {"key": key, "value": [message.model_dump_json()]}
             await session.execute(stmt, params)
             await session.commit()
 
