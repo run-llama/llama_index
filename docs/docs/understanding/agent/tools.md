@@ -33,14 +33,11 @@ finance_tools.extend([multiply, add])
 And we'll ask a different question than last time, necessitating the use of the new tools:
 
 ```python
-workflow = FunctionAgent(
-    name="Agent",
-    description="Useful for performing financial operations.",
-    llm=OpenAI(model="gpt-4o-mini"),
-    tools=finance_tools,
-    system_prompt="You are a helpful assistant.",
+workflow = AgentWorkflow.from_tools_or_functions(
+    finance_tools,
+    llm=llm,
+    system_prompt="You are an agent that can perform basic mathematical operations and fetch financial data using tools."
 )
-
 
 async def main():
     response = await workflow.run(
