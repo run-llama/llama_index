@@ -150,47 +150,48 @@ def get_filter_clause(filters: MetadataFilters) -> str:
             formatted_value = (
                 f'"{filter.value}"' if isinstance(filter.value, str) else filter.value
             )
-            match filter.operator:
-                case FilterOperator.EQ.value:
-                    subclause = (
-                        f'<str>json_get(.metadata, "{filter.key}") = {formatted_value}'
-                    )
-                case FilterOperator.GT.value:
-                    subclause = (
-                        f'<str>json_get(.metadata, "{filter.key}") > {formatted_value}'
-                    )
-                case FilterOperator.LT.value:
-                    subclause = (
-                        f'<str>json_get(.metadata, "{filter.key}") < {formatted_value}'
-                    )
-                case FilterOperator.NE.value:
-                    subclause = (
-                        f'<str>json_get(.metadata, "{filter.key}") != {formatted_value}'
-                    )
-                case FilterOperator.GTE.value:
-                    subclause = (
-                        f'<str>json_get(.metadata, "{filter.key}") >= {formatted_value}'
-                    )
-                case FilterOperator.LTE.value:
-                    subclause = (
-                        f'<str>json_get(.metadata, "{filter.key}") <= {formatted_value}'
-                    )
-                case FilterOperator.IN.value:
-                    subclause = f'<str>json_get(.metadata, "{filter.key}") in array_unpack({formatted_value})'
-                case FilterOperator.NIN.value:
-                    subclause = f'<str>json_get(.metadata, "{filter.key}") not in array_unpack({formatted_value})'
-                case FilterOperator.ANY.value:
-                    subclause = f'any(<str>json_get(.metadata, "{filter.key}") = array_unpack({formatted_value}))'
-                case FilterOperator.ALL.value:
-                    subclause = f'all(<str>json_get(.metadata, "{filter.key}") = array_unpack({formatted_value}))'
-                case FilterOperator.TEXT_MATCH.value:
-                    subclause = f'<str>json_get(.metadata, "{filter.key}") like {formatted_value}'
-                case FilterOperator.CONTAINS.value:
-                    subclause = f'contains(<str>json_get(.metadata, "{filter.key}"), {formatted_value})'
-                case FilterOperator.IS_EMPTY.value:
-                    subclause = f'not exists <str>json_get(.metadata, "{filter.key}")'
-                case _:
-                    raise ValueError(f"Unknown operator: {filter.operator}")
+            if filter.operator == FilterOperator.EQ.value:
+                subclause = (
+                    f'<str>json_get(.metadata, "{filter.key}") = {formatted_value}'
+                )
+            elif filter.operator == FilterOperator.GT.value:
+                subclause = (
+                    f'<str>json_get(.metadata, "{filter.key}") > {formatted_value}'
+                )
+            elif filter.operator == FilterOperator.LT.value:
+                subclause = (
+                    f'<str>json_get(.metadata, "{filter.key}") < {formatted_value}'
+                )
+            elif filter.operator == FilterOperator.NE.value:
+                subclause = (
+                    f'<str>json_get(.metadata, "{filter.key}") != {formatted_value}'
+                )
+            elif filter.operator == FilterOperator.GTE.value:
+                subclause = (
+                    f'<str>json_get(.metadata, "{filter.key}") >= {formatted_value}'
+                )
+            elif filter.operator == FilterOperator.LTE.value:
+                subclause = (
+                    f'<str>json_get(.metadata, "{filter.key}") <= {formatted_value}'
+                )
+            elif filter.operator == FilterOperator.IN.value:
+                subclause = f'<str>json_get(.metadata, "{filter.key}") in array_unpack({formatted_value})'
+            elif filter.operator == FilterOperator.NIN.value:
+                subclause = f'<str>json_get(.metadata, "{filter.key}") not in array_unpack({formatted_value})'
+            elif filter.operator == FilterOperator.ANY.value:
+                subclause = f'any(<str>json_get(.metadata, "{filter.key}") = array_unpack({formatted_value}))'
+            elif filter.operator == FilterOperator.ALL.value:
+                subclause = f'all(<str>json_get(.metadata, "{filter.key}") = array_unpack({formatted_value}))'
+            elif filter.operator == FilterOperator.TEXT_MATCH.value:
+                subclause = (
+                    f'<str>json_get(.metadata, "{filter.key}") like {formatted_value}'
+                )
+            elif filter.operator == FilterOperator.CONTAINS.value:
+                subclause = f'contains(<str>json_get(.metadata, "{filter.key}"), {formatted_value})'
+            elif filter.operator == FilterOperator.IS_EMPTY.value:
+                subclause = f'not exists <str>json_get(.metadata, "{filter.key}")'
+            else:
+                raise ValueError(f"Unknown operator: {filter.operator}")
 
         subclauses.append(subclause)
 
