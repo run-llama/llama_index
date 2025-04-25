@@ -17,13 +17,13 @@ from cleanlab_tlm import TLM
 from cleanlab_tlm.utils.config import (
     get_default_model,
     get_default_quality_preset,
-    get_default_context_window,
+    get_default_context_limit,
     get_default_max_tokens,
 )
 
 DEFAULT_MODEL = get_default_model()
 DEFAULT_QUALITY_PRESET = get_default_quality_preset()
-DEFAULT_CONTEXT_WINDOW = get_default_context_window()
+DEFAULT_CONTEXT_WINDOW = get_default_context_limit()
 DEFAULT_MAX_TOKENS = get_default_max_tokens()
 
 
@@ -37,7 +37,7 @@ class CleanlabTLM(CustomLLM):
         ```python
         from llama_index.llms.cleanlab import CleanlabTLM
 
-        llm = CleanlabTLM(quality_preset="best", api_key=api_key)
+        llm = CleanlabTLM(api_key=api_key, quality_preset="best", options={"log": ["explanation"]})
         resp = llm.complete("Who is Paul Graham?")
         print(resp)
         ```
@@ -58,13 +58,6 @@ class CleanlabTLM(CustomLLM):
         default=DEFAULT_MAX_TOKENS,
         description="The maximum number of tokens to generate in TLM response.",
     )
-    quality_preset: str = Field(
-        default=DEFAULT_QUALITY_PRESET,
-        description="Pre-defined configuration to use for TLM.",
-    )
-    log: dict = Field(
-        default_factory=dict, description="Metadata to log from TLM response."
-    )
     _client: Any = PrivateAttr()
 
     def __init__(
@@ -80,14 +73,12 @@ class CleanlabTLM(CustomLLM):
             callback_manager=callback_manager,
         )
 
-        self.quality_preset = quality_preset
+        preset = quality_preset or DEFAULT_QUALITY_PRESET
         self.max_tokens = (
             options.get("max_tokens")
             if options and "max_tokens" in options
             else DEFAULT_MAX_TOKENS
         )
-        if options and options.get("log") and "explanation" in options["log"]:
-            self.log["explanation"] = True
 
         api_key = get_from_param_or_env("api_key", api_key, "CLEANLAB_API_KEY")
 
@@ -118,7 +109,7 @@ class CleanlabTLM(CustomLLM):
             raise ValueError(f"Missing expected key in response: {e}")
 
         additional_data = {"trustworthiness_score": trust_score}
-        if self.log.get("explanation") and "explanation" in response["log"]:
+        if "log" in response and "explanation" in response["log"]:
             additional_data["explanation"] = response["log"]["explanation"]
 
         return CompletionResponse(text=text, additional_kwargs=additional_data)
