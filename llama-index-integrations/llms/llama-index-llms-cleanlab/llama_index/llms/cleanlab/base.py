@@ -14,11 +14,17 @@ from llama_index.core.llms.custom import CustomLLM
 from llama_index.core.bridge.pydantic import PrivateAttr, Field
 
 from cleanlab_tlm import TLM
+from cleanlab_tlm.utils.config import (
+    get_default_model,
+    get_default_quality_preset,
+    get_default_context_window,
+    get_default_max_tokens,
+)
 
-DEFAULT_MODEL = "gpt-4o-mini"
-DEFAULT_QUALITY_PRESET = "medium"
-DEFAULT_CONTEXT_WINDOW = 70000
-DEFAULT_MAX_TOKENS = 512
+DEFAULT_MODEL = get_default_model()
+DEFAULT_QUALITY_PRESET = get_default_quality_preset()
+DEFAULT_CONTEXT_WINDOW = get_default_context_window()
+DEFAULT_MAX_TOKENS = get_default_max_tokens()
 
 
 class CleanlabTLM(CustomLLM):
