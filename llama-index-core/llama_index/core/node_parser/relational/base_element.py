@@ -230,10 +230,12 @@ class BaseElementNodeParser(NodeParser):
                 if element.type not in ("table", "table_text"):
                     continue
                 table_context = str(element.element)
-                if idx > 0 and str(elements[idx - 1].element).lower().strip().startswith(
-                    "table"
-                ):
-                    table_context = str(elements[idx - 1].element) + "\n" + table_context
+                if idx > 0 and str(
+                    elements[idx - 1].element
+                ).lower().strip().startswith("table"):
+                    table_context = (
+                        str(elements[idx - 1].element) + "\n" + table_context
+                    )
                 if idx < len(elements) + 1 and str(
                     elements[idx - 1].element
                 ).lower().strip().startswith("table"):
