@@ -27,7 +27,7 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-vertex"
 readme = "README.md"
-version = "0.4.5"
+version = "0.4.6"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"

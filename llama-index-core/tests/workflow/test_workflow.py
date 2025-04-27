@@ -1,7 +1,8 @@
 import asyncio
 import logging
 import time
-from typing import Type
+import sys
+from typing import Type, Union
 from unittest import mock
 
 import pytest
@@ -215,12 +216,30 @@ async def test_workflow_sync_async_steps():
 
 
 @pytest.mark.asyncio()
+async def test_workflow_sync_steps_only():
+    class SyncWorkflow(Workflow):
+        @step
+        def step_one(self, ctx: Context, ev: StartEvent) -> OneTestEvent:
+            ctx.collect_events(ev, [StartEvent])
+            return OneTestEvent()
+
+        @step
+        def step_two(self, ctx: Context, ev: OneTestEvent) -> StopEvent:
+            # ctx.collect_events(ev, [OneTestEvent])
+            return StopEvent()
+
+    workflow = SyncWorkflow()
+    await workflow.run()
+    assert workflow.is_done()
+
+
+@pytest.mark.asyncio()
 async def test_workflow_num_workers():
     class NumWorkersWorkflow(Workflow):
         @step
         async def original_step(
             self, ctx: Context, ev: StartEvent
-        ) -> OneTestEvent | LastEvent:
+        ) -> Union[OneTestEvent, LastEvent]:
             await ctx.set("num_to_collect", 3)
             ctx.send_event(OneTestEvent(test_param="test1"))
             ctx.send_event(OneTestEvent(test_param="test2"))
@@ -238,7 +257,7 @@ async def test_workflow_num_workers():
 
         @step
         async def final_step(
-            self, ctx: Context, ev: AnotherTestEvent | LastEvent
+            self, ctx: Context, ev: Union[AnotherTestEvent, LastEvent]
         ) -> StopEvent:
             n = await ctx.get("num_to_collect")
             events = ctx.collect_events(ev, [AnotherTestEvent] * n)
@@ -258,9 +277,9 @@ async def test_workflow_num_workers():
 
     # ctx should have 1 extra event
     assert handler.ctx
-    assert (
-        len(handler.ctx._events_buffer["tests.workflow.conftest.AnotherTestEvent"]) == 1
-    )
+    assert "final_step" in handler.ctx._event_buffers
+    event_buffer = handler.ctx._event_buffers["final_step"]
+    assert len(event_buffer["tests.workflow.conftest.AnotherTestEvent"]) == 1
 
     # ensure ctx is serializable
     ctx = handler.ctx
@@ -740,6 +759,10 @@ async def test_workflow_run_num_concurrent(
     desired_max_concurrent_runs: int,
     expected_exception: Type,
 ):
+    # skip test if python version is 3.9 or lower
+    if sys.version_info < (3, 10):
+        pytest.skip("Skipping test for Python 3.9 or lower")
+
     async def _poll_workflow(
         wf: DummyWorkflowForConcurrentRunsTest, desired_max_concurrent_runs: int
     ) -> None:

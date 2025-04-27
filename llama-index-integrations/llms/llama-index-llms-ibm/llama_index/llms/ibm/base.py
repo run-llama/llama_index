@@ -148,6 +148,12 @@ class WatsonxLLM(FunctionCallingLLM):
         default=True, description="Model id validation", frozen=True
     )
 
+    # Enabled by default since IBM watsonx SDK 1.1.2 but it can cause problems
+    # in environments where long-running connections are not supported.
+    persistent_connection: bool = Field(
+        default=True, description="Use persistent connection"
+    )
+
     _model: ModelInference = PrivateAttr()
     _client: Optional[APIClient] = PrivateAttr()
     _model_info: Optional[Dict[str, Any]] = PrivateAttr()
@@ -174,6 +180,7 @@ class WatsonxLLM(FunctionCallingLLM):
         verify: Union[str, bool, None] = None,
         api_client: Optional[APIClient] = None,
         validate_model: bool = True,
+        persistent_connection: bool = True,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
@@ -214,6 +221,7 @@ class WatsonxLLM(FunctionCallingLLM):
             verify=verify,
             _client=api_client,
             validate_model=validate_model,
+            persistent_connection=persistent_connection,
             callback_manager=callback_manager,
             **kwargs,
         )
@@ -254,6 +262,7 @@ class WatsonxLLM(FunctionCallingLLM):
             space_id=self.space_id,
             api_client=api_client,
             validate=validate_model,
+            persistent_connection=persistent_connection,
         )
         self._model_info = None
         self._deployment_info = None

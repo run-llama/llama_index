@@ -42,7 +42,7 @@ from llama_index.llms.text_generation_inference.utils import (
     resolve_tool_choice,
     get_model_name,
 )
-from text_generation import (
+from tgi import (
     Client as TGIClient,
     AsyncClient as TGIAsyncClient,
 )

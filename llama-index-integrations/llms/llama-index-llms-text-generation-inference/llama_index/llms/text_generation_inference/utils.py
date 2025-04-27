@@ -5,7 +5,7 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
 )
-from text_generation.types import (
+from tgi.types import (
     Message,
 )
 

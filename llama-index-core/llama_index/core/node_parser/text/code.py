@@ -72,18 +72,18 @@ class CodeSplitter(TextSplitter):
 
         if parser is None:
             try:
-                import tree_sitter_languages  # pants: no-infer-dep
+                import tree_sitter_language_pack  # pants: no-infer-dep
 
-                parser = tree_sitter_languages.get_parser(language)
+                parser = tree_sitter_language_pack.get_parser(language)  # type: ignore
             except ImportError:
                 raise ImportError(
-                    "Please install tree_sitter_languages to use CodeSplitter."
+                    "Please install tree_sitter_language_pack to use CodeSplitter."
                     "Or pass in a parser object."
                 )
             except Exception:
                 print(
                     f"Could not get parser for language {language}. Check "
-                    "https://github.com/grantjenks/py-tree-sitter-languages#license "
+                    "https://github.com/Goldziher/tree-sitter-language-pack?tab=readme-ov-file#available-languages "
                     "for a list of valid languages."
                 )
                 raise

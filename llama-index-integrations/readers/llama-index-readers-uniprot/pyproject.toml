@@ -1,0 +1,37 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.readers.uniprot"
+
+[tool.llamahub.class_authors]
+UniProtReader = "evgenyneu"
+
+[tool.poetry]
+authors = ["Evgenii Neumerzhitckii <sausageskin@gmail.com>"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+]
+description = "UniProt reader for LlamaIndex"
+exclude = ["**/BUILD"]
+keywords = ["bioinformatics", "llama-index", "uniprot"]
+license = "MIT"
+name = "llama-index-readers-uniprot"
+readme = "README.md"
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"
+llama-index-core = "^0.12.0"
+
+[[tool.poetry.packages]]
+include = "llama_index/"

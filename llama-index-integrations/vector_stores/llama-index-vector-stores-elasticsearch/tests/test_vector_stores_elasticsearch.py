@@ -647,3 +647,92 @@ async def test_delete_nodes(
     assert any(
         node.metadata.get("director") == "Christopher Nolan" for node in res.nodes
     )
+
+
+@pytest.mark.asyncio()
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_get_nodes(
+    es_store: ElasticsearchStore,
+    node_embeddings: List[TextNode],
+    use_async: bool,
+) -> None:
+    """Test the get_nodes method with node_ids and filters."""
+    if use_async:
+        await es_store.async_add(node_embeddings)
+    else:
+        es_store.add(node_embeddings)
+
+    node_ids = [node_embeddings[0].node_id, node_embeddings[1].node_id]
+    if use_async:
+        nodes = await es_store.aget_nodes(node_ids=node_ids)
+    else:
+        nodes = es_store.get_nodes(node_ids=node_ids)
+
+    assert len(nodes) == 2
+    retrieved_node_ids = [node.node_id for node in nodes]
+    assert all(node_id in retrieved_node_ids for node_id in node_ids)
+
+    filters = MetadataFilters(
+        filters=[ExactMatchFilter(key="author", value="Stephen King")]
+    )
+    if use_async:
+        nodes = await es_store.aget_nodes(filters=filters)
+    else:
+        nodes = es_store.get_nodes(filters=filters)
+
+    assert len(nodes) == 1
+    assert nodes[0].metadata["author"] == "Stephen King"
+
+    assert nodes[0].get_content() == "lorem ipsum"
+
+    filters = MetadataFilters(
+        filters=[ExactMatchFilter(key="author", value="Non-existent Author")]
+    )
+    if use_async:
+        nodes = await es_store.aget_nodes(filters=filters)
+    else:
+        nodes = es_store.get_nodes(filters=filters)
+
+    assert len(nodes) == 0
+
+    with pytest.raises(ValueError):
+        if use_async:
+            await es_store.aget_nodes()
+        else:
+            es_store.get_nodes()
+
+
+@pytest.mark.asyncio()
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_clear(
+    es_store: ElasticsearchStore,
+    node_embeddings: List[TextNode],
+    use_async: bool,
+) -> None:
+    """Test that clear/aclear methods properly delete all data from the index."""
+    if use_async:
+        await es_store.async_add(node_embeddings)
+    else:
+        es_store.add(node_embeddings)
+
+    q = VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=10)
+    if use_async:
+        res = await es_store.aquery(q)
+    else:
+        res = es_store.query(q)
+    assert len(res.nodes) > 0
+
+    if use_async:
+        await es_store.aclear()
+    else:
+        es_store.clear()
+
+    if use_async:
+        await es_store.async_add([node_embeddings[0]])
+        res = await es_store.aquery(q)
+    else:
+        es_store.add([node_embeddings[0]])
+        res = es_store.query(q)
+
+    assert len(res.nodes) == 1
+    assert res.nodes[0].node_id == node_embeddings[0].node_id

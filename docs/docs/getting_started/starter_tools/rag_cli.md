@@ -64,7 +64,7 @@ Here are some high level steps to get you started:
 
 You can also create a full-stack chat application with a FastAPI backend and NextJS frontend based on the files that you have selected.
 
-To bootstrap the application, make sure you have NodeJS and npx installed on your machine. If not, please refer to the [LlamaIndex.TS](https://ts.llamaindex.ai/getting_started/installation) documentation for instructions.
+To bootstrap the application, make sure you have NodeJS and npx installed on your machine. If not, please refer to the [LlamaIndex.TS](https://ts.llamaindex.ai/docs/llamaindex/getting_started) documentation for instructions.
 
 Once you have everything set up, creating a new application is easy. Simply run the following command:
 

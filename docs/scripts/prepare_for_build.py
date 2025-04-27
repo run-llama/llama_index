@@ -65,6 +65,9 @@ INTEGRATION_FOLDERS = [
     "../llama-index-integrations",
     # "../llama-index-cli",
 ]
+EXCLUDED_INTEGRATION_FOLDERS = [
+    "llama-index-integrations/agent",
+]
 INTEGRATION_FOLDER_TO_LABEL = {
     "finetuning": "Fine-tuning",
     "llms": "LLMs",
@@ -188,6 +191,13 @@ def main():
     for folder in INTEGRATION_FOLDERS:
         for root, dirs, files in os.walk(folder):
             for file in files:
+                # check if the current root is in the excluded integration folders
+                if any(
+                    excluded_folder in root
+                    for excluded_folder in EXCLUDED_INTEGRATION_FOLDERS
+                ):
+                    continue
+
                 if file == "pyproject.toml":
                     toml_path = os.path.join(root, file)
                     with open(toml_path) as f:

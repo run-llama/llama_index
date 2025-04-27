@@ -29,7 +29,7 @@ license = "GPL-3.0-or-later"
 maintainers = ["amorriscode"]
 name = "llama-index-readers-stripe-docs"
 readme = "README.md"
-version = "0.3.0"
+version = "0.3.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
@@ -37,6 +37,7 @@ html2text = "^2024.2.26"
 urllib3 = "^2.1.0"
 llama-index-readers-web = "^0.3.0"
 llama-index-core = "^0.12.0"
+defusedxml = "^0.7.1"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

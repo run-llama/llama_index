@@ -487,8 +487,6 @@
   "DashScopeCloudRetriever": "llama_index.indices.managed.dashscope",
   "PostgresMLIndex": "llama_index.indices.managed.postgresml",
   "PostgresMLRetriever": "llama_index.indices.managed.postgresml",
-  "ZillizCloudPipelineIndex": "llama_index.indices.managed.zilliz",
-  "ZillizCloudPipelineRetriever": "llama_index.indices.managed.zilliz",
   "LlamaCloudIndex": "llama_index.indices.managed.llama_cloud",
   "LlamaCloudRetriever": "llama_index.indices.managed.llama_cloud",
   "ColbertIndex": "llama_index.indices.managed.colbert",

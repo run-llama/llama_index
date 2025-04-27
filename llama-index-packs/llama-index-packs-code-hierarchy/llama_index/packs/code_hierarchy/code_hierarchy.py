@@ -535,15 +535,15 @@ class CodeHierarchyNodeParser(NodeParser):
         out: List[BaseNode] = []
 
         try:
-            import tree_sitter_languages
+            import tree_sitter_language_pack
         except ImportError:
             raise ImportError(
-                "Please install tree_sitter_languages to use CodeSplitter."
+                "Please install tree_sitter_language_pack to use CodeSplitter."
             )
 
         try:
-            parser = tree_sitter_languages.get_parser(self.language)
-            language = tree_sitter_languages.get_language(self.language)
+            parser = tree_sitter_language_pack.get_parser(self.language)
+            language = tree_sitter_language_pack.get_language(self.language)
 
             # Construct the path to the SCM file
             scm_fname = os.path.join(
@@ -554,7 +554,7 @@ class CodeHierarchyNodeParser(NodeParser):
         except Exception as e:
             print(
                 f"Could not get parser for language {self.language}. Check "
-                "https://github.com/grantjenks/py-tree-sitter-languages#license "
+                "https://github.com/Goldziher/tree-sitter-language-pack?tab=readme-ov-file#available-languages "
                 "for a list of valid languages."
             )
             raise e  # noqa: TRY201

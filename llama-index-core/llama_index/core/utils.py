@@ -138,7 +138,7 @@ def set_global_tokenizer(tokenizer: Union[Tokenizer, Callable[[str], list]]) -> 
         llama_index.core.global_tokenizer = tokenizer
 
 
-def get_tokenizer() -> Callable[[str], List]:
+def get_tokenizer(model_name: str = "gpt-3.5-turbo") -> Callable[[str], List]:
     import llama_index.core
 
     if llama_index.core.global_tokenizer is None:
@@ -159,7 +159,7 @@ def get_tokenizer() -> Callable[[str], List]:
                 "_static/tiktoken_cache",
             )
 
-        enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        enc = tiktoken.encoding_for_model(model_name)
         tokenizer = partial(enc.encode, allowed_special="all")
         set_global_tokenizer(tokenizer)
 

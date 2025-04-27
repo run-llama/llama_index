@@ -61,13 +61,13 @@ CREATE EDGE IF NOT EXISTS `__meta__rel_label__` (`label` STRING, `props_json` ST
 
 # TODO: need to define Props__ Indexes based on all the properties
 INDEX_DDL = """
-CREATE TAG INDEX IF NOT EXISTS idx_Entity__ ON `Entity__`(`name`);
-CREATE TAG INDEX IF NOT EXISTS idx_Chunk__ ON `Chunk__`(`text`);
-CREATE TAG INDEX IF NOT EXISTS idx_Node__ ON `Node__`(`label`);
-CREATE EDGE INDEX IF NOT EXISTS idx_Relation__ ON `Relation__`(`label`);
+CREATE TAG INDEX IF NOT EXISTS idx_Entity__ ON `Entity__`(`name`(256));
+CREATE TAG INDEX IF NOT EXISTS idx_Chunk__ ON `Chunk__`(`text`(256));
+CREATE TAG INDEX IF NOT EXISTS idx_Node__ ON `Node__`(`label`(256));
+CREATE EDGE INDEX IF NOT EXISTS idx_Relation__ ON `Relation__`(`label`(256));
 
-CREATE EDGE INDEX IF NOT EXISTS idx_meta__node_label__ ON `__meta__node_label__`(`label`);
-CREATE EDGE INDEX IF NOT EXISTS idx_meta__rel_label__ ON `__meta__rel_label__`(`label`);
+CREATE EDGE INDEX IF NOT EXISTS idx_meta__node_label__ ON `__meta__node_label__`(`label`(256));
+CREATE EDGE INDEX IF NOT EXISTS idx_meta__rel_label__ ON `__meta__rel_label__`(`label`(256));
 """
 
 # Hard coded default schema, which is union of
@@ -358,7 +358,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
             params[f"all_id"] = ids
         if properties:
             for i, prop in enumerate(properties):
-                cypher_statement += f"e.Prop__.`{prop}` == $property_{i} AND "
+                cypher_statement += f"e.Props__.`{prop}` == $property_{i} AND "
                 params[f"property_{i}"] = properties[prop]
             cypher_statement = cypher_statement[:-5]  # Remove trailing AND
 

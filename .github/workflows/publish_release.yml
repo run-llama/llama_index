@@ -33,10 +33,10 @@ jobs:
         run: pip install -e .
       - name: Cache tiktoken and nltk files
         shell: bash
-        run: python -c "from llama_index.core import get_tokenizer; get_tokenizer()"
+        run: python -c 'from llama_index.core.utils import get_tokenizer, globals_helper; get_tokenizer("gpt-3.5-turbo"); get_tokenizer("o3-mini"); get_tokenizer("gpt-4o"); globals_helper.stopwords'
       - name: Clean up zip files
         shell: bash
-        run: rm -rf llama-index-core/llama_index/core/_static/nltk_cache/corpora/stopwords.zip llama-index-core/llama_index/core/_static/nltk_cache/tokenizers/punkt.zip
+        run: rm -rf llama-index-core/llama_index/core/_static/nltk_cache/corpora/stopwords.zip llama-index-core/llama_index/core/_static/nltk_cache/tokenizers/punkt_tab.zip
       - name: Build and publish to pypi
         uses: JRubics/poetry-publish@v2.1
         with:

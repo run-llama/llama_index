@@ -3,3 +3,7 @@ python_tests(
         "llama-index-integrations/llms/llama-index-llms-reka:poetry",
     ],
 )
+
+python_test_utils(
+    name="test_utils",
+)

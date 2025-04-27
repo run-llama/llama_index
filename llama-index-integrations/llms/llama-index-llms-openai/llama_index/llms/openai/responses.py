@@ -247,6 +247,10 @@ class OpenAIResponses(FunctionCallingLLM):
         default=None,
         description="The effort to use for reasoning models.",
     )
+    context_window: Optional[int] = Field(
+        default=None,
+        description="The context window override for the model.",
+    )
 
     _client: SyncOpenAI = PrivateAttr()
     _aclient: AsyncOpenAI = PrivateAttr()
@@ -281,6 +285,7 @@ class OpenAIResponses(FunctionCallingLLM):
         async_http_client: Optional[httpx.AsyncClient] = None,
         openai_client: Optional[SyncOpenAI] = None,
         async_openai_client: Optional[AsyncOpenAI] = None,
+        context_window: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -316,6 +321,7 @@ class OpenAIResponses(FunctionCallingLLM):
             default_headers=default_headers,
             call_metadata=call_metadata,
             strict=strict,
+            context_window=context_window,
             **kwargs,
         )
 
@@ -339,7 +345,8 @@ class OpenAIResponses(FunctionCallingLLM):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=openai_modelname_to_contextsize(self._get_model_name()),
+            context_window=self.context_window
+            or openai_modelname_to_contextsize(self._get_model_name()),
             num_output=self.max_output_tokens or -1,
             is_chat_model=True,
             is_function_calling_model=is_function_calling_model(
@@ -380,6 +387,7 @@ class OpenAIResponses(FunctionCallingLLM):
         }
 
     def _get_model_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
+        initial_tools = self.built_in_tools or []
         model_kwargs = {
             "model": self.model,
             "include": self.include,
@@ -389,7 +397,7 @@ class OpenAIResponses(FunctionCallingLLM):
             "previous_response_id": self._previous_response_id,
             "store": self.store,
             "temperature": self.temperature,
-            "tools": self.built_in_tools,
+            "tools": [*initial_tools, *kwargs.pop("tools", [])],
             "top_p": self.top_p,
             "truncation": self.truncation,
             "user": self.user,
@@ -398,13 +406,6 @@ class OpenAIResponses(FunctionCallingLLM):
         if self.model in O1_MODELS and self.reasoning_effort is not None:
             # O1 models support reasoning_effort of low, medium, high
             model_kwargs["reasoning_effort"] = {"effort": self.reasoning_effort}
-
-        # add tools or extend openai tools
-        if "tools" in kwargs:
-            if isinstance(model_kwargs["tools"], list):
-                model_kwargs["tools"].extend(kwargs.pop("tools"))
-            else:
-                model_kwargs["tools"] = kwargs.pop("tools")
 
         # priority is class args > additional_kwargs > runtime args
         model_kwargs.update(self.additional_kwargs)

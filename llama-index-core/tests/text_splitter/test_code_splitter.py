@@ -1,10 +1,11 @@
 """Test text splitter."""
+
 import os
 import pytest
 from typing import List
 
 try:
-    import tree_sitter  # noqa
+    import tree_sitter_language_pack  # noqa
     from llama_index.core.text_splitter import CodeSplitter
 
     SHOULD_SKIP = False
@@ -181,11 +182,11 @@ int main() {
 
 @pytest.mark.skipif(SHOULD_SKIP, reason="tree_sitter not installed")
 def test__py_custom_parser_code_splitter() -> None:
-    """Test case for code splitting using custom parser generated from tree_sitter_languages."""
+    """Test case for code splitting using custom parser generated from tree_sitter_language_pack."""
     if "CI" in os.environ:
         return
 
-    from tree_sitter_languages import get_parser
+    from tree_sitter_language_pack import get_parser
 
     parser = get_parser("python")
 

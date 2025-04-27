@@ -28,12 +28,12 @@ license = "MIT"
 maintainers = ["ryanpeach"]
 name = "llama-index-packs-code-hierarchy"
 readme = "README.md"
-version = "0.4.1"
+version = "0.5.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.13"
-tree-sitter-languages = "^1.8.0"
-tree-sitter = "^0.20.2"
+tree-sitter-language-pack = "*"
+tree-sitter = "*"
 llama-index-agent-openai = "^0.4.0"
 llama-index-readers-file = "^0.4.0"
 llama-index-core = "^0.12.0"

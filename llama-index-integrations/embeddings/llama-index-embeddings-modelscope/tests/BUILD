@@ -4,3 +4,7 @@ python_tests(
         'llama-index-integrations/llms/llama-index-llms-modelscope:poetry#ms-swift',
     ],
 )
+
+python_test_utils(
+    name="test_utils",
+)

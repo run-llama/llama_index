@@ -224,6 +224,17 @@ def test_milvus_filter_with_nested_filters():
     assert expr == "(a == 1 and (b == 2 or c == 3))"
 
 
+def test_milvus_filter_with_single_quotes():
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="a", value="O'Reilly", operator=FilterOperator.EQ),
+            MetadataFilter(key="b", value="O'Reilly", operator=FilterOperator.NE),
+        ]
+    )
+    expr = _to_milvus_filter(filters)
+    assert expr == "(a == 'O\\'Reilly' and b != 'O\\'Reilly')"
+
+
 @pytest.mark.asyncio()
 class TestMilvusAsync:
     @pytest_asyncio.fixture

@@ -62,9 +62,15 @@ async def handoff(ctx: Context, to_agent: str, reason: str) -> str:
     """Handoff control of that chat to the given agent."""
     agents: list[str] = await ctx.get("agents")
     current_agent_name: str = await ctx.get("current_agent_name")
+    can_handoff_to: dict[str, list[str]] = await ctx.get("can_handoff_to")
     if to_agent not in agents:
         valid_agents = ", ".join([x for x in agents if x != current_agent_name])
         return f"Agent {to_agent} not found. Please select a valid agent to hand off to. Valid agents: {valid_agents}"
+
+    if can_handoff_to.get(
+        current_agent_name, []
+    ) is not None and to_agent not in can_handoff_to.get(current_agent_name, []):
+        return f"Agent {to_agent} cannot hand off to {current_agent_name}. Please select a valid agent to hand off to."
 
     await ctx.set("next_agent", to_agent)
     handoff_output_prompt = await ctx.get(
@@ -242,6 +248,14 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             await ctx.set("memory", default_memory)
         if not await ctx.get("agents", default=None):
             await ctx.set("agents", list(self.agents.keys()))
+        if not await ctx.get("can_handoff_to", default=None):
+            await ctx.set(
+                "can_handoff_to",
+                {
+                    agent: agent_cfg.can_handoff_to
+                    for agent, agent_cfg in self.agents.items()
+                },
+            )
         if not await ctx.get("state", default=None):
             await ctx.set("state", self.initial_state)
         if not await ctx.get("current_agent_name", default=None):
@@ -250,6 +264,9 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             await ctx.set(
                 "handoff_output_prompt", self.handoff_output_prompt.get_template()
             )
+
+        # always set to false initially
+        await ctx.set("formatted_input_with_state", False)
 
     async def _call_tool(
         self,
@@ -291,7 +308,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
 
         # First set chat history if it exists
         if chat_history:
-            memory.set(chat_history)
+            await memory.aset(chat_history)
 
         # Then add user message if it exists
         if user_msg:
@@ -318,7 +335,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             raise ValueError("Must provide either user_msg or chat_history")
 
         # Get all messages from memory
-        input_messages = memory.get()
+        input_messages = await memory.aget()
 
         # send to the current agent
         current_agent_name: str = await ctx.get("current_agent_name")
@@ -329,7 +346,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         """Main agent handling logic."""
         current_agent_name = ev.current_agent_name
         agent = self.agents[current_agent_name]
-        llm_input = ev.input
+        llm_input = [*ev.input]
 
         if agent.system_prompt:
             llm_input = [
@@ -338,12 +355,16 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             ]
 
         state = await ctx.get("state", default=None)
-        if state:
+        formatted_input_with_state = await ctx.get(
+            "formatted_input_with_state", default=False
+        )
+        if state and not formatted_input_with_state:
             # update last message with current state
             for block in llm_input[-1].blocks[::-1]:
                 if isinstance(block, TextBlock):
                     block.text = self.state_prompt.format(state=state, msg=block.text)
                     break
+            await ctx.set("formatted_input_with_state", True)
 
         return AgentSetup(
             input=llm_input,
@@ -505,7 +526,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 return StopEvent(result=result)
 
         user_msg_str = await ctx.get("user_msg_str")
-        input_messages = memory.get(input=user_msg_str)
+        input_messages = await memory.aget(input=user_msg_str)
 
         # get this again, in case it changed
         agent_name = await ctx.get("current_agent_name")
