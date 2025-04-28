@@ -343,7 +343,7 @@ async def test_instance_creation(db: None) -> None:
         schema_name=TEST_SCHEMA_NAME,
     )
     assert isinstance(pg, PGVectorStore)
-    assert not hasattr(pg, "_engine")
+
     assert pg.client is None
     await pg.close()
 
@@ -1111,3 +1111,93 @@ def test_get_nodes_parametrized(
     retrieved_ids = [node.node_id for node in nodes]
     assert set(retrieved_ids) == set(expected_node_ids)
     assert len(retrieved_ids) == len(expected_node_ids)
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio()
+async def test_custom_engines(db: None, node_embeddings: List[TextNode]) -> None:
+    """Test that PGVectorStore works correctly with custom engines."""
+    from sqlalchemy import create_engine
+    from sqlalchemy.ext.asyncio import create_async_engine
+
+    # Create custom engines
+    engine = create_engine(
+        f"postgresql+psycopg2://{PARAMS['user']}:{PARAMS['password']}@{PARAMS['host']}:{PARAMS['port']}/{TEST_DB}",
+        echo=False,
+    )
+
+    async_engine = create_async_engine(
+        f"postgresql+asyncpg://{PARAMS['user']}:{PARAMS['password']}@{PARAMS['host']}:{PARAMS['port']}/{TEST_DB}",
+    )
+
+    # Create PGVectorStore with custom engines
+    pg = PGVectorStore(
+        embed_dim=TEST_EMBED_DIM,
+        engine=engine,
+        async_engine=async_engine,
+    )
+
+    # Test sync add
+    pg.add(node_embeddings[:2])
+
+    # Test async add
+    await pg.async_add(node_embeddings[2:])
+
+    # Query to verify nodes were added correctly
+    q = VectorStoreQuery(query_embedding=_get_sample_vector(0.5), similarity_top_k=10)
+
+    # Test sync query
+    res = pg.query(q)
+    assert len(res.nodes) == 4
+    assert set(res.ids) == {"aaa", "bbb", "ccc", "ddd"}
+
+    # Test async query
+    res = await pg.aquery(q)
+    assert len(res.nodes) == 4
+    assert set(res.ids) == {"aaa", "bbb", "ccc", "ddd"}
+
+    # Clean up
+    await pg.aclear()
+    await pg.close()
+    await async_engine.dispose()
+    engine.dispose()
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+def test_custom_sync_engine_only(db: None, node_embeddings: List[TextNode]) -> None:
+    """Test that PGVectorStore works correctly with only a custom sync engine."""
+    from sqlalchemy import create_engine
+
+    # Create custom sync engine only
+    engine = create_engine(
+        f"postgresql+psycopg2://{PARAMS['user']}:{PARAMS['password']}@{PARAMS['host']}:{PARAMS['port']}/{TEST_DB}",
+        echo=False,
+    )
+
+    # Create PGVectorStore with custom sync engine only
+    with pytest.raises(ValueError):
+        _ = PGVectorStore(
+            embed_dim=TEST_EMBED_DIM,
+            engine=engine,
+        )
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio()
+async def test_custom_async_engine_only(
+    db: None, node_embeddings: List[TextNode]
+) -> None:
+    """Test that PGVectorStore works correctly with only a custom async engine."""
+    from sqlalchemy.ext.asyncio import create_async_engine
+
+    # Create custom async engine only
+    async_engine = create_async_engine(
+        f"postgresql+asyncpg://{PARAMS['user']}:{PARAMS['password']}@{PARAMS['host']}:{PARAMS['port']}/{TEST_DB}",
+    )
+
+    # Create PGVectorStore with custom async engine only
+    with pytest.raises(ValueError):
+        _ = PGVectorStore(
+            embed_dim=TEST_EMBED_DIM,
+            async_engine=async_engine,
+        )

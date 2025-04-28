@@ -1,5 +1,15 @@
 # ChangeLog
 
+## [2024-04-23]
+
+### `llama-index-core` [0.12.33/0.12.33.post1]
+
+- bundle newer tiktoken encodings, bump min tiktoken version (#18509)
+
+### `llama-index-vector-stores-milvus` [0.8.1]
+
+- Milvus Vector Store: Update metadata filtering demo (#18502)
+
 ## [2025-04-21]
 
 ### `llama-index-core` [0.12.32]
