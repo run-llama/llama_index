@@ -1,9 +1,18 @@
-from llama_index.core import Document
 import asyncio
+import sys
+
 import pytest
+from llama_index.core import Document
 from llama_index.graph_rag.cognee import CogneeGraphRAG
 
 
+def test_smoke():
+    """No-op test: CI will fail if no tests are collected."""
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 10), reason="mock strategy requires python3.10 or higher"
+)
 @pytest.mark.asyncio()
 async def test_add_data(monkeypatch):
     # Instantiate cognee GraphRAG

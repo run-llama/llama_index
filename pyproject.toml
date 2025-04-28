@@ -122,6 +122,7 @@ ignore = [
     "RUF100",  # Allow blanket noqa
     "TCH002",
     "UP",  # Remove when we drop Python 3.9
+    "PT001",
 ]
 # Feel free to add more here
 select = [

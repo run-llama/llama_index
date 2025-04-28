@@ -6,10 +6,6 @@ on:
       - main
   pull_request:
 
-env:
-  POETRY_VERSION: "1.8.3"
-  SYSTEM_VERSION_COMPAT: "1"
-
 jobs:
   test:
     runs-on: ubuntu-latest-unit-tester
@@ -27,15 +23,13 @@ jobs:
         uses: astral-sh/setup-uv@v5
         with:
           python-version: ${{ matrix.python-version }}
-
-      - name: Detect packages to test
-        id: packages-to-test
-        shell: bash
-        run: |
-          git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
-          echo "packages<<EOF" >> $GITHUB_OUTPUT
-          uv run -- python scripts/changed_deps.py --base-ref=${{ github.event.pull_request.base.ref }} >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          enable-cache: true
 
       - name: Run tests
-        run: echo ${{ steps.packages-to-test.outputs.packages }} | xargs -P 4 -I {} bash -c "cd '{}' && uv run -- pytest"
+        id: packages-to-test
+        shell: bash
+        env:
+          NUM_WORKERS: 8
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
+          uv run -- python -u scripts/changed_deps.py --workers ${{ env.NUM_WORKERS }} --base-ref=${{ github.event.pull_request.base.ref }}
