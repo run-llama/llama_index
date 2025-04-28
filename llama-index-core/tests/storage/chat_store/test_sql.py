@@ -1,3 +1,4 @@
+import aiosqlite  # noqa: F401  needed for pants
 import pytest
 
 from llama_index.core.base.llms.types import ChatMessage
