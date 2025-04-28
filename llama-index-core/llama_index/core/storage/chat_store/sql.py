@@ -1,6 +1,5 @@
 import time
 from typing import List, Optional, Tuple
-from enum import Enum
 
 from sqlalchemy import (
     JSON,
@@ -14,26 +13,21 @@ from sqlalchemy import (
     insert,
     update,
 )
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    create_async_engine,
+    async_sessionmaker,
+)
+from sqlalchemy.orm import declarative_base
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.base.llms.types import ChatMessage
-from llama_index.core.storage.chat_store.base_db import AsyncDBChatStore
+from llama_index.core.storage.chat_store.base_db import AsyncDBChatStore, MessageStatus
 
 
 DEFAULT_ASYNC_DATABASE_URI = "sqlite+aiosqlite:///:memory:"
 Base = declarative_base()
-
-
-class MessageStatus(str, Enum):
-    """Status of a message in the chat store."""
-
-    # Message is in the active FIFO queue
-    ACTIVE = "active"
-
-    # Message has been processed and is archived, removed from the active queue
-    ARCHIVED = "archived"
 
 
 class SQLAlchemyChatStore(AsyncDBChatStore):
@@ -55,7 +49,7 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
     )
 
     _async_engine: Optional[AsyncEngine] = PrivateAttr(default=None)
-    _async_session_factory: Optional[sessionmaker] = PrivateAttr(default=None)
+    _async_session_factory: Optional[async_sessionmaker] = PrivateAttr(default=None)
     _metadata: MetaData = PrivateAttr(default_factory=MetaData)
     _table: Optional[Table] = PrivateAttr(default=None)
 
@@ -72,7 +66,7 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         )
         self._async_engine = async_engine
 
-    async def _initialize(self) -> Tuple[sessionmaker, Table]:
+    async def _initialize(self) -> Tuple[async_sessionmaker[AsyncSession], Table]:
         """Initialize the chat store. Used to avoid HTTP connections in constructor."""
         if self._async_session_factory is not None and self._table is not None:
             return self._async_session_factory, self._table
@@ -82,7 +76,9 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
 
         return async_session_factory, table
 
-    async def _setup_connections(self) -> Tuple[AsyncEngine, sessionmaker]:
+    async def _setup_connections(
+        self,
+    ) -> Tuple[AsyncEngine, async_sessionmaker[AsyncSession]]:
         """Set up database connections and session factories."""
         # Create async engine and session factory if async URI is provided
         if self._async_session_factory is not None and self._async_engine is not None:
@@ -94,7 +90,7 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
             if self.async_database_uri is None:
                 self.async_database_uri = self._async_engine.url
 
-            self._async_session_factory = sessionmaker(
+            self._async_session_factory = async_sessionmaker(
                 bind=self._async_engine, class_=AsyncSession
             )
 
