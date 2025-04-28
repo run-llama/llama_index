@@ -138,10 +138,16 @@ class OpensearchVectorClient:
                         index=self._index, body=idx_conf
                     )
                 )
-                asyncio_run(self._os_async_client.indices.refresh(index=self._index))
+                if self.is_aoss:
+                    asyncio_run(self._os_async_client.indices.exists(index=self._index))
+                else:
+                    asyncio_run(self._os_async_client.indices.refresh(index=self._index))
         except not_found_error:
             self._os_client.indices.create(index=self._index, body=idx_conf)
-            self._os_client.indices.refresh(index=self._index)
+            if self.is_aoss:
+                self._os_client.indices.exists(index=self._index)
+            else:
+                self._os_client.indices.refresh(index=self._index)
 
     def _import_opensearch(self) -> Any:
         """Import OpenSearch if available, otherwise raise error."""
