@@ -1,5 +1,5 @@
 import time
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from enum import Enum
 
 from sqlalchemy import (
@@ -58,7 +58,6 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
     _async_session_factory: Optional[sessionmaker] = PrivateAttr(default=None)
     _metadata: MetaData = PrivateAttr(default_factory=MetaData)
     _table: Optional[Table] = PrivateAttr(default=None)
-    _is_initialized: bool = PrivateAttr(default=False)
 
     def __init__(
         self,
@@ -73,19 +72,22 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         )
         self._async_engine = async_engine
 
-    async def _initialize(self) -> None:
+    async def _initialize(self) -> Tuple[sessionmaker, Table]:
         """Initialize the chat store. Used to avoid HTTP connections in constructor."""
-        if self._is_initialized:
-            return
+        if self._async_session_factory is not None and self._table is not None:
+            return self._async_session_factory, self._table
 
-        await self._setup_connections()
-        await self._setup_tables()
-        self._is_initialized = True
+        async_engine, async_session_factory = await self._setup_connections()
+        table = await self._setup_tables(async_engine)
 
-    async def _setup_connections(self) -> None:
+        return async_session_factory, table
+
+    async def _setup_connections(self) -> Tuple[AsyncEngine, sessionmaker]:
         """Set up database connections and session factories."""
         # Create async engine and session factory if async URI is provided
-        if self.async_database_uri or self._async_engine:
+        if self._async_session_factory is not None and self._async_engine is not None:
+            return self._async_engine, self._async_session_factory
+        elif self.async_database_uri or self._async_engine:
             self._async_engine = self._async_engine or create_async_engine(
                 self.async_database_uri
             )
@@ -96,7 +98,13 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
                 bind=self._async_engine, class_=AsyncSession
             )
 
-    async def _setup_tables(self) -> None:
+            return self._async_engine, self._async_session_factory
+        else:
+            raise ValueError(
+                "No async database URI or engine provided, cannot initialize DB sessionmaker"
+            )
+
+    async def _setup_tables(self, async_engine: AsyncEngine) -> Table:
         """Set up database tables."""
         # Create messages table with status column
         self._table = Table(
@@ -117,8 +125,10 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         )
 
         # Create tables in the database
-        async with self._async_engine.begin() as conn:
+        async with async_engine.begin() as conn:
             await conn.run_sync(self._metadata.create_all)
+
+        return self._table
 
     async def get_messages(
         self,
@@ -131,10 +141,9 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
 
         Returns a list of messages.
         """
-        await self._initialize()
-        assert self._async_session_factory is not None
+        session_factory, table = await self._initialize()
 
-        query = select(self._table).where(self._table.c.key == key)
+        query = select(table).where(table.c.key == key)
 
         if limit is not None:
             query = query.limit(limit)
@@ -143,11 +152,11 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
             query = query.offset(offset)
 
         if status is not None:
-            query = query.where(self._table.c.status == status.value)
+            query = query.where(table.c.status == status.value)
 
-        async with self._async_session_factory() as session:
+        async with session_factory() as session:
             result = await session.execute(
-                query.order_by(self._table.c.timestamp, self._table.c.id)
+                query.order_by(table.c.timestamp, table.c.id)
             )
             rows = result.fetchall()
 
@@ -159,15 +168,14 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         status: Optional[MessageStatus] = MessageStatus.ACTIVE,
     ) -> int:
         """Count messages for a key with the specified status (async)."""
-        await self._initialize()
-        assert self._async_session_factory is not None
+        session_factory, table = await self._initialize()
 
-        query = select(self._table.c.id).where(self._table.c.key == key)
+        query = select(table.c.id).where(table.c.key == key)
 
         if status is not None:
-            query = query.where(self._table.c.status == status.value)
+            query = query.where(table.c.status == status.value)
 
-        async with self._async_session_factory() as session:
+        async with session_factory() as session:
             result = await session.execute(query)
             rows = result.fetchall()
             return len(rows)
@@ -179,12 +187,11 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         status: MessageStatus = MessageStatus.ACTIVE,
     ) -> None:
         """Add a message for a key with the specified status (async)."""
-        await self._initialize()
-        assert self._async_session_factory is not None
+        session_factory, table = await self._initialize()
 
-        async with self._async_session_factory() as session:
+        async with session_factory() as session:
             await session.execute(
-                insert(self._table).values(
+                insert(table).values(
                     key=key,
                     timestamp=int(time.time()),
                     role=message.role,
@@ -201,12 +208,11 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         status: MessageStatus = MessageStatus.ACTIVE,
     ) -> None:
         """Add a list of messages in batch for the specified key and status (async)."""
-        await self._initialize()
-        assert self._async_session_factory is not None
+        session_factory, table = await self._initialize()
 
-        async with self._async_session_factory() as session:
+        async with session_factory() as session:
             await session.execute(
-                insert(self._table).values(
+                insert(table).values(
                     [
                         {
                             "key": key,
@@ -228,8 +234,7 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         status: MessageStatus = MessageStatus.ACTIVE,
     ) -> None:
         """Set all messages for a key (replacing existing ones) with the specified status (async)."""
-        await self._initialize()
-        assert self._async_session_factory is not None
+        session_factory, table = await self._initialize()
 
         # First delete all existing messages
         await self.delete_messages(key)
@@ -237,10 +242,10 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         # Then add new messages
         current_time = int(time.time())
 
-        async with self._async_session_factory() as session:
+        async with session_factory() as session:
             for i, message in enumerate(messages):
                 await session.execute(
-                    insert(self._table).values(
+                    insert(table).values(
                         key=key,
                         timestamp=current_time
                         + i,  # Preserve order with incremental timestamps
@@ -253,15 +258,12 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
 
     async def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
         """Delete a specific message by ID and return it (async)."""
-        await self._initialize()
-        assert self._async_session_factory is not None
+        session_factory, table = await self._initialize()
 
-        async with self._async_session_factory() as session:
+        async with session_factory() as session:
             # First get the message
             result = await session.execute(
-                select(self._table).where(
-                    self._table.c.key == key, self._table.c.id == idx
-                )
+                select(table).where(table.c.key == key, table.c.id == idx)
             )
             row = result.fetchone()
 
@@ -272,7 +274,7 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
             message = ChatMessage.model_validate(row.data)
 
             # Delete the message
-            await session.execute(delete(self._table).where(self._table.c.id == idx))
+            await session.execute(delete(table).where(table.c.id == idx))
             await session.commit()
 
             return message
@@ -281,34 +283,32 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         self, key: str, status: Optional[MessageStatus] = None
     ) -> None:
         """Delete all messages for a key with the specified status (async)."""
-        await self._initialize()
-        assert self._async_session_factory is not None
+        session_factory, table = await self._initialize()
 
-        query = delete(self._table).where(self._table.c.key == key)
+        query = delete(table).where(table.c.key == key)
 
         if status is not None:
-            query = query.where(self._table.c.status == status.value)
+            query = query.where(table.c.status == status.value)
 
-        async with self._async_session_factory() as session:
+        async with session_factory() as session:
             await session.execute(query)
             await session.commit()
 
     async def delete_oldest_messages(self, key: str, n: int) -> List[ChatMessage]:
         """Delete the oldest n messages for a key and return them (async)."""
-        await self._initialize()
-        assert self._async_session_factory is not None
+        session_factory, table = await self._initialize()
 
         oldest_messages = []
 
-        async with self._async_session_factory() as session:
+        async with session_factory() as session:
             # First get the oldest n messages
             result = await session.execute(
-                select(self._table)
+                select(table)
                 .where(
-                    self._table.c.key == key,
-                    self._table.c.status == MessageStatus.ACTIVE.value,
+                    table.c.key == key,
+                    table.c.status == MessageStatus.ACTIVE.value,
                 )
-                .order_by(self._table.c.timestamp, self._table.c.id)
+                .order_by(table.c.timestamp, table.c.id)
                 .limit(n)
             )
             rows = result.fetchall()
@@ -323,27 +323,24 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
             ids_to_delete = [row.id for row in rows]
 
             # Delete the messages
-            await session.execute(
-                delete(self._table).where(self._table.c.id.in_(ids_to_delete))
-            )
+            await session.execute(delete(table).where(table.c.id.in_(ids_to_delete)))
             await session.commit()
 
         return oldest_messages
 
     async def archive_oldest_messages(self, key: str, n: int) -> List[ChatMessage]:
         """Archive the oldest n messages for a key and return them (async)."""
-        await self._initialize()
-        assert self._async_session_factory is not None
+        session_factory, table = await self._initialize()
 
-        async with self._async_session_factory() as session:
+        async with session_factory() as session:
             # First get the oldest n messages
             result = await session.execute(
-                select(self._table)
+                select(table)
                 .where(
-                    self._table.c.key == key,
-                    self._table.c.status == MessageStatus.ACTIVE.value,
+                    table.c.key == key,
+                    table.c.status == MessageStatus.ACTIVE.value,
                 )
-                .order_by(self._table.c.timestamp, self._table.c.id)
+                .order_by(table.c.timestamp, table.c.id)
                 .limit(n)
             )
             rows = result.fetchall()
@@ -359,8 +356,8 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
 
             # Update message status to archived
             await session.execute(
-                update(self._table)
-                .where(self._table.c.id.in_(ids_to_archive))
+                update(table)
+                .where(table.c.id.in_(ids_to_archive))
                 .values(status=MessageStatus.ARCHIVED.value)
             )
             await session.commit()
@@ -369,11 +366,10 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
 
     async def get_keys(self) -> List[str]:
         """Get all unique keys in the store (async)."""
-        await self._initialize()
-        assert self._async_session_factory is not None
+        session_factory, table = await self._initialize()
 
-        async with self._async_session_factory() as session:
-            result = await session.execute(select(self._table.c.key).distinct())
+        async with session_factory() as session:
+            result = await session.execute(select(table.c.key).distinct())
             return [row[0] for row in result.fetchall()]
 
     @classmethod
