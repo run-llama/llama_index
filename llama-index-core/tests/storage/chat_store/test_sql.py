@@ -248,4 +248,5 @@ async def test_get_keys(chat_store: SQLAlchemyChatStore):
     keys = await chat_store.get_keys()
 
     # Verify keys (note: other tests may add more keys)
-    assert set("keys_user1", "keys_user2", "keys_user3").issubset(set(keys))
+    expected_keys = {"keys_user1", "keys_user2", "keys_user3"}
+    assert expected_keys.issubset(set(keys))
