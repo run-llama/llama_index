@@ -28,7 +28,7 @@ license = "MIT"
 maintainers = ["ryanpeach"]
 name = "llama-index-packs-code-hierarchy"
 readme = "README.md"
-version = "0.5.0"
+version = "0.5.1"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.13"
