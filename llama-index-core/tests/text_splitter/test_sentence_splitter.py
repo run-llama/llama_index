@@ -139,7 +139,7 @@ def test_split_texts_multiple() -> None:
 def test_split_texts_with_metadata(english_text: str) -> None:
     """Test case for a list of texts with metadata."""
     chunk_size = 100
-    metadata_str = "word " * 50
+    metadata_str = "word " * 50 * 10000
     tokenizer = tiktoken.get_encoding("cl100k_base")
     splitter = SentenceSplitter(
         chunk_size=chunk_size, chunk_overlap=0, tokenizer=tokenizer.encode

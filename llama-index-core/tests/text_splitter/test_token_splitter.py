@@ -74,7 +74,7 @@ def test_contiguous_text(contiguous_text: str) -> None:
 
 def test_split_with_metadata(english_text: str) -> None:
     chunk_size = 100
-    metadata_str = "word " * 50
+    metadata_str = "word " * 50 *10000
     tokenizer = tiktoken.get_encoding("gpt2")
     splitter = TokenTextSplitter(
         chunk_size=chunk_size, chunk_overlap=0, tokenizer=tokenizer.encode
