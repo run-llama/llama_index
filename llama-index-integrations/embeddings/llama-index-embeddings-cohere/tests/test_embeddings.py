@@ -58,4 +58,4 @@ def test_cohere_embeddings_custom_endpoint_multiprocessing():
     deserialized_embeddings.__setstate__(serialized_data)
 
     # Assert: Verify that the deserialized instance retains the correct base_url
-    assert deserialized_embeddings._base_url == custom_base_url
+    assert deserialized_embeddings.base_url == custom_base_url
