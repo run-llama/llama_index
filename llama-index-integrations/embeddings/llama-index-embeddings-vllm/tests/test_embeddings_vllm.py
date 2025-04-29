@@ -11,7 +11,7 @@ def test_vllmembedding_class():
 def test_embedding_retry():
     try:
         embed_model = VllmEmbedding()
-    except RuntimeError:
+    except Exception:
         # will fail in certain environments
         # skip test if it fails
         pytest.skip("Skipping test due to environment issue")

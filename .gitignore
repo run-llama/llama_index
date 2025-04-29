@@ -25,3 +25,5 @@ token.json
 .python-version
 .DS_Store
 /storage/
+*.sqlite3
+*.db
