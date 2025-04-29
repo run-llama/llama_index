@@ -141,7 +141,9 @@ class OpensearchVectorClient:
                 if self.is_aoss:
                     asyncio_run(self._os_async_client.indices.exists(index=self._index))
                 else:
-                    asyncio_run(self._os_async_client.indices.refresh(index=self._index))
+                    asyncio_run(
+                        self._os_async_client.indices.refresh(index=self._index)
+                    )
         except not_found_error:
             self._os_client.indices.create(index=self._index, body=idx_conf)
             if self.is_aoss:
