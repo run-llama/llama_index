@@ -1284,8 +1284,6 @@ dev = [
     { name = "pytest-asyncio" },
     { name = "pytest-mock" },
     { name = "ruff" },
-    { name = "tree-sitter", marker = "python_full_version < '3.12'" },
-    { name = "tree-sitter-languages", marker = "python_full_version < '3.12'" },
     { name = "types-deprecated" },
     { name = "types-protobuf" },
     { name = "types-pyyaml" },
@@ -1324,8 +1322,6 @@ dev = [
     { name = "pytest-asyncio", specifier = ">=0.23.7" },
     { name = "pytest-mock", specifier = ">=3.14.0" },
     { name = "ruff", specifier = "==0.0.292" },
-    { name = "tree-sitter", marker = "python_full_version < '3.12'", specifier = "==0.20.0" },
-    { name = "tree-sitter-languages", marker = "python_full_version < '3.12'", specifier = "==1.9.1" },
     { name = "types-deprecated", specifier = ">=0.1.0" },
     { name = "types-protobuf", specifier = ">=4.24.0.4,<5" },
     { name = "types-pyyaml", specifier = ">=6.0.12.12,<7" },
@@ -3131,65 +3127,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/eb/79/72064e6a701c2183016abbbfedaba506d81e30e232a68c9f0d6f6fcd1574/traitlets-5.14.3.tar.gz", hash = "sha256:9ed0579d3502c94b4b3732ac120375cda96f923114522847de4b3bb98b96b6b7", size = 161621, upload_time = "2024-04-19T11:11:49.746Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/00/c0/8f5d070730d7836adc9c9b6408dec68c6ced86b304a9b26a14df072a6e8c/traitlets-5.14.3-py3-none-any.whl", hash = "sha256:b74e89e397b1ed28cc831db7aea759ba6640cb3de13090ca145426688ff1ac4f", size = 85359, upload_time = "2024-04-19T11:11:46.763Z" },
-]
-
-[[package]]
-name = "tree-sitter"
-version = "0.20.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/10/19/434f796441f739cb0a980b76ac71bdeeff64ea75ff9ace3a8a2b18be3aeb/tree_sitter-0.20.0.tar.gz", hash = "sha256:1940f64be1e8c9c3c0e34a2258f1e4c324207534d5b1eefc5ab2960a9d98f668", size = 116208, upload_time = "2022-01-07T19:54:23.625Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c0/6a/c36db85f3cb408f8cdf1329902ebfd88546c04b9224f952e99855092390b/tree_sitter-0.20.0-cp39-cp39-macosx_12_0_arm64.whl", hash = "sha256:51a609a7c1bd9d9e75d92ee128c12c7852ae70a482900fbbccf3d13a79e0378c", size = 107368, upload_time = "2022-01-07T19:54:14.345Z" },
-]
-
-[[package]]
-name = "tree-sitter-languages"
-version = "1.9.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "tree-sitter", marker = "python_full_version < '3.12'" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/42/84/a982a2279c23a3d0b3f8f4b61dfe3ff399a28b0b3e52a628821774bc9256/tree_sitter_languages-1.9.1-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:5dee458cf1bd1e725470949124e24db842dc789039ea7ff5ba46b338e5f0dc60", size = 5149907, upload_time = "2024-01-03T20:24:42.863Z" },
-    { url = "https://files.pythonhosted.org/packages/30/f7/defa2d104cefd624d93f2e82db157329eeec9d9d987b7240576bfe8dc898/tree_sitter_languages-1.9.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:81921135fa15469586b1528088f78553e60a900d3045f4f37021ad3836219216", size = 5548197, upload_time = "2024-01-03T20:24:44.866Z" },
-    { url = "https://files.pythonhosted.org/packages/e1/48/4b1113e6ba43cea3492d16846a0b229b89bb636893f1fddda617d6450b0e/tree_sitter_languages-1.9.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:edd60780d14c727179acb7bb48fbe4f79da9b830abdeb0d12c06a9f2c37928c7", size = 5072747, upload_time = "2024-01-03T20:24:46.441Z" },
-    { url = "https://files.pythonhosted.org/packages/da/c9/2183124ad47db47b1e9f5de0833d2ab37cbd69b884fe5d942fc80300ac36/tree_sitter_languages-1.9.1-cp310-cp310-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:a28da3f60a6bc23195d6850836e477c149d4aaf58cdb0eb662741dca4f6401e2", size = 5107869, upload_time = "2024-01-03T20:24:48.538Z" },
-    { url = "https://files.pythonhosted.org/packages/fc/81/28cd6d863b31793f01fff3546fcb8e31afefbce68dd10570c7f08609fff1/tree_sitter_languages-1.9.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a9778c00a58ee77006abc5af905b591551b158ce106c8cc6c3b4148d624ccabf", size = 4982902, upload_time = "2024-01-03T20:24:50.902Z" },
-    { url = "https://files.pythonhosted.org/packages/b2/5b/acfd77568e591715ac965797666940c582f0aa1f1c52a52326ff7be269da/tree_sitter_languages-1.9.1-cp310-cp310-musllinux_1_1_aarch64.whl", hash = "sha256:6f68cfec0d74d6344db9c83414f401dcfc753916e71fac7d37f3a5e35b79e5ec", size = 5608922, upload_time = "2024-01-03T20:24:53.193Z" },
-    { url = "https://files.pythonhosted.org/packages/05/67/604050604770188f03c82f87f69243b716f49e07cd9c449a308ad45d7d6d/tree_sitter_languages-1.9.1-cp310-cp310-musllinux_1_1_i686.whl", hash = "sha256:02142d81b2cd759b5fe246d403e4fba80b70268d108bd2b108301e64a84437a6", size = 5711520, upload_time = "2024-01-03T20:24:54.936Z" },
-    { url = "https://files.pythonhosted.org/packages/cd/04/d898685a58f97fd5f2f110b1f8107c8a6324d31ab7c9bf0f17ed559d9c84/tree_sitter_languages-1.9.1-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:ca4e0041c2ead2a8b354b9c229faee152bfd4617480c85cf2b352acf459db3cc", size = 5533444, upload_time = "2024-01-03T20:24:56.631Z" },
-    { url = "https://files.pythonhosted.org/packages/b9/69/7246daf424b4bc6abac70ed33764de473fffbfe5843abea91fc78d3c4ca0/tree_sitter_languages-1.9.1-cp310-cp310-win32.whl", hash = "sha256:506ff5c3646e7b3a533f9e925221d4fe63b88dad0b7ffc1fb96db4c271994606", size = 4792912, upload_time = "2024-01-03T20:24:58.899Z" },
-    { url = "https://files.pythonhosted.org/packages/a9/72/4220ba217195654eec9604c4e5a0efa64d20b9b11c0f810f427a1456a1d3/tree_sitter_languages-1.9.1-cp310-cp310-win_amd64.whl", hash = "sha256:3ac3899e05f2bf0a7c8da70ef5a077ab3dbd442f99eb7452aabbe67bc7b29ddf", size = 4735308, upload_time = "2024-01-03T20:25:00.906Z" },
-    { url = "https://files.pythonhosted.org/packages/50/93/6b5f8dbc4f09b8659bf469c5bb8f40bced020b01da6895eb955f5921011b/tree_sitter_languages-1.9.1-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:823426c3768eea88b6a4fd70dc668b72de90cc9f44d041a579c76d024d7d0697", size = 5150064, upload_time = "2024-01-03T20:25:02.659Z" },
-    { url = "https://files.pythonhosted.org/packages/a2/95/bf1d64c46f5308e10fc4f13be6a6d1e2431e721b7ec6fe5fc937af1b58c0/tree_sitter_languages-1.9.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:51f64b11f30cef3c5c9741e06221a46948f7c82d53ea2468139028eaf4858cca", size = 5548326, upload_time = "2024-01-03T20:25:05.227Z" },
-    { url = "https://files.pythonhosted.org/packages/0e/15/eb6d30cfbef2ce0c1f2eb9c1dee3f75dba0d9e5506b2860207b10fe02acd/tree_sitter_languages-1.9.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f7e1c384bcd2695ebf873bc63eccfa0b9e1c3c944cd6a6ebdd1139a2528d2d6f", size = 5080430, upload_time = "2024-01-03T20:25:07.405Z" },
-    { url = "https://files.pythonhosted.org/packages/6c/41/6432dfef5f08017e9db86290231e21a94fb77fad76f23ee24743a1b6e0d7/tree_sitter_languages-1.9.1-cp311-cp311-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:fecf8553645fc1ad84921e97b03615d84aca22c35d020f629bb44cb6a28a302e", size = 5115073, upload_time = "2024-01-03T20:25:09.516Z" },
-    { url = "https://files.pythonhosted.org/packages/0e/e3/9459998d9b2678b2088293301a98f7a1e22155fbd94dd5964bf27b084ae9/tree_sitter_languages-1.9.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f1a499004189bf9f338f3412d4c1c05a643e86d4619a60ba4b3ae56bc4bf5db9", size = 4990512, upload_time = "2024-01-03T20:25:12.023Z" },
-    { url = "https://files.pythonhosted.org/packages/b4/ac/35f16797525b5a5c47b93c1a15a1f77c17cadaca088b82354f8c1d697e9e/tree_sitter_languages-1.9.1-cp311-cp311-musllinux_1_1_aarch64.whl", hash = "sha256:634ef22744b4af2ed9a43fea8309ec1171b062e37c609c3463364c790a08dae3", size = 5616207, upload_time = "2024-01-03T20:25:13.546Z" },
-    { url = "https://files.pythonhosted.org/packages/32/b4/14c10c5e998fdd71ec493daab855fee185637f8846edbb98d44967c1c04d/tree_sitter_languages-1.9.1-cp311-cp311-musllinux_1_1_i686.whl", hash = "sha256:9394eb34208abcfa9c26ece39778037a8d97da3ef59501185303fef0ab850290", size = 5718283, upload_time = "2024-01-03T20:25:16.017Z" },
-    { url = "https://files.pythonhosted.org/packages/19/39/310f2265f8e97c23d6da1a08295927c70f6b6b0526fd0709dfa76afd59e9/tree_sitter_languages-1.9.1-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:221c367be0129da540fbb84170e18c5b8c56c09fd2f6143e116eebbef72c780e", size = 5540419, upload_time = "2024-01-03T20:25:18.248Z" },
-    { url = "https://files.pythonhosted.org/packages/32/7e/1e6ea4f9b0238c68bc75326667ac227fd9309c0464f0cc2488f8ad6a473c/tree_sitter_languages-1.9.1-cp311-cp311-win32.whl", hash = "sha256:15d03f54f913f47ac36277d8a521cd425415a25b020e0845d7b8843f5f5e1209", size = 4792907, upload_time = "2024-01-03T20:25:20.371Z" },
-    { url = "https://files.pythonhosted.org/packages/84/79/d985ecb02279666eade1c865462b71f53e996d7525862dc5e76e1ea69159/tree_sitter_languages-1.9.1-cp311-cp311-win_amd64.whl", hash = "sha256:7c565c18cebc72417ebc8f0f4cd5cb91dda51874164045cc274f47c913b194aa", size = 4735433, upload_time = "2024-01-03T20:25:22.762Z" },
-    { url = "https://files.pythonhosted.org/packages/ae/cc/15b8aded597d5955a48d2fed141ee23c32c4406addda2c900ed401634f44/tree_sitter_languages-1.9.1-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:cde380cdc37594e7fcbade6a4b396dbeab52a1cecfe884cd814e1a1541ca6b93", size = 5149939, upload_time = "2024-01-03T20:25:24.984Z" },
-    { url = "https://files.pythonhosted.org/packages/62/86/609cbf9d17dac0bca0547cb447a2dee19047aad37d90234596a3121be19d/tree_sitter_languages-1.9.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:9c4f2409e5460bdec5921ee445f748ea7c319469e347a13373e3c7086dbf0315", size = 5548281, upload_time = "2024-01-03T20:25:27.115Z" },
-    { url = "https://files.pythonhosted.org/packages/74/f0/d5dd8cd65275419daae0025aa49dd3644393c782c69ea8a11167c5fe129c/tree_sitter_languages-1.9.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a17bbe91a78a29a9c14ab8bb07ed3761bb2708b58815bafc02d0965b15cb99e5", size = 5089580, upload_time = "2024-01-03T20:25:28.676Z" },
-    { url = "https://files.pythonhosted.org/packages/ed/03/254d29f6e08dc3e47114d51c221decc5d23664ae66fd1ccc4c4d3d2475a9/tree_sitter_languages-1.9.1-cp312-cp312-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:369402e2b395de2655d769e515401fe7c7df247a83aa28a6362e808b8a017fae", size = 5126023, upload_time = "2024-01-03T20:25:30.917Z" },
-    { url = "https://files.pythonhosted.org/packages/41/b6/6b796aae523b93a36865a73872c610192dabbaabc472b392c69e20bcae96/tree_sitter_languages-1.9.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f4a382d1e463e6ae60bbbd0c1f3db48e83b3c1a3af98d652af11de4c0e6171fc", size = 5001168, upload_time = "2024-01-03T20:25:32.468Z" },
-    { url = "https://files.pythonhosted.org/packages/56/d6/40b9aabd401d6fab0c077f8c46aede53f88180a6eebcd2f3c2d77ca260fd/tree_sitter_languages-1.9.1-cp312-cp312-musllinux_1_1_aarch64.whl", hash = "sha256:bc60fb35f377143b30f4319fbaac0503b12cfb49de34082a479c7f0cc28927f1", size = 5628583, upload_time = "2024-01-03T20:25:34.06Z" },
-    { url = "https://files.pythonhosted.org/packages/3c/3c/648ca5f91ad294e1fdf591a42563ac11b41872c15324912c28ca0f0969c0/tree_sitter_languages-1.9.1-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:9e953fb43767e327bf5c1d0585ee39236eaff47683cbda2811cbe0227fd41ad7", size = 5729985, upload_time = "2024-01-03T20:25:35.845Z" },
-    { url = "https://files.pythonhosted.org/packages/83/31/7a199439b31066aa37ad668b17eb1527e727997ee1aa69c682aa6af8be3e/tree_sitter_languages-1.9.1-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:c5a6df25eae23a5e2d448218b130207476cb8a613ac40570d49008243b0915bb", size = 5554035, upload_time = "2024-01-03T20:25:37.401Z" },
-    { url = "https://files.pythonhosted.org/packages/bf/d3/c7e06cc4032d12e7c4cdc441e0e21f30bba679d60dac6f50936db61ed38b/tree_sitter_languages-1.9.1-cp312-cp312-win32.whl", hash = "sha256:2720f9a639f5d5c17692135f3f2d60506c240699d0c1becdb895546e553f2339", size = 4792628, upload_time = "2024-01-03T20:25:39.032Z" },
-    { url = "https://files.pythonhosted.org/packages/0a/06/f7b6a120771befef0a597d13d27cc14626a8e4a3f89c33e8b03935d71708/tree_sitter_languages-1.9.1-cp312-cp312-win_amd64.whl", hash = "sha256:f19157c33ddc1e75ae7843b813e65575ed2040e1638643251bd603bb0f52046b", size = 4735329, upload_time = "2024-01-03T20:25:40.806Z" },
-    { url = "https://files.pythonhosted.org/packages/8d/a4/0fbdcb376d0550fea81f78de22134a442f62cbbf750b7024317c70eb08c4/tree_sitter_languages-1.9.1-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:119f32cfc7c561e252e8958259ef997f2adfd4587ae43e82819b56f2810b8b42", size = 5149900, upload_time = "2024-01-03T20:26:46.67Z" },
-    { url = "https://files.pythonhosted.org/packages/62/5c/5e11af4ae720b19902d1f8e1c8f6fe7787238fac3cf96ce8409e5ac3f00f/tree_sitter_languages-1.9.1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:582b04e11c67706b0a5ea64fd53ce4910fe11ad29d74ec7680c4014a02d09d4a", size = 5548195, upload_time = "2024-01-03T20:26:49.077Z" },
-    { url = "https://files.pythonhosted.org/packages/1c/2f/464495ca2fb730e48c15a559751667a26728a2954fa3e2fc06900b3b41d3/tree_sitter_languages-1.9.1-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a816f76c52f6c9fb3316c5d44195f8de48e09f2214b7fdb5f9232395033c789c", size = 5072355, upload_time = "2024-01-03T20:26:51.017Z" },
-    { url = "https://files.pythonhosted.org/packages/73/a2/ffe4adff258589b51dd853d04a5b9c72890b94724592c57082fe25fd87d2/tree_sitter_languages-1.9.1-cp39-cp39-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3a099b2f69cf22ab77de811b148de7d2d8ba8c51176a64bc56304cf42a627dd4", size = 5107443, upload_time = "2024-01-03T20:26:53.279Z" },
-    { url = "https://files.pythonhosted.org/packages/2f/98/c5d1b0ae26f39eb703c850c60118ee16f69c5a02ef4402ea659a57cb3969/tree_sitter_languages-1.9.1-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:447b6c62c59255c89341ec0968e467e8c59c60fc5c2c3dc1f7dfe159a820dd3c", size = 4982441, upload_time = "2024-01-03T20:26:55.311Z" },
-    { url = "https://files.pythonhosted.org/packages/8d/34/06bf7e9043e354d3a00eb233ac73e72b31a472070dd56afcc37e47ad73db/tree_sitter_languages-1.9.1-cp39-cp39-musllinux_1_1_aarch64.whl", hash = "sha256:41f4fee9b7de9646ef9711b6dbcdd5a4e7079e3d175089c8ef3f2c68b5adb5f4", size = 5608650, upload_time = "2024-01-03T20:26:58.373Z" },
-    { url = "https://files.pythonhosted.org/packages/e8/ee/162425278873bfb1feea6076c9cad9fef8ef646bf913b747fdb1a7d5f1f9/tree_sitter_languages-1.9.1-cp39-cp39-musllinux_1_1_i686.whl", hash = "sha256:ee3b70594b79ff1155d5d9fea64e3af240d9327a52526d446e6bd792ac5b43cf", size = 5711247, upload_time = "2024-01-03T20:27:00.207Z" },
-    { url = "https://files.pythonhosted.org/packages/79/5d/f2cd3ac8f0a92115bcf9de074896736535044d4011b6cc3025e37536c6b9/tree_sitter_languages-1.9.1-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:087b82cc3943fc5ffac30dc1b4192936a27c3c06fbd8718935a269e30dedc83b", size = 5533081, upload_time = "2024-01-03T20:27:02.432Z" },
-    { url = "https://files.pythonhosted.org/packages/1c/be/43cd60c04705e347f3adda91a27c3ab11aaca2f77e0c5fad9902231d4c43/tree_sitter_languages-1.9.1-cp39-cp39-win32.whl", hash = "sha256:155483058dc11de302f47922d31feec5e1bb9888e661aed7be0dad6f70bfe691", size = 4792904, upload_time = "2024-01-03T20:27:04.475Z" },
-    { url = "https://files.pythonhosted.org/packages/e9/8b/80d8830e9ae2e7f817c6a62c2cc5741d4eebdfd69a925ef6a5788297a172/tree_sitter_languages-1.9.1-cp39-cp39-win_amd64.whl", hash = "sha256:5335405a937f788a2608d1b25c654461dddddbc6a1341672c833d2c8943397a8", size = 4735313, upload_time = "2024-01-03T20:27:06.663Z" },
 ]
 
 [[package]]
