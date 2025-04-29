@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"js/ts.implicitProjectConfig.checkJs": true
+	}
+
+}
+
