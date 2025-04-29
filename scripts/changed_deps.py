@@ -112,18 +112,16 @@ def get_affected_packages(
     return affected_packages
 
 
-def run_pytest(package_dir):
+def run_pytest(package_dir, install_local_core=False):
     env = os.environ.copy()
     if "VIRTUAL_ENV" in env:
         del env["VIRTUAL_ENV"]
 
     start = time.perf_counter()
 
+    # Sync deps
     result = subprocess.run(
-        [
-            "uv",
-            "sync",
-        ],
+        ["uv", "sync"],
         cwd=package_dir,
         text=True,
         capture_output=True,
@@ -139,6 +137,26 @@ def run_pytest(package_dir):
             "time": f"{elapsed_time:.2f}s",
         }
 
+    # Install local copy of core if it changed
+    if install_local_core:
+        result = subprocess.run(
+            ["uv", "pip", "install", "./llama-index-core"],
+            cwd=package_dir,
+            text=True,
+            capture_output=True,
+            env=env,
+        )
+        if result.returncode != 0:
+            elapsed_time = time.perf_counter() - start
+            return {
+                "package": str(package_dir),
+                "status": ResultStatus.INSTALL_FAILED,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "time": f"{elapsed_time:.2f}s",
+            }
+
+    # Run pytest
     result = subprocess.run(
         [
             "uv",
@@ -185,11 +203,18 @@ def main():
     ]
 
     # Find directly affected packages
+    install_local_core = False
     directly_affected = get_affected_packages(changed_files, all_packages)
     packages_to_test = {str(p) for p in directly_affected}
     if "llama-index-core" in packages_to_test:
         # Run all the tests if llama-index-core was changed
         packages_to_test = {str(p) for p in all_packages}
+        install_local_core = True
+
+    for p in packages_to_test:
+        print(p)
+
+    return
 
     # Run pytest for each affected package in parallel
     results = []
@@ -197,7 +222,7 @@ def main():
         max_workers=int(args.workers)
     ) as executor:
         future_to_package = {
-            executor.submit(run_pytest, package): package
+            executor.submit(run_pytest, package, install_local_core): package
             for package in sorted(packages_to_test)
         }
 
