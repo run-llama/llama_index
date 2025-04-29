@@ -24,7 +24,8 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.poetry]
-authors = ["Arthur Cheng <arthur.cheng@oracle.com>", "Rave Harpaz <rave.harpaz@oracle.com>"]
+authors = ["Arthur Cheng <arthur.cheng@oracle.com>", "Rave Harpaz <rave.harpaz@oracle.com>",
+    "Leo He <lejian.he@oracle.com>"]
 description = "llama-index llms OCI GenAI integration"
 exclude = ["**/BUILD"]
 license = "MIT"
@@ -35,7 +36,7 @@ version = "0.4.0"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<4.0"
-oci = "^2.134.0"
+oci = "^2.144.0"
 llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]

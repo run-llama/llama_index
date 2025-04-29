@@ -30,6 +30,8 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM, ToolSelec
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 
 from llama_index.llms.oci_genai.utils import (
+    CohereProvider,
+    MetaProvider,
     CHAT_MODELS,
     create_client,
     get_provider,
@@ -74,11 +76,6 @@ class OCIGenAI(FunctionCallingLLM):
         default="DEFAULT",
     )
 
-    auth_file_location: Optional[str] = Field(
-        description="Path to the config file. If not specified, ~/.oci/config will be used",
-        default="~/.oci/config",
-    )
-
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict,
         description="Additional kwargs for the OCI Generative AI request.",
@@ -100,7 +97,6 @@ class OCIGenAI(FunctionCallingLLM):
         compartment_id: Optional[str] = None,
         auth_type: Optional[str] = "API_KEY",
         auth_profile: Optional[str] = "DEFAULT",
-        auth_file_location: Optional[str] = "~/.oci/config",
         client: Optional[Any] = None,
         provider: Optional[str] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
@@ -127,11 +123,10 @@ class OCIGenAI(FunctionCallingLLM):
 
             compartment_id (str): OCID of the compartment.
 
-            auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCEAL, RESOURCE_PRINCIPAL. If not specified, API_KEY will be used
+            auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCEAL, RESOURCE_PRINCIPAL.
+                                    If not specified, API_KEY will be used
 
             auth_profile (Optional[str]): The name of the profile in ~/.oci/config. If not specified , DEFAULT will be used
-
-            auth_file_location (Optional[str]): Path to the config file, If not specified, ~/.oci/config will be used.
 
             client (Optional[Any]): An optional OCI client object. If not provided, the client will be created using the
                                     provided service endpoint and authentifcation method.
@@ -154,7 +149,6 @@ class OCIGenAI(FunctionCallingLLM):
             compartment_id=compartment_id,
             auth_type=auth_type,
             auth_profile=auth_profile,
-            auth_file_location=auth_file_location,
             additional_kwargs=additional_kwargs,
             callback_manager=callback_manager,
             system_prompt=system_prompt,
@@ -165,7 +159,7 @@ class OCIGenAI(FunctionCallingLLM):
         )
 
         self._client = client or create_client(
-            auth_type, auth_profile, auth_file_location, service_endpoint
+            auth_type, auth_profile, service_endpoint
         )
 
         self._provider = get_provider(model, provider)
@@ -222,25 +216,47 @@ class OCIGenAI(FunctionCallingLLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        # Convert the LlamaIndex messages to the provider's internal request shape
         oci_params = self._provider.messages_to_oci_params(messages)
         oci_params["is_stream"] = False
+
+        # Gather any additional kwargs from user
         tools = kwargs.pop("tools", None)
         all_kwargs = self._get_all_kwargs(**kwargs)
         chat_params = {**all_kwargs, **oci_params}
+
+        # If the user passed in "tools", handle them
         if tools:
+            # Convert each tool into the provider's format
             chat_params["tools"] = [
                 self._provider.convert_to_oci_tool(tool) for tool in tools
             ]
 
+            # **Only** set tool_choice if this is Meta (Llama),
+            # because cohere won't accept the 'tool_choice' param.
+            if isinstance(self._provider, MetaProvider):
+                from oci.generative_ai_inference import models
+                chat_params["tool_choice"] = models.ToolChoiceAuto()
+            # If it’s Cohere, do nothing special here
+            # (Cohere handles function calls differently.)
+
+        # Build the final request object
         request = self._chat_generator(
             compartment_id=self.compartment_id,
             serving_mode=self._serving_mode,
             chat_request=self._provider.oci_chat_request(**chat_params),
         )
 
-        response = self._client.chat(request)
+        # Assign `tool_choice` and `tools` only if they exist in chat_params
+        if "tool_choice" in chat_params:
+            request.chat_request.tool_choice = chat_params["tool_choice"]
+        if "tools" in chat_params:
+            request.chat_request.tools = chat_params["tools"]
 
+        response = self._client.chat(request)
+        # print(response.data)
         generation_info = self._provider.chat_generation_info(response)
+        # print(generation_info)
 
         llm_output = {
             "model_id": response.data.model_id,
@@ -258,8 +274,9 @@ class OCIGenAI(FunctionCallingLLM):
             raw=response.__dict__,
         )
 
+
     def stream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
+            self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         oci_params = self._provider.messages_to_oci_params(messages)
         oci_params["is_stream"] = True
@@ -270,6 +287,8 @@ class OCIGenAI(FunctionCallingLLM):
             chat_params["tools"] = [
                 self._provider.convert_to_oci_tool(tool) for tool in tools
             ]
+            from oci.generative_ai_inference import models
+            chat_params["tool_choice"] = models.ToolChoiceAuto()
 
         request = self._chat_generator(
             compartment_id=self.compartment_id,
@@ -277,48 +296,43 @@ class OCIGenAI(FunctionCallingLLM):
             chat_request=self._provider.oci_chat_request(**chat_params),
         )
 
+        if "tool_choice" in chat_params:
+            request.chat_request.tool_choice = chat_params["tool_choice"]
+        if "tools" in chat_params:
+            request.chat_request.tools = chat_params["tools"]
+
         response = self._client.chat(request)
 
         def gen() -> ChatResponseGen:
             content = ""
-            tool_calls_accumulated = []
+            tool_calls_accum = []
 
             for event in response.data.events():
-                content_delta = self._provider.chat_stream_to_text(
-                    json.loads(event.data)
-                )
-                content += content_delta
-
                 try:
                     event_data = json.loads(event.data)
+                    chunk_text = self._provider.chat_stream_to_text(event_data)
+                    content += chunk_text
 
-                    tool_calls_data = None
+                    # Check for function/tool calls
                     for key in ["toolCalls", "tool_calls", "functionCalls"]:
                         if key in event_data:
-                            tool_calls_data = event_data[key]
-                            break
-
-                    if tool_calls_data:
-                        new_tool_calls = _format_oci_tool_calls(tool_calls_data)
-                        for tool_call in new_tool_calls:
-                            existing = next(
-                                (
-                                    t
-                                    for t in tool_calls_accumulated
-                                    if t["name"] == tool_call["name"]
-                                ),
-                                None,
-                            )
-                            if existing:
-                                existing.update(tool_call)
-                            else:
-                                tool_calls_accumulated.append(tool_call)
+                            new_calls = _format_oci_tool_calls(event_data[key])
+                            # Merge them into tool_calls_accum
+                            for nc in new_calls:
+                                existing = next(
+                                    (tc for tc in tool_calls_accum if tc["name"] == nc["name"]),
+                                    None
+                                )
+                                if existing:
+                                    existing.update(nc)
+                                else:
+                                    tool_calls_accum.append(nc)
 
                     generation_info = self._provider.chat_stream_generation_info(
                         event_data
                     )
-                    if tool_calls_accumulated:
-                        generation_info["tool_calls"] = tool_calls_accumulated
+                    if tool_calls_accum:
+                        generation_info["tool_calls"] = tool_calls_accum
 
                     yield ChatResponse(
                         message=ChatMessage(
@@ -326,30 +340,15 @@ class OCIGenAI(FunctionCallingLLM):
                             content=content,
                             additional_kwargs=generation_info,
                         ),
-                        delta=content_delta,
+                        delta=chunk_text,
                         raw=event.__dict__,
                     )
-
                 except json.JSONDecodeError:
-                    yield ChatResponse(
-                        message=ChatMessage(
-                            role=MessageRole.ASSISTANT, content=content
-                        ),
-                        delta=content_delta,
-                        raw=event.__dict__,
-                    )
-
-                except Exception as e:
-                    print(f"Error processing stream chunk: {e}")
-                    yield ChatResponse(
-                        message=ChatMessage(
-                            role=MessageRole.ASSISTANT, content=content
-                        ),
-                        delta=content_delta,
-                        raw=event.__dict__,
-                    )
+                    # ...
+                    yield ChatResponse(...)
 
         return gen()
+
 
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
