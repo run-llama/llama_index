@@ -318,6 +318,7 @@ class HuggingFaceLLM(CustomLLM):
     ) -> CompletionResponse:
         """Completion endpoint."""
         full_prompt = prompt
+        logits_processors = kwargs.get("logits_processors")
         if not formatted:
             if self.query_wrapper_prompt:
                 full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
@@ -338,6 +339,7 @@ class HuggingFaceLLM(CustomLLM):
             **inputs,
             max_new_tokens=self.max_new_tokens,
             stopping_criteria=self._stopping_criteria,
+            logits_processor=logits_processors,
             **self.generate_kwargs,
         )
         completion_tokens = tokens[0][inputs["input_ids"].size(1) :]
@@ -353,6 +355,7 @@ class HuggingFaceLLM(CustomLLM):
         from transformers import TextIteratorStreamer
 
         full_prompt = prompt
+        logits_processors = kwargs.get("logits_processors")
         if not formatted:
             if self.query_wrapper_prompt:
                 full_prompt = self.query_wrapper_prompt.format(query_str=prompt)
@@ -375,6 +378,7 @@ class HuggingFaceLLM(CustomLLM):
             streamer=streamer,
             max_new_tokens=self.max_new_tokens,
             stopping_criteria=self._stopping_criteria,
+            logits_processor=logits_processors,
             **self.generate_kwargs,
         )
 
