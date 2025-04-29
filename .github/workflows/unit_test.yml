@@ -6,10 +6,6 @@ on:
       - main
   pull_request:
 
-env:
-  POETRY_VERSION: "1.8.3"
-  SYSTEM_VERSION_COMPAT: "1"
-
 jobs:
   test:
     runs-on: ubuntu-latest-unit-tester
@@ -18,36 +14,21 @@ jobs:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
-      - name: clear space
-        env:
-          CI: true
-        shell: bash
-        run: rm -rf /opt/hostedtoolcache/*
-
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Install Poetry
-        run: pipx install poetry==${{ env.POETRY_VERSION }}
-
-      - name: Set up python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v5
         with:
           python-version: ${{ matrix.python-version }}
+          enable-cache: true
 
-      - name: Install pants
-        run: |
-          curl --proto '=https' --tlsv1.2 -fsSLO https://static.pantsbuild.org/setup/get-pants.sh
-          chmod +x get-pants.sh
-          ./get-pants.sh
-
-      - name: Check BUILD files
-        run: |
-          pants tailor --check :: -docs/::
-
-      - name: Run testing
-        env:
-          CI: true
+      - name: Run tests
+        id: packages-to-test
         shell: bash
-        run: poetry run make test
+        env:
+          NUM_WORKERS: 8
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
+          uv run -- python -u scripts/changed_deps.py --workers ${{ env.NUM_WORKERS }} --base-ref=${{ github.event.pull_request.base.ref }}
