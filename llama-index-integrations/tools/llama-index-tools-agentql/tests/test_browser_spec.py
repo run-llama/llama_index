@@ -1,13 +1,11 @@
-import pytest
 import os
 
+import pytest
+from llama_index.core.agent.function_calling.base import FunctionCallingAgent
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
-from llama_index.core.agent import FunctionCallingAgent
-
+from llama_index.llms.openai import OpenAI
 from llama_index.tools.agentql import AgentQLBrowserToolSpec
 from llama_index.tools.playwright import PlaywrightToolSpec
-
-from llama_index.llms.openai import OpenAI
 
 from tests.conftest import get_testing_data
 
@@ -31,7 +29,7 @@ class TestExtractDataBrowserTool:
         yield agentql_browser_tool
         await async_browser.close()
 
-    @pytest.fixture()
+    @pytest.fixture
     def agent(self, agentql_browser_tool):
         return FunctionCallingAgent.from_tools(
             agentql_browser_tool.to_tool_list(),
