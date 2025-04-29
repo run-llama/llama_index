@@ -35,6 +35,7 @@ dependencies = [
     "azure-cosmos>=4.7.0,<5",
     "azure-identity>=1.7.1,<2",
     "llama-index-core>=0.12.0,<0.13",
+    "llama-index-storage-kv-store-azurecosmosnosql>=1.1.0",
 ]
 
 [tool.codespell]
