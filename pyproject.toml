@@ -16,8 +16,6 @@ dev = [
     "pytest-mock>=3.14.0",
     "pytest>=8.2.1",
     "ruff==0.0.292",
-    "tree-sitter-languages==1.9.1 ; python_version < '3.12'",
-    "tree-sitter==0.20.0 ; python_version < '3.12'",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-protobuf>=4.24.0.4,<5",
