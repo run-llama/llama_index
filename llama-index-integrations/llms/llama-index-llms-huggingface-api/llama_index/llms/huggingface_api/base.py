@@ -86,11 +86,10 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
     provider: Optional[str] = Field(
         default=None,
         description=(
-            "Name of the provider to use for inference. Can be `\"black-forest-labs\"`,"
-            " `\"cerebras\"`, `\"cohere\"`, `\"fal-ai\"`, `\"fireworks-ai\"`,"
-            " `\"hf-inference\"`, `\"hyperbolic\"`, `\"nebius\"`, `\"novita\"`,"
-            " `\"openai\"`, `\"replicate\"`, \"sambanova\"` or `\"together\"`."
-            " defaults to hf-inference (Hugging Face Serverless Inference API)."
+            "Name of the provider to use for inference. Can be 'black-forest-labs',"
+            " 'cerebras', 'cohere', 'fal-ai', 'fireworks-ai', 'hf-inference',"
+            " 'hyperbolic', 'nebius', 'novita', 'openai', 'replicate', 'sambanova'"
+            " or 'together'. defaults to hf-inference (Hugging Face Serverless Inference API)."
             " If model is a URL or `base_url` is passed, then `provider` is not used."
         ),
     )
