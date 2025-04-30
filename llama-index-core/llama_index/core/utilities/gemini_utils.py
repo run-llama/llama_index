@@ -40,7 +40,7 @@ def merge_neighboring_same_role_messages(
     while i < len(messages):
         current_message = messages[i]
         # Initialize merged content with current message content
-        merged_content = [current_message.content]
+        merged_content = current_message.blocks
 
         # Check if the next message exists and has the same role
         while (
@@ -50,12 +50,12 @@ def merge_neighboring_same_role_messages(
         ):
             i += 1
             next_message = messages[i]
-            merged_content.extend([next_message.content])
+            merged_content.extend(next_message.blocks)
 
         # Create a new ChatMessage or similar object with merged content
         merged_message = ChatMessage(
             role=ROLES_TO_GEMINI[current_message.role],
-            content="\n".join([str(msg_content) for msg_content in merged_content]),
+            blocks=merged_content,
             additional_kwargs=current_message.additional_kwargs,
         )
 

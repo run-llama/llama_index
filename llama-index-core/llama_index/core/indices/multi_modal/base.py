@@ -8,6 +8,7 @@ import logging
 from typing import Any, List, Optional, Sequence, cast
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.data_structs.data_structs import (
     IndexDict,
     MultiModelIndexDict,
@@ -25,7 +26,7 @@ from llama_index.core.indices.multi_modal.retriever import (
 )
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.llms.utils import LLMType
-from llama_index.core.multi_modal_llms import MultiModalLLM
+from llama_index.core.multi_modal_llms.base import MultiModalLLM
 from llama_index.core.query_engine.multi_modal import SimpleMultiModalQueryEngine
 from llama_index.core.schema import BaseNode, ImageNode, TextNode
 from llama_index.core.settings import Settings
@@ -140,11 +141,16 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         retriever = cast(MultiModalVectorIndexRetriever, self.as_retriever(**kwargs))
 
         llm = llm or Settings.llm
-        assert isinstance(llm, MultiModalLLM)
+        assert isinstance(llm, (BaseLLM, MultiModalLLM))
+        class_name = llm.class_name()
+        if "multi" not in class_name:
+            logger.warning(
+                f"Warning: {class_name} does not appear to be a multi-modal LLM. This may not work as expected."
+            )
 
         return SimpleMultiModalQueryEngine(
             retriever,
-            multi_modal_llm=llm,
+            multi_modal_llm=llm,  # type: ignore
             **kwargs,
         )
 

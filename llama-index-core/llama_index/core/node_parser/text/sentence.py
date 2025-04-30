@@ -20,7 +20,7 @@ from llama_index.core.node_parser.text.utils import (
 from llama_index.core.utils import get_tokenizer
 
 SENTENCE_CHUNK_OVERLAP = 200
-CHUNKING_REGEX = "[^,.;。？！]+[,.;。？！]?"
+CHUNKING_REGEX = "[^,.;。？！]+[,.;。？！]?|[,.;。？！]"
 DEFAULT_PARAGRAPH_SEP = "\n\n\n"
 
 
@@ -262,8 +262,9 @@ class SentenceSplitter(MetadataAwareTextSplitter):
                     cur_chunk.insert(0, (text, length))
                     last_index -= 1
 
-        while len(splits) > 0:
-            cur_split = splits[0]
+        split_idx = 0
+        while split_idx < len(splits):
+            cur_split = splits[split_idx]
             if cur_split.token_size > chunk_size:
                 raise ValueError("Single token exceeded chunk size")
             if cur_chunk_len + cur_split.token_size > chunk_size and not new_chunk:
@@ -278,7 +279,7 @@ class SentenceSplitter(MetadataAwareTextSplitter):
                     # add split to chunk
                     cur_chunk_len += cur_split.token_size
                     cur_chunk.append((cur_split.text, cur_split.token_size))
-                    splits.pop(0)
+                    split_idx += 1
                     new_chunk = False
                 else:
                     # close out chunk

@@ -58,7 +58,7 @@ async def review_report(ctx: Context, review: str) -> str:
     return "Report reviewed."
 ```
 
-Now we're going to bring in a new class to create a stand-alone function-calling agent, the `FunctionAgent` (we also support a `ReactAgent`):
+Now we're going to bring in a new class to create a stand-alone function-calling agent, the `FunctionAgent` (we also support a `ReactAgent` and `CodeActAgent`):
 
 ```python
 from llama_index.core.agent.workflow import FunctionAgent

@@ -1,13 +1,15 @@
-from llama_index.core.vector_stores.types import BasePydanticVectorStore
-from llama_index.vector_stores.qdrant import QdrantVectorStore
 import pytest
-from unittest.mock import MagicMock
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import (
     PointsList,
     PointStruct,
     Filter,
 )
+from unittest.mock import MagicMock
+
+from llama_index.core.vector_stores.types import BasePydanticVectorStore
+from llama_index.vector_stores.qdrant import QdrantVectorStore
+from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
 
 
 def test_class():
@@ -91,6 +93,7 @@ def test_parse_query_result(vector_store: QdrantVectorStore) -> None:
 
     points = PointsList(points=[PointStruct(id=1, vector=vector_dict, payload=payload)])
 
+    vector_store.dense_vector_name = "text-dense"
     results = vector_store.parse_to_query_result(list(points.points))
 
     assert len(results.nodes) == 1
@@ -199,3 +202,22 @@ def test_filter_conditions():
     assert len(filter_and_not.must[1].must_not) == 1
     assert filter_and_not.must[1].must_not[0].key == "price"
     assert filter_and_not.must[1].must_not[0].match.value == 50
+
+
+def test_hybrid_vector_store_query(hybrid_vector_store: QdrantVectorStore) -> None:
+    query = VectorStoreQuery(
+        query_embedding=[0.0, 0.0],
+        query_str="test1",
+        similarity_top_k=1,
+        sparse_top_k=1,
+        hybrid_top_k=2,
+        mode=VectorStoreQueryMode.HYBRID,
+    )
+    results = hybrid_vector_store.query(query)
+    assert len(results.nodes) == 2
+
+    # disable hybrid, and it should still work
+    hybrid_vector_store.enable_hybrid = False
+    query.mode = VectorStoreQueryMode.DEFAULT
+    results = hybrid_vector_store.query(query)
+    assert len(results.nodes) == 1

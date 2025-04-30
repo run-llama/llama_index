@@ -30,6 +30,9 @@ from llama_index.core.readers.base import BaseReader, ResourcesReaderMixin
 from llama_index.core.schema import Document
 
 
+logger = logging.getLogger(__name__)
+
+
 class FileSystemReaderMixin(ABC):
     @abstractmethod
     def read_file_content(self, input_file: Path, **kwargs: Any) -> bytes:
@@ -76,7 +79,11 @@ def _try_loading_included_file_formats() -> (
             VideoAudioReader,
         )  # pants: no-infer-dep
     except ImportError:
-        raise ImportError("`llama-index-readers-file` package not found")
+        logger.warning(
+            "`llama-index-readers-file` package not found, some file readers will not be available "
+            "if not provided by the `file_extractor` parameter."
+        )
+        return {}
 
     default_file_reader_cls: dict[str, Type[BaseReader]] = {
         ".hwp": HWPReader,
@@ -190,9 +197,6 @@ def get_default_fs() -> fsspec.AbstractFileSystem:
 
 def is_default_fs(fs: fsspec.AbstractFileSystem) -> bool:
     return isinstance(fs, LocalFileSystem) and not fs.auto_mkdir
-
-
-logger = logging.getLogger(__name__)
 
 
 class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMixin):

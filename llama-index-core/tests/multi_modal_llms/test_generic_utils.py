@@ -61,8 +61,9 @@ def test_image_documents_to_base64_multiple_sources():
     ]
     with patch("requests.get") as mock_get:
         mock_get.return_value.content = EXP_BINARY
-        with patch("builtins.open", mock_open(read_data=EXP_BINARY)):
-            result = image_documents_to_base64(documents)
+        with patch("os.path.isfile", return_value=True):
+            with patch("builtins.open", mock_open(read_data=EXP_BINARY)):
+                result = image_documents_to_base64(documents)
 
     assert len(result) == 4
     assert all(encoding == EXP_BASE64 for encoding in result)
@@ -144,8 +145,10 @@ def test_set_base64_and_mimetype_for_image_docs():
 
     with patch("requests.get") as mock_get:
         mock_get.return_value.content = EXP_BINARY
-        with patch("builtins.open", mock_open(read_data=EXP_BINARY)):
-            results = set_base64_and_mimetype_for_image_docs(image_docs)
+        # patch os.path.isfile
+        with patch("os.path.isfile", return_value=True):
+            with patch("builtins.open", mock_open(read_data=EXP_BINARY)):
+                results = set_base64_and_mimetype_for_image_docs(image_docs)
 
     assert len(results) == 2
     assert results[0].image == EXP_BASE64

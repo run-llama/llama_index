@@ -1,7 +1,9 @@
 import functools
+from json.decoder import JSONDecodeError
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     Awaitable,
     Callable,
     Dict,
@@ -11,6 +13,7 @@ from typing import (
     Optional,
     Protocol,
     Sequence,
+    Type,
     Union,
     cast,
     get_args,
@@ -43,7 +46,6 @@ from llama_index.core.base.llms.types import (
     MessageRole,
 )
 from llama_index.core.bridge.pydantic import (
-    BaseModel,
     Field,
     PrivateAttr,
 )
@@ -56,9 +58,11 @@ from llama_index.core.llms.callbacks import (
     llm_completion_callback,
 )
 from llama_index.core.llms.function_calling import FunctionCallingLLM
-from llama_index.core.llms.llm import ToolSelection
+from llama_index.core.llms.llm import ToolSelection, Model
 from llama_index.core.llms.utils import parse_partial_json
-from llama_index.core.types import BaseOutputParser, Model, PydanticProgramMode
+from llama_index.core.prompts import PromptTemplate
+from llama_index.core.program.utils import FlexibleModel
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.openai.utils import (
     O1_MODELS,
     OpenAIToolCall,
@@ -74,7 +78,7 @@ from llama_index.llms.openai.utils import (
     to_openai_message_dicts,
     update_tool_calls,
 )
-from openai import AsyncOpenAI, AzureOpenAI
+from openai import AsyncOpenAI, AzureOpenAI, AsyncAzureOpenAI
 from openai import OpenAI as SyncOpenAI
 from openai.types.chat.chat_completion_chunk import (
     ChatCompletionChunk,
@@ -337,9 +341,6 @@ class OpenAI(FunctionCallingLLM):
             model_name = model_name.split(":")[1]
         return model_name
 
-    def _is_azure_client(self) -> bool:
-        return isinstance(self._get_client(), AzureOpenAI)
-
     @classmethod
     def class_name(cls) -> str:
         return "openai_llm"
@@ -527,7 +528,7 @@ class OpenAI(FunctionCallingLLM):
                 if len(response.choices) > 0:
                     delta = response.choices[0].delta
                 else:
-                    if self._is_azure_client():
+                    if isinstance(client, AzureOpenAI):
                         continue
                     else:
                         delta = ChoiceDelta()
@@ -796,7 +797,7 @@ class OpenAI(FunctionCallingLLM):
                         continue
                     delta = response.choices[0].delta
                 else:
-                    if self._is_azure_client():
+                    if isinstance(aclient, AsyncAzureOpenAI):
                         continue
                     else:
                         delta = ChoiceDelta()
@@ -976,7 +977,7 @@ class OpenAI(FunctionCallingLLM):
             # this should handle both complete and partial jsons
             try:
                 argument_dict = parse_partial_json(tool_call.function.arguments)
-            except ValueError:
+            except (ValueError, TypeError, JSONDecodeError):
                 argument_dict = {}
 
             tool_selections.append(
@@ -991,62 +992,80 @@ class OpenAI(FunctionCallingLLM):
 
     @dispatcher.span
     def structured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> BaseModel:
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Model:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
         llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in all_kwargs else all_kwargs["tool_choice"]
+            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
         )
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
-        return super().structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+        return super().structured_predict(
+            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+        )
 
     @dispatcher.span
     async def astructured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> BaseModel:
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Model:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
         llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in all_kwargs else all_kwargs["tool_choice"]
+            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
         )
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
-        return await super().astructured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+        return await super().astructured_predict(
+            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+        )
 
     @dispatcher.span
     def stream_structured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> Generator[Union[Model, List[Model]], None, None]:
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Generator[Union[Model, FlexibleModel], None, None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
         llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in all_kwargs else all_kwargs["tool_choice"]
+            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
         )
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
-        return super().stream_structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+        return super().stream_structured_predict(
+            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+        )
 
     @dispatcher.span
     async def astream_structured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> Generator[Union[Model, List[Model]], None, None]:
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> AsyncGenerator[Union[Model, FlexibleModel], None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
         llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in all_kwargs else all_kwargs["tool_choice"]
+            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
         )
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
         return await super().astream_structured_predict(
-            *args, llm_kwargs=llm_kwargs, **kwargs
+            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
         )

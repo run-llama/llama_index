@@ -5,11 +5,13 @@ import typing
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     Dict,
     Generator,
     List,
     Optional,
     Sequence,
+    Type,
     Union,
 )
 
@@ -33,17 +35,19 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.constants import DEFAULT_TEMPERATURE
+from llama_index.core.constants import DEFAULT_TEMPERATURE, DEFAULT_NUM_OUTPUTS
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
-from llama_index.core.llms.llm import ToolSelection
+from llama_index.core.llms.llm import ToolSelection, Model
 from llama_index.core.prompts import PromptTemplate
-from llama_index.core.types import Model
+from llama_index.core.program.utils import FlexibleModel, create_flexible_model
+from llama_index.core.types import PydanticProgramMode
 from llama_index.llms.google_genai.utils import (
     chat_from_gemini_response,
     chat_message_to_gemini,
     convert_schema_to_function_declaration,
     prepare_chat_params,
+    handle_streaming_flexible_model,
 )
 
 import google.genai
@@ -53,7 +57,7 @@ import google.genai.types as types
 
 dispatcher = instrument.get_dispatcher(__name__)
 
-DEFAULT_MODEL = "models/gemini-2.0-flash"
+DEFAULT_MODEL = "gemini-2.0-flash"
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -75,7 +79,7 @@ class GoogleGenAI(FunctionCallingLLM):
         ```python
         from llama_index.llms.google_genai import GoogleGenAI
 
-        llm = GoogleGenAI(model="models/gemini-2.0-flash", api_key="YOUR_API_KEY")
+        llm = GoogleGenAI(model="gemini-2.0-flash", api_key="YOUR_API_KEY")
         resp = llm.complete("Write a poem about a magic backpack")
         print(resp)
         ```
@@ -88,8 +92,9 @@ class GoogleGenAI(FunctionCallingLLM):
         ge=0.0,
         le=2.0,
     )
-    generate_kwargs: dict = Field(
-        default_factory=dict, description="Kwargs for generation."
+    context_window: Optional[int] = Field(
+        default=None,
+        description="The context window of the model. If not provided, the default context window 200000 will be used.",
     )
     is_function_calling_model: bool = Field(
         default=True, description="Whether the model is a function calling model."
@@ -106,19 +111,21 @@ class GoogleGenAI(FunctionCallingLLM):
         api_key: Optional[str] = None,
         temperature: float = DEFAULT_TEMPERATURE,
         max_tokens: Optional[int] = None,
+        context_window: Optional[int] = None,
         vertexai_config: Optional[VertexAIConfig] = None,
         http_options: Optional[types.HttpOptions] = None,
         debug_config: Optional[google.genai.client.DebugConfig] = None,
         generation_config: Optional[types.GenerateContentConfig] = None,
         callback_manager: Optional[CallbackManager] = None,
         is_function_calling_model: bool = True,
-        **generate_kwargs: Any,
+        **kwargs: Any,
     ):
         # API keys are optional. The API can be authorised via OAuth (detected
         # environmentally) or by the GOOGLE_API_KEY environment variable.
         api_key = api_key or os.getenv("GOOGLE_API_KEY", None)
-        vertexai = vertexai_config is not None or os.getenv(
-            "GOOGLE_GENAI_USE_VERTEXAI", False
+        vertexai = (
+            vertexai_config is not None
+            or os.getenv("GOOGLE_GENAI_USE_VERTEXAI", "false") != "false"
         )
         project = (vertexai_config or {}).get("project") or os.getenv(
             "GOOGLE_CLOUD_PROJECT", None
@@ -149,18 +156,14 @@ class GoogleGenAI(FunctionCallingLLM):
 
         client = google.genai.Client(**config_params)
         model_meta = client.models.get(model=model)
-        if not max_tokens:
-            max_tokens = model_meta.output_token_limit
-        else:
-            max_tokens = min(max_tokens, model_meta.output_token_limit)
 
         super().__init__(
             model=model,
             temperature=temperature,
-            max_tokens=max_tokens,
-            generate_kwargs=generate_kwargs,
+            context_window=context_window,
             callback_manager=callback_manager,
             is_function_calling_model=is_function_calling_model,
+            **kwargs,
         )
 
         self.model = model
@@ -169,9 +172,16 @@ class GoogleGenAI(FunctionCallingLLM):
         # store this as a dict and not as a pydantic model so we can more easily
         # merge it later
         self._generation_config = (
-            generation_config.model_dump() if generation_config else {}
+            generation_config.model_dump()
+            if generation_config
+            else types.GenerateContentConfig(
+                temperature=temperature,
+                max_output_tokens=max_tokens,
+            ).model_dump()
         )
-        self._max_tokens = max_tokens
+        self._max_tokens = (
+            max_tokens or model_meta.output_token_limit or DEFAULT_NUM_OUTPUTS
+        )
 
     @classmethod
     def class_name(cls) -> str:
@@ -179,7 +189,12 @@ class GoogleGenAI(FunctionCallingLLM):
 
     @property
     def metadata(self) -> LLMMetadata:
-        total_tokens = (self._model_meta.input_token_limit or 0) + self._max_tokens
+        if self.context_window is None:
+            base = self._model_meta.input_token_limit or 200000
+            total_tokens = base + self._max_tokens
+        else:
+            total_tokens = self.context_window
+
         return LLMMetadata(
             context_window=total_tokens,
             num_output=self._max_tokens,
@@ -359,7 +374,9 @@ class GoogleGenAI(FunctionCallingLLM):
         tool_declarations = []
         for tool in tools:
             if tool.metadata.fn_schema:
-                function_declaration = convert_schema_to_function_declaration(tool)
+                function_declaration = convert_schema_to_function_declaration(
+                    self._client, tool
+                )
                 tool_declarations.append(function_declaration)
 
         if isinstance(user_msg, str):
@@ -412,21 +429,20 @@ class GoogleGenAI(FunctionCallingLLM):
     @dispatcher.span
     def structured_predict_without_function_calling(
         self,
-        output_cls: type[BaseModel],
+        output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> BaseModel:
+        **prompt_args: Any,
+    ) -> Model:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
-        messages = prompt.format_messages()
+        messages = prompt.format_messages(**prompt_args)
         response = self._client.models.generate_content(
             model=self.model,
             contents=list(map(chat_message_to_gemini, messages)),
             **{
-                **all_kwargs,
+                **llm_kwargs,
                 **{
                     "config": {
                         "response_mime_type": "application/json",
@@ -444,89 +460,175 @@ class GoogleGenAI(FunctionCallingLLM):
     @dispatcher.span
     def structured_predict(
         self,
-        output_cls: type[BaseModel],
+        output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> BaseModel:
+        **prompt_args: Any,
+    ) -> Model:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
-        if self.is_function_calling_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in all_kwargs
-                else all_kwargs["tool_choice"]
+        if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
+            generation_config = {
+                **(self._generation_config or {}),
+                **llm_kwargs.pop("generation_config", {}),
+            }
+
+            # set the specific types needed for the response
+            generation_config["response_mime_type"] = "application/json"
+            generation_config["response_schema"] = output_cls
+
+            messages = prompt.format_messages(**prompt_args)
+            contents = list(map(chat_message_to_gemini, messages))
+            response = self._client.models.generate_content(
+                model=self.model,
+                contents=contents,
+                config=generation_config,
             )
 
-        return super().structured_predict(
-            output_cls, prompt, llm_kwargs=llm_kwargs, **kwargs
-        )
+            if isinstance(response.parsed, BaseModel):
+                return response.parsed
+            else:
+                raise ValueError("Response is not a BaseModel")
+
+        else:
+            return super().structured_predict(
+                output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+            )
 
     @dispatcher.span
     async def astructured_predict(
         self,
-        output_cls: type[BaseModel],
+        output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> BaseModel:
+        **prompt_args: Any,
+    ) -> Model:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
-        if self.is_function_calling_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in all_kwargs
-                else all_kwargs["tool_choice"]
+        if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
+            generation_config = {
+                **(self._generation_config or {}),
+                **llm_kwargs.pop("generation_config", {}),
+            }
+
+            # set the specific types needed for the response
+            generation_config["response_mime_type"] = "application/json"
+            generation_config["response_schema"] = output_cls
+
+            messages = prompt.format_messages(**prompt_args)
+            contents = list(map(chat_message_to_gemini, messages))
+            response = await self._client.aio.models.generate_content(
+                model=self.model,
+                contents=contents,
+                config=generation_config,
             )
 
-        return await super().astructured_predict(
-            output_cls, prompt, llm_kwargs=llm_kwargs, **kwargs
-        )
+            if isinstance(response.parsed, BaseModel):
+                return response.parsed
+            else:
+                raise ValueError("Response is not a BaseModel")
+
+        else:
+            return super().structured_predict(
+                output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+            )
 
     @dispatcher.span
     def stream_structured_predict(
         self,
-        output_cls: type[BaseModel],
+        output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> Generator[Union[Model, List[Model]], None, None]:
+        **prompt_args: Any,
+    ) -> Generator[Union[Model, FlexibleModel], None, None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
-        if self.is_function_calling_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in all_kwargs
-                else all_kwargs["tool_choice"]
+        if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
+            generation_config = {
+                **(self._generation_config or {}),
+                **llm_kwargs.pop("generation_config", {}),
+            }
+
+            # set the specific types needed for the response
+            generation_config["response_mime_type"] = "application/json"
+            generation_config["response_schema"] = output_cls
+
+            messages = prompt.format_messages(**prompt_args)
+            contents = list(map(chat_message_to_gemini, messages))
+
+            def gen() -> Generator[Union[Model, FlexibleModel], None, None]:
+                flexible_model = create_flexible_model(output_cls)
+                response_gen = self._client.models.generate_content_stream(
+                    model=self.model,
+                    contents=contents,
+                    config=generation_config,
+                )
+
+                current_json = ""
+                for chunk in response_gen:
+                    if chunk.parsed:
+                        yield chunk.parsed
+                    elif chunk.candidates:
+                        streaming_model, current_json = handle_streaming_flexible_model(
+                            current_json, chunk.candidates[0], output_cls, flexible_model
+                        )
+                        if streaming_model:
+                            yield streaming_model
+
+            return gen()
+        else:
+            return super().stream_structured_predict(
+                output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
             )
-        return super().stream_structured_predict(
-            output_cls, prompt, llm_kwargs=llm_kwargs, **kwargs
-        )
 
     @dispatcher.span
     async def astream_structured_predict(
         self,
-        output_cls: type[BaseModel],
+        output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> Generator[Union[Model, List[Model]], None, None]:
+        **prompt_args: Any,
+    ) -> AsyncGenerator[Union[Model, FlexibleModel], None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
-        if self.is_function_calling_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in all_kwargs
-                else all_kwargs["tool_choice"]
+        if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
+            generation_config = {
+                **(self._generation_config or {}),
+                **llm_kwargs.pop("generation_config", {}),
+            }
+
+            # set the specific types needed for the response
+            generation_config["response_mime_type"] = "application/json"
+            generation_config["response_schema"] = output_cls
+
+            messages = prompt.format_messages(**prompt_args)
+            contents = list(map(chat_message_to_gemini, messages))
+
+            async def gen() -> AsyncGenerator[Union[Model, FlexibleModel], None]:
+                flexible_model = create_flexible_model(output_cls)
+                response_gen = await self._client.aio.models.generate_content_stream(
+                    model=self.model,
+                    contents=contents,
+                    config=generation_config,
+                )
+
+                current_json = ""
+                async for chunk in response_gen:
+                    if chunk.parsed:
+                        yield chunk.parsed
+                    elif chunk.candidates:
+                        streaming_model, current_json = handle_streaming_flexible_model(
+                            current_json, chunk.candidates[0], output_cls, flexible_model
+                        )
+                        if streaming_model:
+                            yield streaming_model
+
+            return gen()
+        else:
+            return await super().astream_structured_predict(
+                output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
             )
-        return await super().astream_structured_predict(
-            output_cls, prompt, llm_kwargs=llm_kwargs, **kwargs
-        )

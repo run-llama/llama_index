@@ -42,6 +42,8 @@ def completion_from_gemini_response(
         "genai.types.GenerateContentResponse",
         "genai.types.AsyncGenerateContentResponse",
     ],
+    text: str = None,
+    delta: str = None,
 ) -> CompletionResponse:
     top_candidate = response.candidates[0]
     _error_if_finished_early(top_candidate)
@@ -54,7 +56,11 @@ def completion_from_gemini_response(
         raw["usage_metadata"] = type(response.usage_metadata).to_dict(
             response.usage_metadata
         )
-    return CompletionResponse(text=response.text, raw=raw)
+    return CompletionResponse(
+        text=text if text is not None else response.text,
+        delta=delta if delta is not None else response.text,
+        raw=raw,
+    )
 
 
 def chat_from_gemini_response(

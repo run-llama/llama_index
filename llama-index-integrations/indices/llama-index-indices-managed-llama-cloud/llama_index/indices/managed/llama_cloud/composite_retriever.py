@@ -18,6 +18,7 @@ from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.indices.managed.llama_cloud.base import LlamaCloudIndex
 from llama_index.indices.managed.llama_cloud.api_utils import (
     resolve_project,
+    resolve_retriever,
     image_nodes_to_node_with_score,
 )
 
@@ -25,8 +26,9 @@ from llama_index.indices.managed.llama_cloud.api_utils import (
 class LlamaCloudCompositeRetriever(BaseRetriever):
     def __init__(
         self,
-        # index identifier
+        # retriever identifier
         name: Optional[str] = None,
+        retriever_id: Optional[str] = None,
         # project identifier
         project_name: Optional[str] = DEFAULT_PROJECT_NAME,
         project_id: Optional[str] = None,
@@ -46,11 +48,6 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         **kwargs: Any,
     ) -> None:
         """Initialize the Composite Retriever."""
-        if sum([bool(name), bool(project_id)]) != 1:
-            raise ValueError(
-                "Exactly one of `name` or `project_id` must be provided to identify the index."
-            )
-
         # initialize clients
         self._client = get_client(api_key, base_url, app_url, timeout, httpx_client)
         self._aclient = get_aclient(
@@ -60,21 +57,13 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         self.project = resolve_project(
             self._client, project_name, project_id, organization_id
         )
+
+        self.retriever = resolve_retriever(
+            self._client, self.project, name, retriever_id
+        )
         self.name = name
         self.project_name = self.project.name
 
-        # TODO: Refactor to use ?name=x query param once that is released in python client
-        project_retrievers = self._client.retrievers.list_retrievers(
-            project_id=self.project.id
-        )
-        self.retriever = next(
-            (
-                retriever
-                for retriever in project_retrievers
-                if retriever.name == self.name
-            ),
-            None,
-        )
         if self.retriever is None:
             if create_if_not_exists:
                 self.retriever = self._client.retrievers.upsert_retriever(
@@ -83,7 +72,7 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
                 )
             else:
                 raise ValueError(
-                    f"Retriever with name '{self.name}' does not exist in project '{self.project_name}'."
+                    f"Retriever with name '{self.name}' does not exist in project."
                 )
 
         # composite retrieval params
@@ -223,7 +212,7 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
             self._result_nodes_to_node_with_score(node) for node in result.nodes
         ]
         image_nodes_w_scores = image_nodes_to_node_with_score(
-            self._client, result.image_nodes, self.project.id
+            self._client, result.image_nodes, self.retriever.project_id
         )
         return sorted(
             node_w_scores + image_nodes_w_scores, key=lambda x: x.score, reverse=True
@@ -247,7 +236,7 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
             self._result_nodes_to_node_with_score(node) for node in result.nodes
         ]
         image_nodes_w_scores = image_nodes_to_node_with_score(
-            self._aclient, result.image_nodes, self.project.id
+            self._aclient, result.image_nodes, self.retriever.project_id
         )
         return sorted(
             node_w_scores + image_nodes_w_scores, key=lambda x: x.score, reverse=True

@@ -64,7 +64,7 @@ class DoclingReader(BasePydanticReader):
         )
 
         for source in file_paths:
-            dl_doc = self.doc_converter.convert(str(source)).document
+            dl_doc = self.doc_converter.convert(source).document
             text: str
             if self.export_type == self.ExportType.MARKDOWN:
                 text = dl_doc.export_to_markdown(**self.md_export_kwargs)

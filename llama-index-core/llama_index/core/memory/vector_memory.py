@@ -27,7 +27,7 @@ def _stringify_obj(d: Any) -> Union[str, list, dict]:
 
 def _stringify_chat_message(msg: ChatMessage) -> Dict:
     """Utility function to convert chatmessage to serializable dict."""
-    msg_dict = msg.dict()
+    msg_dict = msg.model_dump()
     msg_dict["additional_kwargs"] = _stringify_obj(msg_dict["additional_kwargs"])
     msg_dict["content"] = msg.content
     return msg_dict

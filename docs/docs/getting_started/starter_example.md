@@ -22,7 +22,7 @@ set OPENAI_API_KEY=XXXXX
 ```
 
 !!! tip
-    If you are using an OpenAI-Compatible API, you can use the `OpenAILike` LLM class. You can find more information in the [OpenAILike LLM](https://docs.llamaindex.ai/en/stable/api_reference/llms/openai_like/#llama_index.llms.openai_like.OpenAILike) integration.
+    If you are using an OpenAI-Compatible API, you can use the `OpenAILike` LLM class. You can find more information in the [OpenAILike LLM](https://docs.llamaindex.ai/en/stable/api_reference/llms/openai_like/) integration and [OpenAILike Embeddings](https://docs.llamaindex.ai/en/stable/api_reference/embeddings/openai_like/) integration.
 
 ## Basic Agent Example
 
@@ -42,8 +42,6 @@ def multiply(a: float, b: float) -> float:
 
 # Create an agent workflow with our calculator tool
 agent = FunctionAgent(
-    name="Agent",
-    description="Useful for multiplying two numbers",
     tools=[multiply],
     llm=OpenAI(model="gpt-4o-mini"),
     system_prompt="You are a helpful assistant that can multiply two numbers.",
@@ -137,8 +135,6 @@ async def search_documents(query: str) -> str:
 
 # Create an enhanced workflow with both tools
 agent = FunctionAgent(
-    name="Agent",
-    description="Useful for multiplying two numbers and searching through documents to answer questions.",
     tools=[multiply, search_documents],
     llm=OpenAI(model="gpt-4o-mini"),
     system_prompt="""You are a helpful assistant that can perform calculations

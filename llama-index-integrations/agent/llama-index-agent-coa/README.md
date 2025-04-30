@@ -24,8 +24,6 @@ As an extension to the original paper, we also run the LLM a final time, to rewr
 
 **NOTE:** In the original paper, the authors fine-tuned an LLM specifically for this, and also for specific functions and datasets. As such, only capabale LLMs (OpenAI, Anthropic, etc.) will be (hopefully) reliable for this without finetuning.
 
-A full example notebook is [also provided](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/agent/coa_agent.ipynb).
-
 ## Code Usage
 
 `pip install llama-index-agent-coa`
@@ -61,5 +59,3 @@ pack = CoAAgentPack(
 
 print(pack.run("What is 1245 + 4321?"))
 ```
-
-See the example notebook for [more thorough details](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/agent/coa_agent.ipynb).

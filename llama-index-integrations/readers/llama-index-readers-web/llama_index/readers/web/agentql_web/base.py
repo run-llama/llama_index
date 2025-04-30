@@ -12,6 +12,8 @@ logging.getLogger("root").setLevel(logging.INFO)
 QUERY_DATA_ENDPOINT = "https://api.agentql.com/v1/query-data"
 API_TIMEOUT_SECONDS = 900
 
+REQUEST_ORIGIN = "llamaindex"
+
 
 class AgentQLWebReader(BasePydanticReader):
     """
@@ -50,7 +52,11 @@ class AgentQLWebReader(BasePydanticReader):
         """
         payload = {"url": url, "query": query, "prompt": prompt, "params": self.params}
 
-        headers = {"X-API-Key": f"{self.api_key}", "Content-Type": "application/json"}
+        headers = {
+            "X-API-Key": f"{self.api_key}",
+            "Content-Type": "application/json",
+            "X-TF-Request-Origin": REQUEST_ORIGIN,
+        }
 
         try:
             response = httpx.post(

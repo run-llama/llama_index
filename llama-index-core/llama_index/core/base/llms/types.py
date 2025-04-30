@@ -40,6 +40,7 @@ class MessageRole(str, Enum):
     """Message role."""
 
     SYSTEM = "system"
+    DEVELOPER = "developer"
     USER = "user"
     ASSISTANT = "assistant"
     FUNCTION = "function"

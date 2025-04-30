@@ -8,7 +8,8 @@ python_test_utils(
         "llama-index-core/tests/mock_utils/mock_text_splitter.py",
         "llama-index-core/tests/mock_utils/mock_prompts.py",
         "llama-index-core/tests/mock_utils/mock_utils.py",
-        "llama-index-core:poetry#eval-type-backport"
+        "llama-index-core:poetry#eval-type-backport",
+        "llama-index-core:poetry#platformdirs",
     ],
 )
 

@@ -384,7 +384,17 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         semantic_config = SemanticConfiguration(
             name=self._semantic_configuration_name or "mySemanticConfig",
             prioritized_fields=SemanticPrioritizedFields(
+                title_field=(
+                    SemanticField(field_name="title")
+                    if "title" in self._metadata_to_index_field_map
+                    else None
+                ),
                 content_fields=[SemanticField(field_name=self._field_mapping["chunk"])],
+                keywords_fields=(
+                    [SemanticField(field_name="keyWords")]
+                    if "keyWords" in self._metadata_to_index_field_map
+                    else None
+                ),
             ),
         )
 
@@ -506,7 +516,17 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         semantic_config = SemanticConfiguration(
             name=self._semantic_configuration_name or "mySemanticConfig",
             prioritized_fields=SemanticPrioritizedFields(
+                title_field=(
+                    SemanticField(field_name="title")
+                    if "title" in self._metadata_to_index_field_map
+                    else None
+                ),
                 content_fields=[SemanticField(field_name=self._field_mapping["chunk"])],
+                keywords_fields=(
+                    [SemanticField(field_name="keyWords")]
+                    if "keyWords" in self._metadata_to_index_field_map
+                    else None
+                ),
             ),
         )
 

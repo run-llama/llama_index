@@ -66,6 +66,7 @@ class NeptuneBaseGraphStore(GraphStore):
 
         prepared_statement = query % (
             self.node_label.replace("`", ""),
+            self.node_label.replace("`", ""),
             rel.replace(" ", "_").replace("`", "").upper(),
         )
 

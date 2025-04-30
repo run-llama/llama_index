@@ -305,7 +305,12 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        self._container.delete_item(ref_doc_id, partition_key=ref_doc_id)
+        items = self._container.query_items(
+            query=f"SELECT c.id, c.id AS partitionKey FROM c WHERE c.{self._metadata_key}.ref_doc_id = '{ref_doc_id}'",
+            enable_cross_partition_query=True,
+        )
+        for item in items:
+            self._container.delete_item(item["id"], partition_key=item["partitionKey"])
 
     @property
     def client(self) -> Any:

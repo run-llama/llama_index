@@ -1,12 +1,12 @@
+import re
 from typing import List
-from llama_index.core.schema import Document, MediaResource
-from llama_index.indices.managed.vectara import VectaraIndex
-from llama_index.core.tools.tool_spec.base import BaseToolSpec
-from llama_index.tools.vectara_query import VectaraQueryToolSpec
-from llama_index.agent.openai import OpenAIAgent
 
 import pytest
-import re
+from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.schema import Document, MediaResource, Node
+from llama_index.core.tools.tool_spec.base import BaseToolSpec
+from llama_index.indices.managed.vectara import VectaraIndex
+from llama_index.tools.vectara_query import VectaraQueryToolSpec
 
 #
 # For this test to run properly, please setup as follows:
@@ -62,7 +62,36 @@ def get_docs() -> List[Document]:
     return docs
 
 
-@pytest.fixture()
+def get_nodes() -> List[Node]:
+    inputs = [
+        {
+            "text": "This is test text for Vectara integration with LlamaIndex",
+            "metadata": {"test_num": "1", "test_score": 10, "date": "2020-02-25"},
+        },
+        {
+            "text": "And now for something completely different",
+            "metadata": {"test_num": "2", "test_score": 2, "date": "2015-10-13"},
+        },
+        {
+            "text": "when 900 years you will be, look as good you will not",
+            "metadata": {"test_num": "3", "test_score": 20, "date": "2023-09-12"},
+        },
+        {
+            "text": "when 850 years you will be, look as good you will not",
+            "metadata": {"test_num": "4", "test_score": 50, "date": "2022-01-01"},
+        },
+    ]
+
+    nodes: List[Node] = []
+    for inp in inputs:
+        node = Node(
+            text_resource=MediaResource(text=inp["text"]), metadata=inp["metadata"]
+        )
+        nodes.append(node)
+    return nodes
+
+
+@pytest.fixture
 def vectara1():
     docs = get_docs()
     try:
@@ -83,6 +112,10 @@ def test_simple_retrieval(vectara1) -> None:
     res = tool_spec.semantic_search("Find me something different.")
     assert len(res) == 1
     assert res[0]["text"] == docs[1].text_resource.text
+    assert (
+        res[0]["citation_metadata"]["document"]["test_score"]
+        == docs[1].metadata["test_score"]
+    )
 
 
 def test_mmr_retrieval(vectara1) -> None:
@@ -244,7 +277,7 @@ def test_custom_prompt(vectara1) -> None:
     assert res["factual_consistency_score"] > 0
 
 
-@pytest.fixture()
+@pytest.fixture
 def vectara2():
     try:
         vectara2 = VectaraIndex()
@@ -303,6 +336,40 @@ def test_citations(vectara2) -> None:
     res = tool_spec.rag_query("What colleges has Paul attended?")
     summary = res["summary"]
     assert re.search(r"\[\d+\]", summary)
+
+
+@pytest.fixture
+def vectara3():
+    nodes = get_nodes()
+    try:
+        vectara3 = VectaraIndex()
+        vectara3.add_nodes(
+            nodes,
+            document_id="doc_1",
+            document_metadata={"author": "Vectara", "title": "LlamaIndex Integration"},
+            corpus_key="llamaindex-testing-2",
+        )
+    except ValueError:
+        pytest.skip("Missing Vectara credentials, skipping test")
+
+    yield vectara3
+
+    # Tear down code
+    for id in vectara3.doc_ids:
+        vectara3.delete_ref_doc(id, corpus_key="llamaindex-testing-2")
+
+
+def test_metadata_format(vectara3) -> None:
+    nodes = get_nodes()
+    tool_spec = VectaraQueryToolSpec(
+        num_results=1, n_sentences_before=0, n_sentences_after=0
+    )
+    res = tool_spec.semantic_search("Find me something different")
+    assert len(res) == 1
+    assert res[0]["citation_metadata"]["document"]["author"] == "Vectara"
+    assert res[0]["citation_metadata"]["document"]["title"] == "LlamaIndex Integration"
+    assert res[0]["text"] == nodes[1].text_resource.text
+    assert res[0]["citation_metadata"]["test_score"] == nodes[1].metadata["test_score"]
 
 
 def test_agent_basic(vectara2) -> None:

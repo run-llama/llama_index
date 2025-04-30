@@ -1,69 +1,183 @@
 # Agents
 
-## Concept
+In LlamaIndex, we define an "agent" as a specific system that uses an LLM, memory, and tools, to handle inputs from outside users. Contrast this with the term "agentic", which generally refers to a superclass of agents, which is any system with LLM decision making in the process.
 
-Data Agents are LLM-powered knowledge workers in LlamaIndex that can intelligently perform various tasks over your data, in both a “read” and “write” function. They are capable of the following:
-
-- Perform automated search and retrieval over different types of data - unstructured, semi-structured, and structured.
-- Calling any external service API in a structured fashion, and processing the response + storing it for later.
-
-In that sense, agents are a step beyond our [query engines](../query_engine/index.md) in that they can not only "read" from a static source of data, but can dynamically ingest and modify data from a variety of different tools.
-
-Building a data agent requires the following core components:
-
-- A reasoning loop
-- Tool abstractions
-
-A data agent is initialized with set of APIs, or Tools, to interact with; these APIs can be called by the agent to return information or modify state. Given an input task, the data agent uses a reasoning loop to decide which tools to use, in which sequence, and the parameters to call each tool.
-
-### Reasoning Loop
-
-The reasoning loop depends on the type of agent. We have support for the following agents:
-
-- Function Calling Agents (integrates with any function calling LLM)
-- ReAct agent (works across any chat/text completion endpoint).
-- "Advanced Agents": [LLMCompiler](https://llamahub.ai/l/llama-packs/llama-index-packs-agents-llm-compiler?from=), [Chain-of-Abstraction](https://llamahub.ai/l/llama-packs/llama-index-packs-agents-coa?from=), [Language Agent Tree Search](https://llamahub.ai/l/llama-packs/llama-index-packs-agents-lats?from=), and more.
-
-### Tool Abstractions
-
-You can learn more about our Tool abstractions in our [Tools section](./tools.md).
-
-### Blog Post
-
-For full details, please check out our detailed [blog post](https://medium.com/llamaindex-blog/data-agents-eed797d7972f).
-
-### Lower-level API: Step-Wise Execution
-
-By default, our agents expose `query` and `chat` functions that will execute a user-query end-to-end.
-
-We also offer a **lower-level API** allowing you to perform step-wise execution of an agent. This gives you much more control in being able to create tasks, and analyze + act upon the input/output of each step within a task.
-
-Check out [our guide](agent_runner.md).
-
-## Usage Pattern
-
-Data agents can be used in the following manner (the example uses the OpenAI Function API)
+To create an agent in LlamaIndex, it takes only a few lines of code:
 
 ```python
-from llama_index.agent.openai import OpenAIAgent
+import asyncio
+from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.llms.openai import OpenAI
 
-# import and define tools
-...
 
-# initialize llm
-llm = OpenAI(model="gpt-3.5-turbo-0613")
+# Define a simple calculator tool
+def multiply(a: float, b: float) -> float:
+    """Useful for multiplying two numbers."""
+    return a * b
 
-# initialize openai agent
-agent = OpenAIAgent.from_tools(tools, llm=llm, verbose=True)
+
+# Create an agent workflow with our calculator tool
+agent = FunctionAgent(
+    tools=[multiply],
+    llm=OpenAI(model="gpt-4o-mini"),
+    system_prompt="You are a helpful assistant that can multiply two numbers.",
+)
+
+
+async def main():
+    # Run the agent
+    response = await agent.run("What is 1234 * 4567?")
+    print(str(response))
+
+
+# Run the agent
+if __name__ == "__main__":
+    asyncio.run(main())
 ```
 
-See our [usage pattern guide](usage_pattern.md) for more details.
+Calling this agent kicks off a specific loop of actions:
 
-## Modules
+- Agent gets the latest message + chat history
+- The tool schemas and chat history get sent over the API
+- The Agent responds either with a direct response, or a list of tool calls
+    - Every tool call is executed
+    - The tool call results are added to the chat history
+    - The Agent is invoked again with updated history, and either responds directly or selects more calls
 
-Learn more about our different agent types and use cases in our [module guides](./modules.md).
+## Tools
 
-We also have a [lower-level api guide](./agent_runner.md) for agent runenrs and workers.
+Tools can be defined simply as python functions, or further customized using classes like `FunctionTool` and `QueryEngineTool`. LlamaIndex also provides sets of pre-defined tools for common APIs using something called `Tool Specs`.
 
-Also take a look at our [tools section](./tools.md)!
+You can read more about configuring tools in the [tools guide](./tools.md)
+
+## Memory
+
+Memory is a core-component when building agents. By default, all LlamaIndex agents are using a ChatMemoryBuffer for memory.
+
+To customize it, you can declare it outside the agent and pass it in:
+
+```python
+from llama_index.core.memory import ChatMemoryBuffer
+
+memory = ChatMemoryBuffer.from_defaults(token_limit=40000)
+
+response = await agent.run(..., memory=memory)
+```
+
+You can read more about configuring memory in the [memory guide](./memory.md)
+
+## Multi-Modal Agents
+
+Some LLMs will support multiple modalities, such as images and text. Using chat messages with content blocks, we can pass in images to an agent for reasoning.
+
+For example, imagine you had a screenshot of the [slide from this presentation](https://docs.google.com/presentation/d/1wy3nuO9ezGS4R99mzP3Q3yvrjAkZ26OGI2NjfqtwAaE/edit?usp=sharing).
+
+You can pass this image to an agent for reasoning, and see that it reads the image and acts accordingly.
+
+```python
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.core.llms import ChatMessage, ImageBlock, TextBlock
+from llama_index.llms.openai import OpenAI
+
+llm = OpenAI(model="gpt-4o-mini", api_key="sk-...")
+
+
+def add(a: int, b: int) -> int:
+    """Useful for adding two numbers together."""
+    return a + b
+
+
+workflow = FunctionAgent(
+    tools=[add],
+    llm=llm,
+)
+
+msg = ChatMessage(
+    role="user",
+    blocks=[
+        TextBlock(text="Follow what the image says."),
+        ImageBlock(path="./screenshot.png"),
+    ],
+)
+
+response = await workflow.run(msg)
+print(str(response))
+```
+
+## Multi-Agent Systems
+
+You can combine agents into a multi-agent system, where each agent is able to hand off control to another agent to coordinate while completing tasks.
+
+```python
+from llama_index.core.agent.workflow import AgentWorkflow
+
+multi_agent = AgentWorkflow(agents=[FunctionAgent(...), FunctionAgent(...)])
+
+resp = await agent.run("query")
+```
+
+Read on to learn more about [multi-agent systems](../../../understanding/agent/multi_agent.md).
+
+## Manual Agents
+
+While the agent classes like `FunctionAgent`, `ReActAgent`, `CodeActAgent`, and `AgentWorkflow` abstract away a lot of details, sometimes its desirable to build your own lower-level agents.
+
+Using the `LLM` objects directly, you can quickly implement a basic agent loop, while having full control over how the tool calling and error handling works.
+
+```python
+from llama_index.core.llms import ChatMessage
+from llama_index.core.tools import FunctionTool
+from llama_index.llms.openai import OpenAI
+
+
+def select_song(song_name: str) -> str:
+    """Useful for selecting a song."""
+    return f"Song selected: {song_name}"
+
+
+tools = [FunctionTool.from_defaults(select_song)]
+tools_by_name = {t.metadata.name: t for t in [tool]}
+
+# call llm with initial tools + chat history
+chat_history = [ChatMessage(role="user", content="Pick a random song for me")]
+resp = llm.chat_with_tools([tool], chat_history=chat_history)
+
+# parse tool calls from response
+tool_calls = llm.get_tool_calls_from_response(
+    resp, error_on_no_tool_call=False
+)
+
+# loop while there are still more tools to call
+while tool_calls:
+    # add the LLM's response to the chat history
+    chat_history.append(resp.message)
+
+    # call every tool and add its result to chat_history
+    for tool_call in tool_calls:
+        tool_name = tool_call.tool_name
+        tool_kwargs = tool_call.tool_kwargs
+
+        print(f"Calling {tool_name} with {tool_kwargs}")
+        tool_output = tool(**tool_kwargs)
+        chat_history.append(
+            ChatMessage(
+                role="tool",
+                content=str(tool_output),
+                # most LLMs like OpenAI need to know the tool call id
+                additional_kwargs={"tool_call_id": tool_call.tool_id},
+            )
+        )
+
+        # check if the LLM can write a final response or calls more tools
+        resp = llm.chat_with_tools([tool], chat_history=chat_history)
+        tool_calls = llm.get_tool_calls_from_response(
+            resp, error_on_no_tool_call=False
+        )
+
+# print the final response
+print(resp.message.content)
+```
+
+## Examples / Module Guides
+
+You can find a more complete list of examples and module guides in the [module guides page](./modules.md).

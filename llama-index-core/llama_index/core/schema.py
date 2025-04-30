@@ -45,6 +45,7 @@ from llama_index.core.bridge.pydantic import (
     SerializeAsAny,
     SerializerFunctionWrapHandler,
     ValidationInfo,
+    field_serializer,
     field_validator,
     model_serializer,
 )
@@ -565,6 +566,14 @@ class MediaResource(BaseModel):
 
         return v
 
+    @field_serializer("path")  # type: ignore
+    def serialize_path(
+        self, path: Optional[Path], _info: ValidationInfo
+    ) -> Optional[str]:
+        if path is None:
+            return path
+        return str(path)
+
     @property
     def hash(self) -> str:
         """Generate a hash to uniquely identify the media resource.
@@ -627,9 +636,13 @@ class Node(BaseNode):
         Provided for backward compatibility, use self.text_resource directly instead.
         """
         if self.text_resource:
+            metadata_str = self.get_metadata_str(metadata_mode)
+            if metadata_mode == MetadataMode.NONE or not metadata_str:
+                return self.text_resource.text or ""
+
             return self.text_template.format(
                 content=self.text_resource.text or "",
-                metadata_str=self.get_metadata_str(metadata_mode),
+                metadata_str=metadata_str,
             ).strip()
         return ""
 
@@ -642,7 +655,14 @@ class Node(BaseNode):
 
     @property
     def hash(self) -> str:
+        """Generate a hash representing the state of the node.
+
+        The hash is generated based on the available resources (audio, image, text or video) and its metadata.
+        """
         doc_identities = []
+        metadata_str = self.get_metadata_str(mode=MetadataMode.ALL)
+        if metadata_str:
+            doc_identities.append(metadata_str)
         if self.audio_resource is not None:
             doc_identities.append(self.audio_resource.hash)
         if self.image_resource is not None:
@@ -712,7 +732,7 @@ class TextNode(BaseNode):
     def get_content(self, metadata_mode: MetadataMode = MetadataMode.NONE) -> str:
         """Get object content."""
         metadata_str = self.get_metadata_str(mode=metadata_mode).strip()
-        if not metadata_str:
+        if metadata_mode == MetadataMode.NONE or not metadata_str:
             return self.text
 
         return self.text_template.format(
@@ -1004,7 +1024,7 @@ class Document(Node):
             else:
                 data["metadata"] = value
 
-        if "text" in data:
+        if data.get("text"):
             text = data.pop("text")
             if "text_resource" in data:
                 text_resource = (

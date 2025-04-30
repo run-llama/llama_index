@@ -1,13 +1,10 @@
-import asyncio
 import os
-from typing import List
+from typing import List, Optional
 
 import pytest
 from google.genai import types
 from llama_index.core.base.llms.types import (
     ChatMessage,
-    ChatResponse,
-    CompletionResponse,
     ImageBlock,
     MessageRole,
     TextBlock,
@@ -17,40 +14,66 @@ from llama_index.core.program.function_program import get_function_tool
 from llama_index.core.prompts import ChatPromptTemplate, PromptTemplate
 from llama_index.core.tools import FunctionTool
 from pydantic import BaseModel, Field
-
+from google.genai.types import GenerateContentConfig, ThinkingConfig
 from llama_index.llms.google_genai import GoogleGenAI
 from llama_index.llms.google_genai.utils import convert_schema_to_function_declaration
 
 
+SKIP_GEMINI = (
+    os.environ.get("GOOGLE_API_KEY") is None
+    or os.environ.get("GOOGLE_GENAI_USE_VERTEXAI", "false") == "true"
+)
+
+
+
 class Poem(BaseModel):
+    """A simple poem."""
     content: str
 
 
 class Column(BaseModel):
+    """A model of a column in a table."""
     name: str = Field(description="Column field")
     data_type: str = Field(description="Data type field")
 
 
 class Table(BaseModel):
+    """A model of a table in a database."""
     name: str = Field(description="Table name field")
     columns: List[Column] = Field(description="List of random Column objects")
 
 
 class Schema(BaseModel):
+    """A model of a schema in a database."""
     schema_name: str = Field(description="Schema name")
     tables: List[Table] = Field(description="List of random Table objects")
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
-def test_complete_and_acomplete() -> None:
-    """Test both sync and async complete methods."""
-    llm = GoogleGenAI(
-        model="models/gemini-2.0-flash-001",
+# Define the models to test against
+GEMINI_MODELS_TO_TEST = [
+    {"model": "models/gemini-2.0-flash-001", "config": {}},
+    {"model": "models/gemini-2.5-flash-preview-04-17", "config": {
+         "generation_config": GenerateContentConfig(
+            thinking_config=ThinkingConfig(thinking_budget=0)
+        )
+    }},
+] if not SKIP_GEMINI else []
+
+
+@pytest.fixture(params=GEMINI_MODELS_TO_TEST)
+def llm(request) -> GoogleGenAI:
+    """Fixture to create a GoogleGenAI instance for each model."""
+    return GoogleGenAI(
+        model=request.param["model"],
         api_key=os.environ["GOOGLE_API_KEY"],
+        **request.param.get("config", {}),
     )
 
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_complete(llm: GoogleGenAI) -> None:
+    """Test both sync and async complete methods."""
     prompt = "Write a poem about a magic backpack"
 
     # Test synchronous complete
@@ -58,22 +81,22 @@ def test_complete_and_acomplete() -> None:
     assert sync_response is not None
     assert len(sync_response.text) > 0
 
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+@pytest.mark.asyncio()
+async def test_acomplete(llm: GoogleGenAI) -> None:
+    """Test both sync and async complete methods."""
+    prompt = "Write a poem about a magic backpack"
+
     # Test async complete
-    async_response = asyncio.run(llm.acomplete(prompt))
+    async_response = await llm.acomplete(prompt)
     assert async_response is not None
     assert len(async_response.text) > 0
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
-def test_chat_and_achat() -> None:
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_chat(llm: GoogleGenAI) -> None:
     """Test both sync and async chat methods."""
-    llm = GoogleGenAI(
-        model="models/gemini-2.0-flash-001",
-        api_key=os.environ["GOOGLE_API_KEY"],
-    )
-
     message = ChatMessage(content="Write a poem about a magic backpack")
 
     # Test synchronous chat
@@ -81,22 +104,22 @@ def test_chat_and_achat() -> None:
     assert sync_response is not None
     assert sync_response.message.content and len(sync_response.message.content) > 0
 
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+@pytest.mark.asyncio()
+async def test_achat(llm: GoogleGenAI) -> None:
+    """Test both sync and async chat methods."""
+    message = ChatMessage(content="Write a poem about a magic backpack")
+
     # Test async chat
-    async_response = asyncio.run(llm.achat(messages=[message]))
+    async_response = await llm.achat(messages=[message])
     assert async_response is not None
     assert async_response.message.content and len(async_response.message.content) > 0
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
-def test_stream_chat_and_astream_chat() -> None:
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_stream_chat(llm: GoogleGenAI) -> None:
     """Test both sync and async stream chat methods."""
-    llm = GoogleGenAI(
-        model="models/gemini-2.0-flash-001",
-        api_key=os.environ["GOOGLE_API_KEY"],
-    )
-
     message = ChatMessage(content="Write a poem about a magic backpack")
 
     # Test synchronous stream chat
@@ -104,28 +127,24 @@ def test_stream_chat_and_astream_chat() -> None:
     assert len(sync_chunks) > 0
     assert all(isinstance(chunk.message.content, str) for chunk in sync_chunks)
 
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+@pytest.mark.asyncio()
+async def test_astream_chat(llm: GoogleGenAI) -> None:
+    """Test both sync and async stream chat methods."""
+    message = ChatMessage(content="Write a poem about a magic backpack")
+
     # Test async stream chat
-    async def test_async_stream() -> List[ChatResponse]:
-        chunks = []
-        async for chunk in await llm.astream_chat(messages=[message]):
-            chunks.append(chunk)
-        return chunks
+    response_gen = await llm.astream_chat(messages=[message])
+    chunks = []
+    async for chunk in response_gen:
+        chunks.append(chunk)
+    assert len(chunks) > 0
+    assert all(isinstance(chunk.message.content, str) for chunk in chunks)
 
-    async_chunks = asyncio.run(test_async_stream())
-    assert len(async_chunks) > 0
-    assert all(isinstance(chunk.message.content, str) for chunk in async_chunks)
-
-
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
-def test_stream_complete_and_astream_complete() -> None:
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_stream_complete(llm: GoogleGenAI) -> None:
     """Test both sync and async stream complete methods."""
-    llm = GoogleGenAI(
-        model="models/gemini-2.0-flash-001",
-        api_key=os.environ["GOOGLE_API_KEY"],
-    )
-
     prompt = "Write a poem about a magic backpack"
 
     # Test synchronous stream complete
@@ -133,33 +152,29 @@ def test_stream_complete_and_astream_complete() -> None:
     assert len(sync_chunks) > 0
     assert all(isinstance(chunk.text, str) for chunk in sync_chunks)
 
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+@pytest.mark.asyncio()
+async def test_astream_complete(llm: GoogleGenAI) -> None:
+    """Test both sync and async stream complete methods."""
+    prompt = "Write a poem about a magic backpack"
+
     # Test async stream complete
-    async def test_async_stream() -> List[CompletionResponse]:
-        chunks = []
-        async for chunk in await llm.astream_complete(prompt):
-            chunks.append(chunk)
-        return chunks
-
-    async_chunks = asyncio.run(test_async_stream())
-    assert len(async_chunks) > 0
-    assert all(isinstance(chunk.text, str) for chunk in async_chunks)
+    response_gen = await llm.astream_complete(prompt)
+    chunks = []
+    async for chunk in response_gen:
+        chunks.append(chunk)
+    assert len(chunks) > 0
+    assert all(isinstance(chunk.text, str) for chunk in chunks)
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
-def test_simple_astructured_predict() -> None:
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+@pytest.mark.asyncio()
+async def test_astructured_predict(llm: GoogleGenAI) -> None:
     """Test async structured prediction with a simple schema."""
-    llm = GoogleGenAI(
-        model="models/gemini-2.0-flash-001",
-        api_key=os.environ["GOOGLE_API_KEY"],
-    )
-
-    response = asyncio.run(
-        llm.astructured_predict(
-            output_cls=Poem,
-            prompt=PromptTemplate("Write a poem about a magic backpack"),
-        )
+    response = await llm.astructured_predict(
+        output_cls=Poem,
+        prompt=PromptTemplate("Write a poem about a magic backpack"),
     )
 
     assert response is not None
@@ -168,16 +183,9 @@ def test_simple_astructured_predict() -> None:
     assert len(response.content) > 0
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
-def test_simple_stream_structured_predict() -> None:
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_simple_stream_structured_predict(llm: GoogleGenAI) -> None:
     """Test stream structured prediction with a simple schema."""
-    llm = GoogleGenAI(
-        model="models/gemini-2.0-flash-001",
-        api_key=os.environ["GOOGLE_API_KEY"],
-    )
-
     response = llm.stream_structured_predict(
         output_cls=Poem,
         prompt=PromptTemplate("Write a poem about a magic backpack"),
@@ -185,7 +193,7 @@ def test_simple_stream_structured_predict() -> None:
 
     result = None
     for partial_response in response:
-        assert partial_response.content is not None
+        assert hasattr(partial_response, "content")
         result = partial_response
 
     assert result is not None
@@ -193,44 +201,28 @@ def test_simple_stream_structured_predict() -> None:
     assert len(result.content) > 0
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
-def test_simple_astream_structured_predict() -> None:
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+@pytest.mark.asyncio()
+async def test_simple_astream_structured_predict(llm: GoogleGenAI) -> None:
     """Test async stream structured prediction with a simple schema."""
-    llm = GoogleGenAI(
-        model="models/gemini-2.0-flash-001",
-        api_key=os.environ["GOOGLE_API_KEY"],
-    )
-
-    response = llm.astream_structured_predict(
+    response = await llm.astream_structured_predict(
         output_cls=Poem,
         prompt=PromptTemplate("Write a poem about a magic backpack"),
     )
 
-    async def run() -> None:
-        result = None
-        async for partial_response in await response:
-            result = partial_response
-            assert partial_response.content is not None
+    result = None
+    async for partial_response in response:
+        result = partial_response
+        assert hasattr(result, "content")
 
-        assert result is not None
-        assert isinstance(result, Poem)
-        assert isinstance(result.content, str)
-
-    asyncio.run(run())
+    assert result is not None
+    assert isinstance(result, Poem)
+    assert isinstance(result.content, str)
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
-def test_simple_structured_predict() -> None:
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_simple_structured_predict(llm: GoogleGenAI) -> None:
     """Test structured prediction with a simple schema."""
-    llm = GoogleGenAI(
-        model="models/gemini-2.0-flash-001",
-        api_key=os.environ["GOOGLE_API_KEY"],
-    )
-
     response = llm.structured_predict(
         output_cls=Poem,
         prompt=PromptTemplate("Write a poem about a magic backpack"),
@@ -242,16 +234,9 @@ def test_simple_structured_predict() -> None:
     assert len(response.content) > 0
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
-def test_complex_structured_predict() -> None:
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_complex_structured_predict(llm: GoogleGenAI) -> None:
     """Test structured prediction with a complex nested schema."""
-    llm = GoogleGenAI(
-        model="models/gemini-2.0-flash-001",
-        api_key=os.environ["GOOGLE_API_KEY"],
-    )
-
     prompt = PromptTemplate("Generate a simple database structure")
     response = llm.structured_predict(output_cls=Schema, prompt=prompt)
 
@@ -264,15 +249,36 @@ def test_complex_structured_predict() -> None:
     assert all(len(table.columns) > 0 for table in response.tables)
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
-def test_as_structured_llm() -> None:
-    llm = GoogleGenAI(
-        model="models/gemini-2.0-flash-001",
-        api_key=os.environ["GOOGLE_API_KEY"],
-    )
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_anyof_optional_structured_predict(llm: GoogleGenAI) -> None:
+    class Person(BaseModel):
+        last_name: str = Field(description="Last name")
+        first_name: Optional[str] = Field(None, description="Optional first name")
 
+    prompt = PromptTemplate("Create a fake person ")
+    response = llm.structured_predict(output_cls=Person, prompt=prompt)
+
+    assert response is not None
+    assert isinstance(response, Person)
+    assert isinstance(response.last_name, str)
+    assert isinstance(response.first_name, None | str)
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_as_structured_llm_native_genai(llm: GoogleGenAI) -> None:
+    schema_response = llm._client.models.generate_content(
+        model=llm.model,
+        contents="Generate a simple database structure with at least one table called 'experiments'",
+        config=GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=Schema,
+        ),
+    ).parsed
+    assert isinstance(schema_response, Schema)
+    assert len(schema_response.schema_name) > 0
+    assert len(schema_response.tables) > 0
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_as_structured_llm(llm: GoogleGenAI) -> None:
     prompt = PromptTemplate("Generate content")
 
     # Test with simple schema
@@ -284,6 +290,28 @@ def test_as_structured_llm() -> None:
 
     # Test with complex schema
     schema_response = llm.as_structured_llm(output_cls=Schema, prompt=prompt).complete(
+        "Generate a simple database structure with at least one table called 'experiments'"
+    )
+
+    assert isinstance(schema_response.raw, Schema)
+    assert len(schema_response.raw.schema_name) > 0
+    assert len(schema_response.raw.tables) > 0
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+@pytest.mark.asyncio()
+async def test_as_structured_llm_async(llm: GoogleGenAI) -> None:
+    prompt = PromptTemplate("Generate content")
+
+    # Test with simple schema
+    poem_response = await llm.as_structured_llm(output_cls=Poem, prompt=prompt).acomplete(
+        "Write a poem about a magic backpack"
+    )
+    assert isinstance(poem_response.raw, Poem)
+    assert len(poem_response.raw.content) > 0
+
+    # Test with complex schema
+    schema_response = await llm.as_structured_llm(output_cls=Schema, prompt=prompt).acomplete(
         "Generate a simple database structure"
     )
     assert isinstance(schema_response.raw, Schema)
@@ -291,46 +319,8 @@ def test_as_structured_llm() -> None:
     assert len(schema_response.raw.tables) > 0
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
-def test_as_structured_llm_async() -> None:
-    llm = GoogleGenAI(
-        model="models/gemini-2.0-flash-001",
-        api_key=os.environ["GOOGLE_API_KEY"],
-    )
-
-    prompt = PromptTemplate("Generate content")
-
-    # Test with simple schema
-    poem_response = asyncio.run(
-        llm.as_structured_llm(output_cls=Poem, prompt=prompt).acomplete(
-            "Write a poem about a magic backpack"
-        )
-    )
-    assert isinstance(poem_response.raw, Poem)
-    assert len(poem_response.raw.content) > 0
-
-    # Test with complex schema
-    schema_response = asyncio.run(
-        llm.as_structured_llm(output_cls=Schema, prompt=prompt).acomplete(
-            "Generate a simple database structure"
-        )
-    )
-    assert isinstance(schema_response.raw, Schema)
-    assert len(schema_response.raw.schema_name) > 0
-    assert len(schema_response.raw.tables) > 0
-
-
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
-def test_as_structure_llm_with_config() -> None:
-    llm = GoogleGenAI(
-        model="models/gemini-2.0-flash-001",
-        api_key=os.environ["GOOGLE_API_KEY"],
-    )
-
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_as_structure_llm_with_config(llm: GoogleGenAI) -> None:
     response = (
         llm.as_structured_llm(output_cls=Poem)
         .complete(
@@ -343,22 +333,22 @@ def test_as_structure_llm_with_config() -> None:
 
     assert isinstance(response, Poem)
 
-    response = asyncio.run(
-        llm.as_structured_llm(output_cls=Poem).acomplete(
-            prompt="Write a poem about a magic backpack",
-            # here we want to change the temperature, but it must not override the whole config
-            config={"temperature": 0.1},
-        )
-    ).raw
 
-    assert isinstance(response, Poem)
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+@pytest.mark.asyncio()
+async def test_as_structured_llm_async_with_config(llm: GoogleGenAI) -> None:
+    response = await llm.as_structured_llm(output_cls=Poem).acomplete(
+        prompt="Write a poem about a magic backpack",
+        # here we want to change the temperature, but it must not override the whole config
+        config={"temperature": 0.1},
+    )
+
+    assert isinstance(response.raw, Poem)
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
-def test_structured_predict_multiple_block() -> None:
-    chat_messaages = [
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_structured_predict_multiple_block(llm: GoogleGenAI) -> None:
+    chat_messages = [
         ChatMessage(
             content=[
                 TextBlock(text="which logo is this?"),
@@ -373,29 +363,19 @@ def test_structured_predict_multiple_block() -> None:
     class Response(BaseModel):
         answer: str
 
-    llm = GoogleGenAI(
-        model="models/gemini-2.0-flash-001",
-        api_key=os.environ["GOOGLE_API_KEY"],
-    )
     support = llm.structured_predict(
-        output_cls=Response, prompt=ChatPromptTemplate(message_templates=chat_messaages)
+        output_cls=Response, prompt=ChatPromptTemplate(message_templates=chat_messages)
     )
     assert isinstance(support, Response)
     assert "wiki" in support.answer.lower()
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
-def test_get_tool_calls_from_response() -> None:
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_get_tool_calls_from_response(llm: GoogleGenAI) -> None:
     def add(a: int, b: int) -> int:
         """Add two integers and returns the result integer."""
         return a + b
 
-    llm = GoogleGenAI(
-        model="models/gemini-2.0-flash-001",
-        api_key=os.environ["GOOGLE_API_KEY"],
-    )
 
     add_tool = FunctionTool.from_defaults(fn=add)
     msg = ChatMessage("What is the result of adding 2 and 3?")
@@ -410,53 +390,46 @@ def test_get_tool_calls_from_response() -> None:
     assert tool_calls[0].tool_kwargs == {"a": 2, "b": 3}
 
 
-@pytest.mark.skipif(
-    os.environ.get("GOOGLE_API_KEY") is None, reason="GOOGLE_API_KEY not set"
-)
-def test_convert_llama_index_schema_to_gemini_function_declaration() -> None:
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_convert_llama_index_schema_to_gemini_function_declaration(llm: GoogleGenAI) -> None:
     """Test conversion of a llama_index schema to a gemini function declaration."""
-    llm = GoogleGenAI(
-        model="models/gemini-2.0-flash-001",
-        api_key=os.environ["GOOGLE_API_KEY"],
-    )
     function_tool = get_function_tool(Poem)
     # this is our baseline, which is not working because:
     # 1. the descriptions are missing
-    # 2. the required fields are not set
     google_openai_function = types.FunctionDeclaration.from_callable(
         client=llm._client,
         callable=function_tool.metadata.fn_schema,  # type: ignore
     )
 
-    assert google_openai_function.description is None
-    assert google_openai_function.parameters.required is None  # type: ignore
+    assert google_openai_function.description == "A simple poem."
 
     # this is our custom conversion that can take a llama index: fn_schema and convert it to a gemini compatible
     # function declaration (subset of OpenAPI v3)
-    converted = convert_schema_to_function_declaration(function_tool)
+    converted = convert_schema_to_function_declaration(llm._client, function_tool)
 
     assert converted.name == "Poem"
-    assert converted.description is not None
-    assert converted.parameters.required is not None  # type: ignore
+    assert converted.description == "A simple poem."
+    assert converted.parameters.required is not None
 
     assert converted.parameters
 
 
-def test_convert_llama_index_schema_to_gemini_function_declaration_nested_case() -> (
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_convert_llama_index_schema_to_gemini_function_declaration_nested_case(llm: GoogleGenAI) -> (
     None
 ):
     """Test conversion of a llama_index fn_schema to a gemini function declaration."""
     function_tool = get_function_tool(Schema)
 
-    llama_index_model_json_schema = function_tool.metadata.fn_schema.model_json_schema()  # type: ignore
+    llama_index_model_json_schema = function_tool.metadata.fn_schema.model_json_schema()
     # check that the model_json_schema contains a $defs key, which is not supported by Gemini
     assert "$defs" in llama_index_model_json_schema
 
-    converted = convert_schema_to_function_declaration(function_tool)
+    converted = convert_schema_to_function_declaration(llm._client, function_tool)
 
     assert converted.name == "Schema"
     assert converted.description is not None
-    assert converted.parameters.required is not None  # type: ignore
+    assert converted.parameters.required is not None
 
     assert converted.parameters
     assert list(converted.parameters.properties) == [
@@ -465,3 +438,81 @@ def test_convert_llama_index_schema_to_gemini_function_declaration_nested_case()
     ]
 
     assert converted.parameters.required == ["schema_name", "tables"]
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_optional_value_gemini(llm: GoogleGenAI) -> None:
+    class OptionalContent(BaseModel):
+        content: Optional[str] = Field(default=None)
+        content2: str | None
+
+    function_tool = get_function_tool(OptionalContent)
+    decl = convert_schema_to_function_declaration(llm._client, function_tool)
+
+    assert decl.parameters.properties["content"].nullable
+    assert decl.parameters.properties["content"].default is None
+
+    assert decl.parameters.properties["content2"].nullable
+    assert decl.parameters.properties["content2"].default is None
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_optional_lists_nested_gemini(llm: GoogleGenAI) -> None:
+    class TextContent(BaseModel):
+        """A piece of text content."""
+        text: str
+        language: str
+
+    class ImageContent(BaseModel):
+        """A piece of image content."""
+        url: str
+        alt_text: Optional[str]
+        width: Optional[int]
+        height: Optional[int]
+
+    class VideoContent(BaseModel):
+        """A piece of video content."""
+        url: str
+        duration_seconds: int
+        thumbnail: Optional[str]
+
+    class Content(BaseModel):
+        """Content of a blog post."""
+        title: str
+        created_at: str
+        text: Optional[TextContent] = None
+        image: Optional[ImageContent]
+        video: Optional[VideoContent]
+        tags: List[str]
+
+    class BlogPost(BaseModel):
+        """A blog post."""
+        id: str
+        author: str
+        published: bool
+        contents: List[Content]
+        category: Optional[str]
+
+    function_tool = get_function_tool(BlogPost)
+
+    llama_index_model_json_schema = function_tool.metadata.fn_schema.model_json_schema()
+    assert "$defs" in llama_index_model_json_schema
+
+    converted = convert_schema_to_function_declaration(llm._client, function_tool)
+
+    assert converted.name == "BlogPost"
+
+    contents_property = converted.parameters.properties["contents"]
+    assert contents_property.type == types.Type.ARRAY
+
+    content_items = contents_property.items
+    assert "text" in content_items.properties
+    assert "image" in content_items.properties
+    assert "video" in content_items.properties
+
+    blogpost = (
+        llm.as_structured_llm(output_cls=BlogPost)
+        .complete(prompt="Write a blog post with at least 3 contents")
+        .raw
+    )
+    assert isinstance(blogpost, BlogPost)
+    assert len(blogpost.contents) >= 3

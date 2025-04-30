@@ -72,18 +72,18 @@ class CodeSplitter(TextSplitter):
 
         if parser is None:
             try:
-                import tree_sitter_languages  # pants: no-infer-dep
+                import tree_sitter_language_pack  # pants: no-infer-dep
 
-                parser = tree_sitter_languages.get_parser(language)
+                parser = tree_sitter_language_pack.get_parser(language)  # type: ignore
             except ImportError:
                 raise ImportError(
-                    "Please install tree_sitter_languages to use CodeSplitter."
+                    "Please install tree_sitter_language_pack to use CodeSplitter."
                     "Or pass in a parser object."
                 )
             except Exception:
                 print(
                     f"Could not get parser for language {language}. Check "
-                    "https://github.com/grantjenks/py-tree-sitter-languages#license "
+                    "https://github.com/Goldziher/tree-sitter-language-pack?tab=readme-ov-file#available-languages "
                     "for a list of valid languages."
                 )
                 raise
@@ -117,6 +117,16 @@ class CodeSplitter(TextSplitter):
         return "CodeSplitter"
 
     def _chunk_node(self, node: Any, text: str, last_end: int = 0) -> List[str]:
+        """Recursively chunk a node into smaller pieces based on character limits.
+
+        Args:
+            node (Any): The AST node to chunk.
+            text (str): The original source code text.
+            last_end (int, optional): The ending position of the last processed chunk. Defaults to 0.
+
+        Returns:
+            List[str]: A list of code chunks that respect the max_chars limit.
+        """
         new_chunks = []
         current_chunk = ""
         for child in node.children:
@@ -140,6 +150,20 @@ class CodeSplitter(TextSplitter):
         return new_chunks
 
     def split_text(self, text: str) -> List[str]:
+        """Split incoming code into chunks using the AST parser.
+
+        This method parses the input code into an AST and then chunks it while preserving
+        syntactic structure. It handles error cases and ensures the code can be properly parsed.
+
+        Args:
+            text (str): The source code text to split.
+
+        Returns:
+            List[str]: A list of code chunks.
+
+        Raises:
+            ValueError: If the code cannot be parsed for the specified language.
+        """
         """Split incoming code and return chunks using the AST."""
         with self.callback_manager.event(
             CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}

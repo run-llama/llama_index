@@ -9,7 +9,7 @@ Welcome to Understanding LlamaIndex. This is a series of short, bite-sized tutor
 
 This tutorial has three main parts: **Building a RAG pipeline**, **Building an agent**, and **Building Workflows**, with some smaller sections before and after. Here's what to expect:
 
-- **[Using LLMs](./using_llms/using_llms.md)**: hit the ground running by getting started working with LLMs. We'll show you how to use any of our [dozens of supported LLMs](../module_guides/models/llms/modules/), whether via remote API calls or running locally on your machine.
+- **[Using LLMs](./using_llms/using_llms.md)**: hit the ground running by getting started working with LLMs. We'll show you how to use any of our [dozens of supported LLMs](../module_guides/models/llms/modules.md), whether via remote API calls or running locally on your machine.
 
 - **[Building agents](./agent/index.md)**: agents are LLM-powered knowledge workers that can interact with the world via a set of tools. Those tools can retrieve information (such as RAG, see below) or take action. This tutorial includes:
 

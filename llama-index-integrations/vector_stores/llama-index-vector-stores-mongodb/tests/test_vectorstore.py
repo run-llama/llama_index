@@ -20,7 +20,7 @@ from .conftest import lock
 
 def test_documents(documents: List[Document]) -> None:
     """Sanity check essay was found and documents loaded."""
-    assert len(documents) == 23
+    assert len(documents) == 25
     assert isinstance(documents[0], Document)
 
 

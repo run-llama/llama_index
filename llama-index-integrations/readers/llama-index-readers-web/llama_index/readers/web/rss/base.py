@@ -1,9 +1,12 @@
 """Rss reader."""
 
-from typing import List
+from typing import List, Any, Union
+import logging
 
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
+
+logger = logging.getLogger(__name__)
 
 
 class RssReader(BasePydanticReader):
@@ -15,6 +18,12 @@ class RssReader(BasePydanticReader):
 
     is_remote: bool = True
     html_to_text: bool = False
+    user_agent: Union[str, None] = None
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        # https://pythonhosted.org/feedparser/http-useragent.html
+        self.user_agent = kwargs.get("user_agent", None)
 
     @classmethod
     def class_name(cls) -> str:
@@ -31,6 +40,9 @@ class RssReader(BasePydanticReader):
 
         """
         import feedparser
+
+        if self.user_agent:
+            feedparser.USER_AGENT = self.user_agent
 
         if not isinstance(urls, list):
             raise ValueError("urls must be a list of strings.")
@@ -64,3 +76,12 @@ class RssReader(BasePydanticReader):
                     documents.append(Document(text=data, extra_info=extra_info))
 
         return documents
+
+
+if __name__ == "__main__":
+    default_reader = RssReader()
+    print(
+        default_reader.load_data(urls=["https://rsshub.app/hackernews/newest"])
+    )  # 0 blocked by cloudflare
+    reader = RssReader(user_agent="MyApp/1.0 +http://example.com/")
+    print(reader.load_data(urls=["https://rsshub.app/hackernews/newest"]))

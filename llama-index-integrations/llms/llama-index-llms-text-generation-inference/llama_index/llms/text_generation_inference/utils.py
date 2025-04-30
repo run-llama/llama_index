@@ -5,7 +5,7 @@ from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
 )
-from text_generation.types import (
+from tgi.types import (
     Message,
 )
 
@@ -38,6 +38,12 @@ def get_max_total_tokens(url: str) -> Union[int, None]:
     url = f"{url}/info"
     model_info = dict(requests.get(url).json())
     return model_info.get("max_total_tokens", None)
+
+
+def get_model_name(url: str) -> Union[str, None]:
+    url = f"{url}/info"
+    model_info = dict(requests.get(url).json())
+    return model_info.get("model_id", None)
 
 
 def to_tgi_messages(messages: Sequence[ChatMessage]) -> Sequence[Message]:

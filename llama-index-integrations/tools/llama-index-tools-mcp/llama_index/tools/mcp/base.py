@@ -39,6 +39,8 @@ def create_model_from_json_schema(
 
     for field_name, field_schema in properties.items():
         json_type = field_schema.get("type", "string")
+        json_type = json_type[0] if isinstance(json_type, list) else json_type
+
         field_type = json_type_mapping.get(json_type, str)
         if field_name in required_fields:
             default_value = ...

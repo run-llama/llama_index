@@ -1,6 +1,7 @@
 ::: llama_index.readers.web
     options:
       members:
+        - AgentQLWebReader
         - AsyncWebPageReader
         - BeautifulSoupWebReader
         - BrowserbaseWebReader

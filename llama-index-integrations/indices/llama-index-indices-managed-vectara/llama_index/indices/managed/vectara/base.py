@@ -102,13 +102,19 @@ class VectaraIndex(BaseManagedIndex):
 
         # setup requests session with max 3 retries and 90s timeout
         # for calling Vectara API
-        self._session = requests.Session()  # to reuse connections
+        self._session = requests.Session()
         if not vectara_verify_ssl:
             self._session.verify = False  # to ignore SSL verification
         adapter = requests.adapters.HTTPAdapter(max_retries=3)
         self._session.mount("https://", adapter)
         self.vectara_api_timeout = 90
         self.doc_ids: List[str] = []
+
+    def __del__(self) -> None:
+        """Attempt to close the session when the object is garbage collected."""
+        if hasattr(self, "_session") and self._session:
+            self._session.close()
+            self._session = None
 
     @lru_cache(maxsize=None)
     def _get_corpus_key(self, corpus_key: str) -> str:
@@ -262,7 +268,7 @@ class VectaraIndex(BaseManagedIndex):
         description: Optional[str] = None,
         max_chars_per_chunk: Optional[int] = None,
     ) -> None:
-        """ "
+        """
         Indexes a document into a corpus using the Vectara Structured Document format.
 
         Full API Docs: https://docs.vectara.com/docs/api-reference/indexing-apis/indexing#structured-document-object-definition

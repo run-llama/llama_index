@@ -1,5 +1,6 @@
 from llama_index.core.agent.workflow.multi_agent_workflow import AgentWorkflow
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
+from llama_index.core.agent.workflow.codeact_agent import CodeActAgent
 from llama_index.core.agent.workflow.function_agent import FunctionAgent
 from llama_index.core.agent.workflow.react_agent import ReActAgent
 from llama_index.core.agent.workflow.workflow_events import (
@@ -19,6 +20,7 @@ __all__ = [
     "AgentOutput",
     "BaseWorkflowAgent",
     "FunctionAgent",
+    "CodeActAgent",
     "AgentWorkflow",
     "ReActAgent",
     "ToolCall",

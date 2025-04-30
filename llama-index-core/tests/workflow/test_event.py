@@ -103,3 +103,7 @@ def test_event_serialization():
     )
     assert ev.param == deseriazlied_ev.param
     assert ev._data == deseriazlied_ev._data
+
+
+def test_bool():
+    assert bool(_TestEvent(param="foo")) is True

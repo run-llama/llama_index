@@ -145,6 +145,7 @@ async def test_resume_streams():
     async for _ in handler_1.stream_events():
         pass
     await handler_1
+    assert handler_1.ctx
 
     handler_2 = wf.run(ctx=handler_1.ctx)
     async for _ in handler_2.stream_events():
