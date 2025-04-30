@@ -186,11 +186,10 @@ def main():
 
     # Find directly affected packages
     directly_affected = get_affected_packages(changed_files, all_packages)
-    if "llama-index-core" in directly_affected:
+    packages_to_test = {str(p) for p in directly_affected}
+    if "llama-index-core" in packages_to_test:
         # Run all the tests if llama-index-core was changed
         packages_to_test = {str(p) for p in all_packages}
-    else:
-        packages_to_test = directly_affected
 
     # Run pytest for each affected package in parallel
     results = []
