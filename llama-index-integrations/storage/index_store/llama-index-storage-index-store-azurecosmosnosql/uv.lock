@@ -1535,6 +1535,7 @@ dependencies = [
     { name = "azure-cosmos" },
     { name = "azure-identity" },
     { name = "llama-index-core" },
+    { name = "llama-index-storage-kv-store-azurecosmosnosql" },
 ]
 
 [package.dev-dependencies]
@@ -1563,6 +1564,7 @@ requires-dist = [
     { name = "azure-cosmos", specifier = ">=4.7.0,<5" },
     { name = "azure-identity", specifier = ">=1.7.1,<2" },
     { name = "llama-index-core", specifier = ">=0.12.0,<0.13" },
+    { name = "llama-index-storage-kv-store-azurecosmosnosql", specifier = ">=1.1.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -1584,6 +1586,20 @@ dev = [
     { name = "types-redis", specifier = "==4.5.5.0" },
     { name = "types-requests", specifier = "==2.28.11.8" },
     { name = "types-setuptools", specifier = "==67.1.0.0" },
+]
+
+[[package]]
+name = "llama-index-storage-kv-store-azurecosmosnosql"
+version = "1.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "azure-cosmos" },
+    { name = "azure-identity" },
+    { name = "llama-index-core" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/22/1d/932dd9862cde376a1f21ef73f2fd36be43285a141796685ce344764b9ed6/llama_index_storage_kv_store_azurecosmosnosql-1.1.0.tar.gz", hash = "sha256:409daed7d0b5aeb5bd96033eda845e9ea506fc22c050de0aa45072f779487bb3", size = 3070, upload_time = "2024-11-17T23:54:39.413Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a8/68/ea28337c2ed497b8b84af73989e954e4649dd2ddb991865c5994909d9901/llama_index_storage_kv_store_azurecosmosnosql-1.1.0-py3-none-any.whl", hash = "sha256:48d91cc50a92798e4e425605e6191c814d6803dd0890652ee9eea5b6beb7e2b0", size = 3458, upload_time = "2024-11-17T23:54:37.773Z" },
 ]
 
 [[package]]

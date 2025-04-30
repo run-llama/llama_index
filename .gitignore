@@ -27,3 +27,4 @@ token.json
 /storage/
 *.sqlite3
 *.db
+llama-index-core/llama_index/core/_static
