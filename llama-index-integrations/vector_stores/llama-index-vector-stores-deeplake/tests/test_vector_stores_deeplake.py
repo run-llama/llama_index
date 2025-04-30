@@ -12,9 +12,6 @@ from llama_index.core.vector_stores.types import (
 )
 from llama_index.vector_stores.deeplake import DeepLakeVectorStore
 
-if os.getenv("GITHUB_ACTIONS") == "true":
-    pytest.skip("tests are flaky on Github runners", allow_module_level=True)
-
 
 def test_class():
     names_of_base_classes = [b.__name__ for b in DeepLakeVectorStore.__mro__]
@@ -35,6 +32,9 @@ def vs_ids():
     vs.clear()
 
 
+@pytest.mark.skipif(
+    os.getenv("GITHUB_ACTIONS") == "true", reason="tests are flaky on Github runners"
+)
 def test_filters(vs_ids):
     vs, ids = vs_ids
 
@@ -100,12 +100,18 @@ def test_filters(vs_ids):
     assert [x.text for x in nodes] == ["Doc 1", "Doc 2"]
 
 
+@pytest.mark.skipif(
+    os.getenv("GITHUB_ACTIONS") == "true", reason="tests are flaky on Github runners"
+)
 def test_delete_id(vs_ids):
     vs, ids = vs_ids
     vs.delete_nodes(node_ids=[ids[0], ids[2]])
     assert [x.text for x in vs.get_nodes()] == ["Doc 2"]
 
 
+@pytest.mark.skipif(
+    os.getenv("GITHUB_ACTIONS") == "true", reason="tests are flaky on Github runners"
+)
 def test_delete_filter(vs_ids):
     vs, ids = vs_ids
     vs.delete_nodes(
