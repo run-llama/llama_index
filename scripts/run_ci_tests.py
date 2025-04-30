@@ -1,11 +1,15 @@
 import argparse
 import concurrent.futures
 import os
+import re
 import subprocess
 import time
 from enum import Enum, auto
 from pathlib import Path
-from typing import List, Set
+
+import tomli
+
+DEP_NAME_REGEX = re.compile(r"([^<>=\s]+)")
 
 
 class ResultStatus(Enum):
@@ -32,8 +36,8 @@ def parse_args():
     return parser.parse_args()
 
 
-def get_changed_files(base_ref: str, repo_root: str) -> List[str]:
-    """Get list of files changed compared to the base branch."""
+def get_changed_files(base_ref: str, repo_root: str) -> list[str]:
+    """Use git to get the list of files changed compared to the base branch."""
     try:
         cmd = ["git", "diff", "--name-only", f"{base_ref}...HEAD"]
         result = subprocess.run(cmd, cwd=repo_root, text=True, capture_output=True)
@@ -46,9 +50,61 @@ def get_changed_files(base_ref: str, repo_root: str) -> List[str]:
         raise
 
 
-def find_integrations(root_path: str, recursive=False) -> list[Path]:
+def get_changed_packages(changed_files: list[str], all_packages: list[str]) -> set[str]:
+    """Get the packages containing the files in changed_files."""
+    changed_packages = set()
+
+    for file_path in changed_files:
+        # Find the package containing this file
+        for pkg_dir in all_packages:
+            if file_path.startswith(str(pkg_dir)):
+                changed_packages.add(pkg_dir)
+                break
+
+    return changed_packages
+
+
+def load_pyproject(pyproject_path: Path) -> dict:
+    """Thin wrapper around tomli.load()."""
+    with open(pyproject_path, "rb") as f:
+        return tomli.load(f)
+
+
+def get_dep_names(pyproject_data: dict) -> set[str]:
+    """Load dependencies from pyproject.toml."""
+    dependencies: set[str] = set()
+    for dep in pyproject_data["project"]["dependencies"]:
+        matches = DEP_NAME_REGEX.findall(dep)
+        if not matches:
+            continue
+        dependencies.add(matches[0])
+    return dependencies
+
+
+def get_dependants_packages(
+    changed_packages: set[str], all_packages: list[str]
+) -> set[str]:
+    """Get packages containing the files in the changeset."""
+    dependants_packages: set[str] = set()
+    dep_name_re = re.compile(r"([^<>=\s]+)")
+
+    changed_packages_names: set[str] = set()
+    for pkg_path in changed_packages:
+        pyproject_data = load_pyproject(Path(pkg_path) / "pyproject.toml")
+        changed_packages_names.add(pyproject_data["project"]["name"])
+
+    for pkg_path in all_packages:
+        pyproject_data = load_pyproject(Path(pkg_path) / "pyproject.toml")
+        for dep_name in get_dep_names(pyproject_data):
+            if dep_name in changed_packages_names:
+                dependants_packages.add(str(pkg_path))
+
+    return dependants_packages
+
+
+def find_integrations(root_path: str, recursive=False) -> list[str]:
     """Find all integrations packages in the repo."""
-    package_roots: list[Path] = []
+    package_roots: list[str] = []
     integrations_root = Path(root_path)
     if not recursive:
         integrations_root = integrations_root / "llama-index-integrations"
@@ -65,54 +121,38 @@ def find_integrations(root_path: str, recursive=False) -> list[Path]:
         for package_name in category_path.iterdir():
             tests_folder = package_name / "tests"
             if package_name.is_dir() and tests_folder.exists():
-                package_roots.append(package_name)
+                package_roots.append(str(package_name))
 
     return package_roots
 
 
-def find_packs(root_path: str) -> list[Path]:
+def find_packs(root_path: str) -> list[str]:
     """Find all llama-index-packs packages in the repo."""
-    package_roots = []
+    package_roots: list[str] = []
     packs_root = Path(root_path) / "llama-index-packs"
 
     for package_name in packs_root.iterdir():
         tests_folder = package_name / "tests"
         if package_name.is_dir() and tests_folder.exists():
-            package_roots.append(package_name)
+            package_roots.append(str(package_name))
 
     return package_roots
 
 
-def find_utils(root_path: str) -> list[Path]:
+def find_utils(root_path: str) -> list[str]:
     """Find all llama-index-utils packages in the repo."""
-    package_roots = []
+    package_roots: list[str] = []
     utils_root = Path(root_path) / "llama-index-utils"
 
     for package_name in utils_root.iterdir():
         tests_folder = package_name / "tests"
         if package_name.is_dir() and tests_folder.exists():
-            package_roots.append(package_name)
+            package_roots.append(str(package_name))
 
     return package_roots
 
 
-def get_affected_packages(
-    changed_files: list[str], all_packages: list[Path]
-) -> Set[str]:
-    """Get packages containing the files in the changeset."""
-    affected_packages = set()
-
-    for file_path in changed_files:
-        # Find the package containing this file
-        for pkg_dir in all_packages:
-            if file_path.startswith(str(pkg_dir)):
-                affected_packages.add(pkg_dir)
-                break
-
-    return affected_packages
-
-
-def run_pytest(package_dir):
+def run_pytest(root_dir: str, package_dir: str, changed_packages: set[str]):
     env = os.environ.copy()
     if "VIRTUAL_ENV" in env:
         del env["VIRTUAL_ENV"]
@@ -138,6 +178,33 @@ def run_pytest(package_dir):
             "stderr": result.stderr,
             "time": f"{elapsed_time:.2f}s",
         }
+
+    # Install local copy of packages that have changed
+    debug_output = ""
+    pyproject_data = load_pyproject(Path(package_dir) / "pyproject.toml")
+    dep_names = get_dep_names(pyproject_data)
+    install_local = set()
+    for name in dep_names:
+        for package_path in changed_packages:
+            if package_path.endswith(name):
+                install_local.add(str(Path(root_dir) / package_path))
+    if install_local:
+        result = subprocess.run(
+            ["uv", "pip", "install", "-U", " ".join(install_local)],
+            cwd=package_dir,
+            text=True,
+            capture_output=True,
+            env=env,
+        )
+        if result.returncode != 0:
+            elapsed_time = time.perf_counter() - start
+            return {
+                "package": str(package_dir),
+                "status": ResultStatus.INSTALL_FAILED,
+                "stdout": result.stdout,
+                "stderr": debug_output + "\n" + result.stderr,
+                "time": f"{elapsed_time:.2f}s",
+            }
 
     result = subprocess.run(
         [
@@ -172,9 +239,6 @@ def run_pytest(package_dir):
 def main():
     args = parse_args()
 
-    # Get changed files
-    changed_files = get_changed_files(args.base_ref, args.repo_root)
-
     # Find all packages in the repo
     all_packages = [
         Path("llama-index-core"),
@@ -183,14 +247,14 @@ def main():
         *find_packs(args.repo_root),
         *find_utils(args.repo_root),
     ]
-
-    # Find directly affected packages
-    directly_affected = get_affected_packages(changed_files, all_packages)
-    if "llama-index-core" in directly_affected:
-        # Run all the tests if llama-index-core was changed
-        packages_to_test = {str(p) for p in all_packages}
-    else:
-        packages_to_test = directly_affected
+    # Get the files that changed from the base branch
+    changed_files = get_changed_files(args.base_ref, args.repo_root)
+    # Get the packages containing the changed files
+    changed_packages = get_changed_packages(changed_files, all_packages)
+    # Find the dependants of the changed packages
+    dependants = get_dependants_packages(changed_packages, all_packages)
+    # Test the packages directly affected and their dependants
+    packages_to_test: set[str] = changed_packages | dependants
 
     # Run pytest for each affected package in parallel
     results = []
@@ -198,7 +262,12 @@ def main():
         max_workers=int(args.workers)
     ) as executor:
         future_to_package = {
-            executor.submit(run_pytest, package): package
+            executor.submit(
+                run_pytest,
+                str(Path(args.repo_root).resolve()),
+                package,
+                changed_packages,
+            ): package
             for package in sorted(packages_to_test)
         }
 

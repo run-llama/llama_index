@@ -17,7 +17,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.head_ref }}
 
       - name: Install uv and set the python version
         uses: astral-sh/setup-uv@v5
@@ -32,4 +31,4 @@ jobs:
           NUM_WORKERS: 8
         run: |
           git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
-          uv run -- python -u scripts/changed_deps.py --workers ${{ env.NUM_WORKERS }} --base-ref=${{ github.event.pull_request.base.ref }}
+          uv run -- python -u scripts/run_ci_tests.py --workers ${{ env.NUM_WORKERS }} --base-ref=${{ github.event.pull_request.base.ref }}
