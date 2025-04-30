@@ -24,18 +24,18 @@ dev = [
 ]
 
 [project]
-name = "llama-index-embeddings-openvino"
-version = "0.5.2"
-description = "llama-index embeddings openvino integration"
+name = "llama-index-embeddings-openvino-genai"
+version = "0.5.0"
+description = "llama-index embeddings openvino genai integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-embeddings-huggingface>=0.4.0,<0.5",
-    "huggingface-hub>=0.23.0",
     "llama-index-core>=0.12.0,<0.13",
-    "optimum-intel[openvino]>=1.22.0,<2",
+    "openvino>=2025.1.0",
+    "openvino-genai>=2025.1.0.0",
+    "openvino-tokenizers>=2025.1.0.0",
 ]
 
 [tool.codespell]
@@ -53,7 +53,7 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.embeddings.huggingface_openvino"
+import_path = "llama_index.embeddings.openvino_genai"
 
 [tool.llamahub.class_authors]
 OpenVINOEmbedding = "llama-index"
