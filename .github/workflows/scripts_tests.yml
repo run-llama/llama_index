@@ -1,13 +1,17 @@
-name: Core Typecheck
+name: Test repo scripts
 
 on:
   push:
     branches:
       - main
+    paths:
+      - "scripts/**"
   pull_request:
+    paths:
+      - "scripts/**"
 
 jobs:
-  core-typecheck:
+  test-scripts:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,6 +24,5 @@ jobs:
       - name: Set up Python
         run: uv python install
 
-      - name: Run Mypy
-        working-directory: llama-index-core
-        run: uv run -- mypy llama_index
+      - name: Run tests
+        run: uv run -- python -m pytest scripts/tests/test_run_ci_tests.py
