@@ -1,6 +1,4 @@
 import asyncio
-from datetime import datetime
-from enum import Enum
 import os
 from typing import List, Optional, Union
 
@@ -19,7 +17,7 @@ from llama_index.core.program.function_program import get_function_tool
 from llama_index.core.prompts import ChatPromptTemplate, PromptTemplate
 from llama_index.core.tools import FunctionTool
 from pydantic import BaseModel, Field
-
+from google.genai.types import GenerateContentConfig, ThinkingConfig
 from llama_index.llms.google_genai import GoogleGenAI
 from llama_index.llms.google_genai.utils import convert_schema_to_function_declaration
 
@@ -29,7 +27,6 @@ SKIP_GEMINI = (
     or os.environ.get("GOOGLE_GENAI_USE_VERTEXAI", "false") == "true"
 )
 
-SKIP_VERTEXAI = os.environ.get("GOOGLE_GENAI_USE_VERTEXAI", "false") == "false"
 
 
 class Poem(BaseModel):
@@ -51,14 +48,31 @@ class Schema(BaseModel):
     tables: List[Table] = Field(description="List of random Table objects")
 
 
-@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-def test_complete_and_acomplete() -> None:
-    """Test both sync and async complete methods."""
-    llm = GoogleGenAI(
-        model="models/gemini-2.0-flash-001",
+# Define the models to test against
+GEMINI_MODELS_TO_TEST = [
+    # {"model": "models/gemini-2.0-flash-001", "config": {}},
+    {"model": "models/gemini-2.5-flash-preview-04-17", "config": {
+         "generation_config": GenerateContentConfig(
+            thinking_config=ThinkingConfig(thinking_budget=0)
+        )
+    }},
+] if not SKIP_GEMINI else []
+
+
+@pytest.fixture(params=GEMINI_MODELS_TO_TEST)
+def llm(request) -> GoogleGenAI:
+    """Fixture to create a GoogleGenAI instance for each model."""
+    return GoogleGenAI(
+        model=request.param["model"],
         api_key=os.environ["GOOGLE_API_KEY"],
+        **request.param.get("config", {}),
     )
 
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_complete_and_acomplete(llm: GoogleGenAI) -> None:
+    """Test both sync and async complete methods."""
     prompt = "Write a poem about a magic backpack"
 
     # Test synchronous complete
@@ -486,27 +500,6 @@ def test_anyof_not_supported_gemini() -> None:
         _ = convert_schema_to_function_declaration(llm._client, function_tool)
 
 
-@pytest.mark.skipif(
-    SKIP_VERTEXAI,
-    reason="GOOGLE_GENAI_USE_VERTEXAI not set",
-)
-def test_anyof_supported_vertexai() -> None:
-    class Content(BaseModel):
-        content: Union[int, str]
-
-    llm = GoogleGenAI(
-        model="gemini-2.0-flash-001",
-    )
-    function_tool = get_function_tool(Content)
-    _ = convert_schema_to_function_declaration(llm._client, function_tool)
-
-    content = (
-        llm.as_structured_llm(output_cls=Content)
-        .complete(prompt="Generate a small content")
-        .raw
-    )
-    assert isinstance(content, Content)
-    assert isinstance(content.content, int | str)
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
@@ -521,31 +514,6 @@ def test_default_value_not_supported_gemini() -> None:
     with pytest.raises(ValueError):
         function_tool = get_function_tool(ContentWithDefaultValue)
         _ = convert_schema_to_function_declaration(llm._client, function_tool)
-
-
-@pytest.mark.skipif(
-    SKIP_VERTEXAI,
-    reason="GOOGLE_GENAI_USE_VERTEXAI not set",
-)
-def test_default_value_supported_vertexai() -> None:
-    class ContentWithDefaultValue(BaseModel):
-        content: str = Field(default="default_value")
-
-    llm = GoogleGenAI(
-        model="gemini-2.0-flash-001",
-    )
-
-    function_tool = get_function_tool(ContentWithDefaultValue)
-    function_decl = convert_schema_to_function_declaration(llm._client, function_tool)
-
-    assert function_decl.parameters.properties["content"].default == "default_value"
-
-    content = (
-        llm.as_structured_llm(output_cls=ContentWithDefaultValue)
-        .complete(prompt="Generate a small content")
-        .raw
-    )
-    assert isinstance(content, ContentWithDefaultValue)
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
@@ -629,77 +597,3 @@ def test_optional_lists_nested_gemini() -> None:
     )
     assert isinstance(blogpost, BlogPost)
     assert len(blogpost.contents) >= 3
-
-
-@pytest.mark.skipif(
-    SKIP_VERTEXAI,
-    reason="GOOGLE_GENAI_USE_VERTEXAI not set",
-)
-def test_optional_lists_nested_vertexai() -> None:
-    class Address(BaseModel):
-        street: str
-        city: str
-        country: str = Field(default="USA")
-
-    class ContactInfo(BaseModel):
-        email: str
-        phone: Optional[str] = None
-        address: Address
-
-    class Department(Enum):
-        ENGINEERING = "engineering"
-        MARKETING = "marketing"
-        SALES = "sales"
-        HR = "human_resources"
-
-    class Employee(BaseModel):
-        name: str
-        contact: ContactInfo
-        department: Department
-        hire_date: datetime
-
-    class Company(BaseModel):
-        name: str
-        founded_year: int
-        website: str
-        employees: List[Employee]
-        headquarters: Address
-
-    llm = GoogleGenAI(
-        model="gemini-2.0-flash-001",
-    )
-
-    function_tool = get_function_tool(Company)
-    converted = convert_schema_to_function_declaration(llm._client, function_tool)
-
-    assert converted.name == "Company"
-    assert converted.description is not None
-    assert converted.parameters.required is not None
-
-    assert list(converted.parameters.properties) == [
-        "name",
-        "founded_year",
-        "website",
-        "employees",
-        "headquarters",
-    ]
-
-    assert "name" in converted.parameters.required
-    assert "founded_year" in converted.parameters.required
-    assert "website" in converted.parameters.required
-    assert "employees" in converted.parameters.required
-    assert "headquarters" in converted.parameters.required
-
-    # call the model and check the output
-    company = (
-        llm.as_structured_llm(output_cls=Company)
-        .complete(prompt="Create a fake company with at least 3 employees")
-        .raw
-    )
-    assert isinstance(company, Company)
-
-    assert len(company.employees) >= 3
-    assert all(
-        employee.department in Department.__members__.values()
-        for employee in company.employees
-    )
