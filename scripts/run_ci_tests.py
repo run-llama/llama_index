@@ -58,7 +58,7 @@ def get_changed_packages(changed_files: list[str], all_packages: list[str]) -> s
         # Find the package containing this file
         for pkg_dir in all_packages:
             if file_path.startswith(str(pkg_dir)):
-                changed_packages.add(pkg_dir)
+                changed_packages.add(str(pkg_dir))
                 break
 
     return changed_packages
