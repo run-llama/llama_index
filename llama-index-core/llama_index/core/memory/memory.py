@@ -76,10 +76,10 @@ class BaseMemoryBlock(BaseModel, Generic[T]):
     accept_short_term_memory: bool = Field(default=True, description="Whether to accept puts from messages ejected from the short-term memory.")
 
     @abstractmethod
-    async def _aget(self, input: List[ChatMessage], **block_kwargs: Any) -> T:
+    async def _aget(self, messages: List[ChatMessage], **block_kwargs: Any) -> T:
         """Pull the memory block (async)."""
 
-    async def aget(self, input: List[ChatMessage], **block_kwargs: Any) -> T:
+    async def aget(self, messages: List[ChatMessage], **block_kwargs: Any) -> T:
         """Pull the memory block (async).
 
         Returns:
@@ -88,7 +88,7 @@ class BaseMemoryBlock(BaseModel, Generic[T]):
             - List[ContentBlock]: A list of content blocks to be inserted into the template.
             - List[ChatMessage]: A list of chat messages to be directly appended to the chat history.
         """
-        return await self._aget(input, **block_kwargs)
+        return await self._aget(messages, **block_kwargs)
 
     @abstractmethod
     async def _aput(self, messages: List[ChatMessage]) -> None:
@@ -261,7 +261,8 @@ class Memory(BaseMemory):
             blocks = message_or_blocks.blocks
 
             # Estimate the token count for the additional kwargs
-            token_count += len(self.tokenizer_fn(str(message_or_blocks.additional_kwargs)))
+            if message_or_blocks.additional_kwargs:
+                token_count += len(self.tokenizer_fn(str(message_or_blocks.additional_kwargs)))
         elif isinstance(message_or_blocks, List):
             # Type narrow the list
             messages: List[ChatMessage] = []
@@ -359,7 +360,7 @@ class Memory(BaseMemory):
 
             # Update the content blocks
             if truncated_block_content is None:
-                del truncated_content[memory_block.name]
+                truncated_content[memory_block.name] = []
             else:
                 truncated_content[memory_block.name] = truncated_block_content
 
