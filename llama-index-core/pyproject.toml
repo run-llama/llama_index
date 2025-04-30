@@ -9,7 +9,7 @@ dev = [
     "botocore>=1.33.13",
     "codespell[toml]>=v2.2.6",
     "llama-cloud>=0.0.6",
-    "mypy==1.11.0",
+    "mypy>=1.15.0",
     "openai",
     "pandas",
     "platformdirs",
