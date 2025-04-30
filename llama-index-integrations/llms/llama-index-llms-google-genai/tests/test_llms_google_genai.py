@@ -244,6 +244,19 @@ def test_anyof_optional_structured_predict(llm: GoogleGenAI) -> None:
     assert isinstance(response.last_name, str)
     assert isinstance(response.first_name, None | str)
 
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_as_structured_llm_native_genai(llm: GoogleGenAI) -> None:
+    schema_response = llm._client.models.generate_content(
+        model=llm.model,
+        contents="Generate a simple database structure with at least one table called 'experiments'",
+        config=GenerateContentConfig(
+            response_mime_type="application/json",
+            response_schema=Schema,
+        ),
+    ).parsed
+    assert isinstance(schema_response, Schema)
+    assert len(schema_response.schema_name) > 0
+    assert len(schema_response.tables) > 0
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_as_structured_llm(llm: GoogleGenAI) -> None:
@@ -258,8 +271,9 @@ def test_as_structured_llm(llm: GoogleGenAI) -> None:
 
     # Test with complex schema
     schema_response = llm.as_structured_llm(output_cls=Schema, prompt=prompt).complete(
-        "Generate a simple database structure"
+        "Generate a simple database structure with at least one table called 'experiments'"
     )
+
     assert isinstance(schema_response.raw, Schema)
     assert len(schema_response.raw.schema_name) > 0
     assert len(schema_response.raw.tables) > 0
