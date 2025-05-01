@@ -22,7 +22,8 @@ class BaseObjectNodeMapping(Generic[OT]):
     def from_objects(
         cls, objs: Sequence[OT], *args: Any, **kwargs: Any
     ) -> "BaseObjectNodeMapping":
-        """Initialize node mapping from a list of objects.
+        """
+        Initialize node mapping from a list of objects.
 
         Only needs to be specified if the node mapping
         needs to be initialized with a list of objects.
@@ -33,7 +34,8 @@ class BaseObjectNodeMapping(Generic[OT]):
         """Validate object."""
 
     def add_object(self, obj: OT) -> None:
-        """Add object.
+        """
+        Add object.
 
         Only needs to be specified if the node mapping
         needs to be initialized with a list of objects.
@@ -49,7 +51,8 @@ class BaseObjectNodeMapping(Generic[OT]):
 
     @abstractmethod
     def _add_object(self, obj: OT) -> None:
-        """Add object.
+        """
+        Add object.
 
         Only needs to be specified if the node mapping
         needs to be initialized with a list of objects.
@@ -107,7 +110,8 @@ class BaseObjectNodeMapping(Generic[OT]):
 
 
 class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
-    """General node mapping that works for any obj.
+    """
+    General node mapping that works for any obj.
 
     More specifically, any object with a meaningful string representation.
 
@@ -147,7 +151,8 @@ class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
         persist_dir: str = DEFAULT_PERSIST_DIR,
         obj_node_mapping_fname: str = DEFAULT_PERSIST_FNAME,
     ) -> None:
-        """Persist object node mapping.
+        """
+        Persist object node mapping.
 
         NOTE: This may fail depending on whether the object types are
         pickle-able.

@@ -41,6 +41,7 @@ class Contextual(OpenAILike):
 
         print(response)
         ```
+
     """
 
     model: str = Field(
@@ -97,6 +98,7 @@ class Contextual(OpenAILike):
 
         Returns:
             str: The generated text completion.
+
         """
         messages_list = [{"role": MessageRole.USER, "content": prompt}]
         response = self._generate(
@@ -117,7 +119,7 @@ class Contextual(OpenAILike):
             {"role": msg.role, "content": msg.blocks[0].text} for msg in messages
         ]
         response = self._generate(
-            knowledge=kwargs.get("knowledge_base", None),
+            knowledge=kwargs.get("knowledge_base"),
             messages=messages_list,
             model=self.model,
             system_prompt=self.system_prompt,

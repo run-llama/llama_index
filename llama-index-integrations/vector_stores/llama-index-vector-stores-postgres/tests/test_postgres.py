@@ -334,7 +334,7 @@ def pg_hnsw_hybrid_halfvec(db_hnsw: None) -> Any:
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_instance_creation(db: None) -> None:
     pg = PGVectorStore.from_params(
         **PARAMS,  # type: ignore
@@ -359,7 +359,7 @@ def pg_fixture(request):
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query(
@@ -382,7 +382,7 @@ async def test_add_to_db_and_query(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_query_hnsw(
     pg_hnsw: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
@@ -406,7 +406,7 @@ async def test_query_hnsw(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters(
@@ -434,7 +434,7 @@ async def test_add_to_db_and_query_with_metadata_filters(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters_with_in_operator(
@@ -468,7 +468,7 @@ async def test_add_to_db_and_query_with_metadata_filters_with_in_operator(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters_with_in_operator_and_single_element(
@@ -502,7 +502,7 @@ async def test_add_to_db_and_query_with_metadata_filters_with_in_operator_and_si
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters_with_contains_operator(
@@ -536,7 +536,7 @@ async def test_add_to_db_and_query_with_metadata_filters_with_contains_operator(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_query_and_delete(
@@ -561,7 +561,7 @@ async def test_add_to_db_query_and_delete(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_sparse_query(
     pg_hybrid: PGVectorStore,
@@ -594,7 +594,7 @@ async def test_sparse_query(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_hybrid_query(
     pg_hybrid: PGVectorStore,
@@ -666,7 +666,7 @@ async def test_hybrid_query(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_hybrid_query(
     pg_hnsw_hybrid: PGVectorStore,
@@ -738,7 +738,7 @@ async def test_hybrid_query(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_hybrid_query_with_metadata_filters(
     pg_hybrid: PGVectorStore,
@@ -788,7 +788,7 @@ def test_hybrid_query_fails_if_no_query_str_provided(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_index_nodes(
@@ -815,7 +815,7 @@ async def test_add_to_db_and_query_index_nodes(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_delete_nodes(
@@ -867,7 +867,7 @@ async def test_delete_nodes(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_delete_nodes_metadata(
@@ -969,7 +969,7 @@ async def test_delete_nodes_metadata(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_hnsw_index_creation(
     pg_hnsw_multiple: List[PGVectorStore],
@@ -1004,7 +1004,7 @@ async def test_hnsw_index_creation(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_clear(
@@ -1114,7 +1114,7 @@ def test_get_nodes_parametrized(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_custom_engines(db: None, node_embeddings: List[TextNode]) -> None:
     """Test that PGVectorStore works correctly with custom engines."""
     from sqlalchemy import create_engine
@@ -1183,7 +1183,7 @@ def test_custom_sync_engine_only(db: None, node_embeddings: List[TextNode]) -> N
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_custom_async_engine_only(
     db: None, node_embeddings: List[TextNode]
 ) -> None:

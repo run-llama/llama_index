@@ -107,7 +107,8 @@ def _format_sql_query(sql_query: str) -> str:
 
 
 class SQLAugmentQueryTransform(BaseQueryTransform):
-    """SQL Augment Query Transform.
+    """
+    SQL Augment Query Transform.
 
     This query transform will transform the query into a more specific query
     after augmenting with SQL results.
@@ -164,7 +165,8 @@ class SQLAugmentQueryTransform(BaseQueryTransform):
 
 
 class SQLJoinQueryEngine(BaseQueryEngine):
-    """SQL Join Query Engine.
+    """
+    SQL Join Query Engine.
 
     This query engine can "Join" a SQL database results
     with another query engine.

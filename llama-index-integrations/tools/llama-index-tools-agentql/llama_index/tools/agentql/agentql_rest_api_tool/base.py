@@ -49,6 +49,7 @@ class AgentQLRestAPIToolSpec(BaseToolSpec):
             Learn more about the modes in this guide: https://docs.agentql.com/accuracy/standard-mode) Defaults to 'fast'.
 
             is_screenshot_enabled: Whether to take a screenshot before extracting data. Returned in 'metadata' as a Base64 string. Defaults to `False`.
+
         """
         self._api_key = os.getenv("AGENTQL_API_KEY")
         if not self._api_key:
@@ -76,6 +77,7 @@ class AgentQLRestAPIToolSpec(BaseToolSpec):
 
         Returns:
             dict: Extracted data.
+
         """
         _params = {
             "wait_for": self.wait_for,

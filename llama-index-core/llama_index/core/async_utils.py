@@ -21,7 +21,8 @@ def asyncio_module(show_progress: bool = False) -> Any:
 
 
 def asyncio_run(coro: Coroutine) -> Any:
-    """Gets an existing event loop to run the coroutine.
+    """
+    Gets an existing event loop to run the coroutine.
 
     If there is no existing event loop, creates a new one.
     """
@@ -119,7 +120,8 @@ async def run_jobs(
     workers: int = DEFAULT_NUM_WORKERS,
     desc: Optional[str] = None,
 ) -> List[T]:
-    """Run jobs.
+    """
+    Run jobs.
 
     Args:
         jobs (List[Coroutine]):
@@ -130,6 +132,7 @@ async def run_jobs(
     Returns:
         List[Any]:
             List of results.
+
     """
     semaphore = asyncio.Semaphore(workers)
 

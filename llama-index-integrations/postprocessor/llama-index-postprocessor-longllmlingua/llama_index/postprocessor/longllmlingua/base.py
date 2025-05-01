@@ -18,7 +18,8 @@ def format_metadata(nodes=List[NodeWithScore]):
 
 
 class LongLLMLinguaPostprocessor(BaseNodePostprocessor):
-    """Optimization of nodes.
+    """
+    Optimization of nodes.
 
     Compress using LongLLMLingua paper.
 

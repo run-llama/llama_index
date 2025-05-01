@@ -16,7 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 class VllmEmbedding(MultiModalEmbedding):
-    """Vllm LLM.
+    """
+    Vllm LLM.
 
     This class runs a vLLM embedding model locally.
     """
@@ -124,6 +125,7 @@ class VllmEmbedding(MultiModalEmbedding):
 
         Raises:
             Exception: If embedding fails after retries
+
         """
         try:
             if embed_type == "image":
@@ -156,6 +158,7 @@ class VllmEmbedding(MultiModalEmbedding):
         Raises:
             ValueError: If any input text is invalid
             Exception: If embedding fails after retries
+
         """
         if embed_type not in SUPPORT_EMBED_TYPES:
             raise (ValueError("Not Implemented"))
@@ -170,6 +173,7 @@ class VllmEmbedding(MultiModalEmbedding):
 
         Returns:
             List[float]: numpy array of embeddings
+
         """
         return self._embed([query])[0]
 
@@ -182,6 +186,7 @@ class VllmEmbedding(MultiModalEmbedding):
 
         Returns:
             List[float]: numpy array of embeddings
+
         """
         return self._get_query_embedding(query)
 
@@ -194,6 +199,7 @@ class VllmEmbedding(MultiModalEmbedding):
 
         Returns:
             List[float]: numpy array of embeddings
+
         """
         return self._get_text_embedding(text)
 
@@ -206,6 +212,7 @@ class VllmEmbedding(MultiModalEmbedding):
 
         Returns:
             List[float]: numpy array of embeddings
+
         """
         return self._embed([text])[0]
 
@@ -218,6 +225,7 @@ class VllmEmbedding(MultiModalEmbedding):
 
         Returns:
             List[List[float]]: numpy array of embeddings
+
         """
         return self._embed(texts)
 

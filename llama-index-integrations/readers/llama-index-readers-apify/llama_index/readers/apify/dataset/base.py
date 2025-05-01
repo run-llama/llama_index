@@ -6,11 +6,13 @@ from llama_index.core.schema import Document
 
 
 class ApifyDataset(BaseReader):
-    """Apify Dataset reader.
+    """
+    Apify Dataset reader.
     Reads a dataset on the Apify platform.
 
     Args:
         apify_api_token (str): Apify API token.
+
     """
 
     def __init__(self, apify_api_token: str) -> None:
@@ -28,7 +30,8 @@ class ApifyDataset(BaseReader):
     def load_data(
         self, dataset_id: str, dataset_mapping_function: Callable[[Dict], Document]
     ) -> List[Document]:
-        """Load data from the Apify dataset.
+        """
+        Load data from the Apify dataset.
 
         Args:
             dataset_id (str): Dataset ID.
@@ -37,6 +40,7 @@ class ApifyDataset(BaseReader):
 
         Returns:
             List[Document]: List of documents.
+
         """
         items_list = self.apify_client.dataset(dataset_id).list_items(clean=True)
 

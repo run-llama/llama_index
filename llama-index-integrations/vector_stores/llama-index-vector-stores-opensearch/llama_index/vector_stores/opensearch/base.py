@@ -348,7 +348,8 @@ class OpensearchVectorClient:
         return query
 
     def _is_text_field(self, value: Any) -> bool:
-        """Check if value is a string and keyword filtering needs to be performed.
+        """
+        Check if value is a string and keyword filtering needs to be performed.
 
         Not applied to datetime strings.
         """
@@ -362,7 +363,8 @@ class OpensearchVectorClient:
             return False
 
     def _parse_filter(self, filter: MetadataFilter) -> dict:
-        """Parse a single MetadataFilter to equivalent OpenSearch expression.
+        """
+        Parse a single MetadataFilter to equivalent OpenSearch expression.
 
         As Opensearch does not differentiate between scalar/array keyword fields, IN and ANY are equivalent.
         """
@@ -464,6 +466,7 @@ class OpensearchVectorClient:
 
         Returns:
             Dict: Up to k documents closest to query_embedding.
+
         """
         filters = self._parse_filters(filters)
 
@@ -553,7 +556,8 @@ class OpensearchVectorClient:
     def __get_painless_scripting_source(
         self, space_type: str, vector_field: str = "embedding"
     ) -> str:
-        """For Painless Scripting, it returns the script source based on space type.
+        """
+        For Painless Scripting, it returns the script source based on space type.
         This does not work with Opensearch Serverless currently.
         """
         source_value = (
@@ -594,7 +598,8 @@ class OpensearchVectorClient:
         pre_filter: Optional[Union[Dict, List]] = None,
         vector_field: str = "embedding",
     ) -> Dict:
-        """For Scoring Script Search, this is the default query. Has to account for Opensearch Service
+        """
+        For Scoring Script Search, this is the default query. Has to account for Opensearch Service
         Serverless which does not support painless scripting functions so defaults to knn_score.
         """
         if not pre_filter:
@@ -625,13 +630,7 @@ class OpensearchVectorClient:
 
     def _is_aoss_enabled(self, http_auth: Any) -> bool:
         """Check if the service is http_auth is set as `aoss`."""
-        if (
-            http_auth is not None
-            and hasattr(http_auth, "service")
-            and http_auth.service == "aoss"
-        ):
-            return True
-        return False
+        return http_auth is not None and hasattr(http_auth, "service") and http_auth.service == "aoss"
 
     def _is_efficient_filtering_enabled(self) -> bool:
         """Check if kNN with efficient filtering is enabled."""
@@ -704,6 +703,7 @@ class OpensearchVectorClient:
 
         Args:
             doc_id (str): a LlamaIndex `Document` id
+
         """
         search_query = {
             "query": {"term": {"metadata.doc_id.keyword": {"value": doc_id}}}
@@ -718,6 +718,7 @@ class OpensearchVectorClient:
 
         Args:
             doc_id (str): a LlamaIndex `Document` id
+
         """
         search_query = {
             "query": {"term": {"metadata.doc_id.keyword": {"value": doc_id}}}
@@ -732,11 +733,13 @@ class OpensearchVectorClient:
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes.
+        """
+        Deletes nodes.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+
         """
         if not node_ids and not filters:
             return
@@ -756,11 +759,13 @@ class OpensearchVectorClient:
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes.
+        """
+        Deletes nodes.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+
         """
         if not node_ids and not filters:
             return
@@ -941,6 +946,7 @@ class OpensearchVectorStore(BasePydanticVectorStore):
         # initialize vector store
         vector_store = OpensearchVectorStore(client)
         ```
+
     """
 
     stores_text: bool = True
@@ -1015,11 +1021,13 @@ class OpensearchVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes async.
+        """
+        Deletes nodes async.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+
         """
         self._client.delete_nodes(node_ids, filters, **delete_kwargs)
 
@@ -1029,11 +1037,13 @@ class OpensearchVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Async deletes nodes async.
+        """
+        Async deletes nodes async.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+
         """
         await self._client.adelete_nodes(node_ids, filters, **delete_kwargs)
 

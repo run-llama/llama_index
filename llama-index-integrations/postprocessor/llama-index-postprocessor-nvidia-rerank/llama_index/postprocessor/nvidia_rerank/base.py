@@ -91,6 +91,7 @@ class NVIDIARerank(BaseNodePostprocessor):
 
         API Key:
         - The recommended way to provide the API key is through the `NVIDIA_API_KEY` environment variable.
+
         """
         if not base_url or (base_url in KNOWN_URLS and not model):
             model = model or DEFAULT_MODEL
@@ -149,7 +150,8 @@ class NVIDIARerank(BaseNodePostprocessor):
         return self.base_url.rstrip("/")
 
     def _get_headers(self, auth_required: bool = False) -> dict:
-        """Return default headers for HTTP requests.
+        """
+        Return default headers for HTTP requests.
 
         If auth_required is True or the client is hosted, includes an Authorization header.
         """
@@ -217,6 +219,7 @@ class NVIDIARerank(BaseNodePostprocessor):
 
         Raises:
             ValueError: If the model is incompatible with the client.
+
         """
         model = determine_model(model_name)
         available_model_ids = [model.id for model in self.available_models]

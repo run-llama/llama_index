@@ -137,7 +137,8 @@ def get_llm_token_counts(
 
 
 class TokenCountingHandler(PythonicallyPrintingBaseHandler):
-    """Callback handler for counting tokens in LLM and Embedding events.
+    """
+    Callback handler for counting tokens in LLM and Embedding events.
 
     Args:
         tokenizer:
@@ -145,6 +146,7 @@ class TokenCountingHandler(PythonicallyPrintingBaseHandler):
             (see llama_index.core.utils.globals_helper).
         event_starts_to_ignore: List of event types to ignore at the start of a trace.
         event_ends_to_ignore: List of event types to ignore at the end of a trace.
+
     """
 
     def __init__(

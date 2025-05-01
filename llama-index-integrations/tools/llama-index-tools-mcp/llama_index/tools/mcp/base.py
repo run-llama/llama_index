@@ -32,6 +32,7 @@ def create_model_from_json_schema(
 
     Returns:
         A Pydantic model class.
+
     """
     properties = schema.get("properties", {})
     required_fields = set(schema.get("required", []))
@@ -63,6 +64,7 @@ class McpToolSpec(BaseToolSpec):
             - list_tools: List all tools.
             - call_tool: Call a tool.
         allowed_tools: If set, only return tools with the specified names.
+
     """
 
     def __init__(
@@ -79,6 +81,7 @@ class McpToolSpec(BaseToolSpec):
 
         Returns:
             A list of tools, each tool object needs to contain name, description, inputSchema properties.
+
         """
         response = await self.client.list_tools()
         tools = response.tools if hasattr(response, "tools") else []
@@ -102,6 +105,7 @@ class McpToolSpec(BaseToolSpec):
 
         Returns:
             A list of FunctionTool objects.
+
         """
         tools_list = await self.fetch_tools()
         function_tool_list: List[FunctionTool] = []
@@ -127,6 +131,7 @@ class McpToolSpec(BaseToolSpec):
 
         Returns:
             A list of FunctionTool objects.
+
         """
         return patch_sync(self.to_tool_list_async)()
 

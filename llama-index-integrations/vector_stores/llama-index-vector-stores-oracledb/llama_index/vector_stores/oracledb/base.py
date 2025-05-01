@@ -389,6 +389,7 @@ class OraLlamaVS(BasePydanticVectorStore):
 
             with oracledb.connect(user = user, passwd = pwd, dsn = dsn) as connection:
                 print ("Database version:", connection.version)
+
     """
 
     AMPLIFY_RATIO_LE5: ClassVar[int] = 100

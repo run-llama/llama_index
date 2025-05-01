@@ -149,7 +149,7 @@ def test_add_message_at_index(upstash_chat_store: UpstashChatStore):
 
 
 @pytest.mark.skip(reason="Skipping all tests")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_upstash_add_message(upstash_chat_store: UpstashChatStore):
     key = "test_async_add_key"
 
@@ -162,7 +162,7 @@ async def test_async_upstash_add_message(upstash_chat_store: UpstashChatStore):
 
 
 @pytest.mark.skip(reason="Skipping all tests")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_set_and_retrieve_messages(upstash_chat_store: UpstashChatStore):
     messages = [
         ChatMessage(content="First async message", role="user"),
@@ -178,7 +178,7 @@ async def test_async_set_and_retrieve_messages(upstash_chat_store: UpstashChatSt
 
 
 @pytest.mark.skip(reason="Skipping all tests")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_delete_messages(upstash_chat_store: UpstashChatStore):
     messages = [ChatMessage(content="Async message to delete", role="user")]
     key = "test_async_delete_key"
@@ -190,7 +190,7 @@ async def test_async_delete_messages(upstash_chat_store: UpstashChatStore):
 
 
 @pytest.mark.skip(reason="Skipping all tests")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_delete_specific_message(upstash_chat_store: UpstashChatStore):
     messages = [
         ChatMessage(content="Async keep me", role="user"),
@@ -206,7 +206,7 @@ async def test_async_delete_specific_message(upstash_chat_store: UpstashChatStor
 
 
 @pytest.mark.skip(reason="Skipping all tests")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_ttl_on_messages(upstash_chat_store: UpstashChatStore):
     upstash_chat_store.ttl = 3
     key = "async_ttl_test_key"
@@ -220,7 +220,7 @@ async def test_async_ttl_on_messages(upstash_chat_store: UpstashChatStore):
 
 
 @pytest.mark.skip(reason="Skipping all tests")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_add_message_at_index(upstash_chat_store: UpstashChatStore):
     key = "test_async_add_message_index_key"
     # Clear any existing data for the key
@@ -245,7 +245,7 @@ async def test_async_add_message_at_index(upstash_chat_store: UpstashChatStore):
 
 
 @pytest.mark.skip(reason="Skipping all tests")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_get_keys(upstash_chat_store: UpstashChatStore):
     # Add some test data
     await upstash_chat_store.async_set_messages(
@@ -261,7 +261,7 @@ async def test_async_get_keys(upstash_chat_store: UpstashChatStore):
 
 
 @pytest.mark.skip(reason="Skipping all tests")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_delete_last_message(upstash_chat_store: UpstashChatStore):
     key = "test_async_delete_last_message"
     messages = [

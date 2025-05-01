@@ -15,7 +15,8 @@ SCOPES = [
 
 
 class GoogleChatReader(BasePydanticReader):
-    """Google Chat Reader.
+    """
+    Google Chat Reader.
 
     Reads messages from Google Chat
     """
@@ -35,7 +36,8 @@ class GoogleChatReader(BasePydanticReader):
         before: datetime = None,
         order_asc: bool = True,
     ) -> List[Document]:
-        """Loads documents from Google Chat.
+        """
+        Loads documents from Google Chat.
 
         Args:
             space_name (List[str]): List of Space ID names found at top of URL (without the "space/").
@@ -46,6 +48,7 @@ class GoogleChatReader(BasePydanticReader):
 
         Returns:
             List[Document]: List of document objects
+
         """
         from googleapiclient.discovery import build
 
@@ -69,7 +72,8 @@ class GoogleChatReader(BasePydanticReader):
         return res
 
     def _sort_msgs(self, space_name: str, all_msgs: List[Dict[str, Any]]) -> Document:
-        """Sorts messages from space and puts them into Document.
+        """
+        Sorts messages from space and puts them into Document.
 
         Args:
             space_name (str): Space ID
@@ -78,6 +82,7 @@ class GoogleChatReader(BasePydanticReader):
 
         Returns:
             Document: Document with messages
+
         """
         res = []
         id_to_text = self._id_to_text(
@@ -126,13 +131,15 @@ class GoogleChatReader(BasePydanticReader):
         return res
 
     def _id_to_text(self, all_msgs: List[Dict[str, Any]]) -> Dict[str, str]:
-        """Maps message ID to text, used for quote replies.
+        """
+        Maps message ID to text, used for quote replies.
 
         Args:
             all_msgs (List[Dict[str, Any]]): All messages
 
         Returns:
             Dict[str, str]: Map message ID -> message text
+
         """
         res = {}
 
@@ -145,13 +152,15 @@ class GoogleChatReader(BasePydanticReader):
         return res
 
     def _get_thread_msg_cnt(self, all_msgs: List[Dict[str, Any]]) -> Dict[str, int]:
-        """Gets message count for each thread ID.
+        """
+        Gets message count for each thread ID.
 
         Args:
             all_msgs (List[Dict[str, Any]]): All messages
 
         Returns:
             Dict[str, int]: Maps thread ID -> count of messages that were in that thread
+
         """
         # maps thread ID -> count
         threads_dict = {}
@@ -174,7 +183,8 @@ class GoogleChatReader(BasePydanticReader):
         before: datetime = None,
         order_asc: bool = True,
     ) -> List[Dict[str, Any]]:
-        """Puts raw API output of chat messages from one space into a list.
+        """
+        Puts raw API output of chat messages from one space into a list.
 
         Args:
             service (Any): Google Chat API service object
@@ -186,6 +196,7 @@ class GoogleChatReader(BasePydanticReader):
 
         Returns:
             List[Dict[str, Any]]: List of message objects
+
         """
         all_msgs = []
 
@@ -236,7 +247,8 @@ class GoogleChatReader(BasePydanticReader):
         return all_msgs
 
     def _get_credentials(self) -> Any:
-        """Get valid user credentials from storage.
+        """
+        Get valid user credentials from storage.
 
         The file token.json stores the user's access and refresh tokens, and is
         created automatically when the authorization flow completes for the first
@@ -244,6 +256,7 @@ class GoogleChatReader(BasePydanticReader):
 
         Returns:
             Credentials, the obtained credential.
+
         """
         import os
 

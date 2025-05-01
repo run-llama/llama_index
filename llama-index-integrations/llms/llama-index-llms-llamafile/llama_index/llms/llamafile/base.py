@@ -27,7 +27,8 @@ def get_additional_kwargs(
 
 
 class Llamafile(CustomLLM):
-    """llamafile lets you distribute and run large language models with a
+    """
+    llamafile lets you distribute and run large language models with a
     single file.
 
     To get started, see: https://github.com/Mozilla-Ocho/llamafile
@@ -258,7 +259,8 @@ class Llamafile(CustomLLM):
                             )
 
     def _get_streaming_chunk_content(self, chunk: str) -> Dict:
-        """Extract json from chunks received from llamafile API streaming calls.
+        """
+        Extract json from chunks received from llamafile API streaming calls.
 
         When streaming is turned on, llamafile server returns lines like:
 

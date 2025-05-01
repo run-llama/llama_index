@@ -235,7 +235,7 @@ def test_milvus_filter_with_single_quotes():
     assert expr == "(a == 'O\\'Reilly' and b != 'O\\'Reilly')"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestMilvusAsync:
     @pytest_asyncio.fixture
     def vector_store(self, event_loop) -> MilvusVectorStore:

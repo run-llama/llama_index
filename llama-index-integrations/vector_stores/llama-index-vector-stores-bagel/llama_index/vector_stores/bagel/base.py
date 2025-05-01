@@ -30,7 +30,8 @@ def _to_bagel_filter(standard_filters: MetadataFilters) -> dict:
 
 
 class BagelVectorStore(BasePydanticVectorStore):
-    """Vector store for Bagel.
+    """
+    Vector store for Bagel.
 
     Examples:
         `pip install llama-index-vector-stores-bagel`
@@ -51,6 +52,7 @@ class BagelVectorStore(BasePydanticVectorStore):
         collection = client.get_or_create_cluster("testing_embeddings")
         vector_store = BagelVectorStore(collection=collection)
         ```
+
     """
 
     # support for Bagel specific parameters
@@ -66,6 +68,7 @@ class BagelVectorStore(BasePydanticVectorStore):
         Args:
             collection: Bagel collection.
             **kwargs: Additional arguments.
+
         """
         super().__init__()
 
@@ -93,6 +96,7 @@ class BagelVectorStore(BasePydanticVectorStore):
 
         Returns:
             List of document ids.
+
         """
         if not self._collection:
             raise ValueError("collection not set")
@@ -127,6 +131,7 @@ class BagelVectorStore(BasePydanticVectorStore):
         Args:
             ref_doc_id: Reference document id.
             kwargs: Additional arguments.
+
         """
         if not self._collection:
             raise ValueError("collection not set")
@@ -152,6 +157,7 @@ class BagelVectorStore(BasePydanticVectorStore):
 
         Returns:
             Query result.
+
         """
         if not self._collection:
             raise ValueError("collection not set")

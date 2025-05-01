@@ -154,6 +154,7 @@ class NeptuneAnalyticsVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[Dict[str, Any]]: List of dictionaries containing the query results.
+
         """
         try:
             logger.debug(f"query() query: {query} parameters: {json.dumps(params)}")

@@ -232,6 +232,7 @@ try:
 
                 Returns:
                     Sanitized identifier
+
                 """
                 # Remove any dangerous characters from the identifier
                 # Only allow alphanumeric characters and underscores
@@ -252,6 +253,7 @@ try:
 
                 Returns:
                     Properly formatted and sanitized value string
+
                 """
                 if value is None:
                     return "NULL"
@@ -337,6 +339,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
         # Create an instance of DeepLakeVectorStore
         vector_store = DeepLakeVectorStore(dataset_path=dataset_path, overwrite=True)
         ```
+
     """
 
     stores_text: bool = True
@@ -390,6 +393,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
 
         Raises:
             ImportError: Unable to import `deeplake`.
+
         """
         super().__init__(
             dataset_path=dataset_path,
@@ -424,6 +428,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
 
         Returns:
             Any: DeepLake vectorstore dataset.
+
         """
         return self.vectorstore.dataset
 
@@ -522,6 +527,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[str]: List of ids inserted.
+
         """
         embedding = []
         metadata = []
@@ -584,6 +590,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
 
         Returns:
             VectorStoreQueryResult
+
         """
         query_embedding = cast(List[float], query.query_embedding)
         exec_option = kwargs.get("exec_option")

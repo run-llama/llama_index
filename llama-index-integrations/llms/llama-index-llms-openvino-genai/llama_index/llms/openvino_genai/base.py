@@ -31,7 +31,8 @@ logger = logging.getLogger(__name__)
 
 
 class OpenVINOGenAILLM(CustomLLM):
-    r"""OpenVINO GenAI LLM.
+    r"""
+    OpenVINO GenAI LLM.
 
     Examples:
         `pip install llama-index-llms-openvino-genai`
@@ -47,6 +48,7 @@ class OpenVINOGenAILLM(CustomLLM):
         response = llm.complete("What is the meaning of life?")
         print(str(response))
         ```
+
     """
 
     model_path: str = Field(
@@ -118,6 +120,7 @@ class OpenVINOGenAILLM(CustomLLM):
                 for storing decoded text chunks.
                 print_len (int): The length of the printed text
                 to manage incremental decoding.
+
             """
 
             def __init__(self, tokenizer: Any) -> None:
@@ -127,6 +130,7 @@ class OpenVINOGenAILLM(CustomLLM):
                 Args:
                     tokenizer (Tokenizer): The tokenizer to use for encoding
                     and decoding tokens.
+
                 """
                 super().__init__()
                 self.tokenizer = tokenizer
@@ -149,6 +153,7 @@ class OpenVINOGenAILLM(CustomLLM):
 
                 Raises:
                     StopIteration: If there are no more elements in the queue.
+
                 """
                 value = (
                     self.text_queue.get()
@@ -163,6 +168,7 @@ class OpenVINOGenAILLM(CustomLLM):
 
                 Returns:
                     bool: Always returns False in this implementation.
+
                 """
                 return False
 
@@ -172,6 +178,7 @@ class OpenVINOGenAILLM(CustomLLM):
 
                 Args:
                     word (str): The word to put into the queue.
+
                 """
                 self.text_queue.put(word)
 
@@ -185,6 +192,7 @@ class OpenVINOGenAILLM(CustomLLM):
 
                 Returns:
                     bool: True if generation should be stopped, False otherwise.
+
                 """
                 self.tokens_cache.append(token_id)
                 text = self.tokenizer.decode(
@@ -364,7 +372,7 @@ class OpenVINOGenAILLM(CustomLLM):
 
         def generate_and_signal_complete() -> None:
             """
-            generation function for single thread.
+            Generation function for single thread.
             """
             self._streamer.reset()
             self._pipe.generate(full_prompt, self.config, self._streamer, **kwargs)

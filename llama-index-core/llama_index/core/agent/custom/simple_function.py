@@ -28,7 +28,8 @@ from llama_index.core.query_pipeline.components.function import get_parameters
 
 
 class FnAgentWorker(BaseModel, BaseAgentWorker):
-    """Function Agent Worker.
+    """
+    Function Agent Worker.
 
     Define an agent worker over a stateful function (takes in a `state` variable).
     The stateful function expects a tuple of (`AgentChatResponse`, bool) as the response.
@@ -110,7 +111,8 @@ class FnAgentWorker(BaseModel, BaseAgentWorker):
     def _run_step(
         self, state: Dict[str, Any], task: Task, input: Optional[str] = None
     ) -> Tuple[AgentChatResponse, bool]:
-        """Run step.
+        """
+        Run step.
 
         Returns:
             Tuple of (agent_response, is_done)
@@ -127,7 +129,8 @@ class FnAgentWorker(BaseModel, BaseAgentWorker):
     async def _arun_step(
         self, state: Dict[str, Any], task: Task, input: Optional[str] = None
     ) -> Tuple[AgentChatResponse, bool]:
-        """Run step (async).
+        """
+        Run step (async).
 
         Can override this method if you want to run the step asynchronously.
 

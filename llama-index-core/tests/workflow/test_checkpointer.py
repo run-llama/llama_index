@@ -21,7 +21,7 @@ def workflow_checkpointer(workflow: DummyWorkflow):
     return WorkflowCheckpointer(workflow=workflow)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_create_checkpoint(workflow_checkpointer: WorkflowCheckpointer):
     incoming_ev = StartEvent()
     output_ev = OneTestEvent()
@@ -46,7 +46,7 @@ async def test_create_checkpoint(workflow_checkpointer: WorkflowCheckpointer):
     assert ckpt.ctx_state == ctx.to_dict()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_checkpoints_after_successive_runs(
     workflow_checkpointer: WorkflowCheckpointer,
 ):
@@ -67,7 +67,7 @@ async def test_checkpoints_after_successive_runs(
         ]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_filter_checkpoints(workflow_checkpointer: WorkflowCheckpointer):
     num_runs = 2
     for _ in range(num_runs):
@@ -104,7 +104,7 @@ async def test_filter_checkpoints(workflow_checkpointer: WorkflowCheckpointer):
         workflow_checkpointer.filter_checkpoints()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_checkpoints_works_with_new_instances_concurrently(
     workflow_checkpointer: WorkflowCheckpointer,
 ):
@@ -134,7 +134,7 @@ async def test_checkpoints_works_with_new_instances_concurrently(
         ]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_run_from_checkpoint(workflow_checkpointer: WorkflowCheckpointer):
     num_steps = len(workflow_checkpointer.workflow._get_steps())
     num_ckpts_in_single_run = num_steps - 1
@@ -160,7 +160,7 @@ async def test_run_from_checkpoint(workflow_checkpointer: WorkflowCheckpointer):
     assert num_checkpoints == [1, num_ckpts_in_single_run]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch("llama_index.core.workflow.workflow.uuid")
 async def test_checkpointer_with_stepwise(
     mock_uuid: MagicMock,
@@ -215,7 +215,7 @@ async def test_checkpointer_with_stepwise(
     ] == ["end_step"]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch("llama_index.core.workflow.workflow.uuid")
 async def test_disable_and_enable_checkpoints(
     mock_uuid: MagicMock,

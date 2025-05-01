@@ -15,7 +15,8 @@ DEFAULT_TAGS = ["p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "b", "i", "u", "s
 
 
 class HTMLNodeParser(NodeParser):
-    """HTML node parser.
+    """
+    HTML node parser.
 
     Splits a document into Nodes using custom HTML splitting logic.
 

@@ -47,7 +47,8 @@ class OracleEmbeddings(BaseEmbedding):
 
     @staticmethod
     def load_onnx_model(conn: Connection, dir: str, onnx_file: str, model_name: str):
-        """Load an ONNX model to Oracle Database.
+        """
+        Load an ONNX model to Oracle Database.
 
         Args:
             conn: Oracle Connection,
@@ -56,6 +57,7 @@ class OracleEmbeddings(BaseEmbedding):
             model_name: Name of the model.
             Note: user needs to have create procedure,
                   create mining model, create any directory privilege.
+
         """
         try:
             if conn is None or dir is None or onnx_file is None or model_name is None:
@@ -124,13 +126,15 @@ class OracleEmbeddings(BaseEmbedding):
             raise
 
     def _get_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Compute doc embeddings using an OracleEmbeddings.
+        """
+        Compute doc embeddings using an OracleEmbeddings.
 
         Args:
             texts: The list of texts to embed.
 
         Returns:
             List of embeddings, one for each input text.
+
         """
         try:
             import oracledb

@@ -122,7 +122,8 @@ def _build_metadata_filter_fn(
 
 @dataclass
 class SimpleVectorStoreData(DataClassJsonMixin):
-    """Simple Vector Store Data container.
+    """
+    Simple Vector Store Data container.
 
     Args:
         embedding_dict (Optional[dict]): dict mapping node_ids to embeddings.
@@ -137,7 +138,8 @@ class SimpleVectorStoreData(DataClassJsonMixin):
 
 
 class SimpleVectorStore(BasePydanticVectorStore):
-    """Simple Vector Store.
+    """
+    Simple Vector Store.
 
     In this vector store, embeddings are stored within a simple, in-memory dictionary.
 
@@ -145,6 +147,7 @@ class SimpleVectorStore(BasePydanticVectorStore):
         simple_vector_store_data_dict (Optional[dict]): data dict
             containing the embeddings and doc_ids. See SimpleVectorStoreData
             for more details.
+
     """
 
     stores_text: bool = False
@@ -364,7 +367,7 @@ class SimpleVectorStore(BasePydanticVectorStore):
                 embedding_ids=node_ids,
             )
         elif query.mode == MMR_MODE:
-            mmr_threshold = kwargs.get("mmr_threshold", None)
+            mmr_threshold = kwargs.get("mmr_threshold")
             top_similarities, top_ids = get_top_k_mmr_embeddings(
                 query_embedding,
                 embeddings,

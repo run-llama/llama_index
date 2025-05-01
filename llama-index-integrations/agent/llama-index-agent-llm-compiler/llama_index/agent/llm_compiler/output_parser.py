@@ -26,7 +26,8 @@ def default_dependency_rule(idx: int, args: str) -> bool:
 
 
 class LLMCompilerPlanParser(BaseOutputParser):
-    """LLM Compiler plan output parser.
+    """
+    LLM Compiler plan output parser.
 
     Directly adapted from source code: https://github.com/SqueezeAILab/LLMCompiler/blob/main/src/llm_compiler/output_parser.py.
 
@@ -61,7 +62,8 @@ class LLMCompilerPlanParser(BaseOutputParser):
 
 
 class LLMCompilerJoinerParser(BaseOutputParser):
-    """LLM Compiler output parser for the join step.
+    """
+    LLM Compiler output parser for the join step.
 
     Adapted from _parse_joiner_output in
     https://github.com/SqueezeAILab/LLMCompiler/blob/main/src/llm_compiler/llm_compiler.py

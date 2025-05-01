@@ -1,4 +1,5 @@
-"""ReAct agent.
+"""
+ReAct agent.
 
 Simple wrapper around AgentRunner + ReActAgentWorker.
 

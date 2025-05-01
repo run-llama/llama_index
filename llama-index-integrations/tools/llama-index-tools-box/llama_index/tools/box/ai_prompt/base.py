@@ -35,6 +35,7 @@ class BoxAIPromptToolSpec(BaseToolSpec):
 
     Returns:
         Document: A Document object containing the generated AI prompt.
+
     """
 
     spec_functions = ["ai_prompt"]
@@ -47,6 +48,7 @@ class BoxAIPromptToolSpec(BaseToolSpec):
 
         Args:
             box_client (BoxClient): The BoxClient instance to use for interacting with the Box API.
+
         """
         self._box_client = add_extra_header_to_box_client(box_client)
 
@@ -67,6 +69,7 @@ class BoxAIPromptToolSpec(BaseToolSpec):
 
         Returns:
             Document: A Document object containing the generated AI prompt and file metadata.
+
         """
         # Connect to Box
         box_check_connection(self._box_client)

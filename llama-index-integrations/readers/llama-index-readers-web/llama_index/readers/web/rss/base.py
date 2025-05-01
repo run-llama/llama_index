@@ -10,7 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 class RssReader(BasePydanticReader):
-    """RSS reader.
+    """
+    RSS reader.
 
     Reads content from an RSS feed.
 
@@ -23,14 +24,15 @@ class RssReader(BasePydanticReader):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         # https://pythonhosted.org/feedparser/http-useragent.html
-        self.user_agent = kwargs.get("user_agent", None)
+        self.user_agent = kwargs.get("user_agent")
 
     @classmethod
     def class_name(cls) -> str:
         return "RssReader"
 
     def load_data(self, urls: List[str]) -> List[Document]:
-        """Load data from RSS feeds.
+        """
+        Load data from RSS feeds.
 
         Args:
             urls (List[str]): List of RSS URLs to load.

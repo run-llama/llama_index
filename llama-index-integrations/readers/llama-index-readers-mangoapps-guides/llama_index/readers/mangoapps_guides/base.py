@@ -9,21 +9,25 @@ from llama_index.core.schema import Document
 
 
 class MangoppsGuidesReader(BaseReader):
-    """MangoppsGuides reader. Reads data from a MangoppsGuides workspace.
+    """
+    MangoppsGuides reader. Reads data from a MangoppsGuides workspace.
 
     Args:
         domain_url (str): MangoppsGuides domain url
         limir (int): depth to crawl
+
     """
 
     def __init__(self) -> None:
         """Initialize MangoppsGuides reader."""
 
     def load_data(self, domain_url: str, limit: int) -> List[Document]:
-        """Load data from the workspace.
+        """
+        Load data from the workspace.
 
         Returns:
             List[Document]: List of documents.
+
         """
         import requests
         from bs4 import BeautifulSoup

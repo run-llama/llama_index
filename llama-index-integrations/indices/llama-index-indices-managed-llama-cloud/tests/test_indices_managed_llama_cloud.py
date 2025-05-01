@@ -104,7 +104,7 @@ def test_conflicting_index_identifiers():
     not base_url or not api_key, reason="No platform base url or api key set"
 )
 @pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_resolve_index_with_id(remote_file):
     """Test that we can instantiate an index with a given id."""
     client = LlamaCloud(token=api_key, base_url=base_url)
@@ -128,7 +128,7 @@ def test_resolve_index_with_id(remote_file):
     not base_url or not api_key, reason="No platform base url or api key set"
 )
 @pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_resolve_index_with_name(remote_file):
     """Test that we can instantiate an index with a given name."""
     client = LlamaCloud(token=api_key, base_url=base_url)
@@ -154,7 +154,7 @@ def test_resolve_index_with_name(remote_file):
     not base_url or not api_key, reason="No platform base url or api key set"
 )
 @pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_upload_file():
     pipeline = _setup_empty_index(LlamaCloud(token=api_key, base_url=base_url))
 
@@ -192,7 +192,7 @@ def test_upload_file():
     not base_url or not api_key, reason="No platform base url or api key set"
 )
 @pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_upload_file_from_url(remote_file):
     pipeline = _setup_empty_index(LlamaCloud(token=api_key, base_url=base_url))
 
@@ -222,7 +222,7 @@ def test_upload_file_from_url(remote_file):
     not base_url or not api_key, reason="No platform base url or api key set"
 )
 @pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_index_from_documents():
     documents = [
         Document(text="Hello world.", doc_id="1", metadata={"source": "test"}),
@@ -286,7 +286,7 @@ def test_index_from_documents():
     not base_url or not api_key, reason="No platform base url or api key set"
 )
 @pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_image_retrieval() -> None:
     pipeline = _setup_empty_index(
         LlamaCloud(token=api_key, base_url=base_url), multi_modal_index=True
@@ -319,7 +319,7 @@ def test_image_retrieval() -> None:
     not base_url or not api_key, reason="No platform base url or api key set"
 )
 @pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_composite_retriever():
     """Test the LlamaCloudCompositeRetriever with multiple indices."""
     # Create first index with documents

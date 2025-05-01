@@ -157,7 +157,8 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
         return chunks
 
     def _split(self, text: str, chunk_size: int) -> List[str]:
-        """Break text into splits that are smaller than chunk size.
+        """
+        Break text into splits that are smaller than chunk size.
 
         The order of splitting is:
         1. split by separator
@@ -185,7 +186,8 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
         return new_splits
 
     def _merge(self, splits: List[str], chunk_size: int) -> List[str]:
-        """Merge splits into chunks.
+        """
+        Merge splits into chunks.
 
         The high-level idea is to keep adding splits to a chunk until we
         exceed the chunk size, then we start a new chunk with overlap.
