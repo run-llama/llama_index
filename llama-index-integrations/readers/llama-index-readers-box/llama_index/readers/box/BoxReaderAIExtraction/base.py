@@ -33,6 +33,7 @@ class BoxReaderAIExtract(BoxReaderBase):
     Attributes:
         _box_client (BoxClient): An authenticated Box client object used
             for interacting with the Box API.
+
     """
 
     _box_client: BoxClient
@@ -75,6 +76,7 @@ class BoxReaderAIExtract(BoxReaderBase):
         Returns:
             List[Document]: A list of Document objects containing the extracted
                 data and file metadata.
+
         """
         # check if the box client is authenticated
         box_check_connection(self._box_client)
@@ -119,5 +121,6 @@ class BoxReaderAIExtract(BoxReaderBase):
 
         Returns:
             List[Document]: A list of documents loaded from the resource.
+
         """
         return self.load_data(file_ids=[box_file_id], ai_prompt=ai_prompt)

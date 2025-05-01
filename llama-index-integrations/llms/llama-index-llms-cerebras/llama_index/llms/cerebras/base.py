@@ -22,6 +22,7 @@ class Cerebras(OpenAILike):
 
         print(response)
         ```
+
     """
 
     def __init__(

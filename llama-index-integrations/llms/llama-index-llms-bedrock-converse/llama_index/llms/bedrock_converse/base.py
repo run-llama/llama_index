@@ -73,6 +73,7 @@ class BedrockConverse(FunctionCallingLLM):
         resp = llm.complete("Paul Graham is ")
         print(resp)
         ```
+
     """
 
     model: str = Field(description="The modelId of the Bedrock model to use.")

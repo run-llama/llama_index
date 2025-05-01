@@ -173,7 +173,7 @@ def test_run_step_returns_message_if_function_not_found(
     assert output_chat_response.sources[0] == NONEXISTENT_TOOL_OUTPUT
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_arun_step_returns_message_if_function_not_found(
     missing_function_agent_worker: FunctionCallingAgentWorker,
 ) -> None:
@@ -188,7 +188,7 @@ async def test_arun_step_returns_message_if_function_not_found(
     assert output_chat_response.sources[0] == NONEXISTENT_TOOL_OUTPUT
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("method", ["run_step", "arun_step"])
 async def test_run_step_returns_correct_sources_history(
     method: str,

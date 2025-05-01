@@ -565,7 +565,8 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         timeout: Optional[float] = None,
         verbose: bool = False,
     ) -> "AgentWorkflow":
-        """Initializes an AgentWorkflow from a list of tools or functions.
+        """
+        Initializes an AgentWorkflow from a list of tools or functions.
 
         The workflow will be initialized with a single agent that uses the provided tools or functions.
 

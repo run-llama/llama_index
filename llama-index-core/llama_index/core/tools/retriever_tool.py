@@ -24,7 +24,8 @@ against a knowledge base and retrieving a set of relevant documents.
 
 
 class RetrieverTool(AsyncBaseTool):
-    """Retriever tool.
+    """
+    Retriever tool.
 
     A tool making use of a retriever.
 
@@ -33,6 +34,7 @@ class RetrieverTool(AsyncBaseTool):
         metadata (ToolMetadata): The associated metadata of the query engine.
         node_postprocessors (Optional[List[BaseNodePostprocessor]]): A list of
             node postprocessors.
+
     """
 
     def __init__(

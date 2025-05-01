@@ -13,19 +13,22 @@ logger = logging.getLogger(__name__)
 
 
 def load_image_urls(image_urls: List[str]) -> List[ImageDocument]:
-    """Convert a list of image URLs into ImageDocument objects.
+    """
+    Convert a list of image URLs into ImageDocument objects.
 
     Args:
         image_urls (List[str]): List of strings containing valid image URLs.
 
     Returns:
         List[ImageDocument]: List of ImageDocument objects.
+
     """
     return [ImageDocument(image_url=url) for url in image_urls]
 
 
 def encode_image(image_path: str) -> str:
-    """Create base64 representation of an image.
+    """
+    Create base64 representation of an image.
 
     Args:
         image_path (str): Path to the image file
@@ -36,6 +39,7 @@ def encode_image(image_path: str) -> str:
     Raises:
         FileNotFoundError: If the `image_path` doesn't exist.
         IOError: If there's an error reading the file.
+
     """
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode("utf-8")
@@ -44,7 +48,8 @@ def encode_image(image_path: str) -> str:
 def image_documents_to_base64(
     image_documents: Sequence[ImageDocument],
 ) -> List[str]:
-    """Convert ImageDocument objects to base64-encoded strings.
+    """
+    Convert ImageDocument objects to base64-encoded strings.
 
     Args:
         image_documents (Sequence[ImageDocument]: Sequence of
@@ -52,6 +57,7 @@ def image_documents_to_base64(
 
     Returns:
         List[str]: List of base64-encoded image strings
+
     """
     image_encodings = []
 
@@ -81,7 +87,8 @@ def image_documents_to_base64(
 
 
 def infer_image_mimetype_from_file_path(image_file_path: str) -> str:
-    """Infer the MIME of an image file based on its file extension.
+    """
+    Infer the MIME of an image file based on its file extension.
 
     Currently only supports the following types of images:
         * image/jpeg
@@ -95,6 +102,7 @@ def infer_image_mimetype_from_file_path(image_file_path: str) -> str:
     Returns:
         str: MIME type of the image: image/jpeg, image/png, image/gif, or image/webp.
             Defaults to `image/jpeg`.
+
     """
     # Get the file extension
     file_extension = image_file_path.split(".")[-1].lower()
@@ -114,7 +122,8 @@ def infer_image_mimetype_from_file_path(image_file_path: str) -> str:
 
 
 def infer_image_mimetype_from_base64(base64_string: str) -> Optional[str]:
-    """Infer the MIME of an image from the base64 encoding.
+    """
+    Infer the MIME of an image from the base64 encoding.
 
     Args:
         base64_string (str): Base64-encoded string of the image.
@@ -122,6 +131,7 @@ def infer_image_mimetype_from_base64(base64_string: str) -> Optional[str]:
     Returns:
         Optional[str]: MIME type of the image: image/jpeg, image/png, image/gif, or image/webp.
           `None` if the MIME type cannot be inferred.
+
     """
     # Decode the base64 string
     decoded_data = base64.b64decode(base64_string)
@@ -136,13 +146,15 @@ def infer_image_mimetype_from_base64(base64_string: str) -> Optional[str]:
 def set_base64_and_mimetype_for_image_docs(
     image_documents: Sequence[ImageDocument],
 ) -> Sequence[ImageDocument]:
-    """Set the base64 and mimetype fields for the image documents.
+    """
+    Set the base64 and mimetype fields for the image documents.
 
     Args:
         image_documents (Sequence[ImageDocument]): Sequence of ImageDocument objects.
 
     Returns:
         Sequence[ImageDocument]: ImageDocuments with base64 and detected mimetypes set.
+
     """
     base64_strings = image_documents_to_base64(image_documents)
     for image_doc, base64_str in zip(image_documents, base64_strings):

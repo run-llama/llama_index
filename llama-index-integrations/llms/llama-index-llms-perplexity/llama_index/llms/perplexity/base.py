@@ -47,6 +47,7 @@ class Perplexity(LLM):
         response = llm.chat(messages)
         print(str(response))
         ```
+
     """
 
     model: str = Field(

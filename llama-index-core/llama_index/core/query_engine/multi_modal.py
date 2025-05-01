@@ -30,7 +30,8 @@ def _get_image_and_text_nodes(
 
 
 class SimpleMultiModalQueryEngine(BaseQueryEngine):
-    """Simple Multi Modal Retriever query engine.
+    """
+    Simple Multi Modal Retriever query engine.
 
     Assumes that retrieved text context fits within context window of LLM, along with images.
 
@@ -41,6 +42,7 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
         image_qa_template (Optional[BasePromptTemplate]): Image QA Prompt Template.
         node_postprocessors (Optional[List[BaseNodePostprocessor]]): Node Postprocessors.
         callback_manager (Optional[CallbackManager]): A callback manager.
+
     """
 
     def __init__(

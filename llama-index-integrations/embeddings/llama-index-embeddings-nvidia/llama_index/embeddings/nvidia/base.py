@@ -82,7 +82,8 @@ class NVIDIAEmbedding(BaseEmbedding):
         This constructor initializes an instance of the NVIDIAEmbedding class, which provides
         an interface for embedding text using NVIDIA's NIM service.
 
-        Parameters:
+        Parameters
+        ----------
         - model (str, optional): The name of the model to use for embeddings.
         - timeout (float, optional): The timeout for requests to the NIM service, in seconds. Defaults to 120.
         - max_retries (int, optional): The maximum number of retries for requests to the NIM service. Defaults to 5.
@@ -98,6 +99,7 @@ class NVIDIAEmbedding(BaseEmbedding):
 
         Note:
         - Switch from a hosted NIM (default) to an on-premises NIM using the `base_url` parameter. An API key is required for hosted NIM.
+
         """
         super().__init__(
             model=model,
@@ -181,6 +183,7 @@ class NVIDIAEmbedding(BaseEmbedding):
 
         Raises:
             ValueError: If the model is incompatible with the client.
+
         """
         model = determine_model(model_name)
         if self._is_hosted:

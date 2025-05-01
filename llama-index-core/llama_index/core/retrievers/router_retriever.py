@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 class RouterRetriever(BaseRetriever):
-    """Router retriever.
+    """
+    Router retriever.
 
     Selects one (or multiple) out of several candidate retrievers to execute a query.
 

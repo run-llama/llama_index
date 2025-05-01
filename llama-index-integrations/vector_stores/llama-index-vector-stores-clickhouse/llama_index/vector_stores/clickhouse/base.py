@@ -73,6 +73,7 @@ class ClickHouseSettings:
         batch_size (int): The size of documents to insert.
         index_params (dict, optional): Index build parameter.
         search_params (dict, optional): Index search parameters for ClickHouse query.
+
     """
 
     def __init__(
@@ -156,6 +157,7 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
 
         vector_store = ClickHouseVectorStore(clickhouse_client=client)
         ```
+
     """
 
     stores_text: bool = True
@@ -387,6 +389,7 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
+
         """
         if not nodes:
             return []
@@ -405,6 +408,7 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
+
         """
         query = f"DELETE FROM {self._config.database}.{self._config.table} WHERE doc_id = %(ref_doc_id)s"
         self._client.command(query, parameters={"ref_doc_id": ref_doc_id})
@@ -424,6 +428,7 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
         Args:
             query (VectorStoreQuery): query
             where (str): additional where filter
+
         """
         query_embedding = cast(List[float], query.query_embedding)
         where_str = where

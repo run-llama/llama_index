@@ -71,6 +71,7 @@ class GithubRepositoryReader(BaseReader):
         Attributes:
             - EXCLUDE: Exclude the files in the directories or with the extensions.
             - INCLUDE: Include only the files in the directories or with the extensions.
+
         """
 
         EXCLUDE = enum.auto()
@@ -118,6 +119,7 @@ class GithubRepositoryReader(BaseReader):
         Raises:
             - `ValueError`: If the github_token is not provided and
                 the GITHUB_TOKEN environment variable is not set.
+
         """
         super().__init__()
 

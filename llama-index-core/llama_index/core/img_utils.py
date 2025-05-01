@@ -8,7 +8,8 @@ from PIL.ImageFile import ImageFile
 
 
 def img_2_b64(image: ImageFile, format: str = "JPEG") -> str:
-    """Convert a PIL.Image to a base64 encoded image string.
+    """
+    Convert a PIL.Image to a base64 encoded image string.
 
     Args:
         image (ImageFile): The PIL Image object to be converted.
@@ -16,6 +17,7 @@ def img_2_b64(image: ImageFile, format: str = "JPEG") -> str:
 
     Returns:
         str: A base64 encoded string representation of the image.
+
     """
     buff = BytesIO()
     image.save(buff, format=format)
@@ -23,13 +25,15 @@ def img_2_b64(image: ImageFile, format: str = "JPEG") -> str:
 
 
 def b64_2_img(data: str) -> ImageFile:
-    """Convert base64 encoded image string to a PIL.Image.
+    """
+    Convert base64 encoded image string to a PIL.Image.
 
     Args:
         data (str): The base64 encoded image string.
 
     Returns:
         ImageFile: A PIL Image object.
+
     """
     buff = BytesIO(base64.b64decode(data))
     return cast(ImageFile, Image.open(buff))

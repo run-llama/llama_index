@@ -84,7 +84,8 @@ class MyCustomAgentComponent(CustomAgentComponent):
 
 
 def test_qp_agent_fn() -> None:
-    """Test query pipeline agent.
+    """
+    Test query pipeline agent.
 
     Implement via function components.
 
@@ -110,7 +111,7 @@ def test_qp_agent_fn() -> None:
     assert step_output.is_last is True
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_qp_agent_async_fn() -> None:
     """
     Test query pipeline agent with async function components.
@@ -137,7 +138,8 @@ async def test_qp_agent_async_fn() -> None:
 
 
 def test_qp_agent_custom() -> None:
-    """Test query pipeline agent.
+    """
+    Test query pipeline agent.
     Implement via `AgentCustomQueryComponent` subclass.
 
     """
@@ -163,7 +165,8 @@ def test_qp_agent_custom() -> None:
 
 
 def test_qp_agent_stateful_fn() -> None:
-    """Test query pipeline agent with stateful components.
+    """
+    Test query pipeline agent with stateful components.
 
     The old flows of using `AgentInputComponent` and `AgentFnComponent` are deprecated.
 

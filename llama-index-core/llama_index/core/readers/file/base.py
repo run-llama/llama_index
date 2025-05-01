@@ -44,6 +44,7 @@ class FileSystemReaderMixin(ABC):
 
         Returns:
             bytes: File content.
+
         """
 
     async def aread_file_content(
@@ -57,6 +58,7 @@ class FileSystemReaderMixin(ABC):
 
         Returns:
             bytes: File content.
+
         """
         return self.read_file_content(input_file, **kwargs)
 
@@ -124,6 +126,7 @@ def _format_file_timestamp(
     Returns:
         str: formatted timestamp
         None: if the timestamp passed was None
+
     """
     if timestamp is None:
         return None
@@ -148,6 +151,7 @@ def default_file_metadata_func(
 
     Args:
         file_path: str: file path in str
+
     """
     fs = fs or get_default_fs()
     stat_result = fs.stat(file_path)
@@ -235,6 +239,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         fs (Optional[fsspec.AbstractFileSystem]): File system to use. Defaults
         to using the local file system. Can be changed to use any remote file system
         exposed via the fsspec interface.
+
     """
 
     supported_suffix_fn: Callable = _try_loading_included_file_formats
@@ -391,6 +396,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
         Args:
             documents (List[Document]): List of documents.
+
         """
         for doc in documents:
             # Keep only metadata['file_path'] in both embedding and llm content
@@ -545,6 +551,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
         Returns:
             List[Document]: loaded documents
+
         """
         # TODO: make this less redundant
         default_file_reader_cls = SimpleDirectoryReader.supported_suffix_fn()
@@ -691,6 +698,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
         Returns:
             List[Document]: A list of documents.
+
         """
         documents = []
 
@@ -760,6 +768,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
         Returns:
             List[Document]: A list of documents.
+
         """
         files_to_process = self.input_files
         fs = fs or self.fs
@@ -802,6 +811,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
         Returns:
             Generator[List[Document]]: A list of documents.
+
         """
         files_to_process = self.input_files
 
