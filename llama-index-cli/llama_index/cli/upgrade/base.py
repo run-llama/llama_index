@@ -188,11 +188,10 @@ def _cell_installs_llama_hub(cell) -> bool:
 
     if len(lines) > 1:
         return False
-    if cell["cell_type"] == "code" and any(
+
+    return cell["cell_type"] == "code" and any(
         el in lines[0] for el in llama_hub_partial_statements
-    ):
-        return True
-    return False
+    )
 
 
 def _format_new_installs(new_installs):
