@@ -421,6 +421,7 @@ class BasePydanticVectorStore(BaseComponent, ABC):
     @abstractmethod
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Query vector store."""
+        pass
 
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any

@@ -3,11 +3,11 @@
 An index that is built on top of an existing vector store.
 """
 
-import asyncio
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Pattern
 
 import fsspec
+import re
 from redis import Redis
 from redis.asyncio import Redis as RedisAsync
 from redis.exceptions import RedisError
@@ -33,6 +33,7 @@ from llama_index.core.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
+    FilterOperator
 )
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
@@ -50,6 +51,29 @@ from llama_index.vector_stores.redis.utils import REDIS_LLAMA_FIELD_SPEC
 
 logger = logging.getLogger(__name__)
 NO_DOCS = "No docs found on index"
+
+
+class TokenEscaper:
+    """
+    Escape punctuation within an input string. Taken from RedisOM Python.
+    """
+
+    # Characters that RediSearch requires us to escape during queries.
+    # Source: https://redis.io/docs/stack/search/reference/escaping/#the-rules-of-text-field-tokenization
+    DEFAULT_ESCAPED_CHARS = r"[,.<>{}\[\]\\\"\':;!@#$%^&*()\-+=~\/ ]"
+
+    def __init__(self, escape_chars_re: Optional[Pattern] = None):
+        if escape_chars_re:
+            self.escaped_chars_re = escape_chars_re
+        else:
+            self.escaped_chars_re = re.compile(self.DEFAULT_ESCAPED_CHARS)
+
+    def escape(self, value: str) -> str:
+        def escape_symbol(match: re.Match) -> str:
+            value = match.group(0)
+            return f"\\{value}"
+
+        return self.escaped_chars_re.sub(escape_symbol, value)
 
 
 class RedisVectorStore(BasePydanticVectorStore):
@@ -107,8 +131,10 @@ class RedisVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
     stores_node: bool = True
     flat_metadata: bool = False
+    created_async_index: bool = False
 
     _index: SearchIndex = PrivateAttr()
+    _async_index: AsyncSearchIndex = PrivateAttr()
     _tokenizer: Any = PrivateAttr()
     _redis_client: Any = PrivateAttr()
     _redis_client_async: Any = PrivateAttr()
@@ -149,8 +175,18 @@ class RedisVectorStore(BasePydanticVectorStore):
         self._index = SearchIndex(
             schema=schema, redis_client=redis_client, redis_url=redis_url
         )
-        self.create_index()
-        self.created_async_index = False
+        if redis_client or redis_url:
+            self._redis_client = redis_client
+            self.create_index()
+        elif redis_client_async:
+            self._redis_client_async = redis_client_async
+            self._async_index = AsyncSearchIndex(
+                schema=schema, redis_client=redis_client_async
+            )
+        else:
+            raise Exception(
+                "Either redis_client, redis_url, or redis_client_async need to be defined"
+            )
 
     def _flag_old_kwargs(self, **kwargs):
         old_kwargs = [
@@ -285,12 +321,16 @@ class RedisVectorStore(BasePydanticVectorStore):
             data.append({**record, **additional_metadata})
 
         # Load nodes to Redis
-        keys = await self.async_index.load(
+        for mapping in data:
+            mapping.pop(
+                "sub_dicts", None
+            )  # Remove if present from VectorMemory to avoid serialization issues
+        keys = await self._async_index.load(
             data, id_field=NODE_ID_FIELD_NAME, **add_kwargs
         )
-        logger.info(f"Added {len(keys)} documents to index {self._index.name}")
+        logger.info(f"Added {len(keys)} documents to index {self._async_index.name}")
         return [
-            key.strip(self.async_index.prefix + self.async_index.key_separator)
+            key.strip(self._async_index.prefix + self._async_index.key_separator)
             for key in keys
         ]
 
@@ -345,13 +385,15 @@ class RedisVectorStore(BasePydanticVectorStore):
 
     def delete_nodes(self, node_ids: list):
         for node_id in node_ids:
-            self._redis_client.delete("_".join([self._prefix, str(node_id)]))
+            self._redis_client.delete(
+                "_".join([self._async_index.prefix, str(node_id)])
+            )
 
     async def async_delete_nodes(self, node_ids: list):
         await self.async_index_exists()
         for node_id in node_ids:
             await self._redis_client_async.delete(
-                "_".join([self._prefix, str(node_id)])
+                "_".join([self._async_index.prefix, str(node_id)])
             )
 
     async def async_delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -376,10 +418,10 @@ class RedisVectorStore(BasePydanticVectorStore):
         async with self._index.client.pipeline(transaction=False) as pipe:
             for doc in docs_to_delete.docs:
                 await pipe.delete(doc.id)
-            res = await pipe.execute()
+            await pipe.execute()
 
         logger.info(
-            f"Deleted {len(docs_to_delete.docs)} documents from index {self._index.name}"
+            f"Deleted {len(docs_to_delete.docs)} documents from index {self._async_index.name}"
         )
 
     def delete(self, ref_doc_id: str) -> None:
@@ -403,7 +445,7 @@ class RedisVectorStore(BasePydanticVectorStore):
         with self._index.client.pipeline(transaction=False) as pipe:
             for doc in docs_to_delete.docs:
                 pipe.delete(doc.id)
-            res = pipe.execute()
+            pipe.execute()
 
         logger.info(
             f"Deleted {len(docs_to_delete.docs)} documents from index {self._index.name}"
@@ -487,9 +529,47 @@ class RedisVectorStore(BasePydanticVectorStore):
                         filter_expression = filter_expression | redis_filter
         return filter_expression
 
+    def _to_redis_filters(self, metadata_filters: MetadataFilters) -> str:
+        tokenizer = TokenEscaper()
+
+        filter_strings = []
+        filter_in_strings = {}
+        for filter in metadata_filters.legacy_filters():
+            # adds quotes around the value to ensure that the filter is treated as an
+            #   exact
+            field = self._index.schema.fields.get(filter.key)
+            if not field:
+                logger.warning(
+                    f"{filter.key} field was not included as part of the index schema, and thus cannot be used as a filter condition."
+                )
+                continue
+            if filter.operator == FilterOperator.IN:
+                if len(filter.value.split()) > 1:
+                    filter.value = f'"{filter.value}"'
+                if filter.key in filter_in_strings:
+                    filter_in_strings[filter.key].append(filter.value)
+                else:
+                    filter_in_strings[filter.key] = [filter.value]
+            else:
+                filter_string = (
+                    f"@{filter.key}:{{{tokenizer.escape(str(filter.value))}}}"
+                )
+                filter_strings.append(filter_string)
+        for key, value_list in filter_in_strings.items():
+            values = "|".join(value_list)
+            filter_string = f"@{key}:{{{tokenizer.escape(str(values))}}}"
+            filter_strings.append(filter_string)
+        # A space can be used for the AND operator: https://redis.io/docs/latest/develop/interact/search-and-query/query/combined/
+        filter_strings_base = [f"({filter_string})" for filter_string in filter_strings]
+        joined_filter_strings = " ".join(filter_strings_base)
+        print("Using filter string: ", joined_filter_strings)
+        return f"({joined_filter_strings})"
+
     def _to_redis_query(self, query: VectorStoreQuery) -> VectorQuery:
         """Creates a RedisQuery from a VectorStoreQuery."""
-        filter_expression = self._create_redis_filter_expression(query.filters)
+        # TODO: Figure out why create_redis_filter_expression doesn't handle IN properly
+        # filter_expression = self._create_redis_filter_expression(query.filters)
+        filter_expression = self._to_redis_filters(query.filters)
         return_fields = self._return_fields.copy()
         return VectorQuery(
             vector=query.query_embedding,
@@ -587,7 +667,6 @@ class RedisVectorStore(BasePydanticVectorStore):
 
         redis_query = self._to_redis_query(query)
         logger.info(f"Querying index {self._index.name} with query {redis_query!s}")
-
         try:
             results = await self._async_index.query(redis_query)
         except RedisTimeoutError as e:
@@ -597,9 +676,6 @@ class RedisVectorStore(BasePydanticVectorStore):
             logger.error(f"Error querying {self._index.name}: {e}")
             raise
 
-        return self._process_query_results(results, redis_query)
-
-    def _query_post_processing(self, results) -> VectorStoreQueryResult:
         return self._process_query_results(results, redis_query)
 
     def persist(

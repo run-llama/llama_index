@@ -37,7 +37,9 @@ def async_to_sync(func_async: AsyncCallable) -> Callable:
 CallbackReturn = Optional[Union[ToolOutput, str]]
 
 
-def create_tool_metadata(fn, name, description, return_direct: bool, fn_schema=None):
+def create_tool_metadata(
+    fn, name, description, return_direct: bool = False, fn_schema=None
+):
     name = name or fn.__name__
     docstring = fn.__doc__
     description = description or f"{name}{inspect.signature(fn)}\n{docstring}"

@@ -38,7 +38,7 @@ class TokenCountingEvent:
 
 
 def get_tokens_from_response(
-    response: Union["CompletionResponse", "ChatResponse"]
+    response: Union["CompletionResponse", "ChatResponse"],
 ) -> Tuple[int, int]:
     """Get the token counts from a raw response."""
     raw_response = response.raw
@@ -107,7 +107,7 @@ def get_llm_token_counts(
         messages_str = "\n".join([str(x) for x in messages])
 
         response = payload.get(EventPayload.RESPONSE)
-        model = response.raw.get("model")
+        model = response.raw.model
         response_str = str(response)
 
         if response:
@@ -127,7 +127,7 @@ def get_llm_token_counts(
             prompt_token_count=prompt_tokens,
             completion=response_str,
             completion_token_count=completion_tokens,
-            model=model
+            model=model,
         )
     else:
         return TokenCountingEvent(

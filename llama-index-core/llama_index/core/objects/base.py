@@ -82,12 +82,13 @@ class ObjectRetriever(ChainableMixin, Generic[OT]):
         if isinstance(str_or_query_bundle, str):
             query_bundle = QueryBundle(query_str=str_or_query_bundle)
         else:
-            query_bundle = str_or_query_bundle        
+            query_bundle = str_or_query_bundle
         nodes = await self._retriever.aretrieve(query_bundle)
         for node_postprocessor in self._node_postprocessors:
             nodes = node_postprocessor.postprocess_nodes(
                 nodes, query_bundle=query_bundle
-            )        
+            )
+        retrieved_nodes = []
         for node in nodes:
             table_nm = node.node.metadata.get("name")
             logger.info("Node table name: %s", table_nm)
@@ -231,7 +232,7 @@ class ObjectIndex(Generic[OT]):
             self._object_node_mapping.persist(
                 persist_dir=persist_dir, obj_node_mapping_fname=obj_node_mapping_fname
             )
-        except (NotImplementedError, pickle.PickleError) as err:
+        except (NotImplementedError, pickle.PickleError):
             warnings.warn(
                 (
                     "Unable to persist ObjectNodeMapping. You will need to "
