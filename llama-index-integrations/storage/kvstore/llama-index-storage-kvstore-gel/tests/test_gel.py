@@ -1,4 +1,5 @@
 import subprocess
+import os
 from typing import Generator
 
 import pytest
@@ -12,14 +13,14 @@ try:
 except ImportError:
     no_packages = True
 
-try:
-    subprocess.run(["gel", "project", "init", "--non-interactive"], check=True)
-except subprocess.CalledProcessError as e:
-    print(e)
-
-
 # Skip tests in CICD
 skip_in_cicd = os.environ.get("CI") is not None
+
+try:
+    if not skip_in_cicd:
+        subprocess.run(["gel", "project", "init", "--non-interactive"], check=True)
+except subprocess.CalledProcessError as e:
+    print(e)
 
 
 @pytest.fixture()

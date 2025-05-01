@@ -1,23 +1,24 @@
 import subprocess
-from typing import Generator
 import pytest
 import pytest_asyncio
+import os
+from typing import Generator
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store.base import BaseChatStore
 from llama_index.storage.chat_store.gel import GelChatStore
 
+skip_in_cicd = os.environ.get("CI") is not None
+
+try:
+    if not skip_in_cicd:
+        subprocess.run(["gel", "project", "init", "--non-interactive"], check=True)
+except subprocess.CalledProcessError as e:
+    print(e)
 
 def test_class():
     names_of_base_classes = [b.__name__ for b in GelChatStore.__mro__]
     assert BaseChatStore.__name__ in names_of_base_classes
 
-
-try:
-    subprocess.run(["gel", "project", "init", "--non-interactive"], check=True)
-except subprocess.CalledProcessError as e:
-    print(e)
-
-skip_in_cicd = os.environ.get("CI") is not None
 
 @pytest.fixture()
 def gel_chat_store() -> Generator[GelChatStore, None, None]:

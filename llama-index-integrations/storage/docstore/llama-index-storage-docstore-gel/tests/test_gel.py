@@ -1,6 +1,7 @@
-from typing import List, Generator
 import subprocess
 import pytest
+import os
+from typing import List, Generator
 from llama_index.core.schema import BaseNode, Document
 from llama_index.storage.docstore.gel import (
     GelDocumentStore,
@@ -13,13 +14,13 @@ try:
     no_packages = False
 except ImportError:
     no_packages = True
-try:
-    subprocess.run(["gel", "project", "init", "--non-interactive"], check=True)
-except subprocess.CalledProcessError as e:
-    print(e)
-
 
 skip_in_cicd = os.environ.get("CI") is not None
+try:
+    if not skip_in_cicd:
+        subprocess.run(["gel", "project", "init", "--non-interactive"], check=True)
+except subprocess.CalledProcessError as e:
+    print(e)
 
 
 @pytest.fixture()
