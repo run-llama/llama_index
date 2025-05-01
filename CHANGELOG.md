@@ -1,5 +1,97 @@
 # ChangeLog
 
+## [2025-04-30]
+
+- Migrate repo from poetry to uv (#18524)
+
+### `llama-index-core` [0.12.34]
+
+- fix: `aextract_table_summaries` cause unwanted output when showprogress is False (#18528)
+
+### `llama-index-embeddings-cohere` [0.4.1]
+
+- Fix Cohere Embedding Multiprocessing with Custom Endpoint (#18551)
+
+### `llama-index-embeddings-openvino-genai` [0.5.0]
+
+- add openvino genai embedding (#18569)
+
+### `llama-index-llms-bedrock-converse` [0.5.0]
+
+- Add support for AWS Bedrock Application Inference Profiles (#18549)
+
+### `llama-index-llms-google-genai` [0.1.10]
+
+- 2.5-flash-preview tests + structured predict changes/fixes (#18575)
+- unlock pillow dep in google genai llm (#18533)
+- merge tool messages properly (#18527)
+
+### `llama-index-llms-huggingface-api` [0.4.2]
+
+- Add provider support to HuggingFaceInferenceAPI (#18574)
+
+### `llama-index-llms-vllm` [0.5.1]
+
+- feat: add is_chat_model option (#18552)
+
+### `llama-index-packs-code-hierarchy` [0.5.1]
+
+- Code Hierarchy Agent Pack Issue with Empty and different encoding based files (#18538)
+
+### `llama-index-postprocessor-cohere-rerank` [0.4.0]
+
+- update default model version to v3.0 in CohereRerank (#18579)
+
+### `llama-index-readers-database` [0.4.0]
+
+- Enhance DatabaseReader with new features and improved documentation (#18537)
+
+### `llama-index-tools-mcp` [0.1.2]
+
+- Prevent MCP Connections Hang (#18512)
+
+### `llama-index-vector-stores-opensearch` [0.5.3]
+
+- Add OpensearchVectorClient to conditionally check index existence for AOSS (#18560)
+
+### `llama-index-vector-stores-postgres` [0.5.1]
+
+- Implement aget_nodes and adelete in PGVectorStore (#18515)
+- Allow PGVectorStore to allow passing in engines (#18507)
+
+## [2025-04-23]
+
+### `llama-index-core` [0.12.33 / 0.12.33.post1]
+
+- bundle newer tiktoken encodings, bump min tiktoken version (#18509)
+
+### `llama-index-vector-stores-milvus` [0.8.1]
+
+- Milvus Vector Store: Update metadata filtering demo (#18502)
+
+## [2025-04-21]
+
+### `llama-index-core` [0.12.32]
+
+- Fix media resource serialization (#18496)
+- fix react agent prompt updates (#18494)
+
+### `llama-index-indices-managed-vectara` [0.4.4]
+
+- Close "session" in VectaraIndex on GC (#18484)
+
+### `llama-index-llms-openai` [0.3.38]
+
+- allow content blocks in openai assistant messages (#18495)
+
+### `llama-index-llms-openvino-genai` [0.1.1]
+
+- fix the openvino llm initialize issue (#18481)
+
+### `llama-index-vector-stores-milvus` [0.8.0]
+
+- MilvusVectorStore: BM25 as default sparse embedding function (#18460)
+
 ## [2025-04-16]
 
 ### `llama-index-core` [0.12.31]

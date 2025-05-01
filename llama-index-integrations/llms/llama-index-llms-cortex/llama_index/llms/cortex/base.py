@@ -32,15 +32,8 @@ from llama_index.llms.cortex.utils import (
     get_spcs_base_url,
 )
 
-
 DEFAULT_CONTEXT_WINDOW = 128_000
-DEFAULT_MAX_TOKENS = 4_096
-DEFAULT_MODEL = "llama3.2-1b"
-DEFAULT_TEMP = 0.0
-DEFAULT_TOP_P = 1.0
-
-DEFAULT_CONTEXT_WINDOW = 128_000
-DEFAULT_MAX_TOKENS = 4096  # !! This is the max for all requests to the Rest API, per # https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-llm-rest-api
+DEFAULT_MAX_TOKENS = 4_096  # !! This is the max for all requests to the Rest API, per # https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-llm-rest-api
 DEFAULT_MODEL = "llama3.2-1b"
 DEFAULT_TEMP = 0.0
 DEFAULT_TOP_P = 1.0
@@ -79,6 +72,11 @@ model_specs = {
 class Cortex(CustomLLM):
     """
     Cortex LLM.
+
+    This class provides an interface to Snowflake's Cortex LLM service.
+    HTTP errors from the API (including invalid model names) will raise
+    requests.exceptions.HTTPError for synchronous methods or
+    aiohttp.ClientResponseError for asynchronous methods.
 
     This class provides an interface to Snowflake's Cortex LLM service.
     HTTP errors from the API (including invalid model names) will raise
@@ -232,6 +230,19 @@ class Cortex(CustomLLM):
         append = "/api/v2/cortex/inference:complete"
         return self.snowflake_api_endpoint + append
 
+    @property
+    def snowflake_api_endpoint(self) -> str:
+        if is_spcs_environment():
+            return get_spcs_base_url()
+        else:
+            base_url = f"https://{self.account}.snowflakecomputing.com"
+        return base_url
+
+    @property
+    def cortex_complete_endpoint(self) -> str:
+        append = "/api/v2/cortex/inference:complete"
+        return self.snowflake_api_endpoint + append
+
     def _make_completion_payload(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> dict:
@@ -242,6 +253,7 @@ class Cortex(CustomLLM):
         if not formatted:
             prompt = prompt.format(**kwargs)
         return {
+            "url": self.cortex_complete_endpoint,
             "url": self.cortex_complete_endpoint,
             "headers": {
                 "Authorization": self._generate_auth_header(),
@@ -264,6 +276,7 @@ class Cortex(CustomLLM):
             **self._make_completion_payload(prompt, formatted, **kwargs), stream=True
         )
         api_response.raise_for_status()
+        api_response.raise_for_status()
         responses = []
         for line in api_response.iter_lines(decode_unicode=True):
             if line:
@@ -283,6 +296,7 @@ class Cortex(CustomLLM):
             api_response = await session.post(
                 **self._make_completion_payload(prompt, formatted, **kwargs)
             )
+            await api_response.raise_for_status()
             await api_response.raise_for_status()
             responses = []
             async for line in api_response.content:
@@ -307,6 +321,7 @@ class Cortex(CustomLLM):
             **self._make_completion_payload(prompt, formatted, **kwargs), stream=True
         )
         api_response.raise_for_status()
+        api_response.raise_for_status()
 
         def gen() -> CompletionResponseGen:
             text = ""
@@ -328,6 +343,21 @@ class Cortex(CustomLLM):
     async def _astream_complete(
         self, prompt, formatted=False, **kwargs
     ) -> CompletionResponseAsyncGen:
+        async def gen() -> CompletionResponseAsyncGen:
+            async with aiohttp.ClientSession() as session:
+                api_response = await session.post(
+                    **self._make_completion_payload(prompt, formatted, **kwargs)
+                )
+                text = ""
+                async for line in api_response.content:
+                    line = line.decode()
+                    if line and (line != "\n") and line.startswith("data: "):
+                        line_json = json.loads(line[len("data: ") :].strip("\n"))
+                        line_delta = line_json["choices"][0]["delta"].get("content", "")
+                        text += line_delta
+                        yield CompletionResponse(
+                            text=text, delta=line_delta, raw=line_json
+                        )
         async def gen() -> CompletionResponseAsyncGen:
             async with aiohttp.ClientSession() as session:
                 api_response = await session.post(
@@ -376,6 +406,7 @@ class Cortex(CustomLLM):
         jwt = self._generate_auth_header()
         return {
             "url": self.cortex_complete_endpoint,
+            "url": self.cortex_complete_endpoint,
             "headers": {
                 "Authorization": self._generate_auth_header(),
                 "Content-Type": "application/json",
@@ -397,6 +428,7 @@ class Cortex(CustomLLM):
         api_response = requests.post(
             **self._make_chat_payload(messages, **kwargs), stream=True
         )
+        api_response.raise_for_status()
         api_response.raise_for_status()
         responses = []
         for line in api_response.iter_lines(decode_unicode=True):
@@ -422,6 +454,7 @@ class Cortex(CustomLLM):
             api_response = await session.post(
                 **self._make_chat_payload(messages, **kwargs)
             )
+            await api_response.raise_for_status()
             await api_response.raise_for_status()
             responses = []
             async for line in api_response.content:
@@ -449,6 +482,7 @@ class Cortex(CustomLLM):
         api_response = requests.post(
             **self._make_chat_payload(messages, **kwargs), stream=True
         )
+        api_response.raise_for_status()
         api_response.raise_for_status()
 
         def gen() -> ChatResponseGen:
@@ -479,6 +513,7 @@ class Cortex(CustomLLM):
             api_response = await session.post(
                 **self._make_chat_payload(messages, **kwargs)
             )
+            await api_response.raise_for_status()
             await api_response.raise_for_status()
             # buffer data
             lines = []

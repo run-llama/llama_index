@@ -927,6 +927,7 @@ nav:
           - ./api_reference/embeddings/opea.md
           - ./api_reference/embeddings/openai.md
           - ./api_reference/embeddings/openai_like.md
+          - ./api_reference/embeddings/openvino_genai.md
           - ./api_reference/embeddings/oracleai.md
           - ./api_reference/embeddings/premai.md
           - ./api_reference/embeddings/sagemaker_endpoint.md
@@ -2417,6 +2418,7 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-uniprot
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-ApertureDB
             - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-sqlite
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-openvino-genai
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
@@ -3060,6 +3062,7 @@ plugins:
         ./presentations/past_presentations.html: https://docs.llamaindex.ai/en/stable/presentations/past_presentations/
         ./understanding/agent/basic_agent/index.html: https://docs.llamaindex.ai/en/stable/understanding/agent/
         ./understanding/agent/multi_agents/index.html: https://docs.llamaindex.ai/en/stable/understanding/agent/multi_agent/
+        ./understanding/agent/rag_agent.html: https://docs.llamaindex.ai/en/stable/understanding/agent/
         ./understanding/deployment/deployment.html: https://docs.llamaindex.ai/en/stable/understanding/deployment/deployment/
         ./understanding/evaluating/cost_analysis/root.html: understanding/evaluating/cost_analysis/index.md
         ./understanding/evaluating/cost_analysis/usage_pattern.html: https://docs.llamaindex.ai/en/stable/understanding/evaluating/cost_analysis/usage_pattern/

@@ -1,8 +1,9 @@
-from llama_index.llms.openai_like import OpenAILike
 from typing import Any, Dict, Optional
+
 from llama_index.core.base.llms.generic_utils import (
     get_from_param_or_env,
 )
+from llama_index.llms.openai_like import OpenAILike
 
 DEFAULT_API_BASE = "https://api.novita.ai/v3/openai"
 DEFAULT_MODEL = "deepseek/deepseek_v3"
@@ -19,7 +20,8 @@ def is_function_calling_model(model: str) -> bool:
 
 
 class NovitaAI(OpenAILike):
-    """NovitaAI LLM.
+    """
+    NovitaAI LLM.
 
     Novita AI & LlamaIndex Integration Guide
     Effortlessly integrate Novita AI with LlamaIndex to build intelligent, data-powered applications.

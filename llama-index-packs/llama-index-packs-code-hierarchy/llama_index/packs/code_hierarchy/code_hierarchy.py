@@ -322,7 +322,7 @@ class CodeHierarchyNodeParser(NodeParser):
             start_byte = node.start_byte
         if end_byte is None:
             end_byte = node.end_byte
-        return text[start_byte:end_byte].strip()
+        return bytes(text, "utf-8")[start_byte:end_byte].decode().strip()
 
     def _chunk_node(
         self,
@@ -622,6 +622,9 @@ class CodeHierarchyNodeParser(NodeParser):
                         new_split_nodes = self.code_splitter.get_nodes_from_documents(
                             [original_node], show_progress=show_progress, **kwargs
                         )
+
+                        if not new_split_nodes:
+                            continue
 
                         # Force the first new_split_node to have the
                         # same id as the original_node
