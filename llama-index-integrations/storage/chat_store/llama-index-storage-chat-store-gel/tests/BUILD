@@ -1,3 +1,1 @@
-python_tests(
-    skip_tests=True,
-)
+python_tests()
