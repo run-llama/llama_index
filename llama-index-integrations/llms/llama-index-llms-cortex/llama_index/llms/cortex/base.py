@@ -95,6 +95,7 @@ class Cortex(CustomLLM):
         )
         print(completion_response)
         ```
+
     """
 
     user: str = Field(

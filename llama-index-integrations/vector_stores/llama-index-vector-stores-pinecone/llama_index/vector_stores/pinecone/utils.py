@@ -96,8 +96,5 @@ def _is_pinecone_v3() -> bool:
     """
     pinecone = _import_pinecone()
     pinecone_client_version = pinecone.__version__
-    if version.parse(pinecone_client_version) >= version.parse(
-        "3.0.0"
-    ):  # Will not work with .dev versions, e.g. "3.0.0.dev8"
-        return True
-    return False
+
+    return version.parse(pinecone_client_version) >= version.parse("3.0.0")

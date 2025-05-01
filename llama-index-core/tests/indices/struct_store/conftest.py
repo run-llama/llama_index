@@ -10,7 +10,8 @@ from tests.mock_utils.mock_prompts import (
 
 
 def _mock_output_parser(output: str) -> Optional[Dict[str, Any]]:
-    """Mock output parser.
+    """
+    Mock output parser.
 
     Split via commas instead of newlines, in order to fit
     the format of the mock test document (newlines create

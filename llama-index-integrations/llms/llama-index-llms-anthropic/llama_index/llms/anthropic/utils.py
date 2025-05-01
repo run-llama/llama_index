@@ -88,13 +88,15 @@ def is_function_calling_model(modelname: str) -> bool:
 
 
 def anthropic_modelname_to_contextsize(modelname: str) -> int:
-    """Get the context size for an Anthropic model.
+    """
+    Get the context size for an Anthropic model.
 
     Args:
         modelname (str): Anthropic model name.
 
     Returns:
         int: Context size for the specific model.
+
     """
     for model, context_size in BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS.items():
         # Only US & EU inference profiles are currently supported by AWS
@@ -130,7 +132,8 @@ def messages_to_anthropic_messages(
     messages: Sequence[ChatMessage],
     cache_idx: Optional[int] = None,
 ) -> Tuple[Sequence[MessageParam], str]:
-    """Converts a list of generic ChatMessages to anthropic messages.
+    """
+    Converts a list of generic ChatMessages to anthropic messages.
 
     Args:
         messages: List of ChatMessages
@@ -139,6 +142,7 @@ def messages_to_anthropic_messages(
         Tuple of:
         - List of anthropic messages
         - System prompt
+
     """
     anthropic_messages = []
     system_prompt = []

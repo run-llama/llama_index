@@ -67,6 +67,7 @@ class PreprocessReader(BaseReader):
 
     Examples:
         >>> loader = PreprocessReader(api_key="your-api-key", file_path="valid/path/to/file")
+
     """
 
     def __init__(self, api_key: str, *args, **kwargs):
@@ -124,7 +125,8 @@ class PreprocessReader(BaseReader):
         self._chunks = None
 
     def load_data(self, return_whole_document=False) -> List[Document]:
-        """Load data from Preprocess.
+        """
+        Load data from Preprocess.
 
         Args:
             return_whole_document (bool):
@@ -138,6 +140,7 @@ class PreprocessReader(BaseReader):
         Returns:
             List[Document]:
                 A list of documents each document containing a chunk from the original document.
+
         """
         if self._chunks is None:
             if self._process_id is not None:
@@ -184,7 +187,8 @@ class PreprocessReader(BaseReader):
                 ]
 
     def get_process_id(self):
-        """Get process's hash id from Preprocess.
+        """
+        Get process's hash id from Preprocess.
 
         Examples:
             >>> process_id = loader.get_process_id()
@@ -192,11 +196,13 @@ class PreprocessReader(BaseReader):
         Returns:
             str:
                 Process's hash id.
+
         """
         return self._process_id
 
     def get_nodes(self) -> List[TextNode]:
-        """Get nodes from Preprocess's chunks.
+        """
+        Get nodes from Preprocess's chunks.
 
         Examples:
             >>> nodes = loader.get_nodes()
@@ -204,6 +210,7 @@ class PreprocessReader(BaseReader):
         Returns:
             List[TextNode]:
                 List of nodes, each node will contains a chunk from the original document.
+
         """
         if self._chunks is None:
             self.load_data()

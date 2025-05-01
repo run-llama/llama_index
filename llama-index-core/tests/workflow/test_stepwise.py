@@ -33,7 +33,7 @@ class StepWorkflow(Workflow):
         self.probe = "test"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_simple_stepwise():
     workflow = StepWorkflow(disable_validation=True)
     handler = workflow.run(stepwise=True)

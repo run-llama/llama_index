@@ -186,7 +186,8 @@ class StructuredLLM(LLM):
 
 
 class StructuredLLMComponent(QueryComponent):
-    """Structured LLM component.
+    """
+    Structured LLM component.
 
     Wraps an existing LLM component, directly returns structured output.
 

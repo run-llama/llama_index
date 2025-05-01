@@ -24,7 +24,8 @@ class DataFrameColumn(BaseModel):
 
 
 class DataFrame(BaseModel):
-    """Data-frame class.
+    """
+    Data-frame class.
 
     Consists of a `rows` field which is a list of dictionaries,
     as well as a `columns` field which is a list of column names.
@@ -65,7 +66,8 @@ class DataFrameRowsOnly(BaseModel):
 
 
 class DataFrameValuesPerColumn(BaseModel):
-    """Data-frame as a list of column objects.
+    """
+    Data-frame as a list of column objects.
 
     Each column object contains a list of values. Note that they can be
     of variable length, and so may not be able to be converted to a dataframe.
@@ -89,7 +91,8 @@ The column schema is the following: {column_schema}.
 
 
 class DFFullProgram(BasePydanticProgram[DataFrame]):
-    """Data-frame program.
+    """
+    Data-frame program.
 
     Extracts text into a schema + datapoints.
 
@@ -144,7 +147,8 @@ class DFFullProgram(BasePydanticProgram[DataFrame]):
 
 
 class DFRowsProgram(BasePydanticProgram[DataFrameRowsOnly]):
-    """DF Rows output parser.
+    """
+    DF Rows output parser.
 
     Given DF schema, extract text into a set of rows.
 

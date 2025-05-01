@@ -30,7 +30,7 @@ def test_sync_embedding():
 @pytest.mark.skipif(
     os.environ.get("CO_API_KEY") is None, reason="Cohere API key required"
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_embedding():
     emb = CohereEmbedding(
         api_key=os.environ["CO_API_KEY"],
@@ -44,7 +44,8 @@ async def test_async_embedding():
 
 
 def test_cohere_embeddings_custom_endpoint_multiprocessing():
-    """When used in multiprocessing, the CohereEmbedding instance will be serialized and deserialized. This test
+    """
+    When used in multiprocessing, the CohereEmbedding instance will be serialized and deserialized. This test
     verifies, that custom base_url's are retained in the spawned processes.
     """
     # Arrange: Create a CohereEmbeddings instance with a custom base_url

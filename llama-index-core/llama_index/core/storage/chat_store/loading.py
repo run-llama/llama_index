@@ -8,7 +8,7 @@ RECOGNIZED_CHAT_STORES = {
 
 def load_chat_store(data: dict) -> BaseChatStore:
     """Load a chat store from a dict."""
-    chat_store_name = data.get("class_name", None)
+    chat_store_name = data.get("class_name")
     if chat_store_name is None:
         raise ValueError("ChatStore loading requires a class_name")
 

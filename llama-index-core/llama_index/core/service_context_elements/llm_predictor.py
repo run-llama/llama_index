@@ -69,7 +69,8 @@ class BaseLLMPredictor(BaseComponent, DispatcherSpanMixin, ABC):
 
 
 class LLMPredictor(BaseLLMPredictor):
-    """LLM predictor class.
+    """
+    LLM predictor class.
 
     NOTE: Deprecated. Use any LLM class directly.
     """

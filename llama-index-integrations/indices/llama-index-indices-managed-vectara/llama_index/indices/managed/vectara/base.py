@@ -146,6 +146,7 @@ class VectaraIndex(BaseManagedIndex):
 
         Returns:
             bool: True if deletion was successful, False otherwise.
+
         """
         valid_corpus_key = self._get_corpus_key(corpus_key)
         body = {}
@@ -195,6 +196,7 @@ class VectaraIndex(BaseManagedIndex):
             document (Document): a document to index using Vectara's Structured Document type.
             nodes (Sequence[Node]): a list of nodes representing document parts to index a document using Vectara's Core Document type.
             corpus_key (str): If multiple corpora are provided for this index, the corpus_key of the corpus you want to add the document to.
+
         """
         if document:
             # Use Structured Document type
@@ -281,6 +283,7 @@ class VectaraIndex(BaseManagedIndex):
             title (str): The title of the document.
             description (str): The description of the document.
             max_chars_per_chunk (int): The maximum number of characters per chunk.
+
         """
         self._insert(
             document=doc,
@@ -308,6 +311,7 @@ class VectaraIndex(BaseManagedIndex):
             document_id (str): The document id (must be unique for the corpus).
             document_metadata (Dict): The document_metadata to be associated with this document.
             corpus_key (str): If multiple corpora are provided for this index, the corpus_key of the corpus you want to add the document to.
+
         """
         self._insert(
             nodes=nodes,
@@ -346,6 +350,7 @@ class VectaraIndex(BaseManagedIndex):
 
         Returns:
             List of ids associated with each of the files indexed
+
         """
         if not os.path.exists(file_path):
             _logger.error(f"File {file_path} does not exist")
@@ -409,6 +414,7 @@ class VectaraIndex(BaseManagedIndex):
                 If False, no change is made to the index or corpus.
             corpus_key (str): corpus key to delete the document from.
                 This should be specified if there are multiple corpora in the index.
+
         """
         if delete_from_docstore:
             if "corpus_key" in delete_kwargs:
@@ -428,6 +434,7 @@ class VectaraIndex(BaseManagedIndex):
             corpus_key (str): corpus key to modify the document from.
                 This should be specified if there are multiple corpora in the index.
             metadata (dict): dictionary specifying any modifications or additions to the document's metadata.
+
         """
         if "metadata" in update_kwargs:
             if "corpus_key" in update_kwargs:

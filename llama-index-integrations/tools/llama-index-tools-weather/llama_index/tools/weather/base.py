@@ -37,7 +37,8 @@ class OpenWeatherMapToolSpec(BaseToolSpec):
     def _format_weather(
         self, place: str, temp_str: str, w: Any, time_str: str = "now"
     ) -> str:
-        """Format weather response from OpenWeatherMap.
+        """
+        Format weather response from OpenWeatherMap.
 
         Function thanks to
         langchain/utilities/openweathermap.py
@@ -69,6 +70,7 @@ class OpenWeatherMapToolSpec(BaseToolSpec):
             place (str):
                 The place to find the weather at.
                 Should be a city name and country.
+
         """
         from pyowm.commons.exceptions import NotFoundError
 
@@ -95,6 +97,7 @@ class OpenWeatherMapToolSpec(BaseToolSpec):
             location (str):
                 The location to find the weather tomorrow at.
                 Should be a city name and country.
+
         """
         from pyowm.commons.exceptions import NotFoundError
         from pyowm.utils import timestamps

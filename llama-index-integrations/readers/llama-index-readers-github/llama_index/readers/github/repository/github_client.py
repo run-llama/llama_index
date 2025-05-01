@@ -28,6 +28,7 @@ class GitTreeResponseModel(DataClassJsonMixin):
     Examples:
         >>> tree = client.get_tree("owner", "repo", "branch")
         >>> tree.sha
+
     """
 
     @dataclass
@@ -42,6 +43,7 @@ class GitTreeResponseModel(DataClassJsonMixin):
             - sha (str): SHA1 checksum ID of the object.
             - url (str): URL for the object.
             - size (Optional[int]): Size of the object (only for blobs).
+
         """
 
         path: str
@@ -69,6 +71,7 @@ class GitBlobResponseModel(DataClassJsonMixin):
         - sha (str): SHA1 checksum ID of the blob.
         - size (int): Size of the blob.
         - node_id (str): Node ID of the blob.
+
     """
 
     content: str
@@ -86,6 +89,7 @@ class GitCommitResponseModel(DataClassJsonMixin):
 
     Attributes:
         - tree (Tree): Tree object for the commit.
+
     """
 
     @dataclass
@@ -99,6 +103,7 @@ class GitCommitResponseModel(DataClassJsonMixin):
 
             Attributes:
                 - sha (str): SHA for the commit
+
             """
 
             sha: str
@@ -117,6 +122,7 @@ class GitBranchResponseModel(DataClassJsonMixin):
 
     Attributes:
         - commit (Commit): Commit object for the branch.
+
     """
 
     @dataclass
@@ -211,6 +217,7 @@ class GithubClient:
     Examples:
         >>> client = GithubClient("my_github_token")
         >>> branch_info = client.get_branch("owner", "repo", "branch")
+
     """
 
     DEFAULT_BASE_URL = "https://api.github.com"
@@ -239,6 +246,7 @@ class GithubClient:
 
         Raises:
             ValueError: If no Github token is provided.
+
         """
         if github_token is None:
             github_token = os.getenv("GITHUB_TOKEN")
@@ -305,6 +313,7 @@ class GithubClient:
             >>> response = client.request("getTree", "GET",
                                 owner="owner", repo="repo",
                                 tree_sha="tree_sha", timeout=5, retries=0)
+
         """
         try:
             import httpx
@@ -357,6 +366,7 @@ class GithubClient:
 
         Examples:
             >>> branch_info = client.get_branch("owner", "repo", "branch")
+
         """
         if branch is None:
             if branch_name is None:
@@ -400,6 +410,7 @@ class GithubClient:
 
         Examples:
             >>> tree_info = client.get_tree("owner", "repo", "tree_sha")
+
         """
         return GitTreeResponseModel.from_json(
             (
@@ -438,6 +449,7 @@ class GithubClient:
 
         Examples:
             >>> blob_info = client.get_blob("owner", "repo", "file_sha")
+
         """
         try:
             return GitBlobResponseModel.from_json(
@@ -486,6 +498,7 @@ class GithubClient:
 
         Examples:
             >>> commit_info = client.get_commit("owner", "repo", "commit_sha")
+
         """
         return GitCommitResponseModel.from_json(
             (

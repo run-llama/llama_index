@@ -1,4 +1,5 @@
-"""OpenAI Agent.
+"""
+OpenAI Agent.
 
 Simple wrapper around AgentRunner + OpenAIAgentWorker.
 
@@ -34,7 +35,8 @@ DEFAULT_MAX_FUNCTION_CALLS = 5
 
 
 class OpenAIAgent(AgentRunner):
-    """OpenAI agent.
+    """
+    OpenAI agent.
 
     Subclasses AgentRunner with a OpenAIAgentWorker.
 
@@ -96,7 +98,8 @@ class OpenAIAgent(AgentRunner):
         tool_call_parser: Optional[Callable[[OpenAIToolCall], Dict]] = None,
         **kwargs: Any,
     ) -> "OpenAIAgent":
-        """Create an OpenAIAgent from a list of tools.
+        """
+        Create an OpenAIAgent from a list of tools.
 
         Similar to `from_defaults` in other classes, this method will
         infer defaults for a variety of parameters, including the LLM,

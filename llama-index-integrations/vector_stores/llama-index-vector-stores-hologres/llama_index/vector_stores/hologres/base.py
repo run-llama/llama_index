@@ -1,4 +1,5 @@
-"""Hologres Vector store index.
+"""
+Hologres Vector store index.
 
 Vector store using hologres back end.
 """
@@ -19,7 +20,8 @@ logger = logging.getLogger()
 
 
 class HologresVectorStore(BasePydanticVectorStore):
-    """Hologres Vector Store.
+    """
+    Hologres Vector Store.
 
     Hologres is a one-stop real-time data warehouse, which can support high performance OLAP analysis and high QPS online services.
     Hologres supports vector processing and allows you to use vector data
@@ -51,7 +53,8 @@ class HologresVectorStore(BasePydanticVectorStore):
         embedding_dimension: int = 1536,
         pre_delete_table: bool = False,
     ) -> "HologresVectorStore":
-        """Create Hologres Vector Store from connection string.
+        """
+        Create Hologres Vector Store from connection string.
 
         Args:
             connection_string: connection string of hologres database
@@ -59,6 +62,7 @@ class HologresVectorStore(BasePydanticVectorStore):
             table_schema: table column schemam
             embedding_dimension: dimension size of embedding vector
             pre_delete_table: whether to erase data from table on creation
+
         """
         hologres_storage = HologresVector(
             connection_string,
@@ -95,6 +99,7 @@ class HologresVectorStore(BasePydanticVectorStore):
             table_schema: table column schemam
             embedding_dimension: dimension size of embedding vector
             pre_delete_table: whether to erase data from table on creation
+
         """
         connection_string = HologresVector.connection_string_from_db_params(
             host, port, database, user, password
@@ -120,12 +125,14 @@ class HologresVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to hologres index.
+        """
+        Add nodes to hologres index.
 
         Embedding data will be saved to `vector` column and text will be saved to `document` column.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
+
         """
         embeddings = []
         node_ids = []
@@ -151,7 +158,8 @@ class HologresVectorStore(BasePydanticVectorStore):
         query: VectorStoreQuery,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query_embedding (List[float]): query embedding

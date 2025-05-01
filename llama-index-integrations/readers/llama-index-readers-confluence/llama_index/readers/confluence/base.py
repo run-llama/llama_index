@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 class ConfluenceReader(BaseReader):
-    """Confluence reader.
+    """
+    Confluence reader.
 
     Reads a set of confluence pages given a space key and optionally a list of page ids
 
@@ -125,7 +126,8 @@ class ConfluenceReader(BaseReader):
         limit: Optional[int] = None,
         max_num_results: Optional[int] = None,
     ) -> List[Document]:
-        """Load Confluence pages from Confluence, specifying by one of four mutually exclusive methods:
+        """
+        Load Confluence pages from Confluence, specifying by one of four mutually exclusive methods:
         `space_key`, `page_ids`, `label`, or `cql`
         (Confluence Query Language https://developer.atlassian.com/cloud/confluence/advanced-searching-using-cql/ ).
 
@@ -141,6 +143,7 @@ class ConfluenceReader(BaseReader):
             cursor (str): Skips to the cursor. Used with cql and label, set when the max limit has been hit for cql based search
             limit (int): Deprecated, use `max_num_results` instead.
             max_num_results (int): Maximum number of results to return.  If None, return all results.  Requests are made in batches to achieve the desired number of results.
+
         """
         num_space_key_parameter = 1 if space_key else 0
         num_page_ids_parameter = 1 if page_ids is not None else 0

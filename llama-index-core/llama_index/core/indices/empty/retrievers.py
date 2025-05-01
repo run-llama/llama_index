@@ -10,7 +10,8 @@ from llama_index.core.schema import NodeWithScore, QueryBundle
 
 
 class EmptyIndexRetriever(BaseRetriever):
-    """EmptyIndex query.
+    """
+    EmptyIndex query.
 
     Passes the raw LLM call to the underlying LLM model.
 

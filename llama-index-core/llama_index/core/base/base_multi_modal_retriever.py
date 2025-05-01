@@ -13,7 +13,8 @@ class MultiModalRetriever(BaseRetriever, BaseImageRetriever):
 
     @abstractmethod
     def text_retrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
-        """Retrieve text nodes given text query.
+        """
+        Retrieve text nodes given text query.
 
         Implemented by the user.
 
@@ -23,7 +24,8 @@ class MultiModalRetriever(BaseRetriever, BaseImageRetriever):
     def text_to_image_retrieve(
         self, str_or_query_bundle: QueryType
     ) -> List[NodeWithScore]:
-        """Retrieve image nodes given text query.
+        """
+        Retrieve image nodes given text query.
 
         Implemented by the user.
 
@@ -33,7 +35,8 @@ class MultiModalRetriever(BaseRetriever, BaseImageRetriever):
     def image_to_image_retrieve(
         self, str_or_query_bundle: QueryType
     ) -> List[NodeWithScore]:
-        """Retrieve image nodes given image query.
+        """
+        Retrieve image nodes given image query.
 
         Implemented by the user.
 
@@ -43,7 +46,8 @@ class MultiModalRetriever(BaseRetriever, BaseImageRetriever):
     async def atext_retrieve(
         self, str_or_query_bundle: QueryType
     ) -> List[NodeWithScore]:
-        """Async Retrieve text nodes given text query.
+        """
+        Async Retrieve text nodes given text query.
 
         Implemented by the user.
 
@@ -53,7 +57,8 @@ class MultiModalRetriever(BaseRetriever, BaseImageRetriever):
     async def atext_to_image_retrieve(
         self, str_or_query_bundle: QueryType
     ) -> List[NodeWithScore]:
-        """Async Retrieve image nodes given text query.
+        """
+        Async Retrieve image nodes given text query.
 
         Implemented by the user.
 
@@ -63,7 +68,8 @@ class MultiModalRetriever(BaseRetriever, BaseImageRetriever):
     async def aimage_to_image_retrieve(
         self, str_or_query_bundle: QueryType
     ) -> List[NodeWithScore]:
-        """Async Retrieve image nodes given image query.
+        """
+        Async Retrieve image nodes given image query.
 
         Implemented by the user.
 

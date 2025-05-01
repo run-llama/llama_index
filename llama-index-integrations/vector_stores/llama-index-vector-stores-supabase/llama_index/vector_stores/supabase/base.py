@@ -25,7 +25,8 @@ logger = logging.getLogger(__name__)
 
 
 class SupabaseVectorStore(BasePydanticVectorStore):
-    """Supbabase Vector.
+    """
+    Supbabase Vector.
 
     In this vector store, embeddings are stored in Postgres table using pgvector.
 
@@ -105,7 +106,8 @@ class SupabaseVectorStore(BasePydanticVectorStore):
         return vecs_filter
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -132,10 +134,12 @@ class SupabaseVectorStore(BasePydanticVectorStore):
         return ids
 
     def get_by_id(self, doc_id: str, **kwargs: Any) -> list:
-        """Get row ids by doc id.
+        """
+        Get row ids by doc id.
 
         Args:
             doc_id (str): document id
+
         """
         filters = {"doc_id": {"$eq": doc_id}}
 
@@ -150,7 +154,8 @@ class SupabaseVectorStore(BasePydanticVectorStore):
         # NOTE: list of row ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete doc.
+        """
+        Delete doc.
 
         Args:
             :param ref_doc_id (str): document id
@@ -166,7 +171,8 @@ class SupabaseVectorStore(BasePydanticVectorStore):
         query: VectorStoreQuery,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query (List[float]): query embedding

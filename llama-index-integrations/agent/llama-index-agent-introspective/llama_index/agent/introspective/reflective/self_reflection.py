@@ -99,7 +99,8 @@ class Correction(BaseModel):
 
 
 class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
-    """Self Reflection Agent Worker.
+    """
+    Self Reflection Agent Worker.
 
     This agent performs a reflection without any tools on a given response
     and subsequently performs correction. It should be noted that this reflection

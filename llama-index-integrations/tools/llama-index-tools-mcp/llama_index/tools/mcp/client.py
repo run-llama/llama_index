@@ -19,6 +19,7 @@ class BasicMCPClient(ClientSession):
         args: The arguments to pass to StdioServerParameters.
         env: The environment variables to set for StdioServerParameters.
         timeout: The timeout for the command in seconds.
+
     """
 
     def __init__(

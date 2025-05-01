@@ -14,10 +14,12 @@ except ImportError:
 
 
 class ChonkieAutoEmbedding(BaseEmbedding):
-    """Autoembeddings from chonkie.
+    """
+    Autoembeddings from chonkie.
 
     Args:
         model_name (str): The name of the model to use.
+
     """
 
     model_name: str

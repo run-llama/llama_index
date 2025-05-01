@@ -124,7 +124,7 @@ def monkey_query(
             embedding_ids=node_ids,
         )
     elif query.mode == MMR_MODE:
-        mmr_threshold = kwargs.get("mmr_threshold", None)
+        mmr_threshold = kwargs.get("mmr_threshold")
         top_similarities, top_ids = get_top_k_mmr_embeddings(
             query_embedding,
             embeddings,

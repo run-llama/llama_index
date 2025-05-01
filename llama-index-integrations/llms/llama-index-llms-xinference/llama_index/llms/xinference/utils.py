@@ -27,7 +27,7 @@ def xinference_message_to_history(message: ChatMessage) -> ChatCompletionMessage
 
 
 def xinference_modelname_to_contextsize(modelname: str) -> int:
-    context_size = XINFERENCE_MODEL_SIZES.get(modelname, None)
+    context_size = XINFERENCE_MODEL_SIZES.get(modelname)
 
     if context_size is None:
         raise ValueError(

@@ -22,7 +22,8 @@ DEFAULT_QA_TEXT = (
 
 
 class QASummaryQueryEngineBuilder:
-    """Joint QA Summary graph builder.
+    """
+    Joint QA Summary graph builder.
 
     Can build a graph that provides a unified query interface
     for both QA and summarization tasks.

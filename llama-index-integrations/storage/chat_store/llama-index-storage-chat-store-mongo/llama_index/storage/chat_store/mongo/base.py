@@ -58,6 +58,7 @@ class MongoChatStore(BaseChatStore):
             amongo_client: Optional pre-configured async MongoDB client
             ttl_seconds: Optional time-to-live for messages in seconds
             **kwargs: Additional arguments to pass to MongoDB client
+
         """
         super().__init__(ttl=ttl_seconds)
 
@@ -90,6 +91,7 @@ class MongoChatStore(BaseChatStore):
         Args:
             key: Key to set messages for
             messages: List of ChatMessage objects
+
         """
         # Delete existing messages for this key
         self._collection.delete_many({"session_id": key})
@@ -115,6 +117,7 @@ class MongoChatStore(BaseChatStore):
         Args:
             key: Key to set messages for
             messages: List of ChatMessage objects
+
         """
         # Delete existing messages for this key
         await self._async_collection.delete_many({"session_id": key})
@@ -139,6 +142,7 @@ class MongoChatStore(BaseChatStore):
 
         Args:
             key: Key to get messages for
+
         """
         # Find all messages for this key, sorted by index
         docs = list(self._collection.find({"session_id": key}, sort=[("index", 1)]))
@@ -152,6 +156,7 @@ class MongoChatStore(BaseChatStore):
 
         Args:
             key: Key to get messages for
+
         """
         # Find all messages for this key, sorted by index
         cursor = self._async_collection.find({"session_id": key}).sort("index", 1)
@@ -169,6 +174,7 @@ class MongoChatStore(BaseChatStore):
         Args:
             key: Key to add message for
             message: ChatMessage object to add
+
         """
         if idx is None:
             # Get the current highest index
@@ -196,6 +202,7 @@ class MongoChatStore(BaseChatStore):
         Args:
             key: Key to add message for
             message: ChatMessage object to add
+
         """
         if idx is None:
             # Get the current highest index
@@ -220,6 +227,7 @@ class MongoChatStore(BaseChatStore):
 
         Args:
             key: Key to delete messages for
+
         """
         # Get messages before deleting
         messages = self.get_messages(key)
@@ -235,6 +243,7 @@ class MongoChatStore(BaseChatStore):
 
         Args:
             key: Key to delete messages for
+
         """
         # Get messages before deleting
         messages = await self.aget_messages(key)
@@ -251,6 +260,7 @@ class MongoChatStore(BaseChatStore):
         Args:
             key: Key to delete message for
             idx: Index of message to delete
+
         """
         # Find the message to delete
         doc = self._collection.find_one({"session_id": key, "index": idx})
@@ -274,6 +284,7 @@ class MongoChatStore(BaseChatStore):
         Args:
             key: Key to delete message for
             idx: Index of message to delete
+
         """
         # Find the message to delete
         doc = await self._async_collection.find_one({"session_id": key, "index": idx})
@@ -296,6 +307,7 @@ class MongoChatStore(BaseChatStore):
 
         Args:
             key: Key to delete last message for
+
         """
         # Find the last message
         last_msg_doc = self._collection.find_one(
@@ -316,6 +328,7 @@ class MongoChatStore(BaseChatStore):
 
         Args:
             key: Key to delete last message for
+
         """
         # Find the last message
         last_msg_doc = await self._async_collection.find_one(
@@ -336,6 +349,7 @@ class MongoChatStore(BaseChatStore):
 
         Returns:
             List of session IDs
+
         """
         # Get distinct session IDs
         return self._collection.distinct("session_id")
@@ -346,6 +360,7 @@ class MongoChatStore(BaseChatStore):
 
         Returns:
             List of session IDs
+
         """
         # Get distinct session IDs
         return await self._async_collection.distinct("session_id")

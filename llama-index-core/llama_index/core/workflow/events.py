@@ -11,7 +11,8 @@ from llama_index.core.bridge.pydantic import (
 
 
 class Event(BaseModel):
-    """Base class for event types that mimics dict interface.
+    """
+    Base class for event types that mimics dict interface.
 
     PrivateAttr:
         _data (Dict[str, Any]): Underlying Python dict.
@@ -50,13 +51,15 @@ class Event(BaseModel):
         # `a` and `b` get set in the underlying dict, namely `evt._data`
         print((evt.a, evt.b))
         ```
+
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
     _data: Dict[str, Any] = PrivateAttr(default_factory=dict)
 
     def __init__(self, **params: Any):
-        """__init__.
+        """
+        __init__.
 
         NOTE: fields and private_attrs are pulled from params by name.
         """

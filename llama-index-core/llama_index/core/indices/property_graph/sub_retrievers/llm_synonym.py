@@ -28,7 +28,8 @@ DEFAULT_SYNONYM_EXPAND_TEMPLATE = (
 
 
 class LLMSynonymRetriever(BasePGRetriever):
-    """A retriever that uses a language model to expand a query with synonyms.
+    """
+    A retriever that uses a language model to expand a query with synonyms.
     The synonyms are then used to retrieve nodes from a property graph.
 
     Args:
@@ -47,6 +48,7 @@ class LLMSynonymRetriever(BasePGRetriever):
             A callable function to parse the output of the language model. Defaults to None.
         llm (Optional[LLM], optional):
             The language model to use. Defaults to Settings.llm.
+
     """
 
     def __init__(

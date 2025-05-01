@@ -46,7 +46,8 @@ class TokenizerFake:
     """
 
     def __call__(self, img, prompt, return_tensors) -> TokenizerFake:
-        """This is just a stub for the purposes of the test,
+        """
+        This is just a stub for the purposes of the test,
         so we just return the instance itself.
         """
         return self
@@ -122,7 +123,8 @@ class ModelFake:
         ]
 
     def to(self, device) -> None:
-        """This is just a dummy method for the purposes of the test (it
+        """
+        This is just a dummy method for the purposes of the test (it
         needs to be defined, but is not used). Hence, we return nothing.
         """
 
@@ -137,6 +139,7 @@ def _get_custom_import(torch_installed: bool):
 
     Returns:
         Generator: Parametrized `_custom_import()` function.
+
     """
     # Store the original __import__ function
     original_import = builtins.__import__
