@@ -24,7 +24,7 @@ class CohereRerank(BaseNodePostprocessor):
     def __init__(
         self,
         top_n: int = 2,
-        model: str = "rerank-english-v2.0",
+        model: str = "rerank-english-v3.0",
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
     ):
