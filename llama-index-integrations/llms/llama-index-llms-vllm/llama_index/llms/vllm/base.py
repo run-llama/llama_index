@@ -142,7 +142,7 @@ class Vllm(LLM):
     )
 
     api_url: str = Field(description="The api url for vllm server")
-    
+
     is_chat_model: bool = Field(
         default=False,
         description=LLMMetadata.model_fields["is_chat_model"].description,
