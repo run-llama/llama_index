@@ -120,10 +120,12 @@ class GelKVStore(BaseKVStore):
     """Gel Key-Value store."""
 
     def __init__(self, record_type: str = "Record") -> None:
-        """Initialize GelKVStore.
+        """
+        Initialize GelKVStore.
 
         Args:
             record_type: The name of the record type in Gel schema.
+
         """
         self.record_type = record_type
 
@@ -131,12 +133,14 @@ class GelKVStore(BaseKVStore):
         self._async_client = None
 
     def get_sync_client(self):
-        """Get or initialize a synchronous Gel client.
+        """
+        Get or initialize a synchronous Gel client.
 
         Ensures the client is connected and the record type exists.
 
         Returns:
             A connected synchronous Gel client.
+
         """
         if self._async_client is not None:
             raise RuntimeError(
@@ -166,12 +170,14 @@ class GelKVStore(BaseKVStore):
         return self._sync_client
 
     async def get_async_client(self):
-        """Get or initialize an asynchronous Gel client.
+        """
+        Get or initialize an asynchronous Gel client.
 
         Ensures the client is connected and the record type exists.
 
         Returns:
             A connected asynchronous Gel client.
+
         """
         if self._sync_client is not None:
             raise RuntimeError(
@@ -206,7 +212,8 @@ class GelKVStore(BaseKVStore):
         val: dict,
         collection: str = DEFAULT_COLLECTION,
     ) -> None:
-        """Put a key-value pair into the store.
+        """
+        Put a key-value pair into the store.
 
         Args:
             key (str): key
@@ -228,7 +235,8 @@ class GelKVStore(BaseKVStore):
         val: dict,
         collection: str = DEFAULT_COLLECTION,
     ) -> None:
-        """Put a key-value pair into the store.
+        """
+        Put a key-value pair into the store.
 
         Args:
             key (str): key
@@ -250,12 +258,14 @@ class GelKVStore(BaseKVStore):
         collection: str = DEFAULT_COLLECTION,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
-        """Store multiple key-value pairs in batches.
+        """
+        Store multiple key-value pairs in batches.
 
         Args:
             kv_pairs: List of (key, value) tuples to store.
             collection: Namespace for the keys.
             batch_size: Number of pairs to store in each batch.
+
         """
         for chunk in (
             kv_pairs[pos : pos + batch_size]
@@ -274,12 +284,14 @@ class GelKVStore(BaseKVStore):
         collection: str = DEFAULT_COLLECTION,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
-        """Async version of put_all.
+        """
+        Async version of put_all.
 
         Args:
             kv_pairs: List of (key, value) tuples to store.
             collection: Namespace for the keys.
             batch_size: Number of pairs to store in each batch.
+
         """
         for chunk in (
             kv_pairs[pos : pos + batch_size]
@@ -293,7 +305,8 @@ class GelKVStore(BaseKVStore):
             )
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
-        """Get a value from the store.
+        """
+        Get a value from the store.
 
         Args:
             key (str): key
@@ -311,7 +324,8 @@ class GelKVStore(BaseKVStore):
     async def aget(
         self, key: str, collection: str = DEFAULT_COLLECTION
     ) -> Optional[dict]:
-        """Get a value from the store.
+        """
+        Get a value from the store.
 
         Args:
             key (str): key
@@ -327,7 +341,8 @@ class GelKVStore(BaseKVStore):
         return json.loads(result) if result is not None else None
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
-        """Get all values from the store.
+        """
+        Get all values from the store.
 
         Args:
             collection (str): collection name
@@ -341,7 +356,8 @@ class GelKVStore(BaseKVStore):
         return {result.key: json.loads(result.value) for result in results}
 
     async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
-        """Get all values from the store.
+        """
+        Get all values from the store.
 
         Args:
             collection (str): collection name
@@ -355,7 +371,8 @@ class GelKVStore(BaseKVStore):
         return {result.key: json.loads(result.value) for result in results}
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        """Delete a value from the store.
+        """
+        Delete a value from the store.
 
         Args:
             key (str): key
@@ -371,7 +388,8 @@ class GelKVStore(BaseKVStore):
         return len(result) > 0
 
     async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        """Delete a value from the store.
+        """
+        Delete a value from the store.
 
         Args:
             key (str): key

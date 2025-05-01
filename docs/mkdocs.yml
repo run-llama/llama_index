@@ -700,6 +700,7 @@ nav:
           - ./examples/vector_stores/elasticsearch_auto_retriever.ipynb
           - ./examples/vector_stores/existing_data/pinecone_existing_data.ipynb
           - ./examples/vector_stores/existing_data/weaviate_existing_data.ipynb
+          - ./examples/vector_stores/gel.ipynb
           - ./examples/vector_stores/neo4j_metadata_filter.ipynb
           - ./examples/vector_stores/orallamavs.ipynb
           - ./examples/vector_stores/pinecone_auto_retriever.ipynb
@@ -880,6 +881,7 @@ nav:
           - ./api_reference/embeddings/alephalpha.md
           - ./api_reference/embeddings/alibabacloud_aisearch.md
           - ./api_reference/embeddings/anyscale.md
+          - ./api_reference/embeddings/autoembeddings.md
           - ./api_reference/embeddings/azure_inference.md
           - ./api_reference/embeddings/azure_openai.md
           - ./api_reference/embeddings/bedrock.md
@@ -1034,6 +1036,7 @@ nav:
           - ./api_reference/llms/lmstudio.md
           - ./api_reference/llms/localai.md
           - ./api_reference/llms/maritalk.md
+          - ./api_reference/llms/meta.md
           - ./api_reference/llms/mistral_rs.md
           - ./api_reference/llms/mistralai.md
           - ./api_reference/llms/mlx.md
@@ -1414,6 +1417,7 @@ nav:
           - ./api_reference/readers/mangadex.md
           - ./api_reference/readers/mangoapps_guides.md
           - ./api_reference/readers/maps.md
+          - ./api_reference/readers/markitdown.md
           - ./api_reference/readers/mbox.md
           - ./api_reference/readers/memos.md
           - ./api_reference/readers/metal.md
@@ -1533,6 +1537,7 @@ nav:
               - ./api_reference/storage/chat_store/azurecosmosmongovcore.md
               - ./api_reference/storage/chat_store/azurecosmosnosql.md
               - ./api_reference/storage/chat_store/dynamodb.md
+              - ./api_reference/storage/chat_store/gel.md
               - ./api_reference/storage/chat_store/index.md
               - ./api_reference/storage/chat_store/mongo.md
               - ./api_reference/storage/chat_store/postgres.md
@@ -1548,6 +1553,7 @@ nav:
               - ./api_reference/storage/docstore/dynamodb.md
               - ./api_reference/storage/docstore/elasticsearch.md
               - ./api_reference/storage/docstore/firestore.md
+              - ./api_reference/storage/docstore/gel.md
               - ./api_reference/storage/docstore/index.md
               - ./api_reference/storage/docstore/mongodb.md
               - ./api_reference/storage/docstore/postgres.md
@@ -1571,6 +1577,7 @@ nav:
               - ./api_reference/storage/index_store/dynamodb.md
               - ./api_reference/storage/index_store/elasticsearch.md
               - ./api_reference/storage/index_store/firestore.md
+              - ./api_reference/storage/index_store/gel.md
               - ./api_reference/storage/index_store/index.md
               - ./api_reference/storage/index_store/mongodb.md
               - ./api_reference/storage/index_store/postgres.md
@@ -1584,6 +1591,7 @@ nav:
               - ./api_reference/storage/kvstore/dynamodb.md
               - ./api_reference/storage/kvstore/elasticsearch.md
               - ./api_reference/storage/kvstore/firestore.md
+              - ./api_reference/storage/kvstore/gel.md
               - ./api_reference/storage/kvstore/index.md
               - ./api_reference/storage/kvstore/mongodb.md
               - ./api_reference/storage/kvstore/postgres.md
@@ -1620,6 +1628,7 @@ nav:
               - ./api_reference/storage/vector_store/epsilla.md
               - ./api_reference/storage/vector_store/faiss.md
               - ./api_reference/storage/vector_store/firestore.md
+              - ./api_reference/storage/vector_store/gel.md
               - ./api_reference/storage/vector_store/google.md
               - ./api_reference/storage/vector_store/hologres.md
               - ./api_reference/storage/vector_store/index.md
@@ -2419,6 +2428,14 @@ plugins:
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-ApertureDB
             - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-sqlite
             - ../llama-index-integrations/embeddings/llama-index-embeddings-openvino-genai
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-gel
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-autoembeddings
+            - ../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-gel
+            - ../llama-index-integrations/storage/docstore/llama-index-storage-docstore-gel
+            - ../llama-index-integrations/storage/index_store/llama-index-storage-index-store-gel
+            - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-gel
+            - ../llama-index-integrations/readers/llama-index-readers-markitdown
+            - ../llama-index-integrations/llms/llama-index-llms-meta
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
