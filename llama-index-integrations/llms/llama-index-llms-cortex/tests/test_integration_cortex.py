@@ -34,6 +34,16 @@ def test_cortex_metadata(cortex_llm):
     assert metadata.num_output == 4096
 
 
+def test_cortex_metadata(cortex_llm):
+    """Test that the LLM metadata is correctly configured."""
+    metadata = cortex_llm.metadata
+
+    assert metadata.model_name == "llama3.2-1b"
+    assert metadata.is_chat_model is True
+    assert metadata.context_window == 128000
+    assert metadata.num_output == 4096
+
+
 def test_complete(cortex_llm):
     response = cortex_llm.complete("hello", temperature=0, max_tokens=2)
     assert isinstance(response, CompletionResponse)
@@ -369,9 +379,7 @@ def test_session_auth_token_generation(mock_session):
     )
 
     # Test the token extraction
-    token = cortex._generate_auth_token()
-    assert token == mock_session.connection.rest.token
-    assert token == "mock_jwt_token"
+    assert cortex._generate_auth_header() == 'Snowflake Token="mock_jwt_token"'
 
 
 def test_complete_with_session_auth(mock_cortex_with_session):
@@ -395,7 +403,7 @@ def test_complete_with_session_auth(mock_cortex_with_session):
         args, kwargs = mock_post.call_args
         headers = kwargs.get("headers", {})
         assert "Authorization" in headers
-        assert headers["Authorization"] == "Bearer mock_jwt_token"
+        assert headers["Authorization"] == 'Snowflake Token="mock_jwt_token"'
 
 
 def test_chat_with_session_auth(mock_cortex_with_session):
@@ -421,4 +429,4 @@ def test_chat_with_session_auth(mock_cortex_with_session):
         args, kwargs = mock_post.call_args
         headers = kwargs.get("headers", {})
         assert "Authorization" in headers
-        assert headers["Authorization"] == "Bearer mock_jwt_token"
+        assert headers["Authorization"] == 'Snowflake Token="mock_jwt_token"'
