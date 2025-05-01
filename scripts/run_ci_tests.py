@@ -190,7 +190,7 @@ def run_pytest(root_dir: str, package_dir: str, changed_packages: set[str]):
                 install_local.add(str(Path(root_dir) / package_path))
     if install_local:
         result = subprocess.run(
-            ["uv", "pip", "install", "-U", " ".join(install_local)],
+            ["uv", "pip", "install", "-U", *install_local],
             cwd=package_dir,
             text=True,
             capture_output=True,
