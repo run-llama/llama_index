@@ -1523,7 +1523,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-markitdown"
-version = "0.3.0"
+version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1553,7 +1553,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-core" },
+    { name = "llama-index-core", specifier = ">=0.12.0,<0.13" },
     { name = "markitdown", extras = ["all"], specifier = "==0.1.0" },
 ]
 
