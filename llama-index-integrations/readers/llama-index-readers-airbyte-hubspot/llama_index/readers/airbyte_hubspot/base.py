@@ -4,12 +4,14 @@ from llama_index.readers.airbyte_cdk.base import AirbyteCDKReader, RecordHandler
 
 
 class AirbyteHubspotReader(AirbyteCDKReader):
-    """AirbyteHubspotReader reader.
+    """
+    AirbyteHubspotReader reader.
 
     Retrieve documents from Hubspot
 
     Args:
         config: The config object for the hubspot source.
+
     """
 
     def __init__(

@@ -67,13 +67,15 @@ class WaiiToolSpec(BaseToolSpec, BaseReader):
         return documents
 
     def load_data(self, ask: str) -> List[Document]:
-        """Query using natural language and load data from the Database, returning a list of Documents.
+        """
+        Query using natural language and load data from the Database, returning a list of Documents.
 
         Args:
             ask: a natural language question.
 
         Returns:
             List[Document]: A list of Document objects.
+
         """
         query = self.generate_query_only(ask)
 
@@ -102,6 +104,7 @@ class WaiiToolSpec(BaseToolSpec, BaseReader):
 
         Returns:
             str: A string containing the summarization of the answer.
+
         """
         query = self.generate_query_only(ask)
 
@@ -116,6 +119,7 @@ class WaiiToolSpec(BaseToolSpec, BaseReader):
 
         Returns:
             str: A string containing the query.
+
         """
         from waii_sdk_py import WAII
         from waii_sdk_py.query import QueryGenerationRequest
@@ -139,6 +143,7 @@ class WaiiToolSpec(BaseToolSpec, BaseReader):
 
         Returns:
             str: A string containing the summarization of the answer.
+
         """
         from waii_sdk_py import WAII
         from waii_sdk_py.query import DescribeQueryRequest
@@ -158,6 +163,7 @@ class WaiiToolSpec(BaseToolSpec, BaseReader):
 
         Returns:
             str: A string containing the summarization of the answer.
+
         """
         from waii_sdk_py import WAII
         from waii_sdk_py.query import QueryPerformanceRequest
@@ -177,6 +183,7 @@ class WaiiToolSpec(BaseToolSpec, BaseReader):
 
         Returns:
             str: A string containing the summarization of the answer.
+
         """
         from waii_sdk_py import WAII
         from waii_sdk_py.query import DiffQueryRequest
@@ -205,6 +212,7 @@ class WaiiToolSpec(BaseToolSpec, BaseReader):
 
         Returns:
             str: A string containing the summarization of the answer.
+
         """
         from waii_sdk_py import WAII
 
@@ -257,6 +265,7 @@ class WaiiToolSpec(BaseToolSpec, BaseReader):
 
         Returns:
             str: A string containing the generated query.
+
         """
         from waii_sdk_py import WAII
         from waii_sdk_py.query import TranscodeQueryRequest

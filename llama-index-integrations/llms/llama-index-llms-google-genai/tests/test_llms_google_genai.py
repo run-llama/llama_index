@@ -28,23 +28,27 @@ SKIP_GEMINI = (
 
 class Poem(BaseModel):
     """A simple poem."""
+
     content: str
 
 
 class Column(BaseModel):
     """A model of a column in a table."""
+
     name: str = Field(description="Column field")
     data_type: str = Field(description="Data type field")
 
 
 class Table(BaseModel):
     """A model of a table in a database."""
+
     name: str = Field(description="Table name field")
     columns: List[Column] = Field(description="List of random Column objects")
 
 
 class Schema(BaseModel):
     """A model of a schema in a database."""
+
     schema_name: str = Field(description="Schema name")
     tables: List[Table] = Field(description="List of random Table objects")
 
@@ -83,7 +87,7 @@ def test_complete(llm: GoogleGenAI) -> None:
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_acomplete(llm: GoogleGenAI) -> None:
     """Test both sync and async complete methods."""
     prompt = "Write a poem about a magic backpack"
@@ -106,7 +110,7 @@ def test_chat(llm: GoogleGenAI) -> None:
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat(llm: GoogleGenAI) -> None:
     """Test both sync and async chat methods."""
     message = ChatMessage(content="Write a poem about a magic backpack")
@@ -129,7 +133,7 @@ def test_stream_chat(llm: GoogleGenAI) -> None:
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat(llm: GoogleGenAI) -> None:
     """Test both sync and async stream chat methods."""
     message = ChatMessage(content="Write a poem about a magic backpack")
@@ -154,7 +158,7 @@ def test_stream_complete(llm: GoogleGenAI) -> None:
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete(llm: GoogleGenAI) -> None:
     """Test both sync and async stream complete methods."""
     prompt = "Write a poem about a magic backpack"
@@ -169,7 +173,7 @@ async def test_astream_complete(llm: GoogleGenAI) -> None:
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astructured_predict(llm: GoogleGenAI) -> None:
     """Test async structured prediction with a simple schema."""
     response = await llm.astructured_predict(
@@ -202,7 +206,7 @@ def test_simple_stream_structured_predict(llm: GoogleGenAI) -> None:
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_simple_astream_structured_predict(llm: GoogleGenAI) -> None:
     """Test async stream structured prediction with a simple schema."""
     response = await llm.astream_structured_predict(
@@ -299,7 +303,7 @@ def test_as_structured_llm(llm: GoogleGenAI) -> None:
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_as_structured_llm_async(llm: GoogleGenAI) -> None:
     prompt = PromptTemplate("Generate content")
 
@@ -335,7 +339,7 @@ def test_as_structure_llm_with_config(llm: GoogleGenAI) -> None:
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_as_structured_llm_async_with_config(llm: GoogleGenAI) -> None:
     response = await llm.as_structured_llm(output_cls=Poem).acomplete(
         prompt="Write a poem about a magic backpack",
@@ -459,11 +463,13 @@ def test_optional_value_gemini(llm: GoogleGenAI) -> None:
 def test_optional_lists_nested_gemini(llm: GoogleGenAI) -> None:
     class TextContent(BaseModel):
         """A piece of text content."""
+
         text: str
         language: str
 
     class ImageContent(BaseModel):
         """A piece of image content."""
+
         url: str
         alt_text: Optional[str]
         width: Optional[int]
@@ -471,12 +477,14 @@ def test_optional_lists_nested_gemini(llm: GoogleGenAI) -> None:
 
     class VideoContent(BaseModel):
         """A piece of video content."""
+
         url: str
         duration_seconds: int
         thumbnail: Optional[str]
 
     class Content(BaseModel):
         """Content of a blog post."""
+
         title: str
         created_at: str
         text: Optional[TextContent] = None
@@ -486,6 +494,7 @@ def test_optional_lists_nested_gemini(llm: GoogleGenAI) -> None:
 
     class BlogPost(BaseModel):
         """A blog post."""
+
         id: str
         author: str
         published: bool

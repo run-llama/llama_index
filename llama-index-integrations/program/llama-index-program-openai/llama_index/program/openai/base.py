@@ -321,7 +321,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
                 continue
 
     def _description_eval(self, **kwargs: Any) -> Optional[str]:
-        description = kwargs.get("description", None)
+        description = kwargs.get("description")
 
         ## __doc__ checks if docstring is provided in the Pydantic Model
         if not (self._output_cls.__doc__ or description):

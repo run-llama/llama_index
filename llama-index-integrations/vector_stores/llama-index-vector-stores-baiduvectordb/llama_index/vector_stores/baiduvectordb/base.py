@@ -68,7 +68,8 @@ class TableField:
 
 
 class TableParams:
-    """Baidu VectorDB table params.
+    """
+    Baidu VectorDB table params.
 
     See the following documentation for details:
     https://cloud.baidu.com/doc/VDB/s/mlrsob0p6
@@ -94,6 +95,7 @@ class TableParams:
              ...
              query = VectorStoreQuery(...)
              store.query(query, filter="age > 20 and age < 40 and name = 'name1'")
+
     """
 
     def __init__(
@@ -122,7 +124,8 @@ class TableParams:
 
 
 class BaiduVectorDB(BasePydanticVectorStore):
-    """Baidu VectorDB as a vector store.
+    """
+    Baidu VectorDB as a vector store.
 
     In order to use this you need to have a database instance.
     See the following documentation for details:
@@ -134,6 +137,7 @@ class BaiduVectorDB(BasePydanticVectorStore):
         api_key (Optional[str]): The Api-Key for Baidu VectorDB
         database_name(Optional[str]): The database name for Baidu VectorDB
         table_params (Optional[TableParams]): The table parameters for BaiduVectorDB
+
     """
 
     user_defined_fields: List[TableField] = Field(default_factory=list)
@@ -341,7 +345,8 @@ class BaiduVectorDB(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -396,13 +401,15 @@ class BaiduVectorDB(BasePydanticVectorStore):
         raise NotImplementedError("Not support.")
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): contains
                 query_embedding (List[float]): query embedding
                 similarity_top_k (int): top k most similar nodes
                 filters (Optional[MetadataFilters]): filter result
+
         """
         from pymochow.model.table import AnnSearch, HNSWSearchParams
 

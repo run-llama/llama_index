@@ -15,7 +15,8 @@ class RTFReader(BaseReader):
         extra_info: Optional[Dict[str, Any]] = None,
         **load_kwargs: Any
     ) -> List[Document]:
-        """Load data from RTF file.
+        """
+        Load data from RTF file.
 
         Args:
             input_file (Path | str): Path for the RTF file.
@@ -23,6 +24,7 @@ class RTFReader(BaseReader):
 
         Returns:
             List[Document]: List of documents.
+
         """
         try:
             from striprtf.striprtf import rtf_to_text

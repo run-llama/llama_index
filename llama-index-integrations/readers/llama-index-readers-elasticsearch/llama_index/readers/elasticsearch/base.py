@@ -1,4 +1,5 @@
-"""Elasticsearch (or Opensearch) reader over REST api.
+"""
+Elasticsearch (or Opensearch) reader over REST api.
 
 This only uses the basic search api, so it will work with Elasticsearch and Opensearch.
 
@@ -22,6 +23,7 @@ class ElasticsearchReader(BasePydanticReader):
         endpoint (str): URL (http/https) of cluster
         index (str): Name of the index (required)
         httpx_client_args (dict): Optional additional args to pass to the `httpx.Client`
+
     """
 
     is_remote: bool = True
@@ -58,7 +60,8 @@ class ElasticsearchReader(BasePydanticReader):
         embedding_field: Optional[str] = None,
         metadata_fields: Optional[List[str]] = None,
     ) -> List[Document]:
-        """Read data from the Elasticsearch index.
+        """
+        Read data from the Elasticsearch index.
 
         Args:
             field (str): Field in the document to retrieve text from

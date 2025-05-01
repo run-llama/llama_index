@@ -21,7 +21,8 @@ logger = logging.getLogger(__name__)
 def resolve_upstage_credentials(
     api_key: Optional[str] = None, api_base: Optional[str] = None
 ) -> Tuple[Optional[str], str]:
-    """Resolve Upstage credentials.
+    """
+    Resolve Upstage credentials.
 
     The order of precedence is:
     1. param

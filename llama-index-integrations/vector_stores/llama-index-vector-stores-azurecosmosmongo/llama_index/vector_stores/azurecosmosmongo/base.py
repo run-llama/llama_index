@@ -1,4 +1,5 @@
-"""Azure CosmosDB MongoDB vCore Vector store index.
+"""
+Azure CosmosDB MongoDB vCore Vector store index.
 
 An index that is built on top of an existing vector store.
 
@@ -26,7 +27,8 @@ logger = logging.getLogger(__name__)
 
 
 class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
-    """Azure CosmosDB MongoDB vCore Vector Store.
+    """
+    Azure CosmosDB MongoDB vCore Vector Store.
 
     To use, you should have both:
     - the ``pymongo`` python package installed
@@ -50,6 +52,7 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
             collection_name="paul_graham_essay",
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -81,7 +84,8 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         insert_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize the vector store.
+        """
+        Initialize the vector store.
 
         Args:
             mongodb_client: An Azure CosmoDB MongoDB client (type: MongoClient, shown any for lazy import).
@@ -97,6 +101,7 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
             cosmos_search_kwargs: An Azure CosmosDB MongoDB field that will
             contain search options, such as kind, numLists, similarity, and dimensions.
             insert_kwargs: The kwargs used during `insert`.
+
         """
         super().__init__()
 
@@ -239,7 +244,8 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -424,12 +430,14 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         return pipeline
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query: a VectorStoreQuery object.
 
         Returns:
             A VectorStoreQueryResult containing the results of the query.
+
         """
         return self._query(query, **kwargs)

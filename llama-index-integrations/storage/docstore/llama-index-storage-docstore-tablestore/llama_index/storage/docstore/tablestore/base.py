@@ -6,7 +6,8 @@ from llama_index.storage.kvstore.tablestore import TablestoreKVStore
 
 
 class TablestoreDocumentStore(KVDocumentStore):
-    """TablestoreDocument Store.
+    """
+    TablestoreDocument Store.
 
     Args:
         tablestore_kvstore (TablestoreKVStore): tablestore_kvstore key-value store
@@ -14,6 +15,7 @@ class TablestoreDocumentStore(KVDocumentStore):
 
     Returns:
         TablestoreDocumentStore: A Tablestore document store object.
+
     """
 
     def __init__(

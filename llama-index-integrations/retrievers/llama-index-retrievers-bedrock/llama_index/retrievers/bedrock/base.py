@@ -8,7 +8,8 @@ from llama_index.core.utilities.aws_utils import get_aws_service_client
 
 
 class AmazonKnowledgeBasesRetriever(BaseRetriever):
-    """`Amazon Bedrock Knowledge Bases` retrieval.
+    """
+    `Amazon Bedrock Knowledge Bases` retrieval.
 
     See https://aws.amazon.com/bedrock/knowledge-bases for more info.
 
@@ -46,6 +47,7 @@ class AmazonKnowledgeBasesRetriever(BaseRetriever):
                     }
                 },
             )
+
     """
 
     def __init__(

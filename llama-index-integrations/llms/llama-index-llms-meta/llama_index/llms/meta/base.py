@@ -5,7 +5,8 @@ from llama_index.llms.openai_like import OpenAILike
 
 
 class LlamaLLM(OpenAILike):
-    """Llama LLM.
+    """
+    Llama LLM.
 
     Examples:
         `pip install llama-index-llms-meta`
@@ -24,6 +25,7 @@ class LlamaLLM(OpenAILike):
         resp = llm.complete("Who is Paul Graham?")
         print(resp)
         ```
+
     """
 
     def __init__(

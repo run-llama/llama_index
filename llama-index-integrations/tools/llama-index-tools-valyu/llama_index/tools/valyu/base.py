@@ -36,7 +36,8 @@ class ValyuToolSpec(BaseToolSpec):
         query_rewrite: bool = True,
         similarity_threshold: float = 0.5,
     ) -> List[Document]:
-        """Find relevant programmaticly licensed proprietary content and the web to answer your query.
+        """
+        Find relevant programmaticly licensed proprietary content and the web to answer your query.
 
         Args:
             query (str): The question or topic to search for
@@ -49,6 +50,7 @@ class ValyuToolSpec(BaseToolSpec):
 
         Returns:
             List[Document]: List of Document objects containing the search results
+
         """
         if max_price is None:
             max_price = self._max_price

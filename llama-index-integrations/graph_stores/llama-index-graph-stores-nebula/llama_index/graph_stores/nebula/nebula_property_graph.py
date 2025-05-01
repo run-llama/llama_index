@@ -98,6 +98,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         %ngql --address 127.0.0.1 --port 9669 --user root --password nebula
         %ngql CREATE SPACE IF NOT EXISTS llamaindex_nebula_property_graph(vid_type=FIXED_STRING(256));
         ```
+
     """
 
     _space: str
@@ -157,7 +158,8 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         return self._client.execute(query)
 
     def refresh_schema(self) -> None:
-        """Refresh schema.
+        """
+        Refresh schema.
 
         Example data of self.structured_schema
         {
