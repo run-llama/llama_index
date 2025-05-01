@@ -25,7 +25,7 @@ repos:
     rev: v0.11.8
     hooks:
       - id: ruff
-        args: [--exit-non-zero-on-fix]
+        args: [--exit-non-zero-on-fix, --fix]
         exclude: ".*poetry.lock|.*_static"
 
   # - repo: https://github.com/psf/black-pre-commit-mirror
