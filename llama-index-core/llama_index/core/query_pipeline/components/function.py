@@ -25,7 +25,8 @@ AnnotatedCallable = Annotated[
 
 
 def get_parameters(fn: Callable) -> Tuple[Set[str], Set[str]]:
-    """Get parameters from function.
+    """
+    Get parameters from function.
 
     Returns:
         Tuple[Set[str], Set[str]]: required and optional parameters

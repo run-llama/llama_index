@@ -14,7 +14,8 @@ from llama_index.core.utils import concat_dirs
 
 
 class SimpleIndexStore(KVIndexStore):
-    """Simple in-memory Index store.
+    """
+    Simple in-memory Index store.
 
     Args:
         simple_kvstore (SimpleKVStore): simple key-value store

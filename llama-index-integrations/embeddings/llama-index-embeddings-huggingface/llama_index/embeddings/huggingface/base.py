@@ -216,6 +216,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
 
         Raises:
             Exception: If embedding fails after retries
+
         """
         try:
             if self._parallel_process:
@@ -262,6 +263,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
         Raises:
             ValueError: If any input text is invalid
             Exception: If embedding fails after retries
+
         """
         return self._embed_with_retry(inputs, prompt_name)
 
@@ -274,6 +276,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
 
         Returns:
             List[float]: numpy array of embeddings
+
         """
         return self._embed([query], prompt_name="query")[0]
 
@@ -286,6 +289,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
 
         Returns:
             List[float]: numpy array of embeddings
+
         """
         return await asyncio.to_thread(self._get_query_embedding, query)
 
@@ -298,6 +302,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
 
         Returns:
             List[float]: numpy array of embeddings
+
         """
         return await asyncio.to_thread(self._get_text_embedding, text)
 
@@ -310,6 +315,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
 
         Returns:
             List[float]: numpy array of embeddings
+
         """
         return self._embed([text], prompt_name="text")[0]
 
@@ -322,6 +328,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
 
         Returns:
             List[List[float]]: numpy array of embeddings
+
         """
         return self._embed(texts, prompt_name="text")
 
@@ -427,6 +434,7 @@ class HuggingFaceInferenceAPIEmbedding(BaseEmbedding):  # type: ignore[misc]
 
         Args:
             kwargs: See the class-level Fields.
+
         """
         if kwargs.get("model_name") is None:
             task = kwargs.get("task", "")
@@ -450,6 +458,7 @@ class HuggingFaceInferenceAPIEmbedding(BaseEmbedding):  # type: ignore[misc]
         Args:
             task: Hugging Face task to check within. A list of all tasks can be
                 found here: https://huggingface.co/tasks
+
         """
         all_models = self._sync_client.list_deployed_models(frameworks="all")
         try:

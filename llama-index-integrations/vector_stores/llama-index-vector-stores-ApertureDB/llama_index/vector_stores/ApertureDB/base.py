@@ -279,6 +279,7 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
         Args:
             nodes: List[TextNode] List of text nodes
             kwargs: Additional arguments to pass to add
+
         """
         ids = []
         data = []
@@ -322,6 +323,7 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
 
         Args:
             descriptor_set_name: The name of the descriptor set to delete.
+
         """
         self._utils.remove_descriptorset(descriptor_set_name)
 
@@ -372,6 +374,7 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
 
         Returns:
             None
+
         """
         ref_property_key_name = "ref_doc_id"
         query = [

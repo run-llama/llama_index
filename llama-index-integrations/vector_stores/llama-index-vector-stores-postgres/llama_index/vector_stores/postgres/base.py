@@ -131,7 +131,8 @@ def get_data_model(
 
 
 class PGVectorStore(BasePydanticVectorStore):
-    """Postgres Vector Store.
+    """
+    Postgres Vector Store.
 
     Examples:
         `pip install llama-index-vector-stores-postgres`
@@ -151,6 +152,7 @@ class PGVectorStore(BasePydanticVectorStore):
             use_halfvec=True  # Enable half precision
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -204,7 +206,8 @@ class PGVectorStore(BasePydanticVectorStore):
         engine: Optional[sqlalchemy.engine.Engine] = None,
         async_engine: Optional[sqlalchemy.ext.asyncio.AsyncEngine] = None,
     ) -> None:
-        """Constructor.
+        """
+        Constructor.
 
         Args:
             connection_string (Union[str, sqlalchemy.engine.URL]): Connection string to postgres db.
@@ -225,6 +228,7 @@ class PGVectorStore(BasePydanticVectorStore):
             use_halfvec (bool, optional): If `True`, use half-precision vectors. Defaults to False.
             engine (Optional[sqlalchemy.engine.Engine], optional): SQLAlchemy engine instance to use. Defaults to None.
             async_engine (Optional[sqlalchemy.ext.asyncio.AsyncEngine], optional): SQLAlchemy async engine instance to use. Defaults to None.
+
         """
         table_name = table_name.lower() if table_name else "llamaindex"
         schema_name = schema_name.lower() if schema_name else "public"
@@ -317,7 +321,8 @@ class PGVectorStore(BasePydanticVectorStore):
         create_engine_kwargs: Optional[Dict[str, Any]] = None,
         use_halfvec: bool = False,
     ) -> "PGVectorStore":
-        """Construct from params.
+        """
+        Construct from params.
 
         Args:
             host (Optional[str], optional): Host of postgres connection. Defaults to None.
@@ -344,6 +349,7 @@ class PGVectorStore(BasePydanticVectorStore):
 
         Returns:
             PGVectorStore: Instance of PGVectorStore constructed from params.
+
         """
         conn_str = (
             connection_string
@@ -982,11 +988,13 @@ class PGVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes.
+        """
+        Deletes nodes.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+
         """
         if not node_ids and not filters:
             return
@@ -1012,11 +1020,13 @@ class PGVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes asynchronously.
+        """
+        Deletes nodes asynchronously.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+
         """
         if not node_ids and not filters:
             return

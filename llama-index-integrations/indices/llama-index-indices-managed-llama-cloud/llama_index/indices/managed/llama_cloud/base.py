@@ -1,4 +1,5 @@
-"""Managed index.
+"""
+Managed index.
 
 A managed Index - where the index is accessible via some API that
 interfaces a managed service.

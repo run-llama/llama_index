@@ -13,11 +13,13 @@ class PdbAbstractReader(BaseReader):
         super().__init__()
 
     def load_data(self, pdb_ids: List[str]) -> List[Document]:
-        """Load data from RCSB or EBI REST API.
+        """
+        Load data from RCSB or EBI REST API.
 
         Args:
             pdb_ids (List[str]): List of PDB ids \
                 for which primary citation abstract are to be read.
+
         """
         results = []
         for pdb_id in pdb_ids:

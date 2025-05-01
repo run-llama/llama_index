@@ -75,7 +75,7 @@ def test_function_tool_to_langchain() -> None:
     assert langchain_tool2.args_schema == TestSchema
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_function_tool_async() -> None:
     """Test function tool async."""
     function_tool = FunctionTool.from_defaults(
@@ -90,7 +90,7 @@ async def test_function_tool_async() -> None:
 
 
 @pytest.mark.skipif(langchain is None, reason="langchain not installed")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_function_tool_async_langchain() -> None:
     function_tool = FunctionTool.from_defaults(
         fn=tmp_function, async_fn=async_tmp_function, name="foo", description="bar"
@@ -126,7 +126,7 @@ async def test_function_tool_async_langchain() -> None:
     assert langchain_tool2.args_schema == TestSchema
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_function_tool_async_defaults() -> None:
     """Test async calls to function tool when only sync function is given."""
     function_tool = FunctionTool.from_defaults(
@@ -138,7 +138,7 @@ async def test_function_tool_async_defaults() -> None:
 
 
 @pytest.mark.skipif(langchain is None, reason="langchain not installed")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_function_tool_async_defaults_langchain() -> None:
     function_tool = FunctionTool.from_defaults(
         fn=tmp_function, name="foo", description="bar"

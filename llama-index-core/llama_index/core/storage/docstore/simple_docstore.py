@@ -15,7 +15,8 @@ from llama_index.core.utils import concat_dirs
 
 
 class SimpleDocumentStore(KVDocumentStore):
-    """Simple Document (Node) store.
+    """
+    Simple Document (Node) store.
 
     An in-memory store for Document and Node objects.
 
@@ -42,7 +43,8 @@ class SimpleDocumentStore(KVDocumentStore):
         namespace: Optional[str] = None,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "SimpleDocumentStore":
-        """Create a SimpleDocumentStore from a persist directory.
+        """
+        Create a SimpleDocumentStore from a persist directory.
 
         Args:
             persist_dir (str): directory to persist the store
@@ -63,7 +65,8 @@ class SimpleDocumentStore(KVDocumentStore):
         namespace: Optional[str] = None,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "SimpleDocumentStore":
-        """Create a SimpleDocumentStore from a persist path.
+        """
+        Create a SimpleDocumentStore from a persist path.
 
         Args:
             persist_path (str): Path to persist the store

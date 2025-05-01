@@ -41,7 +41,8 @@ logger = logging.getLogger(__name__)
 
 
 class HuggingFaceLLM(CustomLLM):
-    r"""HuggingFace LLM.
+    r"""
+    HuggingFace LLM.
 
     Examples:
         `pip install llama-index-llms-huggingface`
@@ -99,6 +100,7 @@ class HuggingFaceLLM(CustomLLM):
         response = llm.complete("What is the meaning of life?")
         print(str(response))
         ```
+
     """
 
     model_name: str = Field(

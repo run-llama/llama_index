@@ -99,7 +99,8 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
         eps_error: float = 0.01,
         delta_error: float = 1e-10,
     ) -> float:
-        """Return the epsilon value given a sigma.
+        """
+        Return the epsilon value given a sigma.
 
         Args:
             sigma (float): The parameter associated with noise mechanism.
@@ -112,6 +113,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
 
         Returns:
             float: The epsilon value.
+
         """
         if max_token_cnt > max_self_compositions:
             raise ValueError(
@@ -254,7 +256,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
                 "Something went wrong when trying to get LogProb from CompletionResponse."
             )
 
-        split_probs = {t: 0 for t in token_universe_probas}
+        split_probs = dict.fromkeys(token_universe_probas, 0)
         for el in next_token_proba_distn:  # for immediate next token only
             if el.token in split_probs:
                 split_probs[el.token] = np.exp(el.logprob)
@@ -421,7 +423,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
             )
 
         if isinstance(sizes, int):
-            sizes_dict = {d: sizes for d in self.labels}
+            sizes_dict = dict.fromkeys(self.labels, sizes)
         elif isinstance(sizes, dict):
             sizes_dict = sizes
         else:
@@ -463,7 +465,7 @@ class DiffPrivateSimpleDatasetPack(BaseLlamaPack):
             )
 
         if isinstance(sizes, int):
-            sizes_dict = {d: sizes for d in self.labels}
+            sizes_dict = dict.fromkeys(self.labels, sizes)
         elif isinstance(sizes, dict):
             sizes_dict = sizes
         else:

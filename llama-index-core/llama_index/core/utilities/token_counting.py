@@ -8,34 +8,40 @@ from llama_index.core.utils import get_tokenizer
 
 
 class TokenCounter:
-    """Token counter class.
+    """
+    Token counter class.
 
     Attributes:
         model (Optional[str]): The model to use for token counting.
+
     """
 
     def __init__(self, tokenizer: Optional[Callable[[str], list]] = None) -> None:
         self.tokenizer = tokenizer or get_tokenizer()
 
     def get_string_tokens(self, string: str) -> int:
-        """Get the token count for a string.
+        """
+        Get the token count for a string.
 
         Args:
             string (str): The string to count.
 
         Returns:
             int: The token count.
+
         """
         return len(self.tokenizer(string))
 
     def estimate_tokens_in_messages(self, messages: List[ChatMessage]) -> int:
-        """Estimate token count for a single message.
+        """
+        Estimate token count for a single message.
 
         Args:
             message (OpenAIMessage): The message to estimate the token count for.
 
         Returns:
             int: The estimated token count.
+
         """
         tokens = 0
 
@@ -78,7 +84,8 @@ class TokenCounter:
         return tokens
 
     def estimate_tokens_in_tools(self, tools: List[Dict[str, Any]]) -> int:
-        """Estimate token count for the tools.
+        """
+        Estimate token count for the tools.
 
         We take here a list of tools created using the `to_openai_tool()` function (or similar).
 
@@ -87,6 +94,7 @@ class TokenCounter:
 
         Returns:
             int: The estimated token count.
+
         """
         if not tools:
             return 0

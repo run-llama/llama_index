@@ -41,7 +41,7 @@ GLM_MULTI_MODAL_MODELS = {
 
 
 def glm_model_to_context_size(model: str) -> Union[int, None]:
-    token_limit = GLM_MULTI_MODAL_MODELS.get(model, None)
+    token_limit = GLM_MULTI_MODAL_MODELS.get(model)
 
     if token_limit is None:
         raise ValueError(
@@ -65,7 +65,8 @@ def async_llm_generate(item):
 
 
 class ZhipuAIMultiModal(MultiModalLLM):
-    """ZhipuAI MultiModal.
+    """
+    ZhipuAI MultiModal.
 
     Visit https://open.bigmodel.cn to get more information about ZhipuAI.
 
@@ -80,6 +81,7 @@ class ZhipuAIMultiModal(MultiModalLLM):
         response = llm.complete("draw a bird flying in the sky")
         print(response)
         ```
+
     """
 
     model: str = Field(description="The ZhipuAI model to use.")
@@ -222,7 +224,7 @@ class ZhipuAIMultiModal(MultiModalLLM):
             raw_response = self._client.videos.generations(
                 model=self.model,
                 prompt=messages_to_prompt(messages),
-                image_url=kwargs.get("image_url", None),
+                image_url=kwargs.get("image_url"),
             )
             task_id = raw_response.id
             task_status = raw_response.task_status

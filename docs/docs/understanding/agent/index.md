@@ -33,7 +33,7 @@ Our agent will be powered by OpenAI's `gpt-4o-mini` LLM, so you'll need an [API 
 OPENAI_API_KEY=sk-proj-xxxx
 ```
 
-If you don't want to use OpenAI, you can use [any other LLM](../using_llms/index.md) including local models. Agents require capable models, so smaller models may be less reliable.
+If you don't want to use OpenAI, you can use [any other LLM](../using_llms/using_llms.md) including local models. Agents require capable models, so smaller models may be less reliable.
 
 ## Bring in dependencies
 

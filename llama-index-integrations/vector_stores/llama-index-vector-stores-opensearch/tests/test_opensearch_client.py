@@ -241,7 +241,7 @@ def test_functionality(
         assert count_docs_in_index(os_store) == len(node_embeddings) - 1
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
 async def test_async_functionality(
     os_stores: List[OpensearchVectorStore], node_embeddings: List[TextNode]
@@ -291,7 +291,7 @@ def test_delete_nodes(
         assert "ccc" in res.ids
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
 async def test_adelete_nodes(
     os_stores: List[OpensearchVectorStore], node_embeddings_2: List[TextNode]
@@ -421,7 +421,7 @@ def test_clear(
         assert len(res.ids) == 0
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
 async def test_aclear(
     os_stores: List[OpensearchVectorStore], node_embeddings_2: List[TextNode]
@@ -656,7 +656,8 @@ def test_filter_text_match(
     os_stores: List[OpensearchVectorStore],
     insert_document,
 ):
-    """Test that OpensearchVectorStore correctly applies FilterOperator.TEXT_MATCH in filters. Also tests that
+    """
+    Test that OpensearchVectorStore correctly applies FilterOperator.TEXT_MATCH in filters. Also tests that
     fuzzy matching works as intended.
     """
     for os_store in os_stores:
@@ -685,7 +686,8 @@ def test_filter_text_match(
 
 @pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
 def test_filter_contains(os_stores: List[OpensearchVectorStore], insert_document):
-    """Test that OpensearchVectorStore correctly applies FilterOperator.CONTAINS in filters. Should only match
+    """
+    Test that OpensearchVectorStore correctly applies FilterOperator.CONTAINS in filters. Should only match
     exact substring matches.
     """
     for os_store in os_stores:
@@ -788,7 +790,8 @@ def test_filter_nested(
 def test_filter_array_of_strings(
     os_stores: List[OpensearchVectorStore], insert_document
 ):
-    """Test that OpensearchVectorStore correctly applies Filter.Operator.IN filters
+    """
+    Test that OpensearchVectorStore correctly applies Filter.Operator.IN filters
     when the filter value is an array of strings. Should only match all members
     of the input array exist in the field.
     """

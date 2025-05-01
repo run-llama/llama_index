@@ -102,7 +102,7 @@ def test_tool_spec() -> None:
     assert fn_schema["properties"]["arg1"]["type"] == "boolean"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_tool_spec_async() -> None:
     """Test async_fn of tool spec."""
     tool_spec = TestToolSpec()

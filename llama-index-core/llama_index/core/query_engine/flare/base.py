@@ -1,4 +1,5 @@
-"""Query engines based on the FLARE paper.
+"""
+Query engines based on the FLARE paper.
 
 Active Retrieval Augmented Generation.
 
@@ -95,7 +96,8 @@ DEFAULT_INSTRUCT_PROMPT = PromptTemplate(DEFAULT_INSTRUCT_PROMPT_TMPL)
 
 
 class FLAREInstructQueryEngine(BaseQueryEngine):
-    """FLARE Instruct query engine.
+    """
+    FLARE Instruct query engine.
 
     This is the version of FLARE that uses retrieval-encouraging instructions.
 

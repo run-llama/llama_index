@@ -20,6 +20,7 @@ class CouchbaseIndexStore(KVIndexStore):
         couchbase_kvstore (CouchbaseKVStore): Couchbase key-value store
         namespace (str): namespace for the index store
         collection_suffix (str): suffix for the collection name
+
         """
         super().__init__(
             couchbase_kvstore,

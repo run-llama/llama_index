@@ -20,6 +20,7 @@ llm = HuggingFaceInferenceAPI(
     temperature=0.7,
     max_tokens=100,
     token="<your-token>",  # Optional
+    provider="hf-inference",  # Optional
 )
 
 response = llm.complete("Hello, how are you?")

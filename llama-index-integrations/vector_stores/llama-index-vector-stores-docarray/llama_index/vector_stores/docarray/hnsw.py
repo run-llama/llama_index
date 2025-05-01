@@ -6,7 +6,8 @@ from llama_index.vector_stores.docarray.base import DocArrayVectorStore
 
 
 class DocArrayHnswVectorStore(DocArrayVectorStore):
-    """Class representing a DocArray HNSW vector store.
+    """
+    Class representing a DocArray HNSW vector store.
 
     This class is a lightweight Document Index implementation provided by Docarray.
     It stores vectors on disk in hnswlib, and stores all other data in SQLite.
@@ -20,6 +21,7 @@ class DocArrayHnswVectorStore(DocArrayVectorStore):
         # Initialize the DocArrayHnswVectorStore
         vector_store = DocArrayHnswVectorStore(work_dir="hnsw_index", dim=1536)
         ```
+
     """
 
     def __init__(
@@ -34,7 +36,8 @@ class DocArrayHnswVectorStore(DocArrayVectorStore):
         allow_replace_deleted: bool = True,
         num_threads: int = 1,
     ):
-        """Initializes the DocArrayHnswVectorStore.
+        """
+        Initializes the DocArrayHnswVectorStore.
 
         Args:
             work_dir (str): The working directory.
@@ -52,6 +55,7 @@ class DocArrayHnswVectorStore(DocArrayVectorStore):
                 deleted elements. Default is True.
             num_threads (int, optional): Number of threads for index construction.
                 Default is 1.
+
         """
         import_err_msg = """
                 `docarray` package not found. Install the package via pip:
@@ -82,13 +86,15 @@ class DocArrayHnswVectorStore(DocArrayVectorStore):
         )
 
     def _init_index(self, **kwargs: Any):  # type: ignore[no-untyped-def]
-        """Initializes the HNSW document index.
+        """
+        Initializes the HNSW document index.
 
         Args:
             **kwargs: Variable length argument list for the HNSW index.
 
         Returns:
             tuple: The HNSW document index and its schema.
+
         """
         from docarray.index import HnswDocumentIndex
 
@@ -97,13 +103,15 @@ class DocArrayHnswVectorStore(DocArrayVectorStore):
         return index(work_dir=self._work_dir), schema
 
     def _find_docs_to_be_removed(self, doc_id: str) -> List[str]:
-        """Finds the documents to be removed from the vector store.
+        """
+        Finds the documents to be removed from the vector store.
 
         Args:
             doc_id (str): Reference document ID that should be removed.
 
         Returns:
             List[str]: List of document IDs to be removed.
+
         """
         docs = self._ref_docs.get(doc_id, [])
         del self._ref_docs[doc_id]
@@ -116,10 +124,12 @@ class DocArrayHnswVectorStore(DocArrayVectorStore):
             json.dump(self._ref_docs, f)
 
     def _update_ref_docs(self, docs):  # type: ignore[no-untyped-def]
-        """Updates reference documents.
+        """
+        Updates reference documents.
 
         Args:
             docs (List): List of documents to update.
+
         """
         for doc in docs:
             if doc.metadata["doc_id"] not in self._ref_docs:

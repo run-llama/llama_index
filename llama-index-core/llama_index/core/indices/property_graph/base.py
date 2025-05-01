@@ -41,7 +41,8 @@ if TYPE_CHECKING:
 
 
 class PropertyGraphIndex(BaseIndex[IndexLPG]):
-    """An index for a property graph.
+    """
+    An index for a property graph.
 
     Args:
         nodes (Optional[Sequence[BaseNode]]):
@@ -71,6 +72,7 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
             The storage context to use.
         show_progress (bool):
             Whether to show progress bars for transformations. Defaults to `False`.
+
     """
 
     index_struct_cls = IndexLPG
@@ -342,7 +344,8 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
         include_text: bool = True,
         **kwargs: Any,
     ) -> BaseRetriever:
-        """Return a retriever for the index.
+        """
+        Return a retriever for the index.
 
         Args:
             sub_retrievers (Optional[List[BasePGRetriever]]):
@@ -352,6 +355,7 @@ class PropertyGraphIndex(BaseIndex[IndexLPG]):
                 Whether to include source-text in the retriever results.
             **kwargs:
                 Additional kwargs to pass to the retriever.
+
         """
         from llama_index.core.indices.property_graph.retriever import (
             PGRetriever,

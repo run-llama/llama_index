@@ -113,7 +113,8 @@ _TEXT_MODE_MODEL_DICT = {
 
 
 def get_embedding(client: OpenAI, text: str, engine: str, **kwargs: Any) -> List[float]:
-    """Get embedding.
+    """
+    Get embedding.
 
     NOTE: Copied from OpenAI's embedding utils:
     https://github.com/openai/openai-python/blob/main/openai/embeddings_utils.py
@@ -132,7 +133,8 @@ def get_embedding(client: OpenAI, text: str, engine: str, **kwargs: Any) -> List
 async def aget_embedding(
     aclient: AsyncOpenAI, text: str, engine: str, **kwargs: Any
 ) -> List[float]:
-    """Asynchronously get embedding.
+    """
+    Asynchronously get embedding.
 
     NOTE: Copied from OpenAI's embedding utils:
     https://github.com/openai/openai-python/blob/main/openai/embeddings_utils.py
@@ -153,7 +155,8 @@ async def aget_embedding(
 def get_embeddings(
     client: OpenAI, list_of_text: List[str], engine: str, **kwargs: Any
 ) -> List[List[float]]:
-    """Get embeddings.
+    """
+    Get embeddings.
 
     NOTE: Copied from OpenAI's embedding utils:
     https://github.com/openai/openai-python/blob/main/openai/embeddings_utils.py
@@ -176,7 +179,8 @@ async def aget_embeddings(
     engine: str,
     **kwargs: Any,
 ) -> List[List[float]]:
-    """Asynchronously get embeddings.
+    """
+    Asynchronously get embeddings.
 
     NOTE: Copied from OpenAI's embedding utils:
     https://github.com/openai/openai-python/blob/main/openai/embeddings_utils.py
@@ -208,7 +212,8 @@ def get_engine(
 
 
 class OpenAIEmbedding(BaseEmbedding):
-    """OpenAI class for embeddings.
+    """
+    OpenAI class for embeddings.
 
     Args:
         mode (str): Mode for embedding.
@@ -227,6 +232,7 @@ class OpenAIEmbedding(BaseEmbedding):
             - OpenAIEmbeddingModelType.BABBAGE
             - OpenAIEmbeddingModelType.ADA
             - OpenAIEmbeddingModelType.TEXT_EMBED_ADA_002
+
     """
 
     additional_kwargs: Dict[str, Any] = Field(
@@ -444,7 +450,8 @@ class OpenAIEmbedding(BaseEmbedding):
         return await _retryable_aget_embedding()
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Get text embeddings.
+        """
+        Get text embeddings.
 
         By default, this is a wrapper around _get_text_embedding.
         Can be overridden for batch queries.

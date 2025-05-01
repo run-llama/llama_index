@@ -21,6 +21,7 @@ EXP_STREAM_RESPONSE = ["Test ", "value"]
 EXP_MAX_TOKENS = 100
 EXP_TEMPERATURE = 0.7
 EXP_MODEL = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+EXP_APP_INF_PROFILE_ARN = "arn:aws:bedrock:us-east-1:012345678901:application-inference-profile/test-profile-name"
 EXP_GUARDRAIL_ID = "IDENTIFIER"
 EXP_GUARDRAIL_VERSION = "DRAFT"
 EXP_GUARDRAIL_TRACE = "ENABLED"
@@ -143,11 +144,39 @@ def bedrock_converse(mock_boto3_session, mock_aioboto3_session):
     )
 
 
+@pytest.fixture()
+def bedrock_converse_with_application_inference_profile(
+    mock_boto3_session, mock_aioboto3_session
+):
+    """
+    Create a BedrockConverse client that uses an application inference profile for invoking the LLM.
+    See AWS documentation for details about creating and using application inference profiles.
+    """
+    return BedrockConverse(
+        model=EXP_MODEL,
+        max_tokens=EXP_MAX_TOKENS,
+        temperature=EXP_TEMPERATURE,
+        guardrail_identifier=EXP_GUARDRAIL_ID,
+        guardrail_version=EXP_GUARDRAIL_VERSION,
+        application_inference_profile_arn=EXP_APP_INF_PROFILE_ARN,
+        trace=EXP_GUARDRAIL_TRACE,
+        callback_manager=CallbackManager(),
+    )
+
+
 def test_init(bedrock_converse):
     assert bedrock_converse.model == EXP_MODEL
     assert bedrock_converse.max_tokens == EXP_MAX_TOKENS
     assert bedrock_converse.temperature == EXP_TEMPERATURE
     assert bedrock_converse._client is not None
+
+
+def test_init_app_inf_profile(bedrock_converse_with_application_inference_profile):
+    client = bedrock_converse_with_application_inference_profile
+    assert client.application_inference_profile_arn == EXP_APP_INF_PROFILE_ARN
+    assert client.model == EXP_MODEL
+    # Application inference profile ARN should be used for the LLM kwargs when provided.
+    assert client._model_kwargs["model"] == EXP_APP_INF_PROFILE_ARN
 
 
 def test_chat(bedrock_converse):
@@ -175,7 +204,7 @@ def test_stream_chat(bedrock_converse):
         assert response.delta in EXP_STREAM_RESPONSE
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat(bedrock_converse):
     response = await bedrock_converse.achat(messages)
 
@@ -184,7 +213,7 @@ async def test_achat(bedrock_converse):
     assert response.message.content == EXP_RESPONSE
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat(bedrock_converse):
     response_stream = await bedrock_converse.astream_chat(messages)
 
@@ -194,7 +223,7 @@ async def test_astream_chat(bedrock_converse):
         assert response.delta in EXP_STREAM_RESPONSE
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_acomplete(bedrock_converse):
     response = await bedrock_converse.acomplete(prompt)
 
@@ -205,7 +234,7 @@ async def test_acomplete(bedrock_converse):
     assert response.additional_kwargs["tool_calls"] == []
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete(bedrock_converse):
     response_stream = await bedrock_converse.astream_complete(prompt)
 
@@ -254,7 +283,7 @@ def test_bedrock_converse_integration_chat_multimodal(
 
 
 @needs_aws_creds
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_bedrock_converse_integration_achat_text_only(
     bedrock_converse_integration,
 ):
@@ -272,7 +301,7 @@ async def test_bedrock_converse_integration_achat_text_only(
 
 
 @needs_aws_creds
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_bedrock_converse_integration_achat_multimodal(
     temp_image_bytes, bedrock_converse_integration
 ):
@@ -343,7 +372,7 @@ def test_bedrock_converse_integration_stream_chat_multimodal(
 
 
 @needs_aws_creds
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_bedrock_converse_integration_astream_chat(bedrock_converse_integration):
     """Test async streaming chat integration with Bedrock Converse."""
     llm = bedrock_converse_integration
@@ -363,7 +392,7 @@ async def test_bedrock_converse_integration_astream_chat(bedrock_converse_integr
 
 
 @needs_aws_creds
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_bedrock_converse_integration_astream_chat_multimodal(
     temp_image_bytes, bedrock_converse_integration
 ):

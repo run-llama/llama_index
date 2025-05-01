@@ -3,11 +3,14 @@ import concurrent.futures
 import os
 import re
 import subprocess
+import sys
 import time
 from enum import Enum, auto
+
 from pathlib import Path
 
 import tomli
+from packaging import specifiers, version
 
 DEP_NAME_REGEX = re.compile(r"([^<>=\s]+)")
 
@@ -16,6 +19,7 @@ class ResultStatus(Enum):
     INSTALL_FAILED = auto()
     TESTS_FAILED = auto()
     TESTS_PASSED = auto()
+    SKIPPED = auto()
 
 
 def parse_args():
@@ -58,7 +62,7 @@ def get_changed_packages(changed_files: list[str], all_packages: list[str]) -> s
         # Find the package containing this file
         for pkg_dir in all_packages:
             if file_path.startswith(str(pkg_dir)):
-                changed_packages.add(pkg_dir)
+                changed_packages.add(str(pkg_dir))
                 break
 
     return changed_packages
@@ -79,6 +83,30 @@ def get_dep_names(pyproject_data: dict) -> set[str]:
             continue
         dependencies.add(matches[0])
     return dependencies
+
+
+def is_python_version_compatible(pyproject_data: dict) -> bool:
+    """Check if the package is compatible with the current Python version using packaging."""
+    # Get current Python version
+    current_version = version.Version(f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")
+
+    # Get Python version requirements if they exist
+    requires_python = pyproject_data.get("project", {}).get("requires-python", None)
+
+    if not requires_python:
+        # If no Python version is specified, assume it's compatible
+        return True
+
+    try:
+        # Parse the version specifier
+        spec = specifiers.SpecifierSet(requires_python)
+
+        # Check if the current version satisfies the specifier
+        return spec.contains(str(current_version))
+    except Exception as e:
+        # If there's any error in parsing, log it and assume compatibility
+        print(f"Warning: Could not parse Python version specifier '{requires_python}': {e}")
+        return True
 
 
 def get_dependants_packages(
@@ -153,6 +181,19 @@ def find_utils(root_path: str) -> list[str]:
 
 
 def run_pytest(root_dir: str, package_dir: str, changed_packages: set[str]):
+    # Check Python version compatibility first
+    pyproject_path = Path(package_dir) / "pyproject.toml"
+    if pyproject_path.exists():
+        pyproject_data = load_pyproject(pyproject_path)
+        if not is_python_version_compatible(pyproject_data):
+            return {
+                "package": str(package_dir),
+                "status": ResultStatus.SKIPPED,
+                "stdout": "",
+                "stderr": f"Skipped: Not compatible with Python {sys.version_info.major}.{sys.version_info.minor}",
+                "time": "0.00s",
+            }
+
     env = os.environ.copy()
     if "VIRTUAL_ENV" in env:
         del env["VIRTUAL_ENV"]
@@ -190,7 +231,7 @@ def run_pytest(root_dir: str, package_dir: str, changed_packages: set[str]):
                 install_local.add(str(Path(root_dir) / package_path))
     if install_local:
         result = subprocess.run(
-            ["uv", "pip", "install", "-U", " ".join(install_local)],
+            ["uv", "pip", "install", "-U", *install_local],
             cwd=package_dir,
             text=True,
             capture_output=True,
@@ -282,6 +323,8 @@ def main():
                 print(f"Error:\n{result['stderr']}")
             elif result["status"] == ResultStatus.TESTS_PASSED:
                 print(f"✅ {package} succeeded in {result['time']}")
+            elif result["status"] == ResultStatus.SKIPPED:
+                print(f"⏭️  {package} skipped: {result['stderr']}")
             else:
                 print(f"❌ {package} failed")
                 print(f"Error:\n{result['stderr']}")
@@ -292,6 +335,13 @@ def main():
     install_failed = [
         r["package"] for r in results if r["status"] == ResultStatus.INSTALL_FAILED
     ]
+    skipped = [r["package"] for r in results if r["status"] == ResultStatus.SKIPPED]
+
+    if skipped:
+        print(f"\n{len(skipped)} packages were skipped due to Python version incompatibility:")
+        for p in skipped:
+            print(p)
+
     if install_failed:
         # Do not fail the CI if there was an installation problem: many packages cannot
         # be installed in the runners, something we should either fix or ignore.
@@ -304,7 +354,7 @@ def main():
             print(p)
         exit(1)
     else:
-        print(f"\nTests passed for {len(results)} packages.")
+        print(f"\nTests passed for {len(results) - len(skipped)} packages.")
 
 
 if __name__ == "__main__":

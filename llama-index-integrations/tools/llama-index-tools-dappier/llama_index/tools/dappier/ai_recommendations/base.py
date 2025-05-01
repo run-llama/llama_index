@@ -63,6 +63,7 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
 
         Returns:
             str: A response message for the user specified query.
+
         """
         data_model_id = "dm_01j0pb465keqmatq9k83dthx34"  # Sports News
         response = self.client.get_ai_recommendations(
@@ -97,6 +98,7 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
 
         Returns:
             str: A response message for the user specified query.
+
         """
         data_model_id = "dm_01j0q82s4bfjmsqkhs3ywm3x6y"  # Lifestyle News
         response = self.client.get_ai_recommendations(
@@ -131,6 +133,7 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
 
         Returns:
             str: A response message for the user specified query.
+
         """
         data_model_id = "dm_01j1sz8t3qe6v9g8ad102kvmqn"  # iHeartDogs AI
         response = self.client.get_ai_recommendations(
@@ -165,6 +168,7 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
 
         Returns:
             str: A response message for the user specified query.
+
         """
         data_model_id = "dm_01j1sza0h7ekhaecys2p3y0vmj"  # iHeartCats AI
         response = self.client.get_ai_recommendations(
@@ -199,6 +203,7 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
 
         Returns:
             str: A response message for the user specified query.
+
         """
         data_model_id = "dm_01j5xy9w5sf49bm6b1prm80m27"  # GreenMonster
         response = self.client.get_ai_recommendations(
@@ -233,6 +238,7 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
 
         Returns:
             str: A response message for the user specified query.
+
         """
         data_model_id = "dm_01jagy9nqaeer9hxx8z1sk1jx6"  # WISH-TV AI
         response = self.client.get_ai_recommendations(
@@ -268,6 +274,7 @@ class DappierAIRecommendationsToolSpec(BaseToolSpec):
 
         Returns:
             str: A response message for the user specified query.
+
         """
         data_model_id = "dm_01jhtt138wf1b9j8jwswye99y5"  # 9 and 10 News
         response = self.client.get_ai_recommendations(
@@ -290,6 +297,7 @@ def format_results(response: Any) -> str:
 
     Returns:
         str: A formatted string representation of the recommendations.
+
     """
     if response.status != "success":
         return "The API response was not successful."

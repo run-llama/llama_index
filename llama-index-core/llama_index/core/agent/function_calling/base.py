@@ -17,7 +17,8 @@ from llama_index.core.tools.types import BaseTool
 
 
 class FunctionCallingAgent(AgentRunner):
-    """Function calling agent.
+    """
+    Function calling agent.
 
     Light wrapper around AgentRunner.
     """

@@ -61,6 +61,7 @@ def generate_sf_jwt(sf_account: str, sf_user: str, sf_private_key_filepath: str)
 
     Returns:
         str: JSON Web Token
+
     """
     with open(sf_private_key_filepath, "rb") as pem_in:
         pemlines = pem_in.read()

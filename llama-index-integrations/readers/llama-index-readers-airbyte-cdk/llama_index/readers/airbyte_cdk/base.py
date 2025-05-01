@@ -8,13 +8,15 @@ RecordHandler = Callable[[Any, Optional[str]], Document]
 
 
 class AirbyteCDKReader(BaseReader):
-    """AirbyteCDKReader reader.
+    """
+    AirbyteCDKReader reader.
 
     Retrieve documents from an Airbyte source implemented using the CDK.
 
     Args:
         source_class: The Airbyte source class.
         config: The config object for the Airbyte source.
+
     """
 
     def __init__(

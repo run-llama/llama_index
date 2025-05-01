@@ -10,7 +10,8 @@ from .base import GraphRAG
 
 
 class CogneeGraphRAG(GraphRAG):
-    """Cognee GraphRAG, handles adding, storing, processing and retrieving information from knowledge graphs.
+    """
+    Cognee GraphRAG, handles adding, storing, processing and retrieving information from knowledge graphs.
 
     Unlike traditional RAG models that retrieve unstructured text snippets, graphRAG utilizes knowledge graphs.
     A knowledge graph represents entities as nodes and their relationships as edges, often in a structured semantic format.
@@ -36,6 +37,7 @@ class CogneeGraphRAG(GraphRAG):
     db_port: str: Port for the relational database.
     db_username: str: Username for the relational database.
     db_password: str: Password for the relational database.
+
     """
 
     def __init__(
@@ -110,26 +112,30 @@ class CogneeGraphRAG(GraphRAG):
     async def add(
         self, data: Union[Document, List[Document]], dataset_name: str
     ) -> None:
-        """Add data to the specified dataset.
+        """
+        Add data to the specified dataset.
         This data will later be processed and made into a knowledge graph.
 
         Args:
              data (Any): The data to be added to the graph.
              dataset_name (str): Name of the dataset or node set where the data will be added.
+
         """
         # Convert LlamaIndex Document type to text
         if isinstance(data, List) and len(data) > 0:
-            data = [data.text for data in data if type(data) == Document]
-        elif type(data) == Document:
+            data = [data.text for data in data if type(data) is Document]
+        elif type(data) is Document:
             data = [data.text]
 
         await cognee.add(data, dataset_name)
 
     async def process_data(self, dataset_names: str) -> None:
-        """Process and structure data in the dataset and make a knowledge graph out of it.
+        """
+        Process and structure data in the dataset and make a knowledge graph out of it.
 
         Args:
             dataset_name (str): The dataset name to process.
+
         """
         user = await cognee.modules.users.methods.get_default_user()
         datasets = await cognee.modules.data.methods.get_datasets_by_name(
@@ -138,10 +144,12 @@ class CogneeGraphRAG(GraphRAG):
         await cognee.cognify(datasets, user)
 
     async def get_graph_url(self, graphistry_password, graphistry_username) -> str:
-        """Retrieve the URL or endpoint for visualizing or interacting with the graph.
+        """
+        Retrieve the URL or endpoint for visualizing or interacting with the graph.
 
         Returns:
             str: The URL endpoint of the graph.
+
         """
         if graphistry_password and graphistry_username:
             cognee.config.set_graphistry_config(
@@ -163,10 +171,12 @@ class CogneeGraphRAG(GraphRAG):
         return graph_url
 
     async def rag_search(self, query: str) -> list:
-        """Answer query based on data chunk most relevant to query.
+        """
+        Answer query based on data chunk most relevant to query.
 
         Args:
             query (str): The query string.
+
         """
         user = await cognee.modules.users.methods.get_default_user()
         return await cognee.search(
@@ -176,10 +186,12 @@ class CogneeGraphRAG(GraphRAG):
         )
 
     async def search(self, query: str) -> list:
-        """Search the graph for relevant information based on a query.
+        """
+        Search the graph for relevant information based on a query.
 
         Args:
             query (str): The query string to match against data from the graph.
+
         """
         user = await cognee.modules.users.methods.get_default_user()
         return await cognee.search(
@@ -189,10 +201,12 @@ class CogneeGraphRAG(GraphRAG):
         )
 
     async def get_related_nodes(self, node_id: str) -> list:
-        """Search the graph for relevant nodes or relationships based on node id.
+        """
+        Search the graph for relevant nodes or relationships based on node id.
 
         Args:
             node_id (str): The name of the node to match against nodes in the graph.
+
         """
         user = await cognee.modules.users.methods.get_default_user()
         return await cognee.search(

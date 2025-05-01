@@ -189,7 +189,8 @@ def download_llama_module(
     override_path: bool = False,
     skip_load: bool = False,
 ) -> Any:
-    """Download a module from LlamaHub.
+    """
+    Download a module from LlamaHub.
 
     Can be a loader, tool, pack, or more.
 
@@ -210,6 +211,7 @@ def download_llama_module(
 
     Returns:
         A Loader, A Pack, An Agent, or A Dataset
+
     """
     # create directory / get path
     dirpath = initialize_directory(custom_path=custom_path, custom_dir=custom_dir)
@@ -259,11 +261,13 @@ def download_llama_module(
 
 
 def track_download(module_class: str, module_type: str) -> None:
-    """Tracks number of downloads via Llamahub proxy.
+    """
+    Tracks number of downloads via Llamahub proxy.
 
     Args:
         module_class: The name of the llama module being downloaded, e.g.,`GmailOpenAIAgentPack`.
         module_type: Can be "loader", "tool", "llamapack", or "datasets"
+
     """
     try:
         requests.post(

@@ -25,6 +25,12 @@ dev = [
     "tomli>=2.2.1",
 ]
 
+[lint.flake8-annotations]
+mypy-init-return = true
+
+[lint.pydocstyle]
+convention = "google"
+
 [project]
 authors = [{email = "jerry@llamaindex.ai", name = "Jerry Liu"}]
 classifiers = [
@@ -35,7 +41,7 @@ classifiers = [
 dependencies = [
     "llama-index-agent-openai>=0.4.0,<0.5",
     "llama-index-cli>=0.4.1,<0.5",
-    "llama-index-core>=0.12.33,<0.13",
+    "llama-index-core>=0.12.34,<0.13",
     "llama-index-embeddings-openai>=0.3.0,<0.4",
     "llama-index-indices-managed-llama-cloud>=0.4.0",
     "llama-index-llms-openai>=0.3.0,<0.4",
@@ -68,7 +74,7 @@ maintainers = [
 name = "llama-index"
 readme = "README.md"
 requires-python = ">=3.9,<4.0"
-version = "0.12.33"
+version = "0.12.34"
 
 [project.scripts]
 llamaindex-cli = "llama_index.cli.command_line:main"
@@ -113,18 +119,25 @@ exclude = [
     "llama_index/ingestion/client",
     "notebooks",
 ]
-ignore = [
+target-version = "py312"
+lint.ignore = [
     "COM812",  # Too aggressive
     "D212",  # Using D213
     "D417",  # Too aggressive
     "F541",  # Messes with prompts.py
     "RUF100",  # Allow blanket noqa
-    "TCH002",
+    "TC002",
     "UP",  # Remove when we drop Python 3.9
     "PT001",
+    "E501",  # Use best judgement for line-length
+    "E402",  # Annoying, use best judgement
+    "PYI063",
+    "ANN204",  # this is annoying
+    "D401",  # I disagree
+    "D404",
 ]
 # Feel free to add more here
-select = [
+lint.select = [
     "ANN204",
     "B009",
     "B010",
@@ -136,7 +149,6 @@ select = [
     "COM819",
     "D201",
     "D202",
-    "D203",
     "D204",
     "D207",
     "D208",
@@ -147,7 +159,7 @@ select = [
     "D215",
     "D3",
     "D4",
-    "E7",
+    "E",
     "EXE004",
     "F401",
     "F504",
@@ -167,7 +179,6 @@ select = [
     "PLE2513",
     "PLE2514",
     "PLE2515",
-    "PLR1701",
     "PLR1711",
     "PT001",
     "PT003",
@@ -192,22 +203,15 @@ select = [
     "SIM2",
     "SIM300",
     "SIM9",
-    "TCH005",
+    "TC005",
     "TD006",
     "TID",
     "TRY201",
     "W",
 ]
-target-version = "py312"
-unfixable = [
+lint.unfixable = [
     "ERA001",
 ]
-
-[tool.ruff.flake8-annotations]
-mypy-init-return = true
-
-[tool.ruff.pydocstyle]
-convention = "google"
 
 [tool.tomlsort]
 all = false

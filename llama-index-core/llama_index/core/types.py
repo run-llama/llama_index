@@ -101,7 +101,8 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
 
 
 class BasePydanticProgram(DispatcherSpanMixin, ABC, Generic[Model]):
-    """A base class for LLM-powered function that return a pydantic model.
+    """
+    A base class for LLM-powered function that return a pydantic model.
 
     Note: this interface is not yet stable.
     """

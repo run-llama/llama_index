@@ -9,7 +9,8 @@ from llama_index.tools.openapi.base import OpenAPIToolSpec
 
 
 class ChatGPTPluginToolSpec(BaseToolSpec):
-    """ChatGPT Plugin Tool.
+    """
+    ChatGPT Plugin Tool.
 
     This tool leverages the OpenAPI tool spec to automatically load ChatGPT
     plugins from a manifest file.
@@ -65,6 +66,7 @@ class ChatGPTPluginToolSpec(BaseToolSpec):
 
         Returns:
             Document: A List of Document objects describing the OpenAPI spec
+
         """
         return self.openapi.load_openapi_spec()
 

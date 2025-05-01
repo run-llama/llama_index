@@ -8,7 +8,8 @@ from llama_index.core.schema import Document
 
 
 class DadJokesReader(BaseReader):
-    """Dad jokes reader.
+    """
+    Dad jokes reader.
 
     Reads a random dad joke.
 
@@ -23,7 +24,8 @@ class DadJokesReader(BaseReader):
         return json_data["joke"]
 
     def load_data(self) -> List[Document]:
-        """Return a random dad joke.
+        """
+        Return a random dad joke.
 
         Args:
             None.

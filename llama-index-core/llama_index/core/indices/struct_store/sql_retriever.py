@@ -30,7 +30,8 @@ logger = logging.getLogger(__name__)
 
 
 class SQLRetriever(BaseRetriever):
-    """SQL Retriever.
+    """
+    SQL Retriever.
 
     Retrieves via raw SQL statements.
 
@@ -176,7 +177,8 @@ class PGVectorSQLParser(BaseSQLParser):
 
 
 class NLSQLRetriever(BaseRetriever, PromptMixin):
-    """Text-to-SQL Retriever.
+    """
+    Text-to-SQL Retriever.
 
     Retrieves via text.
 

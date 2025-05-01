@@ -16,6 +16,7 @@ class SpokeOperator:
         functionality_list (list): A list of functionalities supported by the LLM-based system.
         spoke_id (str): The identifier for the spoke.
         child_sock (Socket): The socket used for communication with the hub.
+
     """
 
     def __init__(self, functionality_list) -> None:
@@ -24,6 +25,7 @@ class SpokeOperator:
 
         Args:
             functionality_list (list): A list of functionalities supported by the LLM-based system.
+
         """
         self.functionality_list = functionality_list
         self.spoke_id = None
@@ -38,6 +40,7 @@ class SpokeOperator:
 
         Returns:
             str: A formatted request string or the original request if parsing fails.
+
         """
         try:
             if request.startswith("{"):
@@ -60,6 +63,7 @@ class SpokeOperator:
 
         Returns:
             tuple: A tuple containing the message type and the function schema if available.
+
         """
         # check whether the functionality is in the functionality list
         if functionality not in self.functionality_list:
@@ -89,6 +93,7 @@ class SpokeOperator:
 
         Returns:
             tuple: A tuple containing the message type and the response from the hub.
+
         """
         # format the app request message
         app_request_message = Message.app_request(self.spoke_id, functionality, request)
@@ -107,6 +112,7 @@ class SpokeOperator:
 
         Returns:
             bool: True if the instance matches the format, False otherwise.
+
         """
         try:
             validate(instance=instance_dict, schema=format)
@@ -120,6 +126,7 @@ class SpokeOperator:
 
         Args:
             results (dict): The results to be included in the final response.
+
         """
         response = Message.final_response(self.spoke_id, results)
         self.child_sock.send(response)

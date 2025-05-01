@@ -21,6 +21,7 @@ class OpenLLM(OpenAILike):
         print(result)
 
         ```
+
     """
 
     @classmethod

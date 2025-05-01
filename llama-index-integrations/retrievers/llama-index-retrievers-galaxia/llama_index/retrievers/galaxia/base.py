@@ -98,7 +98,8 @@ class GalaxiaClient:
 
 
 class GalaxiaRetriever(BaseRetriever):
-    """Galaxia knowledge retriever.
+    """
+    Galaxia knowledge retriever.
 
     before using the API create your knowledge base here:
     beta.cloud.smabbler.com/
@@ -128,6 +129,7 @@ class GalaxiaRetriever(BaseRetriever):
             ))
 
             print(result)
+
     """
 
     def __init__(

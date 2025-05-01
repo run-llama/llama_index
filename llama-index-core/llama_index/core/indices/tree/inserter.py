@@ -49,7 +49,8 @@ class TreeIndexInserter:
     def _insert_under_parent_and_consolidate(
         self, text_node: BaseNode, parent_node: Optional[BaseNode]
     ) -> None:
-        """Insert node under parent and consolidate.
+        """
+        Insert node under parent and consolidate.
 
         Consolidation will happen by dividing up child nodes, and creating a new
         intermediate layer of nodes.

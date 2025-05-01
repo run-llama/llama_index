@@ -63,7 +63,8 @@ def force_single_tool_call(response: ChatResponse) -> None:
 
 
 class Ollama(FunctionCallingLLM):
-    """Ollama LLM.
+    """
+    Ollama LLM.
 
     Visit https://ollama.com/ to download and install Ollama.
 
@@ -82,6 +83,7 @@ class Ollama(FunctionCallingLLM):
         response = llm.complete("What is the capital of France?")
         print(response)
         ```
+
     """
 
     base_url: str = Field(
@@ -580,7 +582,8 @@ class Ollama(FunctionCallingLLM):
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
     ) -> Generator[Union[Model, FlexibleModel], None, None]:
-        """Stream structured predictions as they are generated.
+        """
+        Stream structured predictions as they are generated.
 
         Args:
             output_cls: The Pydantic class to parse responses into
@@ -590,6 +593,7 @@ class Ollama(FunctionCallingLLM):
 
         Returns:
             Generator yielding partial objects as they are generated
+
         """
         if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
 

@@ -21,7 +21,7 @@ class PostponedAnnotationsWorkflow(Workflow):
         return StopEvent(result=f"Handled {ev.test_param}")
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_postponed_annotations():
     workflow = PostponedAnnotationsWorkflow()
     result = await workflow.run()
@@ -29,7 +29,7 @@ async def test_workflow_postponed_annotations():
     assert result == "Handled postponed"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_forward_reference():
     class ForwardRefWorkflow(Workflow):
         @step

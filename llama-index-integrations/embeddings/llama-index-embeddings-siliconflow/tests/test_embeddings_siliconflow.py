@@ -99,7 +99,7 @@ def test_base64_format_embedding():
         )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_float_format_embedding_async():
     input_text = "..."
     mock_response = MockAsyncResponse(

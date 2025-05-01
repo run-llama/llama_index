@@ -29,7 +29,8 @@ class UniProtRecord:
 
 
 class UniProtReader(BaseReader):
-    """UniProt reader for LlamaIndex.
+    """
+    UniProt reader for LlamaIndex.
 
     Reads UniProt Swiss-Prot format files and converts them into LlamaIndex Documents.
     Each record is converted into a document with structured text and metadata.
@@ -39,6 +40,7 @@ class UniProtReader(BaseReader):
             Defaults to all fields.
         max_records (Optional[int]): Maximum number of records to parse.
             If None, parse all records.
+
     """
 
     # Mapping of field names to their two-letter codes in UniProt format
@@ -115,7 +117,8 @@ class UniProtReader(BaseReader):
     def lazy_load_data(
         self, input_file: str, extra_info: Optional[Dict] = {}
     ) -> Generator[Document, None, None]:
-        """Load data from the input file lazily, yielding one document at a time.
+        """
+        Load data from the input file lazily, yielding one document at a time.
 
         This method is memory efficient as it processes one record at a time instead of
         loading all records into memory at once. It's particularly useful for large UniProt files.
@@ -126,6 +129,7 @@ class UniProtReader(BaseReader):
 
         Yields:
             Document: One document at a time
+
         """
         record_count = 0
 
@@ -378,7 +382,8 @@ class UniProtReader(BaseReader):
                 yield current_record
 
     def count_records(self, file_path: str) -> int:
-        """Count the total number of protein records in the UniProt database file.
+        """
+        Count the total number of protein records in the UniProt database file.
 
         Uses grep to efficiently count lines starting with "//" which is much faster
         than reading the file line by line.
@@ -388,6 +393,7 @@ class UniProtReader(BaseReader):
 
         Returns:
             int: Total number of protein records in the file
+
         """
         count = 0
 

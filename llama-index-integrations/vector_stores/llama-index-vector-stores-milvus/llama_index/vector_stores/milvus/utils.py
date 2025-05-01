@@ -81,7 +81,8 @@ class ScalarMetadataFilter(BaseModel):
         cls,
         filter_dict: Dict,
     ) -> "ScalarMetadataFilter":
-        """Create ScalarMetadataFilter from dictionary.
+        """
+        Create ScalarMetadataFilter from dictionary.
 
         Args:
             filter_dict: Dict with key, value and FilterOperatorFunction.

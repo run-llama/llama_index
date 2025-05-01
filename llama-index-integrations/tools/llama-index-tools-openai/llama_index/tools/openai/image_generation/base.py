@@ -114,6 +114,7 @@ class OpenAIImageGenerationToolSpec(BaseToolSpec):
             timeout: Override the client-level default timeout for this request, in seconds. Defaults to `None`.
 
             download: If `True`, the image will be downloaded to the cache directory. Defaults to `True`.
+
         """
         if size not in valid_sizes[model]:
             raise Exception(f"Invalid size for {model}: {size}")

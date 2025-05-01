@@ -48,7 +48,7 @@ DEFAULT_MAX_FUNCTION_CALLS = 5
 def get_function_by_name(tools: Sequence[BaseTool], name: str) -> Optional[BaseTool]:
     """Get function by name. If the function is not found, None is returned."""
     name_to_tool = {tool.metadata.name: tool for tool in tools}
-    return name_to_tool.get(name, None)
+    return name_to_tool.get(name)
 
 
 def build_missing_tool_message(missing_tool_name: str) -> str:
@@ -134,7 +134,8 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         prefix_messages: Optional[List[ChatMessage]] = None,
         **kwargs: Any,
     ) -> "FunctionCallingAgentWorker":
-        """Create an FunctionCallingAgentWorker from a list of tools.
+        """
+        Create an FunctionCallingAgentWorker from a list of tools.
 
         Similar to `from_defaults` in other classes, this method will
         infer defaults for a variety of parameters, including the LLM,

@@ -31,7 +31,7 @@ def test_sync_embedding():
 @pytest.mark.skipif(
     os.environ.get("MXBAI_API_KEY") is None, reason="Mixedbread AI API key required"
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_embedding():
     emb = MixedbreadAIEmbedding(
         api_key=os.environ["MXBAI_API_KEY"],

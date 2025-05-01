@@ -14,6 +14,7 @@ class WhatsappChatLoader(BaseReader):
 
     Args:
         path (str): Path to Whatsapp chat file.
+
     """
 
     def __init__(self, path: str):

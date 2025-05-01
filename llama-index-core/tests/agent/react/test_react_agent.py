@@ -97,7 +97,7 @@ def test_chat_basic(
     ]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat_basic(
     add_tool: FunctionTool,
 ) -> None:
@@ -216,7 +216,7 @@ def test_stream_chat_basic(
     ]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat_basic(
     add_tool: FunctionTool,
 ) -> None:
@@ -347,7 +347,7 @@ def test_add_step(
     assert "tmp" in observations
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_add_step(
     add_tool: FunctionTool,
 ) -> None:

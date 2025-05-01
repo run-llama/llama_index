@@ -42,6 +42,7 @@ class ArxivReader(BaseReader):
 
         Returns:
             List[Document]: A list of Document objects.
+
         """
         import arxiv
 
@@ -118,6 +119,7 @@ class ArxivReader(BaseReader):
         Returns:
             List[Document]: A list of Document objects representing the papers themselves
             List[Document]: A list of Document objects representing abstracts only
+
         """
         import arxiv
 

@@ -22,7 +22,7 @@ from llama_index.core.workflow.workflow import (
 from .conftest import AnotherTestEvent, OneTestEvent
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_collect_events():
     ev1 = OneTestEvent()
     ev2 = AnotherTestEvent()
@@ -50,25 +50,25 @@ async def test_collect_events():
     assert result == [ev1, ev2]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_get_default(workflow):
     c1 = Context(workflow)
     assert await c1.get(key="test_key", default=42) == 42
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_get(ctx):
     await ctx.set("foo", 42)
     assert await ctx.get("foo") == 42
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_get_not_found(ctx):
     with pytest.raises(ValueError):
         await ctx.get("foo")
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_legacy_data(workflow):
     c1 = Context(workflow)
     await c1.set(key="test_key", value=42)
@@ -137,7 +137,7 @@ def test_to_dict_with_events_buffer(ctx):
     assert json.dumps(ctx.to_dict())
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_deprecated_params(ctx):
     with pytest.warns(
         DeprecationWarning, match="`make_private` is deprecated and will be ignored"
@@ -145,7 +145,7 @@ async def test_deprecated_params(ctx):
         await ctx.set("foo", 42, make_private=True)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_empty_inprogress_when_workflow_done(workflow):
     h = workflow.run()
     _ = await h
@@ -155,7 +155,7 @@ async def test_empty_inprogress_when_workflow_done(workflow):
         assert len(inprogress_list) == 0
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_wait_for_event(ctx):
     # skip test if python version is 3.9 or lower
     if sys.version_info < (3, 10):
@@ -168,7 +168,7 @@ async def test_wait_for_event(ctx):
     assert ev.msg == "foo"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_wait_for_event_with_requirements(ctx):
     # skip test if python version is 3.9 or lower
     if sys.version_info < (3, 10):
@@ -184,7 +184,7 @@ async def test_wait_for_event_with_requirements(ctx):
     assert ev.msg == "foo"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_wait_for_event_in_workflow():
     class TestWorkflow(Workflow):
         @step
@@ -205,7 +205,7 @@ async def test_wait_for_event_in_workflow():
     assert result == "bar"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_prompt_and_wait(ctx):
     prompt_id = "test_prompt_and_wait"
     prompt_event = InputRequiredEvent(prefix="test_prompt_and_wait")
@@ -278,7 +278,7 @@ class WaitingWorkflow(Workflow):
         return StopEvent(result=[e.result for e in events])
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_wait_for_multiple_events_in_workflow():
     workflow = WaitingWorkflow()
     handler = workflow.run()
@@ -318,7 +318,7 @@ def test_get_holding_events(ctx):
     assert ctx.get_holding_events() == []
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_clear(ctx):
     await ctx.set("test_key", 42)
     ctx.clear()

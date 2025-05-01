@@ -15,7 +15,8 @@ DEFAULT_MAX_CHARS = 1500
 
 
 class CodeSplitter(TextSplitter):
-    """Split code using a AST parser.
+    """
+    Split code using a AST parser.
 
     Thank you to Kevin Lu / SweepAI for suggesting this elegant code splitting solution.
     https://docs.sweep.dev/blogs/chunking-2m-files
@@ -117,7 +118,8 @@ class CodeSplitter(TextSplitter):
         return "CodeSplitter"
 
     def _chunk_node(self, node: Any, text: str, last_end: int = 0) -> List[str]:
-        """Recursively chunk a node into smaller pieces based on character limits.
+        """
+        Recursively chunk a node into smaller pieces based on character limits.
 
         Args:
             node (Any): The AST node to chunk.
@@ -126,6 +128,7 @@ class CodeSplitter(TextSplitter):
 
         Returns:
             List[str]: A list of code chunks that respect the max_chars limit.
+
         """
         new_chunks = []
         current_chunk = ""
@@ -150,7 +153,8 @@ class CodeSplitter(TextSplitter):
         return new_chunks
 
     def split_text(self, text: str) -> List[str]:
-        """Split incoming code into chunks using the AST parser.
+        """
+        Split incoming code into chunks using the AST parser.
 
         This method parses the input code into an AST and then chunks it while preserving
         syntactic structure. It handles error cases and ensures the code can be properly parsed.
@@ -163,6 +167,7 @@ class CodeSplitter(TextSplitter):
 
         Raises:
             ValueError: If the code cannot be parsed for the specified language.
+
         """
         """Split incoming code and return chunks using the AST."""
         with self.callback_manager.event(
