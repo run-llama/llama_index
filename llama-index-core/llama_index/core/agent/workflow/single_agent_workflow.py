@@ -38,7 +38,7 @@ class SingleAgentRunnerMixin(ABC):
         """Run the agent."""
         from llama_index.core.agent.workflow import AgentWorkflow
 
-        workflow = AgentWorkflow(agents=[self], **workflow_kwargs)
+        workflow = AgentWorkflow(agents=[self], **workflow_kwargs)  # type: ignore[list-item]
         return workflow.run(
             user_msg=user_msg,
             chat_history=chat_history,
