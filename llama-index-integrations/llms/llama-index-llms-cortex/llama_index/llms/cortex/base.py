@@ -196,8 +196,6 @@ class Cortex(CustomLLM):
         # Case 3: SPCS environment with default token
         elif is_in_spcs:
             self.jwt_token = get_default_spcs_token()
-            self.user = None
-            self.role = None
 
         # No valid authentication method found
         else:
