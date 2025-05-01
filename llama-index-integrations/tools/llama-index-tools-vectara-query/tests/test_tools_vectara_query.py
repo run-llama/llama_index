@@ -1,12 +1,12 @@
+import re
 from typing import List
-from llama_index.core.schema import Document, Node, MediaResource
-from llama_index.indices.managed.vectara import VectaraIndex
-from llama_index.core.tools.tool_spec.base import BaseToolSpec
-from llama_index.tools.vectara_query import VectaraQueryToolSpec
-from llama_index.agent.openai import OpenAIAgent
 
 import pytest
-import re
+from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.schema import Document, MediaResource, Node
+from llama_index.core.tools.tool_spec.base import BaseToolSpec
+from llama_index.indices.managed.vectara import VectaraIndex
+from llama_index.tools.vectara_query import VectaraQueryToolSpec
 
 #
 # For this test to run properly, please setup as follows:
@@ -91,7 +91,7 @@ def get_nodes() -> List[Node]:
     return nodes
 
 
-@pytest.fixture()
+@pytest.fixture
 def vectara1():
     docs = get_docs()
     try:
@@ -277,7 +277,7 @@ def test_custom_prompt(vectara1) -> None:
     assert res["factual_consistency_score"] > 0
 
 
-@pytest.fixture()
+@pytest.fixture
 def vectara2():
     try:
         vectara2 = VectaraIndex()
@@ -338,7 +338,7 @@ def test_citations(vectara2) -> None:
     assert re.search(r"\[\d+\]", summary)
 
 
-@pytest.fixture()
+@pytest.fixture
 def vectara3():
     nodes = get_nodes()
     try:

@@ -719,7 +719,16 @@ class MilvusVectorStore(BasePydanticVectorStore):
         else:
             raise ValueError(f"Milvus does not support {query.mode} yet.")
 
-        string_expr, output_fields = self._prepare_before_search(query, **kwargs)
+        filter_string_expr, output_fields = self._prepare_before_search(query, **kwargs)
+        custom_string_expr = kwargs.pop("string_expr", "")
+        if len(filter_string_expr) != 0:
+            if len(custom_string_expr) != 0:
+                logger.warning(
+                    "string_expr in vector_store_kwargs is ignored because filters are provided."
+                )
+            string_expr = filter_string_expr
+        else:
+            string_expr = custom_string_expr
 
         # Perform the search
         if query.mode == VectorStoreQueryMode.MMR:

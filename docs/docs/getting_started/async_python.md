@@ -54,7 +54,7 @@ async def fetch_data(delay):
     print(f"Started fetching data with {delay}s delay")
 
     # Simulates I/O-bound work, such as network operation
-    await asyncio.sleep(0.1)
+    await asyncio.sleep(delay)
 
     print("Finished fetching data")
     return f"Data after {delay}s"
