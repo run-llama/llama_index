@@ -32,6 +32,8 @@ class LlamaLLM(OpenAILike):
         api_key: Optional[str] = None,
         api_base: str = "https://api.llama.com/compat/v1",
         is_chat_model: bool = True,
+        # Slightly lower to account for tokenization defaults
+        context_window: int = 120000,
         **kwargs: Any,
     ) -> None:
         api_key = api_key or os.environ.get("LLAMA_API_KEY", None)
@@ -40,6 +42,7 @@ class LlamaLLM(OpenAILike):
             api_key=api_key,
             api_base=api_base,
             is_chat_model=is_chat_model,
+            context_window=context_window,
             **kwargs,
         )
 
