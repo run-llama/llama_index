@@ -26,7 +26,8 @@ logger = logging.getLogger(__name__)
 
 
 class DatabaseReader(BaseReader):
-    """Simple Database reader.
+    """
+    Simple Database reader.
 
     Reads data from a database via a query and returns LlamaIndex Documents.
     Allows specifying columns for metadata (with optional renaming) and
@@ -138,7 +139,8 @@ class DatabaseReader(BaseReader):
         document_id: Optional[Callable[[Dict[str, Any]], str]] = None,
         **load_kwargs: Any,
     ) -> Generator[Document, Any, None]:
-        """Lazily query and load data from the Database.
+        """
+        Lazily query and load data from the Database.
 
         Args:
             query (str): SQL query to execute.
@@ -166,6 +168,7 @@ class DatabaseReader(BaseReader):
         Usage Pattern for Renaming Metadata Keys:
             To include DB column `db_col_name` in metadata with the key `meta_key_name`,
             use `metadata_cols=[('db_col_name', 'meta_key_name')]`.
+
         """
         exclude_set: Set[str] = set(excluded_text_cols or [])
         missing_columns: Set[str] = set()
@@ -251,7 +254,8 @@ class DatabaseReader(BaseReader):
         document_id: Optional[Callable[[Dict[str, Any]], str]] = None,
         **load_kwargs: Any,
     ) -> List[Document]:
-        """Query and load data from the Database into a list of Documents.
+        """
+        Query and load data from the Database into a list of Documents.
 
         Args:
             query (str): SQL query to execute.
@@ -271,6 +275,7 @@ class DatabaseReader(BaseReader):
 
         Returns:
             List[Document]: A list of Document objects.
+
         """
         return list(
             self.lazy_load_data(
@@ -290,7 +295,8 @@ class DatabaseReader(BaseReader):
         document_id: Optional[Callable[[Dict[str, Any]], str]] = None,
         **load_kwargs: Any,
     ) -> List[Document]:
-        """Asynchronously query and load data from the Database into a list.
+        """
+        Asynchronously query and load data from the Database into a list.
 
         Note: Implementation uses `asyncio.to_thread`; database I/O still
             runs in a worker thread, not an async driver.
@@ -313,6 +319,7 @@ class DatabaseReader(BaseReader):
 
         Returns:
             List[Document]: A list of Document objects.
+
         """
         func = functools.partial(
             self.load_data,  # Target the sync load_data

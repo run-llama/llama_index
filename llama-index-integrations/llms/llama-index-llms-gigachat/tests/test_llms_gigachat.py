@@ -60,7 +60,7 @@ def test_chat(mock_gigachat):
 
 
 @patch("llama_index.llms.gigachat.base.GigaChat")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_acomplete(mock_gigachat):
     # Arrange
     mock_response = AsyncMock()
@@ -80,7 +80,7 @@ async def test_acomplete(mock_gigachat):
 
 
 @patch("llama_index.llms.gigachat.base.GigaChat")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat(mock_gigachat):
     # Arrange
     mock_response = AsyncMock()
@@ -150,7 +150,7 @@ T = TypeVar("T")
 
 
 @patch("llama_index.llms.gigachat.base.GigaChat")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete(mock_gigachat):
     # Arrange
 

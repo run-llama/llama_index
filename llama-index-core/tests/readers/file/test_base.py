@@ -122,7 +122,7 @@ def test_SimpleDirectoryReader_load_resource(data_path):
     assert isinstance(res[0], Document)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_SimpleDirectoryReader_aload_resource(data_path):
     r = SimpleDirectoryReader(input_dir=data_path)
     res = await r.aload_resource(str(data_path / "file_0.md"))
@@ -183,7 +183,7 @@ def test_SimpleDirectoryReader_load_file_extractor(data_path):
     assert len(docs) == 1
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_SimpleDirectoryReader_aload_file_extractor(data_path):
     extractor = mock.AsyncMock()
     extractor.aload_data.return_value = [Document()]
@@ -247,7 +247,7 @@ def test_SimpleDirectoryReader_load_data(data_path):
     assert len(docs) == 5
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_SimpleDirectoryReader_aload_data(data_path):
     r = SimpleDirectoryReader(input_dir=data_path, recursive=True)
     docs = await r.aload_data(num_workers=2)

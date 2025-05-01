@@ -119,6 +119,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             collection_name="example_collection", client=client
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -362,6 +363,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[BaseNode]: List of nodes retrieved from the index.
+
         """
         should = []
         if node_ids is not None:
@@ -417,6 +419,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[BaseNode]: List of nodes retrieved from the index.
+
         """
         self._ensure_async_client()
 
@@ -492,6 +495,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         Raises:
             ValueError: If trying to using async methods without aclient
+
         """
         from qdrant_client.http.exceptions import UnexpectedResponse
 
@@ -578,6 +582,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         Args:
             node_ids (Optional[List[str]): List of node IDs to delete.
             filters (Optional[MetadataFilters]): Metadata filters to apply.
+
         """
         should = []
         if node_ids is not None:
@@ -613,6 +618,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         Args:
             node_ids (Optional[List[str]): List of node IDs to delete.
             filters (Optional[MetadataFilters]): Metadata filters to apply.
+
         """
         self._ensure_async_client()
 
@@ -783,6 +789,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         Args:
             query (VectorStoreQuery): query
+
         """
         query_embedding = cast(List[float], query.query_embedding)
         #  NOTE: users can pass in qdrant_filters (nested/complicated filters) to override the default MetadataFilters
@@ -919,6 +926,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         Args:
             query (VectorStoreQuery): query
+
         """
         self._ensure_async_client()
 
@@ -1059,6 +1067,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
         Args:
             response: List[Any]: List of results returned from the vector store.
+
         """
         nodes = []
         similarities = []

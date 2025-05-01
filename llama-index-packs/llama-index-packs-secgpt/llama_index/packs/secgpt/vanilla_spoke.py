@@ -29,6 +29,7 @@ class VanillaSpoke:
             llm (LLM, optional): A large language model for the spoke. Defaults to None.
             memory (ChatMemoryBuffer, optional): The chat memory buffer. Defaults to None.
             verbose (bool, optional): Whether to enable verbose mode. Defaults to False.
+
         """
         self.llm = llm or Settings.llm
         self.memory = memory or ChatMemoryBuffer.from_defaults(
@@ -52,5 +53,6 @@ class VanillaSpoke:
 
         Returns:
             str: The response from the vanilla agent.
+
         """
         return self.vanilla_agent.chat(query, chat_history=chat_history)

@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 class TreeSelectLeafEmbeddingRetriever(TreeSelectLeafRetriever):
-    """Tree select leaf embedding retriever.
+    """
+    Tree select leaf embedding retriever.
 
     This class traverses the index graph using the embedding similarity between the
     query and the node text.

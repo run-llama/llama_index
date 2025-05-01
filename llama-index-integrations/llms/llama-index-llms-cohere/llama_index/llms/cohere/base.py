@@ -42,7 +42,8 @@ from cohere.types import (
 
 
 class Cohere(FunctionCallingLLM):
-    """Cohere LLM.
+    """
+    Cohere LLM.
 
     Examples:
         `pip install llama-index-llms-cohere`
@@ -54,6 +55,7 @@ class Cohere(FunctionCallingLLM):
         resp = llm.complete("Paul Graham is ")
         print(resp)
         ```
+
     """
 
     model: str = Field(description="The cohere model to use.")
@@ -202,7 +204,8 @@ class Cohere(FunctionCallingLLM):
         stop_sequences: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        """Get the request for the Cohere chat API.
+        """
+        Get the request for the Cohere chat API.
 
         Args:
             messages: The messages.
@@ -211,6 +214,7 @@ class Cohere(FunctionCallingLLM):
 
         Returns:
             The request for the Cohere chat API.
+
         """
         additional_kwargs = messages[-1].additional_kwargs
 

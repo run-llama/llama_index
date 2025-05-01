@@ -33,6 +33,7 @@ class VectaraQueryEngine(BaseQueryEngine):
         summary_response_lang: response language for summary (ISO 639-2 code)
         summary_num_results: number of results to use for summary generation.
         summary_prompt_name: name of the prompt to use for summary generation.
+
     """
 
     def __init__(

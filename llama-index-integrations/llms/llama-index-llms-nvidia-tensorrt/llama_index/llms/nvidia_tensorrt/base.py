@@ -61,7 +61,8 @@ PAD_TOKEN = 2
 
 
 class LocalTensorRTLLM(CustomLLM):
-    r"""Local TensorRT LLM.
+    r"""
+    Local TensorRT LLM.
 
     [TensorRT-LLM](https://github.com/NVIDIA/TensorRT-LLM) provides users with an easy-to-use Python API to define Large Language Models (LLMs) and build TensorRT engines that contain state-of-the-art optimizations to perform inference
     efficiently on NVIDIA GPUs.
@@ -106,6 +107,7 @@ class LocalTensorRTLLM(CustomLLM):
         resp = llm.complete("Who is Paul Graham?")
         print(str(resp))
         ```
+
     """
 
     model_path: Optional[str] = Field(description="The path to the trt engine.")

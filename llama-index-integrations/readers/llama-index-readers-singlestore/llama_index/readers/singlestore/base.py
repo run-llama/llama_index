@@ -8,7 +8,8 @@ from llama_index.readers.database import DatabaseReader
 
 
 class SingleStoreReader(BaseReader):
-    """SingleStore reader.
+    """
+    SingleStore reader.
 
     Args:
         scheme (str): Database Scheme.
@@ -20,6 +21,7 @@ class SingleStoreReader(BaseReader):
         table_name (str): Table Name.
         content_field (str): Content Field.
         vector_field (str): Vector Field.
+
     """
 
     def __init__(
@@ -63,7 +65,8 @@ class SingleStoreReader(BaseReader):
         )
 
     def load_data(self, search_embedding: str, top_k: int = 5) -> List[Document]:
-        """Load data from SingleStore.
+        """
+        Load data from SingleStore.
 
         Args:
             search_embedding (str): The embedding to search.
@@ -71,6 +74,7 @@ class SingleStoreReader(BaseReader):
 
         Returns:
             List[Document]: A list of documents.
+
         """
         query = f"""
         SELECT {self.content_field}, DOT_PRODUCT_F64({self.vector_field}, JSON_ARRAY_PACK_F64(\'{search_embedding}\')) AS score

@@ -22,7 +22,8 @@ class MongoDBAtlasBM25Retriever(BaseRetriever):
         metadata_key: str = "metadata",
         similarity_top_k: int = DEFAULT_SIMILARITY_TOP_K,
     ) -> None:
-        """Initialize the vector store.
+        """
+        Initialize the vector store.
 
         Args:
             mongodb_client: A MongoDB client.
@@ -31,6 +32,7 @@ class MongoDBAtlasBM25Retriever(BaseRetriever):
             index_name: A MongoDB Atlas Vector Search index name.
             text_key: A MongoDB field that will contain the text for each document.
             metadata_key: A MongoDB field that will contain
+
         """
         import_err_msg = "`pymongo` package not found, please run `pip install pymongo`"
         try:

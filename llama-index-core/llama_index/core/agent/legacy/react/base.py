@@ -46,7 +46,8 @@ from llama_index.core.utils import print_text, unit_generator
 
 
 class ReActAgent(BaseAgent):
-    """ReAct agent.
+    """
+    ReAct agent.
 
     Uses a ReAct prompt that can be used in both chat and text
     completion endpoints.
@@ -101,7 +102,8 @@ class ReActAgent(BaseAgent):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "ReActAgent":
-        """Convenience constructor method from set of BaseTools (Optional).
+        """
+        Convenience constructor method from set of BaseTools (Optional).
 
         NOTE: kwargs should have been exhausted by this point. In other words
         the various upstream components such as BaseSynthesizer (response synthesizer)
@@ -110,6 +112,7 @@ class ReActAgent(BaseAgent):
 
         Returns:
             ReActAgent
+
         """
         llm = llm or Settings.llm
         if callback_manager is not None:
@@ -258,7 +261,8 @@ class ReActAgent(BaseAgent):
         return AgentChatResponse(response=response_step.response, sources=self.sources)
 
     def _infer_stream_chunk_is_final(self, chunk: ChatResponse) -> bool:
-        """Infers if a chunk from a live stream is the start of the final
+        """
+        Infers if a chunk from a live stream is the start of the final
         reasoning step. (i.e., and should eventually become
         ResponseReasoningStep — not part of this function's logic tho.).
 
@@ -267,6 +271,7 @@ class ReActAgent(BaseAgent):
 
         Returns:
             bool: Boolean on whether the chunk is the start of the final response
+
         """
         latest_content = chunk.message.content
 
@@ -283,7 +288,8 @@ class ReActAgent(BaseAgent):
     def _add_back_chunk_to_stream(
         self, chunk: ChatResponse, chat_stream: Generator[ChatResponse, None, None]
     ) -> Generator[ChatResponse, None, None]:
-        """Helper method for adding back initial chunk stream of final response
+        """
+        Helper method for adding back initial chunk stream of final response
         back to the rest of the chat_stream.
 
         Args:
@@ -292,6 +298,7 @@ class ReActAgent(BaseAgent):
 
         Return:
             Generator[ChatResponse, None, None]: the updated chat_stream
+
         """
         updated_stream = chain.from_iterable(  # need to add back partial response chunk
             [
@@ -308,7 +315,8 @@ class ReActAgent(BaseAgent):
     async def _async_add_back_chunk_to_stream(
         self, chunk: ChatResponse, chat_stream: AsyncGenerator[ChatResponse, None]
     ) -> AsyncGenerator[ChatResponse, None]:
-        """Helper method for adding back initial chunk stream of final response
+        """
+        Helper method for adding back initial chunk stream of final response
         back to the rest of the chat_stream.
 
         NOTE: this itself is not an async function.
@@ -319,6 +327,7 @@ class ReActAgent(BaseAgent):
 
         Return:
             AsyncGenerator[ChatResponse, None]: the updated async chat_stream
+
         """
         yield chunk
         async for item in chat_stream:

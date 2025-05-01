@@ -64,7 +64,8 @@ class MistralAIFinetuneEngine(BaseLLMFinetuneEngine):
         training_path: str,
         **kwargs: Any,
     ) -> "MistralAIFinetuneEngine":
-        """Initialize from finetuning handler.
+        """
+        Initialize from finetuning handler.
 
         Used to finetune an MistralAI model.
 

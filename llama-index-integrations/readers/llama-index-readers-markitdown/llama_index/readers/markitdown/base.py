@@ -55,11 +55,12 @@ class MarkItDownReader(BaseReader):
     """
     MarkItDownReader is a document reader that utilizes the MarkItDown parser to convert files or collections of files into Document objects.
 
-    Methods:
+    Methods
     -------
     load_data(file_path: str | Path | Iterable[str] | Iterable[Path]) -> List[Document]
         Loads and parses a directory (if `file_path` is `str` or `Path`) or a list of files specified by `file_path` using the MarkItDown parser.
         Returns a list of Document objects, each containing the text content and metadata such as file path, file type, and content length.
+
     """
 
     _reader: MarkItDown = MarkItDown()

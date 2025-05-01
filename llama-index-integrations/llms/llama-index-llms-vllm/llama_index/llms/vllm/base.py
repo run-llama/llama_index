@@ -28,7 +28,8 @@ import atexit
 
 
 class Vllm(LLM):
-    r"""Vllm LLM.
+    r"""
+    Vllm LLM.
 
     This class runs a vLLM model locally.
 
@@ -60,6 +61,7 @@ class Vllm(LLM):
             "What is a black hole?"
         )
         ```
+
     """
 
     model: Optional[str] = Field(description="The HuggingFace Model to use.")
@@ -325,7 +327,8 @@ class Vllm(LLM):
 
 
 class VllmServer(Vllm):
-    r"""Vllm LLM.
+    r"""
+    Vllm LLM.
 
     This class connects to a vLLM server (non-openai versions).
 
@@ -358,6 +361,7 @@ class VllmServer(Vllm):
             "What is a black hole?"
         )
         ```
+
     """
 
     def __init__(

@@ -18,7 +18,8 @@ class IMDBReviews(BaseReader):
         max_workers: int = 0,
         reviews_folder: str = "movie_reviews",
     ):
-        """Get the IMDB reviews of a movie.
+        """
+        Get the IMDB reviews of a movie.
 
         Args:
             movie_name_year (str): movie name alongwith year
@@ -26,6 +27,7 @@ class IMDBReviews(BaseReader):
             generate_csv (bool, optional): whether to generate csv. Defaults to False.
             multithreading (bool, optional): whether to use multithreading. Defaults to False.
             max_workers (int, optional): number of workers if you are using multithreading. Defaults to 0.
+
         """
         assert webdriver_engine in [
             "google",
@@ -40,10 +42,12 @@ class IMDBReviews(BaseReader):
         self.reviews_folder = reviews_folder
 
     def load_data(self) -> List[Document]:
-        """Scrapes the data from the IMDB website movie reviews.
+        """
+        Scrapes the data from the IMDB website movie reviews.
 
         Returns:
             List[Document]: document object in llama index with date and rating as extra information
+
         """
         (
             reviews_date,

@@ -46,7 +46,8 @@ def create_vector_search_index(
     wait_until_complete: Optional[float] = None,
     **kwargs: Any,
 ) -> None:
-    """Experimental Utility function to create a vector search index.
+    """
+    Experimental Utility function to create a vector search index.
 
     Args:
         collection (Collection): MongoDB Collection
@@ -58,6 +59,7 @@ def create_vector_search_index(
         wait_until_complete (Optional[float]): If provided, number of seconds to wait
             until search index is ready.
         kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
+
     """
     logger.info("Creating Search Index %s on %s", index_name, collection.name)
 
@@ -90,13 +92,15 @@ def drop_vector_search_index(
     *,
     wait_until_complete: Optional[float] = None,
 ) -> None:
-    """Drop a created vector search index.
+    """
+    Drop a created vector search index.
 
     Args:
         collection (Collection): MongoDB Collection with index to be dropped
         index_name (str): Name of the MongoDB index
         wait_until_complete (Optional[float]): If provided, number of seconds to wait
             until search index is ready.
+
     """
     logger.info(
         "Dropping Search Index %s from Collection: %s", index_name, collection.name
@@ -128,7 +132,8 @@ def update_vector_search_index(
     wait_until_complete: Optional[float] = None,
     **kwargs: Any,
 ) -> None:
-    """Update a search index.
+    """
+    Update a search index.
 
     Replace the existing index definition with the provided definition.
 
@@ -142,6 +147,7 @@ def update_vector_search_index(
         wait_until_complete (Optional[float]): If provided, number of seconds to wait
             until search index is ready.
         kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
+
     """
     logger.info(
         "Updating Search Index %s from Collection: %s", index_name, collection.name
@@ -167,7 +173,8 @@ def update_vector_search_index(
 
 
 def _is_index_ready(collection: Collection, index_name: str) -> bool:
-    """Check for the index name in the list of available search indexes.
+    """
+    Check for the index name in the list of available search indexes.
 
      This confirms that the specified index is of status READY.
 
@@ -177,6 +184,7 @@ def _is_index_ready(collection: Collection, index_name: str) -> bool:
 
     Returns:
         bool : True if the index is present and READY false otherwise
+
     """
     search_indexes = collection.list_search_indexes(index_name)
 
@@ -189,7 +197,8 @@ def _is_index_ready(collection: Collection, index_name: str) -> bool:
 def _wait_for_predicate(
     predicate: Callable, err: str, timeout: float = 120, interval: float = 0.5
 ) -> None:
-    """Generic to block until the predicate returns true.
+    """
+    Generic to block until the predicate returns true.
 
     Args:
         predicate (Callable[, bool]): A function that returns a boolean value
@@ -199,6 +208,7 @@ def _wait_for_predicate(
 
     Raises:
         TimeoutError: _description_
+
     """
     start = monotonic()
     while not predicate():
@@ -216,7 +226,8 @@ def create_fulltext_search_index(
     wait_until_complete: Optional[float] = None,
     **kwargs: Any,
 ) -> None:
-    """Experimental Utility function to create an Atlas Search index.
+    """
+    Experimental Utility function to create an Atlas Search index.
 
     Args:
         collection (Collection): MongoDB Collection
@@ -225,6 +236,7 @@ def create_fulltext_search_index(
         wait_until_complete (Optional[float]): If provided, number of seconds to wait
             until search index is ready
         kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
+
     """
     logger.info("Creating Search Index %s on %s", index_name, collection.name)
 

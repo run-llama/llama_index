@@ -31,7 +31,8 @@ logger = logging.getLogger(__name__)
 
 
 class DocugamiReader(BaseReader):
-    """Docugami reader.
+    """
+    Docugami reader.
 
     Reads Documents as nodes in a Document XML Knowledge Graph, from Docugami.
 
@@ -358,12 +359,14 @@ class DocugamiReader(BaseReader):
         document_ids: Optional[List[str]] = None,
         access_token: Optional[str] = None,
     ) -> List[Document]:
-        """Load data the given docset_id in Docugami.
+        """
+        Load data the given docset_id in Docugami.
 
         Args:
             docset_id (str): Document set ID to load data for.
             document_ids (Optional[List[str]]): Optional list of document ids to load data for.
                                     If not specified, all documents from docset_id are loaded.
+
         """
         chunks: List[Document] = []
 

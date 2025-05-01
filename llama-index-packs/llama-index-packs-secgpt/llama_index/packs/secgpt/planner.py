@@ -29,6 +29,7 @@ class PromptModule(PromptMixin):
 
         Returns:
             PromptDictType: A dictionary containing the current prompts.
+
         """
         return self._prompts
 
@@ -38,6 +39,7 @@ class PromptModule(PromptMixin):
 
         Returns:
             PromptMixinType: An empty dictionary as there are no sub-modules.
+
         """
         return {}
 
@@ -47,6 +49,7 @@ class PromptModule(PromptMixin):
 
         Args:
             prompts_dict (PromptDictType): A dictionary containing the prompts to update.
+
         """
         self._prompts.update(prompts_dict)
 
@@ -124,6 +127,7 @@ class HubPlanner:
 
         Args:
             llm (LLM): The large language model used for generating plans.
+
         """
         self.llm = llm
 
@@ -149,6 +153,7 @@ class HubPlanner:
 
         Returns:
             dict: The generated plan in JSON format.
+
         """
         return self.query_pipeline.run(
             input=query, tools=tool_info, chat_history=chat_history

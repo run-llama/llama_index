@@ -136,7 +136,8 @@ Overall Task: {task}
 
 
 class StructuredPlannerAgent(BasePlanningAgentRunner):
-    """Structured Planner Agent runner.
+    """
+    Structured Planner Agent runner.
 
     Top-level agent orchestrator that can create tasks, run each step in a task,
     or run a task e2e. Stores state and keeps track of tasks.

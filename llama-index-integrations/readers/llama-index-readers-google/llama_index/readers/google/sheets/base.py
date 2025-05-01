@@ -33,7 +33,8 @@ logger = logging.getLogger(__name__)
 
 
 class GoogleSheetsReader(BasePydanticReader):
-    """Google Sheets reader.
+    """
+    Google Sheets reader.
 
     Reads a sheet as TSV from Google Sheets
 
@@ -60,10 +61,12 @@ class GoogleSheetsReader(BasePydanticReader):
         return "GoogleSheetsReader"
 
     def load_data(self, spreadsheet_ids: List[str]) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             spreadsheet_ids (List[str]): a list of document ids.
+
         """
         if spreadsheet_ids is None:
             raise ValueError('Must specify a "spreadsheet_ids" in `load_kwargs`.')
@@ -81,10 +84,12 @@ class GoogleSheetsReader(BasePydanticReader):
         return results
 
     def load_data_in_pandas(self, spreadsheet_ids: List[str]) -> List[pd.DataFrame]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             spreadsheet_ids (List[str]): a list of document ids.
+
         """
         if spreadsheet_ids is None:
             raise ValueError('Must specify a "spreadsheet_ids" in `load_kwargs`.')
@@ -96,13 +101,15 @@ class GoogleSheetsReader(BasePydanticReader):
         return results
 
     def _load_sheet(self, spreadsheet_id: str) -> str:
-        """Load a sheet from Google Sheets.
+        """
+        Load a sheet from Google Sheets.
 
         Args:
             spreadsheet_id: the sheet id.
 
         Returns:
             The sheet data.
+
         """
         credentials = self._get_credentials()
         sheets_service = discovery.build("sheets", "v4", credentials=credentials)
@@ -132,7 +139,8 @@ class GoogleSheetsReader(BasePydanticReader):
         return sheet_text
 
     def _load_sheet_in_pandas(self, spreadsheet_id: str) -> List[pd.DataFrame]:
-        """Load a sheet from Google Sheets.
+        """
+        Load a sheet from Google Sheets.
 
         Args:
             spreadsheet_id: the sheet id.
@@ -140,6 +148,7 @@ class GoogleSheetsReader(BasePydanticReader):
 
         Returns:
             The sheet data.
+
         """
         credentials = self._get_credentials()
         sheets_service = discovery.build("sheets", "v4", credentials=credentials)
@@ -169,7 +178,8 @@ class GoogleSheetsReader(BasePydanticReader):
         return dataframes
 
     def _get_credentials(self) -> Any:
-        """Get valid user credentials from storage.
+        """
+        Get valid user credentials from storage.
 
         The file token.json stores the user's access and refresh tokens, and is
         created automatically when the authorization flow completes for the first
@@ -177,6 +187,7 @@ class GoogleSheetsReader(BasePydanticReader):
 
         Returns:
             Credentials, the obtained credential.
+
         """
         creds = None
         if os.path.exists("token.json"):

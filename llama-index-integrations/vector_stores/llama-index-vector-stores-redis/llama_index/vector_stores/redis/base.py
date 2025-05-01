@@ -1,4 +1,5 @@
-"""Redis Vector store index.
+"""
+Redis Vector store index.
 
 An index that is built on top of an existing vector store.
 """
@@ -50,7 +51,8 @@ logger = logging.getLogger(__name__)
 
 
 class RedisVectorStore(BasePydanticVectorStore):
-    """RedisVectorStore.
+    """
+    RedisVectorStore.
 
     The RedisVectorStore takes a user-defined schema object and a Redis connection
     client or URL string. The schema is optional, but useful for:
@@ -99,6 +101,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             schema=schema,
             redis_url="redis://localhost:6379"
         )
+
     """
 
     stores_text: bool = True
@@ -189,10 +192,12 @@ class RedisVectorStore(BasePydanticVectorStore):
         self._return_fields = return_fields
 
     def index_exists(self) -> bool:
-        """Check whether the index exists in Redis.
+        """
+        Check whether the index exists in Redis.
 
         Returns:
             bool: True or False.
+
         """
         return self._index.exists()
 
@@ -207,7 +212,8 @@ class RedisVectorStore(BasePydanticVectorStore):
             self._index.create()
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add nodes to the index.
+        """
+        Add nodes to the index.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings
@@ -217,6 +223,7 @@ class RedisVectorStore(BasePydanticVectorStore):
 
         Raises:
             ValueError: If the index already exists and overwrite is False.
+
         """
         # Check to see if empty document list was passed
         if len(nodes) == 0:
@@ -301,6 +308,7 @@ class RedisVectorStore(BasePydanticVectorStore):
 
         Raises:
             ValueError: If the field type is unsupported or if the operator is not supported for the field type.
+
         """
         # Check for unsupported field type
         if field.type not in REDIS_LLAMA_FIELD_SPEC:
@@ -329,6 +337,7 @@ class RedisVectorStore(BasePydanticVectorStore):
 
         Returns:
             FilterExpression: A Redis filter expression.
+
         """
         filter_expression = FilterExpression("*")
         if metadata_filters:
@@ -403,7 +412,8 @@ class RedisVectorStore(BasePydanticVectorStore):
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=scores)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query the index.
+        """
+        Query the index.
 
         Args:
             query (VectorStoreQuery): query object
@@ -415,6 +425,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             ValueError: If query.query_embedding is None.
             redis.exceptions.RedisError: If there is an error querying the index.
             redis.exceptions.TimeoutError: If there is a timeout querying the index.
+
         """
         if not query.query_embedding:
             raise ValueError("Query embedding is required for querying.")
@@ -439,7 +450,8 @@ class RedisVectorStore(BasePydanticVectorStore):
         fs: Optional[fsspec.AbstractFileSystem] = None,
         in_background: bool = True,
     ) -> None:
-        """Persist the vector store to disk.
+        """
+        Persist the vector store to disk.
 
         For Redis, more notes here: https://redis.io/docs/management/persistence/
 
@@ -452,6 +464,7 @@ class RedisVectorStore(BasePydanticVectorStore):
         Raises:
             redis.exceptions.RedisError: If there is an error
                                          persisting the index to disk.
+
         """
         try:
             if in_background:

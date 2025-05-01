@@ -101,7 +101,7 @@ def test_get_text_embedding_batch(embeddings):
     assert embedding_vectors == [[0.1, 0.2, 0.3], [0.4, 0.5, 0.6]]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_aget_query_embedding(embeddings):
     embeddings.async_client.embeddings.return_value = response_data["data"]
 
@@ -117,7 +117,7 @@ async def test_aget_query_embedding(embeddings):
     assert embedding_vector == [0.1, 0.2, 0.3]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_aget_text_embedding(embeddings):
     embeddings.async_client.embeddings.return_value = response_data["data"]
 
@@ -133,7 +133,7 @@ async def test_aget_text_embedding(embeddings):
     assert embedding_vector == [0.1, 0.2, 0.3]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_aget_text_embedding_batch(embeddings):
     embeddings.async_client.embeddings.return_value = response_data["data"]
 

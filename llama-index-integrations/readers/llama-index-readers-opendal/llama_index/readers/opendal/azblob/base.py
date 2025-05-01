@@ -1,4 +1,5 @@
-"""Azblob file and directory reader.
+"""
+Azblob file and directory reader.
 
 A loader that fetches a file or iterates through a directory on Azblob or.
 
@@ -23,7 +24,8 @@ class OpendalAzblobReader(BaseReader):
         account_key: str = "",
         file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
     ) -> None:
-        """Initialize Azblob container, along with credentials if needed.
+        """
+        Initialize Azblob container, along with credentials if needed.
 
         If key is not set, the entire bucket (filtered by prefix) is parsed.
 

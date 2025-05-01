@@ -7,7 +7,8 @@ from llama_index.core.schema import Document
 
 
 class ChromaReader(BaseReader):
-    """Chroma reader.
+    """
+    Chroma reader.
 
     Retrieve documents from existing persisted Chroma collections.
 
@@ -52,13 +53,15 @@ class ChromaReader(BaseReader):
         self._collection = self._client.get_collection(collection_name)
 
     def create_documents(self, results: Any) -> List[Document]:
-        """Create documents from the results.
+        """
+        Create documents from the results.
 
         Args:
             results: Results from the query.
 
         Returns:
             List of documents.
+
         """
         documents = []
         for result in zip(
@@ -85,7 +88,8 @@ class ChromaReader(BaseReader):
         where_document: Optional[dict] = None,
         query: Optional[Union[str, List[str]]] = None,
     ) -> Any:
-        """Load data from the collection.
+        """
+        Load data from the collection.
 
         Args:
             limit: Number of results to return.
@@ -94,6 +98,7 @@ class ChromaReader(BaseReader):
 
         Returns:
             List of documents.
+
         """
         where = where or {}
         where_document = where_document or {}

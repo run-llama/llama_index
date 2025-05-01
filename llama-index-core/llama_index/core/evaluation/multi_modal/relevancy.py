@@ -37,7 +37,8 @@ DEFAULT_REFINE_TEMPLATE = PromptTemplate(
 
 
 class MultiModalRelevancyEvaluator(BaseEvaluator):
-    """Relevancy evaluator.
+    """
+    Relevancy evaluator.
 
     Evaluates the relevancy of retrieved image and textual contexts and response to a query.
     This evaluator considers the query string, retrieved contexts, and response string.
@@ -52,6 +53,7 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
             The template to use for evaluation.
         refine_template(Optional[Union[str, BasePromptTemplate]]):
             The template to use for refinement.
+
     """
 
     def __init__(

@@ -88,7 +88,8 @@ def default_output_processor(llm_output: str, json_value: JSONType) -> Dict[str,
 
 
 class JSONQueryEngine(BaseQueryEngine):
-    """GPT JSON Query Engine.
+    """
+    GPT JSON Query Engine.
 
     Converts natural language to JSON Path queries.
 
@@ -101,6 +102,7 @@ class JSONQueryEngine(BaseQueryEngine):
         output_kwargs (dict): Additional output processor kwargs for the
             output_processor function.
         verbose (bool): Whether to print verbose output.
+
     """
 
     def __init__(

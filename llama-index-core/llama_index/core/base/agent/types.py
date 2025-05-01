@@ -76,7 +76,8 @@ class BaseAgent(BaseChatEngine, BaseQueryEngine):
 
 
 class TaskStep(BaseModel):
-    """Agent task step.
+    """
+    Agent task step.
 
     Represents a single input step within the execution run ("Task") of an agent
     given a user input.
@@ -114,7 +115,8 @@ class TaskStep(BaseModel):
         input: Optional[str] = None,
         step_state: Optional[Dict[str, Any]] = None,
     ) -> "TaskStep":
-        """Convenience function to get next step.
+        """
+        Convenience function to get next step.
 
         Preserve task_id, memory, step_state.
 
@@ -131,7 +133,8 @@ class TaskStep(BaseModel):
         self,
         next_step: "TaskStep",
     ) -> None:
-        """Link to next step.
+        """
+        Link to next step.
 
         Add link from this step to next, and from next step to current.
 
@@ -154,7 +157,8 @@ class TaskStepOutput(BaseModel):
 
 
 class Task(BaseModel):
-    """Agent Task.
+    """
+    Agent Task.
 
     Represents a "run" of an agent given a user input.
 

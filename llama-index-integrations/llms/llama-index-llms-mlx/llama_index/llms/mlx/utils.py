@@ -20,6 +20,7 @@ def apply_repetition_penalty(logits: mx.array, generated_tokens: Any, penalty: f
 
     Returns:
         logits (mx.array): Logits with repetition penalty applied to generated tokens.
+
     """
     if len(generated_tokens) > 0:
         indices = mx.array([list(generated_tokens)])
@@ -42,6 +43,7 @@ def top_p_sampling(logits: mx.array, top_p: float, temperature: float) -> mx.arr
 
     Returns:
         token selected based on the top-p criterion.
+
     """
     # referenced implementation from https://github.com/huggingface/transformers/blob/main/src/transformers/generation/logits_process.py#L449-L460
     probs = mx.softmax(logits / temperature, axis=-1)
@@ -87,6 +89,7 @@ def generate_step(
     Yields:
         Generator[Tuple[mx.array, mx.array]]: A generator producing
         one token and probability per call.
+
     """
 
     def sample(logits: mx.array) -> Tuple[mx.array, float]:
@@ -175,6 +178,7 @@ def gen_full(
            probability and displays it.
        repetition_penalty (float, optional): The penalty factor for repeating tokens.
        repetition_context_size (int, optional): The number of tokens to consider for repetition penalty.
+
     """
     if not isinstance(tokenizer, TokenizerWrapper):
         tokenizer = TokenizerWrapper(tokenizer)
@@ -236,6 +240,7 @@ def gen_stream(
            probability and displays it.
        repetition_penalty (float, optional): The penalty factor for repeating tokens.
        repetition_context_size (int, optional): The number of tokens to consider for repetition penalty.
+
     """
     if not isinstance(tokenizer, TokenizerWrapper):
         tokenizer = TokenizerWrapper(tokenizer)

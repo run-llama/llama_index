@@ -24,6 +24,7 @@ def maybe_decode_sse_data(data: bytes) -> Union[dict, None]:
 
     Returns:
         Union[dict, None]: The decoded data or None.
+
     """
     if data and data.startswith(b"data: "):
         data = data.decode("utf-8").strip("data: ")
@@ -44,6 +45,7 @@ def maybe_extract_from_json(data: dict, key: str = "text") -> Union[str, None]:
 
     Returns:
         Union[str, None]: The extracted text or None.
+
     """
     if "choices" in data:
         if len(data["choices"]) > 0 and key in data["choices"][0]:
@@ -63,6 +65,7 @@ def chat_messages_to_list(messages: Sequence[ChatMessage]) -> Sequence[Dict[str,
 
     Returns:
         Sequence[Dict[str, Any]]: A list of dictionaries.
+
     """
     chat_messages = []
     for message in messages:
@@ -92,6 +95,7 @@ def create_retry_decorator(retry_limit: int) -> Callable[[Any], Any]:
 
     Returns:
         Callable[[Any], Any]: The retry decorator.
+
     """
     initial_delay = 4
     max_delay = 10
@@ -120,6 +124,7 @@ def retry_request(
 
     Returns:
         Any: The response.
+
     """
     retry_func = create_retry_decorator(max_retries)
 
@@ -144,6 +149,7 @@ async def aretry_request(
 
     Returns:
         Any: The response.
+
     """
     retry_decorator = create_retry_decorator(max_retries)
 

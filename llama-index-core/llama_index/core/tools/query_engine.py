@@ -15,13 +15,15 @@ against a knowledge base and get back a natural language response.
 
 
 class QueryEngineTool(AsyncBaseTool):
-    """Query engine tool.
+    """
+    Query engine tool.
 
     A tool making use of a query engine.
 
     Args:
         query_engine (BaseQueryEngine): A query engine.
         metadata (ToolMetadata): The associated metadata of the query engine.
+
     """
 
     def __init__(

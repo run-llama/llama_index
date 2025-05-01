@@ -203,7 +203,8 @@ class TransformComponent(BaseComponent, DispatcherSpanMixin):
 
 
 class NodeRelationship(str, Enum):
-    """Node relationships used in `BaseNode` class.
+    """
+    Node relationships used in `BaseNode` class.
 
     Attributes:
         SOURCE: The node is the source document.
@@ -259,7 +260,8 @@ RelatedNodeType = Union[RelatedNodeInfo, List[RelatedNodeInfo]]
 
 # Node classes for indexes
 class BaseNode(BaseComponent):
-    """Base node Object.
+    """
+    Base node Object.
 
     Generic abstract interface for retrievable nodes
 
@@ -366,7 +368,8 @@ class BaseNode(BaseComponent):
 
     @property
     def source_node(self) -> Optional[RelatedNodeInfo]:
-        """Source object node.
+        """
+        Source object node.
 
         Extracted from the relationships field.
 
@@ -457,7 +460,8 @@ class BaseNode(BaseComponent):
         return f"Node ID: {self.node_id}\n{source_text_wrapped}"
 
     def get_embedding(self) -> List[float]:
-        """Get embedding.
+        """
+        Get embedding.
 
         Errors if embedding is None.
 
@@ -480,7 +484,8 @@ EmbeddingKind = Literal["sparse", "dense"]
 
 
 class MediaResource(BaseModel):
-    """A container class for media content.
+    """
+    A container class for media content.
 
     This class represents a generic media resource that can be stored and accessed
     in multiple ways - as raw bytes, on the filesystem, or via URL. It also supports
@@ -493,6 +498,7 @@ class MediaResource(BaseModel):
         mimetype: The MIME type indicating the format/type of the media content
         path: Local filesystem path where the media content can be accessed
         url: URL where the media content can be accessed remotely
+
     """
 
     embeddings: dict[EmbeddingKind, list[float]] | None = Field(
@@ -522,7 +528,8 @@ class MediaResource(BaseModel):
     @field_validator("data", mode="after")
     @classmethod
     def validate_data(cls, v: bytes | None, info: ValidationInfo) -> bytes | None:
-        """If binary data was passed, store the resource as base64 and guess the mimetype when possible.
+        """
+        If binary data was passed, store the resource as base64 and guess the mimetype when possible.
 
         In case the model was built passing binary data but without a mimetype,
         we try to guess it using the filetype library. To avoid resource-intense
@@ -576,7 +583,8 @@ class MediaResource(BaseModel):
 
     @property
     def hash(self) -> str:
-        """Generate a hash to uniquely identify the media resource.
+        """
+        Generate a hash to uniquely identify the media resource.
 
         The hash is generated based on the available content (data, path, text or url).
         Returns an empty string if no content is available.
@@ -631,7 +639,8 @@ class Node(BaseNode):
         return ObjectType.MULTIMODAL
 
     def get_content(self, metadata_mode: MetadataMode = MetadataMode.NONE) -> str:
-        """Get the text content for the node if available.
+        """
+        Get the text content for the node if available.
 
         Provided for backward compatibility, use self.text_resource directly instead.
         """
@@ -647,7 +656,8 @@ class Node(BaseNode):
         return ""
 
     def set_content(self, value: str) -> None:
-        """Set the text content of the node.
+        """
+        Set the text content of the node.
 
         Provided for backward compatibility, set self.text_resource instead.
         """
@@ -655,7 +665,8 @@ class Node(BaseNode):
 
     @property
     def hash(self) -> str:
-        """Generate a hash representing the state of the node.
+        """
+        Generate a hash representing the state of the node.
 
         The hash is generated based on the available resources (audio, image, text or video) and its metadata.
         """
@@ -677,7 +688,8 @@ class Node(BaseNode):
 
 
 class TextNode(BaseNode):
-    """Provided for backward compatibility.
+    """
+    Provided for backward compatibility.
 
     Note: we keep the field with the typo "seperator" to maintain backward compatibility for
     serialized objects.
@@ -857,7 +869,8 @@ class ImageNode(TextNode):
 
 
 class IndexNode(TextNode):
-    """Node with reference to any object.
+    """
+    Node with reference to any object.
 
     This can include other indices, query engines, retrievers.
 
@@ -996,13 +1009,15 @@ class NodeWithScore(BaseComponent):
 
 
 class Document(Node):
-    """Generic interface for a data document.
+    """
+    Generic interface for a data document.
 
     This document connects to data sources.
     """
 
     def __init__(self, **data: Any) -> None:
-        """Keeps backward compatibility with old 'Document' versions.
+        """
+        Keeps backward compatibility with old 'Document' versions.
 
         If 'text' was passed, store it in 'text_resource'.
         If 'doc_id' was passed, store it in 'id_'.
@@ -1289,10 +1304,12 @@ class ImageDocument(Document):
         return "ImageDocument"
 
     def resolve_image(self, as_base64: bool = False) -> BytesIO:
-        """Resolve an image such that PIL can read it.
+        """
+        Resolve an image such that PIL can read it.
 
         Args:
             as_base64 (bool): whether the resolved image should be returned as base64-encoded bytes
+
         """
         if self.image_resource is None:
             return BytesIO()
@@ -1330,6 +1347,7 @@ class QueryBundle(DataClassJsonMixin):
         custom_embedding_strs (list[str]): list of strings used for embedding the query.
             This is currently used by all embedding-based queries.
         embedding (list[float]): the stored embedding for the query.
+
     """
 
     query_str: str

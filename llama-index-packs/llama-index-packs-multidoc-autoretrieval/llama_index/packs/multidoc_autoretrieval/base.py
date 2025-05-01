@@ -24,7 +24,8 @@ from llama_index.vector_stores.weaviate import WeaviateVectorStore
 
 
 class IndexAutoRetriever(BaseRetriever):
-    """Index auto-retriever.
+    """
+    Index auto-retriever.
 
     Simple wrapper around VectorIndexAutoRetriever to convert
     text nodes to index nodes.
@@ -51,7 +52,8 @@ class IndexAutoRetriever(BaseRetriever):
 
 
 class MultiDocAutoRetrieverPack(BaseLlamaPack):
-    """Multi-doc auto-retriever pack.
+    """
+    Multi-doc auto-retriever pack.
 
     Uses weaviate as the underlying storage.
 
@@ -160,6 +162,7 @@ class MultiDocAutoRetrieverPack(BaseLlamaPack):
         Returns:
             Dict[str, Any]: A dictionary containing the internals of the
             LlamaPack.
+
         """
         return {
             "index_auto_retriever": self.index_auto_retriever,
@@ -174,5 +177,6 @@ class MultiDocAutoRetrieverPack(BaseLlamaPack):
 
         Returns:
             Any: A response from the query engine.
+
         """
         return self.query_engine.query(*args, **kwargs)

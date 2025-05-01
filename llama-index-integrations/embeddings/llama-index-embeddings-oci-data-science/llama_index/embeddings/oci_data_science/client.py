@@ -42,25 +42,30 @@ logger = logging.getLogger(__name__)
 
 
 class OCIAuth(httpx.Auth):
-    """Custom HTTPX authentication class that uses the OCI Signer for request signing.
+    """
+    Custom HTTPX authentication class that uses the OCI Signer for request signing.
 
     This class implements the HTTPX authentication interface, enabling it to sign outgoing HTTP requests
     using an Oracle Cloud Infrastructure (OCI) Signer.
 
     Attributes:
         signer (oci.signer.Signer): The OCI signer used to sign requests.
+
     """
 
     def __init__(self, signer: oci.signer.Signer):
-        """Initialize the OCIAuth instance.
+        """
+        Initialize the OCIAuth instance.
 
         Args:
             signer (oci.signer.Signer): The OCI signer to use for signing requests.
+
         """
         self.signer = signer
 
     def auth_flow(self, request: httpx.Request) -> Iterator[httpx.Request]:
-        """The authentication flow that signs the HTTPX request using the OCI signer.
+        """
+        The authentication flow that signs the HTTPX request using the OCI signer.
 
         This method is called by HTTPX to sign each request before it is sent.
 
@@ -69,6 +74,7 @@ class OCIAuth(httpx.Auth):
 
         Yields:
             httpx.Request: The signed HTTPX request.
+
         """
         # Create a requests.Request object from the HTTPX request
         req = requests.Request(
@@ -90,20 +96,24 @@ class OCIAuth(httpx.Auth):
 
 
 class ExtendedRequestException(Exception):
-    """Custom exception for handling request errors with additional context.
+    """
+    Custom exception for handling request errors with additional context.
 
     Attributes:
         original_exception (Exception): The original exception that caused the error.
         response_text (str): The text of the response received from the request, if available.
+
     """
 
     def __init__(self, message: str, original_exception: Exception, response_text: str):
-        """Initialize the ExtendedRequestException.
+        """
+        Initialize the ExtendedRequestException.
 
         Args:
             message (str): The error message associated with the exception.
             original_exception (Exception): The original exception that caused the error.
             response_text (str): The text of the response received from the request, if available.
+
         """
         super().__init__(message)
         self.original_exception = original_exception
@@ -111,7 +121,8 @@ class ExtendedRequestException(Exception):
 
 
 def _should_retry_exception(e: ExtendedRequestException) -> bool:
-    """Determine whether the exception should trigger a retry.
+    """
+    Determine whether the exception should trigger a retry.
 
     This function checks if the exception is of a type that should cause the request to be retried,
     based on the status code or the type of exception.
@@ -121,6 +132,7 @@ def _should_retry_exception(e: ExtendedRequestException) -> bool:
 
     Returns:
         bool: True if the exception should trigger a retry, False otherwise.
+
     """
     original_exception = e.original_exception if hasattr(e, "original_exception") else e
     if isinstance(original_exception, httpx.HTTPStatusError):
@@ -138,7 +150,8 @@ def _create_retry_decorator(
     min_seconds: float = 0,
     max_seconds: float = 60,
 ) -> Callable[[Any], Any]:
-    """Create a tenacity retry decorator with the specified configuration.
+    """
+    Create a tenacity retry decorator with the specified configuration.
 
     This function sets up a retry strategy using the tenacity library, which can be applied to functions
     to automatically retry on failure.
@@ -154,6 +167,7 @@ def _create_retry_decorator(
 
     Returns:
         Callable[[Any], Any]: A tenacity retry decorator configured with the specified strategy.
+
     """
     wait_strategy = (
         wait_random_exponential(min=min_seconds, max=max_seconds)
@@ -178,7 +192,8 @@ def _create_retry_decorator(
 
 
 def _retry_decorator(f: Callable) -> Callable:
-    """Decorator to apply retry logic to a function using tenacity.
+    """
+    Decorator to apply retry logic to a function using tenacity.
 
     This decorator applies a retry strategy to the decorated function, retrying it according
     to the configured backoff and retry settings.
@@ -188,6 +203,7 @@ def _retry_decorator(f: Callable) -> Callable:
 
     Returns:
         Callable: The decorated function with retry logic applied.
+
     """
 
     @functools.wraps(f)
@@ -211,7 +227,8 @@ def _retry_decorator(f: Callable) -> Callable:
 
 
 class BaseClient(ABC):
-    """Abstract base class for HTTP clients invoking models with retry logic.
+    """
+    Abstract base class for HTTP clients invoking models with retry logic.
 
     This class provides common functionality for synchronous and asynchronous clients,
     including request preparation, authentication, and retry handling.
@@ -223,6 +240,7 @@ class BaseClient(ABC):
         backoff_factor (float): The factor to determine the delay between retries.
         timeout (Union[float, Tuple[float, float]]): The timeout setting for the HTTP request.
         kwargs (Dict[str, Any]): Additional keyword arguments.
+
     """
 
     def __init__(
@@ -234,7 +252,8 @@ class BaseClient(ABC):
         timeout: Optional[Union[float, Tuple[float, float]]] = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize the BaseClient.
+        """
+        Initialize the BaseClient.
 
         Args:
             endpoint (str): The URL endpoint to send the request.
@@ -244,6 +263,7 @@ class BaseClient(ABC):
             timeout (Optional[Union[float, Tuple[float, float]]]): The timeout setting for the HTTP request in seconds.
                 Can be a single float for total timeout, or a tuple (connect_timeout, read_timeout). Defaults to TIMEOUT.
             **kwargs: Additional keyword arguments.
+
         """
         self.endpoint = endpoint
         self.retries = retries or DEFAULT_RETRIES
@@ -284,7 +304,8 @@ class BaseClient(ABC):
     def _prepare_headers(
         self, headers: Optional[Dict[str, str]] = None
     ) -> Dict[str, str]:
-        """Construct and return the headers for a request.
+        """
+        Construct and return the headers for a request.
 
         This method merges any provided headers with the default headers.
 
@@ -293,6 +314,7 @@ class BaseClient(ABC):
 
         Returns:
             Dict[str, str]: The prepared headers.
+
         """
         default_headers = {
             "Content-Type": "application/json",
@@ -306,34 +328,41 @@ class BaseClient(ABC):
 
 
 class Client(BaseClient):
-    """Synchronous HTTP client for invoking models with retry logic.
+    """
+    Synchronous HTTP client for invoking models with retry logic.
 
     This client sends HTTP requests to a specified endpoint and handles retries, timeouts, and authentication.
 
     Attributes:
         _client (httpx.Client): The underlying HTTPX client used for sending requests.
+
     """
 
     def __init__(self, *args, **kwargs) -> None:
-        """Initialize the Client.
+        """
+        Initialize the Client.
 
         Args:
             *args: Positional arguments forwarded to BaseClient.
             **kwargs: Keyword arguments forwarded to BaseClient.
+
         """
         super().__init__(*args, **kwargs)
         self._client = httpx.Client(timeout=self.timeout)
 
     def is_closed(self) -> bool:
-        """Check if the underlying HTTPX client is closed.
+        """
+        Check if the underlying HTTPX client is closed.
 
         Returns:
             bool: True if the client is closed, False otherwise.
+
         """
         return self._client.is_closed
 
     def close(self) -> None:
-        """Close the underlying HTTPX client.
+        """
+        Close the underlying HTTPX client.
 
         The client will not be usable after this method is called.
         """
@@ -360,7 +389,8 @@ class Client(BaseClient):
     def _request(
         self, payload: Dict[str, Any], headers: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
-        """Send a POST request to the configured endpoint with retry and error handling.
+        """
+        Send a POST request to the configured endpoint with retry and error handling.
 
         This method handles the HTTP request, including retries on failure, and returns the JSON response.
 
@@ -373,6 +403,7 @@ class Client(BaseClient):
 
         Raises:
             ExtendedRequestException: Raised when the request fails after retries.
+
         """
         logger.debug(f"Starting synchronous request with payload: {payload}")
         try:
@@ -406,7 +437,8 @@ class Client(BaseClient):
         payload: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Union[Dict[str, Any], Iterator[Mapping[str, Any]]]:
-        """Generate embeddings by sending a request to the endpoint.
+        """
+        Generate embeddings by sending a request to the endpoint.
 
         Args:
             input (Union[str, Sequence[AnyStr]], optional): The input text or sequence of texts for which to generate embeddings.
@@ -418,6 +450,7 @@ class Client(BaseClient):
 
         Returns:
             Union[Dict[str, Any], Iterator[Mapping[str, Any]]]: The server's response, typically including the generated embeddings.
+
         """
         logger.debug(f"Generating embeddings with input: {input}, payload: {payload}")
         payload = {**(payload or {}), "input": input}
@@ -425,35 +458,42 @@ class Client(BaseClient):
 
 
 class AsyncClient(BaseClient):
-    """Asynchronous HTTP client for invoking models with retry logic.
+    """
+    Asynchronous HTTP client for invoking models with retry logic.
 
     This client sends asynchronous HTTP requests to a specified endpoint and handles retries,
     timeouts, and authentication.
 
     Attributes:
         _client (httpx.AsyncClient): The underlying HTTPX async client used for sending requests.
+
     """
 
     def __init__(self, *args, **kwargs) -> None:
-        """Initialize the AsyncClient.
+        """
+        Initialize the AsyncClient.
 
         Args:
             *args: Positional arguments forwarded to BaseClient.
             **kwargs: Keyword arguments forwarded to BaseClient.
+
         """
         super().__init__(*args, **kwargs)
         self._client = httpx.AsyncClient(timeout=self.timeout)
 
     def is_closed(self) -> bool:
-        """Check if the underlying HTTPX client is closed.
+        """
+        Check if the underlying HTTPX client is closed.
 
         Returns:
             bool: True if the client is closed, False otherwise.
+
         """
         return self._client.is_closed
 
     async def close(self) -> None:
-        """Close the underlying HTTPX client.
+        """
+        Close the underlying HTTPX client.
 
         The client will not be usable after this method is called.
         """
@@ -485,7 +525,8 @@ class AsyncClient(BaseClient):
     async def _request(
         self, payload: Dict[str, Any], headers: Optional[Dict[str, str]] = None
     ) -> Dict[str, Any]:
-        """Send an asynchronous POST request to the configured endpoint with retry and error handling.
+        """
+        Send an asynchronous POST request to the configured endpoint with retry and error handling.
 
         This method handles the HTTP request asynchronously, including retries on failure,
         and returns the JSON response.
@@ -499,6 +540,7 @@ class AsyncClient(BaseClient):
 
         Raises:
             ExtendedRequestException: Raised when the request fails after retries.
+
         """
         logger.debug(f"Starting asynchronous request with payload: {payload}")
         try:
@@ -532,7 +574,8 @@ class AsyncClient(BaseClient):
         payload: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Union[Dict[str, Any], Iterator[Mapping[str, Any]]]:
-        """Generate embeddings asynchronously by sending a request to the endpoint.
+        """
+        Generate embeddings asynchronously by sending a request to the endpoint.
 
         Args:
             input (Union[str, Sequence[AnyStr]], optional): The input text or sequence of texts for which to generate embeddings.
@@ -544,6 +587,7 @@ class AsyncClient(BaseClient):
 
         Returns:
             Union[Dict[str, Any], Iterator[Mapping[str, Any]]]: The server's response, typically including the generated embeddings.
+
         """
         logger.debug(f"Generating embeddings with input: {input}, payload: {payload}")
         payload = {**(payload or {}), "input": input}

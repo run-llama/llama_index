@@ -23,13 +23,15 @@ dispatcher = instrument.get_dispatcher(__name__)
 
 
 class RetrieverQueryEngine(BaseQueryEngine):
-    """Retriever query engine.
+    """
+    Retriever query engine.
 
     Args:
         retriever (BaseRetriever): A retriever object.
         response_synthesizer (Optional[BaseSynthesizer]): A BaseSynthesizer
             object.
         callback_manager (Optional[CallbackManager]): A callback manager.
+
     """
 
     def __init__(
@@ -76,7 +78,8 @@ class RetrieverQueryEngine(BaseQueryEngine):
         streaming: bool = False,
         **kwargs: Any,
     ) -> "RetrieverQueryEngine":
-        """Initialize a RetrieverQueryEngine object.".
+        """
+        Initialize a RetrieverQueryEngine object.".
 
         Args:
             retriever (BaseRetriever): A retriever object.
@@ -96,6 +99,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
                 response synthesizer.
             use_async (bool): Whether to use async.
             streaming (bool): Whether to use streaming.
+
         """
         llm = llm or Settings.llm
 
