@@ -122,6 +122,7 @@ ignore = [
     "TCH002",
     "UP",  # Remove when we drop Python 3.9
     "PT001",
+    "E501",  # Use best judgement for line-length
 ]
 # Feel free to add more here
 select = [
@@ -147,7 +148,7 @@ select = [
     "D215",
     "D3",
     "D4",
-    "E7",
+    "E",
     "EXE004",
     "F401",
     "F504",
