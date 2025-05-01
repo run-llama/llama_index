@@ -13,7 +13,8 @@ from pydantic import Field
 
 
 class DoclingReader(BasePydanticReader):
-    """Docling Reader.
+    """
+    Docling Reader.
 
     Extracts PDF, DOCX, and other document formats into LlamaIndex Documents as either Markdown or JSON-serialized Docling native format.
 
@@ -22,6 +23,7 @@ class DoclingReader(BasePydanticReader):
         doc_converter (DocumentConverter, optional): The Docling converter to use. Default factory: `DocumentConverter`.
         md_export_kwargs (Dict[str, Any], optional): Kwargs to use in case of markdown export. Defaults to `{"image_placeholder": ""}`.
         id_func: (DocIDGenCallable, optional): Doc ID generation function to use. Default: `_uuid4_doc_id_gen`
+
     """
 
     class ExportType(str, Enum):
@@ -48,7 +50,8 @@ class DoclingReader(BasePydanticReader):
         extra_info: dict | None = None,
         fs: Optional[AbstractFileSystem] = None,
     ) -> Iterable[LIDocument]:
-        """Lazily load from given source.
+        """
+        Lazily load from given source.
 
         Args:
             file_path (str | Path | Iterable[str] | Iterable[Path]): Document file source as single str (URL or local file) or pathlib.Path — or iterable thereof
@@ -56,6 +59,7 @@ class DoclingReader(BasePydanticReader):
 
         Returns:
             Iterable[LIDocument]: Iterable over the created LlamaIndex documents.
+
         """
         file_paths = (
             file_path

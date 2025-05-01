@@ -43,6 +43,7 @@ def validate_file_path(file_path: str) -> None:
 
     Raises:
         FileNotFoundError: If the file does not exist at the given file path.
+
     """
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"File not found: {file_path}")
@@ -62,6 +63,7 @@ def parse_output(data: dict, output_format: OutputFormat) -> str:
 
     Raises:
         ValueError: If the output type is invalid.
+
     """
     content = data["content"]
     if output_format == "text":
@@ -110,6 +112,7 @@ class UpstageDocumentParseReader(BaseReader):
             reader = UpstageDocumentParseReader()
 
             docs = reader.load_data("path/to/file.pdf")
+
     """
 
     def __init__(
@@ -175,6 +178,7 @@ class UpstageDocumentParseReader(BaseReader):
 
         Raises:
             ValueError: If there is an error in the API call.
+
         """
         try:
             headers = {
@@ -226,6 +230,7 @@ class UpstageDocumentParseReader(BaseReader):
 
         Returns:
             response: The response from the server.
+
         """
         with fitz.open() as chunk_pdf:
             chunk_pdf.insert_pdf(
@@ -276,6 +281,7 @@ class UpstageDocumentParseReader(BaseReader):
         Returns:
             List[Document]: A list of Document objects, each representing a page
                             with its content and metadata.
+
         """
         _docs = []
         pages = sorted({x["page"] for x in elements})
@@ -336,6 +342,7 @@ class UpstageDocumentParseReader(BaseReader):
 
         Raises:
             ValueError: If an invalid split type is provided or if file_path is required.
+
         """
         # Check if the file path is a list of paths
         if isinstance(file_path, list):

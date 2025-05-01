@@ -117,7 +117,8 @@ class FunctionAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
     async def finalize(
         self, ctx: Context, output: AgentOutput, memory: BaseMemory
     ) -> AgentOutput:
-        """Finalize the function calling agent.
+        """
+        Finalize the function calling agent.
 
         Adds all in-progress messages to memory.
         """

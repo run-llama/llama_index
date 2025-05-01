@@ -48,7 +48,7 @@ def test_simple_chat_engine_with_init_history() -> None:
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_simple_chat_engine_astream():
     engine = SimpleChatEngine.from_defaults()
     response = await engine.astream_chat("Hello World!")
@@ -74,7 +74,8 @@ async def test_simple_chat_engine_astream():
 
 
 def test_simple_chat_engine_astream_exception_handling():
-    """Test that an exception thrown while retrieving the streamed LLM response gets bubbled up to the user.
+    """
+    Test that an exception thrown while retrieving the streamed LLM response gets bubbled up to the user.
     Also tests that the non-retrieved exception does not remain in an task that was not awaited leading to
     a 'Task exception was never retrieved' message during garbage collection.
     """

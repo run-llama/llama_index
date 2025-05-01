@@ -64,6 +64,7 @@ class VectorIndexAutoRetriever(BaseAutoRetriever):
             vector if the query is empty.
         callback_manager (Optional[CallbackManager]): callback manager
         verbose (bool): verbose mode
+
     """
 
     def __init__(

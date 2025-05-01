@@ -35,7 +35,8 @@ _logger = logging.getLogger(__name__)
 
 
 class MariaDBVectorStore(BasePydanticVectorStore):
-    """MariaDB Vector Store.
+    """
+    MariaDB Vector Store.
 
     Examples:
         `pip install llama-index-vector-stores-mariadb`
@@ -56,6 +57,7 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             embed_dim=1536  # OpenAI embedding dimension
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -86,7 +88,8 @@ class MariaDBVectorStore(BasePydanticVectorStore):
         perform_setup: bool = True,
         debug: bool = False,
     ) -> None:
-        """Constructor.
+        """
+        Constructor.
 
         Args:
             connection_string (Union[str, sqlalchemy.engine.URL]): Connection string for the MariaDB server.
@@ -98,6 +101,7 @@ class MariaDBVectorStore(BasePydanticVectorStore):
             ef_search (int, optional): EF search value for the vector index. Defaults to 20.
             perform_setup (bool, optional): If DB should be set up. Defaults to True.
             debug (bool, optional): Debug mode. Defaults to False.
+
         """
         super().__init__(
             connection_string=connection_string,
@@ -142,7 +146,8 @@ class MariaDBVectorStore(BasePydanticVectorStore):
         perform_setup: bool = True,
         debug: bool = False,
     ) -> "MariaDBVectorStore":
-        """Construct from params.
+        """
+        Construct from params.
 
         Args:
             host (Optional[str], optional): Host of MariaDB connection. Defaults to None.
@@ -162,6 +167,7 @@ class MariaDBVectorStore(BasePydanticVectorStore):
 
         Returns:
             MariaDBVectorStore: Instance of MariaDBVectorStore constructed from params.
+
         """
         conn_str = (
             connection_string
@@ -485,7 +491,8 @@ class MariaDBVectorStore(BasePydanticVectorStore):
 
 
 def _meets_min_server_version(version: str, min_version: str) -> bool:
-    """Check if a MariaDB server version meets minimum required version.
+    """
+    Check if a MariaDB server version meets minimum required version.
 
     Args:
         version: Version string from MariaDB server (e.g. "11.7.1-MariaDB-ubu2404")
@@ -493,6 +500,7 @@ def _meets_min_server_version(version: str, min_version: str) -> bool:
 
     Returns:
         bool: True if version >= min_version, False otherwise
+
     """
     version = version.split("-")[0]
     version_parts = [int(x) for x in version.split(".")]

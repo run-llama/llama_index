@@ -1,4 +1,5 @@
-"""Infer-Retrieve-Rerank Pack.
+"""
+Infer-Retrieve-Rerank Pack.
 
 Taken from this paper: https://arxiv.org/pdf/2401.12178.pdf.
 

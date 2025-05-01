@@ -20,7 +20,8 @@ from llama_index.core.llms.llm import LLM
 
 
 class CustomLLM(LLM):
-    """Simple abstract base class for custom LLMs.
+    """
+    Simple abstract base class for custom LLMs.
 
     Subclasses must implement the `__init__`, `_complete`,
         `_stream_complete`, and `metadata` methods.

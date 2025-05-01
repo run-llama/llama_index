@@ -10,14 +10,16 @@ logger = logging.getLogger(__name__)
 
 
 class RssNewsReader(BaseReader):
-    """RSS news reader.
+    """
+    RSS news reader.
 
     Reads news content from RSS feeds and parses with NewsArticleReader.
 
     """
 
     def __init__(self, **reader_kwargs: Any) -> None:
-        """Initialize with parameters.
+        """
+        Initialize with parameters.
 
         Args:
             html_to_text (bool): Whether to convert HTML to text.
@@ -41,7 +43,8 @@ class RssNewsReader(BaseReader):
         self.reader_kwargs = reader_kwargs
 
     def load_data(self, urls: List[str] = None, opml: str = None) -> List[Document]:
-        """Load data from either RSS feeds or OPML.
+        """
+        Load data from either RSS feeds or OPML.
 
         Args:
             urls (List[str]): List of RSS URLs to load.

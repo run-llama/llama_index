@@ -20,7 +20,8 @@ FAILED_TOOL_OUTPUT_TEMPLATE = (
 
 
 class EvalQueryEngineTool(QueryEngineTool):
-    """Evaluating query engine tool.
+    """
+    Evaluating query engine tool.
 
     A tool that makes use of a query engine and an evaluator, where the
     evaluation of the query engine response will determine the tool output.
@@ -29,6 +30,7 @@ class EvalQueryEngineTool(QueryEngineTool):
         evaluator (BaseEvaluator): A query engine.
         query_engine (BaseQueryEngine): A query engine.
         metadata (ToolMetadata): The associated metadata of the query engine.
+
     """
 
     _evaluator: BaseEvaluator

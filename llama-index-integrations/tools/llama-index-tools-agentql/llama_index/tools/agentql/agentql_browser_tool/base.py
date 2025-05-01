@@ -53,6 +53,7 @@ class AgentQLBrowserToolSpec(BaseToolSpec):
 
             mode: `standard` uses deep data analysis, while `fast` trades some depth of analysis for speed and is adequate for most usecases.
             Learn more about the modes in this guide: https://docs.agentql.com/accuracy/standard-mode. Defaults to `fast`.
+
         """
         self.async_browser = async_browser
         self.timeout_for_data = timeout_for_data
@@ -76,6 +77,7 @@ class AgentQLBrowserToolSpec(BaseToolSpec):
 
         Returns:
             dict: The extracted data
+
         """
         # Check that query and prompt cannot be both empty or both provided
         if not query and not prompt:
@@ -115,6 +117,7 @@ class AgentQLBrowserToolSpec(BaseToolSpec):
 
         Returns:
             str: The CSS selector of the target element.
+
         """
         page = await _aget_current_agentql_page(self.async_browser)
         element = await page.get_by_prompt(

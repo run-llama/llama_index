@@ -83,6 +83,7 @@ class GoogleGenAI(FunctionCallingLLM):
         resp = llm.complete("Write a poem about a magic backpack")
         print(resp)
         ```
+
     """
 
     model: str = Field(default=DEFAULT_MODEL, description="The Gemini model to use.")

@@ -71,7 +71,8 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT_V2 = PromptTemplate(
 
 
 class SQLStructStoreQueryEngine(BaseQueryEngine):
-    """GPT SQL query engine over a structured database.
+    """
+    GPT SQL query engine over a structured database.
 
     NOTE: deprecated in favor of SQLTableRetriever, kept for backward compatibility.
 
@@ -130,7 +131,8 @@ class SQLStructStoreQueryEngine(BaseQueryEngine):
 
 
 class NLStructStoreQueryEngine(BaseQueryEngine):
-    """GPT natural language query engine over a structured database.
+    """
+    GPT natural language query engine over a structured database.
 
     NOTE: deprecated in favor of SQLTableRetriever, kept for backward compatibility.
 
@@ -160,6 +162,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         response_synthesis_prompt (Optional[BasePromptTemplate]): A
             Response Synthesis BasePromptTemplate to use for the query. Defaults to
             DEFAULT_RESPONSE_SYNTHESIS_PROMPT.
+
     """
 
     def __init__(
@@ -218,7 +221,8 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         return response.strip()
 
     def _get_table_context(self, query_bundle: QueryBundle) -> str:
-        """Get table context.
+        """
+        Get table context.
 
         Get tables schema + optional context as a single string. Taken from
         SQLContextContainer.
@@ -316,7 +320,8 @@ def _validate_prompt(
 
 
 class BaseSQLTableQueryEngine(BaseQueryEngine):
-    """Base SQL Table query engine.
+    """
+    Base SQL Table query engine.
 
     NOTE: Any Text-to-SQL application should be aware that executing
     arbitrary SQL queries can be a security risk. It is recommended to
@@ -526,7 +531,8 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
 
 
 class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
-    """PGvector SQL query engine.
+    """
+    PGvector SQL query engine.
 
     A modified version of the normal text-to-SQL query engine because
     we can infer embedding vectors in the sql query.

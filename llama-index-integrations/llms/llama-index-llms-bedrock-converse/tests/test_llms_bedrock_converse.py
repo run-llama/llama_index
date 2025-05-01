@@ -204,7 +204,7 @@ def test_stream_chat(bedrock_converse):
         assert response.delta in EXP_STREAM_RESPONSE
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat(bedrock_converse):
     response = await bedrock_converse.achat(messages)
 
@@ -213,7 +213,7 @@ async def test_achat(bedrock_converse):
     assert response.message.content == EXP_RESPONSE
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat(bedrock_converse):
     response_stream = await bedrock_converse.astream_chat(messages)
 
@@ -223,7 +223,7 @@ async def test_astream_chat(bedrock_converse):
         assert response.delta in EXP_STREAM_RESPONSE
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_acomplete(bedrock_converse):
     response = await bedrock_converse.acomplete(prompt)
 
@@ -234,7 +234,7 @@ async def test_acomplete(bedrock_converse):
     assert response.additional_kwargs["tool_calls"] == []
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete(bedrock_converse):
     response_stream = await bedrock_converse.astream_complete(prompt)
 
@@ -283,7 +283,7 @@ def test_bedrock_converse_integration_chat_multimodal(
 
 
 @needs_aws_creds
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_bedrock_converse_integration_achat_text_only(
     bedrock_converse_integration,
 ):
@@ -301,7 +301,7 @@ async def test_bedrock_converse_integration_achat_text_only(
 
 
 @needs_aws_creds
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_bedrock_converse_integration_achat_multimodal(
     temp_image_bytes, bedrock_converse_integration
 ):
@@ -372,7 +372,7 @@ def test_bedrock_converse_integration_stream_chat_multimodal(
 
 
 @needs_aws_creds
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_bedrock_converse_integration_astream_chat(bedrock_converse_integration):
     """Test async streaming chat integration with Bedrock Converse."""
     llm = bedrock_converse_integration
@@ -392,7 +392,7 @@ async def test_bedrock_converse_integration_astream_chat(bedrock_converse_integr
 
 
 @needs_aws_creds
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_bedrock_converse_integration_astream_chat_multimodal(
     temp_image_bytes, bedrock_converse_integration
 ):

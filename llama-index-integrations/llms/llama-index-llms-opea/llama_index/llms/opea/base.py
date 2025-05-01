@@ -6,7 +6,8 @@ from llama_index.llms.openai_like.base import OpenAILike
 
 
 class OPEA(OpenAILike):
-    """Adapter for a OPEA LLM.
+    """
+    Adapter for a OPEA LLM.
 
     Examples:
         `pip install llama-index-llms-opea`
@@ -19,6 +20,7 @@ class OPEA(OpenAILike):
             api_base="http://localhost:8080/v1",
         )
         ```
+
     """
 
     is_chat_model: bool = Field(

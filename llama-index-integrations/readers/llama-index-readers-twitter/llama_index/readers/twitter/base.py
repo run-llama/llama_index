@@ -6,7 +6,8 @@ from llama_index.core.schema import Document
 
 
 class TwitterTweetReader(BasePydanticReader):
-    """Twitter tweets reader.
+    """
+    Twitter tweets reader.
 
     Read tweets of user twitter handle.
 
@@ -18,6 +19,7 @@ class TwitterTweetReader(BasePydanticReader):
         bearer_token (str): bearer_token that you get from twitter API.
         num_tweets (Optional[int]): Number of tweets for each user twitter handle.\
             Default is 100 tweets.
+
     """
 
     is_remote: bool = True
@@ -45,7 +47,8 @@ class TwitterTweetReader(BasePydanticReader):
         num_tweets: Optional[int] = None,
         **load_kwargs: Any
     ) -> List[Document]:
-        """Load tweets of twitter handles.
+        """
+        Load tweets of twitter handles.
 
         Args:
             twitterhandles (List[str]): List of user twitter handles to read tweets.

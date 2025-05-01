@@ -24,6 +24,7 @@ class CypherQueryCorrector:
         """
         Args:
             schemas: list of schemas.
+
         """
         self.schemas = schemas
 
@@ -42,6 +43,7 @@ class CypherQueryCorrector:
         """
         Args:
             query: cypher query.
+
         """
         nodes = re.findall(self.node_pattern, query)
         nodes = [self.clean_node(node) for node in nodes]
@@ -60,6 +62,7 @@ class CypherQueryCorrector:
         """
         Args:
             query: cypher query.
+
         """
         return re.findall(self.path_pattern, query)
 
@@ -67,6 +70,7 @@ class CypherQueryCorrector:
         """
         Args:
             relation: relation in string format.
+
         """
         direction = "BIDIRECTIONAL"
         if relation[0] == "<":
@@ -79,6 +83,7 @@ class CypherQueryCorrector:
         """
         Args:
             part: node in string format.
+
         """
         part = part.lstrip("(").rstrip(")")
         idx = part.find(":")
@@ -93,6 +98,7 @@ class CypherQueryCorrector:
         Args:
             str_node: node in string format
             node_variable_dict: dictionary of node variables.
+
         """
         splitted_node = str_node.split(":")
         variable = splitted_node[0]
@@ -114,6 +120,7 @@ class CypherQueryCorrector:
             from_node_labels: labels of the from node
             relation_type: type of the relation
             to_node_labels: labels of the to node.
+
         """
         valid_schemas = self.schemas
         if from_node_labels != []:
@@ -137,6 +144,7 @@ class CypherQueryCorrector:
         """
         Args:
             str_relation: relation in string format.
+
         """
         relation_direction = self.judge_direction(str_relation)
         relation_type = self.relation_type_pattern.search(str_relation)
@@ -152,6 +160,7 @@ class CypherQueryCorrector:
         """
         Args:
             query: cypher query.
+
         """
         node_variable_dict = self.detect_node_variables(query)
         paths = self.extract_paths(query)
@@ -240,7 +249,8 @@ class CypherQueryCorrector:
         return query
 
     def __call__(self, query: str) -> str:
-        """Correct the query to make it valid. If
+        """
+        Correct the query to make it valid. If
         Args:
             query: cypher query.
         """

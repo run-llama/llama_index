@@ -312,6 +312,7 @@ class Neo4jGraphStore(GraphStore):
 
         Returns:
             Neo4jPropertyGraphStore: The current graph connection instance
+
         """
         return self
 
@@ -337,6 +338,7 @@ class Neo4jGraphStore(GraphStore):
 
         Note:
             Any exception is re-raised after the connection is closed.
+
         """
         self.close()
 
@@ -361,6 +363,7 @@ class Neo4jGraphStore(GraphStore):
                    ...
                finally:
                    graph.close()
+
         """
         try:
             self.close()

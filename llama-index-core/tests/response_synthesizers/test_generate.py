@@ -21,14 +21,14 @@ def test_synthesize_stream() -> None:
         i += 1
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_asynthesize() -> None:
     synthesizer = Generation(llm=MockLLM())
     response = await synthesizer.asynthesize(query="test", nodes=[])
     assert str(response) == "test"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_asynthesize_stream() -> None:
     synthesizer = Generation(llm=MockLLM(), streaming=True)
     response = await synthesizer.asynthesize(query="test", nodes=[])

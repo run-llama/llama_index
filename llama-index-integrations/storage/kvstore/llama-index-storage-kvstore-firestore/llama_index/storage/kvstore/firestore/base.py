@@ -23,7 +23,8 @@ DEFAULT_FIRESTORE_DATABASE = "(default)"
 
 
 class FirestoreKVStore(BaseKVStore):
-    """Firestore Key-Value store.
+    """
+    Firestore Key-Value store.
 
     Args:
         project (str): The project which the client acts on behalf of.
@@ -31,6 +32,7 @@ class FirestoreKVStore(BaseKVStore):
         credentials (google.auth.credentials.Credentials): The OAuth2
             Credentials to access Firestore. If not passed, falls back
             to the default inferred from the environment.
+
     """
 
     def __init__(
@@ -79,12 +81,14 @@ class FirestoreKVStore(BaseKVStore):
         val: dict,
         collection: str = DEFAULT_COLLECTION,
     ) -> None:
-        """Put a key-value pair into the Firestore collection.
+        """
+        Put a key-value pair into the Firestore collection.
 
         Args:
             key (str): key
             val (dict): value
             collection (str): collection name
+
         """
         collection_id = self.firestore_collection(collection)
         val = self.replace_field_name_set(val)
@@ -97,12 +101,14 @@ class FirestoreKVStore(BaseKVStore):
         val: dict,
         collection: str = DEFAULT_COLLECTION,
     ) -> None:
-        """Put a key-value pair into the Firestore collection.
+        """
+        Put a key-value pair into the Firestore collection.
 
         Args:
             key (str): key
             val (dict): value
             collection (str): collection name
+
         """
         collection_id = self.firestore_collection(collection)
         val = self.replace_field_name_set(val)
@@ -131,11 +137,13 @@ class FirestoreKVStore(BaseKVStore):
         collection: str = DEFAULT_COLLECTION,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
-        """Put a dictionary of key-value pairs into the Firestore collection.
+        """
+        Put a dictionary of key-value pairs into the Firestore collection.
 
         Args:
             kv_pairs (List[Tuple[str, dict]]): key-value pairs
             collection (str): collection name
+
         """
         batch = self._adb.batch()
         for i, (key, val) in enumerate(kv_pairs, start=1):
@@ -149,11 +157,13 @@ class FirestoreKVStore(BaseKVStore):
         await batch.commit()
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
-        """Get a key-value pair from the Firestore.
+        """
+        Get a key-value pair from the Firestore.
 
         Args:
             key (str): key
             collection (str): collection name
+
         """
         collection_id = self.firestore_collection(collection)
         result = self._db.collection(collection_id).document(key).get().to_dict()
@@ -165,11 +175,13 @@ class FirestoreKVStore(BaseKVStore):
     async def aget(
         self, key: str, collection: str = DEFAULT_COLLECTION
     ) -> Optional[dict]:
-        """Get a key-value pair from the Firestore.
+        """
+        Get a key-value pair from the Firestore.
 
         Args:
             key (str): key
             collection (str): collection name
+
         """
         collection_id = self.firestore_collection(collection)
         result = (
@@ -181,10 +193,12 @@ class FirestoreKVStore(BaseKVStore):
         return self.replace_field_name_get(result)
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
-        """Get all values from the Firestore collection.
+        """
+        Get all values from the Firestore collection.
 
         Args:
             collection (str): collection name
+
         """
         collection_id = self.firestore_collection(collection)
         docs = self._db.collection(collection_id).list_documents()
@@ -196,10 +210,12 @@ class FirestoreKVStore(BaseKVStore):
         return output
 
     async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
-        """Get all values from the Firestore collection.
+        """
+        Get all values from the Firestore collection.
 
         Args:
             collection (str): collection name
+
         """
         collection_id = self.firestore_collection(collection)
         docs = self._adb.collection(collection_id).list_documents()
@@ -214,11 +230,13 @@ class FirestoreKVStore(BaseKVStore):
         return output
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        """Delete a value from the Firestore.
+        """
+        Delete a value from the Firestore.
 
         Args:
             key (str): key
             collection (str): collection name
+
         """
         collection_id = self.firestore_collection(collection)
         doc = self._db.collection(collection_id).document(key)
@@ -226,11 +244,13 @@ class FirestoreKVStore(BaseKVStore):
         return True
 
     async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        """Delete a value from the Firestore.
+        """
+        Delete a value from the Firestore.
 
         Args:
             key (str): key
             collection (str): collection name
+
         """
         collection_id = self.firestore_collection(collection)
         doc = self._adb.collection(collection_id).document(key)

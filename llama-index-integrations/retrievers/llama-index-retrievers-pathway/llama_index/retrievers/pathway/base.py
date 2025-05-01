@@ -33,6 +33,7 @@ class _VectorStoreClient:
             - host: host on which `:py:class:`VectorStoreServer` listens
             - port: port on which `:py:class:`VectorStoreServer` listens
             - url: url at which `:py:class:`VectorStoreServer` listens
+
         """
         err = "Either (`host` and `port`) or `url` must be provided, but not both."
         if url is not None:
@@ -57,6 +58,7 @@ class _VectorStoreClient:
             - metadata_filter: optional string representing the metadata filtering query
                 in the JMESPath format. The search will happen only for documents
                 satisfying this filtering.
+
         """
         data = {"query": query, "k": k}
         if metadata_filter is not None:
@@ -98,6 +100,7 @@ class _VectorStoreClient:
                 satisfying this filtering.
             filepath_globpattern: optional glob pattern specifying which documents
                 will be searched for this query.
+
         """
         url = self.url + "/v1/inputs"
         response = requests.post(
@@ -112,7 +115,8 @@ class _VectorStoreClient:
 
 
 class PathwayRetriever(BaseRetriever):
-    """Pathway retriever.
+    """
+    Pathway retriever.
 
     Pathway is an open data processing framework.
     It allows you to easily develop data transformation pipelines

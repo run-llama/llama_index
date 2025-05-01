@@ -148,6 +148,7 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
 
         Returns:
             Extracted code or None if no code found
+
         """
         # Match content between <execute> and </execute> tags
         execute_pattern = r"<execute>(.*?)</execute>"
@@ -167,6 +168,7 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
 
         Returns:
             Tool descriptions as a string
+
         """
         tool_descriptions = []
 
@@ -339,7 +341,8 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
     async def finalize(
         self, ctx: Context, output: AgentOutput, memory: BaseMemory
     ) -> AgentOutput:
-        """Finalize the code act agent.
+        """
+        Finalize the code act agent.
 
         Adds all in-progress messages to memory.
         """

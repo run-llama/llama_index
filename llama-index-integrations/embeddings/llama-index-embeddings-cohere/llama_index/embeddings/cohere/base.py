@@ -160,6 +160,7 @@ class CohereEmbedding(MultiModalEmbedding):
                                     'search_document', 'classification', or 'clustering'.
             model_name (str): The name of the model to be used for generating embeddings. The class ensures that
                           this model is supported and that the input type provided is compatible with the model.
+
         """
         # Validate model_name and input_type
         if model_name not in VALID_MODEL_INPUT_TYPES:

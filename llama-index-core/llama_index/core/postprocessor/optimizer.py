@@ -44,7 +44,8 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
         context_before: Optional[int] = None,
         context_after: Optional[int] = None,
     ):
-        """Optimizer class that is passed into BaseGPTIndexQuery.
+        """
+        Optimizer class that is passed into BaseGPTIndexQuery.
 
         Should be set like this:
 

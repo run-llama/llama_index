@@ -45,7 +45,8 @@ class EventDispatcher(Protocol):
 
 
 class Dispatcher(BaseModel):
-    """Dispatcher class.
+    """
+    Dispatcher class.
 
     Responsible for dispatching BaseEvent (and its subclasses) as well as
     sending signals to enter/exit/drop a BaseSpan. It does so by sending
@@ -123,7 +124,7 @@ class Dispatcher(BaseModel):
 
     def event(self, event: BaseEvent, **kwargs: Any) -> None:
         """Dispatch event to all registered handlers."""
-        c: Optional["Dispatcher"] = self
+        c: Optional[Dispatcher] = self
 
         # Attach tags from the active context
         event.tags.update(active_instrument_tags.get())
@@ -148,7 +149,8 @@ class Dispatcher(BaseModel):
         ),
     )
     def get_dispatch_event(self) -> EventDispatcher:
-        """Keep for backwards compatibility.
+        """
+        Keep for backwards compatibility.
 
         In llama-index-core v0.10.41, we removed this method and made changes to
         integrations or packs that relied on this method. Adding back this method
@@ -167,7 +169,7 @@ class Dispatcher(BaseModel):
         **kwargs: Any,
     ) -> None:
         """Send notice to handlers that a span with id_ has started."""
-        c: Optional["Dispatcher"] = self
+        c: Optional[Dispatcher] = self
         while c:
             for h in c.span_handlers:
                 try:
@@ -195,7 +197,7 @@ class Dispatcher(BaseModel):
         **kwargs: Any,
     ) -> None:
         """Send notice to handlers that a span with id_ is being dropped."""
-        c: Optional["Dispatcher"] = self
+        c: Optional[Dispatcher] = self
         while c:
             for h in c.span_handlers:
                 try:
@@ -222,7 +224,7 @@ class Dispatcher(BaseModel):
         **kwargs: Any,
     ) -> None:
         """Send notice to handlers that a span with id_ is exiting."""
-        c: Optional["Dispatcher"] = self
+        c: Optional[Dispatcher] = self
         while c:
             for h in c.span_handlers:
                 try:

@@ -123,7 +123,8 @@ class HumanInputRequiredException(Exception):
 
 
 class QueryUnderstandingAgentWorker(CustomSimpleAgentWorker):
-    """Agent worker that adds a retry layer on top of a router.
+    """
+    Agent worker that adds a retry layer on top of a router.
 
     Continues iterating until there's no errors / task is done.
 
@@ -175,7 +176,8 @@ class QueryUnderstandingAgentWorker(CustomSimpleAgentWorker):
     def _run_step(
         self, state: Dict[str, Any], task: Task, input: Optional[str] = None
     ) -> Tuple[AgentChatComplexResponse, bool]:
-        """Run step.
+        """
+        Run step.
 
         Returns:
             Tuple of (agent_response, is_done)

@@ -27,6 +27,7 @@ class KnowledgeBaseWebReader(BaseReader):
             e.g. '.article-subtitle'
         body_selector (Optional[str]): css selector to find the body of the article
             e.g. '.article-body'
+
     """
 
     def __init__(

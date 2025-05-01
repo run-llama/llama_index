@@ -48,6 +48,7 @@ class BufferedAsyncIterator(ABC):
                 be retrieved from the async operation at once.
                 see _fill_buffer. Defaults to 2. Setting it to 1
                 will result in the same behavior as a synchronous iterator.
+
         """
         self._buffer_size = buffer_size
         self._buffer: List[Tuple[GitBlobResponseModel, str]] = []
@@ -70,6 +71,7 @@ class BufferedAsyncIterator(ABC):
 
         Raises:
             - `StopAsyncIteration`: If there are no more items.
+
         """
         if not self._buffer:
             await self._fill_buffer()
@@ -122,6 +124,7 @@ class BufferedGitBlobDataIterator(BufferedAsyncIterator):
             - buffer_size (int): Size of the buffer.
             - timeout (int or None): Timeout for the requests to the Github API. Default is 5.
             - retries (int): Number of retries for requests made to the Github API. Default is 0.
+
         """
         super().__init__(buffer_size)
         self._blobs_and_paths = blobs_and_paths

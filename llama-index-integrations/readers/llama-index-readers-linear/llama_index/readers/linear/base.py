@@ -6,10 +6,12 @@ from llama_index.core.schema import Document
 
 
 class LinearReader(BaseReader):
-    """Linear reader. Reads data from Linear issues for the passed query.
+    """
+    Linear reader. Reads data from Linear issues for the passed query.
 
     Args:
         api_key (str): Personal API token.
+
     """
 
     def __init__(self, api_key: str) -> None:

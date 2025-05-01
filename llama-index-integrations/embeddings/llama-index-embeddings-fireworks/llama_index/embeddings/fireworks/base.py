@@ -22,6 +22,7 @@ class FireworksEmbedding(OpenAIEmbedding):
     Args:
         model (str): Model for embedding.
             Defaults to "nomic-ai/nomic-embed-text-v1.5"
+
     """
 
     additional_kwargs: Dict[str, Any] = Field(

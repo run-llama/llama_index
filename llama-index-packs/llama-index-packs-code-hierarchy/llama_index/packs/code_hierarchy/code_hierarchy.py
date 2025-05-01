@@ -192,7 +192,8 @@ class _ChunkNodeOutput(BaseModel):
 
 
 class CodeHierarchyNodeParser(NodeParser):
-    """Split code using a AST parser.
+    """
+    Split code using a AST parser.
 
     Add metadata about the scope of the code block and relationships between
     code blocks.
@@ -343,6 +344,7 @@ class CodeHierarchyNodeParser(NodeParser):
             _context_list (Optional[List[_ScopeItem]]): The scope context of the
                                                         parent node
             _root (bool): Whether or not this is the root node
+
         """
         if _context_list is None:
             _context_list = []

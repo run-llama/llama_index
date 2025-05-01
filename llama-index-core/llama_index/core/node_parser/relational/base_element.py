@@ -269,7 +269,8 @@ class BaseElementNodeParser(NodeParser):
     def get_base_nodes_and_mappings(
         self, nodes: List[BaseNode]
     ) -> Tuple[List[BaseNode], Dict]:
-        """Get base nodes and mappings.
+        """
+        Get base nodes and mappings.
 
         Given a list of nodes and IndexNode objects, return the base nodes and a mapping
         from index id to child nodes (which are excluded from the base nodes).

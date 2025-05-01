@@ -68,6 +68,7 @@ class WatsonxLLM(FunctionCallingLLM):
             project_id="*****",
         )
         ```
+
     """
 
     model_id: Optional[str] = Field(

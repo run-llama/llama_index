@@ -35,7 +35,8 @@ class SubQuestionAnswerPair(BaseModel):
 
 
 class SubQuestionQueryEngine(BaseQueryEngine):
-    """Sub question query engine.
+    """
+    Sub question query engine.
 
     A query engine that breaks down a complex query (e.g. compare and contrast) into
         many sub questions and their target query engine for execution.
@@ -53,6 +54,7 @@ class SubQuestionQueryEngine(BaseQueryEngine):
             Defaults to True
         use_async (bool): whether to execute the sub questions with asyncio.
             Defaults to True
+
     """
 
     def __init__(

@@ -52,7 +52,7 @@ def test_rankgpt_rerank():
     "achat",
     mock_rankgpt_achat,
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_rankgpt_rerank_async():
     rankgpt_rerank = RankGPTRerank(
         top_n=2,

@@ -22,6 +22,7 @@ class AgentQLWebReader(BasePydanticReader):
     Args:
         api_key (str): The AgentQL API key, get one at https://dev.agentql.com
         params (dict): Additional parameters to pass to the AgentQL API. Visit https://docs.agentql.com/rest-api/api-reference for details.
+
     """
 
     api_key: str
@@ -49,6 +50,7 @@ class AgentQLWebReader(BasePydanticReader):
 
         Returns:
             List[Document]: List of documents.
+
         """
         payload = {"url": url, "query": query, "prompt": prompt, "params": self.params}
 

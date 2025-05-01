@@ -1,4 +1,5 @@
-"""Default query for PandasIndex.
+"""
+Default query for PandasIndex.
 
 WARNING: This tool provides the LLM access to the `eval` function.
 Arbitrary code execution is possible on the machine running this tool.
@@ -13,7 +14,8 @@ from typing import Any
 
 
 class PandasQueryEngine:
-    """Pandas query engine.
+    """
+    Pandas query engine.
 
     DEPRECATED: Use `PandasQueryEngine` from `llama-index-experimental` instead.
     """

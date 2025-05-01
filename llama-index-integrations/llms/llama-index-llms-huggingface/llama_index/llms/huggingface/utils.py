@@ -9,17 +9,17 @@ from llama_index.core.base.llms.types import (
 def get_max_input_tokens(url: str) -> Union[int, None]:
     url = f"{url}/info"
     model_info = dict(requests.get(url).json())
-    tgi_version = model_info.get("version", None)
+    tgi_version = model_info.get("version")
     if version.parse(tgi_version) >= version.parse("2.1.0"):
-        return model_info.get("max_input_tokens", None)
+        return model_info.get("max_input_tokens")
     else:
-        return model_info.get("max_input_length", None)
+        return model_info.get("max_input_length")
 
 
 def get_max_total_tokens(url: str) -> Union[int, None]:
     url = f"{url}/info"
     model_info = dict(requests.get(url).json())
-    return model_info.get("max_total_tokens", None)
+    return model_info.get("max_total_tokens")
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
@@ -31,7 +31,8 @@ def force_single_tool_call(response: ChatResponse) -> None:
 def resolve_tool_choice(
     tools: Optional[List[dict]] = None, tool_choice: str = "none"
 ) -> Union[str, dict]:
-    """Resolve tool choice.
+    """
+    Resolve tool choice.
 
     Check if tool_name exists in tools.
     Note that unlike in OpenAI specification, 'auto' will ALWAYS choose the tool for you.

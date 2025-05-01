@@ -111,6 +111,7 @@ class AnyscaleEmbedding(BaseEmbedding):
     Args:
         model (str): Model for embedding.
             Defaults to "thenlper/gte-large"
+
     """
 
     additional_kwargs: Dict[str, Any] = Field(

@@ -13,7 +13,8 @@ DEFAULT_COLLECTION_SUFFIX = "/data"
 
 
 class KVIndexStore(BaseIndexStore):
-    """Key-Value Index store.
+    """
+    Key-Value Index store.
 
     Args:
         kvstore (BaseKVStore): key-value store
@@ -35,7 +36,8 @@ class KVIndexStore(BaseIndexStore):
         self._collection = f"{self._namespace}{self._collection_suffix}"
 
     def add_index_struct(self, index_struct: IndexStruct) -> None:
-        """Add an index struct.
+        """
+        Add an index struct.
 
         Args:
             index_struct (IndexStruct): index struct
@@ -46,7 +48,8 @@ class KVIndexStore(BaseIndexStore):
         self._kvstore.put(key, data, collection=self._collection)
 
     def delete_index_struct(self, key: str) -> None:
-        """Delete an index struct.
+        """
+        Delete an index struct.
 
         Args:
             key (str): index struct key
@@ -57,7 +60,8 @@ class KVIndexStore(BaseIndexStore):
     def get_index_struct(
         self, struct_id: Optional[str] = None
     ) -> Optional[IndexStruct]:
-        """Get an index struct.
+        """
+        Get an index struct.
 
         Args:
             struct_id (Optional[str]): index struct id
@@ -74,7 +78,8 @@ class KVIndexStore(BaseIndexStore):
             return json_to_index_struct(json)
 
     def index_structs(self) -> List[IndexStruct]:
-        """Get all index structs.
+        """
+        Get all index structs.
 
         Returns:
             List[IndexStruct]: index structs

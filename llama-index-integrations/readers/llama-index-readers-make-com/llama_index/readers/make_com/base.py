@@ -1,4 +1,5 @@
-"""Make.com API wrapper.
+"""
+Make.com API wrapper.
 
 Currently cannot load documents.
 
@@ -16,7 +17,8 @@ class MakeWrapper(BaseReader):
     """Make reader."""
 
     def load_data(self, *args: Any, **load_kwargs: Any) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         NOTE: This is not implemented.
 
@@ -26,7 +28,8 @@ class MakeWrapper(BaseReader):
     def pass_response_to_webhook(
         self, webhook_url: str, response: Response, query: Optional[str] = None
     ) -> None:
-        """Pass response object to webhook.
+        """
+        Pass response object to webhook.
 
         Args:
             webhook_url (str): Webhook URL.

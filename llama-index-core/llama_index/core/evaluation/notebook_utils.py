@@ -43,7 +43,8 @@ def get_retrieval_results_df(
 def get_eval_results_df(
     names: List[str], results_arr: List[EvaluationResult], metric: Optional[str] = None
 ) -> Tuple[Any, Any]:
-    """Organizes EvaluationResults into a deep dataframe and computes the mean
+    """
+    Organizes EvaluationResults into a deep dataframe and computes the mean
     score.
 
     result:

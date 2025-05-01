@@ -291,7 +291,8 @@ def test_chat_completion_gpt4o_api_version(test_params: dict):
 
 
 def test_get_metadata(test_llm: AzureAICompletionsModel, caplog):
-    """Tests if we can get model metadata back from the endpoint. If so,
+    """
+    Tests if we can get model metadata back from the endpoint. If so,
     model_name should not be 'unknown'. Some endpoints may not support this
     and in those cases a warning should be logged.
     """
