@@ -143,6 +143,11 @@ class Vllm(LLM):
 
     api_url: str = Field(description="The api url for vllm server")
 
+    is_chat_model: bool = Field(
+        default=False,
+        description=LLMMetadata.model_fields["is_chat_model"].description,
+    )
+
     _client: Any = PrivateAttr()
 
     def __init__(
@@ -171,6 +176,7 @@ class Vllm(LLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        is_chat_model:Optional[bool] = False,
     ) -> None:
         callback_manager = callback_manager or CallbackManager([])
         super().__init__(
@@ -196,6 +202,7 @@ class Vllm(LLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+            is_chat_model=is_chat_model,
         )
         if not api_url:
             try:
@@ -222,7 +229,7 @@ class Vllm(LLM):
 
     @property
     def metadata(self) -> LLMMetadata:
-        return LLMMetadata(model_name=self.model)
+        return LLMMetadata(model_name=self.model, is_chat_model=self.is_chat_model)
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
