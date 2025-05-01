@@ -1,5 +1,6 @@
 import pytest
 import subprocess
+import os
 from typing import Generator
 from llama_index.core.data_structs.data_structs import IndexGraph
 from llama_index.storage.index_store.gel import (
