@@ -4,7 +4,6 @@ import asyncio
 import json
 import uuid
 from functools import partial
-from itertools import chain
 import time
 from threading import Thread
 from typing import (
@@ -20,7 +19,6 @@ from typing import (
     Callable,
 )
 
-from llama_index.llms.openai.base import OpenAI
 from llama_index.core.agent.react.formatter import ReActChatFormatter
 from llama_index.core.agent.react.output_parser import (
     ReActOutputParser,
@@ -62,9 +60,7 @@ from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.core.tools.types import AsyncBaseTool
-from llama_index.core.types import Thread
-from llama_index.core.utils import print_text
-from llama_index.core.utils import aprint_text, print_text, unit_generator
+from llama_index.core.utils import print_text, aprint_text
 import numpy as np
 
 dispatcher = get_dispatcher(__name__)
@@ -174,7 +170,7 @@ class ReActAgentWorker(BaseAgentWorker):
             Callable[[CallbackManager, Exception], ToolOutput]
         ] = None,
         response_hook: Optional[Callable] = None,
-        **kwargs: Any,        
+        **kwargs: Any,
     ) -> "ReActAgentWorker":
         """Convenience constructor method from set of of BaseTools (Optional).
 
@@ -353,7 +349,11 @@ class ReActAgentWorker(BaseAgentWorker):
         current_reasoning.append(observation_step)
 
         if self._verbose:
-            print_text(f"{observation_step.get_content()}\n", color="blue", response_hook=self.response_hook,)
+            print_text(
+                f"{observation_step.get_content()}\n",
+                color="blue",
+                response_hook=self.response_hook,
+            )
         return (
             current_reasoning,
             tool.metadata.return_direct and not tool_output.is_error if tool else False,

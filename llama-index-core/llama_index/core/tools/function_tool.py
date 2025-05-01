@@ -35,13 +35,20 @@ def async_to_sync(func_async: AsyncCallable) -> Callable:
 
 # The type that the callback can return: either a ToolOutput instance or a string to override the content.
 CallbackReturn = Optional[Union[ToolOutput, str]]
-def create_tool_metadata(fn, name, description, fn_schema=None, return_direct: bool):
+
+
+def create_tool_metadata(fn, name, description, return_direct: bool, fn_schema=None):
     name = name or fn.__name__
     docstring = fn.__doc__
-    description = description or f"{name}{signature(fn)}\n{docstring}"
+    description = description or f"{name}{inspect.signature(fn)}\n{docstring}"
     if fn_schema is None:
         fn_schema = create_schema_from_function(f"{name}", fn, additional_fields=None)
-    return ToolMetadata(name=name, description=description, fn_schema=fn_schema, return_direct=return_direct)
+    return ToolMetadata(
+        name=name,
+        description=description,
+        fn_schema=fn_schema,
+        return_direct=return_direct,
+    )
 
 
 class FunctionTool(AsyncBaseTool):
@@ -164,9 +171,11 @@ class FunctionTool(AsyncBaseTool):
             # Handle FieldInfo defaults
             fn_sig = fn_sig.replace(
                 parameters=[
-                    param.replace(default=inspect.Parameter.empty)
-                    if isinstance(param.default, FieldInfo)
-                    else param
+                    (
+                        param.replace(default=inspect.Parameter.empty)
+                        if isinstance(param.default, FieldInfo)
+                        else param
+                    )
                     for param in fn_sig.parameters.values()
                 ]
             )
@@ -177,12 +186,16 @@ class FunctionTool(AsyncBaseTool):
                     f"{name}",
                     fn_to_parse,
                     additional_fields=None,
-                    ignore_fields=[ctx_param_name]
-                    if ctx_param_name is not None
-                    else None,
+                    ignore_fields=(
+                        [ctx_param_name] if ctx_param_name is not None else None
+                    ),
                 )
             tool_metadata = create_tool_metadata(
-                fn=fn, description=description, name=name, fn_schema=fn_schema, return_direct=return_direct
+                fn=fn,
+                description=description,
+                name=name,
+                fn_schema=fn_schema,
+                return_direct=return_direct,
             )
         return cls(
             fn=fn,

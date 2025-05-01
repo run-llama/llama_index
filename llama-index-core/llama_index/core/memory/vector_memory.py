@@ -5,13 +5,11 @@ Memory backed by a vector database.
 """
 
 import uuid
-from typing import Any, Dict, List, Optional, Union
-from llama_index.core.bridge.pydantic import Field, validator, field_validator
+from typing import Any, Dict, List, Optional
+from llama_index.core.bridge.pydantic import Field, field_validator
 
 from llama_index.core.schema import TextNode
-from llama_index.core.vector_stores.types import VectorStore
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
-from llama_index.core.bridge.pydantic import Field
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.embeddings.utils import EmbedType
 from llama_index.core.vector_stores.types import BasePydanticVectorStore

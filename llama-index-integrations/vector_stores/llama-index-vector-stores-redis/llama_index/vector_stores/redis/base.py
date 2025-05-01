@@ -3,11 +3,13 @@
 An index that is built on top of an existing vector store.
 """
 
+import asyncio
 import logging
 from typing import Any, Dict, List, Optional
 
 import fsspec
 from redis import Redis
+from redis.asyncio import Redis as RedisAsync
 from redis.exceptions import RedisError
 from redis.exceptions import TimeoutError as RedisTimeoutError
 from redisvl.index import SearchIndex, AsyncSearchIndex
@@ -31,7 +33,6 @@ from llama_index.core.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
-    FilterOperator,
 )
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
@@ -46,14 +47,6 @@ from llama_index.vector_stores.redis.schema import (
     RedisVectorStoreSchema,
 )
 from llama_index.vector_stores.redis.utils import REDIS_LLAMA_FIELD_SPEC
-
-import redis
-from redis import DataError
-from redis import Redis
-from redis.client import Redis as RedisType
-from redis.commands.search.field import VectorField
-from redis.exceptions import RedisError
-from redis.exceptions import TimeoutError as RedisTimeoutError
 
 logger = logging.getLogger(__name__)
 NO_DOCS = "No docs found on index"
@@ -130,7 +123,7 @@ class RedisVectorStore(BasePydanticVectorStore):
         self,
         schema: Optional[IndexSchema] = None,
         redis_client: Optional[Redis] = None,
-        redis_client_async: Optional[Redis] = None,
+        redis_client_async: Optional[RedisAsync] = None,
         redis_url: Optional[str] = None,
         overwrite: bool = False,
         return_fields: Optional[List[str]] = None,
@@ -153,17 +146,11 @@ class RedisVectorStore(BasePydanticVectorStore):
             NODE_CONTENT_FIELD_NAME,
         ]
         self._overwrite = overwrite
-        if redis_client:
-            self._index = SearchIndex(
-                schema=schema, redis_client=redis_client, redis_url=redis_url
-            )
-            self.create_index()
-        else:
-            self._async_index = AsyncSearchIndex(
-                schema=schema, redis_client=redis_client_async, redis_url=redis_url
-            )    
-            await self.async_create_index()
-        
+        self._index = SearchIndex(
+            schema=schema, redis_client=redis_client, redis_url=redis_url
+        )
+        self.create_index()
+        self.created_async_index = False
 
     def _flag_old_kwargs(self, **kwargs):
         old_kwargs = [
@@ -208,7 +195,7 @@ class RedisVectorStore(BasePydanticVectorStore):
     def schema(self) -> IndexSchema:
         """Return the index schema."""
         if self._async_index:
-            return self._async_index.client        
+            return self._async_index.client
         return self._index.schema
 
     def set_return_fields(self, return_fields: List[str]) -> None:
@@ -223,13 +210,15 @@ class RedisVectorStore(BasePydanticVectorStore):
         """
         return self._index.exists()
 
-    def async_index_exists(self) -> bool:
+    async def async_index_exists(self) -> bool:
         """Check whether the index exists in Redis.
 
         Returns:
             bool: True or False.
         """
-        return await self._async_index.exists()
+        if not self.created_async_index:
+            await self.async_create_index()
+        return True
 
     def create_index(self, overwrite: Optional[bool] = None) -> None:
         """Create an index in Redis."""
@@ -241,7 +230,7 @@ class RedisVectorStore(BasePydanticVectorStore):
         else:
             self._index.create()
 
-    def async_create_index(self, overwrite: Optional[bool] = None) -> None:
+    async def async_create_index(self, overwrite: Optional[bool] = None) -> None:
         """Create an async index in Redis."""
         if overwrite is None:
             overwrite = self._overwrite
@@ -249,7 +238,8 @@ class RedisVectorStore(BasePydanticVectorStore):
         if overwrite:
             await self._async_index.create(overwrite=True, drop=True)
         else:
-            await self._async_index.create()            
+            await self._async_index.create()
+        self.created_async_index = True
 
     async def async_add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to the index.
@@ -264,6 +254,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             ValueError: If the index already exists and overwrite is False.
         """
         # Check to see if empty document list was passed
+        await self.async_index_exists()
         if len(nodes) == 0:
             return []
 
@@ -294,12 +285,15 @@ class RedisVectorStore(BasePydanticVectorStore):
             data.append({**record, **additional_metadata})
 
         # Load nodes to Redis
-        keys = await self.async_index.load(data, id_field=NODE_ID_FIELD_NAME, **add_kwargs)
+        keys = await self.async_index.load(
+            data, id_field=NODE_ID_FIELD_NAME, **add_kwargs
+        )
         logger.info(f"Added {len(keys)} documents to index {self._index.name}")
         return [
-            key.strip(self.async_index.prefix + self.async_index.key_separator) for key in keys
+            key.strip(self.async_index.prefix + self.async_index.key_separator)
+            for key in keys
         ]
-    
+
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to the index.
 
@@ -354,6 +348,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             self._redis_client.delete("_".join([self._prefix, str(node_id)]))
 
     async def async_delete_nodes(self, node_ids: list):
+        await self.async_index_exists()
         for node_id in node_ids:
             await self._redis_client_async.delete(
                 "_".join([self._prefix, str(node_id)])
@@ -367,6 +362,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
+        await self.async_index_exists()
         # build a filter to target specific docs by doc ID
         doc_filter = Tag(DOC_ID_FIELD_NAME) == ref_doc_id
         total = self._index.query(CountQuery(doc_filter))
@@ -383,7 +379,8 @@ class RedisVectorStore(BasePydanticVectorStore):
             res = await pipe.execute()
 
         logger.info(
-            f"Deleted {len(docs_to_delete.docs)} documents from index {self._index.name}")
+            f"Deleted {len(docs_to_delete.docs)} documents from index {self._index.name}"
+        )
 
     def delete(self, ref_doc_id: str) -> None:
         """
@@ -409,7 +406,8 @@ class RedisVectorStore(BasePydanticVectorStore):
             res = pipe.execute()
 
         logger.info(
-            f"Deleted {len(docs_to_delete.docs)} documents from index {self._index.name}")
+            f"Deleted {len(docs_to_delete.docs)} documents from index {self._index.name}"
+        )
 
     def delete_index(self) -> None:
         """Delete the index and all documents."""
@@ -419,7 +417,7 @@ class RedisVectorStore(BasePydanticVectorStore):
     async def async_delete_index(self) -> None:
         """Delete the index and all documents."""
         logger.info(f"Deleting index {self._async_index.name}")
-        await self._async_index.delete(drop=True)        
+        await self._async_index.delete(drop=True)
 
     @staticmethod
     def _to_redis_filter(field: BaseField, filter: MetadataFilter) -> FilterExpression:
@@ -567,7 +565,9 @@ class RedisVectorStore(BasePydanticVectorStore):
 
         return self._process_query_results(results, redis_query)
 
-    async def aquery(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+    async def aquery(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
         """Query the index.
 
         Args:
@@ -581,6 +581,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             redis.exceptions.RedisError: If there is an error querying the index.
             redis.exceptions.TimeoutError: If there is a timeout querying the index.
         """
+        await self.async_index_exists()
         if not query.query_embedding:
             raise ValueError("Query embedding is required for querying.")
 

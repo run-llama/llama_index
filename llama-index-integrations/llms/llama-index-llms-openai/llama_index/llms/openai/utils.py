@@ -582,6 +582,9 @@ def from_openai_token_logprob(
                 LogProb(token=el.token, logprob=el.logprob, bytes=el.bytes or [])
                 for el in openai_token_logprob.top_logprobs
             ]
+        except Exception:
+            print(openai_token_logprob)
+            raise
         else:
             result = [
                 LogProb(
@@ -590,14 +593,12 @@ def from_openai_token_logprob(
                     bytes=openai_token_logprob.bytes or [],
                 )
             ]
-    except Exception:
-        print(openai_token_logprob)
-        raise
     return result
 
 
 def from_openai_token_logprobs(
-    openai_token_logprobs: Sequence[ChatCompletionTokenLogprob], top_logprobs: bool = True
+    openai_token_logprobs: Sequence[ChatCompletionTokenLogprob],
+    top_logprobs: bool = True,
 ) -> List[List[LogProb]]:
     """Convert openai token logprobs to generic list of LogProb."""
     return [
