@@ -19,7 +19,10 @@ from typing import (
     get_args,
     runtime_checkable,
 )
+import datetime
+import time
 
+import numpy as np
 import httpx
 import tiktoken
 
@@ -45,10 +48,9 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.core.bridge.pydantic import (
-    Field,
-    PrivateAttr,
-)
+from llama_index.core.agent.types import Task
+from llama_index.core.chat_engine.types import AgentChatResponse
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import (
     DEFAULT_TEMPERATURE,
@@ -494,7 +496,6 @@ class OpenAI(FunctionCallingLLM):
         logprobs = None
         if openai_token_logprobs and openai_token_logprobs.content:
             logprobs = from_openai_token_logprobs(openai_token_logprobs.content)
-
         return ChatResponse(
             message=message,
             raw=response,
@@ -752,7 +753,7 @@ class OpenAI(FunctionCallingLLM):
         openai_token_logprobs = response.choices[0].logprobs
         logprobs = None
         if openai_token_logprobs and openai_token_logprobs.content:
-            logprobs = from_openai_token_logprobs(openai_token_logprobs.content)
+            logprobs = from_openai_token_logprobs(openai_token_logprobs.content, top_logprobs=True if self.top_logprobs != 0 else False)
 
         return ChatResponse(
             message=message,

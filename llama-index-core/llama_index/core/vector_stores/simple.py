@@ -58,6 +58,7 @@ def _build_metadata_filter_fn(
         def _process_filter_match(
             operator: FilterOperator, value: Any, metadata_value: Any
         ) -> bool:
+            # If the filter key is not in the metadata, then return False
             if metadata_value is None:
                 return False
             if operator == FilterOperator.EQ:
@@ -122,7 +123,8 @@ def _build_metadata_filter_fn(
 
 @dataclass
 class SimpleVectorStoreData(DataClassJsonMixin):
-    """Simple Vector Store Data container.
+    """
+    Simple Vector Store Data container.
 
     Args:
         embedding_dict (Optional[dict]): dict mapping node_ids to embeddings.
@@ -351,6 +353,7 @@ class SimpleVectorStore(BasePydanticVectorStore):
         # TODO: consolidate with get_query_text_embedding_similarities
         for node_id, embedding in self.data.embedding_dict.items():
             if node_filter_fn(node_id) and query_filter_fn(node_id):
+
                 node_ids.append(node_id)
                 embeddings.append(embedding)
 

@@ -4,6 +4,7 @@ import logging
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
+import asyncio
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.embeddings.base import BaseEmbedding
@@ -30,7 +31,8 @@ logger = logging.getLogger(__name__)
 
 
 class SQLRetriever(BaseRetriever):
-    """SQL Retriever.
+    """
+    SQL Retriever.
 
     Retrieves via raw SQL statements.
 
@@ -176,7 +178,8 @@ class PGVectorSQLParser(BaseSQLParser):
 
 
 class NLSQLRetriever(BaseRetriever, PromptMixin):
-    """Text-to-SQL Retriever.
+    """
+    Text-to-SQL Retriever.
 
     Retrieves via text.
 
@@ -202,7 +205,7 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
 
     def __init__(
         self,
-        sql_database: SQLDatabase,
+        sql_database: Optional[SQLDatabase],
         text_to_sql_prompt: Optional[BasePromptTemplate] = None,
         context_query_kwargs: Optional[dict] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
@@ -225,6 +228,7 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         self._get_tables = self._load_get_tables_fn(
             sql_database, tables, context_query_kwargs, table_retriever
         )
+        self.table_retriever = table_retriever
         self._context_str_prefix = context_str_prefix
         self._llm = llm or Settings.llm
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
@@ -289,7 +293,7 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
                 table_names = list(sql_database.get_usable_table_names())
             context_strs = [context_query_kwargs.get(t, None) for t in table_names]
             table_schemas = [
-                SQLTableSchema(table_name=t, context_str=c)
+                SQLTableSchema(table_name=t, full_table_name=t, context_str=c)
                 for t, c in zip(table_names, context_strs)
             ]
             return lambda _: table_schemas
@@ -306,7 +310,6 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         logger.info(f"> Table desc str: {table_desc_str}")
         if self._verbose:
             print(f"> Table desc str: {table_desc_str}")
-
         response_str = self._llm.predict(
             self._text_to_sql_prompt,
             query_str=query_bundle.query_str,
@@ -323,9 +326,16 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
             print(f"> Predicted SQL query: {sql_query_str}")
 
         if self._sql_only:
-            sql_only_node = TextNode(text=f"{sql_query_str}")
+            sql_only_node = TextNode(
+                text=f"Here is the SQL string: {sql_query_str}. The user will execute this query for you."
+            )
             retrieved_nodes = [NodeWithScore(node=sql_only_node)]
-            metadata = {"result": sql_query_str}
+            metadata = {
+                "result": sql_query_str,
+                "dialect": self._sql_database.dialect,
+                "schema": table_desc_str,
+                "engine": self._sql_database.engine,
+            }
         else:
             try:
                 retrieved_nodes, metadata = self._sql_retriever.retrieve_with_metadata(
@@ -339,7 +349,6 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
                     metadata = {}
                 else:
                     raise
-
         return retrieved_nodes, {"sql_query": sql_query_str, **metadata}
 
     async def aretrieve_with_metadata(
@@ -397,16 +406,22 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         return retrieved_nodes
 
     def _get_table_context(self, query_bundle: QueryBundle) -> str:
-        """Get table context string."""
+        """
+        Get table context.
+
+        Get tables schema + optional context as a single string.
+
+        """
         table_schema_objs = self._get_tables(query_bundle.query_str)
+
         context_strs = []
         for table_schema_obj in table_schema_objs:
             # first append table info + additional context
             table_info = self._sql_database.get_single_table_info(
-                table_schema_obj.table_name
+                table=table_schema_obj
             )
             if table_schema_obj.context_str:
-                table_opt_context = " The table description is: "
+                table_opt_context = ", and table description is: "
                 table_opt_context += table_schema_obj.context_str
                 table_info += table_opt_context
 
@@ -426,3 +441,37 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
             context_strs.append(table_info)
 
         return "\n\n".join(context_strs)
+
+
+class SQLTableRetriever:
+    """A light-weight class to retrieve table context that is not reliant on a database connection
+    since it's focused on just retrieving nodes from the vector index
+    """
+
+    def __init__(
+        self,
+        table_retriever: ObjectRetriever[SQLTableSchema],
+        context_str_prefix: Optional[str] = None,
+    ):
+        self.table_retriever = table_retriever
+        self._context_str_prefix = context_str_prefix
+
+    async def _aget_table_context(self, query_bundle: QueryBundle) -> list:
+        """
+        Get table context.
+
+        Get tables schema + optional context as a single string.
+
+        """
+        table_schema_objs = await self.table_retriever.aretrieve(query_bundle.query_str)
+        context_strs = []
+        if self._context_str_prefix is not None:
+            context_strs = [self._context_str_prefix]
+
+        for table_schema_obj in table_schema_objs:
+            if table_schema_obj.table_info:
+                context_strs.append(table_schema_obj.table_info)
+            else:
+                logger.warn("Missing table info")
+
+        return context_strs

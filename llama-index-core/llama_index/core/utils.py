@@ -125,8 +125,7 @@ globals_helper = GlobalsHelper()
 # Global Tokenizer
 @runtime_checkable
 class Tokenizer(Protocol):
-    def encode(self, text: str, *args: Any, **kwargs: Any) -> List[Any]:
-        ...
+    def encode(self, text: str, *args: Any, **kwargs: Any) -> List[Any]: ...
 
 
 def set_global_tokenizer(tokenizer: Union[Tokenizer, Callable[[str], list]]) -> None:
@@ -190,7 +189,8 @@ def get_new_int_id(d: Set) -> int:
 
 @contextmanager
 def temp_set_attrs(obj: Any, **kwargs: Any) -> Generator:
-    """Temporary setter.
+    """
+    Temporary setter.
 
     Utility class for setting a temporary value for an attribute on a class.
     Taken from: https://tinyurl.com/2p89xymh
@@ -208,7 +208,8 @@ def temp_set_attrs(obj: Any, **kwargs: Any) -> Generator:
 
 @dataclass
 class ErrorToRetry:
-    """Exception types that should be retried.
+    """
+    Exception types that should be retried.
 
     Args:
         exception_cls (Type[Exception]): Class of exception.
@@ -229,7 +230,8 @@ def retry_on_exceptions_with_backoff(
     min_backoff_secs: float = 0.5,
     max_backoff_secs: float = 60.0,
 ) -> Any:
-    """Execute lambda function with retries and exponential backoff.
+    """
+    Execute lambda function with retries and exponential backoff.
 
     Args:
         lambda_fn (Callable): Function to be called and output we want.
@@ -350,7 +352,8 @@ def truncate_text(text: str, max_length: int) -> str:
 
 
 def iter_batch(iterable: Union[Iterable, Generator], size: int) -> Iterable:
-    """Iterate over an iterable in batches.
+    """
+    Iterate over an iterable in batches.
 
     >>> list(iter_batch([1,2,3,4,5], 3))
     [[1, 2, 3], [4, 5]]
@@ -412,7 +415,8 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
 
 
 def get_cache_dir() -> str:
-    """Locate a platform-appropriate cache directory for llama_index,
+    """
+    Locate a platform-appropriate cache directory for llama_index,
     and create it if it doesn't yet exist.
     """
     # User override
@@ -442,7 +446,8 @@ def get_cache_dir() -> str:
 
 
 def add_sync_version(func: Any) -> Any:
-    """Decorator for adding sync version of an async function. The sync version
+    """
+    Decorator for adding sync version of an async function. The sync version
     is added as a function attribute to the original function, func.
 
     Args:
@@ -500,7 +505,10 @@ _ANSI_COLORS = {
     "magenta": "35",
     "cyan": "36",
     "pink": "38;5;200",
+    "orange": "38;5;208",
 }
+
+_OTHER_RGB_COLORS = {"orange": "48;2;255;165;0"}
 
 
 def get_color_mapping(
@@ -527,7 +535,7 @@ def get_color_mapping(
     return {item: colors[i % len(colors)] for i, item in enumerate(items)}
 
 
-def _get_colored_text(text: str, color: str) -> str:
+def _get_colored_text(text: str, color: str, bold_and_italics=True) -> str:
     """
     Get the colored version of the input text.
 
@@ -538,17 +546,28 @@ def _get_colored_text(text: str, color: str) -> str:
     Returns:
         str: Colored version of the input text.
     """
-    all_colors = {**_LLAMA_INDEX_COLORS, **_ANSI_COLORS}
+    all_colors = {**_LLAMA_INDEX_COLORS, **_ANSI_COLORS, **_OTHER_RGB_COLORS}
 
     if color not in all_colors:
-        return f"\033[1;3m{text}\033[0m"  # just bolded and italicized
+        if bold_and_italics:
+            return f"\033[1;3m{text}\033[0m"  # just bolded and italicized
+        else:
+            return text
 
     color = all_colors[color]
 
-    return f"\033[1;3;{color}m{text}\033[0m"
+    if bold_and_italics:
+        return f"\033[1;3;{color}m{text}\033[0m"
+    else:
+        return f"\033[{color}m{text}\033[0m"
 
 
-def print_text(text: str, color: Optional[str] = None, end: str = "") -> None:
+def print_text(
+    text: str,
+    color: Optional[str] = None,
+    end: str = "",
+    response_hook: Optional[Callable] = None,
+) -> None:
     """
     Print the text with the specified color.
 
@@ -562,9 +581,35 @@ def print_text(text: str, color: Optional[str] = None, end: str = "") -> None:
     Returns:
         None
     """
+    if response_hook:
+        response_hook(text)
     text_to_print = _get_colored_text(text, color) if color is not None else text
     print(text_to_print, end=end)
 
+
+async def aprint_text(
+    text: str,
+    color: Optional[str] = None,
+    end: str = "",
+    response_hook: Optional[Callable] = None,
+) -> None:
+    """
+    Print the text with the specified color.
+
+    Args:
+        text (str): Text to be printed.
+        color (str, optional): Color to be applied to the text. Supported colors are:
+            llama_pink, llama_blue, llama_turquoise, llama_lavender,
+            red, green, yellow, blue, magenta, cyan, pink.
+        end (str, optional): String appended after the last character of the text.
+
+    Returns:
+        None
+    """
+    if response_hook:
+        await response_hook(text)
+    text_to_print = _get_colored_text(text, color) if color is not None else text
+    print(text_to_print, end=end)
 
 def infer_torch_device() -> str:
     """Infer the input to torch.device."""
@@ -582,7 +627,8 @@ def infer_torch_device() -> str:
 
 
 def unit_generator(x: Any) -> Generator[Any, None, None]:
-    """A function that returns a generator of a single element.
+    """
+    A function that returns a generator of a single element.
 
     Args:
         x (Any): the element to build yield
@@ -594,7 +640,8 @@ def unit_generator(x: Any) -> Generator[Any, None, None]:
 
 
 async def async_unit_generator(x: Any) -> AsyncGenerator[Any, None]:
-    """A function that returns a generator of a single element.
+    """
+    A function that returns a generator of a single element.
 
     Args:
         x (Any): the element to build yield

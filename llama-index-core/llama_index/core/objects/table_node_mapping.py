@@ -16,13 +16,19 @@ class SQLTableSchema(BaseModel):
     """Lightweight representation of a SQL table."""
 
     table_name: str
+    full_table_name: str
+    table_schema: Optional[str] = None
+    table_schema_rendered: Optional[str] = None
     context_str: Optional[str] = None
+    description: Optional[str] = None
+    table_info: Optional[str] = None
+    tbl_uuid: Optional[str] = None
 
 
 class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
     """SQL Table node mapping."""
 
-    def __init__(self, sql_database: SQLDatabase) -> None:
+    def __init__(self, sql_database: Optional[SQLDatabase] = None) -> None:
         self._sql_database = sql_database
 
     @classmethod
@@ -45,15 +51,19 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
     def to_node(self, obj: SQLTableSchema) -> TextNode:
         """To node."""
         # taken from existing schema logic
+        if not self._sql_database:
+            raise ValueError(
+                "A sql database connection is required for converting to nodes"
+            )
         table_text = (
-            f"Schema of table {obj.table_name}:\n"
-            f"{self._sql_database.get_single_table_info(obj.table_name)}\n"
+            f"Schema of table {obj.full_table_name}:\n"
+            f"{self._sql_database.get_single_table_info(table=obj)}\n"
         )
 
-        metadata = {"name": obj.table_name}
+        metadata = {"name": obj.full_table_name}
 
         if obj.context_str is not None:
-            table_text += f"Context of table {obj.table_name}:\n"
+            table_text += f"Context of table {obj.full_table_name}:\n"
             table_text += obj.context_str
             metadata["context"] = obj.context_str
 
@@ -64,16 +74,50 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
             text=table_text,
             metadata=metadata,
             excluded_embed_metadata_keys=["name", "context"],
-            excluded_llm_metadata_keys=["name", "context"],
+            excluded_llm_metadata_keys=["context"],
         )
 
     def _from_node(self, node: BaseNode) -> SQLTableSchema:
         """From node."""
         if node.metadata is None:
             raise ValueError("Metadata must be set")
+        full_table_name = node.metadata["name"]
+        table_split = full_table_name.split(".")
+        table_name = table_split[-1]
+        table_schema = table_split[0] if len(table_split) == 2 else None
         return SQLTableSchema(
-            table_name=node.metadata["name"], context_str=node.metadata.get("context")
+            table_name=table_name,
+            table_schema=table_schema,
+            full_table_name=full_table_name,
+            context_str=node.metadata.get("context"),
+            table_info=node.metadata.get("table_info"),
         )
+
+    @staticmethod
+    async def to_nodes_from_tables(tables: list[SQLTableSchema]) -> list[TextNode]:
+        nodes = []
+        for table in tables:
+            table_text = (
+                f"Schema of table {table.full_table_name}:\n" f"{table.table_info}\n"
+            )
+
+            metadata = {"name": table.full_table_name}
+
+            if table.context_str is not None:
+                table_text += f"Context of table {table.full_table_name}:\n"
+                table_text += table.context_str
+                metadata["context"] = table.context_str
+
+            metadata["table_info"] = table.table_info
+            node = TextNode(
+                text=table_text,
+                metadata=metadata,
+                excluded_embed_metadata_keys=["name", "context", "table_info"],
+                excluded_llm_metadata_keys=["context", "table_info"],
+            )
+            node.node_id = table.tbl_uuid
+            nodes.append(node)
+        return nodes
 
     @property
     def obj_node_mapping(self) -> Dict[int, Any]:

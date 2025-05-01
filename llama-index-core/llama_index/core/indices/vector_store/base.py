@@ -190,7 +190,6 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
                 nodes_batch, show_progress
             )
             new_ids = await self._vector_store.async_add(nodes_batch, **insert_kwargs)
-
             # if the vector store doesn't store text, we need to add the nodes to the
             # index struct and document store
             if not self._vector_store.stores_text or self._store_nodes_override:
@@ -313,6 +312,11 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         """Insert a document."""
         self._add_nodes_to_index(self._index_struct, nodes, **insert_kwargs)
 
+    async def _async_insert(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
+        """Insert a document."""
+        await self._async_add_nodes_to_index(self._index_struct, nodes, **insert_kwargs)
+        
+
     def insert_nodes(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """
         Insert nodes.
@@ -332,6 +336,26 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         with self._callback_manager.as_trace("insert_nodes"):
             self._insert(nodes, **insert_kwargs)
             self._storage_context.index_store.add_index_struct(self._index_struct)
+        self._insert(nodes, **insert_kwargs)
+        self._storage_context.index_store.add_index_struct(self._index_struct)
+    
+    async def async_insert_nodes(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
+        """Insert nodes.
+
+        NOTE: overrides BaseIndex.insert_nodes.
+            VectorStoreIndex only stores nodes in document store
+            if vector store does not store text
+        """
+        for node in nodes:
+            if isinstance(node, IndexNode):
+                try:
+                    node.dict()
+                except ValueError:
+                    self._object_map[node.index_id] = node.obj
+                    node.obj = None
+
+        await self._async_insert(nodes, **insert_kwargs)
+        self._storage_context.index_store.add_index_struct(self._index_struct)    
 
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         pass
@@ -351,6 +375,29 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         """
         # delete nodes from vector store
         self._vector_store.delete_nodes(node_ids, **delete_kwargs)
+        self._vector_store.delete_nodes(node_ids)
+        # raise NotImplementedError(
+        #     "Vector indices currently only support delete_ref_doc, which "
+        #     "deletes nodes using the ref_doc_id of ingested documents."
+        # )
+
+    async def async_delete_nodes(
+        self,
+        node_ids: List[str],
+        delete_from_docstore: bool = False,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Delete a list of nodes from the index.
+
+        Args:
+            node_ids (List[str]): A list of node_ids from the nodes to delete
+
+        """
+        await self._vector_store.async_delete_nodes(node_ids)
+        # raise NotImplementedError(
+        #     "Vector indices currently only support delete_ref_doc, which "
+        #     "deletes nodes using the ref_doc_id of ingested documents."
+        # )
 
         # delete from docstore only if needed
         if (

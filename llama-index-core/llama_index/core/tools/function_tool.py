@@ -35,6 +35,13 @@ def async_to_sync(func_async: AsyncCallable) -> Callable:
 
 # The type that the callback can return: either a ToolOutput instance or a string to override the content.
 CallbackReturn = Optional[Union[ToolOutput, str]]
+def create_tool_metadata(fn, name, description, fn_schema=None, return_direct: bool):
+    name = name or fn.__name__
+    docstring = fn.__doc__
+    description = description or f"{name}{signature(fn)}\n{docstring}"
+    if fn_schema is None:
+        fn_schema = create_schema_from_function(f"{name}", fn, additional_fields=None)
+    return ToolMetadata(name=name, description=description, fn_schema=fn_schema, return_direct=return_direct)
 
 
 class FunctionTool(AsyncBaseTool):
@@ -174,11 +181,8 @@ class FunctionTool(AsyncBaseTool):
                     if ctx_param_name is not None
                     else None,
                 )
-            tool_metadata = ToolMetadata(
-                name=name,
-                description=description,
-                fn_schema=fn_schema,
-                return_direct=return_direct,
+            tool_metadata = create_tool_metadata(
+                fn=fn, description=description, name=name, fn_schema=fn_schema, return_direct=return_direct
             )
         return cls(
             fn=fn,

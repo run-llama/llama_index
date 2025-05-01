@@ -1,4 +1,5 @@
 from __future__ import annotations
+from datetime import datetime
 
 import base64
 import filetype
@@ -189,6 +190,7 @@ class ChatMessage(BaseModel):
     """Chat message."""
 
     role: MessageRole = MessageRole.USER
+    timestamp: Optional[datetime] = None    
     additional_kwargs: dict[str, Any] = Field(default_factory=dict)
     blocks: list[ContentBlock] = Field(default_factory=list)
 

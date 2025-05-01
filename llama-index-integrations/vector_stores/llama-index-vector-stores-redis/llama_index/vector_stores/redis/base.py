@@ -10,7 +10,7 @@ import fsspec
 from redis import Redis
 from redis.exceptions import RedisError
 from redis.exceptions import TimeoutError as RedisTimeoutError
-from redisvl.index import SearchIndex
+from redisvl.index import SearchIndex, AsyncSearchIndex
 from redisvl.query import CountQuery, FilterQuery, VectorQuery
 from redisvl.query.filter import FilterExpression, Tag
 from redisvl.redis.utils import array_to_buffer
@@ -31,6 +31,7 @@ from llama_index.core.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
+    FilterOperator,
 )
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
@@ -46,7 +47,16 @@ from llama_index.vector_stores.redis.schema import (
 )
 from llama_index.vector_stores.redis.utils import REDIS_LLAMA_FIELD_SPEC
 
+import redis
+from redis import DataError
+from redis import Redis
+from redis.client import Redis as RedisType
+from redis.commands.search.field import VectorField
+from redis.exceptions import RedisError
+from redis.exceptions import TimeoutError as RedisTimeoutError
+
 logger = logging.getLogger(__name__)
+NO_DOCS = "No docs found on index"
 
 
 class RedisVectorStore(BasePydanticVectorStore):
@@ -106,6 +116,13 @@ class RedisVectorStore(BasePydanticVectorStore):
     flat_metadata: bool = False
 
     _index: SearchIndex = PrivateAttr()
+    _tokenizer: Any = PrivateAttr()
+    _redis_client: Any = PrivateAttr()
+    _redis_client_async: Any = PrivateAttr()
+    _prefix: str = PrivateAttr()
+    _index_name: str = PrivateAttr()
+    _index_args: Dict[str, Any] = PrivateAttr()
+    _metadata_fields: List[str] = PrivateAttr()
     _overwrite: bool = PrivateAttr()
     _return_fields: List[str] = PrivateAttr()
 
@@ -113,6 +130,7 @@ class RedisVectorStore(BasePydanticVectorStore):
         self,
         schema: Optional[IndexSchema] = None,
         redis_client: Optional[Redis] = None,
+        redis_client_async: Optional[Redis] = None,
         redis_url: Optional[str] = None,
         overwrite: bool = False,
         return_fields: Optional[List[str]] = None,
@@ -134,13 +152,18 @@ class RedisVectorStore(BasePydanticVectorStore):
             TEXT_FIELD_NAME,
             NODE_CONTENT_FIELD_NAME,
         ]
-        self._index = SearchIndex(
-            schema=schema, redis_client=redis_client, redis_url=redis_url
-        )
         self._overwrite = overwrite
-
-        # Create index
-        self.create_index()
+        if redis_client:
+            self._index = SearchIndex(
+                schema=schema, redis_client=redis_client, redis_url=redis_url
+            )
+            self.create_index()
+        else:
+            self._async_index = AsyncSearchIndex(
+                schema=schema, redis_client=redis_client_async, redis_url=redis_url
+            )    
+            await self.async_create_index()
+        
 
     def _flag_old_kwargs(self, **kwargs):
         old_kwargs = [
@@ -172,6 +195,8 @@ class RedisVectorStore(BasePydanticVectorStore):
     @property
     def client(self) -> "Redis":
         """Return the redis client instance."""
+        if self._async_index:
+            return self._async_index.client
         return self._index.client
 
     @property
@@ -182,6 +207,8 @@ class RedisVectorStore(BasePydanticVectorStore):
     @property
     def schema(self) -> IndexSchema:
         """Return the index schema."""
+        if self._async_index:
+            return self._async_index.client        
         return self._index.schema
 
     def set_return_fields(self, return_fields: List[str]) -> None:
@@ -196,16 +223,83 @@ class RedisVectorStore(BasePydanticVectorStore):
         """
         return self._index.exists()
 
+    def async_index_exists(self) -> bool:
+        """Check whether the index exists in Redis.
+
+        Returns:
+            bool: True or False.
+        """
+        return await self._async_index.exists()
+
     def create_index(self, overwrite: Optional[bool] = None) -> None:
         """Create an index in Redis."""
         if overwrite is None:
             overwrite = self._overwrite
         # Create index honoring overwrite policy
         if overwrite:
-            self._index.create(overwrite=True, drop=True)
+            self._index.create(overwrite=overwrite, drop=True)
         else:
             self._index.create()
 
+    def async_create_index(self, overwrite: Optional[bool] = None) -> None:
+        """Create an async index in Redis."""
+        if overwrite is None:
+            overwrite = self._overwrite
+        # Create index honoring overwrite policy
+        if overwrite:
+            await self._async_index.create(overwrite=True, drop=True)
+        else:
+            await self._async_index.create()            
+
+    async def async_add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
+        """Add nodes to the index.
+
+        Args:
+            nodes (List[BaseNode]): List of nodes with embeddings
+
+        Returns:
+            List[str]: List of ids of the documents added to the index.
+
+        Raises:
+            ValueError: If the index already exists and overwrite is False.
+        """
+        # Check to see if empty document list was passed
+        if len(nodes) == 0:
+            return []
+
+        # Now check for the scenario where user is trying to index embeddings that don't align with schema
+        embedding_len = len(nodes[0].get_embedding())
+        expected_dims = self._async_index.schema.fields[VECTOR_FIELD_NAME].attrs.dims
+        if expected_dims != embedding_len:
+            raise ValueError(
+                f"Attempting to index embeddings of dim {embedding_len} "
+                f"which doesn't match the index schema expectation of {expected_dims}. "
+                "Please review the Redis integration example to learn how to customize schema. "
+                ""
+            )
+
+        data: List[Dict[str, Any]] = []
+        for node in nodes:
+            embedding = node.get_embedding()
+            record = {
+                NODE_ID_FIELD_NAME: node.node_id,
+                DOC_ID_FIELD_NAME: node.ref_doc_id,
+                TEXT_FIELD_NAME: node.get_content(metadata_mode=MetadataMode.NONE),
+                VECTOR_FIELD_NAME: array_to_buffer(embedding, dtype="FLOAT32"),
+            }
+            # parse and append metadata
+            additional_metadata = node_to_metadata_dict(
+                node, remove_text=True, flat_metadata=self.flat_metadata
+            )
+            data.append({**record, **additional_metadata})
+
+        # Load nodes to Redis
+        keys = await self.async_index.load(data, id_field=NODE_ID_FIELD_NAME, **add_kwargs)
+        logger.info(f"Added {len(keys)} documents to index {self._index.name}")
+        return [
+            key.strip(self.async_index.prefix + self.async_index.key_separator) for key in keys
+        ]
+    
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """Add nodes to the index.
 
@@ -255,9 +349,45 @@ class RedisVectorStore(BasePydanticVectorStore):
             key.strip(self._index.prefix + self._index.key_separator) for key in keys
         ]
 
-    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+    def delete_nodes(self, node_ids: list):
+        for node_id in node_ids:
+            self._redis_client.delete("_".join([self._prefix, str(node_id)]))
+
+    async def async_delete_nodes(self, node_ids: list):
+        for node_id in node_ids:
+            await self._redis_client_async.delete(
+                "_".join([self._prefix, str(node_id)])
+            )
+
+    async def async_delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
-        Delete nodes using with ref_doc_id.
+        Delete nodes using the ref_doc_id.
+
+        Args:
+            ref_doc_id (str): The doc_id of the document to delete.
+
+        """
+        # build a filter to target specific docs by doc ID
+        doc_filter = Tag(DOC_ID_FIELD_NAME) == ref_doc_id
+        total = self._index.query(CountQuery(doc_filter))
+        delete_query = FilterQuery(
+            return_fields=[NODE_ID_FIELD_NAME],
+            filter_expression=doc_filter,
+            num_results=total,
+        )
+        # fetch docs to delete and flush them
+        docs_to_delete = self._index.search(delete_query.query, delete_query.params)
+        async with self._index.client.pipeline(transaction=False) as pipe:
+            for doc in docs_to_delete.docs:
+                await pipe.delete(doc.id)
+            res = await pipe.execute()
+
+        logger.info(
+            f"Deleted {len(docs_to_delete.docs)} documents from index {self._index.name}")
+
+    def delete(self, ref_doc_id: str) -> None:
+        """
+        Delete nodes using the ref_doc_id.
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
@@ -279,13 +409,17 @@ class RedisVectorStore(BasePydanticVectorStore):
             res = pipe.execute()
 
         logger.info(
-            f"Deleted {len(docs_to_delete.docs)} documents from index {self._index.name}"
-        )
+            f"Deleted {len(docs_to_delete.docs)} documents from index {self._index.name}")
 
     def delete_index(self) -> None:
         """Delete the index and all documents."""
         logger.info(f"Deleting index {self._index.name}")
         self._index.delete(drop=True)
+
+    async def async_delete_index(self) -> None:
+        """Delete the index and all documents."""
+        logger.info(f"Deleting index {self._async_index.name}")
+        await self._async_index.delete(drop=True)        
 
     @staticmethod
     def _to_redis_filter(field: BaseField, filter: MetadataFilter) -> FilterExpression:
@@ -431,6 +565,40 @@ class RedisVectorStore(BasePydanticVectorStore):
             logger.error(f"Error querying {self._index.name}: {e}")
             raise
 
+        return self._process_query_results(results, redis_query)
+
+    async def aquery(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        """Query the index.
+
+        Args:
+            query (VectorStoreQuery): query object
+
+        Returns:
+            VectorStoreQueryResult: query result
+
+        Raises:
+            ValueError: If query.query_embedding is None.
+            redis.exceptions.RedisError: If there is an error querying the index.
+            redis.exceptions.TimeoutError: If there is a timeout querying the index.
+        """
+        if not query.query_embedding:
+            raise ValueError("Query embedding is required for querying.")
+
+        redis_query = self._to_redis_query(query)
+        logger.info(f"Querying index {self._index.name} with query {redis_query!s}")
+
+        try:
+            results = await self._async_index.query(redis_query)
+        except RedisTimeoutError as e:
+            logger.error(f"Query timed out on {self._index.name}: {e}")
+            raise
+        except RedisError as e:
+            logger.error(f"Error querying {self._index.name}: {e}")
+            raise
+
+        return self._process_query_results(results, redis_query)
+
+    def _query_post_processing(self, results) -> VectorStoreQueryResult:
         return self._process_query_results(results, redis_query)
 
     def persist(

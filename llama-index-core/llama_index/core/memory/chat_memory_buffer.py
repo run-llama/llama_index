@@ -45,6 +45,12 @@ class ChatMemoryBuffer(BaseChatStoreMemory):
         return values
 
     @classmethod
+    def get_llm_token_limit(cls, llm, token_limit: Optional[int] = None):
+        context_window = llm.metadata.context_window
+        token_limit = token_limit or int(context_window * DEFAULT_TOKEN_LIMIT_RATIO)
+        return token_limit
+
+    @classmethod
     def from_defaults(
         cls,
         chat_history: Optional[List[ChatMessage]] = None,
@@ -60,8 +66,7 @@ class ChatMemoryBuffer(BaseChatStoreMemory):
             raise ValueError(f"Unexpected kwargs: {kwargs}")
 
         if llm is not None:
-            context_window = llm.metadata.context_window
-            token_limit = token_limit or int(context_window * DEFAULT_TOKEN_LIMIT_RATIO)
+            token_limit = cls.get_llm_token_limit(llm=llm, token_limit=token_limit)
         elif token_limit is None:
             token_limit = DEFAULT_TOKEN_LIMIT
 

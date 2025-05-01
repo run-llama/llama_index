@@ -25,3 +25,4 @@ token.json
 .python-version
 .DS_Store
 /storage/
+*.egg*

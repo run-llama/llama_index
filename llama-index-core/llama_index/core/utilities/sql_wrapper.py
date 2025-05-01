@@ -2,13 +2,14 @@
 
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
-from sqlalchemy import MetaData, create_engine, insert, inspect, text
+from sqlalchemy import MetaData, create_engine, insert, inspect, text, Connection
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError, ProgrammingError
-
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncConnection
 
 class SQLDatabase:
-    """SQL Database.
+    """
+    SQL Database.
 
     This class provides a wrapper around the SQLAlchemy engine to interact with a SQL
     database.
@@ -54,26 +55,46 @@ class SQLDatabase:
         """Create engine from database URI."""
         self._engine = engine
         self._schema = schema
+        self._view_support = view_support
+        self._include_tables = include_tables
+        self._ignore_tables = ignore_tables
+        self._sample_rows_in_table_info = sample_rows_in_table_info
+        self._indexes_in_table_info = indexes_in_table_info
+        self._custom_table_info = custom_table_info
+        self._max_string_length = max_string_length
+        self._metadata = metadata
+
         if include_tables and ignore_tables:
             raise ValueError("Cannot specify both include_tables and ignore_tables")
 
-        self._inspector = inspect(self._engine)
+        if not isinstance(self._engine, AsyncEngine):
+            self.inspect_db()
+
+    def inspect_db(self, conn):
+
+        self._inspector = inspect(conn)
 
         # including view support by adding the views as well as tables to the all
         # tables list if view_support is True
         self._all_tables = set(
-            self._inspector.get_table_names(schema=schema)
-            + (self._inspector.get_view_names(schema=schema) if view_support else [])
+            self._inspector.get_table_names(schema=self._schema)
+            + (
+                self._inspector.get_view_names(schema=self._schema)
+                if self._view_support
+                else []
+            )
         )
 
-        self._include_tables = set(include_tables) if include_tables else set()
+        self._include_tables = (
+            set(self._include_tables) if self._include_tables else set()
+        )
         if self._include_tables:
             missing_tables = self._include_tables - self._all_tables
             if missing_tables:
                 raise ValueError(
                     f"include_tables {missing_tables} not found in database"
                 )
-        self._ignore_tables = set(ignore_tables) if ignore_tables else set()
+        self._ignore_tables = set(self._ignore_tables) if self._ignore_tables else set()
         if self._ignore_tables:
             missing_tables = self._ignore_tables - self._all_tables
             if missing_tables:
@@ -83,13 +104,13 @@ class SQLDatabase:
         usable_tables = self.get_usable_table_names()
         self._usable_tables = set(usable_tables) if usable_tables else self._all_tables
 
-        if not isinstance(sample_rows_in_table_info, int):
+        if not isinstance(self._sample_rows_in_table_info, int):
             raise TypeError("sample_rows_in_table_info must be an integer")
 
-        self._sample_rows_in_table_info = sample_rows_in_table_info
-        self._indexes_in_table_info = indexes_in_table_info
+        self._sample_rows_in_table_info = self._sample_rows_in_table_info
+        self._indexes_in_table_info = self._indexes_in_table_info
 
-        self._custom_table_info = custom_table_info
+        self._custom_table_info = self._custom_table_info
         if self._custom_table_info:
             if not isinstance(self._custom_table_info, dict):
                 raise TypeError(
@@ -104,13 +125,18 @@ class SQLDatabase:
                 if table in intersection
             }
 
-        self._max_string_length = max_string_length
+        self._max_string_length = self._max_string_length
 
-        self._metadata = metadata or MetaData()
+        self._metadata = self._metadata or MetaData()
         # including view support if view_support = true
+
         self._metadata.reflect(
-            views=view_support,
-            bind=self._engine,
+            views=self._view_support,
+            bind=(
+                self._engine.sync_engine
+                if isinstance(self._engine, AsyncEngine)
+                else self._engine
+            ),
             only=list(self._usable_tables),
             schema=self._schema,
         )
@@ -148,24 +174,43 @@ class SQLDatabase:
         """Get table columns."""
         return self._inspector.get_columns(table_name)
 
-    def get_single_table_info(self, table_name: str) -> str:
+    @classmethod
+    def get_single_table_info_wrapper(cls, conn: Connection, table) -> str:
+        """Use this when using an Async Engine. Get table info for a single table."""
+        # reload the inspector
+        cls._inspector = inspect(conn)
+        table_info = cls.get_single_table_info(table=table, inspector=cls._inspector)
+        if table.context_str:
+            table_opt_context = " The table description is: "
+            table_opt_context += table.context_str
+            table_info += table_opt_context    
+        table.table_info = table_info
+     
+        return table
+
+    @staticmethod
+    def get_single_table_info(table, inspector) -> str:
         """Get table info for a single table."""
         # same logic as table_info, but with specific table names
-        template = "Table '{table_name}' has columns: {columns}, "
+
+        full_table_name = table.full_table_name
+        template = "Table '{full_table_name}' has columns: {columns}, "
         try:
             # try to retrieve table comment
-            table_comment = self._inspector.get_table_comment(
-                table_name, schema=self._schema
+            table_comment = inspector.get_table_comment(
+                table_name=table.table_name, schema=table.table_schema
             )["text"]
             if table_comment:
-                template += f"with comment: ({table_comment}) "
+                template += f", and comment: ({table_comment}) "
         except NotImplementedError:
             # get_table_comment raises NotImplementedError for a dialect that does not support comments.
             pass
 
-        template += "{foreign_keys}."
+        template += "and foreign keys: {foreign_keys}"
         columns = []
-        for column in self._inspector.get_columns(table_name, schema=self._schema):
+        for column in inspector.get_columns(
+            table_name=table.table_name, schema=table.table_schema
+        ):
             if column.get("comment"):
                 columns.append(
                     f"{column['name']} ({column['type']!s}): "
@@ -176,20 +221,22 @@ class SQLDatabase:
 
         column_str = ", ".join(columns)
         foreign_keys = []
-        for foreign_key in self._inspector.get_foreign_keys(
-            table_name, schema=self._schema
+        for foreign_key in inspector.get_foreign_keys(
+            table_name=table.table_name, schema=table.table_schema
         ):
             foreign_keys.append(
                 f"{foreign_key['constrained_columns']} -> "
                 f"{foreign_key['referred_table']}.{foreign_key['referred_columns']}"
             )
-        foreign_key_str = (
-            foreign_keys
-            and " and foreign keys: {}".format(", ".join(foreign_keys))
-            or ""
-        )
+        foreign_key_str = ", ".join(foreign_keys)
+        if not foreign_key_str:
+            foreign_key_str = "no foreign key metadata available."
+        else:
+            foreign_key_str += "."
         return template.format(
-            table_name=table_name, columns=column_str, foreign_keys=foreign_key_str
+            full_table_name=full_table_name,
+            columns=column_str,
+            foreign_keys=foreign_key_str,
         )
 
     def insert_into_table(self, table_name: str, data: dict) -> None:
@@ -213,7 +260,8 @@ class SQLDatabase:
         return content[: length - len(suffix)].rsplit(" ", 1)[0] + suffix
 
     def run_sql(self, command: str) -> Tuple[str, Dict]:
-        """Execute a SQL statement and return a string representing the results.
+        """
+        Execute a SQL statement and return a string representing the results.
 
         If the statement returns rows, a string of the results is returned.
         If the statement returns no rows, an empty string is returned.

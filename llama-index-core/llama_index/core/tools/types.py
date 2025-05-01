@@ -2,7 +2,8 @@ import asyncio
 import json
 from abc import abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, Optional, Type
+from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Callable
+
 
 from llama_index.core.instrumentation import DispatcherSpanMixin
 
@@ -24,6 +25,8 @@ class ToolMetadata:
     name: Optional[str] = None
     fn_schema: Optional[Type[BaseModel]] = DefaultToolFnSchema
     return_direct: bool = False
+    callback: Optional[Callable] = None
+    kwargs: Optional[Dict[str, Any]] = None
 
     def get_parameters_dict(self) -> dict:
         if self.fn_schema is None:

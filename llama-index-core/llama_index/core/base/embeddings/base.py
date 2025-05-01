@@ -139,6 +139,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 payload={
                     EventPayload.CHUNKS: [query],
                     EventPayload.EMBEDDINGS: [query_embedding],
+                    EventPayload.SERIALIZED: self.to_dict(),
                 },
             )
         dispatcher.event(
@@ -168,6 +169,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 payload={
                     EventPayload.CHUNKS: [query],
                     EventPayload.EMBEDDINGS: [query_embedding],
+                    EventPayload.SERIALIZED: self.to_dict(),
                 },
             )
         dispatcher.event(
@@ -263,6 +265,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 payload={
                     EventPayload.CHUNKS: [text],
                     EventPayload.EMBEDDINGS: [text_embedding],
+                    EventPayload.SERIALIZED: self.to_dict(),
                 }
             )
         dispatcher.event(
@@ -292,6 +295,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 payload={
                     EventPayload.CHUNKS: [text],
                     EventPayload.EMBEDDINGS: [text_embedding],
+                    EventPayload.SERIALIZED: self.to_dict(),
                 }
             )
         dispatcher.event(
@@ -338,6 +342,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                         payload={
                             EventPayload.CHUNKS: cur_batch,
                             EventPayload.EMBEDDINGS: embeddings,
+                            EventPayload.SERIALIZED: self.to_dict(),
                         },
                     )
                 dispatcher.event(
@@ -424,6 +429,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 payload={
                     EventPayload.CHUNKS: text_batch,
                     EventPayload.EMBEDDINGS: embeddings,
+                    EventPayload.SERIALIZED: self.to_dict(),
                 },
                 event_id=event_id,
             )

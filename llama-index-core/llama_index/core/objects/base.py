@@ -1,5 +1,6 @@
 """Base object types."""
 
+import logging
 import pickle
 import warnings
 from typing import Any, Callable, Dict, Generic, List, Optional, Sequence, Type, TypeVar
@@ -28,7 +29,11 @@ from llama_index.core.storage.storage_context import (
     StorageContext,
 )
 
+logger = logging.getLogger(__name__)
+
 OT = TypeVar("OT")
+
+RELEVANCE_THRESHOLD = 0.1
 
 
 class ObjectRetriever(ChainableMixin, Generic[OT]):
@@ -77,15 +82,19 @@ class ObjectRetriever(ChainableMixin, Generic[OT]):
         if isinstance(str_or_query_bundle, str):
             query_bundle = QueryBundle(query_str=str_or_query_bundle)
         else:
-            query_bundle = str_or_query_bundle
-
+            query_bundle = str_or_query_bundle        
         nodes = await self._retriever.aretrieve(query_bundle)
         for node_postprocessor in self._node_postprocessors:
             nodes = node_postprocessor.postprocess_nodes(
                 nodes, query_bundle=query_bundle
-            )
-
-        return [self._object_node_mapping.from_node(node.node) for node in nodes]
+            )        
+        for node in nodes:
+            table_nm = node.node.metadata.get("name")
+            logger.info("Node table name: %s", table_nm)
+            logger.info("Node score: %s", node.score)
+            if node.score > RELEVANCE_THRESHOLD:
+                retrieved_nodes.append(self._object_node_mapping.from_node(node.node))
+        return retrieved_nodes
 
     def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """As query component."""

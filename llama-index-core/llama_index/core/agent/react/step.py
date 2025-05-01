@@ -4,6 +4,9 @@ import asyncio
 import json
 import uuid
 from functools import partial
+from itertools import chain
+import time
+from threading import Thread
 from typing import (
     Any,
     AsyncGenerator,
@@ -17,8 +20,12 @@ from typing import (
     Callable,
 )
 
+from llama_index.llms.openai.base import OpenAI
 from llama_index.core.agent.react.formatter import ReActChatFormatter
-from llama_index.core.agent.react.output_parser import ReActOutputParser
+from llama_index.core.agent.react.output_parser import (
+    ReActOutputParser,
+    COULD_NOT_PARSE_TXT,
+)
 from llama_index.core.agent.react.types import (
     ActionReasoningStep,
     BaseReasoningStep,
@@ -31,7 +38,7 @@ from llama_index.core.agent.types import (
     TaskStep,
     TaskStepOutput,
 )
-from llama_index.core.base.llms.types import MessageRole
+from llama_index.core.base.llms.types import MessageRole, LogProb
 from llama_index.core.callbacks import (
     CallbackManager,
     CBEventType,
@@ -57,8 +64,12 @@ from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.core.tools.types import AsyncBaseTool
 from llama_index.core.types import Thread
 from llama_index.core.utils import print_text
+from llama_index.core.utils import aprint_text, print_text, unit_generator
+import numpy as np
 
 dispatcher = get_dispatcher(__name__)
+LOW_CONFIDENCE_RESPONSE = "I cannot find an answer I am confident in given the data. Could you please rephrase the question or consult a member of your data team to ensure the question can be answered based on your data?"
+CONFIDENCE_THRESHOLD = 98
 
 
 def add_user_step_to_reasoning(
@@ -121,6 +132,8 @@ class ReActAgentWorker(BaseAgentWorker):
         handle_reasoning_failure_fn: Optional[
             Callable[[CallbackManager, Exception], ToolOutput]
         ] = None,
+        response_hook: Optional[Callable] = None,
+        check_confidence: bool = False,
     ) -> None:
         self._llm = llm
         self.callback_manager = callback_manager or llm.callback_manager
@@ -132,6 +145,9 @@ class ReActAgentWorker(BaseAgentWorker):
             handle_reasoning_failure_fn
             or tell_llm_about_failure_in_extract_reasoning_step
         )
+        self.response_hook = response_hook
+        self.check_confidence = check_confidence
+        self.confident: bool = True
 
         if len(tools) > 0 and tool_retriever is not None:
             raise ValueError("Cannot specify both tools and tool_retriever")
@@ -157,9 +173,10 @@ class ReActAgentWorker(BaseAgentWorker):
         handle_reasoning_failure_fn: Optional[
             Callable[[CallbackManager, Exception], ToolOutput]
         ] = None,
-        **kwargs: Any,
+        response_hook: Optional[Callable] = None,
+        **kwargs: Any,        
     ) -> "ReActAgentWorker":
-        """Convenience constructor method from set of BaseTools (Optional).
+        """Convenience constructor method from set of of BaseTools (Optional).
 
         NOTE: kwargs should have been exhausted by this point. In other words
         the various upstream components such as BaseSynthesizer (response synthesizer)
@@ -182,6 +199,7 @@ class ReActAgentWorker(BaseAgentWorker):
             callback_manager=callback_manager,
             verbose=verbose,
             handle_reasoning_failure_fn=handle_reasoning_failure_fn,
+            response_hook=response_hook,
         )
 
     def _get_prompts(self) -> PromptDictType:
@@ -242,9 +260,19 @@ class ReActAgentWorker(BaseAgentWorker):
         try:
             reasoning_step = self._output_parser.parse(message_content, is_streaming)
         except BaseException as exc:
-            raise ValueError(f"Could not parse output: {message_content}") from exc
+            raise ValueError(f"{COULD_NOT_PARSE_TXT} {message_content}") from exc
+        background_tasks = set()
         if self._verbose:
-            print_text(f"{reasoning_step.get_content()}\n", color="pink")
+            task = asyncio.create_task(
+                aprint_text(
+                    f"{reasoning_step.get_content()}\n",
+                    color="pink",
+                    response_hook=self.response_hook,
+                )
+            )
+            background_tasks.add(task)
+            task.add_done_callback(background_tasks.discard)
+
         current_reasoning.append(reasoning_step)
 
         if reasoning_step.is_done:
@@ -323,8 +351,9 @@ class ReActAgentWorker(BaseAgentWorker):
             ),
         )
         current_reasoning.append(observation_step)
+
         if self._verbose:
-            print_text(f"{observation_step.get_content()}\n", color="blue")
+            print_text(f"{observation_step.get_content()}\n", color="blue", response_hook=self.response_hook,)
         return (
             current_reasoning,
             tool.metadata.return_direct and not tool_output.is_error if tool else False,
@@ -433,8 +462,8 @@ class ReActAgentWorker(BaseAgentWorker):
         """Get response from reasoning steps."""
         if len(current_reasoning) == 0:
             raise ValueError("No reasoning steps were taken.")
-        elif len(current_reasoning) == self._max_iterations:
-            raise ValueError("Reached max iterations.")
+        elif len(current_reasoning) >= self._max_iterations:
+            raise TimeoutError("Reached max iterations.")
 
         if isinstance(current_reasoning[-1], ResponseReasoningStep):
             response_step = cast(ResponseReasoningStep, current_reasoning[-1])
@@ -506,7 +535,8 @@ class ReActAgentWorker(BaseAgentWorker):
         chunks: List[ChatResponse],
         chat_stream: Generator[ChatResponse, None, None],
     ) -> Generator[ChatResponse, None, None]:
-        """Helper method for adding back initial chunk stream of final response
+        """
+        Helper method for adding back initial chunk stream of final response
         back to the rest of the chat_stream.
 
         Args:
@@ -528,7 +558,8 @@ class ReActAgentWorker(BaseAgentWorker):
         chunks: List[ChatResponse],
         chat_stream: AsyncGenerator[ChatResponse, None],
     ) -> AsyncGenerator[ChatResponse, None]:
-        """Helper method for adding back initial chunk stream of final response
+        """
+        Helper method for adding back initial chunk stream of final response
         back to the rest of the chat_stream.
 
         NOTE: this itself is not an async function.
@@ -608,7 +639,11 @@ class ReActAgentWorker(BaseAgentWorker):
             current_reasoning=task.extra_state["current_reasoning"],
         )
         # send prompt
+        start_time = time.time()
         chat_response = await self._llm.achat(input_chat)
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        # print(f'USING LLM: {elapsed_time} seconds')
         # given react prompt outputs, call tools or return response
         reasoning_steps, is_done = await self._aprocess_actions(
             task, tools, output=chat_response
@@ -617,12 +652,37 @@ class ReActAgentWorker(BaseAgentWorker):
         agent_response = self._get_response(
             task.extra_state["current_reasoning"], task.extra_state["sources"]
         )
+        if self.check_confidence:
+            # Check confidence based on the first token only
+            try:
+                logprob = chat_response.logprobs[0][0]
+                self.calculate_confidence(logprob=logprob)
+            except Exception as e:
+                print("Issue calculating confidence")
+                print("Here is the error: ", str(e))
         if is_done:
             task.extra_state["new_memory"].put(
                 ChatMessage(content=agent_response.response, role=MessageRole.ASSISTANT)
             )
-
         return self._get_task_step_response(agent_response, step, is_done)
+
+    def calculate_confidence(self, logprob: LogProb) -> ChatResponse:
+        # Calculate linear probability
+        linear_prob = np.round(np.exp(logprob.logprob) * 100, 2)
+        # Decide on response based on confidence and linear probability
+        # TODO: may need to add linear_prob filtering to false statements
+        print("AI CONFIDENCE: ", logprob.token.lower())
+        print("CONFIDENCE PROBABILITY: ", linear_prob)
+        if (logprob.token.lower() == "true" and linear_prob < CONFIDENCE_THRESHOLD) or (
+            logprob.token.lower() == "false"
+        ):
+            self.confident = False
+        else:
+            self.confident = True
+            if logprob.token.lower() not in ["false", "true"]:
+                print(
+                    "Malformed Response Error: The agent failed to return a single token respones confidence filtering failed"
+                )
 
     def _run_step_stream(
         self,
