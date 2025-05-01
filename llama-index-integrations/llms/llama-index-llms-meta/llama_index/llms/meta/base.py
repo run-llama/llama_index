@@ -8,7 +8,7 @@ class LlamaLLM(OpenAILike):
     """Llama LLM.
 
     Examples:
-        `pip install llama-index-llms-llama`
+        `pip install llama-index-llms-meta`
 
         ```python
         from llama_index.llms.meta import LlamaLLM
