@@ -8,7 +8,6 @@
 
 - fix: `aextract_table_summaries` cause unwanted output when showprogress is False (#18528)
 
-
 ### `llama-index-embeddings-cohere` [0.4.1]
 
 - Fix Cohere Embedding Multiprocessing with Custom Endpoint (#18551)
