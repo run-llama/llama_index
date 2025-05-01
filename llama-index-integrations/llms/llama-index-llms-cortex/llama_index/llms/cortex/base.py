@@ -233,7 +233,7 @@ class Cortex(CustomLLM):
     @property
     def snowflake_api_endpoint(self) -> str:
         if is_spcs_environment():
-            return get_spcs_base_url()
+            return "https://" + get_spcs_base_url()
         else:
             base_url = f"https://{self.account}.snowflakecomputing.com"
         return base_url
