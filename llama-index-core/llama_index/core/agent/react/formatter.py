@@ -126,7 +126,8 @@ class ReActChatFormatter(BaseAgentChatFormatter):
 
     @classmethod
     def from_context(cls, context: str) -> "ReActChatFormatter":
-        """Create ReActChatFormatter from context.
+        """
+        Create ReActChatFormatter from context.
 
         NOTE: deprecated
 

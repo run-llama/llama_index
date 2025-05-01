@@ -34,7 +34,8 @@ def step(
     num_workers: int = 4,
     retry_policy: Optional[RetryPolicy] = None,
 ) -> Callable:
-    """Decorator used to mark methods and functions as workflow steps.
+    """
+    Decorator used to mark methods and functions as workflow steps.
 
     Decorators are evaluated at import time, but we need to wait for
     starting the communication channels until runtime. For this reason,
@@ -47,6 +48,7 @@ def step(
         num_workers: The number of workers that will process events for the decorated step. The default
             value works most of the times.
         retry_policy: The policy used to retry a step that encountered an error while running.
+
     """
 
     def decorator(func: Callable) -> Callable:

@@ -13,7 +13,8 @@ from llama_index.core.schema import BaseNode, TextNode
 
 
 class DashScopeJsonNodeParser(BaseElementNodeParser):
-    """DashScope Json format element node parser.
+    """
+    DashScope Json format element node parser.
 
     Splits a json format document from DashScope Parse into Text Nodes and Index Nodes
     corresponding to embedded objects (e.g. tables).

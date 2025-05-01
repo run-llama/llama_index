@@ -53,7 +53,8 @@ def add_class_name(value: Any, handler: Callable, info: Any) -> Dict[str, Any]:
 
 
 class TitleExtractor(BaseExtractor):
-    """Title extractor. Useful for long documents. Extracts `document_title`
+    """
+    Title extractor. Useful for long documents. Extracts `document_title`
     metadata field.
 
     Args:
@@ -62,6 +63,7 @@ class TitleExtractor(BaseExtractor):
         node_template (str): template for node-level title clues extraction
         combine_template (str): template for combining node-level clues into
             a document-level title
+
     """
 
     is_text_node_only: bool = False  # can work for mixture of text and non-text nodes
@@ -164,13 +166,15 @@ document. Format as comma separated. Keywords: """
 
 
 class KeywordExtractor(BaseExtractor):
-    """Keyword extractor. Node-level extractor. Extracts
+    """
+    Keyword extractor. Node-level extractor. Extracts
     `excerpt_keywords` metadata field.
 
     Args:
         llm (Optional[LLM]): LLM
         keywords (int): number of keywords to extract
         prompt_template (str): template for keyword extraction
+
     """
 
     llm: SerializeAsAny[LLM] = Field(description="The LLM to use for generation.")
@@ -260,6 +264,7 @@ class QuestionsAnsweredExtractor(BaseExtractor):
         questions (int): number of questions to extract
         prompt_template (str): template for question extraction,
         embedding_only (bool): whether to use embedding only
+
     """
 
     llm: SerializeAsAny[LLM] = Field(description="The LLM to use for generation.")
@@ -348,6 +353,7 @@ class SummaryExtractor(BaseExtractor):
         llm (Optional[LLM]): LLM
         summaries (List[str]): list of summaries to extract: 'self', 'prev', 'next'
         prompt_template (str): template for summary extraction
+
     """
 
     llm: SerializeAsAny[LLM] = Field(description="The LLM to use for generation.")
@@ -463,7 +469,8 @@ Given the contextual information, extract out a {class_name} object.\
 
 
 class PydanticProgramExtractor(BaseExtractor, Generic[Model]):
-    """Pydantic program extractor.
+    """
+    Pydantic program extractor.
 
     Uses an LLM to extract out a Pydantic object. Return attributes of that object
     in a dictionary.

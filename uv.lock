@@ -1253,7 +1253,7 @@ wheels = [
 
 [[package]]
 name = "llama-index"
-version = "0.12.33"
+version = "0.12.34"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-agent-openai" },
@@ -1297,7 +1297,7 @@ dev = [
 requires-dist = [
     { name = "llama-index-agent-openai", specifier = ">=0.4.0,<0.5" },
     { name = "llama-index-cli", specifier = ">=0.4.1,<0.5" },
-    { name = "llama-index-core", specifier = ">=0.12.33,<0.13" },
+    { name = "llama-index-core", specifier = ">=0.12.34,<0.13" },
     { name = "llama-index-embeddings-openai", specifier = ">=0.3.0,<0.4" },
     { name = "llama-index-indices-managed-llama-cloud", specifier = ">=0.4.0" },
     { name = "llama-index-llms-openai", specifier = ">=0.3.0,<0.4" },
@@ -1362,7 +1362,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.12.33.post1"
+version = "0.12.34"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1392,9 +1392,9 @@ dependencies = [
     { name = "typing-inspect" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a9/51/e99358e80b0d80777c84081159d351f51feaa6c7d7054486bbbb49f6c9c0/llama_index_core-0.12.33.post1.tar.gz", hash = "sha256:d257f6f594dfd9cf6435af02761a3d21f1427df5347f0e5e9fffe4024db6a724", size = 7282200, upload_time = "2025-04-23T18:48:42.505Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/28/70/c4148dc0a99c090d87993c16f083d53df66ebc4b19e6d9b6ca5defba2dd3/llama_index_core-0.12.34.tar.gz", hash = "sha256:ecd6706a3de2fbf1c503ca17c9d7aa1c934e61887e00419eb39489e9470cc188", size = 7272170, upload_time = "2025-05-01T01:15:10.151Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/87/01/6fcf557a72ad25734327515db506744f8f8ba95846a0f7e055c8fa95a54d/llama_index_core-0.12.33.post1-py3-none-any.whl", hash = "sha256:2c4a316a1ae9ec86c817d44961d1058691632acb3a7021e6af56fcfb8735fd3d", size = 7650733, upload_time = "2025-04-23T18:48:33.433Z" },
+    { url = "https://files.pythonhosted.org/packages/e4/da/1aa0b46810b4e4ff599c0cbc239307145a570bb73061b91ff770ff344789/llama_index_core-0.12.34-py3-none-any.whl", hash = "sha256:c69f638249c8a929b5f2d967c36bcbfbc3e3663ff7997fafec03b39d95ae3d12", size = 7633069, upload_time = "2025-05-01T01:15:01.417Z" },
 ]
 
 [[package]]

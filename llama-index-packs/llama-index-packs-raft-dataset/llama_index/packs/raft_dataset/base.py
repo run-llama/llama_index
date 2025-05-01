@@ -48,7 +48,6 @@ class RAFTDatasetPack(BaseLlamaPack):
         self.ds = None
         self.llm = OpenAI(temperature=0, n=1, model="gpt-4") if llm is None else llm
         self.embed_model = OpenAIEmbedding() if embed_model is None else embed_model
-
     def strip_str(self, s) -> str:
         """
         Helper function for helping format strings returned by GPT-4.
@@ -67,7 +66,6 @@ class RAFTDatasetPack(BaseLlamaPack):
                     end_index = i
         end_index += 2
         return s[start_index : min(end_index, len(s))]
-
     def encode_question_gen(self, question, chunk) -> List[str]:
         """
         Encode multiple prompt instructions into a single string for the general case.
@@ -86,7 +84,6 @@ class RAFTDatasetPack(BaseLlamaPack):
             ),
             ChatMessage(role="user", content=prompt),
         ]
-
     def generate_label(self, question, context) -> str:
         """
         Generates the label / answer to `question` using `context` and GPT-4.
@@ -94,7 +91,6 @@ class RAFTDatasetPack(BaseLlamaPack):
         question_messages = self.encode_question_gen(question, context)
         response = self.llm.chat(question_messages)
         return str(response)
-
     def generate_instructions_gen(self, chunk, x=5) -> List[str]:
         """
         Generates `x` questions / use cases for `chunk`. Used when the input document is of general types

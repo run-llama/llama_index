@@ -205,6 +205,7 @@ class RedisKVStore(BaseKVStore):
         Args:
             host (str): Redis host
             port (int): Redis port
+
         """
         url = f"redis://{host}:{port}".format(host=host, port=port)
         return cls(redis_uri=url)
@@ -216,5 +217,6 @@ class RedisKVStore(BaseKVStore):
 
         Args:
             redis_client (Redis): Redis client
+
         """
         return cls(redis_client=redis_client)

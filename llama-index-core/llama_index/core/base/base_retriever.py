@@ -220,7 +220,8 @@ class BaseRetriever(ChainableMixin, PromptMixin, DispatcherSpanMixin):
 
     @dispatcher.span
     def retrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
-        """Retrieve nodes given query.
+        """
+        Retrieve nodes given query.
 
         Args:
             str_or_query_bundle (QueryType): Either a query string or
@@ -290,7 +291,8 @@ class BaseRetriever(ChainableMixin, PromptMixin, DispatcherSpanMixin):
 
     @abstractmethod
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        """Retrieve nodes given query.
+        """
+        Retrieve nodes given query.
 
         Implemented by the user.
 
@@ -299,7 +301,8 @@ class BaseRetriever(ChainableMixin, PromptMixin, DispatcherSpanMixin):
     # TODO: make this abstract
     # @abstractmethod
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        """Asynchronously retrieve nodes given query.
+        """
+        Asynchronously retrieve nodes given query.
 
         Implemented by the user.
 

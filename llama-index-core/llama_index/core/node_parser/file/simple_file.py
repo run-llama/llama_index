@@ -18,7 +18,8 @@ FILE_NODE_PARSERS: Dict[str, Type[NodeParser]] = {
 
 
 class SimpleFileNodeParser(NodeParser):
-    """Simple file node parser.
+    """
+    Simple file node parser.
 
     Splits a document loaded from a file into Nodes using logic based on the file type
     automatically detects the NodeParser to use based on file type
@@ -55,10 +56,12 @@ class SimpleFileNodeParser(NodeParser):
         show_progress: bool = False,
         **kwargs: Any,
     ) -> List[BaseNode]:
-        """Parse document into nodes.
+        """
+        Parse document into nodes.
 
         Args:
             nodes (Sequence[BaseNode]): nodes to parse
+
         """
         all_nodes: List[BaseNode] = []
         documents_with_progress = get_tqdm_iterable(

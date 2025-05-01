@@ -28,7 +28,8 @@ class VectorDBToolSpec(BaseToolSpec):
         filter_key_list: List[str],
         filter_value_list: List[str],
     ) -> str:
-        """Auto retrieval function.
+        """
+        Auto retrieval function.
 
         Performs auto-retrieval from a vector database, and then applies a set of filters.
 
@@ -37,6 +38,7 @@ class VectorDBToolSpec(BaseToolSpec):
             top_k (int): The number of results to retrieve
             filter_key_list (List[str]): The list of filter keys
             filter_value_list (List[str]): The list of filter values
+
         """
         exact_match_filters = [
             ExactMatchFilter(key=k, value=v)

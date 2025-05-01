@@ -18,7 +18,8 @@ from llama_index.core.utils import get_tqdm_iterable
 
 
 class DoclingNodeParser(NodeParser):
-    """Docling format node parser.
+    """
+    Docling format node parser.
 
     Splits the JSON format of `DoclingReader` into nodes corresponding
     to respective document elements from Docling's data model
@@ -27,6 +28,7 @@ class DoclingNodeParser(NodeParser):
     Args:
         chunker (BaseChunker, optional): The chunker to use. Defaults to `HierarchicalChunker()`.
         id_func(NodeIDGenCallable, optional): The node ID generation function to use. Defaults to `_uuid4_node_id_gen`.
+
     """
 
     @runtime_checkable

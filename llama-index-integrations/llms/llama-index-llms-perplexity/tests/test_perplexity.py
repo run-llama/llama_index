@@ -77,7 +77,7 @@ def test_stream_complete(perplexity_llm):
     print(f"\n\nFull streamed completion response:\n{full_response}")
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat(perplexity_llm):
     messages = [
         ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
@@ -92,7 +92,7 @@ async def test_achat(perplexity_llm):
     print(f"\nAsync chat response:\n{response.message.content}")
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_acomplete(perplexity_llm):
     prompt = "The largest planet in our solar system is"
     response = await perplexity_llm.acomplete(prompt)
@@ -101,7 +101,7 @@ async def test_acomplete(perplexity_llm):
     print(f"\nAsync completion response:\n{response.text}")
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat(perplexity_llm):
     messages = [
         ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
@@ -125,7 +125,7 @@ async def test_astream_chat(perplexity_llm):
     print(f"\n\nFull async streamed chat response:\n{full_response}")
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete(perplexity_llm):
     prompt = "List the first 5 elements in the periodic table:"
     stream = await perplexity_llm.astream_complete(prompt)
@@ -181,7 +181,7 @@ def test_complete_mock(mock_perplexity_llm):
         mock_complete.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat_mock(mock_perplexity_llm):
     with mock.patch.object(mock_perplexity_llm, "_achat") as mock_achat:
         mock_achat.return_value = ChatResponse(
@@ -200,7 +200,7 @@ async def test_achat_mock(mock_perplexity_llm):
         mock_achat.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_acomplete_mock(mock_perplexity_llm):
     with mock.patch.object(mock_perplexity_llm, "_acomplete") as mock_aacomplete:
         mock_aacomplete.return_value = CompletionResponse(
@@ -231,7 +231,7 @@ def test_stream_complete_mock(mock_perplexity_llm):
         mock_stream_complete.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete(mock_perplexity_llm):
     prompt = "Test prompt"
     mock_astream_complete = AsyncMock(
@@ -290,7 +290,7 @@ def test_stream_chat(mock_perplexity_llm):
         mock_stream_chat.assert_called_once_with(messages)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat(mock_perplexity_llm):
     messages = [
         ChatMessage(role=MessageRole.USER, content="Test message 1"),

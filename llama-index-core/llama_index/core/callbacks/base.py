@@ -160,7 +160,8 @@ class CallbackManager(BaseCallbackHandler, ABC):
         payload: Optional[Dict[str, Any]] = None,
         event_id: Optional[str] = None,
     ) -> Generator["EventContext", None, None]:
-        """Context manager for lanching and shutdown of events.
+        """
+        Context manager for lanching and shutdown of events.
 
         Handles sending on_evnt_start and on_event_end to handlers for specified event.
 

@@ -138,7 +138,7 @@ def test_function_program_multiple() -> None:
     assert obj_outputs[1].songs[1].title == "song4"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_function_program() -> None:
     """Test async function program."""
     # same as above but async

@@ -23,5 +23,6 @@ class MultionToolSpec(BaseToolSpec):
 
         Args:
             cmd (str): The detailed and specific natural language instructrion for web browsing
+
         """
         return self.multion.browse(cmd=cmd, local=True)

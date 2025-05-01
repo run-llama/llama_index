@@ -150,7 +150,8 @@ class NodeParser(TransformComponent, ABC):
         show_progress: bool = False,
         **kwargs: Any,
     ) -> List[BaseNode]:
-        """Parse documents into nodes.
+        """
+        Parse documents into nodes.
 
         Args:
             documents (Sequence[Document]): documents to parse

@@ -80,7 +80,7 @@ def test_stream_complete(reka_llm):
     print(f"\n\nFull streamed completion response:\n{full_response}")
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat(reka_llm):
     messages = [
         ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
@@ -95,7 +95,7 @@ async def test_achat(reka_llm):
     print(f"\nAsync chat response:\n{response.message.content}")
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_acomplete(reka_llm):
     prompt = "The largest planet in our solar system is"
     response = await reka_llm.acomplete(prompt)
@@ -104,7 +104,7 @@ async def test_acomplete(reka_llm):
     print(f"\nAsync completion response:\n{response.text}")
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat(reka_llm):
     messages = [
         ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
@@ -128,7 +128,7 @@ async def test_astream_chat(reka_llm):
     print(f"\n\nFull async streamed chat response:\n{full_response}")
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete(reka_llm):
     prompt = "List the first 5 elements in the periodic table:"
     stream = await reka_llm.astream_complete(prompt)
@@ -204,7 +204,7 @@ def test_complete_mock(mock_reka_llm):
         mock_create.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat_mock(mock_reka_llm):
     with mock.patch.object(mock_reka_llm._aclient.chat, "create") as mock_acreate:
         mock_acreate.return_value = mock.MagicMock(
@@ -224,7 +224,7 @@ async def test_achat_mock(mock_reka_llm):
         mock_acreate.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_acomplete_mock(mock_reka_llm):
     with mock.patch.object(mock_reka_llm._aclient.chat, "create") as mock_acreate:
         mock_acreate.return_value = mock.MagicMock(
@@ -283,7 +283,7 @@ def test_stream_complete_mock(mock_reka_llm):
         mock_create_stream.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat_mock(mock_reka_llm):
     with mock.patch.object(
         mock_reka_llm._aclient.chat, "create_stream"
@@ -306,7 +306,7 @@ async def test_astream_chat_mock(mock_reka_llm):
         mock_acreate_stream.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete_mock(mock_reka_llm):
     with mock.patch.object(
         mock_reka_llm._aclient.chat, "create_stream"

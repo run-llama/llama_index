@@ -20,13 +20,15 @@ import google.generativeai as palm
     )
 )
 class GooglePaLMEmbedding(BaseEmbedding):
-    """Class for Google PaLM embeddings.
+    """
+    Class for Google PaLM embeddings.
 
     Args:
         model_name (str): Model for embedding.
             Defaults to "models/embedding-gecko-001".
 
         api_key (Optional[str]): API key to access the model. Defaults to None.
+
     """
 
     _model: Any = PrivateAttr()

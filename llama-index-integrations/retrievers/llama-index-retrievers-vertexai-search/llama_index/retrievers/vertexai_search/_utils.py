@@ -6,7 +6,8 @@ from google.api_core.gapic_v1.client_info import ClientInfo
 
 
 def get_user_agent(module: Optional[str] = None) -> str:
-    r"""Returns a custom user agent header.
+    r"""
+    Returns a custom user agent header.
 
     Args:
         module (Optional[str]):
@@ -14,6 +15,7 @@ def get_user_agent(module: Optional[str] = None) -> str:
 
     Returns:
         Tuple[str, str]
+
     """
     try:
         llama_index_version = metadata.version("llama-index")
@@ -26,7 +28,8 @@ def get_user_agent(module: Optional[str] = None) -> str:
 
 
 def get_client_info(module: Optional[str] = None) -> "ClientInfo":
-    r"""Returns a client info object with a custom user agent header.
+    r"""
+    Returns a client info object with a custom user agent header.
 
     Args:
         module (Optional[str]):
@@ -34,6 +37,7 @@ def get_client_info(module: Optional[str] = None) -> "ClientInfo":
 
     Returns:
         google.api_core.gapic_v1.client_info.ClientInfo
+
     """
     client_library_version, user_agent = get_user_agent(module)
     return ClientInfo(

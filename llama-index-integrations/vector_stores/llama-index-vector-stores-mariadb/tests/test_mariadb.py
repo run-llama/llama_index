@@ -114,7 +114,7 @@ def close_db_connection(request: pytest.FixtureRequest) -> Generator:
         ("8.4.3", False),
     ],
 )
-@pytest.mark.noautousefixtures()
+@pytest.mark.noautousefixtures
 def test_meets_min_server_version(version: str, supported: bool) -> None:
     assert _meets_min_server_version(version, "11.7.1") == supported
 

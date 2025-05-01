@@ -2,7 +2,8 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 
 class SalesforceToolSpec(BaseToolSpec):
-    """Salesforce tool spec.
+    """
+    Salesforce tool spec.
 
     Gives the agent the ability to interact with Salesforce using simple_salesforce
 
@@ -17,12 +18,14 @@ class SalesforceToolSpec(BaseToolSpec):
         self.sf = Salesforce(**kargs)
 
     def execute_sosl(self, search: str) -> str:
-        """Returns the result of a Salesforce search as a dict decoded from
+        """
+        Returns the result of a Salesforce search as a dict decoded from
         the Salesforce response JSON payload.
 
         Arguments:
         * search -- the fully formatted SOSL search string, e.g.
                     `FIND {Waldo}`.
+
         """
         from simple_salesforce import SalesforceError
 
@@ -33,7 +36,8 @@ class SalesforceToolSpec(BaseToolSpec):
         return res
 
     def execute_soql(self, query: str) -> str:
-        """Returns the full set of results for the `query`. This is a
+        """
+        Returns the full set of results for the `query`. This is a
         convenience wrapper around `query(...)` and `query_more(...)`.
         The returned dict is the decoded JSON payload from the final call to
         Salesforce, but with the `totalSize` field representing the full
@@ -43,6 +47,7 @@ class SalesforceToolSpec(BaseToolSpec):
         Arguments:
         * query -- the SOQL query to send to Salesforce, e.g.
                    SELECT Id FROM Lead WHERE Email = "waldo@somewhere.com".
+
         """
         from simple_salesforce import SalesforceError
 

@@ -63,6 +63,7 @@ class GitHubRepositoryIssuesReader(BaseReader):
             - OPEN: Just open issues. This is the default.
             - CLOSED: Just closed issues.
             - ALL: All issues, open and closed.
+
         """
 
         OPEN = "open"
@@ -98,6 +99,7 @@ class GitHubRepositoryIssuesReader(BaseReader):
         Raises:
             - `ValueError`: If the github_token is not provided and
                 the GITHUB_TOKEN environment variable is not set.
+
         """
         super().__init__()
 
@@ -142,6 +144,7 @@ class GitHubRepositoryIssuesReader(BaseReader):
             - labelFilters: an optional list of filters to apply to the issue list based on labels.
 
         :return: list of documents
+
         """
         documents = []
         page = 1

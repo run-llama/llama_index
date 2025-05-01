@@ -134,7 +134,7 @@ def test_delete_last_message(sqlite_chat_store: SQLiteChatStore):
 @pytest.mark.skipif(
     no_packages, reason="aiosqlite, sqlite3 and sqlalchemy not installed"
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_sqlite_add_message(sqlite_chat_store: SQLiteChatStore):
     key = "test_async_add_key"
 
@@ -146,7 +146,7 @@ async def test_async_sqlite_add_message(sqlite_chat_store: SQLiteChatStore):
     assert result[0].content == "async_add_message_test" and result[0].role == "user"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_set_and_retrieve_messages(sqlite_chat_store: SQLiteChatStore):
     messages = [
         ChatMessage(content="First async message", role="user"),
@@ -164,7 +164,7 @@ async def test_async_set_and_retrieve_messages(sqlite_chat_store: SQLiteChatStor
 @pytest.mark.skipif(
     no_packages, reason="aiosqlite, sqlite3 and sqlalchemy not installed"
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_adelete_messages(sqlite_chat_store: SQLiteChatStore):
     messages = [ChatMessage(content="Async message to delete", role="user")]
     key = "test_async_delete_key"
@@ -178,7 +178,7 @@ async def test_adelete_messages(sqlite_chat_store: SQLiteChatStore):
 @pytest.mark.skipif(
     no_packages, reason="aiosqlite, sqlite3 and sqlalchemy not installed"
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_delete_specific_message(sqlite_chat_store: SQLiteChatStore):
     messages = [
         ChatMessage(content="Async keep me", role="user"),
@@ -196,7 +196,7 @@ async def test_async_delete_specific_message(sqlite_chat_store: SQLiteChatStore)
 @pytest.mark.skipif(
     no_packages, reason="aiosqlite, sqlite3 and sqlalchemy not installed"
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_get_keys(sqlite_chat_store: SQLiteChatStore):
     # Add some test data
     await sqlite_chat_store.aset_messages(
@@ -214,7 +214,7 @@ async def test_async_get_keys(sqlite_chat_store: SQLiteChatStore):
 @pytest.mark.skipif(
     no_packages, reason="aiosqlite, sqlite3 and sqlalchemy not installed"
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_delete_last_message(sqlite_chat_store: SQLiteChatStore):
     key = "test_async_delete_last_message"
     messages = [

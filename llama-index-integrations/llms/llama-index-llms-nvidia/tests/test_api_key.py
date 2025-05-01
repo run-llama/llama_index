@@ -61,7 +61,7 @@ def test_api_key_priority(masked_env_var: str) -> None:
         del os.environ["NVIDIA_API_KEY"]
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_missing_api_key_error(masked_env_var: str) -> None:
     with pytest.warns(UserWarning):
         client = NVIDIA()
@@ -71,7 +71,7 @@ def test_missing_api_key_error(masked_env_var: str) -> None:
     assert "401" in message
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_bogus_api_key_error(masked_env_var: str) -> None:
     client = NVIDIA(nvidia_api_key="BOGUS")
     with pytest.raises(Exception) as exc_info:
@@ -80,7 +80,7 @@ def test_bogus_api_key_error(masked_env_var: str) -> None:
     assert "401" in message
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 @pytest.mark.parametrize("param", ["nvidia_api_key", "api_key"])
 def test_api_key(chat_model: str, mode: dict, param: str, masked_env_var: str) -> None:
     client = NVIDIA(model=chat_model, **{**mode, **{param: masked_env_var}})

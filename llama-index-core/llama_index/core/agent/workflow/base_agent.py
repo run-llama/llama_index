@@ -60,7 +60,8 @@ class BaseWorkflowAgent(BaseModel, PromptMixin, ABC):
     def validate_tools(
         cls, v: Optional[Sequence[Union[BaseTool, Callable]]]
     ) -> Optional[Sequence[BaseTool]]:
-        """Validate tools.
+        """
+        Validate tools.
 
         If tools are not of type BaseTool, they will be converted to FunctionTools.
         This assumes the inputs are tools or callable functions.

@@ -34,6 +34,7 @@ class WatsonxEmbeddings(BaseEmbedding):
             project_id="*****",
         )
         ```
+
     """
 
     model_id: str = Field(

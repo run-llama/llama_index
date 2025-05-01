@@ -73,6 +73,7 @@ class BedrockConverse(FunctionCallingLLM):
         resp = llm.complete("Paul Graham is ")
         print(resp)
         ```
+
     """
 
     model: str = Field(description="The modelId of the Bedrock model to use.")
@@ -124,6 +125,9 @@ class BedrockConverse(FunctionCallingLLM):
             description="The version number for the guardrail. The value can also be DRAFT"
         ),
     )
+    application_inference_profile_arn: Optional[str] = Field(
+        description="The ARN of an application inference profile to invoke in place of the model. If provided, make sure the model argument refers to the same one underlying the application inference profile."
+    )
     trace: Optional[str] = (
         Field(
             description="Specifies whether to enable or disable the Bedrock trace. If enabled, you can see the full Bedrock trace."
@@ -162,6 +166,7 @@ class BedrockConverse(FunctionCallingLLM):
         output_parser: Optional[BaseOutputParser] = None,
         guardrail_identifier: Optional[str] = None,
         guardrail_version: Optional[str] = None,
+        application_inference_profile_arn: Optional[str] = None,
         trace: Optional[str] = None,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -198,6 +203,7 @@ class BedrockConverse(FunctionCallingLLM):
             botocore_config=botocore_config,
             guardrail_identifier=guardrail_identifier,
             guardrail_version=guardrail_version,
+            application_inference_profile_arn=application_inference_profile_arn,
             trace=trace,
         )
 
@@ -252,7 +258,7 @@ class BedrockConverse(FunctionCallingLLM):
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
         base_kwargs = {
-            "model": self.model,
+            "model": self.application_inference_profile_arn or self.model,
             "temperature": self.temperature,
             "max_tokens": self.max_tokens,
         }

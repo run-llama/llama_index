@@ -29,7 +29,8 @@ class NotionSearchDataSchema(BaseModel):
 
 
 class NotionToolSpec(BaseToolSpec):
-    """Notion tool spec.
+    """
+    Notion tool spec.
 
     Currently a simple wrapper around the data loader.
     TODO: add more methods to the Notion spec.
@@ -58,7 +59,8 @@ class NotionToolSpec(BaseToolSpec):
         page_ids: Optional[List[str]] = None,
         database_ids: Optional[List[str]] = None,
     ) -> str:
-        """Loads content from a set of page ids or database ids.
+        """
+        Loads content from a set of page ids or database ids.
 
         Don't use this endpoint if you don't know the page ids or database ids.
 
@@ -76,7 +78,8 @@ class NotionToolSpec(BaseToolSpec):
         property: Optional[str] = None,
         page_size: int = 100,
     ) -> List[Dict[str, Any]]:
-        """Search a list of relevant pages.
+        """
+        Search a list of relevant pages.
 
         Contains metadata for each page (but not the page content).
         params:

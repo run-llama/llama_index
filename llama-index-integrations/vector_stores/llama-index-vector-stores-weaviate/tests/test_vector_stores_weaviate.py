@@ -53,7 +53,7 @@ def test_no_weaviate_client_instance_provided():
     )  # As the Weaviate client was created within WeaviateVectorStore, it lies in its responsibility to close the connection when it is not longer needed
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestWeaviateAsync:
     @pytest_asyncio.fixture(scope="class")
     async def async_client(self):

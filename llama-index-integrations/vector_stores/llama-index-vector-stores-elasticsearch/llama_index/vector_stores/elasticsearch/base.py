@@ -52,6 +52,7 @@ def _to_elasticsearch_filter(
 
     Returns:
         Elasticsearch filter.
+
     """
     if len(standard_filters.legacy_filters()) == 1:
         filter = standard_filters.legacy_filters()[0]
@@ -307,6 +308,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
         Raises:
             ImportError: If elasticsearch['async'] python package is not installed.
             BulkIndexError: If AsyncElasticsearch async_bulk indexing fails.
+
         """
         return asyncio.get_event_loop().run_until_complete(
             self.async_add(
@@ -339,6 +341,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
         Raises:
             ImportError: If elasticsearch python package is not installed.
             BulkIndexError: If AsyncElasticsearch async_bulk indexing fails.
+
         """
         if len(nodes) == 0:
             return []
@@ -382,6 +385,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
 
         Raises:
             Exception: If Elasticsearch delete_by_query fails.
+
         """
         return asyncio.get_event_loop().run_until_complete(
             self.adelete(ref_doc_id, **delete_kwargs)
@@ -398,6 +402,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
 
         Raises:
             Exception: If AsyncElasticsearch delete_by_query fails.
+
         """
         await self._store.delete(
             query={"term": {"metadata.ref_doc_id": ref_doc_id}}, **delete_kwargs
@@ -416,6 +421,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
             node_ids: Optional list of node IDs to delete.
             filters: Optional metadata filters to select nodes to delete.
             delete_kwargs: Optional additional arguments to pass to delete operation.
+
         """
         return asyncio.get_event_loop().run_until_complete(
             self.adelete_nodes(node_ids, filters, **delete_kwargs)
@@ -434,6 +440,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
             node_ids (Optional[List[str]], optional): List of node IDs. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
             delete_kwargs (Any, optional): Optional additional arguments to pass to delete operation.
+
         """
         if not node_ids and not filters:
             return
@@ -568,6 +575,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
 
         Returns:
             List[BaseNode]: List of nodes retrieved from the index.
+
         """
         return asyncio.get_event_loop().run_until_complete(
             self.aget_nodes(node_ids, filters)
@@ -590,6 +598,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
 
         Raises:
             ValueError: If neither node_ids nor filters is provided.
+
         """
         if not node_ids and not filters:
             raise ValueError("Either node_ids or filters must be provided.")

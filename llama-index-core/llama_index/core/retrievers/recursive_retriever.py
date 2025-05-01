@@ -20,7 +20,8 @@ RQN_TYPE = Union[BaseRetriever, BaseQueryEngine, BaseNode]
 
 
 class RecursiveRetriever(BaseRetriever):
-    """Recursive retriever.
+    """
+    Recursive retriever.
 
     This retriever will recursively explore links from nodes to other
     retrievers/query engines.
@@ -67,7 +68,8 @@ class RecursiveRetriever(BaseRetriever):
     def _deduplicate_nodes(
         self, nodes_with_score: List[NodeWithScore]
     ) -> List[NodeWithScore]:
-        """Deduplicate nodes according to node id.
+        """
+        Deduplicate nodes according to node id.
         Keep the node with the highest score/first returned.
         """
         node_ids = set()
@@ -82,7 +84,8 @@ class RecursiveRetriever(BaseRetriever):
     def _query_retrieved_nodes(
         self, query_bundle: QueryBundle, nodes_with_score: List[NodeWithScore]
     ) -> Tuple[List[NodeWithScore], List[NodeWithScore]]:
-        """Query for retrieved nodes.
+        """
+        Query for retrieved nodes.
 
         If node is an IndexNode, then recursively query the retriever/query engine.
         If node is a TextNode, then simply return the node.
@@ -209,7 +212,8 @@ class RecursiveRetriever(BaseRetriever):
     def retrieve_all(
         self, query_bundle: QueryBundle
     ) -> Tuple[List[NodeWithScore], List[NodeWithScore]]:
-        """Retrieve all nodes.
+        """
+        Retrieve all nodes.
 
         Unlike default `retrieve` method, this also fetches additional sources.
 
