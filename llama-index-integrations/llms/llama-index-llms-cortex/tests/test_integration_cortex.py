@@ -369,9 +369,7 @@ def test_session_auth_token_generation(mock_session):
     )
 
     # Test the token extraction
-    token = cortex._generate_auth_token()
-    assert token == mock_session.connection.rest.token
-    assert token == "mock_jwt_token"
+    assert cortex._generate_auth_header() == 'Snowflake Token="mock_jwt_token"'
 
 
 def test_complete_with_session_auth(mock_cortex_with_session):
@@ -395,7 +393,7 @@ def test_complete_with_session_auth(mock_cortex_with_session):
         args, kwargs = mock_post.call_args
         headers = kwargs.get("headers", {})
         assert "Authorization" in headers
-        assert headers["Authorization"] == "Bearer mock_jwt_token"
+        assert headers["Authorization"] == 'Snowflake Token="mock_jwt_token"'
 
 
 def test_chat_with_session_auth(mock_cortex_with_session):
@@ -421,4 +419,4 @@ def test_chat_with_session_auth(mock_cortex_with_session):
         args, kwargs = mock_post.call_args
         headers = kwargs.get("headers", {})
         assert "Authorization" in headers
-        assert headers["Authorization"] == "Bearer mock_jwt_token"
+        assert headers["Authorization"] == 'Snowflake Token="mock_jwt_token"'

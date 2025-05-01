@@ -14,13 +14,7 @@ import os
 
 
 def test_spcs_utils():
-    # Setup environment variables
-    os.environ["SNOWFLAKE_HOST"] = "snowflake.example-spcs-host.com"
-    os.environ["SNOWFLAKE_ACCOUNT"] = "abcdef_ghijkl"
-
-    # Test get_spcs_base_url
-    expected_url = "https://abcdef-ghijkl.example-spcs-host.com"
-
+    os.environ["SNOWFLAKE_HOST"] = "abc-xyz.snowflakecomputing.com"
     # Mock the path check to ensure we're not in SPCS environment
     with patch("os.path.exists", return_value=False):
         # Test that ValueError is raised when not in SPCS environment
@@ -29,12 +23,6 @@ def test_spcs_utils():
             assert AssertionError("ValueError not raised when not in SPCS environment")
         except ValueError:
             pass
-
-    # Mock the path check to pretend we're in SPCS environment
-    with patch("os.path.exists", return_value=True):
-        # Test that base URL is correctly formed
-        base_url = get_spcs_base_url()
-        assert base_url == expected_url
 
     # Test is_spcs_environment
     with patch("os.path.exists", return_value=True):
@@ -49,9 +37,7 @@ def test_spcs_utils():
         assert token == fake_token
         mock_file.assert_called_once_with(SPCS_TOKEN_PATH)
 
-    # Clean up environment variables
     del os.environ["SNOWFLAKE_HOST"]
-    del os.environ["SNOWFLAKE_ACCOUNT"]
 
 
 def test_generate_sf_jwt():

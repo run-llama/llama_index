@@ -28,9 +28,7 @@ def is_spcs_environment() -> bool:
     Returns a boolean: whether or not we're in an SPCS environment.
     """
     return (
-        os.path.exists(SPCS_TOKEN_PATH)
-        and os.environ.get("SNOWFLAKE_HOST") is not None
-        and os.environ.get("SNOWFLAKE_ACCOUNT") is not None
+        os.path.exists(SPCS_TOKEN_PATH) and os.environ.get("SNOWFLAKE_HOST") is not None
     )
 
 
@@ -43,11 +41,7 @@ def get_spcs_base_url() -> str:
     """
     if not is_spcs_environment():
         raise ValueError("Cannot call get_spcs_base_url unless in an spcs environment.")
-    return "https://" + os.environ.get("SNOWFLAKE_HOST").replace(
-        "snowflake",
-        os.environ.get("SNOWFLAKE_ACCOUNT").lower().replace("_", "-"),
-        1,
-    )
+    return os.getenv("SNOWFLAKE_HOST")
 
 
 def generate_sf_jwt(sf_account: str, sf_user: str, sf_private_key_filepath: str) -> str:
