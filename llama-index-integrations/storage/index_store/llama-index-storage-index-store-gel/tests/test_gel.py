@@ -18,6 +18,8 @@ try:
 except subprocess.CalledProcessError as e:
     print(e)
 
+skip_in_cicd = os.environ.get("CI") is not None
+
 
 @pytest.fixture()
 def gel_kvstore() -> Generator[GelKVStore, None, None]:
@@ -37,7 +39,7 @@ def gel_indexstore(gel_kvstore: GelKVStore) -> GelIndexStore:
     return GelIndexStore(gel_kvstore=gel_kvstore)
 
 
-@pytest.mark.skipif(no_packages, reason="gel not installed")
+@pytest.mark.skipif(no_packages or skip_in_cicd, reason="gel not installed")
 def test_gel_index_store(gel_indexstore: GelIndexStore) -> None:
     index_struct = IndexGraph()
     index_store = gel_indexstore

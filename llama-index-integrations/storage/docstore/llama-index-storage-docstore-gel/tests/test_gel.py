@@ -19,6 +19,9 @@ except subprocess.CalledProcessError as e:
     print(e)
 
 
+skip_in_cicd = os.environ.get("CI") is not None
+
+
 @pytest.fixture()
 def documents() -> List[Document]:
     return [
@@ -54,7 +57,7 @@ def gel_docstore(gel_kvstore: GelKVStore) -> Generator[GelDocumentStore, None, N
                 docstore.delete_document(id_)
 
 
-@pytest.mark.skipif(no_packages, reason="gel not installed")
+@pytest.mark.skipif(no_packages or skip_in_cicd, reason="gel not installed")
 def test_gel_docstore(
     gel_docstore: GelDocumentStore, documents: List[Document]
 ) -> None:
@@ -81,7 +84,7 @@ def test_gel_docstore(
     assert len(ds.docs) == 1
 
 
-@pytest.mark.skipif(no_packages, reason="gel not installed")
+@pytest.mark.skipif(no_packages or skip_in_cicd, reason="gel not installed")
 def test_gel_docstore_hash(
     gel_docstore: GelDocumentStore, documents: List[Document]
 ) -> None:
