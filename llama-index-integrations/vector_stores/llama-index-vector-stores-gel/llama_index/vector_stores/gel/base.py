@@ -206,7 +206,8 @@ def get_filter_clause(filters: MetadataFilters) -> str:
 
 
 class GelVectorStore(BasePydanticVectorStore):
-    """Gel-backed vector store implementation.
+    """
+    Gel-backed vector store implementation.
 
     Stores and retrieves vectors using Gel database with pgvector extension.
     """
@@ -223,11 +224,13 @@ class GelVectorStore(BasePydanticVectorStore):
         collection_name: str = "default",
         record_type: str = "Record",
     ):
-        """Initialize GelVectorStore.
+        """
+        Initialize GelVectorStore.
 
         Args:
             collection_name: Name of the collection to store vectors in
             record_type: The record type name in Gel schema
+
         """
         super().__init__(
             collection_name=collection_name,
@@ -327,7 +330,7 @@ class GelVectorStore(BasePydanticVectorStore):
         ]
 
     async def aget_nodes(
-        self, node_ids: List[str] | None = None, filters: MetadataFilters | None = None
+        self, node_ids: Optional[List[str]] = None, filters: Optional[MetadataFilters] = None
     ) -> List[BaseNode]:
         """Async version of get_nodes."""
         assert filters is None, "Filters are not supported in get_nodes"

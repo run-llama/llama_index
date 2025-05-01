@@ -1,4 +1,5 @@
 import subprocess
+import os
 from typing import Generator
 
 import pytest
@@ -12,8 +13,12 @@ try:
 except ImportError:
     no_packages = True
 
+# Skip tests in CICD
+skip_in_cicd = os.environ.get("CI") is not None
+
 try:
-    subprocess.run(["gel", "project", "init", "--non-interactive"], check=True)
+    if not skip_in_cicd:
+        subprocess.run(["gel", "project", "init", "--non-interactive"], check=True)
 except subprocess.CalledProcessError as e:
     print(e)
 
@@ -46,7 +51,7 @@ async def gel_kvstore_async():
                 await kvstore.adelete(key)
 
 
-@pytest.mark.skipif(no_packages, reason="gel package not installed")
+@pytest.mark.skipif(no_packages or skip_in_cicd, reason="gel package not installed")
 def test_kvstore_basic(gel_kvstore: GelKVStore) -> None:
     test_key = "test_key_basic"
     test_blob = {"test_obj_key": "test_obj_val"}
@@ -61,8 +66,8 @@ def test_kvstore_basic(gel_kvstore: GelKVStore) -> None:
     assert deleted
 
 
-@pytest.mark.skipif(no_packages, reason="gel package not installed")
-@pytest.mark.asyncio()
+@pytest.mark.skipif(no_packages or skip_in_cicd, reason="gel package not installed")
+@pytest.mark.asyncio
 async def test_kvstore_async_basic(gel_kvstore_async: GelKVStore) -> None:
     test_key = "test_key_basic"
     test_blob = {"test_obj_key": "test_obj_val"}
@@ -77,7 +82,7 @@ async def test_kvstore_async_basic(gel_kvstore_async: GelKVStore) -> None:
     assert deleted
 
 
-@pytest.mark.skipif(no_packages, reason="gel package not installed")
+@pytest.mark.skipif(no_packages or skip_in_cicd, reason="gel package not installed")
 def test_kvstore_delete(gel_kvstore: GelKVStore) -> None:
     test_key = "test_key_delete"
     test_blob = {"test_obj_key": "test_obj_val"}
@@ -90,8 +95,8 @@ def test_kvstore_delete(gel_kvstore: GelKVStore) -> None:
     assert blob is None
 
 
-@pytest.mark.skipif(no_packages, reason="gel package not installed")
-@pytest.mark.asyncio()
+@pytest.mark.skipif(no_packages or skip_in_cicd, reason="gel package not installed")
+@pytest.mark.asyncio
 async def test_kvstore_adelete(gel_kvstore_async: GelKVStore) -> None:
     test_key = "test_key_delete"
     test_blob = {"test_obj_key": "test_obj_val"}
@@ -104,7 +109,7 @@ async def test_kvstore_adelete(gel_kvstore_async: GelKVStore) -> None:
     assert blob is None
 
 
-@pytest.mark.skipif(no_packages, reason="gel package not installed")
+@pytest.mark.skipif(no_packages or skip_in_cicd, reason="gel package not installed")
 def test_kvstore_getall(gel_kvstore: GelKVStore) -> None:
     test_key_1 = "test_key_1"
     test_blob_1 = {"test_obj_key": "test_obj_val"}
@@ -124,8 +129,8 @@ def test_kvstore_getall(gel_kvstore: GelKVStore) -> None:
     gel_kvstore.delete(test_key_2)
 
 
-@pytest.mark.skipif(no_packages, reason="gel package not installed")
-@pytest.mark.asyncio()
+@pytest.mark.skipif(no_packages or skip_in_cicd, reason="gel package not installed")
+@pytest.mark.asyncio
 async def test_kvstore_agetall(gel_kvstore_async: GelKVStore) -> None:
     test_key_1 = "test_key_1"
     test_blob_1 = {"test_obj_key": "test_obj_val"}
@@ -145,8 +150,8 @@ async def test_kvstore_agetall(gel_kvstore_async: GelKVStore) -> None:
     await gel_kvstore_async.adelete(test_key_2)
 
 
-@pytest.mark.skipif(no_packages, reason="gel package not installed")
-@pytest.mark.asyncio()
+@pytest.mark.skipif(no_packages or skip_in_cicd, reason="gel package not installed")
+@pytest.mark.asyncio
 async def test_kvstore_putall(gel_kvstore_async: GelKVStore) -> None:
     test_key = "test_key_putall_1"
     test_blob = {"test_obj_key": "test_obj_val"}
