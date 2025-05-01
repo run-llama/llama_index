@@ -123,7 +123,7 @@ def test_delete_last_message(gel_chat_store: GelChatStore):
     assert remaining_messages[0].content == "First message"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_gel_add_message(gel_chat_store_async: GelChatStore):
     key = "test_async_add_key"
 
@@ -135,7 +135,7 @@ async def test_async_gel_add_message(gel_chat_store_async: GelChatStore):
     assert result[0].content == "async_add_message_test" and result[0].role == "user"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_set_and_retrieve_messages(gel_chat_store_async: GelChatStore):
     messages = [
         ChatMessage(content="First async message", role="user"),
@@ -150,7 +150,7 @@ async def test_async_set_and_retrieve_messages(gel_chat_store_async: GelChatStor
     assert retrieved_messages[1].content == "Second async message"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_delete_messages(gel_chat_store_async: GelChatStore):
     messages = [ChatMessage(content="Async message to delete", role="user")]
     key = "test_async_delete_key"
@@ -161,7 +161,7 @@ async def test_async_delete_messages(gel_chat_store_async: GelChatStore):
     assert retrieved_messages == []
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_delete_specific_message(gel_chat_store_async: GelChatStore):
     messages = [
         ChatMessage(content="Async keep me", role="user"),
@@ -177,7 +177,7 @@ async def test_async_delete_specific_message(gel_chat_store_async: GelChatStore)
     assert deleted_message.content == "Async delete me"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_get_keys(gel_chat_store_async: GelChatStore):
     # Add some test data
     await gel_chat_store_async.aset_messages(
@@ -192,7 +192,7 @@ async def test_async_get_keys(gel_chat_store_async: GelChatStore):
     assert "async_key2" in keys
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_delete_last_message(gel_chat_store_async: GelChatStore):
     key = "test_async_delete_last_message"
     messages = [
