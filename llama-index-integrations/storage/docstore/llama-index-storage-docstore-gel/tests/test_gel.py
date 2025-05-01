@@ -1,6 +1,7 @@
-from typing import List, Generator
 import subprocess
 import pytest
+import os
+from typing import List, Generator
 from llama_index.core.schema import BaseNode, Document
 from llama_index.storage.docstore.gel import (
     GelDocumentStore,
@@ -13,8 +14,11 @@ try:
     no_packages = False
 except ImportError:
     no_packages = True
+
+skip_in_cicd = os.environ.get("CI") is not None
 try:
-    subprocess.run(["gel", "project", "init", "--non-interactive"], check=True)
+    if not skip_in_cicd:
+        subprocess.run(["gel", "project", "init", "--non-interactive"], check=True)
 except subprocess.CalledProcessError as e:
     print(e)
 
@@ -54,7 +58,7 @@ def gel_docstore(gel_kvstore: GelKVStore) -> Generator[GelDocumentStore, None, N
                 docstore.delete_document(id_)
 
 
-@pytest.mark.skipif(no_packages, reason="gel not installed")
+@pytest.mark.skipif(no_packages or skip_in_cicd, reason="gel not installed")
 def test_gel_docstore(
     gel_docstore: GelDocumentStore, documents: List[Document]
 ) -> None:
@@ -81,7 +85,7 @@ def test_gel_docstore(
     assert len(ds.docs) == 1
 
 
-@pytest.mark.skipif(no_packages, reason="gel not installed")
+@pytest.mark.skipif(no_packages or skip_in_cicd, reason="gel not installed")
 def test_gel_docstore_hash(
     gel_docstore: GelDocumentStore, documents: List[Document]
 ) -> None:
