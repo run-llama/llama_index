@@ -6,7 +6,8 @@ from llama_index.storage.kvstore.gel import GelKVStore
 
 
 class GelDocumentStore(KVDocumentStore):
-    """Gel Document (Node) store.
+    """
+    Gel Document (Node) store.
 
     A Gel store for Document and Node objects.
 

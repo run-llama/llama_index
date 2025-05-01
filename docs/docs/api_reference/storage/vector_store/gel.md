@@ -1,4 +1,4 @@
-::: llama_index.vector_stores.gel.
+::: llama_index.vector_stores.gel
     options:
       members:
         - GelVectorStore

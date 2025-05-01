@@ -1,5 +1,6 @@
 import pytest
 import subprocess
+import os
 from typing import Generator
 from llama_index.core.data_structs.data_structs import IndexGraph
 from llama_index.storage.index_store.gel import (
@@ -13,8 +14,11 @@ try:
     no_packages = False
 except ImportError:
     no_packages = True
+
+skip_in_cicd = os.environ.get("CI") is not None
 try:
-    subprocess.run(["gel", "project", "init", "--non-interactive"], check=True)
+    if not skip_in_cicd:
+        subprocess.run(["gel", "project", "init", "--non-interactive"], check=True)
 except subprocess.CalledProcessError as e:
     print(e)
 
@@ -37,7 +41,7 @@ def gel_indexstore(gel_kvstore: GelKVStore) -> GelIndexStore:
     return GelIndexStore(gel_kvstore=gel_kvstore)
 
 
-@pytest.mark.skipif(no_packages, reason="gel not installed")
+@pytest.mark.skipif(no_packages or skip_in_cicd, reason="gel not installed")
 def test_gel_index_store(gel_indexstore: GelIndexStore) -> None:
     index_struct = IndexGraph()
     index_store = gel_indexstore

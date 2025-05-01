@@ -5,7 +5,8 @@ from llama_index.storage.kvstore.gel import GelKVStore
 
 
 class GelIndexStore(KVIndexStore):
-    """Gel Index store.
+    """
+    Gel Index store.
 
     Args:
         gel_kvstore (GelKVStore): Gel key-value store
