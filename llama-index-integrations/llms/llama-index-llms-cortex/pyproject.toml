@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-cortex"
-version = "0.2.0"
+version = "0.3.0"
 description = "llama-index llms cortex integration"
 authors = [
     {name = "Christopher Klapperich", email = "cklapperichmn@gmail.com"},

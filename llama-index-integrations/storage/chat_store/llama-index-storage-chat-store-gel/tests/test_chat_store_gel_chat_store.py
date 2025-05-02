@@ -1,21 +1,23 @@
 import subprocess
-from typing import Generator
 import pytest
 import pytest_asyncio
+import os
+from typing import Generator
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store.base import BaseChatStore
 from llama_index.storage.chat_store.gel import GelChatStore
 
+skip_in_cicd = os.environ.get("CI") is not None
+
+try:
+    if not skip_in_cicd:
+        subprocess.run(["gel", "project", "init", "--non-interactive"], check=True)
+except subprocess.CalledProcessError as e:
+    print(e)
 
 def test_class():
     names_of_base_classes = [b.__name__ for b in GelChatStore.__mro__]
     assert BaseChatStore.__name__ in names_of_base_classes
-
-
-try:
-    subprocess.run(["gel", "project", "init", "--non-interactive"], check=True)
-except subprocess.CalledProcessError as e:
-    print(e)
 
 
 @pytest.fixture()
@@ -45,6 +47,7 @@ async def gel_chat_store_async():
                 await chat_store.adelete_messages(key)
 
 
+@pytest.mark.skipif(skip_in_cicd, reason="gel package not installed")
 def test_gel_add_message(gel_chat_store: GelChatStore):
     key = "test_add_key"
 
@@ -56,6 +59,7 @@ def test_gel_add_message(gel_chat_store: GelChatStore):
     assert result[0].content == "add_message_test" and result[0].role == "user"
 
 
+@pytest.mark.skipif(skip_in_cicd, reason="gel package not installed")
 def test_set_and_retrieve_messages(gel_chat_store: GelChatStore):
     messages = [
         ChatMessage(content="First message", role="user"),
@@ -70,6 +74,7 @@ def test_set_and_retrieve_messages(gel_chat_store: GelChatStore):
     assert retrieved_messages[1].content == "Second message"
 
 
+@pytest.mark.skipif(skip_in_cicd, reason="gel package not installed")
 def test_delete_messages(gel_chat_store: GelChatStore):
     messages = [ChatMessage(content="Message to delete", role="user")]
     key = "test_delete_key"
@@ -80,6 +85,7 @@ def test_delete_messages(gel_chat_store: GelChatStore):
     assert retrieved_messages == []
 
 
+@pytest.mark.skipif(skip_in_cicd, reason="gel package not installed")
 def test_delete_specific_message(gel_chat_store: GelChatStore):
     messages = [
         ChatMessage(content="Keep me", role="user"),
@@ -95,6 +101,7 @@ def test_delete_specific_message(gel_chat_store: GelChatStore):
     assert deleted_message.content == "Delete me"
 
 
+@pytest.mark.skipif(skip_in_cicd, reason="gel package not installed")
 def test_get_keys(gel_chat_store: GelChatStore):
     # Add some test data
     gel_chat_store.set_messages("key1", [ChatMessage(content="Test1", role="user")])
@@ -105,6 +112,7 @@ def test_get_keys(gel_chat_store: GelChatStore):
     assert "key2" in keys
 
 
+@pytest.mark.skipif(skip_in_cicd, reason="gel package not installed")
 def test_delete_last_message(gel_chat_store: GelChatStore):
     key = "test_delete_last_message"
     messages = [
@@ -123,7 +131,8 @@ def test_delete_last_message(gel_chat_store: GelChatStore):
     assert remaining_messages[0].content == "First message"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.skipif(skip_in_cicd, reason="gel package not installed")
+@pytest.mark.asyncio
 async def test_async_gel_add_message(gel_chat_store_async: GelChatStore):
     key = "test_async_add_key"
 
@@ -135,7 +144,8 @@ async def test_async_gel_add_message(gel_chat_store_async: GelChatStore):
     assert result[0].content == "async_add_message_test" and result[0].role == "user"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.skipif(skip_in_cicd, reason="gel package not installed")
+@pytest.mark.asyncio
 async def test_async_set_and_retrieve_messages(gel_chat_store_async: GelChatStore):
     messages = [
         ChatMessage(content="First async message", role="user"),
@@ -150,7 +160,8 @@ async def test_async_set_and_retrieve_messages(gel_chat_store_async: GelChatStor
     assert retrieved_messages[1].content == "Second async message"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.skipif(skip_in_cicd, reason="gel package not installed")
+@pytest.mark.asyncio
 async def test_async_delete_messages(gel_chat_store_async: GelChatStore):
     messages = [ChatMessage(content="Async message to delete", role="user")]
     key = "test_async_delete_key"
@@ -161,7 +172,8 @@ async def test_async_delete_messages(gel_chat_store_async: GelChatStore):
     assert retrieved_messages == []
 
 
-@pytest.mark.asyncio()
+@pytest.mark.skipif(skip_in_cicd, reason="gel package not installed")
+@pytest.mark.asyncio
 async def test_async_delete_specific_message(gel_chat_store_async: GelChatStore):
     messages = [
         ChatMessage(content="Async keep me", role="user"),
@@ -177,7 +189,8 @@ async def test_async_delete_specific_message(gel_chat_store_async: GelChatStore)
     assert deleted_message.content == "Async delete me"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.skipif(skip_in_cicd, reason="gel package not installed")
+@pytest.mark.asyncio
 async def test_async_get_keys(gel_chat_store_async: GelChatStore):
     # Add some test data
     await gel_chat_store_async.aset_messages(
@@ -192,7 +205,8 @@ async def test_async_get_keys(gel_chat_store_async: GelChatStore):
     assert "async_key2" in keys
 
 
-@pytest.mark.asyncio()
+@pytest.mark.skipif(skip_in_cicd, reason="gel package not installed")
+@pytest.mark.asyncio
 async def test_async_delete_last_message(gel_chat_store_async: GelChatStore):
     key = "test_async_delete_last_message"
     messages = [

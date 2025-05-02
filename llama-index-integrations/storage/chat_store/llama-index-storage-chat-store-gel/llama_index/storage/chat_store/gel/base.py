@@ -135,7 +135,8 @@ GET_KEYS_QUERY = format_query(
 
 
 class GelChatStore(BaseChatStore):
-    """Chat store implementation using Gel database.
+    """
+    Chat store implementation using Gel database.
 
     Stores and retrieves chat messages using Gel as the backend storage.
     """
@@ -148,10 +149,12 @@ class GelChatStore(BaseChatStore):
         self,
         record_type: str = "Record",
     ):
-        """Initialize GelChatStore.
+        """
+        Initialize GelChatStore.
 
         Args:
             record_type: The name of the record type in Gel schema.
+
         """
         super().__init__(record_type=record_type)
 
