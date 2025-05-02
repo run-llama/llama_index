@@ -51,12 +51,12 @@ from anthropic.types import (
     ContentBlockDeltaEvent,
     ContentBlockStartEvent,
     ContentBlockStopEvent,
-    SignatureDelta,
     TextBlock,
     TextDelta,
     ThinkingBlock,
     ThinkingDelta,
     ToolUseBlock,
+    SignatureDelta,
 )
 
 if TYPE_CHECKING:
@@ -234,10 +234,6 @@ class Anthropic(FunctionCallingLLM):
 
     @classmethod
     def class_name(cls) -> str:
-        return "Anthropic_LLM"
-
-    @classmethod
-    def foo_bar(cls) -> str:
         return "Anthropic_LLM"
 
     @property
