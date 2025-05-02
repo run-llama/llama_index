@@ -6,8 +6,8 @@ import subprocess
 import sys
 import time
 from enum import Enum, auto
-
 from pathlib import Path
+from typing import Optional
 
 import tomli
 from packaging import specifiers, version
@@ -20,6 +20,7 @@ class ResultStatus(Enum):
     TESTS_FAILED = auto()
     TESTS_PASSED = auto()
     SKIPPED = auto()
+    COVERAGE_FAILED = auto()
 
 
 def parse_args():
@@ -37,6 +38,7 @@ def parse_args():
     parser.add_argument(
         "--workers", default=8, help="Number of concurrent processes running pytest"
     )
+    parser.add_argument("--cov-fail-under", help="Check coverage of changed files")
     return parser.parse_args()
 
 
@@ -88,7 +90,9 @@ def get_dep_names(pyproject_data: dict) -> set[str]:
 def is_python_version_compatible(pyproject_data: dict) -> bool:
     """Check if the package is compatible with the current Python version using packaging."""
     # Get current Python version
-    current_version = version.Version(f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}")
+    current_version = version.Version(
+        f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    )
 
     # Get Python version requirements if they exist
     requires_python = pyproject_data.get("project", {}).get("requires-python", None)
@@ -105,7 +109,9 @@ def is_python_version_compatible(pyproject_data: dict) -> bool:
         return spec.contains(str(current_version))
     except Exception as e:
         # If there's any error in parsing, log it and assume compatibility
-        print(f"Warning: Could not parse Python version specifier '{requires_python}': {e}")
+        print(
+            f"Warning: Could not parse Python version specifier '{requires_python}': {e}"
+        )
         return True
 
 
@@ -180,7 +186,13 @@ def find_utils(root_path: str) -> list[str]:
     return package_roots
 
 
-def run_pytest(root_dir: str, package_dir: str, changed_packages: set[str]):
+def run_pytest(
+    root_dir: str,
+    package_dir: str,
+    changed_packages: set[str],
+    base_ref: str,
+    cov_fail_under: Optional[int] = None,
+):
     # Check Python version compatibility first
     pyproject_path = Path(package_dir) / "pyproject.toml"
     if pyproject_path.exists():
@@ -247,30 +259,67 @@ def run_pytest(root_dir: str, package_dir: str, changed_packages: set[str]):
                 "time": f"{elapsed_time:.2f}s",
             }
 
+    pytest_cmd = [
+        "uv",
+        "run",
+        "--",
+        "pytest",
+        "-q",
+        "--disable-warnings",
+        "--disable-pytest-warnings",
+    ]
+    if cov_fail_under is not None:
+        pytest_cmd += [
+            "--cov=.",
+            "--cov-report=xml",
+        ]
     result = subprocess.run(
-        [
-            "uv",
-            "run",
-            "--",
-            "pytest",
-            "-q",
-            "--disable-warnings",
-            "--disable-pytest-warnings",
-        ],
+        pytest_cmd,
         cwd=package_dir,
         text=True,
         capture_output=True,
         env=env,
     )
-    if result.returncode == 0:
-        status = ResultStatus.TESTS_PASSED
-    else:
-        status = ResultStatus.TESTS_FAILED
+    if result.returncode != 0:
+        elapsed_time = time.perf_counter() - start
+        return {
+            "package": str(package_dir),
+            "status": ResultStatus.TESTS_FAILED,
+            "stdout": result.stdout,
+            "stderr": debug_output + "\n" + result.stderr,
+            "time": f"{elapsed_time:.2f}s",
+        }
+
+    if cov_fail_under is not None:
+        result = subprocess.run(
+            [
+                "uv",
+                "run",
+                "--",
+                "diff-cover",
+                "coverage.xml",
+                f"--fail-under={cov_fail_under}",
+                f"--compare-branch={base_ref}",
+            ],
+            cwd=package_dir,
+            text=True,
+            capture_output=True,
+            env=env,
+        )
+        if result.returncode != 0:
+            elapsed_time = time.perf_counter() - start
+            return {
+                "package": str(package_dir),
+                "status": ResultStatus.COVERAGE_FAILED,
+                "stdout": result.stdout,
+                "stderr": result.stderr,
+                "time": f"{elapsed_time:.2f}s",
+            }
 
     elapsed_time = time.perf_counter() - start
     return {
         "package": str(package_dir),
-        "status": status,
+        "status": ResultStatus.TESTS_PASSED,
         "stdout": result.stdout,
         "stderr": result.stderr,
         "time": f"{elapsed_time:.2f}s",
@@ -308,6 +357,8 @@ def main():
                 str(Path(args.repo_root).resolve()),
                 package,
                 changed_packages,
+                args.base_ref,
+                args.cov_fail_under,
             ): package
             for package in sorted(packages_to_test)
         }
@@ -338,7 +389,9 @@ def main():
     skipped = [r["package"] for r in results if r["status"] == ResultStatus.SKIPPED]
 
     if skipped:
-        print(f"\n{len(skipped)} packages were skipped due to Python version incompatibility:")
+        print(
+            f"\n{len(skipped)} packages were skipped due to Python version incompatibility:"
+        )
         for p in skipped:
             print(p)
 
