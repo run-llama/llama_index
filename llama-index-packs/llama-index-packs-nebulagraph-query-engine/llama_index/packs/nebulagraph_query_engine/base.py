@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 from llama_index.core import (
     KnowledgeGraphIndex,
     QueryBundle,
-    ServiceContext,
+    Settings,
     StorageContext,
     VectorStoreIndex,
     get_response_synthesizer,
@@ -72,13 +72,12 @@ class NebulaGraphQueryEnginePack(BaseLlamaPack):
 
         # define LLM
         self.llm = OpenAI(temperature=0.1, model="gpt-3.5-turbo")
-        self.service_context = ServiceContext.from_defaults(llm=self.llm)
+        Settings.llm = self.llm
 
         nebulagraph_index = KnowledgeGraphIndex.from_documents(
             documents=docs,
             storage_context=nebulagraph_storage_context,
             max_triplets_per_chunk=max_triplets_per_chunk,
-            service_context=self.service_context,
             space_name=space_name,
             edge_types=edge_types,
             rel_prop_names=rel_prop_names,
@@ -126,8 +125,7 @@ class NebulaGraphQueryEnginePack(BaseLlamaPack):
 
             # create response synthesizer
             nebulagraph_response_synthesizer = get_response_synthesizer(
-                service_context=self.service_context,
-                response_mode="tree_summarize",
+                response_mode="tree_summarize"
             )
 
             # Custom combo query engine
@@ -142,7 +140,6 @@ class NebulaGraphQueryEnginePack(BaseLlamaPack):
 
             self.query_engine = KnowledgeGraphQueryEngine(
                 storage_context=nebulagraph_storage_context,
-                service_context=self.service_context,
                 llm=self.llm,
                 verbose=True,
             )
@@ -154,13 +151,12 @@ class NebulaGraphQueryEnginePack(BaseLlamaPack):
 
             nebulagraph_graph_rag_retriever = KnowledgeGraphRAGRetriever(
                 storage_context=nebulagraph_storage_context,
-                service_context=self.service_context,
                 llm=self.llm,
                 verbose=True,
             )
 
             self.query_engine = RetrieverQueryEngine.from_args(
-                nebulagraph_graph_rag_retriever, service_context=self.service_context
+                nebulagraph_graph_rag_retriever
             )
 
         else:
@@ -171,7 +167,6 @@ class NebulaGraphQueryEnginePack(BaseLlamaPack):
         """Get modules."""
         return {
             "llm": self.llm,
-            "service_context": self.service_context,
             "query_engine": self.query_engine,
         }
 

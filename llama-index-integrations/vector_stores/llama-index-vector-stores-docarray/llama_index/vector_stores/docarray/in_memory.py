@@ -8,6 +8,16 @@ class DocArrayInMemoryVectorStore(DocArrayVectorStore):
     """Class representing a DocArray In-Memory vector store.
 
     This class is a document index provided by Docarray that stores documents in memory.
+
+    Examples:
+        `pip install llama-index-vector-stores-docarray`
+
+        ```python
+        from llama_index.vector_stores.docarray import DocArrayInMemoryVectorStore
+
+        # Create an instance of DocArrayInMemoryVectorStore
+        vector_store = DocArrayInMemoryVectorStore()
+        ```
     """
 
     def __init__(

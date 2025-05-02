@@ -5,10 +5,10 @@ from llama_index.storage.kvstore.postgres import PostgresKVStore
 
 
 class PostgresIndexStore(KVIndexStore):
-    """Mongo Index store.
+    """Postgres Index store.
 
     Args:
-        mongo_kvstore (MongoDBKVStore): MongoDB key-value store
+        postgres_kvstore (PostgresKVStore): Postgres key-value store
         namespace (str): namespace for the index store
 
     """
@@ -17,9 +17,12 @@ class PostgresIndexStore(KVIndexStore):
         self,
         postgres_kvstore: PostgresKVStore,
         namespace: Optional[str] = None,
+        collection_suffix: Optional[str] = None,
     ) -> None:
-        """Init a MongoIndexStore."""
-        super().__init__(postgres_kvstore, namespace=namespace)
+        """Init a PostgresIndexStore."""
+        super().__init__(
+            postgres_kvstore, namespace=namespace, collection_suffix=collection_suffix
+        )
 
     @classmethod
     def from_uri(
@@ -31,6 +34,7 @@ class PostgresIndexStore(KVIndexStore):
         perform_setup: bool = True,
         debug: bool = False,
         use_jsonb: bool = False,
+        collection_suffix: Optional[str] = None,
     ) -> "PostgresIndexStore":
         """Load a PostgresIndexStore from a PostgresURI."""
         postgres_kvstore = PostgresKVStore.from_uri(
@@ -41,7 +45,7 @@ class PostgresIndexStore(KVIndexStore):
             debug=debug,
             use_jsonb=use_jsonb,
         )
-        return cls(postgres_kvstore, namespace)
+        return cls(postgres_kvstore, namespace, collection_suffix)
 
     @classmethod
     def from_params(
@@ -57,6 +61,7 @@ class PostgresIndexStore(KVIndexStore):
         perform_setup: bool = True,
         debug: bool = False,
         use_jsonb: bool = False,
+        collection_suffix: Optional[str] = None,
     ) -> "PostgresIndexStore":
         """Load a PostgresIndexStore from a Postgres host and port."""
         postgres_kvstore = PostgresKVStore.from_params(
@@ -71,4 +76,4 @@ class PostgresIndexStore(KVIndexStore):
             debug=debug,
             use_jsonb=use_jsonb,
         )
-        return cls(postgres_kvstore, namespace)
+        return cls(postgres_kvstore, namespace, collection_suffix)

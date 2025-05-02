@@ -25,16 +25,16 @@ authors = ["Your Name <you@example.com>"]
 description = "llama-index readers nougat_ocr integration"
 exclude = ["**/BUILD"]
 keywords = ["academic papers", "ocr", "pdf"]
-license = "MIT"
+license = "GPL-2.0-or-later"
 maintainers = ["mdarshad1000"]
 name = "llama-index-readers-nougat-ocr"
 readme = "README.md"
-version = "0.1.3"
+version = "0.3.0"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.1"
+python = ">=3.9,<4.0"
 nougat-ocr = "^0.1.17"
+llama-index-core = "^0.12.0"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"

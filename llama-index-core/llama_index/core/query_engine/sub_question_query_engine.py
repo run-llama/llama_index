@@ -17,12 +17,7 @@ from llama_index.core.response_synthesizers import (
     get_response_synthesizer,
 )
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.tools.query_engine import QueryEngineTool
 from llama_index.core.utils import get_color_mapping, print_text
 
@@ -93,17 +88,14 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         llm: Optional[LLM] = None,
         question_gen: Optional[BaseQuestionGenerator] = None,
         response_synthesizer: Optional[BaseSynthesizer] = None,
-        service_context: Optional[ServiceContext] = None,
         verbose: bool = True,
         use_async: bool = True,
     ) -> "SubQuestionQueryEngine":
-        callback_manager = callback_manager_from_settings_or_context(
-            Settings, service_context
-        )
+        callback_manager = Settings.callback_manager
         if len(query_engine_tools) > 0:
             callback_manager = query_engine_tools[0].query_engine.callback_manager
 
-        llm = llm or llm_from_settings_or_context(Settings, service_context)
+        llm = llm or Settings.llm
         if question_gen is None:
             try:
                 from llama_index.question_gen.openai import (
@@ -125,7 +117,6 @@ class SubQuestionQueryEngine(BaseQueryEngine):
         synth = response_synthesizer or get_response_synthesizer(
             llm=llm,
             callback_manager=callback_manager,
-            service_context=service_context,
             use_async=use_async,
         )
 

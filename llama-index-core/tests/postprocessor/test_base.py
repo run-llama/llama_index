@@ -22,7 +22,6 @@ from llama_index.core.schema import (
     RelatedNodeInfo,
     TextNode,
 )
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.storage.docstore.simple_docstore import SimpleDocumentStore
 
 spacy_installed = bool(find_spec("spacy"))
@@ -70,7 +69,10 @@ def test_forward_back_processor(tmp_path: Path) -> None:
         docstore=docstore, num_nodes=1, mode="next"
     )
     processed_nodes = node_postprocessor.postprocess_nodes(
-        [nodes_with_scores[1], nodes_with_scores[2]]
+        [
+            nodes_with_scores[1],
+            nodes_with_scores[2],
+        ]
     )
     assert len(processed_nodes) == 3
     assert processed_nodes[0].node.node_id == "2"
@@ -82,7 +84,10 @@ def test_forward_back_processor(tmp_path: Path) -> None:
         docstore=docstore, num_nodes=1, mode="previous"
     )
     processed_nodes = node_postprocessor.postprocess_nodes(
-        [nodes_with_scores[1], nodes_with_scores[2]]
+        [
+            nodes_with_scores[1],
+            nodes_with_scores[2],
+        ]
     )
     assert len(processed_nodes) == 3
     assert processed_nodes[0].node.node_id == "3"
@@ -118,7 +123,10 @@ def test_forward_back_processor(tmp_path: Path) -> None:
         docstore=docstore, num_nodes=1, mode="both"
     )
     processed_nodes = node_postprocessor.postprocess_nodes(
-        [nodes_with_scores[0], nodes_with_scores[4]]
+        [
+            nodes_with_scores[0],
+            nodes_with_scores[4],
+        ]
     )
     assert len(processed_nodes) == 4
     # nodes are sorted
@@ -132,7 +140,10 @@ def test_forward_back_processor(tmp_path: Path) -> None:
         docstore=docstore, num_nodes=0, mode="both"
     )
     processed_nodes = node_postprocessor.postprocess_nodes(
-        [nodes_with_scores[0], nodes_with_scores[4]]
+        [
+            nodes_with_scores[0],
+            nodes_with_scores[4],
+        ]
     )
     assert len(processed_nodes) == 2
     # nodes are sorted
@@ -144,9 +155,7 @@ def test_forward_back_processor(tmp_path: Path) -> None:
         PrevNextNodePostprocessor(docstore=docstore, num_nodes=4, mode="asdfasdf")
 
 
-def test_fixed_recency_postprocessor(
-    mock_service_context: ServiceContext,
-) -> None:
+def test_fixed_recency_postprocessor() -> None:
     """Test fixed recency processor."""
     # try in metadata
     nodes = [
@@ -177,9 +186,7 @@ def test_fixed_recency_postprocessor(
     ]
     node_with_scores = [NodeWithScore(node=node) for node in nodes]
 
-    postprocessor = FixedRecencyPostprocessor(
-        top_k=1, service_context=mock_service_context
-    )
+    postprocessor = FixedRecencyPostprocessor(top_k=1)
     query_bundle: QueryBundle = QueryBundle(query_str="What is?")
     result_nodes = postprocessor.postprocess_nodes(
         node_with_scores, query_bundle=query_bundle
@@ -191,9 +198,7 @@ def test_fixed_recency_postprocessor(
     )
 
 
-def test_embedding_recency_postprocessor(
-    mock_service_context: ServiceContext,
-) -> None:
+def test_embedding_recency_postprocessor() -> None:
     """Test fixed recency processor."""
     # try in node info
     nodes = [
@@ -232,7 +237,6 @@ def test_embedding_recency_postprocessor(
 
     postprocessor = EmbeddingRecencyPostprocessor(
         top_k=1,
-        embed_model=mock_service_context.embed_model,
         in_metadata=False,
         query_embedding_tmpl="{context_str}",
     )

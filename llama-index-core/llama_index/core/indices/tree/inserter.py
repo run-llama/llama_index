@@ -16,11 +16,7 @@ from llama_index.core.prompts.default_prompts import (
     DEFAULT_SUMMARY_PROMPT,
 )
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.storage.docstore import BaseDocumentStore
 from llama_index.core.storage.docstore.registry import get_default_docstore
 
@@ -31,7 +27,6 @@ class TreeIndexInserter:
     def __init__(
         self,
         index_graph: IndexGraph,
-        service_context: Optional[ServiceContext] = None,
         llm: Optional[LLM] = None,
         num_children: int = 10,
         insert_prompt: BasePromptTemplate = DEFAULT_INSERT_PROMPT,
@@ -45,7 +40,7 @@ class TreeIndexInserter:
         self.summary_prompt = summary_prompt
         self.insert_prompt = insert_prompt
         self.index_graph = index_graph
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         self._prompt_helper = Settings._prompt_helper or PromptHelper.from_llm_metadata(
             self._llm.metadata,
         )
@@ -82,6 +77,7 @@ class TreeIndexInserter:
                 text_chunks=[
                     node.get_content(metadata_mode=MetadataMode.LLM) for node in half1
                 ],
+                llm=self._llm,
             )
             text_chunk1 = "\n".join(truncated_chunks)
 
@@ -94,6 +90,7 @@ class TreeIndexInserter:
                 text_chunks=[
                     node.get_content(metadata_mode=MetadataMode.LLM) for node in half2
                 ],
+                llm=self._llm,
             )
             text_chunk2 = "\n".join(truncated_chunks)
             summary2 = self._llm.predict(self.summary_prompt, context_str=text_chunk2)
@@ -134,6 +131,7 @@ class TreeIndexInserter:
             text_splitter = self._prompt_helper.get_text_splitter_given_prompt(
                 prompt=self.insert_prompt,
                 num_chunks=len(cur_graph_node_list),
+                llm=self._llm,
             )
             numbered_text = get_numbered_text_from_nodes(
                 cur_graph_node_list, text_splitter=text_splitter
@@ -168,6 +166,7 @@ class TreeIndexInserter:
                     node.get_content(metadata_mode=MetadataMode.LLM)
                     for node in cur_graph_node_list
                 ],
+                llm=self._llm,
             )
             text_chunk = "\n".join(truncated_chunks)
             new_summary = self._llm.predict(self.summary_prompt, context_str=text_chunk)

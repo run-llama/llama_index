@@ -25,7 +25,6 @@ from llama_index.core.indices.base import IndexType
 from llama_index.core.indices.base_retriever import BaseRetriever
 from llama_index.core.indices.managed.base import BaseManagedIndex
 from llama_index.core.indices.query.base import BaseQueryEngine
-from llama_index.core.indices.service_context import ServiceContext
 from llama_index.core.llms.utils import LLMType
 from llama_index.core.schema import BaseNode, Document, TransformComponent
 from llama_index.core.storage.storage_context import StorageContext
@@ -50,7 +49,6 @@ class GoogleIndex(BaseManagedIndex):
         vector_store: GoogleVectorStore,
         embed_model: Optional[BaseEmbedding] = None,
         # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Creates an instance of GoogleIndex.
@@ -66,7 +64,6 @@ class GoogleIndex(BaseManagedIndex):
 
         super().__init__(
             index_struct=self._index.index_struct,
-            service_context=service_context,
             **kwargs,
         )
 
@@ -125,7 +122,6 @@ class GoogleIndex(BaseManagedIndex):
         callback_manager: Optional[CallbackManager] = None,
         transformations: Optional[List[TransformComponent]] = None,
         # deprecated
-        service_context: Optional[ServiceContext] = None,
         embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
     ) -> IndexType:
@@ -136,7 +132,6 @@ class GoogleIndex(BaseManagedIndex):
         instance = cls(
             vector_store=GoogleVectorStore.create_corpus(display_name=new_display_name),
             embed_model=embed_model,
-            service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
             callback_manager=callback_manager,
@@ -147,7 +142,6 @@ class GoogleIndex(BaseManagedIndex):
         index = cast(GoogleIndex, instance)
         index.insert_documents(
             documents=documents,
-            service_context=service_context,
         )
 
         return instance
@@ -250,8 +244,6 @@ class GoogleIndex(BaseManagedIndex):
             answer_style=answer_style,
             safety_setting=safety_setting,
         )
-        if "service_context" not in local_kwargs:
-            local_kwargs["service_context"] = self._service_context
 
         return RetrieverQueryEngine.from_args(**local_kwargs)
 

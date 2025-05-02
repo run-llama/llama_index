@@ -1,6 +1,6 @@
 """Test tree summarize."""
 
-from typing import Any, List, Sequence
+from typing import Any, List, Sequence, Optional
 from unittest.mock import Mock, patch
 
 import pytest
@@ -10,16 +10,15 @@ from llama_index.core.llms.mock import MockLLM
 from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.response_synthesizers import TreeSummarize
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.service_context_elements.llm_predictor import LLMPredictor
 
 
 @pytest.fixture()
-def mock_service_context_merge_chunks(
-    mock_service_context: ServiceContext,
-) -> ServiceContext:
+def mock_prompt_helper(patch_llm_predictor, patch_token_text_splitter):
     def mock_repack(
-        prompt_template: PromptTemplate, text_chunks: Sequence[str]
+        prompt_template: PromptTemplate,
+        text_chunks: Sequence[str],
+        llm: Optional[Any] = None,
+        tools: Optional[Any] = None,
     ) -> List[str]:
         merged_chunks = []
         for chunks in zip(*[iter(text_chunks)] * 2):
@@ -28,11 +27,10 @@ def mock_service_context_merge_chunks(
 
     mock_prompt_helper = Mock(spec=PromptHelper)
     mock_prompt_helper.repack.side_effect = mock_repack
-    mock_service_context.prompt_helper = mock_prompt_helper
-    return mock_service_context
+    return mock_prompt_helper
 
 
-def test_tree_summarize(mock_service_context_merge_chunks: ServiceContext) -> None:
+def test_tree_summarize(mock_prompt_helper) -> None:
     mock_summary_prompt_tmpl = "{context_str}{query_str}"
     mock_summary_prompt = PromptTemplate(
         mock_summary_prompt_tmpl, prompt_type=PromptType.SUMMARY
@@ -48,7 +46,7 @@ def test_tree_summarize(mock_service_context_merge_chunks: ServiceContext) -> No
 
     # test sync
     tree_summarize = TreeSummarize(
-        service_context=mock_service_context_merge_chunks,
+        prompt_helper=mock_prompt_helper,
         summary_template=mock_summary_prompt,
     )
     response = tree_summarize.get_response(text_chunks=texts, query_str=query_str)
@@ -64,11 +62,7 @@ def mock_return_class(*args: Any, **kwargs: Any) -> TestModel:
 
 
 @patch.object(MockLLM, "structured_predict", mock_return_class)
-def test_tree_summarize_output_cls(
-    mock_service_context_merge_chunks: ServiceContext,
-) -> None:
-    mock_service_context_merge_chunks.llm_predictor = LLMPredictor(MockLLM())
-
+def test_tree_summarize_output_cls(mock_prompt_helper) -> None:
     mock_summary_prompt_tmpl = "{context_str}{query_str}"
     mock_summary_prompt = PromptTemplate(
         mock_summary_prompt_tmpl, prompt_type=PromptType.SUMMARY
@@ -85,19 +79,17 @@ def test_tree_summarize_output_cls(
 
     # test sync
     tree_summarize = TreeSummarize(
-        service_context=mock_service_context_merge_chunks,
+        prompt_helper=mock_prompt_helper,
         summary_template=mock_summary_prompt,
         output_cls=TestModel,
     )
     full_response = "\n".join(texts)
     response = tree_summarize.get_response(text_chunks=texts, query_str=query_str)
     assert isinstance(response, TestModel)
-    assert response.dict() == response_dict
+    assert response.model_dump() == response_dict
 
 
-def test_tree_summarize_use_async(
-    mock_service_context_merge_chunks: ServiceContext,
-) -> None:
+def test_tree_summarize_use_async(mock_prompt_helper) -> None:
     mock_summary_prompt_tmpl = "{context_str}{query_str}"
     mock_summary_prompt = PromptTemplate(
         mock_summary_prompt_tmpl, prompt_type=PromptType.SUMMARY
@@ -113,7 +105,7 @@ def test_tree_summarize_use_async(
 
     # test async
     tree_summarize = TreeSummarize(
-        service_context=mock_service_context_merge_chunks,
+        prompt_helper=mock_prompt_helper,
         summary_template=mock_summary_prompt,
         use_async=True,
     )
@@ -122,9 +114,7 @@ def test_tree_summarize_use_async(
 
 
 @pytest.mark.asyncio()
-async def test_tree_summarize_async(
-    mock_service_context_merge_chunks: ServiceContext,
-) -> None:
+async def test_tree_summarize_async(mock_prompt_helper) -> None:
     mock_summary_prompt_tmpl = "{context_str}{query_str}"
     mock_summary_prompt = PromptTemplate(
         mock_summary_prompt_tmpl, prompt_type=PromptType.SUMMARY
@@ -140,7 +130,7 @@ async def test_tree_summarize_async(
 
     # test async
     tree_summarize = TreeSummarize(
-        service_context=mock_service_context_merge_chunks,
+        prompt_helper=mock_prompt_helper,
         summary_template=mock_summary_prompt,
     )
     response = await tree_summarize.aget_response(

@@ -13,10 +13,10 @@ from llama_index.core.callbacks.schema import (
 class UpTrainDataSchema:
     """UpTrain data schema."""
 
-    def __init__(self, project_name_prefix: str) -> None:
+    def __init__(self, project_name: str) -> None:
         """Initialize the UpTrain data schema."""
         # For tracking project name and results
-        self.project_name_prefix: str = project_name_prefix
+        self.project_name: str = project_name
         self.uptrain_results: DefaultDict[str, Any] = defaultdict(list)
 
         # For tracking event types - reranking, sub_question
@@ -30,6 +30,7 @@ class UpTrainDataSchema:
         ## RERANKING
         self.old_context: List[str] = []
         self.new_context: List[str] = []
+        self.reranking_type: Literal["resize", "rerank"] = "rerank"
 
         ## SUB_QUESTION
         # Map of sub question ID to question, context, and response
@@ -52,7 +53,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         self,
         api_key: str,
         key_type: Literal["uptrain", "openai"],
-        project_name_prefix: str = "llama",
+        project_name: str = "uptrain_llamaindex",
     ) -> None:
         """Initialize the UpTrain callback handler."""
         try:
@@ -67,7 +68,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
             event_starts_to_ignore=[],
             event_ends_to_ignore=[],
         )
-        self.schema = UpTrainDataSchema(project_name_prefix=project_name_prefix)
+        self.schema = UpTrainDataSchema(project_name=project_name)
         self._event_pairs_by_id: Dict[str, List[CBEvent]] = defaultdict(list)
         self._trace_map: Dict[str, List[str]] = defaultdict(list)
 
@@ -84,23 +85,26 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
 
     def uptrain_evaluate(
         self,
-        project_name: str,
+        evaluation_name: str,
         data: List[Dict[str, str]],
         checks: List[str],
     ) -> None:
         """Run an evaluation on the UpTrain server using UpTrain client."""
         if self.uptrain_client.__class__.__name__ == "APIClient":
             uptrain_result = self.uptrain_client.log_and_evaluate(
-                project_name=project_name,
+                project_name=self.schema.project_name,
+                evaluation_name=evaluation_name,
                 data=data,
                 checks=checks,
             )
         else:
             uptrain_result = self.uptrain_client.evaluate(
+                project_name=self.schema.project_name,
+                evaluation_name=evaluation_name,
                 data=data,
                 checks=checks,
             )
-        self.schema.uptrain_results[project_name].append(uptrain_result)
+        self.schema.uptrain_results[self.schema.project_name].append(uptrain_result)
 
         score_name_map = {
             "score_context_relevance": "Context Relevance Score",
@@ -177,7 +181,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         if event_id == self.schema.sub_question_parent_id:
             # Perform individual evaluations for sub questions (but send all sub questions at once)
             self.uptrain_evaluate(
-                project_name=f"{self.schema.project_name_prefix}_sub_question_answering",
+                evaluation_name="sub_question_answering",
                 data=list(self.schema.sub_question_map.values()),
                 checks=[
                     Evals.CONTEXT_RELEVANCE,
@@ -197,7 +201,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
                 ]
             )
             self.uptrain_evaluate(
-                project_name=f"{self.schema.project_name_prefix}_sub_query_completeness",
+                evaluation_name="sub_query_completeness",
                 data=[
                     {
                         "question": self.schema.parent_question,
@@ -206,6 +210,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
                 ],
                 checks=[Evals.SUB_QUERY_COMPLETENESS],
             )
+            self.schema.eval_types.remove("sub_question")
         # Should not be called for sub questions
         if (
             event_type is CBEventType.SYNTHESIZE
@@ -213,8 +218,16 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
         ):
             self.schema.response = payload["response"].response
             # Perform evaluation for synthesization
+            if "reranking" in self.schema.eval_types:
+                if self.schema.reranking_type == "rerank":
+                    evaluation_name = "question_answering_rerank"
+                else:
+                    evaluation_name = "question_answering_resize"
+                self.schema.eval_types.remove("reranking")
+            else:
+                evaluation_name = "question_answering"
             self.uptrain_evaluate(
-                project_name=f"{self.schema.project_name_prefix}_question_answering",
+                evaluation_name=evaluation_name,
                 data=[
                     {
                         "question": self.schema.question,
@@ -233,6 +246,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
             # Store new context data
             self.schema.new_context = [node.text for node in payload["nodes"]]
             if len(self.schema.old_context) == len(self.schema.new_context):
+                self.schema.reranking_type = "rerank"
                 context = "\n".join(
                     [
                         f"{index}. {string}"
@@ -247,7 +261,7 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
                 )
                 # Perform evaluation for reranking
                 self.uptrain_evaluate(
-                    project_name=f"{self.schema.project_name_prefix}_context_reranking",
+                    evaluation_name="context_reranking",
                     data=[
                         {
                             "question": self.schema.question,
@@ -260,11 +274,12 @@ class UpTrainCallbackHandler(BaseCallbackHandler):
                     ],
                 )
             else:
+                self.schema.reranking_type = "resize"
                 context = "\n".join(self.schema.old_context)
                 concise_context = "\n".join(self.schema.new_context)
                 # Perform evaluation for resizing
                 self.uptrain_evaluate(
-                    project_name=f"{self.schema.project_name_prefix}_context_conciseness",
+                    evaluation_name="context_conciseness",
                     data=[
                         {
                             "question": self.schema.question,

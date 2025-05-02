@@ -27,9 +27,10 @@ IMAGE_STORE_KEY = "image_store"
 GRAPH_STORE_KEY = "graph_store"
 INDEX_STORE_KEY = "index_store"
 DOC_STORE_KEY = "doc_store"
+PG_STORE_KEY = "property_graph_store"
 
 # llama-cloud constants
 DEFAULT_PIPELINE_NAME = "default"
-DEFAULT_PROJECT_NAME = "default"
+DEFAULT_PROJECT_NAME = "Default"
 DEFAULT_BASE_URL = "https://api.cloud.llamaindex.ai"
 DEFAULT_APP_URL = "https://cloud.llamaindex.ai"

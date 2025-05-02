@@ -1,5 +1,9 @@
 from typing import Any, Sequence
 
+from llama_index.core.base.llms.generic_utils import (
+    completion_response_to_chat_response,
+    stream_completion_response_to_chat_response,
+)
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -12,10 +16,6 @@ from llama_index.core.llms.callbacks import (
     llm_chat_callback,
     llm_completion_callback,
 )
-from llama_index.core.base.llms.generic_utils import (
-    completion_response_to_chat_response,
-    stream_completion_response_to_chat_response,
-)
 from llama_index.core.llms.llm import LLM
 
 
@@ -26,8 +26,13 @@ class CustomLLM(LLM):
         `_stream_complete`, and `metadata` methods.
     """
 
+    def __init__(self, *args: Any, **kwargs: Any):
+        super().__init__(*args, **kwargs)
+
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        assert self.messages_to_prompt is not None
+
         prompt = self.messages_to_prompt(messages)
         completion_response = self.complete(prompt, formatted=True, **kwargs)
         return completion_response_to_chat_response(completion_response)
@@ -36,6 +41,8 @@ class CustomLLM(LLM):
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
+        assert self.messages_to_prompt is not None
+
         prompt = self.messages_to_prompt(messages)
         completion_response_gen = self.stream_complete(prompt, formatted=True, **kwargs)
         return stream_completion_response_to_chat_response(completion_response_gen)

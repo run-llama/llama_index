@@ -17,9 +17,19 @@ loader = TrafilaturaWebReader()
 documents = loader.load_data(urls=["https://google.com"])
 ```
 
+### Additional Parameters
+
+You can also pass in additional parameters to the `load_data` function.
+
+Most of the functions follow the original `trafilatura.extract` API. You can find more information [here](https://trafilatura.readthedocs.io/en/latest/corefunctions.html#extract).
+
+```python
+documents = loader.load_data(urls=["https://google.com"], favor_recall=True)
+```
+
 ## Examples
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).
 
 ### LlamaIndex
 

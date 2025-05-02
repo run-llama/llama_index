@@ -3,10 +3,11 @@
 import logging
 from typing import Any, List, Optional, cast
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -42,7 +43,7 @@ def _to_dashvector_filter(
     return " and ".join(filters)
 
 
-class DashVectorStore(VectorStore):
+class DashVectorStore(BasePydanticVectorStore):
     """Dash Vector Store.
 
     In this vector store, embeddings and docs are stored within a
@@ -55,10 +56,31 @@ class DashVectorStore(VectorStore):
         collection (Optional[dashvector.Collection]): DashVector collection instance
         support_sparse_vector (bool): whether support sparse vector for collection.
         encoder (Optional[dashtext.SparseVectorEncoder]): encoder for generating sparse vector from document
+
+    Examples:
+        `pip install llama-index-vector-stores-dashvector`
+
+        ```python
+        import dashvector
+
+        api_key = os.environ["DASHVECTOR_API_KEY"]
+        client = dashvector.Client(api_key=api_key)
+
+        # dimensions are for text-embedding-ada-002
+        client.create("llama-demo", dimension=1536)
+
+        dashvector_collection = client.get("quickstart")
+
+        vector_store = DashVectorStore(dashvector_collection)
+        ```
     """
 
     stores_text: bool = True
     flat_metadata: bool = True
+
+    _support_sparse_vector: bool = PrivateAttr()
+    _encoder: Optional[Any] = PrivateAttr()
+    _collection: Optional[Any] = PrivateAttr()
 
     def __init__(
         self,
@@ -67,6 +89,8 @@ class DashVectorStore(VectorStore):
         encoder: Optional[Any] = None,
     ) -> None:
         """Initialize params."""
+        super().__init__()
+
         try:
             import dashvector
         except ImportError:
@@ -90,6 +114,11 @@ class DashVectorStore(VectorStore):
 
         if collection is not None:
             self._collection = cast(dashvector.Collection, collection)
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Get class name."""
+        return "DashVectorStore"
 
     def add(
         self,

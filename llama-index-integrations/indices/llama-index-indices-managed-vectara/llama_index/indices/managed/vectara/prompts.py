@@ -101,7 +101,7 @@ EXAMPLES = f"""\
 << Example 1. >>
 Data Source:
 ```json
-{example_info_1.json(indent=4)}
+{example_info_1.model_dump_json(indent=4)}
 ```
 
 User Query:
@@ -109,13 +109,13 @@ User Query:
 
 Structured Request:
 ```json
-{example_output_1.json()}
+{example_output_1.model_dump_json()}
 
 
 << Example 2. >>
 Data Source:
 ```json
-{example_info_2.json(indent=4)}
+{example_info_2.model_dump_json(indent=4)}
 ```
 
 User Query:
@@ -123,7 +123,7 @@ User Query:
 
 Structured Request:
 ```json
-{example_output_2.json()}
+{example_output_2.model_dump_json()}
 
 ```
 """.replace(

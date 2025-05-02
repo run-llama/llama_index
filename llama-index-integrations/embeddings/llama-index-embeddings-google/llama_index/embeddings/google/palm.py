@@ -1,5 +1,6 @@
 """Google PaLM embeddings file."""
 
+import deprecated
 from typing import Any, List, Optional
 
 from llama_index.core.base.embeddings.base import (
@@ -12,6 +13,12 @@ from llama_index.core.callbacks.base import CallbackManager
 import google.generativeai as palm
 
 
+@deprecated.deprecated(
+    reason=(
+        "Should use `llama-index-embeddings-google-genai` instead, using Google's latest unified SDK. "
+        "See: https://docs.llamaindex.ai/en/stable/examples/embeddings/google_genai/"
+    )
+)
 class GooglePaLMEmbedding(BaseEmbedding):
     """Class for Google PaLM embeddings.
 
@@ -32,15 +39,14 @@ class GooglePaLMEmbedding(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ):
-        palm.configure(api_key=api_key)
-        self._model = palm
-
         super().__init__(
             model_name=model_name,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
             **kwargs,
         )
+        palm.configure(api_key=api_key)
+        self._model = palm
 
     @classmethod
     def class_name(cls) -> str:

@@ -2,9 +2,6 @@ from typing import List, Sequence
 
 from llama_index.core.base.llms.types import ChatMessage, LLMMetadata, MessageRole
 from llama_index.core.constants import AI21_J2_CONTEXT_WINDOW, COHERE_CONTEXT_WINDOW
-from llama_index.llms.anyscale.utils import anyscale_modelname_to_contextsize
-from llama_index.llms.fireworks.utils import fireworks_modelname_to_contextsize
-from llama_index.llms.openai.utils import openai_modelname_to_contextsize
 
 
 class LC:
@@ -99,6 +96,13 @@ def get_llm_metadata(llm: LC.BaseLanguageModel) -> LLMMetadata:
     is_chat_model_ = is_chat_model(llm)
 
     if isinstance(llm, LC.OpenAI):
+        try:
+            from llama_index.llms.openai.utils import openai_modelname_to_contextsize
+        except ImportError:
+            raise ImportError(
+                "Please `pip install llama-index-llms-openai` to use OpenAI models."
+            )
+
         return LLMMetadata(
             context_window=openai_modelname_to_contextsize(llm.model_name),
             num_output=llm.max_tokens,
@@ -106,6 +110,15 @@ def get_llm_metadata(llm: LC.BaseLanguageModel) -> LLMMetadata:
             model_name=llm.model_name,
         )
     elif isinstance(llm, LC.ChatAnyscale):
+        try:
+            from llama_index.llms.anyscale.utils import (
+                anyscale_modelname_to_contextsize,
+            )
+        except ImportError:
+            raise ImportError(
+                "Please `pip install llama-index-llms-anyscale` to use Anyscale models."
+            )
+
         return LLMMetadata(
             context_window=anyscale_modelname_to_contextsize(llm.model_name),
             num_output=llm.max_tokens or -1,
@@ -113,6 +126,15 @@ def get_llm_metadata(llm: LC.BaseLanguageModel) -> LLMMetadata:
             model_name=llm.model_name,
         )
     elif isinstance(llm, LC.ChatFireworks):
+        try:
+            from llama_index.llms.fireworks.utils import (
+                fireworks_modelname_to_contextsize,
+            )
+        except ImportError:
+            raise ImportError(
+                "Please `pip install llama-index-llms-fireworks` to use Fireworks models."
+            )
+
         return LLMMetadata(
             context_window=fireworks_modelname_to_contextsize(llm.model_name),
             num_output=llm.max_tokens or -1,
@@ -120,6 +142,13 @@ def get_llm_metadata(llm: LC.BaseLanguageModel) -> LLMMetadata:
             model_name=llm.model_name,
         )
     elif isinstance(llm, LC.ChatOpenAI):
+        try:
+            from llama_index.llms.openai.utils import openai_modelname_to_contextsize
+        except ImportError:
+            raise ImportError(
+                "Please `pip install llama-index-llms-openai` to use OpenAI models."
+            )
+
         return LLMMetadata(
             context_window=openai_modelname_to_contextsize(llm.model_name),
             num_output=llm.max_tokens or -1,

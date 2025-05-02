@@ -7,7 +7,9 @@ from llama_index.core.node_parser.node_utils import default_id_func
 from llama_index.core.schema import Document
 
 if TYPE_CHECKING:
-    from langchain.text_splitter import TextSplitter as LC_TextSplitter
+    from langchain.text_splitter import (
+        TextSplitter as LC_TextSplitter,
+    )  # pants: no-infer-dep
 
 
 class LangchainNodeParser(TextSplitter):
@@ -28,13 +30,6 @@ class LangchainNodeParser(TextSplitter):
         id_func: Optional[Callable[[int, Document], str]] = None,
     ):
         """Initialize with parameters."""
-        try:
-            from langchain.text_splitter import TextSplitter as LC_TextSplitter  # noqa
-        except ImportError:
-            raise ImportError(
-                "Could not run `from langchain.text_splitter import TextSplitter`, "
-                "please run `pip install langchain`"
-            )
         id_func = id_func or default_id_func
 
         super().__init__(

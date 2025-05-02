@@ -2,7 +2,13 @@
 
 `pip install llama-index-readers-google`
 
-This loader reads files from Google Drive using folder or file ids. To use this loader, you need to pass in a list of file id's or folder id.
+This loader reads files from Google Drive using drive, folder or file ids. To use this loader, you need to pass in a list of file id's or folder id and/or drive id.
+
+### drive_id
+
+You can extract a drive_id directly from its drive URL.
+
+For example, the folder_id of `https://drive.google.com/drive/folders/0AFh3G2dX0OfRUk9PVA` is `0AFh3G2dX0OfRUk9PVA`.
 
 ### folder_id
 
@@ -16,10 +22,6 @@ You can extract a file_id directly from its sharable drive URL.
 
 For example, the file_id of `https://drive.google.com/file/d/1LEqD_zQiOizKrBKZYKJtER_h6i49wE-y/view?usp=sharing` is `1LEqD_zQiOizKrBKZYKJtER_h6i49wE-y`.
 
-### mime_types
-
-DEPRECATED: You can also filter the files by the mimeType e.g.: `mime_types=["application/vnd.google-apps.document"]`
-
 ### query_string
 
 You can also filter the files by the query string e.g.: `query_string="name contains 'test'"`
@@ -27,12 +29,19 @@ It gives more flexibility to filter the documents. More info: https://developers
 
 ## Usage
 
+### Using a Service Account
+
+Authenticate with Google and save credentials.
+Download the `service_account_key.json` file with these instructions: https://cloud.google.com/iam/docs/keys-create-delete.
+
+### Using a Google Drive API Key
+
 We need `credentials.json` file to use this reader.
 
 1. You need to create a service account following the steps mentioned [here](https://cloud.google.com/iam/docs/keys-create-delete)
 2. Get your json file and rename to `credentials.json` and move to the project root
 
-> Note: If you are not using Google Workspaces (formerly GSuite), You'll need to share your document making it public, or inviting your service account as an reader/editor of the folder or file.
+> Note: If you are not using Google Workspaces (formerly GSuite), You'll need to share your document making it public, or inviting your service account as a reader/editor of the folder or file.
 
 Finally, make sure you enable "Google Drive API" in the console of your Google App.
 
@@ -40,6 +49,9 @@ Finally, make sure you enable "Google Drive API" in the console of your Google A
 from llama_index.readers.google import GoogleDriveReader
 
 loader = GoogleDriveReader()
+
+#### Using drive id
+documents = loader.load_data(drive_id="driveid")
 
 #### Using folder id
 documents = loader.load_data(folder_id="folderid")

@@ -28,6 +28,9 @@ class TrafilaturaWebReader(BasePydanticReader):
         include_images=False,
         include_formatting=False,
         include_links=False,
+        show_progress=False,
+        no_ssl=False,
+        **kwargs,
     ) -> List[Document]:
         """Load data from the urls.
 
@@ -39,6 +42,9 @@ class TrafilaturaWebReader(BasePydanticReader):
             include_images (bool, optional): Include images in the output. Defaults to False.
             include_formatting (bool, optional): Include formatting in the output. Defaults to False.
             include_links (bool, optional): Include links in the output. Defaults to False.
+            show_progress (bool, optional): Show progress bar. Defaults to False
+            no_ssl (bool, optional): Bypass SSL verification. Defaults to False.
+            kwargs: Additional keyword arguments for the `trafilatura.extract` function.
 
         Returns:
             List[Document]: List of documents.
@@ -49,8 +55,15 @@ class TrafilaturaWebReader(BasePydanticReader):
         if not isinstance(urls, list):
             raise ValueError("urls must be a list of strings.")
         documents = []
-        for url in urls:
-            downloaded = trafilatura.fetch_url(url)
+
+        if show_progress:
+            from tqdm import tqdm
+
+            iterator = tqdm(urls, desc="Downloading pages")
+        else:
+            iterator = urls
+        for url in iterator:
+            downloaded = trafilatura.fetch_url(url, no_ssl=no_ssl)
             response = trafilatura.extract(
                 downloaded,
                 include_comments=include_comments,
@@ -59,6 +72,7 @@ class TrafilaturaWebReader(BasePydanticReader):
                 include_images=include_images,
                 include_formatting=include_formatting,
                 include_links=include_links,
+                **kwargs,
             )
             documents.append(Document(text=response, id_=url))
 

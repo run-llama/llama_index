@@ -1,24 +1,25 @@
 import asyncio
 import os
+import shlex
 import shutil
 from argparse import ArgumentParser
 from glob import iglob
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 from llama_index.core import (
+    Settings,
     SimpleDirectoryReader,
     VectorStoreIndex,
 )
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.base.response.schema import (
     RESPONSE_TYPE,
-    StreamingResponse,
     Response,
+    StreamingResponse,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field, validator
+from llama_index.core.bridge.pydantic import BaseModel, Field, field_validator
 from llama_index.core.chat_engine import CondenseQuestionChatEngine
-from llama_index.core.indices.service_context import ServiceContext
 from llama_index.core.ingestion import IngestionPipeline
 from llama_index.core.llms import LLM
 from llama_index.core.query_engine import CustomQueryEngine
@@ -90,7 +91,7 @@ class RagCLI(BaseModel):
     )
     chat_engine: Optional[CondenseQuestionChatEngine] = Field(
         description="Chat engine to use for chatting.",
-        default_factory=None,
+        default=None,
     )
     file_extractor: Optional[Dict[str, BaseReader]] = Field(
         description="File extractor to use for extracting text from files.",
@@ -100,7 +101,7 @@ class RagCLI(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    @validator("query_pipeline", always=True)
+    @field_validator("query_pipeline", mode="before")
     def query_pipeline_from_ingestion_pipeline(
         cls, query_pipeline: Any, values: Dict[str, Any]
     ) -> Optional[QueryPipeline]:
@@ -127,15 +128,13 @@ class RagCLI(BaseModel):
                     embed_model = transformation
                     break
 
-        service_context = ServiceContext.from_defaults(
-            llm=llm, embed_model=embed_model or "default"
-        )
+        Settings.llm = llm
+        Settings.embed_model = embed_model
+
         retriever = VectorStoreIndex.from_vector_store(
-            ingestion_pipeline.vector_store, service_context=service_context
+            ingestion_pipeline.vector_store,
         ).as_retriever(similarity_top_k=8)
-        response_synthesizer = CompactAndRefine(
-            service_context=service_context, streaming=True, verbose=verbose
-        )
+        response_synthesizer = CompactAndRefine(streaming=True, verbose=verbose)
 
         # define query pipeline
         query_pipeline = QueryPipeline(verbose=verbose)
@@ -151,7 +150,7 @@ class RagCLI(BaseModel):
         query_pipeline.add_link("query", "summarizer", dest_key="query_str")
         return query_pipeline
 
-    @validator("chat_engine", always=True)
+    @field_validator("chat_engine", mode="before")
     def chat_engine_from_query_pipeline(
         cls, chat_engine: Any, values: Dict[str, Any]
     ) -> Optional[CondenseQuestionChatEngine]:
@@ -161,7 +160,7 @@ class RagCLI(BaseModel):
         if chat_engine is not None:
             return chat_engine
 
-        if values.get("query_pipeline", None) is None:
+        if values.get("query_pipeline") is None:
             values["query_pipeline"] = cls.query_pipeline_from_ingestion_pipeline(
                 query_pipeline=None, values=values
             )
@@ -178,7 +177,7 @@ class RagCLI(BaseModel):
 
     async def handle_cli(
         self,
-        files: Optional[str] = None,
+        files: Optional[List[str]] = None,
         question: Optional[str] = None,
         chat: bool = False,
         verbose: bool = False,
@@ -207,8 +206,11 @@ class RagCLI(BaseModel):
         if self.verbose:
             print("Saving/Loading from persist_dir: ", self.persist_dir)
         if files is not None:
+            expanded_files = []
+            for pattern in files:
+                expanded_files.extend(iglob(pattern, recursive=True))
             documents = []
-            for _file in iglob(files, recursive=True):
+            for _file in expanded_files:
                 _file = os.path.abspath(_file)
                 if os.path.isdir(_file):
                     reader = SimpleDirectoryReader(
@@ -230,7 +232,8 @@ class RagCLI(BaseModel):
 
             # Append the `--files` argument to the history file
             with open(f"{self.persist_dir}/{RAG_HISTORY_FILE_NAME}", "a") as f:
-                f.write(files + "\n")
+                for file in files:
+                    f.write(str(file) + "\n")
 
         if create_llama:
             if shutil.which("npx") is None:
@@ -288,7 +291,7 @@ class RagCLI(BaseModel):
                                 "none",
                                 "--engine",
                                 "context",
-                                f"--files {path}",
+                                f"--files {shlex.quote(path)}",
                             ]
                             os.system(" ".join(command_args))
 
@@ -339,9 +342,10 @@ class RagCLI(BaseModel):
                 "-f",
                 "--files",
                 type=str,
+                nargs="+",
                 help=(
-                    "The name of the file or directory you want to ask a question about,"
-                    'such as "file.pdf".'
+                    "The name of the file(s) or directory you want to ask a question about,"
+                    'such as "file.pdf". Supports globs like "*.py".'
                 ),
             )
             parser.add_argument(

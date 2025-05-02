@@ -15,6 +15,23 @@ class Oauth2(TypedDict):
     api_token: str
 
 
+class PATauth(TypedDict):
+    server_url: str
+    api_token: str
+
+
+def safe_get(obj, *attrs):
+    """Safely get nested attributes from an object."""
+    try:
+        for attr in attrs:
+            obj = getattr(obj, attr)
+            if callable(obj):
+                obj = obj()
+    except (AttributeError, TypeError):
+        return None
+    return obj
+
+
 class JiraReader(BaseReader):
     """Jira reader. Reads data from Jira issues from passed query.
 
@@ -28,7 +45,13 @@ class JiraReader(BaseReader):
             "cloud_id": "cloud_id",
             "api_token": "token"
         }
+        Optional patauth:{
+            "server_url": "server_url",
+            "api_token": "token"
+        }
     """
+
+    include_epics: bool = True
 
     def __init__(
         self,
@@ -37,6 +60,8 @@ class JiraReader(BaseReader):
         server_url: Optional[str] = None,
         BasicAuth: Optional[BasicAuth] = None,
         Oauth2: Optional[Oauth2] = None,
+        PATauth: Optional[PATauth] = None,
+        include_epics: bool = True,
     ) -> None:
         from jira import JIRA
 
@@ -53,14 +78,26 @@ class JiraReader(BaseReader):
                 "headers": {"Authorization": f"Bearer {Oauth2['api_token']}"},
             }
             self.jira = JIRA(options=options)
+        elif PATauth:
+            options = {
+                "server": PATauth["server_url"],
+                "headers": {"Authorization": f"Bearer {PATauth['api_token']}"},
+            }
+            self.jira = JIRA(options=options)
         else:
             self.jira = JIRA(
                 basic_auth=(BasicAuth["email"], BasicAuth["api_token"]),
                 server=f"https://{BasicAuth['server_url']}",
             )
 
-    def load_data(self, query: str) -> List[Document]:
-        relevant_issues = self.jira.search_issues(query)
+        self.include_epics = include_epics
+
+    def load_data(
+        self, query: str, start_at: int = 0, max_results: int = 50
+    ) -> List[Document]:
+        relevant_issues = self.jira.search_issues(
+            query, startAt=start_at, maxResults=max_results
+        )
 
         issues = []
 
@@ -71,14 +108,22 @@ class JiraReader(BaseReader):
         epic_descripton = ""
 
         for issue in relevant_issues:
-            # Iterates through only issues and not epics
-            if "parent" in (issue.raw["fields"]):
-                if issue.fields.assignee:
-                    assignee = issue.fields.assignee.displayName
+            issue_type = issue.fields.issuetype.name
+            if issue_type == "Epic" and not self.include_epics:
+                continue
 
-                if issue.fields.reporter:
-                    reporter = issue.fields.reporter.displayName
+            assignee = ""
+            reporter = ""
+            epic_key = ""
+            epic_summary = ""
+            epic_descripton = ""
 
+            if issue.fields.assignee:
+                assignee = issue.fields.assignee.displayName
+            if issue.fields.reporter:
+                reporter = issue.fields.reporter.displayName
+
+            if "parent" in issue.raw["fields"]:
                 if issue.raw["fields"]["parent"]["key"]:
                     epic_key = issue.raw["fields"]["parent"]["key"]
 
@@ -90,26 +135,29 @@ class JiraReader(BaseReader):
                         "description"
                     ]
 
+            extra_info = {
+                "id": safe_get(issue, "id"),
+                "title": safe_get(issue, "fields", "summary"),
+                "url": safe_get(issue, "permalink"),
+                "created_at": safe_get(issue, "fields", "created"),
+                "updated_at": safe_get(issue, "fields", "updated"),
+                "labels": safe_get(issue, "fields", "labels"),
+                "status": safe_get(issue, "fields", "status", "name"),
+                "assignee": assignee,
+                "reporter": reporter,
+                "project": safe_get(issue, "fields", "project", "name"),
+                "issue_type": issue_type,
+                "priority": safe_get(issue, "fields", "priority", "name"),
+                "epic_key": epic_key,
+                "epic_summary": epic_summary,
+                "epic_description": epic_descripton,
+            }
+
             issues.append(
                 Document(
                     text=f"{issue.fields.summary} \n {issue.fields.description}",
-                    extra_info={
-                        "id": issue.id,
-                        "title": issue.fields.summary,
-                        "url": issue.permalink(),
-                        "created_at": issue.fields.created,
-                        "updated_at": issue.fields.updated,
-                        "labels": issue.fields.labels,
-                        "status": issue.fields.status.name,
-                        "assignee": assignee,
-                        "reporter": reporter,
-                        "project": issue.fields.project.name,
-                        "issue_type": issue.fields.issuetype.name,
-                        "priority": issue.fields.priority.name,
-                        "epic_key": epic_key,
-                        "epic_summary": epic_summary,
-                        "epic_description": epic_descripton,
-                    },
+                    doc_id=issue.id,
+                    extra_info=extra_info,
                 )
             )
 

@@ -1,16 +1,16 @@
 """Relevancy evaluation."""
+
 from __future__ import annotations
 
 import asyncio
 import re
 from typing import Any, Callable, Optional, Sequence, Tuple
 
-from llama_index.core.indices.service_context import ServiceContext
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+from llama_index.core.settings import Settings
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "Your task is to evaluate if the response is relevant to the query.\n"
@@ -53,8 +53,6 @@ class AnswerRelevancyEvaluator(BaseEvaluator):
     This evaluator considers the query string and response string.
 
     Args:
-        service_context(Optional[ServiceContext]):
-            The service context to use for evaluation.
         raise_error(Optional[bool]):
             Whether to raise an error if the response is invalid.
             Defaults to False.
@@ -73,11 +71,9 @@ class AnswerRelevancyEvaluator(BaseEvaluator):
         parser_function: Callable[
             [str], Tuple[Optional[float], Optional[str]]
         ] = _default_parser_function,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
     ) -> None:
         """Init params."""
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         self._raise_error = raise_error
 
         self._eval_template: BasePromptTemplate

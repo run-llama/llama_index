@@ -1,127 +1,143 @@
 from enum import Enum
 from typing import Any, List, Optional, Union
 
+import nomic
+import nomic.embed
+import warnings
+from PIL import Image
+import torch
 from llama_index.core.base.embeddings.base import (
-    BaseEmbedding,
     DEFAULT_EMBED_BATCH_SIZE,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
-
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
-
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.embeddings.huggingface.pooling import Pooling
-import torch
-import logging
+from llama_index.core.embeddings.multi_modal_base import MultiModalEmbedding
+from llama_index.core.schema import ImageType
 
 DEFAULT_HUGGINGFACE_LENGTH = 512
-logger = logging.getLogger(__name__)
 
 
-class NomicAITaskType(str, Enum):
+class NomicTaskType(str, Enum):
     SEARCH_QUERY = "search_query"
     SEARCH_DOCUMENT = "search_document"
     CLUSTERING = "clustering"
     CLASSIFICATION = "classification"
 
 
-TASK_TYPES = [
-    NomicAITaskType.SEARCH_QUERY,
-    NomicAITaskType.SEARCH_DOCUMENT,
-    NomicAITaskType.CLUSTERING,
-    NomicAITaskType.CLASSIFICATION,
-]
+class NomicInferenceMode(str, Enum):
+    REMOTE = "remote"
+    LOCAL = "local"
+    DYNAMIC = "dynamic"
 
 
-class NomicEmbedding(BaseEmbedding):
+class NomicEmbedding(MultiModalEmbedding):
     """NomicEmbedding uses the Nomic API to generate embeddings."""
 
-    # Instance variables initialized via Pydantic's mechanism
-    query_task_type: Optional[str] = Field(description="Query Embedding prefix")
-    document_task_type: Optional[str] = Field(description="Document Embedding prefix")
-    dimensionality: Optional[int] = Field(description="Dimension of the Embedding")
+    query_task_type: Optional[NomicTaskType] = Field(
+        description="Task type for queries",
+    )
+    document_task_type: Optional[NomicTaskType] = Field(
+        description="Task type for documents",
+    )
+    dimensionality: Optional[int] = Field(
+        description="Embedding dimension, for use with Matryoshka-capable models",
+    )
     model_name: str = Field(description="Embedding model name")
-    _model: Any = PrivateAttr()
+    vision_model_name: Optional[str] = Field(
+        description="Vision model name for multimodal embeddings",
+    )
+    inference_mode: NomicInferenceMode = Field(
+        description="Whether to generate embeddings locally",
+    )
+    device: Optional[str] = Field(description="Device to use for local embeddings")
 
     def __init__(
         self,
         model_name: str = "nomic-embed-text-v1",
+        vision_model_name: Optional[str] = "nomic-embed-vision-v1",
         embed_batch_size: int = 32,
         api_key: Optional[str] = None,
         callback_manager: Optional[CallbackManager] = None,
         query_task_type: Optional[str] = "search_query",
         document_task_type: Optional[str] = "search_document",
         dimensionality: Optional[int] = 768,
-        **kwargs: Any,
-    ) -> None:
-        if query_task_type not in TASK_TYPES or document_task_type not in TASK_TYPES:
-            raise ValueError(
-                f"Invalid task type {query_task_type}, {document_task_type}. Must be one of {TASK_TYPES}"
-            )
-
-        try:
-            import nomic
-            from nomic import embed
-        except ImportError:
-            raise ImportError(
-                "NomicEmbedding requires the 'nomic' package to be installed.\n"
-                "Please install it with `pip install nomic`."
-            )
-
+        inference_mode: str = "remote",
+        device: Optional[str] = None,
+    ):
         if api_key is not None:
-            nomic.cli.login(api_key)
+            nomic.login(api_key)
+
         super().__init__(
             model_name=model_name,
+            vision_model_name=vision_model_name,
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
-            _model=embed,
             query_task_type=query_task_type,
             document_task_type=document_task_type,
             dimensionality=dimensionality,
-            **kwargs,
+            inference_mode=inference_mode,
+            device=device,
         )
-        self._model = embed
-        self.model_name = model_name
-        self.query_task_type = query_task_type
-        self.document_task_type = document_task_type
-        self.dimensionality = dimensionality
 
     @classmethod
     def class_name(cls) -> str:
         return "NomicEmbedding"
 
-    def _embed(
+    def load_images(self, image_paths: List[ImageType]) -> List[Image.Image]:
+        """Load images from the specified paths."""
+        return [Image.open(image_path).convert("RGB") for image_path in image_paths]
+
+    def _embed_text(
         self, texts: List[str], task_type: Optional[str] = None
     ) -> List[List[float]]:
-        """Embed sentences using NomicAI."""
-        result = self._model.text(
+        result = nomic.embed.text(
             texts,
             model=self.model_name,
             task_type=task_type,
             dimensionality=self.dimensionality,
+            inference_mode=self.inference_mode,
+            device=self.device,
         )
         return result["embeddings"]
 
+    def _embed_image(self, images_paths: List[ImageType]) -> List[List[float]]:
+        images = self.load_images(images_paths)
+        result = nomic.embed.image(images, model=self.vision_model_name)
+        return result["embeddings"]
+
     def _get_query_embedding(self, query: str) -> List[float]:
-        """Get query embedding."""
-        return self._embed([query], task_type=self.query_task_type)[0]
+        return self._embed_text([query], task_type=self.query_task_type)[0]
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
-        """Get query embedding async."""
+        self._warn_async()
         return self._get_query_embedding(query)
 
     def _get_text_embedding(self, text: str) -> List[float]:
-        """Get text embedding."""
-        return self._embed([text], task_type=self.document_task_type)[0]
+        return self._embed_text([text], task_type=self.document_task_type)[0]
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
-        """Get text embedding async."""
+        self._warn_async()
         return self._get_text_embedding(text)
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Get text embeddings."""
-        return self._embed(texts, task_type=self.document_task_type)
+        return self._embed_text(texts, task_type=self.document_task_type)
+
+    def _get_image_embedding(self, image: ImageType) -> List[float]:
+        return self._embed_image([image])[0]
+
+    async def _aget_image_embedding(self, image: ImageType) -> List[float]:
+        self._warn_async()
+        return self._get_image_embedding(image)
+
+    def _get_image_embeddings(self, images: List[ImageType]) -> List[List[float]]:
+        return self._embed_image(images)
+
+    def _warn_async(self) -> None:
+        warnings.warn(
+            f"{self.class_name()} does not implement async embeddings, falling back to sync method.",
+        )
 
 
 class NomicHFEmbedding(HuggingFaceEmbedding):

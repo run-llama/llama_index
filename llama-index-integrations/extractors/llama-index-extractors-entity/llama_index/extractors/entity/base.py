@@ -43,8 +43,8 @@ class EntityExtractor(BaseExtractor):
     prediction_threshold: float = Field(
         default=0.5,
         description="The confidence threshold for accepting predictions.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     span_joiner: str = Field(
         default=" ", description="The separator between entity names."
@@ -98,12 +98,6 @@ class EntityExtractor(BaseExtractor):
                 Tokenizer to use for splitting text into words.
                 Defaults to NLTK word_tokenize.
         """
-        self._model = SpanMarkerModel.from_pretrained(model_name)
-        if device is not None:
-            self._model = self._model.to(device)
-
-        self._tokenizer = tokenizer or word_tokenize
-
         base_entity_map = DEFAULT_ENTITY_MAP
         if entity_map is not None:
             base_entity_map.update(entity_map)
@@ -117,6 +111,12 @@ class EntityExtractor(BaseExtractor):
             entity_map=base_entity_map,
             **kwargs,
         )
+
+        self._model = SpanMarkerModel.from_pretrained(model_name)
+        if device is not None:
+            self._model = self._model.to(device)
+
+        self._tokenizer = tokenizer or word_tokenize
 
     @classmethod
     def class_name(cls) -> str:

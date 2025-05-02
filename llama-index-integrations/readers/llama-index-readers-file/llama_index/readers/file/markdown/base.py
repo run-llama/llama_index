@@ -5,11 +5,9 @@ Contains parser for md files.
 """
 
 import re
-from pathlib import Path
 from fsspec import AbstractFileSystem
 from fsspec.implementations.local import LocalFileSystem
-from typing import Any, Dict, List, Optional, Tuple, cast
-
+from typing import Any, Dict, List, Optional, Tuple
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
@@ -27,56 +25,83 @@ class MarkdownReader(BaseReader):
         *args: Any,
         remove_hyperlinks: bool = True,
         remove_images: bool = True,
+        separator: str = " ",
         **kwargs: Any,
     ) -> None:
         """Init params."""
         super().__init__(*args, **kwargs)
         self._remove_hyperlinks = remove_hyperlinks
         self._remove_images = remove_images
+        self._separator = separator
 
     def markdown_to_tups(self, markdown_text: str) -> List[Tuple[Optional[str], str]]:
-        """Convert a markdown file to a dictionary.
-
-        The keys are the headers and the values are the text under each header.
-
-        """
+        """Convert a markdown file to a list of tuples containing header and text."""
         markdown_tups: List[Tuple[Optional[str], str]] = []
         lines = markdown_text.split("\n")
 
-        current_header = None
-        current_text = ""
-
+        current_lines = []
+        in_code_block = False
+        headers = {}
         for line in lines:
-            header_match = re.match(r"^#+\s", line)
-            if header_match:
-                if current_header is not None:
-                    if current_text == "" or None:
-                        continue
-                    markdown_tups.append((current_header, current_text))
+            # Toggle code block state
+            if line.startswith("```"):
+                in_code_block = not in_code_block
 
-                current_header = line
-                current_text = ""
+            if in_code_block:
+                current_lines.append(line)
+                continue
+            # Process headers only when not in a code block
             else:
-                current_text += line + "\n"
-        markdown_tups.append((current_header, current_text))
+                line = line.strip()
+                if not line:
+                    continue
 
-        if current_header is not None:
-            # pass linting, assert keys are defined
-            markdown_tups = [
-                (re.sub(r"#", "", cast(str, key)).strip(), re.sub(r"<.*?>", "", value))
-                for key, value in markdown_tups
-            ]
-        else:
-            markdown_tups = [
-                (key, re.sub("<.*?>", "", value)) for key, value in markdown_tups
-            ]
+                header_match = re.match(r"^(#+)\s+(.*)", line)
+                if header_match:
+                    if current_lines and not headers:
+                        # Add content before first header
+                        markdown_tups.append((None, "\n".join(current_lines)))
+                        current_lines.clear()
+                    # Extract header level and text
+                    header_level = len(
+                        header_match.group(1)
+                    )  # number of '#' indicates level
+                    current_header = header_match.group(2)  # the header text
+                    if headers.get(header_level):
+                        # Add previous section to the list before switching header
+                        markdown_tups.append(
+                            (
+                                self._separator.join(headers.values()),
+                                "\n".join(current_lines),
+                            )
+                        )
+                        # remove all headers with level greater than current header
+                        headers = {k: v for k, v in headers.items() if k < header_level}
+                        current_lines.clear()
 
-        return markdown_tups
+                    headers[header_level] = current_header
+                else:
+                    current_lines.append(line)
+
+        # Append the last section
+        if current_lines or headers:
+            markdown_tups.append(
+                (self._separator.join(headers.values()), "\n".join(current_lines))
+            )
+
+        # Postprocess the tuples before returning
+        return [
+            (
+                key.strip() if key else None,  # Clean up header (strip whitespace)
+                re.sub(r"<.*?>", "", value),  # Remove HTML tags
+            )
+            for key, value in markdown_tups
+        ]
 
     def remove_images(self, content: str) -> str:
-        """Remove images in markdown content."""
-        pattern = r"!{1}\[\[(.*)\]\]"
-        return re.sub(pattern, "", content)
+        """Remove images in markdown content but keep the description."""
+        pattern = r"![(.?)](.?)"
+        return re.sub(pattern, r"\1", content)
 
     def remove_hyperlinks(self, content: str) -> str:
         """Remove hyperlinks in markdown content."""
@@ -89,7 +114,7 @@ class MarkdownReader(BaseReader):
 
     def parse_tups(
         self,
-        filepath: Path,
+        filepath: str,
         errors: str = "ignore",
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Tuple[Optional[str], str]]:
@@ -105,19 +130,19 @@ class MarkdownReader(BaseReader):
 
     def load_data(
         self,
-        file: Path,
+        file: str,
         extra_info: Optional[Dict] = None,
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
         """Parse file into string."""
         tups = self.parse_tups(file, fs=fs)
         results = []
-        # TODO: don't include headers right now
-        for header, value in tups:
+
+        for header, text in tups:
             if header is None:
-                results.append(Document(text=value, metadata=extra_info or {}))
+                results.append(Document(text=text, metadata=extra_info or {}))
             else:
                 results.append(
-                    Document(text=f"\n\n{header}\n{value}", metadata=extra_info or {})
+                    Document(text=f"\n\n{header}\n{text}", metadata=extra_info or {})
                 )
         return results

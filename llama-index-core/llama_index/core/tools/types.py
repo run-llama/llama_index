@@ -1,8 +1,11 @@
+import asyncio
 import json
 from abc import abstractmethod
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Dict, Optional, Type, Callable
 
+
+from llama_index.core.instrumentation import DispatcherSpanMixin
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import StructuredTool, Tool
@@ -21,6 +24,7 @@ class ToolMetadata:
     description: str
     name: Optional[str] = None
     fn_schema: Optional[Type[BaseModel]] = DefaultToolFnSchema
+    return_direct: bool = False
     callback: Optional[Callable] = None
     kwargs: Optional[Dict[str, Any]] = None
 
@@ -34,11 +38,11 @@ class ToolMetadata:
                 "required": ["input"],
             }
         else:
-            parameters = self.fn_schema.schema()
+            parameters = self.fn_schema.model_json_schema()
             parameters = {
                 k: v
                 for k, v in parameters.items()
-                if k in ["type", "properties", "required", "definitions"]
+                if k in ["type", "properties", "required", "definitions", "$defs"]
             }
         return parameters
 
@@ -48,7 +52,7 @@ class ToolMetadata:
         if self.fn_schema is None:
             raise ValueError("fn_schema is None.")
         parameters = self.get_parameters_dict()
-        return json.dumps(parameters)
+        return json.dumps(parameters, ensure_ascii=False)
 
     def get_name(self) -> str:
         """Get name."""
@@ -70,8 +74,13 @@ class ToolMetadata:
             "parameters": self.get_parameters_dict(),
         }
 
-    def to_openai_tool(self) -> Dict[str, Any]:
+    def to_openai_tool(self, skip_length_check: bool = False) -> Dict[str, Any]:
         """To OpenAI tool."""
+        if not skip_length_check and len(self.description) > 1024:
+            raise ValueError(
+                "Tool description exceeds maximum length of 1024 characters. "
+                "Please shorten your description or move it to the prompt."
+            )
         return {
             "type": "function",
             "function": {
@@ -89,13 +98,14 @@ class ToolOutput(BaseModel):
     tool_name: str
     raw_input: Dict[str, Any]
     raw_output: Any
+    is_error: bool = False
 
     def __str__(self) -> str:
         """String."""
         return str(self.content)
 
 
-class BaseTool:
+class BaseTool(DispatcherSpanMixin):
     @property
     @abstractmethod
     def metadata(self) -> ToolMetadata:
@@ -116,6 +126,13 @@ class BaseTool:
             langchain_tool_kwargs["description"] = self.metadata.description
         if "fn_schema" not in langchain_tool_kwargs:
             langchain_tool_kwargs["args_schema"] = self.metadata.fn_schema
+
+        # Callback dont exist on langchain
+        if "_callback" in langchain_tool_kwargs:
+            del langchain_tool_kwargs["_callback"]
+        if "_async_callback" in langchain_tool_kwargs:
+            del langchain_tool_kwargs["_async_callback"]
+
         return langchain_tool_kwargs
 
     def to_langchain_tool(
@@ -189,7 +206,7 @@ class BaseToolAsyncAdapter(AsyncBaseTool):
         return self.base_tool(input)
 
     async def acall(self, input: Any) -> ToolOutput:
-        return self.call(input)
+        return await asyncio.to_thread(self.call, input)
 
 
 def adapt_to_async_tool(tool: BaseTool) -> AsyncBaseTool:

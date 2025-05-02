@@ -1,5 +1,6 @@
 """Google Universal Sentence Encoder Embedding Wrapper Module."""
 
+import deprecated
 from typing import Any, List, Optional
 
 from llama_index.core.base.embeddings.base import (
@@ -13,6 +14,12 @@ from llama_index.core.callbacks import CallbackManager
 DEFAULT_HANDLE = "https://tfhub.dev/google/universal-sentence-encoder-large/5"
 
 
+@deprecated.deprecated(
+    reason=(
+        "Should use `llama-index-embeddings-google-genai` instead, using Google's latest unified SDK. "
+        "See: https://docs.llamaindex.ai/en/stable/examples/embeddings/google_genai/"
+    )
+)
 class GoogleUnivSentEncoderEmbedding(BaseEmbedding):
     _model: Any = PrivateAttr()
 
@@ -33,12 +40,12 @@ class GoogleUnivSentEncoderEmbedding(BaseEmbedding):
                 "Please install tensorflow_hub: `pip install tensorflow_hub`"
             )
 
-        self._model = model
         super().__init__(
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
             model_name=handle,
         )
+        self._model = model
 
     @classmethod
     def class_name(cls) -> str:

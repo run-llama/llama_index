@@ -1,4 +1,4 @@
-"""OpenAI Image Generation tool sppec.."""
+"""OpenAI Image Generation tool spec."""
 
 import base64
 import os
@@ -8,7 +8,22 @@ from typing import Optional
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 DEFAULT_CACHE_DIR = "../../../img_cache"
-DEFAULT_SIZE = "1024x1024"  # Dall-e-3 only supports 1024x1024
+DEFAULT_SIZE = "1024x1024"
+
+valid_sizes = {
+    "dall-e-2": ["256x256", "512x512", "1024x1024"],
+    "dall-e-3": ["1024x1024", "1792x1024", "1024x1792"],
+}
+
+
+def get_extension(content: str):
+    map = {
+        "/": "jpg",
+        "i": "png",
+        "R": "gif",
+        "U": "webp",
+    }
+    return map.get(content[0], "jpg")
 
 
 class OpenAIImageGenerationToolSpec(BaseToolSpec):
@@ -16,7 +31,9 @@ class OpenAIImageGenerationToolSpec(BaseToolSpec):
 
     spec_functions = ["image_generation"]
 
-    def __init__(self, api_key: str, cache_dir: Optional[str] = None) -> None:
+    def __init__(
+        self, api_key: Optional[str] = None, cache_dir: Optional[str] = None
+    ) -> None:
         try:
             from openai import OpenAI
         except ImportError:
@@ -62,28 +79,60 @@ class OpenAIImageGenerationToolSpec(BaseToolSpec):
         model: Optional[str] = "dall-e-3",
         quality: Optional[str] = "standard",
         num_images: Optional[int] = 1,
+        size: Optional[str] = DEFAULT_SIZE,
+        style: Optional[str] = "vivid",
+        timeout: Optional[int] = None,
+        download: Optional[bool] = False,
     ) -> str:
         """
         This tool accepts a natural language string and will use OpenAI's DALL-E model to generate an image.
 
         Args:
-            text (str): The text to generate an image from.
-            size (str): The size of the image to generate (1024x1024, 256x256, 512x512).
-            model (str): The model to use to generate the image (dall-e-3, dall-e-2).
-            quality (str): The quality of the image to generate (standard, hd).
-            num_images (int): The number of images to generate.
+            text: The text to generate an image from.
+
+            model: The model to use for image generation. Defaults to `dall-e-3`.
+                Must be one of `dall-e-2` or `dall-e-3`.
+
+            num_images: The number of images to generate. Defaults to 1.
+                Must be between 1 and 10. For `dall-e-3`, only `n=1` is supported.
+
+            quality: The quality of the image that will be generated. Defaults to `standard`.
+                Must be one of `standard` or `hd`. `hd` creates images with finer
+                details and greater consistency across the image. This param is only supported
+                for `dall-e-3`.
+
+            size: The size of the generated images. Defaults to `1024x1024`.
+                Must be one of `256x256`, `512x512`, or `1024x1024` for `dall-e-2`.
+                Must be one of `1024x1024`, `1792x1024`, or `1024x1792` for `dall-e-3` models.
+
+            style: The style of the generated images. Defaults to `vivid`.
+                Must be one of `vivid` or `natural`.
+                Vivid causes the model to lean towards generating hyper-real and dramatic images.
+                Natural causes the model to produce more natural, less hyper-real looking images.
+                This param is only supported for `dall-e-3`.
+
+            timeout: Override the client-level default timeout for this request, in seconds. Defaults to `None`.
+
+            download: If `True`, the image will be downloaded to the cache directory. Defaults to `True`.
         """
+        if size not in valid_sizes[model]:
+            raise Exception(f"Invalid size for {model}: {size}")
+
         response = self.client.images.generate(
-            model=model,
             prompt=text,
-            size=DEFAULT_SIZE,
-            quality=quality,
             n=num_images,
-            response_format="b64_json",
+            model=model,
+            quality=quality,
+            size=size,
+            response_format="b64_json" if download else "url",
+            style=style,
+            timeout=timeout,
         )
+        if download:
+            image_bytes = response.data[0].b64_json
+            ext = get_extension(image_bytes)
+            filename = f"{time.time()}.{ext}"
 
-        image_bytes = response.data[0].b64_json
+            return (self.save_base64_image(image_bytes, filename),)
 
-        filename = f"{time.time()}.jpg"
-
-        return self.save_base64_image(image_bytes, filename)
+        return response.data[0].url

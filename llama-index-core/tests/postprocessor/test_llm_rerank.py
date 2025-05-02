@@ -7,7 +7,6 @@ from llama_index.core.llms.mock import MockLLM
 from llama_index.core.postprocessor.llm_rerank import LLMRerank
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.schema import BaseNode, NodeWithScore, QueryBundle, TextNode
-from llama_index.core.service_context import ServiceContext
 
 
 def mock_llmpredictor_predict(
@@ -46,7 +45,7 @@ def mock_format_node_batch_fn(nodes: List[BaseNode]) -> str:
     "predict",
     mock_llmpredictor_predict,
 )
-def test_llm_rerank(mock_service_context: ServiceContext) -> None:
+def test_llm_rerank() -> None:
     """Test LLM rerank."""
     nodes = [
         TextNode(text="Test"),
@@ -63,10 +62,7 @@ def test_llm_rerank(mock_service_context: ServiceContext) -> None:
     # choice batch size 4 (so two batches)
     # take top-3 across all data
     llm_rerank = LLMRerank(
-        format_node_batch_fn=mock_format_node_batch_fn,
-        choice_batch_size=4,
-        top_n=3,
-        service_context=mock_service_context,
+        format_node_batch_fn=mock_format_node_batch_fn, choice_batch_size=4, top_n=3
     )
     query_str = "What is?"
     result_nodes = llm_rerank.postprocess_nodes(

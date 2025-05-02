@@ -6,7 +6,6 @@ from unittest.mock import patch
 from llama_index.core.data_structs.data_structs import IndexGraph
 from llama_index.core.indices.tree.base import TreeIndex
 from llama_index.core.schema import BaseNode, Document
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.storage.docstore import BaseDocumentStore
 
 
@@ -26,14 +25,13 @@ def _get_left_or_right_node(
 
 def test_build_tree(
     documents: List[Document],
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
     struct_kwargs: Dict,
 ) -> None:
     """Test build tree."""
     index_kwargs, _ = struct_kwargs
-    tree = TreeIndex.from_documents(
-        documents, service_context=mock_service_context, **index_kwargs
-    )
+    tree = TreeIndex.from_documents(documents, **index_kwargs)
     assert len(tree.index_struct.all_nodes) == 6
     # check contents of nodes
 
@@ -53,8 +51,9 @@ def test_build_tree(
 
 def test_build_tree_with_embed(
     documents: List[Document],
-    mock_service_context: ServiceContext,
     struct_kwargs: Dict,
+    patch_llm_predictor,
+    patch_token_text_splitter,
 ) -> None:
     """Test build tree."""
     index_kwargs, _ = struct_kwargs
@@ -65,9 +64,7 @@ def test_build_tree_with_embed(
         "This is a test v2."
     )
     document = Document(text=doc_text, embedding=[0.1, 0.2, 0.3])
-    tree = TreeIndex.from_documents(
-        [document], service_context=mock_service_context, **index_kwargs
-    )
+    tree = TreeIndex.from_documents([document], **index_kwargs)
     assert len(tree.index_struct.all_nodes) == 6
     # check contents of nodes
     all_nodes = tree.docstore.get_node_dict(tree.index_struct.all_nodes)
@@ -95,14 +92,13 @@ OUTPUTS = [
 def test_build_tree_async(
     _mock_run_async_tasks: Any,
     documents: List[Document],
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
     struct_kwargs: Dict,
 ) -> None:
     """Test build tree with use_async."""
     index_kwargs, _ = struct_kwargs
-    tree = TreeIndex.from_documents(
-        documents, use_async=True, service_context=mock_service_context, **index_kwargs
-    )
+    tree = TreeIndex.from_documents(documents, use_async=True, **index_kwargs)
     assert len(tree.index_struct.all_nodes) == 6
     # check contents of nodes
     nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
@@ -115,7 +111,8 @@ def test_build_tree_async(
 
 
 def test_build_tree_multiple(
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
     struct_kwargs: Dict,
 ) -> None:
     """Test build tree."""
@@ -124,9 +121,7 @@ def test_build_tree_multiple(
         Document(text="This is another test.\nThis is a test v2."),
     ]
     index_kwargs, _ = struct_kwargs
-    tree = TreeIndex.from_documents(
-        new_docs, service_context=mock_service_context, **index_kwargs
-    )
+    tree = TreeIndex.from_documents(new_docs, **index_kwargs)
     assert len(tree.index_struct.all_nodes) == 6
     # check contents of nodes
     nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
@@ -138,14 +133,13 @@ def test_build_tree_multiple(
 
 def test_insert(
     documents: List[Document],
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
     struct_kwargs: Dict,
 ) -> None:
     """Test insert."""
     index_kwargs, _ = struct_kwargs
-    tree = TreeIndex.from_documents(
-        documents, service_context=mock_service_context, **index_kwargs
-    )
+    tree = TreeIndex.from_documents(documents, **index_kwargs)
 
     # test insert
     new_doc = Document(text="This is a new doc.", id_="new_doc")
@@ -176,9 +170,7 @@ def test_insert(
     assert right_root3.ref_doc_id == "new_doc"
 
     # test insert from empty (no_id)
-    tree = TreeIndex.from_documents(
-        [], service_context=mock_service_context, **index_kwargs
-    )
+    tree = TreeIndex.from_documents([], **index_kwargs)
     new_doc = Document(text="This is a new doc.")
     tree.insert(new_doc)
     nodes = tree.docstore.get_nodes(list(tree.index_struct.all_nodes.values()))
@@ -186,9 +178,7 @@ def test_insert(
     assert nodes[0].get_content() == "This is a new doc."
 
     # test insert from empty (with_id)
-    tree = TreeIndex.from_documents(
-        [], service_context=mock_service_context, **index_kwargs
-    )
+    tree = TreeIndex.from_documents([], **index_kwargs)
     new_doc = Document(text="This is a new doc.", id_="new_doc_test")
     tree.insert(new_doc)
     assert len(tree.index_struct.all_nodes) == 1
@@ -197,11 +187,9 @@ def test_insert(
     assert nodes[0].ref_doc_id == "new_doc_test"
 
 
-def test_twice_insert_empty(
-    mock_service_context: ServiceContext,
-) -> None:
+def test_twice_insert_empty(patch_llm_predictor, patch_token_text_splitter) -> None:
     """# test twice insert from empty (with_id)."""
-    tree = TreeIndex.from_documents([], service_context=mock_service_context)
+    tree = TreeIndex.from_documents([])
 
     # test first insert
     new_doc = Document(text="This is a new doc.", id_="new_doc")

@@ -1,20 +1,19 @@
 from unittest.mock import patch
 
 from llama_index.core.llms import CompletionResponse
-from llama_index.core.selectors.llm_selectors import (
-    LLMMultiSelector,
-    LLMSingleSelector,
-)
-from llama_index.core.service_context import ServiceContext
+from llama_index.core.selectors.llm_selectors import LLMMultiSelector, LLMSingleSelector
+from llama_index.core import Settings
+
 from tests.mock_utils.mock_predict import _mock_single_select
 
 
-def test_llm_single_selector() -> None:
-    service_context = ServiceContext.from_defaults(llm=None, embed_model=None)
-    selector = LLMSingleSelector.from_defaults(service_context=service_context)
+def test_llm_single_selector(mock_llm, monkeypatch) -> None:
+    selector = LLMSingleSelector.from_defaults()
+
+    monkeypatch.setattr(Settings, "llm", mock_llm)
 
     with patch.object(
-        type(service_context.llm),
+        type(mock_llm),
         "complete",
         return_value=CompletionResponse(text=_mock_single_select()),
     ) as mock_complete:
@@ -26,10 +25,8 @@ def test_llm_single_selector() -> None:
     assert mock_complete.call_args.args[0].count("Here is an example") <= 1
 
 
-def test_llm_multi_selector(
-    mock_service_context: ServiceContext,
-) -> None:
-    selector = LLMMultiSelector.from_defaults(service_context=mock_service_context)
+def test_llm_multi_selector(patch_llm_predictor) -> None:
+    selector = LLMMultiSelector.from_defaults()
 
     choices = [
         "apple",
@@ -42,12 +39,8 @@ def test_llm_multi_selector(
     assert result.inds == [0, 1, 2]
 
 
-def test_llm_multi_selector_max_choices(
-    mock_service_context: ServiceContext,
-) -> None:
-    selector = LLMMultiSelector.from_defaults(
-        service_context=mock_service_context, max_outputs=2
-    )
+def test_llm_multi_selector_max_choices(patch_llm_predictor) -> None:
+    selector = LLMMultiSelector.from_defaults(max_outputs=2)
 
     choices = [
         "apple",

@@ -8,7 +8,6 @@ from llama_index.core.indices.keyword_table.simple_base import (
     SimpleKeywordTableIndex,
 )
 from llama_index.core.schema import Document
-from llama_index.core.service_context import ServiceContext
 from tests.mock_utils.mock_utils import mock_extract_keywords
 
 
@@ -29,16 +28,12 @@ def documents() -> List[Document]:
     "llama_index.core.indices.keyword_table.simple_base.simple_extract_keywords",
     mock_extract_keywords,
 )
-def test_build_table(
-    documents: List[Document], mock_service_context: ServiceContext
-) -> None:
+def test_build_table(documents: List[Document], patch_token_text_splitter) -> None:
     """Test build table."""
     # test simple keyword table
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
-    table = SimpleKeywordTableIndex.from_documents(
-        documents, service_context=mock_service_context
-    )
+    table = SimpleKeywordTableIndex.from_documents(documents)
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
     table_chunks = {n.get_content() for n in nodes}
     assert len(table_chunks) == 4
@@ -67,17 +62,13 @@ def test_build_table(
     mock_extract_keywords,
 )
 def test_build_table_async(
-    allow_networking: Any,
-    documents: List[Document],
-    mock_service_context: ServiceContext,
+    allow_networking: Any, documents: List[Document], patch_token_text_splitter
 ) -> None:
     """Test build table."""
     # test simple keyword table
     # NOTE: here the keyword extraction isn't mocked because we're using
     # the regex-based keyword extractor, not GPT
-    table = SimpleKeywordTableIndex.from_documents(
-        documents, use_async=True, service_context=mock_service_context
-    )
+    table = SimpleKeywordTableIndex.from_documents(documents, use_async=True)
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
     table_chunks = {n.get_content() for n in nodes}
     assert len(table_chunks) == 4
@@ -105,12 +96,9 @@ def test_build_table_async(
     "llama_index.core.indices.keyword_table.simple_base.simple_extract_keywords",
     mock_extract_keywords,
 )
-def test_insert(
-    documents: List[Document],
-    mock_service_context: ServiceContext,
-) -> None:
+def test_insert(documents: List[Document], patch_token_text_splitter) -> None:
     """Test insert."""
-    table = SimpleKeywordTableIndex([], service_context=mock_service_context)
+    table = SimpleKeywordTableIndex([])
     assert len(table.index_struct.table.keys()) == 0
     table.insert(documents[0])
     nodes = table.docstore.get_nodes(list(table.index_struct.node_ids))
@@ -144,7 +132,12 @@ def test_insert(
     chunk_index2_1 = next(iter(table.index_struct.table["test"]))
     chunk_index2_2 = next(iter(table.index_struct.table["v3"]))
     nodes = table.docstore.get_nodes(
-        [chunk_index1_1, chunk_index1_2, chunk_index2_1, chunk_index2_2]
+        [
+            chunk_index1_1,
+            chunk_index1_2,
+            chunk_index2_1,
+            chunk_index2_2,
+        ]
     )
     assert nodes[0].ref_doc_id == "test_id1"
     assert nodes[1].ref_doc_id == "test_id1"
@@ -156,9 +149,7 @@ def test_insert(
     "llama_index.core.indices.keyword_table.simple_base.simple_extract_keywords",
     mock_extract_keywords,
 )
-def test_delete(
-    mock_service_context: ServiceContext,
-) -> None:
+def test_delete(patch_token_text_splitter) -> None:
     """Test insert."""
     new_documents = [
         Document(text="Hello world.\nThis is a test.", id_="test_id_1"),
@@ -167,9 +158,7 @@ def test_delete(
     ]
 
     # test delete
-    table = SimpleKeywordTableIndex.from_documents(
-        new_documents, service_context=mock_service_context
-    )
+    table = SimpleKeywordTableIndex.from_documents(new_documents)
     # test delete
     table.delete_ref_doc("test_id_1")
     assert len(table.index_struct.table.keys()) == 6
@@ -180,9 +169,7 @@ def test_delete(
     node_texts = {n.get_content() for n in nodes}
     assert node_texts == {"This is another test.", "This is a test v2."}
 
-    table = SimpleKeywordTableIndex.from_documents(
-        new_documents, service_context=mock_service_context
-    )
+    table = SimpleKeywordTableIndex.from_documents(new_documents)
 
     # test ref doc info
     all_ref_doc_info = table.ref_doc_info

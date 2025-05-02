@@ -56,28 +56,6 @@ class CodeSplitter(TextSplitter):
         """Initialize a CodeSplitter."""
         from tree_sitter import Parser  # pants: no-infer-dep
 
-        if parser is None:
-            try:
-                import tree_sitter_languages  # pants: no-infer-dep
-
-                parser = tree_sitter_languages.get_parser(language)
-            except ImportError:
-                raise ImportError(
-                    "Please install tree_sitter_languages to use CodeSplitter."
-                    "Or pass in a parser object."
-                )
-            except Exception:
-                print(
-                    f"Could not get parser for language {language}. Check "
-                    "https://github.com/grantjenks/py-tree-sitter-languages#license "
-                    "for a list of valid languages."
-                )
-                raise
-        if not isinstance(parser, Parser):
-            raise ValueError("Parser must be a tree-sitter Parser object.")
-
-        self._parser = parser
-
         callback_manager = callback_manager or CallbackManager([])
         id_func = id_func or default_id_func
 
@@ -91,6 +69,28 @@ class CodeSplitter(TextSplitter):
             include_prev_next_rel=include_prev_next_rel,
             id_func=id_func,
         )
+
+        if parser is None:
+            try:
+                import tree_sitter_language_pack  # pants: no-infer-dep
+
+                parser = tree_sitter_language_pack.get_parser(language)  # type: ignore
+            except ImportError:
+                raise ImportError(
+                    "Please install tree_sitter_language_pack to use CodeSplitter."
+                    "Or pass in a parser object."
+                )
+            except Exception:
+                print(
+                    f"Could not get parser for language {language}. Check "
+                    "https://github.com/Goldziher/tree-sitter-language-pack?tab=readme-ov-file#available-languages "
+                    "for a list of valid languages."
+                )
+                raise
+        if not isinstance(parser, Parser):
+            raise ValueError("Parser must be a tree-sitter Parser object.")
+
+        self._parser = parser
 
     @classmethod
     def from_defaults(
@@ -108,6 +108,7 @@ class CodeSplitter(TextSplitter):
             chunk_lines=chunk_lines,
             chunk_lines_overlap=chunk_lines_overlap,
             max_chars=max_chars,
+            callback_manager=callback_manager,
             parser=parser,
         )
 
@@ -116,6 +117,16 @@ class CodeSplitter(TextSplitter):
         return "CodeSplitter"
 
     def _chunk_node(self, node: Any, text: str, last_end: int = 0) -> List[str]:
+        """Recursively chunk a node into smaller pieces based on character limits.
+
+        Args:
+            node (Any): The AST node to chunk.
+            text (str): The original source code text.
+            last_end (int, optional): The ending position of the last processed chunk. Defaults to 0.
+
+        Returns:
+            List[str]: A list of code chunks that respect the max_chars limit.
+        """
         new_chunks = []
         current_chunk = ""
         for child in node.children:
@@ -139,6 +150,20 @@ class CodeSplitter(TextSplitter):
         return new_chunks
 
     def split_text(self, text: str) -> List[str]:
+        """Split incoming code into chunks using the AST parser.
+
+        This method parses the input code into an AST and then chunks it while preserving
+        syntactic structure. It handles error cases and ensures the code can be properly parsed.
+
+        Args:
+            text (str): The source code text to split.
+
+        Returns:
+            List[str]: A list of code chunks.
+
+        Raises:
+            ValueError: If the code cannot be parsed for the specified language.
+        """
         """Split incoming code and return chunks using the AST."""
         with self.callback_manager.event(
             CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}

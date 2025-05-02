@@ -12,11 +12,6 @@ from llama_index.core.vector_stores.types import (
     FilterCondition,
 )
 
-##
-# Run tests
-# cd tests/vector_stores
-# pytest test_chromadb.py
-
 
 PARAMS: Dict[str, str] = {
     "host": os.environ.get("CHROMADB_HOST", "localhost"),
@@ -196,3 +191,57 @@ async def test_add_to_chromadb_and_query_by_metafilters_only(
         res.nodes[0].get_content()
         == "I was taught that the way of progress was neither swift nor easy."
     )
+
+
+def test_get_nodes(
+    vector_store: ChromaVectorStore, node_embeddings: List[TextNode]
+) -> None:
+    vector_store.add(node_embeddings)
+    res = vector_store.get_nodes(
+        node_ids=[
+            "c330d77f-90bd-4c51-9ed2-57d8d693b3b0",
+            "c3d1e1dd-8fb4-4b8f-b7ea-7fa96038d39d",
+            "c3ew11cd-8fb4-4b8f-b7ea-7fa96038d39d",
+        ]
+    )
+    assert len(res) == 3
+    assert res[0].get_content() == "lorem ipsum"
+    assert res[1].get_content() == "lorem ipsum"
+    assert res[2].get_content() == "lorem ipsum"
+
+
+def test_delete_nodes(
+    vector_store: ChromaVectorStore, node_embeddings: List[TextNode]
+) -> None:
+    vector_store.add(node_embeddings)
+    vector_store.delete_nodes(
+        node_ids=[
+            "c330d77f-90bd-4c51-9ed2-57d8d693b3b0",
+            "c3d1e1dd-8fb4-4b8f-b7ea-7fa96038d39d",
+        ]
+    )
+    res = vector_store.get_nodes(
+        node_ids=[
+            "c330d77f-90bd-4c51-9ed2-57d8d693b3b0",
+            "c3d1e1dd-8fb4-4b8f-b7ea-7fa96038d39d",
+            "c3ew11cd-8fb4-4b8f-b7ea-7fa96038d39d",
+        ]
+    )
+    assert len(res) == 1
+    assert res[0].get_content() == "lorem ipsum"
+    assert res[0].id_ == "c3ew11cd-8fb4-4b8f-b7ea-7fa96038d39d"
+
+
+def test_clear(
+    vector_store: ChromaVectorStore, node_embeddings: List[TextNode]
+) -> None:
+    vector_store.add(node_embeddings)
+    vector_store.clear()
+    res = vector_store.get_nodes(
+        node_ids=[
+            "c330d77f-90bd-4c51-9ed2-57d8d693b3b0",
+            "c3d1e1dd-8fb4-4b8f-b7ea-7fa96038d39d",
+            "c3ew11cd-8fb4-4b8f-b7ea-7fa96038d39d",
+        ]
+    )
+    assert len(res) == 0

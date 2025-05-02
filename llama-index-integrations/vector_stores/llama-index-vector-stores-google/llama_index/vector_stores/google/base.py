@@ -97,7 +97,7 @@ class GoogleVectorStore(BasePydanticVectorStore):
 
     Currently, it computes the embedding vectors on the server side.
 
-    Example:
+    Examples:
         google_vector_store = GoogleVectorStore.from_corpus(
             corpus_id="my-corpus-id",
             include_metadata=True,

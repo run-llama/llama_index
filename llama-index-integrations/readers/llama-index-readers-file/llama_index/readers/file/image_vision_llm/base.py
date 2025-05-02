@@ -33,8 +33,15 @@ class ImageVisionLLMReader(BaseReader):
                     "`pip install torch transformers sentencepiece Pillow`"
                 )
 
+            self._torch = torch
+            self._torch_imported = True
+
             device = infer_torch_device()
-            dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+            dtype = (
+                self._torch.float16
+                if self._torch.cuda.is_available()
+                else self._torch.float32
+            )
             processor = Blip2Processor.from_pretrained("Salesforce/blip2-opt-2.7b")
             model = Blip2ForConditionalGeneration.from_pretrained(
                 "Salesforce/blip2-opt-2.7b", torch_dtype=dtype
@@ -45,6 +52,9 @@ class ImageVisionLLMReader(BaseReader):
                 "device": device,
                 "dtype": dtype,
             }
+
+        # Try to import PyTorch in order to run inference efficiently.
+        self._import_torch()
 
         self._parser_config = parser_config
         self._keep_image = keep_image
@@ -79,7 +89,16 @@ class ImageVisionLLMReader(BaseReader):
 
         inputs = processor(image, self._prompt, return_tensors="pt").to(device, dtype)
 
-        out = model.generate(**inputs)
+        if self._torch_imported:
+            # Gradients are not needed during inference. If PyTorch is
+            # installed, we can instruct it to not track the gradients.
+            # This reduces GPU memory usage and improves inference efficiency.
+            with self._torch.no_grad():
+                out = model.generate(**inputs)
+        else:
+            # Fallback to less efficient behavior if PyTorch is not installed.
+            out = model.generate(**inputs)
+
         text_str = processor.decode(out[0], skip_special_tokens=True)
 
         return [
@@ -90,3 +109,14 @@ class ImageVisionLLMReader(BaseReader):
                 metadata=extra_info or {},
             )
         ]
+
+    def _import_torch(self) -> None:
+        self._torch = None
+
+        try:
+            import torch
+
+            self._torch = torch
+            self._torch_imported = True
+        except ImportError:
+            self._torch_imported = False

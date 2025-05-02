@@ -2,14 +2,26 @@
 
 from inspect import signature
 from typing import Any, Callable, Dict, Optional, Set, Tuple
+from typing_extensions import Annotated
 
 from llama_index.core.base.query_pipeline.query import (
     InputKeys,
     OutputKeys,
     QueryComponent,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import (
+    Field,
+    PrivateAttr,
+    ConfigDict,
+    WithJsonSchema,
+)
 from llama_index.core.callbacks.base import CallbackManager
+
+AnnotatedCallable = Annotated[
+    Callable,
+    WithJsonSchema({"type": "string"}, mode="serialization"),
+    WithJsonSchema({"type": "string"}, mode="validation"),
+]
 
 
 def get_parameters(fn: Callable) -> Tuple[Set[str], Set[str]]:
@@ -35,8 +47,9 @@ def get_parameters(fn: Callable) -> Tuple[Set[str], Set[str]]:
 class FnComponent(QueryComponent):
     """Query component that takes in an arbitrary function."""
 
-    fn: Callable = Field(..., description="Function to run.")
-    async_fn: Optional[Callable] = Field(
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    fn: AnnotatedCallable = Field(..., description="Function to run.")
+    async_fn: Optional[AnnotatedCallable] = Field(
         None, description="Async function to run. If not provided, will run `fn`."
     )
     output_key: str = Field(
@@ -57,6 +70,7 @@ class FnComponent(QueryComponent):
     ) -> None:
         """Initialize."""
         # determine parameters
+        super().__init__(fn=fn, async_fn=async_fn, output_key=output_key, **kwargs)
         default_req_params, default_opt_params = get_parameters(fn)
         if req_params is None:
             req_params = default_req_params
@@ -65,10 +79,6 @@ class FnComponent(QueryComponent):
 
         self._req_params = req_params
         self._opt_params = opt_params
-        super().__init__(fn=fn, async_fn=async_fn, output_key=output_key, **kwargs)
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""

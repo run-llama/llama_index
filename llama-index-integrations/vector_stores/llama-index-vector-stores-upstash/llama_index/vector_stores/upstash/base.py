@@ -9,31 +9,109 @@ https://upstash.com/docs/vector/overall/getstarted
 import logging
 from typing import Any, List
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode
 from llama_index.core.utils import iter_batch
 from llama_index.core.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
+    MetadataFilters,
+    MetadataFilter,
+    FilterOperator,
 )
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+from upstash_vector import Index
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_BATCH_SIZE = 128
 
 
-class UpstashVectorStore(VectorStore):
-    """
-    Upstash Vector Store.
+def _transform_upstash_filter_operator(operator: str) -> str:
+    """Translate standard metadata filter operator to Upstash specific spec."""
+    if operator == FilterOperator.EQ:
+        return "="
+    elif operator == FilterOperator.GT:
+        return ">"
+    elif operator == FilterOperator.LT:
+        return "<"
+    elif operator == FilterOperator.NE:
+        return "!="
+    elif operator == FilterOperator.GTE:
+        return ">="
+    elif operator == FilterOperator.LTE:
+        return "<="
+    elif operator == FilterOperator.IN:
+        return "IN"
+    elif operator == FilterOperator.NIN:
+        return "NOT IN"
+    elif operator == FilterOperator.CONTAINS:
+        return "CONTAINS"
+    else:
+        raise ValueError(f"Filter operator {operator} not supported")
+
+
+def _to_upstash_filter_string(filter: MetadataFilter) -> str:
+    key = filter.key
+    value = filter.value
+    operator = filter.operator
+    operator_str = _transform_upstash_filter_operator(operator)
+
+    if filter.operator in [
+        FilterOperator.IN,
+        FilterOperator.NIN,
+    ]:
+        value_str = ", ".join(
+            str(v) if not isinstance(v, str) else f"'{v}'" for v in value
+        )
+        return f"{key} {operator_str} ({value_str})"
+    value_str = f"'{value}'" if isinstance(value, str) else str(value)
+    return f"{key} {operator_str} {value_str}"
+
+
+def _to_upstash_filters(filters: MetadataFilters) -> str:
+    if not filters:
+        return ""
+    sql_filters = []
+
+    for metadata_filter in filters.filters:
+        sql_filters.append(_to_upstash_filter_string(metadata_filter))
+
+    # Combine filters using AND or OR condition
+    condition_str = filters.condition.value.upper()
+    return f" {condition_str} ".join(sql_filters)
+    # print(combined_filters)
+
+
+class UpstashVectorStore(BasePydanticVectorStore):
+    """Upstash Vector Store.
+
+    Examples:
+        `pip install llama-index-vector-stores-upstash`
+
+        ```python
+        from llama_index.vector_stores.upstash import UpstashVectorStore
+
+        # Create Upstash vector store
+        upstash_vector_store = UpstashVectorStore(
+            url="your_upstash_vector_url",
+            token="your_upstash_vector_token",
+        )
+        ```
     """
 
     stores_text: bool = True
     flat_metadata: bool = False
+
+    namespace: str = ""
+
+    batch_size: int
+    _index: Index = PrivateAttr()
 
     @classmethod
     def class_name(cls) -> str:
@@ -45,7 +123,12 @@ class UpstashVectorStore(VectorStore):
         return self._index
 
     def __init__(
-        self, url: str, token: str, batch_size: int = DEFAULT_BATCH_SIZE
+        self,
+        url: str,
+        token: str,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+        # Upstash uses ("") as the default namespace, if not provided
+        namespace: str = "",
     ) -> None:
         """
         Create a UpstashVectorStore. The index can be created using the Upstash console.
@@ -58,15 +141,7 @@ class UpstashVectorStore(VectorStore):
         Raises:
             ImportError: If the upstash-vector python package is not installed.
         """
-        self.batch_size = batch_size
-
-        try:
-            from upstash_vector import Index
-        except ImportError:
-            raise ImportError(
-                "Could not import upstash_vector.Index, Please install it with `pip install upstash-vector`"
-            )
-
+        super().__init__(batch_size=batch_size, namespace=namespace)
         self._index = Index(url=url, token=token)
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
@@ -88,7 +163,7 @@ class UpstashVectorStore(VectorStore):
                 ids.append(node.node_id)
                 vectors.append((node.node_id, node.embedding, metadata_dict))
 
-            self.client.upsert(vectors=vectors)
+            self.client.upsert(vectors=vectors, namespace=self.namespace)
 
         return ids
 
@@ -118,14 +193,16 @@ class UpstashVectorStore(VectorStore):
         if query.mode != VectorStoreQueryMode.DEFAULT:
             raise ValueError(f"Query mode {query.mode} not supported")
 
-        if query.filters:
-            raise ValueError("Metadata filtering not supported")
+        # if query.filters:
+        #     raise ValueError("Metadata filtering not supported")
 
         res = self.client.query(
             vector=query.query_embedding,
             top_k=query.similarity_top_k,
             include_vectors=True,
             include_metadata=True,
+            filter=_to_upstash_filters(query.filters),
+            namespace=self.namespace,
         )
 
         top_k_nodes = []

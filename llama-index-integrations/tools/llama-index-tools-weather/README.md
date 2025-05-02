@@ -5,7 +5,7 @@ This tool connects to the [OpenWeatherMap](https://openweathermap.org/api)'s One
 The tool has access to the following functions:
 
 - the current weather
-- the the weather tomorrow
+- the weather tomorrow
 
 ## Usage
 
@@ -25,4 +25,4 @@ agent.chat("What is the wind like in Budapest tomorrow?")
 
 `weather_at_location`: Use pyowm to get current weather details at a location
 
-`forecast_tommorrow_at_location`: Use pyowm to get the forecast for tomorrow at a location.
+`forecast_tomorrow_at_location`: Use pyowm to get the forecast for tomorrow at a location.

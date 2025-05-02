@@ -91,14 +91,14 @@ def test_tool_spec() -> None:
     assert tools[0].metadata.name == "foo_name"
     assert tools[0].metadata.description == "foo_description"
     assert tools[0].metadata.fn_schema is not None
-    fn_schema = tools[0].metadata.fn_schema.schema()
+    fn_schema = tools[0].metadata.fn_schema.model_json_schema()
     print(fn_schema)
     assert fn_schema["properties"]["arg1"]["type"] == "string"
     assert fn_schema["properties"]["arg2"]["type"] == "integer"
     assert tools[1].metadata.name == "bar"
     assert tools[1].metadata.description == "bar(arg1: bool) -> str\nBar."
     assert tools[1].metadata.fn_schema is not None
-    fn_schema = tools[1].metadata.fn_schema.schema()
+    fn_schema = tools[1].metadata.fn_schema.model_json_schema()
     assert fn_schema["properties"]["arg1"]["type"] == "boolean"
 
 

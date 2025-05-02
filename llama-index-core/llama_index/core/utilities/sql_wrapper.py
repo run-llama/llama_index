@@ -270,10 +270,11 @@ class SQLDatabase:
             try:
                 if self._schema:
                     command = command.replace("FROM ", f"FROM {self._schema}.")
+                    command = command.replace("JOIN ", f"JOIN {self._schema}.")
                 cursor = connection.execute(text(command))
             except (ProgrammingError, OperationalError) as exc:
                 raise NotImplementedError(
-                    f"Statement {command!r} is invalid SQL."
+                    f"Statement {command!r} is invalid SQL.\nError: {exc.orig}"
                 ) from exc
             if cursor.returns_rows:
                 result = cursor.fetchall()

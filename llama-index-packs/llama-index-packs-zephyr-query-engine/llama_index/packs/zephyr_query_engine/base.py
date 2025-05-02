@@ -1,9 +1,8 @@
 """LlamaPack class."""
 
-
 from typing import Any, Dict, List
 
-from llama_index.core import ServiceContext, VectorStoreIndex, set_global_tokenizer
+from llama_index.core import Settings, VectorStoreIndex, set_global_tokenizer
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.schema import Document
@@ -75,14 +74,11 @@ class ZephyrQueryEnginePack(BaseLlamaPack):
         tokenizer = AutoTokenizer.from_pretrained("HuggingFaceH4/zephyr-7b-beta")
         set_global_tokenizer(tokenizer.encode)
 
-        service_context = ServiceContext.from_defaults(
-            llm=llm, embed_model="local:BAAI/bge-base-en-v1.5"
-        )
+        Settings.llm = llm
+        Settings.embed_model = "local:BAAI/bge-base-en-v1.5"
 
         self.llm = llm
-        self.index = VectorStoreIndex.from_documents(
-            documents, service_context=service_context
-        )
+        self.index = VectorStoreIndex.from_documents(documents)
 
     def get_modules(self) -> Dict[str, Any]:
         """Get modules."""

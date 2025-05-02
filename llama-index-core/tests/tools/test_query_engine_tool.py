@@ -1,4 +1,5 @@
 """Test tools."""
+
 from typing import Type, cast
 
 import pytest
@@ -29,7 +30,7 @@ def test_query_engine_tool() -> None:
 
     fn_schema_cls = cast(Type[BaseModel], query_tool.metadata.fn_schema)
     fn_schema_obj = cast(BaseModel, fn_schema_cls(input="bar"))
-    response = query_tool(**fn_schema_obj.dict())
+    response = query_tool(**fn_schema_obj.model_dump())
     assert str(response) == "custom_bar"
 
     # test resolve input errors

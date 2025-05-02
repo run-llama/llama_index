@@ -13,7 +13,7 @@ from llama_index.core.utils import get_tqdm_iterable
 
 def _add_parent_child_relationship(parent_node: BaseNode, child_node: BaseNode) -> None:
     """Add parent/child relationship between nodes."""
-    child_list = parent_node.relationships.get(NodeRelationship.CHILD, [])
+    child_list = parent_node.child_nodes or []
     child_list.append(child_node.as_related_node_info())
     parent_node.relationships[NodeRelationship.CHILD] = child_list
 
@@ -47,9 +47,7 @@ def get_child_nodes(nodes: List[BaseNode], all_nodes: List[BaseNode]) -> List[Ba
         if NodeRelationship.CHILD not in node.relationships:
             continue
 
-        children_ids.extend(
-            [r.node_id for r in node.relationships[NodeRelationship.CHILD]]
-        )
+        children_ids.extend([r.node_id for r in (node.child_nodes or [])])
 
     child_nodes = []
     for candidate_node in all_nodes:
@@ -85,6 +83,7 @@ class HierarchicalNodeParser(NodeParser):
     per parent (e.g. with a smaller chunk size).
 
     For instance, this may return a list of nodes like:
+
     - list of top-level nodes with chunk size 2048
     - list of second-level nodes, where each node is a child of a top-level node,
       chunk size 512
@@ -210,13 +209,7 @@ class HierarchicalNodeParser(NodeParser):
         show_progress: bool = False,
         **kwargs: Any,
     ) -> List[BaseNode]:
-        """Parse document into nodes.
-
-        Args:
-            documents (Sequence[Document]): documents to parse
-            include_metadata (bool): whether to include metadata in nodes
-
-        """
+        """Parse document into nodes."""
         with self.callback_manager.event(
             CBEventType.NODE_PARSING, payload={EventPayload.DOCUMENTS: documents}
         ) as event:

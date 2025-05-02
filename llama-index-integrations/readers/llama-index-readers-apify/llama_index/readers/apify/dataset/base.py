@@ -17,7 +17,13 @@ class ApifyDataset(BaseReader):
         """Initialize Apify dataset reader."""
         from apify_client import ApifyClient
 
-        self.apify_client = ApifyClient(apify_api_token)
+        client = ApifyClient(apify_api_token)
+        if hasattr(client.http_client, "httpx_client"):
+            client.http_client.httpx_client.headers[
+                "user-agent"
+            ] += "; Origin/llama_index"
+
+        self.apify_client = client
 
     def load_data(
         self, dataset_id: str, dataset_mapping_function: Callable[[Dict], Document]

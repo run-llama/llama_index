@@ -11,17 +11,6 @@ from PIL import Image
 logger = logging.getLogger(__name__)
 
 
-AVAILABLE_CLIP_MODELS = (
-    "RN50",
-    "RN101",
-    "RN50x4",
-    "RN50x16",
-    "RN50x64",
-    "ViT-B/32",
-    "ViT-B/16",
-    "ViT-L/14",
-    "ViT-L/14@336px",
-)
 DEFAULT_CLIP_MODEL = "ViT-B/32"
 
 
@@ -86,10 +75,6 @@ class ClipEmbedding(MultiModalEmbedding):
 
         try:
             self._device = "cuda" if torch.cuda.is_available() else "cpu"
-            if self.model_name not in AVAILABLE_CLIP_MODELS:
-                raise ValueError(
-                    f"Model name {self.model_name} is not available in CLIP."
-                )
             self._model, self._preprocess = clip.load(
                 self.model_name, device=self._device
             )

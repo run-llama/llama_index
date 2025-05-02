@@ -1,4 +1,3 @@
-from threading import Thread
 from typing import Any, Callable, Generator, Optional, Sequence
 
 from llama_index.core.base.llms.types import (
@@ -19,13 +18,31 @@ from llama_index.core.base.llms.generic_utils import (
     stream_completion_response_to_chat_response,
 )
 from llama_index.core.llms.llm import LLM
-from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.types import BaseOutputParser, PydanticProgramMode, Thread
 
 from langchain.base_language import BaseLanguageModel
+from langchain.schema import AIMessage
 
 
 class LangChainLLM(LLM):
-    """Adapter for a LangChain LLM."""
+    """Adapter for a LangChain LLM.
+
+    Examples:
+        `pip install llama-index-llms-langchain`
+
+        ```python
+        from langchain_openai import ChatOpenAI
+
+        from llama_index.llms.langchain import LangChainLLM
+
+        llm = LangChainLLM(llm=ChatOpenAI(...))
+
+        response_gen = llm.stream_complete("What is the meaning of life?")
+
+        for r in response_gen:
+            print(r.delta, end="")
+        ```
+    """
 
     _llm: Any = PrivateAttr()
 
@@ -39,7 +56,6 @@ class LangChainLLM(LLM):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
-        self._llm = llm
         super().__init__(
             callback_manager=callback_manager,
             system_prompt=system_prompt,
@@ -48,6 +64,7 @@ class LangChainLLM(LLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
+        self._llm = llm
 
     @classmethod
     def class_name(cls) -> str:
@@ -76,7 +93,7 @@ class LangChainLLM(LLM):
             return completion_response_to_chat_response(completion_response)
 
         lc_messages = to_lc_messages(messages)
-        lc_message = self._llm.predict_messages(messages=lc_messages, **kwargs)
+        lc_message = self._llm.invoke(input=lc_messages, **kwargs)
         message = from_lc_messages([lc_message])[0]
         return ChatResponse(message=message)
 
@@ -87,7 +104,9 @@ class LangChainLLM(LLM):
         if not formatted:
             prompt = self.completion_to_prompt(prompt)
 
-        output_str = self._llm.predict(prompt, **kwargs)
+        output_str = self._llm.invoke(prompt, **kwargs)
+        if isinstance(output_str, AIMessage):
+            output_str = output_str.content
         return CompletionResponse(text=output_str)
 
     @llm_chat_callback()
@@ -111,7 +130,7 @@ class LangChainLLM(LLM):
                 response_str = ""
                 for message in self._llm.stream(lc_messages, **kwargs):
                     message = from_lc_messages([message])[0]
-                    delta = message.content
+                    delta = message.content or ""
                     response_str += delta
                     yield ChatResponse(
                         message=ChatMessage(role=message.role, content=response_str),

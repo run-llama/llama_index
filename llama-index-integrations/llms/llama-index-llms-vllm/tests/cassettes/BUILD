@@ -1,0 +1,3 @@
+files(
+  sources=["./*.yaml"]
+)

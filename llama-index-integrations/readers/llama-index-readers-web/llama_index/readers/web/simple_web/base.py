@@ -38,8 +38,8 @@ class SimpleWebPageReader(BasePydanticReader):
             raise ImportError(
                 "`html2text` package not found, please run `pip install html2text`"
             )
-        self._metadata_fn = metadata_fn
         super().__init__(html_to_text=html_to_text)
+        self._metadata_fn = metadata_fn
 
     @classmethod
     def class_name(cls) -> str:

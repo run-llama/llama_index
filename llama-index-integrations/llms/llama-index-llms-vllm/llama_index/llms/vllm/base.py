@@ -24,9 +24,44 @@ from llama_index.core.base.llms.generic_utils import (
 from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.vllm.utils import get_response, post_http_request
+import atexit
 
 
 class Vllm(LLM):
+    r"""Vllm LLM.
+
+    This class runs a vLLM model locally.
+
+    Examples:
+        `pip install llama-index-llms-vllm`
+
+
+        ```python
+        from llama_index.llms.vllm import Vllm
+
+        # specific functions to format for mistral instruct
+        def messages_to_prompt(messages):
+            prompt = "\n".join([str(x) for x in messages])
+            return f"<s>[INST] {prompt} [/INST] </s>\n"
+
+        def completion_to_prompt(completion):
+            return f"<s>[INST] {completion} [/INST] </s>\n"
+
+        llm = Vllm(
+            model="mistralai/Mistral-7B-Instruct-v0.1",
+            tensor_parallel_size=4,
+            max_new_tokens=256,
+            vllm_kwargs={"swap_space": 1, "gpu_memory_utilization": 0.5},
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+        )
+
+        llm.complete(
+            "What is a black hole?"
+        )
+        ```
+    """
+
     model: Optional[str] = Field(description="The HuggingFace Model to use.")
 
     temperature: float = Field(description="The temperature to use for sampling.")
@@ -69,10 +104,6 @@ class Vllm(LLM):
     top_k: int = Field(
         default=-1,
         description="Integer that controls the number of top tokens to consider.",
-    )
-
-    use_beam_search: bool = Field(
-        default=False, description="Whether to use beam search instead of sampling."
     )
 
     stop: Optional[List[str]] = Field(
@@ -119,14 +150,13 @@ class Vllm(LLM):
         model: str = "facebook/opt-125m",
         temperature: float = 1.0,
         tensor_parallel_size: int = 1,
-        trust_remote_code: bool = True,
+        trust_remote_code: bool = False,
         n: int = 1,
         best_of: Optional[int] = None,
         presence_penalty: float = 0.0,
         frequency_penalty: float = 0.0,
         top_p: float = 1.0,
         top_k: int = -1,
-        use_beam_search: bool = False,
         stop: Optional[List[str]] = None,
         ignore_eos: bool = False,
         max_new_tokens: int = 512,
@@ -142,24 +172,6 @@ class Vllm(LLM):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
-        try:
-            from vllm import LLM as VLLModel
-        except ImportError:
-            raise ImportError(
-                "Could not import vllm python package. "
-                "Please install it with `pip install vllm`."
-            )
-        if model != "":
-            self._client = VLLModel(
-                model=model,
-                tensor_parallel_size=tensor_parallel_size,
-                trust_remote_code=trust_remote_code,
-                dtype=dtype,
-                download_dir=download_dir,
-                **vllm_kwargs
-            )
-        else:
-            self._client = None
         callback_manager = callback_manager or CallbackManager([])
         super().__init__(
             model=model,
@@ -170,7 +182,6 @@ class Vllm(LLM):
             frequency_penalty=frequency_penalty,
             top_p=top_p,
             top_k=top_k,
-            use_beam_search=use_beam_search,
             stop=stop,
             ignore_eos=ignore_eos,
             max_new_tokens=max_new_tokens,
@@ -179,12 +190,31 @@ class Vllm(LLM):
             download_dir=download_dir,
             vllm_kwargs=vllm_kwargs,
             api_url=api_url,
+            callback_manager=callback_manager,
             system_prompt=system_prompt,
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
+        if not api_url:
+            try:
+                from vllm import LLM as VLLModel
+            except ImportError:
+                raise ImportError(
+                    "Could not import vllm python package. "
+                    "Please install it with `pip install vllm`."
+                )
+            self._client = VLLModel(
+                model=model,
+                tensor_parallel_size=tensor_parallel_size,
+                trust_remote_code=trust_remote_code,
+                dtype=dtype,
+                download_dir=download_dir,
+                **vllm_kwargs
+            )
+        else:
+            self._client = None
 
     @classmethod
     def class_name(cls) -> str:
@@ -202,7 +232,6 @@ class Vllm(LLM):
             "n": self.n,
             "frequency_penalty": self.frequency_penalty,
             "presence_penalty": self.presence_penalty,
-            "use_beam_search": self.use_beam_search,
             "best_of": self.best_of,
             "ignore_eos": self.ignore_eos,
             "stop": self.stop,
@@ -212,16 +241,14 @@ class Vllm(LLM):
         }
         return {**base_kwargs}
 
-    def __del__(self) -> None:
+    @atexit.register
+    def close():
         import torch
+        import gc
 
         if torch.cuda.is_available():
-            from vllm.model_executor.parallel_utils.parallel_state import (
-                destroy_model_parallel,
-            )
-
-            destroy_model_parallel()
-            del self._client
+            gc.collect()
+            torch.cuda.empty_cache()
             torch.cuda.synchronize()
 
     def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
@@ -291,6 +318,41 @@ class Vllm(LLM):
 
 
 class VllmServer(Vllm):
+    r"""Vllm LLM.
+
+    This class connects to a vLLM server (non-openai versions).
+
+    If using the OpenAI-API vLLM server, please see the `OpenAILike` LLM class.
+
+    Examples:
+        `pip install llama-index-llms-vllm`
+
+
+        ```python
+        from llama_index.llms.vllm import VllmServer
+
+        # specific functions to format for mistral instruct
+        def messages_to_prompt(messages):
+            prompt = "\n".join([str(x) for x in messages])
+            return f"<s>[INST] {prompt} [/INST] </s>\n"
+
+        def completion_to_prompt(completion):
+            return f"<s>[INST] {completion} [/INST] </s>\n"
+
+        llm = VllmServer(
+            api_url=api_url,
+            max_new_tokens=256,
+            temperature=0.1,
+            messages_to_prompt=messages_to_prompt,
+            completion_to_prompt=completion_to_prompt,
+        )
+
+        llm.complete(
+            "What is a black hole?"
+        )
+        ```
+    """
+
     def __init__(
         self,
         model: str = "facebook/opt-125m",
@@ -304,7 +366,6 @@ class VllmServer(Vllm):
         frequency_penalty: float = 0.0,
         top_p: float = 1.0,
         top_k: int = -1,
-        use_beam_search: bool = False,
         stop: Optional[List[str]] = None,
         ignore_eos: bool = False,
         max_new_tokens: int = 512,
@@ -317,12 +378,10 @@ class VllmServer(Vllm):
         callback_manager: Optional[CallbackManager] = None,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> None:
-        self._client = None
         messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         completion_to_prompt = completion_to_prompt or (lambda x: x)
         callback_manager = callback_manager or CallbackManager([])
 
-        model = ""
         super().__init__(
             model=model,
             temperature=temperature,
@@ -332,7 +391,6 @@ class VllmServer(Vllm):
             frequency_penalty=frequency_penalty,
             top_p=top_p,
             top_k=top_k,
-            use_beam_search=use_beam_search,
             stop=stop,
             ignore_eos=ignore_eos,
             max_new_tokens=max_new_tokens,
@@ -346,22 +404,24 @@ class VllmServer(Vllm):
             callback_manager=callback_manager,
             output_parser=output_parser,
         )
+        self._client = None
 
     @classmethod
     def class_name(cls) -> str:
         return "VllmServer"
 
+    def __del__(self) -> None:
+        ...
+
     @llm_completion_callback()
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> List[CompletionResponse]:
+    ) -> CompletionResponse:
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
 
-        from vllm import SamplingParams
-
         # build sampling parameters
-        sampling_params = SamplingParams(**params).__dict__
+        sampling_params = dict(**params)
         sampling_params["prompt"] = prompt
         response = post_http_request(self.api_url, sampling_params, stream=False)
         output = get_response(response)
@@ -375,23 +435,25 @@ class VllmServer(Vllm):
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
 
-        from vllm import SamplingParams
-
-        # build sampling parameters
-        sampling_params = SamplingParams(**params).__dict__
+        sampling_params = dict(**params)
         sampling_params["prompt"] = prompt
         response = post_http_request(self.api_url, sampling_params, stream=True)
 
         def gen() -> CompletionResponseGen:
             response_str = ""
+            prev_prefix_len = len(prompt)
             for chunk in response.iter_lines(
                 chunk_size=8192, decode_unicode=False, delimiter=b"\0"
             ):
                 if chunk:
                     data = json.loads(chunk.decode("utf-8"))
 
-                    response_str += data["text"][0]
-                    yield CompletionResponse(text=response_str, delta=data["text"][0])
+                    increasing_concat = data["text"][0]
+                    pref = prev_prefix_len
+                    prev_prefix_len = len(increasing_concat)
+                    yield CompletionResponse(
+                        text=increasing_concat, delta=increasing_concat[pref:]
+                    )
 
         return gen()
 
@@ -409,10 +471,8 @@ class VllmServer(Vllm):
         kwargs = kwargs if kwargs else {}
         params = {**self._model_kwargs, **kwargs}
 
-        from vllm import SamplingParams
-
         # build sampling parameters
-        sampling_params = SamplingParams(**params).__dict__
+        sampling_params = dict(**params)
         sampling_params["prompt"] = prompt
 
         async def gen() -> CompletionResponseAsyncGen:
@@ -433,4 +493,8 @@ class VllmServer(Vllm):
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        return self.stream_chat(messages, **kwargs)
+        async def gen() -> ChatResponseAsyncGen:
+            for message in self.stream_chat(messages, **kwargs):
+                yield message
+
+        return gen()

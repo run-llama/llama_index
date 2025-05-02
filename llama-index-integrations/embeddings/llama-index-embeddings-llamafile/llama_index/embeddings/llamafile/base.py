@@ -43,7 +43,11 @@ class LlamafileEmbedding(BaseEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         **kwargs,
     ) -> None:
-        super().__init__(base_url=base_url, callback_manager=callback_manager, **kwargs)
+        super().__init__(
+            base_url=base_url,
+            callback_manager=callback_manager or CallbackManager([]),
+            **kwargs,
+        )
 
     @classmethod
     def class_name(cls) -> str:

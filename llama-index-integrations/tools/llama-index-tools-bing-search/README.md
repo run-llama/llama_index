@@ -6,7 +6,7 @@ You will need to set up a search key using Azure,learn more here: https://learn.
 
 ## Usage
 
-This tool has a more extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/bing_search.ipynb)
+This tool has a more extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-bing-search/examples/bing_search.ipynb)
 
 Here's an example usage of the BingSearchToolSpec.
 
@@ -27,4 +27,4 @@ agent.chat("is there any videos of it levitating")
 `bing_image_search`: Search for images related to a query
 `bing_video_search`: Search for videos related to a query
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.

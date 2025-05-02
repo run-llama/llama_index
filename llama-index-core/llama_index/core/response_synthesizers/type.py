@@ -42,6 +42,9 @@ class ResponseMode(str, Enum):
     NO_TEXT = "no_text"
     """Return the retrieved context nodes, without synthesizing a final response."""
 
+    CONTEXT_ONLY = "context_only"
+    """Returns a concatenated string of all text chunks."""
+
     ACCUMULATE = "accumulate"
     """Synthesize a response for each text chunk, and then return the concatenation."""
 

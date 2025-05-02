@@ -30,7 +30,7 @@ and the value as the argument to pass to the function parameter.
     ```"""
 def extract_tool_use(input_text: str) -> Tuple[str, str, str]:
     pattern = (
-        r"\s*Thought: (.*?)\nAction: ([a-zA-Z0-9_]+).*?\nAction Input: .*?(\{.*\})"
+        r"\s*Thought: (.*?)\n+Action: ([^\n\(\) ]+).*?\n+Action Input: .*?(\{.*\})"
     )
 
     match = re.search(pattern, input_text, re.DOTALL)

@@ -98,7 +98,7 @@ class MinioReader(BaseReader):
         with tempfile.TemporaryDirectory() as temp_dir:
             if self.key:
                 suffix = Path(self.key).suffix
-                filepath = f"{temp_dir}/{next(tempfile._get_candidate_names())}{suffix}"
+                _, filepath = tempfile.mkstemp(dir=temp_dir, suffix=suffix)
                 minio_client.fget_object(
                     bucket_name=self.bucket, object_name=self.key, file_path=filepath
                 )
@@ -108,7 +108,6 @@ class MinioReader(BaseReader):
                 )
                 for i, obj in enumerate(objects):
                     file_name = obj.object_name.split("/")[-1]
-                    print(file_name)
                     if self.num_files_limit is not None and i > self.num_files_limit:
                         break
 
@@ -124,7 +123,6 @@ class MinioReader(BaseReader):
                         continue
 
                     filepath = f"{temp_dir}/{file_name}"
-                    print(filepath)
                     minio_client.fget_object(self.bucket, obj.object_name, filepath)
 
             loader = SimpleDirectoryReader(

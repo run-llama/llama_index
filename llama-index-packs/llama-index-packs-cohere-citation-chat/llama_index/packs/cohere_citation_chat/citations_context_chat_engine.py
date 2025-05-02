@@ -1,5 +1,4 @@
 import asyncio
-from threading import Thread
 from typing import List, Optional, Any
 from enum import Enum
 from dataclasses import dataclass, field
@@ -19,6 +18,7 @@ from llama_index.core.chat_engine.types import BaseChatEngine
 from llama_index.core import VectorStoreIndex
 from llama_index.core.settings import Settings
 from llama_index.core.memory import BaseMemory
+from llama_index.core.types import Thread
 
 from .types import (
     Document,
@@ -72,7 +72,7 @@ class StreamingAgentCitationsChatResponse(StreamingAgentChatResponse):
             final_text = ""
             for chat in self.chat_stream:
                 # LLM response queue
-                self._is_function = is_function(chat.message)
+                self.is_function = is_function(chat.message)
                 self.put_in_queue(chat.delta)
                 final_text += chat.delta or ""
                 if chat.raw is not None:
@@ -92,7 +92,7 @@ class StreamingAgentCitationsChatResponse(StreamingAgentChatResponse):
                         self.documents += convert_chat_response_to_documents(
                             chat, self.citations_settings
                         )
-            if self._is_function is not None:  # if loop has gone through iteration
+            if self.is_function is not None:  # if loop has gone through iteration
                 # NOTE: this is to handle the special case where we consume some of the
                 # chat stream, but not all of it (e.g. in react agent)
                 chat.message.content = final_text.strip()  # final message
@@ -105,10 +105,10 @@ class StreamingAgentCitationsChatResponse(StreamingAgentChatResponse):
             else:
                 raise
 
-        self._is_done = True
+        self.is_done = True
 
         # This act as is_done events for any consumers waiting
-        self._is_function_not_none_thread_event.set()
+        self.is_function_not_none_thread_event.set()
 
     async def awrite_response_to_history(
         self,
@@ -124,11 +124,11 @@ class StreamingAgentCitationsChatResponse(StreamingAgentChatResponse):
             final_text = ""
             async for chat in self.achat_stream:
                 # Chat response queue
-                self._is_function = is_function(chat.message)
+                self.is_function = is_function(chat.message)
                 self.aput_in_queue(chat.delta)
                 final_text += chat.delta or ""
-                if self._is_function is False:
-                    self._is_function_false_event.set()
+                if self.is_function is False:
+                    self.is_function_false_event.set()
                 if chat.raw is not None:
                     # Citations stream event
                     if (
@@ -146,15 +146,15 @@ class StreamingAgentCitationsChatResponse(StreamingAgentChatResponse):
                         self.documents += convert_chat_response_to_documents(
                             chat, self.citations_settings
                         )
-                self._new_item_event.set()
-            if self._is_function is not None:  # if loop has gone through iteration
+                self.new_item_event.set()
+            if self.is_function is not None:  # if loop has gone through iteration
                 # NOTE: this is to handle the special case where we consume some of the
                 # chat stream, but not all of it (e.g. in react agent)
                 chat.message.content = final_text.strip()  # final message
                 memory.put(chat.message)
         except Exception as e:
             logger.warning(f"Encountered exception writing response to history: {e}")
-        self._is_done = True
+        self.is_done = True
 
 
 class ChatModeCitations(str, Enum):
@@ -250,20 +250,11 @@ class VectorStoreIndexWithCitationsChat(VectorStoreIndex):
         if chat_mode not in [ChatModeCitations.COHERE_CITATIONS_CONTEXT]:
             return super().as_chat_engine(chat_mode=chat_mode, llm=llm, **kwargs)
         else:
-            service_context = kwargs.get("service_context", self.service_context)
-
-            if service_context is not None:
-                llm = (
-                    resolve_llm(llm, callback_manager=self._callback_manager)
-                    if llm
-                    else service_context.llm
-                )
-            else:
-                llm = (
-                    resolve_llm(llm, callback_manager=self._callback_manager)
-                    if llm
-                    else Settings.llm
-                )
+            llm = (
+                resolve_llm(llm, callback_manager=self._callback_manager)
+                if llm
+                else Settings.llm
+            )
 
             return CitationsContextChatEngine.from_defaults(
                 retriever=self.as_retriever(**kwargs),

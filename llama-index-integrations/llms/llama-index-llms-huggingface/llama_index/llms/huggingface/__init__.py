@@ -1,3 +1,5 @@
-from llama_index.llms.huggingface.base import HuggingFaceInferenceAPI, HuggingFaceLLM
+from llama_index.llms.huggingface.base import (
+    HuggingFaceLLM,
+)
 
-__all__ = ["HuggingFaceLLM", "HuggingFaceInferenceAPI"]
+__all__ = ["HuggingFaceLLM"]

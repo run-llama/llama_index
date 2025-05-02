@@ -28,7 +28,10 @@ class DuckDuckGoSearchToolSpec(BaseToolSpec):
             return list(ddg.answers(query))
 
     def duckduckgo_full_search(
-        self, query: str, region: Optional[str] = None, max_results: Optional[int] = 10
+        self,
+        query: str,
+        region: Optional[str] = "wt-wt",
+        max_results: Optional[int] = 10,
     ) -> List[Dict]:
         """
         Make a query to DuckDuckGo search to receive a full search results.
@@ -40,5 +43,11 @@ class DuckDuckGoSearchToolSpec(BaseToolSpec):
         """
         from duckduckgo_search import DDGS
 
+        params = {
+            "keywords": query,
+            "region": region,
+            "max_results": max_results,
+        }
+
         with DDGS() as ddg:
-            return list(ddg.text(query, region=region, max_results=max_results))
+            return list(ddg.text(**params))

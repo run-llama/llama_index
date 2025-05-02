@@ -4,7 +4,7 @@ This tool connects to a Zapier account and allows access to the natural language
 
 ## Usage
 
-This tool has more extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/zapier.ipynb)
+This tool has more extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-zapier/examples/zapier.ipynb)
 
 Here's an example usage of the ZapierToolSpec.
 
@@ -26,4 +26,4 @@ agent.chat("Can you find the taco night file in google drive")
 `list_actions`: Get the actions that you have enabled through zapier
 `natural_language_query`: Make a natural language query to zapier
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.

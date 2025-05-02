@@ -1,0 +1,17 @@
+{
+  "request": {
+    "method": "PUT",
+    "url": "/vector-search/nodes-collection",
+    "headers": {
+      "Authorization": {
+        "equalTo": "Key key43245932904328493223"
+      },
+      "Content-Type": {
+        "equalTo": "application/json"
+      }
+    }
+  },
+  "response": {
+    "status": 200
+  }
+}

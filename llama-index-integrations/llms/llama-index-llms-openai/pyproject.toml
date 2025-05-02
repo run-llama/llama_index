@@ -12,9 +12,8 @@ contains_example = false
 import_path = "llama_index.llms.openai"
 
 [tool.llamahub.class_authors]
-AsyncOpenAI = "llama-index"
 OpenAI = "llama-index"
-SyncOpenAI = "llama-index"
+OpenAIResponses = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -29,11 +28,12 @@ exclude = ["**/BUILD"]
 license = "MIT"
 name = "llama-index-llms-openai"
 readme = "README.md"
-version = "0.1.12"
+version = "0.3.37"
 
 [tool.poetry.dependencies]
-python = ">=3.8.1,<4.0"
-llama-index-core = "^0.10.20.post1"
+python = ">=3.9,<4.0"
+openai = "^1.66.3"
+llama-index-core = "^0.12.17"
 
 [tool.poetry.group.dev.dependencies]
 ipython = "8.10.0"
@@ -42,6 +42,7 @@ mypy = "0.991"
 pre-commit = "3.2.0"
 pylint = "2.15.10"
 pytest = "7.2.1"
+pytest-asyncio = "0.21.0"
 pytest-mock = "3.11.1"
 ruff = "0.0.292"
 tree-sitter-languages = "^1.8.0"
@@ -62,3 +63,6 @@ version = ">=v2.2.6"
 
 [[tool.poetry.packages]]
 include = "llama_index/"
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = true

@@ -9,12 +9,15 @@ from llama_index.core.constants import (
     GRAPH_STORE_KEY,
     INDEX_STORE_KEY,
     VECTOR_STORE_KEY,
+    PG_STORE_KEY,
 )
 from llama_index.core.graph_stores.simple import (
     DEFAULT_PERSIST_FNAME as GRAPH_STORE_FNAME,
 )
 from llama_index.core.graph_stores.simple import SimpleGraphStore
-from llama_index.core.graph_stores.types import GraphStore
+from llama_index.core.graph_stores.simple_labelled import SimplePropertyGraphStore
+from llama_index.core.graph_stores.types import DEFUALT_PG_PERSIST_FNAME as PG_FNAME
+from llama_index.core.graph_stores.types import GraphStore, PropertyGraphStore
 from llama_index.core.storage.docstore.simple_docstore import SimpleDocumentStore
 from llama_index.core.storage.docstore.types import (
     DEFAULT_PERSIST_FNAME as DOCSTORE_FNAME,
@@ -38,8 +41,8 @@ from llama_index.core.vector_stores.simple import (
 )
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
-    VectorStore,
 )
+from llama_index.core.bridge.pydantic import SerializeAsAny
 
 DEFAULT_PERSIST_DIR = "./storage"
 IMAGE_STORE_FNAME = "image_store.json"
@@ -54,27 +57,28 @@ class StorageContext:
     indices, and vectors. It contains the following:
     - docstore: BaseDocumentStore
     - index_store: BaseIndexStore
-    - vector_store: VectorStore
+    - vector_store: BasePydanticVectorStore
     - graph_store: GraphStore
+    - property_graph_store: PropertyGraphStore (lazily initialized)
 
     """
 
     docstore: BaseDocumentStore
     index_store: BaseIndexStore
-    vector_stores: Dict[str, VectorStore]
+    vector_stores: Dict[str, SerializeAsAny[BasePydanticVectorStore]]
     graph_store: GraphStore
+    property_graph_store: Optional[PropertyGraphStore] = None
 
     @classmethod
     def from_defaults(
         cls,
         docstore: Optional[BaseDocumentStore] = None,
         index_store: Optional[BaseIndexStore] = None,
-        vector_store: Optional[Union[VectorStore, BasePydanticVectorStore]] = None,
-        image_store: Optional[VectorStore] = None,
-        vector_stores: Optional[
-            Dict[str, Union[VectorStore, BasePydanticVectorStore]]
-        ] = None,
+        vector_store: Optional[BasePydanticVectorStore] = None,
+        image_store: Optional[BasePydanticVectorStore] = None,
+        vector_stores: Optional[Dict[str, BasePydanticVectorStore]] = None,
         graph_store: Optional[GraphStore] = None,
+        property_graph_store: Optional[PropertyGraphStore] = None,
         persist_dir: Optional[str] = None,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "StorageContext":
@@ -83,9 +87,9 @@ class StorageContext:
         Args:
             docstore (Optional[BaseDocumentStore]): document store
             index_store (Optional[BaseIndexStore]): index store
-            vector_store (Optional[VectorStore]): vector store
+            vector_store (Optional[BasePydanticVectorStore]): vector store
             graph_store (Optional[GraphStore]): graph store
-            image_store (Optional[VectorStore]): image store
+            image_store (Optional[BasePydanticVectorStore]): image store
 
         """
         if persist_dir is None:
@@ -114,6 +118,14 @@ class StorageContext:
                 persist_dir, fs=fs
             )
 
+            try:
+                property_graph_store = (
+                    property_graph_store
+                    or SimplePropertyGraphStore.from_persist_dir(persist_dir, fs=fs)
+                )
+            except FileNotFoundError:
+                property_graph_store = None
+
             if vector_store:
                 vector_stores = {DEFAULT_VECTOR_STORE: vector_store}
             elif vector_stores:
@@ -131,6 +143,7 @@ class StorageContext:
             index_store=index_store,
             vector_stores=vector_stores,  # type: ignore
             graph_store=graph_store,
+            property_graph_store=property_graph_store,
         )
 
     def persist(
@@ -141,6 +154,7 @@ class StorageContext:
         vector_store_fname: str = VECTOR_STORE_FNAME,
         image_store_fname: str = IMAGE_STORE_FNAME,
         graph_store_fname: str = GRAPH_STORE_FNAME,
+        pg_graph_store_fname: str = PG_FNAME,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
         """Persist the storage context.
@@ -153,15 +167,20 @@ class StorageContext:
             docstore_path = concat_dirs(persist_dir, docstore_fname)
             index_store_path = concat_dirs(persist_dir, index_store_fname)
             graph_store_path = concat_dirs(persist_dir, graph_store_fname)
+            pg_graph_store_path = concat_dirs(persist_dir, pg_graph_store_fname)
         else:
             persist_dir = Path(persist_dir)
             docstore_path = str(persist_dir / docstore_fname)
             index_store_path = str(persist_dir / index_store_fname)
             graph_store_path = str(persist_dir / graph_store_fname)
+            pg_graph_store_path = str(persist_dir / pg_graph_store_fname)
 
         self.docstore.persist(persist_path=docstore_path, fs=fs)
         self.index_store.persist(persist_path=index_store_path, fs=fs)
         self.graph_store.persist(persist_path=graph_store_path, fs=fs)
+
+        if self.property_graph_store:
+            self.property_graph_store.persist(persist_path=pg_graph_store_path, fs=fs)
 
         # save each vector store under it's namespace
         for vector_store_name, vector_store in self.vector_stores.items():
@@ -183,6 +202,9 @@ class StorageContext:
             isinstance(self.docstore, SimpleDocumentStore)
             and isinstance(self.index_store, SimpleIndexStore)
             and isinstance(self.graph_store, SimpleGraphStore)
+            and isinstance(
+                self.property_graph_store, (SimplePropertyGraphStore, type(None))
+            )
             and all(
                 isinstance(vs, SimpleVectorStore) for vs in self.vector_stores.values()
             )
@@ -195,6 +217,9 @@ class StorageContext:
         assert isinstance(self.docstore, SimpleDocumentStore)
         assert isinstance(self.index_store, SimpleIndexStore)
         assert isinstance(self.graph_store, SimpleGraphStore)
+        assert isinstance(
+            self.property_graph_store, (SimplePropertyGraphStore, type(None))
+        )
 
         return {
             VECTOR_STORE_KEY: {
@@ -205,6 +230,11 @@ class StorageContext:
             DOC_STORE_KEY: self.docstore.to_dict(),
             INDEX_STORE_KEY: self.index_store.to_dict(),
             GRAPH_STORE_KEY: self.graph_store.to_dict(),
+            PG_STORE_KEY: (
+                self.property_graph_store.to_dict()
+                if self.property_graph_store
+                else None
+            ),
         }
 
     @classmethod
@@ -213,8 +243,13 @@ class StorageContext:
         docstore = SimpleDocumentStore.from_dict(save_dict[DOC_STORE_KEY])
         index_store = SimpleIndexStore.from_dict(save_dict[INDEX_STORE_KEY])
         graph_store = SimpleGraphStore.from_dict(save_dict[GRAPH_STORE_KEY])
+        property_graph_store = (
+            SimplePropertyGraphStore.from_dict(save_dict[PG_STORE_KEY])
+            if save_dict[PG_STORE_KEY]
+            else None
+        )
 
-        vector_stores: Dict[str, VectorStore] = {}
+        vector_stores: Dict[str, BasePydanticVectorStore] = {}
         for key, vector_store_dict in save_dict[VECTOR_STORE_KEY].items():
             vector_stores[key] = SimpleVectorStore.from_dict(vector_store_dict)
 
@@ -223,13 +258,16 @@ class StorageContext:
             index_store=index_store,
             vector_stores=vector_stores,
             graph_store=graph_store,
+            property_graph_store=property_graph_store,
         )
 
     @property
-    def vector_store(self) -> VectorStore:
+    def vector_store(self) -> BasePydanticVectorStore:
         """Backwrds compatibility for vector_store property."""
         return self.vector_stores[DEFAULT_VECTOR_STORE]
 
-    def add_vector_store(self, vector_store: VectorStore, namespace: str) -> None:
+    def add_vector_store(
+        self, vector_store: BasePydanticVectorStore, namespace: str
+    ) -> None:
         """Add a vector store to the storage context."""
         self.vector_stores[namespace] = vector_store

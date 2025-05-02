@@ -5,7 +5,8 @@ from llama_index.core.schema import Document
 
 
 class KnowledgeBaseWebReader(BaseReader):
-    """Knowledge base reader.
+    """
+    Knowledge base reader.
 
     Crawls and reads articles from a knowledge base/help center with Playwright.
     Tested on Zendesk and Intercom CMS, may work on others.
@@ -36,6 +37,7 @@ class KnowledgeBaseWebReader(BaseReader):
         title_selector: Optional[str] = None,
         subtitle_selector: Optional[str] = None,
         body_selector: Optional[str] = None,
+        max_depth: int = 100,
     ) -> None:
         """Initialize with parameters."""
         self.root_url = root_url
@@ -44,6 +46,7 @@ class KnowledgeBaseWebReader(BaseReader):
         self.title_selector = title_selector
         self.subtitle_selector = subtitle_selector
         self.body_selector = body_selector
+        self.max_depth = max_depth
 
     def load_data(self) -> List[Document]:
         """Load data from the knowledge base."""
@@ -54,9 +57,7 @@ class KnowledgeBaseWebReader(BaseReader):
 
             # Crawl
             article_urls = self.get_article_urls(
-                browser,
-                self.root_url,
-                self.root_url,
+                browser, self.root_url, self.root_url, self.max_depth
             )
 
             # Scrape
@@ -82,7 +83,8 @@ class KnowledgeBaseWebReader(BaseReader):
         browser: Any,
         url: str,
     ) -> Dict[str, str]:
-        """Scrape a single article url.
+        """
+        Scrape a single article url.
 
         Args:
             browser (Any): a Playwright Chromium browser.
@@ -125,19 +127,31 @@ class KnowledgeBaseWebReader(BaseReader):
         return {"title": title, "subtitle": subtitle, "body": body, "url": url}
 
     def get_article_urls(
-        self, browser: Any, root_url: str, current_url: str
+        self,
+        browser: Any,
+        root_url: str,
+        current_url: str,
+        max_depth: int = 100,
+        depth: int = 0,
     ) -> List[str]:
-        """Recursively crawl through the knowledge base to find a list of articles.
+        """
+        Recursively crawl through the knowledge base to find a list of articles.
 
         Args:
             browser (Any): a Playwright Chromium browser.
             root_url (str): root URL of the knowledge base.
             current_url (str): current URL that is being crawled.
+            max_depth (int): maximum recursion level for the crawler
+            depth (int): current depth level
 
         Returns:
             List[str]: a list of URLs of found articles.
 
         """
+        if depth >= max_depth:
+            print(f"Reached max depth ({max_depth}): {current_url}")
+            return []
+
         page = browser.new_page(ignore_https_errors=True)
         page.set_default_timeout(60000)
         page.goto(current_url, wait_until="domcontentloaded")
@@ -158,7 +172,9 @@ class KnowledgeBaseWebReader(BaseReader):
 
         for link in links:
             url = root_url + page.evaluate("(node) => node.getAttribute('href')", link)
-            article_urls.extend(self.get_article_urls(browser, root_url, url))
+            article_urls.extend(
+                self.get_article_urls(browser, root_url, url, max_depth, depth + 1)
+            )
 
         page.close()
 

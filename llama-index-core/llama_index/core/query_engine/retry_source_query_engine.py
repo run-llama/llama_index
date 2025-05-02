@@ -2,7 +2,11 @@ import logging
 from typing import Optional
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
-from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
+from llama_index.core.base.response.schema import (
+    AsyncStreamingResponse,
+    RESPONSE_TYPE,
+    Response,
+)
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.evaluation import BaseEvaluator
 from llama_index.core.indices.list.base import SummaryIndex
@@ -12,12 +16,7 @@ from llama_index.core.query_engine.retriever_query_engine import (
     RetrieverQueryEngine,
 )
 from llama_index.core.schema import Document, QueryBundle
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 
 logger = logging.getLogger(__name__)
 
@@ -32,18 +31,13 @@ class RetrySourceQueryEngine(BaseQueryEngine):
         llm: Optional[LLM] = None,
         max_retries: int = 3,
         callback_manager: Optional[CallbackManager] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
     ) -> None:
         """Run a BaseQueryEngine with retries."""
         self._query_engine = query_engine
         self._evaluator = evaluator
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         self.max_retries = max_retries
-        super().__init__(
-            callback_manager=callback_manager
-            or callback_manager_from_settings_or_context(Settings, service_context)
-        )
+        super().__init__(callback_manager=callback_manager or Settings.callback_manager)
 
     def _get_prompt_modules(self) -> PromptMixinType:
         """Get prompt sub-modules."""
@@ -51,6 +45,7 @@ class RetrySourceQueryEngine(BaseQueryEngine):
 
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         response = self._query_engine._query(query_bundle)
+        assert not isinstance(response, AsyncStreamingResponse)
         if self.max_retries <= 0:
             return response
         typed_response = (

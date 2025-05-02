@@ -13,6 +13,7 @@ import enum
 import logging
 import os
 import pathlib
+import re
 import tempfile
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -47,7 +48,15 @@ class GithubRepositoryReader(BaseReader):
     extracted from the files using the parser.
 
     Examples:
-        >>> reader = GithubRepositoryReader("owner", "repo")
+        >>> client = github_client = GithubClient(
+        ...    github_token=os.environ["GITHUB_TOKEN"],
+        ...    verbose=True
+        ... )
+        >>> reader = GithubRepositoryReader(
+        ...    github_client=github_client,
+        ...    owner="run-llama",
+        ...    repo="llama_index",
+        ... )
         >>> branch_documents = reader.load_data(branch="branch")
         >>> commit_documents = reader.load_data(commit_sha="commit_sha")
 
@@ -94,6 +103,7 @@ class GithubRepositoryReader(BaseReader):
                 make to the Github API.
             - timeout (int or None): Timeout for the requests to the Github API. Default is 5.
             - retries (int): Number of retries for requests made to the Github API. Default is 0.
+              This limit applies individually to each request made by this class.
             - filter_directories (Optional[Tuple[List[str], FilterType]]): Tuple
                 containing a list of directories and a FilterType. If the FilterType
                 is INCLUDE, only the files in the directories in the list will be
@@ -233,7 +243,11 @@ class GithubRepositoryReader(BaseReader):
         """
         commit_response: GitCommitResponseModel = self._loop.run_until_complete(
             self._github_client.get_commit(
-                self._owner, self._repo, commit_sha, timeout=self._timeout
+                self._owner,
+                self._repo,
+                commit_sha,
+                timeout=self._timeout,
+                retries=self._retries,
             )
         )
 
@@ -258,7 +272,11 @@ class GithubRepositoryReader(BaseReader):
         """
         branch_data: GitBranchResponseModel = self._loop.run_until_complete(
             self._github_client.get_branch(
-                self._owner, self._repo, branch, timeout=self._timeout
+                self._owner,
+                self._repo,
+                branch,
+                timeout=self._timeout,
+                retries=self._retries,
             )
         )
 
@@ -330,7 +348,11 @@ class GithubRepositoryReader(BaseReader):
         )
 
         tree_data: GitTreeResponseModel = await self._github_client.get_tree(
-            self._owner, self._repo, tree_sha, timeout=self._timeout
+            self._owner,
+            self._repo,
+            tree_sha,
+            timeout=self._timeout,
+            retries=self._retries,
         )
         print_if_verbose(
             self._verbose, "\t" * current_depth + f"tree data: {tree_data}"
@@ -377,6 +399,13 @@ class GithubRepositoryReader(BaseReader):
             )
         return blobs_and_full_paths
 
+    def _get_base_url(self, blob_url):
+        match = re.match(r"(https://[^/]+\.com/)", blob_url)
+        if match:
+            return match.group(1)
+        else:
+            return "https://github.com/"
+
     async def _generate_documents(
         self,
         blobs_and_paths: List[Tuple[GitTreeResponseModel.GitTreeObject, str]],
@@ -398,6 +427,8 @@ class GithubRepositoryReader(BaseReader):
             loop=self._loop,
             buffer_size=self._concurrent_requests,  # TODO: make this configurable
             verbose=self._verbose,
+            timeout=self._timeout,
+            retries=self._retries,
         )
 
         documents = []
@@ -447,7 +478,12 @@ class GithubRepositoryReader(BaseReader):
                 + f"- adding to documents - {full_path}",
             )
             url = os.path.join(
-                "https://github.com/", self._owner, self._repo, "blob/", id, full_path
+                self._get_base_url(blob_data.url),
+                self._owner,
+                self._repo,
+                "blob/",
+                id,
+                full_path,
             )
             document = Document(
                 text=decoded_text,

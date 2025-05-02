@@ -27,7 +27,7 @@ from llama_index.core.schema import (
 from llama_index.core.vector_stores.types import (
     MetadataFilter,
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
 )
 from llama_index.packs.raptor.clustering import get_clusters
 
@@ -59,13 +59,18 @@ class SummaryModule(BaseModel):
         arbitrary_types_allowed = True
 
     def __init__(
-        self, llm: Optional[LLM] = None, summary_prompt: str = DEFAULT_SUMMARY_PROMPT
+        self,
+        llm: Optional[LLM] = None,
+        summary_prompt: str = DEFAULT_SUMMARY_PROMPT,
+        num_workers: int = 4,
     ) -> None:
         response_synthesizer = get_response_synthesizer(
             response_mode="tree_summarize", use_async=True, llm=llm
         )
         super().__init__(
-            response_synthesizer=response_synthesizer, summary_prompt=summary_prompt
+            response_synthesizer=response_synthesizer,
+            summary_prompt=summary_prompt,
+            num_workers=num_workers,
         )
 
     async def generate_summaries(
@@ -107,7 +112,7 @@ class RaptorRetriever(BaseRetriever):
         similarity_top_k: int = 2,
         llm: Optional[LLM] = None,
         embed_model: Optional[BaseEmbedding] = None,
-        vector_store: Optional[VectorStore] = None,
+        vector_store: Optional[BasePydanticVectorStore] = None,
         transformations: Optional[List[TransformComponent]] = None,
         summary_module: Optional[SummaryModule] = None,
         existing_index: Optional[VectorStoreIndex] = None,
@@ -234,7 +239,8 @@ class RaptorRetriever(BaseRetriever):
         """Query the index as a tree, traversing the tree from the top down."""
         # get top k nodes for each level, starting with the top
         parent_ids = None
-        nodes = []
+        selected_node_ids = set()
+        selected_nodes = []
         level = self.tree_depth - 1
         while level >= 0:
             # retrieve nodes at the current level
@@ -245,6 +251,11 @@ class RaptorRetriever(BaseRetriever):
                         filters=[MetadataFilter(key="level", value=level)]
                     ),
                 ).aretrieve(query_str)
+
+                for node in nodes:
+                    if node.id_ not in selected_node_ids:
+                        selected_nodes.append(node)
+                        selected_node_ids.add(node.id_)
 
                 parent_ids = [node.id_ for node in nodes]
                 if self._verbose:
@@ -264,6 +275,10 @@ class RaptorRetriever(BaseRetriever):
                 )
 
                 nodes = [node for nested in nested_nodes for node in nested]
+                for node in nodes:
+                    if node.id_ not in selected_node_ids:
+                        selected_nodes.append(node)
+                        selected_node_ids.add(node.id_)
 
                 if self._verbose:
                     print(f"Retrieved {len(nodes)} from parents at level {level}.")
@@ -271,7 +286,7 @@ class RaptorRetriever(BaseRetriever):
                 level -= 1
                 parent_ids = None
 
-        return nodes
+        return selected_nodes
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve nodes given query and mode."""
@@ -333,7 +348,7 @@ class RaptorPack(BaseLlamaPack):
         documents: List[BaseNode],
         llm: Optional[LLM] = None,
         embed_model: Optional[BaseEmbedding] = None,
-        vector_store: Optional[VectorStore] = None,
+        vector_store: Optional[BasePydanticVectorStore] = None,
         similarity_top_k: int = 2,
         mode: QueryModes = "collapsed",
         verbose: bool = True,

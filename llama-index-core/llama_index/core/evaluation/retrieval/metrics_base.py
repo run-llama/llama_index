@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any, ClassVar, Dict, List, Optional
 
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 
 
 class RetrievalMetricResult(BaseModel):
@@ -30,7 +30,8 @@ class RetrievalMetricResult(BaseModel):
 class BaseRetrievalMetric(BaseModel, ABC):
     """Base class for retrieval metrics."""
 
-    metric_name: str
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    metric_name: ClassVar[str]
 
     @abstractmethod
     def compute(
@@ -51,6 +52,3 @@ class BaseRetrievalMetric(BaseModel, ABC):
             **kwargs: Additional keyword arguments
 
         """
-
-    class Config:
-        arbitrary_types_allowed = True

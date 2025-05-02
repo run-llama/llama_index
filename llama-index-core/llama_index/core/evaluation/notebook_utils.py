@@ -1,9 +1,8 @@
 """Notebook utils."""
 
 from collections import defaultdict
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
-import pandas as pd
 from llama_index.core.evaluation import EvaluationResult
 from llama_index.core.evaluation.retrieval.base import RetrievalEvalResult
 
@@ -14,8 +13,15 @@ def get_retrieval_results_df(
     names: List[str],
     results_arr: List[List[RetrievalEvalResult]],
     metric_keys: Optional[List[str]] = None,
-) -> pd.DataFrame:
+) -> Any:
     """Display retrieval results."""
+    try:
+        import pandas as pd
+    except ImportError:
+        raise ImportError(
+            "pandas is required for this function. Please install it with `pip install pandas`."
+        )
+
     metric_keys = metric_keys or DEFAULT_METRIC_KEYS
 
     avg_metrics_dict = defaultdict(list)
@@ -36,7 +42,7 @@ def get_retrieval_results_df(
 
 def get_eval_results_df(
     names: List[str], results_arr: List[EvaluationResult], metric: Optional[str] = None
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+) -> Tuple[Any, Any]:
     """Organizes EvaluationResults into a deep dataframe and computes the mean
     score.
 
@@ -44,6 +50,13 @@ def get_eval_results_df(
         result_df: pd.DataFrame representing all the evaluation results
         mean_df: pd.DataFrame of average scores groupby names
     """
+    try:
+        import pandas as pd
+    except ImportError:
+        raise ImportError(
+            "pandas is required for this function. Please install it with `pip install pandas`."
+        )
+
     if len(names) != len(results_arr):
         raise ValueError("names and results_arr must have same length.")
 

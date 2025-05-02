@@ -4,7 +4,7 @@ This tool allows Agents to load a plugin using a ChatGPT manifest file, and have
 
 ## Usage
 
-This tool has more extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/chatgpt_plugin.ipynb)
+This tool has more extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-chatgpt-plugin/examples/chatgpt_plugin.ipynb)
 
 ```python
 # Load the manifest
@@ -38,4 +38,4 @@ print(agent.chat("Convert 100 euros to CAD"))
 
 In addition to the above method, this tool makes all of the tools available from the OpenAPI Tool Spec and Requests Tool Spec available to the agent. The plugin OpenAPI definition is loaded into the OpenAPI tool spec, and authentication headers are passed in to the Requests tool spec
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.

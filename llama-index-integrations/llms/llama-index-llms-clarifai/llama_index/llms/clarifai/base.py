@@ -26,6 +26,27 @@ EXAMPLE_URL = "https://clarifai.com/anthropic/completion/models/claude-v2"
 
 
 class Clarifai(LLM):
+    """Clarifai LLM.
+
+    Examples:
+        `pip install llama-index-llms-clarifai`
+
+        ```python
+        from llama_index.llms.clarifai import Clarifai
+
+        llm = Clarifai(
+            user_id="clarifai",
+            app_id="ml",
+            model_name="llama2-7b-alternative-4k",
+            model_url=(
+                "https://clarifai.com/clarifai/ml/models/llama2-7b-alternative-4k"
+        )
+
+        response = llm.complete("Hello World!")
+        print(response)
+        ```
+    """
+
     model_url: Optional[str] = Field(
         description=f"Full URL of the model. e.g. `{EXAMPLE_URL}`"
     )
@@ -70,13 +91,14 @@ class Clarifai(LLM):
         if model_url is None and model_name is None:
             raise ValueError("You must specify one of model_url or model_name.")
 
+        model = None
         if model_name is not None:
             if app_id is None or user_id is None:
                 raise ValueError(
                     f"Missing one app ID or user ID of the model: {app_id=}, {user_id=}"
                 )
             else:
-                self._model = Model(
+                model = Model(
                     user_id=user_id,
                     app_id=app_id,
                     model_id=model_name,
@@ -85,12 +107,12 @@ class Clarifai(LLM):
                 )
 
         if model_url is not None:
-            self._model = Model(model_url, pat=pat)
-            model_name = self._model.id
+            model = Model(model_url, pat=pat)
+            model_name = model.id
 
-        self._is_chat_model = False
-        if "chat" in self._model.app_id or "chat" in self._model.id:
-            self._is_chat_model = True
+        is_chat_model = False
+        if "chat" in model.app_id or "chat" in model.id:
+            is_chat_model = True
 
         additional_kwargs = additional_kwargs or {}
 
@@ -106,6 +128,8 @@ class Clarifai(LLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
+        self._model = model
+        self._is_chat_model = is_chat_model
 
     @classmethod
     def class_name(cls) -> str:

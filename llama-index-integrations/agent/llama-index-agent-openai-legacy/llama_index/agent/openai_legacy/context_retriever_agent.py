@@ -20,7 +20,6 @@ from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool
 from llama_index.core.utils import print_text
 from llama_index.llms.openai import OpenAI
-from llama_index.llms.openai.utils import is_function_calling_model
 
 # inspired by DEFAULT_QA_PROMPT_TMPL from llama_index/prompts/default_prompts.py
 DEFAULT_QA_PROMPT_TMPL = (
@@ -122,7 +121,7 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
 
         memory = memory or memory_cls.from_defaults(chat_history=chat_history, llm=llm)
 
-        if not is_function_calling_model(llm.model):
+        if not llm.metadata.is_function_calling_model:
             raise ValueError(
                 f"Model name {llm.model} does not support function calling API."
             )

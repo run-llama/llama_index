@@ -23,7 +23,7 @@ def get_aws_service_client(
         )
 
     config = botocore.config.Config(
-        retries={"max_attempts": max_retries, "mode": "standard"},
+        retries={"max_attempts": max_retries or 0, "mode": "standard"},
         connect_timeout=timeout,
     )
 
@@ -35,15 +35,15 @@ def get_aws_service_client(
                 aws_session_token=aws_session_token,
                 region_name=region_name,
             )
-            client = session.client(service_name, config=config)
+            client = session.client(service_name, config=config)  # type: ignore
         else:
             session = boto3.Session(profile_name=profile_name)
             if region_name:
                 client = session.client(
-                    service_name, region_name=region_name, config=config
+                    service_name, region_name=region_name, config=config  # type: ignore
                 )
             else:
-                client = session.client(service_name, config=config)
+                client = session.client(service_name, config=config)  # type: ignore
     except Exception as e:
         raise ValueError("Please verify the provided credentials.") from (e)
 

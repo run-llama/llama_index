@@ -21,12 +21,36 @@ DEFAULT_REPLICATE_TEMP = 0.75
 
 
 class Replicate(CustomLLM):
+    """Replicate LLM.
+
+    Examples:
+        `pip install llama-index-llms-replicate`
+
+        ```python
+        from llama_index.llms.replicate import Replicate
+
+        # Set up the Replicate API token
+        import os
+        os.environ["REPLICATE_API_TOKEN"] = "<your API key>"
+
+        # Initialize the Replicate class
+        llm = Replicate(
+            model="replicate/vicuna-13b:6282abe6a492de4145d7bb601023762212f9ddbbe78278bd6771c8b3b2f2a13b"
+        )
+
+        # Example of calling the 'complete' method with a prompt
+        resp = llm.complete("Who is Paul Graham?")
+
+        print(resp)
+        ```
+    """
+
     model: str = Field(description="The Replicate model to use.")
     temperature: float = Field(
         default=DEFAULT_REPLICATE_TEMP,
         description="The temperature to use for sampling.",
-        gte=0.01,
-        lte=1.0,
+        ge=0.01,
+        le=1.0,
     )
     image: str = Field(
         default="", description="The image file for multimodal model to use. (optional)"
@@ -120,11 +144,12 @@ class Replicate(CustomLLM):
         if not formatted:
             prompt = self.completion_to_prompt(prompt)
         input_dict = self._get_input_dict(prompt, **kwargs)
-        response_iter = replicate.run(self.model, input=input_dict)
+        response_iter = replicate.stream(self.model, input=input_dict)
 
         def gen() -> CompletionResponseGen:
             text = ""
-            for delta in response_iter:
+            for server_event in response_iter:
+                delta = str(server_event)
                 text += delta
                 yield CompletionResponse(
                     delta=delta,

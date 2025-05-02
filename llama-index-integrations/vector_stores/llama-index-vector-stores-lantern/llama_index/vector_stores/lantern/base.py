@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, NamedTuple, Optional, Type
+from typing import TYPE_CHECKING, Any, List, NamedTuple, Optional, Type
 
 import asyncpg  # noqa
 import psycopg2  # noqa
@@ -18,6 +18,9 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+
+if TYPE_CHECKING:
+    from sqlalchemy.sql.selectable import Select
 
 
 class DBEmbeddingRow(NamedTuple):
@@ -112,7 +115,7 @@ def get_data_model(
     Index(
         hnsw_indexname,
         model.embedding,  # type: ignore
-        postgresql_using="hnsw",
+        postgresql_using="lantern_hnsw",
         postgresql_with={
             "m": m,
             "ef_construction": ef_construction,
@@ -125,10 +128,39 @@ def get_data_model(
 
 
 class LanternVectorStore(BasePydanticVectorStore):
-    from sqlalchemy.sql.selectable import Select
+    """
+    Latern vector store.
 
-    stores_text = True
-    flat_metadata = False
+    Examples:
+        `pip install llama-index-vector-stores-lantern`
+
+        ```python
+        from llama_index.vector_stores.lantern import LanternVectorStore
+
+        # Set up connection details
+        connection_string = "postgresql://postgres:postgres@localhost:5432"
+        db_name = "postgres"
+        url = make_url(connection_string)
+
+        # Create an instance of LanternVectorStore
+        vector_store = LanternVectorStore.from_params(
+            database=db_name,
+            host=url.host,
+            password=url.password,
+            port=url.port,
+            user=url.username,
+            table_name="your_table_name",
+            embed_dim=1536,  # openai embedding dimension
+            m=16,  # HNSW M parameter
+            ef_construction=128,  # HNSW ef construction parameter
+            ef=64,  # HNSW ef search parameter
+        )
+        ```
+
+    """
+
+    stores_text: bool = True
+    flat_metadata: bool = False
 
     connection_string: str
     async_connection_string: str
@@ -176,6 +208,19 @@ class LanternVectorStore(BasePydanticVectorStore):
 
         from sqlalchemy.orm import declarative_base
 
+        super().__init__(
+            connection_string=connection_string,
+            async_connection_string=async_connection_string,
+            table_name=table_name,
+            schema_name=schema_name,
+            hybrid_search=hybrid_search,
+            text_search_config=text_search_config,
+            embed_dim=embed_dim,
+            cache_ok=cache_ok,
+            perform_setup=perform_setup,
+            debug=debug,
+        )
+
         # sqlalchemy model
         self._base = declarative_base()
         self._table_class = get_data_model(
@@ -189,19 +234,6 @@ class LanternVectorStore(BasePydanticVectorStore):
             m=m,
             ef_construction=ef_construction,
             ef=ef,
-        )
-
-        super().__init__(
-            connection_string=connection_string,
-            async_connection_string=async_connection_string,
-            table_name=table_name,
-            schema_name=schema_name,
-            hybrid_search=hybrid_search,
-            text_search_config=text_search_config,
-            embed_dim=embed_dim,
-            cache_ok=cache_ok,
-            perform_setup=perform_setup,
-            debug=debug,
         )
 
     async def close(self) -> None:
@@ -345,7 +377,7 @@ class LanternVectorStore(BasePydanticVectorStore):
 
     def _apply_filters_and_limit(
         self,
-        stmt: Select,
+        stmt: "Select",
         limit: int,
         metadata_filters: Optional[MetadataFilters] = None,
     ) -> Any:
@@ -442,6 +474,11 @@ class LanternVectorStore(BasePydanticVectorStore):
         from sqlalchemy.types import UserDefinedType
 
         class REGCONFIG(UserDefinedType):
+            # The TypeDecorator.cache_ok class-level flag indicates if this custom TypeDecorator is safe to be used as part of a cache key.
+            # If the TypeDecorator is not guaranteed to produce the same bind/result behavior and SQL generation every time,
+            # this flag should be set to False; otherwise if the class produces the same behavior each time, it may be set to True.
+            cache_ok = True
+
             def get_col_spec(self, **kw: Any) -> str:
                 return "regconfig"
 
@@ -613,14 +650,15 @@ class LanternVectorStore(BasePydanticVectorStore):
         return self._db_rows_to_query_result(results)
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        import sqlalchemy
+        from sqlalchemy import text
 
         self._initialize()
         with self._session() as session, session.begin():
-            stmt = sqlalchemy.text(
-                f"DELETE FROM {self.schema_name}.data_{self.table_name} where "
-                f"(metadata_->>'doc_id')::text = '{ref_doc_id}' "
-            )
+            # Use parameterized query with bind parameters
+            stmt = text(
+                f"DELETE FROM {self.schema_name}.data_{self.table_name} "
+                "WHERE (metadata_->>'doc_id')::text = :ref_doc_id"
+            ).bindparams(ref_doc_id=ref_doc_id)
 
             session.execute(stmt)
             session.commit()

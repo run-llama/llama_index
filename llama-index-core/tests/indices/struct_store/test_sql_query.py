@@ -1,23 +1,39 @@
-import asyncio
 from typing import Any, Dict, Tuple
 
 import pytest
+from llama_index.core.async_utils import asyncio_run
+from llama_index.core.indices.vector_store import VectorStoreIndex
 from llama_index.core.indices.struct_store.base import default_output_parser
 from llama_index.core.indices.struct_store.sql import SQLStructStoreIndex
 from llama_index.core.indices.struct_store.sql_query import (
     NLSQLTableQueryEngine,
     NLStructStoreQueryEngine,
     SQLStructStoreQueryEngine,
+    SQLTableRetrieverQueryEngine,
 )
-from llama_index.core.schema import Document
-from llama_index.core.service_context import ServiceContext
+from llama_index.core.objects import (
+    SQLTableNodeMapping,
+    ObjectIndex,
+    SQLTableSchema,
+)
+from llama_index.core.schema import Document, TextNode
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
-from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine
+from sqlalchemy import (
+    Column,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    create_engine,
+    insert,
+    text,
+)
 from sqlalchemy.exc import OperationalError
 
 
 def test_sql_index_query(
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
     """Test SQLStructStoreIndex."""
@@ -40,8 +56,7 @@ def test_sql_index_query(
         docs,
         sql_database=sql_database,
         table_name=table_name,
-        service_context=mock_service_context,
-        **index_kwargs
+        **index_kwargs,
     )
 
     # query the index with SQL
@@ -55,9 +70,7 @@ def test_sql_index_query(
     response = nl_query_engine.query("test_table:user_id,foo")
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
-    nl_table_engine = NLSQLTableQueryEngine(
-        index.sql_database, service_context=mock_service_context
-    )
+    nl_table_engine = NLSQLTableQueryEngine(index.sql_database)
     response = nl_table_engine.query("test_table:user_id,foo")
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
@@ -76,16 +89,28 @@ def test_sql_index_query(
     response = nl_query_engine.query("test_table:user_id,foo")
     assert str(response) == sql_to_test
 
-    nl_table_engine = NLSQLTableQueryEngine(
-        index.sql_database, service_context=mock_service_context, sql_only=True
-    )
+    nl_table_engine = NLSQLTableQueryEngine(index.sql_database, sql_only=True)
     response = nl_table_engine.query("test_table:user_id,foo")
     assert str(response) == sql_to_test
+
+    # query with markdown return
+    nl_table_engine = NLSQLTableQueryEngine(
+        index.sql_database, synthesize_response=False, markdown_response=True
+    )
+    response = nl_table_engine.query("test_table:user_id,foo")
+    assert (
+        str(response)
+        == """| user_id | foo |
+|---|---|
+| 2 | bar |
+| 8 | hello |"""
+    )
 
 
 def test_sql_index_async_query(
     allow_networking: Any,
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
     struct_kwargs: Tuple[Dict, Dict],
 ) -> None:
     """Test SQLStructStoreIndex."""
@@ -108,48 +133,43 @@ def test_sql_index_async_query(
         docs,
         sql_database=sql_database,
         table_name=table_name,
-        service_context=mock_service_context,
-        **index_kwargs
+        **index_kwargs,
     )
 
     sql_to_test = "SELECT user_id, foo FROM test_table"
     # query the index with SQL
     sql_query_engine = SQLStructStoreQueryEngine(index, **query_kwargs)
     task = sql_query_engine.aquery(sql_to_test)
-    response = asyncio.run(task)
+    response = asyncio_run(task)
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
     # query the index with natural language
     nl_query_engine = NLStructStoreQueryEngine(index, **query_kwargs)
     task = nl_query_engine.aquery("test_table:user_id,foo")
-    response = asyncio.run(task)
+    response = asyncio_run(task)
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
-    nl_table_engine = NLSQLTableQueryEngine(
-        index.sql_database, service_context=mock_service_context
-    )
+    nl_table_engine = NLSQLTableQueryEngine(index.sql_database)
     task = nl_table_engine.aquery("test_table:user_id,foo")
-    response = asyncio.run(task)
+    response = asyncio_run(task)
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"
 
     ## sql_only = True  ###
     # query the index with SQL
     sql_query_engine = SQLStructStoreQueryEngine(index, sql_only=True, **query_kwargs)
     task = sql_query_engine.aquery(sql_to_test)
-    response = asyncio.run(task)
+    response = asyncio_run(task)
     assert str(response) == sql_to_test
 
     # query the index with natural language
     nl_query_engine = NLStructStoreQueryEngine(index, sql_only=True, **query_kwargs)
     task = nl_query_engine.aquery("test_table:user_id,foo")
-    response = asyncio.run(task)
+    response = asyncio_run(task)
     assert str(response) == sql_to_test
 
-    nl_table_engine = NLSQLTableQueryEngine(
-        index.sql_database, service_context=mock_service_context, sql_only=True
-    )
+    nl_table_engine = NLSQLTableQueryEngine(index.sql_database, sql_only=True)
     task = nl_table_engine.aquery("test_table:user_id,foo")
-    response = asyncio.run(task)
+    response = asyncio_run(task)
     assert str(response) == sql_to_test
 
 
@@ -163,3 +183,149 @@ def test_default_output_parser() -> None:
         "testing": "testing2",
         "number": "123456789",
     }
+
+
+def test_nl_query_engine_parser(
+    patch_llm_predictor,
+    patch_token_text_splitter,
+    struct_kwargs: Tuple[Dict, Dict],
+) -> None:
+    """Test the sql response parser."""
+    index_kwargs, _ = struct_kwargs
+    docs = [Document(text="user_id:2,foo:bar"), Document(text="user_id:8,foo:hello")]
+    engine = create_engine("sqlite:///:memory:")
+    metadata_obj = MetaData()
+    table_name = "test_table"
+    # NOTE: table is created by tying to metadata_obj
+    Table(
+        table_name,
+        metadata_obj,
+        Column("user_id", Integer, primary_key=True),
+        Column("foo", String(16), nullable=False),
+    )
+    metadata_obj.create_all(engine)
+    sql_database = SQLDatabase(engine)
+    # NOTE: we can use the default output parser for this
+    index = SQLStructStoreIndex.from_documents(
+        docs,
+        sql_database=sql_database,
+        table_name=table_name,
+        **index_kwargs,
+    )
+    nl_query_engine = NLStructStoreQueryEngine(index)
+
+    # Response with SQLResult
+    response = "SELECT * FROM table; SQLResult: [(1, 'value')]"
+    assert nl_query_engine._parse_response_to_sql(response) == "SELECT * FROM table;"
+
+    # Response with SQLQuery
+    response = "SQLQuery: SELECT * FROM table;"
+    assert nl_query_engine._parse_response_to_sql(response) == "SELECT * FROM table;"
+
+    # Response with ```sql markdown
+    response = "```sql\nSELECT * FROM table;\n```"
+    assert nl_query_engine._parse_response_to_sql(response) == "SELECT * FROM table;"
+
+    # Response with extra text after semi-colon
+    response = "SELECT * FROM table; This is extra text."
+    assert nl_query_engine._parse_response_to_sql(response) == "SELECT * FROM table;"
+
+    # Response with escaped single quotes
+    response = "SELECT * FROM table WHERE name = \\'O\\'Reilly\\';"
+    assert (
+        nl_query_engine._parse_response_to_sql(response)
+        == "SELECT * FROM table WHERE name = ''O''Reilly'';"
+    )
+
+    # Response with escaped single quotes
+    response = "SQLQuery: ```sql\nSELECT * FROM table WHERE name = \\'O\\'Reilly\\';\n``` Extra test SQLResult: [(1, 'value')]"
+    assert (
+        nl_query_engine._parse_response_to_sql(response)
+        == "SELECT * FROM table WHERE name = ''O''Reilly'';"
+    )
+
+
+def test_sql_table_retriever_query_engine_with_rows_retriever(
+    patch_llm_predictor,
+    patch_token_text_splitter,
+    struct_kwargs: Tuple[Dict, Dict],
+) -> None:
+    """Test SQLTableRetrieverQueryEngine."""
+    index_kwargs, query_kwargs = struct_kwargs
+    sql_to_test = "SELECT user_id, foo FROM test_table"
+    engine = create_engine("sqlite:///:memory:")
+    metadata_obj = MetaData()
+    table_name = "test_table"
+    # NOTE: table is created by tying to metadata_obj
+    table_instance = Table(
+        table_name,
+        metadata_obj,
+        Column("user_id", Integer, primary_key=True),
+        Column("foo", String(16), nullable=False),
+    )
+    metadata_obj.create_all(engine)
+    sql_database = SQLDatabase(engine)
+    # Inserting fake values into table
+    statement = insert(table_instance).values(
+        [{"user_id": 2, "foo": "bar"}, {"user_id": 8, "foo": "hello"}]
+    )
+    with engine.connect() as conn:
+        conn.execute(statement)
+        conn.commit()
+
+    # Building rows retriever
+    with engine.connect() as conn:
+        cursor = conn.execute(text(f'SELECT * FROM "{table_name}"'))
+        result = cursor.fetchall()
+        row_tups = []
+        for row in result:
+            row_tups.append(tuple(row))
+    # index each row, put into vector store index
+    nodes = [TextNode(text=str(t)) for t in result]
+    index = VectorStoreIndex(nodes)
+    rows_retrievers = {table_name: index.as_retriever()}
+
+    # Building the table retriever
+    table_node_mapping = SQLTableNodeMapping(sql_database)
+    table_schema_objs = [
+        SQLTableSchema(
+            table_name=table_name,
+            context_str="This table contains information about user id and the foo attribute.",
+        )
+    ]  # add a SQLTableSchema for each table
+    obj_index = ObjectIndex.from_objects(
+        table_schema_objs,
+        table_node_mapping,
+        VectorStoreIndex,  # type: ignore
+    )
+    table_retriever = obj_index.as_retriever()
+
+    # query the index with natural language
+    nl_query_engine = SQLTableRetrieverQueryEngine(
+        sql_database, table_retriever, rows_retrievers
+    )
+    response = nl_query_engine.query("test_table:user_id,foo")
+    assert str(response) == "[(2, 'bar'), (8, 'hello')]"
+
+    nl_table_engine = SQLTableRetrieverQueryEngine(
+        sql_database, table_retriever, rows_retrievers, sql_only=True
+    )
+    response = nl_table_engine.query("test_table:user_id,foo")
+    assert str(response) == sql_to_test
+
+    # query with markdown return
+    nl_table_engine = SQLTableRetrieverQueryEngine(
+        sql_database,
+        table_retriever,
+        rows_retrievers,
+        synthesize_response=False,
+        markdown_response=True,
+    )
+    response = nl_table_engine.query("test_table:user_id,foo")
+    assert (
+        str(response)
+        == """| user_id | foo |
+|---|---|
+| 2 | bar |
+| 8 | hello |"""
+    )

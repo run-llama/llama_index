@@ -2,8 +2,15 @@ from typing import Any, List, Optional
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CBEventType, EventPayload
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.events.rerank import (
+    ReRankEndEvent,
+    ReRankStartEvent,
+)
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
+
+dispatcher = get_dispatcher(__name__)
 
 
 class FlagEmbeddingReranker(BaseNodePostprocessor):
@@ -20,6 +27,7 @@ class FlagEmbeddingReranker(BaseNodePostprocessor):
         model: str = "BAAI/bge-reranker-large",
         use_fp16: bool = False,
     ) -> None:
+        super().__init__(top_n=top_n, model=model, use_fp16=use_fp16)
         try:
             from FlagEmbedding import FlagReranker
         except ImportError:
@@ -31,7 +39,6 @@ class FlagEmbeddingReranker(BaseNodePostprocessor):
             model,
             use_fp16=use_fp16,
         )
-        super().__init__(top_n=top_n, model=model, use_fp16=use_fp16)
 
     @classmethod
     def class_name(cls) -> str:
@@ -42,6 +49,15 @@ class FlagEmbeddingReranker(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
+        dispatcher.event(
+            ReRankStartEvent(
+                query=query_bundle,
+                nodes=nodes,
+                top_n=self.top_n,
+                model_name=self.model,
+            )
+        )
+
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
         if len(nodes) == 0:
@@ -80,4 +96,5 @@ class FlagEmbeddingReranker(BaseNodePostprocessor):
             ]
             event.on_end(payload={EventPayload.NODES: new_nodes})
 
+        dispatcher.event(ReRankEndEvent(nodes=new_nodes))
         return new_nodes

@@ -82,6 +82,15 @@ class GmailToolSpec(BaseToolSpec):
         return creds
 
     def search_messages(self, query: str, max_results: Optional[int] = None):
+        """Searches email messages given a query string and the maximum number
+        of results requested by the user
+           Returns: List of relevant message objects up to the maximum number of results.
+
+        Args:
+            query[str]: The user's query
+            max_results (Optional[int]): The maximum number of search results
+            to return.
+        """
         if not max_results:
             max_results = self.max_results
 

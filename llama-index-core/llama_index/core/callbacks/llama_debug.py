@@ -1,8 +1,10 @@
 from collections import defaultdict
 from datetime import datetime
 from typing import Any, Dict, List, Optional
-
-from llama_index.core.callbacks.base_handler import BaseCallbackHandler
+import logging
+from llama_index.core.callbacks.pythonically_printing_base_handler import (
+    PythonicallyPrintingBaseHandler,
+)
 from llama_index.core.callbacks.schema import (
     BASE_TRACE_EVENT,
     TIMESTAMP_FORMAT,
@@ -12,7 +14,7 @@ from llama_index.core.callbacks.schema import (
 )
 
 
-class LlamaDebugHandler(BaseCallbackHandler):
+class LlamaDebugHandler(PythonicallyPrintingBaseHandler):
     """Callback handler that keeps track of debug info.
 
     NOTE: this is a beta feature. The usage within our codebase, and the interface
@@ -34,6 +36,7 @@ class LlamaDebugHandler(BaseCallbackHandler):
         event_starts_to_ignore: Optional[List[CBEventType]] = None,
         event_ends_to_ignore: Optional[List[CBEventType]] = None,
         print_trace_on_end: bool = True,
+        logger: Optional[logging.Logger] = None,
     ) -> None:
         """Initialize the llama debug handler."""
         self._event_pairs_by_type: Dict[CBEventType, List[CBEvent]] = defaultdict(list)
@@ -49,6 +52,7 @@ class LlamaDebugHandler(BaseCallbackHandler):
         super().__init__(
             event_starts_to_ignore=event_starts_to_ignore,
             event_ends_to_ignore=event_ends_to_ignore,
+            logger=logger,
         )
 
     def on_event_start(
@@ -175,10 +179,8 @@ class LlamaDebugHandler(BaseCallbackHandler):
         if event_pair:
             time_stats = self._get_time_stats_from_event_pairs([event_pair])
             indent = " " * level * 2
-            print(
-                f"{indent}|_{event_pair[0].event_type} -> ",
-                f"{time_stats.total_secs} seconds",
-                flush=True,
+            self._print(
+                f"{indent}|_{event_pair[0].event_type} -> {time_stats.total_secs} seconds",
             )
 
         child_event_ids = self._trace_map[cur_event_id]
@@ -187,10 +189,10 @@ class LlamaDebugHandler(BaseCallbackHandler):
 
     def print_trace_map(self) -> None:
         """Print simple trace map to terminal for debugging of the most recent trace."""
-        print("*" * 10, flush=True)
-        print(f"Trace: {self._cur_trace_id}", flush=True)
+        self._print("*" * 10)
+        self._print(f"Trace: {self._cur_trace_id}")
         self._print_trace_map(BASE_TRACE_EVENT, level=1)
-        print("*" * 10, flush=True)
+        self._print("*" * 10)
 
     @property
     def event_pairs_by_type(self) -> Dict[CBEventType, List[CBEvent]]:

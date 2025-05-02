@@ -25,7 +25,7 @@ def download_loader(
     refresh_cache: bool = False,
     use_gpt_index_import: bool = False,
     custom_path: Optional[str] = None,
-) -> Type[BaseReader]:
+) -> Type[BaseReader]:  # pragma: no cover
     """Download a single loader from the Loader Hub.
 
     Args:

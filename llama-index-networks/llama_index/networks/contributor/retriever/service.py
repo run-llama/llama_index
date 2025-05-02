@@ -1,22 +1,20 @@
 from typing import Any, Optional
 from llama_index.core.base.base_retriever import BaseRetriever
-from llama_index.core.bridge.pydantic import Field, BaseModel
 from llama_index.networks.schema.contributor import (
     ContributorRetrieverRequest,
 )
-from pydantic.v1 import BaseSettings, PrivateAttr
+from llama_index.core.bridge.pydantic import Field, BaseModel, PrivateAttr
+from llama_index.core.bridge.pydantic_settings import BaseSettings, SettingsConfigDict
 from fastapi import FastAPI
 
 
 class ContributorRetrieverServiceSettings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=[".env", ".env.contributor.service"])
     api_version: str = Field(default="v1", description="API version.")
     secret: Optional[str] = Field(
         default=None, description="JWT secret."
     )  # left for future consideration.
     # or if user wants to implement their own
-
-    class Config:
-        env_file = ".env", ".env.contributor.service"
 
 
 class ContributorRetrieverService(BaseModel):
@@ -28,6 +26,7 @@ class ContributorRetrieverService(BaseModel):
         arbitrary_types_allowed = True
 
     def __init__(self, retriever, config) -> None:
+        super().__init__(retriever=retriever, config=config)
         self._fastapi = FastAPI(
             version=config.api_version,
         )
@@ -39,8 +38,6 @@ class ContributorRetrieverService(BaseModel):
             endpoint=self.retrieve,
             methods=["POST"],
         )
-
-        super().__init__(retriever=retriever, config=config)
 
     async def index(self):
         """Index endpoint logic."""
@@ -60,11 +57,16 @@ class ContributorRetrieverService(BaseModel):
         config = ContributorRetrieverServiceSettings(_env_file=env_file)
         return cls(retriever=retriever, config=config)
 
-    def __getattr__(self, attr) -> Any:
-        if hasattr(self._fastapi, attr):
-            return getattr(self._fastapi, attr)
+    def __getattr__(self, attr: str) -> Any:
+        if attr in self.__private_attributes__ or attr in self.model_fields:
+            return super().__getattr__(attr)
         else:
-            raise AttributeError(f"{attr} not exist")
+            try:
+                return getattr(self._fastapi, attr)
+            except KeyError:
+                raise AttributeError(
+                    f"'{self.__class__.__name__}' fastapi app has no attribute '{attr}'"
+                )
 
     @property
     def app(self):

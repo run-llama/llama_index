@@ -80,7 +80,7 @@ class QueryFusionRetriever(BaseRetriever):
                 PromptTemplate, prompts["query_gen_prompt"]
             ).template
 
-    def _get_queries(self, original_query: str) -> List[str]:
+    def _get_queries(self, original_query: str) -> List[QueryBundle]:
         prompt_str = self.query_gen_prompt.format(
             num_queries=self.num_queries - 1,
             query=original_query,
@@ -89,34 +89,37 @@ class QueryFusionRetriever(BaseRetriever):
 
         # assume LLM proper put each query on a newline
         queries = response.text.split("\n")
+        queries = [q.strip() for q in queries if q.strip()]
         if self._verbose:
             queries_str = "\n".join(queries)
             print(f"Generated queries:\n{queries_str}")
+
         # The LLM often returns more queries than we asked for, so trim the list.
-        return response.text.split("\n")[: self.num_queries]
+        return [QueryBundle(q) for q in queries[: self.num_queries - 1]]
 
     def _reciprocal_rerank_fusion(
         self, results: Dict[Tuple[str, int], List[NodeWithScore]]
     ) -> List[NodeWithScore]:
-        """Apply reciprocal rank fusion.
+        """
+        Apply reciprocal rank fusion.
 
         The original paper uses k=60 for best results:
         https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf
         """
         k = 60.0  # `k` is a parameter used to control the impact of outlier rankings.
         fused_scores = {}
-        text_to_node = {}
+        hash_to_node = {}
 
         # compute reciprocal rank scores
         for nodes_with_scores in results.values():
             for rank, node_with_score in enumerate(
                 sorted(nodes_with_scores, key=lambda x: x.score or 0.0, reverse=True)
             ):
-                text = node_with_score.node.get_content()
-                text_to_node[text] = node_with_score
-                if text not in fused_scores:
-                    fused_scores[text] = 0.0
-                fused_scores[text] += 1.0 / (rank + k)
+                hash = node_with_score.node.hash
+                hash_to_node[hash] = node_with_score
+                if hash not in fused_scores:
+                    fused_scores[hash] = 0.0
+                fused_scores[hash] += 1.0 / (rank + k)
 
         # sort results
         reranked_results = dict(
@@ -125,8 +128,8 @@ class QueryFusionRetriever(BaseRetriever):
 
         # adjust node scores
         reranked_nodes: List[NodeWithScore] = []
-        for text, score in reranked_results.items():
-            reranked_nodes.append(text_to_node[text])
+        for hash, score in reranked_results.items():
+            reranked_nodes.append(hash_to_node[hash])
             reranked_nodes[-1].score = score
 
         return reranked_nodes
@@ -144,7 +147,9 @@ class QueryFusionRetriever(BaseRetriever):
             if not nodes_with_scores:
                 min_max_scores[query_tuple] = (0.0, 0.0)
                 continue
-            scores = [node_with_score.score for node_with_score in nodes_with_scores]
+            scores = [
+                node_with_score.score or 0.0 for node_with_score in nodes_with_scores
+            ]
             if dist_based:
                 # Set min and max based on mean and std dev
                 mean_score = sum(scores) / len(scores)
@@ -170,7 +175,10 @@ class QueryFusionRetriever(BaseRetriever):
                     )
                 # Scale by the weight of the retriever
                 retriever_idx = query_tuple[1]
-                node_with_score.score *= self._retriever_weights[retriever_idx]
+                existing_score = node_with_score.score or 0.0
+                node_with_score.score = (
+                    existing_score * self._retriever_weights[retriever_idx]
+                )
                 # Divide by the number of queries
                 node_with_score.score /= self.num_queries
 
@@ -180,11 +188,12 @@ class QueryFusionRetriever(BaseRetriever):
         # Sum scores for each node
         for nodes_with_scores in results.values():
             for node_with_score in nodes_with_scores:
-                text = node_with_score.node.get_content()
-                if text in all_nodes:
-                    all_nodes[text].score += node_with_score.score
+                hash = node_with_score.node.hash
+                if hash in all_nodes:
+                    cur_score = all_nodes[hash].score or 0.0
+                    all_nodes[hash].score = cur_score + (node_with_score.score or 0.0)
                 else:
-                    all_nodes[text] = node_with_score
+                    all_nodes[hash] = node_with_score
 
         return sorted(all_nodes.values(), key=lambda x: x.score or 0.0, reverse=True)
 
@@ -196,23 +205,25 @@ class QueryFusionRetriever(BaseRetriever):
         all_nodes: Dict[str, NodeWithScore] = {}
         for nodes_with_scores in results.values():
             for node_with_score in nodes_with_scores:
-                text = node_with_score.node.get_content()
-                if text in all_nodes:
-                    max_score = max(node_with_score.score, all_nodes[text].score)
-                    all_nodes[text].score = max_score
+                hash = node_with_score.node.hash
+                if hash in all_nodes:
+                    max_score = max(
+                        node_with_score.score or 0.0, all_nodes[hash].score or 0.0
+                    )
+                    all_nodes[hash].score = max_score
                 else:
-                    all_nodes[text] = node_with_score
+                    all_nodes[hash] = node_with_score
 
         return sorted(all_nodes.values(), key=lambda x: x.score or 0.0, reverse=True)
 
     def _run_nested_async_queries(
-        self, queries: List[str]
+        self, queries: List[QueryBundle]
     ) -> Dict[Tuple[str, int], List[NodeWithScore]]:
         tasks, task_queries = [], []
         for query in queries:
             for i, retriever in enumerate(self._retrievers):
                 tasks.append(retriever.aretrieve(query))
-                task_queries.append((query, i))
+                task_queries.append((query.query_str, i))
 
         task_results = run_async_tasks(tasks)
 
@@ -223,13 +234,13 @@ class QueryFusionRetriever(BaseRetriever):
         return results
 
     async def _run_async_queries(
-        self, queries: List[str]
+        self, queries: List[QueryBundle]
     ) -> Dict[Tuple[str, int], List[NodeWithScore]]:
         tasks, task_queries = [], []
         for query in queries:
             for i, retriever in enumerate(self._retrievers):
                 tasks.append(retriever.aretrieve(query))
-                task_queries.append((query, i))
+                task_queries.append((query.query_str, i))
 
         task_results = await asyncio.gather(*tasks)
 
@@ -240,20 +251,19 @@ class QueryFusionRetriever(BaseRetriever):
         return results
 
     def _run_sync_queries(
-        self, queries: List[str]
+        self, queries: List[QueryBundle]
     ) -> Dict[Tuple[str, int], List[NodeWithScore]]:
         results = {}
         for query in queries:
             for i, retriever in enumerate(self._retrievers):
-                results[(query, i)] = retriever.retrieve(query)
+                results[(query.query_str, i)] = retriever.retrieve(query)
 
         return results
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        queries: List[QueryBundle] = [query_bundle]
         if self.num_queries > 1:
-            queries = self._get_queries(query_bundle.query_str)
-        else:
-            queries = [query_bundle.query_str]
+            queries.extend(self._get_queries(query_bundle.query_str))
 
         if self.use_async:
             results = self._run_nested_async_queries(queries)
@@ -274,10 +284,9 @@ class QueryFusionRetriever(BaseRetriever):
             raise ValueError(f"Invalid fusion mode: {self.mode}")
 
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        queries: List[QueryBundle] = [query_bundle]
         if self.num_queries > 1:
-            queries = self._get_queries(query_bundle.query_str)
-        else:
-            queries = [query_bundle.query_str]
+            queries.extend(self._get_queries(query_bundle.query_str))
 
         results = await self._run_async_queries(queries)
 

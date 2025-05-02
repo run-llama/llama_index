@@ -27,7 +27,7 @@ class CohereCitationChatEnginePack(BaseLlamaPack):
         )
 
         self.embed_model_document = CohereEmbedding(
-            cohere_api_key=self.api_key,
+            api_key=self.api_key,
             model_name="embed-english-v3.0",
             input_type="search_document",
         )

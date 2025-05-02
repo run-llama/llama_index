@@ -1,7 +1,7 @@
-from typing import List, Optional
+from typing import Optional, Sequence
 
 import fsspec
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 from llama_index.core.schema import BaseNode
 from llama_index.core.storage.docstore.utils import doc_to_json, json_to_doc
 from llama_index.core.storage.kvstore import (
@@ -15,10 +15,8 @@ DEFAULT_CACHE_NAME = "llama_cache"
 
 
 class IngestionCache(BaseModel):
-    class Config:
-        arbitrary_types_allowed = True
-
-    nodes_key = "nodes"
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    nodes_key: str = "nodes"
 
     collection: str = Field(
         default=DEFAULT_CACHE_NAME, description="Collection name of the cache."
@@ -27,7 +25,7 @@ class IngestionCache(BaseModel):
 
     # TODO: add async get/put methods?
     def put(
-        self, key: str, nodes: List[BaseNode], collection: Optional[str] = None
+        self, key: str, nodes: Sequence[BaseNode], collection: Optional[str] = None
     ) -> None:
         """Put a value into the cache."""
         collection = collection or self.collection
@@ -37,7 +35,7 @@ class IngestionCache(BaseModel):
 
     def get(
         self, key: str, collection: Optional[str] = None
-    ) -> Optional[List[BaseNode]]:
+    ) -> Optional[Sequence[BaseNode]]:
         """Get a value from the cache."""
         collection = collection or self.collection
         node_dicts = self.cache.get(key, collection=collection)
