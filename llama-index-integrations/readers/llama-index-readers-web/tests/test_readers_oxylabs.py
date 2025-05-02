@@ -51,7 +51,7 @@ def test_sync_oxylabs_reader(
     ("urls", "additional_params", "return_value", "expected_output"),
     [READER_TEST_PARAM],
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_oxylabs_reader(
     urls: list[str],
     additional_params: dict,

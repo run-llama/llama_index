@@ -105,7 +105,7 @@ READER_TESTS_PARAMS = [
     ("reader_class", "payload"),
     READER_TESTS_PARAMS,
 )
-@pytest.mark.unit()
+@pytest.mark.unit
 def test_sync_oxylabs_readers(
     reader_class: type[OxylabsBaseReader],
     payload: dict,
@@ -133,8 +133,8 @@ def test_sync_oxylabs_readers(
     ("reader_class", "payload"),
     READER_TESTS_PARAMS,
 )
-@pytest.mark.asyncio()
-@pytest.mark.unit()
+@pytest.mark.asyncio
+@pytest.mark.unit
 async def test_async_oxylabs_readers(
     reader_class: type[OxylabsBaseReader],
     payload: dict,
@@ -188,7 +188,7 @@ GOOGLE_READER_TESTS_PARAMS = [
     ("reader_class", "name", "payload"),
     GOOGLE_READER_TESTS_PARAMS,
 )
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_sync_google_oxylabs_readers(
     reader_class: type[OxylabsBaseReader],
     name: str,
@@ -219,8 +219,8 @@ def test_sync_google_oxylabs_readers(
     ("reader_class", "name", "payload"),
     GOOGLE_READER_TESTS_PARAMS,
 )
-@pytest.mark.asyncio()
-@pytest.mark.integration()
+@pytest.mark.asyncio
+@pytest.mark.integration
 async def test_async_google_oxylabs_readers(
     reader_class: type[OxylabsBaseReader],
     name: str,

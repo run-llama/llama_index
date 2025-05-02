@@ -12,7 +12,8 @@ from oxylabs.sources.response import Response
 
 
 class OxylabsBaseReader(BasePydanticReader, abc.ABC):
-    """Oxylabs Scraper base class.
+    """
+    Oxylabs Scraper base class.
 
     https://developers.oxylabs.io/scraper-apis/web-scraper-api
     """

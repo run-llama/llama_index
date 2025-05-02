@@ -12,6 +12,7 @@ def json_to_markdown(data: Any, level: int = 0, header: str | None = None) -> st
 
     Returns:
         A string containing the Markdown representation of the data.
+
     """
     markdown_parts = []
     indent = "  " * level

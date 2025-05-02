@@ -16,7 +16,8 @@ from oxylabs.internal.api import AsyncAPI, APICredentials, RealtimeAPI
 
 
 class OxylabsWebReader(BasePydanticReader):
-    """Scrape any website with Oxylabs Scraper.
+    """
+    Scrape any website with Oxylabs Scraper.
 
     Oxylabs API documentation:
     https://developers.oxylabs.io/scraper-apis/web-scraper-api/other-websites
@@ -44,6 +45,7 @@ class OxylabsWebReader(BasePydanticReader):
             )
 
             print(docs[0].text)
+
     """
 
     timeout_s: int = 100
@@ -90,13 +92,15 @@ class OxylabsWebReader(BasePydanticReader):
         urls: list[str],
         additional_params: dict[str, Any] | None = None,
     ) -> List[Document]:
-        """Asynchronously load data from urls.
+        """
+        Asynchronously load data from urls.
 
         Args:
             urls: List of URLs to load.
             additional_params: Dictionary with the scraper parameters. Accepts the values from
                 the additional parameters described here:
                 https://developers.oxylabs.io/scraper-apis/web-scraper-api/targets/generic-target#additional
+
         """
         if additional_params is None:
             additional_params = {}
@@ -122,13 +126,15 @@ class OxylabsWebReader(BasePydanticReader):
         urls: list[str],
         additional_params: dict[str, Any] | None = None,
     ) -> List[Document]:
-        """Load data from urls.
+        """
+        Load data from urls.
 
         Args:
             urls: List of URLs to load.
             additional_params: Dictionary with the scraper parameters. Accepts the values from
                 the additional parameters described here:
                 https://developers.oxylabs.io/scraper-apis/web-scraper-api/targets/generic-target#additional
+
         """
         if additional_params is None:
             additional_params = {}
