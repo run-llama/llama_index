@@ -164,7 +164,7 @@ def test_run_pytest_success(mock_time, mock_run, mock_load_pyproject):
     mock_run.side_effect = [mock_process1, mock_process2]
 
     # Call the function
-    result = run_pytest("", "test_package", set())
+    result = run_pytest("", "test_package", set(), "")
 
     # Verify the result
     expected = {
@@ -192,7 +192,7 @@ def test_run_pytest_install_failure(mock_time, mock_run, mock_load_pyproject):
     mock_run.return_value = mock_process
 
     # Call the function
-    result = run_pytest("", "test_package", set())
+    result = run_pytest("", "test_package", set(), "")
 
     # Verify the result
     expected = {
@@ -222,7 +222,7 @@ def test_run_pytest_test_failure(mock_time, mock_run, mock_load_pyproject):
     mock_run.side_effect = [mock_process1, mock_process2]
 
     # Call the function
-    result = run_pytest("", "test_package", set())
+    result = run_pytest("", "test_package", set(), "")
 
     # Verify the result
     expected = {

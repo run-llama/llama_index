@@ -15,7 +15,6 @@ dev = [
     "pytest==7.2.1",
     "pytest-mock==3.11.1",
     "ruff==0.0.292",
-    "tree-sitter-languages>=1.8.0,<2",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-protobuf>=4.24.0.4,<5",
@@ -26,6 +25,8 @@ dev = [
     "respx[pytest]>=0.22.0,<0.23",
     "pytest-httpx",
     "requests-mock>=1.12.1,<2",
+    "diff-cover>=9.2.0",
+    "pytest-cov>=6.1.1",
 ]
 
 [project]

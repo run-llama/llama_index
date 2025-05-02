@@ -6,7 +6,9 @@ build-backend = "hatchling.build"
 dev = [
     "black[jupyter]<=23.9.1,>=23.7.0",
     "codespell[toml]>=v2.2.6",
+    "diff-cover>=9.2.0",
     "pytest>=8.3.5",
+    "pytest-cov>=6.1.1",
 ]
 
 [project]
