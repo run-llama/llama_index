@@ -552,7 +552,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
         if n_function_calls > self._max_function_calls:
             return False
 
-        return tool_calls is not None
+        return tool_calls is not None and len(tool_calls) > 0
 
 
     def get_tools(self, input: str) -> List[BaseTool]:
