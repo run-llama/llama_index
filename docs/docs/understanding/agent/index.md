@@ -45,7 +45,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from llama_index.llms.openai import OpenAI
-from llama_index.core.agent.workflow import AgentWorkflow
+from llama_index.core.agent.workflow import AgentWorkflow, FunctionAgent
 ```
 
 ## Create basic tools
