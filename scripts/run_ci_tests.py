@@ -233,7 +233,6 @@ def run_pytest(
         }
 
     # Install local copy of packages that have changed
-    debug_output = ""
     pyproject_data = load_pyproject(Path(package_dir) / "pyproject.toml")
     dep_names = get_dep_names(pyproject_data)
     install_local = set()
@@ -255,7 +254,7 @@ def run_pytest(
                 "package": str(package_dir),
                 "status": ResultStatus.INSTALL_FAILED,
                 "stdout": result.stdout,
-                "stderr": debug_output + "\n" + result.stderr,
+                "stderr": result.stderr,
                 "time": f"{elapsed_time:.2f}s",
             }
 
@@ -286,7 +285,7 @@ def run_pytest(
             "package": str(package_dir),
             "status": ResultStatus.TESTS_FAILED,
             "stdout": result.stdout,
-            "stderr": debug_output + "\n" + result.stderr,
+            "stderr": result.stderr,
             "time": f"{elapsed_time:.2f}s",
         }
 
