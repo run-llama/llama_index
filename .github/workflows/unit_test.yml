@@ -6,6 +6,10 @@ on:
       - main
   pull_request:
 
+env:
+  NUM_WORKERS: 8
+  COV_FAIL_UNDER: 70
+
 jobs:
   test:
     runs-on: ubuntu-latest-unit-tester
@@ -25,10 +29,8 @@ jobs:
           enable-cache: true
 
       - name: Run tests
-        if: ${{ matrix.python-version }} != "3.12"
+        if: ${{ matrix.python-version != "3.12" }}
         shell: bash
-        env:
-          NUM_WORKERS: 8
         run: |
           git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
           uv run -- python -u scripts/run_ci_tests.py \
@@ -38,9 +40,6 @@ jobs:
       - name: Run tests with coverage
         if: ${{ matrix.python-version == "3.12" }}
         shell: bash
-        env:
-          NUM_WORKERS: 8
-          COV_FAIL_UNDER: 70
         run: |
           git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
           uv run -- python -u scripts/run_ci_tests.py \
