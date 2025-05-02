@@ -26,6 +26,8 @@ dev = [
     "respx[pytest]>=0.22.0,<0.23",
     "pytest-httpx",
     "requests-mock>=1.12.1,<2",
+    "diff-cover>=9.2.0",
+    "pytest-cov>=6.1.1",
 ]
 
 [project]
