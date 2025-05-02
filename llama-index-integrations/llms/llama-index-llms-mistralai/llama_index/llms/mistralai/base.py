@@ -122,7 +122,8 @@ def force_single_tool_call(response: ChatResponse) -> None:
 
 
 class MistralAI(FunctionCallingLLM):
-    """MistralAI LLM.
+    """
+    MistralAI LLM.
 
     Examples:
         `pip install llama-index-llms-mistralai`
@@ -144,6 +145,7 @@ class MistralAI(FunctionCallingLLM):
 
         print(resp)
         ```
+
     """
 
     model: str = Field(

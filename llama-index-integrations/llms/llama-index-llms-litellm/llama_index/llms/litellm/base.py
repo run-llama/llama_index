@@ -61,7 +61,8 @@ def force_single_tool_call(response: ChatResponse) -> None:
 
 
 class LiteLLM(FunctionCallingLLM):
-    """LiteLLM.
+    """
+    LiteLLM.
 
     Examples:
         `pip install llama-index-llms-litellm`
@@ -87,6 +88,7 @@ class LiteLLM(FunctionCallingLLM):
         # Print the response
         print(chat_response)
         ```
+
     """
 
     model: str = Field(
@@ -167,7 +169,7 @@ class LiteLLM(FunctionCallingLLM):
             **kwargs,
         )
 
-        self._custom_llm_provider = kwargs.get("custom_llm_provider", None)
+        self._custom_llm_provider = kwargs.get("custom_llm_provider")
 
     def _get_model_name(self) -> str:
         model_name = self.model

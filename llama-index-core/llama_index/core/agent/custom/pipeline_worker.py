@@ -53,7 +53,8 @@ def _get_agent_components(
 
 @deprecated("Use `FnAgentWorker` instead to build a stateful agent.")
 class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
-    """Query Pipeline agent worker.
+    """
+    Query Pipeline agent worker.
 
     NOTE: This is now deprecated. Use `FnAgentWorker` instead to build a stateful agent.
 
@@ -103,7 +104,8 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
 
     @property
     def agent_input_component(self) -> AgentInputComponent:
-        """Get agent input component.
+        """
+        Get agent input component.
 
         NOTE: This is deprecated and will be removed in the future.
 
@@ -123,7 +125,8 @@ class QueryPipelineAgentWorker(BaseModel, BaseAgentWorker):
         return _get_agent_components(self.pipeline)
 
     def preprocess(self, task: Task, step: TaskStep) -> None:
-        """Preprocessing flow.
+        """
+        Preprocessing flow.
 
         This runs preprocessing to propagate the task and step as variables
         to relevant components in the query pipeline.

@@ -33,7 +33,7 @@ def load_parser(
 ) -> NodeParser:
     if isinstance(data, NodeParser):
         return data
-    parser_name = data.get("class_name", None)
+    parser_name = data.get("class_name")
     if parser_name is None:
         raise ValueError("Parser loading requires a class_name")
 

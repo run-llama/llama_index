@@ -37,7 +37,8 @@ DEFAULT_PII_TMPL = (
 
 
 class PIINodePostprocessor(BaseNodePostprocessor):
-    """PII Node processor.
+    """
+    PII Node processor.
 
     NOTE: this is a beta feature, the API might change.
 
@@ -94,7 +95,8 @@ class PIINodePostprocessor(BaseNodePostprocessor):
 
 
 class NERPIINodePostprocessor(BaseNodePostprocessor):
-    """NER PII Node processor.
+    """
+    NER PII Node processor.
 
     Uses a HF transformers model.
 

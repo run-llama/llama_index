@@ -57,6 +57,7 @@ class AssemblyAIAudioTranscriptReader(BaseReader):
             config: Transcription options and features. If ``None`` is given,
                 the Transcriber's default configuration will be used.
             api_key: AssemblyAI API key.
+
         """
         if api_key is not None:
             assemblyai.settings.api_key = api_key
@@ -68,7 +69,8 @@ class AssemblyAIAudioTranscriptReader(BaseReader):
         self.transcriber = assemblyai.Transcriber(config=config)
 
     def load_data(self) -> List[Document]:
-        """Transcribes the audio file and loads the transcript into documents.
+        """
+        Transcribes the audio file and loads the transcript into documents.
 
         It uses the AssemblyAI API to transcribe the audio file and blocks until
         the transcription is finished.

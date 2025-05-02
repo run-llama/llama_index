@@ -6,10 +6,12 @@ from llama_index.core.schema import QueryType
 
 
 class SynthesizeStartEvent(BaseEvent):
-    """SynthesizeStartEvent.
+    """
+    SynthesizeStartEvent.
 
     Args:
         query (QueryType): Query as a string or query bundle.
+
     """
 
     query: QueryType
@@ -21,11 +23,13 @@ class SynthesizeStartEvent(BaseEvent):
 
 
 class SynthesizeEndEvent(BaseEvent):
-    """SynthesizeEndEvent.
+    """
+    SynthesizeEndEvent.
 
     Args:
         query (QueryType): Query as a string or query bundle.
         response (RESPONSE_TYPE): Response.
+
     """
 
     query: QueryType
@@ -38,11 +42,13 @@ class SynthesizeEndEvent(BaseEvent):
 
 
 class GetResponseStartEvent(BaseEvent):
-    """GetResponseStartEvent.
+    """
+    GetResponseStartEvent.
 
     Args:
         query_str (str): Query string.
         text_chunks (List[str]): List of text chunks.
+
     """
 
     query_str: str

@@ -79,7 +79,7 @@ class TestNotDiamondSelector:
         assert result.selections[0].index == 0
         assert openai_mock.is_called
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     @patch("llama_index.llms.openai.OpenAI")
     async def test_aselect(self, openai_mock, nd_selector, choices, session_id):
         """_aselect should call openai, as mocked."""

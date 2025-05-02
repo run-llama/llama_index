@@ -21,7 +21,8 @@ def create_llama_agent(
     agent_kwargs: Optional[dict] = None,
     **kwargs: Any,
 ) -> AgentExecutor:
-    """Load an agent executor given a Llama Toolkit and LLM.
+    """
+    Load an agent executor given a Llama Toolkit and LLM.
 
     NOTE: this is a light wrapper around initialize_agent in langchain.
 
@@ -45,6 +46,7 @@ def create_llama_agent(
 
     Returns:
         An agent executor
+
     """
     llama_tools = toolkit.get_tools()
     return initialize_agent(
@@ -65,7 +67,8 @@ def create_llama_chat_agent(
     agent_kwargs: Optional[dict] = None,
     **kwargs: Any,
 ) -> AgentExecutor:
-    """Load a chat llama agent given a Llama Toolkit and LLM.
+    """
+    Load a chat llama agent given a Llama Toolkit and LLM.
 
     Args:
         toolkit: LlamaToolkit to use.
@@ -77,6 +80,7 @@ def create_llama_chat_agent(
 
     Returns:
         An agent executor
+
     """
     # chat agent
     # TODO: explore chat-conversational-react-description

@@ -90,7 +90,8 @@ def extract_logprobs_stream(response) -> Optional[List[List[LogProb]]]:
 
 
 class MistralRS(CustomLLM):
-    r"""MistralRS LLM.
+    r"""
+    MistralRS LLM.
 
     Examples:
         Install `mistralrs` following instructions:
@@ -126,6 +127,7 @@ class MistralRS(CustomLLM):
         response = llm.complete("Hello, how are you?")
         print(str(response))
         ```
+
     """
 
     model_url: Optional[str] = Field(description="local")

@@ -18,12 +18,14 @@ from llama_index.core.vector_stores.types import VectorStoreQuery
 
 
 class SimplePropertyGraphStore(PropertyGraphStore):
-    """Simple Labelled Property Graph Store.
+    """
+    Simple Labelled Property Graph Store.
 
     This class implements a simple in-memory labelled property graph store.
 
     Args:
         graph (Optional[LabelledPropertyGraph]): Labelled property graph to initialize the store.
+
     """
 
     supports_structured_queries: bool = False
@@ -275,7 +277,8 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         net.write_html(name)
 
     def show_jupyter_graph(self) -> None:
-        """Visualizes the graph structure of the graph store.
+        """
+        Visualizes the graph structure of the graph store.
 
         NOTE: This function requires yfiles_jupyter_graphs to be installed.
         NOTE: This method exclusively works in jupyter environments.

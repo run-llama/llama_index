@@ -34,13 +34,23 @@ def test_cortex_metadata(cortex_llm):
     assert metadata.num_output == 4096
 
 
+def test_cortex_metadata(cortex_llm):
+    """Test that the LLM metadata is correctly configured."""
+    metadata = cortex_llm.metadata
+
+    assert metadata.model_name == "llama3.2-1b"
+    assert metadata.is_chat_model is True
+    assert metadata.context_window == 128000
+    assert metadata.num_output == 4096
+
+
 def test_complete(cortex_llm):
     response = cortex_llm.complete("hello", temperature=0, max_tokens=2)
     assert isinstance(response, CompletionResponse)
     assert "hello" in response.text.lower()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_acomplete(cortex_llm):
     response = await cortex_llm.acomplete("hello")
     assert isinstance(response, CompletionResponse)
@@ -60,7 +70,7 @@ def test_stream_complete(cortex_llm):
     assert full_response.strip()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete(cortex_llm):
     stream = await cortex_llm.astream_complete("hello")
     assert isinstance(stream, AsyncIterator)
@@ -85,7 +95,7 @@ def test_chat(cortex_llm):
     assert response.message.content.strip()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat(cortex_llm):
     messages = [
         ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
@@ -117,7 +127,7 @@ def test_stream_chat(cortex_llm):
     assert full_response.strip()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat(cortex_llm):
     messages = [
         ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
@@ -160,7 +170,7 @@ def test_complete_mock(mock_cortex_llm):
         mock_complete.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_acomplete_mock(mock_cortex_llm):
     with mock.patch.object(mock_cortex_llm, "_acomplete") as mock_acomplete:
         mock_acomplete.return_value = CompletionResponse(
@@ -189,7 +199,7 @@ def test_stream_complete_mock(mock_cortex_llm):
         mock_stream_complete.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete_mock(mock_cortex_llm):
     prompt = "Test prompt"
     mock_astream_complete = AsyncMock(
@@ -226,7 +236,7 @@ def test_chat_mock(mock_cortex_llm):
         mock_chat.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat_mock(mock_cortex_llm):
     with mock.patch.object(mock_cortex_llm, "_achat") as mock_achat:
         mock_achat.return_value = ChatResponse(
@@ -285,7 +295,7 @@ def test_stream_chat_mock(mock_cortex_llm):
         mock_stream_chat.assert_called_once_with(messages)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat_mock(mock_cortex_llm):
     messages = [
         ChatMessage(role=MessageRole.USER, content="Test message 1"),
@@ -369,9 +379,7 @@ def test_session_auth_token_generation(mock_session):
     )
 
     # Test the token extraction
-    token = cortex._generate_auth_token()
-    assert token == mock_session.connection.rest.token
-    assert token == "mock_jwt_token"
+    assert cortex._generate_auth_header() == 'Snowflake Token="mock_jwt_token"'
 
 
 def test_complete_with_session_auth(mock_cortex_with_session):
@@ -395,7 +403,7 @@ def test_complete_with_session_auth(mock_cortex_with_session):
         args, kwargs = mock_post.call_args
         headers = kwargs.get("headers", {})
         assert "Authorization" in headers
-        assert headers["Authorization"] == "Bearer mock_jwt_token"
+        assert headers["Authorization"] == 'Snowflake Token="mock_jwt_token"'
 
 
 def test_chat_with_session_auth(mock_cortex_with_session):
@@ -421,4 +429,4 @@ def test_chat_with_session_auth(mock_cortex_with_session):
         args, kwargs = mock_post.call_args
         headers = kwargs.get("headers", {})
         assert "Authorization" in headers
-        assert headers["Authorization"] == "Bearer mock_jwt_token"
+        assert headers["Authorization"] == 'Snowflake Token="mock_jwt_token"'

@@ -10,14 +10,15 @@ class ServiceNotFoundError(Exception):
 
 
 class ServiceManager:
-    """An helper class to decouple how services are managed from the Workflow class.
+    """
+    An helper class to decouple how services are managed from the Workflow class.
 
     A Service is nothing more than a workflow instance attached to another workflow.
     The service is made available to the steps of the main workflow.
     """
 
     def __init__(self) -> None:
-        self._services: Dict[str, "Workflow"] = {}
+        self._services: Dict[str, Workflow] = {}
 
     def get(self, name: str, default: Optional["Workflow"] = None) -> "Workflow":
         try:

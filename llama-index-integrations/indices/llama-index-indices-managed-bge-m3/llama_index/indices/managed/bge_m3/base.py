@@ -20,8 +20,8 @@ class BGEM3Index(BaseIndex[IndexDict]):
     BGE-M3 is a multilingual embedding model with multi-functionality:
     Dense retrieval, Sparse retrieval and Multi-vector retrieval.
 
-    Parameters:
-
+    Parameters
+    ----------
     index_path: directory containing PLAID index files.
     model_name: BGE-M3 hugging face model name.
         Default: "BAAI/bge-m3".
@@ -99,7 +99,8 @@ class BGEM3Index(BaseIndex[IndexDict]):
     def _build_index_from_nodes(
         self, nodes: Sequence[BaseNode], **kwargs: Any
     ) -> IndexDict:
-        """Generate a PLAID index from the BGE-M3 checkpoint via its hugging face
+        """
+        Generate a PLAID index from the BGE-M3 checkpoint via its hugging face
         model_name.
         """
         index_struct = IndexDict()

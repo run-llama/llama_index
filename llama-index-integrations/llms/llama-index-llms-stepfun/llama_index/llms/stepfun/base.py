@@ -18,15 +18,18 @@ class StepFun(OpenAILike):
     """
     The StepFun class is a subclass of OpenAILike and is used to interact with the StepFun model.
 
-    Parameters:
+    Parameters
+    ----------
         model (str): The name of the Stepfun model to use. See https://platform.stepfun.com/docs/llm/modeloverview for options.
         context_window (int): The maximum size of the context window for the model. See https://platform.stepfun.com/docs/llm/modeloverview for options.
         is_chat_model (bool): Indicates whether the model is a chat model.
 
-    Attributes:
+    Attributes
+    ----------
         model (str): The name of the Stepfun model to use.
         context_window (int): The maximum size of the context window for the model.
         is_chat_model (bool): Indicates whether the model is a chat model.
+
     """
 
     model: str = Field(
@@ -68,6 +71,7 @@ class StepFun(OpenAILike):
 
         Returns:
             None
+
         """
         additional_kwargs = additional_kwargs or {}
 

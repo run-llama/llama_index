@@ -1,3 +1,0 @@
-files(
-  sources=["./*.yaml"]
-)

@@ -7,7 +7,7 @@ from llama_index.graph_rag.cognee import CogneeGraphRAG
 @pytest.mark.skipif(
     sys.version_info < (3, 10), reason="mock strategy requires python3.10 or higher"
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_get_graph_url(monkeypatch):
     # Instantiate cognee GraphRAG
     cogneeRAG = CogneeGraphRAG(

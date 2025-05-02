@@ -215,7 +215,7 @@ def test_delete_last_message(mongo_chat_store: MongoChatStore):
 
 
 @pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_get_messages(mongo_chat_store: MongoChatStore):
     """Test retrieving messages asynchronously."""
     # Create a chat with messages
@@ -236,7 +236,7 @@ async def test_async_get_messages(mongo_chat_store: MongoChatStore):
 
 
 @pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_add_message(mongo_chat_store: MongoChatStore):
     """Test adding a message asynchronously."""
     key = "test_async_add"
@@ -254,7 +254,7 @@ async def test_async_add_message(mongo_chat_store: MongoChatStore):
 
 
 @pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_set_messages(mongo_chat_store: MongoChatStore):
     """Test setting messages asynchronously."""
     key = "test_async_set"
@@ -274,7 +274,7 @@ async def test_async_set_messages(mongo_chat_store: MongoChatStore):
 
 
 @pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_delete_messages(mongo_chat_store: MongoChatStore):
     """Test deleting all messages asynchronously."""
     key = "test_async_delete_all"
@@ -301,7 +301,7 @@ async def test_async_delete_messages(mongo_chat_store: MongoChatStore):
 
 
 @pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_delete_message(mongo_chat_store: MongoChatStore):
     """Test deleting a specific message asynchronously."""
     key = "test_async_delete_specific"
@@ -327,7 +327,7 @@ async def test_async_delete_message(mongo_chat_store: MongoChatStore):
 
 
 @pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_delete_last_message(mongo_chat_store: MongoChatStore):
     """Test deleting the last message asynchronously."""
     key = "test_async_delete_last"
@@ -351,7 +351,7 @@ async def test_async_delete_last_message(mongo_chat_store: MongoChatStore):
 
 
 @pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_get_keys(mongo_chat_store: MongoChatStore):
     """Test getting all keys asynchronously."""
     # Create multiple chats

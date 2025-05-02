@@ -4,10 +4,12 @@ from llama_index.core.schema import QueryType
 
 
 class QueryStartEvent(BaseEvent):
-    """QueryStartEvent.
+    """
+    QueryStartEvent.
 
     Args:
         query (QueryType): Query as a string or query bundle.
+
     """
 
     query: QueryType
@@ -19,11 +21,13 @@ class QueryStartEvent(BaseEvent):
 
 
 class QueryEndEvent(BaseEvent):
-    """QueryEndEvent.
+    """
+    QueryEndEvent.
 
     Args:
         query (QueryType): Query as a string or query bundle.
         response (RESPONSE_TYPE): Response.
+
     """
 
     query: QueryType

@@ -20,13 +20,15 @@ import google.generativeai as gemini
     )
 )
 class GeminiEmbedding(BaseEmbedding):
-    """Google Gemini embeddings.
+    """
+    Google Gemini embeddings.
 
     Args:
         model_name (str): Model for embedding.
             Defaults to "models/embedding-001".
 
         api_key (Optional[str]): API key to access the model. Defaults to None.
+
     """
 
     _model: Any = PrivateAttr()

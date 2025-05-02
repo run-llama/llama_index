@@ -76,7 +76,8 @@ def _normalize(vector: List[float]) -> List[float]:
 
 
 class OceanBaseVectorStore(BasePydanticVectorStore):
-    """OceanBase Vector Store.
+    """
+    OceanBase Vector Store.
 
     You need to install `pyobvector` and run a standalone observer or OceanBase cluster.
 
@@ -133,6 +134,7 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
             dim=1024,
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -343,7 +345,8 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
     ) -> List[BaseNode]:
-        """Get nodes from OceanBase.
+        """
+        Get nodes from OceanBase.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete.
@@ -353,6 +356,7 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[BaseNode]: List of text nodes.
+
         """
         if filters is not None:
             filter = self._to_oceanbase_filter(filters)
@@ -383,7 +387,8 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
         batch_size: Optional[int] = None,
         extras: Optional[List[dict]] = None,
     ) -> List[str]:
-        """Add nodes into OceanBase.
+        """
+        Add nodes into OceanBase.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings
@@ -395,6 +400,7 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[str]: List of ids inserted.
+
         """
         batch_size = batch_size or DEFAULT_OCEANBASE_BATCH_SIZE
 
@@ -422,10 +428,12 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
         return [node.id_ for node in nodes]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete nodes using with ref_doc_id.
+        """
+        Delete nodes using with ref_doc_id.
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
+
         """
         self._client.delete(
             table_name=self._table_name,
@@ -438,13 +446,15 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes.
+        """
+        Deletes nodes.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete.
                 Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters.
                 Defaults to None.
+
         """
         if filters is not None:
             filter = self._to_oceanbase_filter(filters)
@@ -471,13 +481,15 @@ class OceanBaseVectorStore(BasePydanticVectorStore):
     def query(
         self, query: VectorStoreQuery, param: Optional[dict] = None, **kwargs: Any
     ) -> VectorStoreQueryResult:
-        """Perform top-k ANN search.
+        """
+        Perform top-k ANN search.
 
         Args:
             query (VectorStoreQuery): query infos
             param (Optional[dict]): The search params for the index type.
                 Defaults to None. Refer to `DEFAULT_OCEANBASE_HNSW_SEARCH_PARAM`
                 for example.
+
         """
         search_param = (
             param if param is not None else DEFAULT_OCEANBASE_HNSW_SEARCH_PARAM

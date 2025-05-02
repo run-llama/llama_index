@@ -20,6 +20,7 @@ class OutlookEmailReader(BasePydanticReader):
         user_email (str): Email address of the user whose emails need to be fetched.
         folder (Optional[str]): The email folder to fetch emails from. Defaults to "Inbox".
         num_mails (int): Number of emails to retrieve. Defaults to 10.
+
     """
 
     client_id: str

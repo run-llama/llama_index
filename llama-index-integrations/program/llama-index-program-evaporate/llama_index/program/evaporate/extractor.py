@@ -24,7 +24,8 @@ class TimeoutException(Exception):
 
 @contextmanager
 def time_limit(seconds: int) -> Any:
-    """Time limit context manager.
+    """
+    Time limit context manager.
 
     NOTE: copied from https://github.com/HazyResearch/evaporate.
 
@@ -42,7 +43,8 @@ def time_limit(seconds: int) -> Any:
 
 
 def get_function_field_from_attribute(attribute: str) -> str:
-    """Get function field from attribute.
+    """
+    Get function field from attribute.
 
     NOTE: copied from https://github.com/HazyResearch/evaporate.
 
@@ -84,7 +86,8 @@ def extract_field_dicts(result: str, text_chunk: str) -> Set:
 
 # since we define globals below
 class EvaporateExtractor:
-    """Wrapper around Evaporate.
+    """
+    Wrapper around Evaporate.
 
     Evaporate is an open-source project from Stanford's AI Lab:
     https://github.com/HazyResearch/evaporate.
@@ -115,7 +118,8 @@ class EvaporateExtractor:
     def identify_fields(
         self, nodes: List[BaseNode], topic: str, fields_top_k: int = 5
     ) -> List:
-        """Identify fields from nodes.
+        """
+        Identify fields from nodes.
 
         Will extract fields independently per node, and then
         return the top k fields.
@@ -208,7 +212,8 @@ class EvaporateExtractor:
     def run_fn_on_nodes(
         self, nodes: List[BaseNode], fn_str: str, field_name: str, num_timeouts: int = 1
     ) -> List:
-        """Run function on nodes.
+        """
+        Run function on nodes.
 
         Calls python exec().
 

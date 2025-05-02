@@ -129,6 +129,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             semantic_configuration_name="mySemanticConfig",
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -638,6 +639,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 is of type azure.search.documents.SearchClient
             ValueError: If `create_index_if_not_exists` is true and
                 `search_or_index_client` is of type azure.search.documents.SearchClient
+
         """
         import_err_msg = (
             "`azure-search-documents` package not found, please run "
@@ -1207,7 +1209,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         semantic_configuration_name = None
 
         # NOTE: users can provide odata_filters directly to the query
-        odata_filters = kwargs.get("odata_filters", None)
+        odata_filters = kwargs.get("odata_filters")
         if odata_filters is not None:
             odata_filter = odata_filters
         elif query.filters is not None:
@@ -1308,7 +1310,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
     ) -> Optional[str]:
-        """Build OData filter string from node IDs and metadata filters.
+        """
+        Build OData filter string from node IDs and metadata filters.
 
         Args:
             field_mapping (Dict[str, str]): Field mapping dictionary
@@ -1317,6 +1320,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
         Returns:
             Optional[str]: OData filter string or None if no filters
+
         """
         filter_str = None
         if node_ids is not None:
@@ -1339,7 +1343,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         limit: Optional[int] = None,
     ) -> List[BaseNode]:
-        """Get nodes from the Azure AI Search index.
+        """
+        Get nodes from the Azure AI Search index.
 
         Args:
             node_ids (Optional[List[str]]): List of node IDs to retrieve.
@@ -1348,6 +1353,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[BaseNode]: List of nodes retrieved from the index.
+
         """
         if not self._search_client:
             raise ValueError("Search client not initialized")
@@ -1385,7 +1391,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         limit: Optional[int] = None,
     ) -> List[BaseNode]:
-        """Get nodes asynchronously from the Azure AI Search index.
+        """
+        Get nodes asynchronously from the Azure AI Search index.
 
         Args:
             node_ids (Optional[List[str]]): List of node IDs to retrieve.
@@ -1394,6 +1401,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[BaseNode]: List of nodes retrieved from the index.
+
         """
         if not self._async_search_client:
             raise ValueError("Async Search client not initialized")

@@ -4,7 +4,8 @@ from enum import Enum
 
 
 class IndexStructType(str, Enum):
-    """Index struct type. Identifier for a "type" of index.
+    """
+    Index struct type. Identifier for a "type" of index.
 
     Attributes:
         TREE ("tree"): Tree index. See :ref:`Ref-Indices-Tree` for tree indices.

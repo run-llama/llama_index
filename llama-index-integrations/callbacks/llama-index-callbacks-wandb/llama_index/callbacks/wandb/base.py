@@ -85,7 +85,8 @@ class WandbRunArgs(TypedDict):
 
 
 class WandbCallbackHandler(BaseCallbackHandler):
-    """Callback handler that logs events to wandb.
+    """
+    Callback handler that logs events to wandb.
 
     NOTE: this is a beta feature. The usage within our codebase, and the interface
     may change.
@@ -108,6 +109,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
             ignore when tracking event starts.
         event_ends_to_ignore (Optional[List[CBEventType]]): list of event types to
             ignore when tracking event ends.
+
     """
 
     def __init__(
@@ -181,7 +183,8 @@ class WandbCallbackHandler(BaseCallbackHandler):
         parent_id: str = "",
         **kwargs: Any,
     ) -> str:
-        """Store event start data by event type.
+        """
+        Store event start data by event type.
 
         Args:
             event_type (CBEventType): event type to store.
@@ -201,7 +204,8 @@ class WandbCallbackHandler(BaseCallbackHandler):
         event_id: str = "",
         **kwargs: Any,
     ) -> None:
-        """Store event end data by event type.
+        """
+        Store event end data by event type.
 
         Args:
             event_type (CBEventType): event type to store.
@@ -262,7 +266,8 @@ class WandbCallbackHandler(BaseCallbackHandler):
     def persist_index(
         self, index: "IndexType", index_name: str, persist_dir: Union[str, None] = None
     ) -> None:
-        """Upload an index to wandb as an artifact. You can learn more about W&B
+        """
+        Upload an index to wandb as an artifact. You can learn more about W&B
         artifacts here: https://docs.wandb.ai/guides/artifacts.
 
         For the `ComposableGraph` index, the root id is stored as artifact metadata.
@@ -302,7 +307,8 @@ class WandbCallbackHandler(BaseCallbackHandler):
     def load_storage_context(
         self, artifact_url: str, index_download_dir: Union[str, None] = None
     ) -> "StorageContext":
-        """Download an index from wandb and return a storage context.
+        """
+        Download an index from wandb and return a storage context.
 
         Use this storage context to load the index into memory using
         `load_index_from_storage`, `load_indices_from_storage` or
@@ -313,6 +319,7 @@ class WandbCallbackHandler(BaseCallbackHandler):
                 be of the form: `entity/project/index_name:version` and can be found in
                 the W&B UI.
             index_download_dir (Union[str, None]): directory to download the index to.
+
         """
         from llama_index.core.storage.storage_context import StorageContext
 
@@ -527,7 +534,8 @@ class WandbCallbackHandler(BaseCallbackHandler):
         return start_time_in_ms, end_time_in_ms
 
     def _ensure_run(self, should_print_url: bool = False) -> None:
-        """Ensures an active W&B run exists.
+        """
+        Ensures an active W&B run exists.
 
         If not, will start a new run with the provided run_args.
         """

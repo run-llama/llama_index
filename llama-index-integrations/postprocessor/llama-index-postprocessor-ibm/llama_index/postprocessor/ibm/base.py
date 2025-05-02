@@ -49,6 +49,7 @@ class WatsonxRerank(BaseNodePostprocessor):
             project_id="*****",
         )
         ```
+
     """
 
     model_id: str = Field(description="Type of model to use.")

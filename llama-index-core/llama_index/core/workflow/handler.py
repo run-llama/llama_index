@@ -44,7 +44,8 @@ class WorkflowHandler(asyncio.Future[RunResultT]):
                 break
 
     async def run_step(self) -> Optional[List[Event]]:
-        """Runs the next workflow step and returns the output Event.
+        """
+        Runs the next workflow step and returns the output Event.
 
         If return is None, then the workflow is considered done.
 
@@ -58,6 +59,7 @@ class WorkflowHandler(asyncio.Future[RunResultT]):
             result = handler.result()
             print(result)
             ```
+
         """
         # since event is sent before calling this method, we need to unblock the event loop
         await asyncio.sleep(0)

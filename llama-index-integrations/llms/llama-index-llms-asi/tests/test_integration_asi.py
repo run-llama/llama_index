@@ -78,7 +78,7 @@ def test_stream_chat():
 
 
 @pytest.mark.skipif("ASI_API_KEY" not in os.environ, reason="No ASI API key")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat():
     # Import ChatMessage and MessageRole here to avoid import issues
     from llama_index.core.llms import ChatMessage, MessageRole

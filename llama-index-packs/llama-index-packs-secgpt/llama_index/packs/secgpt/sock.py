@@ -11,6 +11,7 @@ class Socket:
 
     Attributes:
         sock (socket.socket): The socket object used for communication.
+
     """
 
     def __init__(self, sock) -> None:
@@ -19,6 +20,7 @@ class Socket:
 
         Args:
             sock (socket.socket): The socket object used for communication.
+
         """
         self.sock = sock
 
@@ -28,6 +30,7 @@ class Socket:
 
         Args:
             msg (bytes): The message to be sent.
+
         """
         self.sock.sendall(msg)
         self.sock.sendall(b"\n")
@@ -41,6 +44,7 @@ class Socket:
 
         Returns:
             dict: The deserialized JSON message received, or None if the message is not well-formed.
+
         """
         # The length parameter can be altered to fit the size of the message
         buffer = ""
