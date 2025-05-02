@@ -24,12 +24,12 @@ from llama_index.vector_stores.postgres import PGVectorStore
 
 PARAMS: Dict[str, Union[str, int]] = {
     "host": "localhost",
-    "user": "postgres",
-    "password": "mark90",
+    "user": "user",
+    "password": "password",
     "port": 5432,
 }
-TEST_DB = "test_vector_db"
-TEST_DB_HNSW = "test_vector_db_hnsw"
+TEST_DB = "llama_platform_db"
+TEST_DB_HNSW = "llama_platform_db"
 TEST_TABLE_NAME = "lorem_ipsum"
 TEST_SCHEMA_NAME = "test"
 TEST_EMBED_DIM = 2
@@ -117,6 +117,22 @@ def pg_hybrid(db: None) -> Any:
         schema_name=TEST_SCHEMA_NAME,
         hybrid_search=True,
         embed_dim=TEST_EMBED_DIM,
+    )
+
+    yield pg
+
+    asyncio.run(pg.close())
+
+@pytest.fixture()
+def pg_indexed_metadata(db: None) -> Any:
+    pg = PGVectorStore.from_params(
+        **PARAMS,  # type: ignore
+        database=TEST_DB,
+        table_name=TEST_TABLE_NAME,
+        schema_name=TEST_SCHEMA_NAME,
+        hybrid_search=True,
+        embed_dim=TEST_EMBED_DIM,
+        indexed_metadata_keys=[("test_text", "text"), ("test_int", "int")],
     )
 
     yield pg
@@ -1201,3 +1217,27 @@ async def test_custom_async_engine_only(
             embed_dim=TEST_EMBED_DIM,
             async_engine=async_engine,
         )
+
+async def test_indexed_metadata(
+    pg_indexed_metadata: PGVectorStore,
+    hybrid_node_embeddings: List[TextNode],
+) -> None:
+    if pg_indexed_metadata is None:
+        pytest.skip("Postgres not available")
+
+    await pg_indexed_metadata.async_add(hybrid_node_embeddings)
+
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.1),
+        query_str="fox",
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.HYBRID,
+        sparse_top_k=1,
+    )
+
+    res = await pg_indexed_metadata.aquery(q)
+    assert res.nodes
+    assert len(res.nodes) == 3
+    assert res.nodes[0].node_id == "aaa"
+    assert res.nodes[1].node_id == "bbb"
+    assert res.nodes[2].node_id == "ccc"

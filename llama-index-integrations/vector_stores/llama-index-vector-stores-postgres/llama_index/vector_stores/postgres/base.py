@@ -1,6 +1,6 @@
 import logging
 import re
-from typing import Any, Dict, List, NamedTuple, Optional, Type, Union, TYPE_CHECKING
+from typing import Any, Dict, List, NamedTuple, Optional, Type, Union, TYPE_CHECKING, Set, Tuple, Literal
 
 import asyncpg  # noqa
 import pgvector  # noqa
@@ -28,6 +28,20 @@ if TYPE_CHECKING:
     from sqlalchemy.sql.selectable import Select
 
 
+PGType = Literal[
+    "text",
+    "int",
+    "integer",
+    "numeric",
+    "float",
+    "double precision",
+    "boolean",
+    "date",
+    "timestamp",
+    "uuid",
+]
+
+
 class DBEmbeddingRow(NamedTuple):
     node_id: str
     text: str
@@ -48,15 +62,18 @@ def get_data_model(
     embed_dim: int = 1536,
     use_jsonb: bool = False,
     use_halfvec: bool = False,
+    indexed_metadata_keys: Optional[Set[Tuple[str, PGType]]] = None,
 ) -> Any:
     """
     This part create a dynamic sqlalchemy model with a new table.
     """
     from pgvector.sqlalchemy import Vector
-    from sqlalchemy import Column, Computed
+    from sqlalchemy import Column, Computed, text
     from sqlalchemy.dialects.postgresql import BIGINT, JSON, JSONB, TSVECTOR, VARCHAR
     from sqlalchemy.schema import Index
     from sqlalchemy.types import TypeDecorator
+
+    indexed_metadata_keys = indexed_metadata_keys or set()
 
     class TSVector(TypeDecorator):
         impl = TSVECTOR
@@ -105,6 +122,13 @@ def get_data_model(
             model.metadata_["ref_doc_id"].astext,  # type: ignore
             postgresql_using="btree",
         )
+
+        for key, pg_type in indexed_metadata_keys:
+            Index(
+                f"{indexname}_{key}",
+                text(f"(metadata_ ->> '{key}')::{pg_type}"),
+                postgresql_using="btree",
+            )
     else:
 
         class AbstractData(base):  # type: ignore
@@ -126,6 +150,13 @@ def get_data_model(
             model.metadata_["ref_doc_id"].astext,  # type: ignore
             postgresql_using="btree",
         )
+
+        for key, pg_type in indexed_metadata_keys:
+            Index(
+                f"{indexname}_{key}",
+                text(f"(metadata_ ->> '{key}')::{pg_type}"),
+                postgresql_using="btree",
+            )
 
     return model
 
@@ -171,6 +202,7 @@ class PGVectorStore(BasePydanticVectorStore):
     use_jsonb: bool
     create_engine_kwargs: Dict
     initialization_fail_on_error: bool = False
+    indexed_metadata_keys: Optional[Set[Tuple[str, PGType]]] = None
 
     hnsw_kwargs: Optional[Dict[str, Any]]
 
@@ -205,6 +237,7 @@ class PGVectorStore(BasePydanticVectorStore):
         use_halfvec: bool = False,
         engine: Optional[sqlalchemy.engine.Engine] = None,
         async_engine: Optional[sqlalchemy.ext.asyncio.AsyncEngine] = None,
+        indexed_metadata_keys: Optional[Set[Tuple[str, PGType]]] = None,
     ) -> None:
         """
         Constructor.
@@ -228,6 +261,7 @@ class PGVectorStore(BasePydanticVectorStore):
             use_halfvec (bool, optional): If `True`, use half-precision vectors. Defaults to False.
             engine (Optional[sqlalchemy.engine.Engine], optional): SQLAlchemy engine instance to use. Defaults to None.
             async_engine (Optional[sqlalchemy.ext.asyncio.AsyncEngine], optional): SQLAlchemy async engine instance to use. Defaults to None.
+            indexed_metadata_keys (Optional[List[Tuple[str, str]]], optional): Set of metadata keys with their type to index. Defaults to None.
 
         """
         table_name = table_name.lower() if table_name else "llamaindex"
@@ -257,6 +291,7 @@ class PGVectorStore(BasePydanticVectorStore):
             create_engine_kwargs=create_engine_kwargs or {},
             initialization_fail_on_error=initialization_fail_on_error,
             use_halfvec=use_halfvec,
+            indexed_metadata_keys=indexed_metadata_keys,
         )
 
         # sqlalchemy model
@@ -320,6 +355,7 @@ class PGVectorStore(BasePydanticVectorStore):
         hnsw_kwargs: Optional[Dict[str, Any]] = None,
         create_engine_kwargs: Optional[Dict[str, Any]] = None,
         use_halfvec: bool = False,
+        indexed_metadata_keys: Optional[Set[Tuple[str, PGType]]] = None,
     ) -> "PGVectorStore":
         """
         Construct from params.
@@ -346,6 +382,7 @@ class PGVectorStore(BasePydanticVectorStore):
                 which turns off HNSW search.
             create_engine_kwargs (Optional[Dict[str, Any]], optional): Engine parameters to pass to create_engine. Defaults to None.
             use_halfvec (bool, optional): If `True`, use half-precision vectors. Defaults to False.
+            indexed_metadata_keys (Optional[Set[Tuple[str, str]]], optional): Set of metadata keys to index. Defaults to None.
 
         Returns:
             PGVectorStore: Instance of PGVectorStore constructed from params.
@@ -373,6 +410,7 @@ class PGVectorStore(BasePydanticVectorStore):
             hnsw_kwargs=hnsw_kwargs,
             create_engine_kwargs=create_engine_kwargs,
             use_halfvec=use_halfvec,
+            indexed_metadata_keys=indexed_metadata_keys,
         )
 
     @property
@@ -467,6 +505,19 @@ class PGVectorStore(BasePydanticVectorStore):
                 f"ON {self.schema_name}.{self._table_class.__tablename__} "
                 f"USING hnsw (embedding {hnsw_dist_method}) "
                 f"WITH (m = {hnsw_m}, ef_construction = {hnsw_ef_construction})"
+            )
+            session.execute(statement)
+            session.commit()
+
+    def _create_metadata_index(self) -> None:
+        """Create a GIN index on the metadata_ column."""
+        import sqlalchemy
+
+        index_name = f"{self._table_class.__tablename__}_metadata_idx"
+
+        with self._session() as session, session.begin():
+            statement = sqlalchemy.text(
+                f"CREATE INDEX IF NOT EXISTS {index_name} ON {self.schema_name}.{self._table_class.__tablename__} USING gin (metadata_ jsonb_path_ops)"
             )
             session.execute(statement)
             session.commit()
