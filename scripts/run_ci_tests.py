@@ -381,7 +381,11 @@ def main():
                 print(f"Output:\n{result['stdout']}")
 
     # Print summary
-    failed = [r["package"] for r in results if r["status"] == ResultStatus.TESTS_FAILED]
+    failed = [
+        r["package"]
+        for r in results
+        if r["status"] in (ResultStatus.TESTS_FAILED, ResultStatus.COVERAGE_FAILED)
+    ]
     install_failed = [
         r["package"] for r in results if r["status"] == ResultStatus.INSTALL_FAILED
     ]

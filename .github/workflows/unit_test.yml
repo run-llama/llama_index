@@ -7,8 +7,11 @@ on:
   pull_request:
 
 env:
+  # How many concurrent processes running pytest in a single CI job
   NUM_WORKERS: 8
+  # Tests will fail if coverage percentage is below this number
   COV_FAIL_UNDER: 70
+  # Which Python from the matrix will be used to run the coverage check
   COV_PYTHON_VERSION: 3.12
 
 jobs:
