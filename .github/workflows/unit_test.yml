@@ -9,6 +9,7 @@ on:
 env:
   NUM_WORKERS: 8
   COV_FAIL_UNDER: 70
+  COV_PYTHON_VERSION: 3.12
 
 jobs:
   test:
@@ -29,7 +30,7 @@ jobs:
           enable-cache: true
 
       - name: Run tests
-        if: ${{ matrix.python-version != "3.12" }}
+        if: ${{ matrix.python-version != env.COV_PYTHON_VERSION }}
         shell: bash
         run: |
           git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
@@ -38,7 +39,7 @@ jobs:
             --base-ref=${{ github.event.pull_request.base.ref }}
 
       - name: Run tests with coverage
-        if: ${{ matrix.python-version == "3.12" }}
+        if: ${{ matrix.python-version == env.COV_PYTHON_VERSION }}
         shell: bash
         run: |
           git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
