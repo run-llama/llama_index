@@ -24,12 +24,12 @@ from llama_index.vector_stores.postgres import PGVectorStore
 
 PARAMS: Dict[str, Union[str, int]] = {
     "host": "localhost",
-    "user": "user",
-    "password": "password",
+    "user": "postgres",
+    "password": "mark90",
     "port": 5432,
 }
-TEST_DB = "llama_platform_db"
-TEST_DB_HNSW = "llama_platform_db"
+TEST_DB = "test_vector_db"
+TEST_DB_HNSW = "test_vector_db_hnsw"
 TEST_TABLE_NAME = "lorem_ipsum"
 TEST_SCHEMA_NAME = "test"
 TEST_EMBED_DIM = 2
