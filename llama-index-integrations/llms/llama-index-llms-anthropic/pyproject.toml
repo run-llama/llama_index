@@ -67,5 +67,3 @@ python_version = "3.9"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-
-#
