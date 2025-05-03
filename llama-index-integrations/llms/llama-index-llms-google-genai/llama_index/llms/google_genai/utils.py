@@ -284,7 +284,7 @@ def prepare_chat_params(
             history.append(msg)
             continue
 
-        last_msg = history[idx - 1]
+        last_msg = history[-1]
 
         # Skip if the last message is not a tool message
         if last_msg.parts and not any(
