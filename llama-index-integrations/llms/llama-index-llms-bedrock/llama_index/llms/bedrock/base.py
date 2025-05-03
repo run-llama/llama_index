@@ -47,7 +47,8 @@ from llama_index.llms.bedrock.utils import (
     )
 )
 class Bedrock(LLM):
-    """Bedrock LLM.
+    """
+    Bedrock LLM.
 
     Examples:
         `pip install llama-index-llms-bedrock`
@@ -66,6 +67,7 @@ class Bedrock(LLM):
         resp = llm.complete("Paul Graham is ")
         print(resp)
         ```
+
     """
 
     model: str = Field(description="The modelId of the Bedrock model to use.")

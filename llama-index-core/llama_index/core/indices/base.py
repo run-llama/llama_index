@@ -23,11 +23,13 @@ logger = logging.getLogger(__name__)
 
 
 class BaseIndex(Generic[IS], ABC):
-    """Base LlamaIndex.
+    """
+    Base LlamaIndex.
 
     Args:
         nodes (List[Node]): List of nodes to index
         show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
+
     """
 
     index_struct_cls: Type[IS]
@@ -93,7 +95,8 @@ class BaseIndex(Generic[IS], ABC):
         transformations: Optional[List[TransformComponent]] = None,
         **kwargs: Any,
     ) -> IndexType:
-        """Create index from documents.
+        """
+        Create index from documents.
 
         Args:
             documents (Optional[Sequence[BaseDocument]]): List of documents to
@@ -136,7 +139,8 @@ class BaseIndex(Generic[IS], ABC):
         return self._index_struct.index_id
 
     def set_index_id(self, index_id: str) -> None:
-        """Set the index id.
+        """
+        Set the index id.
 
         NOTE: if you decide to set the index_id on the index_struct manually,
         you will need to explicitly call `add_index_struct` on the `index_store`
@@ -226,7 +230,8 @@ class BaseIndex(Generic[IS], ABC):
         delete_from_docstore: bool = False,
         **delete_kwargs: Any,
     ) -> None:
-        """Delete a list of nodes from the index.
+        """
+        Delete a list of nodes from the index.
 
         Args:
             doc_ids (List[str]): A list of doc_ids from the nodes to delete
@@ -240,7 +245,8 @@ class BaseIndex(Generic[IS], ABC):
         self._storage_context.index_store.add_index_struct(self._index_struct)
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document from the index.
+        """
+        Delete a document from the index.
         All nodes in the index related to the index will be deleted.
 
         Args:
@@ -272,7 +278,8 @@ class BaseIndex(Generic[IS], ABC):
             self.docstore.delete_ref_doc(ref_doc_id, raise_error=False)
 
     def update(self, document: Document, **update_kwargs: Any) -> None:
-        """Update a document and it's corresponding nodes.
+        """
+        Update a document and it's corresponding nodes.
 
         This is equivalent to deleting the document and then inserting it again.
 
@@ -289,7 +296,8 @@ class BaseIndex(Generic[IS], ABC):
         self.update_ref_doc(document, **update_kwargs)
 
     def update_ref_doc(self, document: Document, **update_kwargs: Any) -> None:
-        """Update a document and it's corresponding nodes.
+        """
+        Update a document and it's corresponding nodes.
 
         This is equivalent to deleting the document and then inserting it again.
 
@@ -310,7 +318,8 @@ class BaseIndex(Generic[IS], ABC):
     def refresh(
         self, documents: Sequence[Document], **update_kwargs: Any
     ) -> List[bool]:
-        """Refresh an index with documents that have changed.
+        """
+        Refresh an index with documents that have changed.
 
         This allows users to save LLM and Embedding model calls, while only
         updating documents that have any changes in text or metadata. It
@@ -325,7 +334,8 @@ class BaseIndex(Generic[IS], ABC):
     def refresh_ref_docs(
         self, documents: Sequence[Document], **update_kwargs: Any
     ) -> List[bool]:
-        """Refresh an index with documents that have changed.
+        """
+        Refresh an index with documents that have changed.
 
         This allows users to save LLM and Embedding model calls, while only
         updating documents that have any changes in text or metadata. It
@@ -361,7 +371,8 @@ class BaseIndex(Generic[IS], ABC):
     def as_query_engine(
         self, llm: Optional[LLMType] = None, **kwargs: Any
     ) -> BaseQueryEngine:
-        """Convert the index to a query engine.
+        """
+        Convert the index to a query engine.
 
         Calls `index.as_retriever(**kwargs)` to get the retriever and then wraps it in a
         `RetrieverQueryEngine.from_args(retriever, **kwrags)` call.
@@ -390,7 +401,8 @@ class BaseIndex(Generic[IS], ABC):
         llm: Optional[LLMType] = None,
         **kwargs: Any,
     ) -> BaseChatEngine:
-        """Convert the index to a chat engine.
+        """
+        Convert the index to a chat engine.
 
         Calls `index.as_query_engine(llm=llm, **kwargs)` to get the query engine and then
         wraps it in a chat engine based on the chat mode.

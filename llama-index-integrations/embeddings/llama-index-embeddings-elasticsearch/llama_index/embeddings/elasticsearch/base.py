@@ -9,7 +9,8 @@ from elasticsearch.client import MlClient
 
 
 class ElasticsearchEmbedding(BaseEmbedding):
-    """Elasticsearch embedding models.
+    """
+    Elasticsearch embedding models.
 
     This class provides an interface to generate embeddings using a model deployed
     in an Elasticsearch cluster. It requires an Elasticsearch connection object
@@ -85,6 +86,7 @@ class ElasticsearchEmbedding(BaseEmbedding):
                     es_connection,
                     input_field=input_field,
                 )
+
         """
         client = MlClient(es_connection)
         return cls(client, model_id, input_field=input_field)
@@ -98,7 +100,8 @@ class ElasticsearchEmbedding(BaseEmbedding):
         es_password: str,
         input_field: str = "text_field",
     ) -> BaseEmbedding:
-        """Instantiate embeddings from Elasticsearch credentials.
+        """
+        Instantiate embeddings from Elasticsearch credentials.
 
         Args:
             model_id (str): The model_id of the model deployed in the Elasticsearch
@@ -126,6 +129,7 @@ class ElasticsearchEmbedding(BaseEmbedding):
                     es_username="bar",
                     es_password="baz",
                 )
+
         """
         es_connection = Elasticsearch(
             hosts=[es_url],
@@ -144,6 +148,7 @@ class ElasticsearchEmbedding(BaseEmbedding):
 
         Returns:
             List[float]: The embedding for the input query text.
+
         """
         response = self._client.infer_trained_model(
             model_id=self.model_id,

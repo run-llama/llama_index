@@ -21,7 +21,8 @@ logger = logging.getLogger(__name__)
 
 
 class GPTTreeIndexBuilder:
-    """GPT tree index builder.
+    """
+    GPT tree index builder.
 
     Helper class to build the tree-structured index,
     or to synthesize an answer.
@@ -61,7 +62,8 @@ class GPTTreeIndexBuilder:
         nodes: Sequence[BaseNode],
         build_tree: bool = True,
     ) -> IndexGraph:
-        """Build from text.
+        """
+        Build from text.
 
         Returns:
             IndexGraph: graph object consisting of all_nodes, root_nodes
@@ -114,7 +116,8 @@ class GPTTreeIndexBuilder:
         cur_nodes_chunks: List[List[BaseNode]],
         summaries: List[str],
     ) -> Dict[int, str]:
-        """Construct parent nodes.
+        """
+        Construct parent nodes.
 
         Save nodes to docstore.
 

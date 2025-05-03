@@ -42,6 +42,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
         store_nodes_override (bool): set to True to always store Node objects in index
             store and document store even if vector store keeps text. Defaults to False
+
     """
 
     index_struct_cls = IndexDict

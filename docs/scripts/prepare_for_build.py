@@ -200,6 +200,9 @@ def main():
 
                 if file == "pyproject.toml":
                     toml_path = os.path.join(root, file)
+                    if ".venv" in toml_path:
+                        continue
+
                     with open(toml_path) as f:
                         toml_data = toml.load(f)
                     import_path = toml_data["tool"]["llamahub"]["import_path"]

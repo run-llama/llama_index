@@ -210,7 +210,7 @@ def test_chat_model_streaming(MockSyncOpenAI: MagicMock) -> None:
         assert chat_responses[-1].message.role == "assistant"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
 async def test_async_chat_model_basic(MockAsyncOpenAI: MagicMock) -> None:
     with CachedNVIDIApiKeys(set_fake_key=True):
@@ -230,7 +230,7 @@ async def test_async_chat_model_basic(MockAsyncOpenAI: MagicMock) -> None:
         assert chat_response.message.content == "Cool Test Message"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
 async def test_async_streaming_chat_model(MockAsyncOpenAI: MagicMock) -> None:
     with CachedNVIDIApiKeys(set_fake_key=True):

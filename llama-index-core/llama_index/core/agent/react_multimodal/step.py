@@ -65,7 +65,8 @@ def add_user_step_to_reasoning(
     current_reasoning: List[BaseReasoningStep],
     verbose: bool = False,
 ) -> None:
-    """Add user step to reasoning.
+    """
+    Add user step to reasoning.
 
     Adds both text input and image input to reasoning.
 
@@ -100,7 +101,8 @@ def add_user_step_to_reasoning(
 
 
 class MultimodalReActAgentWorker(BaseAgentWorker):
-    """Multimodal ReAct Agent worker.
+    """
+    Multimodal ReAct Agent worker.
 
     **NOTE**: This is a BETA feature.
 
@@ -171,7 +173,8 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "MultimodalReActAgentWorker":
-        """Convenience constructor method from set of BaseTools (Optional).
+        """
+        Convenience constructor method from set of BaseTools (Optional).
 
         NOTE: kwargs should have been exhausted by this point. In other words
         the various upstream components such as BaseSynthesizer (response synthesizer)
@@ -180,6 +183,7 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
 
         Returns:
             ReActAgent
+
         """
         if multi_modal_llm is None:
             try:

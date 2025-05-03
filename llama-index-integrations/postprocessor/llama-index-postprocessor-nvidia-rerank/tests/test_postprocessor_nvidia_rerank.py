@@ -44,7 +44,7 @@ def nodes(documents: List[Document]) -> List[NodeWithScore]:
     return [NodeWithScore(node=document) for document in documents]
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_basic(model: str, mode: dict) -> None:
     text = "Testing leads to failure, and failure leads to understanding."
     result = NVIDIARerank(model=model, **mode).postprocess_nodes(
@@ -60,7 +60,7 @@ def test_basic(model: str, mode: dict) -> None:
     assert all(node.node.text == text for node in result)
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_accuracy(model: str, mode: dict) -> None:
     texts = ["first", "last"]
     query = "last"
@@ -77,14 +77,14 @@ def test_accuracy(model: str, mode: dict) -> None:
     assert result[0].node.text == "last"
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_direct_empty_docs(query: str, model: str, mode: dict) -> None:
     ranker = NVIDIARerank(model=model, **mode)
     result_docs = ranker.postprocess_nodes(nodes=[], query_str=query)
     assert len(result_docs) == 0
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_direct_top_n_negative(
     query: str, nodes: List[NodeWithScore], model: str, mode: dict
 ) -> None:
@@ -97,7 +97,7 @@ def test_direct_top_n_negative(
     assert len(result) == 0
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_direct_top_n_zero(
     query: str, nodes: List[NodeWithScore], model: str, mode: dict
 ) -> None:
@@ -107,7 +107,7 @@ def test_direct_top_n_zero(
     assert len(result) == 0
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_direct_top_n_one(
     query: str, nodes: List[NodeWithScore], model: str, mode: dict
 ) -> None:
@@ -117,7 +117,7 @@ def test_direct_top_n_one(
     assert len(result) == 1
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_direct_top_n_equal_len_docs(
     query: str, nodes: List[NodeWithScore], model: str, mode: dict
 ) -> None:
@@ -127,7 +127,7 @@ def test_direct_top_n_equal_len_docs(
     assert len(result) == len(nodes)
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_direct_top_n_greater_len_docs(
     query: str, nodes: List[NodeWithScore], model: str, mode: dict
 ) -> None:
@@ -150,7 +150,7 @@ def test_invalid_top_n(model: str, mode: dict) -> None:
         ranker.top_n = -10
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 @pytest.mark.parametrize(
     ("batch_size", "top_n"),
     (

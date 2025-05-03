@@ -37,7 +37,7 @@ def test_completion():
 
 
 @pytest.mark.skipif(not api_key, reason="No Novita API key set")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_completion():
     llm = NovitaAI(model=model, api_key=api_key)
     response = await llm.acomplete("who are you")
@@ -58,7 +58,7 @@ def test_stream_complete():
 
 
 @pytest.mark.skipif(not api_key, reason="No Novita API key set")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete():
     llm = NovitaAI(model=model, api_key=api_key)
     response = await llm.astream_complete("who are you")

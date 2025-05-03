@@ -21,6 +21,7 @@ class NebiusEmbedding(OpenAIEmbedding):
 
     Args:
         model (str): Model for embedding. Defaults to "BAAI/bge-en-icl"
+
     """
 
     additional_kwargs: Dict[str, Any] = Field(

@@ -30,6 +30,7 @@ def _transform_couchbase_filter_condition(condition: str) -> str:
 
     Returns:
         Couchbase specific condition
+
     """
     if condition == "and":
         return "conjuncts"
@@ -52,6 +53,7 @@ def _transform_couchbase_filter_operator(
 
     Returns:
         Dictionary with Couchbase specific search operation.
+
     """
     if operator == "!=":
         return {"must_not": {"disjuncts": [{"field": field, "match": value}]}}
@@ -80,6 +82,7 @@ def _to_couchbase_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
 
     Returns:
         Dictionary with Couchbase search query.
+
     """
     filters = {}
     filters_list = []
@@ -170,6 +173,7 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
 
         Returns:
             None
+
         """
         try:
             from couchbase.cluster import Cluster
@@ -253,6 +257,7 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[str]: List of document IDs for the added nodes.
+
         """
         from couchbase.exceptions import DocumentExistsException
 
@@ -309,6 +314,7 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
 
         Returns:
             None
+
         """
         try:
             document_field = self._metadata_key + ".ref_doc_id"
@@ -330,6 +336,7 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
 
         Returns:
             VectorStoreQueryResult: The result of the query containing the top-k nodes, similarities, and ids.
+
         """
         import couchbase.search as search
         from couchbase.options import SearchOptions
@@ -437,6 +444,7 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
 
         Returns:
             True if the bucket exists
+
         """
         bucket_manager = self._cluster.buckets()
         try:
@@ -516,6 +524,7 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
 
         Returns:
             Dict[str, Any]: The formatted metadata.
+
         """
         metadata = {}
         for key, value in row_fields.items():

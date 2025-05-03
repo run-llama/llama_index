@@ -47,11 +47,13 @@ class GoogleMapsTextSearchReader(BaseReader):
         text: str,
         number_of_results: Optional[int] = DEFAULT_NUMBER_OF_RESULTS,
     ) -> List[Document]:
-        """Load data from Google Maps.
+        """
+        Load data from Google Maps.
 
         Args:
             text (str): the text to search for.
             number_of_results (Optional[int]): the number of results to return. Defaults to 20.
+
         """
         response = self._search_text_request(text, MAX_RESULTS_PER_PAGE)
         documents = []
@@ -122,6 +124,7 @@ class GoogleMapsTextSearchReader(BaseReader):
             text (str): the text to search for.
             number_of_results (int): the number of results to return.
             next_page_token (Optional[str]): the next page token to get the next page of results.
+
         """
         headers = {
             "Content-Type": "application/json",

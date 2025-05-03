@@ -90,7 +90,7 @@ def test_dashscope_chat(
     assert response.message.content == "hi, there!"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch("llama_index.llms.dashscope.base.astream_call_with_messages")
 async def test_dashscope_astream_complete(
     mock_astream_call_with_messages, dashscope_llm, dashscope_api_response, prompt
@@ -111,7 +111,7 @@ async def test_dashscope_astream_complete(
     assert responses[0].delta == "hi, there!"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch("llama_index.llms.dashscope.base.astream_call_with_messages")
 async def test_dashscope_astream_chat(
     mock_astream_call_with_messages, dashscope_llm, dashscope_api_response, prompt
@@ -242,7 +242,7 @@ def test_prepare_chat_with_tools(dashscope_llm):
     assert result["stream"] is True
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat_with_tools(monkeypatch, dashscope_llm):
     """
     Test astream_chat method: when the tools parameter is passed,

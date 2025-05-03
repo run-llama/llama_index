@@ -231,7 +231,7 @@ def test_get_tool_calls_from_response(llm):
     assert tool_selections[0].tool_kwargs == {"a": 2, "b": 3}
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_acomplete_success(llm):
     prompt = "What is the capital of France?"
     response_data = {
@@ -256,7 +256,7 @@ async def test_acomplete_success(llm):
     assert response.additional_kwargs["total_tokens"] == 12
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete(llm):
     prompt = "Once upon a time"
 
@@ -282,7 +282,7 @@ async def test_astream_complete(llm):
     assert responses[-1].text == "Once upon a time."
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat_success(llm):
     messages = [ChatMessage(role=MessageRole.USER, content="Tell me a joke.")]
     response_data = {
@@ -313,7 +313,7 @@ async def test_achat_success(llm):
     assert response.additional_kwargs["total_tokens"] == 25
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat(llm):
     messages = [ChatMessage(role=MessageRole.USER, content="Tell me a joke.")]
 

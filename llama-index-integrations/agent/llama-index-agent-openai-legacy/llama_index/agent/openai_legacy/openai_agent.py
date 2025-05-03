@@ -40,7 +40,8 @@ def call_tool_with_error_handling(
     error_message: Optional[str] = None,
     raise_error: bool = False,
 ) -> ToolOutput:
-    """Call tool with error handling.
+    """
+    Call tool with error handling.
 
     Input is a dictionary with args and kwargs
 
@@ -138,7 +139,8 @@ async def acall_function(
 
 
 def resolve_tool_choice(tool_choice: Union[str, dict] = "auto") -> Union[str, dict]:
-    """Resolve tool choice.
+    """
+    Resolve tool choice.
 
     If tool_choice is a function name string, return the appropriate dict.
     """
@@ -194,9 +196,8 @@ class BaseOpenAIAgent(BaseAgent):
     ) -> bool:
         if n_function_calls > self._max_function_calls:
             return False
-        if not tool_calls:
-            return False
-        return True
+
+        return tool_calls is not None
 
     def init_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
@@ -495,7 +496,8 @@ class BaseOpenAIAgent(BaseAgent):
 
 
 class OpenAIAgent(BaseOpenAIAgent):
-    """OpenAI (function calling) Agent.
+    """
+    OpenAI (function calling) Agent.
 
     Uses the OpenAI function API to reason about whether to
     use a tool, and returning the response to the user.
@@ -563,7 +565,8 @@ class OpenAIAgent(BaseOpenAIAgent):
         prefix_messages: Optional[List[ChatMessage]] = None,
         **kwargs: Any,
     ) -> "OpenAIAgent":
-        """Create an OpenAIAgent from a list of tools.
+        """
+        Create an OpenAIAgent from a list of tools.
 
         Similar to `from_defaults` in other classes, this method will
         infer defaults for a variety of parameters, including the LLM,

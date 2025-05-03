@@ -33,7 +33,8 @@ SentenceSplitterCallable = Annotated[
 
 
 class SemanticSplitterNodeParser(NodeParser):
-    """Semantic node parser.
+    """
+    Semantic node parser.
 
     Splits a document into Nodes, with each node being a group of semantically related sentences.
 
@@ -43,6 +44,7 @@ class SemanticSplitterNodeParser(NodeParser):
         sentence_splitter (Optional[Callable]): splits text into sentences
         include_metadata (bool): whether to include metadata in nodes
         include_prev_next_rel (bool): whether to include prev/next relationships
+
     """
 
     sentence_splitter: SentenceSplitterCallable = Field(

@@ -121,7 +121,8 @@ class NebulaGraphStore(GraphStore):
         session_pool_kwargs: Optional[Dict[str, Any]] = {},
         **kwargs: Any,
     ) -> None:
-        """Initialize NebulaGraph graph store.
+        """
+        Initialize NebulaGraph graph store.
 
         Args:
             session_pool: NebulaGraph session pool.
@@ -132,6 +133,7 @@ class NebulaGraphStore(GraphStore):
             tag_prop_names: Tag property names corresponding to tags.
             session_pool_kwargs: Keyword arguments for NebulaGraph session pool.
             **kwargs: Keyword arguments.
+
         """
         assert space_name is not None, "space_name should be provided."
         self._space_name = space_name
@@ -180,7 +182,7 @@ class NebulaGraphStore(GraphStore):
             "map{"
             + ", ".join(
                 [
-                    f"`{edge_type}`: \"{','.join(rel_prop_names)}\""
+                    f'`{edge_type}`: "{",".join(rel_prop_names)}"'  # noqa
                     for edge_type, rel_prop_names in self._edge_prop_map.items()
                 ]
             )
@@ -246,7 +248,8 @@ class NebulaGraphStore(GraphStore):
         stop=stop_after_attempt(RETRY_TIMES),
     )
     def execute(self, query: str, param_map: Optional[Dict[str, Any]] = {}) -> Any:
-        """Execute query.
+        """
+        Execute query.
 
         Args:
             query: Query.
@@ -254,6 +257,7 @@ class NebulaGraphStore(GraphStore):
 
         Returns:
             Query result.
+
         """
         # Clean the query string by removing triple backticks
         query = query.replace("```", "").strip()
@@ -284,27 +288,27 @@ class NebulaGraphStore(GraphStore):
         except ValueError as e:
             # query failed on db side
             logger.error(
-                f"Query failed. Query: {query}, Param: {param_map}"
-                f"Error message: {e}"
+                f"Query failed. Query: {query}, Param: {param_map}Error message: {e}"
             )
             raise
         except Exception as e:
             # other exceptions
             logger.error(
-                f"Query failed. Query: {query}, Param: {param_map}"
-                f"Error message: {e}"
+                f"Query failed. Query: {query}, Param: {param_map}Error message: {e}"
             )
             raise
 
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> "GraphStore":
-        """Initialize graph store from configuration dictionary.
+        """
+        Initialize graph store from configuration dictionary.
 
         Args:
             config_dict: Configuration dictionary.
 
         Returns:
             Graph store.
+
         """
         return cls(**config_dict)
 
@@ -325,13 +329,15 @@ class NebulaGraphStore(GraphStore):
         }
 
     def get(self, subj: str) -> List[List[str]]:
-        """Get triplets.
+        """
+        Get triplets.
 
         Args:
             subj: Subject.
 
         Returns:
             Triplets.
+
         """
         rel_map = self.get_flat_rel_map([subj], depth=1)
         rels = list(rel_map.values())
@@ -493,9 +499,9 @@ class NebulaGraphStore(GraphStore):
         rel = escape_str(rel)
         obj = escape_str(obj)
         if self._vid_type == "INT64":
-            assert all(
-                [subj.isdigit(), obj.isdigit()]
-            ), "Subject and object should be digit strings in current graph store."
+            assert all([subj.isdigit(), obj.isdigit()]), (
+                "Subject and object should be digit strings in current graph store."
+            )
             subj_field = subj
             obj_field = obj
         else:
@@ -519,12 +525,13 @@ class NebulaGraphStore(GraphStore):
         )
         logger.debug(f"upsert_triplet()\nDML query: {dml_query}")
         result = self.execute(dml_query)
-        assert (
-            result and result.is_succeeded()
-        ), f"Failed to upsert triplet: {subj} {rel} {obj}, query: {dml_query}"
+        assert result and result.is_succeeded(), (
+            f"Failed to upsert triplet: {subj} {rel} {obj}, query: {dml_query}"
+        )
 
     def delete(self, subj: str, rel: str, obj: str) -> None:
-        """Delete triplet.
+        """
+        Delete triplet.
         1. Similar to upsert_triplet(),
            we have to assume rel to be the first edge_type.prop_name.
         2. After edge being deleted, we need to check if the subj or
@@ -537,9 +544,9 @@ class NebulaGraphStore(GraphStore):
         obj = escape_str(obj)
 
         if self._vid_type == "INT64":
-            assert all(
-                [subj.isdigit(), obj.isdigit()]
-            ), "Subject and object should be digit strings in current graph store."
+            assert all([subj.isdigit(), obj.isdigit()]), (
+                "Subject and object should be digit strings in current graph store."
+            )
             subj_field = subj
             obj_field = obj
         else:
@@ -551,12 +558,12 @@ class NebulaGraphStore(GraphStore):
         edge_type = self._edge_types[0]
         # rel_prop_name = self._rel_prop_names[0]
         rel_hash = hash_string_to_rank(rel)
-        dml_query = f"DELETE EDGE `{edge_type}`" f"  {edge_field}@{rel_hash};"
+        dml_query = f"DELETE EDGE `{edge_type}`  {edge_field}@{rel_hash};"
         logger.debug(f"delete()\nDML query: {dml_query}")
         result = self.execute(dml_query)
-        assert (
-            result and result.is_succeeded()
-        ), f"Failed to delete triplet: {subj} {rel} {obj}, query: {dml_query}"
+        assert result and result.is_succeeded(), (
+            f"Failed to delete triplet: {subj} {rel} {obj}, query: {dml_query}"
+        )
         # Get isolated vertices to be deleted
         # MATCH (s) WHERE id(s) IN ["player700"] AND NOT (s)-[]-()
         # RETURN id(s) AS isolated
@@ -578,9 +585,9 @@ class NebulaGraphStore(GraphStore):
         dml_query = f"DELETE VERTEX {vertex_ids};"
 
         result = self.execute(dml_query)
-        assert (
-            result and result.is_succeeded()
-        ), f"Failed to delete isolated vertices: {isolated}, query: {dml_query}"
+        assert result and result.is_succeeded(), (
+            f"Failed to delete isolated vertices: {isolated}, query: {dml_query}"
+        )
 
     def refresh_schema(self) -> None:
         """

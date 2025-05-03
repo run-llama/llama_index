@@ -7,7 +7,8 @@ from llama_index.core.utils import infer_torch_device
 
 
 class ImageVisionLLMReader(BaseReader):
-    """Image parser.
+    """
+    Image parser.
 
     Caption image using Blip2 (a multimodal VisionLLM similar to GPT4).
 

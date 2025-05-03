@@ -60,7 +60,8 @@ def call_tool_with_error_handling(
     error_message: Optional[str] = None,
     raise_error: bool = False,
 ) -> ToolOutput:
-    """Call tool with error handling.
+    """
+    Call tool with error handling.
 
     Input is a dictionary with args and kwargs
 
@@ -89,7 +90,8 @@ def default_tool_call_parser(tool_call: OpenAIToolCall):
 
 
 def advanced_tool_call_parser(tool_call: OpenAIToolCall) -> Dict:
-    r"""Parse tool calls that are not standard json.
+    r"""
+    Parse tool calls that are not standard json.
 
     Also parses tool calls of the following forms:
     variable = \"\"\"Some long text\"\"\"
@@ -168,7 +170,8 @@ class OpenAIAgentWorker(BaseAgentWorker):
         tool_call_parser: Optional[Callable[[OpenAIToolCall], Dict]] = None,
         **kwargs: Any,
     ) -> "OpenAIAgentWorker":
-        """Create an OpenAIAgent from a list of tools.
+        """
+        Create an OpenAIAgent from a list of tools.
 
         Similar to `from_defaults` in other classes, this method will
         infer defaults for a variety of parameters, including the LLM,
@@ -548,9 +551,9 @@ class OpenAIAgentWorker(BaseAgentWorker):
     ) -> bool:
         if n_function_calls > self._max_function_calls:
             return False
-        if not tool_calls:
-            return False
-        return True
+
+        return tool_calls is not None and len(tool_calls) > 0
+
 
     def get_tools(self, input: str) -> List[BaseTool]:
         """Get tools."""
@@ -798,7 +801,8 @@ class OpenAIAgentWorker(BaseAgentWorker):
         await task.memory.aput_messages(messages)
 
     def undo_step(self, task: Task, **kwargs: Any) -> Optional[TaskStep]:
-        """Undo step from task.
+        """
+        Undo step from task.
 
         If this cannot be implemented, return None.
 

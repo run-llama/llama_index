@@ -24,7 +24,8 @@ def default_stop_fn(stop_dict: Dict) -> bool:
 
 
 class MultiStepQueryEngine(BaseQueryEngine):
-    """Multi-step query engine.
+    """
+    Multi-step query engine.
 
     This query engine can operate over an existing base query engine,
     along with the multi-step query transform.

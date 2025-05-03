@@ -44,7 +44,8 @@ def _to_dashvector_filter(
 
 
 class DashVectorStore(BasePydanticVectorStore):
-    """Dash Vector Store.
+    """
+    Dash Vector Store.
 
     In this vector store, embeddings and docs are stored within a
     DashVector collection.
@@ -73,6 +74,7 @@ class DashVectorStore(BasePydanticVectorStore):
 
         vector_store = DashVectorStore(dashvector_collection)
         ```
+
     """
 
     stores_text: bool = True
@@ -125,10 +127,12 @@ class DashVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to vector store.
+        """
+        Add nodes to vector store.
 
         Args:
             nodes (List[BaseNode]): list of nodes with embeddings
+
         """
         for i in range(0, len(nodes), DEFAULT_BATCH_SIZE):
             # batch end

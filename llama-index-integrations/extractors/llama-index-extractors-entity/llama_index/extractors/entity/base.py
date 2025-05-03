@@ -97,6 +97,7 @@ class EntityExtractor(BaseExtractor):
             tokenizer (Optional[Callable[[str], List[str]]]):
                 Tokenizer to use for splitting text into words.
                 Defaults to NLTK word_tokenize.
+
         """
         base_entity_map = DEFAULT_ENTITY_MAP
         if entity_map is not None:

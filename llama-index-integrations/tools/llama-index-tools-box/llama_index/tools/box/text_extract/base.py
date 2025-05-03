@@ -16,7 +16,8 @@ from llama_index.readers.box.BoxAPI.box_llama_adaptors import box_file_to_llama_
 
 
 class BoxTextExtractToolSpec(BaseToolSpec):
-    """Box Text Extraction Tool Specification.
+    """
+    Box Text Extraction Tool Specification.
 
     This class provides a specification for extracting text content from Box files
     and creating Document objects. It leverages the Box API to retrieve the
@@ -25,6 +26,7 @@ class BoxTextExtractToolSpec(BaseToolSpec):
     Attributes:
         _box_client (BoxClient): An instance of the Box client for interacting
             with the Box API.
+
     """
 
     spec_functions = ["extract"]
@@ -37,6 +39,7 @@ class BoxTextExtractToolSpec(BaseToolSpec):
 
         Args:
             box_client (BoxClient): The Box client instance.
+
         """
         self._box_client = add_extra_header_to_box_client(box_client)
 
@@ -58,6 +61,7 @@ class BoxTextExtractToolSpec(BaseToolSpec):
         Returns:
             List[Document]: A list of Document objects containing the extracted
                 text content and file metadata.
+
         """
         # Connect to Box
         box_check_connection(self._box_client)

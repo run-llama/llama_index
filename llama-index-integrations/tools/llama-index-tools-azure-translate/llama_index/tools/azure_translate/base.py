@@ -27,6 +27,7 @@ class AzureTranslateToolSpec(BaseToolSpec):
 
         Args:
             language (str): Target translation language.
+
         """
         request = requests.post(
             ENDPOINT_BASE_URL,

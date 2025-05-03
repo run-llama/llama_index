@@ -32,6 +32,7 @@ class MixedbreadAIEmbedding(BaseEmbedding):
         max_retries (Optional[int]): Maximum number of retries for API calls.
         httpx_client (Optional[httpx.Client]): Custom HTTPX client.
         httpx_async_client (Optional[httpx.AsyncClient]): Custom asynchronous HTTPX client.
+
     """
 
     api_key: str = Field(description="The mixedbread ai API key.", min_length=1)
@@ -133,6 +134,7 @@ class MixedbreadAIEmbedding(BaseEmbedding):
 
         Returns:
             List[List[float]]: List of embeddings.
+
         """
         response = self._client.embeddings(
             model=self.model_name,
@@ -155,6 +157,7 @@ class MixedbreadAIEmbedding(BaseEmbedding):
 
         Returns:
             List[List[float]]: List of embeddings.
+
         """
         response = await self._async_client.embeddings(
             model=self.model_name,
@@ -177,6 +180,7 @@ class MixedbreadAIEmbedding(BaseEmbedding):
 
         Returns:
             List[float]: Embedding for the query.
+
         """
         return self._get_embedding([query])[0]
 
@@ -189,6 +193,7 @@ class MixedbreadAIEmbedding(BaseEmbedding):
 
         Returns:
             List[float]: Embedding for the query.
+
         """
         r = await self._aget_embedding([query])
         return r[0]
@@ -202,6 +207,7 @@ class MixedbreadAIEmbedding(BaseEmbedding):
 
         Returns:
             List[float]: Embedding for the text.
+
         """
         return self._get_embedding([text])[0]
 
@@ -214,6 +220,7 @@ class MixedbreadAIEmbedding(BaseEmbedding):
 
         Returns:
             List[float]: Embedding for the text.
+
         """
         r = await self._aget_embedding([text])
         return r[0]
@@ -227,6 +234,7 @@ class MixedbreadAIEmbedding(BaseEmbedding):
 
         Returns:
             List[List[float]]: List of embeddings.
+
         """
         return self._get_embedding(texts)
 
@@ -239,5 +247,6 @@ class MixedbreadAIEmbedding(BaseEmbedding):
 
         Returns:
             List[List[float]]: List of embeddings.
+
         """
         return await self._aget_embedding(texts)

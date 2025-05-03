@@ -1,4 +1,5 @@
-"""Multi Modal Vector Store Index.
+"""
+Multi Modal Vector Store Index.
 
 An index that is built on top of multiple vector stores for different modalities.
 
@@ -41,13 +42,15 @@ logger = logging.getLogger(__name__)
 
 
 class MultiModalVectorStoreIndex(VectorStoreIndex):
-    """Multi-Modal Vector Store Index.
+    """
+    Multi-Modal Vector Store Index.
 
     Args:
         use_async (bool): Whether to use asynchronous calls. Defaults to False.
         show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
         store_nodes_override (bool): set to True to always store Node objects in index
             store and document store even if vector store keeps text. Defaults to False
+
     """
 
     image_namespace = "image"
@@ -76,7 +79,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
     ) -> None:
         """Initialize params."""
         image_embed_model = resolve_embed_model(
-            image_embed_model, callback_manager=kwargs.get("callback_manager", None)
+            image_embed_model, callback_manager=kwargs.get("callback_manager")
         )
         assert isinstance(image_embed_model, MultiModalEmbedding)
         self._image_embed_model = image_embed_model
@@ -177,7 +180,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             image_embed_model=image_embed_model,
             embed_model=(
                 resolve_embed_model(
-                    embed_model, callback_manager=kwargs.get("callback_manager", None)
+                    embed_model, callback_manager=kwargs.get("callback_manager")
                 )
                 if embed_model
                 else Settings.embed_model
@@ -191,7 +194,8 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         show_progress: bool = False,
         is_image: bool = False,
     ) -> List[BaseNode]:
-        """Get tuples of id, node, and embedding.
+        """
+        Get tuples of id, node, and embedding.
 
         Allows us to store these nodes in a vector store.
         Embeddings are called in batches.
@@ -245,7 +249,8 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         show_progress: bool = False,
         is_image: bool = False,
     ) -> List[BaseNode]:
-        """Asynchronously get tuples of id, node, and embedding.
+        """
+        Asynchronously get tuples of id, node, and embedding.
 
         Allows us to store these nodes in a vector store.
         Embeddings are called in batches.

@@ -9,7 +9,8 @@ from llama_index.core.node_parser.relational.utils import md_to_df
 
 
 class LlamaParseJsonNodeParser(BaseElementNodeParser):
-    """Llama Parse Json format element node parser.
+    """
+    Llama Parse Json format element node parser.
 
     Splits a json format document from LlamaParse into Text Nodes and Index Nodes
     corresponding to embedded objects (e.g. tables).
@@ -64,7 +65,8 @@ class LlamaParseJsonNodeParser(BaseElementNodeParser):
         **kwargs: Any,
     ) -> List[Element]:
         # get node id for each node so that we can avoid using the same id for different nodes
-        """Extract elements from json based nodes.
+        """
+        Extract elements from json based nodes.
 
         Args:
             text: node's text content

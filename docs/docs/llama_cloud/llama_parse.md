@@ -17,6 +17,6 @@ LlamaParse exists as a standalone API and also as part of the LlamaCloud platfor
 
 ## Resources
 
-- [LlamaParse documentation](https://docs.cloud.llamaindex.ai/llamaparse/getting_started/web_ui)
+- [LlamaParse documentation](https://docs.cloud.llamaindex.ai/llamaparse/getting_started)
 - [Sign up by signing up for LlamaCloud](https://cloud.llamaindex.ai/)
 - [Launch blog post](https://www.llamaindex.ai/blog/launching-the-first-genai-native-document-parsing-platform)

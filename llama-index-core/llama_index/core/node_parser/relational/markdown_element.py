@@ -9,7 +9,8 @@ from llama_index.core.node_parser.relational.utils import md_to_df
 
 
 class MarkdownElementNodeParser(BaseElementNodeParser):
-    """Markdown element node parser.
+    """
+    Markdown element node parser.
 
     Splits a markdown document into Text Nodes and Index Nodes corresponding to embedded objects
     (e.g. tables).

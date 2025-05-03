@@ -225,20 +225,23 @@ class BaseElementNodeParser(NodeParser):
         llm = self.llm or Settings.llm
 
         table_context_list = []
-        for idx, element in tqdm(enumerate(elements)):
-            if element.type not in ("table", "table_text"):
-                continue
-            table_context = str(element.element)
-            if idx > 0 and str(elements[idx - 1].element).lower().strip().startswith(
-                "table"
-            ):
-                table_context = str(elements[idx - 1].element) + "\n" + table_context
-            if idx < len(elements) + 1 and str(
-                elements[idx - 1].element
-            ).lower().strip().startswith("table"):
-                table_context += "\n" + str(elements[idx + 1].element)
+        if elements:
+            for idx, element in tqdm(enumerate(elements)):
+                if element.type not in ("table", "table_text"):
+                    continue
+                table_context = str(element.element)
+                if idx > 0 and str(
+                    elements[idx - 1].element
+                ).lower().strip().startswith("table"):
+                    table_context = (
+                        str(elements[idx - 1].element) + "\n" + table_context
+                    )
+                if idx < len(elements) + 1 and str(
+                    elements[idx - 1].element
+                ).lower().strip().startswith("table"):
+                    table_context += "\n" + str(elements[idx + 1].element)
 
-            table_context_list.append(table_context)
+                table_context_list.append(table_context)
 
         async def _get_table_output(table_context: str, summary_query_str: str) -> Any:
             index = SummaryIndex.from_documents(
@@ -266,7 +269,8 @@ class BaseElementNodeParser(NodeParser):
     def get_base_nodes_and_mappings(
         self, nodes: List[BaseNode]
     ) -> Tuple[List[BaseNode], Dict]:
-        """Get base nodes and mappings.
+        """
+        Get base nodes and mappings.
 
         Given a list of nodes and IndexNode objects, return the base nodes and a mapping
         from index id to child nodes (which are excluded from the base nodes).

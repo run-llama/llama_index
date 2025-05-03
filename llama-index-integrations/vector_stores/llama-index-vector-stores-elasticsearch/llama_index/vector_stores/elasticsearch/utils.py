@@ -67,6 +67,7 @@ def convert_es_hit_to_node(
 
     Returns:
         BaseNode: The converted node
+
     """
     source = hit.get("_source", {})
     metadata = source.get("metadata", {})

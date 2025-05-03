@@ -228,6 +228,7 @@ def messages_to_converse_messages(
         Tuple of:
         - List of AWS Bedrock Converse messages
         - System prompt
+
     """
     converse_messages = []
     system_prompt = ""
@@ -314,6 +315,7 @@ def tools_to_converse_tools(tools: List["BaseTool"]) -> Dict[str, Any]:
 
     Returns:
         AWS Bedrock Converse tools
+
     """
     converse_tools = []
     for tool in tools:
@@ -512,6 +514,7 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
 
     Returns:
         Joined dictionary
+
     """
     new_dict = dict1.copy()
     for key, value in dict2.items():

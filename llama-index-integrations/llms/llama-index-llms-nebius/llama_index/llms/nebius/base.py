@@ -8,7 +8,8 @@ DEFAULT_API_BASE = "https://api.studio.nebius.ai/v1"
 
 
 class NebiusLLM(OpenAILike):
-    """Nebius AI Studio LLM class.
+    """
+    Nebius AI Studio LLM class.
 
     Examples:
         `pip install llama-index-llms-nebius`
@@ -27,6 +28,7 @@ class NebiusLLM(OpenAILike):
         resp = llm.complete("Who is Paul Graham?")
         print(resp)
         ```
+
     """
 
     def __init__(

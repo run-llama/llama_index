@@ -21,6 +21,7 @@ class FuzzyCitationQueryEngine(CustomQueryEngine):
     Example:
       print(response.metadata)
       >>> {("response_sent", "node_sent"): (0, 25, <BaseNode>), ...}
+
     """
 
     query_engine: BaseQueryEngine

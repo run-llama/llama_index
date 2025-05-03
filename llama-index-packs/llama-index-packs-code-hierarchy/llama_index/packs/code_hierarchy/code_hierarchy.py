@@ -192,7 +192,8 @@ class _ChunkNodeOutput(BaseModel):
 
 
 class CodeHierarchyNodeParser(NodeParser):
-    """Split code using a AST parser.
+    """
+    Split code using a AST parser.
 
     Add metadata about the scope of the code block and relationships between
     code blocks.
@@ -322,7 +323,7 @@ class CodeHierarchyNodeParser(NodeParser):
             start_byte = node.start_byte
         if end_byte is None:
             end_byte = node.end_byte
-        return text[start_byte:end_byte].strip()
+        return bytes(text, "utf-8")[start_byte:end_byte].decode().strip()
 
     def _chunk_node(
         self,
@@ -343,6 +344,7 @@ class CodeHierarchyNodeParser(NodeParser):
             _context_list (Optional[List[_ScopeItem]]): The scope context of the
                                                         parent node
             _root (bool): Whether or not this is the root node
+
         """
         if _context_list is None:
             _context_list = []
@@ -622,6 +624,9 @@ class CodeHierarchyNodeParser(NodeParser):
                         new_split_nodes = self.code_splitter.get_nodes_from_documents(
                             [original_node], show_progress=show_progress, **kwargs
                         )
+
+                        if not new_split_nodes:
+                            continue
 
                         # Force the first new_split_node to have the
                         # same id as the original_node
