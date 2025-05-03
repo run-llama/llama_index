@@ -178,7 +178,7 @@ class RedisVectorStore(BasePydanticVectorStore):
         if redis_client or redis_url:
             self._redis_client = redis_client
             self.create_index()
-        elif redis_client_async:
+        if redis_client_async:
             self._redis_client_async = redis_client_async
             self._async_index = AsyncSearchIndex(
                 schema=schema, redis_client=redis_client_async
