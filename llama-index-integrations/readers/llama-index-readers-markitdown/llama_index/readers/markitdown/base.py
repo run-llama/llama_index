@@ -18,22 +18,29 @@ class ValidFilePath(BaseModel):
     @model_validator(mode="after")
     def validate_file_path(self) -> Self:
         if isinstance(self.file_path, str):
-            if not (Path(self.file_path).is_dir()):
-                raise ValueError("Directory path does not exist")
-            dir_files = []
-            for root, _, files in os.walk(self.file_path):
-                for el in files:
-                    dir_files.append(os.path.join(root, el))
+            if not Path(self.file_path).is_dir():
+                if not Path(self.file_path).is_file():
+                    raise ValueError("File or directory path does not exist")
+                else:
+                    dir_files = [self.file_path]
+            else:
+                dir_files = []
+                for root, _, files in os.walk(self.file_path):
+                    for el in files:
+                        dir_files.append(os.path.join(root, el))
             self.file_path = dir_files
         elif isinstance(self.file_path, Path):
             if not self.file_path.is_dir():
-                raise ValueError("Directory path does not exist")
-            dir_files = []
-            for root, _, files in os.walk(self.file_path):
-                for el in files:
-                    dir_files.append(os.path.join(root, el))
+                if not self.file_path.is_file():
+                    raise ValueError("File or directory path does not exist")
+                else:
+                    dir_files = [self.file_path]
+            else:
+                dir_files = []
+                for root, _, files in os.walk(self.file_path):
+                    for el in files:
+                        dir_files.append(os.path.join(root, el))
             self.file_path = dir_files
-
         empty, fls = is_empty(self.file_path)
         if empty:
             raise ValueError("There is no file to parse!")
@@ -55,12 +62,11 @@ class MarkItDownReader(BaseReader):
     """
     MarkItDownReader is a document reader that utilizes the MarkItDown parser to convert files or collections of files into Document objects.
 
-    Methods
+    Methods:
     -------
     load_data(file_path: str | Path | Iterable[str] | Iterable[Path]) -> List[Document]
         Loads and parses a directory (if `file_path` is `str` or `Path`) or a list of files specified by `file_path` using the MarkItDown parser.
         Returns a list of Document objects, each containing the text content and metadata such as file path, file type, and content length.
-
     """
 
     _reader: MarkItDown = MarkItDown()
@@ -73,6 +79,7 @@ class MarkItDownReader(BaseReader):
     def load_data(
         self,
         file_path: Union[str, Path, List[str], List[Path]],
+        **kwargs,
     ) -> List[Document]:
         docs: List[Document] = []
         fl_pt = ValidFilePath(file_path=file_path)
