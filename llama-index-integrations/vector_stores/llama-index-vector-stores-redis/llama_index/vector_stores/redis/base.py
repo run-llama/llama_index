@@ -231,7 +231,7 @@ class RedisVectorStore(BasePydanticVectorStore):
     def schema(self) -> IndexSchema:
         """Return the index schema."""
         if self._async_index:
-            return self._async_index.client
+            return self._async_index.schema
         return self._index.schema
 
     def set_return_fields(self, return_fields: List[str]) -> None:
