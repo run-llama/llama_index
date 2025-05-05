@@ -1,6 +1,7 @@
 # Oxylabs Webpage Loader
 
 Use Oxylabs Webpage Loader to load a webpage from any URL.
+
 For more information checkout out the [Oxylabs documentation](https://developers.oxylabs.io/scraper-apis/web-scraper-api).
 
 ## Instructions for OxylabsReader
