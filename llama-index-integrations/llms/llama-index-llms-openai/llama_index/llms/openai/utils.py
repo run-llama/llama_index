@@ -428,6 +428,13 @@ def to_openai_responses_message_dict(
                         "detail": block.detail or "auto",
                     }
                 )
+            elif block.image_mimetype == "application/pdf":
+                content.append(
+                    {
+                        "type": "input_file",
+                        "file_data": block.resolve_image(as_base64=True).read(),
+                    }
+                )
             else:
                 img_bytes = block.resolve_image(as_base64=True).read()
                 img_str = img_bytes.decode("utf-8")
