@@ -6,6 +6,7 @@ build-backend = "hatchling.build"
 dev = [
     "black[jupyter]<=23.9.1,>=23.7.0",
     "codespell[toml]>=v2.2.6",
+    "diff-cover>=9.2.0",
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
     "mypy==0.991",
@@ -13,9 +14,9 @@ dev = [
     "pylint==2.15.10",
     "pytest==7.2.1",
     "pytest-asyncio==0.21.0",
+    "pytest-cov>=6.1.1",
     "pytest-mock==3.11.1",
     "ruff==0.0.292",
-    "tree-sitter-languages>=1.8.0,<2",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-protobuf>=4.24.0.4,<5",

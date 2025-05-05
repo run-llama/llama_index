@@ -16,7 +16,7 @@ from llama_index.core.tools import FunctionTool
 from pydantic import BaseModel, Field
 from google.genai.types import GenerateContentConfig, ThinkingConfig
 from llama_index.llms.google_genai import GoogleGenAI
-from llama_index.llms.google_genai.utils import convert_schema_to_function_declaration
+from llama_index.llms.google_genai.utils import convert_schema_to_function_declaration, prepare_chat_params
 
 
 SKIP_GEMINI = (
@@ -525,3 +525,31 @@ def test_optional_lists_nested_gemini(llm: GoogleGenAI) -> None:
     )
     assert isinstance(blogpost, BlogPost)
     assert len(blogpost.contents) >= 3
+
+def test_prepare_chat_params_more_than_2_tool_calls():
+    expected_generation_config = types.GenerateContentConfig()
+    expected_model_name = "models/gemini-foo"
+    test_messages = [
+        ChatMessage(content="Find me a puppy.", role=MessageRole.USER),
+        ChatMessage(content="Let me search for puppies.", role=MessageRole.ASSISTANT, additional_kwargs={"tool_calls": [{"name": "tool_1"}, {"name": "tool_2"}, {"name": "tool_3"}]}),
+        ChatMessage(content="Tool 1 Response", role=MessageRole.TOOL, additional_kwargs={"tool_call_id": "tool_1"}),
+        ChatMessage(content="Tool 2 Response", role=MessageRole.TOOL, additional_kwargs={"tool_call_id": "tool_2"}),
+        ChatMessage(content="Tool 3 Response", role=MessageRole.TOOL, additional_kwargs={"tool_call_id": "tool_3"}),
+        ChatMessage(content="Here is a list of puppies.", role=MessageRole.ASSISTANT),
+    ]
+
+    next_msg, chat_kwargs = prepare_chat_params(expected_model_name, test_messages)
+
+    assert chat_kwargs["model"] == expected_model_name
+    assert chat_kwargs["config"] == expected_generation_config
+    assert next_msg == types.Content(parts=[types.Part(text="Here is a list of puppies.")], role=MessageRole.MODEL)
+    assert chat_kwargs["history"] == [
+        types.Content(parts=[types.Part(text="Find me a puppy.")], role=MessageRole.USER),
+        types.Content(parts=[types.Part(text="Let me search for puppies."),
+                             types.Part.from_function_call(name="tool_1", args=None),
+                             types.Part.from_function_call(name="tool_2", args=None),
+                             types.Part.from_function_call(name="tool_3", args=None)], role=MessageRole.MODEL),
+        types.Content(parts=[types.Part.from_function_response(name="tool_1", response={"result": "Tool 1 Response"}),
+                             types.Part.from_function_response(name="tool_2", response={"result": "Tool 2 Response"}),
+                             types.Part.from_function_response(name="tool_3", response={"result": "Tool 3 Response"})], role=MessageRole.USER),
+    ]

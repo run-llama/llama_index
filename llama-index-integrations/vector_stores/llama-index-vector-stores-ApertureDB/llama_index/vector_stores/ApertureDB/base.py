@@ -20,6 +20,8 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryResult,
 )
 
+from llama_index.core.vector_stores.types import FilterOperator
+
 
 from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
@@ -27,6 +29,7 @@ from llama_index.core.vector_stores.utils import (
 )
 from llama_index.core.schema import MetadataMode
 from aperturedb.ParallelLoader import ParallelLoader
+from aperturedb.Constraints import Constraints
 
 # Default descriptorset name
 DESCRIPTOR_SET = "llamaindex"
@@ -337,9 +340,47 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
         """
         Return nodes as response.
         """
+
+        def convert_filters_to_constraints(query_filters: MetadataFilters) -> Dict:
+            if query_filters is None:
+                return None
+            constraints = Constraints()
+            for filter in query_filters.filters:
+                key = f"{PROPERTY_PREFIX}{filter.key}"
+                if filter.operator == FilterOperator.EQ:
+                    constraints = constraints.equal(
+                        key,
+                        filter.value,
+                    )
+                elif filter.operator == FilterOperator.GT:
+                    constraints = constraints.greater(
+                        key,
+                        filter.value,
+                    )
+                elif filter.operator == FilterOperator.LT:
+                    constraints = constraints.less(
+                        key,
+                        filter.value,
+                    )
+                elif filter.operator == FilterOperator.GTE:
+                    constraints = constraints.greaterequal(
+                        key,
+                        filter.value,
+                    )
+                elif filter.operator == FilterOperator.LTE:
+                    constraints = constraints.lessequal(
+                        key,
+                        filter.value,
+                    )
+                else:
+                    raise ValueError(f"Unsupported mode: {filter.mode}")
+            return constraints
+
+        constraints = convert_filters_to_constraints(query.filters)
         ## VectorStoreQuery has query_embedding, similarity_top_k and mode
         self._descriptors.find_similar(
             set=self._descriptor_set,
+            constraints=constraints,
             vector=query.query_embedding,
             k_neighbors=query.similarity_top_k,
             distances=True,
