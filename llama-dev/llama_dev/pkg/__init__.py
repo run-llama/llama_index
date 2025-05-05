@@ -6,7 +6,7 @@ from .info import info
 
 @click.group(short_help="Manage packages in the monorepo")
 def pkg():
-    pass
+    pass  # pragma: no cover
 
 
 pkg.add_command(info)

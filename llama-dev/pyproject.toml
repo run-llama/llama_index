@@ -33,3 +33,8 @@ Homepage = "https://github.com/run-llama/llama-index"
 Changelog = "https://github.com/run-llama/llama-index/llama-dev/CHANGELOG.md"
 Issues = "https://github.com/run-llama/llama-index/issues"
 CI = "https://github.com/run-llama/llama-index/actions"
+
+[tool.coverage.run]
+omit = [
+    "__main__.py",
+]
