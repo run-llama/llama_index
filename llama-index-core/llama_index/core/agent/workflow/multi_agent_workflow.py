@@ -40,7 +40,6 @@ from llama_index.core.workflow.checkpointer import CheckpointCallback
 from llama_index.core.workflow.handler import WorkflowHandler
 from llama_index.core.workflow.workflow import WorkflowMeta
 from llama_index.core.settings import Settings
-from pydantic import model_serializer
 
 
 DEFAULT_HANDOFF_PROMPT = """Useful for handing off to another agent.
