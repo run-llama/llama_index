@@ -8,7 +8,7 @@ In LlamaIndex, you can either [build your own agentic workflows from scratch](..
 
 ## Getting started
 
-You can find all of this code in [the tutorial repo](https://github.com/run-llama/python-agents-tutorial).
+You can find all of this code in [the agents tutorial repo](https://github.com/run-llama/python-agents-tutorial).
 
 To avoid conflicts and keep things clean, we'll start a new Python virtual environment. You can use any virtual environment manager, but we'll use `poetry` here:
 
