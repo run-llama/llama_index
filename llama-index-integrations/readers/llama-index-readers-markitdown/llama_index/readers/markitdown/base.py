@@ -18,22 +18,29 @@ class ValidFilePath(BaseModel):
     @model_validator(mode="after")
     def validate_file_path(self) -> Self:
         if isinstance(self.file_path, str):
-            if not (Path(self.file_path).is_dir()):
-                raise ValueError("Directory path does not exist")
-            dir_files = []
-            for root, _, files in os.walk(self.file_path):
-                for el in files:
-                    dir_files.append(os.path.join(root, el))
+            if not Path(self.file_path).is_dir():
+                if not Path(self.file_path).is_file():
+                    raise ValueError("File or directory path does not exist")
+                else:
+                    dir_files = [self.file_path]
+            else:
+                dir_files = []
+                for root, _, files in os.walk(self.file_path):
+                    for el in files:
+                        dir_files.append(os.path.join(root, el))
             self.file_path = dir_files
         elif isinstance(self.file_path, Path):
             if not self.file_path.is_dir():
-                raise ValueError("Directory path does not exist")
-            dir_files = []
-            for root, _, files in os.walk(self.file_path):
-                for el in files:
-                    dir_files.append(os.path.join(root, el))
+                if not self.file_path.is_file():
+                    raise ValueError("File or directory path does not exist")
+                else:
+                    dir_files = [self.file_path]
+            else:
+                dir_files = []
+                for root, _, files in os.walk(self.file_path):
+                    for el in files:
+                        dir_files.append(os.path.join(root, el))
             self.file_path = dir_files
-
         empty, fls = is_empty(self.file_path)
         if empty:
             raise ValueError("There is no file to parse!")
@@ -73,6 +80,7 @@ class MarkItDownReader(BaseReader):
     def load_data(
         self,
         file_path: Union[str, Path, List[str], List[Path]],
+        **kwargs,
     ) -> List[Document]:
         docs: List[Document] = []
         fl_pt = ValidFilePath(file_path=file_path)

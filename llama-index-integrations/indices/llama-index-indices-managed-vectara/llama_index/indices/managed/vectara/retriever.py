@@ -314,7 +314,7 @@ class VectaraRetriever(BaseRetriever):
 
             if self._rerank_limit:
                 rerank_config["limit"] = self._rerank_limit
-            if self._rerank_cutoff:
+            if self._rerank_cutoff and self._reranker != VectaraReranker.CHAIN:
                 rerank_config["cutoff"] = self._rerank_cutoff
 
             data["search"]["reranker"] = rerank_config

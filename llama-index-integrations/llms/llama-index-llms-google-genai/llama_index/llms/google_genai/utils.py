@@ -63,7 +63,8 @@ def merge_neighboring_same_role_messages(
     i = 0
 
     while i < len(messages):
-        current_message = messages[i]
+        # operate on a copy of the message to avoid mutating the original
+        current_message = messages[i].model_copy()
         # Initialize merged content with current message content
         merged_content = current_message.blocks
 
@@ -284,7 +285,7 @@ def prepare_chat_params(
             history.append(msg)
             continue
 
-        last_msg = history[idx - 1]
+        last_msg = history[-1]
 
         # Skip if the last message is not a tool message
         if last_msg.parts and not any(

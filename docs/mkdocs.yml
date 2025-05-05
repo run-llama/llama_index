@@ -186,6 +186,7 @@ nav:
           - ./examples/data_connectors/MyScaleReaderDemo.ipynb
           - ./examples/data_connectors/NotionDemo.ipynb
           - ./examples/data_connectors/ObsidianReaderDemo.ipynb
+          - ./examples/data_connectors/OxylabsDemo.ipynb
           - ./examples/data_connectors/PathwayReaderDemo.ipynb
           - ./examples/data_connectors/PreprocessReaderDemo.ipynb
           - ./examples/data_connectors/PsychicDemo.ipynb
@@ -615,6 +616,7 @@ nav:
           - ./examples/vector_stores/AlloyDBVectorStoreDemo.ipynb
           - ./examples/vector_stores/AmazonNeptuneVectorDemo.ipynb
           - ./examples/vector_stores/AnalyticDBDemo.ipynb
+          - ./examples/vector_stores/ApertureDBVectorStoreDemo.ipynb
           - ./examples/vector_stores/AstraDBIndexDemo.ipynb
           - ./examples/vector_stores/AsyncIndexCreationDemo.ipynb
           - ./examples/vector_stores/AwadbDemo.ipynb
@@ -1438,6 +1440,7 @@ nav:
           - ./api_reference/readers/opendal.md
           - ./api_reference/readers/opensearch.md
           - ./api_reference/readers/oracleai.md
+          - ./api_reference/readers/oxylabs.md
           - ./api_reference/readers/pandas_ai.md
           - ./api_reference/readers/papers.md
           - ./api_reference/readers/patentsview.md
@@ -2436,6 +2439,7 @@ plugins:
             - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-gel
             - ../llama-index-integrations/readers/llama-index-readers-markitdown
             - ../llama-index-integrations/llms/llama-index-llms-meta
+            - ../llama-index-integrations/readers/llama-index-readers-oxylabs
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
