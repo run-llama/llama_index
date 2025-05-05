@@ -1,9 +1,6 @@
 name: Unit Testing
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
 
 env:

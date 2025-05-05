@@ -29,6 +29,9 @@ class ResultStatus(Enum):
     COVERAGE_FAILED = auto()
 
 
+NO_TESTS_INDICATOR = "no tests ran"
+
+
 @click.command(short_help="Run tests across the monorepo")
 @click.option(
     "--fail-fast",
@@ -63,6 +66,9 @@ def test(
         raise click.UsageError(
             "You have to pass --cov in order to use --cov-fail-under"
         )
+
+    if not base_ref:
+        raise click.UsageError("Option '--base-ref' cannot be empty.")
 
     console = obj["console"]
     repo_root = obj["repo_root"]
@@ -152,7 +158,9 @@ def test(
         )
 
 
-def _uv_sync(package_path: Path, env: dict[str, str]) -> subprocess.CompletedProcess:
+def _uv_sync(
+    package_path: Path, env: dict[str, str]
+) -> subprocess.CompletedProcess:  # pragma: no cover
     """Run 'uv sync' on a package folder."""
     return subprocess.run(
         ["uv", "sync"],
@@ -165,7 +173,7 @@ def _uv_sync(package_path: Path, env: dict[str, str]) -> subprocess.CompletedPro
 
 def _uv_install_local(
     package_path: Path, env: dict[str, str], install_local: set[Path]
-) -> subprocess.CompletedProcess:
+) -> subprocess.CompletedProcess:  # pragma: no cover
     """Run 'uv pip install -U <packge_path1>, <package_path2>, ...' for locally changed packages."""
     return subprocess.run(
         ["uv", "pip", "install", "-U", *install_local],
@@ -202,7 +210,7 @@ def _pytest(
 
 def _diff_cover(
     package_path: Path, env: dict[str, str], cov_fail_under: int, base_ref: str
-) -> subprocess.CompletedProcess:
+) -> subprocess.CompletedProcess:  # pragma: no cover
     return subprocess.run(
         [
             "uv",
@@ -278,7 +286,8 @@ def _run_tests(
 
     # Run pytest
     result = _pytest(package_path, env, cov)
-    if result.returncode != 0:
+    # Only fail if there are tests and they failed
+    if result.returncode != 0 and NO_TESTS_INDICATOR not in str(result.stdout).lower():
         elapsed_time = time.perf_counter() - start
         return {
             "package": package_path,
