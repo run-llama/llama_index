@@ -1,7 +1,7 @@
 """Oxylabs Web Reader."""
 
 import asyncio
-from typing import Any, List, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, TYPE_CHECKING
 from platform import architecture, python_version
 from importlib.metadata import version
 
@@ -99,7 +99,7 @@ class OxylabsWebReader(BasePydanticReader):
     async def aload_data(
         self,
         urls: list[str],
-        additional_params: dict[str, Any] | None = None,
+        additional_params: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
         """
         Asynchronously load data from urls.
@@ -133,7 +133,7 @@ class OxylabsWebReader(BasePydanticReader):
     def load_data(
         self,
         urls: list[str],
-        additional_params: dict[str, Any] | None = None,
+        additional_params: Optional[Dict[str, Any]] = None,
     ) -> List[Document]:
         """
         Load data from urls.
