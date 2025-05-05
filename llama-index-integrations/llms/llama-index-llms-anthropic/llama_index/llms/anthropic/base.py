@@ -51,12 +51,12 @@ from anthropic.types import (
     ContentBlockDeltaEvent,
     ContentBlockStartEvent,
     ContentBlockStopEvent,
+    SignatureDelta,
     TextBlock,
     TextDelta,
     ThinkingBlock,
     ThinkingDelta,
     ToolUseBlock,
-    SignatureDelta,
 )
 
 if TYPE_CHECKING:
