@@ -1,17 +1,17 @@
-name: Test repo scripts
+name: llama-dev tests
 
 on:
   push:
     branches:
       - main
     paths:
-      - "scripts/**"
+      - "llama-dev/**"
   pull_request:
     paths:
-      - "scripts/**"
+      - "llama-dev/**"
 
 jobs:
-  test-scripts:
+  test-llama-dev:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -25,4 +25,5 @@ jobs:
         run: uv python install
 
       - name: Run tests
-        run: uv run -- python -m pytest scripts/tests/test_run_ci_tests.py
+        working-directory: llama-dev
+        run: uv run pytest --cov llama_dev --cov-report term-missing

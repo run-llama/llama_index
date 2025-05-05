@@ -16,7 +16,7 @@ description = "The official CLI for development, testing, and automation in the 
 readme = "README.md"
 authors = [{name = "LlamaIndex"}]
 license = "MIT"
-requires-python = ">=3.10"
+requires-python = ">=3.9.17"
 classifiers = []
 dependencies = [
     "click",

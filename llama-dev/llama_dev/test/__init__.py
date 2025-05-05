@@ -98,17 +98,21 @@ def test(
             results.append(result)
 
             # Print results as they complete
-            package = result["package"]
+            package: Path = result["package"]
             if result["status"] == ResultStatus.INSTALL_FAILED:
-                console.print(f"❗ Unable to build package {package}")
+                console.print(
+                    f"❗ Unable to build package {package.relative_to(repo_root)}"
+                )
                 console.print(f"Error:\n{result['stderr']}", style="warning")
             elif result["status"] == ResultStatus.TESTS_PASSED:
-                console.print(f"✅ {package} succeeded in {result['time']}")
+                console.print(
+                    f"✅ {package.relative_to(repo_root)} succeeded in {result['time']}"
+                )
             elif result["status"] == ResultStatus.SKIPPED:
-                console.print(f"⏭️  {package} skipped")
+                console.print(f"⏭️  {package.relative_to(repo_root)} skipped")
                 console.print(f"Error:\n{result['stderr']}", style="warning")
             else:
-                console.print(f"❌ {package} failed")
+                console.print(f"❌ {package.relative_to(repo_root)} failed")
                 console.print(f"Error:\n{result['stderr']}", style="error")
                 console.print(f"Output:\n{result['stdout']}", style="info")
 
@@ -227,7 +231,7 @@ def _run_tests(
     package_data = load_pyproject(package_path)
     if not is_python_version_compatible(package_data):
         return {
-            "package": str(package_path),
+            "package": package_path,
             "status": ResultStatus.SKIPPED,
             "stdout": "",
             "stderr": f"Skipped: Not compatible with Python {sys.version_info.major}.{sys.version_info.minor}",
@@ -246,7 +250,7 @@ def _run_tests(
     if result.returncode != 0:
         elapsed_time = time.perf_counter() - start
         return {
-            "package": str(package_path),
+            "package": package_path,
             "status": ResultStatus.INSTALL_FAILED,
             "stdout": result.stdout,
             "stderr": result.stderr,
@@ -265,7 +269,7 @@ def _run_tests(
         if result.returncode != 0:
             elapsed_time = time.perf_counter() - start
             return {
-                "package": str(package_path),
+                "package": package_path,
                 "status": ResultStatus.INSTALL_FAILED,
                 "stdout": result.stdout,
                 "stderr": result.stderr,
@@ -277,7 +281,7 @@ def _run_tests(
     if result.returncode != 0:
         elapsed_time = time.perf_counter() - start
         return {
-            "package": str(package_path),
+            "package": package_path,
             "status": ResultStatus.TESTS_FAILED,
             "stdout": result.stdout,
             "stderr": result.stderr,
@@ -290,7 +294,7 @@ def _run_tests(
         if result.returncode != 0:
             elapsed_time = time.perf_counter() - start
             return {
-                "package": str(package_path),
+                "package": package_path,
                 "status": ResultStatus.COVERAGE_FAILED,
                 "stdout": result.stdout,
                 "stderr": result.stderr,
@@ -300,7 +304,7 @@ def _run_tests(
     # All done
     elapsed_time = time.perf_counter() - start
     return {
-        "package": str(package_path),
+        "package": package_path,
         "status": ResultStatus.TESTS_PASSED,
         "stdout": result.stdout,
         "stderr": result.stderr,
