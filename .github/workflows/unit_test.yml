@@ -38,8 +38,7 @@ jobs:
         working-directory: llama-dev
         run: |
           git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
-          uv run -- llama-dev test \
-            --repo-root ".."
+          uv run -- llama-dev --repo-root ".." test \
             --workers ${{ env.NUM_WORKERS }} \
             --base-ref ${{ github.event.pull_request.base.ref }}
 
@@ -49,8 +48,7 @@ jobs:
         working-directory: llama-dev
         run: |
           git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
-          uv run -- llama-dev test \
-            --repo-root ".."
+          uv run -- llama-dev --repo-root ".." test \
             --workers ${{ env.NUM_WORKERS }} \
             --base-ref=${{ github.event.pull_request.base.ref }} \
             --cov \
