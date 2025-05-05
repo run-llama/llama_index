@@ -186,6 +186,7 @@ nav:
           - ./examples/data_connectors/MyScaleReaderDemo.ipynb
           - ./examples/data_connectors/NotionDemo.ipynb
           - ./examples/data_connectors/ObsidianReaderDemo.ipynb
+          - ./examples/data_connectors/OxylabsDemo.ipynb
           - ./examples/data_connectors/PathwayReaderDemo.ipynb
           - ./examples/data_connectors/PreprocessReaderDemo.ipynb
           - ./examples/data_connectors/PsychicDemo.ipynb
@@ -195,7 +196,6 @@ nav:
           - ./examples/data_connectors/WeaviateDemo.ipynb
           - ./examples/data_connectors/WebPageDemo.ipynb
           - ./examples/data_connectors/ZyteSerpDemo.ipynb
-          - ./examples/data_connectors/OxylabsDemo.ipynb
           - ./examples/data_connectors/deplot/DeplotReader.ipynb
           - ./examples/data_connectors/html_tag_reader.ipynb
           - ./examples/data_connectors/oracleai.ipynb
@@ -616,6 +616,7 @@ nav:
           - ./examples/vector_stores/AlloyDBVectorStoreDemo.ipynb
           - ./examples/vector_stores/AmazonNeptuneVectorDemo.ipynb
           - ./examples/vector_stores/AnalyticDBDemo.ipynb
+          - ./examples/vector_stores/ApertureDBVectorStoreDemo.ipynb
           - ./examples/vector_stores/AstraDBIndexDemo.ipynb
           - ./examples/vector_stores/AsyncIndexCreationDemo.ipynb
           - ./examples/vector_stores/AwadbDemo.ipynb
