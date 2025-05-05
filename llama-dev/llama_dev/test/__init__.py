@@ -29,6 +29,9 @@ class ResultStatus(Enum):
     COVERAGE_FAILED = auto()
 
 
+NO_TESTS_INDICATOR = "no tests ran"
+
+
 @click.command(short_help="Run tests across the monorepo")
 @click.option(
     "--fail-fast",
@@ -283,7 +286,8 @@ def _run_tests(
 
     # Run pytest
     result = _pytest(package_path, env, cov)
-    if result.returncode != 0:
+    # Only fail if there are tests and they failed
+    if result.returncode != 0 and NO_TESTS_INDICATOR not in str(result.stdout).lower():
         elapsed_time = time.perf_counter() - start
         return {
             "package": package_path,
