@@ -1,4 +1,4 @@
-name: Test llama-dev
+name: llama-dev tests
 
 on:
   push:
@@ -26,4 +26,4 @@ jobs:
 
       - name: Run tests
         working-directory: llama-dev
-        run: uv run pytest --cov --cov-report term-missing
+        run: uv run pytest --cov llama_dev --cov-report term-missing
