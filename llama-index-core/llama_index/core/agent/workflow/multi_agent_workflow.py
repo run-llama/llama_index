@@ -15,7 +15,6 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentSetup,
     AgentOutput,
 )
-from llama_index.core.bridge.pydantic import model_serializer
 from llama_index.core.llms import ChatMessage, TextBlock
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
@@ -79,17 +78,6 @@ async def handoff(ctx: Context, to_agent: str, reason: str) -> str:
     )
 
     return handoff_output_prompt.format(to_agent=to_agent, reason=reason)
-
-
-class AgentWorkflowStartEvent(StartEvent):
-
-    @model_serializer()
-    def serialize_start_event(self) -> dict:
-        """Serialize the start event and exclude the memory."""
-        return {
-            "user_msg": self.user_msg,
-            "chat_history": self.chat_history,
-        }
 
 
 class AgentWorkflowMeta(WorkflowMeta, ABCMeta):
@@ -304,7 +292,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         return tool_output
 
     @step
-    async def init_run(self, ctx: Context, ev: AgentWorkflowStartEvent) -> AgentInput:
+    async def init_run(self, ctx: Context, ev: StartEvent) -> AgentInput:
         """Sets up the workflow and validates inputs."""
         await self._init_context(ctx, ev)
 
@@ -557,11 +545,9 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         **kwargs: Any,
     ) -> WorkflowHandler:
         return super().run(
-            start_event=AgentWorkflowStartEvent(
-                user_msg=user_msg,
-                chat_history=chat_history,
-                memory=memory,
-            ),
+            user_msg=user_msg,
+            chat_history=chat_history,
+            memory=memory,
             ctx=ctx,
             stepwise=stepwise,
             checkpoint_callback=checkpoint_callback,
