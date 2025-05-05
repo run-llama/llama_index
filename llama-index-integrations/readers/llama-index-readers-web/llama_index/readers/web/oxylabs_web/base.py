@@ -1,18 +1,25 @@
 """Oxylabs Web Reader."""
 
 import asyncio
-from typing import Any, List
+from typing import Any, List, TYPE_CHECKING
 from platform import architecture, python_version
 from importlib.metadata import version
 
+from llama_index.core.bridge.pydantic import Field
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
 from markdownify import markdownify
 
 from llama_index.readers.web.oxylabs_web.utils import strip_html, json_to_markdown
-from oxylabs.utils.utils import prepare_config
 
-from oxylabs.internal.api import AsyncAPI, APICredentials, RealtimeAPI
+if TYPE_CHECKING:
+    from oxylabs.internal.api import AsyncAPI, RealtimeAPI
+
+
+def get_default_config() -> dict[str, Any]:
+    from oxylabs.utils.utils import prepare_config
+
+    return prepare_config(async_integration=True)
 
 
 class OxylabsWebReader(BasePydanticReader):
@@ -50,11 +57,13 @@ class OxylabsWebReader(BasePydanticReader):
 
     timeout_s: int = 100
     oxylabs_scraper_url: str = "https://realtime.oxylabs.io/v1/queries"
-    api: RealtimeAPI
-    async_api: AsyncAPI
-    default_config: dict[str, Any] = prepare_config(async_integration=True)
+    api: "RealtimeAPI"
+    async_api: "AsyncAPI"
+    default_config: dict[str, Any] = Field(default_factory=get_default_config)
 
     def __init__(self, username: str, password: str, **kwargs) -> None:
+        from oxylabs.internal.api import AsyncAPI, APICredentials, RealtimeAPI
+
         credentials = APICredentials(username=username, password=password)
 
         bits, _ = architecture()
