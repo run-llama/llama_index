@@ -2,7 +2,7 @@
 
 In LlamaIndex, an agent is a semi-autonomous piece of software powered by an LLM that is given a task and executes a series of steps towards solving that task. It is given a set of tools, which can be anything from arbitrary functions up to full LlamaIndex query engines, and it selects the best available tool to complete each step. When each step is completed, the agent judges whether the task is now complete, in which case it returns a result to the user, or whether it needs to take another step, in which case it loops back to the start.
 
-In LlamaIndex, you can either [build your own agentic workflows from scratch](../understanding/workflows/index.md), covered in the "Building Workflows" section, or you can use our pre-built agentic workflows like `FuntionAgent` (a simple function/tool calling agent) or `AgentWorkflow` (an agent capable of managing a multiple agents). This tutorial covers building a functoin calling agent using `FunctionAgent`. 
+In LlamaIndex, you can either [build your own agentic workflows from scratch](../understanding/workflows/index.md), covered in the "Building Workflows" section, or you can use our pre-built agentic workflows like `FuntionAgent` (a simple function/tool calling agent) or `AgentWorkflow` (an agent capable of managing a multiple agents). This tutorial covers building a functoin calling agent using `FunctionAgent`.
 
 To learn about how to build a multi-agent system, go to ["Multi-agent systems with AgentWorkflow"](./multi_agent.md).
 
