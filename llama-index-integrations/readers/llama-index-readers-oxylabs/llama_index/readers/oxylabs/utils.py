@@ -40,8 +40,12 @@ def json_to_markdown(data: Any, level: int = 0, header: str | None = None) -> st
 
     elif isinstance(data, str):
         if "\n" in data:
+
+            # nl var to enable the usage of this symbol inside f-string expressions
+            nl = "\n"
+
             markdown_parts.append(
-                f"{indent}> {data.replace('\n', '\n' + indent + '> ')}\n"
+                f"{indent}> {data.replace(nl, nl + indent + '> ')}\n"
             )
         else:
             markdown_parts.append(f"{indent}{data}\n")

@@ -25,7 +25,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-web"
-version = "0.3.9"
+version = "0.4.0"
 description = "llama-index readers web integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -79,6 +79,11 @@ dependencies = [
     "spider-client>=0.0.27,<0.0.28",
     "llama-index-core>=0.12.0,<0.13",
     "defusedxml>=0.7.1,<0.8",
+    "httpx>=0.28.1",
+    "lxml>=5.4.0",
+    "lxml-html-clean>=0.4.2",
+    "markdownify>=1.1.0",
+    "oxylabs>=2.0.0",
 ]
 
 [tool.codespell]
