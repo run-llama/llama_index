@@ -1,5 +1,5 @@
 import time
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from sqlalchemy import (
     JSON,
@@ -21,7 +21,8 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import declarative_base
 
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.async_utils import asyncio_run
+from llama_index.core.bridge.pydantic import Field, PrivateAttr, model_serializer
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.storage.chat_store.base_db import AsyncDBChatStore, MessageStatus
 
@@ -53,12 +54,14 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
     _async_session_factory: Optional[async_sessionmaker] = PrivateAttr(default=None)
     _metadata: MetaData = PrivateAttr(default_factory=MetaData)
     _table: Optional[Table] = PrivateAttr(default=None)
+    _db_data: Optional[List[Dict[str, Any]]] = PrivateAttr(default=None)
 
     def __init__(
         self,
         table_name: str,
         async_database_uri: Optional[str] = DEFAULT_ASYNC_DATABASE_URI,
         async_engine: Optional[AsyncEngine] = None,
+        db_data: Optional[List[Dict[str, Any]]] = None,
     ):
         """Initialize the SQLAlchemy chat store."""
         super().__init__(
@@ -66,6 +69,13 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
             async_database_uri=async_database_uri or DEFAULT_ASYNC_DATABASE_URI,
         )
         self._async_engine = async_engine
+        self._db_data = db_data
+
+    @staticmethod
+    def _is_in_memory_uri(uri: Optional[str]) -> bool:
+        """Check if the URI points to an in-memory SQLite database."""
+        # Handles both :memory: and empty path which also means in-memory for sqlite
+        return uri == "sqlite+aiosqlite:///:memory:" or uri == "sqlite+aiosqlite://"
 
     async def _initialize(self) -> Tuple[async_sessionmaker[AsyncSession], Table]:
         """Initialize the chat store. Used to avoid HTTP connections in constructor."""
@@ -74,6 +84,15 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
 
         async_engine, async_session_factory = await self._setup_connections()
         table = await self._setup_tables(async_engine)
+
+        # Restore data from in-memory database if provided
+        if self._db_data:
+            async with async_session_factory() as session:
+                await session.execute(insert(table).values(self._db_data))
+                await session.commit()
+
+                # clear the data after it's inserted
+                self._db_data = None
 
         return async_session_factory, table
 
@@ -245,8 +264,8 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
                 await session.execute(
                     insert(table).values(
                         key=key,
-                        timestamp=current_time
-                        + i,  # Preserve order with incremental timestamps
+                        # Preserve order with incremental timestamps
+                        timestamp=current_time + i,
                         role=message.role,
                         status=status.value,
                         data=message.model_dump(mode="json"),
@@ -369,6 +388,44 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         async with session_factory() as session:
             result = await session.execute(select(table.c.key).distinct())
             return [row[0] for row in result.fetchall()]
+
+    async def _dump_db_data(self) -> List[Dict[str, Any]]:
+        """Dump the data from the database."""
+        session_factory, table = await self._initialize()
+
+        async with session_factory() as session:
+            result = await session.execute(select(table))
+            rows = result.fetchall()
+            return [
+                {
+                    "key": row.key,
+                    "timestamp": row.timestamp,
+                    "role": row.role,
+                    "status": row.status,
+                    "data": row.data,
+                }
+                for row in rows
+            ]
+
+    @model_serializer()
+    def dump_store(self) -> dict:
+        """
+        Dump the store's configuration and data (if in-memory).
+
+        Returns:
+            A dictionary containing the store's configuration and potentially its data.
+
+        """
+        dump_data = {
+            "table_name": self.table_name,
+            "async_database_uri": self.async_database_uri,
+        }
+
+        if self._is_in_memory_uri(self.async_database_uri):
+            # switch to sync sqlite
+            dump_data["db_data"] = asyncio_run(self._dump_db_data())
+
+        return dump_data
 
     @classmethod
     def class_name(cls) -> str:
