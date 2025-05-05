@@ -39,6 +39,12 @@ if TYPE_CHECKING:  # pragma: no cover
 T = TypeVar("T", bound=Event)
 EventBuffer = Dict[str, List[Event]]
 
+# Only warn once about unserializable keys
+class UnserializableKeyWarning(Warning):
+    pass
+
+warnings.simplefilter("once", UnserializableKeyWarning)
+
 
 class Context:
     """
@@ -51,6 +57,10 @@ class Context:
 
     Both `set` and `get` operations on global data are governed by a lock, and considered coroutine-safe.
     """
+
+    # These keys are set by pre-built workflows and
+    # are known to be unserializable in some cases.
+    known_unserializable_keys = ("memory", )
 
     def __init__(
         self,
@@ -125,6 +135,14 @@ class Context:
             try:
                 serialized_globals[key] = serializer.serialize(value)
             except Exception as e:
+                if key in self.known_unserializable_keys:
+                    # Skip serialization of known unserializable keys
+                    warnings.warn(
+                        f"Skipping serialization of known unserializable key: {key} -- "
+                        "This is expected but will require this item to be set manually after deserialization.",
+                        category=UnserializableKeyWarning,
+                    )
+                    continue
                 raise ValueError(f"Failed to serialize value for key {key}: {e}")
         return serialized_globals
 
