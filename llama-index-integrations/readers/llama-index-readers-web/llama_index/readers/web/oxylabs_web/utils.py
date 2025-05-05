@@ -112,9 +112,8 @@ def json_to_markdown(data: Any, level: int = 0, header: str | None = None) -> st
 
     elif isinstance(data, str):
         if "\n" in data:
-            markdown_parts.append(
-                f"{indent}> {data.replace('\n', '\n' + indent + '> ')}\n"
-            )
+            cleaned_data = data.replace("\n", "\n" + indent + "> ")
+            markdown_parts.append(f"{indent}> {cleaned_data}\n")
         else:
             markdown_parts.append(f"{indent}{data}\n")
 
