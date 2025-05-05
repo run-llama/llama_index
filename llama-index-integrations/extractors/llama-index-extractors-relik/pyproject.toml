@@ -28,7 +28,7 @@ name = "llama-index-extractors-relik"
 version = "0.3.1"
 description = "llama-index extractors relik integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<4"
+requires-python = ">=3.10,<4"
 readme = "README.md"
 license = "MIT"
 dependencies = [
