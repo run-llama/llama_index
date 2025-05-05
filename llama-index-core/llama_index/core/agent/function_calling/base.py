@@ -1,6 +1,6 @@
 """Function calling agent."""
 
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Callable
 
 from llama_index.core.agent.runner.base import AgentRunner, AgentState
 from llama_index.core.agent.function_calling.step import (
@@ -37,6 +37,7 @@ class FunctionCallingAgent(AgentRunner):
         chat_history: Optional[List[ChatMessage]] = None,
         state: Optional[AgentState] = None,
         allow_parallel_tool_calls: bool = True,
+        response_hook: Optional[Callable] = None,
         **kwargs: Any,
     ) -> "FunctionCallingAgent":
         """Create a FunctionCallingAgent from a list of tools."""
@@ -68,6 +69,7 @@ class FunctionCallingAgent(AgentRunner):
             callback_manager=callback_manager,
             prefix_messages=prefix_messages,
             allow_parallel_tool_calls=allow_parallel_tool_calls,
+            response_hook=response_hook,
         )
 
         return cls(

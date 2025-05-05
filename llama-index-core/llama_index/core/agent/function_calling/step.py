@@ -3,7 +3,7 @@
 import json
 import logging
 import uuid
-from typing import Any, List, Optional, Sequence, cast
+from typing import Any, List, Optional, Sequence, cast, Callable
 import asyncio
 import llama_index.core.instrumentation as instrument
 from llama_index.core.agent.types import (
@@ -96,6 +96,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         callback_manager: Optional[CallbackManager] = None,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
         allow_parallel_tool_calls: bool = True,
+        response_hook: Optional[Callable] = None
     ) -> None:
         """Init params."""
         if not llm.metadata.is_function_calling_model:
@@ -108,6 +109,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         self.prefix_messages = prefix_messages
         self.callback_manager = callback_manager or self._llm.callback_manager
         self.allow_parallel_tool_calls = allow_parallel_tool_calls
+        self.response_hook = response_hook
 
         if len(tools) > 0 and tool_retriever is not None:
             raise ValueError("Cannot specify both tools and tool_retriever")
@@ -132,6 +134,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
+        response_hook: Optional[Callable] = None,
         **kwargs: Any,
     ) -> "FunctionCallingAgentWorker":
         """Create an FunctionCallingAgentWorker from a list of tools.
@@ -169,6 +172,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             max_function_calls=max_function_calls,
             callback_manager=callback_manager,
             allow_parallel_tool_calls=allow_parallel_tool_calls,
+            response_hook=response_hook,
             **kwargs,
         )
 
@@ -320,6 +324,8 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         if self._verbose and response.message.content:
             print("=== LLM Response ===")
             print(str(response.message.content))
+            if self.response_hook:
+                self.response_hook(str(response.message.content))
 
         if not self.allow_parallel_tool_calls and len(tool_calls) > 1:
             raise ValueError(
@@ -412,6 +418,8 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
         if self._verbose and response.message.content:
             print("=== LLM Response ===")
             print(str(response.message.content))
+            if self.response_hook:
+                await self.response_hook(str(response.message.content))
 
         if not self.allow_parallel_tool_calls and len(tool_calls) > 1:
             raise ValueError(
