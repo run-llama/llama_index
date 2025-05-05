@@ -1,7 +1,7 @@
-from typing import Any
+from typing import Any, Optional
 
 
-def json_to_markdown(data: Any, level: int = 0, header: str | None = None) -> str:
+def json_to_markdown(data: Any, level: int = 0, header: Optional[str] = None) -> str:
     """
     Recursively converts a Python object (from JSON) into a Markdown string.
 

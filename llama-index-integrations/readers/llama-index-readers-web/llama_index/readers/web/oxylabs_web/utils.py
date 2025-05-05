@@ -1,5 +1,5 @@
 import re
-from typing import Any
+from typing import Any, Optional
 
 from lxml.html import defs, fromstring, tostring
 from lxml.html.clean import Cleaner
@@ -74,7 +74,7 @@ def strip_html(html: str) -> str:
     return re.sub(r"\n{2,}", "", stripped_html)
 
 
-def json_to_markdown(data: Any, level: int = 0, header: str | None = None) -> str:
+def json_to_markdown(data: Any, level: int = 0, header: Optional[str] = None) -> str:
     """
     Recursively converts a Python object (from JSON) into a Markdown string.
 
