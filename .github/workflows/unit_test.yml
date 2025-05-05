@@ -32,6 +32,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
           working-directory: llama-dev
+          activate-environment: true
 
       - name: Run tests
         if: ${{ matrix.python-version != env.COV_PYTHON_VERSION }}
