@@ -63,7 +63,8 @@ def merge_neighboring_same_role_messages(
     i = 0
 
     while i < len(messages):
-        current_message = messages[i]
+        # operate on a copy of the message to avoid mutating the original
+        current_message = messages[i].model_copy()
         # Initialize merged content with current message content
         merged_content = current_message.blocks
 
