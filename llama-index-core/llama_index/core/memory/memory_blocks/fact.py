@@ -1,5 +1,5 @@
 import re
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.bridge.pydantic import Field, field_validator
@@ -92,7 +92,7 @@ class FactExtractionMemoryBlock(BaseMemoryBlock[str]):
 
     @field_validator("fact_extraction_prompt_template", mode="before")
     @classmethod
-    def validate_fact_extraction_prompt_template(cls, v):
+    def validate_fact_extraction_prompt_template(cls, v: Union[str, BasePromptTemplate]) -> BasePromptTemplate:
         if isinstance(v, str):
             if "{{" in v and "}}" in v:
                 v = RichPromptTemplate(v)
@@ -127,7 +127,7 @@ class FactExtractionMemoryBlock(BaseMemoryBlock[str]):
         response = await self.llm.achat(messages=[*messages, *prompt_messages])
 
         # Parse the XML response to extract facts
-        facts_text = response.message.content
+        facts_text = response.message.content or ""
         new_facts = self._parse_facts_xml(facts_text)
 
         # Add new facts to the list, avoiding exact-match duplicates
@@ -144,7 +144,7 @@ class FactExtractionMemoryBlock(BaseMemoryBlock[str]):
                 max_facts=self.max_facts,
             )
             response = await self.llm.achat(messages=[*messages, *prompt_messages])
-            new_facts = self._parse_facts_xml(response.message.content)
+            new_facts = self._parse_facts_xml(response.message.content or "")
             self.facts = new_facts
 
     def _parse_facts_xml(self, xml_text: str) -> List[str]:

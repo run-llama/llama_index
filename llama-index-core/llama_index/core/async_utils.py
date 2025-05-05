@@ -36,7 +36,7 @@ def asyncio_run(coro: Coroutine) -> Any:
         if loop.is_running():
             # If loop is already running, run in a separate thread
 
-            def run_coro_in_thread():
+            def run_coro_in_thread() -> Any:
                 new_loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(new_loop)
                 try:

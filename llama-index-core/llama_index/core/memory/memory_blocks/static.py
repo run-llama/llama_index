@@ -23,7 +23,7 @@ class StaticMemoryBlock(BaseMemoryBlock[List[ContentBlock]]):
 
     @field_validator("static_content", mode="before")
     @classmethod
-    def validate_static_content(cls, v):
+    def validate_static_content(cls, v: Union[str, List[ContentBlock]]) -> List[ContentBlock]:
         if isinstance(v, str):
             v = [TextBlock(text=v)]
         return v

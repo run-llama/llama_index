@@ -6,7 +6,7 @@ from llama_index.core.bridge.pydantic import Field, field_validator
 from llama_index.core.memory.memory import BaseMemoryBlock
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate, RichPromptTemplate, PromptTemplate
-from llama_index.core.schema import TextNode
+from llama_index.core.schema import TextNode, NodeWithScore
 from llama_index.core.settings import Settings
 from llama_index.core.vector_stores.types import BasePydanticVectorStore, VectorStoreQuery
 
@@ -57,7 +57,7 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
     )
 
     @field_validator("vector_store", mode="before")
-    def validate_vector_store(cls, v):
+    def validate_vector_store(cls, v: Any) -> "BasePydanticVectorStore":
         if not isinstance(v, BasePydanticVectorStore):
             raise ValueError("vector_store must be a BasePydanticVectorStore")
         if not v.stores_text:
@@ -67,7 +67,7 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
 
     @field_validator("format_template", mode="before")
     @classmethod
-    def validate_format_template(cls, v):
+    def validate_format_template(cls, v: Any) -> "BasePromptTemplate":
         if isinstance(v, str):
             if "{{" in v and "}}" in v:
                 v = RichPromptTemplate(v)
@@ -111,16 +111,16 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
         )
 
         results = await self.vector_store.aquery(query)
-
-        if not results.nodes:
+        nodes_with_scores = [NodeWithScore(node=node, score=score) for node, score in zip(results.nodes or [], results.similarities or [])]
+        if not nodes_with_scores:
             return ""
 
         # Apply postprocessors
         for postprocessor in self.node_postprocessors:
-            results.nodes = await postprocessor.apostprocess_nodes(results.nodes)
+            nodes_with_scores = await postprocessor.apostprocess_nodes(nodes_with_scores)
 
         # Format the results
-        retrieved_text = "\n\n".join([node.get_content() for node in results.nodes])
+        retrieved_text = "\n\n".join([node.get_content() for node in nodes_with_scores])
         return self.format_template.format(text=retrieved_text)
 
     async def _aput(self, messages: List[ChatMessage]) -> None:
