@@ -17,7 +17,7 @@ from llama_index.core.utils import get_tokenizer
 T = TypeVar("T", str, List[ContentBlock], List[ChatMessage])
 
 DEFAULT_TOKEN_LIMIT = 30000
-DEFAULT_FLUSH_SIZE = int(DEFAULT_TOKEN_LIMIT * 0.7)
+DEFAULT_FLUSH_SIZE = int(DEFAULT_TOKEN_LIMIT * 0.1)
 DEFAULT_MEMORY_BLOCKS_TEMPLATE = RichPromptTemplate(
 """
 <memory>
@@ -25,7 +25,7 @@ DEFAULT_MEMORY_BLOCKS_TEMPLATE = RichPromptTemplate(
 <{{ block_name }}>
   {% for block in block_content %}
     {% if block.block_type == "text" %}
-      {{ block.text }}
+{{ block.text }}
     {% elif block.block_type == "image" %}
       {% if block.url %}
         {{ block.url | image }}
@@ -150,7 +150,7 @@ class Memory(BaseMemory):
         default=DEFAULT_FLUSH_SIZE,
         description="The token size to use for flushing the FIFO queue.",
     )
-    chat_history_min_token_ratio: float = Field(
+    chat_history_token_ratio: float = Field(
         default=0.7,
         description="Minimum percentage ratio of total token limit reserved for chat history.",
     )
@@ -184,7 +184,7 @@ class Memory(BaseMemory):
         exclude=True,
         description="The chat store to use for storing messages.",
     )
-    user_id: str = Field(
+    session_id: str = Field(
         default_factory=generate_chat_store_key,
         description="The key to use for storing messages in the chat store.",
     )
@@ -206,9 +206,9 @@ class Memory(BaseMemory):
             values["tokenizer_fn"] = get_tokenizer()
 
         if values.get("token_flush_size", -1) < 1:
-            values["token_flush_size"] = int(token_limit * 0.7)
+            values["token_flush_size"] = int(token_limit * 0.1)
         elif values.get("token_flush_size", -1) > token_limit:
-            values["token_flush_size"] = int(token_limit * 0.7)
+            values["token_flush_size"] = int(token_limit * 0.1)
 
         # validate all blocks have unique names
         block_names = [block.name for block in values.get("memory_blocks", [])]
@@ -220,12 +220,12 @@ class Memory(BaseMemory):
     @classmethod
     def from_defaults(  # type: ignore[override]
         cls,
-        user_id: str,
+        session_id: Optional[str] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         token_limit: int = DEFAULT_TOKEN_LIMIT,
         memory_blocks: Optional[List[BaseMemoryBlock[Any]]] = None,
         tokenizer_fn: Optional[Callable[[str], List]] = None,
-        chat_history_min_token_ratio: float = 0.7,
+        chat_history_token_ratio: float = 0.7,
         token_flush_size: int = DEFAULT_FLUSH_SIZE,
         memory_blocks_template: RichPromptTemplate = DEFAULT_MEMORY_BLOCKS_TEMPLATE,
         insert_method: InsertMethod = InsertMethod.SYSTEM,
@@ -237,6 +237,8 @@ class Memory(BaseMemory):
         async_engine: Optional[AsyncEngine] = None,
     ) -> "Memory":
         """Initialize Memory."""
+        session_id = session_id or generate_chat_store_key()
+
         # If not using the SQLAlchemyChatStore, provide an error
         sql_store = SQLAlchemyChatStore(
             table_name=table_name,
@@ -245,7 +247,7 @@ class Memory(BaseMemory):
         )
 
         if chat_history is not None:
-            asyncio_run(sql_store.set_messages(user_id, chat_history))
+            asyncio_run(sql_store.set_messages(session_id, chat_history))
 
         if token_flush_size > token_limit:
             token_flush_size = int(token_limit * 0.7)
@@ -254,9 +256,9 @@ class Memory(BaseMemory):
             token_limit=token_limit,
             tokenizer_fn=tokenizer_fn or get_tokenizer(),
             sql_store=sql_store,
-            user_id=user_id,
+            session_id=session_id,
             memory_blocks=memory_blocks or [],
-            chat_history_min_token_ratio=chat_history_min_token_ratio,
+            chat_history_token_ratio=chat_history_token_ratio,
             token_flush_size=token_flush_size,
             memory_blocks_template=memory_blocks_template,
             insert_method=insert_method,
@@ -443,11 +445,11 @@ class Memory(BaseMemory):
                     result.insert(0, ChatMessage(role="system", blocks=memory_content))
             elif self.insert_method == InsertMethod.USER:
                 # Find the latest user message
-                user_idx = next((i for i, msg in enumerate(reversed(result)) if msg.role == "user"), None)
+                session_idx = next((i for i, msg in enumerate(reversed(result)) if msg.role == "user"), None)
 
-                if user_idx is not None:
+                if session_idx is not None:
                     # Get actual index (since we enumerated in reverse)
-                    actual_idx = len(result) - 1 - user_idx
+                    actual_idx = len(result) - 1 - session_idx
                     # Update existing user message
                     result[actual_idx].blocks = [*result[actual_idx].blocks, *memory_content]
                 else:
@@ -458,7 +460,7 @@ class Memory(BaseMemory):
     async def aget(self, **block_kwargs: Any) -> List[ChatMessage]:  # type: ignore[override]
         """Get messages with memory blocks included (async)."""
         # Get chat history efficiently
-        chat_history = await self.sql_store.get_messages(self.user_id, status=MessageStatus.ACTIVE)
+        chat_history = await self.sql_store.get_messages(self.session_id, status=MessageStatus.ACTIVE)
         chat_history_tokens = sum(self._estimate_token_count(message) for message in chat_history)
 
         # Get memory blocks content
@@ -497,11 +499,11 @@ class Memory(BaseMemory):
         4. It maintains at least one complete conversation turn
         """
         # Calculate if we need to waterfall
-        current_queue = await self.sql_store.get_messages(self.user_id, status=MessageStatus.ACTIVE)
+        current_queue = await self.sql_store.get_messages(self.session_id, status=MessageStatus.ACTIVE)
         tokens_in_current_queue = sum(self._estimate_token_count(message) for message in current_queue)
 
         # If we're over the token limit, initiate waterfall
-        token_limit = self.token_limit * self.chat_history_min_token_ratio
+        token_limit = self.token_limit * self.chat_history_token_ratio
         if tokens_in_current_queue > token_limit:
             # Process from oldest to newest, but efficiently with pop() operations
             reversed_queue = current_queue[::-1]  # newest first, oldest last
@@ -568,7 +570,7 @@ class Memory(BaseMemory):
 
                 # Archive the flushed messages
                 if messages_to_flush:
-                    await self.sql_store.archive_oldest_messages(self.user_id, n=len(messages_to_flush))
+                    await self.sql_store.archive_oldest_messages(self.session_id, n=len(messages_to_flush))
 
                     # Waterfall the flushed messages to memory blocks
                     await asyncio.gather(*[block.aput(messages_to_flush, from_short_term_memory=True) for block in self.memory_blocks])
@@ -585,7 +587,7 @@ class Memory(BaseMemory):
     async def aput(self, message: ChatMessage) -> None:
         """Add a message to the chat store and process waterfall logic if needed."""
         # Add the message to the chat store
-        await self.sql_store.add_message(self.user_id, message, status=MessageStatus.ACTIVE)
+        await self.sql_store.add_message(self.session_id, message, status=MessageStatus.ACTIVE)
 
         # Ensure the active queue is managed
         await self._manage_queue()
@@ -593,22 +595,22 @@ class Memory(BaseMemory):
     async def aput_messages(self, messages: List[ChatMessage]) -> None:
         """Add a list of messages to the chat store and process waterfall logic if needed."""
         # Add the messages to the chat store
-        await self.sql_store.add_messages(self.user_id, messages, status=MessageStatus.ACTIVE)
+        await self.sql_store.add_messages(self.session_id, messages, status=MessageStatus.ACTIVE)
 
         # Ensure the active queue is managed
         await self._manage_queue()
 
     async def aset(self, messages: List[ChatMessage]) -> None:
         """Set the chat history."""
-        await self.sql_store.set_messages(self.user_id, messages, status=MessageStatus.ACTIVE)
+        await self.sql_store.set_messages(self.session_id, messages, status=MessageStatus.ACTIVE)
 
     async def aget_all(self, status: Optional[MessageStatus] = None) -> List[ChatMessage]:
         """Get all messages."""
-        return await self.sql_store.get_messages(self.user_id, status=status)
+        return await self.sql_store.get_messages(self.session_id, status=status)
 
     async def areset(self, status: Optional[MessageStatus] = None) -> None:
         """Reset the memory."""
-        await self.sql_store.delete_messages(self.user_id, status=status)
+        await self.sql_store.delete_messages(self.session_id, status=status)
 
     # ---- Sync method wrappers ----
 
