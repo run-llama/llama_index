@@ -3,7 +3,8 @@ from typing import List
 
 from llama_index.core.memory.memory_blocks.fact import (
     FactExtractionMemoryBlock,
-    DEFAULT_FACT_PROMPT,
+    DEFAULT_FACT_EXTRACT_PROMPT,
+    DEFAULT_FACT_CONDENSE_PROMPT,
 )
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.base.llms.types import ChatResponse
@@ -47,7 +48,8 @@ async def test_initialization():
     """Test initialization of FactExtractionMemoryBlock."""
     memory_block = FactExtractionMemoryBlock(llm=MockLLM())
     assert memory_block.facts == []
-    assert memory_block.fact_extraction_prompt_template == DEFAULT_FACT_PROMPT
+    assert memory_block.fact_extraction_prompt_template == DEFAULT_FACT_EXTRACT_PROMPT
+    assert memory_block.fact_condense_prompt_template == DEFAULT_FACT_CONDENSE_PROMPT
 
     # Test with custom prompt
     custom_prompt = "Custom prompt"
