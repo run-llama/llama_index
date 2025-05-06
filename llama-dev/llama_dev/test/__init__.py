@@ -16,6 +16,7 @@ from llama_dev.utils import (
     get_dependants_packages,
     is_python_version_compatible,
     load_pyproject,
+    package_has_tests,
 )
 
 
@@ -94,6 +95,8 @@ def test(
     dependants = get_dependants_packages(changed_packages, all_packages)
     # Test the packages directly affected and their dependants
     packages_to_test = changed_packages | dependants
+    # Filter out packages that are not testable
+    packages_to_test = {p for p in packages_to_test if package_has_tests(p)}
 
     # Test the packages using a process pool
     results = []
