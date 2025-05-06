@@ -352,6 +352,8 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         """
         # delete nodes from vector store
         self._vector_store.delete_nodes(node_ids, **delete_kwargs)
+        for node_id in node_ids:
+            self._index_struct.delete(node_id)
 
         # delete from docstore only if needed
         if (
