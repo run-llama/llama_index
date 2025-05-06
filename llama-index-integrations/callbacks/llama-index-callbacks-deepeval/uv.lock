@@ -6,7 +6,8 @@ resolution-markers = [
     "python_full_version >= '3.12.4' and python_full_version < '3.13'",
     "python_full_version >= '3.11' and python_full_version < '3.12.4'",
     "python_full_version == '3.10.*'",
-    "python_full_version < '3.10'",
+    "python_full_version >= '3.9.17' and python_full_version < '3.10'",
+    "python_full_version < '3.9.17'",
 ]
 
 [[package]]
@@ -497,6 +498,15 @@ wheels = [
 ]
 
 [[package]]
+name = "chardet"
+version = "5.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f3/0d/f7b6ab21ec75897ed80c17d79b15951a719226b9fababf1e40ea74d69079/chardet-5.2.0.tar.gz", hash = "sha256:1b3b6ff479a8c414bc3fa2c0852995695c4a026dcd6d0633b2dd092ca39c1cf7", size = 2069618, upload_time = "2023-08-01T19:23:02.662Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/38/6f/f5fbc992a329ee4e0f288c1fe0e2ad9485ed064cac731ed2fe47dcc38cbf/chardet-5.2.0-py3-none-any.whl", hash = "sha256:e1cf59446890a00105fe7b7912492ea04b6e6f06d4b742b2c788469e34c82970", size = 199385, upload_time = "2023-08-01T19:23:00.661Z" },
+]
+
+[[package]]
 name = "charset-normalizer"
 version = "3.4.1"
 source = { registry = "https://pypi.org/simple" }
@@ -687,6 +697,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/59/f1/4da7717f0063a222db253e7121bd6a56f6fb1ba439dcc36659088793347c/coverage-7.8.0-py3-none-any.whl", hash = "sha256:dbf364b4c5e7bae9250528167dfe40219b62e2d573c854d74be213e1e52069f7", size = 203435, upload_time = "2025-03-30T20:36:43.61Z" },
 ]
 
+[package.optional-dependencies]
+toml = [
+    { name = "tomli", marker = "python_full_version <= '3.11'" },
+]
+
 [[package]]
 name = "cryptography"
 version = "44.0.2"
@@ -844,6 +859,46 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/98/97/06afe62762c9a8a86af0cfb7bfdab22a43ad17138b07af5b1a58442690a2/deprecated-1.2.18.tar.gz", hash = "sha256:422b6f6d859da6f2ef57857761bfb392480502a64c3028ca9bbe86085d72115d", size = 2928744, upload_time = "2025-01-27T10:46:25.7Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/6e/c6/ac0b6c1e2d138f1002bcf799d330bd6d85084fece321e662a14223794041/Deprecated-1.2.18-py2.py3-none-any.whl", hash = "sha256:bd5011788200372a32418f888e326a09ff80d0214bd961147cfed01b5c018eec", size = 9998, upload_time = "2025-01-27T10:46:09.186Z" },
+]
+
+[[package]]
+name = "diff-cover"
+version = "9.2.0"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version < '3.9.17'",
+]
+dependencies = [
+    { name = "chardet", marker = "python_full_version < '3.9.17'" },
+    { name = "jinja2", marker = "python_full_version < '3.9.17'" },
+    { name = "pluggy", marker = "python_full_version < '3.9.17'" },
+    { name = "pygments", marker = "python_full_version < '3.9.17'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/44/3a/e49ccba052a4dda264fbad4f467739ecc63498f7223bfc03d4bfac23ea95/diff_cover-9.2.0.tar.gz", hash = "sha256:85a0b353ebbb678f9e87ea303f75b545bd0baca38f563219bb72f2ae862bba36", size = 94857, upload_time = "2024-09-08T00:38:06.913Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b4/8a/bddb8e4aea550066559144e72d3566e9ae2f757b8ac154e769c563f48177/diff_cover-9.2.0-py3-none-any.whl", hash = "sha256:1e24edc51c39e810c47dd9986e76c333ed95859655c091f572e590c39cabbdbe", size = 52561, upload_time = "2024-09-08T00:38:04.96Z" },
+]
+
+[[package]]
+name = "diff-cover"
+version = "9.2.4"
+source = { registry = "https://pypi.org/simple" }
+resolution-markers = [
+    "python_full_version >= '3.13'",
+    "python_full_version >= '3.12.4' and python_full_version < '3.13'",
+    "python_full_version >= '3.11' and python_full_version < '3.12.4'",
+    "python_full_version == '3.10.*'",
+    "python_full_version >= '3.9.17' and python_full_version < '3.10'",
+]
+dependencies = [
+    { name = "chardet", marker = "python_full_version >= '3.9.17'" },
+    { name = "jinja2", marker = "python_full_version >= '3.9.17'" },
+    { name = "pluggy", marker = "python_full_version >= '3.9.17'" },
+    { name = "pygments", marker = "python_full_version >= '3.9.17'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3f/a8/20e11859ee291893ef9711ca868d277b66cdf886278e73abdb72b172cc5f/diff_cover-9.2.4.tar.gz", hash = "sha256:6ea44711f09199a1b8bcaa2eae002e1f337dd22f2d798fcfd62a6a1554bb2a86", size = 91359, upload_time = "2025-03-09T00:40:31.378Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/75/86/45de73eea30a789350ec91a83cdd525a68ac1ed294ae1a24e7de984e971d/diff_cover-9.2.4-py3-none-any.whl", hash = "sha256:c68b34e368b13888cb04a14aeb509821aab594c171a621e8bd3248435c9dd0c9", size = 53185, upload_time = "2025-03-09T00:40:29.543Z" },
 ]
 
 [[package]]
@@ -2008,12 +2063,15 @@ dependencies = [
 dev = [
     { name = "black", extra = ["jupyter"] },
     { name = "codespell", extra = ["toml"] },
+    { name = "diff-cover", version = "9.2.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9.17'" },
+    { name = "diff-cover", version = "9.2.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9.17'" },
     { name = "ipython" },
     { name = "jupyter" },
     { name = "mypy" },
     { name = "pre-commit" },
     { name = "pylint" },
     { name = "pytest" },
+    { name = "pytest-cov" },
     { name = "pytest-mock" },
     { name = "ruff" },
     { name = "tree-sitter-languages" },
@@ -2035,12 +2093,14 @@ requires-dist = [
 dev = [
     { name = "black", extras = ["jupyter"], specifier = ">=23.7.0,<=23.9.1" },
     { name = "codespell", extras = ["toml"], specifier = ">=2.2.6" },
+    { name = "diff-cover", specifier = ">=9.2.0" },
     { name = "ipython", specifier = "==8.10.0" },
     { name = "jupyter", specifier = ">=1.0.0,<2" },
     { name = "mypy", specifier = "==0.991" },
     { name = "pre-commit", specifier = "==3.2.0" },
     { name = "pylint", specifier = "==2.15.10" },
     { name = "pytest", specifier = "==7.2.1" },
+    { name = "pytest-cov", specifier = ">=6.1.1" },
     { name = "pytest-mock", specifier = "==3.11.1" },
     { name = "ruff", specifier = "==0.0.292" },
     { name = "tree-sitter-languages", specifier = ">=1.8.0,<2" },
@@ -2466,7 +2526,8 @@ name = "networkx"
 version = "3.2.1"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version < '3.10'",
+    "python_full_version >= '3.9.17' and python_full_version < '3.10'",
+    "python_full_version < '3.9.17'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/c4/80/a84676339aaae2f1cfdf9f418701dd634aef9cc76f708ef55c36ff39c3ca/networkx-3.2.1.tar.gz", hash = "sha256:9f1bb5cf3409bf324e0a722c20bdb4c20ee39bf1c30ce8ae499c8502b0b5e0c6", size = 2073928, upload_time = "2023-10-28T08:41:39.364Z" }
 wheels = [
@@ -2576,7 +2637,8 @@ name = "numpy"
 version = "2.0.2"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version < '3.10'",
+    "python_full_version >= '3.9.17' and python_full_version < '3.10'",
+    "python_full_version < '3.9.17'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a9/75/10dd1f8116a8b796cb2c737b674e02d02e80454bda953fa7e65d8c12b016/numpy-2.0.2.tar.gz", hash = "sha256:883c987dee1880e2a864ab0dc9892292582510604156762362d9326444636e78", size = 18902015, upload_time = "2024-08-26T20:19:40.945Z" }
 wheels = [
@@ -3509,6 +3571,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/de/b4/0b378b7bf26a8ae161c3890c0b48a91a04106c5713ce81b4b080ea2f4f18/pytest_asyncio-0.23.8.tar.gz", hash = "sha256:759b10b33a6dc61cce40a8bd5205e302978bbbcc00e279a8b61d9a6a3c82e4d3", size = 46920, upload_time = "2024-07-17T17:39:34.617Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ee/82/62e2d63639ecb0fbe8a7ee59ef0bc69a4669ec50f6d3459f74ad4e4189a2/pytest_asyncio-0.23.8-py3-none-any.whl", hash = "sha256:50265d892689a5faefb84df80819d1ecef566eb3549cf915dfb33569359d1ce2", size = 17663, upload_time = "2024-07-17T17:39:32.478Z" },
+]
+
+[[package]]
+name = "pytest-cov"
+version = "6.1.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "coverage", extra = ["toml"] },
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/25/69/5f1e57f6c5a39f81411b550027bf72842c4567ff5fd572bed1edc9e4b5d9/pytest_cov-6.1.1.tar.gz", hash = "sha256:46935f7aaefba760e716c2ebfbe1c216240b9592966e7da99ea8292d4d3e2a0a", size = 66857, upload_time = "2025-04-05T14:07:51.592Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/28/d0/def53b4a790cfb21483016430ed828f64830dd981ebe1089971cd10cab25/pytest_cov-6.1.1-py3-none-any.whl", hash = "sha256:bddf29ed2d0ab6f4df17b4c55b0a657287db8684af9c42ea546b21b1041b3dde", size = 23841, upload_time = "2025-04-05T14:07:49.641Z" },
 ]
 
 [[package]]
@@ -4460,7 +4535,8 @@ name = "tree-sitter"
 version = "0.23.2"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
-    "python_full_version < '3.10'",
+    "python_full_version >= '3.9.17' and python_full_version < '3.10'",
+    "python_full_version < '3.9.17'",
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0f/50/fd5fafa42b884f741b28d9e6fd366c3f34e15d2ed3aa9633b34e388379e2/tree-sitter-0.23.2.tar.gz", hash = "sha256:66bae8dd47f1fed7bdef816115146d3a41c39b5c482d7bad36d9ba1def088450", size = 166800, upload_time = "2024-10-24T15:31:02.238Z" }
 wheels = [
