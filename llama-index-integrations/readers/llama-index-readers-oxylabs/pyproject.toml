@@ -17,7 +17,7 @@ name = "llama-index-readers-oxylabs"
 version = "0.1.2"
 description = "llama-index readers oxylabs integration"
 readme = "README.md"
-requires-python = ">=3.9, <4.0"
+requires-python = ">=3.10,<4.0"
 license = "MIT"
 authors = [
     {name = "Rostyslav Borovyk", email = "rostyslav.borovyk@oxylabs.io"},

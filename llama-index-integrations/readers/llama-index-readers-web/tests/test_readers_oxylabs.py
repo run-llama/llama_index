@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, AsyncMock
 
 import pytest
+import sys
 
 from llama_index.readers.web.oxylabs_web.base import OxylabsWebReader
 
@@ -21,7 +22,9 @@ READER_TEST_PARAM = pytest.param(
     id="response_success",
 )
 
+skip_if_py39_or_lower = sys.version_info < (3, 10)
 
+@pytest.mark.skipif(skip_if_py39_or_lower, reason="Pytest does not support Python 3.9")
 @pytest.mark.parametrize(
     ("urls", "additional_params", "return_value", "expected_output"),
     [READER_TEST_PARAM],
@@ -47,6 +50,7 @@ def test_sync_oxylabs_reader(
         assert doc.text == expected_output
 
 
+@pytest.mark.skipif(skip_if_py39_or_lower, reason="Pytest does not support Python 3.9")
 @pytest.mark.parametrize(
     ("urls", "additional_params", "return_value", "expected_output"),
     [READER_TEST_PARAM],
