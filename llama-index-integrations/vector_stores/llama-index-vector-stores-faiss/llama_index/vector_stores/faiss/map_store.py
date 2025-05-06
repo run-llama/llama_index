@@ -143,7 +143,7 @@ class FaissMapVectorStore(FaissVectorStore):
             # get the faiss id from the node_id_map
             faiss_id = self._node_id_to_faiss_id_map.get(node_id)
             if faiss_id is not None:
-                del self._faiss_id_to_node_id_map[node_id]
+                del self._faiss_id_to_node_id_map[faiss_id]
             del self._node_id_to_faiss_id_map[node_id]
 
     def query(
