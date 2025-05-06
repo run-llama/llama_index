@@ -135,14 +135,20 @@ def test(
 
     # Print summary
     failed = [
-        r["package"]
+        r["package"].relative_to(repo_root)
         for r in results
         if r["status"] in (ResultStatus.TESTS_FAILED, ResultStatus.COVERAGE_FAILED)
     ]
     install_failed = [
-        r["package"] for r in results if r["status"] == ResultStatus.INSTALL_FAILED
+        r["package"].relative_to(repo_root)
+        for r in results
+        if r["status"] == ResultStatus.INSTALL_FAILED
     ]
-    skipped = [r["package"] for r in results if r["status"] == ResultStatus.SKIPPED]
+    skipped = [
+        r["package"].relative_to(repo_root)
+        for r in results
+        if r["status"] == ResultStatus.SKIPPED
+    ]
 
     if skipped:
         console.print(
