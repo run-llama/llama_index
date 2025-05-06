@@ -31,7 +31,7 @@ name = "llama-index-vector-stores-ApertureDB"
 version = "0.0.2"
 description = "llama-index vector_stores ApertureDB integration"
 authors = [{name = "ApertureData", email = "team@aperturedata.io"}]
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.10,<3.13"
 readme = "README.md"
 license = "MIT"
 dependencies = [

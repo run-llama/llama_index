@@ -1,6 +1,6 @@
 import abc
 from platform import architecture, python_version
-from typing import Any
+from typing import Any, Optional
 from importlib.metadata import version
 
 from llama_index.core.readers.base import BasePydanticReader
@@ -18,7 +18,7 @@ class OxylabsBaseReader(BasePydanticReader, abc.ABC):
     https://developers.oxylabs.io/scraper-apis/web-scraper-api
     """
 
-    top_level_header: str | None = None
+    top_level_header: Optional[str] = None
 
     timeout_s: int = 100
     oxylabs_scraper_url: str = "https://realtime.oxyserps-dev.fun/v1/queries"
