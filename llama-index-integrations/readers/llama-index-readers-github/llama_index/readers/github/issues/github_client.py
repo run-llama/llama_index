@@ -136,7 +136,7 @@ class GitHubIssuesClient:
 
         _client: httpx.AsyncClient
         async with httpx.AsyncClient(
-            headers=_headers, base_url=self._base_url, params=params
+            headers=_headers, base_url=self._base_url, params=params, follow_redirects=True
         ) as _client:
             try:
                 response = await _client.request(
