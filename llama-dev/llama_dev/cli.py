@@ -31,7 +31,7 @@ LLAMA_DEV_THEME = Theme(
 def cli(ctx, repo_root: str):
     """The official CLI for development, testing, and automation in the LlamaIndex monorepo."""
     ctx.obj = {
-        "console": Console(theme=LLAMA_DEV_THEME),
+        "console": Console(theme=LLAMA_DEV_THEME, soft_wrap=True),
         "repo_root": Path(repo_root).resolve(),
     }
 

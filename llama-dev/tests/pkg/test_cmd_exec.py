@@ -1,4 +1,3 @@
-from pathlib import Path
 from unittest import mock
 
 from click.testing import CliRunner
@@ -26,8 +25,8 @@ def test_cmd_exec_invalid_package(mock_is_llama_index):
 
 @mock.patch("llama_dev.pkg.cmd_exec.find_all_packages")
 @mock.patch("llama_dev.pkg.cmd_exec.subprocess.run")
-def test_cmd_exec_all_flag(mock_subprocess, mock_find_all):
-    mock_find_all.return_value = [Path("/fake/pkg1"), Path("/fake/pkg2")]
+def test_cmd_exec_all_flag(mock_subprocess, mock_find_all, data_path):
+    mock_find_all.return_value = [data_path / "fake/pkg1", data_path / "fake/pkg2"]
     mock_subprocess.return_value = mock.Mock(
         returncode=0, stdout="Command output", stderr=""
     )
@@ -102,3 +101,21 @@ def test_cmd_exec_multiple_packages(mock_subprocess, mock_is_llama_index):
     assert result.exit_code == 0
     assert mock_subprocess.call_count == 2
     assert "Command succeeded" in result.output
+
+
+@mock.patch("llama_dev.pkg.cmd_exec.is_llama_index_package")
+@mock.patch("llama_dev.pkg.cmd_exec.subprocess.run")
+def test_cmd_exec_silent(mock_subprocess, mock_is_llama_index):
+    mock_is_llama_index.return_value = True
+    mock_subprocess.return_value = mock.Mock(
+        returncode=0, stdout="Command output", stderr=""
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli, ["pkg", "exec", "valid-pkg", "--silent", "--cmd", "echo hello"]
+    )
+
+    assert result.exit_code == 0
+    assert mock_subprocess.call_count == 1
+    assert result.output == ""
