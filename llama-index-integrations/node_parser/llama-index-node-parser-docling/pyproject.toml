@@ -28,7 +28,7 @@ dev = [
 name = "llama-index-node-parser-docling"
 version = "0.3.2"
 description = "llama-index node_parser docling integration"
-authors = [{ name = "Panos Vagenas", email = "pva@zurich.ibm.com" }]
+authors = [{name = "Panos Vagenas", email = "pva@zurich.ibm.com"}]
 requires-python = "~=3.10"
 readme = "README.md"
 license = "MIT"
