@@ -27,7 +27,7 @@ name = "llama-index-postprocessor-rankllm-rerank"
 version = "0.4.0"
 description = "llama-index postprocessor rankllm-rerank integration"
 authors = [{name = "Ryan Nguyen", email = "ryan.nguyen@uwaterloo.ca"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [

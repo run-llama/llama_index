@@ -77,10 +77,10 @@ class BaseMemoryBlock(BaseModel, Generic[T]):
     accept_short_term_memory: bool = Field(default=True, description="Whether to accept puts from messages ejected from the short-term memory.")
 
     @abstractmethod
-    async def _aget(self, messages: List[ChatMessage], **block_kwargs: Any) -> T:
+    async def _aget(self, messages: Optional[List[ChatMessage]] = None, **block_kwargs: Any) -> T:
         """Pull the memory block (async)."""
 
-    async def aget(self, messages: List[ChatMessage], **block_kwargs: Any) -> T:
+    async def aget(self, messages: Optional[List[ChatMessage]] = None, **block_kwargs: Any) -> T:
         """
         Pull the memory block (async).
 
@@ -209,6 +209,11 @@ class Memory(BaseMemory):
             values["token_flush_size"] = int(token_limit * 0.7)
         elif values.get("token_flush_size", -1) > token_limit:
             values["token_flush_size"] = int(token_limit * 0.7)
+
+        # validate all blocks have unique names
+        block_names = [block.name for block in values.get("memory_blocks", [])]
+        if len(block_names) != len(set(block_names)):
+            raise ValueError("All memory blocks must have unique names.")
 
         return values
 

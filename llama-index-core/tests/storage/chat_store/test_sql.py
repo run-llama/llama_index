@@ -1,4 +1,4 @@
-import aiosqlite  # noqa: F401  needed for pants
+import json
 import pytest
 
 from llama_index.core.base.llms.types import ChatMessage
@@ -251,3 +251,33 @@ async def test_get_keys(chat_store: SQLAlchemyChatStore):
     # Verify keys (note: other tests may add more keys)
     expected_keys = {"keys_user1", "keys_user2", "keys_user3"}
     assert expected_keys.issubset(set(keys))
+
+
+@pytest.mark.asyncio
+async def test_dump_load_store(chat_store: SQLAlchemyChatStore):
+    """Test dumping and loading the store."""
+    # Add some messages
+    await chat_store.add_message("dump_user1", ChatMessage(role="user", content="message1"))
+    await chat_store.add_message("dump_user2", ChatMessage(role="user", content="message2"))
+
+    # Dump the store
+    store_dict = chat_store.model_dump()
+
+    # ensure it's valid json
+    _ = json.dumps(store_dict)
+
+    # Load the store
+    loaded_store = SQLAlchemyChatStore.model_validate(store_dict)
+
+    # verify the loaded store is equivalent to the original store
+    assert loaded_store.table_name == chat_store.table_name
+    assert loaded_store.async_database_uri == chat_store.async_database_uri
+
+    # verify the messages are the same
+    messages = await loaded_store.get_messages("dump_user1")
+    assert len(messages) == 1
+    assert messages[0].content == "message1"
+
+    messages = await loaded_store.get_messages("dump_user2")
+    assert len(messages) == 1
+    assert messages[0].content == "message2"
