@@ -69,10 +69,6 @@ def package_data():
 def test_test_command_requires_base_ref():
     runner = CliRunner()
 
-    result = runner.invoke(cli, ["test"])
-    assert result.exit_code != 0
-    assert "Error: Missing option '--base-ref'" in result.output
-
     result = runner.invoke(cli, ["test", "--base-ref"])
     assert result.exit_code != 0
     assert "Error: Option '--base-ref' requires an argument." in result.output
@@ -244,6 +240,41 @@ def test_success(
     # Check console output
     assert result.exit_code == 0
     assert "✅ test_integration succeeded in 0.1s" in result.stdout
+
+
+@mock.patch("llama_dev.test.find_all_packages")
+@mock.patch("llama_dev.test.get_changed_files")
+@mock.patch("llama_dev.test.get_changed_packages")
+@mock.patch("llama_dev.test.get_dependants_packages")
+def test_package_parameter(
+    mock_get_dependants,
+    mock_get_changed_packages,
+    mock_get_changed_files,
+    mock_find_all_packages,
+    data_path,
+):
+    # Setup minimal test data
+    mock_find_all_packages.return_value = set()
+    mock_get_changed_files.return_value = set()
+    mock_get_changed_packages.return_value = set()
+    mock_get_dependants.return_value = set()
+
+    runner = CliRunner()
+    runner.invoke(
+        cli,
+        [
+            "--repo-root",
+            data_path,
+            "test",
+            "--base-ref",
+            "main",
+            "package_1",
+            "package_2",
+        ],
+    )
+    mock_get_dependants.assert_called_with(
+        {data_path / "package_1", data_path / "package_2"}, set()
+    )
 
 
 #
