@@ -210,6 +210,10 @@ class Memory(BaseMemory):
         elif values.get("token_flush_size", -1) > token_limit:
             values["token_flush_size"] = int(token_limit * 0.1)
 
+        chat_history_ratio = values.get("chat_history_token_ratio", 0.7)
+        if token_limit * chat_history_ratio <= values.get("token_flush_size", -1):
+            raise ValueError("token_limit * chat_history_ratio must evaluate to a number greater than the token flush size.")
+
         # validate all blocks have unique names
         block_names = [block.name for block in values.get("memory_blocks", [])]
         if len(block_names) != len(set(block_names)):
@@ -451,7 +455,7 @@ class Memory(BaseMemory):
                     # Get actual index (since we enumerated in reverse)
                     actual_idx = len(result) - 1 - session_idx
                     # Update existing user message
-                    result[actual_idx].blocks = [*result[actual_idx].blocks, *memory_content]
+                    result[actual_idx].blocks = [*memory_content, *result[actual_idx].blocks]
                 else:
                     raise ValueError("No user message found in chat history!")
 
