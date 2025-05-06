@@ -50,8 +50,9 @@ NO_TESTS_INDICATOR = "no tests ran"
     default=0,
     help="Compute test coverage",
 )
-@click.option("--base-ref", required=True)
+@click.option("--base-ref", required=False)
 @click.option("--workers", default=8)
+@click.argument("package_names", required=False, nargs=-1)
 @click.pass_obj
 def test(
     obj: dict,
@@ -60,6 +61,7 @@ def test(
     cov_fail_under: int,
     base_ref: str,
     workers: int,
+    package_names: tuple,
 ):
     # Fail on incompatible configurations
     if cov_fail_under and not cov:
@@ -67,22 +69,31 @@ def test(
             "You have to pass --cov in order to use --cov-fail-under"
         )
 
-    if not base_ref:
+    if base_ref is not None and not base_ref:
         raise click.UsageError("Option '--base-ref' cannot be empty.")
+
+    if not package_names and not base_ref:
+        raise click.UsageError(
+            "Either pass '--base-ref' or provide at least one package name."
+        )
 
     console = obj["console"]
     repo_root = obj["repo_root"]
-
-    # Collect the packages to test
+    packages_to_test: set[Path] = set()
     all_packages = find_all_packages(repo_root)
-    # Get the files that changed from the base branch
-    changed_files = get_changed_files(repo_root, base_ref)
-    # Get the packages containing the changed files
-    changed_packages = get_changed_packages(changed_files, all_packages)
+
+    if package_names:
+        changed_packages: set[Path] = {repo_root / Path(pn) for pn in package_names}
+    else:
+        # Get the files that changed from the base branch
+        changed_files = get_changed_files(repo_root, base_ref)
+        # Get the packages containing the changed files
+        changed_packages = get_changed_packages(changed_files, all_packages)
+
     # Find the dependants of the changed packages
     dependants = get_dependants_packages(changed_packages, all_packages)
     # Test the packages directly affected and their dependants
-    packages_to_test: set[Path] = changed_packages | dependants
+    packages_to_test = changed_packages | dependants
 
     # Test the packages using a process pool
     results = []
@@ -124,14 +135,20 @@ def test(
 
     # Print summary
     failed = [
-        r["package"]
+        r["package"].relative_to(repo_root)
         for r in results
         if r["status"] in (ResultStatus.TESTS_FAILED, ResultStatus.COVERAGE_FAILED)
     ]
     install_failed = [
-        r["package"] for r in results if r["status"] == ResultStatus.INSTALL_FAILED
+        r["package"].relative_to(repo_root)
+        for r in results
+        if r["status"] == ResultStatus.INSTALL_FAILED
     ]
-    skipped = [r["package"] for r in results if r["status"] == ResultStatus.SKIPPED]
+    skipped = [
+        r["package"].relative_to(repo_root)
+        for r in results
+        if r["status"] == ResultStatus.SKIPPED
+    ]
 
     if skipped:
         console.print(
@@ -211,16 +228,19 @@ def _pytest(
 def _diff_cover(
     package_path: Path, env: dict[str, str], cov_fail_under: int, base_ref: str
 ) -> subprocess.CompletedProcess:  # pragma: no cover
+    diff_cover_cmd = [
+        "uv",
+        "run",
+        "--",
+        "diff-cover",
+        "coverage.xml",
+        f"--fail-under={cov_fail_under}",
+    ]
+    if base_ref:
+        diff_cover_cmd.append(f"--compare-branch={base_ref}")
+
     return subprocess.run(
-        [
-            "uv",
-            "run",
-            "--",
-            "diff-cover",
-            "coverage.xml",
-            f"--fail-under={cov_fail_under}",
-            f"--compare-branch={base_ref}",
-        ],
+        diff_cover_cmd,
         cwd=package_path,
         text=True,
         capture_output=True,
