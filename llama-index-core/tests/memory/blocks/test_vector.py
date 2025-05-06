@@ -1,12 +1,12 @@
 import pytest
 from typing import Any, Dict, List, Sequence
 
-from llama_index.core.base.llms.types import ChatMessage, TextBlock
+from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.embeddings import MockEmbedding
 from llama_index.core.memory.memory_blocks.vector import VectorMemoryBlock
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import RichPromptTemplate
-from llama_index.core.schema import BaseNode, TextNode
+from llama_index.core.schema import BaseNode, TextNode, NodeWithScore
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     VectorStoreQuery,
@@ -71,11 +71,11 @@ class MockVectorStore(BasePydanticVectorStore):
 class MockNodePostprocessor(BaseNodePostprocessor):
     """Mock node postprocessor for testing."""
 
-    def _postprocess_nodes(self, nodes: List[BaseNode], query: Any = None) -> List[BaseNode]:
+    def _postprocess_nodes(self, nodes: List[NodeWithScore], query: Any = None) -> List[NodeWithScore]:
         """Add a prefix to each node's text."""
         for node in nodes:
-            if isinstance(node, TextNode):
-                node.text = f"PROCESSED: {node.text}"
+            if isinstance(node.node, TextNode):
+                node.node.text = f"PROCESSED: {node.node.text}"
         return nodes
 
 
@@ -101,18 +101,13 @@ def vector_memory_block(mock_vector_store, mock_embedding):
     )
 
 
-def create_chat_message(role: str, content: str) -> ChatMessage:
-    """Helper to create a chat message."""
-    return ChatMessage(role=role, content=None, blocks=[TextBlock(text=content)])
-
-
 @pytest.mark.asyncio
 async def test_vector_memory_block_put(vector_memory_block):
     """Test putting messages in the vector memory block."""
     # Create messages
     messages = [
-        create_chat_message("user", "Hello, how are you?"),
-        create_chat_message("assistant", "I'm doing well, thank you for asking!"),
+        ChatMessage(role="user", content="Hello, how are you?"),
+        ChatMessage(role="assistant", content="I'm doing well, thank you for asking!"),
     ]
 
     # Put messages in memory
@@ -132,16 +127,16 @@ async def test_vector_memory_block_get(vector_memory_block):
     """Test getting messages from the vector memory block."""
     # Create and store some messages
     history_messages = [
-        create_chat_message("user", "What's the capital of France?"),
-        create_chat_message("assistant", "The capital of France is Paris."),
-        create_chat_message("user", "What about Germany?"),
-        create_chat_message("assistant", "The capital of Germany is Berlin."),
+        ChatMessage(role="user", content="What's the capital of France?"),
+        ChatMessage(role="assistant", content="The capital of France is Paris."),
+        ChatMessage(role="user", content="What about Germany?"),
+        ChatMessage(role="assistant", content="The capital of Germany is Berlin."),
     ]
 
     await vector_memory_block.aput(messages=history_messages)
 
     # Create a new query
-    query_messages = [create_chat_message("user", "Tell me about Paris.")]
+    query_messages = [ChatMessage(role="user", content="Tell me about Paris.")]
 
     # Get relevant information
     result = await vector_memory_block.aget(messages=query_messages)
@@ -189,19 +184,19 @@ async def test_retrieval_context_window(mock_vector_store, mock_embedding):
 
     # Create and store some messages
     history_messages = [
-        create_chat_message("user", "What's your name?"),
-        create_chat_message("assistant", "I'm an AI assistant."),
-        create_chat_message("user", "What's the capital of France?"),
-        create_chat_message("assistant", "The capital of France is Paris."),
+        ChatMessage(role="user", content="What's your name?"),
+        ChatMessage(role="assistant", content="I'm an AI assistant."),
+        ChatMessage(role="user", content="What's the capital of France?"),
+        ChatMessage(role="assistant", content="The capital of France is Paris."),
     ]
 
     await memory_block.aput(messages=history_messages)
 
     # Create a query with multiple messages
     query_messages = [
-        create_chat_message("user", "What about the UK?"),
-        create_chat_message("assistant", "The capital of the UK is London."),
-        create_chat_message("user", "And Germany?"),
+        ChatMessage(role="user", content="What about the UK?"),
+        ChatMessage(role="assistant", content="The capital of the UK is London."),
+        ChatMessage(role="user", content="And Germany?"),
     ]
 
     # The retrieval should only use the last 2 messages
@@ -229,14 +224,14 @@ async def test_node_postprocessors(mock_vector_store, mock_embedding):
 
     # Create and store some messages
     history_messages = [
-        create_chat_message("user", "What's the capital of France?"),
-        create_chat_message("assistant", "The capital of France is Paris."),
+        ChatMessage(role="user", content="What's the capital of France?"),
+        ChatMessage(role="assistant", content="The capital of France is Paris."),
     ]
 
     await memory_block.aput(messages=history_messages)
 
     # Create a query
-    query_messages = [create_chat_message("user", "Tell me about Paris.")]
+    query_messages = [ChatMessage(role="user", content="Tell me about Paris.")]
 
     # Get relevant information - this should be processed
     result = await memory_block.aget(messages=query_messages)
@@ -260,14 +255,14 @@ async def test_format_template(mock_vector_store, mock_embedding):
 
     # Create and store some messages
     history_messages = [
-        create_chat_message("user", "What's the capital of France?"),
-        create_chat_message("assistant", "The capital of France is Paris."),
+        ChatMessage(role="user", content="What's the capital of France?"),
+        ChatMessage(role="assistant", content="The capital of France is Paris."),
     ]
 
     await memory_block.aput(messages=history_messages)
 
     # Create a query
-    query_messages = [create_chat_message("user", "Tell me about Paris.")]
+    query_messages = [ChatMessage(role="user", content="Tell me about Paris.")]
 
     # Get relevant information with custom format
     result = await memory_block.aget(messages=query_messages)

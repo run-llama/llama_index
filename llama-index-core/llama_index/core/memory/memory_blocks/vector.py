@@ -111,13 +111,16 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
         )
 
         results = await self.vector_store.aquery(query)
-        nodes_with_scores = [NodeWithScore(node=node, score=score) for node, score in zip(results.nodes or [], results.similarities or [])]
+        nodes_with_scores = [
+            NodeWithScore(node=node, score=score)
+            for node, score in zip(results.nodes or [], results.similarities or [])
+        ]
         if not nodes_with_scores:
             return ""
 
         # Apply postprocessors
         for postprocessor in self.node_postprocessors:
-            nodes_with_scores = await postprocessor.apostprocess_nodes(nodes_with_scores)
+            nodes_with_scores = await postprocessor.apostprocess_nodes(nodes_with_scores, query_str=query_text)
 
         # Format the results
         retrieved_text = "\n\n".join([node.get_content() for node in nodes_with_scores])
