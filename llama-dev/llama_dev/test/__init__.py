@@ -29,6 +29,9 @@ class ResultStatus(Enum):
     COVERAGE_FAILED = auto()
 
 
+NO_TESTS_INDICATOR = "no tests ran"
+
+
 @click.command(short_help="Run tests across the monorepo")
 @click.option(
     "--fail-fast",
@@ -64,6 +67,9 @@ def test(
             "You have to pass --cov in order to use --cov-fail-under"
         )
 
+    if not base_ref:
+        raise click.UsageError("Option '--base-ref' cannot be empty.")
+
     console = obj["console"]
     repo_root = obj["repo_root"]
 
@@ -98,17 +104,21 @@ def test(
             results.append(result)
 
             # Print results as they complete
-            package = result["package"]
+            package: Path = result["package"]
             if result["status"] == ResultStatus.INSTALL_FAILED:
-                console.print(f"❗ Unable to build package {package}")
+                console.print(
+                    f"❗ Unable to build package {package.relative_to(repo_root)}"
+                )
                 console.print(f"Error:\n{result['stderr']}", style="warning")
             elif result["status"] == ResultStatus.TESTS_PASSED:
-                console.print(f"✅ {package} succeeded in {result['time']}")
+                console.print(
+                    f"✅ {package.relative_to(repo_root)} succeeded in {result['time']}"
+                )
             elif result["status"] == ResultStatus.SKIPPED:
-                console.print(f"⏭️  {package} skipped")
+                console.print(f"⏭️  {package.relative_to(repo_root)} skipped")
                 console.print(f"Error:\n{result['stderr']}", style="warning")
             else:
-                console.print(f"❌ {package} failed")
+                console.print(f"❌ {package.relative_to(repo_root)} failed")
                 console.print(f"Error:\n{result['stderr']}", style="error")
                 console.print(f"Output:\n{result['stdout']}", style="info")
 
@@ -148,7 +158,9 @@ def test(
         )
 
 
-def _uv_sync(package_path: Path, env: dict[str, str]) -> subprocess.CompletedProcess:
+def _uv_sync(
+    package_path: Path, env: dict[str, str]
+) -> subprocess.CompletedProcess:  # pragma: no cover
     """Run 'uv sync' on a package folder."""
     return subprocess.run(
         ["uv", "sync"],
@@ -161,7 +173,7 @@ def _uv_sync(package_path: Path, env: dict[str, str]) -> subprocess.CompletedPro
 
 def _uv_install_local(
     package_path: Path, env: dict[str, str], install_local: set[Path]
-) -> subprocess.CompletedProcess:
+) -> subprocess.CompletedProcess:  # pragma: no cover
     """Run 'uv pip install -U <packge_path1>, <package_path2>, ...' for locally changed packages."""
     return subprocess.run(
         ["uv", "pip", "install", "-U", *install_local],
@@ -198,7 +210,7 @@ def _pytest(
 
 def _diff_cover(
     package_path: Path, env: dict[str, str], cov_fail_under: int, base_ref: str
-) -> subprocess.CompletedProcess:
+) -> subprocess.CompletedProcess:  # pragma: no cover
     return subprocess.run(
         [
             "uv",
@@ -227,7 +239,7 @@ def _run_tests(
     package_data = load_pyproject(package_path)
     if not is_python_version_compatible(package_data):
         return {
-            "package": str(package_path),
+            "package": package_path,
             "status": ResultStatus.SKIPPED,
             "stdout": "",
             "stderr": f"Skipped: Not compatible with Python {sys.version_info.major}.{sys.version_info.minor}",
@@ -246,7 +258,7 @@ def _run_tests(
     if result.returncode != 0:
         elapsed_time = time.perf_counter() - start
         return {
-            "package": str(package_path),
+            "package": package_path,
             "status": ResultStatus.INSTALL_FAILED,
             "stdout": result.stdout,
             "stderr": result.stderr,
@@ -265,7 +277,7 @@ def _run_tests(
         if result.returncode != 0:
             elapsed_time = time.perf_counter() - start
             return {
-                "package": str(package_path),
+                "package": package_path,
                 "status": ResultStatus.INSTALL_FAILED,
                 "stdout": result.stdout,
                 "stderr": result.stderr,
@@ -274,10 +286,11 @@ def _run_tests(
 
     # Run pytest
     result = _pytest(package_path, env, cov)
-    if result.returncode != 0:
+    # Only fail if there are tests and they failed
+    if result.returncode != 0 and NO_TESTS_INDICATOR not in str(result.stdout).lower():
         elapsed_time = time.perf_counter() - start
         return {
-            "package": str(package_path),
+            "package": package_path,
             "status": ResultStatus.TESTS_FAILED,
             "stdout": result.stdout,
             "stderr": result.stderr,
@@ -290,7 +303,7 @@ def _run_tests(
         if result.returncode != 0:
             elapsed_time = time.perf_counter() - start
             return {
-                "package": str(package_path),
+                "package": package_path,
                 "status": ResultStatus.COVERAGE_FAILED,
                 "stdout": result.stdout,
                 "stderr": result.stderr,
@@ -300,7 +313,7 @@ def _run_tests(
     # All done
     elapsed_time = time.perf_counter() - start
     return {
-        "package": str(package_path),
+        "package": package_path,
         "status": ResultStatus.TESTS_PASSED,
         "stdout": result.stdout,
         "stderr": result.stderr,

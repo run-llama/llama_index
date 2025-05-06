@@ -1,9 +1,6 @@
 name: Unit Testing
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
 
 env:
@@ -35,18 +32,21 @@ jobs:
       - name: Run tests
         if: ${{ matrix.python-version != env.COV_PYTHON_VERSION }}
         shell: bash
+        working-directory: llama-dev
         run: |
           git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
-          uv run -- python -u scripts/run_ci_tests.py \
+          uv run -- llama-dev --repo-root ".." test \
             --workers ${{ env.NUM_WORKERS }} \
-            --base-ref=${{ github.event.pull_request.base.ref }}
+            --base-ref ${{ github.event.pull_request.base.ref }}
 
       - name: Run tests with coverage
         if: ${{ matrix.python-version == env.COV_PYTHON_VERSION }}
         shell: bash
+        working-directory: llama-dev
         run: |
           git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
-          uv run -- python -u scripts/run_ci_tests.py \
+          uv run -- llama-dev --repo-root ".." test \
             --workers ${{ env.NUM_WORKERS }} \
             --base-ref=${{ github.event.pull_request.base.ref }} \
+            --cov \
             --cov-fail-under=${{ env.COV_FAIL_UNDER }}
