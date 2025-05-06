@@ -1,9 +1,7 @@
 """
-Faiss Vector store map index.
+Faiss Map Vector Store index.
 
-This wraps the base Faiss vector store and adds handling for
-the Faiss IDMap and IDMap2 indexes. This allows for
-update/delete functionality through node_id and ref_doc_id mapping.
+An index that is built on top of an existing vector store.
 
 """
 import numpy as np
@@ -17,7 +15,41 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryResult,
 )
 
-class FaissVectorMapStore(FaissVectorStore):
+class FaissMapVectorStore(FaissVectorStore):
+    """
+    Faiss Map Vector Store.
+
+    This wraps the base Faiss vector store and adds handling for
+    the Faiss IDMap and IDMap2 indexes. This allows for
+    update/delete functionality through node_id and ref_doc_id mapping.
+
+    Embeddings are stored within a Faiss index.
+
+    During query time, the index uses Faiss to query for the top
+    k embeddings, and returns the corresponding indices.
+
+    Args:
+        faiss_index (faiss.IndexIDMap or faiss.IndexIDMap2): Faiss id map index instance
+
+    Examples:
+        `pip install llama-index-vector-stores-faiss faiss-cpu`
+
+        ```python
+        from llama_index.vector_stores.faiss import FaissMapVectorStore
+        import faiss
+
+        # create a faiss index
+        d = 1536  # dimension
+        faiss_index = faiss.IndexFlatL2(d)
+
+        # wrap it in an IDMap or IDMap2
+        id_map_index = faiss.IndexIDMap2(faiss_index)
+
+        vector_store = FaissMapVectorStore(faiss_index=id_map_index)
+        ```
+
+    """
+
     # ref_doc_id_map is used to map the ref_doc_id to fiass index id
     _ref_doc_id_map = PrivateAttr()
     # node_id_map is used to map the faiss index id to llama_index node id
