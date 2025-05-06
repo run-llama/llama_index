@@ -95,8 +95,6 @@ def test(
     dependants = get_dependants_packages(changed_packages, all_packages)
     # Test the packages directly affected and their dependants
     packages_to_test = changed_packages | dependants
-    # Filter out packages that are not testable
-    packages_to_test = {p for p in packages_to_test if package_has_tests(p)}
 
     # Test the packages using a process pool
     results = []
@@ -266,6 +264,16 @@ def _run_tests(
             "status": ResultStatus.SKIPPED,
             "stdout": "",
             "stderr": f"Skipped: Not compatible with Python {sys.version_info.major}.{sys.version_info.minor}",
+            "time": "0.00s",
+        }
+
+    # Filter out packages that are not testable
+    if not package_has_tests(package_path):
+        return {
+            "package": package_path,
+            "status": ResultStatus.SKIPPED,
+            "stdout": "",
+            "stderr": f"Skipped: package has no tests",
             "time": "0.00s",
         }
 
