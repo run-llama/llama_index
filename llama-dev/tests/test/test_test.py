@@ -66,7 +66,7 @@ def package_data():
     }
 
 
-def test_test_command_requires_base_ref():
+def test_test_command_base_ref():
     runner = CliRunner()
 
     result = runner.invoke(cli, ["test", "--base-ref"])
@@ -76,6 +76,17 @@ def test_test_command_requires_base_ref():
     result = runner.invoke(cli, ["test", "--base-ref="])
     assert result.exit_code != 0
     assert "Error: Option '--base-ref' cannot be empty." in result.output
+
+
+def test_test_command_requires_base_ref_or_packages():
+    runner = CliRunner()
+
+    result = runner.invoke(cli, ["test"])
+    assert result.exit_code != 1
+    assert (
+        "Error: Either pass '--base-ref' or provide at least one package name."
+        in result.output
+    )
 
 
 def test_test_command_cov_fail_under_requires_cov():

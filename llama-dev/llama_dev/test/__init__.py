@@ -72,6 +72,11 @@ def test(
     if base_ref is not None and not base_ref:
         raise click.UsageError("Option '--base-ref' cannot be empty.")
 
+    if not package_names and not base_ref:
+        raise click.UsageError(
+            "Either pass '--base-ref' or provide at least one package name."
+        )
+
     console = obj["console"]
     repo_root = obj["repo_root"]
     packages_to_test: set[Path] = set()
