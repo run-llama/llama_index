@@ -299,8 +299,8 @@ In `llama_index.core.memory`, we offer a few different memory types:
 
 You can find a few examples of memory in action below:
 
-- [Memory](../../../examples/agent/memory/memory.ipynb)
-- [Custom Memory](../../../examples/agent/memory/custom_memory.ipynb)
+- [Memory](../../../examples/memory/memory.ipynb)
+- [Custom Memory](../../../examples/memory/custom_memory.ipynb)
 
 **NOTE:** Deprecated examples:
 - [Chat Memory Buffer](../../../examples/agent/memory/chat_memory_buffer.ipynb)
