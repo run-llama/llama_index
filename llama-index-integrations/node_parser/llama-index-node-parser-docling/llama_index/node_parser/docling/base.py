@@ -33,8 +33,7 @@ class DoclingNodeParser(NodeParser):
 
     @runtime_checkable
     class NodeIDGenCallable(Protocol):
-        def __call__(self, i: int, node: BaseNode) -> str:
-            ...
+        def __call__(self, i: int, node: BaseNode) -> str: ...
 
     @staticmethod
     def _uuid4_node_id_gen(i: int, node: BaseNode) -> str:
@@ -66,6 +65,21 @@ class DoclingNodeParser(NodeParser):
                     k for k in chunk.meta.excluded_embed if k in metadata
                 ]
                 excl_llm_keys = [k for k in chunk.meta.excluded_llm if k in metadata]
+
+                excl_embed_keys.extend(
+                    [
+                        k
+                        for k in li_doc.excluded_embed_metadata_keys
+                        if k not in excl_embed_keys
+                    ]
+                )
+                excl_llm_keys.extend(
+                    [
+                        k
+                        for k in li_doc.excluded_llm_metadata_keys
+                        if k not in excl_llm_keys
+                    ]
+                )
 
                 node = TextNode(
                     id_=self.id_func(i=i, node=li_doc),
