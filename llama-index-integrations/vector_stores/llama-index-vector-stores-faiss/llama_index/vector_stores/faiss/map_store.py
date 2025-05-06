@@ -21,7 +21,7 @@ class FaissMapVectorStore(FaissVectorStore):
 
     This wraps the base Faiss vector store and adds handling for
     the Faiss IDMap and IDMap2 indexes. This allows for
-    update/delete functionality through node_id and ref_doc_id mapping.
+    update/delete functionality through node_id and faiss_id mapping.
 
     Embeddings are stored within a Faiss index.
 
@@ -50,10 +50,10 @@ class FaissMapVectorStore(FaissVectorStore):
 
     """
 
-    # ref_doc_id_map is used to map the ref_doc_id to fiass index id
-    _ref_doc_id_map = PrivateAttr()
-    # node_id_map is used to map the faiss index id to llama_index node id
-    _node_id_map = PrivateAttr()
+    # _node_id_to_faiss_id_map is used to map the node id to the faiss id
+    _node_id_to_faiss_id_map = PrivateAttr()
+    # _faiss_id_to_node_id_map is used to map the faiss id to the node id
+    _faiss_id_to_node_id_map = PrivateAttr()
 
     def __init__(
         self,
@@ -76,8 +76,8 @@ class FaissMapVectorStore(FaissVectorStore):
                 "Please create an IndexIDMap2 index and pass it to the FaissVectorMapStore."
             )
         super().__init__(faiss_index=faiss_index)
-        self._ref_doc_id_map = {}
-        self._node_id_map = {}
+        self._node_id_to_faiss_id_map = {}
+        self._faiss_id_to_node_id_map = {}
 
     def add(
         self,
@@ -97,9 +97,8 @@ class FaissMapVectorStore(FaissVectorStore):
         for node in nodes:
             text_embedding = node.get_embedding()
             text_embedding_np = np.array(text_embedding, dtype="float32")[np.newaxis, :]
-            new_id = str(self._faiss_index.ntotal)
-            self._ref_doc_id_map[node.ref_doc_id] = self._faiss_index.ntotal
-            self._node_id_map[new_id] = node.id_
+            self._node_id_to_faiss_id_map[node.id_] = self._faiss_index.ntotal
+            self._faiss_id_to_node_id_map[self._faiss_index.ntotal] = node.id_
             self._faiss_index.add_with_ids(text_embedding_np, self._faiss_index.ntotal)
             new_ids.append(node.id_)
         return new_ids
@@ -112,13 +111,15 @@ class FaissMapVectorStore(FaissVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        if ref_doc_id in self._ref_doc_id_map:
-            # https://github.com/facebookresearch/faiss/wiki/Special-operations-on-indexes#removing-elements-from-an-index
-            self._faiss_index.remove_ids(np.array([int(self._ref_doc_id_map[ref_doc_id])], dtype=np.int64))
-            del self._ref_doc_id_map[ref_doc_id]
-        # node_id_map is only used for indext_struct handling and shouldn't reference an actual document
-        if ref_doc_id in self._node_id_map:
-            del self._node_id_map[ref_doc_id]
+        # only handle delete on node_ids
+        if ref_doc_id in self._node_id_to_faiss_id_map:
+            faiss_id = self._node_id_to_faiss_id_map[ref_doc_id]
+            # remove the faiss id from the faiss index
+            self._faiss_index.remove_ids(np.array([faiss_id], dtype=np.int64))
+            # remove the node id from the node id map
+            del self._node_id_to_faiss_id_map[ref_doc_id]
+            # remove the faiss id from the faiss id map
+            del self._faiss_id_to_node_id_map[faiss_id]
 
     def delete_nodes(
         self,
@@ -129,18 +130,21 @@ class FaissMapVectorStore(FaissVectorStore):
         faiss_ids = []
         for node_id in node_ids:
             # get the faiss id from the node_id_map
-            faiss_id = self._node_id_map.get(node_id)
+            faiss_id = self._node_id_to_faiss_id_map.get(node_id)
             if faiss_id is not None:
                 faiss_ids.append(faiss_id)
         if not faiss_ids:
             return
 
         self._faiss_index.remove_ids(np.array(faiss_ids, dtype=np.int64))
+
+        # cleanup references
         for node_id in node_ids:
             # get the faiss id from the node_id_map
-            faiss_id = self._node_id_map.get(node_id)
+            faiss_id = self._node_id_to_faiss_id_map.get(node_id)
             if faiss_id is not None:
-                del self._node_id_map[node_id]
+                del self._faiss_id_to_node_id_map[node_id]
+            del self._node_id_to_faiss_id_map[node_id]
 
     def query(
         self,
@@ -177,7 +181,7 @@ class FaissMapVectorStore(FaissVectorStore):
             if idx < 0:
                 continue
             filtered_dists.append(dist)
-            filtered_node_idxs.append(self._node_id_map[str(idx)])
+            filtered_node_idxs.append(self._faiss_id_to_node_id_map[idx])
 
         return VectorStoreQueryResult(
             similarities=filtered_dists, ids=filtered_node_idxs
