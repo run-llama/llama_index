@@ -16,6 +16,7 @@ from llama_dev.utils import (
     get_dependants_packages,
     is_python_version_compatible,
     load_pyproject,
+    package_has_tests,
 )
 
 
@@ -263,6 +264,16 @@ def _run_tests(
             "status": ResultStatus.SKIPPED,
             "stdout": "",
             "stderr": f"Skipped: Not compatible with Python {sys.version_info.major}.{sys.version_info.minor}",
+            "time": "0.00s",
+        }
+
+    # Filter out packages that are not testable
+    if not package_has_tests(package_path):
+        return {
+            "package": package_path,
+            "status": ResultStatus.SKIPPED,
+            "stdout": "",
+            "stderr": f"Skipped: package has no tests",
             "time": "0.00s",
         }
 
