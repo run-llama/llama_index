@@ -13,7 +13,8 @@ T = TypeVar("T", bound="BaseWorkflowAgent")  # type: ignore[name-defined]
 
 
 class SingleAgentRunnerMixin(ABC):
-    """Mixin class for executing a single agent within a workflow system.
+    """
+    Mixin class for executing a single agent within a workflow system.
     This class provides the necessary interface for running a single agent.
     """
 
@@ -25,7 +26,7 @@ class SingleAgentRunnerMixin(ABC):
         return instance._get_steps()
 
     def run(
-        self: T,
+        self,
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
@@ -37,7 +38,7 @@ class SingleAgentRunnerMixin(ABC):
         """Run the agent."""
         from llama_index.core.agent.workflow import AgentWorkflow
 
-        workflow = AgentWorkflow(agents=[self], **workflow_kwargs)
+        workflow = AgentWorkflow(agents=[self], **workflow_kwargs)  # type: ignore[list-item]
         return workflow.run(
             user_msg=user_msg,
             chat_history=chat_history,

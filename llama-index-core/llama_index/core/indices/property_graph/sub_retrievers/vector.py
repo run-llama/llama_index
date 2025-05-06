@@ -20,7 +20,8 @@ from llama_index.core.vector_stores.types import (
 
 
 class VectorContextRetriever(BasePGRetriever):
-    """A retriever that uses a vector store to retrieve nodes based on a query.
+    """
+    A retriever that uses a vector store to retrieve nodes based on a query.
 
     Args:
         graph_store (PropertyGraphStore):
@@ -38,6 +39,7 @@ class VectorContextRetriever(BasePGRetriever):
             The depth of the path to retrieve for each node. Defaults to 1 (i.e. a triple).
         similarity_score (float, optional):
             The minimum similarity score to retrieve the nodes. Defaults to None.
+
     """
 
     def __init__(

@@ -48,7 +48,8 @@ if TYPE_CHECKING:
 
 
 class DeepInfraLLM(FunctionCallingLLM):
-    """DeepInfra LLM.
+    """
+    DeepInfra LLM.
 
     Examples:
         `pip install llama-index-llms-deepinfra`
@@ -67,6 +68,7 @@ class DeepInfraLLM(FunctionCallingLLM):
         response = llm.complete("Hello World!")
         print(response)
         ```
+
     """
 
     model: str = Field(
@@ -176,6 +178,7 @@ class DeepInfraLLM(FunctionCallingLLM):
 
         Returns:
             str: The generated text completion.
+
         """
         payload = self._build_payload(prompt=prompt, **kwargs)
         result = self._client.request(INFERENCE_ENDPOINT, payload)
@@ -192,6 +195,7 @@ class DeepInfraLLM(FunctionCallingLLM):
 
         Yields:
             CompletionResponseGen: The streaming text completion.
+
         """
         payload = self._build_payload(prompt=prompt, **kwargs)
 
@@ -214,6 +218,7 @@ class DeepInfraLLM(FunctionCallingLLM):
 
         Returns:
             ChatResponse: The chat response containing a sequence of messages.
+
         """
         messages = chat_messages_to_list(messages)
         payload = self._build_payload(messages=messages, **kwargs)
@@ -244,6 +249,7 @@ class DeepInfraLLM(FunctionCallingLLM):
 
         Yields:
             ChatResponseGen: The chat response containing a sequence of messages.
+
         """
         messages = chat_messages_to_list(chat_messages)
         payload = self._build_payload(messages=messages, **kwargs)
@@ -278,6 +284,7 @@ class DeepInfraLLM(FunctionCallingLLM):
 
         Returns:
             CompletionResponse: The generated text completion.
+
         """
         payload = self._build_payload(prompt=prompt, **kwargs)
 
@@ -297,6 +304,7 @@ class DeepInfraLLM(FunctionCallingLLM):
 
         Yields:
             CompletionResponseAsyncGen: The streaming text completion.
+
         """
         payload = self._build_payload(prompt=prompt, **kwargs)
 
@@ -326,6 +334,7 @@ class DeepInfraLLM(FunctionCallingLLM):
 
         Returns:
             ChatResponse: The chat response containing a sequence of messages.
+
         """
         messages = chat_messages_to_list(chat_messages)
         payload = self._build_payload(messages=messages, **kwargs)
@@ -355,6 +364,7 @@ class DeepInfraLLM(FunctionCallingLLM):
 
         Yields:
             ChatResponseAsyncGen: The chat response containing a sequence of messages.
+
         """
         messages = chat_messages_to_list(chat_messages)
         payload = self._build_payload(messages=messages, **kwargs)
@@ -469,6 +479,7 @@ class DeepInfraLLM(FunctionCallingLLM):
 
         Returns:
             Dict[str, Any]: The API request payload.
+
         """
         return {
             **self.generate_kwargs,

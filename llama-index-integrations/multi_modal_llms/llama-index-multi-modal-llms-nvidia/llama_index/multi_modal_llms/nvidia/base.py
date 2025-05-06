@@ -70,6 +70,7 @@ class NVIDIAClient:
 
         Returns:
             List of models
+
         """
         return [Model(id=model) for model in NVIDIA_MULTI_MODAL_MODELS]
 
@@ -90,6 +91,7 @@ class NVIDIAClient:
 
         Returns:
             Dict[str, Any]: The API response.
+
         """
 
         def perform_request():
@@ -123,6 +125,7 @@ class NVIDIAClient:
 
         Returns:
             Dict[str, Any]: The API response.
+
         """
         async with aiohttp.ClientSession() as session:
             async with session.post(

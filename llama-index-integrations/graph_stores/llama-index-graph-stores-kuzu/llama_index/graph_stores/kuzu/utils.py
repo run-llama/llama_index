@@ -17,11 +17,14 @@ def get_list_from_literal(literal: _LiteralGenericAlias) -> List[str]:
     """
     Get a list of strings from a Literal type.
 
-    Parameters:
+    Parameters
+    ----------
     literal (_LiteralGenericAlias): The Literal type from which to extract the strings.
 
-    Returns:
+    Returns
+    -------
     List[str]: A list of strings extracted from the Literal type.
+
     """
     if not isinstance(literal, _LiteralGenericAlias):
         raise TypeError(
@@ -34,11 +37,14 @@ def remove_empty_values(input_dict):
     """
     Remove entries with empty values from the dictionary.
 
-    Parameters:
+    Parameters
+    ----------
     input_dict (dict): The dictionary from which empty values need to be removed.
 
-    Returns:
+    Returns
+    -------
     dict: A new dictionary with all empty values removed.
+
     """
     # Create a new dictionary excluding empty values and remove the `e.` prefix from the keys
     return {key.replace("e.", ""): value for key, value in input_dict.items() if value}

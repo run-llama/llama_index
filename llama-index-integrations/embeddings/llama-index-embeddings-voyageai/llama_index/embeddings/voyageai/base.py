@@ -23,7 +23,8 @@ SUPPORTED_IMAGE_FORMATS = {"png", "jpeg", "jpg", "webp", "gif"}
 
 
 class VoyageEmbedding(MultiModalEmbedding):
-    """Class for Voyage embeddings.
+    """
+    Class for Voyage embeddings.
 
     Args:
         model_name (str): Model for embedding.
@@ -31,6 +32,7 @@ class VoyageEmbedding(MultiModalEmbedding):
 
         voyage_api_key (Optional[str]): Voyage API key. Defaults to None.
             You can either specify the key here or store it as an environment variable.
+
     """
 
     _client: voyageai.Client = PrivateAttr(None)

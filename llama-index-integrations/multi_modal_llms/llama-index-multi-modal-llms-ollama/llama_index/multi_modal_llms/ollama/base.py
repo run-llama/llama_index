@@ -26,7 +26,8 @@ def get_additional_kwargs(
 
 
 def _messages_to_dicts(messages: Sequence[ChatMessage]) -> Sequence[Dict[str, Any]]:
-    """Convert messages to dicts.
+    """
+    Convert messages to dicts.
 
     For use in ollama API
 

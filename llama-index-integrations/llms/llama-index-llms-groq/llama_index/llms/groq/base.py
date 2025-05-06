@@ -22,6 +22,7 @@ class Groq(OpenAILike):
 
         print(response)
         ```
+
     """
 
     def __init__(

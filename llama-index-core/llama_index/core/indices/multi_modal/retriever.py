@@ -32,7 +32,8 @@ if TYPE_CHECKING:
 
 
 class MultiModalVectorIndexRetriever(MultiModalRetriever):
-    """Multi Modal Vector index retriever.
+    """
+    Multi Modal Vector index retriever.
 
     Args:
         index (MultiModalVectorStoreIndex): Multi Modal vector store index for images and texts.

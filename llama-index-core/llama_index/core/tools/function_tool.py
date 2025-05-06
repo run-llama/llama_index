@@ -38,7 +38,8 @@ CallbackReturn = Optional[Union[ToolOutput, str]]
 
 
 class FunctionTool(AsyncBaseTool):
-    """Function Tool.
+    """
+    Function Tool.
 
     A tool that takes in a function, optionally handles workflow context,
     and allows the use of callbacks. The callback can return a new ToolOutput
@@ -96,7 +97,8 @@ class FunctionTool(AsyncBaseTool):
             self._async_callback = sync_to_async(self._callback)
 
     def _run_sync_callback(self, result: Any) -> CallbackReturn:
-        """Runs the sync callback, if provided, and returns either a ToolOutput
+        """
+        Runs the sync callback, if provided, and returns either a ToolOutput
         to override the default output or a string to override the content.
         """
         if self._callback:
@@ -105,7 +107,8 @@ class FunctionTool(AsyncBaseTool):
         return None
 
     async def _run_async_callback(self, result: Any) -> CallbackReturn:
-        """Runs the async callback, if provided, and returns either a ToolOutput
+        """
+        Runs the async callback, if provided, and returns either a ToolOutput
         to override the default output or a string to override the content.
         """
         if self._async_callback:

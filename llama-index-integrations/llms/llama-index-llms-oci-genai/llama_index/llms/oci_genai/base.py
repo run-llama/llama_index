@@ -139,6 +139,7 @@ class OCIGenAI(FunctionCallingLLM):
             provider (Optional[str]): Provider name of the model. If not specified, the provider will be derived from the model name.
 
             additional_kwargs (Optional[Dict[str, Any]]): Additional kwargs for the the LLM.
+
         """
         context_size = get_context_size(model, context_size)
 

@@ -52,7 +52,8 @@ def get_data_model(
 
 
 class PostgresKVStore(BaseKVStore):
-    """Postgres Key-Value store.
+    """
+    Postgres Key-Value store.
 
     Args:
         connection_string (str): psycopg2 connection string
@@ -62,6 +63,7 @@ class PostgresKVStore(BaseKVStore):
         perform_setup (Optional[bool]): perform table setup
         debug (Optional[bool]): debug mode
         use_jsonb (Optional[bool]): use JSONB data type for storage
+
     """
 
     connection_string: str
@@ -218,7 +220,8 @@ class PostgresKVStore(BaseKVStore):
         val: dict,
         collection: str = DEFAULT_COLLECTION,
     ) -> None:
-        """Put a key-value pair into the store.
+        """
+        Put a key-value pair into the store.
 
         Args:
             key (str): key
@@ -234,7 +237,8 @@ class PostgresKVStore(BaseKVStore):
         val: dict,
         collection: str = DEFAULT_COLLECTION,
     ) -> None:
-        """Put a key-value pair into the store.
+        """
+        Put a key-value pair into the store.
 
         Args:
             key (str): key
@@ -329,7 +333,8 @@ class PostgresKVStore(BaseKVStore):
                 await session.commit()
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
-        """Get a value from the store.
+        """
+        Get a value from the store.
 
         Args:
             key (str): key
@@ -353,7 +358,8 @@ class PostgresKVStore(BaseKVStore):
     async def aget(
         self, key: str, collection: str = DEFAULT_COLLECTION
     ) -> Optional[dict]:
-        """Get a value from the store.
+        """
+        Get a value from the store.
 
         Args:
             key (str): key
@@ -375,7 +381,8 @@ class PostgresKVStore(BaseKVStore):
         return None
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
-        """Get all values from the store.
+        """
+        Get all values from the store.
 
         Args:
             collection (str): collection name
@@ -392,7 +399,8 @@ class PostgresKVStore(BaseKVStore):
         return {result.key: result.value for result in results} if results else {}
 
     async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
-        """Get all values from the store.
+        """
+        Get all values from the store.
 
         Args:
             collection (str): collection name
@@ -409,7 +417,8 @@ class PostgresKVStore(BaseKVStore):
         return {result.key: result.value for result in results} if results else {}
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        """Delete a value from the store.
+        """
+        Delete a value from the store.
 
         Args:
             key (str): key
@@ -429,7 +438,8 @@ class PostgresKVStore(BaseKVStore):
         return result.rowcount > 0
 
     async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        """Delete a value from the store.
+        """
+        Delete a value from the store.
 
         Args:
             key (str): key

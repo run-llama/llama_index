@@ -20,13 +20,15 @@ logger = logging.getLogger(__name__)
 
 
 class RetryQueryEngine(BaseQueryEngine):
-    """Does retry on query engine if it fails evaluation.
+    """
+    Does retry on query engine if it fails evaluation.
 
     Args:
         query_engine (BaseQueryEngine): A query engine object
         evaluator (BaseEvaluator): An evaluator object
         max_retries (int): Maximum number of retries
         callback_manager (Optional[CallbackManager]): A callback manager object
+
     """
 
     def __init__(
@@ -74,7 +76,8 @@ class RetryQueryEngine(BaseQueryEngine):
 
 
 class RetryGuidelineQueryEngine(BaseQueryEngine):
-    """Does retry with evaluator feedback
+    """
+    Does retry with evaluator feedback
     if query engine fails evaluation.
 
     Args:
@@ -83,6 +86,7 @@ class RetryGuidelineQueryEngine(BaseQueryEngine):
         resynthesize_query (bool): Whether to resynthesize query
         max_retries (int): Maximum number of retries
         callback_manager (Optional[CallbackManager]): A callback manager object
+
     """
 
     def __init__(

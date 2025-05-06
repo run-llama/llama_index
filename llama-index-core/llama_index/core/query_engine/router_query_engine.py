@@ -93,7 +93,8 @@ async def acombine_responses(
 
 
 class RouterQueryEngine(BaseQueryEngine):
-    """Router query engine.
+    """
+    Router query engine.
 
     Selects one out of several candidate query engines to execute a query.
 
@@ -248,7 +249,8 @@ class RouterQueryEngine(BaseQueryEngine):
 
 
 def default_node_to_metadata_fn(node: BaseNode) -> ToolMetadata:
-    """Default node to metadata function.
+    """
+    Default node to metadata function.
 
     We use the node's text as the Tool description.
 
@@ -260,7 +262,8 @@ def default_node_to_metadata_fn(node: BaseNode) -> ToolMetadata:
 
 
 class RetrieverRouterQueryEngine(BaseQueryEngine):
-    """Retriever-based router query engine.
+    """
+    Retriever-based router query engine.
 
     NOTE: this is deprecated, please use our new ToolRetrieverRouterQueryEngine
 
@@ -311,7 +314,8 @@ class RetrieverRouterQueryEngine(BaseQueryEngine):
 
 
 class ToolRetrieverRouterQueryEngine(BaseQueryEngine):
-    """Tool Retriever router query engine.
+    """
+    Tool Retriever router query engine.
 
     Selects a set of candidate query engines to execute a query.
 

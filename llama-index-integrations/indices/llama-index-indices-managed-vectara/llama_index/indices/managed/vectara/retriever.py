@@ -107,6 +107,7 @@ class VectaraRetriever(BaseRetriever):
         citations_text_pattern (str): The displayed text for citations.
             If not specified, numeric citations are displayed for text.
         save_history (bool): Whether to save the query in history. Defaults to False.
+
     """
 
     def __init__(
@@ -242,6 +243,7 @@ class VectaraRetriever(BaseRetriever):
 
         Args:
             query_bundle: Query Bundle
+
         """
         return self._vectara_query(query_bundle, **kwargs)[0]  # return top_nodes only
 
@@ -312,7 +314,7 @@ class VectaraRetriever(BaseRetriever):
 
             if self._rerank_limit:
                 rerank_config["limit"] = self._rerank_limit
-            if self._rerank_cutoff:
+            if self._rerank_cutoff and self._reranker != VectaraReranker.CHAIN:
                 rerank_config["cutoff"] = self._rerank_cutoff
 
             data["search"]["reranker"] = rerank_config
@@ -384,6 +386,7 @@ class VectaraRetriever(BaseRetriever):
             query_bundle: Query Bundle
             chat: whether to use chat API in Vectara
             conv_id: conversation ID, if adding to existing chat
+
         """
         body = self._build_vectara_query_body(query_bundle.query_str)
         body["stream_response"] = True
@@ -519,6 +522,7 @@ class VectaraRetriever(BaseRetriever):
             List[NodeWithScore]: list of nodes with scores
             Dict: summary
             str: conversation ID, if applicable
+
         """
         data = self._build_vectara_query_body(query_bundle.query_str)
 
@@ -619,6 +623,7 @@ class VectaraRetriever(BaseRetriever):
         Returns:
             List[NodeWithScore]: list of nodes with scores
             Dict: summary
+
         """
         return await self._vectara_query(query_bundle, chat, conv_id, verbose, **kwargs)
 
@@ -639,6 +644,7 @@ class VectaraAutoRetriever(VectorIndexAutoRetriever):
             description is used by an LLM to automatically set vector store query
             parameters.
         Other variables are the same as VectorStoreAutoRetriever or VectaraRetriever
+
     """
 
     def __init__(

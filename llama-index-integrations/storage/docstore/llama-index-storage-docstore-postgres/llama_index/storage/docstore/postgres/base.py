@@ -6,7 +6,8 @@ from llama_index.storage.kvstore.postgres import PostgresKVStore
 
 
 class PostgresDocumentStore(KVDocumentStore):
-    """Postgres Document (Node) store.
+    """
+    Postgres Document (Node) store.
 
     A Postgres store for Document and Node objects.
 

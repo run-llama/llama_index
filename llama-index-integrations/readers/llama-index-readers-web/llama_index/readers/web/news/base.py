@@ -10,7 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 class NewsArticleReader(BaseReader):
-    """Simple news article reader.
+    """
+    Simple news article reader.
 
     Reads news articles from the web and parses them using the `newspaper` library.
 
@@ -19,6 +20,7 @@ class NewsArticleReader(BaseReader):
         use_nlp (bool): Whether to use NLP to extract additional summary and keywords (default=True).
         newspaper_kwargs: Additional keyword arguments to pass to newspaper.Article. See
             https://newspaper.readthedocs.io/en/latest/user_guide/quickstart.html#article
+
     """
 
     def __init__(
@@ -34,7 +36,8 @@ class NewsArticleReader(BaseReader):
         self.newspaper_kwargs = newspaper_kwargs
 
     def load_data(self, urls: List[str]) -> List[Document]:
-        """Load data from the list of news article urls.
+        """
+        Load data from the list of news article urls.
 
         Args:
             urls (List[str]): List of URLs to load news articles.

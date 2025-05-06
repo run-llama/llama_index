@@ -6,7 +6,8 @@ from llama_index.core.base.embeddings.base import BaseEmbedding
 
 
 class MockEmbedding(BaseEmbedding):
-    """Mock embedding.
+    """
+    Mock embedding.
 
     Used for token prediction.
 

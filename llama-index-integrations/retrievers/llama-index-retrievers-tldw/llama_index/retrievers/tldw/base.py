@@ -52,6 +52,7 @@ class TldwRetriever(BaseRetriever):
         api_key (str): The API key for authentication.
         collection_id (str): The ID of the video collection to search within.
         callback_manager (Optional[CallbackManager]): Optional callback manager for logging and event handling.
+
     """
 
     def __init__(

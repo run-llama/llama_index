@@ -48,6 +48,7 @@ class GigaChatLLM(CustomLLM):
         resp = llm.complete("What is the capital of France?")
         print(resp)
         ```
+
     """
 
     model: GigaChatModel = Field(default=GigaChatModel.GIGACHAT)

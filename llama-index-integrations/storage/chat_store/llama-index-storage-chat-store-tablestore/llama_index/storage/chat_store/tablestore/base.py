@@ -25,7 +25,8 @@ def _dict_to_message(d: dict) -> ChatMessage:
 
 
 class TablestoreChatStore(BaseChatStore):
-    """Tablestore Chat Store.
+    """
+    Tablestore Chat Store.
 
     Args:
         tablestore_client (OTSClient, optional): External tablestore(ots) client.
@@ -38,6 +39,7 @@ class TablestoreChatStore(BaseChatStore):
 
     Returns:
         TablestoreChatStore: A Tablestore chat store object.
+
     """
 
     table_name: str
@@ -106,7 +108,8 @@ class TablestoreChatStore(BaseChatStore):
         return "TablestoreChatStore"
 
     def set_messages(self, key: str, messages: List[ChatMessage]) -> None:
-        """Assign all provided messages to the row with the given key.
+        """
+        Assign all provided messages to the row with the given key.
         Any pre-existing messages for that key will be overwritten.
 
         Args:
@@ -115,6 +118,7 @@ class TablestoreChatStore(BaseChatStore):
 
         Returns:
             None
+
         """
         primary_key = [(self._primary_key, key)]
         attribute_columns = [
@@ -127,13 +131,15 @@ class TablestoreChatStore(BaseChatStore):
         self._tablestore_client.put_row(self.table_name, row)
 
     def get_messages(self, key: str) -> List[ChatMessage]:
-        """Retrieve all messages for the given key.
+        """
+        Retrieve all messages for the given key.
 
         Args:
             key (str): The key specifying a row.
 
         Returns:
             List[ChatMessage]: The messages associated with the key.
+
         """
         primary_key = [(self._primary_key, key)]
         _, row, _ = self._tablestore_client.get_row(
@@ -150,7 +156,8 @@ class TablestoreChatStore(BaseChatStore):
         return [_dict_to_message(message) for message in history]
 
     def add_message(self, key: str, message: ChatMessage) -> None:
-        """Add a message to the end of the chat history for the given key.
+        """
+        Add a message to the end of the chat history for the given key.
         Creates a new row if the key does not exist.
 
         Args:
@@ -159,13 +166,15 @@ class TablestoreChatStore(BaseChatStore):
 
         Returns:
             None
+
         """
         current_messages = self.get_messages(key)
         current_messages.append(message)
         self.set_messages(key, current_messages)
 
     def delete_messages(self, key: str) -> Optional[List[ChatMessage]]:
-        """Deletes the entire chat history for the given key (i.e. the row).
+        """
+        Deletes the entire chat history for the given key (i.e. the row).
 
         Args:
             key (str): The key specifying a row.
@@ -173,6 +182,7 @@ class TablestoreChatStore(BaseChatStore):
         Returns:
             Optional[List[ChatMessage]]: The messages that were deleted. None if the
                 deletion failed.
+
         """
         messages_to_delete = self.get_messages(key)
         primary_key = [(self._primary_key, key)]
@@ -180,7 +190,8 @@ class TablestoreChatStore(BaseChatStore):
         return messages_to_delete
 
     def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
-        """Deletes the message at the given index for the given key.
+        """
+        Deletes the message at the given index for the given key.
 
         Args:
             key (str): The key specifying a row.
@@ -189,6 +200,7 @@ class TablestoreChatStore(BaseChatStore):
         Returns:
             Optional[ChatMessage]: The message that was deleted. None if the index
                 did not exist.
+
         """
         current_messages = self.get_messages(key)
         try:
@@ -203,7 +215,8 @@ class TablestoreChatStore(BaseChatStore):
             return None
 
     def delete_last_message(self, key: str) -> Optional[ChatMessage]:
-        """Deletes the last message in the chat history for the given key.
+        """
+        Deletes the last message in the chat history for the given key.
 
         Args:
             key (str): The key specifying a row.
@@ -211,14 +224,17 @@ class TablestoreChatStore(BaseChatStore):
         Returns:
             Optional[ChatMessage]: The message that was deleted. None if the chat history
                 was empty.
+
         """
         return self.delete_message(key, -1)
 
     def get_keys(self) -> List[str]:
-        """Retrieve all keys in the table.
+        """
+        Retrieve all keys in the table.
 
         Returns:
             List[str]: The keys in the table.
+
         """
         keys = []
         inclusive_start_primary_key = [(self._primary_key, tablestore.INF_MIN)]

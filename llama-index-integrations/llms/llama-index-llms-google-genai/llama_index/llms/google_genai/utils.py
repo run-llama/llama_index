@@ -4,12 +4,17 @@ from typing import (
     Any,
     Dict,
     Union,
+    Optional,
+    Type,
+    Tuple,
 )
 import typing
 
 import google.genai.types as types
 import google.genai
 from google.genai import _transformers
+
+from llama_index.core.bridge.pydantic import BaseModel, ValidationError
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -17,6 +22,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
 )
+from llama_index.core.program.utils import _repair_incomplete_json
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -57,7 +63,8 @@ def merge_neighboring_same_role_messages(
     i = 0
 
     while i < len(messages):
-        current_message = messages[i]
+        # operate on a copy of the message to avoid mutating the original
+        current_message = messages[i].model_copy()
         # Initialize merged content with current message content
         merged_content = current_message.blocks
 
@@ -220,13 +227,7 @@ def convert_schema_to_function_declaration(
         raise ValueError("fn_schema is missing")
 
     # Get the JSON schema
-    json_schema = tool.metadata.fn_schema.model_json_schema()
-
-    if json_schema.get("properties"):
-        _transformers.process_schema(json_schema, client)
-        root_schema = json_schema
-    else:
-        root_schema = None
+    root_schema = _transformers.t_schema(client, tool.metadata.fn_schema)
 
     description_parts = tool.metadata.description.split("\n", maxsplit=1)
     if len(description_parts) > 1:
@@ -264,6 +265,7 @@ def prepare_chat_params(
         tuple containing:
         - next_msg: the next message to send
         - chat_kwargs: processed keyword arguments for chat creation
+
     """
     merged_messages = merge_neighboring_same_role_messages(messages)
     initial_history = list(map(chat_message_to_gemini, merged_messages))
@@ -283,7 +285,7 @@ def prepare_chat_params(
             history.append(msg)
             continue
 
-        last_msg = history[idx - 1]
+        last_msg = history[-1]
 
         # Skip if the last message is not a tool message
         if last_msg.parts and not any(
@@ -330,3 +332,23 @@ def prepare_chat_params(
     chat_kwargs["config"] = types.GenerateContentConfig(**config)
 
     return next_msg, chat_kwargs
+
+def handle_streaming_flexible_model(
+    current_json: str,
+    candidate: types.Candidate,
+    output_cls: Type[BaseModel],
+    flexible_model: Type[BaseModel],
+) -> Tuple[Optional[BaseModel], str]:
+    parts = candidate.content.parts or []
+    data = parts[0].text if parts else None
+    if data:
+        current_json += data
+        try:
+            return output_cls.model_validate_json(current_json), current_json
+        except ValidationError:
+            try:
+                return flexible_model.model_validate_json(_repair_incomplete_json(current_json)), current_json
+            except ValidationError:
+                return None, current_json
+
+    return None, current_json

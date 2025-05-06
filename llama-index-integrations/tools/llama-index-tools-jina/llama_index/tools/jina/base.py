@@ -23,6 +23,7 @@ class JinaToolSpec(BaseToolSpec):
 
         Returns:
             requests.Response: The response from the API.
+
         """
         headers = {
             "Accept": "application/json",
@@ -41,6 +42,7 @@ class JinaToolSpec(BaseToolSpec):
 
         Returns:
             [Document]: A list of documents containing search results.
+
         """
         search_params = {
             "query": query,

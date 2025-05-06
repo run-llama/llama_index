@@ -24,7 +24,8 @@ class ScrapegraphToolSpec(BaseToolSpec):
         api_key: str,
         schema: Optional[List[BaseModel]] = None,
     ) -> List[Dict]:
-        """Perform synchronous web scraping using scrapegraph.
+        """
+        Perform synchronous web scraping using scrapegraph.
 
         Args:
             prompt (str): User prompt describing the scraping task
@@ -34,6 +35,7 @@ class ScrapegraphToolSpec(BaseToolSpec):
 
         Returns:
             List[Dict]: Scraped data matching the provided schema
+
         """
         client = Client(api_key=api_key)
 
@@ -43,7 +45,8 @@ class ScrapegraphToolSpec(BaseToolSpec):
         )
 
     def scrapegraph_markdownify(self, url: str, api_key: str) -> str:
-        """Convert webpage content to markdown format using scrapegraph.
+        """
+        Convert webpage content to markdown format using scrapegraph.
 
         Args:
             url (str): Target website URL to convert
@@ -51,13 +54,15 @@ class ScrapegraphToolSpec(BaseToolSpec):
 
         Returns:
             str: Markdown representation of the webpage content
+
         """
         client = Client(api_key=api_key)
 
         return client.markdownify(website_url=url)
 
     def scrapegraph_search(self, query: str, api_key: str) -> str:
-        """Perform a search query using scrapegraph.
+        """
+        Perform a search query using scrapegraph.
 
         Args:
             query (str): Search query to execute
@@ -65,6 +70,7 @@ class ScrapegraphToolSpec(BaseToolSpec):
 
         Returns:
             str: Search results from scrapegraph
+
         """
         client = Client(api_key=api_key)
         return client.search(query=query)

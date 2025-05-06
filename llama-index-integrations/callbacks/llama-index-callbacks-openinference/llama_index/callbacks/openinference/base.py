@@ -38,10 +38,12 @@ Embedding = List[float]
 
 
 def _generate_random_id() -> str:
-    """Generates a random ID.
+    """
+    Generates a random ID.
 
     Returns:
         str: A random ID.
+
     """
     return str(uuid.uuid4())
 
@@ -107,13 +109,15 @@ BaseDataType = TypeVar("BaseDataType", QueryData, NodeData)
 
 
 def as_dataframe(data: Iterable[BaseDataType]) -> "DataFrame":
-    """Converts a list of BaseDataType to a pandas dataframe.
+    """
+    Converts a list of BaseDataType to a pandas dataframe.
 
     Args:
         data (Iterable[BaseDataType]): A list of BaseDataType.
 
     Returns:
         DataFrame: The converted pandas dataframe.
+
     """
     pandas = _import_package("pandas")
     as_dict_list = []
@@ -138,7 +142,8 @@ class TraceData:
 
 
 def _import_package(package_name: str) -> ModuleType:
-    """Dynamically imports a package.
+    """
+    Dynamically imports a package.
 
     Args:
         package_name (str): Name of the package to import.
@@ -148,6 +153,7 @@ def _import_package(package_name: str) -> ModuleType:
 
     Returns:
         ModuleType: The imported package.
+
     """
     try:
         package = importlib.import_module(package_name)
@@ -157,7 +163,8 @@ def _import_package(package_name: str) -> ModuleType:
 
 
 class OpenInferenceCallbackHandler(BaseCallbackHandler):
-    """Callback handler for storing generation data in OpenInference format.
+    """
+    Callback handler for storing generation data in OpenInference format.
     OpenInference is an open standard for capturing and storing AI model
     inferences. It enables production LLMapp servers to seamlessly integrate
     with LLM observability solutions such as Arize and Phoenix.
@@ -170,12 +177,14 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
         self,
         callback: Optional[Callable[[List[QueryData], List[NodeData]], None]] = None,
     ) -> None:
-        """Initializes the OpenInferenceCallbackHandler.
+        """
+        Initializes the OpenInferenceCallbackHandler.
 
         Args:
             callback (Optional[Callable[[List[QueryData], List[NodeData]], None]], optional): A
             callback function that will be called when a query trace is
             completed, often used for logging or persisting query data.
+
         """
         super().__init__(event_starts_to_ignore=[], event_ends_to_ignore=[])
         self._callback = callback
@@ -267,20 +276,24 @@ class OpenInferenceCallbackHandler(BaseCallbackHandler):
             ][0]
 
     def flush_query_data_buffer(self) -> List[QueryData]:
-        """Clears the query data buffer and returns the data.
+        """
+        Clears the query data buffer and returns the data.
 
         Returns:
             List[QueryData]: The query data.
+
         """
         query_data_buffer = self._query_data_buffer
         self._query_data_buffer = []
         return query_data_buffer
 
     def flush_node_data_buffer(self) -> List[NodeData]:
-        """Clears the node data buffer and returns the data.
+        """
+        Clears the node data buffer and returns the data.
 
         Returns:
             List[NodeData]: The node data.
+
         """
         node_data_buffer = self._node_data_buffer
         self._node_data_buffer = []

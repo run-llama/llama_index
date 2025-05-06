@@ -100,6 +100,11 @@ def get_data_model(
             model.text_search_tsv,  # type: ignore
             postgresql_using="gin",
         )
+        Index(
+            f"{indexname}_1",
+            model.metadata_["ref_doc_id"].astext,  # type: ignore
+            postgresql_using="btree",
+        )
     else:
 
         class AbstractData(base):  # type: ignore
@@ -116,11 +121,18 @@ def get_data_model(
             {"__tablename__": tablename, "__table_args__": {"schema": schema_name}},
         )
 
+        Index(
+            f"{indexname}_1",
+            model.metadata_["ref_doc_id"].astext,  # type: ignore
+            postgresql_using="btree",
+        )
+
     return model
 
 
 class PGVectorStore(BasePydanticVectorStore):
-    """Postgres Vector Store.
+    """
+    Postgres Vector Store.
 
     Examples:
         `pip install llama-index-vector-stores-postgres`
@@ -140,6 +152,7 @@ class PGVectorStore(BasePydanticVectorStore):
             use_halfvec=True  # Enable half precision
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -193,7 +206,8 @@ class PGVectorStore(BasePydanticVectorStore):
         engine: Optional[sqlalchemy.engine.Engine] = None,
         async_engine: Optional[sqlalchemy.ext.asyncio.AsyncEngine] = None,
     ) -> None:
-        """Constructor.
+        """
+        Constructor.
 
         Args:
             connection_string (Union[str, sqlalchemy.engine.URL]): Connection string to postgres db.
@@ -214,6 +228,7 @@ class PGVectorStore(BasePydanticVectorStore):
             use_halfvec (bool, optional): If `True`, use half-precision vectors. Defaults to False.
             engine (Optional[sqlalchemy.engine.Engine], optional): SQLAlchemy engine instance to use. Defaults to None.
             async_engine (Optional[sqlalchemy.ext.asyncio.AsyncEngine], optional): SQLAlchemy async engine instance to use. Defaults to None.
+
         """
         table_name = table_name.lower() if table_name else "llamaindex"
         schema_name = schema_name.lower() if schema_name else "public"
@@ -306,7 +321,8 @@ class PGVectorStore(BasePydanticVectorStore):
         create_engine_kwargs: Optional[Dict[str, Any]] = None,
         use_halfvec: bool = False,
     ) -> "PGVectorStore":
-        """Construct from params.
+        """
+        Construct from params.
 
         Args:
             host (Optional[str], optional): Host of postgres connection. Defaults to None.
@@ -333,6 +349,7 @@ class PGVectorStore(BasePydanticVectorStore):
 
         Returns:
             PGVectorStore: Instance of PGVectorStore constructed from params.
+
         """
         conn_str = (
             connection_string
@@ -953,17 +970,31 @@ class PGVectorStore(BasePydanticVectorStore):
             session.execute(stmt)
             session.commit()
 
+    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        from sqlalchemy import delete
+
+        self._initialize()
+        async with self._async_session() as session, session.begin():
+            stmt = delete(self._table_class).where(
+                self._table_class.metadata_["doc_id"].astext == ref_doc_id
+            )
+
+            await session.execute(stmt)
+            await session.commit()
+
     def delete_nodes(
         self,
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes.
+        """
+        Deletes nodes.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+
         """
         if not node_ids and not filters:
             return
@@ -989,11 +1020,13 @@ class PGVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes asynchronously.
+        """
+        Deletes nodes asynchronously.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+
         """
         if not node_ids and not filters:
             return
@@ -1086,6 +1119,58 @@ class PGVectorStore(BasePydanticVectorStore):
                 nodes.append(node)
 
         return nodes
+
+    async def aget_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Get nodes asynchronously from vector store."""
+        assert (
+            node_ids is not None or filters is not None
+        ), "Either node_ids or filters must be provided"
+
+        self._initialize()
+        from sqlalchemy import select
+
+        stmt = select(
+            self._table_class.node_id,
+            self._table_class.text,
+            self._table_class.metadata_,
+            self._table_class.embedding,
+        )
+
+        if node_ids:
+            stmt = stmt.where(self._table_class.node_id.in_(node_ids))
+
+        if filters:
+            filter_clause = self._recursively_apply_filters(filters)
+            stmt = stmt.where(filter_clause)
+
+        nodes: List[BaseNode] = []
+
+        async with self._async_session() as session, session.begin():
+            res = (await session.execute(stmt)).fetchall()
+            for item in res:
+                node_id = item.node_id
+                text = item.text
+                metadata = item.metadata_
+                embedding = item.embedding
+
+                try:
+                    node = metadata_dict_to_node(metadata)
+                    node.set_content(str(text))
+                    node.embedding = embedding
+                except Exception:
+                    node = TextNode(
+                        id_=node_id,
+                        text=text,
+                        metadata=metadata,
+                        embedding=embedding,
+                    )
+                nodes.append(node)
+
+            return nodes
 
 
 def _dedup_results(results: List[DBEmbeddingRow]) -> List[DBEmbeddingRow]:

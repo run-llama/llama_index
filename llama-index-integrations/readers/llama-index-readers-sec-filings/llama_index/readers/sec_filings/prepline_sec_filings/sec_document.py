@@ -144,7 +144,8 @@ class SECDocument(HTMLDocument):
         return out_cls.from_elements(self._filter_table_of_contents(self.elements))
 
     def get_section_narrative_no_toc(self, section: SECSection) -> List[NarrativeText]:
-        """Identifies narrative text sections that fall under the given section heading without
+        """
+        Identifies narrative text sections that fall under the given section heading without
         using the table of contents.
         """
         _raise_for_invalid_filing_type(self.filing_type)
@@ -300,7 +301,8 @@ class SECDocument(HTMLDocument):
 def get_narrative_texts(
     doc: HTMLDocument, up_to_next_title: Optional[bool] = False
 ) -> List[Text]:
-    """Returns a list of NarrativeText or ListItem from document,
+    """
+    Returns a list of NarrativeText or ListItem from document,
     with option to return narrative texts only up to next Title element.
     """
     if up_to_next_title:
@@ -384,7 +386,8 @@ def is_s1_risk_title(title: str) -> bool:
 
 
 def to_sklearn_format(elements: List[Element]) -> npt.NDArray[np.float32]:
-    """The input to clustering needs to be locations in euclidean space, so we need to interpret
+    """
+    The input to clustering needs to be locations in euclidean space, so we need to interpret
     the locations of Titles within the sequence of elements as locations in 1d space.
     """
     is_title: npt.NDArray[np.bool_] = np.array(
@@ -396,7 +399,8 @@ def to_sklearn_format(elements: List[Element]) -> npt.NDArray[np.float32]:
 def cluster_num_to_indices(
     num: int, elem_idxs: npt.NDArray[np.float32], res: npt.NDArray[np.int_]
 ) -> List[int]:
-    """Keeping in mind the input to clustering was indices in a list of elements interpreted as
+    """
+    Keeping in mind the input to clustering was indices in a list of elements interpreted as
     location in 1-d space, this function gives back the original indices of elements that are
     members of the cluster with the given number.
     """
@@ -413,14 +417,16 @@ def first(it: Iterable) -> Any:
 
 
 def match_s1_toc_title_to_section(text: str, title: str) -> bool:
-    """Matches an S-1 style title from the table of contents to the associated title in the document
+    """
+    Matches an S-1 style title from the table of contents to the associated title in the document
     body.
     """
     return text == title
 
 
 def match_10k_toc_title_to_section(text: str, title: str) -> bool:
-    """Matches a 10-K style title from the table of contents to the associated title in the document
+    """
+    Matches a 10-K style title from the table of contents to the associated title in the document
     body.
     """
     if re.match(ITEM_TITLE_RE, title):
@@ -431,7 +437,8 @@ def match_10k_toc_title_to_section(text: str, title: str) -> bool:
 
 
 def remove_item_from_section_text(text: str) -> str:
-    """Removes 'item' heading from section text for 10-K/Q forms as preparation for other matching
+    """
+    Removes 'item' heading from section text for 10-K/Q forms as preparation for other matching
     techniques.
     """
     return re.sub(ITEM_TITLE_RE, "", text).strip()

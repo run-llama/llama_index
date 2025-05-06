@@ -6,32 +6,20 @@ on:
       - main
   pull_request:
 
-env:
-  POETRY_VERSION: "1.8.3"
-
 jobs:
-  build:
+  core-typecheck:
     runs-on: ubuntu-latest
-    strategy:
-      # You can use PyPy versions in python-version.
-      # For example, pypy-2.7 and pypy-3.8
-      matrix:
-        python-version: ["3.10"]
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 0 }}
-      - name: Install Poetry
-        run: pipx install poetry==${{ env.POETRY_VERSION }}
-      - name: Set up python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: "poetry"
-          cache-dependency-path: "**/poetry.lock"
-      - name: Install core
-        shell: bash
-        run: cd ./llama-index-core/ && poetry install --with dev
-      - name: Run MyPy
-        shell: bash
-        run: cd ./llama-index-core/ && poetry run mypy llama_index
+          fetch-depth: 1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Run Mypy
+        working-directory: llama-index-core
+        run: uv run -- mypy llama_index

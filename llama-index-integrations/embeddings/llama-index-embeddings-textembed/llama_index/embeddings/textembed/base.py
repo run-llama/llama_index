@@ -1,4 +1,5 @@
-"""TextEmbed: Embedding Inference Server.
+"""
+TextEmbed: Embedding Inference Server.
 
 TextEmbed offers a high-throughput, low-latency service for generating embeddings using various sentence-transformer models.
 It now also supports image embedding models, providing flexibility and scalability for diverse applications.
@@ -56,6 +57,7 @@ class TextEmbedEmbedding(BaseEmbedding):
             timeout (float): Timeout for requests.
             callback_manager (Optional[CallbackManager]): Manager for handling callbacks.
             auth_token (Optional[Union[str, Callable[[str], str]]]): Authentication token or function for generating it.
+
         """
         super().__init__(
             base_url=base_url,
@@ -78,6 +80,7 @@ class TextEmbedEmbedding(BaseEmbedding):
 
         Raises:
             Exception: If the API responds with a status code other than 200.
+
         """
         headers = {
             "Content-Type": "application/json",
@@ -109,6 +112,7 @@ class TextEmbedEmbedding(BaseEmbedding):
 
         Raises:
             Exception: If the API responds with a status code other than 200.
+
         """
         headers = {
             "Content-Type": "application/json",
@@ -139,6 +143,7 @@ class TextEmbedEmbedding(BaseEmbedding):
 
         Returns:
             List[float]: The embedding for the query.
+
         """
         return self._call_api([query])[0]
 
@@ -151,6 +156,7 @@ class TextEmbedEmbedding(BaseEmbedding):
 
         Returns:
             List[float]: The embedding for the text.
+
         """
         return self._call_api([text])[0]
 
@@ -163,6 +169,7 @@ class TextEmbedEmbedding(BaseEmbedding):
 
         Returns:
             List[List[float]]: A list of embeddings for the input texts.
+
         """
         return self._call_api(texts)
 
@@ -175,6 +182,7 @@ class TextEmbedEmbedding(BaseEmbedding):
 
         Returns:
             List[float]: The embedding for the query.
+
         """
         return (await self._acall_api([query]))[0]
 
@@ -187,6 +195,7 @@ class TextEmbedEmbedding(BaseEmbedding):
 
         Returns:
             List[float]: The embedding for the text.
+
         """
         return (await self._acall_api([text]))[0]
 
@@ -199,5 +208,6 @@ class TextEmbedEmbedding(BaseEmbedding):
 
         Returns:
             List[List[float]]: A list of embeddings for the input texts.
+
         """
         return await self._acall_api(texts)

@@ -41,7 +41,8 @@ DEFAULT_LLAMA_CPP_MODEL_VERBOSITY = True
 
 
 class LlamaCPP(CustomLLM):
-    r"""LlamaCPP LLM.
+    r"""
+    LlamaCPP LLM.
 
     Examples:
         Install llama-cpp-python following instructions:
@@ -92,6 +93,7 @@ class LlamaCPP(CustomLLM):
         response = llm.complete("Hello, how are you?")
         print(str(response))
         ```
+
     """
 
     model_url: Optional[str] = Field(

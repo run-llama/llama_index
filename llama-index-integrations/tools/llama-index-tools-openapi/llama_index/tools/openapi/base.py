@@ -8,7 +8,8 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 
 class OpenAPIToolSpec(BaseToolSpec):
-    """OpenAPI Tool.
+    """
+    OpenAPI Tool.
 
     This tool can be used to parse an OpenAPI spec for endpoints and operations
     Use the RequestsToolSpec to automate requests to the openapi server
@@ -48,11 +49,13 @@ class OpenAPIToolSpec(BaseToolSpec):
 
         Returns:
             Document: A List of Document objects.
+
         """
         return [self.spec]
 
     def process_api_spec(self, spec: dict) -> dict:
-        """Perform simplification and reduction on an OpenAPI specification.
+        """
+        Perform simplification and reduction on an OpenAPI specification.
 
         The goal is to create a more concise and efficient representation
         for retrieval purposes.

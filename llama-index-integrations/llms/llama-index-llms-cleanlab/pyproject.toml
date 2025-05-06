@@ -1,6 +1,6 @@
 [build-system]
-build-backend = "hatchling.build"
 requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
@@ -12,9 +12,9 @@ dev = [
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
+    "pytest==7.2.1",
     "pytest-cov>=6.1.1",
     "pytest-mock==3.11.1",
-    "pytest==7.2.1",
     "ruff==0.0.292",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
@@ -25,17 +25,17 @@ dev = [
 ]
 
 [project]
-authors = [{email = "ashishsardana21@gmail.com", name = "Ashish Sardana"}]
+name = "llama-index-llms-cleanlab"
+version = "0.5.0"
+description = "llama-index llms cleanlab integration"
+authors = [{name = "Ashish Sardana", email = "ashishsardana21@gmail.com"}]
+requires-python = ">=3.9,<4.0"
+readme = "README.md"
+license = "MIT"
 dependencies = [
     "cleanlab-tlm>=1.1.2,<2",
     "llama-index-core>=0.12.0,<0.13",
 ]
-description = "llama-index llms cleanlab integration"
-license = "MIT"
-name = "llama-index-llms-cleanlab"
-readme = "README.md"
-requires-python = ">=3.9,<4.0"
-version = "0.5.0"
 
 [tool.codespell]
 check-filenames = true

@@ -81,7 +81,8 @@ DEFAULT_CITATION_CHUNK_OVERLAP = 20
 
 
 class CitationQueryEngine(BaseQueryEngine):
-    """Citation query engine.
+    """
+    Citation query engine.
 
     Args:
         retriever (BaseRetriever): A retriever object.
@@ -97,6 +98,7 @@ class CitationQueryEngine(BaseQueryEngine):
         callback_manager (Optional[CallbackManager]): A callback manager.
         metadata_mode (MetadataMode): A MetadataMode object that controls how
             metadata is included in the citation prompt.
+
     """
 
     def __init__(
@@ -158,7 +160,8 @@ class CitationQueryEngine(BaseQueryEngine):
         metadata_mode: MetadataMode = MetadataMode.NONE,
         **kwargs: Any,
     ) -> "CitationQueryEngine":
-        """Initialize a CitationQueryEngine object.".
+        """
+        Initialize a CitationQueryEngine object.".
 
         Args:
             index: (BastGPTIndex): index to use for querying

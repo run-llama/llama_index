@@ -19,7 +19,8 @@ DEFAULT_CONTEXT_QUERY_TMPL = (
 
 
 class SQLContextContainerBuilder:
-    """SQLContextContainerBuilder.
+    """
+    SQLContextContainerBuilder.
 
     Build a SQLContextContainer that can be passed to the SQL index
     during index construction or during query-time.
@@ -123,7 +124,8 @@ class SQLContextContainerBuilder:
         store_context_str: bool = True,
         **index_kwargs: Any,
     ) -> str:
-        """Query index for context.
+        """
+        Query index for context.
 
         A simple wrapper around the index.query call which
         injects a query template to specifically fetch table information,

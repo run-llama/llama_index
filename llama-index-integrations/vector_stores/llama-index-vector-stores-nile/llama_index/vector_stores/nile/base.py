@@ -55,6 +55,7 @@ class NileVectorStore(BasePydanticVectorStore):
             num_dimensions=1536
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -435,11 +436,14 @@ class NileVectorStore(BasePydanticVectorStore):
         """
         Create a new tenant and return the tenant_id.
 
-        Parameters:
+        Parameters
+        ----------
             tenant_name (str): The name of the tenant to create.
 
-        Returns:
+        Returns
+        -------
             tenant_id (uuid.UUID): The id of the newly created tenant.
+
         """
         with self._sync_conn.cursor() as cursor:
             cursor.execute(
@@ -458,11 +462,13 @@ class NileVectorStore(BasePydanticVectorStore):
         We intentionally throw an error if the index already exists.
         Since you may want to try a different type or parameters, we recommend dropping the index first.
 
-        Parameters:
+        Parameters
+        ----------
             index_type (IndexType): The type of index to create.
             m (optional int): The number of neighbors to consider during construction for PGVECTOR_HSNW index.
             ef_construction (optional int): The construction parameter for PGVECTOR_HSNW index.
             nlists (optional int): The number of lists for PGVECTOR_IVFFLAT index.
+
         """
         _logger.info(f"Creating index of type {index_type} for {self.table_name}")
         if index_type == IndexType.PGVECTOR_HNSW:

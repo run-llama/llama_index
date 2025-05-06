@@ -83,6 +83,7 @@ def run_transformations(
 
     Returns:
         The transformed nodes.
+
     """
     if not in_place:
         nodes = list(nodes)
@@ -119,6 +120,7 @@ async def arun_transformations(
 
     Returns:
         The transformed nodes.
+
     """
     if not in_place:
         nodes = list(nodes)
@@ -178,6 +180,7 @@ class DocstoreStrategy(str, Enum):
             ('duplicates_only') Only handle duplicates. Checks if the hash of a document is already in the doc store. Only then it will add the document to the doc store and run the transformations
         UPSERTS_AND_DELETE:
             ('upserts_and_delete') Use upserts and delete to handle duplicates. Like the upsert strategy but it will also delete non-existing documents from the doc store
+
     """
 
     UPSERTS = "upserts"
@@ -232,6 +235,7 @@ class IngestionPipeline(BaseModel):
 
         nodes = pipeline.run(documents=documents)
         ```
+
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -479,6 +483,7 @@ class IngestionPipeline(BaseModel):
 
         Returns:
             Sequence[BaseNode]: The set of transformed Nodes/Documents
+
         """
         input_nodes = self._prepare_inputs(documents, nodes)
 
@@ -659,6 +664,7 @@ class IngestionPipeline(BaseModel):
 
         Returns:
             Sequence[BaseNode]: The set of transformed Nodes/Documents
+
         """
         input_nodes = self._prepare_inputs(documents, nodes)
 
