@@ -300,7 +300,7 @@ In `llama_index.core.memory`, we offer a few different memory types:
 You can find a few examples of memory in action below:
 
 - [Memory](../../../examples/memory/memory.ipynb)
-- [Custom Memory](../../../examples/memory/custom_memory.ipynb)
+- [Manipulating Memory at Runtime](../../../examples/memory/custom_memory.ipynb)
 
 **NOTE:** Deprecated examples:
 - [Chat Memory Buffer](../../../examples/agent/memory/chat_memory_buffer.ipynb)
