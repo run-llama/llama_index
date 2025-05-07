@@ -50,4 +50,4 @@ documents = reader.load_data(
 
 - The first time you use the reader, it will download the Tika server JAR file if not provided
 - The Tika server will run locally on the specified port
-- All document metadata is preserved in the Document objects 
+- All document metadata is preserved in the Document objects
