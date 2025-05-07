@@ -99,8 +99,8 @@ class FireCrawlWebReader(BasePydanticReader):
             # [CRAWL] params: https://docs.firecrawl.dev/api-reference/endpoint/crawl-post
             if url is None:
                 raise ValueError("URL must be provided for crawl mode.")
-            firecrawl_docs = self.firecrawl.crawl_url(url, params=self.params)
-            firecrawl_docs = firecrawl_docs.get("data", [])
+            firecrawl_docs = self.firecrawl.crawl_url(url, **self.params)
+            firecrawl_docs = firecrawl_docs.data
             for doc in firecrawl_docs:
                 documents.append(
                     Document(
