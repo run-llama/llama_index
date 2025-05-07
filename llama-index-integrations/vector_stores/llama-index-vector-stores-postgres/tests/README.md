@@ -8,7 +8,7 @@ docker run --name test-postgres \
   -e POSTGRES_PASSWORD=mark90 \
   -e POSTGRES_DB=postgres \
   -p 5432:5432 \
-  -d ankane/pgvector
+  -d pgvector/pgvector:pg17
 ```
 
 To clean up the created postgres DB, just run:
