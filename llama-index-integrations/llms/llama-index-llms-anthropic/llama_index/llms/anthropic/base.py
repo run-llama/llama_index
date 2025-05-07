@@ -641,6 +641,12 @@ class Anthropic(FunctionCallingLLM):
 
         return gen()
 
+    def _map_tool_choice_to_anthropic(self, tool_required: bool, allow_parallel_tool_calls: bool) -> dict:
+        return {
+            "disable_parallel_tool_calls": not allow_parallel_tool_calls,
+            "type": "any" if  tool_required else "auto"
+        }
+
     def _prepare_chat_with_tools(
         self,
         tools: List["BaseTool"],
@@ -648,6 +654,7 @@ class Anthropic(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Prepare the chat with tools."""
@@ -672,7 +679,11 @@ class Anthropic(FunctionCallingLLM):
             ):
                 tool_dicts[-1]["cache_control"] = {"type": "ephemeral"}
 
-        return {"messages": chat_history, "tools": tool_dicts, **kwargs}
+        return {
+            "messages": chat_history,
+            "tools": tool_dicts,
+            "tool_choice": self._map_tool_choice_to_anthropic(tool_required, allow_parallel_tool_calls),
+            **kwargs}
 
     def _validate_chat_with_tools_response(
         self,

@@ -292,6 +292,7 @@ class DashScope(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False, # doesn't seem to be supported by dashscope - https://github.com/dashscope/dashscope-sdk-python
         **kwargs: Any,
     ) -> Dict[str, Any]:
         tools_spec = [self._convert_tool_to_dashscope_format(tool) for tool in tools]

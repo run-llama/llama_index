@@ -229,7 +229,8 @@ def _update_tool_calls(
 
 
 def _resolve_tool_choice(
-    tool_choice: Union[str, dict] = DEFAULT_TOOL_CHOICE,
+    tool_choice: Optional[Union[str, dict]] = None,
+    tool_required: bool = False,
 ) -> Union[str, dict]:
     """
     Resolve the tool choice into a string or a dictionary.
@@ -244,6 +245,8 @@ def _resolve_tool_choice(
         Either the original tool_choice if valid or a dictionary representing a function call.
 
     """
+    if tool_choice is None:
+        tool_choice = "required" if tool_required else "auto"
     if isinstance(tool_choice, str) and tool_choice not in SUPPORTED_TOOL_CHOICES:
         return {"type": "function", "function": {"name": tool_choice}}
     return tool_choice
