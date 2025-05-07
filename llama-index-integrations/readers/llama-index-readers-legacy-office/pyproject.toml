@@ -37,6 +37,13 @@ dependencies = [
     "llama-index-core>=0.12.0,<0.13",
 ]
 
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.readers.legacy_office"
+
+[tool.llamahub.class_authors]
+LegacyOfficeReader = "wey-gu"
+
 [tool.codespell]
 check-filenames = true
 check-hidden = true
