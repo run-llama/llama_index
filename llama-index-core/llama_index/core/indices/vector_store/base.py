@@ -352,15 +352,15 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         """
         # delete nodes from vector store
         self._vector_store.delete_nodes(node_ids, **delete_kwargs)
-        for node_id in node_ids:
-            self._index_struct.delete(node_id)
 
         # delete from docstore only if needed
         if (
             not self._vector_store.stores_text or self._store_nodes_override
         ) and delete_from_docstore:
             for node_id in node_ids:
+                self._index_struct.delete(node_id)
                 self._docstore.delete_document(node_id, raise_error=False)
+            self._storage_context.index_store.add_index_struct(self._index_struct)
 
     def _delete_from_index_struct(self, ref_doc_id: str) -> None:
         # delete from index_struct only if needed

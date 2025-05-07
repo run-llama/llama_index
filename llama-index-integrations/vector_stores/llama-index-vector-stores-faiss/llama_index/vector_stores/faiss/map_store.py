@@ -4,16 +4,28 @@ Faiss Map Vector Store index.
 An index that is built on top of an existing vector store.
 
 """
-import numpy as np
+import os
 from typing import Any, List, Optional, cast
 
+import numpy as np
+import fsspec
+from fsspec.implementations.local import LocalFileSystem
 from llama_index.core.schema import BaseNode
 from llama_index.core.bridge.pydantic import PrivateAttr
-from llama_index.vector_stores.faiss import FaissVectorStore
+from llama_index.core.vector_stores.simple import DEFAULT_VECTOR_STORE, NAMESPACE_SEP
+from llama_index.vector_stores.faiss.base import (
+    FaissVectorStore,
+    DEFAULT_PERSIST_PATH,
+    DEFAULT_PERSIST_FNAME
+)
 from llama_index.core.vector_stores.types import (
+    DEFAULT_PERSIST_DIR,
+    MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
+
+DEFAULT_ID_MAP_NAME = "id_map.json"
 
 class FaissMapVectorStore(FaissVectorStore):
     """
@@ -117,16 +129,25 @@ class FaissMapVectorStore(FaissVectorStore):
             # remove the faiss id from the faiss index
             self._faiss_index.remove_ids(np.array([faiss_id], dtype=np.int64))
             # remove the node id from the node id map
-            del self._node_id_to_faiss_id_map[ref_doc_id]
+            if ref_doc_id in self._node_id_to_faiss_id_map:
+                del self._node_id_to_faiss_id_map[ref_doc_id]
             # remove the faiss id from the faiss id map
-            del self._faiss_id_to_node_id_map[faiss_id]
+            if faiss_id in self._faiss_id_to_node_id_map:
+                del self._faiss_id_to_node_id_map[faiss_id]
 
     def delete_nodes(
         self,
         node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
         """Delete nodes from vector store."""
+        if filters is not None:
+            raise NotImplementedError("Metadata filters not implemented for Faiss yet.")
+
+        if node_ids is None:
+            raise ValueError("node_ids must be provided to delete nodes.")
+
         faiss_ids = []
         for node_id in node_ids:
             # get the faiss id from the node_id_map
@@ -142,9 +163,10 @@ class FaissMapVectorStore(FaissVectorStore):
         for node_id in node_ids:
             # get the faiss id from the node_id_map
             faiss_id = self._node_id_to_faiss_id_map.get(node_id)
-            if faiss_id is not None:
+            if faiss_id is not None and faiss_id in self._faiss_id_to_node_id_map:
                 del self._faiss_id_to_node_id_map[faiss_id]
-            del self._node_id_to_faiss_id_map[node_id]
+            if node_id in self._node_id_to_faiss_id_map:
+                del self._node_id_to_faiss_id_map[node_id]
 
     def query(
         self,
@@ -186,3 +208,75 @@ class FaissMapVectorStore(FaissVectorStore):
         return VectorStoreQueryResult(
             similarities=filtered_dists, ids=filtered_node_idxs
         )
+
+    def persist(
+        self,
+        persist_path: str = DEFAULT_PERSIST_PATH,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
+    ) -> None:
+        """
+        Save to file.
+
+        This method saves the vector store to disk.
+
+        Args:
+            persist_path (str): The save_path of the file.
+
+        """
+        super().persist(persist_path=persist_path, fs=fs)
+        dirpath = os.path.dirname(persist_path)
+        if not os.path.exists(dirpath):
+            os.makedirs(dirpath)
+
+        id_map = {}
+        id_map["node_id_to_faiss_id_map"] = self._node_id_to_faiss_id_map
+        id_map["faiss_id_to_node_id_map"] = self._faiss_id_to_node_id_map
+        # save the id map
+        id_map_path = os.path.join(dirpath, DEFAULT_ID_MAP_NAME)
+        with open(id_map_path, "w") as f:
+            f.write(str(id_map))
+
+    @classmethod
+    def from_persist_dir(
+        cls,
+        persist_dir: str = DEFAULT_PERSIST_DIR,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
+    ) -> "FaissMapVectorStore":
+        persist_path = os.path.join(
+            persist_dir,
+            f"{DEFAULT_VECTOR_STORE}{NAMESPACE_SEP}{DEFAULT_PERSIST_FNAME}",
+        )
+        # only support local storage for now
+        if fs and not isinstance(fs, LocalFileSystem):
+            raise NotImplementedError("FAISS only supports local storage for now.")
+        return cls.from_persist_path(persist_path=persist_path, fs=None)
+
+    @classmethod
+    def from_persist_path(
+        cls,
+        persist_path: str,
+        fs: Optional[fsspec.AbstractFileSystem] = None,
+    ) -> "FaissMapVectorStore":
+        import faiss
+
+        # I don't think FAISS supports fsspec, it requires a path in the SWIG interface
+        # TODO: copy to a temp file and load into memory from there
+        if fs and not isinstance(fs, LocalFileSystem):
+            raise NotImplementedError("FAISS only supports local storage for now.")
+
+        if not os.path.exists(persist_path):
+            raise ValueError(f"No existing {__name__} found at {persist_path}.")
+
+        dirpath = os.path.dirname(persist_path)
+        id_map_path = os.path.join(dirpath, DEFAULT_ID_MAP_NAME)
+        if not os.path.exists(persist_path):
+            raise ValueError(f"No existing {__name__} found at {persist_path}.")
+
+        faiss_index = faiss.read_index(persist_path)
+        with open(id_map_path, "r") as f:
+            id_map = eval(f.read())
+
+        map_vs = cls(faiss_index=faiss_index)
+        map_vs._node_id_to_faiss_id_map = id_map["node_id_to_faiss_id_map"]
+        map_vs._faiss_id_to_node_id_map = id_map["faiss_id_to_node_id_map"]
+        return map_vs
