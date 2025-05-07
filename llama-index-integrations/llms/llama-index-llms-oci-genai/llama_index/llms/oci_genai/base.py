@@ -380,6 +380,7 @@ class OCIGenAI(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         tool_specs = [self._provider.convert_to_oci_tool(tool) for tool in tools]
@@ -397,6 +398,7 @@ class OCIGenAI(FunctionCallingLLM):
         return {
             "messages": messages,
             "tools": tool_specs,
+            **({"tool_choice": "REQUIRED"} if tool_required else {}),
             **oci_params,
             **chat_params,
         }
