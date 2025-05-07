@@ -68,12 +68,34 @@ def get_data_model(
     This part create a dynamic sqlalchemy model with a new table.
     """
     from pgvector.sqlalchemy import Vector
-    from sqlalchemy import Column, Computed, text
-    from sqlalchemy.dialects.postgresql import BIGINT, JSON, JSONB, TSVECTOR, VARCHAR
+    from sqlalchemy import Column, Computed
+    from sqlalchemy.dialects.postgresql import BIGINT, JSON, JSONB, TSVECTOR, VARCHAR, UUID, DOUBLE_PRECISION
+    from sqlalchemy import cast, column
+    from sqlalchemy import String, Integer, Numeric, Float, Boolean, Date, DateTime
     from sqlalchemy.schema import Index
     from sqlalchemy.types import TypeDecorator
 
+    pg_type_map = {
+        "text": String,
+        "int": Integer,
+        "integer": Integer,
+        "numeric": Numeric,
+        "float": Float,
+        "double precision": DOUBLE_PRECISION,  # or Float(precision=53)
+        "boolean": Boolean,
+        "date": Date,
+        "timestamp": DateTime,
+        "uuid": UUID,
+    }
+
     indexed_metadata_keys = indexed_metadata_keys or set()
+    # check that types are in pg_type_map
+    for key, pg_type in indexed_metadata_keys:
+        if pg_type not in pg_type_map:
+            raise ValueError(
+                f"Invalid type {pg_type} for key {key}. "
+                f"Must be one of {list(pg_type_map.keys())}"
+            )
 
     class TSVector(TypeDecorator):
         impl = TSVECTOR
@@ -89,6 +111,18 @@ def get_data_model(
         embedding_col = Column(HALFVEC(embed_dim))  # type: ignore
     else:
         embedding_col = Column(Vector(embed_dim))  # type: ignore
+
+    metadata_indices = [
+        Index(
+            f"{indexname}_{key}_{pg_type.replace(' ', '_')}",
+            cast(
+                column("metadata_").op("->>")(key),
+                pg_type_map[pg_type]
+            ),
+            postgresql_using="btree"
+        )
+        for key, pg_type in indexed_metadata_keys
+    ]
 
     if hybrid_search:
 
@@ -109,7 +143,7 @@ def get_data_model(
         model = type(
             class_name,
             (HybridAbstractData,),
-            {"__tablename__": tablename, "__table_args__": {"schema": schema_name}},
+            {"__tablename__": tablename, "__table_args__": (*metadata_indices, {"schema": schema_name})},
         )
 
         Index(
@@ -122,13 +156,6 @@ def get_data_model(
             model.metadata_["ref_doc_id"].astext,  # type: ignore
             postgresql_using="btree",
         )
-
-        for key, pg_type in indexed_metadata_keys:
-            Index(
-                f"{indexname}_{key}",
-                text(f"(metadata_ ->> '{key}')::{pg_type}"),
-                postgresql_using="btree",
-            )
     else:
 
         class AbstractData(base):  # type: ignore
@@ -142,7 +169,7 @@ def get_data_model(
         model = type(
             class_name,
             (AbstractData,),
-            {"__tablename__": tablename, "__table_args__": {"schema": schema_name}},
+            {"__tablename__": tablename, "__table_args__": (*metadata_indices, {"schema": schema_name})},
         )
 
         Index(
@@ -150,13 +177,6 @@ def get_data_model(
             model.metadata_["ref_doc_id"].astext,  # type: ignore
             postgresql_using="btree",
         )
-
-        for key, pg_type in indexed_metadata_keys:
-            Index(
-                f"{indexname}_{key}",
-                text(f"(metadata_ ->> '{key}')::{pg_type}"),
-                postgresql_using="btree",
-            )
 
     return model
 
@@ -306,6 +326,7 @@ class PGVectorStore(BasePydanticVectorStore):
             embed_dim=embed_dim,
             use_jsonb=use_jsonb,
             use_halfvec=use_halfvec,
+            indexed_metadata_keys=indexed_metadata_keys,
         )
 
         # both engine and async_engine must be provided, or both must be None
