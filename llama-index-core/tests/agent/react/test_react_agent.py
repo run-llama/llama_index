@@ -2,8 +2,8 @@ import re
 from typing import Any, List, Sequence
 
 import pytest
-from llama_index.core.agent.react.base import ReActAgent
-from llama_index.core.agent.react.types import ObservationReasoningStep
+from llama_index.core.agent.react.base import ReActAgent, ReActAgentWorker
+from llama_index.core.agent.react.types import ActionReasoningStep, ObservationReasoningStep
 from llama_index.core.agent.types import Task
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -321,6 +321,40 @@ def test_complaint_when_no_reasoning_step():
         current_reasoning[0].get_content()
         == "Observation: Error: Could not parse output. Please follow the thought-action-input format. Try again."
     )
+
+def test_max_iterations(add_tool: FunctionTool) -> None:
+    """Test that _get_response raises ValueError when max_iterations is reached."""
+    # Create a minimal mock LLM
+    mock_llm = MockLLM()
+
+    # Create agent with a small max_iterations value
+    max_iterations = 3
+    agent_worker = ReActAgentWorker.from_tools(
+        tools=[add_tool],
+        llm=mock_llm,
+        max_iterations=max_iterations,
+    )
+
+    # Create a list of reasoning steps that exceeds max_iterations
+    current_reasoning = []
+    for i in range(max_iterations + 1):  # Creating more steps than max_iterations
+        # Alternate between action and observation steps to simulate a real sequence
+        if i % 2 == 0:
+            current_reasoning.append(ActionReasoningStep(
+                thought=f"Thought {i}",
+                action="add",
+                action_input={"a": i, "b": i}
+            ))
+        else:
+            current_reasoning.append(ObservationReasoningStep(
+                observation=f"Result: {i + i}"
+            ))
+
+    # Mock sources
+    sources: List[ToolOutput] = []
+    # Assert that ValueError is raised with the expected message
+    with pytest.raises(ValueError, match="Reached max iterations."):
+        agent_worker._get_response(current_reasoning, sources)
 
 
 def test_add_step(
