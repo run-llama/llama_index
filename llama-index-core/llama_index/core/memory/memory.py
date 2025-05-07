@@ -28,15 +28,15 @@ DEFAULT_MEMORY_BLOCKS_TEMPLATE = RichPromptTemplate(
 {{ block.text }}
     {% elif block.block_type == "image" %}
       {% if block.url %}
-        {{ block.url | image }}
+        {{ (block.url | string) | image }}
       {% elif block.path %}
-        {{ block.path | image }}
+        {{ (block.path | string) | image }}
       {% endif %}
     {% elif block.block_type == "audio" %}
       {% if block.url %}
-        {{ block.url | audio }}
+        {{ (block.url | string) | audio }}
       {% elif block.path %}
-        {{ block.path | audio }}
+        {{ (block.path | string) | audio }}
       {% endif %}
     {% endif %}
   {% endfor %}
