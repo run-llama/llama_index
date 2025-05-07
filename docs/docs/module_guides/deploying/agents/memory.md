@@ -151,7 +151,7 @@ You'll also notice that we've set the `priority` for each block. This is used to
 When memory blocks get too long, they are automatically "truncated". By default, this just means they are removed from memory until there is room again. This can be customized with subclasses of memory blocks that implement their own truncation logic.
 
 - `priority=0`: This block will always be kept in memory.
-- `priority=1, 2, 3, etc`: This block will be flushed to long-term memory when the memory exceeds the token limit.
+- `priority=1, 2, 3, etc`: This determines the order in which memory blocks are truncated when the memory exceeds the token limit, to help the overall short-term memory + long-term memory content be less than or equal to the `token_limit`.
 
 Now, let's pass these blocks into the `Memory` class:
 
