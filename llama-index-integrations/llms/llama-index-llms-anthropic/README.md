@@ -147,12 +147,10 @@ llm = Anthropic(
 )
 
 # Get response with citations
-response = llm.chat(
-    [{"role": "user", "content": "What are the latest AI research trends?"}]
-)
+response = llm.complete("What are the latest AI research trends?")
 
 # Access the main response content
-print(response.message.content)
+print(response.text)
 
 # Access citations if available
 for citation in response.citations:
