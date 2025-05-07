@@ -168,6 +168,9 @@ As the memory is used, the short-term memory will fill up. Once the short-term m
 
 When memory is retrieved, the short-term and long-term memories are merged together. The `Memory` object will ensure that the short-term memory + long-term memory content is less than or equal to the `token_limit`. If it is longer, the `.truncate()` method will be called on the memory blocks, using the `priority` to determine the truncation order.
 
+!!! tip
+    By default, tokens are counted using tiktoken. To customize this, you can set the `tokenizer_fn` argument to a custom callable that given a string, returns a list. The length of the list is then used to determine the token count.
+
 Once the memory has collected enough information, we might see something like this from the memory:
 
 ```python
