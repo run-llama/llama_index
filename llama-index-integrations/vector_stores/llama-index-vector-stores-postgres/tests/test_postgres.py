@@ -123,6 +123,22 @@ def pg_hybrid(db: None) -> Any:
 
     asyncio.run(pg.close())
 
+@pytest.fixture()
+def pg_indexed_metadata(db: None) -> Any:
+    pg = PGVectorStore.from_params(
+        **PARAMS,  # type: ignore
+        database=TEST_DB,
+        table_name=TEST_TABLE_NAME,
+        schema_name=TEST_SCHEMA_NAME,
+        hybrid_search=True,
+        embed_dim=TEST_EMBED_DIM,
+        indexed_metadata_keys=[("test_text", "text"), ("test_int", "int")],
+    )
+
+    yield pg
+
+    asyncio.run(pg.close())
+
 
 @pytest.fixture()
 def pg_hnsw(db_hnsw: None) -> Any:
@@ -1201,3 +1217,70 @@ async def test_custom_async_engine_only(
             embed_dim=TEST_EMBED_DIM,
             async_engine=async_engine,
         )
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+async def test_indexed_metadata(
+    pg_indexed_metadata: PGVectorStore,
+    hybrid_node_embeddings: List[TextNode],
+) -> None:
+    from sqlalchemy import text
+
+    if pg_indexed_metadata is None:
+        pytest.skip("Postgres not available")
+
+    # add metadata keys to nodes
+    for idx, node in enumerate(hybrid_node_embeddings):
+        node.metadata["test_text"] = str(idx)
+        node.metadata["test_int"] = idx
+
+    await pg_indexed_metadata.async_add(hybrid_node_embeddings)
+
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.1),
+        query_str="fox",
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.HYBRID,
+        sparse_top_k=1,
+    )
+
+    res = await pg_indexed_metadata.aquery(q)
+    assert res.nodes
+    assert len(res.nodes) == 3
+    assert res.nodes[0].node_id == "aaa"
+    assert res.nodes[1].node_id == "bbb"
+    assert res.nodes[2].node_id == "ccc"
+
+    # TODO: Use async_session to query that the indexes were created
+    async with pg_indexed_metadata._async_session() as session:
+        # Replace with your actual table name
+        result = await session.execute(
+            text(
+                "SELECT indexname, indexdef FROM pg_indexes WHERE tablename = :table_name"
+            ),
+            {"table_name": f"data_{TEST_TABLE_NAME}"},
+        )
+        indexes = result.fetchall()
+        # Now check that your expected index names are present
+        index_names = [row.indexname for row in indexes]
+        assert f"{TEST_TABLE_NAME}_idx" in index_names
+        assert f"data_{TEST_TABLE_NAME}_pkey" in index_names
+        # Optionally, check the indexdef for the correct type cast
+        for key, pg_type in pg_indexed_metadata.indexed_metadata_keys:
+            index_name = f"{TEST_TABLE_NAME}_idx_{key}_{pg_type}"
+            assert any(
+                index_name == row.indexname and f"metadata_ ->> '{key}'" in row.indexdef
+                for row in indexes
+            ), f"Index {index_name} not found or incorrect type cast in indexdef"
+        from sqlalchemy import text
+        result = await session.execute(
+            text("""
+                EXPLAIN ANALYZE
+                SELECT * FROM test.data_lorem_ipsum
+                WHERE (metadata_ ->> 'test_int')::int = 42
+            """)
+        )
+        explain_output = result.fetchall()
+        for row in explain_output:
+            print(row[0])
