@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Sequence, Union, Tuple, List
+from typing import Any, Dict, Optional, Sequence, Union, Tuple, List, TYPE_CHECKING
 
 from ibm_watsonx_ai import Credentials, APIClient
 from ibm_watsonx_ai.foundation_models import ModelInference
@@ -46,6 +46,9 @@ from llama_index.llms.ibm.utils import (
     from_watsonx_message,
     update_tool_calls,
 )
+
+if TYPE_CHECKING:
+    from llama_index.core.tools import BaseTool
 
 # default max tokens determined by service
 DEFAULT_MAX_TOKENS = 20
@@ -583,6 +586,7 @@ class WatsonxLLM(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         tool_choice: Optional[str] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
@@ -602,6 +606,9 @@ class WatsonxLLM(FunctionCallingLLM):
             "tools": tool_specs or None,
             **kwargs,
         }
+        if tool_required and tool_choice is None:
+            # NOTE: watsonx can only require a single tool
+            tool_choice = tools[0].metadata.name if len(tools) > 0 else None
         if tool_choice is not None:
             chat_with_tools_payload.update(
                 {"tool_choice": {"type": "function", "function": {"name": tool_choice}}}
