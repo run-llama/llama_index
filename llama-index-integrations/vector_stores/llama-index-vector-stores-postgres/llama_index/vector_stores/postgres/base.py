@@ -530,19 +530,6 @@ class PGVectorStore(BasePydanticVectorStore):
             session.execute(statement)
             session.commit()
 
-    def _create_metadata_index(self) -> None:
-        """Create a GIN index on the metadata_ column."""
-        import sqlalchemy
-
-        index_name = f"{self._table_class.__tablename__}_metadata_idx"
-
-        with self._session() as session, session.begin():
-            statement = sqlalchemy.text(
-                f"CREATE INDEX IF NOT EXISTS {index_name} ON {self.schema_name}.{self._table_class.__tablename__} USING gin (metadata_ jsonb_path_ops)"
-            )
-            session.execute(statement)
-            session.commit()
-
     def _initialize(self) -> None:
         fail_on_error = self.initialization_fail_on_error
         if not self._is_initialized:

@@ -1230,6 +1230,11 @@ async def test_indexed_metadata(
     if pg_indexed_metadata is None:
         pytest.skip("Postgres not available")
 
+    # add metadata keys to nodes
+    for idx, node in enumerate(hybrid_node_embeddings):
+        node.metadata["test_text"] = str(idx)
+        node.metadata["test_int"] = idx
+
     await pg_indexed_metadata.async_add(hybrid_node_embeddings)
 
     q = VectorStoreQuery(
@@ -1268,3 +1273,14 @@ async def test_indexed_metadata(
                 index_name == row.indexname and f"metadata_ ->> '{key}'" in row.indexdef
                 for row in indexes
             ), f"Index {index_name} not found or incorrect type cast in indexdef"
+        from sqlalchemy import text
+        result = await session.execute(
+            text("""
+                EXPLAIN ANALYZE
+                SELECT * FROM test.data_lorem_ipsum
+                WHERE (metadata_ ->> 'test_int')::int = 42
+            """)
+        )
+        explain_output = result.fetchall()
+        for row in explain_output:
+            print(row[0])
