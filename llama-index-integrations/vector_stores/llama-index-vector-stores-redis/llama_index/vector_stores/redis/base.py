@@ -33,7 +33,7 @@ from llama_index.core.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
-    FilterOperator
+    FilterOperator,
 )
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
@@ -183,7 +183,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             self._async_index = AsyncSearchIndex(
                 schema=schema, redis_client=redis_client_async
             )
-        else:
+        if not redis_client and redis_url and redis_client_async:
             raise Exception(
                 "Either redis_client, redis_url, or redis_client_async need to be defined"
             )
