@@ -341,6 +341,8 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             new_steps = []
         else:
             is_done = False
+            if response.message.content and self.response_hook:
+                self.response_hook(str(response.message.content))            
             for i, tool_call in enumerate(tool_calls):
                 # TODO: maybe execute this with multi-threading
                 return_direct = self._call_function(
@@ -381,8 +383,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
 
         agent_response = AgentChatResponse(response=response_str, sources=tool_outputs)
 
-        if response_str and self.response_hook and not is_done:
-            self.response_hook(response_str)
+
         return TaskStepOutput(
             output=agent_response,
             task_step=step,
@@ -435,6 +436,8 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
             new_steps = []
         else:
             is_done = False
+            if response.message.content and self.response_hook:
+                await self.response_hook(str(response.message.content))
             tasks = [
                 self._acall_function(
                     tools,
@@ -476,8 +479,6 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
 
         agent_response = AgentChatResponse(response=response_str, sources=tool_outputs)
 
-        if response_str and self.response_hook and not is_done:
-            await self.response_hook(response_str)
         return TaskStepOutput(
             output=agent_response,
             task_step=step,
