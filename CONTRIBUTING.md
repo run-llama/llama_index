@@ -33,6 +33,12 @@ If you're ready to dive in, here’s a quick setup guide to get you going:
 uv sync
 ```
 
+If you've changed documentation:
+
+```bash
+uv run make lint
+```
+
 3. Navigate to the project folder you want to work on. For example, if you want to work on the OpenAI llm integration:
 
 ```bash

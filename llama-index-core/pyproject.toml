@@ -8,6 +8,7 @@ dev = [
     "boto3==1.33.6",
     "botocore>=1.33.13",
     "codespell[toml]>=v2.2.6",
+    "diff-cover>=9.2.0",
     "llama-cloud>=0.0.6",
     "mypy==1.11.0",
     "openai",

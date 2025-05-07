@@ -12,7 +12,6 @@ dev = [
     "pytest==7.2.1",
     "pytest-mock==3.11.1",
     "ruff==0.0.292",
-    "tree-sitter-languages>=1.8.0,<2",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-protobuf>=4.24.0.4,<5",
@@ -21,6 +20,8 @@ dev = [
     "types-setuptools==67.1.0.0",
     "black[jupyter]<=23.9.1,>=23.7.0",
     "codespell[toml]>=v2.2.6",
+    "pytest-cov>=6.1.1",
+    "diff-cover>=9.2.4",
 ]
 
 [project]
@@ -28,7 +29,7 @@ name = "llama-index-readers-google"
 version = "0.6.1"
 description = "llama-index readers google integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 maintainers = [

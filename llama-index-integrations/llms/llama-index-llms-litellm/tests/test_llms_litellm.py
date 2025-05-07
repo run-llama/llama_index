@@ -137,6 +137,38 @@ def test_tool_calling(respx_mock: respx.MockRouter, llm: LiteLLM):
     assert tool_calls[0].tool_kwargs == {"x": 1, "y": 1}
 
 
+def test_get_tool_calls_from_response_returns_empty_arguments_with_invalid_json_arguments(respx_mock: respx.MockRouter, llm: LiteLLM) -> (
+        None
+):
+    mock_tool_response(respx_mock, "INVALID JSON")
+    message = "what's 1+1?"
+    chat_response = llm.chat_with_tools(tools=[add_tool], user_msg=message)
+    tools = llm.get_tool_calls_from_response(chat_response)
+    assert len(tools) == 1
+    assert tools[0].tool_kwargs == {}
+
+
+def test_get_tool_calls_from_response_returns_empty_arguments_with_non_dict_json_input(respx_mock: respx.MockRouter, llm: LiteLLM) -> (
+        None
+):
+    mock_tool_response(respx_mock, "null")
+    message = "what's 1+1?"
+    chat_response = llm.chat_with_tools(tools=[add_tool], user_msg=message)
+    tools = llm.get_tool_calls_from_response(chat_response)
+    assert len(tools) == 1
+    assert tools[0].tool_kwargs == {}
+
+
+def test_get_tool_calls_from_response_returns_arguments_with_dict_json_input(respx_mock: respx.MockRouter, llm: LiteLLM) -> None:
+    arguments = {"test": 123}
+    mock_tool_response(respx_mock, json.dumps(arguments))
+    message = "what's 1+1?"
+    chat_response = llm.chat_with_tools(tools=[add_tool], user_msg=message)
+    tools = llm.get_tool_calls_from_response(chat_response)
+    assert len(tools) == 1
+    assert tools[0].tool_kwargs == arguments
+
+
 @pytest.mark.asyncio
 async def test_achat_tool_calling(respx_mock: respx.MockRouter, llm: LiteLLM):
     mock_tool_response(respx_mock)
@@ -208,7 +240,7 @@ def mock_completion_response(respx_mock: respx.MockRouter):
     )
 
 
-def mock_tool_response(respx_mock: respx.MockRouter):
+def mock_tool_response(respx_mock: respx.MockRouter, arguments: str = '{"x": 1, "y": 1}'):
     respx_mock.post("https://api.openai.com/v1/chat/completions").mock(
         return_value=httpx.Response(
             status_code=200,
@@ -223,7 +255,7 @@ def mock_tool_response(respx_mock: respx.MockRouter):
                                     "type": "function",
                                     "function": {
                                         "name": "add",
-                                        "arguments": '{"x": 1, "y": 1}',
+                                        "arguments": arguments,
                                     },
                                 }
                             ],

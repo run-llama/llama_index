@@ -15,8 +15,6 @@ dev = [
     "pytest-asyncio==0.21.0",
     "pytest-mock==3.11.1",
     "ruff==0.0.292",
-    "torchvision==0.19.1",
-    "tree-sitter-languages>=1.8.0,<2",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-protobuf>=4.24.0.4,<5",
@@ -30,15 +28,15 @@ name = "llama-index-multi-modal-llms-huggingface"
 version = "0.4.2"
 description = "llama-index multi_modal_llms HuggingFace integration by [Cihan Yalçın](https://www.linkedin.com/in/chanyalcin/)"
 authors = [{name = "M.Cihan Yalçın", email = "mcihan.yalcin@outlook.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
     "llama-index-core>=0.12.0,<0.13",
-    "transformers[torch]~=4.45",
+    "transformers[torch]>=4.45",
     "qwen-vl-utils>=0.0.8",
-    "torchvision>=0.19.1,<0.20",
-    "Pillow>=10.0.0,<11",
+    "torchvision>=0.19.1",
+    "Pillow>=10.0.0",
 ]
 
 [tool.codespell]

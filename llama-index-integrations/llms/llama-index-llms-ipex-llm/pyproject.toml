@@ -28,7 +28,7 @@ name = "llama-index-llms-ipex-llm"
 version = "0.3.1"
 description = "llama-index llms ipex-llm integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<3.12"
+requires-python = ">=3.10,<3.12"
 readme = "README.md"
 license = "MIT"
 dependencies = [
