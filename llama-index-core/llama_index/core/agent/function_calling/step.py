@@ -417,9 +417,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
 
         if self._verbose and response.message.content:
             print("=== LLM Response ===")
-            print(str(response.message.content))
-            if response.message.content and self.response_hook:
-                await self.response_hook('BEFORE DONE ' + str(response.message.content))            
+            print(str(response.message.content))      
 
         if not self.allow_parallel_tool_calls and len(tool_calls) > 1:
             raise ValueError(
@@ -478,8 +476,6 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
 
         agent_response = AgentChatResponse(response=response_str, sources=tool_outputs)
 
-        if is_done:
-            print('IS DONE')
         if response_str and self.response_hook and not is_done:
             await self.response_hook(response_str)
         return TaskStepOutput(
