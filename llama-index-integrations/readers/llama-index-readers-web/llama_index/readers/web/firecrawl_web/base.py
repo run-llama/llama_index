@@ -5,6 +5,7 @@ from pydantic import Field
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
+from firecrawl import FirecrawlApp
 
 
 class FireCrawlWebReader(BasePydanticReader):
@@ -26,7 +27,7 @@ class FireCrawlWebReader(BasePydanticReader):
 
     """
 
-    firecrawl: Optional[object] = Field(None)
+    firecrawl: Optional[FirecrawlApp] = Field(None)
     api_key: str
     api_url: Optional[str]
     mode: Optional[str]
@@ -88,7 +89,7 @@ class FireCrawlWebReader(BasePydanticReader):
             # [SCRAPE] params: https://docs.firecrawl.dev/api-reference/endpoint/scrape
             if url is None:
                 raise ValueError("URL must be provided for scrape mode.")
-            firecrawl_docs = self.firecrawl.scrape_url(url, params=self.params)
+            firecrawl_docs = self.firecrawl.scrape_url(url, **self.params)
             documents.append(
                 Document(
                     text=firecrawl_docs.get("markdown", ""),
@@ -119,7 +120,7 @@ class FireCrawlWebReader(BasePydanticReader):
                 del search_params["query"]
 
             # Get search results
-            search_response = self.firecrawl.search(query, params=search_params)
+            search_response = self.firecrawl.search(query, **search_params)
 
             # Handle the search response format
             if isinstance(search_response, dict):
@@ -199,7 +200,7 @@ class FireCrawlWebReader(BasePydanticReader):
             payload = {"prompt": extract_params.pop("prompt")}
 
             # Call the extract method with the urls and params
-            extract_response = self.firecrawl.extract(urls=urls, params=payload)
+            extract_response = self.firecrawl.extract(urls=urls, **payload)
 
             # Handle the extract response format
             if isinstance(extract_response, dict):
