@@ -414,6 +414,13 @@ faiss_index = faiss.IndexFlatL2(d)
 # construct vector store
 vector_store = FaissVectorStore(faiss_index)
 
+# if update/delete functionality is needed you can leverage the FaissMapVectorStore
+
+d = 1536
+faiss_index = faiss.IndexFlatL2(d)
+id_map_index = faiss.IndexIDMap2(faiss_index)
+vector_store = FaissMapVectorStore(id_map_index)
+
 ...
 
 # NOTE: since faiss index is in-memory, we need to explicitly call

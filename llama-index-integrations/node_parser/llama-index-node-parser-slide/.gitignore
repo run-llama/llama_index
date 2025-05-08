@@ -151,6 +151,3 @@ Pipfile.lock
 
 # pyright
 pyrightconfig.json
-
-# faiss persist dir
-storage/

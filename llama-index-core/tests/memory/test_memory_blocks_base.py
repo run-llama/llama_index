@@ -88,7 +88,8 @@ def memory_with_blocks():
     return Memory(
         token_limit=1000,
         token_flush_size=700,
-        user_id="test_blocks",
+        chat_history_token_ratio=0.9,
+        session_id="test_blocks",
         memory_blocks=[
             TextMemoryBlock(name="text_block", priority=1),
             ContentBlocksMemoryBlock(name="content_blocks", priority=2),
@@ -284,7 +285,8 @@ async def test_insert_method_setting():
     memory = Memory(
         token_limit=1000,
         token_flush_size=700,
-        user_id="test_insert_methods",
+        chat_history_token_ratio=0.9,
+        session_id="test_insert_methods",
         insert_method=InsertMethod.USER,
         memory_blocks=[system_block, user_block],
     )
@@ -306,7 +308,8 @@ async def test_insert_method_setting():
     memory = Memory(
         token_limit=1000,
         token_flush_size=700,
-        user_id="test_insert_methods",
+        chat_history_token_ratio=0.9,
+        session_id="test_insert_methods",
         insert_method=InsertMethod.SYSTEM,
         memory_blocks=[system_block, user_block],
     )
