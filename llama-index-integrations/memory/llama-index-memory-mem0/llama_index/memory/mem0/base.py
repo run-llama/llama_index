@@ -35,6 +35,8 @@ class BaseMem0(BaseMemory):
     ) -> Optional[Dict[str, Any]]:
         if self._client is None:
             raise ValueError("Client is not initialized")
+        if not messages:
+            return None
         return self._client.add(messages=messages, **kwargs)
 
     def search(self, query: str, **kwargs) -> Optional[Dict[str, Any]]:

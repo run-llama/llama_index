@@ -100,7 +100,7 @@ def test_chat(model, temp_image_path):
     model._generate.assert_called_once_with({"mocked": "inputs"})
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "method_name",
     [

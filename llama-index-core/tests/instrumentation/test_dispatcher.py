@@ -284,7 +284,7 @@ def test_dispatcher_span_drop_args(
     mock_span_exit.assert_not_called()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch.object(Dispatcher, "span_exit")
 @patch.object(Dispatcher, "span_enter")
 @patch("llama_index.core.instrumentation.dispatcher.uuid")
@@ -321,7 +321,7 @@ async def test_dispatcher_async_span_args(mock_uuid, mock_span_enter, mock_span_
     }
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch.object(Dispatcher, "span_exit")
 @patch.object(Dispatcher, "span_enter")
 @patch("llama_index.core.instrumentation.dispatcher.uuid")
@@ -361,7 +361,7 @@ async def test_dispatcher_async_span_args_with_instance(
     }
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch.object(Dispatcher, "span_exit")
 @patch.object(Dispatcher, "span_drop")
 @patch.object(Dispatcher, "span_enter")
@@ -400,7 +400,7 @@ async def test_dispatcher_async_span_drop_args(
     mock_span_exit.assert_not_called()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch.object(Dispatcher, "span_exit")
 @patch.object(Dispatcher, "span_drop")
 @patch.object(Dispatcher, "span_enter")
@@ -472,7 +472,7 @@ def test_dispatcher_fire_event(
     mock_span_exit.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch.object(Dispatcher, "span_exit")
 @patch.object(Dispatcher, "span_drop")
 @patch.object(Dispatcher, "span_enter")
@@ -508,7 +508,7 @@ async def test_dispatcher_async_fire_event(
     mock_span_exit.call_count == 3
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 @patch.object(Dispatcher, "span_enter")
 async def test_dispatcher_attaches_tags_to_events_and_spans(
@@ -596,7 +596,7 @@ def test_dispatcher_fire_event_with_instance(
     mock_span_exit.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch.object(Dispatcher, "span_exit")
 @patch.object(Dispatcher, "span_drop")
 @patch.object(Dispatcher, "span_enter")

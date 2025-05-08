@@ -12,12 +12,14 @@ from llama_index.core.tools.types import ToolMetadata
 
 
 class AgentRunStepStartEvent(BaseEvent):
-    """AgentRunStepStartEvent.
+    """
+    AgentRunStepStartEvent.
 
     Args:
         task_id (str): Task ID.
         step (Optional[TaskStep]): Task step.
         input (Optional[str]): Optional input.
+
     """
 
     task_id: str
@@ -31,10 +33,12 @@ class AgentRunStepStartEvent(BaseEvent):
 
 
 class AgentRunStepEndEvent(BaseEvent):
-    """AgentRunStepEndEvent.
+    """
+    AgentRunStepEndEvent.
 
     Args:
         step_output (TaskStepOutput): Task step output.
+
     """
 
     step_output: TaskStepOutput
@@ -46,10 +50,12 @@ class AgentRunStepEndEvent(BaseEvent):
 
 
 class AgentChatWithStepStartEvent(BaseEvent):
-    """AgentChatWithStepStartEvent.
+    """
+    AgentChatWithStepStartEvent.
 
     Args:
         user_msg (str): User input message.
+
     """
 
     user_msg: str
@@ -61,10 +67,12 @@ class AgentChatWithStepStartEvent(BaseEvent):
 
 
 class AgentChatWithStepEndEvent(BaseEvent):
-    """AgentChatWithStepEndEvent.
+    """
+    AgentChatWithStepEndEvent.
 
     Args:
         response (Optional[AGENT_CHAT_RESPONSE_TYPE]): Agent chat response.
+
     """
 
     response: Optional[AGENT_CHAT_RESPONSE_TYPE]
@@ -106,11 +114,13 @@ class AgentChatWithStepEndEvent(BaseEvent):
 
 
 class AgentToolCallEvent(BaseEvent):
-    """AgentToolCallEvent.
+    """
+    AgentToolCallEvent.
 
     Args:
         arguments (str): Arguments.
         tool (ToolMetadata): Tool metadata.
+
     """
 
     arguments: str

@@ -39,9 +39,16 @@ if TYPE_CHECKING:  # pragma: no cover
 T = TypeVar("T", bound=Event)
 EventBuffer = Dict[str, List[Event]]
 
+# Only warn once about unserializable keys
+class UnserializableKeyWarning(Warning):
+    pass
+
+warnings.simplefilter("once", UnserializableKeyWarning)
+
 
 class Context:
-    """A global object representing a context for a given workflow run.
+    """
+    A global object representing a context for a given workflow run.
 
     The Context object can be used to store data that needs to be available across iterations during a workflow
     execution, and across multiple workflow runs.
@@ -50,6 +57,10 @@ class Context:
 
     Both `set` and `get` operations on global data are governed by a lock, and considered coroutine-safe.
     """
+
+    # These keys are set by pre-built workflows and
+    # are known to be unserializable in some cases.
+    known_unserializable_keys = ("memory", )
 
     def __init__(
         self,
@@ -124,6 +135,14 @@ class Context:
             try:
                 serialized_globals[key] = serializer.serialize(value)
             except Exception as e:
+                if key in self.known_unserializable_keys:
+                    # Skip serialization of known unserializable keys
+                    warnings.warn(
+                        f"Skipping serialization of known unserializable key: {key} -- "
+                        "This is expected but will require this item to be set manually after deserialization.",
+                        category=UnserializableKeyWarning,
+                    )
+                    continue
                 raise ValueError(f"Failed to serialize value for key {key}: {e}")
         return serialized_globals
 
@@ -208,7 +227,8 @@ class Context:
             raise ContextSerdeError(msg) from e
 
     async def set(self, key: str, value: Any, make_private: bool = False) -> None:
-        """Store `value` into the Context under `key`.
+        """
+        Store `value` into the Context under `key`.
 
         Args:
             key: A unique string to identify the value stored.
@@ -216,6 +236,7 @@ class Context:
 
         Raises:
             ValueError: When make_private is True but a key already exists in the global storage.
+
         """
         if make_private:
             warnings.warn(
@@ -226,21 +247,25 @@ class Context:
             self._globals[key] = value
 
     async def mark_in_progress(self, name: str, ev: Event) -> None:
-        """Add input event to in_progress dict.
+        """
+        Add input event to in_progress dict.
 
         Args:
             name (str): The name of the step that is in progress.
             ev (Event): The input event that kicked off this step.
+
         """
         async with self.lock:
             self._in_progress[name].append(ev)
 
     async def remove_from_in_progress(self, name: str, ev: Event) -> None:
-        """Remove input event from active steps.
+        """
+        Remove input event from active steps.
 
         Args:
             name (str): The name of the step that has been completed.
             ev (Event): The associated input event that kicked of this completed step.
+
         """
         async with self.lock:
             events = [e for e in self._in_progress[name] if e != ev]
@@ -261,7 +286,8 @@ class Context:
             return list(self._currently_running_steps)
 
     async def get(self, key: str, default: Optional[Any] = Ellipsis) -> Any:
-        """Get the value corresponding to `key` from the Context.
+        """
+        Get the value corresponding to `key` from the Context.
 
         Args:
             key: A unique string to identify the value stored.
@@ -269,6 +295,7 @@ class Context:
 
         Raises:
             ValueError: When there's not value accessible corresponding to `key`.
+
         """
         async with self.lock:
             if key in self._globals:
@@ -281,7 +308,8 @@ class Context:
 
     @property
     def data(self) -> Dict[str, Any]:  # pragma: no cover
-        """This property is provided for backward compatibility.
+        """
+        This property is provided for backward compatibility.
 
         Use `get` and `set` instead.
         """
@@ -323,7 +351,8 @@ class Context:
     def collect_events(
         self, ev: Event, expected: List[Type[Event]], buffer_id: Optional[str] = None
     ) -> Optional[List[Event]]:
-        """Collects events for buffering in workflows.
+        """
+        Collects events for buffering in workflows.
 
         This method adds the current event to the internal buffer and attempts to collect all
         expected event types. If all expected events are found, they will be returned in order.
@@ -339,6 +368,7 @@ class Context:
         Returns:
             Optional[List[Event]]: List of collected events in the order of expected types if all
                                   expected events are found; otherwise None.
+
         """
         buffer_id = buffer_id or self._get_event_buffer_id(expected)
 
@@ -370,7 +400,8 @@ class Context:
         return None
 
     def add_holding_event(self, event: Event) -> None:
-        """Add an event to the list of those collected in current step.
+        """
+        Add an event to the list of those collected in current step.
 
         This is only relevant for stepwise execution.
         """
@@ -388,7 +419,8 @@ class Context:
         return list(self._step_events_holding)
 
     def send_event(self, message: Event, step: Optional[str] = None) -> None:
-        """Sends an event to a specific step in the workflow.
+        """
+        Sends an event to a specific step in the workflow.
 
         If step is None, the event is sent to all the receivers and we let
         them discard events they don't want.
@@ -420,7 +452,8 @@ class Context:
         requirements: Optional[Dict[str, Any]] = None,
         timeout: Optional[float] = 2000,
     ) -> T:
-        """Asynchronously wait for a specific event type to be received.
+        """
+        Asynchronously wait for a specific event type to be received.
 
         If provided, `waiter_event` will be written to the event stream to let the caller know that we're waiting for a response.
 
@@ -436,6 +469,7 @@ class Context:
 
         Raises:
             asyncio.TimeoutError: If the timeout is reached before receiving matching event
+
         """
         requirements = requirements or {}
 
@@ -486,7 +520,8 @@ class Context:
         self._globals.clear()
 
     async def shutdown(self) -> None:
-        """To be called when a workflow ends.
+        """
+        To be called when a workflow ends.
 
         We clear all the tasks and set the is_running flag. Note that we
         don't clear _globals or _queues so that the context can be still

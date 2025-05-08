@@ -18,6 +18,7 @@ class StructuredDataReader(BaseReader):
         col_index (str, int, or list): The list of columns to be used as index.
         col_metadata (None, str, int, or list): The list of columns to be used as metadata.
         ...
+
     """
 
     def __init__(

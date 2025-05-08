@@ -19,10 +19,12 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class SimpleGraphStoreData(DataClassJsonMixin):
-    """Simple Graph Store Data container.
+    """
+    Simple Graph Store Data container.
 
     Args:
         graph_dict (Optional[dict]): dict mapping subject to
+
     """
 
     graph_dict: Dict[str, List[List[str]]] = field(default_factory=dict)
@@ -68,7 +70,8 @@ class SimpleGraphStoreData(DataClassJsonMixin):
 
 
 class SimpleGraphStore(GraphStore):
-    """Simple Graph Store.
+    """
+    Simple Graph Store.
 
     In this graph store, triplets are stored within a simple, in-memory dictionary.
 
@@ -76,6 +79,7 @@ class SimpleGraphStore(GraphStore):
         simple_graph_store_data_dict (Optional[dict]): data dict
             containing the triplets. See SimpleGraphStoreData
             for more details.
+
     """
 
     def __init__(
@@ -100,7 +104,8 @@ class SimpleGraphStore(GraphStore):
 
     @property
     def client(self) -> None:
-        """Get client.
+        """
+        Get client.
         Not applicable for this store.
         """
         return

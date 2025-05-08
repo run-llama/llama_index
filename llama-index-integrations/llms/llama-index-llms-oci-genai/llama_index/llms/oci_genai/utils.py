@@ -85,7 +85,8 @@ def _format_oci_tool_calls(
 
 
 def create_client(auth_type, auth_profile, auth_file_location, service_endpoint):
-    """OCI Gen AI client.
+    """
+    OCI Gen AI client.
 
     Args:
         auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPAL, RESOURCE_PRINCIPAL. If not specified, API_KEY will be used
@@ -95,6 +96,7 @@ def create_client(auth_type, auth_profile, auth_file_location, service_endpoint)
         auth_file_location (Optional[str]): Path to the config file. If not specified, ~/.oci/config will be used
 
         service_endpoint (str): service endpoint url, e.g., "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com"
+
     """
     try:
         import oci
@@ -420,6 +422,7 @@ class CohereProvider(Provider):
 
         Returns:
             A CohereTool representing the tool in the OCI API format.
+
         """
         if isinstance(tool, BaseTool):
             # Extract tool name and description for BaseTool

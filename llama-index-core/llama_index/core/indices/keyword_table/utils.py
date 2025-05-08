@@ -51,7 +51,8 @@ def rake_extract_keywords(
 def extract_keywords_given_response(
     response: str, lowercase: bool = True, start_token: str = ""
 ) -> Set[str]:
-    """Extract keywords given the GPT-generated response.
+    """
+    Extract keywords given the GPT-generated response.
 
     Used by keyword table indices.
     Parses <start_token>: <word1>, <word2>, ... into [word1, word2, ...]

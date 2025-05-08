@@ -105,6 +105,33 @@ resp = llm.complete("Paul Graham is ")
 print(resp)
 ```
 
+### Use an Application Inference Profile
+
+AWS Bedrock supports Application Inference Profiles which are a sort of provisioned proxy to Bedrock LLMs.
+
+Since these profile ARNs are account-specific, they must be handled specially in BedrockConverse.
+
+When an application inference profile is created as an AWS resource, it references an existing Bedrock foundation model or a cross-region inference profile. The referenced model must be provided to the BedrockConverse initializer as the `model` argument, and the ARN of the application inference profile must be provided as the `application_inference_profile_arn` argument.
+
+**Important:** BedrockConverse does not validate that the `model` argument in fact matches the underlying model referenced by the application inference profile provided. The caller is responsible for making sure they match. Behavior when they do not match is undefined.
+
+```py
+# Assumes the existence of a provisioned application inference profile
+# that references a foundation model or cross-region inference profile.
+
+from llama_index.llms.bedrock_converse import BedrockConverse
+
+
+# Instantiate the BedrockConverse model
+# with the model and application inference profile
+# Make sure the model is the one that the
+# application inference profile refers to in AWS
+llm = BedrockConverse(
+    model="us.anthropic.claude-3-5-sonnet-20240620-v1:0",  # this is the referenced model/profile
+    application_inference_profile_arn="arn:aws:bedrock:us-east-1:012345678901:application-inference-profile/fake-profile-name",
+)
+```
+
 ### Function Calling
 
 ```py

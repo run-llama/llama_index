@@ -21,6 +21,7 @@ class StripeDocsReader(BaseReader):
     Args:
         html_to_text (bool): Whether to convert HTML to text.
         limit (int): Maximum number of concurrent requests.
+
     """
 
     def __init__(self, html_to_text: bool = False, limit: int = 10) -> None:

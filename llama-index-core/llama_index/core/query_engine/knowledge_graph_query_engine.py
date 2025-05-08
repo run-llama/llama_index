@@ -51,7 +51,8 @@ DEFAULT_KG_RESPONSE_ANSWER_PROMPT = PromptTemplate(
     ),
 )
 class KnowledgeGraphQueryEngine(BaseQueryEngine):
-    """Knowledge graph query engine.
+    """
+    Knowledge graph query engine.
 
     Query engine to call a knowledge graph.
 

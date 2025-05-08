@@ -23,7 +23,8 @@ from google.auth import credentials as auth_credentials
     )
 )
 class VertexEmbeddingMode(str, Enum):
-    """VertexAI embedding mode.
+    """
+    VertexAI embedding mode.
 
     Attributes:
         DEFAULT_MODE (str): The default embedding mode, for older models before August 2023,
@@ -32,6 +33,7 @@ class VertexEmbeddingMode(str, Enum):
         CLUSTERING_MODE (str): Optimizes embeddings for clustering tasks.
         SEMANTIC_SIMILARITY_MODE (str): Optimizes embeddings for tasks that require assessments of semantic similarity.
         RETRIEVAL_MODE (str): Optimizes embeddings for retrieval tasks, including search and document retrieval.
+
     """
 
     DEFAULT_MODE = "default"
@@ -63,7 +65,8 @@ def init_vertexai(
     location: Optional[str] = None,
     credentials: Optional[auth_credentials.Credentials] = None,
 ) -> None:
-    """Init vertexai.
+    """
+    Init vertexai.
 
     Args:
         project: The default GCP project to use when making Vertex API calls.
@@ -71,6 +74,7 @@ def init_vertexai(
         credentials: The default custom
             credentials to use when making API calls. If not provided credentials
             will be ascertained from the environment.
+
     """
     vertexai.init(
         project=project,

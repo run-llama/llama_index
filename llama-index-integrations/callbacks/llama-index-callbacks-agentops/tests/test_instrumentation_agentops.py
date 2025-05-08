@@ -142,7 +142,7 @@ def test_class():
     assert AgentOpsHandler.__name__ in names_of_base_classes
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("method", ["chat", "achat", "stream_chat", "astream_chat"])
 @pytest.mark.parametrize("agent_runner_fixture", ["mock_agent"])
 @patch("llama_index.callbacks.agentops.base.AOClient")

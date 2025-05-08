@@ -32,6 +32,7 @@ class BoxReaderTextExtraction(BoxReaderBase):
     Attributes:
         _box_client (BoxClient): An authenticated Box client object used
             for interacting with the Box API.
+
     """
 
     @classmethod
@@ -69,6 +70,7 @@ class BoxReaderTextExtraction(BoxReaderBase):
         Returns:
             List[Document]: A list of Document objects containing the extracted
                 text content and file metadata.
+
         """
         # Connect to Box
         box_check_connection(self._box_client)

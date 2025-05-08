@@ -38,21 +38,21 @@ def test_embedding_query_not_found(mock_sparse_embedding: MockSparseEmbedding):
     assert embedding == mock_sparse_embedding.default_embedding
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_embedding_query_async(mock_sparse_embedding: MockSparseEmbedding):
     query = "hello"
     embedding = await mock_sparse_embedding.aget_text_embedding(query)
     assert embedding == text_embedding_map[query]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_embedding_text_async(mock_sparse_embedding: MockSparseEmbedding):
     text = "hello"
     embedding = await mock_sparse_embedding.aget_text_embedding(text)
     assert embedding == text_embedding_map[text]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_embedding_texts_async(mock_sparse_embedding: MockSparseEmbedding):
     texts = ["hello", "world", "foo"]
     embeddings = await mock_sparse_embedding.aget_text_embedding_batch(texts)
@@ -72,7 +72,7 @@ def test_aggregate_embeddings(mock_sparse_embedding: MockSparseEmbedding):
     assert embedding == {0: 0.125, 1: 0.25}
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_aggregate_embeddings_async(mock_sparse_embedding: MockSparseEmbedding):
     queries = ["hello", "world"]
     embedding = await mock_sparse_embedding.aget_agg_embedding_from_queries(queries)

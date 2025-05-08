@@ -8,7 +8,8 @@ from llama_index.core.schema import Document
 
 
 class GraphDBCypherReader(BaseReader):
-    """Graph database Cypher reader.
+    """
+    Graph database Cypher reader.
 
     Combines all Cypher query results into the Document type used by LlamaIndex.
 
@@ -39,7 +40,8 @@ class GraphDBCypherReader(BaseReader):
     def load_data(
         self, query: str, parameters: Optional[Dict] = None
     ) -> List[Document]:
-        """Run the Cypher with optional parameters and turn results into documents.
+        """
+        Run the Cypher with optional parameters and turn results into documents.
 
         Args:
             query (str): Graph Cypher query string.

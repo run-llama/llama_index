@@ -50,6 +50,7 @@ class JaguarVectorStore(BasePydanticVectorStore):
             url='http://192.168.8.88:8080/fwww/',
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -81,6 +82,7 @@ class JaguarVectorStore(BasePydanticVectorStore):
             vector_type: str:  type of the vector index
             vector_dimension: int:  dimension of the vector index
             url: str:  URL end point of jaguar http server
+
         """
         super().__init__(stores_text=True)
         self._pod = self._sanitize_input(pod)
@@ -121,6 +123,7 @@ class JaguarVectorStore(BasePydanticVectorStore):
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
+
         """
         use_node_metadata = add_kwargs.get("use_node_metadata", False)
         ids = []
@@ -142,6 +145,7 @@ class JaguarVectorStore(BasePydanticVectorStore):
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
+
         """
         podstore = self._pod + "." + self._store
         q = (
@@ -160,6 +164,7 @@ class JaguarVectorStore(BasePydanticVectorStore):
         Args:
             query: VectorStoreQuery object
             kwargs:  may contain 'where', 'metadata_fields', 'args', 'fetch_k'
+
         """
         embedding = query.query_embedding
         k = query.similarity_top_k
@@ -178,6 +183,7 @@ class JaguarVectorStore(BasePydanticVectorStore):
             embedding: a list of floats
             k: topK number
             kwargs:  may contain 'where', 'metadata_fields', 'args', 'fetch_k'
+
         """
         return cast(
             List[Document],
@@ -196,6 +202,7 @@ class JaguarVectorStore(BasePydanticVectorStore):
             metadata_fields (str):  exrta metadata columns and types
         Returns:
             True if successful; False if not successful
+
         """
         podstore = self._pod + "." + self._store
 
@@ -236,6 +243,7 @@ class JaguarVectorStore(BasePydanticVectorStore):
 
         Returns:
             id from adding the text into the vectorstore
+
         """
         text = self._sanitize_input(text)
         vcol = self._vector_index
@@ -314,6 +322,7 @@ class JaguarVectorStore(BasePydanticVectorStore):
             kwargs: may have where, metadata_fields, args, fetch_k
         Returns:
             Tuple(list of nodes, list of ids, list of similaity scores)
+
         """
         where = kwargs.get("where")
         metadata_fields = kwargs.get("metadata_fields")
@@ -408,6 +417,7 @@ class JaguarVectorStore(BasePydanticVectorStore):
             query: Text to detect if it is anomaly
         Returns:
             True or False
+
         """
         vcol = self._vector_index
         vtype = self._vector_type
@@ -421,9 +431,8 @@ class JaguarVectorStore(BasePydanticVectorStore):
         if isinstance(js, list) and len(js) == 0:
             return False
         jd = json.loads(js[0])
-        if jd["anomalous"] == "YES":
-            return True
-        return False
+        return jd["anomalous"] == "YES"
+
 
     def run(self, query: str, withFile: bool = False) -> dict:
         """
@@ -434,6 +443,7 @@ class JaguarVectorStore(BasePydanticVectorStore):
         Returns:
             None for invalid token, or
             json result string
+
         """
         if self._token == "":
             logger.error(f"E0005 error run({query})")
@@ -499,6 +509,7 @@ class JaguarVectorStore(BasePydanticVectorStore):
             optional jaguar_api_key (str): API key of user to jaguardb server
         Returns:
             True if successful; False if not successful
+
         """
         if jaguar_api_key == "":
             jaguar_api_key = self._jag.getApiKey()

@@ -113,6 +113,9 @@ class CohereEmbedding(MultiModalEmbedding):
 
     # Instance variables initialized via Pydantic's mechanism
     api_key: str = Field(description="The Cohere API key.")
+    base_url: Optional[str] = Field(
+        default=None, description="The endpoint to use. Defaults to the Cohere API."
+    )
     truncate: str = Field(description="Truncation type - START/ END/ NONE")
     input_type: Optional[str] = Field(
         default=None,
@@ -124,7 +127,6 @@ class CohereEmbedding(MultiModalEmbedding):
 
     _client: cohere.Client = PrivateAttr()
     _async_client: cohere.AsyncClient = PrivateAttr()
-    _base_url: Optional[str] = PrivateAttr()
     _timeout: Optional[float] = PrivateAttr()
     _httpx_client: Optional[httpx.Client] = PrivateAttr()
     _httpx_async_client: Optional[httpx.AsyncClient] = PrivateAttr()
@@ -158,6 +160,7 @@ class CohereEmbedding(MultiModalEmbedding):
                                     'search_document', 'classification', or 'clustering'.
             model_name (str): The name of the model to be used for generating embeddings. The class ensures that
                           this model is supported and that the input type provided is compatible with the model.
+
         """
         # Validate model_name and input_type
         if model_name not in VALID_MODEL_INPUT_TYPES:
@@ -187,9 +190,10 @@ class CohereEmbedding(MultiModalEmbedding):
             **kwargs,
         )
 
+        self.base_url = base_url
+
         self._client = None
         self._async_client = None
-        self._base_url = base_url
         self._timeout = timeout
         self._httpx_client = httpx_client
         self._httpx_async_client = httpx_async_client
@@ -199,7 +203,7 @@ class CohereEmbedding(MultiModalEmbedding):
             self._client = cohere.Client(
                 api_key=self.api_key,
                 client_name="llama_index",
-                base_url=self._base_url,
+                base_url=self.base_url,
                 timeout=self._timeout,
                 httpx_client=self._httpx_client,
             )
@@ -211,7 +215,7 @@ class CohereEmbedding(MultiModalEmbedding):
             self._async_client = cohere.AsyncClient(
                 api_key=self.api_key,
                 client_name="llama_index",
-                base_url=self._base_url,
+                base_url=self.base_url,
                 timeout=self._timeout,
                 httpx_client=self._httpx_async_client,
             )

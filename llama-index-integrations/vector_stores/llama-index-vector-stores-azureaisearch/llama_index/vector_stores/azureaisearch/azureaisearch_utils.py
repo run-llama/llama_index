@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 def create_node_from_result(
     result: Dict[str, Any], field_mapping: Dict[str, str]
 ) -> BaseNode:
-    """Create a node from a search result.
+    """
+    Create a node from a search result.
 
     Args:
         result (Dict[str, Any]): Search result dictionary
@@ -21,6 +22,7 @@ def create_node_from_result(
 
     Returns:
         BaseNode: Created node
+
     """
     metadata_str = result[field_mapping["metadata"]]
     metadata = json.loads(metadata_str) if metadata_str else {}
@@ -53,7 +55,8 @@ def process_batch_results(
     batch_size: int,
     limit: Optional[int] = None,
 ) -> Tuple[List[BaseNode], bool]:
-    """Process batch results and determine if we should continue fetching.
+    """
+    Process batch results and determine if we should continue fetching.
 
     Args:
         batch_nodes (List[BaseNode]): Current batch of nodes
@@ -63,6 +66,7 @@ def process_batch_results(
 
     Returns:
         Tuple[List[BaseNode], bool]: Updated nodes list and whether to continue fetching
+
     """
     if not batch_nodes:
         return nodes, False
@@ -86,7 +90,8 @@ def create_search_request(
     batch_size: int,
     offset: int,
 ) -> Dict[str, Any]:
-    """Create a search request dictionary.
+    """
+    Create a search request dictionary.
 
     Args:
         field_mapping (Dict[str, str]): Field mapping dictionary
@@ -96,6 +101,7 @@ def create_search_request(
 
     Returns:
         Dict[str, Any]: Search request parameters
+
     """
     return {
         "search_text": "*",
@@ -107,10 +113,12 @@ def create_search_request(
 
 
 def handle_search_error(e: Exception) -> None:
-    """Handle search errors by logging them appropriately.
+    """
+    Handle search errors by logging them appropriately.
 
     Args:
         e (Exception): The exception that occurred
+
     """
     if isinstance(e, ValueError):
         logger.error(f"Invalid search parameters: {e}")

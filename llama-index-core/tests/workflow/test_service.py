@@ -48,7 +48,7 @@ class DummyWorkflow(Workflow):
         return StopEvent(ev.num * 2)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_e2e():
     wf = DummyWorkflow()
     # We are responsible for passing the ServiceWorkflow instances to the dummy workflow
@@ -58,7 +58,7 @@ async def test_e2e():
     assert res == 2674
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_default_value_for_service():
     wf = DummyWorkflow()
     # We don't add any workflow to leverage the default value defined by the user

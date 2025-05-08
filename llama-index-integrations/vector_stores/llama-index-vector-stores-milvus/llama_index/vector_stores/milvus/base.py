@@ -1,4 +1,5 @@
-"""Milvus vector store index.
+"""
+Milvus vector store index.
 
 An index that is built within Milvus.
 
@@ -116,7 +117,8 @@ similarity_metrics_map = {
 
 
 class MilvusVectorStore(BasePydanticVectorStore):
-    """The Milvus Vector Store.
+    """
+    The Milvus Vector Store.
 
     In this vector store we store the text, its embedding and
     a its metadata in a Milvus collection. This implementation
@@ -157,6 +159,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         sparse_embedding_field (str): The name of sparse embedding field, defaults to DEFAULT_SPARSE_EMBEDDING_KEY.
         sparse_embedding_function (Union[BaseSparseEmbeddingFunction, BaseMilvusBuiltInFunction], optional):
             If enable_sparse is True, this object should be provided to convert text to a sparse embedding.
+            Defaults to None, which uses BM25 as the default sparse embedding function,
+            or BGEM3 given existing collection without built-in functions.
         sparse_index_config (dict, optional): The configuration used to build the sparse embedding index.
             Defaults to None.
         collection_properties (dict, optional): The collection properties such as TTL
@@ -211,6 +215,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             overwrite=True
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -302,27 +307,6 @@ class MilvusVectorStore(BasePydanticVectorStore):
             scalar_field_names=scalar_field_names,
             scalar_field_types=scalar_field_types,
         )
-
-        # Set default args
-        if self.enable_dense and self.embedding_field is None:
-            logger.warning("Dense embedding field name is not provided, using default.")
-            self.embedding_field = DEFAULT_EMBEDDING_KEY
-        if self.enable_sparse:
-            if self.sparse_embedding_function is None:
-                logger.warning(
-                    "Sparse embedding function is not provided, using default."
-                )
-                self.sparse_embedding_function = get_default_sparse_embedding_function()
-            if self.sparse_embedding_field is None:
-                logger.warning(
-                    "Sparse embedding field name is not provided, using default."
-                )
-                self.sparse_embedding_field = DEFAULT_SPARSE_EMBEDDING_KEY
-
-        # Select the similarity metric
-        self.similarity_metric = similarity_metrics_map.get(
-            similarity_metric.lower(), "L2"
-        )
         # Connect to Milvus instance
         self._milvusclient = MilvusClient(
             uri=uri,
@@ -334,12 +318,43 @@ class MilvusVectorStore(BasePydanticVectorStore):
             token=token,
             **kwargs,  # pass additional arguments such as server_pem_path
         )
+
         # Delete previous collection if overwriting
         if overwrite and collection_name in self.client.list_collections():
             self.client.drop_collection(collection_name)
 
-        # Create the collection if it does not exist
-        if collection_name not in self.client.list_collections():
+        # Get the collection
+        if collection_name in self.client.list_collections():
+            self._collection = Collection(collection_name, using=self.client._using)
+            self._create_index_if_required()
+        else:
+            self._collection = None
+
+        # Set default args
+        self.similarity_metric = similarity_metrics_map.get(
+            similarity_metric.lower(), "L2"
+        )
+        if self.enable_dense and self.embedding_field is None:
+            logger.warning("Dense embedding field name is not provided, using default.")
+            self.embedding_field = DEFAULT_EMBEDDING_KEY
+        if self.enable_sparse:
+            if self.sparse_embedding_field is None:
+                logger.warning(
+                    "Sparse embedding field name is not provided, using default."
+                )
+                self.sparse_embedding_field = DEFAULT_SPARSE_EMBEDDING_KEY
+            if self.sparse_embedding_function is None:
+                logger.warning(
+                    "Sparse embedding function is not provided, using default."
+                )
+                self.sparse_embedding_function = get_default_sparse_embedding_function(
+                    input_field_names=self.text_key,
+                    output_field_names=self.sparse_embedding_field,
+                    collection=self._collection,
+                )
+
+        # Create the collection & index if it does not exist
+        if self._collection is None:
             # Prepare schema
             schema = self.client.create_schema(auto_id=False, enable_dynamic_field=True)
             schema = self._add_fields_to_schema(schema)  # add fields
@@ -363,11 +378,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             logger.debug(
                 f"Successfully created a new collection: {self.collection_name}"
             )
-        else:
-            self._create_index_if_required()
-
-        # Get existed collection
-        self._collection = Collection(collection_name, using=self.client._using)
+            self._collection = Collection(collection_name, using=self.client._using)
 
         # Set properties
         if collection_properties:
@@ -393,7 +404,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         return self._async_milvusclient
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add the embeddings and their nodes into Milvus.
+        """
+        Add the embeddings and their nodes into Milvus.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings
@@ -404,6 +416,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[str]: List of ids inserted.
+
         """
         insert_list = []
         insert_ids = []
@@ -503,6 +516,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         Raises:
             MilvusException: Failed to delete the doc.
+
         """
         # Adds ability for multiple doc delete in future.
         doc_ids: List[str]
@@ -548,11 +562,13 @@ class MilvusVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes.
+        """
+        Deletes nodes.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+
         """
         filters_cpy = deepcopy(filters) or MetadataFilters(filters=[])
 
@@ -612,7 +628,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
     ) -> List[BaseNode]:
-        """Get nodes by node ids or metadata filters.
+        """
+        Get nodes by node ids or metadata filters.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to retrieve. Defaults to None.
@@ -623,6 +640,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[BaseNode]:
+
         """
         if node_ids is None and filters is None:
             raise ValueError("Either node_ids or filters must be provided.")
@@ -685,7 +703,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         return nodes
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query_embedding (List[float]): query embedding
@@ -694,6 +713,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             node_ids (Optional[List[str]]): list of node_ids to filter by
             output_fields (Optional[List[str]]): list of fields to return
             embedding_field (Optional[str]): name of embedding field
+
         """
         if query.mode == VectorStoreQueryMode.DEFAULT:
             pass
@@ -711,7 +731,16 @@ class MilvusVectorStore(BasePydanticVectorStore):
         else:
             raise ValueError(f"Milvus does not support {query.mode} yet.")
 
-        string_expr, output_fields = self._prepare_before_search(query, **kwargs)
+        filter_string_expr, output_fields = self._prepare_before_search(query, **kwargs)
+        custom_string_expr = kwargs.pop("string_expr", "")
+        if len(filter_string_expr) != 0:
+            if len(custom_string_expr) != 0:
+                logger.warning(
+                    "string_expr in vector_store_kwargs is ignored because filters are provided."
+                )
+            string_expr = filter_string_expr
+        else:
+            string_expr = custom_string_expr
 
         # Perform the search
         if query.mode == VectorStoreQueryMode.MMR:
@@ -886,7 +915,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         """
         Perform MMR search.
         """
-        mmr_threshold = kwargs.get("mmr_threshold", None)
+        mmr_threshold = kwargs.get("mmr_threshold")
         if (
             kwargs.get("mmr_prefetch_factor") is not None
             and kwargs.get("mmr_prefetch_k") is not None
@@ -945,7 +974,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         """
         Perform asynchronous MMR search.
         """
-        mmr_threshold = kwargs.get("mmr_threshold", None)
+        mmr_threshold = kwargs.get("mmr_threshold")
         if (
             kwargs.get("mmr_prefetch_factor") is not None
             and kwargs.get("mmr_prefetch_k") is not None

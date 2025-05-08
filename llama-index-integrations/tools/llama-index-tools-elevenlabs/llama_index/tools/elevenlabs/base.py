@@ -12,11 +12,13 @@ class ElevenLabsToolSpec(BaseToolSpec):
     def __init__(
         self, api_key: str, base_url: Optional[str] = "https://api.elevenlabs.io"
     ) -> None:
-        """Initialize with parameters.
+        """
+        Initialize with parameters.
 
         Args:
             api_key (str): Your ElevenLabs API key
             base_url (Optional[str]): The base url of elevenlabs
+
         """
         self.api_key = api_key
         self.base_url = base_url
@@ -27,6 +29,7 @@ class ElevenLabsToolSpec(BaseToolSpec):
 
         Returns:
             List[dict]: List of available voices with their details
+
         """
         from elevenlabs import ElevenLabs
 
@@ -66,6 +69,7 @@ class ElevenLabsToolSpec(BaseToolSpec):
 
         Returns:
             str: Path to the generated audio file
+
         """
         from elevenlabs import ElevenLabs, VoiceSettings
         from elevenlabs.client import DEFAULT_VOICE

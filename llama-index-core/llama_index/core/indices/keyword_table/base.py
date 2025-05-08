@@ -1,4 +1,5 @@
-"""Keyword-table based index.
+"""
+Keyword-table based index.
 
 Similar to a "hash table" in concept. LlamaIndex first tries
 to extract keywords from the source text, and stores the
@@ -40,7 +41,8 @@ class KeywordTableRetrieverMode(str, Enum):
 
 
 class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
-    """Base Keyword Table Index.
+    """
+    Base Keyword Table Index.
 
     This index extracts keywords from the text, and maps each
     keyword to the node(s) that it corresponds to. In this sense it mimics a
@@ -225,7 +227,8 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
 
 
 class KeywordTableIndex(BaseKeywordTableIndex):
-    """Keyword Table Index.
+    """
+    Keyword Table Index.
 
     This index uses a GPT model to extract keywords from the text.
 

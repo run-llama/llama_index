@@ -80,6 +80,7 @@ class GitHubRepositoryCollaboratorsReader(BaseReader):
         Raises:
             - `ValueError`: If the github_token is not provided and
                 the GITHUB_TOKEN environment variable is not set.
+
         """
         super().__init__()
 

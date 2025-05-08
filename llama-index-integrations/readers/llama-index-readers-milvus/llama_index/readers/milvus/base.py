@@ -61,7 +61,8 @@ class MilvusReader(BaseReader):
         search_params: Optional[dict] = None,
         limit: int = 10,
     ) -> List[Document]:
-        """Load data from Milvus.
+        """
+        Load data from Milvus.
 
         Args:
             collection_name (str): Name of the Milvus collection.
@@ -70,6 +71,7 @@ class MilvusReader(BaseReader):
 
         Returns:
             List[Document]: A list of documents.
+
         """
         from pymilvus import Collection, MilvusException
 

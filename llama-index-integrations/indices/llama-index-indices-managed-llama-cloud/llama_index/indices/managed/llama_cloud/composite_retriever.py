@@ -80,7 +80,7 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         self._rerank_top_n = rerank_top_n if rerank_top_n is not None else OMIT
 
         super().__init__(
-            callback_manager=kwargs.get("callback_manager", None),
+            callback_manager=kwargs.get("callback_manager"),
             verbose=kwargs.get("verbose", False),
         )
 

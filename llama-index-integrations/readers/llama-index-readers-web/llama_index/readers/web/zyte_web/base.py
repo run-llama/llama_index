@@ -12,7 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 class ZyteWebReader(BasePydanticReader):
-    """Load text from URLs using `Zyte api`.
+    """
+    Load text from URLs using `Zyte api`.
 
     Args:
         api_key: Zyte API key.

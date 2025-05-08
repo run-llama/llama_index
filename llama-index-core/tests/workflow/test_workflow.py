@@ -47,20 +47,20 @@ def test_fn():
     print("test_fn")
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_initialization(workflow):
     assert workflow._timeout == 10
     assert not workflow._disable_validation
     assert not workflow._verbose
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_run(workflow):
     result = await workflow.run()
     assert result == "Workflow completed"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_run_step(workflow):
     handler = workflow.run(stepwise=True)
 
@@ -90,7 +90,7 @@ async def test_workflow_run_step(workflow):
         assert len(inprogress_list) == 0
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_cancelled_by_user(workflow):
     handler = workflow.run(stepwise=True)
 
@@ -105,7 +105,7 @@ async def test_workflow_cancelled_by_user(workflow):
     assert type(handler.exception()) is WorkflowCancelledByUser
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_run_step_continue_context():
     class DummyWorkflow(Workflow):
         @step
@@ -115,7 +115,7 @@ async def test_workflow_run_step_continue_context():
             return StopEvent(result="Done")
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_timeout():
     class SlowWorkflow(Workflow):
         @step
@@ -128,7 +128,7 @@ async def test_workflow_timeout():
         await workflow.run()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_validation_unproduced_events():
     class InvalidWorkflow(Workflow):
         @step
@@ -142,7 +142,7 @@ async def test_workflow_validation_unproduced_events():
         workflow = InvalidWorkflow()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_validation_unconsumed_events():
     class InvalidWorkflow(Workflow):
         @step
@@ -161,7 +161,7 @@ async def test_workflow_validation_unconsumed_events():
         await workflow.run()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_validation_start_event_not_consumed():
     class InvalidWorkflow(Workflow):
         @step
@@ -179,7 +179,7 @@ async def test_workflow_validation_start_event_not_consumed():
         workflow = InvalidWorkflow()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_event_propagation():
     events = []
 
@@ -199,7 +199,7 @@ async def test_workflow_event_propagation():
     assert events == ["step1", "step2"]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_sync_async_steps():
     class SyncAsyncWorkflow(Workflow):
         @step
@@ -215,7 +215,7 @@ async def test_workflow_sync_async_steps():
     assert workflow.is_done()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_sync_steps_only():
     class SyncWorkflow(Workflow):
         @step
@@ -233,7 +233,7 @@ async def test_workflow_sync_steps_only():
     assert workflow.is_done()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_num_workers():
     class NumWorkersWorkflow(Workflow):
         @step
@@ -292,7 +292,7 @@ async def test_workflow_num_workers():
     ), f"Execution time was {execution_time:.2f} seconds"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_step_send_event():
     class StepSendEventWorkflow(Workflow):
         @step
@@ -317,7 +317,7 @@ async def test_workflow_step_send_event():
     assert ("step3", "OneTestEvent") not in ctx._accepted_events
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_step_send_event_to_None():
     class StepSendEventToNoneWorkflow(Workflow):
         @step
@@ -335,7 +335,7 @@ async def test_workflow_step_send_event_to_None():
     assert ("step2", "OneTestEvent") in workflow._contexts.pop()._accepted_events
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_step_returning_bogus():
     class TestWorkflow(Workflow):
         @step
@@ -358,7 +358,7 @@ async def test_workflow_step_returning_bogus():
         await workflow.run()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_missing_service():
     class DummyWorkflow(Workflow):
         @step
@@ -374,7 +374,7 @@ async def test_workflow_missing_service():
         await workflow.run()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_multiple_runs():
     class DummyWorkflow(Workflow):
         @step
@@ -438,7 +438,7 @@ def test_add_step_not_a_step():
         TestWorkflow.add_step(another_step)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_task_raises():
     class DummyWorkflow(Workflow):
         @step
@@ -452,7 +452,7 @@ async def test_workflow_task_raises():
         await workflow.run()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_task_raises_step():
     class DummyWorkflow(Workflow):
         @step
@@ -479,7 +479,7 @@ def test_workflow_disable_validation():
     w._get_steps.assert_not_called()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_continue_context():
     class DummyWorkflow(Workflow):
         @step
@@ -512,7 +512,7 @@ async def test_workflow_continue_context():
     assert await r.ctx.get("number") == 2
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_pickle():
     class DummyWorkflow(Workflow):
         @step
@@ -573,7 +573,7 @@ async def test_workflow_pickle():
     assert new_llm.max_tokens == llm.max_tokens
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_context_to_dict_mid_run(workflow):
     handler = workflow.run(stepwise=True)
 
@@ -617,7 +617,7 @@ async def test_workflow_context_to_dict_mid_run(workflow):
     await asyncio.sleep(1)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_context_to_dict(workflow):
     handler = workflow.run()
     ctx = handler.ctx
@@ -650,7 +650,7 @@ class HumanInTheLoopWorkflow(Workflow):
         return StopEvent(result=ev.response)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_human_in_the_loop():
     workflow = HumanInTheLoopWorkflow(timeout=1)
 
@@ -676,7 +676,7 @@ async def test_human_in_the_loop():
     assert final_result == "42"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_human_in_the_loop_with_resume():
     # workflow should work with streaming
     workflow = HumanInTheLoopWorkflow()
@@ -733,7 +733,7 @@ class NumConcurrentRunsException(Exception):
     pass
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     (
         "workflow",
@@ -793,7 +793,7 @@ async def test_workflow_run_num_concurrent(
     assert results == [f"Run {ix}: Done" for ix in range(1, 5)]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_custom_stop_event():
     class CustomEventsWorkflow(Workflow):
         @step
@@ -829,7 +829,7 @@ async def test_custom_stop_event():
     _ = await handler
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_workflow_stream_events_exits():
     class CustomEventsWorkflow(Workflow):
         @step

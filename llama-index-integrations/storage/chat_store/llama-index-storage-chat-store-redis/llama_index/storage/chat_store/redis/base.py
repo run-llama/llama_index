@@ -335,6 +335,7 @@ class RedisChatStore(BaseChatStore):
                 redis_client = get_client(
                     redis_url="redis+sentinel://username:password@sentinelhost:26379/mymaster/0"
                 )
+
         """
         # Initialize with necessary components.
         redis_client: "Redis"

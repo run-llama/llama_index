@@ -69,7 +69,7 @@ def draw_all_possible_flows(
             )  # Light green for events
 
         for return_type in step_config.return_types:
-            if return_type == type(None):
+            if return_type is type(None):
                 continue
 
             net.add_node(
@@ -96,7 +96,7 @@ def draw_all_possible_flows(
             continue
 
         for return_type in step_config.return_types:
-            if return_type != type(None):
+            if return_type is not type(None):
                 net.add_edge(step_name, return_type.__name__)
 
             if issubclass(return_type, InputRequiredEvent):
