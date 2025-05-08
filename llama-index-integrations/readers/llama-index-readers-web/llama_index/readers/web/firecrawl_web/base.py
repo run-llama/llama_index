@@ -1,5 +1,5 @@
 """Firecrawl Web Reader."""
-from typing import List, Optional, Dict, Callable
+from typing import Any, List, Optional, Dict, Callable
 from pydantic import Field
 
 from llama_index.core.bridge.pydantic import PrivateAttr
