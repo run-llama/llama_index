@@ -1,5 +1,7 @@
 # LlamaIndex Legacy Office Reader
 
+<a href="https://colab.research.google.com/github/run-llama/llama_index/blob/main/docs/docs/examples/data_connectors/lagecy_office_reader.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+
 ## Overview
 
 The Legacy Office Reader allows loading data from legacy Office documents (like Word 97 `.doc` files) using Apache Tika. It runs the Tika server locally to avoid remote server calls.
