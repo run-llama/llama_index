@@ -11,7 +11,8 @@ def memory():
     return Memory(
         token_limit=1000,
         token_flush_size=700,
-        user_id="test_user",
+        chat_history_token_ratio=0.9,
+        session_id="test_user",
     )
 
 
@@ -20,7 +21,7 @@ async def test_initialization(memory):
     """Test that memory initializes correctly."""
     assert memory.token_limit == 1000
     assert memory.token_flush_size == 700
-    assert memory.user_id == "test_user"
+    assert memory.session_id == "test_user"
 
 @pytest.mark.asyncio
 async def test_estimate_token_count_text(memory):

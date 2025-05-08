@@ -118,8 +118,8 @@ async def test_vector_memory_block_put(vector_memory_block):
 
     # Check node content contains both messages
     node = next(iter(vector_memory_block.vector_store.nodes.values()))
-    assert "user: Hello, how are you?" in node.text
-    assert "assistant: I'm doing well, thank you for asking!" in node.text
+    assert "<message role='user'>Hello, how are you?</message>" in node.text
+    assert "<message role='assistant'>I'm doing well, thank you for asking!</message>" in node.text
 
 
 @pytest.mark.asyncio
