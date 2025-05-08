@@ -86,8 +86,8 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
             " automatically selected for the task (see Field below)."
         ),
     )
-    provider: Optional[str] = Field(
-        default=None,
+    provider: str = Field(
+        default="hf-inference",
         description=(
             "Name of the provider to use for inference. Can be 'black-forest-labs',"
             " 'cerebras', 'cohere', 'fal-ai', 'fireworks-ai', 'hf-inference',"
