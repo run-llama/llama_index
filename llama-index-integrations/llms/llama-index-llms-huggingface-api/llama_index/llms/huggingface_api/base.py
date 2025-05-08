@@ -15,6 +15,9 @@ from llama_index.core.base.llms.generic_utils import (
     completion_response_to_chat_response,
     stream_completion_response_to_chat_response,
     astream_completion_response_to_chat_response,
+    chat_response_to_completion_response,
+    stream_chat_response_to_completion_response,
+    astream_chat_response_to_completion_response,
 )
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -170,6 +173,7 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
 
         if kwargs.get("task") is None:
             task = "conversational"
+            kwargs["task"] = task
         else:
             task = kwargs["task"].lower()
 
@@ -306,6 +310,11 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
+        breakpoint()
+        if self.task == "conversational":
+            chat_resp = self.chat(messages=[ChatMessage(role=MessageRole.USER, content=prompt)], **kwargs)
+            return chat_response_to_completion_response(chat_resp)
+
         model_kwargs = self._get_model_kwargs(**kwargs)
         model_kwargs["max_new_tokens"] = model_kwargs["max_tokens"]
         del model_kwargs["max_tokens"]
@@ -367,6 +376,10 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
+        if self.task == "conversational":
+            chat_gen = self.stream_chat(messages=[ChatMessage(role=MessageRole.USER, content=prompt)], **kwargs)
+            return stream_chat_response_to_completion_response(chat_gen)
+
         model_kwargs = self._get_model_kwargs(**kwargs)
         model_kwargs["max_new_tokens"] = model_kwargs["max_tokens"]
         del model_kwargs["max_tokens"]
@@ -416,6 +429,10 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
+        if self.task == "conversational":
+            chat_resp = await self.achat(messages=[ChatMessage(role=MessageRole.USER, content=prompt)], **kwargs)
+            return chat_response_to_completion_response(chat_resp)
+
         model_kwargs = self._get_model_kwargs(**kwargs)
         model_kwargs["max_new_tokens"] = model_kwargs["max_tokens"]
         del model_kwargs["max_tokens"]
@@ -486,6 +503,10 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
+        if self.task == "conversational":
+            chat_gen = await self.astream_chat(messages=[ChatMessage(role=MessageRole.USER, content=prompt)], **kwargs)
+            return astream_chat_response_to_completion_response(chat_gen)
+
         model_kwargs = self._get_model_kwargs(**kwargs)
         model_kwargs["max_new_tokens"] = model_kwargs["max_tokens"]
         del model_kwargs["max_tokens"]
