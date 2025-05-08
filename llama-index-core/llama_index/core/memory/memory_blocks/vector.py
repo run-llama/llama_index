@@ -138,13 +138,10 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
             if not text:
                 continue
 
-            text = f"{message.role.value}: {text}"
-            texts.append(text)
-
             if message.additional_kwargs:
                 text += f"\nAdditional Info: ({message.additional_kwargs!s})"
 
-            text = f"<message>{text}</message>"
+            text = f"<message role='{message.role.value}'>{text}</message>"
             texts.append(text)
 
         if not texts:
