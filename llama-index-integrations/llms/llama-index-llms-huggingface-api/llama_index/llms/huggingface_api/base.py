@@ -310,7 +310,6 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        breakpoint()
         if self.task == "conversational":
             chat_resp = self.chat(messages=[ChatMessage(role=MessageRole.USER, content=prompt)], **kwargs)
             return chat_response_to_completion_response(chat_resp)
