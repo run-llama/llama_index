@@ -410,12 +410,12 @@ class Anthropic(FunctionCallingLLM):
                             )
                         else:
                             thinking.thinking += r.delta.thinking
-                    elif isinstance(r.delta, InputJSONDelta):
-                        # TODO: handle server-side tool calls
-                        pass
                     elif isinstance(r.delta, CitationsDelta):
                         # TODO: handle citation deltas
                         cur_citations.append(r.delta.citation.model_dump())
+                    elif isinstance(r.delta, InputJSONDelta) and not isinstance(cur_tool_call, ToolUseBlock):
+                        # TODO: handle server-side tool calls
+                        pass
                     else:
                         if not isinstance(cur_tool_call, ToolUseBlock):
                             raise ValueError("Tool call not started, but got block type " + str(type(r.delta)))
@@ -555,12 +555,12 @@ class Anthropic(FunctionCallingLLM):
                             )
                         else:
                             thinking.thinking += r.delta.thinking
-                    elif isinstance(r.delta, InputJSONDelta):
-                        # TODO: handle server-side tool calls
-                        pass
                     elif isinstance(r.delta, CitationsDelta):
                         # TODO: handle citation deltas
                         cur_citations.append(r.delta.citation.model_dump())
+                    elif isinstance(r.delta, InputJSONDelta) and not isinstance(cur_tool_call, ToolUseBlock):
+                        # TODO: handle server-side tool calls
+                        pass
                     else:
                         if not isinstance(cur_tool_call, ToolUseBlock):
                             raise ValueError("Tool call not started, but got block type " + str(type(r.delta)))
