@@ -31,13 +31,28 @@ pip install llama-index-node-parser-slide
 from llama_index.core import Document
 from llama_index.node_parser.slide import SlideNodeParser
 
+# — Synchronous usage —
 parser = SlideNodeParser.from_defaults(
     llm=llm,
     chunk_size=800,
     window_size=5,
 )
-
 nodes = parser.get_nodes_from_documents(
+    [
+        Document(text="document text 1"),
+        Document(text="document text 2"),
+    ]
+)
+
+# — Asynchronous usage (for parallel LLM calls) —
+# Specify llm_workers > 1 to run multiple LLM calls concurrently
+parser = SlideNodeParser.from_defaults(
+    llm=llm,
+    chunk_size=800,
+    window_size=5,
+    llm_workers=2,
+)
+nodes = await parser.aget_nodes_from_documents(
     [
         Document(text="document text 1"),
         Document(text="document text 2"),
