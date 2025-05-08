@@ -4,6 +4,7 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "faiss-cpu",
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
     "mypy==0.991",
