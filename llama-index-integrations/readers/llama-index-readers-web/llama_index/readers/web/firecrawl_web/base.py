@@ -5,7 +5,6 @@ from pydantic import Field
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
-from firecrawl import FirecrawlApp
 
 
 class FireCrawlWebReader(BasePydanticReader):
@@ -27,7 +26,7 @@ class FireCrawlWebReader(BasePydanticReader):
 
     """
 
-    firecrawl: Optional[FirecrawlApp] = Field(None)
+    firecrawl: Optional[Any] = Field(None)
     api_key: str
     api_url: Optional[str]
     mode: Optional[str]
