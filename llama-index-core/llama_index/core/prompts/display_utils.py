@@ -5,7 +5,8 @@ from llama_index.core.prompts.mixin import PromptDictType
 
 # define prompt viewing function
 def display_prompt_dict(prompts_dict: PromptDictType) -> None:
-    """Display prompt dict.
+    """
+    Display prompt dict.
 
     Args:
         prompts_dict: prompt dict

@@ -34,6 +34,7 @@ class Spoke:
         spoke_operator (SpokeOperator): The spoke operator instance.
         spoke_output_parser (SpokeOutputParser): The spoke output parser instance.
         spoke_agent (ReActAgent): The ReAct agent for the spoke.
+
     """
 
     def __init__(
@@ -53,6 +54,7 @@ class Spoke:
             llm (LLM, optional): A large language model for the spoke. Defaults to None.
             memory (ChatMemoryBuffer, optional): The chat memory buffer. Defaults to None.
             verbose (bool, optional): Whether to enable verbose mode. Defaults to True.
+
         """
         self.tools = tools
         if self.tools:
@@ -104,6 +106,7 @@ class Spoke:
 
         Returns:
             str: The response from the spoke agent.
+
         """
         return self.spoke_agent.chat(query, chat_history=chat_history)
 
@@ -121,6 +124,7 @@ class Spoke:
 
         Returns:
             str: The response from the spoke agent.
+
         """
         return await self.spoke_agent.achat(query, chat_history=chat_history)
 
@@ -138,6 +142,7 @@ class Spoke:
 
         Returns:
             str: The final response from the spoke agent.
+
         """
         stream_response = self.spoke_agent.stream_chat(query, chat_history=chat_history)
         final_response = ""
@@ -159,6 +164,7 @@ class Spoke:
 
         Returns:
             str: The final response from the spoke agent.
+
         """
         stream_response = await self.spoke_agent.astream_chat(
             query, chat_history=chat_history
@@ -180,6 +186,7 @@ class Spoke:
             spoke_id (str): The identifier for the spoke.
             chat_history (Optional[List[ChatMessage]], optional): The chat history. Defaults to None.
             chat_method (str, optional): The chat method to be used. Defaults to "chat".
+
         """
         # Set seccomp and setrlimit
         set_mem_limit()

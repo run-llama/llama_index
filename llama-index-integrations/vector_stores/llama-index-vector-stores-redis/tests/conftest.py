@@ -45,7 +45,8 @@ def turtle_test() -> dict:
 
 @pytest.fixture()
 def documents(turtle_test, dummy_embedding) -> List[Document]:
-    """List of documents represents data to be embedded in the datastore.
+    """
+    List of documents represents data to be embedded in the datastore.
     Minimum requirements for Documents in the /upsert endpoint's UpsertRequest.
     """
     return [

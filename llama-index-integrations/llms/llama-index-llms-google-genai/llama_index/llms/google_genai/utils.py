@@ -4,26 +4,92 @@ from typing import (
     Any,
     Dict,
     Union,
+    Optional,
+    Type,
+    Tuple,
 )
 import typing
 
 import google.genai.types as types
 import google.genai
 from google.genai import _transformers
+
+from llama_index.core.bridge.pydantic import BaseModel, ValidationError
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ImageBlock,
+    MessageRole,
     TextBlock,
 )
-from llama_index.core.utilities.gemini_utils import (
-    ROLES_FROM_GEMINI,
-    ROLES_TO_GEMINI,
-    merge_neighboring_same_role_messages,
-)
+from llama_index.core.program.utils import _repair_incomplete_json
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
+
+
+ROLES_TO_GEMINI: dict[MessageRole, MessageRole] = {
+    MessageRole.USER: MessageRole.USER,
+    MessageRole.ASSISTANT: MessageRole.MODEL,
+    ## Gemini chat mode only has user and model roles. Put the rest in user role.
+    MessageRole.SYSTEM: MessageRole.USER,
+    MessageRole.MODEL: MessageRole.MODEL,
+    ## Gemini has function role, but chat mode only accepts user and model roles.
+    ## https://medium.com/@smallufo/openai-vs-gemini-function-calling-a664f7f2b29f
+    ## Agent response's 'tool/function' role is converted to 'user' role.
+    MessageRole.TOOL: MessageRole.USER,
+    MessageRole.FUNCTION: MessageRole.USER,
+}
+
+ROLES_FROM_GEMINI: dict[str, MessageRole] = {
+    ## Gemini has user, model and function roles.
+    "user": MessageRole.USER,
+    "model": MessageRole.ASSISTANT,
+    "function": MessageRole.TOOL,
+}
+
+
+def merge_neighboring_same_role_messages(
+    messages: Sequence[ChatMessage],
+) -> Sequence[ChatMessage]:
+    if len(messages) < 2:
+        # Nothing to merge
+        return messages
+
+    # Gemini does not support multiple messages of the same role in a row, so we merge them
+    # However, tool messages are not merged, so that we can keep the tool names
+    # (merging them would destroy the tool name)
+    merged_messages = []
+    i = 0
+
+    while i < len(messages):
+        # operate on a copy of the message to avoid mutating the original
+        current_message = messages[i].model_copy()
+        # Initialize merged content with current message content
+        merged_content = current_message.blocks
+
+        # Check if the next message exists and has the same role
+        while (
+            i + 1 < len(messages)
+            and ROLES_TO_GEMINI[messages[i + 1].role]
+            == ROLES_TO_GEMINI[current_message.role]
+            and current_message.role != MessageRole.TOOL
+        ):
+            i += 1
+            next_message = messages[i]
+            merged_content.extend(next_message.blocks)
+
+        # Create a new ChatMessage or similar object with merged content
+        merged_message = ChatMessage(
+            role=ROLES_TO_GEMINI[current_message.role],
+            blocks=merged_content,
+            additional_kwargs=current_message.additional_kwargs,
+        )
+
+        merged_messages.append(merged_message)
+        i += 1
+
+    return merged_messages
 
 
 def _error_if_finished_early(candidate: types.Candidate) -> None:
@@ -161,13 +227,7 @@ def convert_schema_to_function_declaration(
         raise ValueError("fn_schema is missing")
 
     # Get the JSON schema
-    json_schema = tool.metadata.fn_schema.model_json_schema()
-
-    if json_schema.get("properties"):
-        _transformers.process_schema(json_schema, client)
-        root_schema = json_schema
-    else:
-        root_schema = None
+    root_schema = _transformers.t_schema(client, tool.metadata.fn_schema)
 
     description_parts = tool.metadata.description.split("\n", maxsplit=1)
     if len(description_parts) > 1:
@@ -205,9 +265,45 @@ def prepare_chat_params(
         tuple containing:
         - next_msg: the next message to send
         - chat_kwargs: processed keyword arguments for chat creation
+
     """
     merged_messages = merge_neighboring_same_role_messages(messages)
-    *history, next_msg = map(chat_message_to_gemini, merged_messages)
+    initial_history = list(map(chat_message_to_gemini, merged_messages))
+
+    # merge tool messages into a single tool message
+    # while maintaining the tool names
+    history = []
+    for idx, msg in enumerate(initial_history):
+        if idx < 1:
+            history.append(msg)
+            continue
+
+        # Skip if the role is different or not a tool message
+        if msg.parts and not any(
+            part.function_response is not None for part in msg.parts
+        ):
+            history.append(msg)
+            continue
+
+        last_msg = history[-1]
+
+        # Skip if the last message is not a tool message
+        if last_msg.parts and not any(
+            part.function_response is not None for part in last_msg.parts
+        ):
+            history.append(msg)
+            continue
+
+        # Skip if the role is different
+        if last_msg.role != msg.role:
+            history.append(msg)
+            continue
+
+        # Merge the tool messages
+        last_msg.parts.extend(msg.parts or [])
+
+    # Separate the next message from the history
+    next_msg = history.pop()
 
     tools: types.Tool | list[types.Tool] | None = kwargs.pop("tools", None)
     if tools and not isinstance(tools, list):
@@ -236,3 +332,23 @@ def prepare_chat_params(
     chat_kwargs["config"] = types.GenerateContentConfig(**config)
 
     return next_msg, chat_kwargs
+
+def handle_streaming_flexible_model(
+    current_json: str,
+    candidate: types.Candidate,
+    output_cls: Type[BaseModel],
+    flexible_model: Type[BaseModel],
+) -> Tuple[Optional[BaseModel], str]:
+    parts = candidate.content.parts or []
+    data = parts[0].text if parts else None
+    if data:
+        current_json += data
+        try:
+            return output_cls.model_validate_json(current_json), current_json
+        except ValidationError:
+            try:
+                return flexible_model.model_validate_json(_repair_incomplete_json(current_json)), current_json
+            except ValidationError:
+                return None, current_json
+
+    return None, current_json

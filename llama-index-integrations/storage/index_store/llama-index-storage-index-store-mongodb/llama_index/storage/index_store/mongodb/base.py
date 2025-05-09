@@ -5,7 +5,8 @@ from llama_index.storage.kvstore.mongodb import MongoDBKVStore
 
 
 class MongoIndexStore(KVIndexStore):
-    """Mongo Index store.
+    """
+    Mongo Index store.
 
     Args:
         mongo_kvstore (MongoDBKVStore): MongoDB key-value store

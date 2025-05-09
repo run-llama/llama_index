@@ -6,7 +6,8 @@ from llama_index.core.output_parsers.utils import parse_json_markdown
 
 
 def convert_to_handlebars(text: str) -> str:
-    """Convert a python format string to handlebars-style template.
+    """
+    Convert a python format string to handlebars-style template.
 
     In python format string, single braces {} are used for variable substitution,
         and double braces {{}} are used for escaping actual braces (e.g. for JSON dict)
@@ -58,7 +59,8 @@ def json_schema_to_guidance_output_template(
     root: Optional[dict] = None,
     use_pattern_control: bool = False,
 ) -> str:
-    """Convert a json schema to guidance output template.
+    """
+    Convert a json schema to guidance output template.
 
     Implementation based on https://github.com/microsoft/guidance/\
         blob/main/notebooks/applications/jsonformer.ipynb
@@ -129,7 +131,8 @@ Model = TypeVar("Model", bound=BaseModel)
 def parse_pydantic_from_guidance_program(
     response: str, cls: Type[Model], verbose: bool = False
 ) -> Model:
-    """Parse output from guidance program.
+    """
+    Parse output from guidance program.
 
     This is a temporary solution for parsing a pydantic object out of an executed
     guidance program.

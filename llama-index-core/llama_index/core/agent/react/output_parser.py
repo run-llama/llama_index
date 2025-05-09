@@ -88,7 +88,8 @@ class ReActOutputParser(BaseOutputParser):
     """ReAct Output parser."""
 
     def parse(self, output: str, is_streaming: bool = False) -> BaseReasoningStep:
-        f"""Parse output from ReAct agent.
+        """Parse output from ReAct agent.
+        """
 
         {EXPECTED_OUTPUT_INSTRUCTIONS}
         """

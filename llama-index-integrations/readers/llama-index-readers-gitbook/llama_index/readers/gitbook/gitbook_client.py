@@ -5,13 +5,15 @@ DEFAULT_GITBOOK_API_URL = "https://api.gitbook.com/v1"
 
 
 class GitbookClient:
-    """Gitbook Restful API Client.
+    """
+    Gitbook Restful API Client.
 
     Helper Class to invoke gitbook restful api & parse result
 
     Args:
         api_token (str): Gitbook API Token.
         api_url (str): Gitbook API Endpoint.
+
     """
 
     def __init__(self, api_token: str, api_url: str = DEFAULT_GITBOOK_API_URL):

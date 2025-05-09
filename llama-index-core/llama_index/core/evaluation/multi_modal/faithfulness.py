@@ -57,7 +57,8 @@ DEFAULT_REFINE_TEMPLATE = PromptTemplate(
 
 
 class MultiModalFaithfulnessEvaluator(BaseEvaluator):
-    """Multi-Modal Faithfulness evaluator.
+    """
+    Multi-Modal Faithfulness evaluator.
 
     Evaluates whether a response is faithful to the contexts
     (i.e. whether the response is supported by the contexts or hallucinated.)
@@ -73,6 +74,7 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
             The template to use for evaluation.
         refine_template(Optional[Union[str, BasePromptTemplate]]):
             The template to use for refining the evaluation.
+
     """
 
     def __init__(

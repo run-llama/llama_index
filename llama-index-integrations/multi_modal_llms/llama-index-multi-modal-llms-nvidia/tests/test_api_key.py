@@ -42,7 +42,7 @@ def test_api_key_priority(masked_env_var: str) -> None:
         del os.environ["NVIDIA_API_KEY"]
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_bogus_api_key_error(vlm_model: str, masked_env_var: str) -> None:
     client = NVIDIAMultiModal(model=vlm_model, nvidia_api_key="BOGUS")
     with pytest.raises(Exception) as exc_info:

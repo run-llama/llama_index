@@ -49,7 +49,7 @@ def test_base_url_valid_hosted_without_api_key(base_url: str) -> None:
     Interface(base_url=base_url, api_key="BOGUS")
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 @pytest.mark.parametrize("base_url", ["https://integrate.api.nvidia.com/v1/"])
 def test_base_url_valid_hosted_with_api_key(base_url: str) -> None:
     llm = Interface()

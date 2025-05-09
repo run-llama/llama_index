@@ -1,11 +1,41 @@
 [build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core"]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "black[jupyter]<=23.9.1,>=23.7.0",
+    "codespell[toml]>=v2.2.6",
+    "diff-cover>=9.2.0",
+    "pytest>=8.3.5",
+    "pytest-cov>=6.1.1",
+]
+
+[project]
+name = "llama-index-llms-contextual"
+version = "0.0.2"
+description = "llama-index contextual integration"
+authors = [{name = "Sean Smith", email = "sean.smith@contextual.ai"}]
+requires-python = ">=3.9,<4.0"
+readme = "README.md"
+license = "MIT"
+dependencies = [
+    "llama-index-llms-openai-like>=0.3.3,<0.4",
+    "contextual-client>=0.4.0,<0.5",
+]
 
 [tool.codespell]
 check-filenames = true
 check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
@@ -19,28 +49,3 @@ disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 python_version = "3.8"
-
-[tool.poetry]
-authors = ["Sean Smith <sean.smith@contextual.ai>"]
-description = "llama-index contextual integration"
-exclude = ["**/BUILD"]
-license = "MIT"
-name = "llama-index-llms-contextual"
-readme = "README.md"
-version = "0.0.2"
-
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-llama-index-llms-openai-like = "^0.3.3"
-contextual-client = "^0.4.0"
-
-[tool.poetry.group.dev.dependencies.black]
-extras = ["jupyter"]
-version = "<=23.9.1,>=23.7.0"
-
-[tool.poetry.group.dev.dependencies.codespell]
-extras = ["toml"]
-version = ">=v2.2.6"
-
-[[tool.poetry.packages]]
-include = "llama_index/"

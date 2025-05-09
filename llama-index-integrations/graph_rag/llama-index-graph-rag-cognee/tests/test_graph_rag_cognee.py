@@ -1,5 +1,5 @@
 import os
-import asyncio
+import sys
 
 import cognee
 import pytest
@@ -8,10 +8,13 @@ from llama_index.graph_rag.cognee import CogneeGraphRAG
 
 
 @pytest.mark.skipif(
+    sys.version_info < (3, 10), reason="mock strategy requires python3.10 or higher"
+)
+@pytest.mark.skipif(
     os.getenv("OPENAI_API_KEY") is None,
     reason="OPENAI_API_KEY not available to test Cognee integration",
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_graph_rag_cognee():
     documents = [
         Document(
@@ -67,7 +70,3 @@ async def test_graph_rag_cognee():
     # Clean all data from previous runs
     await cognee.prune.prune_data()
     await cognee.prune.prune_system(metadata=True)
-
-
-if __name__ == "__main__":
-    asyncio.run(test_graph_rag_cognee())

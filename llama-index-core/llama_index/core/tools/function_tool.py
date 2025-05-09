@@ -1,6 +1,6 @@
 import asyncio
 import inspect
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Dict, Optional, Type, Union
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import StructuredTool, Tool
@@ -54,7 +54,8 @@ def create_tool_metadata(
 
 
 class FunctionTool(AsyncBaseTool):
-    """Function Tool.
+    """
+    Function Tool.
 
     A tool that takes in a function, optionally handles workflow context,
     and allows the use of callbacks. The callback can return a new ToolOutput
@@ -68,6 +69,7 @@ class FunctionTool(AsyncBaseTool):
         async_fn: Optional[AsyncCallable] = None,
         callback: Optional[Callable[..., Any]] = None,
         async_callback: Optional[Callable[..., Any]] = None,
+        partial_params: Optional[Dict[str, Any]] = None,
     ) -> None:
         if fn is None and async_fn is None:
             raise ValueError("fn or async_fn must be provided.")
@@ -111,8 +113,11 @@ class FunctionTool(AsyncBaseTool):
         elif self._callback is not None:
             self._async_callback = sync_to_async(self._callback)
 
+        self.partial_params = partial_params or {}
+
     def _run_sync_callback(self, result: Any) -> CallbackReturn:
-        """Runs the sync callback, if provided, and returns either a ToolOutput
+        """
+        Runs the sync callback, if provided, and returns either a ToolOutput
         to override the default output or a string to override the content.
         """
         if self._callback:
@@ -121,7 +126,8 @@ class FunctionTool(AsyncBaseTool):
         return None
 
     async def _run_async_callback(self, result: Any) -> CallbackReturn:
-        """Runs the async callback, if provided, and returns either a ToolOutput
+        """
+        Runs the async callback, if provided, and returns either a ToolOutput
         to override the default output or a string to override the content.
         """
         if self._async_callback:
@@ -141,7 +147,10 @@ class FunctionTool(AsyncBaseTool):
         tool_metadata: Optional[ToolMetadata] = None,
         callback: Optional[Callable[[Any], Any]] = None,
         async_callback: Optional[AsyncCallable] = None,
+        partial_params: Optional[Dict[str, Any]] = None,
     ) -> "FunctionTool":
+        partial_params = partial_params or {}
+
         if tool_metadata is None:
             fn_to_parse = fn or async_fn
             assert fn_to_parse is not None, "fn must be provided"
@@ -179,18 +188,20 @@ class FunctionTool(AsyncBaseTool):
                         else param
                     )
                     for param in fn_sig.parameters.values()
+                    if param.name not in partial_params
                 ]
             )
 
             description = description or f"{name}{fn_sig}\n{docstring}"
             if fn_schema is None:
+                ignore_fields = [ctx_param_name] if ctx_param_name is not None else []
+                ignore_fields.extend(partial_params.keys())
+
                 fn_schema = create_schema_from_function(
                     f"{name}",
                     fn_to_parse,
                     additional_fields=None,
-                    ignore_fields=(
-                        [ctx_param_name] if ctx_param_name is not None else None
-                    ),
+                    ignore_fields=ignore_fields,
                 )
             tool_metadata = create_tool_metadata(
                 fn=fn,
@@ -205,6 +216,7 @@ class FunctionTool(AsyncBaseTool):
             async_fn=async_fn,
             callback=callback,
             async_callback=async_callback,
+            partial_params=partial_params,
         )
 
     @property
@@ -230,21 +242,26 @@ class FunctionTool(AsyncBaseTool):
 
         return self._real_fn
 
+    def __call__(self, *args: Any, **kwargs: Any) -> ToolOutput:
+        all_kwargs = {**self.partial_params, **kwargs}
+        return self.call(*args, **all_kwargs)
+
     def call(
         self, *args: Any, ctx: Optional[Context] = None, **kwargs: Any
     ) -> ToolOutput:
         """Sync Call."""
+        all_kwargs = {**self.partial_params, **kwargs}
         if self.requires_context:
             if ctx is None:
                 raise ValueError("Context is required for this tool")
-            raw_output = self._fn(ctx, *args, **kwargs)
+            raw_output = self._fn(ctx, *args, **all_kwargs)
         else:
-            raw_output = self._fn(*args, **kwargs)
+            raw_output = self._fn(*args, **all_kwargs)
         # Default ToolOutput based on the raw output
         default_output = ToolOutput(
             content=str(raw_output),
             tool_name=self.metadata.name,
-            raw_input={"args": args, "kwargs": kwargs},
+            raw_input={"args": args, "kwargs": all_kwargs},
             raw_output=raw_output,
         )
         # Check for a sync callback override
@@ -257,7 +274,7 @@ class FunctionTool(AsyncBaseTool):
                 return ToolOutput(
                     content=str(callback_result),
                     tool_name=self.metadata.name,
-                    raw_input={"args": args, "kwargs": kwargs},
+                    raw_input={"args": args, "kwargs": all_kwargs},
                     raw_output=raw_output,
                 )
         return default_output
@@ -266,17 +283,18 @@ class FunctionTool(AsyncBaseTool):
         self, *args: Any, ctx: Optional[Context] = None, **kwargs: Any
     ) -> ToolOutput:
         """Async Call."""
+        all_kwargs = {**self.partial_params, **kwargs}
         if self.requires_context:
             if ctx is None:
                 raise ValueError("Context is required for this tool")
-            raw_output = await self._async_fn(ctx, *args, **kwargs)
+            raw_output = await self._async_fn(ctx, *args, **all_kwargs)
         else:
-            raw_output = await self._async_fn(*args, **kwargs)
+            raw_output = await self._async_fn(*args, **all_kwargs)
         # Default ToolOutput based on the raw output
         default_output = ToolOutput(
             content=str(raw_output),
             tool_name=self.metadata.name,
-            raw_input={"args": args, "kwargs": kwargs},
+            raw_input={"args": args, "kwargs": all_kwargs},
             raw_output=raw_output,
         )
         # Check for an async callback override
@@ -289,7 +307,7 @@ class FunctionTool(AsyncBaseTool):
                 return ToolOutput(
                     content=str(callback_result),
                     tool_name=self.metadata.name,
-                    raw_input={"args": args, "kwargs": kwargs},
+                    raw_input={"args": args, "kwargs": all_kwargs},
                     raw_output=raw_output,
                 )
         return default_output

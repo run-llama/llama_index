@@ -81,6 +81,7 @@ class AzureOpenAI(OpenAI):
             api_version=aoai_api_version,
         )
         ```
+
     """
 
     engine: str = Field(description="The name of the deployed azure engine.")

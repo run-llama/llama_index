@@ -1,4 +1,5 @@
-"""Prompts for implementing Chain of Abstraction.
+"""
+Prompts for implementing Chain of Abstraction.
 
 While official prompts are not given (and the paper finetunes models for the task),
 we can take inspiration and use few-shot prompting to generate a prompt for implementing

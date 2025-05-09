@@ -10,7 +10,8 @@ from llama_index.core.schema import Document
 
 
 class JaguarReader(BaseReader):
-    """Jaguar reader.
+    """
+    Jaguar reader.
     Retrieve documents from existing persisted Jaguar store.
     """
 
@@ -23,7 +24,8 @@ class JaguarReader(BaseReader):
         vector_dimension: int,
         url: str,
     ):
-        """Constructor of JaguarReader.
+        """
+        Constructor of JaguarReader.
 
         Args:
             pod: name of the pod (database)
@@ -32,6 +34,7 @@ class JaguarReader(BaseReader):
             vector_type: type of the vector index
             vector_dimension: dimension of the vector index
             url: end point URL of jaguar http server
+
         """
         self._pod = pod
         self._store = store
@@ -45,7 +48,8 @@ class JaguarReader(BaseReader):
         self,
         jaguar_api_key: Optional[str] = "",
     ) -> bool:
-        """Login to jaguar server with a jaguar_api_key or let self._jag find a key.
+        """
+        Login to jaguar server with a jaguar_api_key or let self._jag find a key.
 
         Args:
             optional jaguar_api_key (str): API key of user to jaguardb server.
@@ -53,17 +57,17 @@ class JaguarReader(BaseReader):
             JAGUAR_API_KEY or from file $HOME/.jagrc
         Returns:
             True if successful; False if not successful
+
         """
         if jaguar_api_key == "":
             jaguar_api_key = self._jag.getApiKey()
         self._jaguar_api_key = jaguar_api_key
         self._token = self._jag.login(jaguar_api_key)
-        if self._token == "":
-            return False
-        return True
+        return self._token != ""
 
     def logout(self) -> None:
-        """Logout from jaguar server to cleanup resources.
+        """
+        Logout from jaguar server to cleanup resources.
 
         Args: no args
         Returns: None
@@ -78,7 +82,8 @@ class JaguarReader(BaseReader):
         where: Optional[str] = None,
         **kwargs: Any,
     ) -> List[Document]:
-        """Load data from the jaguar vector store.
+        """
+        Load data from the jaguar vector store.
 
         Args:
             embedding: list of float number for vector. If this
@@ -92,6 +97,7 @@ class JaguarReader(BaseReader):
 
         Returns:
             List of documents
+
         """
         if embedding is not None:
             return self._load_similar_data(
@@ -116,7 +122,7 @@ class JaguarReader(BaseReader):
     ) -> List[Document]:
         """Load data by similarity search from the jaguar store."""
         ### args is additional search conditions, such as time decay
-        args = kwargs.get("args", None)
+        args = kwargs.get("args")
         fetch_k = kwargs.get("fetch_k", -1)
 
         vcol = self._vector_index
@@ -224,13 +230,15 @@ class JaguarReader(BaseReader):
         return docs
 
     def run(self, query: str) -> dict:
-        """Run any query statement in jaguardb.
+        """
+        Run any query statement in jaguardb.
 
         Args:
             query (str): query statement to jaguardb
         Returns:
             None for invalid token, or
             json result string
+
         """
         if self._token == "":
             return {}

@@ -55,9 +55,11 @@ class ReActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
 
     def _update_prompts(self, prompts: PromptDictType) -> None:
         """Update prompts."""
-        if "system_prompt" in prompts:
-            react_header = cast(PromptTemplate, prompts["react_header"])
-            self.formatter.system_header = react_header.template
+        if "react_header" in prompts:
+            react_header = prompts["react_header"]
+            if isinstance(react_header, str):
+                react_header = PromptTemplate(react_header)
+            self.formatter.system_header = react_header.get_template()
 
     async def take_step(
         self,

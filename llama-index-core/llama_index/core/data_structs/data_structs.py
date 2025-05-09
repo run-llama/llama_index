@@ -1,4 +1,5 @@
-"""Data structures.
+"""
+Data structures.
 
 Nodes are decoupled from the indices.
 

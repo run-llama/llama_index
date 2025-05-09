@@ -24,7 +24,7 @@ class StreamingWorkflow(Workflow):
         return StopEvent(result=None)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_e2e():
     wf = StreamingWorkflow()
     r = wf.run()
@@ -36,7 +36,7 @@ async def test_e2e():
     await r
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_too_many_runs():
     wf = StreamingWorkflow()
     r = asyncio.gather(wf.run(), wf.run())
@@ -49,7 +49,7 @@ async def test_too_many_runs():
     await r
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_task_raised():
     class DummyWorkflow(Workflow):
         @step
@@ -72,7 +72,7 @@ async def test_task_raised():
         await r
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_task_timeout():
     class DummyWorkflow(Workflow):
         @step
@@ -94,7 +94,7 @@ async def test_task_timeout():
         await r
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_multiple_sequential_streams():
     wf = StreamingWorkflow()
     r = wf.run()
@@ -111,7 +111,7 @@ async def test_multiple_sequential_streams():
     await r
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_multiple_ongoing_streams():
     wf = StreamingWorkflow()
     stream_1 = wf.run()
@@ -128,7 +128,7 @@ async def test_multiple_ongoing_streams():
     await asyncio.gather(stream_1, stream_2)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_resume_streams():
     class CounterWorkflow(Workflow):
         @step

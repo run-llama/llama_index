@@ -22,6 +22,7 @@ def trace_method(
     Assumes that the self instance has a CallbackManager instance in an attribute
     named `callback_manager`.
     This can be overridden by passing in a `callback_manager_attr` keyword argument.
+
     """
 
     def decorator(func: Callable) -> Callable:

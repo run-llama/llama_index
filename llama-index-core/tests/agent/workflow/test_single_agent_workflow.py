@@ -119,7 +119,7 @@ def calculator_agent():
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_single_function_agent(function_agent):
     """Test single agent with state management."""
     handler = function_agent.run(user_msg="test")
@@ -130,7 +130,7 @@ async def test_single_function_agent(function_agent):
     assert "Success with the FunctionAgent" in str(response.response)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_single_react_agent(calculator_agent):
     """Verify execution of basic ReAct single agent."""
     memory = ChatMemoryBuffer.from_defaults()

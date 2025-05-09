@@ -8,7 +8,8 @@ logger = logging.getLogger(__name__)
 
 
 class NeptuneBaseGraphStore(GraphStore):
-    """This is an abstract base class that represents the shared features across the NeptuneDatabaseGraphStore
+    """
+    This is an abstract base class that represents the shared features across the NeptuneDatabaseGraphStore
     and NeptuneAnalyticsGraphStore classes.
     """
 

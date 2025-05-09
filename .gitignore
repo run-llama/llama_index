@@ -24,5 +24,11 @@ credentials.json
 token.json
 .python-version
 .DS_Store
+<<<<<<< HEAD
 /storage/
 *.egg*
+=======
+*.sqlite3
+*.db
+llama-index-core/llama_index/core/_static
+>>>>>>> df48f1d83b032aae3ec232013a11401cd26ea184

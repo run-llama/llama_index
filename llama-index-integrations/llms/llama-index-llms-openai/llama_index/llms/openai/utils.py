@@ -491,7 +491,7 @@ def to_openai_responses_message_dict(
             "role": message.role.value,
             "content": (
                 content_txt
-                if message.role.value in ("assistant", "system", "developer")
+                if message.role.value in ("system", "developer")
                 or all(isinstance(block, TextBlock) for block in message.blocks)
                 else content
             ),

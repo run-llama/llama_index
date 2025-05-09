@@ -92,7 +92,8 @@ class FilterCondition(str, Enum):
 
 
 class MetadataFilter(BaseModel):
-    r"""Comprehensive metadata filter for vector stores to support more operators.
+    r"""
+    Comprehensive metadata filter for vector stores to support more operators.
 
     Value uses Strict* types, as int, float and str are compatible types and were all
     converted to string before.

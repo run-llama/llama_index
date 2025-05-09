@@ -11,6 +11,7 @@ def box_file_to_llama_document_metadata(box_file: File) -> dict:
 
     Returns:
         Llama Document metadata object
+
     """
     # massage data
     if box_file.path_collection is not None:
@@ -53,6 +54,7 @@ def box_file_to_llama_document(box_file: File) -> Document:
 
     Returns:
         Llama Document object
+
     """
     document = Document()
 

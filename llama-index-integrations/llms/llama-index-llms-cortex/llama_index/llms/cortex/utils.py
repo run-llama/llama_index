@@ -1,7 +1,8 @@
 import base64
 import hashlib
 from datetime import datetime, timedelta, timezone
-
+import os
+import os
 import jwt
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization import (
@@ -9,6 +10,39 @@ from cryptography.hazmat.primitives.serialization import (
     PublicFormat,
     load_pem_private_key,
 )
+
+SPCS_TOKEN_PATH = "/snowflake/session/token"
+
+
+def get_default_spcs_token() -> str:
+    """
+    Returns the value of the SnowPark default JWT Oauth Session Token.
+    In a Snowpark Container Services environment, there is a 'default' oauth session token. This retrieves it for you (as a string).
+    """
+    with open(SPCS_TOKEN_PATH) as fp:
+        return fp.read()
+
+
+def is_spcs_environment() -> bool:
+    """
+    Determines if we're currently in an SPCS (Snowpark Container Services) environment. Does this by checking for the default session token.
+    Returns a boolean: whether or not we're in an SPCS environment.
+    """
+    return (
+        os.path.exists(SPCS_TOKEN_PATH) and os.environ.get("SNOWFLAKE_HOST") is not None
+    )
+
+
+def get_spcs_base_url() -> str:
+    """
+    Returns a correctly formatted URL for making Snowflake API calls from within an SPCS environment.
+
+    Raises a ValueError if not in an SPCS environment.
+    Returns a string, https://{some-url} that you can affix an API endpoint such as Cortex to.
+    """
+    if not is_spcs_environment():
+        raise ValueError("Cannot call get_spcs_base_url unless in an spcs environment.")
+    return os.getenv("SNOWFLAKE_HOST")
 
 
 def generate_sf_jwt(sf_account: str, sf_user: str, sf_private_key_filepath: str) -> str:
@@ -22,6 +56,7 @@ def generate_sf_jwt(sf_account: str, sf_user: str, sf_private_key_filepath: str)
 
     Returns:
         str: JSON Web Token
+
     """
     with open(sf_private_key_filepath, "rb") as pem_in:
         pemlines = pem_in.read()

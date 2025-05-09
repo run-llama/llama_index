@@ -128,6 +128,35 @@ resp = await llm.acomplete("Paul Graham is ")
 print(resp)
 ```
 
+### Using Anthropic Tools (Web Search)
+
+```py
+from llama_index.llms.anthropic import Anthropic
+
+# Initialize with web search tool
+llm = Anthropic(
+    model="claude-3-7-sonnet-latest",  # Must be a tool-supported model
+    max_tokens=1024,
+    tools=[
+        {
+            "type": "web_search_20250305",
+            "name": "web_search",
+            "max_uses": 3,  # Limit to 3 searches
+        }
+    ],
+)
+
+# Get response with citations
+response = llm.complete("What are the latest AI research trends?")
+
+# Access the main response content
+print(response.text)
+
+# Access citations if available
+for citation in response.citations:
+    print(f"Source: {citation.get('url')} - {citation.get('cited_text')}")
+```
+
 ### Structured Prediction Example
 
 ```py

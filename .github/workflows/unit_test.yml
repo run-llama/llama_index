@@ -1,14 +1,15 @@
 name: Unit Testing
 
 on:
-  push:
-    branches:
-      - main
   pull_request:
 
 env:
-  POETRY_VERSION: "1.8.3"
-  SYSTEM_VERSION_COMPAT: "1"
+  # How many concurrent processes running pytest in a single CI job
+  NUM_WORKERS: 8
+  # Tests will fail if coverage percentage is below this number
+  COV_FAIL_UNDER: 50
+  # Which Python from the matrix will be used to run the coverage check
+  COV_PYTHON_VERSION: 3.12
 
 jobs:
   test:
@@ -18,36 +19,34 @@ jobs:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
-      - name: clear space
-        env:
-          CI: true
-        shell: bash
-        run: rm -rf /opt/hostedtoolcache/*
-
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Install Poetry
-        run: pipx install poetry==${{ env.POETRY_VERSION }}
-
-      - name: Set up python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ matrix.python-version }}
+          enable-cache: true
 
-      - name: Install pants
-        run: |
-          curl --proto '=https' --tlsv1.2 -fsSLO https://static.pantsbuild.org/setup/get-pants.sh
-          chmod +x get-pants.sh
-          ./get-pants.sh
-
-      - name: Check BUILD files
-        run: |
-          pants tailor --check :: -docs/::
-
-      - name: Run testing
-        env:
-          CI: true
+      - name: Run tests
+        if: ${{ matrix.python-version != env.COV_PYTHON_VERSION }}
         shell: bash
-        run: poetry run make test
+        working-directory: llama-dev
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
+          uv run -- llama-dev --repo-root ".." test \
+            --workers ${{ env.NUM_WORKERS }} \
+            --base-ref ${{ github.event.pull_request.base.ref }}
+
+      - name: Run tests with coverage
+        if: ${{ matrix.python-version == env.COV_PYTHON_VERSION }}
+        shell: bash
+        working-directory: llama-dev
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
+          uv run -- llama-dev --repo-root ".." test \
+            --workers ${{ env.NUM_WORKERS }} \
+            --base-ref=${{ github.event.pull_request.base.ref }} \
+            --cov \
+            --cov-fail-under=${{ env.COV_FAIL_UNDER }}

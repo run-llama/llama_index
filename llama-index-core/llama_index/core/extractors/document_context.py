@@ -80,6 +80,7 @@ class DocumentContextExtractor(BaseExtractor):
         )
         metadata_list = await extractor.aextract(nodes)
         ```
+
     """
 
     # Pydantic fields
@@ -167,6 +168,7 @@ class DocumentContextExtractor(BaseExtractor):
         Note:
             Uses exponential backoff starting at 60 seconds with up to 5 retries
             for rate limit handling.
+
         """
         cached_text = f"<document>{document.get_content()}</document>"
         messages = [
@@ -290,6 +292,7 @@ class DocumentContextExtractor(BaseExtractor):
 
         Returns:
             List of metadata dictionaries with generated context
+
         """
         metadata_list: List[Dict] = []
         for _ in nodes:

@@ -45,13 +45,15 @@ logger = logging.getLogger(__name__)
 
 
 class IpexLLM(CustomLLM):
-    r"""IPEX-LLM.
+    r"""
+    IPEX-LLM.
 
     Example:
         .. code-block:: python
 
             from llama_index.llms.ipex_llm import IpexLLM
             llm = IpexLLM(model_path="/path/to/llama/model")
+
     """
 
     model_name: str = Field(
@@ -187,6 +189,7 @@ class IpexLLM(CustomLLM):
 
         Returns:
             None.
+
         """
         model_kwargs = model_kwargs or {}
 
@@ -454,6 +457,7 @@ class IpexLLM(CustomLLM):
 
         Returns:
             Str of response.
+
         """
         if hasattr(self._tokenizer, "apply_chat_template"):
             messages_dict = [
@@ -493,6 +497,7 @@ class IpexLLM(CustomLLM):
 
         Returns:
             CompletionReponse after generation.
+
         """
         if not formatted:
             prompt = self.completion_to_prompt(prompt)
@@ -528,6 +533,7 @@ class IpexLLM(CustomLLM):
 
         Returns:
             CompletionReponse after generation.
+
         """
         from transformers import TextIteratorStreamer
 

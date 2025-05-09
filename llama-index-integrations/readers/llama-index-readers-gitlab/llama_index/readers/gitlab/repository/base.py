@@ -64,6 +64,7 @@ class GitLabRepositoryReader(BaseReader):
 
         Returns:
             List[Document]: List of documents loaded from the repository
+
         """
         if file_path:
             return [self._load_single_file(file_path, ref)]

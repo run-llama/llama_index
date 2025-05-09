@@ -137,7 +137,7 @@ def set_global_tokenizer(tokenizer: Union[Tokenizer, Callable[[str], list]]) -> 
         llama_index.core.global_tokenizer = tokenizer
 
 
-def get_tokenizer() -> Callable[[str], List]:
+def get_tokenizer(model_name: str = "gpt-3.5-turbo") -> Callable[[str], List]:
     import llama_index.core
 
     if llama_index.core.global_tokenizer is None:
@@ -158,7 +158,7 @@ def get_tokenizer() -> Callable[[str], List]:
                 "_static/tiktoken_cache",
             )
 
-        enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        enc = tiktoken.encoding_for_model(model_name)
         tokenizer = partial(enc.encode, allowed_special="all")
         set_global_tokenizer(tokenizer)
 
@@ -278,7 +278,8 @@ async def aretry_on_exceptions_with_backoff(
     min_backoff_secs: float = 0.5,
     max_backoff_secs: float = 60.0,
 ) -> Any:
-    """Execute lambda function with retries and exponential backoff.
+    """
+    Execute lambda function with retries and exponential backoff.
 
     Args:
         async_fn (Callable): Async Function to be called and output we want.
@@ -403,6 +404,7 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
     Args:
         model_name(str): the model name of the tokenizer.
                         For instance, fxmarty/tiny-llama-fast-tokenizer.
+
     """
     try:
         from transformers import AutoTokenizer  # pants: no-infer-dep
@@ -452,6 +454,7 @@ def add_sync_version(func: Any) -> Any:
 
     Args:
         func(Any): the async function for which a sync variant will be built.
+
     """
     assert asyncio.iscoroutinefunction(func)
 
@@ -525,6 +528,7 @@ def get_color_mapping(
 
     Returns:
         Dict[str, str]: Mapping of items to colors.
+
     """
     if use_llama_index_colors:
         color_palette = _LLAMA_INDEX_COLORS
@@ -545,6 +549,7 @@ def _get_colored_text(text: str, color: str, bold_and_italics=True) -> str:
 
     Returns:
         str: Colored version of the input text.
+
     """
     all_colors = {**_LLAMA_INDEX_COLORS, **_ANSI_COLORS, **_OTHER_RGB_COLORS}
 
@@ -580,6 +585,7 @@ def print_text(
 
     Returns:
         None
+
     """
     if response_hook:
         response_hook(text)
@@ -635,6 +641,7 @@ def unit_generator(x: Any) -> Generator[Any, None, None]:
 
     Yields:
         Any: the single element
+
     """
     yield x
 
@@ -648,6 +655,7 @@ async def async_unit_generator(x: Any) -> AsyncGenerator[Any, None]:
 
     Yields:
         Any: the single element
+
     """
     yield x
 
@@ -658,7 +666,8 @@ def resolve_binary(
     url: Optional[str] = None,
     as_base64: bool = False,
 ) -> BytesIO:
-    """Resolve binary data from various sources into a BytesIO object.
+    """
+    Resolve binary data from various sources into a BytesIO object.
 
     Args:
         raw_bytes: Raw bytes data
@@ -671,6 +680,7 @@ def resolve_binary(
 
     Raises:
         ValueError: If no valid source is provided
+
     """
     if raw_bytes is not None:
         # check if raw_bytes is base64 encoded

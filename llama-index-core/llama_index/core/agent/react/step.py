@@ -181,6 +181,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         Returns:
             ReActAgentWorker
+
         """
         llm = llm or Settings.llm
         if callback_manager is not None:
@@ -504,7 +505,8 @@ class ReActAgentWorker(BaseAgentWorker):
     def _infer_stream_chunk_is_final(
         self, chunk: ChatResponse, missed_chunks_storage: list
     ) -> bool:
-        """Infers if a chunk from a live stream is the start of the final
+        """
+        Infers if a chunk from a live stream is the start of the final
         reasoning step. (i.e., and should eventually become
         ResponseReasoningStep — not part of this function's logic tho.).
 
@@ -514,6 +516,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         Returns:
             bool: Boolean on whether the chunk is the start of the final response
+
         """
         latest_content = (
             None if chunk.message.content is None else chunk.message.content.strip()
@@ -545,6 +548,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         Return:
             Generator[ChatResponse, None, None]: the updated chat_stream
+
         """
 
         def gen() -> Generator[ChatResponse, None, None]:
@@ -570,6 +574,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         Return:
             AsyncGenerator[ChatResponse, None]: the updated async chat_stream
+
         """
         for chunk in chunks:
             yield chunk

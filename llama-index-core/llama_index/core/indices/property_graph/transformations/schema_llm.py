@@ -116,6 +116,7 @@ class SchemaLLMPathExtractor(TransformComponent):
             The maximum number of triplets to extract per chunk. Defaults to 10.
         num_workers (int, optional):
             The number of workers to use. Defaults to 4.
+
     """
 
     llm: LLM

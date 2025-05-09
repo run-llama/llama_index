@@ -33,6 +33,7 @@ class CouchbaseKVStore(BaseKVStore):
             bucket_name (str): Name of the bucket to use for the key-value store
             scope_name (str): Name of the scope to use for the key-value store
             async_cluster (Optional[AsyncCluster]): Async Couchbase cluster object
+
         """
         if not isinstance(cluster, Cluster):
             raise ValueError(
@@ -79,6 +80,7 @@ class CouchbaseKVStore(BaseKVStore):
 
         Returns:
             True if the bucket exists
+
         """
         bucket_manager = self._cluster.buckets()
         try:
@@ -158,6 +160,7 @@ class CouchbaseKVStore(BaseKVStore):
             key (str): key
             val (dict): value
             collection (str): collection name
+
         """
         # Create collection if it does not exist
         collection = self._sanitize_collection_name(collection)
@@ -176,6 +179,7 @@ class CouchbaseKVStore(BaseKVStore):
             key (str): key
             val (dict): value
             collection (str): collection name
+
         """
         self._check_async_client()
 
@@ -199,6 +203,7 @@ class CouchbaseKVStore(BaseKVStore):
             kv_pairs (List[Tuple[str, dict]]): list of key-value pairs
             collection (str): collection name
             batch_size (int): batch size
+
         """
         # Create collection if it does not exist
         collection = self._sanitize_collection_name(collection)
@@ -244,6 +249,7 @@ class CouchbaseKVStore(BaseKVStore):
         Args:
             key (str): key
             collection (str): collection name
+
         """
         try:
             # Create collection if it does not exist
@@ -265,6 +271,7 @@ class CouchbaseKVStore(BaseKVStore):
         Args:
             key (str): key
             collection (str): collection name
+
         """
         self._check_async_client()
 
@@ -284,6 +291,7 @@ class CouchbaseKVStore(BaseKVStore):
 
         Args:
             collection (str): collection name
+
         """
         output = {}
 
@@ -305,6 +313,7 @@ class CouchbaseKVStore(BaseKVStore):
 
         Args:
             collection (str): collection name
+
         """
         self._check_async_client()
         output = {}
@@ -327,6 +336,7 @@ class CouchbaseKVStore(BaseKVStore):
         Args:
             key (str): key
             collection (str): collection name
+
         """
         # Create collection if it does not exist
         collection = self._sanitize_collection_name(collection)
@@ -346,6 +356,7 @@ class CouchbaseKVStore(BaseKVStore):
         Args:
             key (str): key
             collection (str): collection name
+
         """
         self._check_async_client()
 
@@ -378,5 +389,6 @@ class CouchbaseKVStore(BaseKVStore):
 
         Returns:
             CouchbaseKVStore: instance of CouchbaseKVStore
+
         """
         return cls(client, bucket_name, scope_name, async_client)

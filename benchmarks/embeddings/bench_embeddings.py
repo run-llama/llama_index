@@ -13,7 +13,9 @@ from llama_index.embeddings import OpenAIEmbedding, resolve_embed_model
 
 def generate_strings(num_strings: int = 100, string_length: int = 10) -> List[str]:
     """
-    Generate random strings sliced from the paul graham essay of the following form:
+    Generate random strings sliced from the paul graham essay.
+
+    Has the following form:
 
     offset 0: [0:string_length], [string_length:2*string_length], ...
     offset 1: [1:1+string_length], [1+string_length:1+2*string_length],...
