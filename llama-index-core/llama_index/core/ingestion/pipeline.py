@@ -335,7 +335,7 @@ class IngestionPipeline(BaseModel):
                 concat_dirs(persist_dir, cache_name), fs=fs
             )
             persist_docstore_path = concat_dirs(persist_dir, docstore_name)
-            if os.path.exists(persist_docstore_path):
+            if fs.exists(persist_docstore_path):
                 self.docstore = SimpleDocumentStore.from_persist_path(
                     concat_dirs(persist_dir, docstore_name), fs=fs
                 )
