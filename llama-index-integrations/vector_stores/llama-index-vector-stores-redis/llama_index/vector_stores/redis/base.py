@@ -156,12 +156,13 @@ class RedisVectorStore(BasePydanticVectorStore):
         redis_url: Optional[str] = None,
         overwrite: bool = False,
         return_fields: Optional[List[str]] = None,
+        legacy_filters: Optional[bool] = False
         **kwargs: Any,
     ) -> None:
         super().__init__()
         # check for indicators of old schema
         self._flag_old_kwargs(**kwargs)
-
+        self.legacy_filters = legacy_filters
         # Setup schema
         if not schema:
             logger.info("Using default RedisVectorStore schema.")
@@ -186,7 +187,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             self._async_index = AsyncSearchIndex(
                 schema=schema, redis_client=redis_client_async
             )
-        if not redis_client and redis_url and redis_client_async:
+        if not redis_client and not redis_url and not redis_client_async:
             raise Exception(
                 "Either redis_client, redis_url, or redis_client_async need to be defined"
             )
@@ -577,8 +578,10 @@ class RedisVectorStore(BasePydanticVectorStore):
     def _to_redis_query(self, query: VectorStoreQuery) -> VectorQuery:
         """Creates a RedisQuery from a VectorStoreQuery."""
         # TODO: Figure out why create_redis_filter_expression doesn't handle IN properly
-        # filter_expression = self._create_redis_filter_expression(query.filters)
-        filter_expression = self._to_redis_filters(query.filters)
+        if self.legacy_filters:
+            filter_expression = self._to_redis_filters(query.filters)
+        else:
+            filter_expression = self._create_redis_filter_expression(query.filters)
         return_fields = self._return_fields.copy()
         return VectorQuery(
             vector=query.query_embedding,

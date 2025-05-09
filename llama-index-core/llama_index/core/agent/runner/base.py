@@ -2,7 +2,6 @@ import os
 from abc import abstractmethod
 from collections import deque
 from typing import Any, Deque, Dict, List, Optional, Union, cast
-import time
 
 from llama_index.core.agent.types import (
     BaseAgent,

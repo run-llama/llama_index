@@ -29,8 +29,6 @@ from llama_index.core.storage.storage_context import (
     StorageContext,
 )
 
-logger = logging.getLogger(__name__)
-
 OT = TypeVar("OT")
 
 
@@ -89,8 +87,6 @@ class ObjectRetriever(ChainableMixin, Generic[OT]):
         retrieved_nodes = []
         for node in nodes:
             table_nm = node.node.metadata.get("name")
-            logger.info("Node table name: %s", table_nm)
-            logger.info("Node score: %s", node.score)
             if relevance_threshold:
                 if node.score > relevance_threshold:
                     retrieved_nodes.append(self._object_node_mapping.from_node(node.node))

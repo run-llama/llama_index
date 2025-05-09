@@ -1,8 +1,4 @@
 [build-system]
-<<<<<<< HEAD
-requires = ["setuptools", "setuptools-scm"]
-build-backend = "setuptools.build_meta"
-=======
 build-backend = "hatchling.build"
 requires = ["hatchling"]
 
@@ -87,7 +83,6 @@ llamaindex-cli = "llama_index.cli.command_line:main"
 Documentation = "https://docs.llamaindex.ai/en/stable/"
 Homepage = "https://llamaindex.ai"
 Repository = "https://github.com/run-llama/llama_index"
->>>>>>> df48f1d83b032aae3ec232013a11401cd26ea184
 
 [tool.codespell]
 check-filenames = true

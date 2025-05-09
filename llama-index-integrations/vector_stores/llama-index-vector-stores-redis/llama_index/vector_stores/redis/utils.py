@@ -1,6 +1,3 @@
-import re
-from typing import Any, List, Optional, Pattern
-
 from redisvl.query.filter import Tag, Num, Text
 
 # Global constant defining field specifications
