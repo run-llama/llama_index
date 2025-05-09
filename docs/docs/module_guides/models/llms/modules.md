@@ -9,6 +9,7 @@ We support integrations with OpenAI, Anthropic, Google, Hugging Face, and more.
 - [Azure OpenAI](../../../examples/llm/azure_openai.ipynb)
 - [Bedrock](../../../examples/llm/bedrock.ipynb)
 - [Clarifai](../../../examples/llm/clarifai.ipynb)
+- [Cleanlab](../../../examples/llm/cleanlab.ipynb)
 - [Cohere](../../../examples/llm/cohere.ipynb)
 - [Dashscope](../../../examples/llm/dashscope.ipynb)
 - [Dashscope Multi-Modal](../../../examples/multi_modal/dashscope_multi_modal.ipynb)
