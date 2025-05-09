@@ -9,10 +9,11 @@ from llama_index.core.base.llms.types import (
     ChatResponseGen,
 )
 from llama_index.core.llms.llm import LLM, ToolSelection
-
 if TYPE_CHECKING:
     from llama_index.core.chat_engine.types import AgentChatResponse
     from llama_index.core.tools.types import BaseTool
+
+
 
 
 class FunctionCallingLLM(LLM):
@@ -33,6 +34,7 @@ class FunctionCallingLLM(LLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False, # if required, LLM should only call tools, and not return a response
         **kwargs: Any,
     ) -> ChatResponse:
         """Chat with function calling."""
@@ -42,6 +44,7 @@ class FunctionCallingLLM(LLM):
             chat_history=chat_history,
             verbose=verbose,
             allow_parallel_tool_calls=allow_parallel_tool_calls,
+            tool_required=tool_required,
             **kwargs,
         )
         response = self.chat(**chat_kwargs)
@@ -59,6 +62,7 @@ class FunctionCallingLLM(LLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> ChatResponse:
         """Async chat with function calling."""
@@ -68,6 +72,7 @@ class FunctionCallingLLM(LLM):
             chat_history=chat_history,
             verbose=verbose,
             allow_parallel_tool_calls=allow_parallel_tool_calls,
+            tool_required=tool_required,
             **kwargs,
         )
         response = await self.achat(**chat_kwargs)
@@ -85,6 +90,7 @@ class FunctionCallingLLM(LLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> ChatResponseGen:
         """Stream chat with function calling."""
@@ -94,6 +100,7 @@ class FunctionCallingLLM(LLM):
             chat_history=chat_history,
             verbose=verbose,
             allow_parallel_tool_calls=allow_parallel_tool_calls,
+            tool_required=tool_required,
             **kwargs,
         )
         # TODO: no validation for streaming outputs
@@ -106,6 +113,7 @@ class FunctionCallingLLM(LLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> ChatResponseAsyncGen:
         """Async stream chat with function calling."""
@@ -115,6 +123,7 @@ class FunctionCallingLLM(LLM):
             chat_history=chat_history,
             verbose=verbose,
             allow_parallel_tool_calls=allow_parallel_tool_calls,
+            tool_required=tool_required,
             **kwargs,
         )
         # TODO: no validation for streaming outputs
@@ -128,6 +137,7 @@ class FunctionCallingLLM(LLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False, # if required, LLM should only call tools, and not return a response
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Prepare the arguments needed to let the LLM chat with tools."""

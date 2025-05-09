@@ -352,6 +352,7 @@ class TextGenerationInference(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         tool_choice: str = "auto",
         **kwargs: Any,
     ) -> Dict[str, Any]:
