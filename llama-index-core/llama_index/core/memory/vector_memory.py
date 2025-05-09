@@ -6,17 +6,17 @@ Memory backed by a vector database.
 """
 
 import uuid
-from typing import Any, Dict, List, Optional, Union
-
-from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from typing import Any, Dict, List, Optional
 from llama_index.core.bridge.pydantic import Field, field_validator
-from llama_index.core.embeddings.utils import EmbedType
-from llama_index.core.memory.types import BaseMemory
+
 from llama_index.core.schema import TextNode
+from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.memory.types import BaseMemory
+from llama_index.core.embeddings.utils import EmbedType
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 
-def _stringify_obj(d: Any) -> Union[str, list, dict]:
+def _stringify_obj(d: Any):
     """Utility function to convert all keys in a dictionary to strings."""
     if isinstance(d, list):
         return [_stringify_obj(v) for v in d]
@@ -29,15 +29,16 @@ def _stringify_obj(d: Any) -> Union[str, list, dict]:
 def _stringify_chat_message(msg: ChatMessage) -> Dict:
     """Utility function to convert chatmessage to serializable dict."""
     msg_dict = msg.model_dump()
-    msg_dict["additional_kwargs"] = _stringify_obj(msg_dict["additional_kwargs"])
+    msg_dict["timestamp"] = str(msg_dict["timestamp"])
     msg_dict["content"] = msg.content
+    msg_dict["additional_kwargs"] = _stringify_obj(msg_dict["additional_kwargs"])
     return msg_dict
 
 
-def _get_starter_node_for_new_batch() -> TextNode:
+def _get_starter_node_for_new_batch(msg_uuid: Optional[str] = None) -> TextNode:
     """Generates a new starter node for a new batch or group of messages."""
     return TextNode(
-        id_=str(uuid.uuid4()),
+        id_=str(uuid.uuid4()) if not msg_uuid else msg_uuid,
         text="",
         metadata={"sub_dicts": []},
         excluded_embed_metadata_keys=["sub_dicts"],
@@ -134,19 +135,35 @@ class VectorMemory(BaseMemory):
         self, input: Optional[str] = None, initial_token_count: int = 0, **kwargs: Any
     ) -> List[ChatMessage]:
         """Get chat history."""
-        if input is None:
-            return []
-
-        # retrieve from index
-        retriever = self.vector_index.as_retriever(**self.retriever_kwargs)
+        retriever = self._get_retriever()
         nodes = retriever.retrieve(input or "")
 
         # retrieve underlying messages
+        return self._retrieve_messages(nodes=nodes)
+
+    async def aget(
+        self, input: Optional[str] = None, initial_token_count: int = 0, **kwargs: Any
+    ) -> List[ChatMessage]:
+        """Get chat history."""
+        retriever = self._get_retriever()
+        nodes = await retriever.aretrieve(input or "")
+        # retrieve underlying messages
+        return self._retrieve_messages(nodes=nodes)
+
+    def _retrieve_messages(self, nodes):
         return [
             ChatMessage.model_validate(sub_dict)
             for node in nodes
             for sub_dict in node.metadata["sub_dicts"]
         ]
+
+    def _get_retriever(self):
+        if input is None:
+            return []
+
+        # retrieve from index
+        retriever = self.vector_index.as_retriever(**self.retriever_kwargs)
+        return retriever
 
     def get_all(self) -> List[ChatMessage]:
         """Get all chat history."""
@@ -172,15 +189,34 @@ class VectorMemory(BaseMemory):
 
         self.vector_index.insert_nodes([self.cur_batch_textnode])
 
-    def put(self, message: ChatMessage) -> None:
+    async def _async_commit_node(self, override_last: bool = False) -> None:
+        """Commit new node to vector store."""
+        if self.cur_batch_textnode.text == "":
+            return
+
+        if override_last:
+            # delete the last node
+            # This is needed since we're updating the last node in the vector
+            # index as its being updated. When a new user-message batch starts
+            # we already will have the last user message group committed to the
+            # vector store index and so we don't need to override_last (i.e. see
+            # logic in self.put().)
+            await self.vector_index.async_delete_nodes([self.cur_batch_textnode.id_])
+        await self.vector_index.async_insert_nodes([self.cur_batch_textnode])
+
+    def _put(
+        self,
+        message: ChatMessage,
+        additional_metadata: Optional[dict] = None,
+        msg_uuid: Optional[str] = None,
+    ) -> None:
         """Put chat history."""
         if not self.batch_by_user_message or message.role in [
             MessageRole.USER,
             MessageRole.SYSTEM,
         ]:
             # if not batching by user message, commit to vector store immediately after adding
-            self.cur_batch_textnode = _get_starter_node_for_new_batch()
-
+            self.cur_batch_textnode = _get_starter_node_for_new_batch(msg_uuid)
         # update current batch textnode
         sub_dict = _stringify_chat_message(message)
         if self.cur_batch_textnode.text == "":
@@ -188,6 +224,20 @@ class VectorMemory(BaseMemory):
         else:
             self.cur_batch_textnode.text += " " + (sub_dict["content"] or "")
         self.cur_batch_textnode.metadata["sub_dicts"].append(sub_dict)
+        if additional_metadata:
+            self.cur_batch_textnode.metadata.update(additional_metadata)
+
+    async def async_put(
+        self,
+        message: ChatMessage,
+        additional_metadata: Optional[dict] = None,
+        msg_uuid: Optional[str] = None,
+    ) -> None:
+        self._put(message, additional_metadata, msg_uuid)
+        await self._async_commit_node(override_last=True)
+
+    def put(self, message: ChatMessage) -> None:
+        self._put(message)
         self._commit_node(override_last=True)
 
     def set(self, messages: List[ChatMessage]) -> None:
