@@ -1,6 +1,7 @@
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 
+from deprecated import deprecated
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -50,6 +51,7 @@ from tgi import (
 logger = logging.getLogger(__name__)
 
 
+@deprecated(reason="use HuggingFaceInferenceAPI from llama-index-llms-huggingface-api instead")
 class TextGenerationInference(FunctionCallingLLM):
     model_name: Optional[str] = Field(
         default=None,
