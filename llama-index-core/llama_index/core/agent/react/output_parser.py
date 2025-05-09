@@ -90,8 +90,6 @@ class ReActOutputParser(BaseOutputParser):
 
     def parse(self, output: str, is_streaming: bool = False) -> BaseReasoningStep:
         """Parse output from ReAct agent.
-
-        {EXPECTED_OUTPUT_INSTRUCTIONS}
         """
         if "Thought:" not in output:
             if "Action:" in output or "Action Input:" in output:
