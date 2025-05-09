@@ -574,8 +574,8 @@ async def test_add_to_db_and_query_with_metadata_filters_with_is_empty(
         ]
     )
     q = VectorStoreQuery(
-        query_embedding=_get_sample_vector(0.5), 
-        similarity_top_k=10, 
+        query_embedding=_get_sample_vector(0.5),
+        similarity_top_k=10,
         filters=filters
     )
     if use_async:
