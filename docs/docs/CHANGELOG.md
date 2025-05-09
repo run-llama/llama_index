@@ -1,11 +1,5 @@
 # ChangeLog
 
-## [2025-05-09]
-
-### `llama-index-readers-legacy-office` [0.1.0]
-
-- Add Legacy Office Reader, to load legacy Office documents (Word 97 `.doc` files) using Apache Tika. (#18649)
-
 ## [2024-05-08]
 
 ### `llama-index-core` [0.12.35]
