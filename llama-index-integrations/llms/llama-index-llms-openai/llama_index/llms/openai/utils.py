@@ -64,7 +64,7 @@ GPT4_MODELS: Dict[str, int] = {
     #   resolves to gpt-4-0314 before 2023-06-27,
     #   resolves to gpt-4-0613 after
     "gpt-4o": 128000,
-    "gpt-41o": 1000000,
+    "gpt-41": 1000000,
     "gpt-4o-mini": 128000,
     "gpt-4": 8192,
     "gpt-4-32k": 32768,

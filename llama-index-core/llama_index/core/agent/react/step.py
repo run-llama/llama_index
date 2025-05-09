@@ -64,8 +64,6 @@ from llama_index.core.utils import print_text, aprint_text
 import numpy as np
 
 dispatcher = get_dispatcher(__name__)
-LOW_CONFIDENCE_RESPONSE = "I cannot find an answer I am confident in given the data. Could you please rephrase the question or consult a member of your data team to ensure the question can be answered based on your data?"
-CONFIDENCE_THRESHOLD = 98
 
 
 def add_user_step_to_reasoning(
