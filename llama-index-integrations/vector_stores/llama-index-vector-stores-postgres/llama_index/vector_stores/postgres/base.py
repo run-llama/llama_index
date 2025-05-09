@@ -619,6 +619,8 @@ class PGVectorStore(BasePydanticVectorStore):
             return "LIKE"
         elif operator == FilterOperator.TEXT_MATCH_INSENSITIVE:
             return "ILIKE"
+        elif operator == FilterOperator.IS_EMPTY:
+            return "IS NULL"
         else:
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
             return "="
@@ -654,6 +656,12 @@ class PGVectorStore(BasePydanticVectorStore):
                 f"metadata_->>'{filter_.key}' "
                 f"{self._to_postgres_operator(filter_.operator)} "
                 f"'%{filter_.value}%'"
+            )
+        elif filter_.operator == FilterOperator.IS_EMPTY:
+            # Where the operator is is_empty, we need to check if the metadata is null
+            return text(
+                f"metadata_->>'{filter_.key}' "
+                f"{self._to_postgres_operator(filter_.operator)}"
             )
         else:
             # Check if value is a number. If so, cast the metadata value to a float

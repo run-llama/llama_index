@@ -555,6 +555,42 @@ async def test_add_to_db_and_query_with_metadata_filters_with_contains_operator(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
+async def test_add_to_db_and_query_with_metadata_filters_with_is_empty(
+    pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+) -> None:
+    if use_async:
+        await pg_fixture.async_add(node_embeddings)
+    else:
+        pg_fixture.add(node_embeddings)
+    assert isinstance(pg_fixture, PGVectorStore)
+    assert hasattr(pg_fixture, "_engine")
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="nonexistent_key",
+                value=None,
+                operator=FilterOperator.IS_EMPTY
+            )
+        ]
+    )
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.5), 
+        similarity_top_k=10, 
+        filters=filters
+    )
+    if use_async:
+        res = await pg_fixture.aquery(q)
+    else:
+        res = pg_fixture.query(q)
+    assert res.nodes
+    # All nodes should match since none have the nonexistent_key
+    assert len(res.nodes) == len(node_embeddings)
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
+@pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_query_and_delete(
     pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
 ) -> None:
