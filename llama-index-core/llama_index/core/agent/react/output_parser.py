@@ -102,7 +102,7 @@ class ReActOutputParser(BaseOutputParser):
             ```
             Thought: <thought>
             Answer: <answer>
-            ```        
+            ```
         """
         if "Thought:" not in output:
             if "Action:" in output or "Action Input:" in output:
