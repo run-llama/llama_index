@@ -1,6 +1,5 @@
 """ReAct output parser."""
 
-
 import re
 from typing import Tuple
 
@@ -28,6 +27,8 @@ and the value as the argument to pass to the function parameter.
     Thought: <thought>
     Answer: <answer>
     ```"""
+
+
 def extract_tool_use(input_text: str) -> Tuple[str, str, str]:
     pattern = (
         r"\s*Thought: (.*?)\n+Action: ([^\n\(\) ]+).*?\n+Action Input: .*?(\{.*\})"
@@ -89,7 +90,6 @@ class ReActOutputParser(BaseOutputParser):
 
     def parse(self, output: str, is_streaming: bool = False) -> BaseReasoningStep:
         """Parse output from ReAct agent.
-        """
 
         {EXPECTED_OUTPUT_INSTRUCTIONS}
         """
@@ -111,7 +111,7 @@ class ReActOutputParser(BaseOutputParser):
 
         if "Action:" in output:
             return parse_action_reasoning_step(output)
-        
+
         raise ValueError(f"{COULD_NOT_PARSE_TXT} {output}")
 
     def format(self, output: str) -> str:

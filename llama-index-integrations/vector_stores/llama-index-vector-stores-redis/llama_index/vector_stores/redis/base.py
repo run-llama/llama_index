@@ -135,6 +135,7 @@ class RedisVectorStore(BasePydanticVectorStore):
     stores_node: bool = True
     flat_metadata: bool = False
     created_async_index: bool = False
+    legacy_filters: bool = False
 
     _index: SearchIndex = PrivateAttr()
     _async_index: AsyncSearchIndex = PrivateAttr()
