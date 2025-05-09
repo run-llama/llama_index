@@ -140,8 +140,6 @@ class ReActAgentWorker(BaseAgentWorker):
             or tell_llm_about_failure_in_extract_reasoning_step
         )
         self.response_hook = response_hook
-        self.check_confidence = check_confidence
-        self.confident: bool = True
 
         if len(tools) > 0 and tool_retriever is not None:
             raise ValueError("Cannot specify both tools and tool_retriever")
