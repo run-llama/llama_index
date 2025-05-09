@@ -156,7 +156,7 @@ class RedisVectorStore(BasePydanticVectorStore):
         redis_url: Optional[str] = None,
         overwrite: bool = False,
         return_fields: Optional[List[str]] = None,
-        legacy_filters: Optional[bool] = False
+        legacy_filters: Optional[bool] = False,
         **kwargs: Any,
     ) -> None:
         super().__init__()
