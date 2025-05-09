@@ -23,7 +23,7 @@ from typing import (
 from llama_index.core.agent.react.formatter import ReActChatFormatter
 from llama_index.core.agent.react.output_parser import ReActOutputParser
 from llama_index.core.agent.react.step import ReActAgentWorker
-from llama_index.core.agent.runner.base import AgentRunner, AgentState
+from llama_index.core.agent.runner.base import AgentRunner
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.callbacks import (
     CallbackManager,
@@ -65,10 +65,7 @@ class ReActAgent(AgentRunner):
         handle_reasoning_failure_fn: Optional[
             Callable[[CallbackManager, Exception], ToolOutput]
         ] = None,
-        init_task_state_kwargs: Optional[dict] = None,
         response_hook: Optional[Callable] = None,
-        # TODO: Remove state
-        state: Optional[AgentState] = None,
     ) -> None:
         """Init params."""
         callback_manager = callback_manager or llm.callback_manager
@@ -94,7 +91,6 @@ class ReActAgent(AgentRunner):
             llm=llm,
             callback_manager=callback_manager,
             verbose=verbose,
-            state=state,
         )
 
     @classmethod
@@ -115,7 +111,6 @@ class ReActAgent(AgentRunner):
         handle_reasoning_failure_fn: Optional[
             Callable[[CallbackManager, Exception], ToolOutput]
         ] = None,
-        state: Optional[AgentState] = None,
         response_hook: Optional[Callable] = None,
         **kwargs: Any,
     ) -> "ReActAgent":
@@ -157,7 +152,6 @@ class ReActAgent(AgentRunner):
             verbose=verbose,
             context=context,
             handle_reasoning_failure_fn=handle_reasoning_failure_fn,
-            state=state,
             response_hook=response_hook,
         )
 

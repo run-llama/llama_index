@@ -665,14 +665,10 @@ class AgentRunner(BaseAgentRunner):
         result_output = None
         dispatcher.event(AgentChatWithStepStartEvent(user_msg=message))
         while True:
-            start_time = time.time()
             # pass step queue in as argument, assume step executor is stateless
             cur_step_output = await self._arun_step(
                 task.task_id, mode=mode, tool_choice=tool_choice, input=input, step=step
             )
-            end_time = time.time()
-            elapsed_time = end_time - start_time
-            # print(f"TOOL CHOICE: {tool_choice} took {elapsed_time} seconds.")
 
             if cur_step_output.is_last:
                 result_output = cur_step_output

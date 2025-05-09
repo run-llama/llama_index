@@ -33,8 +33,6 @@ logger = logging.getLogger(__name__)
 
 OT = TypeVar("OT")
 
-RELEVANCE_THRESHOLD = 0.1
-
 
 class ObjectRetriever(ChainableMixin, Generic[OT]):
     """Object retriever."""
@@ -78,7 +76,7 @@ class ObjectRetriever(ChainableMixin, Generic[OT]):
 
         return [self._object_node_mapping.from_node(node.node) for node in nodes]
 
-    async def aretrieve(self, str_or_query_bundle: QueryType) -> List[OT]:
+    async def aretrieve(self, str_or_query_bundle: QueryType, relevance_threshold: Optional[float] = None) -> List[OT]:
         if isinstance(str_or_query_bundle, str):
             query_bundle = QueryBundle(query_str=str_or_query_bundle)
         else:
@@ -93,8 +91,9 @@ class ObjectRetriever(ChainableMixin, Generic[OT]):
             table_nm = node.node.metadata.get("name")
             logger.info("Node table name: %s", table_nm)
             logger.info("Node score: %s", node.score)
-            if node.score > RELEVANCE_THRESHOLD:
-                retrieved_nodes.append(self._object_node_mapping.from_node(node.node))
+            if relevance_threshold:
+                if node.score > relevance_threshold:
+                    retrieved_nodes.append(self._object_node_mapping.from_node(node.node))
         return retrieved_nodes
 
     def _as_query_component(self, **kwargs: Any) -> QueryComponent:

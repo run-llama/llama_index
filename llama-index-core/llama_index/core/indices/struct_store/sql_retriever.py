@@ -456,14 +456,14 @@ class SQLTableRetriever:
         self.table_retriever = table_retriever
         self._context_str_prefix = context_str_prefix
 
-    async def _aget_table_context(self, query_bundle: QueryBundle) -> list:
+    async def _aget_table_context(self, query_bundle: QueryBundle, relevance_threshold: Optional[float] = None) -> list:
         """
         Get table context.
 
         Get tables schema + optional context as a single string.
 
         """
-        table_schema_objs = await self.table_retriever.aretrieve(query_bundle.query_str)
+        table_schema_objs = await self.table_retriever.aretrieve(query_bundle.query_str, relevance_threshold=relevance_threshold)
         context_strs = []
         if self._context_str_prefix is not None:
             context_strs = [self._context_str_prefix]

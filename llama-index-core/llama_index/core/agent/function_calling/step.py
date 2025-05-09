@@ -419,7 +419,7 @@ class FunctionCallingAgentWorker(BaseAgentWorker):
 
         if self._verbose and response.message.content:
             print("=== LLM Response ===")
-            print(str(response.message.content))      
+            print(str(response.message.content))
 
         if not self.allow_parallel_tool_calls and len(tool_calls) > 1:
             raise ValueError(

@@ -258,17 +258,12 @@ class ReActAgentWorker(BaseAgentWorker):
             reasoning_step = self._output_parser.parse(message_content, is_streaming)
         except BaseException as exc:
             raise ValueError(f"{COULD_NOT_PARSE_TXT} {message_content}") from exc
-        background_tasks = set()
         if self._verbose:
-            task = asyncio.create_task(
-                aprint_text(
-                    f"{reasoning_step.get_content()}\n",
-                    color="pink",
-                    response_hook=self.response_hook,
-                )
+            print_text(
+                f"{reasoning_step.get_content()}\n",
+                color="pink",
+                response_hook=self.response_hook,
             )
-            background_tasks.add(task)
-            task.add_done_callback(background_tasks.discard)
 
         current_reasoning.append(reasoning_step)
 
@@ -644,11 +639,7 @@ class ReActAgentWorker(BaseAgentWorker):
             current_reasoning=task.extra_state["current_reasoning"],
         )
         # send prompt
-        start_time = time.time()
         chat_response = await self._llm.achat(input_chat)
-        end_time = time.time()
-        elapsed_time = end_time - start_time
-        # print(f'USING LLM: {elapsed_time} seconds')
         # given react prompt outputs, call tools or return response
         reasoning_steps, is_done = await self._aprocess_actions(
             task, tools, output=chat_response
@@ -657,37 +648,11 @@ class ReActAgentWorker(BaseAgentWorker):
         agent_response = self._get_response(
             task.extra_state["current_reasoning"], task.extra_state["sources"]
         )
-        if self.check_confidence:
-            # Check confidence based on the first token only
-            try:
-                logprob = chat_response.logprobs[0][0]
-                self.calculate_confidence(logprob=logprob)
-            except Exception as e:
-                print("Issue calculating confidence")
-                print("Here is the error: ", str(e))
         if is_done:
             task.extra_state["new_memory"].put(
                 ChatMessage(content=agent_response.response, role=MessageRole.ASSISTANT)
             )
         return self._get_task_step_response(agent_response, step, is_done)
-
-    def calculate_confidence(self, logprob: LogProb) -> ChatResponse:
-        # Calculate linear probability
-        linear_prob = np.round(np.exp(logprob.logprob) * 100, 2)
-        # Decide on response based on confidence and linear probability
-        # TODO: may need to add linear_prob filtering to false statements
-        print("AI CONFIDENCE: ", logprob.token.lower())
-        print("CONFIDENCE PROBABILITY: ", linear_prob)
-        if (logprob.token.lower() == "true" and linear_prob < CONFIDENCE_THRESHOLD) or (
-            logprob.token.lower() == "false"
-        ):
-            self.confident = False
-        else:
-            self.confident = True
-            if logprob.token.lower() not in ["false", "true"]:
-                print(
-                    "Malformed Response Error: The agent failed to return a single token respones confidence filtering failed"
-                )
 
     def _run_step_stream(
         self,
