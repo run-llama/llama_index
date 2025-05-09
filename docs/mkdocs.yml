@@ -1723,7 +1723,6 @@ nav:
           - ./api_reference/tools/playwright.md
           - ./api_reference/tools/python_file.md
           - ./api_reference/tools/query_engine.md
-          - ./api_reference/tools/query_plan.md
           - ./api_reference/tools/requests.md
           - ./api_reference/tools/retriever.md
           - ./api_reference/tools/salesforce.md
@@ -3136,6 +3135,7 @@ theme:
   favicon: _static/assets/LlamaLogoBrowserTab.png
   features:
     - navigation.instant
+    - navigation.prune
     - navigation.tabs
     - navigation.indexes
     - navigation.top
