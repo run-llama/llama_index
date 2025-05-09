@@ -23,7 +23,8 @@ logger = logging.getLogger(__name__)
 
 
 class AzureAIEmbeddingsModel(BaseEmbedding):
-    """Azure AI model inference for embeddings.
+    """
+    Azure AI model inference for embeddings.
 
     Examples:
         ```python
@@ -61,6 +62,7 @@ class AzureAIEmbeddingsModel(BaseEmbedding):
         documents = SimpleDirectoryReader("./data").load_data()
         index = VectorStoreIndex.from_documents(documents)
         ```
+
     """
 
     model_kwargs: Dict[str, Any] = Field(

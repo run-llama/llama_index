@@ -50,7 +50,8 @@ class Checkpoint(BaseModel):
 
 
 class WorkflowCheckpointer:
-    """An object that creates and maintain's checkpoints during a Workflow run.
+    """
+    An object that creates and maintain's checkpoints during a Workflow run.
 
     This checkpoint manager object works with multiple run's of a Workflow instance
     or from several different instances. Specified checkpoints can also be used
@@ -65,13 +66,15 @@ class WorkflowCheckpointer:
         checkpoint_serializer: Optional[BaseSerializer] = None,
         disabled_steps: List[str] = [],
     ):
-        """Create a WorkflowCheckpointer object.
+        """
+        Create a WorkflowCheckpointer object.
 
         Args:
             workflow (Workflow): The wrapped workflow.
             checkpoint_serializer (Optional[BaseSerializer], optional): The serializer to use
                 for serializing associated `Context` of a Workflow run. Defaults to None.
             disabled_steps (List[str], optional): Steps for which to disable checkpointing. Defaults to [].
+
         """
         self._checkpoints: Dict[str, List[Checkpoint]] = {}
         self._checkpoint_serializer = checkpoint_serializer or JsonSerializer()
@@ -157,13 +160,13 @@ class WorkflowCheckpointer:
         input_event_type: Optional[Type[Event]],
         output_event_type: Optional[Type[Event]],
     ) -> bool:
-        if last_completed_step and ckpt.last_completed_step != last_completed_step:
+        if last_completed_step and ckpt.last_completed_step is not last_completed_step:
             return False
-        if input_event_type and type(ckpt.input_event) != input_event_type:
+        if input_event_type and type(ckpt.input_event) is not input_event_type:
             return False
-        if output_event_type and type(ckpt.output_event) != output_event_type:
+        if output_event_type and type(ckpt.output_event) is not output_event_type:  # noqa: SIM103
             return False
-        return True
+        return True  # noqa: SIM103
 
     def filter_checkpoints(
         self,

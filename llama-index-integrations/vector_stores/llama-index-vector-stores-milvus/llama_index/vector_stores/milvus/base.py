@@ -1,4 +1,5 @@
-"""Milvus vector store index.
+"""
+Milvus vector store index.
 
 An index that is built within Milvus.
 
@@ -116,7 +117,8 @@ similarity_metrics_map = {
 
 
 class MilvusVectorStore(BasePydanticVectorStore):
-    """The Milvus Vector Store.
+    """
+    The Milvus Vector Store.
 
     In this vector store we store the text, its embedding and
     a its metadata in a Milvus collection. This implementation
@@ -213,6 +215,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             overwrite=True
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -401,7 +404,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         return self._async_milvusclient
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add the embeddings and their nodes into Milvus.
+        """
+        Add the embeddings and their nodes into Milvus.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings
@@ -412,6 +416,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[str]: List of ids inserted.
+
         """
         insert_list = []
         insert_ids = []
@@ -511,6 +516,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         Raises:
             MilvusException: Failed to delete the doc.
+
         """
         # Adds ability for multiple doc delete in future.
         doc_ids: List[str]
@@ -556,11 +562,13 @@ class MilvusVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes.
+        """
+        Deletes nodes.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+
         """
         filters_cpy = deepcopy(filters) or MetadataFilters(filters=[])
 
@@ -620,7 +628,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         node_ids: Optional[List[str]] = None,
         filters: Optional[MetadataFilters] = None,
     ) -> List[BaseNode]:
-        """Get nodes by node ids or metadata filters.
+        """
+        Get nodes by node ids or metadata filters.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to retrieve. Defaults to None.
@@ -631,6 +640,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[BaseNode]:
+
         """
         if node_ids is None and filters is None:
             raise ValueError("Either node_ids or filters must be provided.")
@@ -693,7 +703,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         return nodes
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query_embedding (List[float]): query embedding
@@ -702,6 +713,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             node_ids (Optional[List[str]]): list of node_ids to filter by
             output_fields (Optional[List[str]]): list of fields to return
             embedding_field (Optional[str]): name of embedding field
+
         """
         if query.mode == VectorStoreQueryMode.DEFAULT:
             pass
@@ -903,7 +915,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         """
         Perform MMR search.
         """
-        mmr_threshold = kwargs.get("mmr_threshold", None)
+        mmr_threshold = kwargs.get("mmr_threshold")
         if (
             kwargs.get("mmr_prefetch_factor") is not None
             and kwargs.get("mmr_prefetch_k") is not None
@@ -962,7 +974,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         """
         Perform asynchronous MMR search.
         """
-        mmr_threshold = kwargs.get("mmr_threshold", None)
+        mmr_threshold = kwargs.get("mmr_threshold")
         if (
             kwargs.get("mmr_prefetch_factor") is not None
             and kwargs.get("mmr_prefetch_k") is not None

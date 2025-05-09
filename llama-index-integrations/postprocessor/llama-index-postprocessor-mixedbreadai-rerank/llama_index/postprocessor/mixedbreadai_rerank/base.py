@@ -29,6 +29,7 @@ class MixedbreadAIRerank(BaseNodePostprocessor):
         timeout (Optional[float]): Timeout for API calls.
         httpx_client (Optional[httpx.Client]): Custom HTTPX client for synchronous requests.
         httpx_async_client (Optional[httpx.AsyncClient]): Custom HTTPX client for asynchronous requests.
+
     """
 
     model: str = Field(
@@ -89,6 +90,7 @@ class MixedbreadAIRerank(BaseNodePostprocessor):
 
         Returns:
             List[NodeWithScore]: Reranked list of nodes.
+
         """
         dispatcher.event(
             ReRankStartEvent(

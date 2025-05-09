@@ -6,7 +6,8 @@ from llama_index.storage.kvstore.tablestore import TablestoreKVStore
 
 
 class TablestoreIndexStore(KVIndexStore):
-    """Tablestore Index store.
+    """
+    Tablestore Index store.
 
     Args:
         tablestore_kvstore (TablestoreKVStore): Tablestore key-value store

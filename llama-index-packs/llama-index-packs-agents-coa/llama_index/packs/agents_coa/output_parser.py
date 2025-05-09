@@ -12,7 +12,8 @@ from llama_index.core.types import BaseOutputParser
 
 
 class ChainOfAbstractionParser(BaseOutputParser):
-    """Chain of abstraction output parser.
+    """
+    Chain of abstraction output parser.
 
     This parser is used to parse the output using the default prompt
     defined in prompts.py.

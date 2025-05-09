@@ -75,7 +75,8 @@ class ImageBlock(BaseModel):
 
     @model_validator(mode="after")
     def image_to_base64(self) -> Self:
-        """Store the image as base64 and guess the mimetype when possible.
+        """
+        Store the image as base64 and guess the mimetype when possible.
 
         In case the model was built passing image data but without a mimetype,
         we try to guess it using the filetype library. To avoid resource-intense
@@ -110,10 +111,12 @@ class ImageBlock(BaseModel):
             self.image_mimetype = guess.mime if guess else None
 
     def resolve_image(self, as_base64: bool = False) -> BytesIO:
-        """Resolve an image such that PIL can read it.
+        """
+        Resolve an image such that PIL can read it.
 
         Args:
             as_base64 (bool): whether the resolved image should be returned as base64-encoded bytes
+
         """
         return resolve_binary(
             raw_bytes=self.image,
@@ -140,7 +143,8 @@ class AudioBlock(BaseModel):
 
     @model_validator(mode="after")
     def audio_to_base64(self) -> Self:
-        """Store the audio as base64 and guess the mimetype when possible.
+        """
+        Store the audio as base64 and guess the mimetype when possible.
 
         In case the model was built passing audio data but without a mimetype,
         we try to guess it using the filetype library. To avoid resource-intense
@@ -167,10 +171,12 @@ class AudioBlock(BaseModel):
             self.format = guess.extension if guess else None
 
     def resolve_audio(self, as_base64: bool = False) -> BytesIO:
-        """Resolve an audio such that PIL can read it.
+        """
+        Resolve an audio such that PIL can read it.
 
         Args:
             as_base64 (bool): whether the resolved audio should be returned as base64-encoded bytes
+
         """
         return resolve_binary(
             raw_bytes=self.audio,
@@ -193,7 +199,8 @@ class ChatMessage(BaseModel):
     blocks: list[ContentBlock] = Field(default_factory=list)
 
     def __init__(self, /, content: Any | None = None, **data: Any) -> None:
-        """Keeps backward compatibility with the old `content` field.
+        """
+        Keeps backward compatibility with the old `content` field.
 
         If content was passed and contained text, store a single TextBlock.
         If content was passed and it was a list, assume it's a list of content blocks and store it.
@@ -208,7 +215,8 @@ class ChatMessage(BaseModel):
 
     @model_validator(mode="after")
     def legacy_additional_kwargs_image(self) -> Self:
-        """Provided for backward compatibility.
+        """
+        Provided for backward compatibility.
 
         If `additional_kwargs` contains an `images` key, assume the value is a list
         of ImageDocument and convert them into image blocks.
@@ -222,10 +230,12 @@ class ChatMessage(BaseModel):
 
     @property
     def content(self) -> str | None:
-        """Keeps backward compatibility with the old `content` field.
+        """
+        Keeps backward compatibility with the old `content` field.
 
         Returns:
             The cumulative content of the TextBlock blocks, None if there are none.
+
         """
         content = ""
         for block in self.blocks:
@@ -236,10 +246,12 @@ class ChatMessage(BaseModel):
 
     @content.setter
     def content(self, content: str) -> None:
-        """Keeps backward compatibility with the old `content` field.
+        """
+        Keeps backward compatibility with the old `content` field.
 
         Raises:
             ValueError: if blocks contains more than a block, or a block that's not TextBlock.
+
         """
         if not self.blocks:
             self.blocks = [TextBlock(text=content)]

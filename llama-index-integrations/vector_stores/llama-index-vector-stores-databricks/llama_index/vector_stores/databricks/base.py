@@ -194,7 +194,8 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -354,7 +355,8 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
     # The remaining utilities (and snippets of the above) are taken from
     # https://github.com/langchain-ai/langchain/blob/master/libs/community/langchain_community/vectorstores/databricks_vector_search.py
     def _index_schema(self) -> Optional[dict]:
-        """Return the index schema as a dictionary.
+        """
+        Return the index schema as a dictionary.
         Return None if no schema found.
         """
         if self._is_direct_access_index():
@@ -364,13 +366,15 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
         return None
 
     def _embedding_vector_column_name(self) -> Optional[str]:
-        """Return the name of the embedding vector column.
+        """
+        Return the name of the embedding vector column.
         None if the index is not a self-managed embedding index.
         """
         return self._embedding_vector_column().get("name")
 
     def _embedding_vector_column(self) -> dict:
-        """Return the embedding vector column configs as a dictionary.
+        """
+        Return the embedding vector column configs as a dictionary.
         Empty if the index is not a self-managed embedding index.
         """
         index_spec = (
@@ -381,13 +385,15 @@ class DatabricksVectorSearch(BasePydanticVectorStore):
         return next(iter(index_spec.get("embedding_vector_columns") or []), {})
 
     def _embedding_source_column_name(self) -> Optional[str]:
-        """Return the name of the embedding source column.
+        """
+        Return the name of the embedding source column.
         None if the index is not a Databricks-managed embedding index.
         """
         return self._embedding_source_column().get("name")
 
     def _embedding_source_column(self) -> dict:
-        """Return the embedding source column configs as a dictionary.
+        """
+        Return the embedding source column configs as a dictionary.
         Empty if the index is not a Databricks-managed embedding index.
         """
         return next(

@@ -42,6 +42,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                                                           file to text. See `SimpleDirectoryReader` for more details.
         attach_permission_metadata (bool): If True, the reader will attach permission metadata to the documents. Set to False if your vector store
                                            only supports flat metadata (i.e. no nested fields or lists), or to avoid the additional API calls.
+
     """
 
     client_id: str = None
@@ -105,6 +106,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Raises:
             ValueError: If there is an error in obtaining the access_token.
+
         """
         authority = f"https://login.microsoftonline.com/{self.tenant_id}/oauth2/token"
 
@@ -181,6 +183,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Raises:
             Exception: If the specified SharePoint site is not found.
+
         """
         if hasattr(self, "_site_id_with_host_name"):
             return self._site_id_with_host_name
@@ -238,6 +241,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Raises:
             ValueError: If there is an error in obtaining the drive ID.
+
         """
         if hasattr(self, "_drive_id"):
             return self._drive_id
@@ -279,6 +283,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Returns:
             str: The ID of the SharePoint site folder.
+
         """
         folder_id_endpoint = (
             f"{self._drive_id_endpoint}/{self._drive_id}/root:/{folder_path}"
@@ -312,6 +317,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Raises:
             ValueError: If there is an error in downloading the files.
+
         """
         files_path = self.list_resources(
             sharepoint_site_name=self.sharepoint_site_name,
@@ -336,6 +342,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Returns:
             bytes: The content of the file.
+
         """
         file_download_url = item["@microsoft.graph.downloadUrl"]
         response = requests.get(file_download_url)
@@ -360,6 +367,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Returns:
             str: The path of the downloaded file in the temporary directory.
+
         """
         # Get the download URL for the file.
         file_name = item["name"]
@@ -385,6 +393,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Returns:
             Dict[str, str]: A dictionary containing the extracted permissions information.
+
         """
         item_id = item.get("id")
         permissions_info_endpoint = (
@@ -437,11 +446,14 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         """
         Extracts metadata related to the file.
 
-        Parameters:
+        Parameters
+        ----------
         - item (Dict[str, str]): Dictionary containing file metadata.
 
-        Returns:
+        Returns
+        -------
         - Dict[str, str]: A dictionary containing the extracted metadata.
+
         """
         # Extract the required metadata for file.
         if self.attach_permission_metadata:
@@ -523,6 +535,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Returns:
             List[Document]: A list of documents with access control metadata excluded.
+
         """
         for doc in documents:
             access_control_keys = [
@@ -550,6 +563,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Returns:
             List[Document]: A list containing the documents with metadata.
+
         """
 
         def get_metadata(filename: str) -> Any:
@@ -587,6 +601,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Raises:
             Exception: If an error occurs while accessing SharePoint site.
+
         """
         # If no arguments are provided to load_data, default to the object attributes
         if not sharepoint_site_name:
@@ -632,6 +647,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Returns:
             List[Path]: List of file paths.
+
         """
         folder_contents_endpoint = (
             f"{self._drive_id_endpoint}/{self._drive_id}/items/{folder_id}/children"
@@ -660,6 +676,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Returns:
             List[Path]: List of file paths.
+
         """
         drive_contents_endpoint = (
             f"{self._drive_id_endpoint}/{self._drive_id}/root/children"
@@ -701,6 +718,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Raises:
             Exception: If an error occurs while accessing SharePoint site.
+
         """
         # If no arguments are provided to load_data, default to the object attributes
         if not sharepoint_site_name:
@@ -760,6 +778,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Returns:
             Dict[str, Any]: Dictionary containing the item details.
+
         """
         # Get the file ID
         # remove the site_name prefix
@@ -794,6 +813,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         Args:
             input_file (Path): The path of the file in SharePoint. The path should include
                 the SharePoint site name and the folder path. e.g. "site_name/folder_path/file_name".
+
         """
         try:
             item = self._get_item_from_path(Path(resource_id))

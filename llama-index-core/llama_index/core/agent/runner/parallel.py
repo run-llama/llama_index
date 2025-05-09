@@ -70,7 +70,8 @@ class DAGAgentState(BaseModel):
 
 
 class ParallelAgentRunner(BaseAgentRunner):
-    """Parallel agent runner.
+    """
+    Parallel agent runner.
 
     Executes steps in queue in parallel. Requires async support.
 
@@ -130,7 +131,8 @@ class ParallelAgentRunner(BaseAgentRunner):
         self,
         task_id: str,
     ) -> None:
-        """Delete task.
+        """
+        Delete task.
 
         NOTE: this will not delete any previous executions from memory.
 
@@ -177,7 +179,8 @@ class ParallelAgentRunner(BaseAgentRunner):
         mode: ChatResponseMode = ChatResponseMode.WAIT,
         **kwargs: Any,
     ) -> List[TaskStepOutput]:
-        """Execute steps in queue.
+        """
+        Execute steps in queue.
 
         Run all steps in queue, clearing it out.
 
@@ -192,7 +195,8 @@ class ParallelAgentRunner(BaseAgentRunner):
         mode: ChatResponseMode = ChatResponseMode.WAIT,
         **kwargs: Any,
     ) -> List[TaskStepOutput]:
-        """Execute all steps in queue.
+        """
+        Execute all steps in queue.
 
         All steps in queue are assumed to be ready.
 

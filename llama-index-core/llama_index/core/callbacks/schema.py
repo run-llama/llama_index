@@ -13,7 +13,8 @@ BASE_TRACE_EVENT = "root"
 
 
 class CBEventType(str, Enum):
-    """Callback manager event types.
+    """
+    Callback manager event types.
 
     Attributes:
         CHUNKING: Logs for the before and after of text splitting.
@@ -25,6 +26,7 @@ class CBEventType(str, Enum):
         SYNTHESIZE: Logs for the result for synthesize calls.
         TREE: Logs for the summary and level of summaries generated.
         SUB_QUESTION: Logs for a generated sub question and answer.
+
     """
 
     CHUNKING = "chunking"

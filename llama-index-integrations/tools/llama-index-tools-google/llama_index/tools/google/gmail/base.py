@@ -15,7 +15,8 @@ SCOPES = [
 
 
 class GmailToolSpec(BaseToolSpec):
-    """GMail tool spec.
+    """
+    GMail tool spec.
 
     Gives the agent the ability to read, draft and send gmail messages
 
@@ -48,7 +49,8 @@ class GmailToolSpec(BaseToolSpec):
         return self.search_messages()
 
     def _get_credentials(self) -> Any:
-        """Get valid user credentials from storage.
+        """
+        Get valid user credentials from storage.
 
         The file token.json stores the user's access and refresh tokens, and is
         created automatically when the authorization flow completes for the first
@@ -56,6 +58,7 @@ class GmailToolSpec(BaseToolSpec):
 
         Returns:
             Credentials, the obtained credential.
+
         """
         import os
 
@@ -82,7 +85,8 @@ class GmailToolSpec(BaseToolSpec):
         return creds
 
     def search_messages(self, query: str, max_results: Optional[int] = None):
-        """Searches email messages given a query string and the maximum number
+        """
+        Searches email messages given a query string and the maximum number
         of results requested by the user
            Returns: List of relevant message objects up to the maximum number of results.
 
@@ -90,6 +94,7 @@ class GmailToolSpec(BaseToolSpec):
             query[str]: The user's query
             max_results (Optional[int]): The maximum number of search results
             to return.
+
         """
         if not max_results:
             max_results = self.max_results
@@ -197,7 +202,8 @@ class GmailToolSpec(BaseToolSpec):
         subject: Optional[str] = None,
         message: Optional[str] = None,
     ) -> str:
-        """Create and insert a draft email.
+        """
+        Create and insert a draft email.
            Print the returned draft's message and id.
            Returns: Draft object, including draft id and message meta data.
 
@@ -205,6 +211,7 @@ class GmailToolSpec(BaseToolSpec):
             to (Optional[str]): The email addresses to send the message to
             subject (Optional[str]): The subject for the event
             message (Optional[str]): The message for the event
+
         """
         self._cache_service()
         service = self.service
@@ -223,7 +230,8 @@ class GmailToolSpec(BaseToolSpec):
         message: Optional[str] = None,
         draft_id: str = None,
     ) -> str:
-        """Update a draft email.
+        """
+        Update a draft email.
            Print the returned draft's message and id.
            This function is required to be passed a draft_id that is obtained when creating messages
            Returns: Draft object, including draft id and message meta data.
@@ -233,6 +241,7 @@ class GmailToolSpec(BaseToolSpec):
             subject (Optional[str]): The subject for the event
             message (Optional[str]): The message for the event
             draft_id (str): the id of the draft to be updated
+
         """
         self._cache_service()
         service = self.service
@@ -262,24 +271,28 @@ class GmailToolSpec(BaseToolSpec):
         )
 
     def get_draft(self, draft_id: str = None) -> str:
-        """Get a draft email.
+        """
+        Get a draft email.
            Print the returned draft's message and id.
            Returns: Draft object, including draft id and message meta data.
 
         Args:
             draft_id (str): the id of the draft to be updated
+
         """
         self._cache_service()
         service = self.service
         return service.users().drafts().get(userId="me", id=draft_id).execute()
 
     def send_draft(self, draft_id: str = None) -> str:
-        """Sends a draft email.
+        """
+        Sends a draft email.
            Print the returned draft's message and id.
            Returns: Draft object, including draft id and message meta data.
 
         Args:
             draft_id (str): the id of the draft to be updated
+
         """
         self._cache_service()
         service = self.service

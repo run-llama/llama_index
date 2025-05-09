@@ -40,12 +40,14 @@ from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_ca
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.llms.llm import ToolSelection, Model
 from llama_index.core.prompts import PromptTemplate
-from llama_index.core.program.utils import FlexibleModel
+from llama_index.core.program.utils import FlexibleModel, create_flexible_model
+from llama_index.core.types import PydanticProgramMode
 from llama_index.llms.google_genai.utils import (
     chat_from_gemini_response,
     chat_message_to_gemini,
     convert_schema_to_function_declaration,
     prepare_chat_params,
+    handle_streaming_flexible_model,
 )
 
 import google.genai
@@ -81,6 +83,7 @@ class GoogleGenAI(FunctionCallingLLM):
         resp = llm.complete("Write a poem about a magic backpack")
         print(resp)
         ```
+
     """
 
     model: str = Field(default=DEFAULT_MODEL, description="The Gemini model to use.")
@@ -466,16 +469,33 @@ class GoogleGenAI(FunctionCallingLLM):
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
 
-        if self.is_function_calling_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in llm_kwargs
-                else llm_kwargs["tool_choice"]
+        if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
+            generation_config = {
+                **(self._generation_config or {}),
+                **llm_kwargs.pop("generation_config", {}),
+            }
+
+            # set the specific types needed for the response
+            generation_config["response_mime_type"] = "application/json"
+            generation_config["response_schema"] = output_cls
+
+            messages = prompt.format_messages(**prompt_args)
+            contents = list(map(chat_message_to_gemini, messages))
+            response = self._client.models.generate_content(
+                model=self.model,
+                contents=contents,
+                config=generation_config,
             )
 
-        return super().structured_predict(
-            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
-        )
+            if isinstance(response.parsed, BaseModel):
+                return response.parsed
+            else:
+                raise ValueError("Response is not a BaseModel")
+
+        else:
+            return super().structured_predict(
+                output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+            )
 
     @dispatcher.span
     async def astructured_predict(
@@ -488,16 +508,33 @@ class GoogleGenAI(FunctionCallingLLM):
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
 
-        if self.is_function_calling_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in llm_kwargs
-                else llm_kwargs["tool_choice"]
+        if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
+            generation_config = {
+                **(self._generation_config or {}),
+                **llm_kwargs.pop("generation_config", {}),
+            }
+
+            # set the specific types needed for the response
+            generation_config["response_mime_type"] = "application/json"
+            generation_config["response_schema"] = output_cls
+
+            messages = prompt.format_messages(**prompt_args)
+            contents = list(map(chat_message_to_gemini, messages))
+            response = await self._client.aio.models.generate_content(
+                model=self.model,
+                contents=contents,
+                config=generation_config,
             )
 
-        return await super().astructured_predict(
-            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
-        )
+            if isinstance(response.parsed, BaseModel):
+                return response.parsed
+            else:
+                raise ValueError("Response is not a BaseModel")
+
+        else:
+            return super().structured_predict(
+                output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+            )
 
     @dispatcher.span
     def stream_structured_predict(
@@ -510,15 +547,43 @@ class GoogleGenAI(FunctionCallingLLM):
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
 
-        if self.is_function_calling_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in llm_kwargs
-                else llm_kwargs["tool_choice"]
+        if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
+            generation_config = {
+                **(self._generation_config or {}),
+                **llm_kwargs.pop("generation_config", {}),
+            }
+
+            # set the specific types needed for the response
+            generation_config["response_mime_type"] = "application/json"
+            generation_config["response_schema"] = output_cls
+
+            messages = prompt.format_messages(**prompt_args)
+            contents = list(map(chat_message_to_gemini, messages))
+
+            def gen() -> Generator[Union[Model, FlexibleModel], None, None]:
+                flexible_model = create_flexible_model(output_cls)
+                response_gen = self._client.models.generate_content_stream(
+                    model=self.model,
+                    contents=contents,
+                    config=generation_config,
+                )
+
+                current_json = ""
+                for chunk in response_gen:
+                    if chunk.parsed:
+                        yield chunk.parsed
+                    elif chunk.candidates:
+                        streaming_model, current_json = handle_streaming_flexible_model(
+                            current_json, chunk.candidates[0], output_cls, flexible_model
+                        )
+                        if streaming_model:
+                            yield streaming_model
+
+            return gen()
+        else:
+            return super().stream_structured_predict(
+                output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
             )
-        return super().stream_structured_predict(
-            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
-        )
 
     @dispatcher.span
     async def astream_structured_predict(
@@ -531,12 +596,40 @@ class GoogleGenAI(FunctionCallingLLM):
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
 
-        if self.is_function_calling_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in llm_kwargs
-                else llm_kwargs["tool_choice"]
+        if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
+            generation_config = {
+                **(self._generation_config or {}),
+                **llm_kwargs.pop("generation_config", {}),
+            }
+
+            # set the specific types needed for the response
+            generation_config["response_mime_type"] = "application/json"
+            generation_config["response_schema"] = output_cls
+
+            messages = prompt.format_messages(**prompt_args)
+            contents = list(map(chat_message_to_gemini, messages))
+
+            async def gen() -> AsyncGenerator[Union[Model, FlexibleModel], None]:
+                flexible_model = create_flexible_model(output_cls)
+                response_gen = await self._client.aio.models.generate_content_stream(
+                    model=self.model,
+                    contents=contents,
+                    config=generation_config,
+                )
+
+                current_json = ""
+                async for chunk in response_gen:
+                    if chunk.parsed:
+                        yield chunk.parsed
+                    elif chunk.candidates:
+                        streaming_model, current_json = handle_streaming_flexible_model(
+                            current_json, chunk.candidates[0], output_cls, flexible_model
+                        )
+                        if streaming_model:
+                            yield streaming_model
+
+            return gen()
+        else:
+            return await super().astream_structured_predict(
+                output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
             )
-        return await super().astream_structured_predict(
-            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
-        )

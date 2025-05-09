@@ -49,6 +49,7 @@ class OCIAuth(httpx.Auth):
 
     Attributes:
         signer (oci.signer.Signer): The OCI signer used to sign requests.
+
     """
 
     def __init__(self, signer: oci.signer.Signer):
@@ -57,6 +58,7 @@ class OCIAuth(httpx.Auth):
 
         Args:
             signer (oci.signer.Signer): The OCI signer to use for signing requests.
+
         """
         self.signer = signer
 
@@ -69,6 +71,7 @@ class OCIAuth(httpx.Auth):
 
         Yields:
             httpx.Request: The signed HTTPX request.
+
         """
         # Create a requests.Request object from the HTTPX request
         req = requests.Request(
@@ -96,6 +99,7 @@ class ExtendedRequestException(Exception):
     Attributes:
         original_exception (Exception): The original exception that caused the error.
         response_text (str): The text of the response received from the request, if available.
+
     """
 
     def __init__(self, message: str, original_exception: Exception, response_text: str):
@@ -106,6 +110,7 @@ class ExtendedRequestException(Exception):
             message (str): The error message associated with the exception.
             original_exception (Exception): The original exception that caused the error.
             response_text (str): The text of the response received from the request, if available.
+
         """
         super().__init__(message)
         self.original_exception = original_exception
@@ -121,6 +126,7 @@ def _should_retry_exception(e: ExtendedRequestException) -> bool:
 
     Returns:
         bool: True if the exception should trigger a retry, False otherwise.
+
     """
     original_exception = e.original_exception if hasattr(e, "original_exception") else e
     if isinstance(original_exception, httpx.HTTPStatusError):
@@ -151,6 +157,7 @@ def _create_retry_decorator(
 
     Returns:
         Callable[[Any], Any]: A tenacity retry decorator configured with the specified strategy.
+
     """
     wait_strategy = (
         wait_random_exponential(min=min_seconds, max=max_seconds)
@@ -183,6 +190,7 @@ def _retry_decorator(f: Callable) -> Callable:
 
     Returns:
         Callable: The decorated function with retry logic applied.
+
     """
 
     @functools.wraps(f)
@@ -216,6 +224,7 @@ class BaseClient(ABC):
         backoff_factor (float): The factor to determine the delay between retries.
         timeout (Union[float, Tuple[float, float]]): The timeout setting for the HTTP request.
         kwargs (Dict): Additional keyword arguments.
+
     """
 
     def __init__(
@@ -237,6 +246,7 @@ class BaseClient(ABC):
             backoff_factor (Optional[float]): The factor to determine the delay between retries.
             timeout (Optional[Union[float, Tuple[float, float]]]): The timeout setting for the HTTP request.
             **kwargs: Additional keyword arguments.
+
         """
         self.endpoint = endpoint
         self.retries = retries or DEFAULT_RETRIES
@@ -289,6 +299,7 @@ class BaseClient(ABC):
         Raises:
             Exception: Raised if the line contains an error object.
             json.JSONDecodeError: Raised if the line cannot be decoded as JSON.
+
         """
         logger.debug(f"Parsing streaming line: {line}")
 
@@ -335,6 +346,7 @@ class BaseClient(ABC):
 
         Returns:
             Dict[str, str]: The prepared headers.
+
         """
         default_headers = {
             "Content-Type": "application/json",
@@ -361,6 +373,7 @@ class Client(BaseClient):
         Args:
             *args: Positional arguments forwarded to BaseClient.
             **kwargs: Keyword arguments forwarded to BaseClient.
+
         """
         super().__init__(*args, **kwargs)
         self._client = httpx.Client(timeout=self.timeout)
@@ -405,6 +418,7 @@ class Client(BaseClient):
 
         Raises:
             ExtendedRequestException: Raised when the request fails.
+
         """
         logger.debug(f"Starting synchronous request with payload: {payload}")
         try:
@@ -447,6 +461,7 @@ class Client(BaseClient):
 
         Raises:
             ExtendedRequestException: Raised when the request fails.
+
         """
         logger.debug(f"Starting synchronous streaming request with payload: {payload}")
         last_exception_text = None
@@ -520,6 +535,7 @@ class Client(BaseClient):
 
         Returns:
             Union[Dict[str, Any], Iterator[Mapping[str, Any]]]: A full JSON response or an iterator for streaming responses.
+
         """
         logger.debug(f"Generating text with prompt: {prompt}, stream: {stream}")
         payload = {**(payload or {}), "prompt": prompt}
@@ -546,6 +562,7 @@ class Client(BaseClient):
 
         Returns:
             Union[Dict[str, Any], Iterator[Mapping[str, Any]]]: A full JSON response or an iterator for streaming responses.
+
         """
         logger.debug(f"Starting chat with messages: {messages}, stream: {stream}")
         payload = {**(payload or {}), "messages": messages}
@@ -567,6 +584,7 @@ class AsyncClient(BaseClient):
         Args:
             *args: Positional arguments forwarded to BaseClient.
             **kwargs: Keyword arguments forwarded to BaseClient.
+
         """
         super().__init__(*args, **kwargs)
         self._client = httpx.AsyncClient(timeout=self.timeout)
@@ -575,7 +593,8 @@ class AsyncClient(BaseClient):
         return self._client.is_closed
 
     async def close(self) -> None:
-        """Close the underlying HTTPX client.
+        """
+        Close the underlying HTTPX client.
 
         The client will *not* be usable after this.
         """
@@ -619,6 +638,7 @@ class AsyncClient(BaseClient):
 
         Raises:
             ExtendedRequestException: Raised when the request fails.
+
         """
         logger.debug(f"Starting asynchronous request with payload: {payload}")
         try:
@@ -661,6 +681,7 @@ class AsyncClient(BaseClient):
 
         Raises:
             ExtendedRequestException: Raised when the request fails.
+
         """
         logger.debug(f"Starting asynchronous streaming request with payload: {payload}")
         last_exception_text = None
@@ -729,6 +750,7 @@ class AsyncClient(BaseClient):
 
         Returns:
             Union[Dict[str, Any], AsyncIterator[Mapping[str, Any]]]: A full JSON response or an async iterator for streaming responses.
+
         """
         logger.debug(f"Generating text with prompt: {prompt}, stream: {stream}")
         payload = {**(payload or {}), "prompt": prompt}
@@ -755,6 +777,7 @@ class AsyncClient(BaseClient):
 
         Returns:
             Union[Dict[str, Any], AsyncIterator[Mapping[str, Any]]]: A full JSON response or an async iterator for streaming responses.
+
         """
         logger.debug(f"Starting chat with messages: {messages}, stream: {stream}")
         payload = {**(payload or {}), "messages": messages}

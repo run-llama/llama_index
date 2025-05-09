@@ -26,7 +26,8 @@ EXAMPLE_URL = "https://clarifai.com/anthropic/completion/models/claude-v2"
 
 
 class Clarifai(LLM):
-    """Clarifai LLM.
+    """
+    Clarifai LLM.
 
     Examples:
         `pip install llama-index-llms-clarifai`
@@ -45,6 +46,7 @@ class Clarifai(LLM):
         response = llm.complete("Hello World!")
         print(response)
         ```
+
     """
 
     model_url: Optional[str] = Field(

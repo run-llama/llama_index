@@ -56,7 +56,7 @@ def test_fn_agent_init() -> None:
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_run_async_step() -> None:
     """Test run async step."""
     agent_without_async_fn = FnAgentWorker(

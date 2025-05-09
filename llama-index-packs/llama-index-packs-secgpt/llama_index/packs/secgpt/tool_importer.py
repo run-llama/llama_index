@@ -13,6 +13,7 @@ class ToolImporter:
         tools (list): A list of tools.
         tool_name_obj_dict (dict): A dictionary mapping tool names to tool objects.
         tool_functions (dict): A dictionary mapping tool names to their functions.
+
     """
 
     def __init__(self, tools, tool_specs=[]) -> None:
@@ -22,6 +23,7 @@ class ToolImporter:
         Args:
             tools (list): A list of tools.
             tool_specs (list, optional): A list of tool specifications. Defaults to [].
+
         """
         self.tool_functions = {}
         # Load individual tools
@@ -47,6 +49,7 @@ class ToolImporter:
 
         Returns:
             list: A list of all tool objects.
+
         """
         return self.tools
 
@@ -56,6 +59,7 @@ class ToolImporter:
 
         Returns:
             list: A list of available tool names.
+
         """
         return [tool.metadata.name for tool in self.tools]
 
@@ -68,6 +72,7 @@ class ToolImporter:
 
         Returns:
             list: A list of available functionalities.
+
         """
         if tool_name:
             return [
@@ -87,6 +92,7 @@ class ToolImporter:
 
         Returns:
             dict: The tool function's specifications.
+
         """
         tool_obj = self.tool_name_obj_dict[function]
         return tool_obj.metadata.get_parameters_dict()
@@ -100,6 +106,7 @@ class ToolImporter:
 
         Returns:
             FunctionTool: The tool object.
+
         """
         return self.tool_name_obj_dict[tool_name]
 
@@ -109,6 +116,7 @@ class ToolImporter:
 
         Returns:
             dict: A dictionary mapping tool names to their functions.
+
         """
         return self.tool_functions
 
@@ -118,6 +126,7 @@ class ToolImporter:
 
         Returns:
             str: A string containing the tool information.
+
         """
         return "\n".join(
             [
@@ -136,6 +145,7 @@ def create_function_placeholder(function_names):
 
     Returns:
         list: A list of FunctionTool placeholders.
+
     """
     func_placeholders = []
     for func in function_names:
@@ -152,6 +162,7 @@ def create_message_spoke_tool():
 
     Returns:
         FunctionTool: The message spoke tool.
+
     """
 
     def message_spoke(message: str):

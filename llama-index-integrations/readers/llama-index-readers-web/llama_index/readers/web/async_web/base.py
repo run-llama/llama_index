@@ -9,7 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 class AsyncWebPageReader(BaseReader):
-    """Asynchronous web page reader.
+    """
+    Asynchronous web page reader.
 
     Reads pages from the web asynchronously.
 
@@ -19,6 +20,7 @@ class AsyncWebPageReader(BaseReader):
         limit (int): Maximum number of concurrent requests.
         dedupe (bool): to deduplicate urls if there is exact-match within given list
         fail_on_error (bool): if requested url does not return status code 200 the routine will raise an ValueError
+
     """
 
     def __init__(
@@ -47,7 +49,8 @@ class AsyncWebPageReader(BaseReader):
         self._fail_on_error = fail_on_error
 
     async def aload_data(self, urls: List[str]) -> List[Document]:
-        """Load data from the input urls.
+        """
+        Load data from the input urls.
 
         Args:
             urls (List[str]): List of URLs to scrape.
@@ -115,7 +118,8 @@ class AsyncWebPageReader(BaseReader):
         return documents
 
     def load_data(self, urls: List[str]) -> List[Document]:
-        """Load data from the input urls.
+        """
+        Load data from the input urls.
 
         Args:
             urls (List[str]): List of URLs to scrape.

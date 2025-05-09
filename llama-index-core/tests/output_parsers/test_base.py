@@ -21,7 +21,8 @@ def test_lc_output_parser() -> None:
     """Test langchain output parser."""
 
     class MockOutputParser(LCOutputParser):
-        """Mock output parser.
+        """
+        Mock output parser.
 
         Similar to langchain's StructuredOutputParser, but better for testing.
 

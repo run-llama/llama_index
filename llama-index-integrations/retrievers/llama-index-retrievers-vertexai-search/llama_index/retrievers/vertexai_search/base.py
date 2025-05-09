@@ -1,4 +1,5 @@
-"""Vertex AI Search Retriever.
+"""
+Vertex AI Search Retriever.
 
 Vertex AI Search helps developers build secure, Google-quality search experiences for websites,
 intranet and RAG systems for generative AI agents and apps.
@@ -26,7 +27,8 @@ if TYPE_CHECKING:
 
 
 class VertexAISearchRetriever(BaseRetriever):
-    """`Vertex AI Search` retrieval.
+    """
+    `Vertex AI Search` retrieval.
 
     For a detailed explanation of the Vertex AI Search concepts
     and configuration parameters, refer to the product documentation.
@@ -63,6 +65,7 @@ class VertexAISearchRetriever(BaseRetriever):
             location_id=LOCATION_ID,
             engine_data_type=0
         )
+
     """
 
     """

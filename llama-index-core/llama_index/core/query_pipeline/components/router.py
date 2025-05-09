@@ -70,7 +70,8 @@ class SelectorComponent(QueryComponent):
 
 
 class RouterComponent(QueryComponent):
-    """Router Component.
+    """
+    Router Component.
 
     Routes queries to different query components based on a selector.
 
@@ -186,7 +187,8 @@ class RouterComponent(QueryComponent):
 
     @property
     def sub_query_components(self) -> List["QueryComponent"]:
-        """Get sub query components.
+        """
+        Get sub query components.
 
         Certain query components may have sub query components, e.g. a
         query pipeline will have sub query components, and so will

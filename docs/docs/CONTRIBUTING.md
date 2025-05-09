@@ -1,39 +1,74 @@
 # 🚀 Contributing to LlamaIndex
 
-Welcome to **LlamaIndex**! We’re excited that you want to contribute and become part of our growing community. Whether you're interested in building integrations, fixing bugs, or adding exciting new features, we've made it easy for you to get started.
+Welcome to **LlamaIndex**! We’re excited that you want to contribute and become part of our growing community. Whether
+you're interested in building integrations, fixing bugs, or adding exciting new features, we've made it easy for you to
+get started.
 
 ---
 
 ## 🎯 Quick Start Guide
 
+We use `uv` as the package and project manager for all the Python packages in this repository. Before contributing, make
+sure you have `uv` installed. On macOS and Linux:
+
+```
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+On Windows:
+
+```
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+For more install options, see `uv`'s [official documentation](https://docs.astral.sh/uv/getting-started/installation/).
+
 If you're ready to dive in, here’s a quick setup guide to get you going:
 
-1. **Fork** the repo and clone your fork.
-2. Navigate to the project folder:
-   ```bash
-   cd llama_index
-   ```
-3. Set up a new virtual environment with `Poetry`:
-   ```bash
-   poetry shell
-   ```
-4. Install development (and/or docs) dependencies:
-   ```bash
-   poetry install --only dev,docs --no-root
-   ```
-5. Install the package(s) you want to work on. You will for sure need to install `llama-index-core`:
+1. **Fork** the GitHub repo, clone your fork and open a terminal at the root of the git repository `llama_index`.
+2. At the root of the repo, run the following command to setup the global virtual environment we use for the
+   pre-commit hooks and the linters:
 
-   ```bash
-   pip install -e llama-index-core
-   ```
+```bash
+uv sync
+```
 
-   From there, you can install specific integrations that you want to work on:
+If you've changed documentation:
 
-   ```bash
-   pip install -e llama-index-integrations/llms/llama-index-llms-openai
-   ```
+```bash
+uv run make lint
+```
 
-**That’s it!** If anything seems unclear, scroll down to the [Development Guidelines](#-Development-Guidelines) for more details.
+3. Navigate to the project folder you want to work on. For example, if you want to work on the OpenAI llm integration:
+
+```bash
+cd llama-index-integrations/llms/llama-index-llms-openai
+```
+
+4. `uv` will take care of creating and setting up the virtual environment for the specific project you're working on.
+   For example, to run the tests you can do:
+
+```bash
+uv run -- pytest
+```
+
+5. If you want to create the virtual environment explicitly, without `uv run`ning a command:
+
+```bash
+uv venv
+```
+
+6. To activate the virtual environment:
+
+```bash
+source .venv/bin/activate
+```
+
+**That’s it!** The package you're working on is already installed in editable mode, so you can go on, change the code
+and run the tests!
+
+Once you get familiar with the project, scroll down to the [Development Guidelines](#-Development-Guidelines) for more
+details.
 
 ---
 
@@ -166,42 +201,12 @@ LlamaIndex is organized as a **monorepo**, meaning different packages live withi
 - **Core package**: [`llama-index-core/`](https://github.com/run-llama/llama_index/tree/main/llama-index-core)
 - **Integrations**: e.g., [`llama-index-integrations/`](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations)
 
-### Setting Up Your Environment
-
-1. **Install Poetry** (if you don’t already have it):
-   ```bash
-   curl -sSL https://install.python-poetry.org | python3 -
-   ```
-2. Install the Poetry shell plugin (if you don't already have it):
-   ```bash
-   poetry self add poetry-plugin-shell
-   ```
-3. Activate the environment:
-   ```bash
-   poetry shell
-   ```
-4. Install dependencies:
-   ```bash
-   poetry install --only dev,docs --no-root
-   ```
-5. Install the package(s) you want to work on. You will for sure need to install `llama-index-core`:
-
-   ```bash
-   pip install -e llama-index-core
-   ```
-
-   From there, you can install specific integrations that you want to work on:
-
-   ```bash
-   pip install -e llama-index-integrations/llms/llama-index-llms-openai
-   ```
-
 ### Running Tests
 
 We use `pytest` for testing. Make sure you run tests in each package you modify:
 
 ```bash
-pytest
+uv run -- pytest
 ```
 
 If you’re integrating with a remote system, **mock** it to prevent test failures from external changes.

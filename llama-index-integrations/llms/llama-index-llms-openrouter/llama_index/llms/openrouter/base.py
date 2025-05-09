@@ -15,7 +15,8 @@ DEFAULT_MODEL = "gryphe/mythomax-l2-13b"
 
 
 class OpenRouter(OpenAILike):
-    """OpenRouter LLM.
+    """
+    OpenRouter LLM.
 
     To instantiate the `OpenRouter` class, you will need to provide an API key. You can set the API key either as an environment variable `OPENROUTER_API_KEY` or directly in the class
     constructor. If setting it in the class constructor, it would look like this:
@@ -39,6 +40,7 @@ class OpenRouter(OpenAILike):
         response = llm.complete("Hello World!")
         print(str(response))
         ```
+
     """
 
     model: str = Field(

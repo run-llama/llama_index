@@ -1,4 +1,5 @@
-"""Remote file reader.
+"""
+Remote file reader.
 
 A loader that fetches an arbitrary remote page or file by URL and parses its contents.
 
@@ -41,11 +42,7 @@ class RemoteReader(BaseReader):
         match = re.match(youtube_pattern, url)
 
         # If there's a match, it's a YouTube video URL
-        if match:
-            return True
-
-        # Otherwise, it's not a YouTube video URL
-        return False
+        return match is not None
 
     def load_data(self, url: str) -> List[Document]:
         """Parse whatever is at the URL."""

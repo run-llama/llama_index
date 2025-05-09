@@ -7,10 +7,12 @@ from llama_index.core.schema import Document
 
 
 class MondayReader(BaseReader):
-    """monday.com reader. Reads board's data by a GraphQL query.
+    """
+    monday.com reader. Reads board's data by a GraphQL query.
 
     Args:
         api_key (str): monday.com API key.
+
     """
 
     def __init__(self, api_key: str) -> None:
@@ -57,7 +59,8 @@ class MondayReader(BaseReader):
         return response.json()
 
     def load_data(self, board_id: int) -> List[Document]:
-        """Load board data by board_id.
+        """
+        Load board data by board_id.
 
         Args:
             board_id (int): monday.com board id.
@@ -66,6 +69,7 @@ class MondayReader(BaseReader):
         Returns:
             List[Document]: List of items as documents.
             [{id, name, values: [{title, value}]}]
+
         """
         json_response = self._perform_request(board_id)
         board_data = json_response["data"]["boards"][0]

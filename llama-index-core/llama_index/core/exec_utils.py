@@ -1,4 +1,5 @@
-"""Utilities for safe code execution and evaluation.
+"""
+Utilities for safe code execution and evaluation.
 
 This module provides utilities for safely executing and evaluating code by restricting
 access to potentially dangerous operations. It includes a set of allowed imports and
@@ -29,7 +30,8 @@ def _restricted_import(
     fromlist: Sequence[str] = (),
     level: int = 0,
 ) -> ModuleType:
-    """Restrict imports to a set of allowed modules.
+    """
+    Restrict imports to a set of allowed modules.
 
     Args:
         name (str): The name of the module to import.
@@ -43,6 +45,7 @@ def _restricted_import(
 
     Raises:
         ImportError: If the module is not in the allowed list.
+
     """
     if name in ALLOWED_IMPORTS:
         return __import__(name, globals, locals, fromlist, level)
@@ -101,13 +104,15 @@ ALLOWED_BUILTINS = {
 
 
 def _get_restricted_globals(__globals: Union[dict, None]) -> Any:
-    """Create a restricted globals dictionary with only allowed builtins.
+    """
+    Create a restricted globals dictionary with only allowed builtins.
 
     Args:
         __globals (Union[dict, None]): Additional globals to include.
 
     Returns:
         Any: A dictionary containing only allowed builtins and provided globals.
+
     """
     restricted_globals = copy.deepcopy(ALLOWED_BUILTINS)
     if __globals:
@@ -131,10 +136,12 @@ class DunderVisitor(ast.NodeVisitor):
         self._builtins = builtins
 
     def visit_Name(self, node: ast.Name) -> None:
-        """Visit a name node in the AST.
+        """
+        Visit a name node in the AST.
 
         Args:
             node (ast.Name): The AST name node to visit.
+
         """
         if node.id.startswith("_"):
             self.has_access_to_private_entity = True
@@ -143,10 +150,12 @@ class DunderVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_Attribute(self, node: ast.Attribute) -> None:
-        """Visit an attribute node in the AST.
+        """
+        Visit an attribute node in the AST.
 
         Args:
             node (ast.Attribute): The AST attribute node to visit.
+
         """
         if node.attr.startswith("_"):
             self.has_access_to_private_entity = True
@@ -156,13 +165,15 @@ class DunderVisitor(ast.NodeVisitor):
 
 
 def _contains_protected_access(code: str) -> bool:
-    """Check if code contains protected access or disallowed operations.
+    """
+    Check if code contains protected access or disallowed operations.
 
     Args:
         code (str): The code string to check.
 
     Returns:
         bool: True if code contains protected access or disallowed operations.
+
     """
     # do not allow imports
     tree = ast.parse(code)
@@ -186,13 +197,15 @@ def _contains_protected_access(code: str) -> bool:
 
 
 def _verify_source_safety(__source: Union[str, bytes, CodeType]) -> None:
-    """Verify that the source code is safe to execute.
+    """
+    Verify that the source code is safe to execute.
 
     Args:
         __source (Union[str, bytes, CodeType]): The source code to verify.
 
     Raises:
         RuntimeError: If the code contains unsafe operations.
+
     """
     if isinstance(__source, CodeType):
         raise RuntimeError("Direct execution of CodeType is forbidden!")
@@ -210,7 +223,8 @@ def safe_eval(
     __globals: Union[Dict[str, Any], None] = None,
     __locals: Union[Mapping[str, object], None] = None,
 ) -> Any:
-    """Safely evaluate an expression within a restricted context.
+    """
+    Safely evaluate an expression within a restricted context.
 
     Args:
         __source (Union[str, bytes, CodeType]): The source code to evaluate.
@@ -219,6 +233,7 @@ def safe_eval(
 
     Returns:
         Any: The result of evaluating the expression.
+
     """
     _verify_source_safety(__source)
     return eval(__source, _get_restricted_globals(__globals), __locals)
@@ -229,7 +244,8 @@ def safe_exec(
     __globals: Union[Dict[str, Any], None] = None,
     __locals: Union[Mapping[str, object], None] = None,
 ) -> None:
-    """Safely execute code within a restricted context.
+    """
+    Safely execute code within a restricted context.
 
     Args:
         __source (Union[str, bytes, CodeType]): The source code to execute.
@@ -237,6 +253,7 @@ def safe_exec(
             Defaults to None.
         __locals (Union[Mapping[str, object], None], optional): Local namespace.
             Defaults to None.
+
     """
     _verify_source_safety(__source)
     return exec(__source, _get_restricted_globals(__globals), __locals)

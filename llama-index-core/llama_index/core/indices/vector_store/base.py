@@ -42,6 +42,7 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
         store_nodes_override (bool): set to True to always store Node objects in index
             store and document store even if vector store keeps text. Defaults to False
+
     """
 
     index_struct_cls = IndexDict
@@ -357,7 +358,9 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
             not self._vector_store.stores_text or self._store_nodes_override
         ) and delete_from_docstore:
             for node_id in node_ids:
+                self._index_struct.delete(node_id)
                 self._docstore.delete_document(node_id, raise_error=False)
+            self._storage_context.index_store.add_index_struct(self._index_struct)
 
     def _delete_from_index_struct(self, ref_doc_id: str) -> None:
         # delete from index_struct only if needed

@@ -21,7 +21,8 @@ from llama_index.core.vector_stores.types import (
 
 
 class TablestoreVectorStore(BasePydanticVectorStore):
-    """Tablestore vector store.
+    """
+    Tablestore vector store.
 
     In this vector store we store the text, its embedding and
     its metadata in Tablestore.
@@ -86,6 +87,7 @@ class TablestoreVectorStore(BasePydanticVectorStore):
             ],
         )
         ```
+
     """
 
     stores_text: bool = True

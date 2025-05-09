@@ -54,7 +54,7 @@ def bedrock_embedding(mock_aioboto3_session):
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_aget_text_embedding(bedrock_embedding):
     response = await bedrock_embedding._aget_text_embedding(EXP_REQUEST)
     assert response == EXP_RESPONSE["embedding"]

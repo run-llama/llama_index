@@ -19,6 +19,7 @@ def _marshal_llm_to_json(output: str) -> str:
 
     Returns:
         A string containing a valid JSON object or array.
+
     """
     output = output.strip()
 

@@ -54,14 +54,14 @@ class BaseExtractor(TransformComponent):
 
         data.pop("class_name", None)
 
-        llm_predictor = data.get("llm_predictor", None)
+        llm_predictor = data.get("llm_predictor")
         if llm_predictor:
             from llama_index.core.llm_predictor.loading import load_predictor
 
             llm_predictor = load_predictor(llm_predictor)
             data["llm_predictor"] = llm_predictor
 
-        llm = data.get("llm", None)
+        llm = data.get("llm")
         if llm:
             from llama_index.core.llms.loading import load_llm
 
@@ -77,7 +77,8 @@ class BaseExtractor(TransformComponent):
 
     @abstractmethod
     async def aextract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
-        """Extracts metadata for a sequence of nodes, returning a list of
+        """
+        Extracts metadata for a sequence of nodes, returning a list of
         metadata dictionaries corresponding to each node.
 
         Args:
@@ -86,7 +87,8 @@ class BaseExtractor(TransformComponent):
         """
 
     def extract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
-        """Extracts metadata for a sequence of nodes, returning a list of
+        """
+        Extracts metadata for a sequence of nodes, returning a list of
         metadata dictionaries corresponding to each node.
 
         Args:
@@ -102,7 +104,8 @@ class BaseExtractor(TransformComponent):
         excluded_llm_metadata_keys: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> List[BaseNode]:
-        """Post process nodes parsed from documents.
+        """
+        Post process nodes parsed from documents.
 
         Allows extractors to be chained.
 
@@ -112,6 +115,7 @@ class BaseExtractor(TransformComponent):
                 keys to exclude from embed metadata
             excluded_llm_metadata_keys (Optional[List[str]]):
                 keys to exclude from llm metadata
+
         """
         if self.in_place:
             new_nodes = nodes
@@ -150,21 +154,25 @@ class BaseExtractor(TransformComponent):
         )
 
     def __call__(self, nodes: Sequence[BaseNode], **kwargs: Any) -> List[BaseNode]:
-        """Post process nodes parsed from documents.
+        """
+        Post process nodes parsed from documents.
 
         Allows extractors to be chained.
 
         Args:
             nodes (List[BaseNode]): nodes to post-process
+
         """
         return self.process_nodes(nodes, **kwargs)
 
     async def acall(self, nodes: Sequence[BaseNode], **kwargs: Any) -> List[BaseNode]:
-        """Post process nodes parsed from documents.
+        """
+        Post process nodes parsed from documents.
 
         Allows extractors to be chained.
 
         Args:
             nodes (List[BaseNode]): nodes to post-process
+
         """
         return await self.aprocess_nodes(nodes, **kwargs)

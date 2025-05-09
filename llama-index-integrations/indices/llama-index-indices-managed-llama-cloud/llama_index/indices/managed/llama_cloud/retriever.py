@@ -90,7 +90,7 @@ class LlamaCloudRetriever(BaseRetriever):
         )
 
         super().__init__(
-            callback_manager=kwargs.get("callback_manager", None),
+            callback_manager=kwargs.get("callback_manager"),
             verbose=kwargs.get("verbose", False),
         )
 

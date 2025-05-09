@@ -30,8 +30,12 @@ def dashscope_response_to_chat_response(
         if not content:
             content = ""
         role = response["output"]["choices"][0]["message"]["role"]
+        additional_kwargs = response["output"]["choices"][0]["message"]
         return ChatResponse(
-            message=ChatMessage(role=role, content=content), raw=response
+            message=ChatMessage(
+                role=role, content=content, additional_kwargs=additional_kwargs
+            ),
+            raw=response,
         )
     else:
         return ChatResponse(message=ChatMessage(), raw=response)

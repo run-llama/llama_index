@@ -8,7 +8,8 @@ from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 
 def correct_date(yr, dt):
-    """Some transcripts have incorrect date, correcting it.
+    """
+    Some transcripts have incorrect date, correcting it.
 
     Args:
         yr (int): actual
@@ -16,6 +17,7 @@ def correct_date(yr, dt):
 
     Returns:
         datetime: corrected date
+
     """
     dt = datetime.strptime(dt, "%Y-%m-%d %H:%M:%S")
     if dt.year != yr:
@@ -24,13 +26,15 @@ def correct_date(yr, dt):
 
 
 def extract_speakers(cont: str) -> List[str]:
-    """Extract the list of speakers.
+    """
+    Extract the list of speakers.
 
     Args:
         cont (str): transcript content
 
     Returns:
         List[str]: list of speakers
+
     """
     pattern = re.compile(r"\n(.*?):")
     matches = pattern.findall(cont)
@@ -40,12 +44,14 @@ def extract_speakers(cont: str) -> List[str]:
 
 @retry(wait=wait_random_exponential(min=1, max=5), stop=stop_after_attempt(2))
 def get_earnings_transcript(quarter: str, ticker: str, year: int):
-    """Get the earnings transcripts.
+    """
+    Get the earnings transcripts.
 
     Args:
         quarter (str)
         ticker (str)
         year (int)
+
     """
     response = requests.get(
         f"https://discountingcashflows.com/api/transcript/{ticker}/{quarter}/{year}/",

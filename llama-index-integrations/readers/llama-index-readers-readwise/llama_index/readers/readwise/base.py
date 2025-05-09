@@ -17,6 +17,7 @@ def _get_readwise_data(api_key: str, updated_after: Optional[datetime.datetime] 
 
     Args:
         updated_after (datetime.datetime): The datetime to load highlights after. Useful for updating indexes over time.
+
     """
     result = []
     next_page = None
@@ -54,6 +55,7 @@ class ReadwiseReader(BaseReader):
 
         Args:
             updated_after (datetime.datetime): The datetime to load highlights after. Useful for updating indexes over time.
+
         """
         readwise_response = _get_readwise_data(
             api_key=self._api_key, updated_after=updated_after

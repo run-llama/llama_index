@@ -31,7 +31,8 @@ CUSTOM_ENDPOINT_PREFIX = "ocid1.generativeaiendpoint"
 
 
 class OCIGenAIEmbeddings(BaseEmbedding):
-    """OCI embedding models.
+    """
+    OCI embedding models.
 
     To authenticate, the OCI client uses the methods described in
     https://docs.oracle.com/en-us/iaas/Content/API/Concepts/sdk_authentication_methods.htm
@@ -60,6 +61,7 @@ class OCIGenAIEmbeddings(BaseEmbedding):
                 service_endpoint="https://inference.generativeai.us-chicago-1.oci.oraclecloud.com",
                 compartment_id="MY_OCID"
             )
+
     """
 
     model_name: str = Field(
@@ -142,6 +144,7 @@ class OCIGenAIEmbeddings(BaseEmbedding):
 
             client (Optional[Any]): An optional OCI client object. If not provided, the client will be created using the
                                     provided service endpoint and authentifcation method.
+
         """
         super().__init__(
             model_name=model_name,

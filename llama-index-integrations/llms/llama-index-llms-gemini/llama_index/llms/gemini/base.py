@@ -87,6 +87,7 @@ class Gemini(FunctionCallingLLM):
         resp = llm.complete("Write a poem about a magic backpack")
         print(resp)
         ```
+
     """
 
     model: str = Field(default=GEMINI_MODELS[0], description="The Gemini model to use.")

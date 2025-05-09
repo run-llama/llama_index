@@ -35,7 +35,8 @@ DEFAULT_SUMMARY_TEMPLATE = PromptTemplate(
 
 
 class TextToCypherRetriever(BasePGRetriever):
-    """A Text-to-Cypher retriever that uses a language model to generate Cypher queries.
+    """
+    A Text-to-Cypher retriever that uses a language model to generate Cypher queries.
 
     NOTE: Executing arbitrary cypher has its risks. Ensure you take the needed measures
     (read-only roles, sandboxed env, etc.) to ensure safe usage in a production environment.
@@ -60,6 +61,7 @@ class TextToCypherRetriever(BasePGRetriever):
             response, If False this uses the provided or default response_template. Defaults to False.
         summarization_template (Optional[str], optional):
             The template to use for summarizing the response. Defaults to None.
+
     """
 
     def __init__(

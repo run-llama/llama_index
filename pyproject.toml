@@ -1,6 +1,88 @@
 [build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core"]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[dependency-groups]
+dev = [
+    "black[jupyter]>=23.7.0,<=24.3.0",
+    "codespell[toml]>=v2.2.6",
+    "ipykernel>=6.29.5,<7",
+    "mypy==1.11.0",
+    "openai",
+    "pandas",
+    "pre-commit==3.2.0",
+    "pylint==2.15.10",
+    "pytest-asyncio>=0.23.7",
+    "pytest-mock>=3.14.0",
+    "pytest>=8.2.1",
+    "ruff==0.0.292",
+    "types-Deprecated>=0.1.0",
+    "types-PyYAML>=6.0.12.12,<7",
+    "types-protobuf>=4.24.0.4,<5",
+    "types-redis==4.5.5.0",
+    "types-requests==2.28.11.8",
+    "types-setuptools==67.1.0.0",
+    "tomli>=2.2.1",
+]
+
+[lint.flake8-annotations]
+mypy-init-return = true
+
+[lint.pydocstyle]
+convention = "google"
+
+[project]
+authors = [{email = "jerry@llamaindex.ai", name = "Jerry Liu"}]
+classifiers = [
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "llama-index-agent-openai>=0.4.0,<0.5",
+    "llama-index-cli>=0.4.1,<0.5",
+    "llama-index-core>=0.12.35,<0.13",
+    "llama-index-embeddings-openai>=0.3.0,<0.4",
+    "llama-index-indices-managed-llama-cloud>=0.4.0",
+    "llama-index-llms-openai>=0.3.0,<0.4",
+    "llama-index-multi-modal-llms-openai>=0.4.0,<0.5",
+    "llama-index-program-openai>=0.3.0,<0.4",
+    "llama-index-question-gen-openai>=0.3.0,<0.4",
+    "llama-index-readers-file>=0.4.0,<0.5",
+    "llama-index-readers-llama-parse>=0.4.0",
+    "nltk>3.8.1",
+]
+description = "Interface between LLMs and your data"
+keywords = [
+    "LLM",
+    "NLP",
+    "RAG",
+    "data",
+    "devtools",
+    "index",
+    "retrieval",
+]
+license = "MIT"
+maintainers = [
+    {email = "andrei@runllama.ai", name = "Andrei Fajardo"},
+    {email = "ht@runllama.ai", name = "Haotian Zhang"},
+    {email = "jerry@llamaindex.ai", name = "Jerry Liu"},
+    {email = "logan@llamaindex.ai", name = "Logan Markewich"},
+    {email = "simon@llamaindex.ai", name = "Simon Suo"},
+    {email = "sourabh@llamaindex.ai", name = "Sourabh Desai"},
+]
+name = "llama-index"
+readme = "README.md"
+requires-python = ">=3.9,<4.0"
+version = "0.12.35"
+
+[project.scripts]
+llamaindex-cli = "llama_index.cli.command_line:main"
+
+[project.urls]
+Documentation = "https://docs.llamaindex.ai/en/stable/"
+Homepage = "https://llamaindex.ai"
+Repository = "https://github.com/run-llama/llama_index"
 
 [tool.codespell]
 check-filenames = true
@@ -9,6 +91,15 @@ ignore-words-list = "astroid,gallary,momento,narl,ot,rouge"
 # Feel free to un-skip examples, and experimental, you will just need to
 # work through many typos (--write-changes and --interactive will help)
 skip = "./llama_index/core/_static,./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.hatch.build.targets.sdist]
+include = ["_llama-index/llama_index"]
+
+[tool.hatch.build.targets.wheel]
+include = ["_llama-index/llama_index"]
+
+[tool.hatch.build.targets.wheel.sources]
+"_llama-index/llama_index" = "llama_index"
 
 [tool.mypy]
 disallow_untyped_defs = true
@@ -21,88 +112,6 @@ namespace_packages = true
 plugins = "pydantic.mypy"
 python_version = "3.9"
 
-[tool.poetry]
-authors = ["Jerry Liu <jerry@llamaindex.ai>"]
-classifiers = [
-    "Topic :: Scientific/Engineering :: Artificial Intelligence",
-    "Topic :: Software Development :: Libraries :: Application Frameworks",
-    "Topic :: Software Development :: Libraries :: Python Modules",
-]
-description = "Interface between LLMs and your data"
-documentation = "https://docs.llamaindex.ai/en/stable/"
-homepage = "https://llamaindex.ai"
-keywords = ["LLM", "NLP", "RAG", "data", "devtools", "index", "retrieval"]
-license = "MIT"
-maintainers = [
-    "Andrei Fajardo <andrei@runllama.ai>",
-    "Haotian Zhang <ht@runllama.ai>",
-    "Jerry Liu <jerry@llamaindex.ai>",
-    "Logan Markewich <logan@llamaindex.ai>",
-    "Simon Suo <simon@llamaindex.ai>",
-    "Sourabh Desai <sourabh@llamaindex.ai>",
-]
-name = "llama-index"
-packages = [{from = "_llama-index", include = "llama_index"}]
-readme = "README.md"
-repository = "https://github.com/run-llama/llama_index"
-version = "0.12.33"
-
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-llama-index-llms-openai = "^0.3.0"
-llama-index-embeddings-openai = "^0.3.0"
-llama-index-program-openai = "^0.3.0"
-llama-index-question-gen-openai = "^0.3.0"
-llama-index-agent-openai = "^0.4.0"
-llama-index-readers-file = "^0.4.0"
-llama-index-readers-llama-parse = ">=0.4.0"
-llama-index-indices-managed-llama-cloud = ">=0.4.0"
-llama-index-core = "^0.12.33"
-llama-index-multi-modal-llms-openai = "^0.4.0"
-llama-index-cli = "^0.4.1"
-nltk = ">3.8.1"  # avoids a CVE, temp until next release, should be in llama-index-core
-
-[tool.poetry.group.dev.dependencies]
-black = {extras = ["jupyter"], version = ">=23.7.0,<=24.3.0"}
-codespell = {extras = ["toml"], version = ">=v2.2.6"}
-ipykernel = "^6.29.5"
-mypy = "1.11.0"
-openai = "*"
-pandas = "*"
-pre-commit = "3.2.0"
-pylint = "2.15.10"
-pytest = ">=8.2.1"
-pytest-asyncio = ">=0.23.7"
-pytest-mock = ">=3.14.0"
-ruff = "0.0.292"
-tree-sitter = {python = "<3.12", version = "0.20.0"}  # 0.22 seems to break for now
-tree-sitter-languages = {python = "<3.12", version = "1.9.1"}
-types-Deprecated = ">=0.1.0"
-types-PyYAML = "^6.0.12.12"
-types-protobuf = "^4.24.0.4"
-types-redis = "4.5.5.0"
-types-requests = "2.28.11.8"  # TODO: unpin when mypy>0.991
-types-setuptools = "67.1.0.0"
-
-[tool.poetry.group.docs]
-optional = true
-
-[tool.poetry.group.docs.dependencies]
-mkdocs = "^1.6.0"
-mkdocs-include-dir-to-nav = "^1.2.0"
-mkdocs-jupyter = "^0.24.7"
-mkdocs-material = "^9.5.25"
-mkdocs-redirects = "^1.2.1"
-mkdocstrings = {extras = ["python"], version = "^0.25.1"}
-
-[tool.poetry.scripts]
-llamaindex-cli = 'llama_index.cli.command_line:main'
-
-[[tool.poetry.source]]
-name = "nvidia-pypi"
-priority = "supplemental"
-url = "https://pypi.nvidia.com"
-
 [tool.ruff]
 exclude = [
     "_static",
@@ -110,17 +119,25 @@ exclude = [
     "llama_index/ingestion/client",
     "notebooks",
 ]
-ignore = [
+target-version = "py312"
+lint.ignore = [
     "COM812",  # Too aggressive
     "D212",  # Using D213
     "D417",  # Too aggressive
     "F541",  # Messes with prompts.py
-    "TCH002",
-    "UP006",  # Messes with pydantic
-    "UP007",  # Wants | over Union, which breaks 3.8
+    "RUF100",  # Allow blanket noqa
+    "TC002",
+    "UP",  # Remove when we drop Python 3.9
+    "PT001",
+    "E501",  # Use best judgement for line-length
+    "E402",  # Annoying, use best judgement
+    "PYI063",
+    "ANN204",  # this is annoying
+    "D401",  # I disagree
+    "D404",
 ]
 # Feel free to add more here
-select = [
+lint.select = [
     "ANN204",
     "B009",
     "B010",
@@ -132,7 +149,6 @@ select = [
     "COM819",
     "D201",
     "D202",
-    "D203",
     "D204",
     "D207",
     "D208",
@@ -143,7 +159,7 @@ select = [
     "D215",
     "D3",
     "D4",
-    "E7",
+    "E",
     "EXE004",
     "F401",
     "F504",
@@ -163,7 +179,6 @@ select = [
     "PLE2513",
     "PLE2514",
     "PLE2515",
-    "PLR1701",
     "PLR1711",
     "PT001",
     "PT003",
@@ -188,30 +203,28 @@ select = [
     "SIM2",
     "SIM300",
     "SIM9",
-    "TCH005",
+    "TC005",
     "TD006",
     "TID",
     "TRY201",
-    "UP",
     "W",
 ]
-target-version = "py38"
-unfixable = [
+lint.unfixable = [
     "ERA001",
 ]
 
-[tool.ruff.flake8-annotations]
-mypy-init-return = true
-
-[tool.ruff.pydocstyle]
-convention = "google"
-
 [tool.tomlsort]
-all = true
+all = false
 in_place = true
 spaces_before_inline_comment = 2  # Match Python PEP 8
 spaces_indent_inline_array = 4  # Match Python PEP 8
 trailing_comma_inline_array = true
 
-[tool.tomlsort.overrides."tool.poetry.dependencies"]
-table_keys = false
+[tool.uv]
+default-groups = [
+    "dev",
+]
+
+[[tool.uv.index]]
+name = "nvidia-pypi"
+url = "https://pypi.nvidia.com"

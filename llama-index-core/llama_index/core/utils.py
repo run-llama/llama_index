@@ -190,7 +190,8 @@ def get_new_int_id(d: Set) -> int:
 
 @contextmanager
 def temp_set_attrs(obj: Any, **kwargs: Any) -> Generator:
-    """Temporary setter.
+    """
+    Temporary setter.
 
     Utility class for setting a temporary value for an attribute on a class.
     Taken from: https://tinyurl.com/2p89xymh
@@ -208,7 +209,8 @@ def temp_set_attrs(obj: Any, **kwargs: Any) -> Generator:
 
 @dataclass
 class ErrorToRetry:
-    """Exception types that should be retried.
+    """
+    Exception types that should be retried.
 
     Args:
         exception_cls (Type[Exception]): Class of exception.
@@ -229,7 +231,8 @@ def retry_on_exceptions_with_backoff(
     min_backoff_secs: float = 0.5,
     max_backoff_secs: float = 60.0,
 ) -> Any:
-    """Execute lambda function with retries and exponential backoff.
+    """
+    Execute lambda function with retries and exponential backoff.
 
     Args:
         lambda_fn (Callable): Function to be called and output we want.
@@ -276,7 +279,8 @@ async def aretry_on_exceptions_with_backoff(
     min_backoff_secs: float = 0.5,
     max_backoff_secs: float = 60.0,
 ) -> Any:
-    """Execute lambda function with retries and exponential backoff.
+    """
+    Execute lambda function with retries and exponential backoff.
 
     Args:
         async_fn (Callable): Async Function to be called and output we want.
@@ -350,7 +354,8 @@ def truncate_text(text: str, max_length: int) -> str:
 
 
 def iter_batch(iterable: Union[Iterable, Generator], size: int) -> Iterable:
-    """Iterate over an iterable in batches.
+    """
+    Iterate over an iterable in batches.
 
     >>> list(iter_batch([1,2,3,4,5], 3))
     [[1, 2, 3], [4, 5]]
@@ -400,6 +405,7 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
     Args:
         model_name(str): the model name of the tokenizer.
                         For instance, fxmarty/tiny-llama-fast-tokenizer.
+
     """
     try:
         from transformers import AutoTokenizer  # pants: no-infer-dep
@@ -412,7 +418,8 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
 
 
 def get_cache_dir() -> str:
-    """Locate a platform-appropriate cache directory for llama_index,
+    """
+    Locate a platform-appropriate cache directory for llama_index,
     and create it if it doesn't yet exist.
     """
     # User override
@@ -442,11 +449,13 @@ def get_cache_dir() -> str:
 
 
 def add_sync_version(func: Any) -> Any:
-    """Decorator for adding sync version of an async function. The sync version
+    """
+    Decorator for adding sync version of an async function. The sync version
     is added as a function attribute to the original function, func.
 
     Args:
         func(Any): the async function for which a sync variant will be built.
+
     """
     assert asyncio.iscoroutinefunction(func)
 
@@ -517,6 +526,7 @@ def get_color_mapping(
 
     Returns:
         Dict[str, str]: Mapping of items to colors.
+
     """
     if use_llama_index_colors:
         color_palette = _LLAMA_INDEX_COLORS
@@ -537,6 +547,7 @@ def _get_colored_text(text: str, color: str) -> str:
 
     Returns:
         str: Colored version of the input text.
+
     """
     all_colors = {**_LLAMA_INDEX_COLORS, **_ANSI_COLORS}
 
@@ -561,6 +572,7 @@ def print_text(text: str, color: Optional[str] = None, end: str = "") -> None:
 
     Returns:
         None
+
     """
     text_to_print = _get_colored_text(text, color) if color is not None else text
     print(text_to_print, end=end)
@@ -582,25 +594,29 @@ def infer_torch_device() -> str:
 
 
 def unit_generator(x: Any) -> Generator[Any, None, None]:
-    """A function that returns a generator of a single element.
+    """
+    A function that returns a generator of a single element.
 
     Args:
         x (Any): the element to build yield
 
     Yields:
         Any: the single element
+
     """
     yield x
 
 
 async def async_unit_generator(x: Any) -> AsyncGenerator[Any, None]:
-    """A function that returns a generator of a single element.
+    """
+    A function that returns a generator of a single element.
 
     Args:
         x (Any): the element to build yield
 
     Yields:
         Any: the single element
+
     """
     yield x
 
@@ -611,7 +627,8 @@ def resolve_binary(
     url: Optional[str] = None,
     as_base64: bool = False,
 ) -> BytesIO:
-    """Resolve binary data from various sources into a BytesIO object.
+    """
+    Resolve binary data from various sources into a BytesIO object.
 
     Args:
         raw_bytes: Raw bytes data
@@ -624,6 +641,7 @@ def resolve_binary(
 
     Raises:
         ValueError: If no valid source is provided
+
     """
     if raw_bytes is not None:
         # check if raw_bytes is base64 encoded

@@ -1,4 +1,5 @@
-"""Test of utility functions for working with Search Index commands.
+"""
+Test of utility functions for working with Search Index commands.
 
 Note that search index commands are only supported on Atlas Clusters >=M10.
 """

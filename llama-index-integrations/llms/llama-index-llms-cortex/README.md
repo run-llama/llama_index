@@ -55,10 +55,10 @@ connection_parameters = {
     "database": "<your snowflake database>",
     "schema": "<your snowflake schema",
     "warehouse": "<your snowflake warehouse>",
-    "authenticator": "JWT_AUTHENTICATOR",
+    "private_key_file": "<path to file>",
+    "authenticator": "JWT_AUTHENTICATOR",  # use this for private key
 }
 session = Session.builder.configs(connection_parameters).create()
-
 
 llm = Cortex(
     model="llama3.2-1b",
@@ -76,29 +76,35 @@ print(completion_response)
 ## Connect in an SPCS environment
 
 ```python
+# That's it! That's all we need.
+llm = Cortex(model="llama3.2-1b")
+completion_response = llm.complete(
+    "write me a haiku about a snowflake", temperature=0.0
+)
+print(completion_response)
+```
+
+## Create a session within an SPCS environment
+
+```python
 import os
 from snowflake.snowpark import Session
 from llama_index.llms.cortex import Cortex
 from llama_index.llms.cortex import utils as cortex_utils
 
+#! Note now the user and role parameters are left blank for SPCS !
 connection_parameters = {
     "account": "<your snowflake account>",
-    "user": "<your snowflake user>",
-    "role": "<your snowflake role>",
     "database": "<your snowflake database>",
     "schema": "<your snowflake schema",
     "warehouse": "<your snowflake warehouse>",
     "token": cortex_utils.get_default_spcs_token(),
-    "authenticator": "JWT_AUTHENTICATOR",
+    "host": cortex_utils.get_spcs_base_url(),
+    "authenticator": "OAUTH",
 }
 session = Session.builder.configs(connection_parameters).create()
 
-llm = Cortex(
-    model="llama3.2-1b",
-    user=os.environ["YOUR_SF_USER"],
-    account=os.environ["YOUR_SF_ACCOUNT"],
-    session=session,
-)
+llm = Cortex(model="llama3.2-1b", session=session)
 
 completion_response = llm.complete(
     "write me a haiku about a snowflake", temperature=0.0

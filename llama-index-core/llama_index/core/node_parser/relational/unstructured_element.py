@@ -16,7 +16,8 @@ from llama_index.core.node_parser.relational.utils import html_to_df
 
 
 class UnstructuredElementNodeParser(BaseElementNodeParser):
-    """Unstructured element node parser.
+    """
+    Unstructured element node parser.
 
     Splits a document into Text Nodes and Index Nodes corresponding to embedded objects
     (e.g. tables).

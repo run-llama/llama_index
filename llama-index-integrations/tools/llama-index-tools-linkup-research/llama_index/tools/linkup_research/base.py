@@ -24,6 +24,7 @@ class LinkupToolSpec(BaseToolSpec):
 
         Args:
             query: The query to search for.
+
         """
         api_params = {
             "query": query,

@@ -1,4 +1,5 @@
-"""Azure CosmosDB NoSQL vCore Vector store index.
+"""
+Azure CosmosDB NoSQL vCore Vector store index.
 
 An index that is built on top of an existing vector store.
 
@@ -25,7 +26,8 @@ USER_AGENT = ("LlamaIndex-CDBNoSql-VectorStore-Python",)
 
 
 class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
-    """Azure CosmosDB NoSQL vCore Vector Store.
+    """
+    Azure CosmosDB NoSQL vCore Vector Store.
 
     To use, you should have both:
     -the ``azure-cosmos`` python package installed
@@ -65,7 +67,8 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         metadata_key: str = "metadata",
         **kwargs: Any,
     ) -> None:
-        """Initialize the vector store.
+        """
+        Initialize the vector store.
 
         Args:
             cosmos_client: Client used to connect to azure cosmosdb no sql account.
@@ -76,6 +79,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
             indexing_policy: Indexing Policy for the container.
             cosmos_container_properties: Container Properties for the container.
             cosmos_database_properties: Database Properties for the container.
+
         """
         super().__init__()
 
@@ -263,7 +267,8 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -374,12 +379,14 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
         )
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query: a VectorStoreQuery object.
 
         Returns:
             A VectorStoreQueryResult containing the results of the query.
+
         """
         return self._query(query, **kwargs)

@@ -54,6 +54,7 @@ class S3Reader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
     aws_access_id (Optional[str]): provide AWS access key directly.
     aws_access_secret (Optional[str]): provide AWS access key directly.
     s3_endpoint_url (Optional[str]): provide S3 endpoint URL directly.
+
     """
 
     is_remote: bool = True
@@ -145,6 +146,7 @@ class S3Reader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
 
         Returns:
             List[Document]: A list of documents loaded from S3.
+
         """
         if custom_temp_subdir is not None:
             warnings.warn(
@@ -164,6 +166,7 @@ class S3Reader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
 
         Returns:
             List[Document]: A list of documents loaded from S3.
+
         """
         if custom_temp_subdir is not None:
             warnings.warn(

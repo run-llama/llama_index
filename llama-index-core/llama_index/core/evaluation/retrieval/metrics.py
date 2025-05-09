@@ -14,7 +14,8 @@ _AGG_FUNC: Dict[str, Callable] = {"mean": np.mean, "median": np.median, "max": n
 
 
 class HitRate(BaseRetrievalMetric):
-    """Hit rate metric: Compute hit rate with two calculation options.
+    """
+    Hit rate metric: Compute hit rate with two calculation options.
 
     - The default method checks for a single match between any of the retrieved docs and expected docs.
     - The more granular method checks for all potential matches between retrieved docs and expected docs.
@@ -22,6 +23,7 @@ class HitRate(BaseRetrievalMetric):
     Attributes:
         metric_name (str): The name of the metric.
         use_granular_hit_rate (bool): Determines whether to use the granular method for calculation.
+
     """
 
     metric_name: ClassVar[str] = "hit_rate"
@@ -36,20 +38,25 @@ class HitRate(BaseRetrievalMetric):
         retrieved_texts: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> RetrievalMetricResult:
-        """Compute metric based on the provided inputs.
+        """
+        Compute metric based on the provided inputs.
 
-        Parameters:
+        Parameters
+        ----------
             query (Optional[str]): The query string (not used in the current implementation).
             expected_ids (Optional[List[str]]): Expected document IDs.
             retrieved_ids (Optional[List[str]]): Retrieved document IDs.
             expected_texts (Optional[List[str]]): Expected texts (not used in the current implementation).
             retrieved_texts (Optional[List[str]]): Retrieved texts (not used in the current implementation).
 
-        Raises:
+        Raises
+        ------
             ValueError: If the necessary IDs are not provided.
 
-        Returns:
+        Returns
+        -------
             RetrievalMetricResult: The result with the computed hit rate score.
+
         """
         # Checking for the required arguments
         if (
@@ -74,7 +81,8 @@ class HitRate(BaseRetrievalMetric):
 
 
 class MRR(BaseRetrievalMetric):
-    """MRR (Mean Reciprocal Rank) metric with two calculation options.
+    """
+    MRR (Mean Reciprocal Rank) metric with two calculation options.
 
     - The default method calculates the reciprocal rank of the first relevant retrieved document.
     - The more granular method sums the reciprocal ranks of all relevant retrieved documents and divides by the count of relevant documents.
@@ -82,6 +90,7 @@ class MRR(BaseRetrievalMetric):
     Attributes:
         metric_name (str): The name of the metric.
         use_granular_mrr (bool): Determines whether to use the granular method for calculation.
+
     """
 
     metric_name: ClassVar[str] = "mrr"
@@ -96,20 +105,25 @@ class MRR(BaseRetrievalMetric):
         retrieved_texts: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> RetrievalMetricResult:
-        """Compute MRR based on the provided inputs and selected method.
+        """
+        Compute MRR based on the provided inputs and selected method.
 
-        Parameters:
+        Parameters
+        ----------
             query (Optional[str]): The query string (not used in the current implementation).
             expected_ids (Optional[List[str]]): Expected document IDs.
             retrieved_ids (Optional[List[str]]): Retrieved document IDs.
             expected_texts (Optional[List[str]]): Expected texts (not used in the current implementation).
             retrieved_texts (Optional[List[str]]): Retrieved texts (not used in the current implementation).
 
-        Raises:
+        Raises
+        ------
             ValueError: If the necessary IDs are not provided.
 
-        Returns:
+        Returns
+        -------
             RetrievalMetricResult: The result with the computed MRR score.
+
         """
         # Checking for the required arguments
         if (
@@ -145,12 +159,14 @@ class MRR(BaseRetrievalMetric):
 
 
 class Precision(BaseRetrievalMetric):
-    """Precision metric.
+    """
+    Precision metric.
 
     The `K`-value in `Precision@K` usually corresponds to `top_k` of the retriever.
 
     Attributes:
         metric_name (str): The name of the metric.
+
     """
 
     metric_name: ClassVar[str] = "precision"
@@ -164,20 +180,25 @@ class Precision(BaseRetrievalMetric):
         retrieved_texts: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> RetrievalMetricResult:
-        """Compute precision based on the provided inputs and selected method.
+        """
+        Compute precision based on the provided inputs and selected method.
 
-        Parameters:
+        Parameters
+        ----------
             query (Optional[str]): The query string (not used in the current implementation).
             expected_ids (Optional[List[str]]): Expected document IDs.
             retrieved_ids (Optional[List[str]]): Retrieved document IDs.
             expected_texts (Optional[List[str]]): Expected texts (not used in the current implementation).
             retrieved_texts (Optional[List[str]]): Retrieved texts (not used in the current implementation).
 
-        Raises:
+        Raises
+        ------
             ValueError: If the necessary IDs are not provided.
 
-        Returns:
+        Returns
+        -------
             RetrievalMetricResult: The result with the computed precision score.
+
         """
         # Checking for the required arguments
         if (
@@ -196,10 +217,12 @@ class Precision(BaseRetrievalMetric):
 
 
 class Recall(BaseRetrievalMetric):
-    """Recall metric.
+    """
+    Recall metric.
 
     Attributes:
         metric_name (str): The name of the metric.
+
     """
 
     metric_name: ClassVar[str] = "recall"
@@ -213,20 +236,25 @@ class Recall(BaseRetrievalMetric):
         retrieved_texts: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> RetrievalMetricResult:
-        """Compute recall based on the provided inputs and selected method.
+        """
+        Compute recall based on the provided inputs and selected method.
 
-        Parameters:
+        Parameters
+        ----------
             query (Optional[str]): The query string (not used in the current implementation).
             expected_ids (Optional[List[str]]): Expected document IDs.
             retrieved_ids (Optional[List[str]]): Retrieved document IDs.
             expected_texts (Optional[List[str]]): Expected texts (not used in the current implementation).
             retrieved_texts (Optional[List[str]]): Retrieved texts (not used in the current implementation).
 
-        Raises:
+        Raises
+        ------
             ValueError: If the necessary IDs are not provided.
 
-        Returns:
+        Returns
+        -------
             RetrievalMetricResult: The result with the computed recall score.
+
         """
         # Checking for the required arguments
         if (
@@ -245,10 +273,12 @@ class Recall(BaseRetrievalMetric):
 
 
 class AveragePrecision(BaseRetrievalMetric):
-    """Average Precision (AP) metric.
+    """
+    Average Precision (AP) metric.
 
     Attributes:
         metric_name (str): The name of the metric.
+
     """
 
     metric_name: ClassVar[str] = "ap"
@@ -262,20 +292,25 @@ class AveragePrecision(BaseRetrievalMetric):
         retrieved_texts: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> RetrievalMetricResult:
-        """Compute average precision based on the provided inputs and selected method.
+        """
+        Compute average precision based on the provided inputs and selected method.
 
-        Parameters:
+        Parameters
+        ----------
             query (Optional[str]): The query string (not used in the current implementation).
             expected_ids (Optional[List[str]]): Expected document IDs.
             retrieved_ids (Optional[List[str]]): Retrieved document IDs, ordered by relevance from highest to lowest.
             expected_texts (Optional[List[str]]): Expected texts (not used in the current implementation).
             retrieved_texts (Optional[List[str]]): Retrieved texts (not used in the current implementation).
 
-        Raises:
+        Raises
+        ------
             ValueError: If the necessary IDs are not provided.
 
-        Returns:
+        Returns
+        -------
             RetrievalMetricResult: The result with the computed average precision score.
+
         """
         # Checking for the required arguments
         if (
@@ -318,7 +353,8 @@ def discounted_gain(*, rel: float, i: int, mode: DiscountedGainMode) -> float:
 
 
 class NDCG(BaseRetrievalMetric):
-    """NDCG (Normalized Discounted Cumulative Gain) metric.
+    """
+    NDCG (Normalized Discounted Cumulative Gain) metric.
 
     The position `p` is taken as the size of the query results (which is usually
     `top_k` of the retriever).
@@ -330,6 +366,7 @@ class NDCG(BaseRetrievalMetric):
     Attributes:
         metric_name (str): The name of the metric.
         mode (DiscountedGainMode): Determines the formula for each item in the summation.
+
     """
 
     metric_name: ClassVar[str] = "ndcg"
@@ -344,20 +381,25 @@ class NDCG(BaseRetrievalMetric):
         retrieved_texts: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> RetrievalMetricResult:
-        """Compute NDCG based on the provided inputs and selected method.
+        """
+        Compute NDCG based on the provided inputs and selected method.
 
-        Parameters:
+        Parameters
+        ----------
             query (Optional[str]): The query string (not used in the current implementation).
             expected_ids (Optional[List[str]]): Expected document IDs, unordered by relevance.
             retrieved_ids (Optional[List[str]]): Retrieved document IDs, ordered by relevance from highest to lowest.
             expected_texts (Optional[List[str]]): Expected texts (not used in the current implementation).
             retrieved_texts (Optional[List[str]]): Retrieved texts (not used in the current implementation).
 
-        Raises:
+        Raises
+        ------
             ValueError: If the necessary IDs are not provided.
 
-        Returns:
+        Returns
+        -------
             RetrievalMetricResult: The result with the computed NDCG score.
+
         """
         # Checking for the required arguments
         if (

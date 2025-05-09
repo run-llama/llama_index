@@ -23,10 +23,12 @@ mock_correction = Correction(correction="This is a mock correction.")
 class MockLLM(CustomLLM):
     @property
     def metadata(self) -> LLMMetadata:
-        """LLM metadata.
+        """
+        LLM metadata.
 
         Returns:
             LLMMetadata: LLM metadata containing various information about the LLM.
+
         """
         return LLMMetadata()
 

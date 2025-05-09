@@ -6,7 +6,8 @@ from llama_index.storage.kvstore.mongodb import MongoDBKVStore
 
 
 class MongoDocumentStore(KVDocumentStore):
-    """Mongo Document (Node) store.
+    """
+    Mongo Document (Node) store.
 
     A MongoDB store for Document and Node objects.
 

@@ -26,12 +26,14 @@ logger = logging.getLogger(__name__)
 
 
 class OracleSummary:
-    """Get Summary.
+    """
+    Get Summary.
 
     Args:
         conn: Oracle Connection,
         params: Summary parameters,
         proxy: Proxy
+
     """
 
     def __init__(
@@ -42,7 +44,8 @@ class OracleSummary:
         self.summary_params = params
 
     def get_summary(self, docs) -> List[str]:
-        """Get the summary of the input docs.
+        """
+        Get the summary of the input docs.
 
         Args:
             docs: The documents to generate summary for.
@@ -50,6 +53,7 @@ class OracleSummary:
 
         Returns:
             List of summary text, one for each input doc.
+
         """
         try:
             import oracledb

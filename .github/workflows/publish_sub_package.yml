@@ -6,7 +6,6 @@ on:
       - main
 
 env:
-  POETRY_VERSION: "1.8.3"
   PYTHON_VERSION: "3.10"
 
 jobs:
@@ -17,27 +16,26 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Install Poetry
-        run: pipx install poetry==${{ env.POETRY_VERSION }}
-      - name: Set up python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v5
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: "poetry"
-          cache-dependency-path: "**/poetry.lock"
+          enable-cache: true
+
       - name: Get changed pyproject files
         id: changed-files
         run: |
           echo "changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | grep -v llama-index-core | grep llama-index | grep pyproject | xargs)" >> $GITHUB_OUTPUT
+
       - name: Publish changed packages
         env:
           PYPI_TOKEN: ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}
         run: |
           for file in ${{ steps.changed-files.outputs.changed_files }}; do
               cd `echo $file | sed 's/\/pyproject.toml//g'`
-              poetry lock
-              pip install -e .
-              poetry config pypi-token.pypi $PYPI_TOKEN
-              poetry publish --build
+              uv sync
+              uv build
+              uv publish --token $PYPI_TOKEN
               cd -
           done
