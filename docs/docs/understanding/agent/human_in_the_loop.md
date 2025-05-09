@@ -27,6 +27,7 @@ Next we'll create a tool that performs a hypothetical dangerous task. There are 
 ```python
 from llama_index.core.workflow import Context
 
+
 async def dangerous_task(ctx: Context) -> str:
     """A dangerous task that requires human confirmation."""
 
