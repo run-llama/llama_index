@@ -198,6 +198,7 @@ nav:
           - ./examples/data_connectors/ZyteSerpDemo.ipynb
           - ./examples/data_connectors/deplot/DeplotReader.ipynb
           - ./examples/data_connectors/html_tag_reader.ipynb
+          - ./examples/data_connectors/lagecy_office_reader.ipynb
           - ./examples/data_connectors/oracleai.ipynb
           - ./examples/data_connectors/simple_directory_reader.ipynb
           - ./examples/data_connectors/simple_directory_reader_parallel.ipynb
@@ -1413,6 +1414,7 @@ nav:
           - ./api_reference/readers/json.md
           - ./api_reference/readers/kaltura_esearch.md
           - ./api_reference/readers/kibela.md
+          - ./api_reference/readers/legacy_office.md
           - ./api_reference/readers/lilac.md
           - ./api_reference/readers/linear.md
           - ./api_reference/readers/llama_parse.md
@@ -2443,6 +2445,7 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-meta
             - ../llama-index-integrations/readers/llama-index-readers-oxylabs
             - ../llama-index-integrations/node_parser/llama-index-node-parser-slide
+            - ../llama-index-integrations/readers/llama-index-readers-legacy-office
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
