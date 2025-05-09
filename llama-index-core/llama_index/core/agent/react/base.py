@@ -120,11 +120,7 @@ class ReActAgent(AgentRunner):
         **kwargs: Any,
     ) -> "ReActAgent":
         """
-<<<<<<< HEAD
-        Convenience constructor method from set of of BaseTools (Optional).
-=======
         Convenience constructor method from set of BaseTools (Optional).
->>>>>>> df48f1d83b032aae3ec232013a11401cd26ea184
 
         NOTE: kwargs should have been exhausted by this point. In other words
         the various upstream components such as BaseSynthesizer (response synthesizer)
