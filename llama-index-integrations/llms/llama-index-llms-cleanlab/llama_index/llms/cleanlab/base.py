@@ -23,7 +23,6 @@ from cleanlab_tlm.utils.config import (
 
 DEFAULT_MODEL = get_default_model()
 DEFAULT_QUALITY_PRESET = get_default_quality_preset()
-DEFAULT_CONTEXT_WINDOW = get_default_context_limit()
 DEFAULT_MAX_TOKENS = get_default_max_tokens()
 
 
@@ -63,7 +62,7 @@ class CleanlabTLM(CustomLLM):
     def __init__(
         self,
         api_key: Optional[str] = None,
-        quality_preset: Optional[str] = "medium",
+        quality_preset: Optional[str] = DEFAULT_QUALITY_PRESET,
         options: Optional[Dict] = None,
         callback_manager: Optional[CallbackManager] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
@@ -73,7 +72,6 @@ class CleanlabTLM(CustomLLM):
             callback_manager=callback_manager,
         )
 
-        preset = quality_preset or DEFAULT_QUALITY_PRESET
         self.max_tokens = (
             options.get("max_tokens")
             if options and "max_tokens" in options
@@ -82,7 +80,7 @@ class CleanlabTLM(CustomLLM):
 
         api_key = get_from_param_or_env("api_key", api_key, "CLEANLAB_API_KEY")
 
-        self._client = TLM(api_key=api_key, quality_preset=preset, options=options)
+        self._client = TLM(api_key=api_key, quality_preset=quality_preset, options=options)
         self.model = self._client.get_model_name()
 
     @classmethod
@@ -93,7 +91,7 @@ class CleanlabTLM(CustomLLM):
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
         return LLMMetadata(
-            context_window=DEFAULT_CONTEXT_WINDOW,
+            context_window=get_default_context_limit(),
             num_output=self.max_tokens,
             model_name=self.model,
         )
