@@ -180,18 +180,28 @@ class RedisVectorStore(BasePydanticVectorStore):
         self._index = SearchIndex(
             schema=schema, redis_client=redis_client, redis_url=redis_url
         )
+        if redis_client_async:
+            self._redis_client_async = redis_client_async
         if redis_client or redis_url:
             self._redis_client = redis_client
             self.create_index()
-        if redis_client_async:
-            self._redis_client_async = redis_client_async
-            self._async_index = AsyncSearchIndex(
-                schema=schema, redis_client=redis_client_async
-            )
+            if not self._redis_client_async:
+                self._redis_client_async = redis_async.Redis(
+                    host=redis_client.connection_pool.connection_kwargs["host"],
+                    port=redis_client.connection_pool.connection_kwargs["port"],
+                    **{
+                        k: v
+                        for k, v in redis_client.connection_pool.connection_kwargs.items()
+                        if k not in ["host", "port"]
+                    },
+                )
         if not redis_client and not redis_url and not redis_client_async:
             raise Exception(
                 "Either redis_client, redis_url, or redis_client_async need to be defined"
             )
+        self._async_index = AsyncSearchIndex(
+            schema=schema, redis_client=self._redis_client_async
+        )
 
     def _flag_old_kwargs(self, **kwargs):
         old_kwargs = [
@@ -398,14 +408,14 @@ class RedisVectorStore(BasePydanticVectorStore):
                 "_".join([self._async_index.prefix, str(node_id)])
             )
 
-    async def async_delete_nodes(self, node_ids: list):
+    async def adelete_nodes(self, node_ids: list):
         await self.async_index_exists()
         for node_id in node_ids:
             await self._redis_client_async.delete(
                 "_".join([self._async_index.prefix, str(node_id)])
             )
 
-    async def async_delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Delete nodes using the ref_doc_id.
 
