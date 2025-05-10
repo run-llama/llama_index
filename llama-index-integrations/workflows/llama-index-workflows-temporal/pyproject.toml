@@ -1,0 +1,51 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "mypy",
+    "pre-commit",
+    "pylint",
+    "pytest",
+    "pytest-asyncio",
+    "pytest-mock",
+    "ruff",
+]
+
+[project]
+name = "llama-index-workflows-temporal"
+version = "0.3.38"
+description = "llama-index workflows temporal integration"
+authors = [{name = "llama-index"}]
+requires-python = ">=3.9,<4.0"
+readme = "README.md"
+license = "MIT"
+dependencies = [
+    "llama-index-core",
+    "temporalio",
+]
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.workflows.temporal"
+
+[tool.mypy]
+disallow_untyped_defs = true
+python_version = "3.9"
+
+[tool.ruff.lint.flake8-pytest-style]
+fixture-parentheses = true
