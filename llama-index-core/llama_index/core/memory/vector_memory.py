@@ -201,7 +201,7 @@ class VectorMemory(BaseMemory):
             # we already will have the last user message group committed to the
             # vector store index and so we don't need to override_last (i.e. see
             # logic in self.put().)
-            await self.vector_index.async_delete_nodes([self.cur_batch_textnode.id_])
+            await self.vector_index.adelete_nodes([self.cur_batch_textnode.id_])
         await self.vector_index.async_insert_nodes([self.cur_batch_textnode])
 
     def _put(
