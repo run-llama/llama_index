@@ -1,6 +1,6 @@
 # Gestell Tool Spec
 
-A LlamaIndex Tool Spec for integrating Gestell SDK’s search and prompt endpoints as tool calls.
+A LlamaIndex Tool Spec for integrating [Gestell SDK’s](https://gestell.ai) search and prompt endpoints as tool calls.
 
 ## Quickstart
 
@@ -43,6 +43,6 @@ Make sure you have your environment properly set:
 
 ### Usage
 
-1. Review [example usage](./examples/agent.py) with the ReAct agent for how it works with llama index agents.
+1. Review [example usage](./examples/agent.py) with the OpenAI agent to learn how it works with llama index agents.
 2. Review [prompt usage](./examples//prompt.py) and [search usage](./examples/search.py) to see how the tools work directly
-3. You can access the Gestell SDK client directly via `gestell.client`, [learn about usage here](https://gestell.ai/docs/reference).
+3. You can access the Gestell SDK client directly via `tool_spec.client`, [learn about usage here](https://gestell.ai/docs/reference).
