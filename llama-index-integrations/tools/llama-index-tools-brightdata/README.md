@@ -21,10 +21,7 @@ Here's an example of how to use the BrightDataToolSpec with LlamaIndex:
 ```python
 llm = OpenAI(model="gpt-4o", api_key="your-api-key")
 
-brightdata_tool = BrightDataToolSpec(
-    api_key="your-api-key",
-    zone="unlocker"  
-)
+brightdata_tool = BrightDataToolSpec(api_key="your-api-key", zone="unlocker")
 
 tool_list = brightdata_tool.to_tool_list()
 
@@ -32,16 +29,17 @@ for tool in tool_list:
     tool.original_description = tool.metadata.description
     tool.metadata.description = "Bright Data web scraping tool"
 
-agent = OpenAIAgent.from_tools(
-    tools=tool_list,
-    llm=llm
-)
+agent = OpenAIAgent.from_tools(tools=tool_list, llm=llm)
 
-query = "Find and summarize the latest news about AI from major tech news sites"
-tool_descriptions = "\n\n".join([
-    f"Tool Name: {tool.metadata.name}\nTool Description: {tool.original_description}"
-    for tool in tool_list
-])
+query = (
+    "Find and summarize the latest news about AI from major tech news sites"
+)
+tool_descriptions = "\n\n".join(
+    [
+        f"Tool Name: {tool.metadata.name}\nTool Description: {tool.original_description}"
+        for tool in tool_list
+    ]
+)
 
 query_with_descriptions = f"{tool_descriptions}\n\nQuery: {query}"
 
@@ -68,14 +66,13 @@ print(result.text)
 
 ```python
 screenshot_path = brightdata_tool.get_screenshot(
-    "https://example.com", 
-    output_path="example_screenshot.png"
+    "https://example.com", output_path="example_screenshot.png"
 )
 ```
 
 ### Search Engine Access
 
-- `search_engine`: Search Google, Bing, or Yandex and get strutured search results as JSON or Markdown. Supports advanced parameters for more specific searches.
+- `search_engine`: Search Google, Bing, or Yandex and get structured search results as JSON or Markdown. Supports advanced parameters for more specific searches.
 
 ```python
 search_results = brightdata_tool.search_engine(
@@ -83,7 +80,7 @@ search_results = brightdata_tool.search_engine(
     engine="google",
     language="en",
     country_code="us",
-    num_results=20
+    num_results=20,
 )
 print(search_results.text)
 ```
@@ -95,13 +92,12 @@ print(search_results.text)
 ```python
 linkedin_profile = brightdata_tool.web_data_feed(
     source_type="linkedin_person_profile",
-    url="https://www.linkedin.com/in/username/"
+    url="https://www.linkedin.com/in/username/",
 )
 print(linkedin_profile)
 
 amazon_product = brightdata_tool.web_data_feed(
-    source_type="amazon_product",
-    url="https://www.amazon.com/dp/B08N5KWB9H"
+    source_type="amazon_product", url="https://www.amazon.com/dp/B08N5KWB9H"
 )
 print(amazon_product)
 ```
@@ -131,7 +127,7 @@ results = brightdata_tool.search_engine(
     search_type="shopping",
     device="mobile",
     hotel_dates="2025-06-01,2025-06-05",
-    hotel_occupancy=2
+    hotel_occupancy=2,
 )
 ```
 
