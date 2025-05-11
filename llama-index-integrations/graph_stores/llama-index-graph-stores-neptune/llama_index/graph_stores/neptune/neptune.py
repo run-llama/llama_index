@@ -272,7 +272,7 @@ def _get_node_properties(query: str, n_labels: List[str], types: Dict) -> List:
                             data_type = "DATETIME"
                         else:
                             data_type = "STRING"
-                    except ValueError:
+                    except (ValueError, OverflowError):
                         data_type = "STRING"
                 s.add((k, data_type))
 
