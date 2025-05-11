@@ -2,10 +2,15 @@
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[dependency-groups]
+dev = [
+    "llama-index>=0.12.35",
+]
+
 [project]
-name = "llama-index-packs-gestell-sdk"
+name = "llama-index-tools-gestell"
 version = "0.1.0"
-description = "llama-index packs gestell_sdk integration"
+description = "llama-index tools gestell integration"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.9, <4.0"
@@ -14,14 +19,8 @@ maintainers = [{name = "ChrisCates"}]
 keywords = ["retrieval", "search", "reasoning", "sdk", "gestell"]
 dependencies = ["gestell>=1.3.0", "llama-index-core>=0.12.35"]
 
-[project.entry-points."llama_index.packs"]
-gestell_sdk = "llama_index.packs.gestell_sdk.base:GestellSDKPack"
-
 [project.optional-dependencies]
-dev = [
-    "pytest-asyncio>=0.26.0",
-    "pytest>=8.3.5",
-]
+dev = ["pytest-asyncio>=0.26.0", "pytest>=8.3.5"]
 
 [tool.hatch.build.targets.sdist]
 include = ["llama_index/"]
@@ -33,13 +32,11 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = true
-import_path = "llama_index.packs.gestell_sdk"
+import_path = "llama_index.tools.gestell"
 
 [tool.llamahub.class_authors]
-GestellSDKPack = "ChrisCates"
+GestellToolSpec = "ChrisCates"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
-markers = [
-    "asyncio: mark test as async",
-]
+markers = ["asyncio: mark test as async"]
