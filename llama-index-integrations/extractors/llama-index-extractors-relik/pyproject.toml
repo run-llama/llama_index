@@ -21,6 +21,8 @@ dev = [
     "types-setuptools==67.1.0.0",
     "black[jupyter]<=23.9.1,>=23.7.0",
     "codespell[toml]>=v2.2.6",
+    "pytest-cov>=6.1.1",
+    "diff-cover>=9.2.4",
 ]
 
 [project]
@@ -28,7 +30,7 @@ name = "llama-index-extractors-relik"
 version = "0.3.1"
 description = "llama-index extractors relik integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<4"
+requires-python = ">=3.10,<4"
 readme = "README.md"
 license = "MIT"
 dependencies = [

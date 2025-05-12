@@ -4,6 +4,7 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "faiss-cpu",
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
     "mypy==0.991",
@@ -26,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-faiss"
-version = "0.3.0"
+version = "0.4.0"
 description = "llama-index vector_stores faiss integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"

@@ -186,6 +186,7 @@ nav:
           - ./examples/data_connectors/MyScaleReaderDemo.ipynb
           - ./examples/data_connectors/NotionDemo.ipynb
           - ./examples/data_connectors/ObsidianReaderDemo.ipynb
+          - ./examples/data_connectors/OxylabsDemo.ipynb
           - ./examples/data_connectors/PathwayReaderDemo.ipynb
           - ./examples/data_connectors/PreprocessReaderDemo.ipynb
           - ./examples/data_connectors/PsychicDemo.ipynb
@@ -197,6 +198,7 @@ nav:
           - ./examples/data_connectors/ZyteSerpDemo.ipynb
           - ./examples/data_connectors/deplot/DeplotReader.ipynb
           - ./examples/data_connectors/html_tag_reader.ipynb
+          - ./examples/data_connectors/lagecy_office_reader.ipynb
           - ./examples/data_connectors/oracleai.ipynb
           - ./examples/data_connectors/simple_directory_reader.ipynb
           - ./examples/data_connectors/simple_directory_reader_parallel.ipynb
@@ -439,6 +441,7 @@ nav:
           - ./examples/multi_modal/gpt4v_experiments_cot.ipynb
           - ./examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb
           - ./examples/multi_modal/image_to_image_retrieval.ipynb
+          - ./examples/multi_modal/llamaindex_mongodb_voyageai_multimodal.ipynb
           - ./examples/multi_modal/llava_demo.ipynb
           - ./examples/multi_modal/llava_multi_modal_tesla_10q.ipynb
           - ./examples/multi_modal/mistral_multi_modal.ipynb
@@ -615,6 +618,7 @@ nav:
           - ./examples/vector_stores/AlloyDBVectorStoreDemo.ipynb
           - ./examples/vector_stores/AmazonNeptuneVectorDemo.ipynb
           - ./examples/vector_stores/AnalyticDBDemo.ipynb
+          - ./examples/vector_stores/ApertureDBVectorStoreDemo.ipynb
           - ./examples/vector_stores/AstraDBIndexDemo.ipynb
           - ./examples/vector_stores/AsyncIndexCreationDemo.ipynb
           - ./examples/vector_stores/AwadbDemo.ipynb
@@ -1216,6 +1220,7 @@ nav:
           - ./api_reference/node_parser/alibabacloud_aisearch.md
           - ./api_reference/node_parser/dashscope.md
           - ./api_reference/node_parser/docling.md
+          - ./api_reference/node_parser/slide.md
           - ./api_reference/node_parser/topic.md
           - ./api_reference/node_parsers/code.md
           - ./api_reference/node_parsers/hierarchical.md
@@ -1409,6 +1414,7 @@ nav:
           - ./api_reference/readers/json.md
           - ./api_reference/readers/kaltura_esearch.md
           - ./api_reference/readers/kibela.md
+          - ./api_reference/readers/legacy_office.md
           - ./api_reference/readers/lilac.md
           - ./api_reference/readers/linear.md
           - ./api_reference/readers/llama_parse.md
@@ -1438,6 +1444,7 @@ nav:
           - ./api_reference/readers/opendal.md
           - ./api_reference/readers/opensearch.md
           - ./api_reference/readers/oracleai.md
+          - ./api_reference/readers/oxylabs.md
           - ./api_reference/readers/pandas_ai.md
           - ./api_reference/readers/papers.md
           - ./api_reference/readers/patentsview.md
@@ -1716,7 +1723,6 @@ nav:
           - ./api_reference/tools/playwright.md
           - ./api_reference/tools/python_file.md
           - ./api_reference/tools/query_engine.md
-          - ./api_reference/tools/query_plan.md
           - ./api_reference/tools/requests.md
           - ./api_reference/tools/retriever.md
           - ./api_reference/tools/salesforce.md
@@ -2436,6 +2442,9 @@ plugins:
             - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-gel
             - ../llama-index-integrations/readers/llama-index-readers-markitdown
             - ../llama-index-integrations/llms/llama-index-llms-meta
+            - ../llama-index-integrations/readers/llama-index-readers-oxylabs
+            - ../llama-index-integrations/node_parser/llama-index-node-parser-slide
+            - ../llama-index-integrations/readers/llama-index-readers-legacy-office
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
@@ -3126,6 +3135,7 @@ theme:
   favicon: _static/assets/LlamaLogoBrowserTab.png
   features:
     - navigation.instant
+    - navigation.prune
     - navigation.tabs
     - navigation.indexes
     - navigation.top

@@ -1,5 +1,114 @@
 # ChangeLog
 
+## [2024-05-08]
+
+### `llama-index-core` [0.12.35]
+
+- add support for prefilling partial tool kwargs on `FunctionTool` (#18658)
+- Fix/react agent max iterations skipping (#18634)
+- handling for edge-case serialization in prebuilt workflows like `AgentWorkflow` (#18628)
+- memory revamp with new base class (#18594)
+- add prebuilt memory blocks (#18607)
+
+### `llama-index-embeddings-autoembeddings` [0.1.0]
+
+- Support for AutoEmbeddings integration from chonkie (#18578)
+
+### `llama-index-embeddings-huggingface-api` [0.3.1]
+
+- Fix dep versions for huggingface-hub (#18662)
+
+### `llama-index-indices-managed-vectara` [0.4.5]
+
+- Bugfix in using cutoff argument with chain reranker in Vectara (#18610)
+
+### `llama-index-llms-anthropic` [0.6.12]
+
+- anthropic citations and tool calls (#18657)
+
+### `llama-index-llms-cortex` [0.3.0]
+
+- Cortex enhancements 2 for auth (#18588)
+
+### `llama-index-llms-dashscope` [0.3.3]
+
+- Fix dashscope tool call parsing (#18608)
+
+### `llama-index-llms-google-genai` [0.1.12]
+
+- Fix modifying object references in google-genai llm (#18616)
+- feat(llama-index-llms-google-genai): 2.5-flash-preview tests (#18575)
+- Fix last_msg indexing (#18611)
+
+### `llama-index-llms-huggingface-api` [0.4.3]
+
+- Huggingface API fixes for task and deps (#18662)
+
+### `llama-index-llms-litellm` [0.4.2]
+
+- fix parsing streaming tool calls (#18653)
+
+### `llama-index-llms-meta` [0.1.1]
+
+- Support Meta Llama-api as an LLM provider (#18585)
+
+### `llama-index-node-parser-docling` [0.3.2]
+
+- Fix/docling node parser metadata (#186390)
+
+### `llama-index-node-parser-slide` [0.1.0]
+
+- add SlideNodeParser integration (#18620)
+
+### `llama-index-readers-github` [0.6.1]
+
+- Fix: Add follow_redirects=True to GitHubIssuesClient (#18630)
+
+### `llama-index-readers-markitdown` [0.1.1]
+
+- Fix MarkItDown Reader bugs (#18613)
+
+### `llama-index-readers-oxylabs` [0.1.2]
+
+- Add Oxylabs readers (#18555)
+
+### `llama-index-readers-web` [0.4.1]
+
+- Fixes improper invocation of Firecrawl library (#18646)
+- Add Oxylabs readers (#18555)
+
+### `llama-index-storage-chat-store-gel` [0.1.0]
+
+- Add Gel integrations (#18503)
+
+### `llama-index-storage-docstore-gel` [0.1.0]
+
+- Add Gel integrations (#18503)
+
+### `llama-index-storage-kvstore-gel` [0.1.0]
+
+- Add Gel integrations (#18503)
+
+### `llama-index-storage-index-store-gel` [0.1.0]
+
+- Add Gel integrations (#18503)
+
+### `llama-index-utils-workflow` [0.3.2]
+
+- Fix event colors of draw_all_possible_flows (#18660)
+
+### `llama-index-vector-stores-faiss` [0.4.0]
+
+- Add Faiss Map Vector store and fix missing index_struct delete (#18638)
+
+### `llama-index-vector-stores-gel` [0.1.0]
+
+- Add Gel integrations (#18503)
+
+### `llama-index-vector-stores-postgres` [0.5.2]
+
+- add indexed metadata fields (#18595)
+
 ## [2025-04-30]
 
 - Migrate repo from poetry to uv (#18524)
@@ -5484,7 +5593,7 @@
 
 ### `llama-index-llms-databricks` [0.1.0]
 
-- Integrations with DataBricks LLM API (#12432)
+- Integrations with Databricks LLM API (#12432)
 
 ### `llama-index-llms-watsonx` [0.1.6]
 

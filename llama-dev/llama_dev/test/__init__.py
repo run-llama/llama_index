@@ -16,6 +16,7 @@ from llama_dev.utils import (
     get_dependants_packages,
     is_python_version_compatible,
     load_pyproject,
+    package_has_tests,
 )
 
 
@@ -27,6 +28,9 @@ class ResultStatus(Enum):
     TESTS_PASSED = auto()
     SKIPPED = auto()
     COVERAGE_FAILED = auto()
+
+
+NO_TESTS_INDICATOR = "no tests ran"
 
 
 @click.command(short_help="Run tests across the monorepo")
@@ -47,8 +51,9 @@ class ResultStatus(Enum):
     default=0,
     help="Compute test coverage",
 )
-@click.option("--base-ref", required=True)
+@click.option("--base-ref", required=False)
 @click.option("--workers", default=8)
+@click.argument("package_names", required=False, nargs=-1)
 @click.pass_obj
 def test(
     obj: dict,
@@ -57,6 +62,7 @@ def test(
     cov_fail_under: int,
     base_ref: str,
     workers: int,
+    package_names: tuple,
 ):
     # Fail on incompatible configurations
     if cov_fail_under and not cov:
@@ -64,19 +70,31 @@ def test(
             "You have to pass --cov in order to use --cov-fail-under"
         )
 
+    if base_ref is not None and not base_ref:
+        raise click.UsageError("Option '--base-ref' cannot be empty.")
+
+    if not package_names and not base_ref:
+        raise click.UsageError(
+            "Either pass '--base-ref' or provide at least one package name."
+        )
+
     console = obj["console"]
     repo_root = obj["repo_root"]
-
-    # Collect the packages to test
+    packages_to_test: set[Path] = set()
     all_packages = find_all_packages(repo_root)
-    # Get the files that changed from the base branch
-    changed_files = get_changed_files(repo_root, base_ref)
-    # Get the packages containing the changed files
-    changed_packages = get_changed_packages(changed_files, all_packages)
+
+    if package_names:
+        changed_packages: set[Path] = {repo_root / Path(pn) for pn in package_names}
+    else:
+        # Get the files that changed from the base branch
+        changed_files = get_changed_files(repo_root, base_ref)
+        # Get the packages containing the changed files
+        changed_packages = get_changed_packages(changed_files, all_packages)
+
     # Find the dependants of the changed packages
     dependants = get_dependants_packages(changed_packages, all_packages)
     # Test the packages directly affected and their dependants
-    packages_to_test: set[Path] = changed_packages | dependants
+    packages_to_test = changed_packages | dependants
 
     # Test the packages using a process pool
     results = []
@@ -98,30 +116,40 @@ def test(
             results.append(result)
 
             # Print results as they complete
-            package = result["package"]
+            package: Path = result["package"]
             if result["status"] == ResultStatus.INSTALL_FAILED:
-                console.print(f"❗ Unable to build package {package}")
+                console.print(
+                    f"❗ Unable to build package {package.relative_to(repo_root)}"
+                )
                 console.print(f"Error:\n{result['stderr']}", style="warning")
             elif result["status"] == ResultStatus.TESTS_PASSED:
-                console.print(f"✅ {package} succeeded in {result['time']}")
+                console.print(
+                    f"✅ {package.relative_to(repo_root)} succeeded in {result['time']}"
+                )
             elif result["status"] == ResultStatus.SKIPPED:
-                console.print(f"⏭️  {package} skipped")
+                console.print(f"⏭️  {package.relative_to(repo_root)} skipped")
                 console.print(f"Error:\n{result['stderr']}", style="warning")
             else:
-                console.print(f"❌ {package} failed")
+                console.print(f"❌ {package.relative_to(repo_root)} failed")
                 console.print(f"Error:\n{result['stderr']}", style="error")
                 console.print(f"Output:\n{result['stdout']}", style="info")
 
     # Print summary
     failed = [
-        r["package"]
+        r["package"].relative_to(repo_root)
         for r in results
         if r["status"] in (ResultStatus.TESTS_FAILED, ResultStatus.COVERAGE_FAILED)
     ]
     install_failed = [
-        r["package"] for r in results if r["status"] == ResultStatus.INSTALL_FAILED
+        r["package"].relative_to(repo_root)
+        for r in results
+        if r["status"] == ResultStatus.INSTALL_FAILED
     ]
-    skipped = [r["package"] for r in results if r["status"] == ResultStatus.SKIPPED]
+    skipped = [
+        r["package"].relative_to(repo_root)
+        for r in results
+        if r["status"] == ResultStatus.SKIPPED
+    ]
 
     if skipped:
         console.print(
@@ -148,7 +176,9 @@ def test(
         )
 
 
-def _uv_sync(package_path: Path, env: dict[str, str]) -> subprocess.CompletedProcess:
+def _uv_sync(
+    package_path: Path, env: dict[str, str]
+) -> subprocess.CompletedProcess:  # pragma: no cover
     """Run 'uv sync' on a package folder."""
     return subprocess.run(
         ["uv", "sync"],
@@ -161,7 +191,7 @@ def _uv_sync(package_path: Path, env: dict[str, str]) -> subprocess.CompletedPro
 
 def _uv_install_local(
     package_path: Path, env: dict[str, str], install_local: set[Path]
-) -> subprocess.CompletedProcess:
+) -> subprocess.CompletedProcess:  # pragma: no cover
     """Run 'uv pip install -U <packge_path1>, <package_path2>, ...' for locally changed packages."""
     return subprocess.run(
         ["uv", "pip", "install", "-U", *install_local],
@@ -198,17 +228,20 @@ def _pytest(
 
 def _diff_cover(
     package_path: Path, env: dict[str, str], cov_fail_under: int, base_ref: str
-) -> subprocess.CompletedProcess:
+) -> subprocess.CompletedProcess:  # pragma: no cover
+    diff_cover_cmd = [
+        "uv",
+        "run",
+        "--",
+        "diff-cover",
+        "coverage.xml",
+        f"--fail-under={cov_fail_under}",
+    ]
+    if base_ref:
+        diff_cover_cmd.append(f"--compare-branch={base_ref}")
+
     return subprocess.run(
-        [
-            "uv",
-            "run",
-            "--",
-            "diff-cover",
-            "coverage.xml",
-            f"--fail-under={cov_fail_under}",
-            f"--compare-branch={base_ref}",
-        ],
+        diff_cover_cmd,
         cwd=package_path,
         text=True,
         capture_output=True,
@@ -227,10 +260,20 @@ def _run_tests(
     package_data = load_pyproject(package_path)
     if not is_python_version_compatible(package_data):
         return {
-            "package": str(package_path),
+            "package": package_path,
             "status": ResultStatus.SKIPPED,
             "stdout": "",
             "stderr": f"Skipped: Not compatible with Python {sys.version_info.major}.{sys.version_info.minor}",
+            "time": "0.00s",
+        }
+
+    # Filter out packages that are not testable
+    if not package_has_tests(package_path):
+        return {
+            "package": package_path,
+            "status": ResultStatus.SKIPPED,
+            "stdout": "",
+            "stderr": f"Skipped: package has no tests",
             "time": "0.00s",
         }
 
@@ -246,7 +289,7 @@ def _run_tests(
     if result.returncode != 0:
         elapsed_time = time.perf_counter() - start
         return {
-            "package": str(package_path),
+            "package": package_path,
             "status": ResultStatus.INSTALL_FAILED,
             "stdout": result.stdout,
             "stderr": result.stderr,
@@ -265,7 +308,7 @@ def _run_tests(
         if result.returncode != 0:
             elapsed_time = time.perf_counter() - start
             return {
-                "package": str(package_path),
+                "package": package_path,
                 "status": ResultStatus.INSTALL_FAILED,
                 "stdout": result.stdout,
                 "stderr": result.stderr,
@@ -274,10 +317,11 @@ def _run_tests(
 
     # Run pytest
     result = _pytest(package_path, env, cov)
-    if result.returncode != 0:
+    # Only fail if there are tests and they failed
+    if result.returncode != 0 and NO_TESTS_INDICATOR not in str(result.stdout).lower():
         elapsed_time = time.perf_counter() - start
         return {
-            "package": str(package_path),
+            "package": package_path,
             "status": ResultStatus.TESTS_FAILED,
             "stdout": result.stdout,
             "stderr": result.stderr,
@@ -290,7 +334,7 @@ def _run_tests(
         if result.returncode != 0:
             elapsed_time = time.perf_counter() - start
             return {
-                "package": str(package_path),
+                "package": package_path,
                 "status": ResultStatus.COVERAGE_FAILED,
                 "stdout": result.stdout,
                 "stderr": result.stderr,
@@ -300,7 +344,7 @@ def _run_tests(
     # All done
     elapsed_time = time.perf_counter() - start
     return {
-        "package": str(package_path),
+        "package": package_path,
         "status": ResultStatus.TESTS_PASSED,
         "stdout": result.stdout,
         "stderr": result.stderr,

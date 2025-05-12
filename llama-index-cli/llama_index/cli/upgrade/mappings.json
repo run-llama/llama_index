@@ -939,7 +939,6 @@
   "completion_response_to_chat_response": "llama_index.llms.bedrock",
   "HuggingFaceLLM": "llama_index.llms.huggingface",
   "HuggingFaceInferenceAPI": "llama_index.llms.huggingface",
-  "TextGenerationInference": "llama_index.llms.huggingface",
   "SyncAzureOpenAI": "llama_index.llms.azure_openai",
   "DashScope": "llama_index.llms.dashscope",
   "DashScopeGenerationModels": "llama_index.llms.dashscope",

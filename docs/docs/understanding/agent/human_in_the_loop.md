@@ -25,6 +25,9 @@ Next we'll create a tool that performs a hypothetical dangerous task. There are 
 * The `requirements` argument is used to specify that we want to wait for a HumanResponseEvent with a specific `user_name`.
 
 ```python
+from llama_index.core.workflow import Context
+
+
 async def dangerous_task(ctx: Context) -> str:
     """A dangerous task that requires human confirmation."""
 
