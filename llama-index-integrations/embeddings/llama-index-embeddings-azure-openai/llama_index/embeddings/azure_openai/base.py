@@ -88,7 +88,10 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         **kwargs: Any,
     ):
         azure_endpoint = get_from_param_or_env(
-            "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", ""
+            "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", None
+        )
+        api_key = get_from_param_or_env(
+            "api_key", api_key, "AZURE_OPENAI_API_KEY", None
         )
 
         # OpenAI base_url and azure_endpoint are mutually exclusive
