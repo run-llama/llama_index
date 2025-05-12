@@ -112,7 +112,7 @@ class LegacyOfficeReader(BaseReader):
             file_path: Path to the document
 
         Returns:
-            Processed metadata dictionary
+            Processed metadata dictionary with essential information only
 
         """
         # Start with basic metadata
@@ -122,20 +122,44 @@ class LegacyOfficeReader(BaseReader):
             "file_type": Path(file_path).suffix.lower(),
         }
 
-        # Add Tika metadata, flattening nested structures
-        for key, value in tika_metadata.items():
+        # Whitelist of metadata keys to keep
+        essential_keys = {
+            # Document properties
+            "title": "title",
+            "dc:title": "title",
+            "dc:creator": "author",
+            "meta:author": "author",
+            "meta:word-count": "words",
+            "meta:character-count": "chars",
+            "meta:page-count": "pages",
+            "xmptpg:npages": "pages",
+            # Dates
+            "dcterms:created": "created",
+            "dcterms:modified": "modified",
+        }
+
+        for key, orig_value in tika_metadata.items():
+            # Skip if not an essential key
+            normalized_key = essential_keys.get(key.lower())
+            if not normalized_key:
+                continue
+
             # Skip empty values
-            if not value:
+            if not orig_value:
                 continue
 
             # Handle lists by joining with semicolon
-            if isinstance(value, list):
-                value = "; ".join(str(v) for v in value)
+            processed_value = orig_value
+            if isinstance(orig_value, list):
+                processed_value = "; ".join(str(v) for v in orig_value)
 
             # Convert to string and clean up
-            value = str(value).strip()
-            if value:
-                metadata[key.lower()] = value
+            processed_value = str(processed_value).strip()
+            if processed_value and ":" in processed_value:
+                processed_value = processed_value.split(":", 1)[1].strip()
+
+            if processed_value:
+                metadata[normalized_key] = processed_value
 
         return metadata
 
