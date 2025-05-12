@@ -49,7 +49,7 @@ def json_to_doc(doc_dict: dict) -> BaseNode | Document:
             raise ValueError(f"Unknown doc type: {doc_type}")
         return doc
 
-def legacy_json_to_doc(doc_dict: dict) -> Document:
+def legacy_json_to_doc(doc_dict: dict) -> BaseNode:
     """Todo: Deprecated legacy support for old node versions."""
     doc_type = doc_dict[TYPE_KEY]
     data_dict = doc_dict[DATA_KEY]
