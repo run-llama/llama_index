@@ -25,7 +25,7 @@ def test_docstore(simple_docstore: SimpleDocumentStore) -> None:
     gd1 = docstore.get_document("d1")
     assert gd1 == doc
     gd2 = docstore.get_document("d2")
-    assert gd2 == Document.from_dict(node.to_dict())
+    assert gd2 == node
 
 
 def test_docstore_persist(tmp_path: Path) -> None:
@@ -44,7 +44,7 @@ def test_docstore_persist(tmp_path: Path) -> None:
     gd1 = new_docstore.get_document("d1")
     assert gd1 == doc
     gd2 = new_docstore.get_document("d2")
-    assert gd2 == Document.from_dict(node.to_dict())
+    assert gd2 == node
 
 
 def test_docstore_dict() -> None:
@@ -61,7 +61,7 @@ def test_docstore_dict() -> None:
     gd1 = new_docstore.get_document("d1")
     assert gd1 == doc
     gd2 = new_docstore.get_document("d2")
-    assert gd2 == Document.from_dict(node.to_dict())
+    assert gd2 == node
 
 
 def test_docstore_delete_document() -> None:

@@ -99,7 +99,7 @@ class BaseIndex(Generic[IS], ABC):
         Create index from documents.
 
         Args:
-            documents (Optional[Sequence[BaseDocument]]): List of documents to
+            documents (Sequence[Document]]): List of documents to
                 build the index from.
 
         """
