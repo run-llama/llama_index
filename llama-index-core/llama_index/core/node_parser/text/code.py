@@ -117,13 +117,13 @@ class CodeSplitter(TextSplitter):
     def class_name(cls) -> str:
         return "CodeSplitter"
 
-    def _chunk_node(self, node: Any, text: str, last_end: int = 0) -> List[str]:
+    def _chunk_node(self, node: Any, text_bytes: bytes, last_end: int = 0) -> List[str]:
         """
         Recursively chunk a node into smaller pieces based on character limits.
 
         Args:
             node (Any): The AST node to chunk.
-            text (str): The original source code text.
+            text_bytes (bytes): The original source code text as bytes.
             last_end (int, optional): The ending position of the last processed chunk. Defaults to 0.
 
         Returns:
@@ -138,15 +138,15 @@ class CodeSplitter(TextSplitter):
                 if len(current_chunk) > 0:
                     new_chunks.append(current_chunk)
                 current_chunk = ""
-                new_chunks.extend(self._chunk_node(child, text, last_end))
+                new_chunks.extend(self._chunk_node(child, text_bytes, last_end))
             elif (
                 len(current_chunk) + child.end_byte - child.start_byte > self.max_chars
             ):
                 # Child would make the current chunk too big, so start a new chunk
                 new_chunks.append(current_chunk)
-                current_chunk = text[last_end : child.end_byte]
+                current_chunk = text_bytes[last_end : child.end_byte].decode("utf-8")
             else:
-                current_chunk += text[last_end : child.end_byte]
+                current_chunk += text_bytes[last_end : child.end_byte].decode("utf-8")
             last_end = child.end_byte
         if len(current_chunk) > 0:
             new_chunks.append(current_chunk)
@@ -173,14 +173,15 @@ class CodeSplitter(TextSplitter):
         with self.callback_manager.event(
             CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
         ) as event:
-            tree = self._parser.parse(bytes(text, "utf-8"))
+            text_bytes = bytes(text, "utf-8")
+            tree = self._parser.parse(text_bytes)
 
             if (
                 not tree.root_node.children
                 or tree.root_node.children[0].type != "ERROR"
             ):
                 chunks = [
-                    chunk.strip() for chunk in self._chunk_node(tree.root_node, text)
+                    chunk.strip() for chunk in self._chunk_node(tree.root_node, text_bytes)
                 ]
                 event.on_end(
                     payload={EventPayload.CHUNKS: chunks},
