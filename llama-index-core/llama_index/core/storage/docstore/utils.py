@@ -1,3 +1,4 @@
+from typing import Union
 from llama_index.core.constants import DATA_KEY, TYPE_KEY
 from llama_index.core.schema import (
     BaseNode,
@@ -17,7 +18,7 @@ def doc_to_json(doc: BaseNode) -> dict:
         TYPE_KEY: doc.get_type(),
     }
 
-def json_to_doc(doc_dict: dict) -> BaseNode | Document:
+def json_to_doc(doc_dict: dict) -> Union[BaseNode, Document]:
     doc_type = doc_dict[TYPE_KEY]
     data_dict = doc_dict[DATA_KEY]
     doc: BaseNode
