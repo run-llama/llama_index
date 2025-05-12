@@ -112,7 +112,7 @@ class LegacyOfficeReader(BaseReader):
             file_path: Path to the document
 
         Returns:
-            Processed metadata dictionary
+            Processed metadata dictionary with essential information only
 
         """
         # Start with basic metadata
@@ -122,8 +122,29 @@ class LegacyOfficeReader(BaseReader):
             "file_type": Path(file_path).suffix.lower(),
         }
 
-        # Add Tika metadata, flattening nested structures
+        # Whitelist of metadata keys to keep
+        essential_keys = {
+            # Document properties
+            "title": "title",
+            "dc:title": "title",
+            "dc:creator": "author",
+            "meta:author": "author",
+            "meta:word-count": "words",
+            "meta:character-count": "chars",
+            "meta:page-count": "pages",
+            "xmptpg:npages": "pages",
+
+            # Dates
+            "dcterms:created": "created",
+            "dcterms:modified": "modified",
+        }
+
         for key, value in tika_metadata.items():
+            # Skip if not an essential key
+            normalized_key = essential_keys.get(key.lower())
+            if not normalized_key:
+                continue
+
             # Skip empty values
             if not value:
                 continue
@@ -135,7 +156,9 @@ class LegacyOfficeReader(BaseReader):
             # Convert to string and clean up
             value = str(value).strip()
             if value:
-                metadata[key.lower()] = value
+                if ":" in value:
+                    value = value.split(":", 1)[1].strip()
+                metadata[normalized_key] = value
 
         return metadata
 
