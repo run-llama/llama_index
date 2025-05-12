@@ -17,11 +17,10 @@ def doc_to_json(doc: BaseNode) -> dict:
         TYPE_KEY: doc.get_type(),
     }
 
-
-def json_to_doc(doc_dict: dict) -> BaseNode:
+def json_to_doc(doc_dict: dict) -> Document:
     doc_type = doc_dict[TYPE_KEY]
     data_dict = doc_dict[DATA_KEY]
-    doc: BaseNode
+    doc: Document
 
     if "extra_info" in data_dict:
         return legacy_json_to_doc(doc_dict)
@@ -31,19 +30,15 @@ def json_to_doc(doc_dict: dict) -> BaseNode:
                 doc = ImageDocument.from_dict(data_dict)
             else:
                 doc = Document.from_dict(data_dict)
-        elif doc_type == TextNode.get_type():
-            doc = TextNode.from_dict(data_dict)
-        elif doc_type == ImageNode.get_type():
-            doc = ImageNode.from_dict(data_dict)
-        elif doc_type == IndexNode.get_type():
-            doc = IndexNode.from_dict(data_dict)
+        elif doc_type == TextNode.get_type() or doc_type == ImageNode.get_type() or doc_type == IndexNode.get_type():
+            return Document.from_dict(data_dict)
         else:
             raise ValueError(f"Unknown doc type: {doc_type}")
 
         return doc
 
 
-def legacy_json_to_doc(doc_dict: dict) -> BaseNode:
+def legacy_json_to_doc(doc_dict: dict) -> Document:
     """Todo: Deprecated legacy support for old node versions."""
     doc_type = doc_dict[TYPE_KEY]
     data_dict = doc_dict[DATA_KEY]
@@ -87,5 +82,4 @@ def legacy_json_to_doc(doc_dict: dict) -> BaseNode:
         )
     else:
         raise ValueError(f"Unknown doc type: {doc_type}")
-
-    return doc
+    return Document.from_dict(doc.to_dict())

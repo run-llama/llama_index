@@ -79,12 +79,12 @@ class KVDocumentStore(BaseDocumentStore):
         self._batch_size = batch_size
 
     @property
-    def docs(self) -> Dict[str, BaseNode]:
+    def docs(self) -> Dict[str, Document]:
         """
         Get all documents.
 
         Returns:
-            Dict[str, BaseDocument]: documents
+            Dict[str, Document]: documents
 
         """
         json_dict = self._kvstore.get_all(collection=self._node_collection)
