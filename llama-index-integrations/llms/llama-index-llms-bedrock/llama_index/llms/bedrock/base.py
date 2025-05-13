@@ -9,7 +9,8 @@ from llama_index.core.base.llms.types import (
     CompletionResponse,
     CompletionResponseAsyncGen,
     CompletionResponseGen,
-    LLMMetadata, MessageRole,
+    LLMMetadata,
+    MessageRole,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
@@ -351,7 +352,7 @@ class Bedrock(LLM):
 
     # Create an asynchronous version of the conversion function
     async def async_stream_completion_response_to_chat_response(
-        self, completion_response_gen: CompletionResponseAsyncGen,
+            self, completion_response_gen: CompletionResponseAsyncGen,
     ) -> ChatResponseAsyncGen:
         """Convert async completion response stream to async chat response stream."""
         async for completion_response in completion_response_gen:
@@ -363,15 +364,15 @@ class Bedrock(LLM):
             )
 
     async def acompletion_with_retry(
-        self,
-        client: Any,
-        model: str,
-        request_body: str,
-        max_retries: int,
-        stream: bool = False,
-        guardrail_identifier: str = None,
-        guardrail_version: str = None,
-        trace: str = None
+            self,
+            client: Any,
+            model: str,
+            request_body: str,
+            max_retries: int,
+            stream: bool = False,
+            guardrail_identifier: str = None,
+            guardrail_version: str = None,
+            trace: str = None
     ) -> Dict[str, Any]:
         """Asynchronous version of completion_with_retry function."""
         from botocore.exceptions import ClientError
@@ -418,7 +419,7 @@ class Bedrock(LLM):
 
     @llm_completion_callback()
     async def acomplete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
+            self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
         """Asynchronous completion prompt."""
         if not formatted:
@@ -450,7 +451,7 @@ class Bedrock(LLM):
 
     @llm_completion_callback()
     async def astream_complete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
+            self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         """Asynchronous streaming completion prompt."""
         if self.model in BEDROCK_FOUNDATION_LLMS and self.model not in STREAMING_MODELS:
@@ -502,7 +503,7 @@ class Bedrock(LLM):
 
     @llm_chat_callback()
     async def achat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
+            self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         """Asynchronous chat."""
         prompt = self.messages_to_prompt(messages)
@@ -510,7 +511,7 @@ class Bedrock(LLM):
         return completion_response_to_chat_response(completion_response)
 
     async def astream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
+            self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         """Asynchronous streaming chat."""
         prompt = self.messages_to_prompt(messages)
