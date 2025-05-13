@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Optional, Pattern
 import fsspec
 import re
 from redis import Redis
+import redis.asyncio as redis_async
 from redis.asyncio import Redis as RedisAsync
 from redis.exceptions import RedisError
 from redis.exceptions import TimeoutError as RedisTimeoutError
