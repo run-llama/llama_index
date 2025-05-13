@@ -2,7 +2,7 @@ import pytest
 import asyncio
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
-from .base import Bedrock
+from llama_index.llms.bedrock import Bedrock
 
 # Test configuration - Please replace with your actual
 MODEL_ID = "us.anthropic.claude-3-5-sonnet-20241022-v2:0"  # For example: anthropic.claude-v2, amazon.titan-text-express-v1, etc.
