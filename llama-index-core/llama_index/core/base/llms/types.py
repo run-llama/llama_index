@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import filetype
+import httpx
 from binascii import Error as BinasciiError
 from enum import Enum
 from io import BytesIO
@@ -185,11 +186,35 @@ class AudioBlock(BaseModel):
             as_base64=as_base64,
         )
 
+class DocumentBlock(BaseModel):
+    block_type: Literal["document"] = "document"
+    path: Optional[Union[FilePath | str]] = None
+    url: Optional[str] = None
+    file_data: Optional[bytes | str] = None
+    @model_validator(mode="after")
+    def file_or_url_to_base64(self) -> Self:
+        if self.file_data is not None:
+            try:
+                decoded = base64.b64decode(self.file_data).decode("utf-8")
+            except Exception:
+                if isinstance(self.file_data, bytes):
+                    self.file_data = base64.b64encode(self.file_data).decode("utf-8")
+                else:
+                    raise ValueError("file_path needs to be either a base64-encoded string or a bytes buffer coming from a read() operation on a file")
+        elif self.path is not None:
+            with open(self.path, "rb") as f:
+                data = f.read()
+            self.file_data = base64.b64encode(data).decode("utf8")
+        elif self.url is not None:
+            url_content = httpx.get(self.url).content
+            self.file_data = base64.b64encode(url_content).decode("utf8")
+        else:
+            raise ValueError("At least one of the fields file_data, path or url needs to be set to a non-null value")
+        return self
 
 ContentBlock = Annotated[
-    Union[TextBlock, ImageBlock, AudioBlock], Field(discriminator="block_type")
+    Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock], Field(discriminator="block_type")
 ]
-
 
 class ChatMessage(BaseModel):
     """Chat message."""
