@@ -2,7 +2,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 import json
-
+import pytest
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.tools.brightdata import BrightDataToolSpec
 
@@ -58,10 +58,10 @@ class TestBrightDataToolSpec(unittest.TestCase):
 
         tool = BrightDataToolSpec(api_key="test_key")
 
-        with self.pytest.raises(Exception) as context:
+        with pytest.raises(Exception) as context:
             tool.scrape_as_markdown("https://example.com")
 
-        self.assertIn("Failed to scrape: 403", str(context.exception))
+        self.assertIn("Failed to scrape: 403", str(context.value))
 
 
 if __name__ == "__main__":
