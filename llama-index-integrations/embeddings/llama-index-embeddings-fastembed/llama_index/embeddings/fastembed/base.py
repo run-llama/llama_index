@@ -74,6 +74,7 @@ class FastEmbedEmbedding(BaseEmbedding):
         threads: Optional[int] = None,
         doc_embed_type: Literal["default", "passage"] = "default",
         providers: Optional[List[str]] = None,
+        **kwargs: Any,
     ):
         super().__init__(
             model_name=model_name,
@@ -81,6 +82,7 @@ class FastEmbedEmbedding(BaseEmbedding):
             threads=threads,
             doc_embed_type=doc_embed_type,
             providers=providers,
+            **kwargs,
         )
 
         self._model = TextEmbedding(
@@ -89,6 +91,7 @@ class FastEmbedEmbedding(BaseEmbedding):
             cache_dir=cache_dir,
             threads=threads,
             providers=providers,
+            **kwargs,
         )
 
     def _get_text_embedding(self, text: str) -> List[float]:

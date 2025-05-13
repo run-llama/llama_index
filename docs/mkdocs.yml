@@ -1175,8 +1175,9 @@ nav:
           - ./api_reference/llama_deploy/services.md
           - ./api_reference/llama_deploy/types.md
       - Memory:
-          - ./api_reference/memory/chat_memory_buffer.md
           - ./api_reference/memory/index.md
+          - ./api_reference/memory/memory.md
+          - ./api_reference/memory/chat_memory_buffer.md
           - ./api_reference/memory/mem0.md
           - ./api_reference/memory/simple_composable_memory.md
           - ./api_reference/memory/vector_memory.md
@@ -1540,6 +1541,7 @@ nav:
           - ./api_reference/sparse_embeddings/fastembed.md
       - Storage:
           - Chat Store:
+              - ./api_reference/storage/chat_store/async_sql.md
               - ./api_reference/storage/chat_store/azure.md
               - ./api_reference/storage/chat_store/azurecosmosmongovcore.md
               - ./api_reference/storage/chat_store/azurecosmosnosql.md
