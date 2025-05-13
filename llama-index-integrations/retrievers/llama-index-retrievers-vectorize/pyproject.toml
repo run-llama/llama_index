@@ -1,3 +1,16 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.15.0",
+    "pytest>=8.3.5",
+    "ruff>=0.11.9,<0.12",
+    "codespell[toml]>=v2.4.1",
+    "pytest-cov>=6.1.1",
+]
+
 [project]
 name = "llama-index-retrievers-vectorize"
 version = "0.1.0"
@@ -5,7 +18,7 @@ description = "llama-index retrievers Vectorize.io integration"
 readme = "README.md"
 keywords = ["llama-index", "vectorize", "retrieval", "search"]
 authors = [
-    { name = "Vectorize", email = "contact@vectorize.io" },
+    {name = "Vectorize", email = "contact@vectorize.io"},
 ]
 requires-python = ">=3.9"
 dependencies = [
@@ -29,38 +42,6 @@ license = "MIT"
 Repository = "https://github.com/run-llama/llama_index.git"
 Issues = "https://github.com/run-llama/llama_index/issues"
 
-[dependency-groups]
-dev = [
-    "mypy>=1.15.0",
-    "pytest>=8.3.5",
-    "ruff>=0.11.9,<0.12",
-    "codespell[toml]>=v2.4.1",
-    "pytest-cov>=6.1.1",
-]
-
-[tool.ruff.lint]
-select = ["ALL"]
-ignore = [
-    "CPY", # Missing copyright
-    "COM812", # Messes with the formatter
-    "ISC001", # Messes with the formatter
-    "PERF203", # Rarely useful
-    "PLR09", # Too many something (arg, statements, etc)
-]
-pydocstyle.convention = "google"
-flake8-annotations.allow-star-arg-any = true
-flake8-annotations.mypy-init-return = true
-
-[tool.ruff.lint.per-file-ignores]
-"tests/*" = [
-    "D1",
-    "PLR2004",
-]
-
-[tool.mypy]
-strict = true
-warn_unreachable = true
-
 [tool.codespell]
 check-filenames = true
 check-hidden = true
@@ -79,8 +60,29 @@ import_path = "llama_index.retrievers.vectorize"
 [tool.llamahub.class_authors]
 VectorizeRetriever = "llama-index"
 
+[tool.mypy]
+strict = true
+warn_unreachable = true
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "CPY",  # Missing copyright
+    "COM812",  # Messes with the formatter
+    "ISC001",  # Messes with the formatter
+    "PERF203",  # Rarely useful
+    "PLR09",  # Too many something (arg, statements, etc)
+]
+flake8-annotations.allow-star-arg-any = true
+flake8-annotations.mypy-init-return = true
 
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "D1",
+    "PLR2004",
+    "S101",
+    "SLF",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

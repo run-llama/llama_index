@@ -1,7 +1,7 @@
 # LlamaIndex Retrievers Integration: Vectorize
 
-> [Vectorize](https://vectorize.io/) RAG-as-a-Service handles the messy, hard parts of AI development, 
-> so you can focus on building your applications. 
+> [Vectorize](https://vectorize.io/) RAG-as-a-Service handles the messy, hard parts of AI development,
+> so you can focus on building your applications.
 
 ## Installation
 

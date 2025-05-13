@@ -24,18 +24,6 @@ from llama_index.core.schema import (
 if TYPE_CHECKING:
     from llama_index.core.callbacks.base import CallbackManager
 
-_METADATA_FIELDS = {
-    "relevancy",
-    "chunk_id",
-    "total_chunks",
-    "origin",
-    "origin_id",
-    "source",
-    "source_display_name",
-    "pipeline_id",
-    "org_id",
-}
-
 
 class VectorizeRetriever(BaseRetriever):
     """Vectorize retriever.
@@ -115,11 +103,9 @@ class VectorizeRetriever(BaseRetriever):
 
     @staticmethod
     def _convert_document(document: Document) -> NodeWithScore:
-        metadata = {field: getattr(document, field) for field in _METADATA_FIELDS}
         doc = TextNode(
             id_=document.id,
             text=document.text,
-            metadata=metadata,
             relationships={
                 NodeRelationship.SOURCE: RelatedNodeInfo(node_id=document.unique_source)
             },

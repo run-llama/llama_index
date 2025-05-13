@@ -6,11 +6,14 @@ import time
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Literal
+from unittest.mock import MagicMock
 
 import pytest
 import urllib3
 import vectorize_client as v
+from urllib3 import HTTPResponse
 
+from llama_index.core.schema import NodeRelationship
 from llama_index.retrievers.vectorize import VectorizeRetriever
 
 logger = logging.getLogger(__name__)
@@ -149,7 +152,7 @@ def pipeline_id(api_client: v.ApiClient) -> Iterator[str]:
     VECTORIZE_TOKEN == "" or VECTORIZE_ORG == "",
     reason="missing Vectorize credentials (VECTORIZE_TOKEN, VECTORIZE_ORG)",
 )
-def test_retrieve(
+def test_retrieve_integration(
     environment: Literal["prod", "dev", "local", "staging"],
     pipeline_id: str,
 ) -> None:
@@ -169,3 +172,48 @@ def test_retrieve(
             msg = "Docs not retrieved in time"
             raise RuntimeError(msg)
         time.sleep(1)
+
+
+def test_retrieve_unit() -> None:
+    retriever = VectorizeRetriever(
+        environment="prod",
+        api_token="fake_token",  # noqa: S106
+        organization="fake_org",
+        pipeline_id="fake_pipeline_id",
+    )
+    retriever._pipelines.api_client.rest_client.pool_manager.urlopen = MagicMock(
+        return_value=HTTPResponse(
+            body=json.dumps(
+                {
+                    "documents": [
+                        {
+                            "relevancy": 0.42,
+                            "id": "fake_id",
+                            "text": "fake_text",
+                            "chunk_id": "fake_chunk_id",
+                            "total_chunks": "fake_total_chunks",
+                            "origin": "fake_origin",
+                            "origin_id": "fake_origin_id",
+                            "similarity": 0.43,
+                            "source": "fake_source",
+                            "unique_source": "fake_unique_source",
+                            "source_display_name": "fake_source_display_name",
+                        },
+                    ],
+                    "question": "fake_question",
+                    "average_relevancy": 0.44,
+                    "ndcg": 0.45,
+                }
+            ).encode(),
+            status=200,
+        )
+    )
+    docs = retriever.retrieve("fake_question")
+    assert len(docs) == 1
+    assert docs[0].node.id_ == "fake_id"
+    assert docs[0].node.text == "fake_text"
+    assert (
+        docs[0].node.relationships[NodeRelationship.SOURCE].node_id
+        == "fake_unique_source"
+    )
+    assert docs[0].score == 0.43
