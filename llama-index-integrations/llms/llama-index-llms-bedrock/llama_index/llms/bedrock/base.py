@@ -1,5 +1,4 @@
 import json
-import deprecated
 from typing import Any, Callable, Dict, Optional, Sequence
 
 from llama_index.core.base.llms.types import (
@@ -10,7 +9,7 @@ from llama_index.core.base.llms.types import (
     CompletionResponse,
     CompletionResponseAsyncGen,
     CompletionResponseGen,
-    LLMMetadata,
+    LLMMetadata, MessageRole,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
@@ -33,22 +32,15 @@ from llama_index.llms.bedrock.utils import (
     CHAT_ONLY_MODELS,
     STREAMING_MODELS,
     Provider,
-    ProviderType,
     completion_with_retry,
     get_provider,
-    get_provider_by_type,
 )
 
+import asyncio
 
-@deprecated.deprecated(
-    reason=(
-        "Should use `llama-index-llms-bedrock-converse` instead, the converse API is the recommended way to use Bedrock.\n"
-        "See: https://docs.llamaindex.ai/en/stable/examples/llm/bedrock_converse/"
-    )
-)
+
 class Bedrock(LLM):
-    """
-    Bedrock LLM.
+    """Bedrock LLM.
 
     Examples:
         `pip install llama-index-llms-bedrock`
@@ -67,7 +59,6 @@ class Bedrock(LLM):
         resp = llm.complete("Paul Graham is ")
         print(resp)
         ```
-
     """
 
     model: str = Field(description="The modelId of the Bedrock model to use.")
@@ -154,13 +145,12 @@ class Bedrock(LLM):
         guardrail_identifier: Optional[str] = None,
         guardrail_version: Optional[str] = None,
         trace: Optional[str] = None,
-        provider_type: Optional[ProviderType] = None,
         **kwargs: Any,
     ) -> None:
         if context_size is None and model not in BEDROCK_FOUNDATION_LLMS:
             raise ValueError(
                 "`context_size` argument not provided and"
-                " model provided refers to a non-foundation model."
+                "model provided refers to a non-foundation model."
                 " Please specify the context_size"
             )
 
@@ -221,10 +211,7 @@ class Bedrock(LLM):
             guardrail_version=guardrail_version,
             trace=trace,
         )
-        if provider_type is not None:
-            self._provider = get_provider_by_type(provider_type)
-        else:
-            self._provider = get_provider(model)
+        self._provider = get_provider(model)
         self.messages_to_prompt = (
             messages_to_prompt
             or self._provider.messages_to_prompt
@@ -362,27 +349,173 @@ class Bedrock(LLM):
         completion_response = self.stream_complete(prompt, formatted=True, **kwargs)
         return stream_completion_response_to_chat_response(completion_response)
 
-    async def achat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponse:
-        """Chat asynchronously."""
-        # TODO: do synchronous chat for now
-        return self.chat(messages, **kwargs)
+    # Create an asynchronous version of the conversion function
+    async def async_stream_completion_response_to_chat_response(
+        self, completion_response_gen: CompletionResponseAsyncGen,
+    ) -> ChatResponseAsyncGen:
+        """Convert async completion response stream to async chat response stream."""
+        async for completion_response in completion_response_gen:
+            yield ChatResponse(
+                message=ChatMessage(role=MessageRole.ASSISTANT, content=completion_response.text),
+                raw=completion_response.raw,
+                additional_kwargs=completion_response.additional_kwargs,
+                delta=completion_response.delta
+            )
 
+    async def acompletion_with_retry(
+        self,
+        client: Any,
+        model: str,
+        request_body: str,
+        max_retries: int,
+        stream: bool = False,
+        guardrail_identifier: str = None,
+        guardrail_version: str = None,
+        trace: str = None
+    ) -> Dict[str, Any]:
+        """Asynchronous version of completion_with_retry function."""
+        from botocore.exceptions import ClientError
+
+        params = {
+            "modelId": model,
+            "contentType": "application/json",
+            "accept": "application/json",
+            "body": request_body,
+        }
+
+        if guardrail_identifier:
+            params["guardrailIdentifier"] = guardrail_identifier
+            if guardrail_version:
+                params["guardrailVersion"] = guardrail_version
+
+        if trace:
+            params["trace"] = trace
+
+        # Choose different API method based on whether streaming is needed
+        invoke_method = client.invoke_model_with_response_stream if stream else client.invoke_model
+
+        retries = 0
+        while True:
+            try:
+                # Use asyncio.to_thread to convert synchronous API call to asynchronous
+                response = await asyncio.to_thread(
+                    invoke_method, **params
+                )
+                return response
+            except ClientError as error:
+                if retries >= max_retries:
+                    raise
+                if error.response["Error"]["Code"] in [
+                    "ThrottlingException",
+                    "ServiceUnavailableException",
+                ]:
+                    # Exponential backoff strategy
+                    sleep_time = 2 ** retries
+                    await asyncio.sleep(sleep_time)
+                    retries += 1
+                else:
+                    raise
+
+    @llm_completion_callback()
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        raise NotImplementedError
+        """Asynchronous completion prompt."""
+        if not formatted:
+            prompt = self.completion_to_prompt(prompt)
+
+        all_kwargs = self._get_all_kwargs(**kwargs)
+        request_body = self._provider.get_request_body(prompt, all_kwargs)
+        request_body_str = json.dumps(request_body)
+
+        response = await self.acompletion_with_retry(
+            client=self._client,
+            model=self.model,
+            request_body=request_body_str,
+            max_retries=self.max_retries,
+            guardrail_identifier=self.guardrail_identifier,
+            guardrail_version=self.guardrail_version,
+            trace=self.trace
+        )
+
+        response_body = response["body"].read()
+        response_headers = response["ResponseMetadata"]["HTTPHeaders"]
+        response_body = json.loads(response_body)
+
+        return CompletionResponse(
+            text=self._provider.get_text_from_response(response_body),
+            raw=response_body,
+            additional_kwargs=self._get_response_token_counts(response_headers),
+        )
+
+    @llm_completion_callback()
+    async def astream_complete(
+        self, prompt: str, formatted: bool = False, **kwargs: Any
+    ) -> CompletionResponseAsyncGen:
+        """Asynchronous streaming completion prompt."""
+        if self.model in BEDROCK_FOUNDATION_LLMS and self.model not in STREAMING_MODELS:
+            raise ValueError(f"Model {self.model} does not support streaming")
+
+        if not formatted:
+            prompt = self.completion_to_prompt(prompt)
+
+        all_kwargs = self._get_all_kwargs(**kwargs)
+        request_body = self._provider.get_request_body(prompt, all_kwargs)
+        request_body_str = json.dumps(request_body)
+
+        response = await self.acompletion_with_retry(
+            client=self._client,
+            model=self.model,
+            request_body=request_body_str,
+            max_retries=self.max_retries,
+            stream=True,
+            guardrail_identifier=self.guardrail_identifier,
+            guardrail_version=self.guardrail_version,
+            trace=self.trace
+        )
+
+        # Modify here to adapt to AWS EventStream object
+        response_body = response["body"]
+        response_headers = response["ResponseMetadata"]["HTTPHeaders"]
+
+        async def agen() -> CompletionResponseAsyncGen:
+            content = ""
+
+            # Use the correct handling for event streams
+            # Create an async generator to convert EventStream to an async iterable object
+            for event in response_body:
+                # Wrap synchronous processing into async with asyncio.to_thread
+                chunk = await asyncio.to_thread(lambda: event["chunk"]["bytes"])
+                r = json.loads(chunk)
+                content_delta = self._provider.get_text_from_stream_response(r)
+                if content_delta is None or content_delta == "":
+                    continue  # Skip empty responses
+                content += content_delta
+                yield CompletionResponse(
+                    text=content,
+                    delta=content_delta,
+                    raw=r,
+                    additional_kwargs=self._get_response_token_counts(response_headers)
+                )
+
+        return agen()  # Return the async generator
+
+    @llm_chat_callback()
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        """Asynchronous chat."""
+        prompt = self.messages_to_prompt(messages)
+        completion_response = await self.acomplete(prompt, formatted=True, **kwargs)
+        return completion_response_to_chat_response(completion_response)
 
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        raise NotImplementedError
-
-    async def astream_complete(
-        self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> CompletionResponseAsyncGen:
-        raise NotImplementedError
+        """Asynchronous streaming chat."""
+        prompt = self.messages_to_prompt(messages)
+        completion_response_gen = await self.astream_complete(prompt, formatted=True, **kwargs)
+        return self.async_stream_completion_response_to_chat_response(completion_response_gen)
 
     def _get_response_token_counts(self, headers: Any) -> dict:
         """Get the token usage reported by the response."""
