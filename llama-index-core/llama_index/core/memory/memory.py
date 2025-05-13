@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, TypeVar, Generic, cast
 
 from llama_index.core.async_utils import asyncio_run
-from llama_index.core.base.llms.types import ChatMessage, ContentBlock, TextBlock, AudioBlock, ImageBlock
+from llama_index.core.base.llms.types import ChatMessage, ContentBlock, TextBlock, AudioBlock, ImageBlock, DocumentBlock
 from llama_index.core.bridge.pydantic import BaseModel, Field, model_validator, ConfigDict
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.prompts import RichPromptTemplate
@@ -284,7 +284,7 @@ class Memory(BaseMemory):
         elif isinstance(message_or_blocks, List):
             # Type narrow the list
             messages: List[ChatMessage] = []
-            content_blocks: List[Union[TextBlock, ImageBlock, AudioBlock]] = []
+            content_blocks: List[Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock]] = []
 
             if all(isinstance(item, ChatMessage) for item in message_or_blocks):
                 messages = cast(List[ChatMessage], message_or_blocks)
@@ -295,8 +295,8 @@ class Memory(BaseMemory):
 
                 # Estimate the token count for the additional kwargs
                 token_count += sum(len(self.tokenizer_fn(str(msg.additional_kwargs))) for msg in messages if msg.additional_kwargs)
-            elif all(isinstance(item, (TextBlock, ImageBlock, AudioBlock)) for item in message_or_blocks):
-                content_blocks = cast(List[Union[TextBlock, ImageBlock, AudioBlock]], message_or_blocks)
+            elif all(isinstance(item, (TextBlock, ImageBlock, AudioBlock, DocumentBlock)) for item in message_or_blocks):
+                content_blocks = cast(List[Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock]], message_or_blocks)
                 blocks = content_blocks
             else:
                 raise ValueError(f"Invalid message type: {type(message_or_blocks)}")

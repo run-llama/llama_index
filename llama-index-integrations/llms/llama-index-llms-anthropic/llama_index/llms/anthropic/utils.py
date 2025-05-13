@@ -10,14 +10,17 @@ from llama_index.core.base.llms.types import (
     ImageBlock,
     MessageRole,
     TextBlock,
+    DocumentBlock,
 )
 
 from anthropic.types import (
     MessageParam,
     TextBlockParam,
+    DocumentBlockParam,
     ThinkingBlockParam,
     ImageBlockParam,
     CacheControlEphemeralParam,
+    Base64PDFSourceParam,
 )
 from anthropic.types.tool_result_block_param import ToolResultBlockParam
 from anthropic.types.tool_use_block_param import ToolUseBlockParam
@@ -172,7 +175,7 @@ def messages_to_anthropic_messages(
             )
             anthropic_messages.append(anth_message)
         else:
-            content: list[TextBlockParam | ImageBlockParam] = []
+            content: list[TextBlockParam | ImageBlockParam | DocumentBlockParam] = []
             for block in message.blocks:
                 if isinstance(block, TextBlock):
                     if block.text:
@@ -200,7 +203,10 @@ def messages_to_anthropic_messages(
                         },
                     )
                     content.append(block)
-
+                elif isinstance(block, DocumentBlock):
+                    content.append(
+                        _document_block_to_anthropic_message(block=block, kwargs=message.additional_kwargs)
+                    )
             tool_calls = message.additional_kwargs.get("tool_calls", [])
             for tool_call in tool_calls:
                 assert "id" in tool_call
@@ -238,6 +244,11 @@ def _text_block_to_anthropic_message(
         )
     else:
         return TextBlockParam(text=block.text, type="text")
+
+def _document_block_to_anthropic_message(
+    block: DocumentBlock, kwargs: dict[str, Any]
+) -> DocumentBlockParam:
+    return DocumentBlockParam(source=Base64PDFSourceParam(data=block.file_data, media_type="application/pdf", type="base64"))
 
 
 # Function used in bedrock

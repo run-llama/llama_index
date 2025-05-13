@@ -21,6 +21,7 @@ from llama_index.core.base.llms.types import (
     ImageBlock,
     MessageRole,
     TextBlock,
+    DocumentBlock,
 )
 from llama_index.core.program.utils import _repair_incomplete_json
 
@@ -184,6 +185,14 @@ def chat_message_to_gemini(message: ChatMessage) -> types.Content:
                     data=base64_bytes,
                     mime_type=block.image_mimetype,
                 )
+            )
+        elif isinstance(block, DocumentBlock):
+            parts.append(
+                {
+                    "mimeType": block.mime_type,
+                    "fileUri": block.url,
+                    "displayName": block.title
+                }
             )
 
         else:

@@ -28,6 +28,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     AudioBlock,
+    DocumentBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 
@@ -308,6 +309,8 @@ def to_openai_message_dict(
         if isinstance(block, TextBlock):
             content.append({"type": "text", "text": block.text})
             content_txt += block.text
+        if isinstance(block, DocumentBlock):
+            content.append({"type": "input_file", "filename": block.title, "file_data": f"data:{block.mime_type};base64,{block.file_data}"})
         elif isinstance(block, ImageBlock):
             if block.url:
                 content.append(

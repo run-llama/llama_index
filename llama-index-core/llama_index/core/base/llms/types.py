@@ -20,6 +20,7 @@ from typing import (
 )
 
 import filetype
+import mimetypes
 from typing_extensions import Self
 
 from llama_index.core.bridge.pydantic import (
@@ -190,6 +191,8 @@ class DocumentBlock(BaseModel):
     block_type: Literal["document"] = "document"
     path: Optional[Union[FilePath | str]] = None
     url: Optional[str] = None
+    title: Optional[str] = None
+    mime_type: Optional[str] = None
     file_data: Optional[bytes | str] = None
     @model_validator(mode="after")
     def file_or_url_to_base64(self) -> Self:
@@ -200,7 +203,7 @@ class DocumentBlock(BaseModel):
                 if isinstance(self.file_data, bytes):
                     self.file_data = base64.b64encode(self.file_data).decode("utf-8")
                 else:
-                    raise ValueError("file_path needs to be either a base64-encoded string or a bytes buffer coming from a read() operation on a file")
+                    raise ValueError("file_data needs to be either a base64-encoded string or a bytes buffer coming from a read() operation on a file")
         elif self.path is not None:
             with open(self.path, "rb") as f:
                 data = f.read()
@@ -210,7 +213,53 @@ class DocumentBlock(BaseModel):
             self.file_data = base64.b64encode(url_content).decode("utf8")
         else:
             raise ValueError("At least one of the fields file_data, path or url needs to be set to a non-null value")
+        if self.title is None and self.path is None and self.url is None:
+            self.title = "input_document"
+        elif self.title is None and (self.path is not None or self.url is not None):
+            if self.path is not None:
+                self.title = self.path.__str__()
+            elif self.url is not None:
+                self.title = self.url.split("/")[-1] if self.url.split("/")[-1] is not None else "input_document"
+        if self.mime_type is None:
+            if self.path is not None:
+                guess = filetype.guess_mime(self.path)
+                self.mime_type =  guess if guess is not None else "application/pdf"
+            elif self.url is not None:
+                guess = mimetypes.guess_type(self.url)[0]
+                self.mime_type = guess if guess is not None else "application/pdf"
+            else:
+                self.mime_type = "application/pdf"
         return self
+    def _guess_format_for_bedrock(self) -> Union[str, Any]:
+        if self.path is not None:
+            guess = filetype.guess(self.path)
+            if guess is None:
+                return "pdf"
+            else:
+                if guess.extension not in ["pdf", "csv", "doc", "docx", "xls", "xlsx", "html", "txt", "md"]:
+                    raise ValueError("Document not supported by Bedrock Converse")
+                return guess.extension
+        elif self.url is not None:
+            guess = mimetypes.guess_type(self.url)[0]
+            if guess is None:
+                return "pdf"
+            else:
+                ext_guess = mimetypes.guess_extension(guess)
+                if ext_guess is None:
+                    return "pdf"
+                ext_guess = ext_guess.replace(".","")
+                if ext_guess not in ["pdf", "csv", "doc", "docx", "xls", "xlsx", "html", "txt", "md"]:
+                    raise ValueError("Document not supported by Bedrock Converse")
+                return ext_guess
+        else:
+            raise ValueError("One of url or path need to be specified in order to understand the format of the input file")
+
+    def _get_bytes_for_bedrock(self) -> bytes:
+        if self.file_data is not None:
+            decoded = base64.b64decode(self.file_data)
+            return base64.b64encode(decoded)
+        else:
+            raise ValueError("No file data to pass to Bedrock Converse")
 
 ContentBlock = Annotated[
     Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock], Field(discriminator="block_type")
