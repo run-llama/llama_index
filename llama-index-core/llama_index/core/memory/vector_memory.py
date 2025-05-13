@@ -29,7 +29,9 @@ def _stringify_obj(d: Any):
 def _stringify_chat_message(msg: ChatMessage) -> Dict:
     """Utility function to convert chatmessage to serializable dict."""
     msg_dict = msg.model_dump()
-    msg_dict["timestamp"] = str(msg_dict["timestamp"])
+    msg_dict["timestamp"] = (
+        str(msg_dict.get("timestamp")) if msg_dict.get("timestamp") else None
+    )
     msg_dict["content"] = msg.content
     msg_dict["additional_kwargs"] = _stringify_obj(msg_dict["additional_kwargs"])
     return msg_dict
