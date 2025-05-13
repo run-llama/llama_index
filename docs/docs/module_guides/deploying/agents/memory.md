@@ -31,7 +31,7 @@ response = await agent.run("<question that invokes tool>", memory=memory)
 
 ### Managing the Memory Manually
 
-You can also manage the memory manually by calling `memory.put()` and `memory.get()` directly, and passing in the chat history.
+You can also manage the memory manually by calling `memory.put_messages()` and `memory.get()` directly, and passing in the chat history.
 
 ```python
 from llama_index.core.agent.workflow import FunctionAgent

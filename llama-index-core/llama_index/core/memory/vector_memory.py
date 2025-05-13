@@ -47,6 +47,8 @@ def _get_starter_node_for_new_batch() -> TextNode:
 
 class VectorMemory(BaseMemory):
     """
+    Deprecated: Please use `llama_index.core.memory.Memory` instead.
+
     Memory backed by a vector index.
 
     NOTE: This class requires the `delete_nodes` method to be implemented
