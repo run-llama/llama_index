@@ -1401,5 +1401,5 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
             nodes.append(node)
             similarities.append(hit["distance"])
-            ids.append(hit["id"])
+            ids.append(hit["id"] if "id" in hit else hit[list(hit.keys())[0]])
         return nodes, similarities, ids
