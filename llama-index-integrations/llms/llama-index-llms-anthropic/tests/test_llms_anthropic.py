@@ -12,6 +12,7 @@ from llama_index.core.llms import (
     MessageRole,
     ChatResponse,
 )
+from llama_index.core.tools import FunctionTool
 from llama_index.llms.anthropic import Anthropic
 
 
@@ -244,3 +245,65 @@ def test_document_upload(tmp_path: Path, pdf_url: str) -> None:
     messages = [msg]
     response = llm.chat(messages)
     assert isinstance(response, ChatResponse)
+
+
+def test_map_tool_choice_to_anthropic():
+    """Test that tool_required is correctly mapped to Anthropic's tool_choice parameter."""
+    llm = Anthropic()
+
+    # Test with tool_required=True
+    tool_choice = llm._map_tool_choice_to_anthropic(
+        tool_required=True, allow_parallel_tool_calls=False
+    )
+    assert tool_choice["type"] == "any"
+    assert tool_choice["disable_parallel_tool_calls"]
+
+    # Test with tool_required=False
+    tool_choice = llm._map_tool_choice_to_anthropic(
+        tool_required=False, allow_parallel_tool_calls=False
+    )
+    assert tool_choice["type"] == "auto"
+    assert tool_choice["disable_parallel_tool_calls"]
+
+    # Test with allow_parallel_tool_calls=True
+    tool_choice = llm._map_tool_choice_to_anthropic(
+        tool_required=True, allow_parallel_tool_calls=True
+    )
+    assert tool_choice["type"] == "any"
+    assert not tool_choice["disable_parallel_tool_calls"]
+
+
+def search(query: str) -> str:
+    """Search for information about a query."""
+    return f"Results for {query}"
+
+
+search_tool = FunctionTool.from_defaults(
+    fn=search, name="search_tool", description="A tool for searching information"
+)
+
+
+def test_prepare_chat_with_tools_tool_required():
+    """Test that tool_required is correctly passed to the API request when True."""
+    llm = Anthropic()
+
+    # Test with tool_required=True
+    result = llm._prepare_chat_with_tools(tools=[search_tool], tool_required=True)
+
+    assert result["tool_choice"]["type"] == "any"
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["name"] == "search_tool"
+
+
+def test_prepare_chat_with_tools_tool_not_required():
+    """Test that tool_required is correctly passed to the API request when False."""
+    llm = Anthropic()
+
+    # Test with tool_required=False (default)
+    result = llm._prepare_chat_with_tools(
+        tools=[search_tool],
+    )
+
+    assert result["tool_choice"]["type"] == "auto"
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["name"] == "search_tool"
