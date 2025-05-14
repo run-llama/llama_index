@@ -426,15 +426,17 @@ class RedisVectorStore(BasePydanticVectorStore):
         await self.async_index_exists()
         # build a filter to target specific docs by doc ID
         doc_filter = Tag(DOC_ID_FIELD_NAME) == ref_doc_id
-        total = self._index.query(CountQuery(doc_filter))
+        total = await self._async_index.query(CountQuery(doc_filter))
         delete_query = FilterQuery(
             return_fields=[NODE_ID_FIELD_NAME],
             filter_expression=doc_filter,
             num_results=total,
         )
         # fetch docs to delete and flush them
-        docs_to_delete = self._index.search(delete_query.query, delete_query.params)
-        async with self._index.client.pipeline(transaction=False) as pipe:
+        docs_to_delete = await self._async_index.search(
+            delete_query.query, delete_query.params
+        )
+        async with self._async_index.client.pipeline(transaction=False) as pipe:
             for doc in docs_to_delete.docs:
                 await pipe.delete(doc.id)
             await pipe.execute()
