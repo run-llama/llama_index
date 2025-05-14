@@ -206,7 +206,7 @@ Here, the memory was inserted into the system message, with specific sections fo
 
 While predefined memory blocks are available, you can also create your own custom memory blocks.
 
-```
+```python
 from typing import Optional, List, Any
 from llama_index.core.llms import ChatMessage
 from llama_index.core.memory.memory import BaseMemoryBlock
