@@ -20,6 +20,7 @@ MODELS_WITHOUT_FUNCTION_CALLING_SUPPORT = [
 ]
 
 
+
 def _error_if_finished_early(candidate: "glm.Candidate") -> None:  # type: ignore[name-defined] # only until release
     if (finish_reason := candidate.finish_reason) > 1:  # 1=STOP (normally)
         reason = finish_reason.name

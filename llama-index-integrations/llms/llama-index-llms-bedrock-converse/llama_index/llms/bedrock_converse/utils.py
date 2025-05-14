@@ -183,11 +183,12 @@ def _content_block_to_bedrock_format(
         if not block.data:
             file_buffer = block.resolve_document()
             file_bytes = file_buffer.read()
-            block._guess_format(file_bytes)
+            block._guess_format()
             data = block._get_b64_bytes(file_buffer)
         else:
             data = block.data
-        format = block.format if block.format is not None else "pdf"
+        guessed_format = block._guess_format()
+        format = guessed_format if guessed_format is not None else "pdf"
         title = block.title
         return {
             "document": {"format": format,"name": title, "source": {"bytes": data}}

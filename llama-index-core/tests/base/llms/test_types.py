@@ -2,7 +2,6 @@ import base64
 from io import BytesIO
 from pathlib import Path
 from unittest import mock
-import os
 import pytest
 import httpx
 
@@ -217,10 +216,9 @@ def test_completion_response():
 
 
 def test_document_block_from_bytes(mock_pdf_bytes: bytes, pdf_base64: bytes):
-    document = DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf", format="pdf")
+    document = DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf")
     assert document.title == "input_document"
     assert document.document_mimetype == "application/pdf"
-    assert document.format == "pdf"
     assert pdf_base64 == document.data
 
 def test_document_block_from_b64(pdf_base64: bytes):
@@ -228,19 +226,18 @@ def test_document_block_from_b64(pdf_base64: bytes):
     assert document.title == "input_document"
     assert pdf_base64 == document.data
 
-def test_document_block_from_path(pdf_url: str):
+def test_document_block_from_path(tmp_path: Path, pdf_url: str):
+    pdf_path = tmp_path / "test.pdf"
     pdf_content = httpx.get(pdf_url).content
-    with open("test.pdf", "wb") as f:
-        f.write(pdf_content)
-    f.close()
-    document = DocumentBlock(path="test.pdf")
+    pdf_path.write_bytes(pdf_content)
+    document = DocumentBlock(path=pdf_path.__str__())
     file_buffer = document.resolve_document()
     assert isinstance(file_buffer, BytesIO)
     file_bytes = file_buffer.read()
-    document._guess_mimetype(file_bytes)
+    document._guess_mimetype()
     assert document.document_mimetype == "application/pdf"
-    document._guess_format(file_bytes)
-    assert document.format == "pdf"
+    fm = document._guess_format()
+    assert fm == "pdf"
     b64_string = document._get_b64_string(file_buffer)
     try:
         base64.b64decode(b64_string, validate=True)
@@ -256,17 +253,16 @@ def test_document_block_from_path(pdf_url: str):
         bytes_base64_encoded = False
     assert bytes_base64_encoded
     assert document.title == "input_document"
-    os.remove("test.pdf")
 
 def test_document_block_from_url(pdf_url: str):
     document = DocumentBlock(url=pdf_url, title="dummy_pdf")
     file_buffer = document.resolve_document()
     assert isinstance(file_buffer, BytesIO)
     file_bytes = file_buffer.read()
-    document._guess_mimetype(file_bytes)
+    document._guess_mimetype()
     assert document.document_mimetype == "application/pdf"
-    document._guess_format(file_bytes)
-    assert document.format == "pdf"
+    fm = document._guess_format()
+    assert fm == "pdf"
     b64_string = document._get_b64_string(file_buffer)
     try:
         base64.b64decode(b64_string, validate=True)

@@ -313,8 +313,6 @@ def to_openai_message_dict(
             if not block.data:
                 file_buffer = block.resolve_document()
                 b64_string = block._get_b64_string(data_buffer=file_buffer)
-                file_bytes = file_buffer.read()
-                block._guess_mimetype(file_bytes)
             else:
                 b64_string = block.data.decode("utf-8")
             mimetype = block.document_mimetype if block.document_mimetype is not None else "application/pdf"

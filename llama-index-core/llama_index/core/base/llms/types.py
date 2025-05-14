@@ -192,24 +192,20 @@ class DocumentBlock(BaseModel):
     url: Optional[str] = None
     title: Optional[str] = None
     document_mimetype: Optional[str] = None
-    format: Optional[str] = None
 
     @model_validator(mode="after")
     def document_validation(self) -> Self:
         if not self.title:
             self.title = "input_document"
+        if not self.document_mimetype:
+            self.document_mimetype = self._guess_mimetype()
         if not self.data:
             return self
         try:
             decoded_document = base64.b64decode(self.data, validate=True)
         except BinasciiError:
-            decoded_document = self.data
             self.data = base64.b64encode(self.data)
 
-        if not self.document_mimetype:
-            self.document_mimetype = self._guess_mimetype(decoded_document)
-        if not self.format:
-            self.format = self._guess_format(decoded_document)
         return self
 
     def resolve_document(self) -> BytesIO:
@@ -237,12 +233,13 @@ class DocumentBlock(BaseModel):
         data = data_buffer.read()
         return base64.b64encode(data)
 
-    def _guess_format(self, file_data: bytes) -> None:
-        guess = filetype.guess(file_data)
-        self.format = guess.extension if guess else None
+    def _guess_format(self) -> str | None:
+        path = self.path or self.url
+        return Path(str(path)).suffix.replace(".", "") or None
 
-    def _guess_mimetype(self, file_data: bytes) -> None:
-        guess = filetype.guess(file_data)
+    def _guess_mimetype(self) -> None:
+        suffix = self._guess_format()
+        guess = filetype.get_type(ext=suffix)
         self.document_mimetype = guess.mime if guess else None
 
 ContentBlock = Annotated[

@@ -187,19 +187,15 @@ def chat_message_to_gemini(message: ChatMessage) -> types.Content:
                 )
             )
         elif isinstance(block, DocumentBlock):
-            if not block.url:
-                raise ValueError("To load a document to Google GenAI LLM services you need to provide the URL to it")
-            if not block.data:
-                file_buffer = block.resolve_document()
-                file_bytes = file_buffer.read()
-                block._guess_mimetype(file_bytes)
+            file_buffer = block.resolve_document()
+            file_bytes = file_buffer.read()
+            block._guess_mimetype()
             mimetype = block.document_mimetype if block.document_mimetype is not None else "application/pdf"
             parts.append(
-                {
-                    "mimeType": mimetype,
-                    "fileUri": block.url,
-                    "displayName": block.title
-                }
+                types.Part.from_bytes(
+                    data=file_bytes,
+                    mime_type=mimetype
+                )
             )
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
