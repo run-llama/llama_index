@@ -1,3 +1,4 @@
+import deprecated
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -9,7 +10,6 @@ from typing import (
     Sequence,
     Union,
 )
-from google.protobuf.json_format import MessageToDict
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -47,8 +47,15 @@ if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
 
 
+@deprecated.deprecated(
+    reason=(
+        "Should use `llama-index-llms-google-genai` instead, using Google's latest unified SDK. "
+        "See: https://docs.llamaindex.ai/en/stable/examples/llm/google_genai/"
+    )
+)
 class Vertex(FunctionCallingLLM):
-    """Vertext LLM.
+    """
+    Vertext LLM.
 
     Examples:
         `pip install llama-index-llms-vertex`
@@ -67,16 +74,21 @@ class Vertex(FunctionCallingLLM):
             model="text-bison",
             project=credentials["project_id"],
             credentials=credentials,
+            context_window=4096,
         )
 
         # Access the complete method from the instance
         response = llm.complete("Hello world!")
         print(str(response))
         ```
+
     """
 
     model: str = Field(description="The vertex model to use.")
     temperature: float = Field(description="The temperature to use for sampling.")
+    context_window: int = Field(
+        default=4096, description="The context window to use for sampling."
+    )
     max_tokens: int = Field(description="The maximum number of tokens to generate.")
     examples: Optional[Sequence[ChatMessage]] = Field(
         description="Example messages for the chat model."
@@ -103,6 +115,7 @@ class Vertex(FunctionCallingLLM):
         examples: Optional[Sequence[ChatMessage]] = None,
         temperature: float = 0.1,
         max_tokens: int = 512,
+        context_window: int = 4096,
         max_retries: int = 10,
         iscode: bool = False,
         safety_settings: Optional[SafetySettingsType] = None,
@@ -122,6 +135,7 @@ class Vertex(FunctionCallingLLM):
 
         super().__init__(
             temperature=temperature,
+            context_window=context_window,
             max_tokens=max_tokens,
             additional_kwargs=additional_kwargs,
             max_retries=max_retries,
@@ -174,6 +188,8 @@ class Vertex(FunctionCallingLLM):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
+            num_output=self.max_tokens,
+            context_window=self.context_window,
             is_chat_model=self._is_chat_model,
             is_function_calling_model=self._is_gemini,
             model_name=self.model,
@@ -495,7 +511,7 @@ class Vertex(FunctionCallingLLM):
 
         tool_selections = []
         for tool_call in tool_calls:
-            response_dict = MessageToDict(tool_call._pb)
+            response_dict = tool_call.to_dict()
             if "args" not in response_dict or "name" not in response_dict:
                 raise ValueError("Invalid tool call.")
             argument_dict = response_dict["args"]

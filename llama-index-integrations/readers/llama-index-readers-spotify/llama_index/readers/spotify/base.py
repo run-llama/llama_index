@@ -7,17 +7,20 @@ from llama_index.core.schema import Document
 
 
 class SpotifyReader(BaseReader):
-    """Spotify Reader.
+    """
+    Spotify Reader.
 
     Read a user's saved albums, tracks, or playlists from Spotify.
 
     """
 
     def load_data(self, collection: Optional[str] = "albums") -> List[Document]:
-        """Load data from a user's Spotify account.
+        """
+        Load data from a user's Spotify account.
 
         Args:
             collections (Optional[str]): "albums", "tracks", or "playlists"
+
         """
         import spotipy
         from spotipy.oauth2 import SpotifyOAuth

@@ -10,7 +10,8 @@ def get_node_rel_string(relationship: NodeRelationship) -> str:
 
 
 class ImplicitPathExtractor(TransformComponent):
-    """Extract edges from node relationships.
+    """
+    Extract edges from node relationships.
 
     Uses `node.relationships` to extract relations between nodes.
     """

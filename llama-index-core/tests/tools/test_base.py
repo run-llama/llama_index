@@ -75,7 +75,7 @@ def test_function_tool_to_langchain() -> None:
     assert langchain_tool2.args_schema == TestSchema
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_function_tool_async() -> None:
     """Test function tool async."""
     function_tool = FunctionTool.from_defaults(
@@ -90,7 +90,7 @@ async def test_function_tool_async() -> None:
 
 
 @pytest.mark.skipif(langchain is None, reason="langchain not installed")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_function_tool_async_langchain() -> None:
     function_tool = FunctionTool.from_defaults(
         fn=tmp_function, async_fn=async_tmp_function, name="foo", description="bar"
@@ -126,7 +126,7 @@ async def test_function_tool_async_langchain() -> None:
     assert langchain_tool2.args_schema == TestSchema
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_function_tool_async_defaults() -> None:
     """Test async calls to function tool when only sync function is given."""
     function_tool = FunctionTool.from_defaults(
@@ -138,7 +138,7 @@ async def test_function_tool_async_defaults() -> None:
 
 
 @pytest.mark.skipif(langchain is None, reason="langchain not installed")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_function_tool_async_defaults_langchain() -> None:
     function_tool = FunctionTool.from_defaults(
         fn=tmp_function, name="foo", description="bar"
@@ -177,7 +177,7 @@ def test_retreiver_tool() -> None:
     )
     output = vs_ret_tool.call("arg1", "arg2", key1="v1", key2="v2")
     formated_doc = (
-        "file_path = /data/personal/essay.md\n"
+        "file_path: /data/personal/essay.md\n\n"
         "# title1:Hello world.\n"
         "This is a test."
     )
@@ -194,3 +194,34 @@ def test_tool_fn_schema() -> None:
     )
     parameter_dict = json.loads(metadata.fn_schema_str)
     assert set(parameter_dict.keys()) == {"type", "properties", "required"}
+
+def test_function_tool_partial_params_schema() -> None:
+    def test_function(x: int, y: int) -> str:
+        return f"x: {x}, y: {y}"
+
+    tool = FunctionTool.from_defaults(test_function, partial_params={"y": 2})
+    assert tool.metadata.fn_schema is not None
+    actual_schema = tool.metadata.fn_schema.model_json_schema()
+    assert actual_schema["properties"]["x"]["type"] == "integer"
+    assert "y" not in actual_schema["properties"]
+
+def test_function_tool_partial_params() -> None:
+    def test_function(x: int, y: int) -> str:
+        return f"x: {x}, y: {y}"
+
+    tool = FunctionTool.from_defaults(test_function, partial_params={"y": 2})
+    assert tool(x=1).raw_output == "x: 1, y: 2"
+    assert tool(x=1).raw_input == {"args": (), "kwargs": {"x": 1, "y": 2}}
+    assert tool(x=1, y=3).raw_output == "x: 1, y: 3"
+    assert tool(x=1, y=3).raw_input == {"args": (), "kwargs": {"x": 1, "y": 3}}
+
+@pytest.mark.asyncio
+async def test_function_tool_partial_params_async() -> None:
+    async def test_function(x: int, y: int) -> str:
+        return f"x: {x}, y: {y}"
+
+    tool = FunctionTool.from_defaults(test_function, partial_params={"y": 2})
+    assert (await tool.acall(x=1)).raw_output == "x: 1, y: 2"
+    assert (await tool.acall(x=1)).raw_input == {"args": (), "kwargs": {"x": 1, "y": 2}}
+    assert (await tool.acall(x=1, y=3)).raw_output == "x: 1, y: 3"
+    assert (await tool.acall(x=1, y=3)).raw_input == {"args": (), "kwargs": {"x": 1, "y": 3}}

@@ -20,6 +20,7 @@ LlamaCloud allows you to spend less time wrangling with your data and more time 
 
 ## Resources
 
+- [LlamaCloud documentation](https://docs.cloud.llamaindex.ai/)
 - If you're interested in LlamaCloud, [come talk to us](https://www.llamaindex.ai/contact).
-- [LlamaParse](./llama_parse.md) is available to **everyone** via self-serve (with free and premium tiers). [Sign up here](cloud.llamaindex.ai).
+- [LlamaParse](./llama_parse.md) is available to everyone: [sign up](cloud.llamaindex.ai) by signing up for LlamaCloud.
 - [LlamaCloud launch blog post](https://www.llamaindex.ai/blog/introducing-llamacloud-and-llamaparse-af8cedf9006b)

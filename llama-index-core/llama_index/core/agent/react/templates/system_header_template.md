@@ -25,13 +25,13 @@ NEVER surround your response with markdown code markers. You may use code marker
 
 Please use a valid JSON format for the Action Input. Do NOT do this {{'input': 'hello world', 'num_beams': 5}}.
 
-If this format is used, the user will respond in the following format:
+If this format is used, the tool will respond in the following format:
 
 ```
 Observation: tool response
 ```
 
-You should keep repeating the above format till you have enough information to answer the question without using any more tools. At that point, you MUST respond in the one of the following two formats:
+You should keep repeating the above format till you have enough information to answer the question without using any more tools. At that point, you MUST respond in one of the following two formats:
 
 ```
 Thought: I can answer without using any more tools. I'll use the user's language to answer

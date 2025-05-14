@@ -1,4 +1,5 @@
-"""Redis Vector store index.
+"""
+Redis Vector store index.
 
 An index that is built on top of an existing vector store.
 """
@@ -7,6 +8,16 @@ import logging
 from typing import Any, Dict, List, Optional
 
 import fsspec
+from redis import Redis
+from redis.exceptions import RedisError
+from redis.exceptions import TimeoutError as RedisTimeoutError
+from redisvl.index import SearchIndex
+from redisvl.query import CountQuery, FilterQuery, VectorQuery
+from redisvl.query.filter import FilterExpression, Tag
+from redisvl.redis.utils import array_to_buffer
+from redisvl.schema import IndexSchema
+from redisvl.schema.fields import BaseField
+
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import (
     BaseNode,
@@ -17,8 +28,8 @@ from llama_index.core.schema import (
 )
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
-    MetadataFilters,
     MetadataFilter,
+    MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -27,32 +38,21 @@ from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
 from llama_index.vector_stores.redis.schema import (
-    NODE_ID_FIELD_NAME,
-    NODE_CONTENT_FIELD_NAME,
     DOC_ID_FIELD_NAME,
+    NODE_CONTENT_FIELD_NAME,
+    NODE_ID_FIELD_NAME,
     TEXT_FIELD_NAME,
     VECTOR_FIELD_NAME,
     RedisVectorStoreSchema,
 )
 from llama_index.vector_stores.redis.utils import REDIS_LLAMA_FIELD_SPEC
 
-from redis import Redis
-from redis.exceptions import RedisError
-from redis.exceptions import TimeoutError as RedisTimeoutError
-
-from redisvl.index import SearchIndex
-from redisvl.schema import IndexSchema
-from redisvl.query import VectorQuery, FilterQuery, CountQuery
-from redisvl.query.filter import Tag, FilterExpression
-from redisvl.schema.fields import BaseField
-from redisvl.redis.utils import array_to_buffer
-
-
 logger = logging.getLogger(__name__)
 
 
 class RedisVectorStore(BasePydanticVectorStore):
-    """RedisVectorStore.
+    """
+    RedisVectorStore.
 
     The RedisVectorStore takes a user-defined schema object and a Redis connection
     client or URL string. The schema is optional, but useful for:
@@ -101,6 +101,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             schema=schema,
             redis_url="redis://localhost:6379"
         )
+
     """
 
     stores_text: bool = True
@@ -136,18 +137,10 @@ class RedisVectorStore(BasePydanticVectorStore):
             TEXT_FIELD_NAME,
             NODE_CONTENT_FIELD_NAME,
         ]
-        self._index = SearchIndex(schema=schema)
+        self._index = SearchIndex(
+            schema=schema, redis_client=redis_client, redis_url=redis_url
+        )
         self._overwrite = overwrite
-
-        # Establish redis connection
-        if redis_client:
-            self._index.set_client(redis_client)
-        elif redis_url:
-            self._index.connect(redis_url)
-        else:
-            raise ValueError(
-                "Failed to connect to Redis. Must provide a valid redis client or url"
-            )
 
         # Create index
         self.create_index()
@@ -199,10 +192,12 @@ class RedisVectorStore(BasePydanticVectorStore):
         self._return_fields = return_fields
 
     def index_exists(self) -> bool:
-        """Check whether the index exists in Redis.
+        """
+        Check whether the index exists in Redis.
 
         Returns:
             bool: True or False.
+
         """
         return self._index.exists()
 
@@ -217,7 +212,8 @@ class RedisVectorStore(BasePydanticVectorStore):
             self._index.create()
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add nodes to the index.
+        """
+        Add nodes to the index.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings
@@ -227,6 +223,7 @@ class RedisVectorStore(BasePydanticVectorStore):
 
         Raises:
             ValueError: If the index already exists and overwrite is False.
+
         """
         # Check to see if empty document list was passed
         if len(nodes) == 0:
@@ -311,6 +308,7 @@ class RedisVectorStore(BasePydanticVectorStore):
 
         Raises:
             ValueError: If the field type is unsupported or if the operator is not supported for the field type.
+
         """
         # Check for unsupported field type
         if field.type not in REDIS_LLAMA_FIELD_SPEC:
@@ -339,6 +337,7 @@ class RedisVectorStore(BasePydanticVectorStore):
 
         Returns:
             FilterExpression: A Redis filter expression.
+
         """
         filter_expression = FilterExpression("*")
         if metadata_filters:
@@ -413,7 +412,8 @@ class RedisVectorStore(BasePydanticVectorStore):
         return VectorStoreQueryResult(nodes=nodes, ids=ids, similarities=scores)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query the index.
+        """
+        Query the index.
 
         Args:
             query (VectorStoreQuery): query object
@@ -425,6 +425,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             ValueError: If query.query_embedding is None.
             redis.exceptions.RedisError: If there is an error querying the index.
             redis.exceptions.TimeoutError: If there is a timeout querying the index.
+
         """
         if not query.query_embedding:
             raise ValueError("Query embedding is required for querying.")
@@ -449,7 +450,8 @@ class RedisVectorStore(BasePydanticVectorStore):
         fs: Optional[fsspec.AbstractFileSystem] = None,
         in_background: bool = True,
     ) -> None:
-        """Persist the vector store to disk.
+        """
+        Persist the vector store to disk.
 
         For Redis, more notes here: https://redis.io/docs/management/persistence/
 
@@ -462,6 +464,7 @@ class RedisVectorStore(BasePydanticVectorStore):
         Raises:
             redis.exceptions.RedisError: If there is an error
                                          persisting the index to disk.
+
         """
         try:
             if in_background:

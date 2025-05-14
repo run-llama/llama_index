@@ -13,11 +13,13 @@ class BaseImageRetriever(PromptMixin, DispatcherSpanMixin):
     def text_to_image_retrieve(
         self, str_or_query_bundle: QueryType
     ) -> List[NodeWithScore]:
-        """Retrieve image nodes given query or single image input.
+        """
+        Retrieve image nodes given query or single image input.
 
         Args:
             str_or_query_bundle (QueryType): a query text
             string or a QueryBundle object.
+
         """
         if isinstance(str_or_query_bundle, str):
             str_or_query_bundle = QueryBundle(query_str=str_or_query_bundle)
@@ -28,7 +30,8 @@ class BaseImageRetriever(PromptMixin, DispatcherSpanMixin):
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        """Retrieve image nodes or documents given query text.
+        """
+        Retrieve image nodes or documents given query text.
 
         Implemented by the user.
 
@@ -37,11 +40,13 @@ class BaseImageRetriever(PromptMixin, DispatcherSpanMixin):
     def image_to_image_retrieve(
         self, str_or_query_bundle: QueryType
     ) -> List[NodeWithScore]:
-        """Retrieve image nodes given single image input.
+        """
+        Retrieve image nodes given single image input.
 
         Args:
             str_or_query_bundle (QueryType): a image path
             string or a QueryBundle object.
+
         """
         if isinstance(str_or_query_bundle, str):
             # leave query_str as empty since we are using image_path for image retrieval
@@ -55,7 +60,8 @@ class BaseImageRetriever(PromptMixin, DispatcherSpanMixin):
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        """Retrieve image nodes or documents given image.
+        """
+        Retrieve image nodes or documents given image.
 
         Implemented by the user.
 
@@ -75,7 +81,8 @@ class BaseImageRetriever(PromptMixin, DispatcherSpanMixin):
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        """Async retrieve image nodes or documents given query text.
+        """
+        Async retrieve image nodes or documents given query text.
 
         Implemented by the user.
 
@@ -97,7 +104,8 @@ class BaseImageRetriever(PromptMixin, DispatcherSpanMixin):
         self,
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
-        """Async retrieve image nodes or documents given image.
+        """
+        Async retrieve image nodes or documents given image.
 
         Implemented by the user.
 

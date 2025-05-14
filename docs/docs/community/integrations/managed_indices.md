@@ -39,7 +39,14 @@ See the [notebook guide](../../examples/managed/GoogleDemo.ipynb) for full detai
 ## Vectara
 
 First, [sign up](https://vectara.com/integrations/llama_index) and use the Vectara Console to create a corpus (aka Index), and add an API key for access.
-Then put the customer id, corpus id, and API key in your environment.
+Once you have your API key, export it as an environment variable:
+
+```python
+import os
+
+os.environ["VECTARA_API_KEY"] = "<YOUR_VECTARA_API_KEY>"
+os.environ["VECTARA_CORPUS_KEY"] = "<YOUR_VECTARA_CORPUS_KEY>"
+```
 
 Then construct the Vectara Index and query it as follows:
 
@@ -48,22 +55,20 @@ from llama_index.core import ManagedIndex, SimpleDirectoryReade
 from llama_index.indices.managed.vectara import VectaraIndex
 
 # Load documents and build index
-vectara_customer_id = os.environ.get("VECTARA_CUSTOMER_ID")
-vectara_corpus_id = os.environ.get("VECTARA_CORPUS_ID")
+vectara_corpus_key = os.environ.get("VECTARA_CORPUS_KEY")
 vectara_api_key = os.environ.get("VECTARA_API_KEY")
 
 documents = SimpleDirectoryReader("../paul_graham_essay/data").load_data()
 index = VectaraIndex.from_documents(
     documents,
-    vectara_customer_id=vectara_customer_id,
-    vectara_corpus_id=vectara_corpus_id,
+    vectara_corpus_key=vectara_corpus_key,
     vectara_api_key=vectara_api_key,
 )
 ```
 
 Notes:
-* If the environment variables `VECTARA_CUSTOMER_ID`, `VECTARA_CORPUS_ID` and `VECTARA_API_KEY` are in the environment already, you do not have to explicitly specify them in your call and the VectaraIndex class will read them from the environment.
-* To connect to multiple Vectara corpora, you can set `VECTARA_CORPUS_ID` to a comma-separated list, for example: `12,51` would connect to corpus `12` and corpus `51`.
+* If the environment variables `VECTARA_CORPUS_KEY` and `VECTARA_API_KEY` are in the environment already, you do not have to explicitly specify them in your call and the VectaraIndex class will read them from the environment.
+* To connect to multiple Vectara corpora, you can set `VECTARA_CORPUS_KEY` to a comma-separated list, for example: `12,51` would connect to corpus `12` and corpus `51`.
 
 If you already have documents in your corpus, you can just access the data directly by constructing the `VectaraIndex` as follows:
 
@@ -71,7 +76,7 @@ If you already have documents in your corpus, you can just access the data direc
 index = VectaraIndex()
 ```
 
-And the index will connect to the existing corpus without loading any new documents.
+The VectaraIndex will connect to the existing corpus without loading any new documents.
 
 To query the index, simply construct a query engine as follows:
 
@@ -146,53 +151,3 @@ nodes = retriever.retrieve("What is RAG and why it is helpful?")
 ```
 
 See the [notebook guide](../../examples/managed/VertexAIDemo.ipynb) for full details.
-
-## Zilliz
-
-First, set up your [Zilliz Cloud](https://cloud.zilliz.com/signup?utm_source=twitter&utm_medium=social%20&utm_campaign=2023-12-22_social_pipeline-llamaindex_twitter) account and create a free serverless cluster.
-Then copy the Project ID, Cluster ID and API Key from your account.
-
-Now you can construct `ZillizCloudPipelineIndex` to index docs and query as follows:
-
-```python
-import os
-
-from llama_index.core import ManagedIndex
-from llama_index.indices.managed.zilliz import ZillizCloudPipelineIndex
-
-# Load documents from url and build document index
-zcp_index = ZillizCloudPipelineIndex.from_document_url(
-    url="https://publicdataset.zillizcloud.com/milvus_doc.md",
-    project_id="<YOUR_ZILLIZ_PROJECT_ID>",
-    cluster_id="<YOUR_ZILLIZ_CLUSTER_ID>",
-    token="<YOUR_ZILLIZ_API_KEY>",
-    metadata={"version": "2.3"},  # optional
-)
-
-# Insert more docs into index, eg. a Milvus v2.2 document
-zcp_index.insert_doc_url(
-    url="https://publicdataset.zillizcloud.com/milvus_doc_22.md",
-    metadata={"version": "2.2"},
-)
-
-# Query index
-from llama_index.core.vector_stores import ExactMatchFilter, MetadataFilters
-
-query_engine_milvus23 = zcp_index.as_query_engine(
-    search_top_k=3,
-    filters=MetadataFilters(
-        filters=[
-            ExactMatchFilter(key="version", value="2.3")
-        ]  # version == "2.3"
-    ),
-    output_metadata=["version"],
-)
-
-question = "Can users delete entities by complex boolean expressions?"
-# Retrieving
-retrieval_result = query_engine_with_filters.retrieve(question)
-# Querying
-answer = query_engine_with_filters.query(question)
-```
-
-- [Zilliz Example Notebook](../../examples/managed/zcpDemo.ipynb)

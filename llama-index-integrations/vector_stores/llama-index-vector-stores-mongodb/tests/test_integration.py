@@ -1,4 +1,5 @@
-"""Integration Tests of llama-index-vector-stores-mongodb
+"""
+Integration Tests of llama-index-vector-stores-mongodb
 with MongoDB Atlas Vector Datastore and OPENAI Embedding model.
 
 As described in docs/providers/mongodb/setup.md, to run this, one must
@@ -9,6 +10,7 @@ provide a valid OPENAI_API_KEY.
 import os
 from time import sleep
 from typing import List
+
 import pytest
 from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.core.schema import Document
@@ -33,7 +35,8 @@ def test_mongodb_connection(atlas_client: MongoClient) -> None:
 def test_index(
     documents: List[Document], vector_store: MongoDBAtlasVectorSearch
 ) -> None:
-    """End-to-end example from essay and query to response.
+    """
+    End-to-end example from essay and query to response.
 
     via NodeParser, LLM Embedding, VectorStore, and Synthesizer.
     """

@@ -13,6 +13,7 @@ class PlaygroundsSubgraphInspectorToolSpec(GraphQLToolSpec):
         spec_functions (list): List of functions that specify the tool's capabilities.
         url (str): The endpoint URL for the GraphQL requests.
         headers (dict): Headers used for the GraphQL requests.
+
     """
 
     spec_functions = ["introspect_and_summarize_subgraph"]
@@ -25,6 +26,7 @@ class PlaygroundsSubgraphInspectorToolSpec(GraphQLToolSpec):
             identifier (str): The subgraph's identifier or deployment ID.
             api_key (str): API key for the Playgrounds API.
             use_deployment_id (bool): If True, treats the identifier as a deployment ID. Default is False.
+
         """
         self.url = self._generate_url(identifier, use_deployment_id)
         self.headers = {
@@ -42,6 +44,7 @@ class PlaygroundsSubgraphInspectorToolSpec(GraphQLToolSpec):
 
         Returns:
             str: The constructed URL.
+
         """
         endpoint = "deployments" if use_deployment_id else "subgraphs"
         return f"https://api.playgrounds.network/v1/proxy/{endpoint}/id/{identifier}"
@@ -52,6 +55,7 @@ class PlaygroundsSubgraphInspectorToolSpec(GraphQLToolSpec):
 
         Returns:
             str: A textual summary of the introspected subgraph schema.
+
         """
         introspection_query = """
         query {
@@ -97,6 +101,7 @@ class PlaygroundsSubgraphInspectorToolSpec(GraphQLToolSpec):
 
         Returns:
             dict: Response from the GraphQL server, either containing the data or an error.
+
         """
         payload = {"query": query.strip()}
         try:
@@ -115,6 +120,7 @@ class PlaygroundsSubgraphInspectorToolSpec(GraphQLToolSpec):
 
         Returns:
             dict: A processed representation of the introspected schema, categorized into specific entity queries, list entity queries, and other entities.
+
         """
         processed_subgraph = {
             "specific_entity_queries": {},
@@ -147,6 +153,7 @@ class PlaygroundsSubgraphInspectorToolSpec(GraphQLToolSpec):
 
         Returns:
             tuple: A tuple containing a list of relevant fields and a boolean indicating if arguments are required for the fields.
+
         """
         fields = []
         args_required = False
@@ -188,6 +195,7 @@ class PlaygroundsSubgraphInspectorToolSpec(GraphQLToolSpec):
 
         Returns:
             str: A formatted string representation of the provided section data.
+
         """
         section = [
             f"Category: {category}",
@@ -220,6 +228,7 @@ class PlaygroundsSubgraphInspectorToolSpec(GraphQLToolSpec):
 
         Returns:
             str: A textual summary of the processed subgraph schema.
+
         """
         sections = [
             (

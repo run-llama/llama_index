@@ -108,19 +108,19 @@ def mock_chat_stream(
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def mock_achat_completion(*args: Any, **kwargs: Any) -> ChatCompletion:
     return mock_chat_completion(*args, **kwargs)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def mock_achat_completion_tool_call(
     function: Function, *args: Any, **kwargs: Any
 ) -> ChatCompletion:
     return mock_chat_completion_tool_call(function, *args, **kwargs)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def mock_achat_stream(
     *args: Any, **kwargs: Any
 ) -> AsyncGenerator[ChatCompletionChunk, None]:
@@ -212,7 +212,7 @@ def test_chat_basic(
     assert agent.chat_history[1].content == "\n\nThis is a test!"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
 async def test_achat_basic(
     MockAsyncOpenAI: MagicMock, add_tool: FunctionTool, masked_env_var
@@ -237,7 +237,7 @@ async def test_achat_basic(
 @pytest.mark.xfail(
     reason="streaming not yet implemented, see https://github.com/run-llama/llama_index/discussions/14653 and https://github.com/run-llama/llama_index/issues/15079"
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
 async def test_astream_chat_basic(
     MockAsyncOpenAI: MagicMock, add_tool: FunctionTool, masked_env_var
@@ -320,7 +320,7 @@ def test_add_step(
 @pytest.mark.xfail(
     reason="streaming not yet implemented, see https://github.com/run-llama/llama_index/discussions/14653 and https://github.com/run-llama/llama_index/issues/15079"
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
 async def test_async_add_step(
     MockAsyncOpenAI: MagicMock, add_tool: FunctionTool, masked_env_var
@@ -366,7 +366,7 @@ async def test_async_add_step(
     assert "tmp" in [m.content for m in chat_history]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("method", ["run_step", "arun_step"])
 @patch("llama_index.llms.openai.base.SyncOpenAI")
 @patch("llama_index.llms.openai.base.AsyncOpenAI")

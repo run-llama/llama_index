@@ -1,6 +1,5 @@
 """General node utils."""
 
-
 import logging
 import uuid
 from typing import List, Optional, Protocol, runtime_checkable
@@ -44,7 +43,6 @@ def build_nodes_from_splits(
     relationships = {NodeRelationship.SOURCE: ref_doc.as_related_node_info()}
     for i, text_chunk in enumerate(text_splits):
         logger.debug(f"> Adding chunk: {truncate_text(text_chunk, 50)}")
-
         if isinstance(document, ImageDocument):
             image_node = ImageNode(
                 id_=id_func(i, document),
@@ -55,7 +53,7 @@ def build_nodes_from_splits(
                 image_url=document.image_url,
                 excluded_embed_metadata_keys=document.excluded_embed_metadata_keys,
                 excluded_llm_metadata_keys=document.excluded_llm_metadata_keys,
-                metadata_seperator=document.metadata_seperator,
+                metadata_seperator=document.metadata_separator,
                 metadata_template=document.metadata_template,
                 text_template=document.text_template,
                 relationships=relationships,
@@ -68,7 +66,7 @@ def build_nodes_from_splits(
                 embedding=document.embedding,
                 excluded_embed_metadata_keys=document.excluded_embed_metadata_keys,
                 excluded_llm_metadata_keys=document.excluded_llm_metadata_keys,
-                metadata_seperator=document.metadata_seperator,
+                metadata_seperator=document.metadata_separator,
                 metadata_template=document.metadata_template,
                 text_template=document.text_template,
                 relationships=relationships,

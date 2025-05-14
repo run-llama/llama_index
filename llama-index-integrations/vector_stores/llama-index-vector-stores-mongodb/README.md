@@ -19,7 +19,8 @@ to create an account, deploy an Atlas cluster, and connect to a database.
 
 ### Retrieve the URI used by Python to connect to the Cluster
 
-When you deploy, this will be stored as the environment variable: `MONGODB_URI`,
+Once deployed, you will need a URI (connection string) to access the cluster.
+This you should store as the environment variable: `MONGODB_URI`.
 It will look something like the following. The username and password, if not provided,
 can be configured in _Database Access_ under Security in the left panel.
 
@@ -27,12 +28,14 @@ can be configured in _Database Access_ under Security in the left panel.
 export MONGODB_URI="mongodb+srv://<username>:<password>@cluster0.foo.mongodb.net/?retryWrites=true&w=majority"
 ```
 
-There are a number of ways to navigate the Atlas UI. Keep your eye out for "Connect" and "driver".
+Head to Atlas UI to find the connection string.
 
-On the left panel, navigate and click 'Database' under DEPLOYMENT.
+NOTE: There are a number of ways to navigate the Atlas UI. Keep your eye out for "Connect" and "driver".
+
+On the left panel, find and click 'Database' under DEPLOYMENT.
 Click the Connect button that appears, then Drivers. Select Python.
 (Have no concern for the version. This is the PyMongo, not Python, version.)
-Once you have got the Connect Window open, you will see an instruction to `pip install pymongo`.
+Once you have the Connect Window open, you will see an instruction to `pip install pymongo`.
 You will also see a **connection string**.
 This is the `uri` that a `pymongo.MongoClient` uses to connect to the Database.
 
@@ -125,6 +128,6 @@ You can experiment with these later.
 
 ### Running MongoDB Integration Tests
 
-In addition to the Jupyter Notebook in `examples/`,
-a suite of integration tests is available to verify the MongoDB integration.
-The test suite needs the cluster up and running, and the environment variables defined above.
+In addition to the [Jupyter Notebook](https://docs.llamaindex.ai/en/stable/examples/vector_stores/MongoDBAtlasVectorSearch/) in the documentation,
+a suite of integration tests is available to verify the MongoDB integration unders `./tests`.
+This test suite needs the cluster up and running, and the environment variables defined above.

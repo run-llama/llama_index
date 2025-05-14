@@ -1,3 +1,6 @@
+# pants requires this import to recognize the dep
+import pytest_asyncio  # noqa: F401
+
 import pytest
 import os
 
@@ -20,6 +23,11 @@ def masked_env_var() -> Generator[str, None, None]:
     finally:
         if val:
             os.environ[var] = val
+
+
+@pytest.fixture(params=[Interface])
+def public_class(request: pytest.FixtureRequest) -> type:
+    return request.param
 
 
 def pytest_collection_modifyitems(config, items):

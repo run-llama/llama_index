@@ -5,7 +5,7 @@
 To install the required package, run:
 
 ```bash
-%pip install llama-index-llms-ollama
+pip install llama-index-llms-ollama
 ```
 
 ## Setup

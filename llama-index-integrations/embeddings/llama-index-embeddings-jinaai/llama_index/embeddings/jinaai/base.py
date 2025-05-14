@@ -163,6 +163,7 @@ class JinaEmbedding(MultiModalEmbedding):
     Args:
         model (str): Model for embedding.
             Defaults to `jina-embeddings-v3`
+
     """
 
     api_key: Optional[str] = Field(default=None, description="The JinaAI API key.")

@@ -6,13 +6,15 @@ from llama_index.core.bridge.pydantic import ConfigDict
 
 
 class ReRankStartEvent(BaseEvent):
-    """ReRankStartEvent.
+    """
+    ReRankStartEvent.
 
     Args:
         query (QueryType): Query as a string or query bundle.
         nodes (List[NodeWithScore]): List of nodes with scores.
         top_n (int): Number of nodes to return after rerank.
         model_name (str): Name of the model used for reranking.
+
     """
 
     model_config = ConfigDict(protected_namespaces=("pydantic_model_",))
@@ -28,10 +30,12 @@ class ReRankStartEvent(BaseEvent):
 
 
 class ReRankEndEvent(BaseEvent):
-    """ReRankEndEvent.
+    """
+    ReRankEndEvent.
 
     Args:
         nodes (List[NodeWithScore]): List of returned nodes after rerank.
+
     """
 
     nodes: List[NodeWithScore]

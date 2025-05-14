@@ -2,7 +2,6 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url><loc>https://docs.llamaindex.ai/en/stable/examples/vector_stores/postgres.html</loc></url>
     <url><loc>https://docs.llamaindex.ai/en/stable/examples/agent/Chatbot_SEC.html</loc></url>
-    <url><loc>https://docs.llamaindex.ai/en/stable/examples/agent/openai_forced_function_call.html</loc></url>
     <url><loc>https://docs.llamaindex.ai/en/stable/examples/agent/react_agent.html</loc></url>
     <url><loc>https://docs.llamaindex.ai/en/stable/examples/analysis/PlaygroundDemo.html</loc></url>
     <url><loc>https://docs.llamaindex.ai/en/stable/examples/chat_engine/chat_engine_best.html</loc></url>

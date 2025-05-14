@@ -28,7 +28,8 @@ class IndexType(enum.Enum):
 
 
 class TimescaleVectorStore(BasePydanticVectorStore):
-    """Timescale vector store.
+    """
+    Timescale vector store.
 
     Examples:
         `pip install llama-index-vector-stores-timescalevector`
@@ -46,6 +47,7 @@ class TimescaleVectorStore(BasePydanticVectorStore):
             num_dimensions=1536,
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -81,6 +83,11 @@ class TimescaleVectorStore(BasePydanticVectorStore):
     @classmethod
     def class_name(cls) -> str:
         return "TimescaleVectorStore"
+
+    @property
+    def client(self) -> Any:
+        """Get client."""
+        return self._sync_client
 
     async def close(self) -> None:
         self._sync_client.close()

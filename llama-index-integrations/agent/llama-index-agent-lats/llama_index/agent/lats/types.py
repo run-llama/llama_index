@@ -63,7 +63,8 @@ class Evaluation(BaseModel):
 
 
 class SearchNode(BaseModel):
-    """Search node.
+    """
+    Search node.
 
     Named differently from `Node` which is a core module in LlamaIndex.
 
@@ -116,7 +117,8 @@ class SearchNode(BaseModel):
             cur_node = cur_node.parent
 
     def get_best_leaf(self) -> "SearchNode":
-        """Get best leaf node.
+        """
+        Get best leaf node.
 
         Get best leaf node across any children nodes.
 

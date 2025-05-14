@@ -1,10 +1,11 @@
 import asyncio
 import os
+import shlex
 import shutil
 from argparse import ArgumentParser
 from glob import iglob
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 from llama_index.core import (
     Settings,
@@ -14,8 +15,8 @@ from llama_index.core import (
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.base.response.schema import (
     RESPONSE_TYPE,
-    StreamingResponse,
     Response,
+    StreamingResponse,
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field, field_validator
 from llama_index.core.chat_engine import CondenseQuestionChatEngine
@@ -159,7 +160,7 @@ class RagCLI(BaseModel):
         if chat_engine is not None:
             return chat_engine
 
-        if values.get("query_pipeline", None) is None:
+        if values.get("query_pipeline") is None:
             values["query_pipeline"] = cls.query_pipeline_from_ingestion_pipeline(
                 query_pipeline=None, values=values
             )
@@ -176,7 +177,7 @@ class RagCLI(BaseModel):
 
     async def handle_cli(
         self,
-        files: Optional[str] = None,
+        files: Optional[List[str]] = None,
         question: Optional[str] = None,
         chat: bool = False,
         verbose: bool = False,
@@ -205,8 +206,11 @@ class RagCLI(BaseModel):
         if self.verbose:
             print("Saving/Loading from persist_dir: ", self.persist_dir)
         if files is not None:
+            expanded_files = []
+            for pattern in files:
+                expanded_files.extend(iglob(pattern, recursive=True))
             documents = []
-            for _file in iglob(files, recursive=True):
+            for _file in expanded_files:
                 _file = os.path.abspath(_file)
                 if os.path.isdir(_file):
                     reader = SimpleDirectoryReader(
@@ -228,7 +232,8 @@ class RagCLI(BaseModel):
 
             # Append the `--files` argument to the history file
             with open(f"{self.persist_dir}/{RAG_HISTORY_FILE_NAME}", "a") as f:
-                f.write(files + "\n")
+                for file in files:
+                    f.write(str(file) + "\n")
 
         if create_llama:
             if shutil.which("npx") is None:
@@ -286,7 +291,7 @@ class RagCLI(BaseModel):
                                 "none",
                                 "--engine",
                                 "context",
-                                f"--files {path}",
+                                f"--files {shlex.quote(path)}",
                             ]
                             os.system(" ".join(command_args))
 
@@ -337,9 +342,10 @@ class RagCLI(BaseModel):
                 "-f",
                 "--files",
                 type=str,
+                nargs="+",
                 help=(
-                    "The name of the file or directory you want to ask a question about,"
-                    'such as "file.pdf".'
+                    "The name of the file(s) or directory you want to ask a question about,"
+                    'such as "file.pdf". Supports globs like "*.py".'
                 ),
             )
             parser.add_argument(

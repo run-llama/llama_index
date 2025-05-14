@@ -192,7 +192,8 @@ class _ChunkNodeOutput(BaseModel):
 
 
 class CodeHierarchyNodeParser(NodeParser):
-    """Split code using a AST parser.
+    """
+    Split code using a AST parser.
 
     Add metadata about the scope of the code block and relationships between
     code blocks.
@@ -322,7 +323,7 @@ class CodeHierarchyNodeParser(NodeParser):
             start_byte = node.start_byte
         if end_byte is None:
             end_byte = node.end_byte
-        return text[start_byte:end_byte].strip()
+        return bytes(text, "utf-8")[start_byte:end_byte].decode().strip()
 
     def _chunk_node(
         self,
@@ -343,6 +344,7 @@ class CodeHierarchyNodeParser(NodeParser):
             _context_list (Optional[List[_ScopeItem]]): The scope context of the
                                                         parent node
             _root (bool): Whether or not this is the root node
+
         """
         if _context_list is None:
             _context_list = []
@@ -535,15 +537,15 @@ class CodeHierarchyNodeParser(NodeParser):
         out: List[BaseNode] = []
 
         try:
-            import tree_sitter_languages
+            import tree_sitter_language_pack
         except ImportError:
             raise ImportError(
-                "Please install tree_sitter_languages to use CodeSplitter."
+                "Please install tree_sitter_language_pack to use CodeSplitter."
             )
 
         try:
-            parser = tree_sitter_languages.get_parser(self.language)
-            language = tree_sitter_languages.get_language(self.language)
+            parser = tree_sitter_language_pack.get_parser(self.language)
+            language = tree_sitter_language_pack.get_language(self.language)
 
             # Construct the path to the SCM file
             scm_fname = os.path.join(
@@ -554,7 +556,7 @@ class CodeHierarchyNodeParser(NodeParser):
         except Exception as e:
             print(
                 f"Could not get parser for language {self.language}. Check "
-                "https://github.com/grantjenks/py-tree-sitter-languages#license "
+                "https://github.com/Goldziher/tree-sitter-language-pack?tab=readme-ov-file#available-languages "
                 "for a list of valid languages."
             )
             raise e  # noqa: TRY201
@@ -622,6 +624,9 @@ class CodeHierarchyNodeParser(NodeParser):
                         new_split_nodes = self.code_splitter.get_nodes_from_documents(
                             [original_node], show_progress=show_progress, **kwargs
                         )
+
+                        if not new_split_nodes:
+                            continue
 
                         # Force the first new_split_node to have the
                         # same id as the original_node

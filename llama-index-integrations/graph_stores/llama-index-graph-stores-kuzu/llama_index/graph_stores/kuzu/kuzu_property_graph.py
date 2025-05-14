@@ -170,16 +170,17 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
     def upsert_relations(self, relations: List[Relation]) -> None:
         for rel in relations:
             if self.has_structured_schema:
-                src, _, dst = utils.lookup_relation(rel.label, self.relationship_schema)
+                src, rel_tbl_name, dst = utils.lookup_relation(
+                    rel.label, self.relationship_schema
+                )
             else:
-                src, dst = "Entity", "Entity"
+                src, rel_tbl_name, dst = "Entity", "LINKS", "Entity"
 
-            rel_tbl_name = f"LINKS_{src}_{dst}"
             # Connect entities to each other
             self.connection.execute(
                 f"""
                 MATCH (a:{src} {{id: $source_id}}),
-                        (b:{dst} {{id: $target_id}})
+                      (b:{dst} {{id: $target_id}})
                 MERGE (a)-[r:{rel_tbl_name} {{label: $label}}]->(b)
                     SET r.triplet_source_id = $triplet_source_id
                 """,
@@ -196,8 +197,8 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
                 MATCH (a:{src} {{id: $source_id}}),
                         (b:{dst} {{id: $target_id}}),
                         (c:Chunk {{id: $triplet_source_id}})
-                MERGE (c)-[:LINKS_Chunk_{src} {{label: "MENTIONS"}}]->(a)
-                MERGE (c)-[:LINKS_Chunk_{dst} {{label: "MENTIONS"}}]->(b)
+                MERGE (c)-[:MENTIONS]->(a)
+                MERGE (c)-[:MENTIONS]->(b)
                 """,
                 parameters={
                     "source_id": rel.source_id,

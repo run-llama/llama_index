@@ -292,3 +292,25 @@ def test_template_with_json() -> None:
 
     test_case_3 = PromptTemplate("test {{message}} {{test}}")
     assert test_case_3.format(message="message", test="test") == "test {message} {test}"
+
+
+def test_template_has_json() -> None:
+    """Test partial format."""
+    prompt_txt = (
+        'hello {text} {foo} \noutput format:\n```json\n{"name": "llamaindex"}\n```'
+    )
+    except_prompt = (
+        'hello world bar \noutput format:\n```json\n{"name": "llamaindex"}\n```'
+    )
+
+    prompt_template = PromptTemplate(prompt_txt)
+    template_vars = prompt_template.template_vars
+    prompt_fmt = prompt_template.partial_format(foo="bar")
+    prompt = prompt_fmt.format(text="world")
+
+    assert isinstance(prompt_fmt, PromptTemplate)
+    assert template_vars == ["text", "foo"]
+    assert prompt == except_prompt
+    assert prompt_fmt.format_messages(text="world") == [
+        ChatMessage(content=except_prompt, role=MessageRole.USER)
+    ]

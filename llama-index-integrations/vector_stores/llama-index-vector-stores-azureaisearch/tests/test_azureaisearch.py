@@ -3,6 +3,7 @@ from typing import Any, List, Optional
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
 from llama_index.vector_stores.azureaisearch import (
@@ -21,6 +22,22 @@ except ImportError:
     search_client = None  # type: ignore
 
 
+def mock_client_with_user_agent(client_type: str) -> Any:
+    """Helper function to create a mock client with user agent configuration."""
+    if client_type == "search":
+        client = MagicMock(spec=SearchClient)
+    else:
+        client = MagicMock(spec=SearchIndexClient)
+
+    # Mock the configuration chain
+    client._client = MagicMock()
+    client._client._config = MagicMock()
+    client._client._config.user_agent_policy = MagicMock()
+    client._client._config.user_agent_policy.add_user_agent = MagicMock()
+
+    return client
+
+
 def create_mock_vector_store(
     search_client: Any,
     index_name: Optional[str] = None,
@@ -33,10 +50,12 @@ def create_mock_vector_store(
         embedding_field_key="embedding",
         metadata_string_field_key="metadata",
         doc_id_field_key="doc_id",
-        filterable_metadata_field_keys=[],  # Added to match the updated constructor
+        filterable_metadata_field_keys=[],
+        hidden_field_keys=["embedding"],
         index_name=index_name,
         index_management=index_management,
         embedding_dimensionality=2,  # Assuming a dimensionality of 2 for simplicity
+        semantic_configuration_name="default",
     )
 
 
@@ -60,8 +79,36 @@ def create_sample_documents(n: int) -> List[TextNode]:
 @pytest.mark.skipif(
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
+def test_user_agent_configuration() -> None:
+    """Test that user agent is properly configured."""
+    # Test with SearchClient
+    search_client = mock_client_with_user_agent("search")
+    vector_store = create_mock_vector_store(search_client)
+
+    # Verify user agent was added with the correct base agent string
+    search_client._client._config.user_agent_policy.add_user_agent.assert_called_with(
+        "llamaindex-python"
+    )
+
+    # Test with SearchIndexClient
+    index_client = mock_client_with_user_agent("index")
+    vector_store = create_mock_vector_store(
+        index_client,
+        index_name="test-index",
+        index_management=IndexManagement.NO_VALIDATION,
+    )
+
+    # Verify user agent was added with the correct base agent string
+    index_client._client._config.user_agent_policy.add_user_agent.assert_called_with(
+        "llamaindex-python"
+    )
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
 def test_azureaisearch_add_two_batches() -> None:
-    search_client = MagicMock(spec=SearchClient)
+    search_client = mock_client_with_user_agent("search")
 
     with patch("azure.search.documents.IndexDocumentsBatch") as MockIndexDocumentsBatch:
         index_documents_batch_instance = MockIndexDocumentsBatch.return_value
@@ -74,7 +121,7 @@ def test_azureaisearch_add_two_batches() -> None:
 
         assert ids is not None
         assert len(ids) == 11
-        assert call_count == 11  # Adjust this value based on your logic
+        assert call_count == 11
         assert search_client.index_documents.call_count == 1
 
 
@@ -82,7 +129,7 @@ def test_azureaisearch_add_two_batches() -> None:
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
 def test_azureaisearch_add_one_batch() -> None:
-    search_client = MagicMock(spec=SearchClient)
+    search_client = mock_client_with_user_agent("search")
 
     with patch("azure.search.documents.IndexDocumentsBatch") as MockIndexDocumentsBatch:
         index_documents_batch_instance = MockIndexDocumentsBatch.return_value
@@ -95,7 +142,7 @@ def test_azureaisearch_add_one_batch() -> None:
 
         assert ids is not None
         assert len(ids) == 11
-        assert call_count == 11  # Adjust this value based on your logic
+        assert call_count == 11
         assert search_client.index_documents.call_count == 1
 
 
@@ -103,7 +150,7 @@ def test_azureaisearch_add_one_batch() -> None:
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
 def test_invalid_index_management_for_searchclient() -> None:
-    search_client = MagicMock(spec=SearchClient)
+    search_client = mock_client_with_user_agent("search")
 
     # No error
     create_mock_vector_store(
@@ -111,7 +158,6 @@ def test_invalid_index_management_for_searchclient() -> None:
     )
 
     # Cannot supply index name
-    # ruff: noqa: E501
     with pytest.raises(
         ValueError,
         match="index_name cannot be supplied if search_or_index_client is of type azure.search.documents.SearchClient",
@@ -130,7 +176,7 @@ def test_invalid_index_management_for_searchclient() -> None:
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
 def test_invalid_index_management_for_searchindexclient() -> None:
-    search_client = MagicMock(spec=SearchIndexClient)
+    search_client = mock_client_with_user_agent("index")
 
     # Index name must be supplied
     with pytest.raises(
@@ -153,7 +199,7 @@ def test_invalid_index_management_for_searchindexclient() -> None:
     not azureaisearch_installed, reason="azure-search-documents package not installed"
 )
 def test_azureaisearch_query() -> None:
-    search_client = MagicMock(spec=SearchClient)
+    search_client = mock_client_with_user_agent("search")
 
     # Mock the search method of the search client
     mock_search_results = [
@@ -199,6 +245,7 @@ def test_azureaisearch_query() -> None:
         top=2,
         select=["id", "content", "metadata", "doc_id"],
         filter=None,
+        semantic_configuration_name=None,
     )
 
     # Assert the result structure
@@ -215,3 +262,70 @@ def test_azureaisearch_query() -> None:
     # Assert the metadata
     assert result.nodes[0].metadata == {"key": "value1"}
     assert result.nodes[1].metadata == {"key": "value2"}
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
+def test_azureaisearch_semantic_query() -> None:
+    search_client = mock_client_with_user_agent("search")
+
+    # Mock the search method of the search client
+    mock_search_results = [
+        {
+            "id": "test_id_1",
+            "chunk": "test chunk 1",
+            "content": "test chunk 1",
+            "metadata": json.dumps({"key": "value1"}),
+            "doc_id": "doc1",
+            "@search.score": 0.9,
+            "@search.reranker_score": 0.7,
+        },
+        {
+            "id": "test_id_2",
+            "chunk": "test chunk 2",
+            "content": "test chunk 2",
+            "metadata": json.dumps({"key": "value2"}),
+            "doc_id": "doc2",
+            "@search.score": 0.8,
+            "@search.reranker_score": 0.7,
+        },
+    ]
+    search_client.search.return_value = mock_search_results
+
+    vector_store = create_mock_vector_store(search_client)
+
+    # Create a sample query
+    query = VectorStoreQuery(
+        query_str="test query",
+        query_embedding=[0.1, 0.2],
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.SEMANTIC_HYBRID,
+    )
+
+    # Execute the query
+    result = vector_store.query(query)
+
+    # Get the actual call arguments
+    call_args = search_client.search.call_args[1]
+
+    # Assert basic parameters
+    assert call_args["search_text"] == "test query"
+    assert call_args["top"] == 2
+    assert call_args["select"] == ["id", "content", "metadata", "doc_id"]
+    assert call_args["filter"] is None
+    assert call_args["query_type"] == "semantic"
+    assert call_args["semantic_configuration_name"] == "default"
+
+    # Assert vector query parameters
+    vector_queries = call_args["vector_queries"]
+    assert len(vector_queries) == 1
+    vector_query = vector_queries[0]
+    assert vector_query.vector == [0.1, 0.2]
+    assert vector_query.k_nearest_neighbors == 50
+    assert vector_query.fields == "embedding"
+
+    # Assert the result structure
+    assert len(result.nodes) == 2
+    assert len(result.ids) == 2
+    assert len(result.similarities) == 2

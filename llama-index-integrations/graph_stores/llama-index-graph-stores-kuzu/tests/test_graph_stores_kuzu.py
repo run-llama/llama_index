@@ -1,10 +1,7 @@
-from unittest.mock import MagicMock, patch
-
 from llama_index.core.graph_stores.types import GraphStore
 from llama_index.graph_stores.kuzu import KuzuGraphStore
 
 
-@patch("llama_index.graph_stores.kuzu.KuzuGraphStore")
-def test_kuzu_graph_store(MockKuzuGraphStore: MagicMock):
-    instance: KuzuGraphStore = MockKuzuGraphStore.return_value()
-    assert isinstance(instance, GraphStore)
+def test_kuzu_graph_store():
+    names_of_bases = [b.__name__ for b in KuzuGraphStore.__bases__]
+    assert GraphStore.__name__ in names_of_bases

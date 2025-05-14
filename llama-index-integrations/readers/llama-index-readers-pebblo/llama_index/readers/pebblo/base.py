@@ -7,8 +7,7 @@ from http import HTTPStatus
 from typing import Any, Dict, List
 
 import requests
-from llama_index.core import Document
-
+from llama_index.core.schema import Document, MetadataMode
 from llama_index.core.readers.base import BaseReader
 
 from llama_index.readers.pebblo.utility import (
@@ -25,7 +24,8 @@ logger = logging.getLogger(__name__)
 
 
 class PebbloSafeReader(BaseReader):
-    """Pebblo Safe Loader class is a wrapper around document loaders enabling the data
+    """
+    Pebblo Safe Loader class is a wrapper around document loaders enabling the data
     to be scrutinized.
     """
 
@@ -55,10 +55,12 @@ class PebbloSafeReader(BaseReader):
         self._send_discover()
 
     def load_data(self, **kwargs) -> List[Document]:
-        """Load Documents.
+        """
+        Load Documents.
 
         Returns:
             list: Documents fetched from load method of the wrapped `reader`.
+
         """
         self.docs = self.reader.load_data(**kwargs)
         self._send_reader_doc(loading_end=True, **kwargs)
@@ -88,25 +90,27 @@ class PebbloSafeReader(BaseReader):
         }
 
     def _send_reader_doc(self, loading_end: bool = False, **kwargs) -> None:
-        """Send documents fetched from reader to pebblo-server. Internal method.
+        """
+        Send documents fetched from reader to pebblo-server. Internal method.
 
         Args:
             loading_end (bool, optional): Flag indicating the halt of data
                                         loading by reader. Defaults to False.
+
         """
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
-        doc_content = [doc.to_langchain_format().dict() for doc in self.docs]
+
         docs = []
         self._set_reader_details(**kwargs)
-        for doc in doc_content:
-            page_content = str(doc.get("page_content"))
+        for doc in self.docs:
+            page_content = str(doc.get_content(metadata_mode=MetadataMode.NONE))
             page_content_size = self.calculate_content_size(page_content)
             self.source_aggr_size += page_content_size
             docs.append(
                 {
                     "doc": page_content,
                     "source_path": self.source_path,
-                    "last_modified": doc.get("metadata", {}).get("last_modified", None),
+                    "last_modified": doc.metadata.get("last_modified", None),
                     "file_owner": self.source_owner,
                     **(
                         {"source_path_size": self.source_path_size}
@@ -155,7 +159,8 @@ class PebbloSafeReader(BaseReader):
 
     @staticmethod
     def calculate_content_size(page_content: str) -> int:
-        """Calculate the content size in bytes:
+        """
+        Calculate the content size in bytes:
         - Encode the string to bytes using a specific encoding (e.g., UTF-8)
         - Get the length of the encoded bytes.
 
@@ -164,6 +169,7 @@ class PebbloSafeReader(BaseReader):
 
         Returns:
             int: Size of string in bytes.
+
         """
         # Encode the content to bytes using UTF-8
         encoded_content = page_content.encode("utf-8")
@@ -198,10 +204,12 @@ class PebbloSafeReader(BaseReader):
             logger.warning("An Exception caught in _send_discover.")
 
     def _get_app_details(self) -> App:
-        """Fetch app details. Internal method.
+        """
+        Fetch app details. Internal method.
 
         Returns:
             App: App details.
+
         """
         framework, runtime = get_runtime()
         return App(
@@ -216,13 +224,15 @@ class PebbloSafeReader(BaseReader):
 
     @staticmethod
     def get_file_owner_from_path(file_path: str) -> str:
-        """Fetch owner of local file path.
+        """
+        Fetch owner of local file path.
 
         Args:
             file_path (str): Local file path.
 
         Returns:
             str: Name of owner.
+
         """
         try:
             import pwd
@@ -234,13 +244,15 @@ class PebbloSafeReader(BaseReader):
         return file_owner_name
 
     def get_source_size(self, source_path: str) -> int:
-        """Fetch size of source path. Source can be a directory or a file.
+        """
+        Fetch size of source path. Source can be a directory or a file.
 
         Args:
             source_path (str): Local path of data source.
 
         Returns:
             int: Source size in bytes.
+
         """
         if not source_path:
             return 0

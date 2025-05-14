@@ -1,12 +1,11 @@
 import asyncio
 
 import pytest
-
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.decorators import step
+from llama_index.core.workflow.errors import WorkflowRuntimeError, WorkflowTimeoutError
 from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.core.workflow.workflow import Workflow
-from llama_index.core.workflow.errors import WorkflowRuntimeError
 
 from .conftest import OneTestEvent
 
@@ -20,12 +19,12 @@ class StreamingWorkflow(Workflow):
                 yield word
 
         async for w in stream_messages():
-            ctx.session.write_event_to_stream(Event(msg=w))
+            ctx.write_event_to_stream(Event(msg=w))
 
         return StopEvent(result=None)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_e2e():
     wf = StreamingWorkflow()
     r = wf.run()
@@ -37,7 +36,7 @@ async def test_e2e():
     await r
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_too_many_runs():
     wf = StreamingWorkflow()
     r = asyncio.gather(wf.run(), wf.run())
@@ -50,7 +49,7 @@ async def test_too_many_runs():
     await r
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_task_raised():
     class DummyWorkflow(Workflow):
         @step
@@ -67,11 +66,35 @@ async def test_task_raised():
             assert ev.test_param == "foo"
 
     # Make sure the await actually caught the exception
-    with pytest.raises(ValueError, match="The step raised an error!"):
+    with pytest.raises(
+        WorkflowRuntimeError, match="Error in step 'step': The step raised an error!"
+    ):
         await r
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
+async def test_task_timeout():
+    class DummyWorkflow(Workflow):
+        @step
+        async def step(self, ctx: Context, ev: StartEvent) -> StopEvent:
+            ctx.write_event_to_stream(OneTestEvent(test_param="foo"))
+            await asyncio.sleep(2)
+            return StopEvent()
+
+    wf = DummyWorkflow(timeout=1)
+    r = wf.run()
+
+    # Make sure we don't block indefinitely here because the step raised
+    async for ev in r.stream_events():
+        if not isinstance(ev, StopEvent):
+            assert ev.test_param == "foo"
+
+    # Make sure the await actually caught the exception
+    with pytest.raises(WorkflowTimeoutError, match="Operation timed out"):
+        await r
+
+
+@pytest.mark.asyncio
 async def test_multiple_sequential_streams():
     wf = StreamingWorkflow()
     r = wf.run()
@@ -88,7 +111,7 @@ async def test_multiple_sequential_streams():
     await r
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_multiple_ongoing_streams():
     wf = StreamingWorkflow()
     stream_1 = wf.run()
@@ -102,8 +125,10 @@ async def test_multiple_ongoing_streams():
         if not isinstance(ev, StopEvent):
             assert "msg" in ev
 
+    await asyncio.gather(stream_1, stream_2)
 
-@pytest.mark.asyncio()
+
+@pytest.mark.asyncio
 async def test_resume_streams():
     class CounterWorkflow(Workflow):
         @step
@@ -120,10 +145,12 @@ async def test_resume_streams():
     async for _ in handler_1.stream_events():
         pass
     await handler_1
+    assert handler_1.ctx
 
     handler_2 = wf.run(ctx=handler_1.ctx)
     async for _ in handler_2.stream_events():
         pass
     await handler_2
 
+    assert handler_2.ctx
     assert await handler_2.ctx.get("cur_count") == 2

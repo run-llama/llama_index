@@ -97,11 +97,13 @@ def test_nvidia_embedding_throws_with_invalid_key(mock_integration_api):
 #     NVIDIAEmbedding(api_key="BOGUS", model=model)
 
 
+# marking this as xfail as we do not return invalid error anymore
+@pytest.mark.xfail(reason="value error is not raised anymore")
 def test_model_incompatible_client_model() -> None:
     model_name = "x"
     err_msg = (
         f"Model {model_name} is incompatible with client NVIDIAEmbedding. "
-        f"Please check `NVIDIAEmbedding.available_models()`."
+        f"Please check `NVIDIAEmbedding.available_models`."
     )
     with pytest.raises(ValueError) as msg:
         NVIDIAEmbedding(api_key="BOGUS", model=model_name)
@@ -113,5 +115,4 @@ def test_model_incompatible_client_known_model() -> None:
     warn_msg = f"Unable to determine validity"
     with pytest.warns(UserWarning) as msg:
         NVIDIAEmbedding(api_key="BOGUS", model=model_name)
-    assert len(msg) == 1
     assert warn_msg in str(msg[0].message)

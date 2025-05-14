@@ -1,4 +1,5 @@
-"""Cassandra / Astra DB Vector store index.
+"""
+Cassandra / Astra DB Vector store index.
 
 An index based on a DB table with vector search capabilities,
 powered by the cassIO library
@@ -90,6 +91,7 @@ class CassandraVectorStore(BasePydanticVectorStore):
             table="cass_v_table", embedding_dimension=1536
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -139,7 +141,8 @@ class CassandraVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of node with embeddings
@@ -237,6 +240,7 @@ class CassandraVectorStore(BasePydanticVectorStore):
                 for prefetch pool size. Defaults to 4.0
             mmr_prefetch_k (Optional[int]): prefetch pool size. This cannot be
                 passed together with mmr_prefetch_factor
+
         """
         _available_query_modes = [
             VectorStoreQueryMode.DEFAULT,

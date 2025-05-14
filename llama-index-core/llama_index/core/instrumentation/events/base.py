@@ -13,7 +13,7 @@ class BaseEvent(BaseModel):
     )
     timestamp: datetime = Field(default_factory=lambda: datetime.now())
     id_: str = Field(default_factory=lambda: str(uuid4()))
-    span_id: Optional[str] = Field(default_factory=active_span_id.get)
+    span_id: Optional[str] = Field(default_factory=active_span_id.get)  # type: ignore
     tags: Dict[str, Any] = Field(default={})
 
     @classmethod

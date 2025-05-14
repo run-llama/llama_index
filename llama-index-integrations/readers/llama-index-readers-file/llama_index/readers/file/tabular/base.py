@@ -1,4 +1,5 @@
-"""Tabular parser.
+"""
+Tabular parser.
 
 Contains parsers for tabular data files.
 
@@ -15,7 +16,8 @@ from llama_index.core.schema import Document
 
 
 class CSVReader(BaseReader):
-    """CSV parser.
+    """
+    CSV parser.
 
     Args:
         concat_rows (bool): whether to concatenate all rows into one document.
@@ -32,7 +34,8 @@ class CSVReader(BaseReader):
     def load_data(
         self, file: Path, extra_info: Optional[Dict] = None
     ) -> List[Document]:
-        """Parse file.
+        """
+        Parse file.
 
         Returns:
             Union[str, List[str]]: a string or a List of strings.
@@ -59,7 +62,8 @@ class CSVReader(BaseReader):
 
 
 class PandasCSVReader(BaseReader):
-    r"""Pandas-based CSV parser.
+    r"""
+    Pandas-based CSV parser.
 
     Parses CSVs using the separator detection from Pandas `read_csv`function.
     If special parameters are required, use the `pandas_config` dict.
@@ -91,7 +95,7 @@ class PandasCSVReader(BaseReader):
         col_joiner: str = ", ",
         row_joiner: str = "\n",
         pandas_config: dict = {},
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Init params."""
         super().__init__(*args, **kwargs)
@@ -130,22 +134,25 @@ class PandasCSVReader(BaseReader):
 
 
 class PandasExcelReader(BaseReader):
-    r"""Pandas-based Excel parser.
+    """
+    Custom Excel parser that includes header names in each row.
 
-    Parses Excel files using the Pandas `read_excel`function.
-    If special parameters are required, use the `pandas_config` dict.
+    Parses Excel files using Pandas' `read_excel` function, but formats
+    each row to include the header name, for example: "name: joao, position: analyst".
+    The first row (header) is not included in the generated documents.
 
     Args:
-        concat_rows (bool): whether to concatenate all rows into one document.
-            If set to False, a Document will be created for each row.
-            True by default.
-
-        sheet_name (str | int | None): Defaults to None, for all sheets, otherwise pass a str or int to specify the sheet to read.
-
+        concat_rows (bool): Determines whether to concatenate all rows into one document.
+            If set to False, one Document is created for each row.
+            Defaults to True.
+        sheet_name (str | int | None): Defaults to None, meaning all sheets.
+            Alternatively, pass a string or an integer to specify the sheet to be read.
+        field_separator (str): Character or string to separate each field. Default: ", ".
+        key_value_separator (str): Character or string to separate the key from the value. Default: ": ".
         pandas_config (dict): Options for the `pandas.read_excel` function call.
             Refer to https://pandas.pydata.org/docs/reference/api/pandas.read_excel.html
-            for more information.
-            Set to empty dict by default.
+            for more details.
+            Defaults to an empty dictionary.
 
     """
 
@@ -154,13 +161,17 @@ class PandasExcelReader(BaseReader):
         *args: Any,
         concat_rows: bool = True,
         sheet_name=None,
+        field_separator: str = ", ",
+        key_value_separator: str = ": ",
         pandas_config: dict = {},
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
-        """Init params."""
+        """Initializes the parameters."""
         super().__init__(*args, **kwargs)
         self._concat_rows = concat_rows
         self._sheet_name = sheet_name
+        self._field_separator = field_separator
+        self._key_value_separator = key_value_separator
         self._pandas_config = pandas_config
 
     def load_data(
@@ -169,7 +180,7 @@ class PandasExcelReader(BaseReader):
         extra_info: Optional[Dict] = None,
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
-        """Parse file."""
+        """Parses the file."""
         openpyxl_spec = importlib.util.find_spec("openpyxl")
         if openpyxl_spec is not None:
             pass
@@ -178,7 +189,7 @@ class PandasExcelReader(BaseReader):
                 "Please install openpyxl to read Excel files. You can install it with 'pip install openpyxl'"
             )
 
-        # sheet_name of None is all sheets, otherwise indexing starts at 0
+        # A sheet_name of None means all sheets; otherwise, indexing starts at 0
         if fs:
             with fs.open(file) as f:
                 dfs = pd.read_excel(f, self._sheet_name, **self._pandas_config)
@@ -187,14 +198,26 @@ class PandasExcelReader(BaseReader):
 
         documents = []
 
-        # handle the case where only a single DataFrame is returned
+        # Handle the case where only a single DataFrame is returned
         if isinstance(dfs, pd.DataFrame):
             df = dfs.fillna("")
+            # Get the headers/column names
+            headers = df.columns.tolist()
 
-            # Convert DataFrame to list of rows
-            text_list = (
-                df.astype(str).apply(lambda row: " ".join(row.values), axis=1).tolist()
-            )
+            # Convert the DataFrame into a list of rows formatted with header names
+            text_list = []
+
+            # Start from index 0 to include all data rows
+            # The header is already in 'headers', not in the data rows
+            for _, row in df.iterrows():
+                # Format each row as "header1: value1, header2: value2, ..."
+                formatted_row = self._field_separator.join(
+                    [
+                        f"{header}{self._key_value_separator}{row[header]!s}"
+                        for header in headers
+                    ]
+                )
+                text_list.append(formatted_row)
 
             if self._concat_rows:
                 documents.append(
@@ -208,13 +231,20 @@ class PandasExcelReader(BaseReader):
                     ]
                 )
         else:
+            # Handle multiple sheets
             for df in dfs.values():
                 df = df.fillna("")
+                headers = df.columns.tolist()
 
-                # Convert DataFrame to list of rows
-                text_list = (
-                    df.astype(str).apply(lambda row: " ".join(row), axis=1).tolist()
-                )
+                text_list = []
+                for _, row in df.iterrows():
+                    formatted_row = self._field_separator.join(
+                        [
+                            f"{header}{self._key_value_separator}{row[header]!s}"
+                            for header in headers
+                        ]
+                    )
+                    text_list.append(formatted_row)
 
                 if self._concat_rows:
                     documents.append(

@@ -1,10 +1,9 @@
 import pytest
-
+from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import Event, StartEvent, StopEvent
-from llama_index.core.workflow.workflow import Workflow
-from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.service import ServiceManager, ServiceNotFoundError
+from llama_index.core.workflow.workflow import Workflow
 
 
 class ServiceWorkflow(Workflow):
@@ -49,7 +48,7 @@ class DummyWorkflow(Workflow):
         return StopEvent(ev.num * 2)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_e2e():
     wf = DummyWorkflow()
     # We are responsible for passing the ServiceWorkflow instances to the dummy workflow
@@ -59,7 +58,7 @@ async def test_e2e():
     assert res == 2674
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_default_value_for_service():
     wf = DummyWorkflow()
     # We don't add any workflow to leverage the default value defined by the user
@@ -67,17 +66,15 @@ async def test_default_value_for_service():
     assert res == 84
 
 
-def test_service_manager_add():
+def test_service_manager_add(workflow):
     s = ServiceManager()
-    w = Workflow()
-    s.add("test_id", w)
-    assert s._services["test_id"] == w
+    s.add("test_id", workflow)
+    assert s._services["test_id"] == workflow
 
 
-def test_service_manager_get():
+def test_service_manager_get(workflow):
     s = ServiceManager()
-    w = Workflow()
-    s._services["test_id"] = w
-    assert s.get("test_id") == w
+    s._services["test_id"] = workflow
+    assert s.get("test_id") == workflow
     with pytest.raises(ServiceNotFoundError):
         s.get("not_found")

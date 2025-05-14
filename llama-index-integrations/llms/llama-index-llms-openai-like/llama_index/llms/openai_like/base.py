@@ -22,18 +22,56 @@ from transformers import AutoTokenizer
 
 
 class OpenAILike(OpenAI):
-    """OpenaAILike LLM.
+    """
+    OpenaAILike LLM.
 
     OpenAILike is a thin wrapper around the OpenAI model that makes it compatible with
     3rd party tools that provide an openai-compatible api.
 
-    Currently, llama_index prevents using custom models with their OpenAI class
-    because they need to be able to infer some metadata from the model name.
-
-    NOTE: You still need to set the OPENAI_BASE_API and OPENAI_API_KEY environment
-    variables or the api_key and api_base constructor arguments.
-    OPENAI_API_KEY/api_key can normally be set to anything in this case,
-    but will depend on the tool you're using.
+    Args:
+        model (str):
+            The model to use for the api.
+        api_base (str):
+            The base url to use for the api.
+            Defaults to "https://api.openai.com/v1".
+        is_chat_model (bool):
+            Whether the model uses the chat or completion endpoint.
+            Defaults to False.
+        is_function_calling_model (bool):
+            Whether the model supports OpenAI function calling/tools over the API.
+            Defaults to False.
+        api_key (str):
+            The api key to use for the api.
+            Set this to some random string if your API does not require an api key.
+        context_window (int):
+            The context window to use for the api. Set this to your model's context window for the best experience.
+            Defaults to 3900.
+        max_tokens (int):
+            The max number of tokens to generate.
+            Defaults to None.
+        temperature (float):
+            The temperature to use for the api.
+            Default is 0.1.
+        additional_kwargs (dict):
+            Specify additional parameters to the request body.
+        max_retries (int):
+            How many times to retry the API call if it fails.
+            Defaults to 3.
+        timeout (float):
+            How long to wait, in seconds, for an API call before failing.
+            Defaults to 60.0.
+        reuse_client (bool):
+            Reuse the OpenAI client between requests.
+            Defaults to True.
+        default_headers (dict):
+            Override the default headers for API requests.
+            Defaults to None.
+        http_client (httpx.Client):
+            Pass in your own httpx.Client instance.
+            Defaults to None.
+        async_http_client (httpx.AsyncClient):
+            Pass in your own httpx.AsyncClient instance.
+            Defaults to None.
 
     Examples:
         `pip install llama-index-llms-openai-like`
@@ -41,11 +79,19 @@ class OpenAILike(OpenAI):
         ```python
         from llama_index.llms.openai_like import OpenAILike
 
-        llm = OpenAILike(model="my model", api_base="https://hostname.com/v1", api_key="fake")
+        llm = OpenAILike(
+            model="my model",
+            api_base="https://hostname.com/v1",
+            api_key="fake",
+            context_window=128000,
+            is_chat_model=True,
+            is_function_calling_model=False,
+        )
 
         response = llm.complete("Hello World!")
         print(str(response))
         ```
+
     """
 
     context_window: int = Field(

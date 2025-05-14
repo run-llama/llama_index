@@ -31,7 +31,10 @@ def md_to_df(md_str: str) -> Any:
         return None
 
     # Use pandas to read the CSV string into a DataFrame
-    return pd.read_csv(StringIO(md_str))
+    try:
+        return pd.read_csv(StringIO(md_str))
+    except pd.errors.ParserError:
+        return None
 
 
 def html_to_df(html_str: str) -> Any:

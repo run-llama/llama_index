@@ -159,7 +159,8 @@ class ReActAgentWorker(BaseAgentWorker):
         ] = None,
         **kwargs: Any,
     ) -> "ReActAgentWorker":
-        """Convenience constructor method from set of BaseTools (Optional).
+        """
+        Convenience constructor method from set of BaseTools (Optional).
 
         NOTE: kwargs should have been exhausted by this point. In other words
         the various upstream components such as BaseSynthesizer (response synthesizer)
@@ -168,6 +169,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         Returns:
             ReActAgentWorker
+
         """
         llm = llm or Settings.llm
         if callback_manager is not None:
@@ -433,7 +435,7 @@ class ReActAgentWorker(BaseAgentWorker):
         """Get response from reasoning steps."""
         if len(current_reasoning) == 0:
             raise ValueError("No reasoning steps were taken.")
-        elif len(current_reasoning) == self._max_iterations:
+        elif len(current_reasoning) >= self._max_iterations:
             raise ValueError("Reached max iterations.")
 
         if isinstance(current_reasoning[-1], ResponseReasoningStep):
@@ -475,7 +477,8 @@ class ReActAgentWorker(BaseAgentWorker):
     def _infer_stream_chunk_is_final(
         self, chunk: ChatResponse, missed_chunks_storage: list
     ) -> bool:
-        """Infers if a chunk from a live stream is the start of the final
+        """
+        Infers if a chunk from a live stream is the start of the final
         reasoning step. (i.e., and should eventually become
         ResponseReasoningStep — not part of this function's logic tho.).
 
@@ -485,8 +488,11 @@ class ReActAgentWorker(BaseAgentWorker):
 
         Returns:
             bool: Boolean on whether the chunk is the start of the final response
+
         """
-        latest_content = chunk.message.content
+        latest_content = (
+            None if chunk.message.content is None else chunk.message.content.strip()
+        )
         if latest_content:
             # doesn't follow thought-action format
             # keep first chunks
@@ -494,7 +500,7 @@ class ReActAgentWorker(BaseAgentWorker):
                 missed_chunks_storage.append(chunk)
             elif not latest_content.startswith("Thought"):
                 return True
-            elif "Answer: " in latest_content:
+            elif "Answer:" in latest_content:
                 missed_chunks_storage.clear()
                 return True
         return False
@@ -504,7 +510,8 @@ class ReActAgentWorker(BaseAgentWorker):
         chunks: List[ChatResponse],
         chat_stream: Generator[ChatResponse, None, None],
     ) -> Generator[ChatResponse, None, None]:
-        """Helper method for adding back initial chunk stream of final response
+        """
+        Helper method for adding back initial chunk stream of final response
         back to the rest of the chat_stream.
 
         Args:
@@ -513,6 +520,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         Return:
             Generator[ChatResponse, None, None]: the updated chat_stream
+
         """
 
         def gen() -> Generator[ChatResponse, None, None]:
@@ -526,7 +534,8 @@ class ReActAgentWorker(BaseAgentWorker):
         chunks: List[ChatResponse],
         chat_stream: AsyncGenerator[ChatResponse, None],
     ) -> AsyncGenerator[ChatResponse, None]:
-        """Helper method for adding back initial chunk stream of final response
+        """
+        Helper method for adding back initial chunk stream of final response
         back to the rest of the chat_stream.
 
         NOTE: this itself is not an async function.
@@ -537,6 +546,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         Return:
             AsyncGenerator[ChatResponse, None]: the updated async chat_stream
+
         """
         for chunk in chunks:
             yield chunk
@@ -682,11 +692,22 @@ class ReActAgentWorker(BaseAgentWorker):
                     )
                 )
         else:
-            # Get the response in a separate thread so we can yield the response
+            # remove "Answer: " from the response, and anything before it
+            start_idx = (latest_chunk.message.content or "").find("Answer:")
+            if start_idx != -1 and latest_chunk.message.content:
+                latest_chunk.message.content = latest_chunk.message.content[
+                    start_idx + len("Answer:") :
+                ].strip()
+
+                # set delta to the content, minus the "Answer: "
+                latest_chunk.delta = latest_chunk.message.content
+
+            # add back the chunks that were missed
             response_stream = self._add_back_chunk_to_stream(
                 chunks=[*missed_chunks_storage, latest_chunk], chat_stream=chat_stream
             )
 
+            # Get the response in a separate thread so we can yield the response
             agent_response_stream = StreamingAgentChatResponse(
                 chat_stream=response_stream,
                 sources=task.extra_state["sources"],
@@ -764,7 +785,17 @@ class ReActAgentWorker(BaseAgentWorker):
                     )
                 )
         else:
-            # Get the response in a separate thread so we can yield the response
+            # remove "Answer: " from the response, and anything before it
+            start_idx = (latest_chunk.message.content or "").find("Answer:")
+            if start_idx != -1 and latest_chunk.message.content:
+                latest_chunk.message.content = latest_chunk.message.content[
+                    start_idx + len("Answer:") :
+                ].strip()
+
+            # set delta to the content, minus the "Answer: "
+            latest_chunk.delta = latest_chunk.message.content
+
+            # add back the chunks that were missed
             response_stream = self._async_add_back_chunk_to_stream(
                 chunks=[*missed_chunks_storage, latest_chunk], chat_stream=chat_stream
             )
@@ -774,7 +805,7 @@ class ReActAgentWorker(BaseAgentWorker):
                 sources=task.extra_state["sources"],
             )
             # create task to write chat response to history
-            asyncio.create_task(
+            agent_response_stream.awrite_response_to_history_task = asyncio.create_task(
                 agent_response_stream.awrite_response_to_history(
                     task.extra_state["new_memory"],
                     on_stream_end_fn=partial(self.finalize_task, task),

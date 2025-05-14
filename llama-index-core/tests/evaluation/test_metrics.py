@@ -152,13 +152,14 @@ def test_ap(expected_ids, retrieved_ids, expected_result):
             ["id3", "id1", "id2", "id4"],
             "linear",
             (1 / log2(1 + 1) + 1 / log2(2 + 1) + 1 / log2(3 + 1))
-            / (1 / log2(1 + 1) + 1 / log2(2 + 1) + 1 / log2(3 + 1) + 1 / log2(4 + 1)),
+            / (1 / log2(1 + 1) + 1 / log2(2 + 1) + 1 / log2(3 + 1)),
         ),
         (
             ["id1", "id2", "id3", "id4"],
             ["id5", "id1"],
             "linear",
-            (1 / log2(2 + 1)) / (1 / log2(1 + 1) + 1 / log2(2 + 1)),
+            (1 / log2(2 + 1))
+            / (1 / log2(1 + 1) + 1 / log2(2 + 1) + 1 / log2(3 + 1) + 1 / log2(4 + 1)),
         ),
         (
             ["id1", "id2"],
@@ -170,29 +171,27 @@ def test_ap(expected_ids, retrieved_ids, expected_result):
             ["id1", "id2"],
             ["id2", "id1", "id7"],
             "linear",
-            (1 / log2(1 + 1) + 1 / log2(2 + 1))
-            / (1 / log2(1 + 1) + 1 / log2(2 + 1) + 1 / log2(3 + 1)),
+            (1 / log2(1 + 1) + 1 / log2(2 + 1)) / (1 / log2(1 + 1) + 1 / log2(2 + 1)),
         ),
         (
             ["id1", "id2", "id3"],
             ["id3", "id1", "id2", "id4"],
             "exponential",
             (1 / log2(1 + 1) + 1 / log2(2 + 1) + 1 / log2(3 + 1))
-            / (1 / log2(1 + 1) + 1 / log2(2 + 1) + 1 / log2(3 + 1) + 1 / log2(4 + 1)),
+            / (1 / log2(1 + 1) + 1 / log2(2 + 1) + 1 / log2(3 + 1)),
         ),
         (
             ["id1", "id2", "id3", "id4"],
             ["id1", "id2", "id5"],
             "exponential",
             (1 / log2(1 + 1) + 1 / log2(2 + 1))
-            / (1 / log2(1 + 1) + 1 / log2(2 + 1) + 1 / log2(3 + 1)),
+            / (1 / log2(1 + 1) + 1 / log2(2 + 1) + 1 / log2(3 + 1) + 1 / log2(4 + 1)),
         ),
         (
             ["id1", "id2"],
             ["id1", "id7", "id15", "id2"],
             "exponential",
-            (1 / log2(1 + 1) + 1 / log2(4 + 1))
-            / (1 / log2(1 + 1) + 1 / log2(2 + 1) + 1 / log2(3 + 1) + 1 / log2(4 + 1)),
+            (1 / log2(1 + 1) + 1 / log2(4 + 1)) / (1 / log2(1 + 1) + 1 / log2(2 + 1)),
         ),
     ],
 )

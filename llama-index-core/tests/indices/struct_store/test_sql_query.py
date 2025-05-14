@@ -2,16 +2,32 @@ from typing import Any, Dict, Tuple
 
 import pytest
 from llama_index.core.async_utils import asyncio_run
+from llama_index.core.indices.vector_store import VectorStoreIndex
 from llama_index.core.indices.struct_store.base import default_output_parser
 from llama_index.core.indices.struct_store.sql import SQLStructStoreIndex
 from llama_index.core.indices.struct_store.sql_query import (
     NLSQLTableQueryEngine,
     NLStructStoreQueryEngine,
     SQLStructStoreQueryEngine,
+    SQLTableRetrieverQueryEngine,
 )
-from llama_index.core.schema import Document
+from llama_index.core.objects import (
+    SQLTableNodeMapping,
+    ObjectIndex,
+    SQLTableSchema,
+)
+from llama_index.core.schema import Document, TextNode
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
-from sqlalchemy import Column, Integer, MetaData, String, Table, create_engine
+from sqlalchemy import (
+    Column,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    create_engine,
+    insert,
+    text,
+)
 from sqlalchemy.exc import OperationalError
 
 
@@ -226,4 +242,90 @@ def test_nl_query_engine_parser(
     assert (
         nl_query_engine._parse_response_to_sql(response)
         == "SELECT * FROM table WHERE name = ''O''Reilly'';"
+    )
+
+
+def test_sql_table_retriever_query_engine_with_rows_retriever(
+    patch_llm_predictor,
+    patch_token_text_splitter,
+    struct_kwargs: Tuple[Dict, Dict],
+) -> None:
+    """Test SQLTableRetrieverQueryEngine."""
+    index_kwargs, query_kwargs = struct_kwargs
+    sql_to_test = "SELECT user_id, foo FROM test_table"
+    engine = create_engine("sqlite:///:memory:")
+    metadata_obj = MetaData()
+    table_name = "test_table"
+    # NOTE: table is created by tying to metadata_obj
+    table_instance = Table(
+        table_name,
+        metadata_obj,
+        Column("user_id", Integer, primary_key=True),
+        Column("foo", String(16), nullable=False),
+    )
+    metadata_obj.create_all(engine)
+    sql_database = SQLDatabase(engine)
+    # Inserting fake values into table
+    statement = insert(table_instance).values(
+        [{"user_id": 2, "foo": "bar"}, {"user_id": 8, "foo": "hello"}]
+    )
+    with engine.connect() as conn:
+        conn.execute(statement)
+        conn.commit()
+
+    # Building rows retriever
+    with engine.connect() as conn:
+        cursor = conn.execute(text(f'SELECT * FROM "{table_name}"'))
+        result = cursor.fetchall()
+        row_tups = []
+        for row in result:
+            row_tups.append(tuple(row))
+    # index each row, put into vector store index
+    nodes = [TextNode(text=str(t)) for t in result]
+    index = VectorStoreIndex(nodes)
+    rows_retrievers = {table_name: index.as_retriever()}
+
+    # Building the table retriever
+    table_node_mapping = SQLTableNodeMapping(sql_database)
+    table_schema_objs = [
+        SQLTableSchema(
+            table_name=table_name,
+            context_str="This table contains information about user id and the foo attribute.",
+        )
+    ]  # add a SQLTableSchema for each table
+    obj_index = ObjectIndex.from_objects(
+        table_schema_objs,
+        table_node_mapping,
+        VectorStoreIndex,  # type: ignore
+    )
+    table_retriever = obj_index.as_retriever()
+
+    # query the index with natural language
+    nl_query_engine = SQLTableRetrieverQueryEngine(
+        sql_database, table_retriever, rows_retrievers
+    )
+    response = nl_query_engine.query("test_table:user_id,foo")
+    assert str(response) == "[(2, 'bar'), (8, 'hello')]"
+
+    nl_table_engine = SQLTableRetrieverQueryEngine(
+        sql_database, table_retriever, rows_retrievers, sql_only=True
+    )
+    response = nl_table_engine.query("test_table:user_id,foo")
+    assert str(response) == sql_to_test
+
+    # query with markdown return
+    nl_table_engine = SQLTableRetrieverQueryEngine(
+        sql_database,
+        table_retriever,
+        rows_retrievers,
+        synthesize_response=False,
+        markdown_response=True,
+    )
+    response = nl_table_engine.query("test_table:user_id,foo")
+    assert (
+        str(response)
+        == """| user_id | foo |
+|---|---|
+| 2 | bar |
+| 8 | hello |"""
     )

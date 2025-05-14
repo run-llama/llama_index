@@ -13,7 +13,8 @@ DEFAULT_MODEL = "meta-llama/Llama-2-7b-chat-hf"
 
 
 class EverlyAI(OpenAI):
-    """EverlyAI LLM.
+    """
+    EverlyAI LLM.
 
     Examples:
         `pip install llama-index-llms-everlyai`
@@ -25,6 +26,7 @@ class EverlyAI(OpenAI):
         response = llm.complete("Hello World!")
         print(response)
         ```
+
     """
 
     def __init__(

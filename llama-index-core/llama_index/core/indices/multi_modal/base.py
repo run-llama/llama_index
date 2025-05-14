@@ -1,4 +1,5 @@
-"""Multi Modal Vector Store Index.
+"""
+Multi Modal Vector Store Index.
 
 An index that is built on top of multiple vector stores for different modalities.
 
@@ -8,6 +9,7 @@ import logging
 from typing import Any, List, Optional, Sequence, cast
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.data_structs.data_structs import (
     IndexDict,
     MultiModelIndexDict,
@@ -25,7 +27,7 @@ from llama_index.core.indices.multi_modal.retriever import (
 )
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.llms.utils import LLMType
-from llama_index.core.multi_modal_llms import MultiModalLLM
+from llama_index.core.multi_modal_llms.base import MultiModalLLM
 from llama_index.core.query_engine.multi_modal import SimpleMultiModalQueryEngine
 from llama_index.core.schema import BaseNode, ImageNode, TextNode
 from llama_index.core.settings import Settings
@@ -40,13 +42,15 @@ logger = logging.getLogger(__name__)
 
 
 class MultiModalVectorStoreIndex(VectorStoreIndex):
-    """Multi-Modal Vector Store Index.
+    """
+    Multi-Modal Vector Store Index.
 
     Args:
         use_async (bool): Whether to use asynchronous calls. Defaults to False.
         show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
         store_nodes_override (bool): set to True to always store Node objects in index
             store and document store even if vector store keeps text. Defaults to False
+
     """
 
     image_namespace = "image"
@@ -75,7 +79,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
     ) -> None:
         """Initialize params."""
         image_embed_model = resolve_embed_model(
-            image_embed_model, callback_manager=kwargs.get("callback_manager", None)
+            image_embed_model, callback_manager=kwargs.get("callback_manager")
         )
         assert isinstance(image_embed_model, MultiModalEmbedding)
         self._image_embed_model = image_embed_model
@@ -140,11 +144,16 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         retriever = cast(MultiModalVectorIndexRetriever, self.as_retriever(**kwargs))
 
         llm = llm or Settings.llm
-        assert isinstance(llm, MultiModalLLM)
+        assert isinstance(llm, (BaseLLM, MultiModalLLM))
+        class_name = llm.class_name()
+        if "multi" not in class_name:
+            logger.warning(
+                f"Warning: {class_name} does not appear to be a multi-modal LLM. This may not work as expected."
+            )
 
         return SimpleMultiModalQueryEngine(
             retriever,
-            multi_modal_llm=llm,
+            multi_modal_llm=llm,  # type: ignore
             **kwargs,
         )
 
@@ -171,7 +180,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             image_embed_model=image_embed_model,
             embed_model=(
                 resolve_embed_model(
-                    embed_model, callback_manager=kwargs.get("callback_manager", None)
+                    embed_model, callback_manager=kwargs.get("callback_manager")
                 )
                 if embed_model
                 else Settings.embed_model
@@ -185,7 +194,8 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         show_progress: bool = False,
         is_image: bool = False,
     ) -> List[BaseNode]:
-        """Get tuples of id, node, and embedding.
+        """
+        Get tuples of id, node, and embedding.
 
         Allows us to store these nodes in a vector store.
         Embeddings are called in batches.
@@ -239,7 +249,8 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         show_progress: bool = False,
         is_image: bool = False,
     ) -> List[BaseNode]:
-        """Asynchronously get tuples of id, node, and embedding.
+        """
+        Asynchronously get tuples of id, node, and embedding.
 
         Allows us to store these nodes in a vector store.
         Embeddings are called in batches.

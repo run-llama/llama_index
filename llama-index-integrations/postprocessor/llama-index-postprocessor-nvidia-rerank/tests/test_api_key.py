@@ -1,23 +1,17 @@
 import os
 
 import pytest
-
+import respx
 from llama_index.postprocessor.nvidia_rerank import NVIDIARerank as Interface
 from llama_index.core.schema import NodeWithScore, Document
 
 from typing import Any
-from requests_mock import Mocker
 
 
 @pytest.fixture()
-def mock_local_models(requests_mock: Mocker) -> None:
-    requests_mock.get(
-        "https://test_url/v1/models",
-        json={
-            "data": [
-                {"id": "model1"},
-            ]
-        },
+def mock_local_models(respx_mock: respx.MockRouter) -> None:
+    respx_mock.get("https://test_url/v1/models").respond(
+        json={"data": [{"id": "model1"}]}
     )
 
 
@@ -54,7 +48,7 @@ def test_api_key_priority(masked_env_var: str) -> None:
         del os.environ["NVIDIA_API_KEY"]
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_bogus_api_key_error(masked_env_var: str) -> None:
     client = Interface(nvidia_api_key="BOGUS")
     with pytest.raises(Exception) as exc_info:
@@ -66,7 +60,7 @@ def test_bogus_api_key_error(masked_env_var: str) -> None:
     assert "401" in message
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 @pytest.mark.parametrize("param", ["nvidia_api_key", "api_key"])
 def test_api_key(model: str, mode: dict, param: str, masked_env_var: str) -> None:
     client = Interface(model=model, **{**mode, **{param: masked_env_var}})

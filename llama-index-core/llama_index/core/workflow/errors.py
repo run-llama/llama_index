@@ -16,3 +16,15 @@ class WorkflowDone(Exception):
 
 class WorkflowCancelledByUser(Exception):
     pass
+
+
+class WorkflowStepDoesNotExistError(Exception):
+    pass
+
+
+class WorkflowConfigurationError(Exception):
+    pass
+
+
+class ContextSerdeError(Exception):
+    pass

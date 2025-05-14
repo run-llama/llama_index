@@ -79,7 +79,7 @@ class CustomExtractor(BaseExtractor):
 
 `extractor.extract()` will automatically call `aextract()` under the hood, to provide both sync and async entrypoints.
 
-In a more advanced example, it can also make use of an `llm` to extract features from the node content and the existing metadata. Refer to the [source code of the provided metadata extractors](https://github.com/jerryjliu/llama_index/blob/main/llama_index/node_parser/extractors/metadata_extractors.py) for more details.
+In a more advanced example, it can also make use of an `llm` to extract features from the node content and the existing metadata. Refer to the [source code of the provided metadata extractors](https://github.com/run-llama/llama_index/blob/main/llama-index-core/llama_index/core/extractors/metadata_extractors.py) for more details.
 
 ## Modules
 

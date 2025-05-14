@@ -47,7 +47,8 @@ class OracleEmbeddings(BaseEmbedding):
 
     @staticmethod
     def load_onnx_model(conn: Connection, dir: str, onnx_file: str, model_name: str):
-        """Load an ONNX model to Oracle Database.
+        """
+        Load an ONNX model to Oracle Database.
 
         Args:
             conn: Oracle Connection,
@@ -56,6 +57,7 @@ class OracleEmbeddings(BaseEmbedding):
             model_name: Name of the model.
             Note: user needs to have create procedure,
                   create mining model, create any directory privilege.
+
         """
         try:
             if conn is None or dir is None or onnx_file is None or model_name is None:
@@ -124,13 +126,15 @@ class OracleEmbeddings(BaseEmbedding):
             raise
 
     def _get_embeddings(self, texts: List[str]) -> List[List[float]]:
-        """Compute doc embeddings using an OracleEmbeddings.
+        """
+        Compute doc embeddings using an OracleEmbeddings.
 
         Args:
             texts: The list of texts to embed.
 
         Returns:
             List of embeddings, one for each input text.
+
         """
         try:
             import oracledb
@@ -147,11 +151,11 @@ class OracleEmbeddings(BaseEmbedding):
         try:
             # returns strings or bytes instead of a locator
             oracledb.defaults.fetch_lobs = False
-            cursor = self.conn.cursor()
+            cursor = self._conn.cursor()
 
-            if self.proxy:
+            if self._proxy:
                 cursor.execute(
-                    "begin utl_http.set_proxy(:proxy); end;", proxy=self.proxy
+                    "begin utl_http.set_proxy(:proxy); end;", proxy=self._proxy
                 )
 
             chunks = []
@@ -159,14 +163,14 @@ class OracleEmbeddings(BaseEmbedding):
                 chunk = {"chunk_id": i, "chunk_data": text}
                 chunks.append(json.dumps(chunk))
 
-            vector_array_type = self.conn.gettype("SYS.VECTOR_ARRAY_T")
+            vector_array_type = self._conn.gettype("SYS.VECTOR_ARRAY_T")
             inputs = vector_array_type.newobject(chunks)
             cursor.execute(
                 "select t.* "
                 + "from dbms_vector_chain.utl_to_embeddings(:content, "
                 + "json(:params)) t",
                 content=inputs,
-                params=json.dumps(self.params),
+                params=json.dumps(self._params),
             )
 
             for row in cursor:

@@ -1,15 +1,15 @@
 import os
 from time import sleep
-import pytest
 from typing import List
 
+import pytest
 from llama_index.core.schema import Document, TextNode
 from llama_index.core.vector_stores.types import (
-    VectorStoreQuery,
+    FilterCondition,
+    FilterOperator,
     MetadataFilter,
     MetadataFilters,
-    FilterOperator,
-    FilterCondition,
+    VectorStoreQuery,
     VectorStoreQueryMode,
 )
 from llama_index.embeddings.openai import OpenAIEmbedding

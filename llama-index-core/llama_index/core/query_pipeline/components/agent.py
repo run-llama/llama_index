@@ -26,7 +26,8 @@ AnnotatedCallable = Annotated[
 
 
 def get_parameters(fn: Callable) -> Tuple[Set[str], Set[str]]:
-    """Get parameters from function.
+    """
+    Get parameters from function.
 
     Returns:
         Tuple[Set[str], Set[str]]: required and optional parameters
@@ -55,7 +56,8 @@ def default_agent_input_fn(task: Any, state: dict) -> dict:
 
 
 class AgentInputComponent(QueryComponent):
-    """Takes in agent inputs and transforms it into desired outputs.
+    """
+    Takes in agent inputs and transforms it into desired outputs.
 
     NOTE: this is now deprecated in favor of using `StatefulFnComponent`.
 
@@ -152,7 +154,8 @@ class AgentInputComponent(QueryComponent):
 
 
 class BaseAgentComponent(QueryComponent):
-    """Agent component.
+    """
+    Agent component.
 
     Abstract class used for type checking.
 
@@ -160,7 +163,8 @@ class BaseAgentComponent(QueryComponent):
 
 
 class AgentFnComponent(BaseAgentComponent):
-    """Function component for agents.
+    """
+    Function component for agents.
 
     Designed to let users easily modify state.
 
@@ -268,7 +272,8 @@ class AgentFnComponent(BaseAgentComponent):
 
 
 class CustomAgentComponent(BaseAgentComponent):
-    """Custom component for agents.
+    """
+    Custom component for agents.
 
     Designed to let users easily modify state.
 

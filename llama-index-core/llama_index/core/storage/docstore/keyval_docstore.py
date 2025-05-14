@@ -3,7 +3,7 @@
 import asyncio
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from llama_index.core.schema import BaseNode, TextNode
+from llama_index.core.schema import BaseNode, Document, TextNode
 from llama_index.core.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.core.storage.docstore.utils import doc_to_json, json_to_doc
 from llama_index.core.storage.kvstore.types import DEFAULT_BATCH_SIZE, BaseKVStore
@@ -22,7 +22,8 @@ DEFAULT_METADATA_COLLECTION_SUFFIX = "/metadata"
 
 
 class KVDocumentStore(BaseDocumentStore):
-    """Document (Node) store.
+    """
+    Document (Node) store.
 
     NOTE: at the moment, this store is primarily used to store Node objects.
     Each node will be assigned an ID.
@@ -79,7 +80,8 @@ class KVDocumentStore(BaseDocumentStore):
 
     @property
     def docs(self) -> Dict[str, BaseNode]:
-        """Get all documents.
+        """
+        Get all documents.
 
         Returns:
             Dict[str, BaseDocument]: documents
@@ -125,19 +127,16 @@ class KVDocumentStore(BaseDocumentStore):
     def _merge_ref_doc_kv_pairs(self, ref_doc_kv_pairs: dict) -> List[Tuple[str, dict]]:
         merged_ref_doc_kv_pairs: List[Tuple[str, dict]] = []
         for key, kv_pairs in ref_doc_kv_pairs.items():
-            for key, kv_pairs in ref_doc_kv_pairs.items():
-                merged_node_ids: List[str] = []
-                metadata: Dict[str, Any] = {}
-                for kv_pair in kv_pairs:
-                    nodes = kv_pair[1].get("node_ids", [])
-                    new_nodes = set(nodes).difference(set(merged_node_ids))
-                    merged_node_ids.extend(
-                        [node for node in nodes if node in new_nodes]
-                    )
-                    metadata.update(kv_pair[1].get("metadata", {}))
-                merged_ref_doc_kv_pairs.append(
-                    (key, {"node_ids": merged_node_ids, "metadata": metadata})
-                )
+            merged_node_ids: List[str] = []
+            metadata: Dict[str, Any] = {}
+            for kv_pair in kv_pairs:
+                nodes = kv_pair[1].get("node_ids", [])
+                new_nodes = set(nodes).difference(set(merged_node_ids))
+                merged_node_ids.extend([node for node in nodes if node in new_nodes])
+                metadata.update(kv_pair[1].get("metadata", {}))
+            merged_ref_doc_kv_pairs.append(
+                (key, {"node_ids": merged_node_ids, "metadata": metadata})
+            )
 
         return merged_ref_doc_kv_pairs
 
@@ -179,7 +178,7 @@ class KVDocumentStore(BaseDocumentStore):
                     "Set allow_update to True to overwrite."
                 )
             ref_doc_info = None
-            if isinstance(node, TextNode) and node.ref_doc_id is not None:
+            if isinstance(node, (TextNode, Document)) and node.ref_doc_id is not None:
                 ref_doc_info = self.get_ref_doc_info(node.ref_doc_id) or RefDocInfo()
 
             (
@@ -210,7 +209,8 @@ class KVDocumentStore(BaseDocumentStore):
         batch_size: Optional[int] = None,
         store_text: bool = True,
     ) -> None:
-        """Add a document to the store.
+        """
+        Add a document to the store.
 
         Args:
             docs (List[BaseDocument]): documents
@@ -312,7 +312,8 @@ class KVDocumentStore(BaseDocumentStore):
         batch_size: Optional[int] = None,
         store_text: bool = True,
     ) -> None:
-        """Add a document to the store.
+        """
+        Add a document to the store.
 
         Args:
             docs (List[BaseDocument]): documents
@@ -346,7 +347,8 @@ class KVDocumentStore(BaseDocumentStore):
         )
 
     def get_document(self, doc_id: str, raise_error: bool = True) -> Optional[BaseNode]:
-        """Get a document from the store.
+        """
+        Get a document from the store.
 
         Args:
             doc_id (str): document id
@@ -364,7 +366,8 @@ class KVDocumentStore(BaseDocumentStore):
     async def aget_document(
         self, doc_id: str, raise_error: bool = True
     ) -> Optional[BaseNode]:
-        """Get a document from the store.
+        """
+        Get a document from the store.
 
         Args:
             doc_id (str): document id

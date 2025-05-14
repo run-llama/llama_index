@@ -53,6 +53,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
     :param file_paths (List[str], optional): List of specific file paths to download. Will be used if the parameter is not provided when calling load_data().
     :param file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file extension to a BaseReader class that specifies how to convert that file to text.
                                                              See `SimpleDirectoryReader` for more details.
+    :param required_exts (Optional[List[str]]): List of required extensions. Default is None.
 
 
     For interactive authentication to work, a browser is used to authenticate, hence the registered application should have a redirect URI set to 'https://localhost'
@@ -67,9 +68,11 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
     file_ids: Optional[List[str]] = None
     folder_path: Optional[str] = None
     file_paths: Optional[List[str]] = None
+    required_exts: Optional[List[str]] = None
     file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
         default=None, exclude=True
     )
+    attach_permission_metadata: bool = False
 
     _is_interactive_auth = PrivateAttr(False)
     _authority = PrivateAttr()
@@ -85,6 +88,8 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         folder_path: Optional[str] = None,
         file_paths: Optional[List[str]] = None,
         file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
+        attach_permission_metadata: bool = False,
+        required_exts: Optional[List[str]] = None,
         **kwargs,
     ) -> None:
         super().__init__(
@@ -97,13 +102,16 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
             folder_path=folder_path,
             file_paths=file_paths,
             file_extractor=file_extractor,
+            attach_permission_metadata=attach_permission_metadata,
+            required_exts=required_exts,
             **kwargs,
         )
         self._is_interactive_auth = not client_secret
         self._authority = f"https://login.microsoftonline.com/{tenant_id}/"
 
     def _authenticate_with_msal(self) -> Any:
-        """Authenticate with MSAL.
+        """
+        Authenticate with MSAL.
 
         For interactive authentication to work, a browser is used to authenticate, hence the registered application should have a redirect URI set to 'localhost'
         for mobile and native applications.
@@ -151,14 +159,17 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         """
         Constructs the appropriate OneDrive API endpoint based on the provided parameters.
 
-        Parameters:
+        Parameters
+        ----------
             item_ref (str): The reference to the item; could be an item ID or a relative path.
             isRelativePath (bool): A boolean indicating whether the item_ref is a relative path.
             isFile (bool): A boolean indicating whether the target is a file.
             userprincipalname (str, optional): The user principal name; used if authentication is not interactive. Defaults to None.
 
-        Returns:
+        Returns
+        -------
             str: A string representing the constructed endpoint.
+
         """
         if not self._is_interactive_auth and not userprincipalname:
             raise Exception(
@@ -198,7 +209,8 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         """
         Retrieves items from a drive using Microsoft Graph API.
 
-        Parameters:
+        Parameters
+        ----------
         access_token (str): Access token for API calls.
         item_ref (Optional[str]): Specific item ID/path or root for root folder.
         max_retries (int): Max number of retries on rate limit or server errors.
@@ -208,8 +220,10 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         Returns:
         dict/None: JSON response or None after max retries.
 
-        Raises:
+        Raises
+        ------
         Exception: On non-retriable status code.
+
         """
         endpoint = self._construct_endpoint(
             item_ref, isRelativePath, isFile, userprincipalname
@@ -241,11 +255,13 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         """
         Downloads a file from OneDrive using the provided item's download URL.
 
-        Parameters:
+        Parameters
+        ----------
         - item (Dict[str, str]): Dictionary containing file metadata and download URL.
         - local_dir (str): Local directory where the file should be saved.
 
-        Returns:
+        Returns
+        -------
         - str: The file path of the download file
 
         """
@@ -263,15 +279,20 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
 
         return file_path
 
-    def _extract_metadata_for_file(self, item: Dict[str, Any]) -> Dict[str, str]:
+    def _extract_metadata_for_file(
+        self, item: Dict[str, Any], access_token: Optional[str] = None
+    ) -> Dict[str, str]:
         """
         Extracts metadata related to the file.
 
-        Parameters:
+        Parameters
+        ----------
         - item (Dict[str, str]): Dictionary containing file metadata.
 
-        Returns:
+        Returns
+        -------
         - Dict[str, str]: A dictionary containing the extracted metadata.
+
         """
         # Extract the required metadata for file.
         created_by = item.get("createdBy", {})
@@ -282,6 +303,14 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         if parent_dir and file_name:
             file_path = os.path.join(parent_dir, file_name)
             file_path = file_path.replace("/drive/root:", "")
+
+        permission = {}
+
+        if self.attach_permission_metadata:
+            permission = self._get_permissions_info(
+                item, self.userprincipalname, access_token
+            )
+
         return {
             "file_id": item.get("id"),
             "file_name": file_name,
@@ -295,6 +324,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
                 "displayName"
             ),
             "last_modified_datetime": item.get("lastModifiedDateTime"),
+            **permission,
         }
 
     def _check_approved_mimetype_and_download_file(
@@ -302,6 +332,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         item: Dict[str, Any],
         local_dir: Optional[str] = None,
         mime_types: Optional[List[str]] = None,
+        access_token: Optional[str] = None,
     ) -> _OneDriveResourcePayload:
         """
         Checks files based on MIME types and download the accepted files.
@@ -332,7 +363,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
                     item, local_dir
                 )  # Assuming this method is implemented
             resource_info = self._extract_metadata_for_file(
-                item
+                item, access_token
             )  # Assuming this method is implemented
         else:
             # Log a debug message for files that are ignored due to an invalid MIME type
@@ -357,7 +388,8 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         """
         Recursively download files from OneDrive, starting from the specified item_id or the root.
 
-        Parameters:
+        Parameters
+        ----------
         - access_token (str): Token for authorization.
         - local_dir (str, optional): Local directory to store downloaded files.
         - item_id (str, optional): ID of the specific item (folder/file) to start from. If None, starts from the root.
@@ -366,11 +398,14 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         - userprincipalname (str): The userprincipalname(normally organization provided email id) whose ondrive needs to be accessed. Mandatory for App authentication scenarios.
         - isRelativePath (bool): Value to indicate if to query file/folder using relative path
 
-        Returns:
+        Returns
+        -------
         - dict: Dictionary of file paths and their corresponding metadata.
 
-        Raises:
+        Raises
+        ------
         - Exception: If items can't be retrieved for the current item.
+
         """
         data = self._get_items_in_drive_with_maxretries(
             access_token,
@@ -397,7 +432,10 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
 
                 elif "file" in item:
                     payload = self._check_approved_mimetype_and_download_file(
-                        item, local_dir=local_dir, mime_types=mime_types
+                        item,
+                        local_dir=local_dir,
+                        mime_types=mime_types,
+                        access_token=access_token,
                     )
                     payloads.append(payload)
 
@@ -421,7 +459,8 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         """
         Download files from OneDrive based on specified folder or file IDs/Paths.
 
-        Parameters:
+        Parameters
+        ----------
         - temp_dir (str): The temporary directory where files will be downloaded.
         - folder_id (str, optional): The ID of the OneDrive folder to download. If provided, files within the folder are downloaded.
         - file_ids (List[str], optional): List of specific file IDs to download.
@@ -459,7 +498,10 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
                     isFile=True,
                 )
                 payload = self._check_approved_mimetype_and_download_file(
-                    item, local_dir=temp_dir, mime_types=mime_types
+                    item,
+                    local_dir=temp_dir,
+                    mime_types=mime_types,
+                    access_token=access_token,
                 )
                 payloads.append(payload)
 
@@ -489,7 +531,10 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
                     isRelativePath=True,
                 )
                 payload = self._check_approved_mimetype_and_download_file(
-                    item, local_dir=temp_dir, mime_types=mime_types
+                    item,
+                    local_dir=temp_dir,
+                    mime_types=mime_types,
+                    access_token=access_token,
                 )
                 payloads.append(payload)
 
@@ -517,13 +562,16 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         Load documents from a specified directory using the SimpleDirectoryReader
         and associate them with their respective metadata.
 
-        Parameters:
+        Parameters
+        ----------
         - payloads (List[_OneDriveResourcePayload]): List of payloads containing metadata and downloaded file paths.
         - directory (str): The directory from which to load the documents.
         - recursive (bool, optional): Whether to perform a recursive search through the directory. Defaults to True.
 
-        Returns:
+        Returns
+        -------
         - List[Document]: Loaded documents from the specified directory with associated metadata.
+
         """
         file_name_to_metadata = {
             payload.downloaded_file_path: payload.resource_info for payload in payloads
@@ -535,6 +583,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         simple_loader = SimpleDirectoryReader(
             directory,
             file_extractor=self.file_extractor,
+            required_exts=self.required_exts,
             file_metadata=get_metadata,
             recursive=recursive,
         )
@@ -588,7 +637,8 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
         recursive: bool = True,
         userprincipalname: Optional[str] = None,
     ) -> List[Document]:
-        """Load data from the folder id / file ids, f both are not provided download from the root.
+        """
+        Load data from the folder id / file ids, f both are not provided download from the root.
 
         Args:
             folder_id (str, optional): folder id of the folder in OneDrive.
@@ -602,6 +652,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
 
         Returns:
             List[Document]: A list of documents.
+
         """
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
@@ -623,6 +674,86 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
             logger.error(
                 f"An error occurred while loading the data: {e}", exc_info=True
             )
+
+    def get_permission_info(self, resource_id: str, *args: Any, **kwargs: Any) -> Dict:
+        payloads = self._get_downloaded_files_metadata(
+            file_paths=[resource_id], *args, **kwargs
+        )
+
+        item = next(
+            payload.resource_info
+            for payload in payloads
+            if payload.resource_info["file_path"] == resource_id
+        )
+
+        access_token = self._authenticate_with_msal()
+
+        return self._get_permissions_info(item, self.userprincipalname, access_token)
+
+    def _get_permissions_info(
+        self, item: Dict[str, Any], userprincipalname: str, access_token: str
+    ) -> Dict[str, Any]:
+        """
+        Extracts the permissions information for the file in OneDrive.
+
+        Args:
+            item (Dict[str, Any]): Dictionary containing file metadata.
+
+        Returns:
+            Dict[str, Any]: A dictionary containing the extracted permissions information.
+
+        """
+        item_id = item.get("id")
+
+        if self._is_interactive_auth:
+            permissions_info_endpoint = (
+                f"https://graph.microsoft.com/v1.0/me/drive/items/{item_id}/permissions"
+            )
+        else:
+            permissions_info_endpoint = f"https://graph.microsoft.com/v1.0/users/{userprincipalname}/drive/items/{item_id}/permissions"
+
+        headers = {"Authorization": f"Bearer {access_token}"}
+
+        response = requests.get(url=permissions_info_endpoint, headers=headers)
+        permissions = response.json()
+        identity_sets = []
+
+        for permission in permissions["value"]:
+            # user type permissions
+            granted_to = permission.get("grantedToV2", None)
+            if granted_to:
+                identity_sets.append(granted_to)
+
+            # link type permissions
+            granted_to_identities = permission.get("grantedToIdentitiesV2", [])
+            for identity in granted_to_identities:
+                identity_sets.append(identity)
+
+        # Extract the identity information from each identity set
+        # they can be 'application', 'device', 'user', 'group', 'siteUser' or 'siteGroup'
+        # 'siteUser' and 'siteGroup' are site-specific, 'group' is for Microsoft 365 groups
+        permissions_dict = {}
+
+        for identity_set in identity_sets:
+            for identity, identity_info in identity_set.items():
+                # For OneDrive, we don't need to consider siteUser and siteGroup
+                if identity in ["siteUser", "siteGroup"]:
+                    continue
+
+                id = identity_info.get("id")
+                display_name = identity_info.get("displayName")
+                ids_key = f"allowed_{identity}_ids"
+                display_names_key = f"allowed_{identity}_display_names"
+
+                if ids_key not in permissions_dict:
+                    permissions_dict[ids_key] = []
+                if display_names_key not in permissions_dict:
+                    permissions_dict[display_names_key] = []
+
+                permissions_dict[ids_key].append(id)
+                permissions_dict[display_names_key].append(display_name)
+
+        return permissions_dict
 
     def list_resources(
         self,
@@ -648,6 +779,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
 
         Returns:
             List[str]: A list of resources.
+
         """
         try:
             payloads = self._get_downloaded_files_metadata(

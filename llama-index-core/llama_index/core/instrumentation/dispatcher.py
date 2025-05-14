@@ -2,7 +2,7 @@ import asyncio
 from functools import partial
 from contextlib import contextmanager
 from contextvars import Context, ContextVar, Token, copy_context
-from typing import Any, Callable, Generator, List, Optional, Dict, Protocol
+from typing import Any, Callable, Generator, List, Optional, Dict, Protocol, TypeVar
 import inspect
 import logging
 import uuid
@@ -26,6 +26,7 @@ _logger = logging.getLogger(__name__)
 active_instrument_tags: ContextVar[Dict[str, Any]] = ContextVar(
     "instrument_tags", default={}
 )
+_R = TypeVar("_R")
 
 
 @contextmanager
@@ -44,7 +45,8 @@ class EventDispatcher(Protocol):
 
 
 class Dispatcher(BaseModel):
-    """Dispatcher class.
+    """
+    Dispatcher class.
 
     Responsible for dispatching BaseEvent (and its subclasses) as well as
     sending signals to enter/exit/drop a BaseSpan. It does so by sending
@@ -78,7 +80,7 @@ class Dispatcher(BaseModel):
         description="Whether to propagate the event to parent dispatchers and their handlers",
     )
     current_span_ids: Optional[Dict[Any, str]] = Field(
-        default_factory=dict,
+        default_factory=dict,  # type: ignore
         description="Id of current enclosing span. Used for creating `dispatch_event` partials.",
     )
 
@@ -122,7 +124,7 @@ class Dispatcher(BaseModel):
 
     def event(self, event: BaseEvent, **kwargs: Any) -> None:
         """Dispatch event to all registered handlers."""
-        c: Optional["Dispatcher"] = self
+        c: Optional[Dispatcher] = self
 
         # Attach tags from the active context
         event.tags.update(active_instrument_tags.get())
@@ -147,7 +149,8 @@ class Dispatcher(BaseModel):
         ),
     )
     def get_dispatch_event(self) -> EventDispatcher:
-        """Keep for backwards compatibility.
+        """
+        Keep for backwards compatibility.
 
         In llama-index-core v0.10.41, we removed this method and made changes to
         integrations or packs that relied on this method. Adding back this method
@@ -166,7 +169,7 @@ class Dispatcher(BaseModel):
         **kwargs: Any,
     ) -> None:
         """Send notice to handlers that a span with id_ has started."""
-        c: Optional["Dispatcher"] = self
+        c: Optional[Dispatcher] = self
         while c:
             for h in c.span_handlers:
                 try:
@@ -194,7 +197,7 @@ class Dispatcher(BaseModel):
         **kwargs: Any,
     ) -> None:
         """Send notice to handlers that a span with id_ is being dropped."""
-        c: Optional["Dispatcher"] = self
+        c: Optional[Dispatcher] = self
         while c:
             for h in c.span_handlers:
                 try:
@@ -221,7 +224,7 @@ class Dispatcher(BaseModel):
         **kwargs: Any,
     ) -> None:
         """Send notice to handlers that a span with id_ is exiting."""
-        c: Optional["Dispatcher"] = self
+        c: Optional[Dispatcher] = self
         while c:
             for h in c.span_handlers:
                 try:
@@ -239,7 +242,7 @@ class Dispatcher(BaseModel):
             else:
                 c = c.parent
 
-    def span(self, func: Callable) -> Any:
+    def span(self, func: Callable[..., _R]) -> Callable[..., _R]:
         # The `span` decorator should be idempotent.
         try:
             if hasattr(func, DISPATCHER_SPAN_DECORATED_ATTR):
@@ -277,7 +280,13 @@ class Dispatcher(BaseModel):
                 instance: Any,
                 context: Context,
             ) -> None:
+                from llama_index.core.workflow.errors import WorkflowCancelledByUser
+
                 try:
+                    exception = future.exception()
+                    if exception is not None:
+                        raise exception
+
                     result = future.result()
                     self.span_exit(
                         id_=span_id,
@@ -286,6 +295,14 @@ class Dispatcher(BaseModel):
                         result=result,
                     )
                     return result
+                except WorkflowCancelledByUser:
+                    self.span_exit(
+                        id_=span_id,
+                        bound_args=bound_args,
+                        instance=instance,
+                        result=None,
+                    )
+                    return None
                 except BaseException as e:
                     self.event(SpanDropEvent(span_id=span_id, err_str=str(e)))
                     self.span_drop(

@@ -33,3 +33,19 @@ Be default, the loader retrieves both Wordpress _pages_ (static content) and
 _posts_ (blog entries) from the target site. This behavior can be configured
 by setting `get_pages=False` or `get_posts=False` when initializing the
 `WordpressReader` object.
+
+## Additional Custom Post types
+
+To scrape additional custom endpoints beside _posts_ and _pages_, you can specify `additional_post_types` as a comma-separated list (e.g., `additional_post_types="custom-pages,custom-posts"`) when initializing the `WordpressReader` object.
+
+```python
+from llama_index.readers.wordpress import WordpressReader
+
+loader = WordpressReader(
+    url="https://www.mysite.com",
+    username="my_username",
+    password="my_password",
+    additional_post_types="webiners,podcasts",
+)
+documents = loader.load_data()
+```

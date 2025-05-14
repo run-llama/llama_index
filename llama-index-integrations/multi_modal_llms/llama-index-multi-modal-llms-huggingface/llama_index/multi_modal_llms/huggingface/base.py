@@ -1,4 +1,4 @@
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, Sequence, Union
 from typing_extensions import override
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -19,6 +19,7 @@ from transformers import (
     AutoConfig,
     Qwen2VLForConditionalGeneration,
     PaliGemmaForConditionalGeneration,
+    MllamaForConditionalGeneration,
 )
 from qwen_vl_utils import (
     process_vision_info,
@@ -48,12 +49,17 @@ class HuggingFaceMultiModal(MultiModalLLM):
         default="cuda" if torch.cuda.is_available() else "cpu",
         description="The device to run the model on.",
     )
+    device_map: Union[Dict[str, Any], str] = Field(
+        default="auto",
+        description="Tell HF accelerate where to put each layer of the model. In auto mode, HF accelerate determines this on it's own",
+    )
     torch_dtype: Any = Field(
         default=torch.float16 if torch.cuda.is_available() else torch.float32,
         description="The torch dtype to use.",
     )
     trust_remote_code: bool = Field(
-        default=True, description="Whether to trust remote code when loading the model."
+        default=False,
+        description="Whether to trust remote code when loading the model.",
     )
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
@@ -93,11 +99,13 @@ class HuggingFaceMultiModal(MultiModalLLM):
                 AutoModelClass = Qwen2VLForConditionalGeneration
             if "PaliGemmaForConditionalGeneration" in architecture:
                 AutoModelClass = PaliGemmaForConditionalGeneration
+            if "MllamaForConditionalGeneration" in architecture:
+                AutoModelClass = MllamaForConditionalGeneration
 
             # Load the model based on the architecture
             self._model = AutoModelClass.from_pretrained(
                 self.model_name,
-                device_map=self.device,
+                device_map=self.device_map,
                 torch_dtype=self.torch_dtype,
                 trust_remote_code=self.trust_remote_code,
                 **self.additional_kwargs,
@@ -177,6 +185,13 @@ class HuggingFaceMultiModal(MultiModalLLM):
     ) -> ChatResponseAsyncGen:
         raise NotImplementedError(
             "HuggingFaceMultiModal does not support async streaming chat yet."
+        )
+
+    async def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        raise NotImplementedError(
+            "HuggingFaceMultiModal does not support streaming chat yet."
         )
 
     async def astream_complete(
@@ -526,24 +541,29 @@ class LlamaMultiModal(HuggingFaceMultiModal):
         """
         Prepares the input messages and images for Llama3.2 models. Images are appended in a custom format.
         """
+        prompt = messages[0].content
         messages = [
             {
                 "role": "user",
-                "content": [
-                    {"type": "image"},
-                    {"type": "text", "text": messages[0].content},
-                ],
+                "content": [],
             }
         ]
         images = []
 
         for img_doc in image_documents:
+            messages[0]["content"].append({"type": "image"})
             images.append(Image.open(img_doc.image_path))
+
+        messages[0]["content"].append({"type": "text", "text": prompt})
 
         # Apply a chat template to format the message with the processor
         input_text = self._processor.tokenizer.apply_chat_template(
-            messages, add_generation_prompt=True
+            messages, add_generation_prompt=True, tokenize=False
         )
+
+        # If no images are present then we should pass None to deactivate image processing in the processor
+        if len(images) == 0:
+            images = None
 
         # Prepare the model inputs (text + images) and convert to tensor
         inputs = self._processor(images, input_text, return_tensors="pt")

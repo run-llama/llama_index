@@ -2,7 +2,7 @@ import json
 import os
 import unittest
 from tempfile import TemporaryDirectory
-from unittest.mock import MagicMock
+from unittest.mock import patch, MagicMock, mock_open
 
 import pytest
 from google.oauth2.credentials import Credentials
@@ -120,3 +120,79 @@ class TestGoogleDriveReader(unittest.TestCase):
         mock_credentials.to_json.assert_not_called()
         assert result == mock_credentials
         assert os.path.exists(reader.token_path) is False
+
+    def test_get_relative_path(self):
+        # Mock the necessary objects and methods
+        mock_credentials = MagicMock()
+        mock_service = MagicMock()
+        GoogleDriveReader._get_credentials = MagicMock(return_value=mock_credentials)
+
+        reader = GoogleDriveReader(
+            client_config={
+                "client_id": "example_client_id",
+                "client_secret": "example_client_secret",
+            },
+        )
+
+        # Test case 1: Simple file without root_folder_id
+        file_id = "example_file_id"
+        mock_file_response = {"name": "test_file", "parents": ["parent_id"]}
+        mock_service.files().get().execute.return_value = mock_file_response
+
+        result = reader._get_relative_path(mock_service, file_id)
+        assert result == "test_file"
+
+        # Test case 2: File with path traversal to root_folder_id
+        root_folder_id = "root_folder_id"
+        mock_file_responses = [
+            {"name": "test_file", "parents": ["parent1_id"]},  # File
+            {"name": "parent1", "parents": ["parent2_id"]},  # Parent 1
+            {"name": "parent2", "parents": ["root_folder_id"]},  # Parent 2
+        ]
+
+        mock_service.files().get().execute.side_effect = mock_file_responses
+
+        result = reader._get_relative_path(mock_service, file_id, root_folder_id)
+        assert result == "parent2/parent1/test_file"
+
+        # Verify API calls
+        assert mock_service.files().get.call_count >= 1
+
+    def test_download_file(self):
+        mock_credentials = MagicMock()
+        mock_credentials.universe_domain = "googleapis.com"
+
+        mock_service = MagicMock()
+        mock_build = MagicMock(return_value=mock_service)
+
+        # setup a bunch of mocks to imitate calling Google Drive and downloading file
+        with patch("googleapiclient.discovery.build", mock_build), patch(
+            "builtins.open", mock_open()
+        ) as mock_file:
+            reader = GoogleDriveReader(
+                client_config={
+                    "client_id": "example_client_id",
+                    "client_secret": "example_client_secret",
+                },
+            )
+            reader._creds = mock_credentials
+
+            google_drive_id = "googledriveid"
+            mock_file_response = {
+                "name": "test_file.pdf",
+                "id": google_drive_id,
+                "mimeType": "application/pdf",
+            }
+            mock_service.files().get().execute.return_value = mock_file_response
+
+            mock_downloader = MagicMock()
+            mock_downloader.next_chunk.return_value = (None, True)
+
+            with patch(
+                "googleapiclient.http.MediaIoBaseDownload", return_value=mock_downloader
+            ):
+                filename = reader._download_file(google_drive_id, google_drive_id)
+
+            assert filename == google_drive_id + ".pdf"
+            # also should have tried to write the file
+            mock_file().write.assert_called_once()

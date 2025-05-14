@@ -18,6 +18,7 @@ class AlphaMatrix(BaseModel):
                 }
             }
         >>> matrix = AlphaMatrix(data=data) # arg must be named matrix for the retriever to use it
+
     """
 
     class AlphaCategory(BaseModel):

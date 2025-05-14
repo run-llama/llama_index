@@ -10,7 +10,8 @@ from llama_index.core.tools.types import BaseTool
 
 
 class FnRetrieverOpenAIAgent(OpenAIAgent):
-    """Function Retriever OpenAI Agent.
+    """
+    Function Retriever OpenAI Agent.
 
     Uses our object retriever module to retrieve openai agent.
 

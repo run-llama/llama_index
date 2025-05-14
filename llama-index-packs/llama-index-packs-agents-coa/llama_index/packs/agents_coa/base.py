@@ -13,11 +13,13 @@ from .step import CoAAgentWorker
 
 
 class CoAAgentPack(BaseLlamaPack):
-    """Chain-of-abstraction Agent Pack.
+    """
+    Chain-of-abstraction Agent Pack.
 
     Args:
         tools (List[BaseTool]): List of tools to use.
         llm (Optional[LLM]): LLM to use. Defaults to gpt-4.
+
     """
 
     def __init__(

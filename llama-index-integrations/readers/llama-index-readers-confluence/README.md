@@ -18,9 +18,10 @@ The following order is used for checking authentication credentials:
 
 1. `oauth2`
 2. `api_token`
-3. `user_name` and `password`
-4. Environment variable `CONFLUENCE_API_TOKEN`
-5. Environment variable `CONFLUENCE_USERNAME` and `CONFLUENCE_PASSWORD`
+3. `cookies`
+4. `user_name` and `password`
+5. Environment variable `CONFLUENCE_API_TOKEN`
+6. Environment variable `CONFLUENCE_USERNAME` and `CONFLUENCE_PASSWORD`
 
 For more on authenticating using OAuth 2.0, checkout:
 
@@ -68,7 +69,11 @@ base_url = "https://yoursite.atlassian.com/wiki"
 page_ids = ["<page_id_1>", "<page_id_2>", "<page_id_3"]
 space_key = "<space_key>"
 
-reader = ConfluenceReader(base_url=base_url, oauth2=oauth2_dict)
+reader = ConfluenceReader(
+    base_url=base_url,
+    oauth2=oauth2_dict,
+    client_args={"backoff_and_retry": True},
+)
 documents = reader.load_data(
     space_key=space_key, include_attachments=True, page_status="current"
 )

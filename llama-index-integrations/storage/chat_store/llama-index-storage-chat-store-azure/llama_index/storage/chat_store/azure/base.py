@@ -4,12 +4,12 @@ from typing import Any, List, Optional
 from azure.core.credentials import AzureNamedKeyCredential, AzureSasCredential
 from azure.core.exceptions import ResourceNotFoundError
 from azure.data.tables import (
-    TableClient,
     TableServiceClient,
     TransactionOperation,
     UpdateMode,
 )
 from azure.data.tables.aio import TableServiceClient as AsyncTableServiceClient
+from azure.data.tables.aio import TableClient as AsyncTableClient
 
 from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -117,6 +117,31 @@ class AzureChatStore(BaseChatStore):
         )
 
     @classmethod
+    def from_account_and_id(
+        cls,
+        account_name: str,
+        endpoint: Optional[str] = None,
+        chat_table_name: str = DEFAULT_CHAT_TABLE,
+        metadata_table_name: str = DEFAULT_METADATA_TABLE,
+        metadata_partition_key: str = None,
+        service_mode: ServiceMode = ServiceMode.STORAGE,
+    ) -> "AzureChatStore":
+        """Initializes AzureChatStore from an account name and managed ID."""
+        from azure.identity import DefaultAzureCredential
+
+        if endpoint is None:
+            endpoint = f"https://{account_name}.table.core.windows.net"
+        credential = DefaultAzureCredential()
+        return cls._from_clients(
+            endpoint,
+            credential,
+            chat_table_name,
+            metadata_table_name,
+            metadata_partition_key,
+            service_mode,
+        )
+
+    @classmethod
     def from_sas_token(
         cls,
         endpoint: str,
@@ -170,8 +195,12 @@ class AzureChatStore(BaseChatStore):
             self.chat_table_name
         )
         entities = chat_client.query_entities(f"PartitionKey eq '{key}'")
+        all_entities = []
+        async for entity in entities:
+            all_entities.append(entity)
+
         delete_operations = (
-            (TransactionOperation.DELETE, entity) for entity in entities
+            (TransactionOperation.DELETE, entity) for entity in all_entities
         )
         create_operations = (
             (
@@ -233,7 +262,7 @@ class AzureChatStore(BaseChatStore):
         metadata_client = await self._atable_service_client.create_table_if_not_exists(
             self.metadata_table_name
         )
-        metadata = self._get_or_default_metadata(metadata_client, key)
+        metadata = await self._get_or_default_metadata(metadata_client, key)
         next_index = int(metadata["MessageCount"])
 
         if idx is not None and idx > next_index:
@@ -245,7 +274,7 @@ class AzureChatStore(BaseChatStore):
         chat_client = await self._atable_service_client.create_table_if_not_exists(
             self.chat_table_name
         )
-        chat_client.create_entity(
+        await chat_client.create_entity(
             serialize(
                 self.service_mode,
                 {
@@ -271,8 +300,12 @@ class AzureChatStore(BaseChatStore):
             self.chat_table_name
         )
         entities = chat_client.query_entities(f"PartitionKey eq '{key}'")
+        all_entities = []
+        async for entity in entities:
+            all_entities.append(entity)
+
         await chat_client.submit_transaction(
-            (TransactionOperation.DELETE, entity) for entity in entities
+            (TransactionOperation.DELETE, entity) for entity in all_entities
         )
 
         metadata_client = await self._atable_service_client.create_table_if_not_exists(
@@ -313,7 +346,7 @@ class AzureChatStore(BaseChatStore):
         if idx == message_count - 1:
             metadata["LastMessageRowKey"] = self._to_row_key(idx - 1)
             metadata["MessageCount"] = message_count - 1
-            metadata_client.upsert_entity(metadata, mode=UpdateMode.MERGE)
+            await metadata_client.upsert_entity(metadata, mode=UpdateMode.MERGE)
 
     def delete_last_message(self, key: str) -> Optional[ChatMessage]:
         """Delete last message for a key."""
@@ -408,13 +441,15 @@ class AzureChatStore(BaseChatStore):
             "MessageCount": 0,
         }
 
-    def _get_or_default_metadata(self, metadata_client: TableClient, key: str) -> dict:
+    async def _get_or_default_metadata(
+        self, metadata_client: AsyncTableClient, key: str
+    ) -> dict:
         """
         Retrieve metadata if it exists, otherwise return default metadata
         structure.
         """
         try:
-            return metadata_client.get_entity(
+            return await metadata_client.get_entity(
                 partition_key=self.metadata_partition_key, row_key=key
             )
         except ResourceNotFoundError:

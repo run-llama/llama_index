@@ -47,6 +47,7 @@ from llama_index.core.base.llms.generic_utils import (
 from llama_index.core.base.llms.generic_utils import (
     prompt_to_messages,
 )
+from llama_index.core.base.llms.types import ContentBlock, TextBlock
 from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.prompts.utils import get_template_vars, format_string
 from llama_index.core.types import BaseOutputParser
@@ -67,10 +68,11 @@ class BasePromptTemplate(ChainableMixin, BaseModel, ABC):  # type: ignore[no-red
     kwargs: Dict[str, str]
     output_parser: Optional[BaseOutputParser]
     template_var_mappings: Optional[Dict[str, Any]] = Field(
-        default_factory=dict, description="Template variable mappings (Optional)."
+        default_factory=dict,  # type: ignore
+        description="Template variable mappings (Optional).",
     )
     function_mappings: Optional[Dict[str, AnnotatedCallable]] = Field(
-        default_factory=dict,
+        default_factory=dict,  # type: ignore
         description=(
             "Function mappings (Optional). This is a mapping from template "
             "variable names to functions that take in the current kwargs and "
@@ -84,7 +86,8 @@ class BasePromptTemplate(ChainableMixin, BaseModel, ABC):  # type: ignore[no-red
         return {template_var_mappings.get(k, k): v for k, v in kwargs.items()}
 
     def _map_function_vars(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        """For keys in function_mappings, compute values and combine w/ kwargs.
+        """
+        For keys in function_mappings, compute values and combine w/ kwargs.
 
         Users can pass in functions instead of fixed values as format variables.
         For each function, we call the function with the current kwargs,
@@ -110,7 +113,8 @@ class BasePromptTemplate(ChainableMixin, BaseModel, ABC):  # type: ignore[no-red
         return new_kwargs
 
     def _map_all_vars(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        """Map both template and function variables.
+        """
+        Map both template and function variables.
 
         We (1) first call function mappings to compute functions,
         and then (2) call the template_var_mappings.
@@ -304,20 +308,30 @@ class ChatPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
 
         messages: List[ChatMessage] = []
         for message_template in self.message_templates:
-            message_content = message_template.content or ""
+            # Handle messages with multiple blocks
+            if message_template.blocks:
+                formatted_blocks: List[ContentBlock] = []
+                for block in message_template.blocks:
+                    if isinstance(block, TextBlock):
+                        template_vars = get_template_vars(block.text)
+                        relevant_kwargs = {
+                            k: v
+                            for k, v in mapped_all_kwargs.items()
+                            if k in template_vars
+                        }
+                        formatted_text = format_string(block.text, **relevant_kwargs)
+                        formatted_blocks.append(TextBlock(text=formatted_text))
+                    else:
+                        # For non-text blocks (like images), keep them as is
+                        # TODO: can images be formatted as variables?
+                        formatted_blocks.append(block)
 
-            template_vars = get_template_vars(message_content)
-            relevant_kwargs = {
-                k: v for k, v in mapped_all_kwargs.items() if k in template_vars
-            }
-            content_template = message_template.content or ""
-
-            # if there's mappings specified, make sure those are used
-            content = format_string(content_template, **relevant_kwargs)
-
-            message: ChatMessage = message_template.model_copy()
-            message.content = content
-            messages.append(message)
+                message = message_template.model_copy()
+                message.blocks = formatted_blocks
+                messages.append(message)
+            else:
+                # Handle empty messages (if any)
+                messages.append(message_template.model_copy())
 
         if self.output_parser is not None:
             messages = self.output_parser.format_messages(messages)

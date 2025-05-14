@@ -194,6 +194,7 @@ class AnthropicMultiModal(MultiModalLLM):
     def _complete(
         self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
     ) -> CompletionResponse:
+        """Complete the prompt with image support and optional tool calls."""
         all_kwargs = self._get_model_kwargs(**kwargs)
         message_dict = self._get_multi_modal_chat_messages(
             prompt=prompt, role=MessageRole.USER, image_documents=image_documents
@@ -206,8 +207,17 @@ class AnthropicMultiModal(MultiModalLLM):
             **all_kwargs,
         )
 
+        # Handle both tool and text responses
+        content = response.content[0]
+        if hasattr(content, "input"):
+            # Tool response - convert to string for compatibility
+            text = str(content.input)
+        else:
+            # Standard text response
+            text = content.text
+
         return CompletionResponse(
-            text=response.content[0].text,
+            text=text,
             raw=response,
             additional_kwargs=self._get_response_token_counts(response),
         )

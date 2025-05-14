@@ -59,7 +59,7 @@ def mock_chat_completion(*args: Any, **kwargs: Any) -> ChatCompletion:
         id="chatcmpl-abc123",
         object="chat.completion",
         created=1677858242,
-        model="solar-1-mini-chat",
+        model="solar-mini",
         usage=CompletionUsage(prompt_tokens=13, completion_tokens=7, total_tokens=20),
         choices=[
             Choice(
@@ -81,7 +81,7 @@ def mock_chat_completion_stream(
             id="chatcmpl-6ptKyqKOGXZT6iQnqiXAH8adNLUzD",
             object="chat.completion.chunk",
             created=1677825464,
-            model="solar-1-mini-chat",
+            model="solar-mini",
             choices=[
                 ChunkChoice(
                     delta=ChoiceDelta(role="assistant"), finish_reason=None, index=0
@@ -92,7 +92,7 @@ def mock_chat_completion_stream(
             id="chatcmpl-6ptKyqKOGXZT6iQnqiXAH8adNLUzD",
             object="chat.completion.chunk",
             created=1677825464,
-            model="solar-1-mini-chat",
+            model="solar-mini",
             choices=[
                 ChunkChoice(
                     delta=ChoiceDelta(content="\n\n"), finish_reason=None, index=0
@@ -103,7 +103,7 @@ def mock_chat_completion_stream(
             id="chatcmpl-6ptKyqKOGXZT6iQnqiXAH8adNLUzD",
             object="chat.completion.chunk",
             created=1677825464,
-            model="solar-1-mini-chat",
+            model="solar-mini",
             choices=[
                 ChunkChoice(delta=ChoiceDelta(content="2"), finish_reason=None, index=0)
             ],
@@ -112,7 +112,7 @@ def mock_chat_completion_stream(
             id="chatcmpl-6ptKyqKOGXZT6iQnqiXAH8adNLUzD",
             object="chat.completion.chunk",
             created=1677825464,
-            model="solar-1-mini-chat",
+            model="solar-mini",
             choices=[ChunkChoice(delta=ChoiceDelta(), finish_reason="stop", index=0)],
         ),
     ]
@@ -125,7 +125,7 @@ def test_chat_model_basic(MockSyncUpstage: MagicMock) -> None:
         mock_instance = MockSyncUpstage.return_value
         mock_instance.chat.completions.create.return_value = mock_chat_completion()
 
-        llm = Upstage(model="solar-1-mini-chat")
+        llm = Upstage(model="solar-mini")
         prompt = "test prompt"
         message = ChatMessage(role="user", content="test message")
 
@@ -144,7 +144,7 @@ def test_chat_model_streaming(MockSyncUpstage: MagicMock) -> None:
             mock_chat_completion_stream()
         )
 
-        llm = Upstage(model="solar-1-mini-chat")
+        llm = Upstage(model="solar-mini")
         prompt = "test prompt"
         message = ChatMessage(role="user", content="test message")
 

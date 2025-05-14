@@ -53,6 +53,7 @@ class AzStorageBlobReader(
         account_url (str): URI to the storage account, may include SAS token.
         credential (Union[str, Dict[str, str], AzureNamedKeyCredential, AzureSasCredential, TokenCredential, None] = None):
             The credentials with which to authenticate. This is optional if the account URL already has a SAS token.
+
     """
 
     container_name: str

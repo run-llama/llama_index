@@ -1,4 +1,5 @@
-"""Azure CosmosDB MongoDB vCore Vector store index.
+"""
+Azure CosmosDB MongoDB vCore Vector store index.
 
 An index that is built on top of an existing vector store.
 
@@ -7,7 +8,6 @@ An index that is built on top of an existing vector store.
 import logging
 import os
 from typing import Any, Dict, List, Optional, cast
-from datetime import date
 
 import pymongo
 from llama_index.core.bridge.pydantic import PrivateAttr
@@ -27,7 +27,8 @@ logger = logging.getLogger(__name__)
 
 
 class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
-    """Azure CosmosDB MongoDB vCore Vector Store.
+    """
+    Azure CosmosDB MongoDB vCore Vector Store.
 
     To use, you should have both:
     - the ``pymongo`` python package installed
@@ -51,6 +52,7 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
             collection_name="paul_graham_essay",
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -82,7 +84,8 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         insert_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize the vector store.
+        """
+        Initialize the vector store.
 
         Args:
             mongodb_client: An Azure CosmoDB MongoDB client (type: MongoClient, shown any for lazy import).
@@ -98,6 +101,7 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
             cosmos_search_kwargs: An Azure CosmosDB MongoDB field that will
             contain search options, such as kind, numLists, similarity, and dimensions.
             insert_kwargs: The kwargs used during `insert`.
+
         """
         super().__init__()
 
@@ -111,7 +115,7 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
                 )
             self._mongodb_client = pymongo.MongoClient(
                 os.environ["AZURE_COSMOSDB_MONGODB_URI"],
-                appname="LlamaIndex-CDBMongoVCore-VectorStore-Python",
+                appname="LLAMAINDEX_PYTHON",
             )
 
         self._collection = self._mongodb_client[db_name][collection_name]
@@ -136,6 +140,8 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
             create_index_commands = self._get_vector_index_ivf(kind)
         elif kind == "vector-hnsw":
             create_index_commands = self._get_vector_index_hnsw(kind)
+        elif kind == "vector-diskann":
+            create_index_commands = self._get_vector_index_diskann(kind)
         db.command(create_index_commands)
 
     def _get_vector_index_ivf(
@@ -189,6 +195,31 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
             ],
         }
 
+    def _get_vector_index_diskann(
+        self,
+        kind: str,
+    ) -> Dict[str, Any]:
+        return {
+            "createIndexes": self._collection_name,
+            "indexes": [
+                {
+                    "name": self._index_name,
+                    "key": {self._embedding_key: "cosmosSearch"},
+                    "cosmosSearchOptions": {
+                        "kind": kind,
+                        "maxDegree": self._cosmos_search_kwargs.get("maxDegree", 32),
+                        "lBuild": self._cosmos_search_kwargs.get("lBuild", 50),
+                        "similarity": self._cosmos_search_kwargs.get(
+                            "similarity", "COS"
+                        ),
+                        "dimensions": self._cosmos_search_kwargs.get(
+                            "dimensions", 1536
+                        ),
+                    },
+                }
+            ],
+        }
+
     def create_filter_index(
         self,
         property_to_filter: str,
@@ -213,7 +244,8 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -234,7 +266,6 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
                 self._embedding_key: node.get_embedding(),
                 self._text_key: node.get_content(metadata_mode=MetadataMode.NONE) or "",
                 self._metadata_key: metadata,
-                "timeStamp": date.today(),
             }
             data_to_insert.append(entry)
             ids.append(node.node_id)
@@ -273,6 +304,10 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         elif kind == "vector-hnsw":
             pipeline = self._get_pipeline_vector_hnsw(
                 query, kwargs.get("ef_search", 40), kwargs.get("pre_filter", {})
+            )
+        elif kind == "vector-diskann":
+            pipeline = self._get_pipeline_vector_diskann(
+                query, kwargs.get("lSearch", 40), kwargs.get("pre_filter", {})
             )
 
         logger.debug("Running query pipeline: %s", pipeline)
@@ -367,13 +402,42 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         ]
         return pipeline
 
+    def _get_pipeline_vector_diskann(
+        self, query: VectorStoreQuery, l_search: int, pre_filter: Optional[Dict]
+    ) -> List[dict[str, Any]]:
+        params = {
+            "vector": query.query_embedding,
+            "path": self._embedding_key,
+            "k": query.similarity_top_k,
+            "lSearch": l_search,
+        }
+        if pre_filter:
+            params["filter"] = pre_filter
+
+        pipeline: List[dict[str, Any]] = [
+            {
+                "$search": {
+                    "cosmosSearch": params,
+                }
+            },
+            {
+                "$project": {
+                    "similarityScore": {"$meta": "searchScore"},
+                    "document": "$$ROOT",
+                }
+            },
+        ]
+        return pipeline
+
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query: a VectorStoreQuery object.
 
         Returns:
             A VectorStoreQueryResult containing the results of the query.
+
         """
         return self._query(query, **kwargs)

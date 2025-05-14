@@ -1,8 +1,10 @@
-from llama_index.core.base.llms.base import BaseLLM
-from llama_index.llms.anthropic import Anthropic
-from llama_index.core.llms import ChatMessage
 import os
+from unittest.mock import MagicMock
+
 import pytest
+from llama_index.core.base.llms.base import BaseLLM
+from llama_index.core.llms import ChatMessage
+from llama_index.llms.anthropic import Anthropic
 
 
 def test_text_inference_embedding_class():
@@ -109,7 +111,7 @@ def test_anthropic_through_bedrock():
     os.getenv("ANTHROPIC_AWS_REGION") is None,
     reason="AWS region not available to test Bedrock integration",
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_anthropic_through_bedrock_async():
     # Note: this assumes you have AWS credentials configured.
     anthropic_llm = Anthropic(
@@ -166,3 +168,45 @@ async def test_anthropic_through_bedrock_async():
         print(f"Assertion failed: full_response is not a string")
         print(f"Content of full_response: {full_response}")
         raise
+
+
+def test_anthropic_tokenizer():
+    """Test that the Anthropic tokenizer properly implements the Tokenizer protocol."""
+    # Create a mock Messages object that returns a predictable token count
+    mock_messages = MagicMock()
+    mock_messages.count_tokens.return_value.input_tokens = 5
+
+    # Create a mock Beta object that returns our mock messages
+    mock_beta = MagicMock()
+    mock_beta.messages = mock_messages
+
+    # Create a mock client that returns our mock beta
+    mock_client = MagicMock()
+    mock_client.beta = mock_beta
+
+    # Create the Anthropic instance with our mock
+    anthropic_llm = Anthropic(model="claude-3-5-sonnet-20241022")
+    anthropic_llm._client = mock_client
+
+    # Test that tokenizer implements the protocol
+    tokenizer = anthropic_llm.tokenizer
+    assert hasattr(tokenizer, "encode")
+
+    # Test that encode returns a list of integers
+    test_text = "Hello, world!"
+    tokens = tokenizer.encode(test_text)
+    assert isinstance(tokens, list)
+    assert all(isinstance(t, int) for t in tokens)
+    assert len(tokens) == 5  # Should match our mocked token count
+
+    # Verify the mock was called correctly
+    mock_messages.count_tokens.assert_called_once_with(
+        messages=[{"role": "user", "content": test_text}],
+        model="claude-3-5-sonnet-20241022",
+    )
+
+
+def test__prepare_chat_with_tools_empty():
+    llm = Anthropic()
+    retval = llm._prepare_chat_with_tools(tools=[])
+    assert retval["tools"] == []

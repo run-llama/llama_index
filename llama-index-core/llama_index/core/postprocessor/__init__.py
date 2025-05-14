@@ -2,6 +2,10 @@
 
 
 from llama_index.core.postprocessor.llm_rerank import LLMRerank
+from llama_index.core.postprocessor.structured_llm_rerank import (
+    StructuredLLMRerank,
+    DocumentWithRelevance,
+)
 from llama_index.core.postprocessor.metadata_replacement import (
     MetadataReplacementPostProcessor,
 )
@@ -35,6 +39,8 @@ __all__ = [
     "PIINodePostprocessor",
     "NERPIINodePostprocessor",
     "LLMRerank",
+    "StructuredLLMRerank",
+    "DocumentWithRelevance",
     "SentenceEmbeddingOptimizer",
     "SentenceTransformerRerank",
     "MetadataReplacementPostProcessor",

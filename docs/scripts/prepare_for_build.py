@@ -1,4 +1,5 @@
-"""Prepare the docs folder for building the documentation.
+"""
+Prepare the docs folder for building the documentation.
 
 This file will:
 1. Update the mkdocs.yml file to include all example notebooks
@@ -8,9 +9,10 @@ This file will:
    to the docs/docs folder
 """
 
+import os
+
 import toml
 import yaml
-import os
 
 MKDOCS_YML = "mkdocs.yml"
 
@@ -63,6 +65,9 @@ INTEGRATION_FOLDERS = [
     "../llama-index-integrations",
     # "../llama-index-cli",
 ]
+EXCLUDED_INTEGRATION_FOLDERS = [
+    "llama-index-integrations/agent",
+]
 INTEGRATION_FOLDER_TO_LABEL = {
     "finetuning": "Fine-tuning",
     "llms": "LLMs",
@@ -72,6 +77,7 @@ INTEGRATION_FOLDER_TO_LABEL = {
     "embeddings": "Embeddings",
     "evaluation": "Evaluation",
     "extractors": "Metadata Extractors",
+    "graph_rag": "Graph RAG",
     "indices": "Indexes",
     "ingestion": "Ingestion",
     "instrumentation": "Instrumentation",
@@ -98,6 +104,8 @@ INTEGRATION_FOLDER_TO_LABEL = {
     "storage": "Storage",
     "tools": "Tools",
     "workflow": "Workflow",
+    "llama_deploy": "LlamaDeploy",
+    "message_queues": "Message Queues",
 }
 API_REF_TEMPLATE = """::: {import_path}
     options:
@@ -171,7 +179,6 @@ def main():
                                     label_idx
                                 ][label]
                             ):
-                                print(toc_path_name)
                                 mkdocs["nav"][examples_idx]["Examples"][
                                     label_idx
                                 ][label].append(toc_path_name)
@@ -184,8 +191,18 @@ def main():
     for folder in INTEGRATION_FOLDERS:
         for root, dirs, files in os.walk(folder):
             for file in files:
+                # check if the current root is in the excluded integration folders
+                if any(
+                    excluded_folder in root
+                    for excluded_folder in EXCLUDED_INTEGRATION_FOLDERS
+                ):
+                    continue
+
                 if file == "pyproject.toml":
                     toml_path = os.path.join(root, file)
+                    if ".venv" in toml_path:
+                        continue
+
                     with open(toml_path) as f:
                         toml_data = toml.load(f)
                     import_path = toml_data["tool"]["llamahub"]["import_path"]
@@ -337,7 +354,16 @@ def main():
                 if "storage" in root:
                     label = "Storage"
                 else:
-                    label = INTEGRATION_FOLDER_TO_LABEL[root.split("/")[-1]]
+                    try:
+                        label = INTEGRATION_FOLDER_TO_LABEL[
+                            root.split("/")[-1]
+                        ]
+                    except KeyError:
+                        # Safe net to avoid blocking the build for some misconfiguration
+                        print(
+                            f"Unable to find {root.split('/')[-1]} in INTEGRATION_FOLDER_TO_LABEL"
+                        )
+                        continue
 
                 label_idx = -1
                 for idx, item in enumerate(

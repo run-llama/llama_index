@@ -1,4 +1,5 @@
-"""Prompts from evaporate repo.
+"""
+Prompts from evaporate repo.
 
 
 Full credits go to: https://github.com/HazyResearch/evaporate

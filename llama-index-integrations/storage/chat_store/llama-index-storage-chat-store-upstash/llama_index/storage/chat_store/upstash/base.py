@@ -22,6 +22,7 @@ def _message_to_dict(message: ChatMessage) -> dict:
 
     Returns:
         dict: A dictionary representation of the ChatMessage.
+
     """
     return message.dict()
 
@@ -58,10 +59,11 @@ class UpstashChatStore(BaseChatStore):
 
         Raises:
             ValueError: If redis_url or redis_token is empty.
+
         """
         if redis_url == "" or redis_token == "":
             raise ValueError("Please provide a valid URL and token")
-
+        super().__init__(ttl=ttl)
         try:
             self._sync_redis_client = SyncRedis(url=redis_url, token=redis_token)
             self._async_redis_client = AsyncRedis(url=redis_url, token=redis_token)
@@ -69,7 +71,6 @@ class UpstashChatStore(BaseChatStore):
             logger.error(f"Upstash Redis client could not be initiated: {error}")
 
         # self.ttl = ttl
-        super().__init__(ttl=ttl)
 
     @classmethod
     def class_name(cls) -> str:
@@ -78,6 +79,7 @@ class UpstashChatStore(BaseChatStore):
 
         Returns:
             str: The name of the class.
+
         """
         return "UpstashChatStore"
 
@@ -88,6 +90,7 @@ class UpstashChatStore(BaseChatStore):
         Args:
             key (str): The key to store the messages under.
             messages (List[ChatMessage]): The list of messages to store.
+
         """
         self._sync_redis_client.delete(key)
         for message in messages:
@@ -103,6 +106,7 @@ class UpstashChatStore(BaseChatStore):
         Args:
             key (str): The key to store the messages under.
             messages (List[ChatMessage]): The list of messages to store.
+
         """
         await self._async_redis_client.delete(key)
         for message in messages:
@@ -120,6 +124,7 @@ class UpstashChatStore(BaseChatStore):
 
         Returns:
             List[ChatMessage]: The list of retrieved messages.
+
         """
         items = self._sync_redis_client.lrange(key, 0, -1)
         if len(items) == 0:
@@ -136,6 +141,7 @@ class UpstashChatStore(BaseChatStore):
 
         Returns:
             List[ChatMessage]: The list of retrieved messages.
+
         """
         items = await self._async_redis_client.lrange(key, 0, -1)
         if len(items) == 0:
@@ -153,6 +159,7 @@ class UpstashChatStore(BaseChatStore):
             key (str): The key to add the message to.
             message (ChatMessage): The message to add.
             idx (Optional[int]): The index at which to insert the message.
+
         """
         if idx is None:
             message_json = json.dumps(_message_to_dict(message))
@@ -173,6 +180,7 @@ class UpstashChatStore(BaseChatStore):
             key (str): The key to add the message to.
             message (ChatMessage): The message to add.
             idx (Optional[int]): The index at which to insert the message.
+
         """
         if idx is None:
             message_json = json.dumps(_message_to_dict(message))
@@ -192,6 +200,7 @@ class UpstashChatStore(BaseChatStore):
 
         Returns:
             Optional[List[ChatMessage]]: Always returns None in this implementation.
+
         """
         self._sync_redis_client.delete(key)
         return None
@@ -205,6 +214,7 @@ class UpstashChatStore(BaseChatStore):
 
         Returns:
             Optional[List[ChatMessage]]: Always returns None in this implementation.
+
         """
         await self._async_redis_client.delete(key)
         return None
@@ -219,6 +229,7 @@ class UpstashChatStore(BaseChatStore):
 
         Returns:
             Optional[ChatMessage]: The deleted message, or None if not found or an error occurred.
+
         """
         try:
             deleted_message = self._sync_redis_client.lindex(key, idx)
@@ -248,6 +259,7 @@ class UpstashChatStore(BaseChatStore):
 
         Returns:
             Optional[ChatMessage]: The deleted message, or None if not found or an error occurred.
+
         """
         try:
             deleted_message = await self._async_redis_client.lindex(key, idx)
@@ -276,6 +288,7 @@ class UpstashChatStore(BaseChatStore):
 
         Returns:
             Optional[ChatMessage]: The deleted message, or None if the list is empty.
+
         """
         deleted_message = self._sync_redis_client.rpop(key)
         return ChatMessage.parse_raw(deleted_message) if deleted_message else None
@@ -289,6 +302,7 @@ class UpstashChatStore(BaseChatStore):
 
         Returns:
             Optional[ChatMessage]: The deleted message, or None if the list is empty.
+
         """
         deleted_message = await self._async_redis_client.rpop(key)
         if deleted_message:
@@ -301,6 +315,7 @@ class UpstashChatStore(BaseChatStore):
 
         Returns:
             List[str]: A list of all keys in the Redis store.
+
         """
         keys = self._sync_redis_client.keys("*")
         return keys if isinstance(keys, list) else [keys]
@@ -311,6 +326,7 @@ class UpstashChatStore(BaseChatStore):
 
         Returns:
             List[str]: A list of all keys in the Redis store.
+
         """
         keys = await self._async_redis_client.keys("*")
         return keys if isinstance(keys, list) else [keys]
@@ -328,6 +344,7 @@ class UpstashChatStore(BaseChatStore):
 
         Returns:
             List[ChatMessage]: The updated list of messages.
+
         """
         current_list = self.get_messages(key)
         current_list.insert(idx, message)
@@ -351,6 +368,7 @@ class UpstashChatStore(BaseChatStore):
 
         Returns:
             List[ChatMessage]: The updated list of messages.
+
         """
         current_list = await self.async_get_messages(key)
         current_list.insert(idx, message)

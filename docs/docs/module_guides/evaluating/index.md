@@ -54,6 +54,7 @@ We also integrate with community evaluation tools.
 - [DeepEval](https://github.com/confident-ai/deepeval)
 - [Ragas](https://github.com/explodinggradients/ragas/blob/main/docs/howtos/integrations/llamaindex.ipynb)
 - [RAGChecker](https://github.com/amazon-science/RAGChecker)
+- [Cleanlab](../../examples/evaluation/Cleanlab.ipynb)
 
 ## Usage Pattern
 

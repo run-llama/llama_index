@@ -56,7 +56,7 @@ async def step_two(self, ctx: Context, ev: StepTwoEvent) -> StopEvent:
     # do something with the data
     print("Data is ", await ctx.get("some_database"))
 
-    return StopEvent(result=await ctx.get("some_database")[1])
+    return StopEvent(result=await ctx.get("some_database"))
 
 
 w = StatefulFlow(timeout=10, verbose=False)

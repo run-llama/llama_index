@@ -10,7 +10,7 @@ This guide centralizes all the resources around writing custom modules in LlamaI
 
 ## Custom LLMs
 
-- [Custom LLMs](../module_guides/models/llms/usage_custom.md#example-using-a-custom-llm-model---advanced)
+- [Custom LLMs](../module_guides/models/llms/usage_custom.md#customizing-llms-within-llamaindex-abstractions)
 
 ## Custom Embeddings
 
@@ -40,7 +40,8 @@ This guide centralizes all the resources around writing custom modules in LlamaI
 
 ## Custom Agents
 
-- [Custom Agents](../examples/agent/custom_agent.ipynb)
+- [Custom Function Calling Agent](../examples/workflow/function_calling_agent.ipynb)
+- [Custom ReAct Agent](../examples/workflow/react_agent.ipynb)
 
 ## Custom Query Components (for use in Query Pipeline)
 

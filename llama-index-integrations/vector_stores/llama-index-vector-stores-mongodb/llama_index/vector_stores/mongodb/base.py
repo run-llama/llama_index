@@ -1,8 +1,10 @@
-"""MongoDB Vector store index.
+"""
+MongoDB Vector store index.
 
 An index that is built on top of an existing vector store.
 
 """
+
 
 import logging
 import os
@@ -14,33 +16,38 @@ from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     VectorStoreQuery,
-    VectorStoreQueryResult,
     VectorStoreQueryMode,
+    VectorStoreQueryResult,
 )
 from llama_index.core.vector_stores.utils import (
     legacy_metadata_dict_to_node,
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
-
 from llama_index.vector_stores.mongodb.pipelines import (
-    fulltext_search_stage,
-    vector_search_stage,
     combine_pipelines,
-    reciprocal_rank_stage,
-    final_hybrid_stage,
     filters_to_mql,
+    final_hybrid_stage,
+    fulltext_search_stage,
+    reciprocal_rank_stage,
+    vector_search_stage,
+)
+from .index import (
+    create_vector_search_index,
+    drop_vector_search_index,
+    update_vector_search_index,
+    create_fulltext_search_index,
 )
 from pymongo import MongoClient
-from pymongo.driver_info import DriverInfo
 from pymongo.collection import Collection
-
+from pymongo.driver_info import DriverInfo
 
 logger = logging.getLogger(__name__)
 
 
 class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
-    """MongoDB Atlas Vector Store.
+    """
+    MongoDB Atlas Vector Store.
 
     To use, you should have both:
     - the ``pymongo`` python package installed
@@ -54,6 +61,7 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
     Please refer to the [documentation](https://www.mongodb.com/docs/atlas/atlas-vector-search/create-index/)
     to get more details on how to define an Atlas Vector Search index. You can name the index {ATLAS_VECTOR_SEARCH_INDEX_NAME}
     and create the index on the namespace {DB_NAME}.{COLLECTION_NAME}.
+
     Finally, write the following definition in the JSON editor on MongoDB Atlas:
 
     ```
@@ -71,6 +79,9 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
     }
     ```
 
+    Optionally, you can use the experimental convenience methods on this class to manage the vector search
+    index and the full text index.
+
 
     Examples:
         `pip install llama-index-vector-stores-mongodb`
@@ -86,6 +97,15 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         # Create an instance of MongoDBAtlasVectorSearch
         vector_store = MongoDBAtlasVectorSearch(mongodb_client)
         ```
+
+        ```python
+        # Create a vector search index programmatically
+        vector_store.create_vector_search_index(path="embedding", dimensions=1536, similarity="cosine")
+
+        # Create a text search index programmatically
+        vector_store.create_fulltext_search_index("foo)
+        ```
+
     """
 
     stores_text: bool = True
@@ -119,7 +139,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         oversampling_factor: int = 10,
         **kwargs: Any,
     ) -> None:
-        """Initialize the vector store.
+        """
+        Initialize the vector store.
 
         Args:
             mongodb_client: A MongoDB client.
@@ -174,12 +195,16 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         self._insert_kwargs = insert_kwargs or {}
         self._oversampling_factor = oversampling_factor
 
+        if collection_name not in self._mongodb_client[db_name].list_collection_names():
+            self._mongodb_client[db_name].create_collection(collection_name)
+
     def add(
         self,
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -227,6 +252,11 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
     def client(self) -> Any:
         """Return MongoDB client."""
         return self._mongodb_client
+
+    @property
+    def collection(self) -> Any:
+        """Return pymongo Collection."""
+        return self._collection
 
     def _query(self, query: VectorStoreQuery) -> VectorStoreQueryResult:
         hybrid_top_k = query.hybrid_top_k or query.similarity_top_k
@@ -365,7 +395,8 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
         return result
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        r"""Query index for top k most similar nodes.
+        r"""
+        Query index for top k most similar nodes.
 
         The type of search to be performed is based on the VectorStoreQuery.mode.
         Choose from DEFAULT (vector), HYBRID (hybrid), or TEXT_SEARCH (full-text).
@@ -393,5 +424,122 @@ class MongoDBAtlasVectorSearch(BasePydanticVectorStore):
 
         Returns:
             A VectorStoreQueryResult containing the results of the query.
+
         """
         return self._query(query)
+
+    def create_vector_search_index(
+        self,
+        dimensions: int,
+        path: str,
+        similarity: str,
+        filters: Optional[List[str]] = None,
+        *,
+        wait_until_complete: Optional[float] = None,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Experimental Utility function to create the vector search index for this store.
+
+        Args:
+            dimensions (int): Number of dimensions in embedding
+            path (str): field with vector embedding
+            similarity (str): The similarity score used for the index
+            filters (List[str]): Fields/paths to index to allow filtering in $vectorSearch
+            wait_until_complete (Optional[float]): If provided, number of seconds to wait
+                until search index is ready.
+            kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
+
+        """
+        return create_vector_search_index(
+            self.collection,
+            self._vector_index_name,
+            dimensions,
+            path,
+            similarity,
+            filters,
+            wait_until_complete=wait_until_complete,
+            **kwargs,
+        )
+
+    def drop_vector_search_index(
+        self,
+        *,
+        wait_until_complete: Optional[float] = None,
+    ) -> None:
+        """
+        Drop the created vector search index for this store.
+
+        Args:
+            wait_until_complete (Optional[float]): If provided, number of seconds to wait
+                until search index is ready.
+
+        """
+        return drop_vector_search_index(
+            self.collection,
+            self._vector_index_name,
+            wait_until_complete=wait_until_complete,
+        )
+
+    def update_vector_search_index(
+        self,
+        dimensions: int,
+        path: str,
+        similarity: str,
+        filters: Optional[List[str]] = None,
+        *,
+        wait_until_complete: Optional[float] = None,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Update the vector search index for this store.
+
+        Replace the existing index definition with the provided definition.
+
+        Args:
+            dimensions (int): Number of dimensions in embedding
+            path (str): field with vector embedding
+            similarity (str): The similarity score used for the index.
+            filters (List[str]): Fields/paths to index to allow filtering in $vectorSearch
+            wait_until_complete (Optional[float]): If provided, number of seconds to wait
+                until search index is ready.
+            kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
+
+        """
+        return update_vector_search_index(
+            self.collection,
+            self._vector_index_name,
+            dimensions,
+            path,
+            similarity,
+            filters,
+            wait_until_complete=wait_until_complete,
+            **kwargs,
+        )
+
+    def create_fulltext_search_index(
+        self,
+        field: str,
+        field_type: str = "string",
+        *,
+        wait_until_complete: Optional[float] = None,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Experimental Utility function to create the Atlas Search index for this store.
+
+        Args:
+            field (str): Field to index
+            wait_until_complete (Optional[float]): If provided, number of seconds to wait
+                until search index is ready
+            kwargs: Keyword arguments supplying any additional options to SearchIndexModel.
+
+        """
+        return create_fulltext_search_index(
+            self.collection,
+            self._fulltext_index_name,
+            field,
+            field_type,
+            wait_until_complete=wait_until_complete,
+            **kwargs,
+        )
