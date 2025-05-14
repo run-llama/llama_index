@@ -52,23 +52,6 @@ class RankLLMRerank(BaseNodePostprocessor):
     use_azure_openai: bool = Field(default=False)
 
     _reranker: Any = PrivateAttr()
-    
-    def __init__(self, **data: Any):
-        super().__init__(**data)
-        
-        kwargs = {
-            "model_path": self.model,
-            "context_size": self.context_size,
-            "prompt_mode": self.prompt_mode,
-            "window_size": self.window_size,
-            "stride": self.stride,
-            "use_azure_openai": self.use_azure_openai,
-            "interactive": False,
-            "default_model_coordinator": None
-        }
-        
-        model_coordinator = Reranker.create_model_coordinator(**kwargs)
-        self._reranker = Reranker(model_coordinator)
 
     @classmethod
     def class_name(cls) -> str:
@@ -79,6 +62,19 @@ class RankLLMRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: QueryBundle,
     ) -> List[NodeWithScore]:
+        kwargs = {
+            "model_path": self.model,
+            "context_size": self.context_size,
+            "prompt_mode": self.prompt_mode,
+            "window_size": self.window_size,
+            "stride": self.stride,
+            "use_azure_openai": self.use_azure_openai,
+            "interactive": False,
+            "default_model_coordinator": None
+        }
+        model_coordinator = Reranker.create_model_coordinator(**kwargs)
+        self._reranker = Reranker(model_coordinator)
+        
         dispatcher.event(
             ReRankStartEvent(
                 query=query_bundle,
@@ -116,11 +112,11 @@ class RankLLMRerank(BaseNodePostprocessor):
         # scores are maintained the same as generated from the retriever
         permutation = self._reranker.rerank(
             request,
-            rank_end=len(request[0].candidates),
+            rank_end=len(request.candidates),
             rank_start=0,
             shuffle_candidates=False,
             logging=False,
-            top_k_retrieve=len(request[0].candidates),
+            top_k_retrieve=len(request.candidates),
         )
 
         new_nodes: List[NodeWithScore] = []
