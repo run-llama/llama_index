@@ -120,7 +120,7 @@ class RankLLMRerank(BaseNodePostprocessor):
         )
 
         new_nodes: List[NodeWithScore] = []
-        for candidate in permutation[0].candidates:
+        for candidate in permutation.candidates:
             id: int = int(candidate.docid)
             new_nodes.append(NodeWithScore(node=nodes[id].node, score=nodes[id].score))
 
