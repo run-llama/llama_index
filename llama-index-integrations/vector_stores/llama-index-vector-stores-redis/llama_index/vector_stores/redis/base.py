@@ -264,10 +264,12 @@ class RedisVectorStore(BasePydanticVectorStore):
         return self._index.exists()
 
     async def async_index_exists(self) -> bool:
-        """Check whether the index exists in Redis.
+        """
+        Check whether the index exists in Redis.
 
         Returns:
             bool: True or False.
+
         """
         if not self.created_async_index:
             await self.async_create_index()
@@ -295,7 +297,8 @@ class RedisVectorStore(BasePydanticVectorStore):
         self.created_async_index = True
 
     async def async_add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add nodes to the index.
+        """
+        Add nodes to the index.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings
@@ -305,6 +308,7 @@ class RedisVectorStore(BasePydanticVectorStore):
 
         Raises:
             ValueError: If the index already exists and overwrite is False.
+
         """
         # Check to see if empty document list was passed
         await self.async_index_exists()
@@ -675,7 +679,8 @@ class RedisVectorStore(BasePydanticVectorStore):
     async def aquery(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
-        """Query the index.
+        """
+        Query the index.
 
         Args:
             query (VectorStoreQuery): query object
@@ -687,6 +692,7 @@ class RedisVectorStore(BasePydanticVectorStore):
             ValueError: If query.query_embedding is None.
             redis.exceptions.RedisError: If there is an error querying the index.
             redis.exceptions.TimeoutError: If there is a timeout querying the index.
+
         """
         await self.async_index_exists()
         if not query.query_embedding:
