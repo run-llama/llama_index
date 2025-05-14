@@ -121,6 +121,10 @@ async def test_embed_image_batch():
     assert len(embeddings2[0]) > 0
     assert len(embeddings2[1]) > 0
 
+
+@pytest.mark.skipif(
+    os.environ.get("CO_API_KEY") is None, reason="Cohere API key required"
+)
 def test_all_model_names():
     for model_name in VALID_MODEL_INPUT_TYPES:
         emb = CohereEmbedding(
