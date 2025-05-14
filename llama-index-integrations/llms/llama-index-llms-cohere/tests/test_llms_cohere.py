@@ -95,6 +95,50 @@ def test_chat(
         )
 
 
+def search(query: str) -> str:
+    """Search for information about a query."""
+    return f"Results for {query}"
+
+
+search_tool = FunctionTool.from_defaults(
+    fn=search,
+    name="search_tool",
+    description="A tool for searching information"
+)
+
+
+def test_prepare_chat_with_tools_tool_required():
+    """Test that tool_required is correctly passed to the API request when True."""
+    with mock.patch("llama_index.llms.cohere.base.cohere.Client", autospec=True):
+        llm = Cohere(api_key="dummy", temperature=0.3)
+
+    # Test with tool_required=True
+    result = llm._prepare_chat_with_tools(
+        tools=[search_tool],
+        tool_required=True
+    )
+
+    assert "tool_choice" in result
+    assert result["tool_choice"] == "REQUIRED"
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["name"] == "search_tool"
+
+
+def test_prepare_chat_with_tools_tool_not_required():
+    """Test that tool_required is correctly passed to the API request when False."""
+    with mock.patch("llama_index.llms.cohere.base.cohere.Client", autospec=True):
+        llm = Cohere(api_key="dummy", temperature=0.3)
+
+    # Test with tool_required=False (default)
+    result = llm._prepare_chat_with_tools(
+        tools=[search_tool],
+    )
+
+    assert "tool_choice" not in result
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["name"] == "search_tool"
+
+
 def test_invoke_tool_calls() -> None:
     with mock.patch("llama_index.llms.cohere.base.cohere.Client", autospec=True):
         llm = Cohere(api_key="dummy", temperature=0.3)
