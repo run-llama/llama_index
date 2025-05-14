@@ -62,7 +62,9 @@ class RankLLMRerank(BaseNodePostprocessor):
             "prompt_mode": self.prompt_mode,
             "window_size": self.window_size,
             "stride": self.stride,
-            "use_azure_openai": self.use_azure_openai
+            "use_azure_openai": self.use_azure_openai,
+            "interactive": False,
+            "default_model_coordinator": None
         }
         
         model_coordinator = Reranker.create_model_coordinator(**kwargs)
