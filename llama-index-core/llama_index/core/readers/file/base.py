@@ -23,7 +23,6 @@ from typing import (
 
 import fsspec
 from fsspec.implementations.local import LocalFileSystem
-from tqdm import tqdm
 
 from llama_index.core.async_utils import get_asyncio_module, run_jobs
 from llama_index.core.readers.base import BaseReader, ResourcesReaderMixin
