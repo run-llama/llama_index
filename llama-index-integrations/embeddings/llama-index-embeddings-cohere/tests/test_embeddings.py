@@ -6,6 +6,7 @@ from PIL import Image
 from llama_index.core.base.embeddings.base import BaseEmbedding
 
 from llama_index.embeddings.cohere import CohereEmbedding
+from llama_index.embeddings.cohere.base import VALID_MODEL_INPUT_TYPES
 
 
 def test_embedding_class():
@@ -119,6 +120,16 @@ async def test_embed_image_batch():
     assert len(embeddings2) == 2
     assert len(embeddings2[0]) > 0
     assert len(embeddings2[1]) > 0
+
+def test_all_model_names():
+    for model_name in VALID_MODEL_INPUT_TYPES:
+        emb = CohereEmbedding(
+            api_key=os.environ["CO_API_KEY"],
+            model_name=model_name,
+        )
+        embedding = emb.get_text_embedding("Hello, world!")
+        assert len(embedding) > 0
+
 
 def test_cohere_embeddings_custom_endpoint_multiprocessing():
     """
