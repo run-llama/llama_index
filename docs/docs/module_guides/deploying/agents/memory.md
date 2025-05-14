@@ -211,16 +211,20 @@ from typing import Optional, List, Any
 from llama_index.core.llms import ChatMessage
 from llama_index.core.memory.memory import BaseMemoryBlock
 
+
 # use generics to define the output type of the memory block
 # can be str or List[ContentBlock]
 class MentionCounter(BaseMemoryBlock[str]):
     """
     A memory block that counts the number of times a user mentions a specific name.
     """
+
     mention_name: str = "Logan"
     mention_count: int = 0
 
-    async def _aget(self, messages: Optional[List[ChatMessage]] = None, **block_kwargs: Any) -> str:
+    async def _aget(
+        self, messages: Optional[List[ChatMessage]] = None, **block_kwargs: Any
+    ) -> str:
         return f"Logan was mentioned {self.mention_count} times."
 
     async def _aput(self, messages: List[ChatMessage]) -> None:
@@ -228,7 +232,9 @@ class MentionCounter(BaseMemoryBlock[str]):
             if self.mention_name in message.content:
                 self.mention_count += 1
 
-    async def atruncate(self, content: str, tokens_to_truncate: int) -> Optional[str]:
+    async def atruncate(
+        self, content: str, tokens_to_truncate: int
+    ) -> Optional[str]:
         return ""
 ```
 
