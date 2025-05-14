@@ -9,11 +9,10 @@ from llama_index.core.base.llms.types import (
     ChatResponseGen,
 )
 from llama_index.core.llms.llm import LLM, ToolSelection
+
 if TYPE_CHECKING:
     from llama_index.core.chat_engine.types import AgentChatResponse
     from llama_index.core.tools.types import BaseTool
-
-
 
 
 class FunctionCallingLLM(LLM):
