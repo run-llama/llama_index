@@ -309,8 +309,7 @@ def to_openai_message_dict(
         if isinstance(block, TextBlock):
             content.append({"type": "text", "text": block.text})
             content_txt += block.text
-        if isinstance(block, DocumentBlock):
-            # add other stuff
+        elif isinstance(block, DocumentBlock):
             if not block.data:
                 file_buffer = block.resolve_document()
                 b64_string = block._get_b64_string(data_buffer=file_buffer)

@@ -303,6 +303,7 @@ def test__pytest(mock_subprocess):
     assert mock_subprocess.call_args[0][0] == [
         "uv",
         "run",
+        "--no-sync",
         "--",
         "pytest",
         "-q",
@@ -315,6 +316,7 @@ def test__pytest(mock_subprocess):
     assert mock_subprocess.call_args[0][0] == [
         "uv",
         "run",
+        "--no-sync",
         "--",
         "pytest",
         "-q",
