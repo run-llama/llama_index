@@ -23,7 +23,8 @@ DEFAULT_RUNGPT_TEMP = 0.75
 
 
 class RunGptLLM(LLM):
-    """RunGPT LLM.
+    """
+    RunGPT LLM.
 
     The opengpt of Jina AI models.
 
@@ -38,6 +39,7 @@ class RunGptLLM(LLM):
         response = llm.complete("What public transportation might be available in a city?")
         print(str(response))
         ```
+
     """
 
     model: Optional[str] = Field(

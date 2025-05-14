@@ -1,11 +1,104 @@
 [build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core"]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "ipython==8.10.0",
+    "jupyter>=1.0.0,<2",
+    "mypy==0.991",
+    "pre-commit==3.2.0",
+    "pylint==2.15.10",
+    "pytest==7.2.1",
+    "pytest-mock==3.11.1",
+    "ruff==0.0.292",
+    "types-Deprecated>=0.1.0",
+    "types-PyYAML>=6.0.12.12,<7",
+    "types-protobuf>=4.24.0.4,<5",
+    "types-redis==4.5.5.0",
+    "types-requests==2.28.11.8",
+    "types-setuptools==67.1.0.0",
+    "black[jupyter]<=23.9.1,>=23.7.0",
+    "codespell[toml]>=v2.2.6",
+    "diff-cover>=9.2.0",
+    "pytest-cov>=6.1.1",
+]
+
+[project]
+name = "llama-index-readers-web"
+version = "0.4.1"
+description = "llama-index readers web integration"
+authors = [{name = "Your Name", email = "you@example.com"}]
+requires-python = ">=3.9,<4.0"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+maintainers = [
+    {name = "HawkClaws"},
+    {name = "Hironsan"},
+    {name = "NA"},
+    {name = "an-bluecat"},
+    {name = "bborn"},
+    {name = "jasonwcfan"},
+    {name = "kravetsmic"},
+    {name = "pandazki"},
+    {name = "ruze00"},
+    {name = "selamanse"},
+    {name = "thejessezhang"},
+]
+keywords = [
+    "BFS",
+    "article",
+    "atom",
+    "documentation",
+    "feed",
+    "main content extractor",
+    "news",
+    "readthedocs",
+    "rss",
+    "scraper",
+    "selenium",
+    "seo",
+    "sitemap",
+    "substack",
+    "trafilatura",
+    "unstructured.io",
+    "url",
+    "web reader",
+    "web",
+    "website",
+]
+dependencies = [
+    "selenium>=4.17.2,<5",
+    "chromedriver-autoinstaller>=0.6.3,<0.7",
+    "html2text>=2024.2.26,<2025",
+    "aiohttp>=3.9.1,<4",
+    "beautifulsoup4>=4.12.3,<5",
+    "requests>=2.31.0,<3",
+    "urllib3>=1.1.0",
+    "playwright>=1.30,<2.0",
+    "newspaper3k>=0.2.8,<0.3",
+    "spider-client>=0.0.27,<0.0.28",
+    "llama-index-core>=0.12.0,<0.13",
+    "defusedxml>=0.7.1,<0.8",
+    "httpx>=0.28.1",
+    "lxml>=5.4.0",
+    "lxml-html-clean>=0.4.2",
+    "markdownify>=1.1.0",
+    "oxylabs>=2.0.0",
+]
 
 [tool.codespell]
 check-filenames = true
 check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
@@ -21,6 +114,7 @@ HyperbrowserWebReader = "NikhilShahi"
 KnowledgeBaseWebReader = "jasonwcfan"
 MainContentExtractorReader = "HawkClaws"
 NewsArticleReader = "ruze00"
+OxylabsWebReader = "oxy-rostyslav"
 ReadabilityWebPageReader = "pandazki"
 RssNewsReader = "ruze00"
 RssReader = "bborn"
@@ -37,57 +131,3 @@ disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 python_version = "3.8"
-
-[tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = "llama-index readers web integration"
-exclude = ["**/BUILD"]
-keywords = ["BFS", "article", "atom", "documentation", "feed", "main content extractor", "news", "readthedocs", "rss", "scraper", "selenium", "seo", "sitemap", "substack", "trafilatura", "unstructured.io", "url", "web reader", "web", "website"]
-license = "GPL-3.0-or-later"
-maintainers = ["HawkClaws", "Hironsan", "NA", "an-bluecat", "bborn", "jasonwcfan", "kravetsmic", "pandazki", "ruze00", "selamanse", "thejessezhang"]
-name = "llama-index-readers-web"
-readme = "README.md"
-version = "0.3.9"
-
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-selenium = "^4.17.2"
-chromedriver-autoinstaller = "^0.6.3"
-html2text = "^2024.2.26"
-aiohttp = "^3.9.1"
-beautifulsoup4 = "^4.12.3"
-requests = "^2.31.0"
-urllib3 = ">=1.1.0"
-playwright = ">=1.30,<2.0"
-newspaper3k = "^0.2.8"
-spider-client = "^0.0.27"
-llama-index-core = "^0.12.0"
-defusedxml = "^0.7.1"
-
-[tool.poetry.group.dev.dependencies]
-ipython = "8.10.0"
-jupyter = "^1.0.0"
-mypy = "0.991"
-pre-commit = "3.2.0"
-pylint = "2.15.10"
-pytest = "7.2.1"
-pytest-mock = "3.11.1"
-ruff = "0.0.292"
-tree-sitter-languages = "^1.8.0"
-types-Deprecated = ">=0.1.0"
-types-PyYAML = "^6.0.12.12"
-types-protobuf = "^4.24.0.4"
-types-redis = "4.5.5.0"
-types-requests = "2.28.11.8"
-types-setuptools = "67.1.0.0"
-
-[tool.poetry.group.dev.dependencies.black]
-extras = ["jupyter"]
-version = "<=23.9.1,>=23.7.0"
-
-[tool.poetry.group.dev.dependencies.codespell]
-extras = ["toml"]
-version = ">=v2.2.6"
-
-[[tool.poetry.packages]]
-include = "llama_index/"

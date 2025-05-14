@@ -926,7 +926,7 @@ def vector_store(configuration: Configuration) -> WordliftVectorStore:
 
 
 @pytest.mark.skipif(not docker_available, reason="Docker not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add(
     vector_store: WordliftVectorStore, node_embeddings: List[TextNode], use_async: bool
@@ -938,7 +938,7 @@ async def test_add(
 
 
 @pytest.mark.skipif(not docker_available, reason="Docker not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_delete_nodes(
     vector_store: WordliftVectorStore, node_embeddings: List[TextNode], use_async: bool
@@ -969,7 +969,7 @@ async def test_delete_nodes(
 
 
 @pytest.mark.skipif(not docker_available, reason="Docker not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_wordlift_and_query(
     vector_store: WordliftVectorStore,
@@ -996,7 +996,7 @@ async def test_add_to_wordlift_and_query(
 
 
 @pytest.mark.skipif(not docker_available, reason="Docker not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_wordlift_and_query_with_filters(
     vector_store: WordliftVectorStore,

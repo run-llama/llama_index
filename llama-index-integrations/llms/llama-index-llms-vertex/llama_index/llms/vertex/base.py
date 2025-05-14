@@ -54,7 +54,8 @@ if TYPE_CHECKING:
     )
 )
 class Vertex(FunctionCallingLLM):
-    """Vertext LLM.
+    """
+    Vertext LLM.
 
     Examples:
         `pip install llama-index-llms-vertex`
@@ -80,6 +81,7 @@ class Vertex(FunctionCallingLLM):
         response = llm.complete("Hello world!")
         print(str(response))
         ```
+
     """
 
     model: str = Field(description="The vertex model to use.")

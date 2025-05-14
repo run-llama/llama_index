@@ -6,7 +6,8 @@ from llama_index.core.schema import Document
 
 
 class MainContentExtractorReader(BaseReader):
-    """MainContentExtractor web page reader.
+    """
+    MainContentExtractor web page reader.
 
     Reads pages from the web.
 
@@ -21,7 +22,8 @@ class MainContentExtractorReader(BaseReader):
         self.text_format = text_format
 
     def load_data(self, urls: List[str]) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             urls (List[str]): List of URLs to scrape.

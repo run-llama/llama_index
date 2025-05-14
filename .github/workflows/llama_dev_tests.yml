@@ -1,0 +1,29 @@
+name: llama-dev tests
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "llama-dev/**"
+  pull_request:
+    paths:
+      - "llama-dev/**"
+
+jobs:
+  test-llama-dev:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Set up Python
+        run: uv python install
+
+      - name: Run tests
+        working-directory: llama-dev
+        run: uv run pytest --cov llama_dev --cov-report term-missing

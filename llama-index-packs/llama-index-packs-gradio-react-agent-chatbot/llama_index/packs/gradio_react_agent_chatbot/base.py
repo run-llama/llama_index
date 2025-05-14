@@ -16,7 +16,8 @@ SUPPORTED_TOOLS = {
 
 
 class Capturing(list):
-    """To capture the stdout from ReActAgent.chat with verbose=True. Taken from
+    """
+    To capture the stdout from ReActAgent.chat with verbose=True. Taken from
     https://stackoverflow.com/questions/16571150/\
         how-to-capture-stdout-output-from-a-python-function-call.
     """
@@ -71,7 +72,8 @@ class GradioReActAgentPack(BaseLlamaPack):
         return {"agent": self.agent, "llm": self.llm, "tools": self.tools}
 
     def _handle_user_message(self, user_message, history):
-        """Handle the user submitted message. Clear message box, and append
+        """
+        Handle the user submitted message. Clear message box, and append
         to the history.
         """
         return "", [*history, (user_message, "")]
@@ -79,7 +81,8 @@ class GradioReActAgentPack(BaseLlamaPack):
     def _generate_response(
         self, chat_history: List[Tuple[str, str]]
     ) -> Tuple[str, List[Tuple[str, str]]]:
-        """Generate the response from agent, and capture the stdout of the
+        """
+        Generate the response from agent, and capture the stdout of the
         ReActAgent's thoughts.
         """
         with Capturing() as output:

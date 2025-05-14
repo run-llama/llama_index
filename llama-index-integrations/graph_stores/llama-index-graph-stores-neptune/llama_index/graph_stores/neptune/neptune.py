@@ -27,12 +27,14 @@ def remove_empty_values(input_dict: Dict) -> Dict:
     """
     Remove entries with empty values from the dictionary.
 
-    Parameters:
-
+    Parameters
+    ----------
     input_dict (dict): The dictionary from which empty values need to be removed.
 
-    Returns:
+    Returns
+    -------
     dict: A new dictionary with all empty values removed.
+
     """
     # Create a new dictionary excluding empty values
     output_dict = {key: value for key, value in input_dict.items() if value}
@@ -48,7 +50,8 @@ def create_neptune_database_client(
     sign: bool,
     use_https: bool,
 ):
-    """Create a Neptune Database Client.
+    """
+    Create a Neptune Database Client.
 
     Args:
             host (str): The host endpoint
@@ -61,6 +64,7 @@ def create_neptune_database_client(
 
     Returns:
         Any: The neptune client
+
     """
     try:
         client = None
@@ -115,7 +119,8 @@ def create_neptune_analytics_client(
     credentials_profile_name: str,
     region_name: str,
 ):
-    """Creates a Neptune Analytics Client.
+    """
+    Creates a Neptune Analytics Client.
 
     Args:
         graph_identifier (str): The geaph identifier
@@ -125,6 +130,7 @@ def create_neptune_analytics_client(
 
     Returns:
         Any: The client
+
     """
     try:
         if not graph_identifier.startswith("g-") or "." in graph_identifier:
@@ -266,7 +272,7 @@ def _get_node_properties(query: str, n_labels: List[str], types: Dict) -> List:
                             data_type = "DATETIME"
                         else:
                             data_type = "STRING"
-                    except ValueError:
+                    except (ValueError, OverflowError):
                         data_type = "STRING"
                 s.add((k, data_type))
 

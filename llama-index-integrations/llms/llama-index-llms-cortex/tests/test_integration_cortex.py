@@ -24,13 +24,33 @@ def cortex_llm() -> Cortex:
     return Cortex(user=user, account=account, private_key_file=key_file)
 
 
+def test_cortex_metadata(cortex_llm):
+    """Test that the LLM metadata is correctly configured."""
+    metadata = cortex_llm.metadata
+
+    assert metadata.model_name == "llama3.2-1b"
+    assert metadata.is_chat_model is True
+    assert metadata.context_window == 128000
+    assert metadata.num_output == 4096
+
+
+def test_cortex_metadata(cortex_llm):
+    """Test that the LLM metadata is correctly configured."""
+    metadata = cortex_llm.metadata
+
+    assert metadata.model_name == "llama3.2-1b"
+    assert metadata.is_chat_model is True
+    assert metadata.context_window == 128000
+    assert metadata.num_output == 4096
+
+
 def test_complete(cortex_llm):
     response = cortex_llm.complete("hello", temperature=0, max_tokens=2)
     assert isinstance(response, CompletionResponse)
     assert "hello" in response.text.lower()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_acomplete(cortex_llm):
     response = await cortex_llm.acomplete("hello")
     assert isinstance(response, CompletionResponse)
@@ -50,7 +70,7 @@ def test_stream_complete(cortex_llm):
     assert full_response.strip()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete(cortex_llm):
     stream = await cortex_llm.astream_complete("hello")
     assert isinstance(stream, AsyncIterator)
@@ -75,7 +95,7 @@ def test_chat(cortex_llm):
     assert response.message.content.strip()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat(cortex_llm):
     messages = [
         ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
@@ -107,7 +127,7 @@ def test_stream_chat(cortex_llm):
     assert full_response.strip()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat(cortex_llm):
     messages = [
         ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
@@ -150,7 +170,7 @@ def test_complete_mock(mock_cortex_llm):
         mock_complete.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_acomplete_mock(mock_cortex_llm):
     with mock.patch.object(mock_cortex_llm, "_acomplete") as mock_acomplete:
         mock_acomplete.return_value = CompletionResponse(
@@ -179,7 +199,7 @@ def test_stream_complete_mock(mock_cortex_llm):
         mock_stream_complete.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete_mock(mock_cortex_llm):
     prompt = "Test prompt"
     mock_astream_complete = AsyncMock(
@@ -216,7 +236,7 @@ def test_chat_mock(mock_cortex_llm):
         mock_chat.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat_mock(mock_cortex_llm):
     with mock.patch.object(mock_cortex_llm, "_achat") as mock_achat:
         mock_achat.return_value = ChatResponse(
@@ -275,7 +295,7 @@ def test_stream_chat_mock(mock_cortex_llm):
         mock_stream_chat.assert_called_once_with(messages)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat_mock(mock_cortex_llm):
     messages = [
         ChatMessage(role=MessageRole.USER, content="Test message 1"),
@@ -313,3 +333,100 @@ async def test_astream_chat_mock(mock_cortex_llm):
 
         assert full_response == "Mocked streamed chat"
         mock_astream_chat.assert_called_once_with(messages)
+
+
+## SESSION RELATED TESTS
+import pytest
+from unittest.mock import Mock, patch
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    CompletionResponse,
+    MessageRole,
+)
+from llama_index.llms.cortex import Cortex
+
+
+class MockSession:
+    """Mock Snowpark session object with the expected structure."""
+
+    def __init__(self, token=None) -> None:
+        # Create the nested structure that matches what Cortex expects
+        self.connection = Mock()
+        self.connection.rest = Mock()
+        self.connection.rest.token = token or "mock_jwt_token"
+
+
+@pytest.fixture()
+def mock_session():
+    """Create a mock session with a token."""
+    return MockSession()
+
+
+@pytest.fixture()
+def mock_cortex_with_session(mock_session):
+    """Create a Cortex instance that uses the mock session for authentication."""
+    return Cortex(user="test_user", account="test_account", session=mock_session)
+
+
+def test_session_auth_token_generation(mock_session):
+    """Test that Cortex correctly extracts the token from a session object."""
+    cortex = Cortex(
+        model="llama3.2-1b",
+        user="test_user",
+        account="test_account",
+        session=mock_session,
+    )
+
+    # Test the token extraction
+    assert cortex._generate_auth_header() == 'Snowflake Token="mock_jwt_token"'
+
+
+def test_complete_with_session_auth(mock_cortex_with_session):
+    """Test the complete method using session authentication."""
+    with patch("requests.post") as mock_post:
+        # Configure the mock to return a properly formed response
+        mock_response = Mock()
+        mock_response.iter_lines.return_value = [
+            b'data: {"choices":[{"delta":{"content":"Hello"}}]}',
+            b'data: {"choices":[{"delta":{"content":" world"}}]}',
+        ]
+        mock_post.return_value = mock_response
+
+        response = mock_cortex_with_session.complete("Test prompt")
+
+        # Verify the response was processed correctly
+        assert isinstance(response, CompletionResponse)
+        assert response.text == "Hello world"
+
+        # Verify the request had the correct authorization header
+        args, kwargs = mock_post.call_args
+        headers = kwargs.get("headers", {})
+        assert "Authorization" in headers
+        assert headers["Authorization"] == 'Snowflake Token="mock_jwt_token"'
+
+
+def test_chat_with_session_auth(mock_cortex_with_session):
+    """Test the chat method using session authentication."""
+    with patch("requests.post") as mock_post:
+        # Configure the mock to return a properly formed response
+        mock_response = Mock()
+        mock_response.iter_lines.return_value = [
+            b'data: {"choices":[{"delta":{"content":"Hello"}}]}',
+            b'data: {"choices":[{"delta":{"content":" from Cortex"}}]}',
+        ]
+        mock_post.return_value = mock_response
+
+        messages = [ChatMessage(role=MessageRole.USER, content="Hi")]
+        response = mock_cortex_with_session.chat(messages)
+
+        # Verify the response was processed correctly
+        assert isinstance(response, ChatResponse)
+        assert response.message.content == "Hello from Cortex"
+        assert response.message.role == MessageRole.ASSISTANT
+
+        # Verify the request had the correct authorization header
+        args, kwargs = mock_post.call_args
+        headers = kwargs.get("headers", {})
+        assert "Authorization" in headers
+        assert headers["Authorization"] == 'Snowflake Token="mock_jwt_token"'

@@ -86,7 +86,8 @@ class BasePromptTemplate(ChainableMixin, BaseModel, ABC):  # type: ignore[no-red
         return {template_var_mappings.get(k, k): v for k, v in kwargs.items()}
 
     def _map_function_vars(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        """For keys in function_mappings, compute values and combine w/ kwargs.
+        """
+        For keys in function_mappings, compute values and combine w/ kwargs.
 
         Users can pass in functions instead of fixed values as format variables.
         For each function, we call the function with the current kwargs,
@@ -112,7 +113,8 @@ class BasePromptTemplate(ChainableMixin, BaseModel, ABC):  # type: ignore[no-red
         return new_kwargs
 
     def _map_all_vars(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        """Map both template and function variables.
+        """
+        Map both template and function variables.
 
         We (1) first call function mappings to compute functions,
         and then (2) call the template_var_mappings.

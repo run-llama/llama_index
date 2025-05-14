@@ -24,7 +24,10 @@ logger = logging.getLogger(__name__)
 
 # TODO: Add option for last N user/assistant history interactions instead of token limit
 class ChatSummaryMemoryBuffer(BaseMemory):
-    """Buffer for storing chat history that uses the full text for the latest
+    """
+    Deprecated: Please use `llama_index.core.memory.Memory` instead.
+
+    Buffer for storing chat history that uses the full text for the latest
     {token_limit}.
 
     All older messages are iteratively summarized using the {llm} provided, with
@@ -71,7 +74,7 @@ class ChatSummaryMemoryBuffer(BaseMemory):
             )
 
         # Validate tokenizer -- this avoids errors when loading from json/dict
-        tokenizer_fn = values.get("tokenizer_fn", None)
+        tokenizer_fn = values.get("tokenizer_fn")
         if tokenizer_fn is None:
             values["tokenizer_fn"] = get_tokenizer()
 
@@ -90,7 +93,8 @@ class ChatSummaryMemoryBuffer(BaseMemory):
         count_initial_tokens: bool = False,
         **kwargs: Any,
     ) -> "ChatSummaryMemoryBuffer":
-        """Create a chat memory buffer from an LLM
+        """
+        Create a chat memory buffer from an LLM
         and an initial list of chat history messages.
         """
         if kwargs:
@@ -230,7 +234,8 @@ class ChatSummaryMemoryBuffer(BaseMemory):
     def _split_messages_summary_or_full_text(
         self, chat_history: List[ChatMessage]
     ) -> Tuple[List[ChatMessage], List[ChatMessage]]:
-        """Determine which messages will be included as full text,
+        """
+        Determine which messages will be included as full text,
         and which will have to be summarized by the llm.
         """
         chat_history_full_text: List[ChatMessage] = []
@@ -257,7 +262,8 @@ class ChatSummaryMemoryBuffer(BaseMemory):
     def _summarize_oldest_chat_history(
         self, chat_history_to_be_summarized: List[ChatMessage]
     ) -> ChatMessage:
-        """Use the llm to summarize the messages that do not fit into the
+        """
+        Use the llm to summarize the messages that do not fit into the
         buffer.
         """
         assert self.llm is not None
@@ -319,7 +325,8 @@ class ChatSummaryMemoryBuffer(BaseMemory):
         chat_history_full_text: List[ChatMessage],
         chat_history_to_be_summarized: List[ChatMessage],
     ) -> None:
-        """To avoid breaking API's, we need to ensure the following.
+        """
+        To avoid breaking API's, we need to ensure the following.
 
         - the first message cannot be ASSISTANT
         - ASSISTANT/TOOL should be considered in pairs

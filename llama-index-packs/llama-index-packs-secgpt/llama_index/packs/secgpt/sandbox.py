@@ -29,6 +29,7 @@ def get_root_domain(url):
 
     Returns:
         str: The root domain of the URL.
+
     """
     extracted = tldextract.extract(url)
     return f"{extracted.domain}.{extracted.suffix}"
@@ -43,6 +44,7 @@ def is_request_allowed(url):
 
     Returns:
         bool: True if the request is allowed, False otherwise.
+
     """
     root_domain = get_root_domain(url)
     return root_domain in allowed_domains

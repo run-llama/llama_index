@@ -27,6 +27,7 @@ async def _aget_current_agentql_page(browser: AsyncBrowser) -> AsyncPage:
 
     Returns:
         Page: The current page.
+
     """
     context = browser.contexts[0] if browser.contexts else await browser.new_context()
     page = context.pages[-1] if context.pages else await context.new_page()

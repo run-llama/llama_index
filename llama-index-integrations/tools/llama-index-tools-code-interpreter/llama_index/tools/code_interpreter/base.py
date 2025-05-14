@@ -7,7 +7,8 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 
 class CodeInterpreterToolSpec(BaseToolSpec):
-    """Code Interpreter tool spec.
+    """
+    Code Interpreter tool spec.
 
     WARNING: This tool provides the Agent access to the `subprocess.run` command.
     Arbitrary code execution is possible on the machine running this tool.

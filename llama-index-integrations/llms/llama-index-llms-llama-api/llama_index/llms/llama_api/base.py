@@ -6,7 +6,8 @@ from llama_index.llms.openai_like import OpenAILike
 
 
 class LlamaAPI(OpenAILike):
-    """LlamaAPI LLM.
+    """
+    LlamaAPI LLM.
 
     Examples:
         `pip install llama-index-llms-llama-api`
@@ -24,6 +25,7 @@ class LlamaAPI(OpenAILike):
 
         print(resp)
         ```
+
     """
 
     model: str = Field(

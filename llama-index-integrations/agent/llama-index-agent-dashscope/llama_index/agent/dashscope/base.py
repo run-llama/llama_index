@@ -30,7 +30,8 @@ class DashScopeAgent(BaseAgent):
         api_key: str = None,
         verbose: bool = False,
     ) -> None:
-        """Init params.
+        """
+        Init params.
 
         Args:
             app_id (str): id of Alibaba cloud bailian application
@@ -39,6 +40,7 @@ class DashScopeAgent(BaseAgent):
             api_key (str, optional): The api api_key, can be None,
                 if None, will get from ENV DASHSCOPE_API_KEY.
             verbose: Output verbose info or not.
+
         """
         self.app_id = app_id
         self.chat_session = chat_session
@@ -87,7 +89,8 @@ class DashScopeAgent(BaseAgent):
         chat_history: Optional[List[ChatMessage]] = None,
         **kwargs,
     ) -> Union[AgentChatResponse, StreamingAgentChatResponse]:
-        """Call app completion service.
+        """
+        Call app completion service.
 
         Args:
             message (str): Message for chatting with LLM.
@@ -102,6 +105,7 @@ class DashScopeAgent(BaseAgent):
 
         Returns:
             Union[AgentChatResponse, StreamingAgentChatResponse]
+
         """
         if stream:
             kwargs["stream"] = True

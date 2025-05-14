@@ -73,7 +73,8 @@ class ReActOutputParser(BaseOutputParser):
     """ReAct Output parser."""
 
     def parse(self, output: str, is_streaming: bool = False) -> BaseReasoningStep:
-        """Parse output from ReAct agent.
+        """
+        Parse output from ReAct agent.
 
         We expect the output to be in one of the following formats:
         1. If the agent need to use a tool to answer the question:

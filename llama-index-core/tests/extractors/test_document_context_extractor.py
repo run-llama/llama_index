@@ -74,7 +74,7 @@ def context_extractor(docstore, mock_llm):
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_context_extraction_basic(
     context_extractor, sample_documents, create_text_nodes
 ):
@@ -111,7 +111,7 @@ def test_invalid_oversized_strategy():
         )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_context_extraction_oversized_document(create_text_nodes):
     large_doc = Document(
         text="This is a very long document. " * 1000, metadata={"title": "Large Doc"}
@@ -134,7 +134,7 @@ async def test_context_extraction_oversized_document(create_text_nodes):
         await extractor.aextract(nodes)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_context_extraction_custom_prompt(
     docstore, mock_llm, sample_documents, create_text_nodes
 ):
@@ -154,7 +154,7 @@ async def test_context_extraction_custom_prompt(
     assert "context" in metadata_list[0]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_multiple_documents_context(
     context_extractor, sample_documents, create_text_nodes
 ):

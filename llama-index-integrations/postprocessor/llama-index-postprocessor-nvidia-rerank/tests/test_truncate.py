@@ -82,7 +82,7 @@ def test_truncate_invalid(truncate: Any) -> None:
         NVIDIARerank(truncate=truncate)
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 @pytest.mark.parametrize("truncate", ["END"])
 def test_truncate_positive(model: str, mode: dict, truncate: str) -> None:
     query = "What is acceleration?"
@@ -96,7 +96,7 @@ def test_truncate_positive(model: str, mode: dict, truncate: str) -> None:
     assert len(response) == len(nodes)
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 @pytest.mark.parametrize("truncate", [None, "NONE"])
 def test_truncate_negative(model: str, mode: dict, truncate: str) -> None:
     if model == "nv-rerank-qa-mistral-4b:1":

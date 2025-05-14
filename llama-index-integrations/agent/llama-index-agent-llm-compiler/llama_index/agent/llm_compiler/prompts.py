@@ -1,4 +1,5 @@
-"""LLM Compiler Prompts.
+"""
+LLM Compiler Prompts.
 
 Taken from https://github.com/SqueezeAILab/LLMCompiler.
 

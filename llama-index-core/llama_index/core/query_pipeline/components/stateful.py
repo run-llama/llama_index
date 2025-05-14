@@ -27,7 +27,8 @@ class BaseStatefulComponent(QueryComponent):
 
 
 class StatefulFnComponent(BaseStatefulComponent, FnComponent):
-    """Query component that takes in an arbitrary function.
+    """
+    Query component that takes in an arbitrary function.
 
     Stateful version of `FnComponent`. Expects functions to have `state` as the first argument.
 

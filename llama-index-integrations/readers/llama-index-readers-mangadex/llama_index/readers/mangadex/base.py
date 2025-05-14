@@ -69,7 +69,8 @@ class MangaDexReader(BaseReader):
         return None
 
     def load_data(self, titles: List[str], lang: str = "en") -> List[Document]:
-        """Load data from the MangaDex API.
+        """
+        Load data from the MangaDex API.
 
         Args:
             title (List[str]): List of manga titles

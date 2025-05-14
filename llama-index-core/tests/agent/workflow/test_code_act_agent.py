@@ -75,7 +75,7 @@ def mock_memory():
     return memory
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_code_act_agent_basic_execution(
     mock_llm, mock_code_execute_fn, mock_memory
 ):
@@ -113,7 +113,7 @@ async def test_code_act_agent_basic_execution(
     assert "print('Hello World')" in output.tool_calls[0].tool_kwargs["code"]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_code_act_agent_tool_handling(
     mock_llm, mock_code_execute_fn, mock_memory
 ):

@@ -63,7 +63,8 @@ class IntegrationActivityAnalyzer:
         self._new_project_score = new_project_score
 
     def get_time_weight(self, date_str: str, decay_factor: float = 0.5) -> float:
-        """Calculate time-based weight using exponential decay.
+        """
+        Calculate time-based weight using exponential decay.
 
         Args:
             date_str: Date string in YYYY-MM-DD format
@@ -71,6 +72,7 @@ class IntegrationActivityAnalyzer:
 
         Returns:
             Weight between 0 and 1, with more recent dates closer to 1
+
         """
         date = datetime.strptime(date_str, "%Y-%m-%d")
         days_ago = (datetime.now() - date).days
@@ -78,7 +80,8 @@ class IntegrationActivityAnalyzer:
 
     @lru_cache(maxsize=128)
     def get_download_trends(self) -> Dict[str, float]:
-        """Get download trends for the package.
+        """
+        Get download trends for the package.
         Cache results to avoid repeated PyPI API calls.
         """
         # Using PyPI Stats API for monthly data

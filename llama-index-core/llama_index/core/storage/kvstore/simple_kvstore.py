@@ -15,10 +15,12 @@ DATA_TYPE = Dict[str, Dict[str, dict]]
 
 
 class SimpleKVStore(BaseInMemoryKVStore):
-    """Simple in-memory Key-Value store.
+    """
+    Simple in-memory Key-Value store.
 
     Args:
         data (Optional[DATA_TYPE]): data to initialize the store with
+
     """
 
     def __init__(

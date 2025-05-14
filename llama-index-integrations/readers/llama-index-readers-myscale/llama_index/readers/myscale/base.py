@@ -22,7 +22,8 @@ def format_list_to_string(lst: List) -> str:
 
 
 class MyScaleSettings:
-    """MyScale Client Configuration.
+    """
+    MyScale Client Configuration.
 
     Attribute:
         table (str) : Table name to operate on.
@@ -83,7 +84,8 @@ class MyScaleSettings:
 
 
 class MyScaleReader(BaseReader):
-    """MyScale reader.
+    """
+    MyScale reader.
 
     Args:
         myscale_host (str) : An URL to connect to MyScale backend.
@@ -143,7 +145,8 @@ class MyScaleReader(BaseReader):
         where_str: Optional[str] = None,
         limit: int = 10,
     ) -> List[Document]:
-        """Load data from MyScale.
+        """
+        Load data from MyScale.
 
         Args:
             query_vector (List[float]): Query vector.
@@ -153,6 +156,7 @@ class MyScaleReader(BaseReader):
 
         Returns:
             List[Document]: A list of documents.
+
         """
         query_statement = self.config.build_query_statement(
             query_embed=query_vector,

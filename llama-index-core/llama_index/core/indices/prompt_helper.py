@@ -1,4 +1,5 @@
-"""General prompt helper that can help deal with LLM context window token limitations.
+"""
+General prompt helper that can help deal with LLM context window token limitations.
 
 At its core, it calculates available context size by starting with the context window
 size of an LLM and reserve token space for the prompt template, and the output.
@@ -39,7 +40,8 @@ logger = logging.getLogger(__name__)
 
 
 class PromptHelper(BaseComponent):
-    """Prompt helper.
+    """
+    Prompt helper.
 
     General prompt helper that can help deal with LLM context window token limitations.
 
@@ -112,7 +114,8 @@ class PromptHelper(BaseComponent):
         tokenizer: Optional[Callable[[str], List]] = None,
         separator: str = " ",
     ) -> "PromptHelper":
-        """Create from llm predictor.
+        """
+        Create from llm predictor.
 
         This will autofill values like context_window and num_output.
 
@@ -138,7 +141,8 @@ class PromptHelper(BaseComponent):
         return "PromptHelper"
 
     def _get_available_context_size(self, num_prompt_tokens: int) -> int:
-        """Get available context size.
+        """
+        Get available context size.
 
         This is calculated as:
             available context window = total context window
@@ -147,6 +151,7 @@ class PromptHelper(BaseComponent):
 
         Notes:
         - Available context size is further clamped to be non-negative.
+
         """
         context_size_tokens = self.context_window - num_prompt_tokens - self.num_output
         if context_size_tokens < 0:
@@ -175,7 +180,8 @@ class PromptHelper(BaseComponent):
         llm: Optional[LLM] = None,
         tools: Optional[List["BaseTool"]] = None,
     ) -> int:
-        """Get available chunk size.
+        """
+        Get available chunk size.
 
         This is calculated as:
             available chunk size = available context window  // number_chunks
@@ -184,6 +190,7 @@ class PromptHelper(BaseComponent):
         Notes:
         - By default, we use padding of 5 (to save space for formatting needs).
         - Available chunk size is further clamped to chunk_size_limit if specified.
+
         """
         tools = self._get_tools_from_llm(llm=llm, tools=tools)
 
@@ -242,7 +249,8 @@ class PromptHelper(BaseComponent):
         llm: Optional[LLM] = None,
         tools: Optional[List["BaseTool"]] = None,
     ) -> TokenTextSplitter:
-        """Get text splitter configured to maximally pack available context window,
+        """
+        Get text splitter configured to maximally pack available context window,
         taking into account of given prompt, and desired number of chunks.
         """
         chunk_size = self._get_available_chunk_size(
@@ -284,7 +292,8 @@ class PromptHelper(BaseComponent):
         llm: Optional[LLM] = None,
         tools: Optional[List["BaseTool"]] = None,
     ) -> List[str]:
-        """Repack text chunks to fit available context window.
+        """
+        Repack text chunks to fit available context window.
 
         This will combine text chunks into consolidated chunks
         that more fully "pack" the prompt template given the context_window.

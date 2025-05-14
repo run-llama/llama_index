@@ -24,11 +24,14 @@ def remove_empty_values(input_dict):
     """
     Remove entries with empty values from the dictionary.
 
-    Parameters:
+    Parameters
+    ----------
     input_dict (dict): The dictionary from which empty values need to be removed.
 
-    Returns:
+    Returns
+    -------
     dict: A new dictionary with all empty values removed.
+
     """
     # Create a new dictionary excluding empty values
     return {key: value for key, value in input_dict.items() if value}
@@ -142,6 +145,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         # Close the neo4j connection explicitly.
         graph_store.close()
         ```
+
     """
 
     supports_structured_queries: bool = True
@@ -1115,6 +1119,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
 
         Returns:
             Neo4jPropertyGraphStore: The current graph connection instance
+
         """
         return self
 
@@ -1140,6 +1145,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
 
         Note:
             Any exception is re-raised after the connection is closed.
+
         """
         self.close()
 
@@ -1164,6 +1170,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                    ...
                finally:
                    graph.close()
+
         """
         try:
             self.close()

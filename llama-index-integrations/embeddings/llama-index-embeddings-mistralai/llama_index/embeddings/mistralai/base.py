@@ -14,13 +14,15 @@ from mistralai import Mistral
 
 
 class MistralAIEmbedding(BaseEmbedding):
-    """Class for MistralAI embeddings.
+    """
+    Class for MistralAI embeddings.
 
     Args:
         model_name (str): Model for embedding.
             Defaults to "mistral-embed".
 
         api_key (Optional[str]): API key to access the model. Defaults to None.
+
     """
 
     # Instance variables initialized via Pydantic's mechanism

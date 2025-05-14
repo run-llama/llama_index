@@ -33,6 +33,7 @@ class GoogleSearchToolSpec(BaseToolSpec):
 
         Raises:
             ValueError: If the 'num' is not an integer between 1 and 10.
+
         """
         url = QUERY_URL_TMPL.format(
             key=self.key, engine=self.engine, query=urllib.parse.quote_plus(query)

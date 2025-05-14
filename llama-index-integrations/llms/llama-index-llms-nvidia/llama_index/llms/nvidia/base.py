@@ -72,6 +72,7 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
 
         Raises:
             DeprecationWarning: If an API key is not provided for a hosted NIM, a warning is issued. This will become an error in version 0.2.0.
+
         """
         api_key = get_from_param_or_env(
             "api_key",
@@ -136,6 +137,7 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
 
         Raises:
             ValueError: If the model is incompatible with the client.
+
         """
         if self._is_hosted:
             if model := determine_model(model_name):

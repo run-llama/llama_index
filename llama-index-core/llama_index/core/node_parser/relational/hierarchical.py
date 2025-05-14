@@ -74,7 +74,8 @@ def get_deeper_nodes(nodes: List[BaseNode], depth: int = 1) -> List[BaseNode]:
 
 
 class HierarchicalNodeParser(NodeParser):
-    """Hierarchical node parser.
+    """
+    Hierarchical node parser.
 
     Splits a document into a recursive hierarchy Nodes using a NodeParser.
 

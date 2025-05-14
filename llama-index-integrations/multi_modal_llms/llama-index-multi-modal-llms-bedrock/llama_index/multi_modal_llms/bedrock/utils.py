@@ -113,7 +113,8 @@ def resolve_bedrock_credentials(
     aws_access_key_id: Optional[str] = None,
     aws_secret_access_key: Optional[str] = None,
 ) -> tuple[Optional[str], Optional[str], str]:
-    """Resolve AWS Bedrock credentials.
+    """
+    Resolve AWS Bedrock credentials.
 
     The order of precedence is:
     1. Explicitly passed credentials

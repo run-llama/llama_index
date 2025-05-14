@@ -61,13 +61,13 @@ CREATE EDGE IF NOT EXISTS `__meta__rel_label__` (`label` STRING, `props_json` ST
 
 # TODO: need to define Props__ Indexes based on all the properties
 INDEX_DDL = """
-CREATE TAG INDEX IF NOT EXISTS idx_Entity__ ON `Entity__`(`name`);
-CREATE TAG INDEX IF NOT EXISTS idx_Chunk__ ON `Chunk__`(`text`);
-CREATE TAG INDEX IF NOT EXISTS idx_Node__ ON `Node__`(`label`);
-CREATE EDGE INDEX IF NOT EXISTS idx_Relation__ ON `Relation__`(`label`);
+CREATE TAG INDEX IF NOT EXISTS idx_Entity__ ON `Entity__`(`name`(256));
+CREATE TAG INDEX IF NOT EXISTS idx_Chunk__ ON `Chunk__`(`text`(256));
+CREATE TAG INDEX IF NOT EXISTS idx_Node__ ON `Node__`(`label`(256));
+CREATE EDGE INDEX IF NOT EXISTS idx_Relation__ ON `Relation__`(`label`(256));
 
-CREATE EDGE INDEX IF NOT EXISTS idx_meta__node_label__ ON `__meta__node_label__`(`label`);
-CREATE EDGE INDEX IF NOT EXISTS idx_meta__rel_label__ ON `__meta__rel_label__`(`label`);
+CREATE EDGE INDEX IF NOT EXISTS idx_meta__node_label__ ON `__meta__node_label__`(`label`(256));
+CREATE EDGE INDEX IF NOT EXISTS idx_meta__rel_label__ ON `__meta__rel_label__`(`label`(256));
 """
 
 # Hard coded default schema, which is union of
@@ -98,6 +98,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         %ngql --address 127.0.0.1 --port 9669 --user root --password nebula
         %ngql CREATE SPACE IF NOT EXISTS llamaindex_nebula_property_graph(vid_type=FIXED_STRING(256));
         ```
+
     """
 
     _space: str
@@ -157,7 +158,8 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
         return self._client.execute(query)
 
     def refresh_schema(self) -> None:
-        """Refresh schema.
+        """
+        Refresh schema.
 
         Example data of self.structured_schema
         {

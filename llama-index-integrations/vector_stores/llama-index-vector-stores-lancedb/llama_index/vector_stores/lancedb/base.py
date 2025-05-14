@@ -139,6 +139,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
 
         vector_store = LanceDBVectorStore()  # native invocation
         ```
+
     """
 
     stores_text: bool = True
@@ -307,6 +308,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                     choice of metrics: 'L2', 'dot', 'cosine'
         Returns:
             None
+
         """
         if scalar is None:
             self._table.create_index(
