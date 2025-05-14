@@ -11,6 +11,7 @@ from llama_index.core.base.llms.types import (
     TextBlock,
 )
 from llama_index.core.callbacks import CallbackManager
+from llama_index.core.tools import FunctionTool
 from PIL import Image
 import io
 import numpy as np
@@ -238,8 +239,12 @@ async def test_acomplete(bedrock_converse):
 async def test_astream_complete(bedrock_converse):
     response_stream = await bedrock_converse.astream_complete(prompt)
 
+    responses = []
     async for response in response_stream:
-        assert response.delta in EXP_STREAM_RESPONSE
+        responses.append(response)
+
+    assert len(responses) == len(EXP_STREAM_RESPONSE)
+    assert "".join([r.delta for r in responses]) == "".join(EXP_STREAM_RESPONSE)
 
 
 @needs_aws_creds
@@ -417,3 +422,50 @@ async def test_bedrock_converse_integration_astream_chat_multimodal(
     assert len(chunks) > 1
     combined = "".join(chunks)
     assert len(combined) > 5
+
+def search(query: str) -> str:
+    """Search for information about a query."""
+    return f"Results for {query}"
+
+search_tool = FunctionTool.from_defaults(
+    fn=search,
+    name="search_tool",
+    description="A tool for searching information"
+)
+
+def test_prepare_chat_with_tools_tool_required(bedrock_converse):
+    """Test that tool_required=True is correctly passed to the API request."""
+    result = bedrock_converse._prepare_chat_with_tools(
+        tools=[search_tool],
+        tool_required=True
+    )
+
+    assert "tools" in result
+    assert "toolChoice" in result["tools"]
+    assert result["tools"]["toolChoice"] == {"any": {}}
+
+
+def test_prepare_chat_with_tools_tool_not_required(bedrock_converse):
+    """Test that tool_required=False is correctly passed to the API request."""
+    result = bedrock_converse._prepare_chat_with_tools(
+        tools=[search_tool],
+        tool_required=False
+    )
+
+    assert "tools" in result
+    assert "toolChoice" in result["tools"]
+    assert result["tools"]["toolChoice"] == {"auto": {}}
+
+
+def test_prepare_chat_with_tools_custom_tool_choice(bedrock_converse):
+    """Test that custom tool_choice overrides tool_required."""
+    custom_tool_choice = {"specific": {"name": "search_tool"}}
+    result = bedrock_converse._prepare_chat_with_tools(
+        tools=[search_tool],
+        tool_required=True,
+        tool_choice=custom_tool_choice
+    )
+
+    assert "tools" in result
+    assert "toolChoice" in result["tools"]
+    assert result["tools"]["toolChoice"] == custom_tool_choice
