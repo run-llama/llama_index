@@ -208,12 +208,12 @@ def _pytest(
     pytest_cmd = [
         "uv",
         "run",
+        "--no-sync",
         "--",
         "pytest",
         "-q",
         "--disable-warnings",
         "--disable-pytest-warnings",
-        "--no-sync",
     ]
     if cov:
         pytest_cmd += ["--cov=.", "--cov-report=xml"]
