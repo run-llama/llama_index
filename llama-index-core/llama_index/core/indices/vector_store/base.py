@@ -344,7 +344,8 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
     async def ainsert_nodes(
         self, nodes: Sequence[BaseNode], **insert_kwargs: Any
     ) -> None:
-        """Insert nodes.
+        """
+        Insert nodes.
 
         NOTE: overrides BaseIndex.insert_nodes.
             VectorStoreIndex only stores nodes in document store
@@ -391,7 +392,8 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         delete_from_docstore: bool = False,
         **delete_kwargs: Any,
     ) -> None:
-        """Delete a list of nodes from the index.
+        """
+        Delete a list of nodes from the index.
 
         Args:
             node_ids (List[str]): A list of node_ids from the nodes to delete

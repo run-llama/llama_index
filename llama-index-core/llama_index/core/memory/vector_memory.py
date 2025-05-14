@@ -42,7 +42,7 @@ def _stringify_chat_message(msg: ChatMessage) -> Dict:
 def _get_starter_node_for_new_batch(msg_uuid: Optional[str] = None) -> TextNode:
     """Generates a new starter node for a new batch or group of messages."""
     return TextNode(
-        id_=str(uuid.uuid4()) if not msg_uuid else msg_uuid,
+        id_=msg_uuid if msg_uuid else str(uuid.uuid4()),
         text="",
         metadata={"sub_dicts": []},
         excluded_embed_metadata_keys=["sub_dicts"],
@@ -162,8 +162,7 @@ class VectorMemory(BaseMemory):
         ]
 
     def _get_retriever(self) -> BaseRetriever:
-        retriever = self.vector_index.as_retriever(**self.retriever_kwargs)
-        return retriever
+        return self.vector_index.as_retriever(**self.retriever_kwargs)
 
     def get_all(self) -> List[ChatMessage]:
         """Get all chat history."""
