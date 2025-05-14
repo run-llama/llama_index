@@ -12,7 +12,7 @@ from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 dispatcher = get_dispatcher(__name__)
 
 try:
-    from rank_llm.rerank.reranker import Reranker
+    from rank_llm.rerank.reranker import Reranker, PromptMode
     from rank_llm.data import Request, Query, Candidate
 except ImportError:
     raise ImportError("RankLLM requires `pip install rank-llm`")
@@ -24,50 +24,49 @@ class RankLLMRerank(BaseNodePostprocessor):
 
     Below are all the rerankers supported with the model name to be passed as an argument to the constructor. Some model have convenience names for ease of use:
         Listwise:
+            - OSLLM (Open Source LLM). Takes in a valid Hugging Face model name. e.g., 'Qwen/Qwen2.5-7B-Instruct'
             - RankZephyr. model='rank_zephyr' or 'castorini/rank_zephyr_7b_v1_full'
             - RankVicuna. model='rank_zephyr' or 'castorini/rank_vicuna_7b_v1'
             - RankGPT. Takes in a valid gpt model. e.g., 'gpt-3.5-turbo', 'gpt-4','gpt-3'
-            - LiT5 Distill. model='castorini/LiT5-Distill-base'
-            - LiT5 Score. model='castorini/LiT5-Score-base'
+            - GenAI. Takes in a valid gemini model. e.g., 'gemini-2.0-flash'
+        Pairwise:
+            - DuoT5. model='duot5'
         Pointwise:
             - MonoT5. model='monot5'
-
     """
 
-    model: str = Field(description="Model name.")
+    model: str = Field(description="Model name.", default="rank_zephyr")
     top_n: Optional[int] = Field(
         description="Number of nodes to return sorted by reranking score."
     )
-    window_size: Optional[int] = Field(
-        description="Reranking window size. Applicable only for listwise and pairwise models."
+    window_size: int = Field(
+        description="Reranking window size. Applicable only for listwise and pairwise models.",
+        default=20
     )
     batch_size: Optional[int] = Field(
         description="Reranking batch size. Applicable only for pointwise models."
     )
+    context_size: int = Field(default=4096)
+    prompt_mode: PromptMode = Field(default=PromptMode.RANK_GPT)
+    stride: int = Field(default=10)
+    use_azure_openai: bool = Field(default=False)
 
-    _model: Any = PrivateAttr()
-
-    def __init__(
-        self,
-        model: str,
-        top_n: Optional[int] = None,
-        window_size: Optional[int] = None,
-        batch_size: Optional[int] = None,
-    ):
-        super().__init__(
-            model=model,
-            top_n=top_n,
-            window_size=window_size,
-            batch_size=batch_size,
-        )
-
-        self._model = Reranker.create_agent(
-            model.lower(),
-            default_agent=None,
-            interactive=False,
-            window_size=window_size,
-            batch_size=batch_size,
-        )
+    _reranker: Any = PrivateAttr()
+    
+    def __init__(self, **data: Any):
+        super().__init__(**data)
+        
+        kwargs = {
+            "model_path": self.model,
+            "context_size": self.context_size,
+            "prompt_mode": self.prompt_mode,
+            "window_size": self.window_size,
+            "stride": self.stride,
+            "use_azure_openai": self.use_azure_openai
+        }
+        
+        model_coordinator = Reranker.create_model_coordinator(**kwargs)
+        self._reranker = Reranker(model_coordinator)
 
     @classmethod
     def class_name(cls) -> str:
@@ -92,30 +91,28 @@ class RankLLMRerank(BaseNodePostprocessor):
             for node in nodes
         ]
 
-        request: List[Request] = [
-            Request(
-                query=Query(
-                    text=query_bundle.query_str,
-                    qid=1,
-                ),
-                candidates=[
-                    Candidate(
-                        docid=index,
-                        score=doc[1],
-                        doc={
-                            "body": doc[0],
-                            "headings": "",
-                            "title": "",
-                            "url": "",
-                        },
-                    )
-                    for index, doc in enumerate(docs)
-                ],
-            )
-        ]
+        request = Request(
+            query=Query(
+                text=query_bundle.query_str,
+                qid=1,
+            ),
+            candidates=[
+                Candidate(
+                    docid=index,
+                    score=doc[1],
+                    doc={
+                        "body": doc[0],
+                        "headings": "",
+                        "title": "",
+                        "url": "",
+                    },
+                )
+                for index, doc in enumerate(docs)
+            ],
+        )
 
         # scores are maintained the same as generated from the retriever
-        permutation = self._model.rerank_batch(
+        permutation = self._reranker.rerank(
             request,
             rank_end=len(request[0].candidates),
             rank_start=0,
