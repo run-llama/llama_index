@@ -104,6 +104,7 @@ nav:
           - ./examples/agent/memory/summary_memory_buffer.ipynb
           - ./examples/agent/memory/vector_memory.ipynb
           - ./examples/agent/mistral_agent.ipynb
+          - ./examples/agent/multi_agent_workflow_with_weaviate_queryagent.ipynb
           - ./examples/agent/multi_document_agents-v1.ipynb
           - ./examples/agent/nvidia_agent.ipynb
           - ./examples/agent/nvidia_document_research_assistant_for_blog_creation.ipynb
@@ -268,6 +269,7 @@ nav:
       - Evaluation:
           - ./examples/evaluation/AIMon.ipynb
           - ./examples/evaluation/BeirEvaluation.ipynb
+          - ./examples/evaluation/Cleanlab.ipynb
           - ./examples/evaluation/Deepeval.ipynb
           - ./examples/evaluation/HotpotQADistractor.ipynb
           - ./examples/evaluation/QuestionGeneration.ipynb
@@ -463,6 +465,7 @@ nav:
       - Node Parsers & Text Splitters:
           - ./examples/node_parsers/semantic_chunking.ipynb
           - ./examples/node_parsers/semantic_double_merging_chunking.ipynb
+          - ./examples/node_parsers/slide_parser.ipynb
           - ./examples/node_parsers/topic_parser.ipynb
       - Node Postprocessors:
           - ./examples/node_postprocessor/AIMonRerank.ipynb
@@ -715,7 +718,6 @@ nav:
       - Workflow:
           - ./examples/workflow/JSONalyze_query_engine.ipynb
           - ./examples/workflow/advanced_text_to_sql.ipynb
-          - ./examples/workflow/auto_retrieval.ipynb
           - ./examples/workflow/checkpointing_workflows.ipynb
           - ./examples/workflow/citation_query_engine.ipynb
           - ./examples/workflow/corrective_rag_pack.ipynb
@@ -724,7 +726,6 @@ nav:
           - ./examples/workflow/long_rag_pack.ipynb
           - ./examples/workflow/multi_step_query_engine.ipynb
           - ./examples/workflow/multi_strategy_workflow.ipynb
-          - ./examples/workflow/multimodal_query_engine.ipynb
           - ./examples/workflow/parallel_execution.ipynb
           - ./examples/workflow/planning_workflow.ipynb
           - ./examples/workflow/rag.ipynb
@@ -1175,10 +1176,10 @@ nav:
           - ./api_reference/llama_deploy/services.md
           - ./api_reference/llama_deploy/types.md
       - Memory:
-          - ./api_reference/memory/index.md
-          - ./api_reference/memory/memory.md
           - ./api_reference/memory/chat_memory_buffer.md
+          - ./api_reference/memory/index.md
           - ./api_reference/memory/mem0.md
+          - ./api_reference/memory/memory.md
           - ./api_reference/memory/simple_composable_memory.md
           - ./api_reference/memory/vector_memory.md
       - Message Queues:
