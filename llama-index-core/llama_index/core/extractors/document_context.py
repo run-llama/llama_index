@@ -26,8 +26,6 @@ from llama_index.core.llms import (
     ImageBlock,
     LLM,
     TextBlock,
-)
-from llama_index.core.base.llms.types import (
     DocumentBlock,
 )
 from llama_index.core.schema import BaseNode, Node, TextNode

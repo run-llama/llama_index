@@ -2,8 +2,10 @@ import base64
 from io import BytesIO
 from pathlib import Path
 from unittest import mock
-
+import os
 import pytest
+import httpx
+
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -11,6 +13,7 @@ from llama_index.core.base.llms.types import (
     ImageBlock,
     MessageRole,
     TextBlock,
+    DocumentBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.schema import ImageDocument
@@ -26,6 +29,20 @@ def png_1px_b64() -> bytes:
 def png_1px(png_1px_b64) -> bytes:
     return base64.b64decode(png_1px_b64)
 
+@pytest.fixture()
+def pdf_url() -> str:
+    return "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+
+@pytest.fixture()
+def mock_pdf_bytes(pdf_url) -> bytes:
+    """
+    Returns a byte string representing a very simple, minimal PDF file.
+    """
+    return httpx.get(pdf_url).content
+
+@pytest.fixture()
+def pdf_base64(mock_pdf_bytes) -> bytes:
+    return base64.b64encode(mock_pdf_bytes)
 
 def test_chat_message_from_str():
     m = ChatMessage.from_str(content="test content")
@@ -197,3 +214,71 @@ def test_chat_response():
 def test_completion_response():
     cr = CompletionResponse(text="some text")
     assert str(cr) == "some text"
+
+
+def test_document_block_from_bytes(mock_pdf_bytes: bytes, pdf_base64: bytes):
+    document = DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf", format="pdf")
+    assert document.title == "input_document"
+    assert document.document_mimetype == "application/pdf"
+    assert document.format == "pdf"
+    assert pdf_base64 == document.data
+
+def test_document_block_from_b64(pdf_base64: bytes):
+    document = DocumentBlock(data=pdf_base64)
+    assert document.title == "input_document"
+    assert pdf_base64 == document.data
+
+def test_document_block_from_path(pdf_url: str):
+    pdf_content = httpx.get(pdf_url).content
+    with open("test.pdf", "wb") as f:
+        f.write(pdf_content)
+    f.close()
+    document = DocumentBlock(path="test.pdf")
+    file_buffer = document.resolve_document()
+    assert isinstance(file_buffer, BytesIO)
+    file_bytes = file_buffer.read()
+    document._guess_mimetype(file_bytes)
+    assert document.document_mimetype == "application/pdf"
+    document._guess_format(file_bytes)
+    assert document.format == "pdf"
+    b64_string = document._get_b64_string(file_buffer)
+    try:
+        base64.b64decode(b64_string, validate=True)
+        string_base64_encoded = True
+    except Exception:
+        string_base64_encoded = False
+    assert string_base64_encoded
+    b64_bytes = document._get_b64_bytes(file_buffer)
+    try:
+        base64.b64decode(b64_bytes, validate=True)
+        bytes_base64_encoded = True
+    except Exception:
+        bytes_base64_encoded = False
+    assert bytes_base64_encoded
+    assert document.title == "input_document"
+    os.remove("test.pdf")
+
+def test_document_block_from_url(pdf_url: str):
+    document = DocumentBlock(url=pdf_url, title="dummy_pdf")
+    file_buffer = document.resolve_document()
+    assert isinstance(file_buffer, BytesIO)
+    file_bytes = file_buffer.read()
+    document._guess_mimetype(file_bytes)
+    assert document.document_mimetype == "application/pdf"
+    document._guess_format(file_bytes)
+    assert document.format == "pdf"
+    b64_string = document._get_b64_string(file_buffer)
+    try:
+        base64.b64decode(b64_string, validate=True)
+        string_base64_encoded = True
+    except Exception as e:
+        string_base64_encoded = False
+    assert string_base64_encoded
+    b64_bytes = document._get_b64_bytes(file_buffer)
+    try:
+        base64.b64decode(b64_bytes, validate=True)
+        bytes_base64_encoded = True
+    except Exception:
+        bytes_base64_encoded = False
+    assert bytes_base64_encoded
+    assert document.title == "dummy_pdf"

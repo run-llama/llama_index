@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import base64
 import filetype
-import httpx
 from binascii import Error as BinasciiError
 from enum import Enum
 from io import BytesIO
@@ -20,7 +19,6 @@ from typing import (
 )
 
 import filetype
-import mimetypes
 from typing_extensions import Self
 
 from llama_index.core.bridge.pydantic import (
@@ -189,77 +187,63 @@ class AudioBlock(BaseModel):
 
 class DocumentBlock(BaseModel):
     block_type: Literal["document"] = "document"
+    data: Optional[bytes] = None
     path: Optional[Union[FilePath | str]] = None
     url: Optional[str] = None
     title: Optional[str] = None
-    mime_type: Optional[str] = None
-    file_data: Optional[bytes | str] = None
-    @model_validator(mode="after")
-    def file_or_url_to_base64(self) -> Self:
-        if self.file_data is not None:
-            try:
-                decoded = base64.b64decode(self.file_data).decode("utf-8")
-            except Exception:
-                if isinstance(self.file_data, bytes):
-                    self.file_data = base64.b64encode(self.file_data).decode("utf-8")
-                else:
-                    raise ValueError("file_data needs to be either a base64-encoded string or a bytes buffer coming from a read() operation on a file")
-        elif self.path is not None:
-            with open(self.path, "rb") as f:
-                data = f.read()
-            self.file_data = base64.b64encode(data).decode("utf8")
-        elif self.url is not None:
-            url_content = httpx.get(self.url).content
-            self.file_data = base64.b64encode(url_content).decode("utf8")
-        else:
-            raise ValueError("At least one of the fields file_data, path or url needs to be set to a non-null value")
-        if self.title is None and self.path is None and self.url is None:
-            self.title = "input_document"
-        elif self.title is None and (self.path is not None or self.url is not None):
-            if self.path is not None:
-                self.title = self.path.__str__()
-            elif self.url is not None:
-                self.title = self.url.split("/")[-1] if self.url.split("/")[-1] is not None else "input_document"
-        if self.mime_type is None:
-            if self.path is not None:
-                guess = filetype.guess_mime(self.path)
-                self.mime_type =  guess if guess is not None else "application/pdf"
-            elif self.url is not None:
-                guess = mimetypes.guess_type(self.url)[0]
-                self.mime_type = guess if guess is not None else "application/pdf"
-            else:
-                self.mime_type = "application/pdf"
-        return self
-    def _guess_format_for_bedrock(self) -> Union[str, Any]:
-        if self.path is not None:
-            guess = filetype.guess(self.path)
-            if guess is None:
-                return "pdf"
-            else:
-                if guess.extension not in ["pdf", "csv", "doc", "docx", "xls", "xlsx", "html", "txt", "md"]:
-                    raise ValueError("Document not supported by Bedrock Converse")
-                return guess.extension
-        elif self.url is not None:
-            guess = mimetypes.guess_type(self.url)[0]
-            if guess is None:
-                return "pdf"
-            else:
-                ext_guess = mimetypes.guess_extension(guess)
-                if ext_guess is None:
-                    return "pdf"
-                ext_guess = ext_guess.replace(".","")
-                if ext_guess not in ["pdf", "csv", "doc", "docx", "xls", "xlsx", "html", "txt", "md"]:
-                    raise ValueError("Document not supported by Bedrock Converse")
-                return ext_guess
-        else:
-            raise ValueError("One of url or path need to be specified in order to understand the format of the input file")
+    document_mimetype: Optional[str] = None
+    format: Optional[str] = None
 
-    def _get_bytes_for_bedrock(self) -> bytes:
-        if self.file_data is not None:
-            decoded = base64.b64decode(self.file_data)
-            return base64.b64encode(decoded)
-        else:
-            raise ValueError("No file data to pass to Bedrock Converse")
+    @model_validator(mode="after")
+    def document_validation(self) -> Self:
+        if not self.title:
+            self.title = "input_document"
+        if not self.data:
+            return self
+        try:
+            decoded_document = base64.b64decode(self.data, validate=True)
+        except BinasciiError:
+            decoded_document = self.data
+            self.data = base64.b64encode(self.data)
+
+        if not self.document_mimetype:
+            self.document_mimetype = self._guess_mimetype(decoded_document)
+        if not self.format:
+            self.format = self._guess_format(decoded_document)
+        return self
+
+    def resolve_document(self) -> BytesIO:
+        """
+        Resolve a document such that it is represented by a BufferIO object.
+        """
+        return resolve_binary(
+            raw_bytes=self.data,
+            path=self.path,
+            url=str(self.url) if self.url else None,
+            as_base64=False,
+        )
+
+    def _get_b64_string(self, data_buffer: BytesIO) -> str:
+        """
+        Get base64-encoded string from a BytesIO buffer.
+        """
+        data = data_buffer.read()
+        return base64.b64encode(data).decode("utf-8")
+
+    def _get_b64_bytes(self, data_buffer: BytesIO) -> bytes:
+        """
+        Get base64-encoded bytes from a BytesIO buffer.
+        """
+        data = data_buffer.read()
+        return base64.b64encode(data)
+
+    def _guess_format(self, file_data: bytes) -> None:
+        guess = filetype.guess(file_data)
+        self.format = guess.extension if guess else None
+
+    def _guess_mimetype(self, file_data: bytes) -> None:
+        guess = filetype.guess(file_data)
+        self.document_mimetype = guess.mime if guess else None
 
 ContentBlock = Annotated[
     Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock], Field(discriminator="block_type")

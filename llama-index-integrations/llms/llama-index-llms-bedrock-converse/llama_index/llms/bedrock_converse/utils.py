@@ -180,8 +180,17 @@ def _content_block_to_bedrock_format(
             "text": block.text,
         }
     elif isinstance(block, DocumentBlock):
+        if not block.data:
+            file_buffer = block.resolve_document()
+            file_bytes = file_buffer.read()
+            block._guess_format(file_bytes)
+            data = block._get_b64_bytes(file_buffer)
+        else:
+            data = block.data
+        format = block.format if block.format is not None else "pdf"
+        title = block.title
         return {
-            "document": {"format": block._guess_format_for_bedrock(),"name": block.title, "source": {"bytes": block._get_bytes_for_bedrock()}}
+            "document": {"format": format,"name": title, "source": {"bytes": data}}
         }
     elif isinstance(block, ImageBlock):
         if role != MessageRole.USER:

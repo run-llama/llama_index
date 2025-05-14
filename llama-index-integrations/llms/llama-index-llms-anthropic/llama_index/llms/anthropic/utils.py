@@ -248,8 +248,12 @@ def _text_block_to_anthropic_message(
 def _document_block_to_anthropic_message(
     block: DocumentBlock, kwargs: dict[str, Any]
 ) -> DocumentBlockParam:
-    return DocumentBlockParam(source=Base64PDFSourceParam(data=block.file_data, media_type="application/pdf", type="base64"))
-
+    if not block.data:
+        file_buffer = block.resolve_document()
+        b64_string = block._get_b64_string(data_buffer=file_buffer)
+    else:
+        b64_string = block.data.decode("utf-8")
+    return DocumentBlockParam(source=Base64PDFSourceParam(data=b64_string, media_type="application/pdf", type="base64"))
 
 # Function used in bedrock
 def _message_to_anthropic_prompt(message: ChatMessage) -> str:

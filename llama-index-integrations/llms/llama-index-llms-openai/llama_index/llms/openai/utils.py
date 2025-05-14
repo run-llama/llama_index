@@ -310,7 +310,16 @@ def to_openai_message_dict(
             content.append({"type": "text", "text": block.text})
             content_txt += block.text
         if isinstance(block, DocumentBlock):
-            content.append({"type": "input_file", "filename": block.title, "file_data": f"data:{block.mime_type};base64,{block.file_data}"})
+            # add other stuff
+            if not block.data:
+                file_buffer = block.resolve_document()
+                b64_string = block._get_b64_string(data_buffer=file_buffer)
+                file_bytes = file_buffer.read()
+                block._guess_mimetype(file_bytes)
+            else:
+                b64_string = block.data.decode("utf-8")
+            mimetype = block.document_mimetype if block.document_mimetype is not None else "application/pdf"
+            content.append({"type": "input_file", "filename": block.title, "file_data": f"data:{mimetype};base64,{b64_string}"})
         elif isinstance(block, ImageBlock):
             if block.url:
                 content.append(
