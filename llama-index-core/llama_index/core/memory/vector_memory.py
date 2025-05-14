@@ -7,16 +7,18 @@ Memory backed by a vector database.
 
 import uuid
 from typing import Any, Dict, List, Optional
-from llama_index.core.bridge.pydantic import Field, field_validator
 
+from llama_index.core.base.base_retriever import BaseRetriever
+from llama_index.core.bridge.pydantic import Field, field_validator
 from llama_index.core.schema import TextNode
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.embeddings.utils import EmbedType
+from llama_index.core.schema import NodeWithScore
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 
-def _stringify_obj(d: Any):
+def _stringify_obj(d: Any) -> Any:
     """Utility function to convert all keys in a dictionary to strings."""
     if isinstance(d, list):
         return [_stringify_obj(v) for v in d]
@@ -152,18 +154,14 @@ class VectorMemory(BaseMemory):
         # retrieve underlying messages
         return self._retrieve_messages(nodes=nodes)
 
-    def _retrieve_messages(self, nodes):
+    def _retrieve_messages(self, nodes: List[NodeWithScore]) -> list[ChatMessage]:
         return [
             ChatMessage.model_validate(sub_dict)
             for node in nodes
             for sub_dict in node.metadata["sub_dicts"]
         ]
 
-    def _get_retriever(self):
-        if input is None:
-            return []
-
-        # retrieve from index
+    def _get_retriever(self) -> BaseRetriever:
         retriever = self.vector_index.as_retriever(**self.retriever_kwargs)
         return retriever
 
