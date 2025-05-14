@@ -731,10 +731,13 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                 documents = reduce(lambda x, y: x + y, results)
 
         else:
-            files_to_process = get_tqdm_iterable(
-                self.input_files,
-                show_progress=show_progress,
-                desc="Loading files",
+            files_to_process = cast(
+                list[Path | PurePosixPath],
+                get_tqdm_iterable(
+                    self.input_files,
+                    show_progress=show_progress,
+                    desc="Loading files",
+                )
             )
             for input_file in files_to_process:
                 documents.extend(
@@ -814,10 +817,13 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             Generator[List[Document]]: A list of documents.
 
         """
-        files_to_process = get_tqdm_iterable(
-            self.input_files,
-            show_progress=show_progress,
-            desc="Loading files",
+        files_to_process = cast(
+            list[Path | PurePosixPath],
+            get_tqdm_iterable(
+                self.input_files,
+                show_progress=show_progress,
+                desc="Loading files",
+            ),
         )
         for input_file in files_to_process:
             documents = SimpleDirectoryReader.load_file(
