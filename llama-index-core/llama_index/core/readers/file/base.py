@@ -18,7 +18,7 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Set, Type, Un
 from llama_index.core.readers.base import BaseReader, ResourcesReaderMixin
 from llama_index.core.async_utils import run_jobs, get_asyncio_module
 from llama_index.core.schema import Document
-from tqdm import tqdm
+from llama_index.core.utils import get_tqdm_iterable
 
 
 class FileSystemReaderMixin(ABC):
@@ -688,10 +688,11 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                 documents = reduce(lambda x, y: x + y, results)
 
         else:
-            if show_progress:
-                files_to_process = tqdm(
-                    self.input_files, desc="Loading files", unit="file"
-                )
+            files_to_process = get_tqdm_iterable(
+                self.input_files,
+                show_progress=show_progress,
+                desc="Loading files",
+            )
             for input_file in files_to_process:
                 documents.extend(
                     SimpleDirectoryReader.load_file(
@@ -768,11 +769,11 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         Returns:
             Generator[List[Document]]: A list of documents.
         """
-        files_to_process = self.input_files
-
-        if show_progress:
-            files_to_process = tqdm(self.input_files, desc="Loading files", unit="file")
-
+        files_to_process = get_tqdm_iterable(
+            self.input_files,
+            show_progress=show_progress,
+            desc="Loading files",
+        )
         for input_file in files_to_process:
             documents = SimpleDirectoryReader.load_file(
                 input_file=input_file,
