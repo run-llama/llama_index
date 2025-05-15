@@ -21,14 +21,15 @@ from tenacity import (
 from tenacity.stop import stop_base
 
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
-from llama_index.core.llms import (
+from llama_index.core.base.llms.types import (
     ChatMessage,
     ImageBlock,
+    LogProb,
     MessageRole,
     TextBlock,
     AudioBlock,
+    DocumentBlock,
 )
-from llama_index.core.base.llms.types import LogProb, DocumentBlock
 from llama_index.core.bridge.pydantic import BaseModel
 
 DEFAULT_OPENAI_API_TYPE = "open_ai"
