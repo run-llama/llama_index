@@ -561,11 +561,11 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 user_msg=user_msg,
                 chat_history=chat_history,
                 memory=memory,
+                **kwargs,
             ),
             ctx=ctx,
             stepwise=stepwise,
             checkpoint_callback=checkpoint_callback,
-            **kwargs,
         )
 
     @classmethod
