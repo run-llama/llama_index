@@ -7,6 +7,7 @@ migration_scripts/
 .idea
 .vscode
 .zed
+*.code-workspace
 
 # Local development
 venv/
