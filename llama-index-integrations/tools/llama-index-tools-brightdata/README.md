@@ -145,5 +145,4 @@ The `web_data_feed` function supports retrieving structured data from:
 - YouTube (videos)
 - ZoomInfo (company profiles)
 
-
 For more information, visit the [Bright Data documentation](https://docs.brightdata.com/).

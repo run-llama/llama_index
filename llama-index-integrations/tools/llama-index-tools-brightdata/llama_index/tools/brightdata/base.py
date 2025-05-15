@@ -122,20 +122,20 @@ class BrightDataToolSpec(BaseToolSpec):
         return output_path
 
     def search_engine(
-    self,
-    query: str,
-    engine: str = "google",
-    zone: Optional[str] = None,
-    language: Optional[str] = None,       # hl parameter, e.g., "en"
-    country_code: Optional[str] = None,   # gl parameter, e.g., "us"
-    search_type: Optional[str] = None,    # tbm parameter (images, shopping, news, etc.)
-    start: Optional[int] = None,          # pagination start index
-    num_results: Optional[int] = 10,      # number of results to return
-    location: Optional[str] = None,       # uule parameter for geo-location
-    device: Optional[str] = None,         # device type for user-agent
-    return_json: bool = False,            # parse results as JSON
-    hotel_dates: Optional[str] = None,    # check-in and check-out dates
-    hotel_occupancy: Optional[int] = None # number of guests
+        self,
+        query: str,
+        engine: str = "google",
+        zone: Optional[str] = None,
+        language: Optional[str] = None,       # hl parameter, e.g., "en"
+        country_code: Optional[str] = None,   # gl parameter, e.g., "us"
+        search_type: Optional[str] = None,    # tbm parameter (images, shopping, news, etc.)
+        start: Optional[int] = None,          # pagination start index
+        num_results: Optional[int] = 10,      # number of results to return
+        location: Optional[str] = None,       # uule parameter for geo-location
+        device: Optional[str] = None,         # device type for user-agent
+        return_json: bool = False,            # parse results as JSON
+        hotel_dates: Optional[str] = None,    # check-in and check-out dates
+        hotel_occupancy: Optional[int] = None # number of guests
     ) -> Document:
         """
         Search using Google, Bing, or Yandex with advanced parameters and return results in Markdown.
@@ -247,12 +247,12 @@ class BrightDataToolSpec(BaseToolSpec):
         })
 
     def web_data_feed(
-    self,
-    source_type: str,
-    url: str,
-    num_of_reviews: Optional[int] = None,
-    timeout: int = 600,
-    polling_interval: int = 1
+        self,
+        source_type: str,
+        url: str,
+        num_of_reviews: Optional[int] = None,
+        timeout: int = 600,
+        polling_interval: int = 1
     ) -> Dict:
         """
         Retrieve structured web data from various sources like LinkedIn, Amazon, Instagram, etc.
