@@ -27,9 +27,8 @@ from llama_index.core.llms import (
     MessageRole,
     TextBlock,
     AudioBlock,
-    DocumentBlock,
 )
-from llama_index.core.base.llms.types import LogProb
+from llama_index.core.base.llms.types import LogProb, DocumentBlock
 from llama_index.core.bridge.pydantic import BaseModel
 
 DEFAULT_OPENAI_API_TYPE = "open_ai"
