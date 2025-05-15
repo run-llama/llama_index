@@ -36,7 +36,7 @@ license = "MIT"
 dependencies = [
     "pillow>=10.2.0",
     "google-genai>=1.4.0",
-    "llama-index-core>=0.12.24.post1,<0.13",
+    "llama-index-core>=0.12.36,<0.13",
 ]
 
 [tool.codespell]

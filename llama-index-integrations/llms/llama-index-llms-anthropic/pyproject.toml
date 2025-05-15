@@ -35,7 +35,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "anthropic[bedrock, vertex]>=0.51.0",
-    "llama-index-core>=0.12.5,<0.13",
+    "llama-index-core>=0.12.36,<0.13",
 ]
 
 [tool.codespell]
