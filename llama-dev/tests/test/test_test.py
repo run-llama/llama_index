@@ -482,3 +482,39 @@ def test_successful_run_with_coverage(package_data, changed_packages):
         assert result["status"] == ResultStatus.TESTS_PASSED
         assert result["stdout"] == "coverage ok"
         assert "time" in result
+
+
+def test__trim():
+    from llama_dev.test import MAX_CONSOLE_PRINT_LINES, _trim
+
+    # Test with a short message (less than MAX_CONSOLE_PRINT_LINES)
+    short_msg = "Line 1\nLine 2\nLine 3"
+    assert _trim(False, short_msg) == short_msg
+    assert _trim(True, short_msg) == short_msg
+
+    # Test with a long message (more than MAX_CONSOLE_PRINT_LINES)
+    long_msg = "\n".join([f"Line {i}" for i in range(1, MAX_CONSOLE_PRINT_LINES + 10)])
+
+    # In non-debug mode, the message should be truncated
+    trimmed = _trim(False, long_msg)
+    trimmed_lines = trimmed.split("\n")
+
+    # Should have MAX_CONSOLE_PRINT_LINES lines plus the additional "truncated" message line
+    assert len(trimmed_lines) == MAX_CONSOLE_PRINT_LINES + 1
+
+    # The first MAX_CONSOLE_PRINT_LINES lines should be from the original message
+    for i in range(MAX_CONSOLE_PRINT_LINES):
+        assert trimmed_lines[i] == f"Line {i + 1}"
+
+    # The last line should be the truncation message
+    assert (
+        "<-- llama-dev: output truncated, pass '--debug' to see the full log -->"
+        in trimmed_lines[-1]
+    )
+
+    # In debug mode, the message should not be truncated
+    debug_trimmed = _trim(True, long_msg)
+    assert debug_trimmed == long_msg
+    assert (
+        len(debug_trimmed.split("\n")) == MAX_CONSOLE_PRINT_LINES + 9
+    )  # Original number of lines

@@ -27,12 +27,14 @@ LLAMA_DEV_THEME = Theme(
     default=".",
     help="Path to the llama_index repository, defaults to '.'",
 )
+@click.option("--debug", is_flag=True, help="Enable verbose output.")
 @click.pass_context
-def cli(ctx, repo_root: str):
+def cli(ctx, repo_root: str, debug: bool):
     """The official CLI for development, testing, and automation in the LlamaIndex monorepo."""
     ctx.obj = {
         "console": Console(theme=LLAMA_DEV_THEME, soft_wrap=True),
         "repo_root": Path(repo_root).resolve(),
+        "debug": debug,
     }
 
 
