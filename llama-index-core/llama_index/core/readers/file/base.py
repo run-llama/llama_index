@@ -19,6 +19,7 @@ from typing import (
     Generator,
     Type,
     cast,
+    Union,
 )
 
 import fsspec
@@ -732,7 +733,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
         else:
             files_to_process = cast(
-                list[Path | PurePosixPath],
+                list[Union[Path, PurePosixPath]],
                 get_tqdm_iterable(
                     self.input_files,
                     show_progress=show_progress,
@@ -818,7 +819,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
         """
         files_to_process = cast(
-            list[Path | PurePosixPath],
+            list[Union[Path, PurePosixPath]],
             get_tqdm_iterable(
                 self.input_files,
                 show_progress=show_progress,
