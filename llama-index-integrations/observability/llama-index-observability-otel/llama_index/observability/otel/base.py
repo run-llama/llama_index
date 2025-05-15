@@ -58,11 +58,14 @@ class TracerOperator(BaseModel):
             span_processor = BatchSpanProcessor(self.span_exporter)
         elif self.span_processor == "simple":
             span_processor = SimpleSpanProcessor(self.span_exporter)
+
         resource = Resource(attributes={SERVICE_NAME: self.tracer_name})
         tracer_provider = TracerProvider(resource=resource)
         tracer_provider.add_span_processor(span_processor)
         trace.set_tracer_provider(tracer_provider)
+
         self.tracer = trace.get_tracer("llamaindex.opentelemetry.tracer")
+
         return self
 
 base_types = (int, str, bool, bytes, float)
@@ -71,9 +74,11 @@ def _is_otel_supported_type(obj: Any) -> bool:
     # If it's one of the base types
     if isinstance(obj, base_types):
         return True
+
     # If it's a sequence (but not a string or bytes, which are sequences too)
     if isinstance(obj, ABCSequence) and not isinstance(obj, (str, bytes)):
         return all(isinstance(item, base_types) for item in obj)
+
     return False
 
 def _filter_model_fields(model_dict: dict) -> dict:
@@ -81,6 +86,7 @@ def _filter_model_fields(model_dict: dict) -> dict:
     for field in model_dict:
         if _is_otel_supported_type(model_dict[field]):
             newdct.update({field: model_dict[field]})
+
     return newdct
 
 class OpenTelemetryEventHandler(BaseEventHandler):
@@ -101,6 +107,7 @@ class OpenTelemetryEventHandler(BaseEventHandler):
     """
 
     tracer_operator: Optional[TracerOperator] = None
+
     @model_validator(mode="after")
     def validate_tracer(self) -> Self:
         if not self.tracer_operator:
