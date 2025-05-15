@@ -382,7 +382,7 @@ class Gemini(FunctionCallingLLM):
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         tool_required: bool = False,
-        tool_choice: Union[str, dict] = "auto",
+        tool_choice: Optional[Union[str, dict]] = None,
         strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
@@ -392,7 +392,6 @@ class Gemini(FunctionCallingLLM):
         tool_config = {
             "function_calling_config": self._to_function_calling_config(tool_required, tool_choice),
         }
-
 
         tool_declarations = []
         for tool in tools:
