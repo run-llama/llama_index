@@ -21,7 +21,7 @@ dev = [
     "types-protobuf>=4.24.0.4,<5",
     "types-redis==4.5.5.0",
     "types-requests==2.28.11.8",
-    "types-setuptools==67.1.0.0",
+    "types-setuptools>=80.0.0.20250429",
     "tomli>=2.2.1",
 ]
 
@@ -228,3 +228,9 @@ default-groups = [
 [[tool.uv.index]]
 name = "nvidia-pypi"
 url = "https://pypi.nvidia.com"
+
+[tool.uv.sources]
+llama-index-core = {workspace = true}
+
+[tool.uv.workspace]
+members = ["llama-index-core", "llama-index-integrations/workflows/*"]

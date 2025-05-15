@@ -1,3 +1,4 @@
+from abc import ABC
 import asyncio
 import functools
 import json
@@ -46,7 +47,53 @@ class UnserializableKeyWarning(Warning):
 warnings.simplefilter("once", UnserializableKeyWarning)
 
 
-class Context:
+class AbstractContext(ABC):
+    async def set(self, key: str, value: Any) -> None:
+        """
+        Store `value` into the Context under `key`.
+
+        Args:
+            key: A unique string to identify the value stored.
+            value: The data to be stored.
+
+        """
+
+    async def get(self, key: str, default: Optional[Any] = Ellipsis) -> Any:
+        """
+        Get the value corresponding to `key` from the Context.
+
+        Args:
+            key: A unique string to identify the value stored.
+            default: The value to return when `key` is missing instead of raising an exception.
+
+        """
+
+    async def send_event(self, message: Event, step: Optional[str] = None) -> None:
+        """
+        Sends an event to a specific step in the workflow.
+
+        If step is None, the event is sent to all the receivers and we let
+        them discard events they don't want.
+        """
+
+    async def wait_for_event(self, event_type: Type[T], waiter_event: Optional[Event] = None, waiter_id: Optional[str] = None, requirements: Optional[Dict[str, Any]] = None, timeout: Optional[float] = 2000) -> T:
+        """
+        Waits for an event of type `event_type` to be sent to the workflow.
+
+        If `waiter_event` is provided, the event will be sent only to the
+        receiver with the same id.
+
+        """
+
+    async def get_result(self) -> RunResultT:
+        """
+        Returns the result of the workflow.
+        """
+
+
+
+
+class Context(AbstractContext):
     """
     A global object representing a context for a given workflow run.
 
@@ -418,7 +465,7 @@ class Context:
 
         return list(self._step_events_holding)
 
-    def send_event(self, message: Event, step: Optional[str] = None) -> None:
+    async def send_event(self, message: Event, step: Optional[str] = None) -> None:
         """
         Sends an event to a specific step in the workflow.
 
