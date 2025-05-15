@@ -2,7 +2,6 @@ import logging
 import re
 from typing import Any, Dict, List, NamedTuple, Optional, Type, Union, TYPE_CHECKING
 
-import psycopg2
 import sqlalchemy
 import sqlalchemy.ext.asyncio
 from llama_index.core.bridge.pydantic import PrivateAttr
@@ -64,7 +63,7 @@ def get_data_model(
 
     metadata_dtype = JSONB if use_jsonb else JSON
 
-    
+
     embedding_col = Column(Vector(embed_dim))  # type: ignore
 
     if hybrid_search:
@@ -114,7 +113,8 @@ def get_data_model(
 
 
 class OpenGaussStore(BasePydanticVectorStore):
-    """openGauss Vector Store.
+    """
+    openGauss Vector Store.
 
     Examples:
         `pip install llama-index-vector-stores-openGauss`
@@ -133,6 +133,7 @@ class OpenGaussStore(BasePydanticVectorStore):
             embed_dim=1536  # openai embedding dimension
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -183,7 +184,8 @@ class OpenGaussStore(BasePydanticVectorStore):
         engine: Optional[sqlalchemy.engine.Engine] = None,
         async_engine: Optional[sqlalchemy.ext.asyncio.AsyncEngine] = None,
     ) -> None:
-        """Constructor.
+        """
+        Constructor.
 
         Args:
             connection_string (Union[str, sqlalchemy.engine.URL]): Connection string to openGauss db.
@@ -203,6 +205,7 @@ class OpenGaussStore(BasePydanticVectorStore):
             create_engine_kwargs (Optional[Dict[str, Any]], optional): Engine parameters to pass to create_engine. Defaults to None.
             engine (Optional[sqlalchemy.engine.Engine], optional): SQLAlchemy engine instance to use. Defaults to None.
             async_engine (Optional[sqlalchemy.ext.asyncio.AsyncEngine], optional): SQLAlchemy async engine instance to use. Defaults to None.
+
         """
         table_name = table_name.lower() if table_name else "llamaindex"
         schema_name = schema_name.lower() if schema_name else "public"
@@ -292,7 +295,8 @@ class OpenGaussStore(BasePydanticVectorStore):
         hnsw_kwargs: Optional[Dict[str, Any]] = None,
         create_engine_kwargs: Optional[Dict[str, Any]] = None,
     ) -> "OpenGaussStore":
-        """Construct from params.
+        """
+        Construct from params.
 
         Args:
             host (Optional[str], optional): Host of openGauss connection. Defaults to None.
@@ -318,6 +322,7 @@ class OpenGaussStore(BasePydanticVectorStore):
 
         Returns:
             OpenGaussStore: Instance of OpenGaussStore constructed from params.
+
         """
         conn_str = (
             connection_string
@@ -926,11 +931,13 @@ class OpenGaussStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes.
+        """
+        Deletes nodes.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+
         """
         if not node_ids and not filters:
             return
@@ -956,11 +963,13 @@ class OpenGaussStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes asynchronously.
+        """
+        Deletes nodes asynchronously.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+
         """
         if not node_ids and not filters:
             return
