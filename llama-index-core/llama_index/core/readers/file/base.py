@@ -34,6 +34,7 @@ from llama_index.core.utils import get_tqdm_iterable
 logger = logging.getLogger(__name__)
 
 
+
 class FileSystemReaderMixin(ABC):
     @abstractmethod
     def read_file_content(self, input_file: Path, **kwargs: Any) -> bytes:
