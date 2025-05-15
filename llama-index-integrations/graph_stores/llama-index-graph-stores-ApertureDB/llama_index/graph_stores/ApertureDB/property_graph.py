@@ -1,10 +1,12 @@
 import logging
-from typing import Dict, List, Optional
+from typing import Any, List, Optional
 from llama_index.core.graph_stores.types import (
+    LabelledNode,
     PropertyGraphStore,
     EntityNode,
     Relation,
     ChunkNode,
+    Triplet,
 )
 from aperturedb.CommonLibrary import create_connector, execute_query
 from aperturedb.Query import QueryBuilder
@@ -23,15 +25,16 @@ logger = logging.getLogger(__name__)
 def get_entity(client, label, id):
     """Get entity by id."""
     query = [
-        QueryBuilder.find_command(
-            oclass=label,
-            params={
+        {
+            "FindEntity": {
                 "_ref": 1,
                 "constraints": {UNIQUEID_PROPERTY: ["==", id]},
                 "results": {"all_properties": True},
-            },
-        )
+            }
+        }
     ]
+    if label is not None:
+        query[0]["FindEntity"]["with_class"] = label
     result, response, _ = execute_query(
         client,
         query,
@@ -74,20 +77,28 @@ class ApertureDBGraphStore(PropertyGraphStore):
 
     flat_metadata: bool = True
 
+    @property
+    def client(self) -> Any:
+        """Get client."""
+        return self._client
+
     def __init__(self, *args, **kwargs) -> None:
         self._client = create_connector()
 
     def get_rel_map(
         self,
-        subjs: Optional[List[str]] = None,
+        subjs: List[LabelledNode],
         depth: int = 2,
         limit: int = 30,
         ignore_rels: Optional[List[str]] = None,
-    ) -> Dict[str, List[List[str]]]:
-        """Get relation map."""
+    ) -> List[Triplet]:
+        """Get depth-aware rel map."""
         if subjs is None or len(subjs) == 0:
-            return {}
+            return []
+        if depth <= 0:
+            return []
         rel_map = []
+        ignore_rels = ignore_rels or []
         for s in subjs:
             query = [
                 QueryBuilder.find_command(
@@ -97,55 +108,62 @@ class ApertureDBGraphStore(PropertyGraphStore):
                         "constraints": {UNIQUEID_PROPERTY: ["==", s.id]},
                         "results": {"all_properties": True, "limit": limit},
                     },
-                ),
-                {
-                    "FindEntity": {
-                        "is_connected_to": {
-                            "ref": 1,
-                        },
-                        "results": {"all_properties": True, "limit": limit},
-                    }
-                },
-                {
-                    "FindConnection": {
-                        "src": 1,
-                        "dst": 2,
-                        "results": {"all_properties": True, "limit": limit},
-                    }
-                },
+                )
             ]
+            for i in range(1, 2):
+                query.extend([
+                    {
+                        "FindEntity": {
+                            "_ref": i+1,
+                            "is_connected_to": {
+                                "ref": i,
+                                "direction": "out"
+                            },
+                            "results": {"all_properties": True, "limit": limit},
+                        }
+                    },
+                    {
+                        "FindConnection": {
+                            "src": i,
+                            "results": {"all_properties": True, "limit": limit},
+                        }
+                    }
+                ])
             result, response, _ = execute_query(
                 self._client,
                 query,
             )
             assert result == 0, response
-            rel_map = []
+
+            adjacent_nodes = []
             if "entities" in response[0]["FindEntity"]:
-                enode = []
                 for entity in response[0]["FindEntity"]["entities"]:
                     for c, ce in zip(
                         response[1]["FindEntity"]["entities"],
                         response[2]["FindConnection"]["connections"],
                     ):
-                        enode.append(
-                            EntityNode(
+                        if ce[UNIQUEID_PROPERTY] in ignore_rels:
+                            continue
+                        source = EntityNode(
                                 name=entity[UNIQUEID_PROPERTY],
                                 label=entity["label"],
                                 properties=entity,
                             )
-                        )
-                        enode.extend(
-                            [
-                                Relation(
-                                    label=ce[UNIQUEID_PROPERTY],
-                                    source_id=enode[0].name,
-                                    target_id=c[UNIQUEID_PROPERTY],
-                                ),
-                                EntityNode(name=c[UNIQUEID_PROPERTY]),
-                            ]
-                        )
-                rel_map.append(enode)
 
+                        target = EntityNode(
+                            name=c[UNIQUEID_PROPERTY],
+                            label=c["label"],
+                            properties=c,
+                        )
+
+                        relation = Relation(
+                            source_id=c[UNIQUEID_PROPERTY],
+                            target_id=c[UNIQUEID_PROPERTY],
+                            label=ce[UNIQUEID_PROPERTY],
+                        )
+                        adjacent_nodes.append(target)
+                        rel_map.append([source, relation, target])
+                    rel_map.extend(self.get_rel_map(adjacent_nodes, depth-1))
         return rel_map
 
     def delete(self, entity_names=None, relation_names=None, properties=None, ids=None):
@@ -260,7 +278,7 @@ class ApertureDBGraphStore(PropertyGraphStore):
 
         return ids
 
-    def upsert_relations(self, relations):
+    def upsert_relations(self, relations: List[Relation]) -> None:
         """Upsert relations."""
         ids = []
         for i, r in enumerate(relations):
@@ -289,6 +307,9 @@ class ApertureDBGraphStore(PropertyGraphStore):
                         "properties": r.properties
                         | {
                             UNIQUEID_PROPERTY: f"{r.id}",
+                        },
+                        "if_not_found": {
+                            UNIQUEID_PROPERTY: ["==", f"{r.id}"],
                         },
                     }
                 },
