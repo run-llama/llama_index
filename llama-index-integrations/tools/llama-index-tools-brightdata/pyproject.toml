@@ -25,16 +25,16 @@ dev = [
 ]
 
 [project]
-name = "llama-index-llms-text-generation-inference"
-version = "0.3.3"
-description = "llama-index llms huggingface text generation inference integration"
-authors = [{name = "Your Name", email = "you@example.com"}]
+name = "llama-index-tools-brightdata"
+version = "0.1.0"
+description = "llama-index tools Bright Data integration"
+authors = [{name = "Bright Data", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
+maintainers = [{name = "brightdata"}]
 dependencies = [
-    "tgi>=2.0.0,<3",
-    "llama-index-utils-huggingface>=0.3.0,<0.4",
+    "llama-index>=0.12.34",
     "llama-index-core>=0.12.0,<0.13",
 ]
 
@@ -53,10 +53,10 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.text_generation_inference"
+import_path = "llama_index.tools.brightdata"
 
 [tool.llamahub.class_authors]
-TextGenerationInference = "llama-index"
+BrightDataToolSpec = "brightdata"
 
 [tool.mypy]
 disallow_untyped_defs = true

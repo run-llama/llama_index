@@ -113,7 +113,7 @@ def test_lexical_query(vector_store):
         query_embedding=query_embedding,
         similarity_top_k=5,
         # your query str match the field "content"(text you stored in),
-        # and note the the minimum search granularity of query str is one token.
+        # and note the minimum search granularity of query str is one token.
         query_str="your query str",
     )
     result = vector_store.query(lexical_query)
@@ -127,7 +127,7 @@ def test_hybrid_query(vector_store):
         query_embedding=query_embedding,
         similarity_top_k=5,
         # your query str match the field "content"(text you stored in),
-        # and note the the minimum search granularity of query str is one token.
+        # and note the minimum search granularity of query str is one token.
         query_str="your query str",
     )
     result = vector_store.query(hybrid_query)
