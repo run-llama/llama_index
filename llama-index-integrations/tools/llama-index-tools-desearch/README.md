@@ -8,9 +8,13 @@ This tool connects to Desearch to enable your agent to perform searches across v
 
 To begin, you need to obtain an API key from the Desearch developer dashboard.
 
+Website: https://desearch.io
+
 ## Usage
 
 Here's an example usage of the `DesearchToolSpec`.
+
+To get started, you will need an [Desearch API key](https://console.desearch.ai/api-keys)
 
 ```python
 # %pip install llama-index llama-index-core desearch-py
