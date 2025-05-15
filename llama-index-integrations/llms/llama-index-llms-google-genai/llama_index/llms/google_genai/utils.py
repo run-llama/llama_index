@@ -189,7 +189,6 @@ def chat_message_to_gemini(message: ChatMessage) -> types.Content:
         elif isinstance(block, DocumentBlock):
             file_buffer = block.resolve_document()
             file_bytes = file_buffer.read()
-            block._guess_mimetype()
             mimetype = block.document_mimetype if block.document_mimetype is not None else "application/pdf"
             parts.append(
                 types.Part.from_bytes(

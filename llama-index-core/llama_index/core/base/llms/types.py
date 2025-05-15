@@ -195,12 +195,15 @@ class DocumentBlock(BaseModel):
 
     @model_validator(mode="after")
     def document_validation(self) -> Self:
+        self.document_mimetype = self.document_mimetype or self._guess_mimetype()
+
         if not self.title:
             self.title = "input_document"
-        if not self.document_mimetype:
-            self.document_mimetype = self._guess_mimetype()
+
+        # skip data validation if it's not provided
         if not self.data:
             return self
+
         try:
             decoded_document = base64.b64decode(self.data, validate=True)
         except BinasciiError:
@@ -233,14 +236,24 @@ class DocumentBlock(BaseModel):
         data = data_buffer.read()
         return base64.b64encode(data)
 
-    def _guess_format(self) -> str | None:
+    def guess_format(self) -> str | None:
         path = self.path or self.url
-        return Path(str(path)).suffix.replace(".", "") or None
+        if not path:
+            return None
 
-    def _guess_mimetype(self) -> None:
-        suffix = self._guess_format()
+        return Path(str(path)).suffix.replace(".", "")
+
+    def _guess_mimetype(self) -> str | None:
+        if self.data:
+            guess = filetype.guess(self.data)
+            return str(guess.mime) if guess else None
+
+        suffix = self.guess_format()
+        if not suffix:
+            return None
+
         guess = filetype.get_type(ext=suffix)
-        self.document_mimetype = guess.mime if guess else None
+        return str(guess.mime) if guess else None
 
 ContentBlock = Annotated[
     Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock], Field(discriminator="block_type")

@@ -236,7 +236,7 @@ def test_document_block_from_path(tmp_path: Path, pdf_url: str):
     file_bytes = file_buffer.read()
     document._guess_mimetype()
     assert document.document_mimetype == "application/pdf"
-    fm = document._guess_format()
+    fm = document.guess_format()
     assert fm == "pdf"
     b64_string = document._get_b64_string(file_buffer)
     try:
@@ -261,7 +261,7 @@ def test_document_block_from_url(pdf_url: str):
     file_bytes = file_buffer.read()
     document._guess_mimetype()
     assert document.document_mimetype == "application/pdf"
-    fm = document._guess_format()
+    fm = document.guess_format()
     assert fm == "pdf"
     b64_string = document._get_b64_string(file_buffer)
     try:
