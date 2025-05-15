@@ -1,6 +1,7 @@
 import uuid
 from collections.abc import Sequence as ABCSequence
-from typing import Optional, Self, Literal, Any
+from typing import Optional, Literal, Any
+from typing_extensions import Self
 from pydantic import BaseModel, model_validator
 from opentelemetry import trace
 from llama_index.core.instrumentation.events import BaseEvent
