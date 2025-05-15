@@ -10,14 +10,17 @@ from llama_index.core.base.llms.types import (
     ImageBlock,
     MessageRole,
     TextBlock,
+    DocumentBlock,
 )
 
 from anthropic.types import (
     MessageParam,
     TextBlockParam,
+    DocumentBlockParam,
     ThinkingBlockParam,
     ImageBlockParam,
     CacheControlEphemeralParam,
+    Base64PDFSourceParam,
 )
 from anthropic.types.tool_result_block_param import ToolResultBlockParam
 from anthropic.types.tool_use_block_param import ToolUseBlockParam
@@ -172,7 +175,7 @@ def messages_to_anthropic_messages(
             )
             anthropic_messages.append(anth_message)
         else:
-            content: list[TextBlockParam | ImageBlockParam] = []
+            content: list[TextBlockParam | ImageBlockParam | DocumentBlockParam] = []
             for block in message.blocks:
                 if isinstance(block, TextBlock):
                     if block.text:
@@ -200,7 +203,10 @@ def messages_to_anthropic_messages(
                         },
                     )
                     content.append(block)
-
+                elif isinstance(block, DocumentBlock):
+                    content.append(
+                        _document_block_to_anthropic_message(block=block, kwargs=message.additional_kwargs)
+                    )
             tool_calls = message.additional_kwargs.get("tool_calls", [])
             for tool_call in tool_calls:
                 assert "id" in tool_call
@@ -239,6 +245,15 @@ def _text_block_to_anthropic_message(
     else:
         return TextBlockParam(text=block.text, type="text")
 
+def _document_block_to_anthropic_message(
+    block: DocumentBlock, kwargs: dict[str, Any]
+) -> DocumentBlockParam:
+    if not block.data:
+        file_buffer = block.resolve_document()
+        b64_string = block._get_b64_string(data_buffer=file_buffer)
+    else:
+        b64_string = block.data.decode("utf-8")
+    return DocumentBlockParam(source=Base64PDFSourceParam(data=b64_string, media_type="application/pdf", type="base64"))
 
 # Function used in bedrock
 def _message_to_anthropic_prompt(message: ChatMessage) -> str:

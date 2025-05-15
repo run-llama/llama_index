@@ -185,11 +185,79 @@ class AudioBlock(BaseModel):
             as_base64=as_base64,
         )
 
+class DocumentBlock(BaseModel):
+    block_type: Literal["document"] = "document"
+    data: Optional[bytes] = None
+    path: Optional[Union[FilePath | str]] = None
+    url: Optional[str] = None
+    title: Optional[str] = None
+    document_mimetype: Optional[str] = None
+
+    @model_validator(mode="after")
+    def document_validation(self) -> Self:
+        self.document_mimetype = self.document_mimetype or self._guess_mimetype()
+
+        if not self.title:
+            self.title = "input_document"
+
+        # skip data validation if it's not provided
+        if not self.data:
+            return self
+
+        try:
+            decoded_document = base64.b64decode(self.data, validate=True)
+        except BinasciiError:
+            self.data = base64.b64encode(self.data)
+
+        return self
+
+    def resolve_document(self) -> BytesIO:
+        """
+        Resolve a document such that it is represented by a BufferIO object.
+        """
+        return resolve_binary(
+            raw_bytes=self.data,
+            path=self.path,
+            url=str(self.url) if self.url else None,
+            as_base64=False,
+        )
+
+    def _get_b64_string(self, data_buffer: BytesIO) -> str:
+        """
+        Get base64-encoded string from a BytesIO buffer.
+        """
+        data = data_buffer.read()
+        return base64.b64encode(data).decode("utf-8")
+
+    def _get_b64_bytes(self, data_buffer: BytesIO) -> bytes:
+        """
+        Get base64-encoded bytes from a BytesIO buffer.
+        """
+        data = data_buffer.read()
+        return base64.b64encode(data)
+
+    def guess_format(self) -> str | None:
+        path = self.path or self.url
+        if not path:
+            return None
+
+        return Path(str(path)).suffix.replace(".", "")
+
+    def _guess_mimetype(self) -> str | None:
+        if self.data:
+            guess = filetype.guess(self.data)
+            return str(guess.mime) if guess else None
+
+        suffix = self.guess_format()
+        if not suffix:
+            return None
+
+        guess = filetype.get_type(ext=suffix)
+        return str(guess.mime) if guess else None
 
 ContentBlock = Annotated[
-    Union[TextBlock, ImageBlock, AudioBlock], Field(discriminator="block_type")
+    Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock], Field(discriminator="block_type")
 ]
-
 
 class ChatMessage(BaseModel):
     """Chat message."""

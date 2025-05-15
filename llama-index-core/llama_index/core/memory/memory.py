@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, TypeVar, Generic, cast
 
 from llama_index.core.async_utils import asyncio_run
-from llama_index.core.base.llms.types import ChatMessage, ContentBlock, TextBlock, AudioBlock, ImageBlock
+from llama_index.core.base.llms.types import ChatMessage, ContentBlock, TextBlock, AudioBlock, ImageBlock, DocumentBlock
 from llama_index.core.bridge.pydantic import BaseModel, Field, model_validator, ConfigDict
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.prompts import RichPromptTemplate
@@ -97,10 +97,19 @@ class BaseMemoryBlock(BaseModel, Generic[T]):
     async def _aput(self, messages: List[ChatMessage]) -> None:
         """Push to the memory block (async)."""
 
-    async def aput(self, messages: List[ChatMessage], from_short_term_memory: bool = False) -> None:
+    async def aput(
+        self,
+        messages: List[ChatMessage],
+        from_short_term_memory: bool = False,
+        session_id: Optional[str] = None,
+    ) -> None:
         """Push to the memory block (async)."""
         if from_short_term_memory and not self.accept_short_term_memory:
             return
+
+        if session_id is not None:
+            for message in messages:
+                message.additional_kwargs["session_id"] = session_id
 
         await self._aput(messages)
 
@@ -284,7 +293,7 @@ class Memory(BaseMemory):
         elif isinstance(message_or_blocks, List):
             # Type narrow the list
             messages: List[ChatMessage] = []
-            content_blocks: List[Union[TextBlock, ImageBlock, AudioBlock]] = []
+            content_blocks: List[Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock]] = []
 
             if all(isinstance(item, ChatMessage) for item in message_or_blocks):
                 messages = cast(List[ChatMessage], message_or_blocks)
@@ -295,8 +304,8 @@ class Memory(BaseMemory):
 
                 # Estimate the token count for the additional kwargs
                 token_count += sum(len(self.tokenizer_fn(str(msg.additional_kwargs))) for msg in messages if msg.additional_kwargs)
-            elif all(isinstance(item, (TextBlock, ImageBlock, AudioBlock)) for item in message_or_blocks):
-                content_blocks = cast(List[Union[TextBlock, ImageBlock, AudioBlock]], message_or_blocks)
+            elif all(isinstance(item, (TextBlock, ImageBlock, AudioBlock, DocumentBlock)) for item in message_or_blocks):
+                content_blocks = cast(List[Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock]], message_or_blocks)
                 blocks = content_blocks
             else:
                 raise ValueError(f"Invalid message type: {type(message_or_blocks)}")
@@ -322,7 +331,7 @@ class Memory(BaseMemory):
 
         # Process memory blocks in priority order
         for memory_block in sorted(self.memory_blocks, key=lambda x: -x.priority):
-            content = await memory_block.aget(chat_history, **block_kwargs)
+            content = await memory_block.aget(chat_history, session_id=self.session_id, **block_kwargs)
 
             # Handle different return types from memory blocks
             if content and isinstance(content, list):
@@ -577,7 +586,7 @@ class Memory(BaseMemory):
                     await self.sql_store.archive_oldest_messages(self.session_id, n=len(messages_to_flush))
 
                     # Waterfall the flushed messages to memory blocks
-                    await asyncio.gather(*[block.aput(messages_to_flush, from_short_term_memory=True) for block in self.memory_blocks])
+                    await asyncio.gather(*[block.aput(messages_to_flush, from_short_term_memory=True, session_id=self.session_id) for block in self.memory_blocks])
 
                 # Recalculate remaining tokens
                 chronological_view = reversed_queue[::-1]
