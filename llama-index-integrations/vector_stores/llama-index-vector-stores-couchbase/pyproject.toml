@@ -57,6 +57,7 @@ import_path = "llama_index.vector_stores.couchbase"
 
 [tool.llamahub.class_authors]
 CouchbaseVectorStore = "nithishr"
+CouchbaseSearchVectorStore = "nithishr"
 
 [tool.mypy]
 disallow_untyped_defs = true
