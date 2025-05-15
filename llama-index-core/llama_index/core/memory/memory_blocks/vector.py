@@ -147,11 +147,11 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
             if not text:
                 continue
 
-            if message.additional_kwargs:
-                # special case for session_id
-                if "session_id" in message.additional_kwargs:
-                    session_id = message.additional_kwargs.pop("session_id")
+            # special case for session_id
+            if "session_id" in message.additional_kwargs:
+                session_id = message.additional_kwargs.pop("session_id")
 
+            if message.additional_kwargs:
                 text += f"\nAdditional Info: ({message.additional_kwargs!s})"
 
             text = f"<message role='{message.role.value}'>{text}</message>"
