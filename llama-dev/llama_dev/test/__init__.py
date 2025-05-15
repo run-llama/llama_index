@@ -208,6 +208,7 @@ def _pytest(
     pytest_cmd = [
         "uv",
         "run",
+        "--no-sync",
         "--",
         "pytest",
         "-q",

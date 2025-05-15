@@ -17,6 +17,7 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     ContentBlock,
     AudioBlock,
+    DocumentBlock,
 )
 
 
@@ -177,6 +178,18 @@ def _content_block_to_bedrock_format(
     if isinstance(block, TextBlock):
         return {
             "text": block.text,
+        }
+    elif isinstance(block, DocumentBlock):
+        if not block.data:
+            file_buffer = block.resolve_document()
+            data = block._get_b64_bytes(file_buffer)
+        else:
+            data = block.data
+
+        format = block.guess_format() or "pdf"
+        title = block.title
+        return {
+            "document": {"format": format, "name": title, "source": {"bytes": data}}
         }
     elif isinstance(block, ImageBlock):
         if role != MessageRole.USER:
