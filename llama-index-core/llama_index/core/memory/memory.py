@@ -97,10 +97,19 @@ class BaseMemoryBlock(BaseModel, Generic[T]):
     async def _aput(self, messages: List[ChatMessage]) -> None:
         """Push to the memory block (async)."""
 
-    async def aput(self, messages: List[ChatMessage], from_short_term_memory: bool = False) -> None:
+    async def aput(
+        self,
+        messages: List[ChatMessage],
+        from_short_term_memory: bool = False,
+        session_id: Optional[str] = None,
+    ) -> None:
         """Push to the memory block (async)."""
         if from_short_term_memory and not self.accept_short_term_memory:
             return
+
+        if session_id is not None:
+            for message in messages:
+                message.additional_kwargs["session_id"] = session_id
 
         await self._aput(messages)
 
@@ -322,7 +331,7 @@ class Memory(BaseMemory):
 
         # Process memory blocks in priority order
         for memory_block in sorted(self.memory_blocks, key=lambda x: -x.priority):
-            content = await memory_block.aget(chat_history, **block_kwargs)
+            content = await memory_block.aget(chat_history, session_id=self.session_id, **block_kwargs)
 
             # Handle different return types from memory blocks
             if content and isinstance(content, list):
@@ -577,7 +586,7 @@ class Memory(BaseMemory):
                     await self.sql_store.archive_oldest_messages(self.session_id, n=len(messages_to_flush))
 
                     # Waterfall the flushed messages to memory blocks
-                    await asyncio.gather(*[block.aput(messages_to_flush, from_short_term_memory=True) for block in self.memory_blocks])
+                    await asyncio.gather(*[block.aput(messages_to_flush, from_short_term_memory=True, session_id=self.session_id) for block in self.memory_blocks])
 
                 # Recalculate remaining tokens
                 chronological_view = reversed_queue[::-1]
