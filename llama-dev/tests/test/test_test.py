@@ -66,12 +66,8 @@ def package_data():
     }
 
 
-def test_test_command_requires_base_ref():
+def test_test_command_base_ref():
     runner = CliRunner()
-
-    result = runner.invoke(cli, ["test"])
-    assert result.exit_code != 0
-    assert "Error: Missing option '--base-ref'" in result.output
 
     result = runner.invoke(cli, ["test", "--base-ref"])
     assert result.exit_code != 0
@@ -80,6 +76,17 @@ def test_test_command_requires_base_ref():
     result = runner.invoke(cli, ["test", "--base-ref="])
     assert result.exit_code != 0
     assert "Error: Option '--base-ref' cannot be empty." in result.output
+
+
+def test_test_command_requires_base_ref_or_packages():
+    runner = CliRunner()
+
+    result = runner.invoke(cli, ["test"])
+    assert result.exit_code != 1
+    assert (
+        "Error: Either pass '--base-ref' or provide at least one package name."
+        in result.output
+    )
 
 
 def test_test_command_cov_fail_under_requires_cov():
@@ -246,6 +253,41 @@ def test_success(
     assert "✅ test_integration succeeded in 0.1s" in result.stdout
 
 
+@mock.patch("llama_dev.test.find_all_packages")
+@mock.patch("llama_dev.test.get_changed_files")
+@mock.patch("llama_dev.test.get_changed_packages")
+@mock.patch("llama_dev.test.get_dependants_packages")
+def test_package_parameter(
+    mock_get_dependants,
+    mock_get_changed_packages,
+    mock_get_changed_files,
+    mock_find_all_packages,
+    data_path,
+):
+    # Setup minimal test data
+    mock_find_all_packages.return_value = set()
+    mock_get_changed_files.return_value = set()
+    mock_get_changed_packages.return_value = set()
+    mock_get_dependants.return_value = set()
+
+    runner = CliRunner()
+    runner.invoke(
+        cli,
+        [
+            "--repo-root",
+            data_path,
+            "test",
+            "--base-ref",
+            "main",
+            "package_1",
+            "package_2",
+        ],
+    )
+    mock_get_dependants.assert_called_with(
+        {data_path / "package_1", data_path / "package_2"}, set()
+    )
+
+
 #
 # Tests for the utility methods, we call them directly not through cli execution
 #
@@ -261,6 +303,7 @@ def test__pytest(mock_subprocess):
     assert mock_subprocess.call_args[0][0] == [
         "uv",
         "run",
+        "--no-sync",
         "--",
         "pytest",
         "-q",
@@ -273,6 +316,7 @@ def test__pytest(mock_subprocess):
     assert mock_subprocess.call_args[0][0] == [
         "uv",
         "run",
+        "--no-sync",
         "--",
         "pytest",
         "-q",

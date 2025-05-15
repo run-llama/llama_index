@@ -21,11 +21,13 @@ dev = [
     "types-setuptools==67.1.0.0",
     "black[jupyter]<=23.9.1,>=23.7.0",
     "codespell[toml]>=v2.2.6",
+    "pytest-cov>=6.1.1",
+    "diff-cover>=9.2.0",
 ]
 
 [project]
 name = "llama-index-embeddings-azure-openai"
-version = "0.3.2"
+version = "0.3.5"
 description = "llama-index embeddings azure openai integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"

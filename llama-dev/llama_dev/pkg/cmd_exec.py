@@ -25,8 +25,16 @@ from llama_dev.utils import find_all_packages, is_llama_index_package
     required=True,
     help="The command to execute (use quotes around the full command)",
 )
+@click.option(
+    "--silent",
+    is_flag=True,
+    default=False,
+    help="Only print errors",
+)
 @click.pass_obj
-def cmd_exec(obj: dict, all: bool, package_names: tuple, cmd: str, fail_fast: bool):
+def cmd_exec(
+    obj: dict, all: bool, package_names: tuple, cmd: str, fail_fast: bool, silent: bool
+):
     if not all and not package_names:
         raise click.UsageError("Either specify a package name or use the --all flag")
 
@@ -51,14 +59,21 @@ def cmd_exec(obj: dict, all: bool, package_names: tuple, cmd: str, fail_fast: bo
     with console.status(f"[bold green]Running '{cmd}'...") as status:
         for package in packages:
             result = subprocess.run(
-                cmd.split(" "), cwd=package, text=True, capture_output=True, env=env
+                cmd.split(" "),
+                cwd=package,
+                text=True,
+                capture_output=True,
+                env=env,
             )
             if result.returncode != 0:
-                msg = f"Command '{cmd}' failed in {package}: {result.stderr}"
+                msg = f"Command '{cmd}' failed in {package.relative_to(obj['repo_root'])}: {result.stderr}"
                 if fail_fast:
                     raise click.ClickException(msg)
                 else:
                     console.print(msg, style="bold red")
             else:
-                console.print(result.stdout)
-                console.log(f"Command succeeded in {package}")
+                if not silent:
+                    console.print(result.stdout)
+                    console.log(
+                        f"Command succeeded in {package.relative_to(obj['repo_root'])}"
+                    )
