@@ -64,6 +64,27 @@ def changed(entity, properties):
             to_delete.append(k)
     return to_update, to_delete
 
+def query_for_ids(command: str, ids: List[str]) -> List[dict]:
+    """Create a query for a list of ids."""
+    constraints = {}
+    constraints.setdefault("any", {UNIQUEID_PROPERTY: ["in", ids]})
+    if command == "FindEntity":
+        query = [{command: {"results": {"all_properties": True}}}]
+    else:
+        query =[{command:{}}]
+    if len(constraints) > 0:
+        query[0][command]["constraints"] = constraints
+    return query
+
+def query_for_properties(command: str, properties: dict) -> List[dict]:
+    """Create a query for a list of properties."""
+    constraints = {}
+    for k, v in properties.items():
+        constraints.setdefault("all", {k: ["==", v]})
+    query = [{command: {"results": {"all_properties": True}}}]
+    if len(constraints) > 0:
+        query[0][command]["constraints"] = constraints
+    return query
 
 class ApertureDBGraphStore(PropertyGraphStore):
     """
@@ -166,17 +187,37 @@ class ApertureDBGraphStore(PropertyGraphStore):
                     rel_map.extend(self.get_rel_map(adjacent_nodes, depth-1))
         return rel_map
 
-    def delete(self, entity_names=None, relation_names=None, properties=None, ids=None):
-        raise NotImplementedError("delete is not implemented")
+    def delete(
+        self,
+        entity_names: Optional[List[str]] = None,
+        relation_names: Optional[List[str]] = None,
+        properties: Optional[dict] = None,
+        ids: Optional[List[str]] = None,
+    ) -> None:
+        """Delete nodes."""
+        if ids and len(ids) > 0:
+            query = query_for_ids("DeleteEntity", ids)
+            result, response, _ = execute_query(
+                self._client,
+                query,
+            )
+            assert result == 0, response
+        if properties and len(properties) > 0:
+            query = query_for_properties("DeleteEntity", properties)
+            result, response, _ = execute_query(
+                self._client,
+                query,
+            )
+            assert result == 0, response
 
-    def get(self, properties=None, ids=None):
-        constraints = {}
+    def get(
+        self,
+        properties: Optional[dict] = None,
+        ids: Optional[List[str]] = None
+    ) -> List[LabelledNode]:
         entities = []
         if ids and len(ids) > 0:
-            constraints.setdefault("any", {UNIQUEID_PROPERTY: ["in", ids]})
-            query = [{"FindEntity": {"results": {"all_properties": True}}}]
-            if len(constraints) > 0:
-                query[0]["FindEntity"]["constraints"] = constraints
+            query = query_for_ids("Findentity", ids)
             result, response, _ = execute_query(
                 self._client,
                 query,
@@ -185,11 +226,7 @@ class ApertureDBGraphStore(PropertyGraphStore):
             entities.extend(response[0]["FindEntity"].get("entities", []))
 
         elif properties and len(properties) > 0:
-            for k, v in properties.items():
-                constraints.setdefault("all", {k: ["==", v]})
-            query = [{"FindEntity": {"results": {"all_properties": True}}}]
-            if len(constraints) > 0:
-                query[0]["FindEntity"]["constraints"] = constraints
+            query = query_for_properties("FindEntity", properties)
             result, response, _ = execute_query(
                 self._client,
                 query,

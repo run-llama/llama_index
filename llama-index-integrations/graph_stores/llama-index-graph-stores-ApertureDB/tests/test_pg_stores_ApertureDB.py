@@ -116,3 +116,27 @@ def test_ApertureDB_pg_store_data_add(monkeypatch) -> None:
         assert "FindEntity" in q[0]
         assert "FindEntity" in q[1]
         assert "AddConnection" in q[2]
+
+def test_ApertureDB_pg_store_delete(monkeypatch) -> None:
+    monkeypatch.setattr(
+        aperturedb.CommonLibrary,
+        "create_connector",
+        lambda *args, **kwargs: MockConnector(False),
+    )
+
+    entities, relations = synthetic_data()
+    from llama_index.graph_stores.ApertureDB import ApertureDBGraphStore
+    pg_store = ApertureDBGraphStore()
+    pg_store.upsert_nodes(entities)
+    pg_store.upsert_relations(relations)
+
+    #20 = 2 (PERSON) + 4 (DISH) + 8 (INGREDIENT) + 6 (relations)
+    assert len(pg_store.client.queries) == 20, json.dumps(pg_store.client.queries, indent=2)
+
+    pg_store.client.queries = []
+    pg_store.delete(ids=[e.id for e in entities])
+    assert len(pg_store.client.queries) == 1, json.dumps(pg_store.client.queries, indent=2)
+    assert "DeleteEntity" in pg_store.client.queries[0][0]
+    assert "results" not in pg_store.client.queries[0][0]["DeleteEntity"]
+    delete_query_constraints = pg_store.client.queries[0][0]["DeleteEntity"]["constraints"]
+    assert len(delete_query_constraints) == 1, json.dumps(delete_query_constraints, indent=2)
