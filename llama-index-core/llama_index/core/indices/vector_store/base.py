@@ -338,8 +338,6 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         with self._callback_manager.as_trace("insert_nodes"):
             self._insert(nodes, **insert_kwargs)
             self._storage_context.index_store.add_index_struct(self._index_struct)
-        self._insert(nodes, **insert_kwargs)
-        self._storage_context.index_store.add_index_struct(self._index_struct)
 
     async def ainsert_nodes(
         self, nodes: Sequence[BaseNode], **insert_kwargs: Any
