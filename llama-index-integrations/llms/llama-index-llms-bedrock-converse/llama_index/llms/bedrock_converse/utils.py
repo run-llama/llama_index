@@ -529,6 +529,9 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
         Joined dictionary
 
     """
+    # These keys should be replaced rather than concatenated
+    REPLACE_KEYS = {"toolUseId", "name", "input"}
+
     new_dict = dict1.copy()
     for key, value in dict2.items():
         if key not in new_dict:
@@ -536,6 +539,9 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
         else:
             if isinstance(value, dict):
                 new_dict[key] = join_two_dicts(new_dict[key], value)
+            elif key in REPLACE_KEYS:
+                # Replace instead of concatenate for special keys
+                new_dict[key] = value
             else:
                 new_dict[key] += value
     return new_dict
