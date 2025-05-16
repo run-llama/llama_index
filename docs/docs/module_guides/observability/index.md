@@ -590,8 +590,6 @@ import openlit
 openlit.init()
 ```
 
-![](../../_static/integrations/openlit.gif)
-
 #### Guides
 
 - [OpenLIT's Official Documentation](https://docs.openlit.io/latest/integrations/llama-index)
