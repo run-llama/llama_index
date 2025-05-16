@@ -305,12 +305,12 @@ class ChatMessage(BaseModel):
             The cumulative content of the TextBlock blocks, None if there are none.
 
         """
-        content = ""
+        content_strs = []
         for block in self.blocks:
             if isinstance(block, TextBlock):
-                content += block.text
+                content_strs.append(block.text)
 
-        return content or None
+        return "\n".join(content_strs) or None
 
     @content.setter
     def content(self, content: str) -> None:
