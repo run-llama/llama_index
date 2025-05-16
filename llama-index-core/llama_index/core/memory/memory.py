@@ -219,10 +219,6 @@ class Memory(BaseMemory):
         elif values.get("token_flush_size", -1) > token_limit:
             values["token_flush_size"] = int(token_limit * 0.1)
 
-        chat_history_ratio = values.get("chat_history_token_ratio", 0.7)
-        if token_limit * chat_history_ratio <= values.get("token_flush_size", -1):
-            raise ValueError("token_limit * chat_history_ratio must evaluate to a number greater than the token flush size.")
-
         # validate all blocks have unique names
         block_names = [block.name for block in values.get("memory_blocks", [])]
         if len(block_names) != len(set(block_names)):
@@ -466,7 +462,7 @@ class Memory(BaseMemory):
                     # Update existing user message
                     result[actual_idx].blocks = [*memory_content, *result[actual_idx].blocks]
                 else:
-                    raise ValueError("No user message found in chat history!")
+                    result.append(ChatMessage(role="user", blocks=memory_content))
 
         return result
 
@@ -513,6 +509,11 @@ class Memory(BaseMemory):
         """
         # Calculate if we need to waterfall
         current_queue = await self.sql_store.get_messages(self.session_id, status=MessageStatus.ACTIVE)
+
+        # If current queue is empty, return
+        if not current_queue:
+            return
+
         tokens_in_current_queue = sum(self._estimate_token_count(message) for message in current_queue)
 
         # If we're over the token limit, initiate waterfall
@@ -525,12 +526,16 @@ class Memory(BaseMemory):
             tokens_to_remove = tokens_in_current_queue - token_limit
 
             while tokens_to_remove > 0:
+                # If only one message left, keep it regardless of token count
+                if len(reversed_queue) <= 1:
+                    break
+
                 # Collect messages to flush (up to flush size)
                 messages_to_flush = []
                 flushed_tokens = 0
 
                 # Remove oldest messages (from end of reversed list) until reaching flush size
-                while flushed_tokens < self.token_flush_size and reversed_queue:
+                while flushed_tokens < self.token_flush_size and reversed_queue and len(reversed_queue) > 1:
                     message = reversed_queue.pop()
                     messages_to_flush.append(message)
                     flushed_tokens += self._estimate_token_count(message)
@@ -549,7 +554,7 @@ class Memory(BaseMemory):
                 if chronological_view:
                     # Keep removing messages until first remaining message is from user
                     # This ensures we start with a user message
-                    while chronological_view and chronological_view[0].role != "user":
+                    while chronological_view and chronological_view[0].role != "user" and len(reversed_queue) > 1:
                         if reversed_queue:
                             messages_to_flush.append(reversed_queue.pop())
                             chronological_view = reversed_queue[::-1]
