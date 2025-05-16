@@ -35,7 +35,10 @@ class RankLLMRerank(BaseNodePostprocessor):
             - MonoT5. model='monot5'
     """
 
-    model: str = Field(description="Model name.", default="rank_zephyr")
+    model: str = Field(
+        description="Model name.",
+        default="rank_zephyr"
+    )
     top_n: Optional[int] = Field(
         description="Number of nodes to return sorted by reranking score."
     )
@@ -46,10 +49,46 @@ class RankLLMRerank(BaseNodePostprocessor):
     batch_size: Optional[int] = Field(
         description="Reranking batch size. Applicable only for pointwise models."
     )
-    context_size: int = Field(default=4096)
-    prompt_mode: PromptMode = Field(default=PromptMode.RANK_GPT)
-    stride: int = Field(default=10)
-    use_azure_openai: bool = Field(default=False)
+    context_size: int = Field(
+        description="Maximum number of tokens for the context window.",
+        default=4096
+    )
+    prompt_mode: PromptMode = Field(
+        description="Prompt format and strategy used when invoking the reranking model.",
+        default=PromptMode.RANK_GPT
+    )
+    num_gpus: int = Field(
+        description="Number of GPUs to use for inference if applicable.",
+        default=1
+    )
+    num_few_shot_examples: int = Field(
+        description="Number of few-shot examples to include in the prompt.",
+        default=0
+    )
+    few_shot_file: Optional[str] = Field(
+        description="Path to a file containing few-shot examples, used if few-shot prompting is enabled.",
+        default=None
+    )
+    use_logits: bool = Field(
+        description="Whether to use raw logits for reranking scores instead of probabilities.",
+        default=False
+    )
+    use_alpha: bool = Field(
+        description="Whether to apply an alpha scaling factor in the reranking score calculation.",
+        default=False
+    )
+    variable_passages: bool = Field(
+        description="Whether to allow passages of variable lengths instead of fixed-size chunks.",
+        default=False
+    )
+    stride: int = Field(
+        description="Stride to use when sliding over long documents for reranking.",
+        default=10
+    )
+    use_azure_openai: bool = Field(
+        description="Whether to use Azure OpenAI instead of the standard OpenAI API.",
+        default=False
+    )
 
     _reranker: Any = PrivateAttr()
 
@@ -64,13 +103,19 @@ class RankLLMRerank(BaseNodePostprocessor):
     ) -> List[NodeWithScore]:
         kwargs = {
             "model_path": self.model,
+            "default_model_coordinator": None,
             "context_size": self.context_size,
             "prompt_mode": self.prompt_mode,
+            "num_gpus": self.num_gpus,
+            "use_logits": self.use_logits,
+            "use_alpha": self.use_alpha,
+            "num_few_shot_examples": self.num_few_shot_examples,
+            "few_shot_file": self.few_shot_file,
+            "variable_passages": self.variable_passages,
+            "interactive": False,
             "window_size": self.window_size,
             "stride": self.stride,
             "use_azure_openai": self.use_azure_openai,
-            "interactive": False,
-            "default_model_coordinator": None
         }
         model_coordinator = Reranker.create_model_coordinator(**kwargs)
         self._reranker = Reranker(model_coordinator)
