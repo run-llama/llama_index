@@ -130,14 +130,12 @@ class DesearchToolSpec(BaseToolSpec):
             str | dict: The search result or an error string.
         """
         try:
-            result = self.client.search(
+            return self.client.search(
                 prompt,
                 tool,
                 model,
                 date_filter,
             )
-
-            return result
         except Exception as e:
             return str(e)
 
@@ -162,8 +160,7 @@ class DesearchToolSpec(BaseToolSpec):
             Exception: If an error occurs when calling the API.
         """
         try:
-            result = self.client.basic_twitter_search(query, sort, count)
-            return result
+            return self.client.basic_twitter_search(query, sort, count)
         except Exception as e:
             return str(e)
 
@@ -190,7 +187,6 @@ class DesearchToolSpec(BaseToolSpec):
             Exception: If an error occurs when calling the API.
         """
         try:
-            result = self.client.basic_web_search(query, num, start)
-            return result
+            return self.client.basic_web_search(query, num, start)
         except Exception as e:
             return str(e)
