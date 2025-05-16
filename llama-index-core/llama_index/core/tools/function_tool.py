@@ -19,7 +19,9 @@ CallbackFunction = Callable[[ToolOutput], CallbackReturn]
 AsyncCallbackFunction = Awaitable[CallbackFunction]
 
 
-def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
+def sync_to_async(
+    fn: Union[Callable[..., Any], CallbackFunction],
+) -> Union[AsyncCallable, AsyncCallbackFunction]:
     """Sync to async."""
 
     async def _async_wrapped_fn(*args: Any, **kwargs: Any) -> Any:
@@ -29,7 +31,9 @@ def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
     return _async_wrapped_fn
 
 
-def async_to_sync(func_async: AsyncCallable) -> Callable:
+def async_to_sync(
+    func_async: Union[AsyncCallable, AsyncCallbackFunction],
+) -> Union[Callable, CallbackFunction]:
     """Async to sync."""
 
     def _sync_wrapped_fn(*args: Any, **kwargs: Any) -> Any:
