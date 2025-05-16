@@ -7,7 +7,7 @@ from llama_index.core.instrumentation.span_handlers.simple import SimpleSpanHand
 import llama_index.core.instrumentation as instrument
 from llama_index.core.instrumentation.span import SimpleSpan
 from typing import Optional, Any, List, Dict, Union, Sequence, Literal, Mapping
-from utils import filter_model_fields
+from llama_index.observability.otel.utils import filter_model_fields
 from opentelemetry import trace
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
