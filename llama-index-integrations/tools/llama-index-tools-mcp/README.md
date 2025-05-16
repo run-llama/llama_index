@@ -49,6 +49,71 @@ agent = FunctionAgent(
 resp = await agent.run("What is the weather in Tokyo?")
 ```
 
+## Helper Functions
+
+This package also includes several helper functions for working with MCP Servers.
+
+### `workflow_as_mcp`
+
+This function converts a `Workflow` to an MCP app.
+
+```python
+from llama_index.core.workflow import (
+    Context,
+    Workflow,
+    Event,
+    StartEvent,
+    StopEvent,
+    step,
+)
+from llama_index.tools.mcp import workflow_as_mcp
+
+
+class RunEvent(StartEvent):
+    msg: str
+
+
+class InfoEvent(Event):
+    msg: str
+
+
+class LoudWorkflow(Workflow):
+    """Useful for converting strings to uppercase and making them louder."""
+
+    @step
+    def step_one(self, ctx: Context, ev: RunEvent) -> StopEvent:
+        ctx.write_event_to_stream(InfoEvent(msg="Hello, world!"))
+
+        return StopEvent(result=ev.msg.upper() + "!")
+
+
+workflow = LoudWorkflow()
+
+mcp = workflow_as_mcp(workflow, start_event_model=RunEvent)
+```
+
+Then, you can launch the MCP server (assuming you have the `mcp[cli]` extra installed):
+
+```bash
+mcp dev script.py
+```
+
+### `get_tools_from_mcp_url` / `aget_tools_from_mcp_url`
+
+This function get a list of `FunctionTool`s from an MCP server or command.
+
+```python
+from llama_index.tools.mcp import (
+    get_tools_from_mcp_url,
+    aget_tools_from_mcp_url,
+)
+
+tools = get_tools_from_mcp_url("http://127.0.0.1:8000/sse")
+
+# async
+tools = await get_tools_from_mcp_url("http://127.0.0.1:8000/sse")
+```
+
 ## Notebook Example
 
 This tool has a more extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-mcp/examples/mcp.ipynb).

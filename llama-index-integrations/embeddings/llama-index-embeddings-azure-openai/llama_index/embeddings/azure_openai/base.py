@@ -1,6 +1,7 @@
 from typing import Annotated, Any, Dict, Optional
 
 import httpx
+from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.core.bridge.pydantic import (
     Field,
     PrivateAttr,
@@ -9,7 +10,6 @@ from llama_index.core.bridge.pydantic import (
 )
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_EMBED_BATCH_SIZE
-from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.embeddings.openai import (
     OpenAIEmbedding,
     OpenAIEmbeddingMode,
@@ -17,8 +17,8 @@ from llama_index.embeddings.openai import (
 )
 from llama_index.embeddings.openai.utils import DEFAULT_OPENAI_API_BASE
 from llama_index.llms.azure_openai.utils import (
-    resolve_from_aliases,
     refresh_openai_azuread_token,
+    resolve_from_aliases,
 )
 from openai import AsyncAzureOpenAI, AzureOpenAI
 from openai.lib.azure import AzureADTokenProvider
@@ -88,8 +88,13 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         **kwargs: Any,
     ):
         azure_endpoint = get_from_param_or_env(
-            "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", ""
+            "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", None
         )
+
+        if not use_azure_ad:
+            api_key = get_from_param_or_env(
+                "api_key", api_key, "AZURE_OPENAI_API_KEY", None
+            )
 
         # OpenAI base_url and azure_endpoint are mutually exclusive
         if api_base:

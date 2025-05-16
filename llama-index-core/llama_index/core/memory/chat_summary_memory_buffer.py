@@ -25,6 +25,8 @@ logger = logging.getLogger(__name__)
 # TODO: Add option for last N user/assistant history interactions instead of token limit
 class ChatSummaryMemoryBuffer(BaseMemory):
     """
+    Deprecated: Please use `llama_index.core.memory.Memory` instead.
+
     Buffer for storing chat history that uses the full text for the latest
     {token_limit}.
 

@@ -13,6 +13,8 @@ DEFAULT_OUTRO_HISTORY_MESSAGE = "This is the end of the retrieved message dialog
 
 class SimpleComposableMemory(BaseMemory):
     """
+    Deprecated: Please use `llama_index.core.memory.Memory` instead.
+
     A simple composition of potentially several memory sources.
 
     This composable memory considers one of the memory sources as the main
