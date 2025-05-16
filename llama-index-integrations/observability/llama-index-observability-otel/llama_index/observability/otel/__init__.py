@@ -1,11 +1,7 @@
 from llama_index.observability.otel.base import (
-    TracerOperator,
-    OpenTelemetryEventHandler,
-    OpenTelemetrySpanHandler
+    LlamaIndexOpenTelemetry
 )
 
 __all__ = [
-    "TracerOperator",
-    "OpenTelemetryEventHandler",
-    "OpenTelemetrySpanHandler",
+    "LlamaIndexOpenTelemetry",
 ]

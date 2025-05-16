@@ -1,22 +1,27 @@
-from llama_index.observability.otel import OpenTelemetryEventHandler, OpenTelemetrySpanHandler, TracerOperator
-from llama_index.observability.otel.base import SpanExporter, trace, BaseEventHandler
+from llama_index.observability.otel import LlamaIndexOpenTelemetry
+from llama_index.observability.otel.base import Resource, SERVICE_NAME, ConsoleSpanExporter, OTelCompatibleSpanHandler, OTelCompatibleEventHandler
 
 def test_initialization() -> None:
-    span_handler = OpenTelemetrySpanHandler()
-    assert span_handler.tracer_operator.tracer_name == "llamaindex.opentelemetry"
-    assert isinstance(span_handler.tracer_operator.span_exporter, SpanExporter)
-    assert isinstance(span_handler.tracer_operator.tracer, trace.Tracer)
+    instrumentor = LlamaIndexOpenTelemetry()
+    assert instrumentor.service_name_or_resource == Resource(attributes={SERVICE_NAME: "llamaindex.opentelemetry"})
+    assert isinstance(instrumentor.span_exporter, ConsoleSpanExporter)
+    assert instrumentor.span_processor == "batch"
+    assert isinstance(instrumentor._span_handler, OTelCompatibleSpanHandler)
+    assert isinstance(instrumentor._span_handler.all_spans, list)
+    assert isinstance(instrumentor._event_handler, OTelCompatibleEventHandler)
+    assert isinstance(instrumentor._event_handler.all_events, list)
+    assert not instrumentor._is_otel_started
 
 def test_diff_initialization() -> None:
-    tracer_operator = TracerOperator(
-        tracer_name = "my.test.project",
+    instrumentor = LlamaIndexOpenTelemetry(
+        service_name_or_resource="this.is.a.test",
+        span_processor="simple"
     )
-    span_handler = OpenTelemetrySpanHandler(tracer_operator=tracer_operator)
-    assert span_handler.tracer_operator.tracer_name == "my.test.project"
-    assert isinstance(span_handler.tracer_operator.span_exporter, SpanExporter)
-    assert isinstance(span_handler.tracer_operator.tracer, trace.Tracer)
-
-def test_event_handler_initialization() -> None:
-    span_handler = OpenTelemetrySpanHandler()
-    event_handler = OpenTelemetryEventHandler(span_handler=span_handler)
-    assert isinstance(event_handler, BaseEventHandler)
+    assert instrumentor.service_name_or_resource == "this.is.a.test"
+    assert isinstance(instrumentor.span_exporter, ConsoleSpanExporter)
+    assert instrumentor.span_processor == "simple"
+    assert isinstance(instrumentor._span_handler, OTelCompatibleSpanHandler)
+    assert isinstance(instrumentor._span_handler.all_spans, list)
+    assert isinstance(instrumentor._event_handler, OTelCompatibleEventHandler)
+    assert isinstance(instrumentor._event_handler.all_events, list)
+    assert not instrumentor._is_otel_started
