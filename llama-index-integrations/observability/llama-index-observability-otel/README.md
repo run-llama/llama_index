@@ -11,15 +11,12 @@ pip install llama-index-observability-otel
 You can use the default OpenTelemetry event handler as follows:
 
 ```python
-from llama_index.observability.otel import OpenTelemetryEventHandler
+from base import OpenTelemetryEventHandler, OpenTelemetrySpanHandler
 import llama_index.core.instrumentation as instrument
-from llama_index.core.instrumentation.span_handlers import SimpleSpanHandler
 from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
 
-# initialize the EventHandler
-event_handler = OpenTelemetryEventHandler()
-# initialize all the other components needed for instrumentation
-span_handler = SimpleSpanHandler()
+span_handler = OpenTelemetrySpanHandler()
+event_handler = OpenTelemetryEventHandler(span_handler=span_handler)
 dispatcher = instrument.get_dispatcher()
 dispatcher.add_event_handler(event_handler)
 dispatcher.add_span_handler(span_handler)
@@ -44,6 +41,7 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from llama_index.observability.otel import (
     OpenTelemetryEventHandler,
+    OpenTelemetrySpanHandler,
     TracerOperator,
 )
 import llama_index.core.instrumentation as instrument
@@ -60,15 +58,12 @@ tracer_operator = TracerOperator(
     span_processor="simple",
 )
 
-# initialize the EventHandler
-event_handler = OpenTelemetryEventHandler(tracer_operator=tracer_operator)
-
-# initialize all the other components needed for instrumentation
-span_handler = SimpleSpanHandler()
+# initialize observability components
+span_handler = OpenTelemetrySpanHandler(tracer_operator=tracer_operator)
+event_handler = OpenTelemetryEventHandler(span_handler=span_handler)
 dispatcher = instrument.get_dispatcher()
 dispatcher.add_event_handler(event_handler)
 dispatcher.add_span_handler(span_handler)
-
 
 if __name__ == "__main__":
     # try it out with a simple RAG example!
