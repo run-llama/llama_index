@@ -19,9 +19,7 @@ CallbackFunction = Callable[[ToolOutput], CallbackReturn]
 AsyncCallbackFunction = Awaitable[CallbackFunction]
 
 
-def sync_to_async(
-    fn: Union[Callable[..., Any], CallbackFunction],
-) -> Union[AsyncCallable, AsyncCallbackFunction]:
+def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
     """Sync to async."""
 
     async def _async_wrapped_fn(*args: Any, **kwargs: Any) -> Any:
@@ -31,9 +29,7 @@ def sync_to_async(
     return _async_wrapped_fn
 
 
-def async_to_sync(
-    func_async: Union[AsyncCallable, AsyncCallbackFunction],
-) -> Union[Callable, CallbackFunction]:
+def async_to_sync(func_async: AsyncCallable) -> Callable:
     """Async to sync."""
 
     def _sync_wrapped_fn(*args: Any, **kwargs: Any) -> Any:
@@ -94,13 +90,13 @@ class FunctionTool(AsyncBaseTool):
         if callback is not None:
             self._callback = callback
         elif async_callback is not None:
-            self._callback = async_to_sync(async_callback)
+            self._callback = async_to_sync(async_callback)  # type: ignore
 
         self._async_callback = None
         if async_callback is not None:
             self._async_callback = async_callback
         elif self._callback is not None:
-            self._async_callback = sync_to_async(self._callback)
+            self._async_callback = sync_to_async(self._callback)  # type: ignore
 
         self.partial_params = partial_params or {}
 
