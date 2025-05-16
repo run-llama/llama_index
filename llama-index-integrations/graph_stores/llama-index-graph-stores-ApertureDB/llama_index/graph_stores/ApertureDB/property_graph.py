@@ -8,9 +8,8 @@ from llama_index.core.graph_stores.types import (
     ChunkNode,
     Triplet,
 )
-from aperturedb.CommonLibrary import create_connector, execute_query
-from aperturedb.Query import QueryBuilder
-
+query_executor = None
+query_builder = None
 # Prefix for properties that are in the client metadata
 PROPERTY_PREFIX = "lm_"
 
@@ -35,7 +34,7 @@ def get_entity(client, label, id):
     ]
     if label is not None:
         query[0]["FindEntity"]["with_class"] = label
-    result, response, _ = execute_query(
+    result, response, _ = query_executor(
         client,
         query,
     )
@@ -60,7 +59,7 @@ def changed(entity, properties):
         elif entity[k] != v:
             to_update[k] = v
     for k, v in entity.items():
-        if k not in properties and not k.startswith("_"):
+        if k not in properties and not k.startswith("_") and k not in ["id", "name"]:
             to_delete.append(k)
     return to_update, to_delete
 
@@ -104,7 +103,20 @@ class ApertureDBGraphStore(PropertyGraphStore):
         return self._client
 
     def __init__(self, *args, **kwargs) -> None:
+        try:
+            from aperturedb.CommonLibrary import create_connector, execute_query
+            from aperturedb.Query import QueryBuilder
+        except ImportError:
+            raise ImportError(
+                "ApertureDB is not installed. Please install it using "
+                "'pip install --upgrade aperturedb'"
+            )
+
         self._client = create_connector()
+        global query_executor
+        query_executor = execute_query
+        global query_builder
+        query_builder = QueryBuilder
 
     def get_rel_map(
         self,
@@ -122,7 +134,7 @@ class ApertureDBGraphStore(PropertyGraphStore):
         ignore_rels = ignore_rels or []
         for s in subjs:
             query = [
-                QueryBuilder.find_command(
+                query_builder.find_command(
                     oclass=s.label,
                     params={
                         "_ref": 1,
@@ -150,7 +162,7 @@ class ApertureDBGraphStore(PropertyGraphStore):
                         }
                     }
                 ])
-            result, response, _ = execute_query(
+            result, response, _ = query_executor(
                 self._client,
                 query,
             )
@@ -196,19 +208,49 @@ class ApertureDBGraphStore(PropertyGraphStore):
     ) -> None:
         """Delete nodes."""
         if ids and len(ids) > 0:
-            query = query_for_ids("DeleteEntity", ids)
-            result, response, _ = execute_query(
+            query = query_for_ids("DeleteEntity", [id.capitalize() for id in ids])
+            result, response, _ = query_executor(
                 self._client,
                 query,
             )
             assert result == 0, response
         if properties and len(properties) > 0:
             query = query_for_properties("DeleteEntity", properties)
-            result, response, _ = execute_query(
+            result, response, _ = query_executor(
                 self._client,
                 query,
             )
             assert result == 0, response
+        if entity_names and len(entity_names) > 0:
+            for name in entity_names:
+                query = [
+                    {
+                        "DeleteEntity": {
+                            "with_class": name,
+                            "constraints": {"_uniqueid": ["!=", "0.0.0"]}
+                        }
+                    }
+                ]
+                result, response, _ = query_executor(
+                    self._client,
+                    query,
+                )
+                assert result == 0, response
+        if relation_names and len(relation_names) > 0:
+            for relation_name in set(relation_names):
+                query = [
+                    {
+                        "DeleteConnection": {
+                            "with_class": relation_name,
+                            "constraints": {"_uniqueid": ["!=", "0.0.0"]}
+                        }
+                    }
+                ]
+                result, response, _ = query_executor(
+                    self._client,
+                    query,
+                )
+                assert result == 0, response
 
     def get(
         self,
@@ -217,8 +259,8 @@ class ApertureDBGraphStore(PropertyGraphStore):
     ) -> List[LabelledNode]:
         entities = []
         if ids and len(ids) > 0:
-            query = query_for_ids("Findentity", ids)
-            result, response, _ = execute_query(
+            query = query_for_ids("FindEntity", ids)
+            result, response, _ = query_executor(
                 self._client,
                 query,
             )
@@ -227,7 +269,7 @@ class ApertureDBGraphStore(PropertyGraphStore):
 
         elif properties and len(properties) > 0:
             query = query_for_properties("FindEntity", properties)
-            result, response, _ = execute_query(
+            result, response, _ = query_executor(
                 self._client,
                 query,
             )
@@ -308,7 +350,7 @@ class ApertureDBGraphStore(PropertyGraphStore):
             if command is not None:
                 query = [command]
                 blobs = []
-                result, response, _ = execute_query(self._client, query, blobs)
+                result, response, _ = query_executor(self._client, query, blobs)
                 assert result == 0, response
                 data.append((query, blobs))
                 ids.append(id)
@@ -351,7 +393,7 @@ class ApertureDBGraphStore(PropertyGraphStore):
                     }
                 },
             ]
-            result, response, _ = execute_query(
+            result, response, _ = query_executor(
                 self._client, query, success_statuses=[0, 2]
             )
             assert result == 0, response

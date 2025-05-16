@@ -1,44 +1,63 @@
 
 import aperturedb.CommonLibrary
 from llama_index.core.graph_stores.types import Relation, EntityNode
+from llama_index.graph_stores.ApertureDB import ApertureDBGraphStore
+
 
 import aperturedb
 import json
 
-class MockConnector:
-    def __init__(self, exists) -> None:
-        self.exists = exists
-        self.queries = []
-        print(f"self.exists: {self.exists}")
+import pytest
 
-    def clone(self):
-        return self
+@pytest.fixture
+def create_store(monkeypatch):
+    class MockConnector:
+        def __init__(self, exists) -> None:
+            self.exists = exists
+            self.queries = []
+            print(f"self.exists: {self.exists}")
 
-    def query(self, *args, **kwargs):
-        print("query called with args:", args, "and kwargs:", kwargs)
-        self.queries.append(args[0])
+        def clone(self):
+            return self
 
-        response, blobs = [], []
-        if self.exists:
-            response = [{
-                "FindEntity": {
-                    "returned": 1,
-                    "status": 0,
-                    "entities": [{"id": "James", "name": "James", "label": "PERSON"}]
-                }}
-            ]
-        else:
-            response = [{"FindEntity": {"returned": 0, "status": 0}}]
+        def query(self, *args, **kwargs):
+            print("query called with args:", args, "and kwargs:", kwargs)
+            self.queries.append(args[0])
 
-        print("query response:", response)
-        return response, blobs
+            response, blobs = [], []
+            if self.exists:
+                response = [{
+                    "FindEntity": {
+                        "returned": 1,
+                        "status": 0,
+                        "entities": [{"id": "James", "name": "James", "label": "PERSON"}]
+                    }}
+                ]
+            else:
+                response = [{"FindEntity": {"returned": 0, "status": 0}}]
 
-    def last_query_ok(self):
-        return True
+            print("query response:", response)
+            return response, blobs
 
-    def get_last_response_str(self):
-        return "response"
+        def last_query_ok(self):
+            return True
 
+        def get_last_response_str(self):
+            return "response"
+
+    def store_creator(data_exists):
+
+        monkeypatch.setattr(
+            aperturedb.CommonLibrary,
+            "create_connector",
+            lambda *args, **kwargs: MockConnector(data_exists),
+        )
+
+        return ApertureDBGraphStore()
+
+    return store_creator
+
+@pytest.fixture
 def synthetic_data():
     entities = [
         EntityNode(label="PERSON", name="James"),
@@ -85,16 +104,35 @@ def synthetic_data():
 
     return entities, relations
 
-def test_ApertureDB_pg_store_data_add(monkeypatch) -> None:
-    monkeypatch.setattr(
-        aperturedb.CommonLibrary,
-        "create_connector",
-        lambda *args, **kwargs: MockConnector(False),
-    )
+def test_ApertureDB_pg_store_data_update(create_store, synthetic_data) -> None:
+    pg_store = create_store(True)
+    entities, relations = synthetic_data
+    pg_store.upsert_nodes(entities)
+    pg_store.upsert_relations(relations)
 
-    entities, relations = synthetic_data()
-    from llama_index.graph_stores.ApertureDB import ApertureDBGraphStore
-    pg_store = ApertureDBGraphStore()
+    #20 = 2 (PERSON) + 4 (DISH) + 8 (INGREDIENT) + 6 (relations)
+    assert len(pg_store.client.queries) == 20, json.dumps(pg_store.client.queries, indent=2)
+
+    # Check if the queries are correct, FindEntity followed by AddEntity.
+    for i in range(14):
+        q = pg_store.client.queries[i]
+        assert len(q) == 1, json.dumps(q, indent=2)
+        if i % 2 == 0:
+            assert "FindEntity" in q[0]
+        else:
+            assert "UpdateEntity" in q[0]
+    # Check if the queries are correct, FindEntity x 2 followed by AddConnection.
+    for i in range(14, 20):
+        q = pg_store.client.queries[i]
+        assert len(q) == 3, json.dumps(q, indent=2)
+        assert "FindEntity" in q[0]
+        assert "FindEntity" in q[1]
+        assert "AddConnection" in q[2]
+
+
+def test_ApertureDB_pg_store_data_add(create_store, synthetic_data) -> None:
+    pg_store = create_store(False)
+    entities, relations = synthetic_data
     pg_store.upsert_nodes(entities)
     pg_store.upsert_relations(relations)
 
@@ -117,16 +155,9 @@ def test_ApertureDB_pg_store_data_add(monkeypatch) -> None:
         assert "FindEntity" in q[1]
         assert "AddConnection" in q[2]
 
-def test_ApertureDB_pg_store_delete(monkeypatch) -> None:
-    monkeypatch.setattr(
-        aperturedb.CommonLibrary,
-        "create_connector",
-        lambda *args, **kwargs: MockConnector(False),
-    )
-
-    entities, relations = synthetic_data()
-    from llama_index.graph_stores.ApertureDB import ApertureDBGraphStore
-    pg_store = ApertureDBGraphStore()
+def test_ApertureDB_pg_store_delete(create_store, synthetic_data) -> None:
+    entities, relations = synthetic_data
+    pg_store = create_store(True)
     pg_store.upsert_nodes(entities)
     pg_store.upsert_relations(relations)
 
