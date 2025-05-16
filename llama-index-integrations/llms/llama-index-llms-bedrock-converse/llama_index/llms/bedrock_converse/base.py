@@ -117,7 +117,7 @@ class BedrockConverse(FunctionCallingLLM):
     )
     guardrail_identifier: Optional[str] = (
         Field(
-            description="The unique identifier of the guardrail that you want to use. If you don’t provide a value, no guardrail is applied to the invocation."
+            description="The unique identifier of the guardrail that you want to use. If you don't provide a value, no guardrail is applied to the invocation."
         ),
     )
     guardrail_version: Optional[str] = (
@@ -375,17 +375,33 @@ class BedrockConverse(FunctionCallingLLM):
 
         def gen() -> ChatResponseGen:
             content = {}
+            tool_calls = []  # Track tool calls separately
+            current_tool_call = None  # Track the current tool call being built
             role = MessageRole.ASSISTANT
             for chunk in response["stream"]:
                 if content_block_delta := chunk.get("contentBlockDelta"):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
-                    (
-                        _,
-                        tool_calls,
-                        tool_call_ids,
-                        status,
-                    ) = self._get_content_and_tool_calls(content=content)
+
+                    # If this delta contains tool call info, update current tool call
+                    if "toolUse" in content_delta:
+                        tool_use_delta = content_delta["toolUse"]
+
+                        if current_tool_call:
+                            # Handle the input field specially - concatenate partial JSON strings
+                            if "input" in tool_use_delta:
+                                if "input" in current_tool_call:
+                                    current_tool_call["input"] += tool_use_delta["input"]
+                                else:
+                                    current_tool_call["input"] = tool_use_delta["input"]
+
+                                # Remove input from the delta to prevent it from being processed again
+                                tool_use_without_input = {k: v for k, v in tool_use_delta.items() if k != "input"}
+                                if tool_use_without_input:
+                                    current_tool_call = join_two_dicts(current_tool_call, tool_use_without_input)
+                            else:
+                                # For other fields, use the normal joining
+                                current_tool_call = join_two_dicts(current_tool_call, tool_use_delta)
 
                     yield ChatResponse(
                         message=ChatMessage(
@@ -393,25 +409,22 @@ class BedrockConverse(FunctionCallingLLM):
                             content=content.get("text", ""),
                             additional_kwargs={
                                 "tool_calls": tool_calls,
-                                "tool_call_id": tool_call_ids,
-                                "status": status,
+                                "tool_call_id": [tc.get("toolUseId", "") for tc in tool_calls],
+                                "status": [],  # Will be populated when tool results come in
                             },
                         ),
                         delta=content_delta.get("text", ""),
-                        raw=response,
-                        additional_kwargs=self._get_response_token_counts(
-                            dict(response)
-                        ),
+                        raw=chunk,
+                        additional_kwargs=self._get_response_token_counts(dict(chunk)),
                     )
                 elif content_block_start := chunk.get("contentBlockStart"):
-                    tool_use = content_block_start["start"]["toolUse"]
-                    content = join_two_dicts(content, tool_use)
-                    (
-                        _,
-                        tool_calls,
-                        tool_call_ids,
-                        status,
-                    ) = self._get_content_and_tool_calls(content=content)
+                    # New tool call starting
+                    if "toolUse" in content_block_start["start"]:
+                        tool_use = content_block_start["start"]["toolUse"]
+                        # Start tracking a new tool call
+                        current_tool_call = tool_use
+                        # Add to our list of tool calls
+                        tool_calls.append(current_tool_call)
 
                     yield ChatResponse(
                         message=ChatMessage(
@@ -419,14 +432,11 @@ class BedrockConverse(FunctionCallingLLM):
                             content=content.get("text", ""),
                             additional_kwargs={
                                 "tool_calls": tool_calls,
-                                "tool_call_id": tool_call_ids,
-                                "status": status,
+                                "tool_call_id": [tc.get("toolUseId", "") for tc in tool_calls],
+                                "status": [],  # Will be populated when tool results come in
                             },
                         ),
-                        raw=response,
-                        additional_kwargs=self._get_response_token_counts(
-                            dict(response)
-                        ),
+                        raw=chunk,
                     )
 
         return gen()
@@ -509,17 +519,33 @@ class BedrockConverse(FunctionCallingLLM):
 
         async def gen() -> ChatResponseAsyncGen:
             content = {}
+            tool_calls = []  # Track tool calls separately
+            current_tool_call = None  # Track the current tool call being built
             role = MessageRole.ASSISTANT
             async for chunk in response_gen:
                 if content_block_delta := chunk.get("contentBlockDelta"):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
-                    (
-                        _,
-                        tool_calls,
-                        tool_call_ids,
-                        status,
-                    ) = self._get_content_and_tool_calls(content=content)
+
+                    # If this delta contains tool call info, update current tool call
+                    if "toolUse" in content_delta:
+                        tool_use_delta = content_delta["toolUse"]
+
+                        if current_tool_call:
+                            # Handle the input field specially - concatenate partial JSON strings
+                            if "input" in tool_use_delta:
+                                if "input" in current_tool_call:
+                                    current_tool_call["input"] += tool_use_delta["input"]
+                                else:
+                                    current_tool_call["input"] = tool_use_delta["input"]
+
+                                # Remove input from the delta to prevent it from being processed again
+                                tool_use_without_input = {k: v for k, v in tool_use_delta.items() if k != "input"}
+                                if tool_use_without_input:
+                                    current_tool_call = join_two_dicts(current_tool_call, tool_use_without_input)
+                            else:
+                                # For other fields, use the normal joining
+                                current_tool_call = join_two_dicts(current_tool_call, tool_use_delta)
 
                     yield ChatResponse(
                         message=ChatMessage(
@@ -527,8 +553,8 @@ class BedrockConverse(FunctionCallingLLM):
                             content=content.get("text", ""),
                             additional_kwargs={
                                 "tool_calls": tool_calls,
-                                "tool_call_id": tool_call_ids,
-                                "status": status,
+                                "tool_call_id": [tc.get("toolUseId", "") for tc in tool_calls],
+                                "status": [],  # Will be populated when tool results come in
                             },
                         ),
                         delta=content_delta.get("text", ""),
@@ -536,14 +562,13 @@ class BedrockConverse(FunctionCallingLLM):
                         additional_kwargs=self._get_response_token_counts(dict(chunk)),
                     )
                 elif content_block_start := chunk.get("contentBlockStart"):
-                    tool_use = content_block_start["start"]["toolUse"]
-                    content = join_two_dicts(content, tool_use)
-                    (
-                        _,
-                        tool_calls,
-                        tool_call_ids,
-                        status,
-                    ) = self._get_content_and_tool_calls(content=content)
+                    # New tool call starting
+                    if "toolUse" in content_block_start["start"]:
+                        tool_use = content_block_start["start"]["toolUse"]
+                        # Start tracking a new tool call
+                        current_tool_call = tool_use
+                        # Add to our list of tool calls
+                        tool_calls.append(current_tool_call)
 
                     yield ChatResponse(
                         message=ChatMessage(
@@ -551,8 +576,8 @@ class BedrockConverse(FunctionCallingLLM):
                             content=content.get("text", ""),
                             additional_kwargs={
                                 "tool_calls": tool_calls,
-                                "tool_call_id": tool_call_ids,
-                                "status": status,
+                                "tool_call_id": [tc.get("toolUseId", "") for tc in tool_calls],
+                                "status": [],  # Will be populated when tool results come in
                             },
                         ),
                         raw=chunk,
