@@ -26,6 +26,8 @@ dev = [
     "openai>=1.76.0",
     "diff-cover>=9.2.0",
     "pytest-cov>=6.1.1",
+    "pytest-httpx",
+    "requests-mock>=1.12.1,<2",
 ]
 test_integration = [
     "pytest-httpx",
