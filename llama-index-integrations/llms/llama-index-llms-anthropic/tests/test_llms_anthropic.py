@@ -218,6 +218,10 @@ def test__prepare_chat_with_tools_empty():
 def pdf_url() -> str:
     return "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
 
+@pytest.mark.skipif(
+    os.getenv("ANTHROPIC_API_KEY") is None,
+    reason="Anthropic API key not available to test Anthropic document uploading ",
+)
 def test_document_upload(tmp_path: Path, pdf_url: str) -> None:
     llm = Anthropic(model="claude-3-5-sonnet-latest")
     pdf_path = tmp_path / "test.pdf"
