@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["pytest-asyncio>=0.26.0", "pytest>=8.3.5"]
+
+[project]
+name = "llama-index-tools-gestell"
+version = "0.1.0"
+description = "llama-index tools gestell integration"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9, <4.0"
+authors = [{name = "Chris Cates", email = "hello@chriscates.ca"}]
+maintainers = [{name = "ChrisCates"}]
+keywords = ["retrieval", "search", "reasoning", "sdk", "gestell"]
+dependencies = ["gestell>=1.4.1", "llama-index-core>=0.12.35"]
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.llamahub]
+contains_example = true
+import_path = "llama_index.tools.gestell"
+
+[tool.llamahub.class_authors]
+GestellToolSpec = "ChrisCates"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+markers = ["asyncio: mark test as async"]
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = [
+    "ignore::pydantic._internal._config.PydanticDeprecatedSince20",
+    "ignore::pydantic._internal._generate_schema.PydanticDeprecatedSince20",
+]
