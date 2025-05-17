@@ -16,7 +16,11 @@ DEFAULT_TOKEN_LIMIT = 3000
 
 
 class ChatMemoryBuffer(BaseChatStoreMemory):
-    """Simple buffer for storing chat history."""
+    """
+    Deprecated: Please use `llama_index.core.memory.Memory` instead.
+
+    Simple buffer for storing chat history.
+    """
 
     token_limit: int
     tokenizer_fn: Callable[[str], List] = Field(

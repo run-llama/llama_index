@@ -21,6 +21,7 @@ from llama_index.core.base.llms.types import (
     ImageBlock,
     MessageRole,
     TextBlock,
+    DocumentBlock,
 )
 from llama_index.core.program.utils import _repair_incomplete_json
 
@@ -185,7 +186,16 @@ def chat_message_to_gemini(message: ChatMessage) -> types.Content:
                     mime_type=block.image_mimetype,
                 )
             )
-
+        elif isinstance(block, DocumentBlock):
+            file_buffer = block.resolve_document()
+            file_bytes = file_buffer.read()
+            mimetype = block.document_mimetype if block.document_mimetype is not None else "application/pdf"
+            parts.append(
+                types.Part.from_bytes(
+                    data=file_bytes,
+                    mime_type=mimetype
+                )
+            )
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)

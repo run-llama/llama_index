@@ -1,3 +1,4 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.llms.meta import LlamaLLM
 
