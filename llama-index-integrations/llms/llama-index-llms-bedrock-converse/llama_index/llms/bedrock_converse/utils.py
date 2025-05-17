@@ -463,6 +463,7 @@ async def converse_with_retry_async(
     guardrail_identifier: Optional[str] = None,
     guardrail_version: Optional[str] = None,
     trace: Optional[str] = None,
+    boto_client_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
@@ -493,6 +494,9 @@ async def converse_with_retry_async(
             if k not in ["tools", "guardrail_identifier", "guardrail_version", "trace"]
         },
     )
+    _boto_client_kwargs = {}
+    if boto_client_kwargs is not None:
+        _boto_client_kwargs |= boto_client_kwargs
 
     ## NOTE: Returning the generator directly from converse_stream doesn't work
     # So, we have to use two separate functions for streaming and non-streaming
@@ -501,12 +505,20 @@ async def converse_with_retry_async(
 
     @retry_decorator
     async def _conversion_with_retry(**kwargs: Any) -> Any:
-        async with session.client("bedrock-runtime", config=config) as client:
+        async with session.client(
+            "bedrock-runtime",
+            config=config,
+            **_boto_client_kwargs,
+        ) as client:
             return await client.converse(**kwargs)
 
     @retry_decorator
     async def _conversion_stream_with_retry(**kwargs: Any) -> Any:
-        async with session.client("bedrock-runtime", config=config) as client:
+        async with session.client(
+            "bedrock-runtime",
+            config=config,
+            **_boto_client_kwargs,
+        ) as client:
             response = await client.converse_stream(**kwargs)
             async for event in response["stream"]:
                 yield event
