@@ -761,7 +761,7 @@ def update_tool_calls(
         List[ChoiceDeltaToolCall]: the updated tool calls
     """
     # openai provides chunks consisting of tool_call deltas one tool at a time
-    if tool_calls_delta is None:
+    if tool_calls_delta is None or len(tool_calls_delta) == 0:
         return tool_calls
 
     tc_delta = tool_calls_delta[0]
