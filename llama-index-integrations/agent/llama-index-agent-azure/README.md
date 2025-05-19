@@ -36,11 +36,13 @@ azure_project_endpoint = os.environ.get("AZURE_PROJECT_ENDPOINT")
 if not azure_project_endpoint:
     raise ValueError("AZURE_PROJECT_ENDPOINT environment variable not set.")
 
+
 # Define a sample tool (optional)
 def get_weather(location: str) -> str:
     """Get the weather for a given location."""
     # This is a placeholder function. Replace with actual weather API call.
     return f"The weather in {location} is sunny."
+
 
 toolset = ToolSet()
 toolset.add(FunctionTool({get_weather}))
@@ -52,17 +54,18 @@ agent = AzureFoundryAgent(
     name="my-azure-agent",
     instructions="You are a helpful assistant that can provide information and use tools.",
     verbose=True,
-    toolset=toolset, # Optional: pass your defined toolset
-    run_retrieve_sleep_time=2, # Time in seconds to wait between polling run status
+    toolset=toolset,  # Optional: pass your defined toolset
+    run_retrieve_sleep_time=2,  # Time in seconds to wait between polling run status
 )
 
 # Chat with the agent
-response = agent.chat("What is the capital of France and what is the weather there?")
-print("Agent Response:", response.response)
+response = agent.chat(
+    "What is the capital of France and what is the weather there?"
+)
+print("Agent Response:", response)
 
 # Important: Azure agents and threads are stateful resources on Azure.
 # Remember to clean them up from the Azure portal or using the Azure SDK
-
 ```
 
 ### Key Parameters for `AzureFoundryAgent`

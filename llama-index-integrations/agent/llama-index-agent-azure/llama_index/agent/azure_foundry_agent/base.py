@@ -9,7 +9,7 @@ from llama_index.core.agent.types import BaseAgent
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
 from llama_index.core.callbacks import CallbackManager, trace_method, CBEventType, EventPayload
- 
+
 from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
 
@@ -26,7 +26,8 @@ class AzureFoundryAgent(BaseAgent):
         callback_manager: Optional[CallbackManager] = None,
         toolset: Optional[ToolSet] = None,
     ):
-        """Initialize an AzureFoundryAgent.
+        """
+        Initialize an AzureFoundryAgent.
 
         Args:
             endpoint: The Azure AI Project endpoint.
@@ -40,6 +41,7 @@ class AzureFoundryAgent(BaseAgent):
                 for run status.
             callback_manager: An optional CallbackManager instance.
             toolset: An optional ToolSet for the agent.
+
         """
         self._endpoint = endpoint
         self._model = model
@@ -49,26 +51,26 @@ class AzureFoundryAgent(BaseAgent):
         self._run_retrieve_sleep_time = run_retrieve_sleep_time
         self.callback_manager = callback_manager or CallbackManager([])
         self._toolset = toolset
-        
-        
+
+
         self._project_client = AIProjectClient(
             endpoint=self._endpoint,
             credential=DefaultAzureCredential()
         )
-       
+
         # Create or use thread
         if thread_id is not None:
             self._thread_id = thread_id
         else:
             thread = self._project_client.agents.threads.create()
-            self._thread_id = thread.id 
-            
+            self._thread_id = thread.id
+
         if self._verbose:
             if self._toolset:
                 print(f"AzureFoundryAgent initialized with provided toolset.")
             else:
                 print("AzureFoundryAgent initialized without tools.")
-            
+
         self._agent = None  # Will be created on first chat
         self._run_id: Optional[str] = None
 
@@ -103,13 +105,13 @@ class AzureFoundryAgent(BaseAgent):
         assert self._run_id is not None, "_run_id cannot be None when submitting tool outputs."
 
         # Safely access submit_tool_outputs and then tool_calls
-        submit_tool_outputs_details = getattr(run_details.required_action, 'submit_tool_outputs', None)
+        submit_tool_outputs_details = getattr(run_details.required_action, "submit_tool_outputs", None)
         if not submit_tool_outputs_details:
             if self._verbose:
                 print("submit_tool_outputs details are missing in required_action.")
             return None
-        
-        tool_calls = getattr(submit_tool_outputs_details, 'tool_calls', None)
+
+        tool_calls = getattr(submit_tool_outputs_details, "tool_calls", None)
 
         if not (self._toolset and tool_calls):
             if self._verbose:
@@ -118,9 +120,9 @@ class AzureFoundryAgent(BaseAgent):
 
         if self._verbose:
             print(f"Executing tool calls: {tool_calls}")
-        
+
         tool_outputs_raw = self._toolset.execute_tool_calls(tool_calls)
-        
+
         # Ensure tool_outputs is in the correct format for submission
         # This requires converting List[Dict[str, Any]] to List[ToolOutput]
         tool_outputs: List[ToolOutput] = []
@@ -140,10 +142,10 @@ class AzureFoundryAgent(BaseAgent):
 
         if self._verbose:
             print(f"Formatted Tool outputs for submission: {tool_outputs}")
-        
+
         self._project_client.agents.runs.submit_tool_outputs(
             thread_id=self._thread_id,
-            run_id=self._run_id, 
+            run_id=self._run_id,
             tool_outputs=tool_outputs
         )
         if self._verbose:
@@ -158,15 +160,15 @@ class AzureFoundryAgent(BaseAgent):
         self._ensure_agent()
         if self._agent is None or self._agent.id is None:
             raise ValueError("Agent not created or agent ID is missing before running.")
- 
+
         run_initiation: ThreadRun = self._project_client.agents.runs.create(
             thread_id=self._thread_id,
             agent_id=self._agent.id
         )
         self._run_id = run_initiation.id
- 
+
         current_run_details = run_initiation
-        
+
         while current_run_details.status in ["queued", "in_progress", "requires_action"]:
             time.sleep(self._run_retrieve_sleep_time)
             # Poll the specific run using its ID and the thread ID
@@ -178,21 +180,21 @@ class AzureFoundryAgent(BaseAgent):
             if current_run_details.status == "requires_action":
                 if self._verbose:
                     print(f"Run requires action: {current_run_details.required_action}")
-                
+
                 submitted_outputs = self._run_function_calling(current_run_details)
                 if submitted_outputs is not None:
                     if self._verbose:
                         print(f"Tool function calling processed. Submitted outputs: {submitted_outputs}")
-                    continue 
+                    continue
                 else:
                     if self._verbose:
                         print("Tool function calling not applicable or failed to process, breaking polling loop.")
                     break
 
         if current_run_details.status == "failed":
-            error_info = getattr(current_run_details, 'last_error', 'No additional error information.')
+            error_info = getattr(current_run_details, "last_error", "No additional error information.")
             raise ValueError(f"Run failed with status {current_run_details.status}. Error: {error_info}")
-        
+
         return current_run_details
 
     @property
@@ -203,12 +205,12 @@ class AzureFoundryAgent(BaseAgent):
             thread_id=self._thread_id,
             order="desc"
         )
-        
+
         assistant_message_obj = next(
             (msg for msg in messages_iterable if getattr(msg, "role", None) == "assistant"),
             None
         )
-        
+
         if assistant_message_obj:
             return self.from_azure_thread_message(assistant_message_obj)
         return None
@@ -223,7 +225,7 @@ class AzureFoundryAgent(BaseAgent):
         Internal chat logic for Azure AI Agents API.
         """
         self._ensure_agent()
-        if not hasattr(self, '_thread_id') or self._thread_id is None:
+        if not hasattr(self, "_thread_id") or self._thread_id is None:
             thread = self._project_client.agents.threads.create()
             self._thread_id = thread.id
 
@@ -278,21 +280,21 @@ class AzureFoundryAgent(BaseAgent):
         # Assume thread_message is a ThreadMessage object (not a dict)
         # Use attribute access as per Azure SDK
         text_contents = [
-            t for t in getattr(thread_message, 'content', [])
-            if getattr(t, 'type', None) == 'text'
+            t for t in getattr(thread_message, "content", [])
+            if getattr(t, "type", None) == "text"
         ]
         text_content_str = " ".join([
-            getattr(getattr(t, 'text', None), 'value', '') for t in text_contents
+            getattr(getattr(t, "text", None), "value", "") for t in text_contents
         ])
         return ChatMessage(
-            role=getattr(thread_message, 'role', ''),
+            role=getattr(thread_message, "role", ""),
             content=text_content_str,
             additional_kwargs={
                 "thread_message": thread_message,
-                "thread_id": getattr(thread_message, 'thread_id', None),
-                "assistant_id": getattr(thread_message, 'assistant_id', None),
-                "id": getattr(thread_message, 'id', None),
-                "metadata": getattr(thread_message, 'metadata', None),
+                "thread_id": getattr(thread_message, "thread_id", None),
+                "assistant_id": getattr(thread_message, "assistant_id", None),
+                "id": getattr(thread_message, "id", None),
+                "metadata": getattr(thread_message, "metadata", None),
             },
         )
 
@@ -341,7 +343,7 @@ class AzureFoundryAgent(BaseAgent):
             except Exception as e:
                 if self._verbose:
                     print(f"Failed to delete old thread {self._thread_id}: {e}. Proceeding to create a new one.")
-        
+
         thread = self._project_client.agents.threads.create()
         self._thread_id = thread.id
         self._run_id = None  # Reset the run ID
