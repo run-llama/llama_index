@@ -909,7 +909,7 @@ class OpenAI(FunctionCallingLLM):
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Predict and call the tool."""
-        tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
+        tool_specs = [tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools]
 
         # if strict is passed in, use, else default to the class-level attribute, else default to True`
         if strict is not None:
