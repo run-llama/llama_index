@@ -243,16 +243,15 @@ class FunctionTool(AsyncBaseTool):
         return self.call(*args, **all_kwargs)
 
     def call(
-        self, *args: Any, ctx: Optional[Context] = None, **kwargs: Any
+        self, *args: Any, **kwargs: Any
     ) -> ToolOutput:
         """Sync Call."""
         all_kwargs = {**self.partial_params, **kwargs}
-        if self.requires_context:
-            if ctx is None:
+        if self.requires_context and self.ctx_param_name is not None:
+            if self.ctx_param_name not in all_kwargs:
                 raise ValueError("Context is required for this tool")
-            raw_output = self._fn(ctx, *args, **all_kwargs)
-        else:
-            raw_output = self._fn(*args, **all_kwargs)
+
+        raw_output = self._fn(*args, **all_kwargs)
         # Default ToolOutput based on the raw output
         default_output = ToolOutput(
             content=str(raw_output),
@@ -276,16 +275,15 @@ class FunctionTool(AsyncBaseTool):
         return default_output
 
     async def acall(
-        self, *args: Any, ctx: Optional[Context] = None, **kwargs: Any
+        self, *args: Any, **kwargs: Any
     ) -> ToolOutput:
         """Async Call."""
         all_kwargs = {**self.partial_params, **kwargs}
-        if self.requires_context:
-            if ctx is None:
+        if self.requires_context and self.ctx_param_name is not None:
+            if self.ctx_param_name not in all_kwargs:
                 raise ValueError("Context is required for this tool")
-            raw_output = await self._async_fn(ctx, *args, **all_kwargs)
-        else:
-            raw_output = await self._async_fn(*args, **all_kwargs)
+
+        raw_output = await self._async_fn(*args, **all_kwargs)
         # Default ToolOutput based on the raw output
         default_output = ToolOutput(
             content=str(raw_output),
