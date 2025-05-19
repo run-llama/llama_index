@@ -1,13 +1,18 @@
-# LlamaIndex Agent Integration: Azure
+# LlamaIndex Azure Foundry Agent Integration
 
-This package provides an Azure Foundry Agent integration for LlamaIndex. It allows you to leverage Azure's AI agent capabilities within your LlamaIndex applications.
+This package provides an Azure Foundry Agent integration for LlamaIndex. It allows you to leverage [Azure AI Agent Service](https://learn.microsoft.com/en-us/azure/ai-services/agents/overview) capabilities within your LlamaIndex applications. The provided `AzureFoundryAgent` inherits from the LLamaIndex `BaseAgent` class.
+
+> **About Azure AI Agent Service**
+>
+> [Azure AI Agent Service](https://learn.microsoft.com/en-us/azure/ai-services/agents/overview) is a fully managed service designed to empower developers to securely build, deploy, and scale high-quality, and extensible AI agents without needing to manage the underlying compute and storage resources.
 
 ## Installation
 
 You can install the package via pip:
 
 ```bash
-pip install llama-index-agent-azure
+cd llama_index/llama-index-integrations/agent/llama-index-agent-azure
+pip install -e .
 ```
 
 ## Prerequisites

@@ -29,7 +29,7 @@ dev = [
 name = "llama-index-agent-azure-foundry"
 version = "0.1.0"
 description = "llama-index agent azure integration"
-authors = [{name = "Your Name", email = "you@example.com"}]
+authors = [{name = "Microsoft", email = "SK-Support@microsoft.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
