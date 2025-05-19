@@ -16,7 +16,7 @@ from llama_index.core.graph_stores.simple import (
 )
 from llama_index.core.graph_stores.simple import SimpleGraphStore
 from llama_index.core.graph_stores.simple_labelled import SimplePropertyGraphStore
-from llama_index.core.graph_stores.types import DEFUALT_PG_PERSIST_FNAME as PG_FNAME
+from llama_index.core.graph_stores.types import DEFAULT_PG_PERSIST_FNAME as PG_FNAME
 from llama_index.core.graph_stores.types import GraphStore, PropertyGraphStore
 from llama_index.core.storage.docstore.simple_docstore import SimpleDocumentStore
 from llama_index.core.storage.docstore.types import (

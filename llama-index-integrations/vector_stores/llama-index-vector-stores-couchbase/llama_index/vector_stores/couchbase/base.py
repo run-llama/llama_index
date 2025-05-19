@@ -3,6 +3,7 @@ Couchbase Vector store interface.
 """
 
 import logging
+import warnings
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.bridge.pydantic import PrivateAttr
@@ -114,7 +115,7 @@ def _to_couchbase_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
     return {"query": filters}
 
 
-class CouchbaseVectorStore(BasePydanticVectorStore):
+class CouchbaseSearchVectorStore(BasePydanticVectorStore):
     """
     Couchbase Vector Store.
 
@@ -537,3 +538,45 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
                 metadata[key] = value
 
         return metadata
+
+
+class CouchbaseVectorStore(CouchbaseSearchVectorStore):
+    """
+    Couchbase Vector Store (deprecated).
+
+    This class is deprecated, please use CouchbaseSearchVectorStore instead.
+    """
+
+    def __init__(
+        self,
+        cluster: Any,
+        bucket_name: str,
+        scope_name: str,
+        collection_name: str,
+        index_name: str,
+        text_key: Optional[str] = "text",
+        embedding_key: Optional[str] = "embedding",
+        metadata_key: Optional[str] = "metadata",
+        scoped_index: bool = True,
+    ) -> None:
+        """
+        Initializes a connection to a Couchbase Vector Store.
+
+        This class is deprecated, please use CouchbaseSearchVectorStore instead.
+        """
+        warnings.warn(
+            "CouchbaseVectorStore is deprecated, please use CouchbaseSearchVectorStore instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(
+            cluster,
+            bucket_name,
+            scope_name,
+            collection_name,
+            index_name,
+            text_key,
+            embedding_key,
+            metadata_key,
+            scoped_index,
+        )

@@ -1,6 +1,71 @@
 # ChangeLog
 
-## [2024-05-08]
+## [2025-05-14]
+
+### `llama-index-core` [0.12.36]
+
+- add support for automatic session_id filtering in vector memory blocks (#18730)
+- Add feature: support for DocumentBlock in chat messages (#18719)
+- Added initial Async methods for BaseIndex (#18711)
+- use fs to check ingestion pipeline path (#18680)
+- add edge case handling in StreamingAgentChatResponse (#18679)
+
+### `llama-index-embeddings-azure-openai` [0.3.5]
+
+- look for azure openai key env var in auzre embeddings (#18703)
+- only get `api_key` if not `use_azure_ad` (#18708)
+- fix typo of the if branch of get `api_key` if not `use_azure_ad` (#18720)
+
+### `llama-index-embeddings-cohere` [0.5.0]
+
+- Support Cohere V4 embeddings and V2 client (#18464)
+
+### `llama-index-embeddings-fastembed` [0.3.2]
+
+- Bugfix: FastEmbedEmbedding was missing code to pass extra arguments to the api (#18695)
+
+### `llama-index-graph-stores-neptune` [0.3.3]
+
+- fix: Handle possible OverflowError when getting Neptune node properties (#18687)
+
+### `llama-index-readers-legacy-office` [0.1.1]
+
+- feat: `legacy_office`, Apache Tika based `.doc` reader (#18649)
+- chore: fix lagecy office reader bloated metadata (#18696)
+
+### `llama-index-retrievers-vectorize` [0.1.0]
+
+- Add Vectorize retriever (#18685)
+
+### `llama-index-tools-brightdata` [0.1.0]
+
+- Feature/brightdata integration (#18690)
+
+### `llama-index-tools-mcp` [0.1.3]
+
+- MCP one-liners for workflow servers and function tools (#18729)
+
+### `llama-index-tools-openapi` [0.4.0]
+
+- feat Improve OpenAPI and Requests tool capabilities and reliability (#18681)
+
+### `llama-index-tools-requests` [0.4.0]
+
+- feat Improve OpenAPI and Requests tool capabilities and reliability (#18681)
+
+### `llama-index-vector-stores-milvus` [0.8.2]
+
+- fix(MilvusVectorStore): use primary key from milvus by its name instead of 'id' (#18714)
+
+### `llama-index-vector-stores-postgres` [0.5.3]
+
+- Add `IS_EMPTY` support for PGVectorStore (#18667)
+
+### `llama-index-vector-stores-redis` [0.5.1]
+
+- Adding Async Redis Vector Store support (#18675)
+
+## [2025-05-08]
 
 ### `llama-index-core` [0.12.35]
 

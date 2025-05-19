@@ -16,7 +16,7 @@ from llama_index.core.query_engine.retriever_query_engine import (
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.core.utils import get_cache_dir
 
-DEV_DISTRACTOR_URL = """http://curtis.ml.cmu.edu/datasets/\
+DEV_DISTRACTOR_URL = """https://web.archive.org/web/20250512032701id_/http://curtis.ml.cmu.edu/datasets/\
 hotpot/hotpot_dev_distractor_v1.json"""
 
 
