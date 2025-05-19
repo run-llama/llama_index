@@ -32,7 +32,7 @@ dependencies = [
 ]
 description = "llama-index tools desearch integration"
 license = "MIT"
-maintainers = [{name = ""}]
+maintainers = [{name = "Desearch", email = "support@desearch.com"}]
 name = "llama-index-tools-desearch"
 readme = "README.md"
 requires-python = ">=3.9,<4.0"
