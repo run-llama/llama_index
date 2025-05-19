@@ -1,4 +1,4 @@
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -9,6 +9,7 @@ from llama_index.core.base.llms.types import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     LLMMetadata,
+    MessageRole,
 )
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW
@@ -17,7 +18,8 @@ from llama_index.core.base.llms.generic_utils import (
     completion_response_to_chat_response,
     stream_completion_response_to_chat_response,
 )
-from llama_index.llms.openai.base import OpenAI, Tokenizer
+from llama_index.core.tools import BaseTool
+from llama_index.llms.openai.base import OpenAI, Tokenizer, resolve_tool_choice
 from transformers import AutoTokenizer
 
 
@@ -216,3 +218,44 @@ class OpenAILike(OpenAI):
             )
 
         return await super().astream_chat(messages, **kwargs)
+
+    def _prepare_chat_with_tools(
+        self,
+        tools: Sequence["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        tool_choice: Union[str, dict] = "auto",
+        strict: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Format the chat with tools."""
+        tool_specs = [tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools]
+
+        # if strict is passed in, use, else default to the class-level attribute, else default to True`
+        if strict is not None:
+            strict = strict
+        else:
+            strict = self.strict
+
+        if self.metadata.is_function_calling_model:
+            for tool_spec in tool_specs:
+                if tool_spec["type"] == "function":
+                    tool_spec["function"]["strict"] = strict
+                    # in current openai 1.40.0 it is always false.
+                    tool_spec["function"]["parameters"]["additionalProperties"] = False
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+
+        messages = chat_history or []
+        if user_msg:
+            messages.append(user_msg)
+
+        return {
+            "messages": messages,
+            "tools": tool_specs or None,
+            "tool_choice": resolve_tool_choice(tool_choice) if tool_specs else None,
+            **kwargs,
+        }
