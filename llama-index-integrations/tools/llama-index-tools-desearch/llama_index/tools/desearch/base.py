@@ -92,7 +92,6 @@ class DesearchToolSpec(BaseToolSpec):
 
     def __init__(self, api_key: str) -> None:
         """Initialize with parameters."""
-
         self.client = Desearch(api_key=api_key)
 
     def ai_search_tool(
@@ -128,6 +127,7 @@ class DesearchToolSpec(BaseToolSpec):
 
         Returns:
             str | dict: The search result or an error string.
+
         """
         try:
             return self.client.search(
@@ -158,6 +158,7 @@ class DesearchToolSpec(BaseToolSpec):
 
         Raises:
             Exception: If an error occurs when calling the API.
+
         """
         try:
             return self.client.basic_twitter_search(query, sort, count)
@@ -185,6 +186,7 @@ class DesearchToolSpec(BaseToolSpec):
 
         Raises:
             Exception: If an error occurs when calling the API.
+
         """
         try:
             return self.client.basic_web_search(query, num, start)

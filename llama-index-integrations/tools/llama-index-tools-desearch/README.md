@@ -27,9 +27,7 @@ desearch_tool = DesearchToolSpec(
 )
 agent = OpenAIAgent.from_tools(desearch_tool.to_tool_list())
 
-agent.chat(
-    "Can you find the latest news on quantum computing?"
-)
+agent.chat("Can you find the latest news on quantum computing?")
 ```
 
 ### Available Functions
@@ -40,6 +38,6 @@ agent.chat(
 
 This loader is designed to be used as a way to load data as a Tool in an Agent.
 
---- 
+---
 
 You can copy and paste this into your README file. Let me know if you need any more modifications!
