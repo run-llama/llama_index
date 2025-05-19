@@ -608,6 +608,7 @@ nav:
           - ./examples/tools/cassandra.ipynb
           - ./examples/tools/eval_query_engine_tool.ipynb
           - ./examples/tools/function_tool_callback.ipynb
+          - ./examples/tools/mcp.ipynb
       - Transforms:
           - ./examples/transforms/TransformsEval.ipynb
       - Use Cases:
@@ -718,6 +719,7 @@ nav:
       - Workflow:
           - ./examples/workflow/JSONalyze_query_engine.ipynb
           - ./examples/workflow/advanced_text_to_sql.ipynb
+          - ./examples/workflow/auto_retrieval.ipynb
           - ./examples/workflow/checkpointing_workflows.ipynb
           - ./examples/workflow/citation_query_engine.ipynb
           - ./examples/workflow/corrective_rag_pack.ipynb
@@ -1531,6 +1533,7 @@ nav:
           - ./api_reference/retrievers/transform.md
           - ./api_reference/retrievers/tree.md
           - ./api_reference/retrievers/vector.md
+          - ./api_reference/retrievers/vectorize.md
           - ./api_reference/retrievers/vertexai_search.md
           - ./api_reference/retrievers/videodb.md
           - ./api_reference/retrievers/you.md
@@ -1693,6 +1696,7 @@ nav:
           - ./api_reference/tools/bing_search.md
           - ./api_reference/tools/box.md
           - ./api_reference/tools/brave_search.md
+          - ./api_reference/tools/brightdata.md
           - ./api_reference/tools/cassandra.md
           - ./api_reference/tools/chatgpt_plugin.md
           - ./api_reference/tools/code_interpreter.md
@@ -2448,6 +2452,8 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-oxylabs
             - ../llama-index-integrations/node_parser/llama-index-node-parser-slide
             - ../llama-index-integrations/readers/llama-index-readers-legacy-office
+            - ../llama-index-integrations/retrievers/llama-index-retrievers-vectorize
+            - ../llama-index-integrations/tools/llama-index-tools-brightdata
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

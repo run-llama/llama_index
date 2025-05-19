@@ -26,6 +26,7 @@ from llama_index.core.llms import (
     ImageBlock,
     LLM,
     TextBlock,
+    DocumentBlock,
 )
 from llama_index.core.schema import BaseNode, Node, TextNode
 from llama_index.core.storage.docstore.simple_docstore import DocumentStore
@@ -206,7 +207,7 @@ class DocumentContextExtractor(BaseExtractor):
                 )
 
                 first_block: Union[
-                    TextBlock, ImageBlock, AudioBlock
+                    TextBlock, ImageBlock, AudioBlock, DocumentBlock
                 ] = response.message.blocks[0]
                 if isinstance(first_block, TextBlock):
                     metadata[key] = first_block.text

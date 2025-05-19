@@ -8,7 +8,7 @@ from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate, RichPromptTemplate, PromptTemplate
 from llama_index.core.schema import TextNode, NodeWithScore
 from llama_index.core.settings import Settings
-from llama_index.core.vector_stores.types import BasePydanticVectorStore, VectorStoreQuery
+from llama_index.core.vector_stores.types import BasePydanticVectorStore, MetadataFilter, MetadataFilters, VectorStoreQuery
 
 DEFAULT_RETRIEVED_TEXT_TEMPLATE = RichPromptTemplate("{{ text }}")
 
@@ -86,7 +86,7 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
 
         return text
 
-    async def _aget(self, messages: Optional[List[ChatMessage]] = None, **block_kwargs: Any) -> str:
+    async def _aget(self, messages: Optional[List[ChatMessage]] = None, session_id: Optional[str] = None, **block_kwargs: Any) -> str:
         """Retrieve relevant information based on recent messages."""
         if not messages or len(messages) == 0:
             return ""
@@ -100,6 +100,14 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
         query_text = self._get_text_from_messages(context)
         if not query_text:
             return ""
+
+        # Handle filtering by session_id
+        if session_id is not None:
+            filter = MetadataFilter(key="session_id", value=session_id)
+            if "filters" in self.query_kwargs and isinstance(self.query_kwargs["filters"], MetadataFilters):
+                self.query_kwargs["filters"].filters.append(filter)
+            else:
+                self.query_kwargs["filters"] = MetadataFilters(filters=[filter])
 
         # Create and execute the query
         query_embedding = await self.embed_model.aget_query_embedding(query_text)
@@ -133,10 +141,15 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
 
         # Format messages with role, text content, and additional info
         texts = []
+        session_id = None
         for message in messages:
             text = self._get_text_from_messages([message])
             if not text:
                 continue
+
+            # special case for session_id
+            if "session_id" in message.additional_kwargs:
+                session_id = message.additional_kwargs.pop("session_id")
 
             if message.additional_kwargs:
                 text += f"\nAdditional Info: ({message.additional_kwargs!s})"
@@ -148,8 +161,8 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
             return
 
         # Get embeddings
-        text_node = TextNode(text="\n".join(texts))
+        text_node = TextNode(text="\n".join(texts), metadata={"session_id": session_id})
         text_node.embedding = await self.embed_model.aget_text_embedding(text_node.text)
 
-        # Add to vector store
+        # Add to vector store, one node per entire message batch
         await self.vector_store.async_add([text_node])
