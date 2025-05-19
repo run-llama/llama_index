@@ -123,7 +123,7 @@ def get_model_name(model_name: str) -> str:
     REGION_PREFIXES = ["us.", "eu.", "apac."]
 
     # If no region prefix, return the original model name
-    if not any(model_name.startswith(prefix) for prefix in REGION_PREFIXES):
+    if not any(prefix in model_name for prefix in REGION_PREFIXES):
         return model_name
 
     # Remove region prefix to get the base model name
