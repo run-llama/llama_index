@@ -5,7 +5,9 @@ from llama_index.llms.openai_like import OpenAILike
 
 
 class FeatherlessLLM(OpenAILike):
-    """Featherless LLM.
+    """
+    Featherless LLM.
+
     Examples:
         `pip install llama-index-llms-featherlessai`
         ```python
@@ -14,11 +16,12 @@ class FeatherlessLLM(OpenAILike):
         # import os
         # os.environ["FEATHERLESS_API_KEY"] = "your api key"
         llm = FeatherlessLLM(
-            model="meta-llama/Llama-3.3-70B-Instruct", api_key="your_api_key"
+            model="Qwen/Qwen3-32B", api_key="your_api_key"
         )
         resp = llm.complete("Who is Paul Graham?")
         print(resp)
         ```
+
     """
 
     def __init__(

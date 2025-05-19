@@ -25,9 +25,7 @@ os.environ["FEATHERLESS_API_KEY"] = "you_api_key"
 ```python
 from llama_index.llms.featherlessai import FeatherlessLLM
 
-llm = FeatherlessLLM(
-    model="meta-llama/Llama-3.3-70B-Instruct", api_key="your api key"
-)
+llm = FeatherlessLLM(model="Qwen/Qwen3-32B", api_key="your api key")
 
 resp = llm.complete("Is 9.9 or 9.11 bigger?")
 print(resp)
