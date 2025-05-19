@@ -713,22 +713,23 @@ class BedrockConverse(FunctionCallingLLM):
         tool_selections = []
         for tool_call in tool_calls:
             if (
-                "input" not in tool_call
-                or "toolUseId" not in tool_call
+                "toolUseId" not in tool_call
                 or "name" not in tool_call
             ):
                 raise ValueError("Invalid tool call.")
 
             # handle empty inputs
             argument_dict = {}
-            if tool_call["input"] and isinstance(tool_call["input"], str):
+            if tool_call.get("input", False) and isinstance(tool_call["input"], str):
                 # TODO parse_partial_json is not perfect
                 try:
                     argument_dict = parse_partial_json(tool_call["input"])
                 except ValueError:
                     argument_dict = {}
-            elif isinstance(tool_call["input"], dict):
+            elif tool_call.get("input", False) and isinstance(tool_call["input"], dict):
                 argument_dict = tool_call["input"]
+            else:
+                continue
 
             tool_selections.append(
                 ToolSelection(
