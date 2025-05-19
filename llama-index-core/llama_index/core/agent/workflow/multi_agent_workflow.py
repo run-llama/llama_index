@@ -288,10 +288,10 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
     ) -> ToolOutput:
         """Call the given tool with the given input."""
         try:
-            if isinstance(tool, FunctionTool) and tool.requires_context:
-                tool_output = await tool.acall(ctx=ctx, **tool_input)
-            else:
-                tool_output = await tool.acall(**tool_input)
+            if isinstance(tool, FunctionTool) and tool.requires_context and tool.ctx_param_name is not None:
+                tool_input[tool.ctx_param_name] = ctx
+
+            tool_output = await tool.acall(**tool_input)
         except Exception as e:
             tool_output = ToolOutput(
                 content=str(e),
