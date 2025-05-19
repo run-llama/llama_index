@@ -468,24 +468,18 @@ class BedrockConverse(FunctionCallingLLM):
                         # Add to our list of tool calls
                         tool_calls.append(current_tool_call)
 
-                    if current_tool_call is None or (
-                        "toolUseId" in current_tool_call
-                        and "name" in current_tool_call
-                        and "input" in current_tool_call
-                    ):
-                        # If the tool call is complete, yield the response
-                        yield ChatResponse(
-                            message=ChatMessage(
-                                role=role,
-                                content=content.get("text", ""),
-                                additional_kwargs={
-                                    "tool_calls": tool_calls,
-                                    "tool_call_id": [tc.get("toolUseId", "") for tc in tool_calls],
-                                    "status": [],  # Will be populated when tool results come in
-                                },
-                            ),
-                            raw=chunk,
-                        )
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            role=role,
+                            content=content.get("text", ""),
+                            additional_kwargs={
+                                "tool_calls": tool_calls,
+                                "tool_call_id": [tc.get("toolUseId", "") for tc in tool_calls],
+                                "status": [],  # Will be populated when tool results come in
+                            },
+                        ),
+                        raw=chunk,
+                    )
 
         return gen()
 
@@ -620,24 +614,18 @@ class BedrockConverse(FunctionCallingLLM):
                         # Add to our list of tool calls
                         tool_calls.append(current_tool_call)
 
-                    if current_tool_call is None or (
-                        "toolUseId" in current_tool_call
-                        and "name" in current_tool_call
-                        and "input" in current_tool_call
-                    ):
-                        # If the tool call is complete, yield the response
-                        yield ChatResponse(
-                            message=ChatMessage(
-                                role=role,
-                                content=content.get("text", ""),
-                                additional_kwargs={
-                                    "tool_calls": tool_calls,
-                                    "tool_call_id": [tc.get("toolUseId", "") for tc in tool_calls],
-                                    "status": [],  # Will be populated when tool results come in
-                                },
-                            ),
-                            raw=chunk,
-                        )
+                    yield ChatResponse(
+                        message=ChatMessage(
+                            role=role,
+                            content=content.get("text", ""),
+                            additional_kwargs={
+                                "tool_calls": tool_calls,
+                                "tool_call_id": [tc.get("toolUseId", "") for tc in tool_calls],
+                                "status": [],  # Will be populated when tool results come in
+                            },
+                        ),
+                        raw=chunk,
+                    )
 
         return gen()
 
