@@ -21,7 +21,7 @@ Before using this integration, ensure you have:
 
 ## Usage
 
-Here's a basic example of how to use the `AzureFoundryAgent`:
+Here's a basic example of how to use the `AzureFoundryAgent`, with a toolset for function calling.
 
 ```python
 from llama_index.agent.azure_agents import AzureFoundryAgent
