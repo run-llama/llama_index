@@ -502,6 +502,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         next_agent_name = await ctx.get("next_agent", default=None)
         if next_agent_name:
             await ctx.set("current_agent_name", next_agent_name)
+            await ctx.set("next_agent", None)
 
         if any(
             tool_call_result.return_direct for tool_call_result in tool_call_results
