@@ -36,7 +36,7 @@ maintainers = [{name = "Desearch", email = "support@desearch.com"}]
 name = "llama-index-tools-desearch"
 readme = "README.md"
 requires-python = ">=3.9,<4.0"
-version = "0.0.1"
+version = "0.1.0"
 
 [tool.codespell]
 check-filenames = true
@@ -52,6 +52,9 @@ include = ["llama_index/"]
 [tool.llamahub]
 contains_example = false
 import_path = "llama_index.tools.desearch"
+
+[tool.llamahub.class_authors]
+DesearchToolSpec = "Desearch"
 
 [tool.mypy]
 disallow_untyped_defs = true
