@@ -1,3 +1,4 @@
+import base64
 import json
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
@@ -182,14 +183,15 @@ def _content_block_to_bedrock_format(
     elif isinstance(block, DocumentBlock):
         if not block.data:
             file_buffer = block.resolve_document()
-            data = block._get_b64_bytes(file_buffer)
+            with file_buffer as f:
+                data = f.read()
         else:
-            data = block.data
-
-        format = block.guess_format() or "pdf"
+            data = base64.b64decode(block.data)
         title = block.title
+        # NOTE: At the time of writing, "txt" format works for all file types
+        # The API then infers the format from the file type based on the bytes
         return {
-            "document": {"format": format, "name": title, "source": {"bytes": data}}
+            "document": {"format": "txt", "name": title, "source": {"bytes": data}}
         }
     elif isinstance(block, ImageBlock):
         if role != MessageRole.USER:
