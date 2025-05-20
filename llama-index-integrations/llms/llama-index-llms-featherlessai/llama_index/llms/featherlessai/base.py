@@ -30,6 +30,8 @@ class FeatherlessLLM(OpenAILike):
         api_key: Optional[str] = None,
         api_base: str = "https://api.featherless.ai/v1",
         is_chat_model: bool = True,
+        context_window: Optional[int] = None,
+        is_function_calling_model: bool = False,
         **kwargs: Any,
     ) -> None:
         api_key = api_key or os.environ.get("FEATHERLESS_API_KEY", None)
@@ -38,6 +40,8 @@ class FeatherlessLLM(OpenAILike):
             api_key=api_key,
             api_base=api_base,
             is_chat_model=is_chat_model,
+            context_window=context_window,
+            is_function_calling_model=is_function_calling_model,
             **kwargs,
         )
 
