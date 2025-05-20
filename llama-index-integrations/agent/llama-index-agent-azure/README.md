@@ -72,7 +72,11 @@ response = await agent.run(
     "What is the capital of France and what is the weather there?"
 )
 print("Agent Response:", response)
+```
 
+Example of using multimodal input with the agent:
+
+```python
 # Example: Multimodal input (text + image)
 # This works with multimodal-capable models such as gpt-4o
 from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock
@@ -87,19 +91,11 @@ multimodal_msg = ChatMessage(
 multimodal_response = await agent.run(multimodal_msg)
 print("Multimodal Agent Response:", multimodal_response)
 
-# Clean up resources (recommended)
-if (
-    agent._agent
-    and agent._agent.id is not None
-    and agent._thread_id is not None
-):
-    print("Agent ID:", agent._agent.id)
-    print("Thread ID:", agent._thread_id)
-    await agent._client.agents.delete_agent(agent_id=agent._agent.id)
-    await agent._client.agents.threads.delete(thread_id=agent._thread_id)
 
 # Important: Azure agents and threads are stateful resources on Azure.
 # Remember to clean them up from the Azure portal or using the Azure SDK
+# await agent._client.agents.delete_agent(agent_id=agent._agent.id)
+# await agent._client.agents.threads.delete(thread_id=agent._thread_id)
 ```
 
 ### Key Parameters for `AzureFoundryAgent`
