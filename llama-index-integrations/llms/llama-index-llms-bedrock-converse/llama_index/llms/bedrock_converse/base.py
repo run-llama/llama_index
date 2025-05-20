@@ -100,6 +100,29 @@ class BedrockConverse(FunctionCallingLLM):
         description="AWS region name to use. Uses region configured in AWS CLI if not passed",
         exclude=True,
     )
+    api_version: Optional[str] = Field(
+        description=(
+            "The API version to use. By default, botocore will use the latest API version when creating a client. "
+            "You only need to specify this parameter if you want to use a previous API version of the client."
+        ),
+        exclude=True,
+    )
+    use_ssl: bool = Field(
+        description="Whether or not to use SSL. By default, SSL is used. Note that not all services support non-ssl connections.",
+        exclude=True,
+    )
+    verify: Optional[Union[bool, str]] = Field(
+        description="Whether or not to verify SSL certificates. By default SSL certificates are verified.",
+        exclude=True,
+    )
+    endpoint_url: Optional[str] = Field(
+        description=(
+            "The complete URL to use for the constructed client. Normally, botocore will automatically construct the appropriate "
+            "URL to use when communicating with a service.  You can specify a complete URL (including the 'http/https' scheme) to override this behavior. "
+            "If this value is provided, then ``use_ssl`` is ignored."
+        ),
+        exclude=True,
+    )
     botocore_session: Optional[Any] = Field(
         description="Use this Botocore session instead of creating a new default one.",
         exclude=True,
@@ -115,23 +138,17 @@ class BedrockConverse(FunctionCallingLLM):
         default=60.0,
         description="The timeout for the Bedrock API request in seconds. It will be used for both connect and read timeouts.",
     )
-    guardrail_identifier: Optional[str] = (
-        Field(
-            description="The unique identifier of the guardrail that you want to use. If you don’t provide a value, no guardrail is applied to the invocation."
-        ),
+    guardrail_identifier: Optional[str] = Field(
+        description="The unique identifier of the guardrail that you want to use. If you don't provide a value, no guardrail is applied to the invocation."
     )
-    guardrail_version: Optional[str] = (
-        Field(
-            description="The version number for the guardrail. The value can also be DRAFT"
-        ),
+    guardrail_version: Optional[str] = Field(
+        description="The version number for the guardrail. The value can also be DRAFT"
     )
     application_inference_profile_arn: Optional[str] = Field(
         description="The ARN of an application inference profile to invoke in place of the model. If provided, make sure the model argument refers to the same one underlying the application inference profile."
     )
-    trace: Optional[str] = (
-        Field(
-            description="Specifies whether to enable or disable the Bedrock trace. If enabled, you can see the full Bedrock trace."
-        ),
+    trace: Optional[str] = Field(
+        description="Specifies whether to enable or disable the Bedrock trace. If enabled, you can see the full Bedrock trace."
     )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict,
@@ -141,6 +158,7 @@ class BedrockConverse(FunctionCallingLLM):
     _config: Any = PrivateAttr()
     _client: Any = PrivateAttr()
     _asession: Any = PrivateAttr()
+    _boto_client_kwargs: Any = PrivateAttr()
 
     def __init__(
         self,
@@ -152,6 +170,10 @@ class BedrockConverse(FunctionCallingLLM):
         aws_secret_access_key: Optional[str] = None,
         aws_session_token: Optional[str] = None,
         region_name: Optional[str] = None,
+        api_version: Optional[str] = None,
+        use_ssl: bool = True,
+        verify: Optional[Union[bool, str]] = None,
+        endpoint_url: Optional[str] = None,
         botocore_session: Optional[Any] = None,
         client: Optional[Any] = None,
         timeout: Optional[float] = 60.0,
@@ -199,6 +221,10 @@ class BedrockConverse(FunctionCallingLLM):
             aws_secret_access_key=aws_secret_access_key,
             aws_session_token=aws_session_token,
             region_name=region_name,
+            api_version=api_version,
+            use_ssl=use_ssl,
+            verify=verify,
+            endpoint_url=endpoint_url,
             botocore_session=botocore_session,
             botocore_config=botocore_config,
             guardrail_identifier=guardrail_identifier,
@@ -208,6 +234,14 @@ class BedrockConverse(FunctionCallingLLM):
         )
 
         self._config = None
+
+        self._boto_client_kwargs = {
+            "api_version": api_version,
+            "use_ssl": use_ssl,
+            "verify": verify,
+            "endpoint_url": endpoint_url,
+        }
+
         try:
             import boto3
             import aioboto3
@@ -237,9 +271,17 @@ class BedrockConverse(FunctionCallingLLM):
         if client is not None:
             self._client = client
         elif "bedrock-runtime" in session.get_available_services():
-            self._client = session.client("bedrock-runtime", config=self._config)
+            self._client = session.client(
+                "bedrock-runtime",
+                config=self._config,
+                **self._boto_client_kwargs,
+            )
         else:
-            self._client = session.client("bedrock", config=self._config)
+            self._client = session.client(
+                "bedrock",
+                config=self._config,
+                **self._boto_client_kwargs,
+            )
 
     @classmethod
     def class_name(cls) -> str:
@@ -375,17 +417,33 @@ class BedrockConverse(FunctionCallingLLM):
 
         def gen() -> ChatResponseGen:
             content = {}
+            tool_calls = []  # Track tool calls separately
+            current_tool_call = None  # Track the current tool call being built
             role = MessageRole.ASSISTANT
             for chunk in response["stream"]:
                 if content_block_delta := chunk.get("contentBlockDelta"):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
-                    (
-                        _,
-                        tool_calls,
-                        tool_call_ids,
-                        status,
-                    ) = self._get_content_and_tool_calls(content=content)
+
+                    # If this delta contains tool call info, update current tool call
+                    if "toolUse" in content_delta:
+                        tool_use_delta = content_delta["toolUse"]
+
+                        if current_tool_call:
+                            # Handle the input field specially - concatenate partial JSON strings
+                            if "input" in tool_use_delta:
+                                if "input" in current_tool_call:
+                                    current_tool_call["input"] += tool_use_delta["input"]
+                                else:
+                                    current_tool_call["input"] = tool_use_delta["input"]
+
+                                # Remove input from the delta to prevent it from being processed again
+                                tool_use_without_input = {k: v for k, v in tool_use_delta.items() if k != "input"}
+                                if tool_use_without_input:
+                                    current_tool_call = join_two_dicts(current_tool_call, tool_use_without_input)
+                            else:
+                                # For other fields, use the normal joining
+                                current_tool_call = join_two_dicts(current_tool_call, tool_use_delta)
 
                     yield ChatResponse(
                         message=ChatMessage(
@@ -393,25 +451,22 @@ class BedrockConverse(FunctionCallingLLM):
                             content=content.get("text", ""),
                             additional_kwargs={
                                 "tool_calls": tool_calls,
-                                "tool_call_id": tool_call_ids,
-                                "status": status,
+                                "tool_call_id": [tc.get("toolUseId", "") for tc in tool_calls],
+                                "status": [],  # Will be populated when tool results come in
                             },
                         ),
                         delta=content_delta.get("text", ""),
-                        raw=response,
-                        additional_kwargs=self._get_response_token_counts(
-                            dict(response)
-                        ),
+                        raw=chunk,
+                        additional_kwargs=self._get_response_token_counts(dict(chunk)),
                     )
                 elif content_block_start := chunk.get("contentBlockStart"):
-                    tool_use = content_block_start["start"]["toolUse"]
-                    content = join_two_dicts(content, tool_use)
-                    (
-                        _,
-                        tool_calls,
-                        tool_call_ids,
-                        status,
-                    ) = self._get_content_and_tool_calls(content=content)
+                    # New tool call starting
+                    if "toolUse" in content_block_start["start"]:
+                        tool_use = content_block_start["start"]["toolUse"]
+                        # Start tracking a new tool call
+                        current_tool_call = tool_use
+                        # Add to our list of tool calls
+                        tool_calls.append(current_tool_call)
 
                     yield ChatResponse(
                         message=ChatMessage(
@@ -419,14 +474,11 @@ class BedrockConverse(FunctionCallingLLM):
                             content=content.get("text", ""),
                             additional_kwargs={
                                 "tool_calls": tool_calls,
-                                "tool_call_id": tool_call_ids,
-                                "status": status,
+                                "tool_call_id": [tc.get("toolUseId", "") for tc in tool_calls],
+                                "status": [],  # Will be populated when tool results come in
                             },
                         ),
-                        raw=response,
-                        additional_kwargs=self._get_response_token_counts(
-                            dict(response)
-                        ),
+                        raw=chunk,
                     )
 
         return gen()
@@ -457,6 +509,7 @@ class BedrockConverse(FunctionCallingLLM):
             guardrail_identifier=self.guardrail_identifier,
             guardrail_version=self.guardrail_version,
             trace=self.trace,
+            boto_client_kwargs=self._boto_client_kwargs,
             **all_kwargs,
         )
 
@@ -504,22 +557,39 @@ class BedrockConverse(FunctionCallingLLM):
             guardrail_identifier=self.guardrail_identifier,
             guardrail_version=self.guardrail_version,
             trace=self.trace,
+            boto_client_kwargs=self._boto_client_kwargs,
             **all_kwargs,
         )
 
         async def gen() -> ChatResponseAsyncGen:
             content = {}
+            tool_calls = []  # Track tool calls separately
+            current_tool_call = None  # Track the current tool call being built
             role = MessageRole.ASSISTANT
             async for chunk in response_gen:
                 if content_block_delta := chunk.get("contentBlockDelta"):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
-                    (
-                        _,
-                        tool_calls,
-                        tool_call_ids,
-                        status,
-                    ) = self._get_content_and_tool_calls(content=content)
+
+                    # If this delta contains tool call info, update current tool call
+                    if "toolUse" in content_delta:
+                        tool_use_delta = content_delta["toolUse"]
+
+                        if current_tool_call:
+                            # Handle the input field specially - concatenate partial JSON strings
+                            if "input" in tool_use_delta:
+                                if "input" in current_tool_call:
+                                    current_tool_call["input"] += tool_use_delta["input"]
+                                else:
+                                    current_tool_call["input"] = tool_use_delta["input"]
+
+                                # Remove input from the delta to prevent it from being processed again
+                                tool_use_without_input = {k: v for k, v in tool_use_delta.items() if k != "input"}
+                                if tool_use_without_input:
+                                    current_tool_call = join_two_dicts(current_tool_call, tool_use_without_input)
+                            else:
+                                # For other fields, use the normal joining
+                                current_tool_call = join_two_dicts(current_tool_call, tool_use_delta)
 
                     yield ChatResponse(
                         message=ChatMessage(
@@ -527,8 +597,8 @@ class BedrockConverse(FunctionCallingLLM):
                             content=content.get("text", ""),
                             additional_kwargs={
                                 "tool_calls": tool_calls,
-                                "tool_call_id": tool_call_ids,
-                                "status": status,
+                                "tool_call_id": [tc.get("toolUseId", "") for tc in tool_calls],
+                                "status": [],  # Will be populated when tool results come in
                             },
                         ),
                         delta=content_delta.get("text", ""),
@@ -536,14 +606,13 @@ class BedrockConverse(FunctionCallingLLM):
                         additional_kwargs=self._get_response_token_counts(dict(chunk)),
                     )
                 elif content_block_start := chunk.get("contentBlockStart"):
-                    tool_use = content_block_start["start"]["toolUse"]
-                    content = join_two_dicts(content, tool_use)
-                    (
-                        _,
-                        tool_calls,
-                        tool_call_ids,
-                        status,
-                    ) = self._get_content_and_tool_calls(content=content)
+                    # New tool call starting
+                    if "toolUse" in content_block_start["start"]:
+                        tool_use = content_block_start["start"]["toolUse"]
+                        # Start tracking a new tool call
+                        current_tool_call = tool_use
+                        # Add to our list of tool calls
+                        tool_calls.append(current_tool_call)
 
                     yield ChatResponse(
                         message=ChatMessage(
@@ -551,8 +620,8 @@ class BedrockConverse(FunctionCallingLLM):
                             content=content.get("text", ""),
                             additional_kwargs={
                                 "tool_calls": tool_calls,
-                                "tool_call_id": tool_call_ids,
-                                "status": status,
+                                "tool_call_id": [tc.get("toolUseId", "") for tc in tool_calls],
+                                "status": [],  # Will be populated when tool results come in
                             },
                         ),
                         raw=chunk,
@@ -632,22 +701,23 @@ class BedrockConverse(FunctionCallingLLM):
         tool_selections = []
         for tool_call in tool_calls:
             if (
-                "input" not in tool_call
-                or "toolUseId" not in tool_call
+                "toolUseId" not in tool_call
                 or "name" not in tool_call
             ):
                 raise ValueError("Invalid tool call.")
 
             # handle empty inputs
             argument_dict = {}
-            if tool_call["input"] and isinstance(tool_call["input"], str):
+            if "input" in tool_call and isinstance(tool_call["input"], str):
                 # TODO parse_partial_json is not perfect
                 try:
                     argument_dict = parse_partial_json(tool_call["input"])
                 except ValueError:
                     argument_dict = {}
-            elif isinstance(tool_call["input"], dict):
+            elif "input" in tool_call and isinstance(tool_call["input"], dict):
                 argument_dict = tool_call["input"]
+            else:
+                continue
 
             tool_selections.append(
                 ToolSelection(

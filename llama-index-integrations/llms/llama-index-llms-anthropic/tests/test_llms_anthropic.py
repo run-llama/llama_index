@@ -1,10 +1,13 @@
 import os
+import httpx
 from unittest.mock import MagicMock
 
 import pytest
+from pathlib import Path
 from llama_index.core.base.llms.base import BaseLLM
-from llama_index.core.llms import ChatMessage
+from llama_index.core.llms import ChatMessage, DocumentBlock, TextBlock, MessageRole, ChatResponse
 from llama_index.llms.anthropic import Anthropic
+
 
 
 def test_text_inference_embedding_class():
@@ -210,3 +213,21 @@ def test__prepare_chat_with_tools_empty():
     llm = Anthropic()
     retval = llm._prepare_chat_with_tools(tools=[])
     assert retval["tools"] == []
+
+@pytest.fixture()
+def pdf_url() -> str:
+    return "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+
+@pytest.mark.skipif(
+    os.getenv("ANTHROPIC_API_KEY") is None,
+    reason="Anthropic API key not available to test Anthropic document uploading ",
+)
+def test_document_upload(tmp_path: Path, pdf_url: str) -> None:
+    llm = Anthropic(model="claude-3-5-sonnet-latest")
+    pdf_path = tmp_path / "test.pdf"
+    pdf_content = httpx.get(pdf_url).content
+    pdf_path.write_bytes(pdf_content)
+    msg = ChatMessage(role=MessageRole.USER, blocks=[DocumentBlock(path=pdf_path), TextBlock(text="What does the document contain?")])
+    messages = [msg]
+    response = llm.chat(messages)
+    assert isinstance(response, ChatResponse)

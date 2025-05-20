@@ -36,7 +36,7 @@ jobs:
         with:
           version: "$(date +'%Y-%m-%d')"
           begin-pattern: "/^## \\[$(date +'%Y-%m-%d')\\]/"
-          end-pattern: "/^## \\["
+          end-pattern: "/^## \\[/"
           working-directory: "."
 
       - name: Create GitHub Release
