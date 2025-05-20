@@ -310,6 +310,7 @@ You can find a few examples of memory in action below:
 
 - [Memory](../../../examples/memory/memory.ipynb)
 - [Manipulating Memory at Runtime](../../../examples/memory/custom_memory.ipynb)
+- [Limiting Multi-Turn Confusion with Custom Memory](../../../examples/memory/custom_multi_turn_memory.ipynb)
 
 **NOTE:** Deprecated examples:
 - [Chat Memory Buffer](../../../examples/agent/memory/chat_memory_buffer.ipynb)

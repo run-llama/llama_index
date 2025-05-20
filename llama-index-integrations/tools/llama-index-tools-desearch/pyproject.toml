@@ -1,6 +1,6 @@
 [build-system]
-requires = ["hatchling"]
 build-backend = "hatchling.build"
+requires = ["hatchling"]
 
 [dependency-groups]
 dev = [
@@ -25,18 +25,18 @@ dev = [
 ]
 
 [project]
-name = "llama-index-llms-openai-like"
-version = "0.3.5"
-description = "llama-index llms openai like integration"
-authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<4.0"
-readme = "README.md"
-license = "MIT"
+authors = [{name = "Desearch", email = "support@desearch.com"}]
 dependencies = [
-    "llama-index-llms-openai>=0.3.42,<0.4",
-    "transformers>=4.37.0,<5",
+    "desearch-py>=1.0.0",
     "llama-index-core>=0.12.0,<0.13",
 ]
+description = "llama-index tools desearch integration"
+license = "MIT"
+maintainers = [{name = "Desearch", email = "support@desearch.com"}]
+name = "llama-index-tools-desearch"
+readme = "README.md"
+requires-python = ">=3.9,<4.0"
+version = "0.1.0"
 
 [tool.codespell]
 check-filenames = true
@@ -45,18 +45,16 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.hatch.build.targets.sdist]
 include = ["llama_index/"]
-exclude = ["**/BUILD"]
 
 [tool.hatch.build.targets.wheel]
 include = ["llama_index/"]
-exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.openai_like"
+import_path = "llama_index.tools.desearch"
 
 [tool.llamahub.class_authors]
-OpenAILike = "llama-index"
+DesearchToolSpec = "Desearch"
 
 [tool.mypy]
 disallow_untyped_defs = true

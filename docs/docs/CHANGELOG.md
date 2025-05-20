@@ -1,5 +1,46 @@
 # ChangeLog
 
+## [2025-05-19]
+
+### `llama-index-core` [0.12.37]
+
+- Ensure `Memory` returns at least one message (#18763)
+- Separate text blocks with newlines when accessing `message.content` (#18763)
+- reset `next_agent` in multi agent workflows (#18782)
+- support sqlalchemy v1 in chat store (#18780)
+- fix: broken hotpotqa dataset URL (#18764)
+- Use `get_tqdm_iterable` in SimpleDirectoryReader (#18722)
+- Pass agent workflow kwargs into start event (#18747)
+- fix(chunking): Ensure correct handling of multi-byte characters during AST node chunking (#18702)
+
+### `llama-index-llms-anthropic` [0.6.14]
+
+- Fixed DocumentBlock handling in OpenAI and Anthropic (#18769)
+
+### `llama-index-llms-bedrock-converse` [0.5.4]
+
+- Fix tool call parsing for bedrock converse (#18781)
+- feat: add missing client params for bedrock (#18768)
+- fix merging multiple tool calls in bedrock converse (#18761)
+
+### `llama-index-llms-openai` [0.3.42]
+
+- Fixed DocumentBlock handling in OpenAI and Anthropic (#18769)
+- Remove tool-length check in openai (#18784)
+- Add check for empty tool call delta, bump version (#18745)
+
+### `llama-index-llms-openai-like` [0.3.5]
+
+- Remove tool-length check in openai (#18784)
+
+### `llama-index-retrievers-vectorize` [0.1.0]
+
+- Add Vectorize retriever (#18685)
+
+### `llama-index-tools-desearch` [0.1.0]
+
+- Feature/desearch integration (#18738)
+
 ## [2025-05-14]
 
 ### `llama-index-core` [0.12.36]

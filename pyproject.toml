@@ -74,7 +74,7 @@ maintainers = [
 name = "llama-index"
 readme = "README.md"
 requires-python = ">=3.9,<4.0"
-version = "0.12.36"
+version = "0.12.37"
 
 [project.scripts]
 llamaindex-cli = "llama_index.cli.command_line:main"
