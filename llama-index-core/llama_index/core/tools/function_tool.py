@@ -79,6 +79,11 @@ class FunctionTool(AsyncBaseTool):
         self.requires_context = any(
             param.annotation == Context for param in sig.parameters.values()
         )
+        self.ctx_param_name = next(
+            param.name
+            for param in sig.parameters.values()
+            if param.annotation == Context
+        ) if self.requires_context else None
 
         if metadata is None:
             raise ValueError("metadata must be provided")
@@ -139,29 +144,35 @@ class FunctionTool(AsyncBaseTool):
             fn_to_parse = fn or async_fn
             assert fn_to_parse is not None, "fn must be provided"
             name = name or fn_to_parse.__name__
-            docstring = fn_to_parse.__doc__
+            docstring = fn_to_parse.__doc__ or ""
 
             # Get function signature
             fn_sig = inspect.signature(fn_to_parse)
 
             # Remove ctx parameter from schema if present
-            has_ctx = any(
-                param.annotation == Context for param in fn_sig.parameters.values()
-            )
             ctx_param_name = None
-            if has_ctx:
-                ctx_param_name = next(
-                    param.name
-                    for param in fn_sig.parameters.values()
-                    if param.annotation == Context
-                )
-                fn_sig = fn_sig.replace(
-                    parameters=[
-                        param
-                        for param in fn_sig.parameters.values()
-                        if param.annotation != Context
-                    ]
-                )
+            for param in fn_sig.parameters.values():
+                if param.annotation == Context:
+                    ctx_param_name = param.name
+                    fn_sig = fn_sig.replace(
+                        parameters=[
+                            param
+                            for param in fn_sig.parameters.values()
+                            if param.annotation != Context
+                        ]
+                    )
+
+            # Remove self parameter from schema if present
+            has_self = False
+            for param in fn_sig.parameters.values():
+                if param.name == "self":
+                    has_self = True
+                    fn_sig = fn_sig.replace(
+                        parameters=[
+                            param for param in fn_sig.parameters.values() if param.name != "self"
+                        ]
+                    )
+                    break
 
             # Handle FieldInfo defaults
             fn_sig = fn_sig.replace(
@@ -176,7 +187,11 @@ class FunctionTool(AsyncBaseTool):
 
             description = description or f"{name}{fn_sig}\n{docstring}"
             if fn_schema is None:
-                ignore_fields = [ctx_param_name] if ctx_param_name is not None else []
+                ignore_fields = []
+                if ctx_param_name is not None:
+                    ignore_fields.append(ctx_param_name)
+                if has_self:
+                    ignore_fields.append("self")
                 ignore_fields.extend(partial_params.keys())
 
                 fn_schema = create_schema_from_function(
@@ -228,16 +243,15 @@ class FunctionTool(AsyncBaseTool):
         return self.call(*args, **all_kwargs)
 
     def call(
-        self, *args: Any, ctx: Optional[Context] = None, **kwargs: Any
+        self, *args: Any, **kwargs: Any
     ) -> ToolOutput:
         """Sync Call."""
         all_kwargs = {**self.partial_params, **kwargs}
-        if self.requires_context:
-            if ctx is None:
+        if self.requires_context and self.ctx_param_name is not None:
+            if self.ctx_param_name not in all_kwargs:
                 raise ValueError("Context is required for this tool")
-            raw_output = self._fn(ctx, *args, **all_kwargs)
-        else:
-            raw_output = self._fn(*args, **all_kwargs)
+
+        raw_output = self._fn(*args, **all_kwargs)
         # Default ToolOutput based on the raw output
         default_output = ToolOutput(
             content=str(raw_output),
@@ -261,16 +275,15 @@ class FunctionTool(AsyncBaseTool):
         return default_output
 
     async def acall(
-        self, *args: Any, ctx: Optional[Context] = None, **kwargs: Any
+        self, *args: Any, **kwargs: Any
     ) -> ToolOutput:
         """Async Call."""
         all_kwargs = {**self.partial_params, **kwargs}
-        if self.requires_context:
-            if ctx is None:
+        if self.requires_context and self.ctx_param_name is not None:
+            if self.ctx_param_name not in all_kwargs:
                 raise ValueError("Context is required for this tool")
-            raw_output = await self._async_fn(ctx, *args, **all_kwargs)
-        else:
-            raw_output = await self._async_fn(*args, **all_kwargs)
+
+        raw_output = await self._async_fn(*args, **all_kwargs)
         # Default ToolOutput based on the raw output
         default_output = ToolOutput(
             content=str(raw_output),
