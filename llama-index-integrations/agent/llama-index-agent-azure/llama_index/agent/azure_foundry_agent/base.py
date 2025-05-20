@@ -1,19 +1,29 @@
-from typing import List, Optional
-import time
-from azure.ai.agents.models import (
-    ThreadRun,
-    ToolSet,
-    ToolOutput
-)
-from llama_index.core.agent.types import BaseAgent
-from llama_index.core.base.llms.types import ChatMessage
-from llama_index.core.chat_engine.types import AgentChatResponse, StreamingAgentChatResponse
-from llama_index.core.callbacks import CallbackManager, trace_method, CBEventType, EventPayload
 
-from azure.ai.projects import AIProjectClient
-from azure.identity import DefaultAzureCredential
+from typing import List, Sequence, Optional
+from azure.ai.agents.models._models import ThreadRun
+from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
+from llama_index.core.agent.workflow.single_agent_workflow import SingleAgentRunnerMixin
+from llama_index.core.agent.workflow.workflow_events import AgentOutput, ToolCallResult
+from llama_index.core.llms import ChatMessage
+from llama_index.core.memory import BaseMemory
+from llama_index.core.tools import AsyncBaseTool, ToolSelection
+from llama_index.core.workflow import Context
+from azure.ai.projects.aio import AIProjectClient
+from azure.identity.aio import DefaultAzureCredential
+import asyncio
+import json
+from azure.ai.agents.models import SubmitToolOutputsAction, RequiredFunctionToolCall, FunctionTool, ToolSet
+from llama_index.core.tools import FunctionTool as LLamaIndexFunctionTool
+from azure.ai.agents.models import MessageInputContentBlock
+from llama_index.core.base.llms.types import ChatMessage, TextBlock, ImageBlock
 
-class AzureFoundryAgent(BaseAgent):
+class AzureFoundryAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
+    """
+    Workflow-compatible Azure Foundry Agent for multi-agent orchestration.
+    Inherits from BaseWorkflowAgent and SingleAgentRunnerMixin.
+    Implements async methods for workflow integration using the async Azure SDK.
+    """
+
     def __init__(
         self,
         endpoint: str,
@@ -21,274 +31,309 @@ class AzureFoundryAgent(BaseAgent):
         name: str = "azure-agent",
         instructions: str = "You are a helpful agent",
         thread_id: Optional[str] = None,
-        verbose: bool = False,
+        agent_id: Optional[str] = None,
         run_retrieve_sleep_time: float = 1.0,
-        callback_manager: Optional[CallbackManager] = None,
-        toolset: Optional[ToolSet] = None,
+        verbose: bool = False,
+        **kwargs
     ):
-        """
-        Initialize an AzureFoundryAgent.
-
-        Args:
-            endpoint: The Azure AI Project endpoint.
-            model: The model to use for the agent (e.g., "gpt-4o-mini").
-            name: The name of the agent.
-            instructions: Instructions for the agent.
-            thread_id: An optional existing thread ID to continue a conversation.
-                If None, a new thread will be created.
-            verbose: Whether to print verbose output.
-            run_retrieve_sleep_time: Time in seconds to sleep between polling
-                for run status.
-            callback_manager: An optional CallbackManager instance.
-            toolset: An optional ToolSet for the agent.
-
-        """
+        super().__init__(name=name, **kwargs)
         self._endpoint = endpoint
         self._model = model
-        self._name = name
         self._instructions = instructions
-        self._verbose = verbose
         self._run_retrieve_sleep_time = run_retrieve_sleep_time
-        self.callback_manager = callback_manager or CallbackManager([])
-        self._toolset = toolset
+        self._thread_id = thread_id
+        self._agent_id = agent_id
+        self._agent = None
+        self._run_id = None
+        self._credential = DefaultAzureCredential()
+        self._client = AIProjectClient(endpoint=endpoint, credential=self._credential)
+        self._verbose = verbose
+        # self.tools = tools if tools is not None else []
+        self._toolset = ToolSet()
 
-
-        self._project_client = AIProjectClient(
-            endpoint=self._endpoint,
-            credential=DefaultAzureCredential()
-        )
-
-        # Create or use thread
-        if thread_id is not None:
-            self._thread_id = thread_id
-        else:
-            thread = self._project_client.agents.threads.create()
-            self._thread_id = thread.id
-
-        if self._verbose:
-            if self._toolset:
-                print(f"AzureFoundryAgent initialized with provided toolset.")
-            else:
-                print("AzureFoundryAgent initialized without tools.")
-
-        self._agent = None  # Will be created on first chat
-        self._run_id: Optional[str] = None
-
-    def _ensure_agent(self):
-        """Ensure the agent is created using the Azure AI Agents API."""
+    async def _ensure_agent(self, tools: Sequence[AsyncBaseTool]) -> None:
         if self._agent is None:
+            if self._agent_id is not None:
+                if self._verbose:
+                    print(f"[AzureFoundryWorkflowAgent] Fetching existing agent with id={self._agent_id}")
+                self._agent = await self._client.agents.get_agent(self._agent_id)
+            else:
+                if self._verbose:
+                    print(f"[AzureFoundryWorkflowAgent] Creating new agent with model={self._model}, name={self.name}")
+
+                func_tools = []
+                for t in (self.tools or []):
+                    if isinstance(t, LLamaIndexFunctionTool):
+                        func_tools.append(t.fn)
+                if func_tools:
+                    self._toolset.add(FunctionTool(functions=set(func_tools)))
+                self._agent = await self._client.agents.create_agent(
+                    model=self._model,
+                    name=self.name,
+                    instructions=self._instructions,
+                    toolset=self._toolset,
+                )
+                self._agent_id = self._agent.id
+                if self._verbose:
+                    print(f"[AzureFoundryWorkflowAgent] Created agent with id={self._agent_id}")
+        if self._thread_id is None:
             if self._verbose:
-                if self._toolset:
-                    print(f"AzureFoundryAgent creating agent with provided toolset.")
-                else:
-                    print("AzureFoundryAgent creating agent without tools.")
-            self._agent = self._project_client.agents.create_agent(
-                model=self._model,
-                name=self._name,
-                instructions=self._instructions,
-                toolset=self._toolset,
+                print(f"[AzureFoundryWorkflowAgent] Creating new thread.")
+            thread = await self._client.agents.threads.create()
+            self._thread_id = thread.id
+            if self._verbose:
+                print(f"[AzureFoundryWorkflowAgent] Created thread with id={self._thread_id}")
+
+    def _llama_to_azure_content_blocks(self, chat_messages: List[ChatMessage]) -> list[MessageInputContentBlock]:
+        """
+        Internal: Convert a list of LlamaIndex ChatMessage to a list of Azure MessageInputContentBlock.
+        Supports text and image blocks. Extend as needed for audio/document.
+        """
+        from azure.ai.agents.models import (
+            MessageInputTextBlock, MessageInputImageFileBlock, MessageInputImageUrlBlock,
+            MessageImageFileParam, MessageImageUrlParam
+        )
+        azure_blocks: list[MessageInputContentBlock] = []
+        for msg in chat_messages:
+            for block in getattr(msg, "blocks", []):
+                if isinstance(block, TextBlock):
+                    azure_blocks.append(MessageInputTextBlock(text=block.text))
+                elif isinstance(block, ImageBlock):
+                    if block.path or block.image:
+                        file_id = str(block.path) if block.path else None
+                        if file_id:
+                            azure_blocks.append(
+                                MessageInputImageFileBlock(
+                                    image_file=MessageImageFileParam(file_id=file_id, detail=block.detail)
+                                )
+                            )
+                    elif block.url:
+                        azure_blocks.append(
+                            MessageInputImageUrlBlock(
+                                image_url=MessageImageUrlParam(url=str(block.url), detail=block.detail)
+                            )
+                        )
+        return azure_blocks
+
+    async def take_step(
+        self,
+        ctx: Context,
+        llm_input: List[ChatMessage],
+        tools: Sequence[AsyncBaseTool],
+        memory: BaseMemory,
+    ) -> AgentOutput:
+        """
+        Take a single step with the Azure Foundry agent.
+        Interacts with Azure backend and returns AgentOutput (response, tool_calls, etc).
+        """
+        # Convert the entire llm_input to Azure content blocks
+        azure_content_blocks = self._llama_to_azure_content_blocks(llm_input) if llm_input else []
+        await self._ensure_agent(tools=tools)
+        assert self._thread_id is not None, "Thread ID must be set after _ensure_agent()"
+        assert self._agent is not None, "Agent must be set after _ensure_agent()"
+
+        tool_calls = []
+        response_msg = None
+        # Only send a user message if there is new user input
+        if azure_content_blocks:
+            if self._verbose:
+                print(f"[AzureFoundryWorkflowAgent] Sending user message blocks to thread_id={self._thread_id}")
+            await self._client.agents.messages.create(
+                thread_id=self._thread_id, role="user", content=azure_content_blocks
             )
             if self._verbose:
-                print(f"Created agent, ID: {self._agent.id}")
-
-    def _run_function_calling(self, run_details: ThreadRun) -> Optional[List[ToolOutput]]:
-        """
-        Handles the 'requires_action' state by executing tool calls and submitting outputs.
-        Returns the list of tool outputs submitted, or None if no action was taken or applicable.
-        """
-        if not (run_details.required_action and run_details.required_action.type == "submit_tool_outputs"):
-            if self._verbose:
-                print("Run does not require tool submission or no action defined.")
-            return None
-
-        # Ensure _run_id is set, as it's required for submitting tool outputs
-        assert self._run_id is not None, "_run_id cannot be None when submitting tool outputs."
-
-        # Safely access submit_tool_outputs and then tool_calls
-        submit_tool_outputs_details = getattr(run_details.required_action, "submit_tool_outputs", None)
-        if not submit_tool_outputs_details:
-            if self._verbose:
-                print("submit_tool_outputs details are missing in required_action.")
-            return None
-
-        tool_calls = getattr(submit_tool_outputs_details, "tool_calls", None)
-
-        if not (self._toolset and tool_calls):
-            if self._verbose:
-                print("Toolset not available or no tool calls to execute.")
-            return None
-
-        if self._verbose:
-            print(f"Executing tool calls: {tool_calls}")
-
-        tool_outputs_raw = self._toolset.execute_tool_calls(tool_calls)
-
-        # Ensure tool_outputs is in the correct format for submission
-        # This requires converting List[Dict[str, Any]] to List[ToolOutput]
-        tool_outputs: List[ToolOutput] = []
-        if isinstance(tool_outputs_raw, list):
-            for item in tool_outputs_raw:
-                if isinstance(item, dict) and "tool_call_id" in item and "output" in item:
-                    tool_outputs.append(ToolOutput(tool_call_id=item["tool_call_id"], output=item["output"]))
-                elif isinstance(item, ToolOutput): # If it's already a ToolOutput object
-                    tool_outputs.append(item)
-                else:
-                    # Handle unexpected item type if necessary, or raise an error
+                print(f"[AzureFoundryWorkflowAgent] Starting run for agent_id={self._agent.id} on thread_id={self._thread_id}")
+            run = await self._client.agents.runs.create(
+                thread_id=self._thread_id, agent_id=self._agent.id
+            )
+            self._run_id = run.id
+            current_run = run
+            while current_run.status in ["queued", "in_progress", "requires_action"]:
+                await asyncio.sleep(self._run_retrieve_sleep_time)
+                current_run = await self._client.agents.runs.get(
+                    thread_id=self._thread_id, run_id=self._run_id
+                )
+                if self._verbose:
+                    print(f"[AzureFoundryWorkflowAgent] Run status: {current_run.status}")
+                if current_run.status == "requires_action":
                     if self._verbose:
-                        print(f"Warning: Unexpected item type in tool_outputs_raw: {type(item)}")
+                        print(f"[AzureFoundryWorkflowAgent] Run requires action: {getattr(current_run, 'required_action', None)}")
+                    break
+
+            if current_run.status == "failed":
+                return AgentOutput(
+                    response=ChatMessage(role="assistant", content="Run failed."),
+                    tool_calls=[],
+                    raw=current_run,
+                    current_agent_name=self.name,
+                )
+            required_action = getattr(current_run, "required_action", None)
+            if (
+                required_action
+                and getattr(required_action, "type", None) == "submit_tool_outputs"
+                and isinstance(required_action, SubmitToolOutputsAction)
+            ):
+                submit_tool_outputs = required_action.submit_tool_outputs
+                for call in getattr(submit_tool_outputs, "tool_calls", []):
+                    # For function tool calls
+                    if isinstance(call, RequiredFunctionToolCall):
+                        function = getattr(call, "function", None)
+                        tool_name = getattr(function, "name", "") if function else ""
+                        arguments = getattr(function, "arguments", "{}") if function else "{}"
+                        try:
+                            tool_kwargs = json.loads(arguments)
+                        except Exception:
+                            tool_kwargs = {}
+                        tool_calls.append(
+                            ToolSelection(
+                                tool_id=getattr(call, "id", ""),
+                                tool_name=tool_name,
+                                tool_kwargs=tool_kwargs,
+                            )
+                        )
+            # Get the latest assistant message if available
+            latest_msg = None
+            async for msg in self._client.agents.messages.list(
+                thread_id=self._thread_id, run_id=self._run_id, order="desc"
+            ):
+                if getattr(msg, "role", None) == "assistant" and getattr(msg, "content", None):
+                    latest_msg = self._from_azure_thread_message(msg)
+                    break
+            # If no assistant message found, try to get the last assistant message in the thread
+            if not latest_msg:
+                async for msg in self._client.agents.messages.list(
+                    thread_id=self._thread_id, order="desc"
+                ):
+                    if getattr(msg, "role", None) == "assistant" and getattr(msg, "content", None):
+                        latest_msg = self._from_azure_thread_message(msg)
+                        break
+            response_msg = latest_msg if latest_msg else ChatMessage(role="assistant", content="No response from agent.")
         else:
-            if self._verbose:
-                print(f"Warning: tool_outputs_raw is not a list: {type(tool_outputs_raw)}")
+            # No new user input: fetch the latest assistant message after tool call resolution
+            latest_msg = None
+            async for msg in self._client.agents.messages.list(
+                thread_id=self._thread_id, order="desc"
+            ):
+                if getattr(msg, "role", None) == "assistant" and getattr(msg, "content", None):
+                    latest_msg = self._from_azure_thread_message(msg)
+                    break
+            response_msg = latest_msg if latest_msg else ChatMessage(role="assistant", content="No response from agent.")
 
+        return AgentOutput(
+            response=response_msg,
+            tool_calls=tool_calls,
+            raw=current_run if azure_content_blocks else None,
+            current_agent_name=self.name,
+        )
+
+    async def handle_tool_call_results(
+        self, ctx: Context, results: List[ToolCallResult], memory: BaseMemory
+    ) -> None:
+        """
+        Handle tool call results for Azure Foundry agent.
+        Submits results to Azure backend and updates state/context as needed.
+        Waits for run to reach a terminal state or another action required.
+        Also appends tool call results to the scratchpad for context tracking.
+        """
+        # Convert ToolCallResult to Azure tool_outputs format
+        tool_outputs = []
+        for result in results:
+            tool_outputs.append({
+                "tool_call_id": result.tool_id,
+                "output": result.tool_output.content,
+            })
+        # Submit tool outputs to Azure
+        assert self._thread_id is not None, "Thread ID must be set."
+        assert self._run_id is not None, "Run ID must be set."
         if self._verbose:
-            print(f"Formatted Tool outputs for submission: {tool_outputs}")
-
-        self._project_client.agents.runs.submit_tool_outputs(
+            print(f"[AzureFoundryWorkflowAgent] Submitting tool call results for run_id={self._run_id} on thread_id={self._thread_id}: {tool_outputs}")
+        await self._client.agents.runs.submit_tool_outputs(
             thread_id=self._thread_id,
             run_id=self._run_id,
             tool_outputs=tool_outputs
         )
+
+
         if self._verbose:
-            print("Successfully submitted tool outputs.")
-        return tool_outputs
-
-    def run_agent(self) -> ThreadRun:
-        """
-        Run the agent and poll until completion. Returns the run object.
-        Uses the new Azure AI Agents API.
-        """
-        self._ensure_agent()
-        if self._agent is None or self._agent.id is None:
-            raise ValueError("Agent not created or agent ID is missing before running.")
-
-        run_initiation: ThreadRun = self._project_client.agents.runs.create(
-            thread_id=self._thread_id,
-            agent_id=self._agent.id
-        )
-        self._run_id = run_initiation.id
-
-        current_run_details = run_initiation
-
-        while current_run_details.status in ["queued", "in_progress", "requires_action"]:
-            time.sleep(self._run_retrieve_sleep_time)
-            # Poll the specific run using its ID and the thread ID
-            current_run_details = self._project_client.agents.runs.get(
-                thread_id=self._thread_id, run_id=self._run_id
-            )
-            if self._verbose:
-                print(f"Run status: {current_run_details.status}")
-            if current_run_details.status == "requires_action":
+            print(f"[AzureFoundryWorkflowAgent] Tool outputs submitted. Waiting for run to reach terminal state or next action required...")
+        # Wait for run to reach a terminal state or another action required
+        while True:
+            run: ThreadRun = await self._client.agents.runs.get(thread_id=self._thread_id, run_id=self._run_id)
+            if run.status not in ["queued", "in_progress", "requires_action"]:
                 if self._verbose:
-                    print(f"Run requires action: {current_run_details.required_action}")
+                    print(f"[AzureFoundryWorkflowAgent] Run reached terminal state: {run.status}")
+                # Print detailed debug info if failed
+                if run.status == "failed":
+                    print("[AzureFoundryWorkflowAgent][DEBUG] Run failed. Full run object:")
+                    print(run)
+                    # Try to print error fields if present
+                    error_fields = ["error", "last_error", "failure_reason", "failure_message"]
+                    for field in error_fields:
+                        if hasattr(run, field):
+                            print(f"[AzureFoundryWorkflowAgent][DEBUG] {field}: {getattr(run, field)}")
+                break
+            if run.status == "requires_action":
+                if self._verbose:
+                    print(f"[AzureFoundryWorkflowAgent] Run requires another action: {getattr(run, 'required_action', None)}")
+                break
+            await asyncio.sleep(self._run_retrieve_sleep_time)
 
-                submitted_outputs = self._run_function_calling(current_run_details)
-                if submitted_outputs is not None:
-                    if self._verbose:
-                        print(f"Tool function calling processed. Submitted outputs: {submitted_outputs}")
-                    continue
-                else:
-                    if self._verbose:
-                        print("Tool function calling not applicable or failed to process, breaking polling loop.")
-                    break
-
-        if current_run_details.status == "failed":
-            error_info = getattr(current_run_details, "last_error", "No additional error information.")
-            raise ValueError(f"Run failed with status {current_run_details.status}. Error: {error_info}")
-
-        return current_run_details
-
-    @property
-    def latest_message(self) -> Optional[ChatMessage]:
-        """Get the latest assistant message in the thread."""
-        messages_iterable = self._project_client.agents.messages.list(
-            run_id=self._run_id,
+        tool_message = f"A tool call was executed : {results!s}"
+        await self._client.agents.messages.create(
             thread_id=self._thread_id,
-            order="desc"
+            role="assistant",
+            content=tool_message
         )
 
-        assistant_message_obj = next(
-            (msg for msg in messages_iterable if getattr(msg, "role", None) == "assistant"),
-            None
-        )
-
-        if assistant_message_obj:
-            return self.from_azure_thread_message(assistant_message_obj)
-        return None
-
-    def _chat(
-        self,
-        message: str,
-        chat_history: Optional[List[ChatMessage]] = None,
-        **kwargs
-    ) -> AgentChatResponse:
+    async def finalize(
+        self, ctx: Context, output: AgentOutput, memory: BaseMemory
+    ) -> AgentOutput:
         """
-        Internal chat logic for Azure AI Agents API.
+        Finalize the agent's execution (persist state, cleanup, etc).
+        For AzureFoundryWorkflowAgent, this can be a no-op or can persist any final state if needed.
         """
-        self._ensure_agent()
-        if not hasattr(self, "_thread_id") or self._thread_id is None:
-            thread = self._project_client.agents.threads.create()
-            self._thread_id = thread.id
+        # Optionally, persist any final state to memory or context
+        # For now, just return the output as-is
+        return output
 
-        msg = self._project_client.agents.messages.create(
-            thread_id=self._thread_id, role="user", content=message
-        )
+    async def close(self):
+        """
+        Close the underlying async Azure client session and credential.
+        """
         if self._verbose:
-            print(f"Created message, message ID: {msg.id}")
-        run: ThreadRun = self.run_agent()
-        latest_msg = self.latest_message
-        # Ensure response_text is always a string
-        response_text = latest_msg.content if latest_msg and latest_msg.content is not None else ""
-        return AgentChatResponse(response=response_text)
+            print(f"[AzureFoundryWorkflowAgent] Closing the session.")
+        await self._client.close()
+        await self._credential.close()
 
-    @trace_method("chat")
-    def chat(
-        self,
-        message: str,
-        chat_history: Optional[List[ChatMessage]] = None,
-        **kwargs
-    ) -> AgentChatResponse:
-        with self.callback_manager.event(
-            CBEventType.AGENT_STEP,
-            payload={EventPayload.MESSAGES: [message]},
-        ) as e:
-            chat_response = self._chat(message, chat_history, **kwargs)
-            assert isinstance(chat_response, AgentChatResponse)
-            e.on_end(payload={EventPayload.RESPONSE: chat_response})
-        return chat_response
+    async def __aenter__(self):
+        return self
 
-    @trace_method("chat")
-    def stream_chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None, **kwargs
-    ) -> StreamingAgentChatResponse:
-        raise NotImplementedError("stream_chat not implemented")
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.close()
 
-    @trace_method("chat")
-    async def achat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> AgentChatResponse:
-        raise NotImplementedError("achat not implemented")
-
-    @trace_method("chat")
-    async def astream_chat(
-        self, message: str, chat_history: Optional[List[ChatMessage]] = None
-    ) -> StreamingAgentChatResponse:
-        raise NotImplementedError("astream_chat not implemented")
-
-    @staticmethod
-    def from_azure_thread_message(thread_message: object) -> ChatMessage:
-        """Convert an OpenAI/Azure thread message to ChatMessage."""
-        # Assume thread_message is a ThreadMessage object (not a dict)
-        # Use attribute access as per Azure SDK
-        text_contents = [
-            t for t in getattr(thread_message, "content", [])
-            if getattr(t, "type", None) == "text"
-        ]
-        text_content_str = " ".join([
-            getattr(getattr(t, "text", None), "value", "") for t in text_contents
-        ])
+    def _from_azure_thread_message(self, thread_message: object) -> ChatMessage:
+        """
+        Convert an Azure/OpenAI thread message to a LlamaIndex ChatMessage.
+        Supports text and image_url content blocks for multimodal support.
+        """
+        from llama_index.core.base.llms.types import ChatMessage, TextBlock, ImageBlock
+        blocks = []
+        for t in getattr(thread_message, "content", []):
+            t_type = getattr(t, "type", None)
+            if t_type == "text":
+                text_val = getattr(getattr(t, "text", None), "value", "")
+                blocks.append(TextBlock(text=text_val))
+            elif t_type == "image_url":
+                url_val = getattr(getattr(t, "image_url", None), "url", None)
+                detail_val = getattr(getattr(t, "image_url", None), "detail", None)
+                if url_val:
+                    blocks.append(ImageBlock(url=url_val, detail=detail_val))
+        # Compose content string for backward compatibility (concatenate text blocks)
+        content_str = " ".join([b.text for b in blocks if hasattr(b, "text")])
         return ChatMessage(
             role=getattr(thread_message, "role", ""),
-            content=text_content_str,
+            content=content_str,
+            blocks=blocks,
             additional_kwargs={
                 "thread_message": thread_message,
                 "thread_id": getattr(thread_message, "thread_id", None),
@@ -297,55 +342,3 @@ class AzureFoundryAgent(BaseAgent):
                 "metadata": getattr(thread_message, "metadata", None),
             },
         )
-
-    @staticmethod
-    def from_azure_thread_messages(thread_messages: list) -> List[ChatMessage]:
-        """Convert a list of OpenAI/Azure thread messages to ChatMessage list."""
-        return [AzureFoundryAgent.from_azure_thread_message(m) for m in thread_messages]
-
-    @property
-    def chat_history(self) -> List[ChatMessage]:
-        """Return the chat history as a list of ChatMessage objects."""
-        messages_iterable = self._project_client.agents.messages.list(thread_id=self._thread_id)
-        return self.from_azure_thread_messages(list(messages_iterable))
-
-    @property
-    def thread_id(self) -> str:
-        """The ID of the current agent thread."""
-        return self._thread_id
-
-    @property
-    def project_client(self) -> AIProjectClient:
-        """The Azure AI Project client instance."""
-        return self._project_client
-
-    @property
-    def agent(self):
-        """The underlying Azure AI Agent object."""
-        return self._agent
-
-    @property
-    def last_message(self) -> Optional[ChatMessage]:
-        """Get the last message in the current thread."""
-        messages_iterable = self._project_client.agents.messages.list(thread_id=self._thread_id)
-        messages_list = list(messages_iterable)
-        if messages_list:
-            return self.from_azure_thread_message(messages_list[-1])
-        return None
-
-    def reset(self) -> None:
-        """Delete and create a new thread for the agent. Also resets the current run ID."""
-        if self._thread_id:
-            try:
-                self._project_client.agents.threads.delete(thread_id=self._thread_id)
-                if self._verbose:
-                    print(f"Successfully deleted old thread: {self._thread_id}")
-            except Exception as e:
-                if self._verbose:
-                    print(f"Failed to delete old thread {self._thread_id}: {e}. Proceeding to create a new one.")
-
-        thread = self._project_client.agents.threads.create()
-        self._thread_id = thread.id
-        self._run_id = None  # Reset the run ID
-        if self._verbose:
-            print(f"Agent reset. New thread ID: {self._thread_id}")
