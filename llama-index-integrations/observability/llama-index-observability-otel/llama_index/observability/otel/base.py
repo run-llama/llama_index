@@ -10,6 +10,7 @@ from llama_index.core.instrumentation.span import SimpleSpan
 from typing import Optional, Any, List, Dict, Union, Sequence, Literal, Mapping
 from llama_index.observability.otel.utils import filter_model_fields
 from opentelemetry import trace, context
+from opentelemetry.trace import set_span_in_context
 from opentelemetry.sdk.trace import TracerProvider, _Span
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace.export import (
@@ -79,7 +80,10 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         **kwargs: Any,
     ) -> SimpleSpan:
         span = super().new_span(id_, bound_args, instance, parent_span_id, tags, **kwargs)
-        ctx = context.Context(bound_args.arguments)
+        if parent_span_id is not None:
+            ctx = set_span_in_context(span=self.all_spans[parent_span_id])
+        else:
+            ctx = context.Context(bound_args.arguments)
         otel_span = self._tracer.start_span(name=id_, context=ctx)
         self.all_spans.update({id_: otel_span})
         if self.debug:
@@ -98,14 +102,11 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
             cprint(f"Preparing to end span {id_} at time: {datetime.now()}", color="blue", attrs=["bold"])
         sp = super().prepare_to_exit_span(id_, bound_args, instance, result, **kwargs)
         span = self.all_spans[id_]
-        if len(self.all_events) > 0:
-            for event in self.all_events:
-                span.add_event(name=event.name, attributes=event.attributes)
-            self.all_events.clear()
-            span.set_status(status=trace.StatusCode.OK)
-            span.end()
-        else:
-            cprint(f"Span {id_} is an empty span, thus it will not be exported", color="red", attrs=["bold"])
+        for event in self.all_events:
+            span.add_event(name=event.name, attributes=event.attributes)
+        self.all_events.clear()
+        span.set_status(status=trace.StatusCode.OK)
+        span.end()
         return sp
 
     def prepare_to_drop_span(
@@ -161,7 +162,6 @@ class LlamaIndexOpenTelemetry(BaseModel):
         span_exporter (Optional[SpanExporter]): The OpenTelemetry span exporter. Defaults to ConsoleSpanExporter.
         span_processor (Literal["simple", "batch"]): The span processor type, either 'simple' or 'batch'. Defaults to 'batch'.
         service_name_or_resource (Union[str, Resource]): The service name or OpenTelemetry Resource. Defaults to a Resource with service name 'llamaindex.opentelemetry'.
-        dispatcher_name (str): The name for the LlamaIndex dispatcher. Defaults to 'root'.
 
     """
 
@@ -177,10 +177,6 @@ class LlamaIndexOpenTelemetry(BaseModel):
     service_name_or_resource: Union[str, Resource] = Field(
         default=Resource(attributes={SERVICE_NAME: "llamaindex.opentelemetry"}),
         description="Service name or resource for OpenTelemetry. Defaults to a Resource with 'llamaindex.opentelemetry' as service name."
-    )
-    dispatcher_name: str = Field(
-        default="root",
-        description="Name for LlamaIndex dispatcher. Defaults to 'root'"
     )
     debug: bool = Field(
         default=False,
@@ -209,7 +205,7 @@ class LlamaIndexOpenTelemetry(BaseModel):
     ) -> None:
         """Starts LlamaIndex instrumentation."""
         self._start_otel()
-        dispatcher = instrument.get_dispatcher(self.dispatcher_name)
+        dispatcher = instrument.get_dispatcher()
         span_handler = OTelCompatibleSpanHandler(tracer=self._tracer, debug=self.debug)
         dispatcher.add_span_handler(span_handler)
         dispatcher.add_event_handler(OTelCompatibleEventHandler(span_handler=span_handler, debug=self.debug))

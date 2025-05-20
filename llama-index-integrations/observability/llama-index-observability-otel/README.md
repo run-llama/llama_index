@@ -56,7 +56,6 @@ instrumentor = LlamaIndexOpenTelemetry(
     service_name_or_resource="my.test.service.1",
     span_exporter=span_exporter,
     debug=True,
-    dispatcher_name="my.dispatcher.name",
 )
 
 if __name__ == "__main__":
