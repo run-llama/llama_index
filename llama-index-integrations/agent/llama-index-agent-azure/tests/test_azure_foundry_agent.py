@@ -1,19 +1,20 @@
-from unittest.mock import AsyncMock, MagicMock, patch
-from pathlib import Path # Added import
-import pytest # Added import
+import pytest
 import tempfile
 import json
+from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import AsyncMock, MagicMock, patch
 
-from llama_index.agent.azure_foundry_agent.base import AzureFoundryAgent
-from azure.ai.projects import AIProjectClient
-from azure.ai.agents.models import Agent as AzureAgent, AgentThread
-from llama_index.core.base.llms.types import ChatMessage, TextBlock, ImageBlock
 from azure.ai.agents.models import (
     MessageInputTextBlock,
     MessageInputImageFileBlock,
     MessageInputImageUrlBlock,
 )
+from azure.ai.projects import AIProjectClient
+from azure.ai.agents.models import Agent as AzureAgent, AgentThread
+
+from llama_index.agent.azure_foundry_agent.base import AzureFoundryAgent
+from llama_index.core.base.llms.types import ChatMessage, TextBlock, ImageBlock
 from llama_index.core.agent.workflow.multi_agent_workflow import AgentWorkflow
 from llama_index.core.memory import ChatMemoryBuffer
 
@@ -29,6 +30,7 @@ class DummyAsyncIterator:
             return next(self._iter)
         except StopIteration:
             raise StopAsyncIteration
+
 
 def test_azure_foundry_agent_constructor():
     """Test the constructor of AzureFoundryAgent."""

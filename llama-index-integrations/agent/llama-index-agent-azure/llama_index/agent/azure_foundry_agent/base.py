@@ -16,7 +16,7 @@ from azure.identity.aio import DefaultAzureCredential
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 from llama_index.core.agent.workflow.single_agent_workflow import SingleAgentRunnerMixin
 from llama_index.core.agent.workflow.workflow_events import AgentOutput, ToolCallResult
-from llama_index.core.llms import ChatMessage
+from llama_index.core.llms import ChatMessage, MockLLM
 from llama_index.core.memory import BaseMemory
 from llama_index.core.tools import AsyncBaseTool, ToolSelection
 from llama_index.core.workflow import Context
@@ -43,7 +43,7 @@ class AzureFoundryAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
         verbose: bool = False,
         **kwargs,
     ):
-        super().__init__(name=name, **kwargs)
+        super().__init__(name=name, llm=MockLLM(), **kwargs)
         self._endpoint = endpoint
         self._model = model
         self._instructions = instructions
