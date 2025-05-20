@@ -6,7 +6,6 @@ def test_initialization() -> None:
     assert instrumentor.service_name_or_resource == Resource(attributes={SERVICE_NAME: "llamaindex.opentelemetry"})
     assert isinstance(instrumentor.span_exporter, ConsoleSpanExporter)
     assert instrumentor.span_processor == "batch"
-    assert instrumentor.dispatcher_name == "root"
     assert instrumentor._tracer is None
     assert not instrumentor.debug
 
@@ -15,11 +14,9 @@ def test_diff_initialization() -> None:
         service_name_or_resource="this.is.a.test",
         span_processor="simple",
         debug = True,
-        dispatcher_name="my.dispatcher",
     )
     assert instrumentor.service_name_or_resource == "this.is.a.test"
     assert isinstance(instrumentor.span_exporter, ConsoleSpanExporter)
     assert instrumentor.span_processor == "simple"
-    assert instrumentor.dispatcher_name == "my.dispatcher"
     assert instrumentor._tracer is None
     assert instrumentor.debug
