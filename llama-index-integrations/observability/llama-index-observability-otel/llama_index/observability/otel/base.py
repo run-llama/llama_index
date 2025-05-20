@@ -1,14 +1,5 @@
 import inspect
-from termcolor.termcolor import cprint
-from llama_index.core.instrumentation.event_handlers import BaseEventHandler
-from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict, PrivateAttr
 from datetime import datetime
-from llama_index.core.instrumentation.events import BaseEvent
-from llama_index.core.instrumentation.span_handlers.simple import SimpleSpanHandler
-import llama_index.core.instrumentation as instrument
-from llama_index.core.instrumentation.span import SimpleSpan, active_span_id
-from typing import Optional, Any, List, Dict, Union, Sequence, Literal, Mapping
-from llama_index.observability.otel.utils import filter_model_fields
 from opentelemetry import trace, context
 from opentelemetry.trace import set_span_in_context
 from opentelemetry.sdk.trace import TracerProvider, _Span
@@ -19,7 +10,16 @@ from opentelemetry.sdk.trace.export import (
     SpanExporter,
     ConsoleSpanExporter
 )
+from termcolor.termcolor import cprint
+from typing import Optional, Any, List, Dict, Union, Sequence, Literal, Mapping
 
+import llama_index.core.instrumentation as instrument
+from llama_index.core.instrumentation.event_handlers import BaseEventHandler
+from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict, PrivateAttr
+from llama_index.core.instrumentation.events import BaseEvent
+from llama_index.core.instrumentation.span_handlers.simple import SimpleSpanHandler
+from llama_index.core.instrumentation.span import SimpleSpan, active_span_id
+from llama_index.observability.otel.utils import filter_model_fields
 
 
 class OTelEventAttributes(BaseModel):
