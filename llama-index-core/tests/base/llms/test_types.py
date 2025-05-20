@@ -66,9 +66,9 @@ def test_chat_message_content_legacy_get():
     assert m.blocks[0].text == "test content"
 
     m = ChatMessage(
-        content=[TextBlock(text="test content 1 "), TextBlock(text="test content 2")]
+        content=[TextBlock(text="test content 1"), TextBlock(text="test content 2")]
     )
-    assert m.content == "test content 1 test content 2"
+    assert m.content == "test content 1\ntest content 2"
     assert len(m.blocks) == 2
     assert all(type(block) is TextBlock for block in m.blocks)
 
