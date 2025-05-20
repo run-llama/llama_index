@@ -98,11 +98,14 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
             cprint(f"Preparing to end span {id_} at time: {datetime.now()}", color="blue", attrs=["bold"])
         sp = super().prepare_to_exit_span(id_, bound_args, instance, result, **kwargs)
         span = self.all_spans[id_]
-        for event in self.all_events:
-            span.add_event(name=event.name, attributes=event.attributes)
-        self.all_events.clear()
-        span.set_status(status=trace.StatusCode.OK)
-        span.end()
+        if len(self.all_events) > 0:
+            for event in self.all_events:
+                span.add_event(name=event.name, attributes=event.attributes)
+            self.all_events.clear()
+            span.set_status(status=trace.StatusCode.OK)
+            span.end()
+        else:
+            cprint(f"Span {id_} is an empty span, thus it will not be exported", color="red", attrs=["bold"])
         return sp
 
     def prepare_to_drop_span(

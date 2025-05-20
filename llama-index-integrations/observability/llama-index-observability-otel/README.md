@@ -53,7 +53,7 @@ span_exporter = OTLPSpanExporter("http://0.0.0.0:4318/v1/traces")
 
 # initialize the instrumentation object
 instrumentor = LlamaIndexOpenTelemetry(
-    service_name="my.test.service.1",
+    service_name_or_resource="my.test.service.1",
     span_exporter=span_exporter,
     debug=True,
     dispatcher_name="my.dispatcher.name",
