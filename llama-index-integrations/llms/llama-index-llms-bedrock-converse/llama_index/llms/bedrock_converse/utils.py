@@ -188,6 +188,8 @@ def _content_block_to_bedrock_format(
         else:
             data = base64.b64decode(block.data)
         title = block.title
+        # NOTE: At the time of writing, "txt" format works for all file types
+        # The API then infers the format from the file type based on the bytes
         return {
             "document": {"format": "txt", "name": title, "source": {"bytes": data}}
         }
