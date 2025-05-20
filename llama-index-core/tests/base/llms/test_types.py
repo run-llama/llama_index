@@ -2,8 +2,9 @@ import base64
 from io import BytesIO
 from pathlib import Path
 from unittest import mock
-
 import pytest
+import httpx
+
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -11,6 +12,7 @@ from llama_index.core.base.llms.types import (
     ImageBlock,
     MessageRole,
     TextBlock,
+    DocumentBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.schema import ImageDocument
@@ -26,6 +28,20 @@ def png_1px_b64() -> bytes:
 def png_1px(png_1px_b64) -> bytes:
     return base64.b64decode(png_1px_b64)
 
+@pytest.fixture()
+def pdf_url() -> str:
+    return "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+
+@pytest.fixture()
+def mock_pdf_bytes(pdf_url) -> bytes:
+    """
+    Returns a byte string representing a very simple, minimal PDF file.
+    """
+    return httpx.get(pdf_url).content
+
+@pytest.fixture()
+def pdf_base64(mock_pdf_bytes) -> bytes:
+    return base64.b64encode(mock_pdf_bytes)
 
 def test_chat_message_from_str():
     m = ChatMessage.from_str(content="test content")
@@ -50,9 +66,9 @@ def test_chat_message_content_legacy_get():
     assert m.blocks[0].text == "test content"
 
     m = ChatMessage(
-        content=[TextBlock(text="test content 1 "), TextBlock(text="test content 2")]
+        content=[TextBlock(text="test content 1"), TextBlock(text="test content 2")]
     )
-    assert m.content == "test content 1 test content 2"
+    assert m.content == "test content 1\ntest content 2"
     assert len(m.blocks) == 2
     assert all(type(block) is TextBlock for block in m.blocks)
 
@@ -197,3 +213,68 @@ def test_chat_response():
 def test_completion_response():
     cr = CompletionResponse(text="some text")
     assert str(cr) == "some text"
+
+
+def test_document_block_from_bytes(mock_pdf_bytes: bytes, pdf_base64: bytes):
+    document = DocumentBlock(data=mock_pdf_bytes, document_mimetype="application/pdf")
+    assert document.title == "input_document"
+    assert document.document_mimetype == "application/pdf"
+    assert pdf_base64 == document.data
+
+def test_document_block_from_b64(pdf_base64: bytes):
+    document = DocumentBlock(data=pdf_base64)
+    assert document.title == "input_document"
+    assert pdf_base64 == document.data
+
+def test_document_block_from_path(tmp_path: Path, pdf_url: str):
+    pdf_path = tmp_path / "test.pdf"
+    pdf_content = httpx.get(pdf_url).content
+    pdf_path.write_bytes(pdf_content)
+    document = DocumentBlock(path=pdf_path.__str__())
+    file_buffer = document.resolve_document()
+    assert isinstance(file_buffer, BytesIO)
+    file_bytes = file_buffer.read()
+    document._guess_mimetype()
+    assert document.document_mimetype == "application/pdf"
+    fm = document.guess_format()
+    assert fm == "pdf"
+    b64_string = document._get_b64_string(file_buffer)
+    try:
+        base64.b64decode(b64_string, validate=True)
+        string_base64_encoded = True
+    except Exception:
+        string_base64_encoded = False
+    assert string_base64_encoded
+    b64_bytes = document._get_b64_bytes(file_buffer)
+    try:
+        base64.b64decode(b64_bytes, validate=True)
+        bytes_base64_encoded = True
+    except Exception:
+        bytes_base64_encoded = False
+    assert bytes_base64_encoded
+    assert document.title == "input_document"
+
+def test_document_block_from_url(pdf_url: str):
+    document = DocumentBlock(url=pdf_url, title="dummy_pdf")
+    file_buffer = document.resolve_document()
+    assert isinstance(file_buffer, BytesIO)
+    file_bytes = file_buffer.read()
+    document._guess_mimetype()
+    assert document.document_mimetype == "application/pdf"
+    fm = document.guess_format()
+    assert fm == "pdf"
+    b64_string = document._get_b64_string(file_buffer)
+    try:
+        base64.b64decode(b64_string, validate=True)
+        string_base64_encoded = True
+    except Exception as e:
+        string_base64_encoded = False
+    assert string_base64_encoded
+    b64_bytes = document._get_b64_bytes(file_buffer)
+    try:
+        base64.b64decode(b64_bytes, validate=True)
+        bytes_base64_encoded = True
+    except Exception:
+        bytes_base64_encoded = False
+    assert bytes_base64_encoded
+    assert document.title == "dummy_pdf"

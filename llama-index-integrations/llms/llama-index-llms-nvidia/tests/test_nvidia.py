@@ -17,7 +17,7 @@ from openai.types.completion import Completion, CompletionUsage
 from pytest_httpx import HTTPXMock
 from llama_index.llms.nvidia.utils import MODEL_TABLE
 
-NVIDIA_FUNTION_CALLING_MODELS = {
+NVIDIA_FUNCTION_CALLING_MODELS = {
     model.id if model.supports_tools else None for model in MODEL_TABLE.values()
 }
 COMPLETION_MODELS = {model.id if model else None for model in MODEL_TABLE.values()}
@@ -309,7 +309,7 @@ def test_model_compatible_client_default_model(MockSyncOpenAI: MagicMock) -> Non
 @pytest.mark.parametrize(
     "model",
     (
-        next(iter(NVIDIA_FUNTION_CALLING_MODELS)),
+        next(iter(NVIDIA_FUNCTION_CALLING_MODELS)),
         next(iter(MODEL_TABLE.keys())),
         next(iter(COMPLETION_MODELS)),
     ),

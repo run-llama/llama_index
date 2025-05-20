@@ -1,4 +1,4 @@
-from llama_index.vector_stores.couchbase.base import CouchbaseVectorStore
+from llama_index.vector_stores.couchbase.base import CouchbaseVectorStore, CouchbaseSearchVectorStore
 
 
-__all__ = ["CouchbaseVectorStore"]
+__all__ = ["CouchbaseVectorStore", "CouchbaseSearchVectorStore"]

@@ -1,8 +1,10 @@
 import os
+import httpx
 import pytest
 from unittest.mock import MagicMock, patch
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole, TextBlock
+from pathlib import Path
+from llama_index.core.base.llms.types import ChatMessage, MessageRole, TextBlock, DocumentBlock, ChatResponse
 from llama_index.llms.openai.responses import OpenAIResponses, ResponseFunctionToolCall
 from llama_index.core.tools import FunctionTool
 from llama_index.core.prompts import PromptTemplate
@@ -384,3 +386,18 @@ def test_chat_with_built_in_tools():
 
     # Should contain built-in tool calls in the response
     assert "built_in_tool_calls" in response.additional_kwargs
+
+@pytest.fixture()
+def pdf_url() -> str:
+    return "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+
+@pytest.mark.skipif(SKIP_OPENAI_TESTS, reason="OpenAI API key not available")
+def test_document_upload(tmp_path: Path, pdf_url: str) -> None:
+    llm = OpenAIResponses(model="gpt-4.1")
+    pdf_path = tmp_path / "test.pdf"
+    pdf_content = httpx.get(pdf_url).content
+    pdf_path.write_bytes(pdf_content)
+    msg = ChatMessage(role=MessageRole.USER, blocks=[DocumentBlock(path=pdf_path), TextBlock(text="What does the document contain?")])
+    messages = [msg]
+    response = llm.chat(messages)
+    assert isinstance(response, ChatResponse)

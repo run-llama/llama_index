@@ -28,6 +28,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     AudioBlock,
+    DocumentBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 
@@ -419,6 +420,14 @@ def to_openai_responses_message_dict(
         if isinstance(block, TextBlock):
             content.append({"type": "input_text", "text": block.text})
             content_txt += block.text
+        elif isinstance(block, DocumentBlock):
+            if not block.data:
+                file_buffer = block.resolve_document()
+                b64_string = block._get_b64_string(file_buffer)
+                mimetype = block._guess_mimetype()
+            else:
+                b64_string = block.data.decode("utf-8")
+            content.append({"type": "input_file", "filename": block.title, "file_data": f"data:{mimetype};base64,{b64_string}"})
         elif isinstance(block, ImageBlock):
             if block.url:
                 content.append(
@@ -752,7 +761,7 @@ def update_tool_calls(
         List[ChoiceDeltaToolCall]: the updated tool calls
     """
     # openai provides chunks consisting of tool_call deltas one tool at a time
-    if tool_calls_delta is None:
+    if tool_calls_delta is None or len(tool_calls_delta) == 0:
         return tool_calls
 
     tc_delta = tool_calls_delta[0]

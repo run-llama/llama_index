@@ -17,6 +17,7 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     ContentBlock,
     AudioBlock,
+    DocumentBlock,
 )
 
 
@@ -122,7 +123,7 @@ def get_model_name(model_name: str) -> str:
     REGION_PREFIXES = ["us.", "eu.", "apac."]
 
     # If no region prefix, return the original model name
-    if not any(model_name.startswith(prefix) for prefix in REGION_PREFIXES):
+    if not any(prefix in model_name for prefix in REGION_PREFIXES):
         return model_name
 
     # Remove region prefix to get the base model name
@@ -177,6 +178,18 @@ def _content_block_to_bedrock_format(
     if isinstance(block, TextBlock):
         return {
             "text": block.text,
+        }
+    elif isinstance(block, DocumentBlock):
+        if not block.data:
+            file_buffer = block.resolve_document()
+            data = block._get_b64_bytes(file_buffer)
+        else:
+            data = block.data
+
+        format = block.guess_format() or "pdf"
+        title = block.title
+        return {
+            "document": {"format": format, "name": title, "source": {"bytes": data}}
         }
     elif isinstance(block, ImageBlock):
         if role != MessageRole.USER:
@@ -450,6 +463,7 @@ async def converse_with_retry_async(
     guardrail_identifier: Optional[str] = None,
     guardrail_version: Optional[str] = None,
     trace: Optional[str] = None,
+    boto_client_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
@@ -480,6 +494,9 @@ async def converse_with_retry_async(
             if k not in ["tools", "guardrail_identifier", "guardrail_version", "trace"]
         },
     )
+    _boto_client_kwargs = {}
+    if boto_client_kwargs is not None:
+        _boto_client_kwargs |= boto_client_kwargs
 
     ## NOTE: Returning the generator directly from converse_stream doesn't work
     # So, we have to use two separate functions for streaming and non-streaming
@@ -488,12 +505,20 @@ async def converse_with_retry_async(
 
     @retry_decorator
     async def _conversion_with_retry(**kwargs: Any) -> Any:
-        async with session.client("bedrock-runtime", config=config) as client:
+        async with session.client(
+            "bedrock-runtime",
+            config=config,
+            **_boto_client_kwargs,
+        ) as client:
             return await client.converse(**kwargs)
 
     @retry_decorator
     async def _conversion_stream_with_retry(**kwargs: Any) -> Any:
-        async with session.client("bedrock-runtime", config=config) as client:
+        async with session.client(
+            "bedrock-runtime",
+            config=config,
+            **_boto_client_kwargs,
+        ) as client:
             response = await client.converse_stream(**kwargs)
             async for event in response["stream"]:
                 yield event
@@ -516,6 +541,9 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
         Joined dictionary
 
     """
+    # These keys should be replaced rather than concatenated
+    REPLACE_KEYS = {"toolUseId", "name", "input"}
+
     new_dict = dict1.copy()
     for key, value in dict2.items():
         if key not in new_dict:
@@ -523,6 +551,9 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
         else:
             if isinstance(value, dict):
                 new_dict[key] = join_two_dicts(new_dict[key], value)
+            elif key in REPLACE_KEYS:
+                # Replace instead of concatenate for special keys
+                new_dict[key] = value
             else:
                 new_dict[key] += value
     return new_dict
