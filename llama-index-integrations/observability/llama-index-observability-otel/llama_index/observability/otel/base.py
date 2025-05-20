@@ -6,7 +6,7 @@ from datetime import datetime
 from llama_index.core.instrumentation.events import BaseEvent
 from llama_index.core.instrumentation.span_handlers.simple import SimpleSpanHandler
 import llama_index.core.instrumentation as instrument
-from llama_index.core.instrumentation.span import SimpleSpan
+from llama_index.core.instrumentation.span import SimpleSpan, active_span_id
 from typing import Optional, Any, List, Dict, Union, Sequence, Literal, Mapping
 from llama_index.observability.otel.utils import filter_model_fields
 from opentelemetry import trace, context
@@ -21,6 +21,7 @@ from opentelemetry.sdk.trace.export import (
 )
 
 
+
 class OTelEventAttributes(BaseModel):
     name: str
     attributes: Optional[Mapping[str, Union[str, bool, int, float, Sequence[str], Sequence[bool], Sequence[int], Sequence[float]]]]
@@ -30,13 +31,12 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
     """OpenTelemetry-compatible span handler."""
 
     _tracer: trace.Tracer = PrivateAttr()
+    _events_by_span: Dict[str, List[OTelEventAttributes]] = PrivateAttr(
+        default_factory=dict,
+    )
     all_spans: Dict[str, Union[trace.Span, _Span]] = Field(
         default_factory=dict,
         description="All the registered OpenTelemetry spans."
-    )
-    all_events: List[OTelEventAttributes] = Field(
-        default_factory=list,
-        description="All the registered OpenTelemetry events."
     )
     debug: bool = Field(
         default=False,
@@ -46,23 +46,20 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
     def __init__(
         self,
         tracer: trace.Tracer,
-        all_spans: Dict[str, Union[trace.Span, _Span]] = {},
-        all_events: List[OTelEventAttributes] = [],
         debug: bool = False,
-        open_spans: Dict[str, SimpleSpan] = {},
-        completed_spans: List[SimpleSpan] = [],
-        dropped_spans: List[SimpleSpan] = [],
-        current_span_ids: Dict[Any, str] = {},
+        open_spans: Optional[Dict[str, SimpleSpan]] = None,
+        completed_spans: Optional[List[SimpleSpan]] = None,
+        dropped_spans: Optional[List[SimpleSpan]] = None,
+        current_span_ids: Optional[Dict[Any, str]] = None,
     ):
         super().__init__(
-            open_spans=open_spans,
-            completed_spans=completed_spans,
-            dropped_spans=dropped_spans,
-            current_span_ids=current_span_ids,
+            open_spans=open_spans or {},
+            completed_spans=completed_spans or [],
+            dropped_spans=dropped_spans or [],
+            current_span_ids=current_span_ids or {},
         )
         self._tracer = tracer
-        self.all_spans = all_spans
-        self.all_events = all_events
+        self._events_by_span = {}
         self.debug = debug
 
     @classmethod
@@ -101,10 +98,13 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         if self.debug:
             cprint(f"Preparing to end span {id_} at time: {datetime.now()}", color="blue", attrs=["bold"])
         sp = super().prepare_to_exit_span(id_, bound_args, instance, result, **kwargs)
-        span = self.all_spans[id_]
-        for event in self.all_events:
+        span = self.all_spans.pop(id_)
+
+        # Get and process events specific to this span
+        events = self._events_by_span.pop(id_, [])
+        for event in events:
             span.add_event(name=event.name, attributes=event.attributes)
-        self.all_events.clear()
+
         span.set_status(status=trace.StatusCode.OK)
         span.end()
         return sp
@@ -120,10 +120,13 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         if self.debug:
             cprint(f"Preparing to exit span {id_} with an error at time: {datetime.now()}", color="red", attrs=["bold"])
         sp = super().prepare_to_drop_span(id_, bound_args, instance, err, **kwargs)
-        span = self.all_spans[id_]
-        for event in self.all_events:
+        span = self.all_spans.pop(id_)
+
+        # Get and process events specific to this span
+        events = self._events_by_span.pop(id_, [])
+        for event in events:
             span.add_event(name=event.name, attributes=event.attributes)
-        self.all_events.clear()
+
         span.set_status(status=trace.StatusCode.ERROR, description=err.__str__())
         span.end()
         return sp
@@ -145,11 +148,27 @@ class OTelCompatibleEventHandler(BaseEventHandler):
         return "OtelCompatibleEventHandler"
 
     def handle(self, event: BaseEvent, **kwargs: Any) -> None:
-        """Handle events by pushing them in a list that will serve for forwarding the events to OpenTelemetry."""
+        """Handle events by pushing them to the correct span's bucket for later attachment to OpenTelemetry."""
         if self.debug:
             cprint(f"Registering a {event.class_name()} event at time: {datetime.now()}", color="green", attrs=["bold"])
-        otel_event = OTelEventAttributes(name=event.class_name(), attributes=filter_model_fields(event.dict()))
-        self.span_handler.all_events.append(otel_event)
+
+        # Get the current span id from the contextvars context
+        current_span_id = active_span_id.get()
+        if current_span_id is None:
+            # The event is happening outside of any span - nothing to do
+            return
+
+        try:
+            event_data = event.model_dump()
+        except TypeError:
+            # Some events can be unserializable,
+            # so we just convert to a string as a fallback
+            event_data = {"event_data": str(event)}
+
+        otel_event = OTelEventAttributes(name=event.class_name(), attributes=filter_model_fields(event_data))
+
+        self.span_handler._events_by_span.setdefault(current_span_id, []).append(otel_event)
+
 
 class LlamaIndexOpenTelemetry(BaseModel):
     """
