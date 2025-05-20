@@ -573,7 +573,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
             )
         # TODO: see if we want to do step-based inputs
         tools = self.get_tools(task.input)
-        openai_tools = [tool.metadata.to_openai_tool() for tool in tools]
+        openai_tools = [tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools]
 
         llm_chat_kwargs = self._get_llm_chat_kwargs(task, openai_tools, tool_choice)
         agent_chat_response = self._get_agent_response(
@@ -665,7 +665,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
             )
 
         tools = self.get_tools(task.input)
-        openai_tools = [tool.metadata.to_openai_tool() for tool in tools]
+        openai_tools = [tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools]
 
         llm_chat_kwargs = self._get_llm_chat_kwargs(task, openai_tools, tool_choice)
         agent_chat_response = await self._get_async_agent_response(
