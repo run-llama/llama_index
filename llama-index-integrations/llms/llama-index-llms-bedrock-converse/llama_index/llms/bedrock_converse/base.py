@@ -708,13 +708,13 @@ class BedrockConverse(FunctionCallingLLM):
 
             # handle empty inputs
             argument_dict = {}
-            if tool_call.get("input", False) and isinstance(tool_call["input"], str):
+            if "input" in tool_call and isinstance(tool_call["input"], str):
                 # TODO parse_partial_json is not perfect
                 try:
                     argument_dict = parse_partial_json(tool_call["input"])
                 except ValueError:
                     argument_dict = {}
-            elif tool_call.get("input", False) and isinstance(tool_call["input"], dict):
+            elif "input" in tool_call and isinstance(tool_call["input"], dict):
                 argument_dict = tool_call["input"]
             else:
                 continue
