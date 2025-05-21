@@ -1,11 +1,17 @@
+import pytest
+from importlib.util import find_spec
 from llama_index.core.storage.kvstore.types import BaseKVStore
 from llama_index.storage.kvstore.postgres import PostgresKVStore
 
+no_packages = find_spec("psycopg2") is not None and find_spec("sqlalchemy") is not None and find_spec("asyncpg") is not None
 
 def test_class():
     names_of_base_classes = [b.__name__ for b in PostgresKVStore.__mro__]
     assert BaseKVStore.__name__ in names_of_base_classes
 
+@pytest.mark.skipif(
+    no_packages, reason="asyncpg, pscopg2-binary and sqlalchemy not installed"
+)
 def test_initialization():
     errors = []
     try:

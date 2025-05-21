@@ -1,18 +1,10 @@
-from typing import Dict, Generator, Union
-
 import pytest
+from importlib.util import find_spec
+from typing import Dict, Generator, Union
 from docker.models.containers import Container
 from llama_index.storage.kvstore.postgres import PostgresKVStore
 
-try:
-    import asyncpg  # noqa
-    import psycopg2  # noqa
-    import sqlalchemy  # noqa
-
-    no_packages = False
-except ImportError:
-    no_packages = True
-
+no_packages = find_spec("psycopg2") is not None and find_spec("sqlalchemy") is not None and find_spec("asyncpg") is not None
 
 @pytest.fixture()
 def postgres_kvstore(
@@ -36,7 +28,7 @@ def postgres_kvstore(
 
 
 @pytest.mark.skipif(
-    no_packages, reason="ayncpg, pscopg2-binary and sqlalchemy not installed"
+    no_packages, reason="asyncpg, pscopg2-binary and sqlalchemy not installed"
 )
 def test_kvstore_basic(postgres_kvstore: PostgresKVStore) -> None:
     test_key = "test_key_basic"
@@ -53,7 +45,7 @@ def test_kvstore_basic(postgres_kvstore: PostgresKVStore) -> None:
 
 
 @pytest.mark.skipif(
-    no_packages, reason="ayncpg, pscopg2-binary and sqlalchemy not installed"
+    no_packages, reason="asyncpg, pscopg2-binary and sqlalchemy not installed"
 )
 def test_from_uri(postgres_container: Dict[str, Union[str, Container]]) -> None:
     kvstore = PostgresKVStore.from_uri(uri=postgres_container["connection_string"])
@@ -62,7 +54,7 @@ def test_from_uri(postgres_container: Dict[str, Union[str, Container]]) -> None:
 
 
 @pytest.mark.skipif(
-    no_packages, reason="ayncpg, pscopg2-binary and sqlalchemy not installed"
+    no_packages, reason="asyncpg, pscopg2-binary and sqlalchemy not installed"
 )
 @pytest.mark.asyncio
 async def test_kvstore_async_basic(postgres_kvstore: PostgresKVStore) -> None:
@@ -80,7 +72,7 @@ async def test_kvstore_async_basic(postgres_kvstore: PostgresKVStore) -> None:
 
 
 @pytest.mark.skipif(
-    no_packages, reason="ayncpg, pscopg2-binary and sqlalchemy not installed"
+    no_packages, reason="asyncpg, pscopg2-binary and sqlalchemy not installed"
 )
 def test_kvstore_delete(postgres_kvstore: PostgresKVStore) -> None:
     test_key = "test_key_delete"
@@ -95,7 +87,7 @@ def test_kvstore_delete(postgres_kvstore: PostgresKVStore) -> None:
 
 
 @pytest.mark.skipif(
-    no_packages, reason="ayncpg, pscopg2-binary and sqlalchemy not installed"
+    no_packages, reason="asyncpg, pscopg2-binary and sqlalchemy not installed"
 )
 @pytest.mark.asyncio
 async def test_kvstore_adelete(postgres_kvstore: PostgresKVStore) -> None:
@@ -111,7 +103,7 @@ async def test_kvstore_adelete(postgres_kvstore: PostgresKVStore) -> None:
 
 
 @pytest.mark.skipif(
-    no_packages, reason="ayncpg, pscopg2-binary and sqlalchemy not installed"
+    no_packages, reason="asyncpg, pscopg2-binary and sqlalchemy not installed"
 )
 def test_kvstore_getall(postgres_kvstore: PostgresKVStore) -> None:
     test_key_1 = "test_key_1"
@@ -133,7 +125,7 @@ def test_kvstore_getall(postgres_kvstore: PostgresKVStore) -> None:
 
 
 @pytest.mark.skipif(
-    no_packages, reason="ayncpg, pscopg2-binary and sqlalchemy not installed"
+    no_packages, reason="asyncpg, pscopg2-binary and sqlalchemy not installed"
 )
 @pytest.mark.asyncio
 async def test_kvstore_agetall(postgres_kvstore: PostgresKVStore) -> None:
@@ -156,7 +148,7 @@ async def test_kvstore_agetall(postgres_kvstore: PostgresKVStore) -> None:
 
 
 @pytest.mark.skipif(
-    no_packages, reason="ayncpg, pscopg2-binary and sqlalchemy not installed"
+    no_packages, reason="asyncpg, pscopg2-binary and sqlalchemy not installed"
 )
 @pytest.mark.asyncio
 async def test_kvstore_putall(postgres_kvstore: PostgresKVStore) -> None:
