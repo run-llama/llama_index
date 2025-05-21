@@ -239,7 +239,7 @@ class LLMChatEndEvent(BaseEvent):
         return "LLMChatEndEvent"
 
     def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
-        if isinstance(self.response.raw, BaseModel):
+        if self.response is not None and isinstance(self.response.raw, BaseModel):
             self.response.raw = self.response.raw.model_dump()
 
         return super().model_dump(**kwargs)
