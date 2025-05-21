@@ -12,7 +12,7 @@ from sklearn.mixture import GaussianMixture
 from typing import Dict, List, Optional
 
 from llama_index.core.schema import BaseNode
-
+import llama_index.core as core
 
 # Set a random seed for reproducibility
 RANDOM_SEED = 224
@@ -120,7 +120,7 @@ def get_clusters(
     nodes: List[BaseNode],
     embedding_map: Dict[str, List[List[float]]],
     max_length_in_cluster: int = 10000,  # 10k tokens max per cluster
-    tokenizer: tiktoken.Encoding = tiktoken.get_encoding("cl100k_base"),
+    tokenizer: tiktoken.Encoding = core.global_tokinizer,
     reduction_dimension: int = 10,
     threshold: float = 0.1,
     prev_total_length=None,  # to keep track of the total length of the previous clusters
