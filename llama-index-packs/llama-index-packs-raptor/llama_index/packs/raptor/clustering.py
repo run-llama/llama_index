@@ -120,7 +120,7 @@ def get_clusters(
     nodes: List[BaseNode],
     embedding_map: Dict[str, List[List[float]]],
     max_length_in_cluster: int = 10000,  # 10k tokens max per cluster
-    tokenizer: tiktoken.Encoding = core.global_tokenizer, # use tokenizer from llama_index 
+    tokenizer: tiktoken.Encoding = core.global_tokenizer, # use tokenizer from llama_index
     reduction_dimension: int = 10,
     threshold: float = 0.1,
     prev_total_length=None,  # to keep track of the total length of the previous clusters
