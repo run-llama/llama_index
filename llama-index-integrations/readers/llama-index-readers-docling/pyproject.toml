@@ -22,11 +22,13 @@ dev = [
     "types-redis==4.5.5.0",
     "types-requests==2.28.11.8",
     "types-setuptools==67.1.0.0",
+    # Sometimes needed for tests to work currently
+    "numpy<2.0",
 ]
 
 [project]
 name = "llama-index-readers-docling"
-version = "0.3.2"
+version = "0.3.3"
 description = "llama-index readers docling integration"
 authors = [{name = "Panos Vagenas", email = "pva@zurich.ibm.com"}]
 requires-python = ">=3.10,<3.13"
