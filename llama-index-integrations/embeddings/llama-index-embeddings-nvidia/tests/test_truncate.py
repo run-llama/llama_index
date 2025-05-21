@@ -6,14 +6,21 @@ import httpx
 import json
 
 
+@pytest.fixture(autouse=True)
+def mock_respx():
+    """Fixture that automatically mocks all HTTP requests for every test."""
+    with respx.mock(assert_all_called=False, assert_all_mocked=False) as respx_mock:
+        yield respx_mock
+
+
 @pytest.fixture()
-def mocked_route() -> respx.Route:
+def mocked_route(mock_respx):
+    """Creates a mocked route that returns a fake embedding response."""
     all_urls = re.compile(r".*/embeddings")
     fake_response = httpx.Response(
         200, json={"data": [{"index": 0, "embedding": [1.0, 2.0, 3.0]}]}
     )
-    with respx.mock:
-        yield respx.post(all_urls).mock(return_value=fake_response)
+    return mock_respx.post(all_urls).mock(return_value=fake_response)
 
 
 @pytest.mark.parametrize("method_name", ["get_query_embedding", "get_text_embedding"])
