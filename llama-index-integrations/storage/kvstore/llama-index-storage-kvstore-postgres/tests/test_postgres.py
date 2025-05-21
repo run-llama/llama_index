@@ -1,10 +1,55 @@
+import docker
 import pytest
+import time
+from docker.models.containers import Container
 from importlib.util import find_spec
 from typing import Dict, Generator, Union
-from docker.models.containers import Container
+
 from llama_index.storage.kvstore.postgres import PostgresKVStore
 
-no_packages = find_spec("psycopg2") is not None and find_spec("sqlalchemy") is not None and find_spec("asyncpg") is not None
+no_packages = find_spec("psycopg2") is None or find_spec("sqlalchemy") is None or find_spec("asyncpg") is None
+
+@pytest.fixture()
+def postgres_container() -> Generator[Dict[str, Union[str, Container]], None, None]:
+    # Define PostgreSQL settings
+    postgres_image = "postgres:latest"
+    postgres_env = {
+        "POSTGRES_DB": "testdb",
+        "POSTGRES_USER": "testuser",
+        "POSTGRES_PASSWORD": "testpassword",
+    }
+    postgres_ports = {"5432/tcp": 5432}
+    container = None
+    try:
+        # Initialize Docker client
+        client = docker.from_env()
+
+        # Run PostgreSQL container
+        container = client.containers.run(
+            postgres_image, environment=postgres_env, ports=postgres_ports, detach=True
+        )
+
+        # Retrieve the container's port
+        container.reload()
+        postgres_port = container.attrs["NetworkSettings"]["Ports"]["5432/tcp"][0][
+            "HostPort"
+        ]
+
+        # Wait for PostgreSQL to start
+        time.sleep(10)  # Adjust the sleep time if necessary
+
+        # Return connection information
+        yield {
+            "container": container,
+            "connection_string": f"postgresql://testuser:testpassword@0.0.0.0:5432/testdb",
+            "async_connection_string": f"postgresql+asyncpg://testuser:testpassword@0.0.0.0:5432/testdb",
+        }
+    finally:
+        # Stop and remove the container
+        if container:
+            container.stop()
+            container.remove()
+            client.close()
 
 @pytest.fixture()
 def postgres_kvstore(
