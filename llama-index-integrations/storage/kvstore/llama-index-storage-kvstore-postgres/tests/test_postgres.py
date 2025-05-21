@@ -11,15 +11,17 @@ no_packages = find_spec("psycopg2") is None or find_spec("sqlalchemy") is None o
 
 @pytest.fixture()
 def postgres_container() -> Generator[Dict[str, Union[str, Container]], None, None]:
-    # Define PostgreSQL settings
     postgres_image = "postgres:latest"
     postgres_env = {
         "POSTGRES_DB": "testdb",
         "POSTGRES_USER": "testuser",
         "POSTGRES_PASSWORD": "testpassword",
     }
-    postgres_ports = {"5432/tcp": 5432}
+    # Let Docker choose available port
+    postgres_ports = {"5432/tcp": None}
     container = None
+    client = None
+
     try:
         # Initialize Docker client
         client = docker.from_env()
@@ -31,24 +33,44 @@ def postgres_container() -> Generator[Dict[str, Union[str, Container]], None, No
 
         # Retrieve the container's port
         container.reload()
-        postgres_port = container.attrs["NetworkSettings"]["Ports"]["5432/tcp"][0][
-            "HostPort"
-        ]
+        postgres_port = container.attrs["NetworkSettings"]["Ports"]["5432/tcp"][0]["HostPort"]
 
-        # Wait for PostgreSQL to start
-        time.sleep(10)  # Adjust the sleep time if necessary
+        # Wait for PostgreSQL to be ready by polling
+        connection_string = f"postgresql://testuser:testpassword@0.0.0.0:{postgres_port}/testdb"
+        async_connection_string = f"postgresql+asyncpg://testuser:testpassword@0.0.0.0:{postgres_port}/testdb"
+
+        # Wait for PostgreSQL to be ready
+        max_retries = 30
+        retry_interval = 1
+        import sqlalchemy
+
+        for i in range(max_retries):
+            try:
+                engine = sqlalchemy.create_engine(connection_string)
+                conn = engine.connect()
+                conn.close()
+                engine.dispose()
+                break
+            except Exception as e:
+                if i == max_retries - 1:
+                    raise Exception(f"Failed to connect to PostgreSQL after {max_retries} attempts: {e}")
+                time.sleep(retry_interval)
 
         # Return connection information
         yield {
             "container": container,
-            "connection_string": f"postgresql://testuser:testpassword@0.0.0.0:5432/testdb",
-            "async_connection_string": f"postgresql+asyncpg://testuser:testpassword@0.0.0.0:5432/testdb",
+            "connection_string": connection_string,
+            "async_connection_string": async_connection_string,
         }
     finally:
         # Stop and remove the container
         if container:
-            container.stop()
-            container.remove()
+            try:
+                container.stop(timeout=5)
+                container.remove()
+            except Exception:
+                pass  # Ignore errors during cleanup
+        if client:
             client.close()
 
 @pytest.fixture()
