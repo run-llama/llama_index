@@ -22,8 +22,6 @@ dev = [
     "types-redis==4.5.5.0",
     "types-requests==2.28.11.8",
     "types-setuptools==67.1.0.0",
-    # Sometimes needed for tests to work currently
-    "numpy<2.0",
 ]
 
 [project]
@@ -38,6 +36,7 @@ dependencies = [
     "llama-index-core>=0.12.0,<0.13",
     "docling-core>=2.2.0,<3",
     "docling>=2.2.0,<3",
+    "numpy>=2.0",
 ]
 
 [tool.codespell]
