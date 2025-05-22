@@ -153,6 +153,13 @@ class Anthropic(FunctionCallingLLM):
             "For example: tools=[{'type': 'web_search_20250305', 'name': 'web_search', 'max_uses': 3}]"
         ),
     )
+    mcp_servers: Optional[List[dict]] = Field(
+        default=None,
+        description=(
+            "List of MCP servers to use for the model. "
+            "For example: mcp_servers=[{'type': 'url', 'url': 'https://mcp.example.com/sse', 'name': 'example-mcp', 'authorization_token': 'YOUR_TOKEN'}]"
+        ),
+    )
 
     _client: Union[
         anthropic.Anthropic, anthropic.AnthropicVertex, anthropic.AnthropicBedrock
@@ -186,6 +193,7 @@ class Anthropic(FunctionCallingLLM):
         cache_idx: Optional[int] = None,
         thinking_dict: Optional[Dict[str, Any]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
+        mcp_servers: Optional[List[dict]] = None,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
@@ -207,6 +215,7 @@ class Anthropic(FunctionCallingLLM):
             cache_idx=cache_idx,
             thinking_dict=thinking_dict,
             tools=tools,
+            mcp_servers=mcp_servers,
         )
 
         if region and project_id and not aws_region:
@@ -293,6 +302,13 @@ class Anthropic(FunctionCallingLLM):
         elif self.tools and "tools" in kwargs:
             kwargs["tools"] = [*self.tools, *kwargs["tools"]]
 
+        if self.mcp_servers and "mcp_servers" not in kwargs:
+            kwargs["mcp_servers"] = self.mcp_servers
+            kwargs["betas"] = ["mcp-client-2025-04-04"]
+        elif self.mcp_servers and "mcp_servers" in kwargs:
+            kwargs["mcp_servers"] = [*self.mcp_servers, *kwargs["mcp_servers"]]
+            kwargs["betas"] = ["mcp-client-2025-04-04"]
+
         return kwargs
 
     def _completion_response_from_chat_response(self, chat_response: AnthropicChatResponse) -> AnthropicCompletionResponse:
@@ -333,7 +349,7 @@ class Anthropic(FunctionCallingLLM):
         )
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = self._client.messages.create(
+        response = self._client.beta.messages.create(
             messages=anthropic_messages,
             stream=False,
             system=system_prompt,
@@ -374,7 +390,7 @@ class Anthropic(FunctionCallingLLM):
         )
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = self._client.messages.create(
+        response = self._client.beta.messages.create(
             messages=anthropic_messages, system=system_prompt, stream=True, **all_kwargs
         )
 
@@ -478,7 +494,7 @@ class Anthropic(FunctionCallingLLM):
         )
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = await self._aclient.messages.create(
+        response = await self._aclient.beta.messages.create(
             messages=anthropic_messages,
             system=system_prompt,
             stream=False,
@@ -519,7 +535,7 @@ class Anthropic(FunctionCallingLLM):
         )
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = await self._aclient.messages.create(
+        response = await self._aclient.beta.messages.create(
             messages=anthropic_messages, system=system_prompt, stream=True, **all_kwargs
         )
 
