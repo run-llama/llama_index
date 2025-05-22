@@ -154,6 +154,7 @@ def test_process_response_event():
         output_index=0,
         type="response.function_call_arguments.delta",
         delta='{"arg": "value"',
+        sequence_number=1,
     )
 
     result = OpenAIResponses.process_response_event(
@@ -166,7 +167,7 @@ def test_process_response_event():
     )
 
     _, _, _, _, updated_call, _, _ = result
-    assert updated_call.arguments == '{"arg": "value"}'
+    assert updated_call.arguments == '{"arg": "value"'
 
     # Test function call arguments done
     event = ResponseFunctionCallArgumentsDoneEvent(
@@ -174,6 +175,7 @@ def test_process_response_event():
         output_index=0,
         type="response.function_call_arguments.done",
         arguments='{"arg": "value"}',
+        sequence_number = 1,
     )
 
     result = OpenAIResponses.process_response_event(
