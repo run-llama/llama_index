@@ -118,6 +118,16 @@ class ImageBlock(BaseModel):
             as_base64 (bool): whether the resolved image should be returned as base64-encoded bytes
 
         """
+        data_buffer = resolve_binary(
+            raw_bytes=self.image,
+            path=self.path,
+            url=str(self.url) if self.url else None,
+            as_base64=as_base64,
+        )
+        with data_buffer as r:
+            rb = r.read()
+        if len(rb) == 0:
+            raise ValueError("resolve_image returned zero bytes")
         return resolve_binary(
             raw_bytes=self.image,
             path=self.path,
@@ -178,6 +188,16 @@ class AudioBlock(BaseModel):
             as_base64 (bool): whether the resolved audio should be returned as base64-encoded bytes
 
         """
+        data_buffer = resolve_binary(
+            raw_bytes=self.audio,
+            path=self.path,
+            url=str(self.url) if self.url else None,
+            as_base64=as_base64,
+        )
+        with data_buffer as r:
+            rb = r.read()
+        if len(rb) == 0:
+            raise ValueError("resolve_audio returned zero bytes")
         return resolve_binary(
             raw_bytes=self.audio,
             path=self.path,
@@ -215,12 +235,22 @@ class DocumentBlock(BaseModel):
         """
         Resolve a document such that it is represented by a BufferIO object.
         """
-        return resolve_binary(
+        data_buffer = resolve_binary(
             raw_bytes=self.data,
             path=self.path,
             url=str(self.url) if self.url else None,
             as_base64=False,
         )
+        with data_buffer as r:
+            rb = r.read()
+        if len(rb) == 0:
+            raise ValueError("resolve_document returned zero bytes")
+        return resolve_binary(
+                raw_bytes=self.data,
+                path=self.path,
+                url=str(self.url) if self.url else None,
+                as_base64=False,
+            )
 
     def _get_b64_string(self, data_buffer: BytesIO) -> str:
         """
