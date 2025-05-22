@@ -53,6 +53,8 @@ VERTEX_CLAUDE_MODELS: Dict[str, int] = {
     "claude-3-5-sonnet-v2@20241022": 200000,
     "claude-3-5-haiku@20241022": 200000,
     "claude-3-7-sonnet@20250219": 200000,
+    "claude-opus-4@20250514": 200000,
+    "claude-sonnet-4@20250514": 200000,
 }
 
 # Anthropic API/SDK identifiers
@@ -75,6 +77,12 @@ ANTHROPIC_MODELS: Dict[str, int] = {
     "claude-3-5-haiku-20241022": 200000,
     "claude-3-7-sonnet-20250219": 200000,
     "claude-3-7-sonnet-latest": 200000,
+    "claude-opus-4-0": 200000,
+    "claude-opus-4-20250514": 200000,
+    "claude-4-opus-20250514": 200000,
+    "claude-sonnet-4-0": 200000,
+    "claude-sonnet-4-20250514": 200000,
+    "claude-4-sonnet-20250514": 200000,
 }
 
 # All provider Anthropic identifiers
