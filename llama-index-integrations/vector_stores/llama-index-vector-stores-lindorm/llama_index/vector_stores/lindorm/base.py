@@ -751,7 +751,6 @@ class LindormVectorClient:
                     start_char_idx=start_char_idx,
                     end_char_idx=end_char_idx,
                     relationships=relationships,
-                    extra_info=source,
                 )
             ids.append(node_id)
             nodes.append(node)
