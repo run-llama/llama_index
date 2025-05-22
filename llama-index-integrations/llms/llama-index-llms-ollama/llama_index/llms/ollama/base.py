@@ -91,11 +91,9 @@ class Ollama(FunctionCallingLLM):
         description="Base url the model is hosted under.",
     )
     model: str = Field(description="The Ollama model to use.")
-    temperature: float = Field(
-        default=0.75,
+    temperature: Optional[float] = Field(
+        default=None,
         description="The temperature to use for sampling.",
-        ge=0.0,
-        le=1.0,
     )
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
@@ -133,12 +131,12 @@ class Ollama(FunctionCallingLLM):
         self,
         model: str,
         base_url: str = "http://localhost:11434",
-        temperature: float = 0.75,
+        temperature: Optional[float] = None,
         context_window: int = DEFAULT_CONTEXT_WINDOW,
         request_timeout: Optional[float] = DEFAULT_REQUEST_TIMEOUT,
         prompt_key: str = "prompt",
         json_mode: bool = False,
-        additional_kwargs: Dict[str, Any] = {},
+        additional_kwargs: Optional[Dict[str, Any]] = None,
         client: Optional[Client] = None,
         async_client: Optional[AsyncClient] = None,
         is_function_calling_model: bool = True,
@@ -153,7 +151,7 @@ class Ollama(FunctionCallingLLM):
             request_timeout=request_timeout,
             prompt_key=prompt_key,
             json_mode=json_mode,
-            additional_kwargs=additional_kwargs,
+            additional_kwargs=additional_kwargs or {},
             is_function_calling_model=is_function_calling_model,
             keep_alive=keep_alive,
             **kwargs,
