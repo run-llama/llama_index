@@ -349,7 +349,7 @@ class Anthropic(FunctionCallingLLM):
         )
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = self._client.beta.messages.create(
+        response = self._client.messages.create(
             messages=anthropic_messages,
             stream=False,
             system=system_prompt,
@@ -390,7 +390,7 @@ class Anthropic(FunctionCallingLLM):
         )
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = self._client.beta.messages.create(
+        response = self._client.messages.create(
             messages=anthropic_messages, system=system_prompt, stream=True, **all_kwargs
         )
 
@@ -494,7 +494,7 @@ class Anthropic(FunctionCallingLLM):
         )
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = await self._aclient.beta.messages.create(
+        response = await self._aclient.messages.create(
             messages=anthropic_messages,
             system=system_prompt,
             stream=False,
@@ -535,7 +535,7 @@ class Anthropic(FunctionCallingLLM):
         )
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = await self._aclient.beta.messages.create(
+        response = await self._aclient.messages.create(
             messages=anthropic_messages, system=system_prompt, stream=True, **all_kwargs
         )
 
