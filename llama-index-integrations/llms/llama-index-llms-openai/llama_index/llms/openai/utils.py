@@ -406,24 +406,6 @@ def to_openai_message_dict(
 
     return message_dict  # type: ignore
 
-
-def to_openai_responses_str_input(
-    message: ChatMessage | List[ChatMessage],
-    tool: str,
-):
-    if isinstance(message, list):
-        if len(message) > 1 or len(message[0].blocks) > 1:
-            raise ValueError(f"Only one prompt at a time is supported when calling {tool}")
-        if not isinstance(message[0].blocks[0], TextBlock):
-            raise ValueError(f"Only textual input is supported when calling {tool}")
-        return message[0].blocks[0].text
-    if isinstance(message, ChatMessage):
-        if len(message.blocks) > 1:
-           raise ValueError(f"Only one prompt at a time is supported when calling {tool}")
-        if not isinstance(message.blocks[0], TextBlock):
-            raise ValueError(f"Only textual input is supported when calling {tool}")
-        return message.blocks[0].text
-
 def to_openai_responses_message_dict(
     message: ChatMessage,
     drop_none: bool = False,

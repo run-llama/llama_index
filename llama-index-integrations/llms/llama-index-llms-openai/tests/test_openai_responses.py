@@ -109,7 +109,6 @@ def test_parse_response_output():
 def test_process_response_event():
     """Test the static process_response_event method for streaming responses."""
     # Initial state
-    content = ""
     tool_calls = []
     built_in_tool_calls = []
     additional_kwargs = {}
@@ -122,11 +121,11 @@ def test_process_response_event():
         output_index=0,
         delta="Hello",
         type="response.output_text.delta",
+        sequence_number=1,
     )
 
     result = OpenAIResponses.process_response_event(
         event=event,
-        content=content,
         tool_calls=tool_calls,
         built_in_tool_calls=built_in_tool_calls,
         additional_kwargs=additional_kwargs,
@@ -134,8 +133,8 @@ def test_process_response_event():
         track_previous_responses=False,
     )
 
-    updated_content, updated_tool_calls, _, _, _, _, delta = result
-    assert updated_content == "Hello"
+    updated_blocks, updated_tool_calls, _, _, _, _, delta = result
+    assert updated_blocks == [TextBlock(text="Hello")]
     assert delta == "Hello"
     assert updated_tool_calls == []
 
@@ -159,7 +158,6 @@ def test_process_response_event():
 
     result = OpenAIResponses.process_response_event(
         event=event,
-        content=updated_content,
         tool_calls=updated_tool_calls,
         built_in_tool_calls=built_in_tool_calls,
         additional_kwargs=additional_kwargs,
@@ -168,7 +166,7 @@ def test_process_response_event():
     )
 
     _, _, _, _, updated_call, _, _ = result
-    assert updated_call.arguments == '{"arg": "value"'
+    assert updated_call.arguments == '{"arg": "value"}'
 
     # Test function call arguments done
     event = ResponseFunctionCallArgumentsDoneEvent(
@@ -180,7 +178,6 @@ def test_process_response_event():
 
     result = OpenAIResponses.process_response_event(
         event=event,
-        content=updated_content,
         tool_calls=updated_tool_calls,
         built_in_tool_calls=built_in_tool_calls,
         additional_kwargs=additional_kwargs,
