@@ -407,11 +407,28 @@ def to_openai_message_dict(
     return message_dict  # type: ignore
 
 
+def to_openai_responses_str_input(
+    message: ChatMessage | List[ChatMessage],
+    tool: str,
+):
+    if isinstance(message, list):
+        if len(message) > 1 or len(message[0].blocks) > 1:
+            raise ValueError(f"Only one prompt at a time is supported when calling {tool}")
+        if not isinstance(message[0].blocks[0], TextBlock):
+            raise ValueError(f"Only textual input is supported when calling {tool}")
+        return message[0].blocks[0].text
+    if isinstance(message, ChatMessage):
+        if len(message.blocks) > 1:
+           raise ValueError(f"Only one prompt at a time is supported when calling {tool}")
+        if not isinstance(message.blocks[0], TextBlock):
+            raise ValueError(f"Only textual input is supported when calling {tool}")
+        return message.blocks[0].text
+
 def to_openai_responses_message_dict(
     message: ChatMessage,
     drop_none: bool = False,
     model: Optional[str] = None,
-) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+) -> Union[str, Dict[str, Any], List[Dict[str, Any]]]:
     """Convert a ChatMessage to an OpenAI message dict."""
     content = []
     content_txt = ""
@@ -492,6 +509,10 @@ def to_openai_responses_message_dict(
         ]
 
         return message_dicts
+    # there are some cases (like image generation or MCP tool call) that only support the string input
+    # this is why, if context_txt is a non-empty string, all the blocks are TextBlocks and the role is user, we return directly context_txt
+    elif isinstance(content_txt, str) and len(content_txt) != 0 and all(item["type"]=="input_text" for item in content) and message.role.value == "user":
+        return content_txt
     else:
         message_dict = {
             "role": message.role.value,
@@ -526,10 +547,11 @@ def to_openai_message_dicts(
     drop_none: bool = False,
     model: Optional[str] = None,
     is_responses_api: bool = False,
-) -> List[ChatCompletionMessageParam]:
+) -> Union[List[ChatCompletionMessageParam], str]:
     """Convert generic messages to OpenAI message dicts."""
     if is_responses_api:
         final_message_dicts = []
+        final_message_txt = ""
         for message in messages:
             message_dicts = to_openai_responses_message_dict(
                 message,
@@ -538,9 +560,13 @@ def to_openai_message_dicts(
             )
             if isinstance(message_dicts, list):
                 final_message_dicts.extend(message_dicts)
+            elif isinstance(message_dicts, str):
+                final_message_txt += message_dicts
             else:
                 final_message_dicts.append(message_dicts)
-
+        # this follows the logic of having a string-only input from to_openai_responses_message_dict
+        if final_message_txt:
+            return final_message_txt
         return final_message_dicts
     else:
         return [
