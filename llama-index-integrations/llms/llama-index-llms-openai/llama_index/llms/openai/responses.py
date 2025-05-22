@@ -494,10 +494,10 @@ class OpenAIResponses(FunctionCallingLLM):
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         kwargs_dict = self._get_model_kwargs(**kwargs)
         message_dicts = to_openai_message_dicts(
-                messages,
-                model=self.model,
-                is_responses_api=True,
-            )
+            messages,
+            model=self.model,
+            is_responses_api=True,
+        )
 
         response: Response = self._client.responses.create(
             input=message_dicts,

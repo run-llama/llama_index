@@ -406,6 +406,7 @@ def to_openai_message_dict(
 
     return message_dict  # type: ignore
 
+
 def to_openai_responses_message_dict(
     message: ChatMessage,
     drop_none: bool = False,
@@ -426,7 +427,13 @@ def to_openai_responses_message_dict(
                 mimetype = block._guess_mimetype()
             else:
                 b64_string = block.data.decode("utf-8")
-            content.append({"type": "input_file", "filename": block.title, "file_data": f"data:{mimetype};base64,{b64_string}"})
+            content.append(
+                {
+                    "type": "input_file",
+                    "filename": block.title,
+                    "file_data": f"data:{mimetype};base64,{b64_string}",
+                }
+            )
         elif isinstance(block, ImageBlock):
             if block.url:
                 content.append(
@@ -491,9 +498,15 @@ def to_openai_responses_message_dict(
         ]
 
         return message_dicts
+
     # there are some cases (like image generation or MCP tool call) that only support the string input
     # this is why, if context_txt is a non-empty string, all the blocks are TextBlocks and the role is user, we return directly context_txt
-    elif isinstance(content_txt, str) and len(content_txt) != 0 and all(item["type"]=="input_text" for item in content) and message.role.value == "user":
+    elif (
+        isinstance(content_txt, str)
+        and len(content_txt) != 0
+        and all(item["type"] == "input_text" for item in content)
+        and message.role.value == "user"
+    ):
         return content_txt
     else:
         message_dict = {
