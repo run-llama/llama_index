@@ -6,6 +6,7 @@ Full credits to the original authors!
 from typing import Callable
 import numpy as np
 import random
+import tiktoken
 import umap
 from sklearn.mixture import GaussianMixture
 from typing import Dict, List, Optional
@@ -119,13 +120,14 @@ def get_clusters(
     nodes: List[BaseNode],
     embedding_map: Dict[str, List[List[float]]],
     max_length_in_cluster: int = 10000,  # 10k tokens max per cluster
-    tokenizer: Callable[[str], list] = core.global_tokenizer, # use tokenizer from llama_index
+    tokenizer: Optional[Callable[[str], list]] = core.global_tokenizer, # use tokenizer from llama_index
     reduction_dimension: int = 10,
     threshold: float = 0.1,
     prev_total_length=None,  # to keep track of the total length of the previous clusters
 ) -> List[List[BaseNode]]:
     # get embeddings
     embeddings = np.array([np.array(embedding_map[node.id_]) for node in nodes])
+    tokenizer = tokenizer or tiktoken.get_encoding("cl100k_base").encode
 
     # Perform the clustering
     clusters = perform_clustering(
