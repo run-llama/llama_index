@@ -15,6 +15,9 @@ from typing import (
     Optional,
     Sequence,
     cast,
+    Union,
+    AsyncGenerator,
+    Generator,
 )
 
 from llama_index.core.agent.types import (
@@ -23,12 +26,13 @@ from llama_index.core.agent.types import (
     TaskStep,
     TaskStepOutput,
 )
-from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
+from llama_index.core.types import Thread
+from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole,ChatResponseGen
 from llama_index.core.callbacks import (
     CallbackManager,
     trace_method,
 )
-from llama_index.core.chat_engine.types import AgentChatResponse
+from llama_index.core.chat_engine.types import AgentChatResponse,StreamingAgentChatResponse
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.core.objects.base import ObjectRetriever
@@ -38,6 +42,8 @@ from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
 from llama_index.core.tools.types import AsyncBaseTool
 from llama_index.core.utils import print_text
 from llama_index.llms.openai import OpenAI
+
+from functools import partial
 
 from .output_parser import (
     LLMCompilerJoinerParser,
@@ -123,7 +129,6 @@ def generate_llm_compiler_prompt(
         prefix += f"Example:\n{example_prompt}\n\n"
 
     return prefix
-
 
 class LLMCompilerAgentWorker(BaseAgentWorker):
     """
@@ -301,13 +306,13 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
         self,
         task: Task,
         llmc_tasks: Dict[int, LLMCompilerTask],
-        answer: str,
+        answer: Union[AgentChatResponse, StreamingAgentChatResponse],
         joiner_thought: str,
         step: TaskStep,
         is_replan: bool,
     ) -> TaskStepOutput:
         """Get task step response."""
-        agent_answer = AgentChatResponse(response=answer, sources=[])
+        #agent_answer = AgentChatResponse(response=answer, sources=[])
 
         if not is_replan:
             # generate final answer
@@ -337,7 +342,7 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
             ]
 
         return TaskStepOutput(
-            output=agent_answer,
+            output=answer,
             task_step=step,
             next_steps=new_steps,
             is_last=not is_replan,
@@ -347,6 +352,7 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
         self,
         step: TaskStep,
         task: Task,
+        **kwargs: Any
     ) -> TaskStepOutput:
         """Run step."""
         if self.verbose:
@@ -392,7 +398,7 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
         return self._get_task_step_response(
             task,
             llmc_tasks=tasks,
-            answer=joiner_output.answer,
+            answer=AgentChatResponse(joiner_output.answer),
             joiner_thought=joiner_output.thought,
             step=step,
             is_replan=joiner_output.is_replan,
@@ -410,20 +416,241 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
         """Run step (async)."""
         return await self._arun_step(step, task)
 
-    @trace_method("run_step")
+    @trace_method("stream_join")
+    def stream_join(
+        self,
+        input: str,
+        tasks: Dict[int, LLMCompilerTask],
+        is_final: bool = False,
+    ) -> ChatResponseGen:
+        """Join answer using LLM/agent."""
+        agent_scratchpad = "\n\n"
+        agent_scratchpad += "".join(
+            [
+                task.get_thought_action_observation(
+                    include_action=True, include_thought=True
+                )
+                for task in tasks.values()
+                if not task.is_join
+            ]
+        )
+        agent_scratchpad = agent_scratchpad.strip()
+        messages = [
+            ChatMessage(role=MessageRole.SYSTEM, content=self.joiner_prompt),
+            ChatMessage(role=MessageRole.USER, content=agent_scratchpad),
+        ]
+        # Use streaming chat response
+        stream_response = self.llm.stream_chat(messages)
+        for join_chunk in stream_response:
+            yield join_chunk
+
+
+    @trace_method("_run_step_stream")
+    def _run_step_stream(
+        self,
+        step: TaskStep,
+        task: Task,
+        **kwargs: Any
+    ) -> TaskStepOutput:
+        """Run step (async stream)."""
+        if self.verbose:
+            print(
+                f"> Running step {step.step_id} for task {task.task_id}.\n"
+                f"> Step count: {step.step_state['replans']}"
+            )
+        is_final_iter = (
+            step.step_state["is_replan"]
+            and step.step_state["replans"] >= self.max_replans
+        )
+
+        if len(step.step_state["contexts"]) == 0:
+            formatted_contexts = None
+        else:
+            formatted_contexts = format_contexts(step.step_state["contexts"])
+
+        # Stream LLM response
+        messages = [
+            ChatMessage(role=MessageRole.SYSTEM, content=self.system_prompt_replan if step.step_state["is_replan"] else self.system_prompt),
+        ]
+
+        if step.step_state["is_replan"]:
+            assert formatted_contexts is not None, "previous_context cannot be None"
+            human_prompt = f"Question: {task.input}\n{formatted_contexts}\n"
+        else:
+            human_prompt = f"Question: {task.input}"
+
+        messages.append(ChatMessage(role=MessageRole.USER, content=human_prompt))
+
+        llm_response = asyncio.run(self.arun_llm(
+            task.input,
+            previous_context=formatted_contexts,
+            is_replan=step.step_state["is_replan"],
+        ))
+        if self.verbose:
+            print_text(f"> Plan: {llm_response.message.content}\n", color="pink")
+
+        # return task dict (will generate plan, parse into dictionary)
+        task_dict = self.output_parser.parse(cast(str, llm_response.message.content))
+
+        # Execute via task executor with streaming support
+        task_fetching_unit = TaskFetchingUnit.from_tasks(
+            task_dict, verbose=self.verbose
+        )
+        asyncio.run(task_fetching_unit.schedule())
+
+        # Join tasks - get response
+        tasks = cast(Dict[int, LLMCompilerTask], task_fetching_unit.tasks)
+        llm_response_gen = self.stream_join(
+            task.input,
+            tasks,
+            is_final=is_final_iter,
+        )
+        agent_response_stream = StreamingAgentChatResponse(
+            chat_stream=llm_response_gen,
+            sources=task.extra_state["sources"],
+        )
+        # Get the response in a separate thread so we can yield the response
+        thread = Thread(
+                target=agent_response_stream.write_response_to_history,
+                args=(task.extra_state["new_memory"],),
+                kwargs={"on_stream_end_fn": partial(self.finalize_task, task)},
+            )
+        thread.start()
+        # wait until response writing is done
+        agent_response_stream._ensure_async_setup()
+
+        return self._get_task_step_response(
+            task,
+            llmc_tasks=tasks,
+            answer=agent_response_stream,
+            joiner_thought="",
+            step=step,
+            is_replan=step.step_state["is_replan"],
+        )
+
+    @trace_method("stream_step")
     def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step (stream)."""
         # # TODO: figure out if we need a different type for TaskStepOutput
-        # return self._run_step_stream(step, task)
-        raise NotImplementedError
+        #raise NotImplementedError
+        return self._run_step_stream(step, task, **kwargs)
 
-    @trace_method("run_step")
+    async def astream_join(
+        self,
+        input: str,
+        tasks: Dict[int, LLMCompilerTask],
+        is_final: bool = False,
+    ) -> AsyncGenerator[ChatResponse, None]:
+        """Join answer using LLM/agent."""
+        agent_scratchpad = "\n\n"
+        agent_scratchpad += "".join(
+            [
+                task.get_thought_action_observation(
+                    include_action=True, include_thought=True
+                )
+                for task in tasks.values()
+                if not task.is_join
+            ]
+        )
+        agent_scratchpad = agent_scratchpad.strip()
+        messages = [
+            ChatMessage(role=MessageRole.SYSTEM, content=self.joiner_prompt),
+            ChatMessage(role=MessageRole.USER, content=agent_scratchpad),
+        ]
+        # Use streaming chat response
+        stream_response = await self.llm.astream_chat(messages)
+        async for join_chunk in stream_response:
+            yield join_chunk
+
+    async def _arun_step_stream(
+        self,
+        step: TaskStep,
+        task: Task,
+    ) -> TaskStepOutput:
+        """Run step (async stream)."""
+        if self.verbose:
+            print(
+                f"> Running step {step.step_id} for task {task.task_id}.\n"
+                f"> Step count: {step.step_state['replans']}"
+            )
+        is_final_iter = (
+            step.step_state["is_replan"]
+            and step.step_state["replans"] >= self.max_replans
+        )
+
+        if len(step.step_state["contexts"]) == 0:
+            formatted_contexts = None
+        else:
+            formatted_contexts = format_contexts(step.step_state["contexts"])
+
+        # Stream LLM response
+        messages = [
+            ChatMessage(role=MessageRole.SYSTEM, content=self.system_prompt_replan if step.step_state["is_replan"] else self.system_prompt),
+        ]
+
+        if step.step_state["is_replan"]:
+            assert formatted_contexts is not None, "previous_context cannot be None"
+            human_prompt = f"Question: {task.input}\n{formatted_contexts}\n"
+        else:
+            human_prompt = f"Question: {task.input}"
+
+        messages.append(ChatMessage(role=MessageRole.USER, content=human_prompt))
+
+        llm_response = await self.arun_llm(
+            task.input,
+            previous_context=formatted_contexts,
+            is_replan=step.step_state["is_replan"],
+        )
+        if self.verbose:
+            print_text(f"> Plan: {llm_response.message.content}\n", color="pink")
+
+        # return task dict (will generate plan, parse into dictionary)
+        task_dict = self.output_parser.parse(cast(str, llm_response.message.content))
+
+        # Execute via task executor with streaming support
+        task_fetching_unit = TaskFetchingUnit.from_tasks(
+            task_dict, verbose=self.verbose
+        )
+        await task_fetching_unit.schedule()
+
+        # Join tasks - get response
+        tasks = cast(Dict[int, LLMCompilerTask], task_fetching_unit.tasks)
+        llm_response_gen = self.astream_join(
+            task.input,
+            tasks,
+            is_final=is_final_iter,
+        )
+        agent_response_stream = StreamingAgentChatResponse(
+            achat_stream=llm_response_gen,
+            sources=task.extra_state["sources"],
+        )
+        # create task to write chat response to history
+        agent_response_stream.awrite_response_to_history_task = asyncio.create_task(
+            agent_response_stream.awrite_response_to_history(
+                task.extra_state["new_memory"],
+                on_stream_end_fn=partial(self.finalize_task, task),
+            )
+        )
+        # wait until response writing is done
+        agent_response_stream._ensure_async_setup()
+
+        assert agent_response_stream.is_function_false_event is not None
+        await agent_response_stream.is_function_false_event.wait()
+        return self._get_task_step_response(
+            task,
+            llmc_tasks=tasks,
+            answer=agent_response_stream,
+            joiner_thought="",
+            step=step,
+            is_replan=step.step_state["is_replan"],
+        )
+
+    @trace_method("astream_step")
     async def astream_step(
         self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
-        raise NotImplementedError
-        # """Run step (async stream)."""
-        # return await self._arun_step_stream(step, task)
+        """Run step (async stream)."""
+        return await self._arun_step_stream(step, task)
 
     def finalize_task(self, task: Task, **kwargs: Any) -> None:
         """Finalize task, after all the steps are completed."""
