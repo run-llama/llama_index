@@ -56,6 +56,8 @@ class AzStorageBlobReader(
         file_metadata (Optional[Callable[str, Dict]]): A function that takes
             in a filename and returns a Dict of metadata for the Document.
             Default is None.
+        filename_as_id (bool): Whether to use the filename as the document id.
+            False by default.
 
     """
 
@@ -72,6 +74,7 @@ class AzStorageBlobReader(
     credential: Optional[Any] = None
     is_remote: bool = True
     file_metadata: Optional[FileMetadataCallable] = Field(default=None, exclude=True)
+    filename_as_id: bool = True
 
     # Not in use. As part of the TODO below. Is part of the kwargs.
     # self.preloaded_data_path = kwargs.get('preloaded_data_path', None)
@@ -162,6 +165,7 @@ class AzStorageBlobReader(
             input_dir=temp_dir,
             file_extractor=self.file_extractor,
             file_metadata=self.file_metadata or get_metadata,
+            filename_as_id=self.filename_as_id,
         )
 
         return loader.load_data()
