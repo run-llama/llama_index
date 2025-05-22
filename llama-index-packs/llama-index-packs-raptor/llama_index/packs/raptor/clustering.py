@@ -3,10 +3,9 @@ Minorly tweaked from https://github.com/parthsarthi03/raptor/blob/master/raptor/
 
 Full credits to the original authors!
 """
-
+from typing import Callable
 import numpy as np
 import random
-import tiktoken
 import umap
 from sklearn.mixture import GaussianMixture
 from typing import Dict, List, Optional
@@ -120,7 +119,7 @@ def get_clusters(
     nodes: List[BaseNode],
     embedding_map: Dict[str, List[List[float]]],
     max_length_in_cluster: int = 10000,  # 10k tokens max per cluster
-    tokenizer: tiktoken.Encoding = core.global_tokenizer, # use tokenizer from llama_index 
+    tokenizer: Callable[[str], list] = core.global_tokenizer, # use tokenizer from llama_index
     reduction_dimension: int = 10,
     threshold: float = 0.1,
     prev_total_length=None,  # to keep track of the total length of the previous clusters
@@ -150,7 +149,7 @@ def get_clusters(
             continue
 
         # Calculate the total length of the text in the nodes
-        total_length = sum([len(tokenizer.encode(node.text)) for node in cluster_nodes])
+        total_length = sum([len(tokenizer(node.text)) for node in cluster_nodes])
 
         # If the total length exceeds the maximum allowed length, recluster this cluster
         # If the total length did not change from the previous call then don't try again to avoid infinite recursion!
