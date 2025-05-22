@@ -95,7 +95,7 @@ CLAUDE_MODELS: Dict[str, int] = {
 
 
 def is_function_calling_model(modelname: str) -> bool:
-    return "claude-3" in modelname
+    return "-3" in modelname or "-4" in modelname
 
 
 def anthropic_modelname_to_contextsize(modelname: str) -> int:
