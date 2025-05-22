@@ -69,7 +69,7 @@ class AnthropicTokenizer:
         self.model = model
 
     def encode(self, text: str, *args: Any, **kwargs: Any) -> List[int]:
-        count = self._client.messages.count_tokens(
+        count = self._client.beta.messages.count_tokens(
             messages=[{"role": "user", "content": text}],
             model=self.model,
         ).input_tokens
