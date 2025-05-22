@@ -14,7 +14,7 @@ from openai.types.responses import (
     ResponseFunctionCallArgumentsDoneEvent,
     ResponseInProgressEvent,
     ResponseOutputItemAddedEvent,
-    ResponseTextAnnotationDeltaEvent,
+    ResponseOutputTextAnnotationAddedEvent,
     ResponseTextDeltaEvent,
     ResponseWebSearchCallCompletedEvent,
     ResponseOutputItem,
@@ -588,7 +588,7 @@ class OpenAIResponses(FunctionCallingLLM):
 
                 # clear the current tool call
                 current_tool_call = None
-        elif isinstance(event, ResponseTextAnnotationDeltaEvent):
+        elif isinstance(event, ResponseOutputTextAnnotationAddedEvent):
             # Annotations for the text
             annotations = additional_kwargs.get("annotations", [])
             annotations.append(event.annotation)
