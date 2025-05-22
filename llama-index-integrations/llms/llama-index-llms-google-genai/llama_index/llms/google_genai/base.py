@@ -102,6 +102,7 @@ class GoogleGenAI(FunctionCallingLLM):
     )
 
     _max_tokens: int = PrivateAttr()
+    _thinking_budget: int | None = PrivateAttr()
     _client: google.genai.Client = PrivateAttr()
     _generation_config: types.GenerateContentConfigDict = PrivateAttr()
     _model_meta: types.Model = PrivateAttr()
@@ -119,6 +120,7 @@ class GoogleGenAI(FunctionCallingLLM):
         generation_config: Optional[types.GenerateContentConfig] = None,
         callback_manager: Optional[CallbackManager] = None,
         is_function_calling_model: bool = True,
+        thinking_budget: Optional[int] = None,
         **kwargs: Any,
     ):
         # API keys are optional. The API can be authorised via OAuth (detected
@@ -178,11 +180,14 @@ class GoogleGenAI(FunctionCallingLLM):
             else types.GenerateContentConfig(
                 temperature=temperature,
                 max_output_tokens=max_tokens,
+                thinking_config=types.ThinkingConfig(
+                    thinking_budget=thinking_budget) if thinking_budget is not None else None
             ).model_dump()
         )
         self._max_tokens = (
             max_tokens or model_meta.output_token_limit or DEFAULT_NUM_OUTPUTS
         )
+        self._thinking_budget = thinking_budget
 
     @classmethod
     def class_name(cls) -> str:
