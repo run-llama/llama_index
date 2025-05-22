@@ -1,6 +1,15 @@
 import json
 from typing import Any, Dict, List, Optional, Tuple, Type
 from urllib.parse import urlparse
+from llama_index.core.bridge.pydantic import PrivateAttr
+
+try:
+    import sqlalchemy
+    import sqlalchemy.ext.asyncio  # noqa
+except ImportError:
+    raise ImportError(
+        "`sqlalchemy[asyncio]` package should be pre installed"
+    )
 
 from llama_index.core.storage.kvstore.types import (
     DEFAULT_BATCH_SIZE,
@@ -66,20 +75,25 @@ class PostgresKVStore(BaseKVStore):
 
     """
 
-    connection_string: str
-    async_connection_string: str
+    connection_string: Optional[str]
+    async_connection_string: Optional[str]
     table_name: str
     schema_name: str
     perform_setup: bool
     debug: bool
     use_jsonb: bool
+    _engine: Optional[sqlalchemy.engine.Engine] = PrivateAttr()
+    _async_engine: Optional[sqlalchemy.ext.asyncio.AsyncEngine] = PrivateAttr()
+
 
     def __init__(
         self,
-        connection_string: str,
-        async_connection_string: str,
         table_name: str,
+        connection_string: Optional[str] = None,
+        async_connection_string: Optional[str] = None,
         schema_name: str = "public",
+        engine: Optional[sqlalchemy.engine.Engine] = None,
+        async_engine: Optional[sqlalchemy.ext.asyncio.AsyncEngine] = None,
         perform_setup: bool = True,
         debug: bool = False,
         use_jsonb: bool = False,
@@ -87,11 +101,9 @@ class PostgresKVStore(BaseKVStore):
         try:
             import asyncpg  # noqa
             import psycopg2  # noqa
-            import sqlalchemy
-            import sqlalchemy.ext.asyncio  # noqa
         except ImportError:
             raise ImportError(
-                "`sqlalchemy[asyncio]`, `psycopg2-binary` and `asyncpg` "
+                "`psycopg2-binary` and `asyncpg` "
                 "packages should be pre installed"
             )
 
@@ -104,7 +116,16 @@ class PostgresKVStore(BaseKVStore):
         self.perform_setup = perform_setup
         self.debug = debug
         self.use_jsonb = use_jsonb
+        self._engine = engine
+        self._async_engine = async_engine
         self._is_initialized = False
+
+        if not self._async_engine and not self.async_connection_string:
+            raise ValueError("You should provide an asynchronous connection string, if you do not provide an asynchronous SqlAlchemy engine")
+        elif not self._engine and not self.connection_string:
+            raise ValueError("You should provide a synchronous connection string, if you do not provide a synchronous SqlAlchemy engine")
+        elif not self._engine and not self._async_engine and (not self.connection_string or not self.connection_string):
+            raise ValueError("If a SqlAlchemy engine is not provided, you should provide a synchronous and an asynchronous connection string")
 
         from sqlalchemy.orm import declarative_base
 
@@ -177,10 +198,10 @@ class PostgresKVStore(BaseKVStore):
         from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
         from sqlalchemy.orm import sessionmaker
 
-        self._engine = create_engine(self.connection_string, echo=self.debug)
+        self._engine = self._engine or create_engine(self.connection_string, echo=self.debug)
         self._session = sessionmaker(self._engine)
 
-        self._async_engine = create_async_engine(self.async_connection_string)
+        self._async_engine = self._async_engine or create_async_engine(self.async_connection_string)
         self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)
 
     def _create_schema_if_not_exists(self) -> None:
