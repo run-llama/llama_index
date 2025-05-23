@@ -27,6 +27,4 @@ def get_biggest_prompt(prompts: List[BasePromptTemplate]) -> BasePromptTemplate:
     is a helper utility for that.
 
     """
-    empty_prompt_txts = [get_empty_prompt_txt(prompt) for prompt in prompts]
-    empty_prompt_txt_lens = [len(txt) for txt in empty_prompt_txts]
-    return prompts[empty_prompt_txt_lens.index(max(empty_prompt_txt_lens))]
+    return max(prompts, key=lambda p: len(get_empty_prompt_txt(p)))
