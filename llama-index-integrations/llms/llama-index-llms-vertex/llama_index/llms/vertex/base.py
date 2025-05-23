@@ -478,6 +478,7 @@ class Vertex(FunctionCallingLLM):
 
         tool_config = { "tool_config": self._to_function_calling_config(tool_required) } if self._is_gemini else {}
 
+        print("tool_config", tool_config)
         return {
             "messages": chat_history,
             "tools": tool_dicts or None,
