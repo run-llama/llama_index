@@ -42,6 +42,7 @@ from llama_index.llms.vertex.utils import (
     force_single_tool_call,
 )
 from vertexai.generative_models._generative_models import SafetySettingsType
+from vertexai.generative_models import ToolConfig
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -475,33 +476,23 @@ class Vertex(FunctionCallingLLM):
                 }
             )
 
+        tool_config = { "tool_config": self._to_function_calling_config(tool_required) } if self._is_gemini else {}
+
         return {
             "messages": chat_history,
             "tools": tool_dicts or None,
-            "tool_config": self._to_function_calling_config(tool_required),
+            **tool_config,
             **kwargs,
         }
 
-    def _to_function_calling_config(self, tool_required: bool) -> dict:
+    def _to_function_calling_config(self, tool_required: bool) -> ToolConfig:
 
-        if tool_choice and not isinstance(tool_choice, str):
-            raise ValueError("Gemini only supports string tool_choices")
-        tool_choice = tool_choice or ("any" if tool_required else "auto")
-
-        if tool_choice == "auto":
-            tool_mode = FunctionCallingMode.AUTO
-        elif tool_choice == "none":
-            tool_mode = FunctionCallingMode.NONE
-        else:
-            tool_mode = FunctionCallingMode.ANY
-
-        allowed_function_names = None
-        if tool_choice not in ["auto", "none", "any"]:
-            allowed_function_names = [tool_choice]
-        return {
-            "mode": tool_mode,
-            **({"allowed_function_names": allowed_function_names} if allowed_function_names else {}),
-        }
+        return ToolConfig(
+            function_calling_config=ToolConfig.FunctionCallingConfig(
+                mode=ToolConfig.FunctionCallingConfig.Mode.ANY if tool_required else ToolConfig.FunctionCallingConfig.Mode.AUTO,
+                allowed_function_names=None,
+            )
+        )
 
 
     def _validate_chat_with_tools_response(
