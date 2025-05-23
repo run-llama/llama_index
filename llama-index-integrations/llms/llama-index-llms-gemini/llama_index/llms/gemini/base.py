@@ -17,10 +17,12 @@ from typing import (
     Union,
     cast,
 )
-
 import google.generativeai as genai
+from google.generativeai.types import generation_types, FunctionDeclaration, ToolDict
+from google.generativeai.types.content_types import FunctionCallingMode
+
 import llama_index.core.instrumentation as instrument
-from google.generativeai.types import generation_types
+
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -353,7 +355,6 @@ class Gemini(FunctionCallingLLM):
         return gen()
 
     def _to_function_calling_config(self, tool_required: bool, tool_choice: Optional[str]) -> dict:
-        from google.generativeai.types.content_types import FunctionCallingMode
 
         if tool_choice and not isinstance(tool_choice, str):
             raise ValueError("Gemini only supports string tool_choices")
@@ -387,8 +388,6 @@ class Gemini(FunctionCallingLLM):
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Predict and call the tool."""
-        from google.generativeai.types import FunctionDeclaration, ToolDict
-
         tool_config = {
             "function_calling_config": self._to_function_calling_config(tool_required, tool_choice),
         }
