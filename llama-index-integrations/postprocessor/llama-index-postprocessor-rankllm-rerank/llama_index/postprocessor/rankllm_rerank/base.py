@@ -119,7 +119,7 @@ class RankLLMRerank(BaseNodePostprocessor):
         }
         model_coordinator = Reranker.create_model_coordinator(**kwargs)
         self._reranker = Reranker(model_coordinator)
-        
+
         dispatcher.event(
             ReRankStartEvent(
                 query=query_bundle,
