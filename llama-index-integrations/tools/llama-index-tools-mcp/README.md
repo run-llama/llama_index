@@ -149,40 +149,6 @@ prompts = await http_client.list_prompts()
 prompt_result = await http_client.get_prompt("greet", {"name": "World"})
 ```
 
-### Resource Subscriptions
-
-For real-time updates to resources, you can use persistent sessions with callbacks:
-
-```python
-client = BasicMCPClient("https://example.com/mcp")
-
-
-# Define a callback to handle resource updates
-async def handle_profile_update(resource_name, content, mime_type):
-    print(f"Profile updated: {content.decode()}")
-    # Update your application state with the new data
-
-
-# Start a persistent session
-await client.start_persistent_session()
-
-try:
-    # Subscribe to a resource with callback
-    await client.subscribe_resource_with_callback(
-        "users://123/profile", handle_profile_update
-    )
-
-    # Your application continues running...
-    # The callback will be triggered whenever the resource changes
-
-    # When you no longer need updates
-    await client.unsubscribe_resource("users://123/profile")
-
-finally:
-    # Always clean up the persistent session
-    await client.stop_persistent_session()
-```
-
 ### OAuth Authentication
 
 The client supports OAuth 2.0 authentication for connecting to protected MCP servers:
