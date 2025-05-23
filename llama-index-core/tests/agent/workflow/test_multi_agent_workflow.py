@@ -325,10 +325,10 @@ async def test_invalid_handoff():
 async def test_workflow_with_state():
     """Test workflow with state management."""
 
-    async def modify_state(ctx: Context):
-        state = await ctx.get("state")
+    async def modify_state(random_arg: str, ctx_val: Context):
+        state = await ctx_val.get("state")
         state["counter"] += 1
-        await ctx.set("state", state)
+        await ctx_val.set("state", state)
         return f"State updated to {state}"
 
     agent = FunctionAgent(
@@ -345,7 +345,7 @@ async def test_workflow_with_state():
                             ToolSelection(
                                 tool_id="one",
                                 tool_name="modify_state",
-                                tool_kwargs={},
+                                tool_kwargs={"random_arg": "hello"},
                             )
                         ]
                     },
@@ -373,3 +373,6 @@ async def test_workflow_with_state():
 
     response = await handler
     assert response is not None
+
+    state = await handler.ctx.get("state")
+    assert state["counter"] == 1

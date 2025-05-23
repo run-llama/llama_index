@@ -91,16 +91,13 @@ class Ollama(FunctionCallingLLM):
         description="Base url the model is hosted under.",
     )
     model: str = Field(description="The Ollama model to use.")
-    temperature: float = Field(
-        default=0.75,
+    temperature: Optional[float] = Field(
+        default=None,
         description="The temperature to use for sampling.",
-        ge=0.0,
-        le=1.0,
     )
     context_window: int = Field(
-        default=DEFAULT_CONTEXT_WINDOW,
+        default=-1,
         description="The maximum number of context tokens for the model.",
-        gt=0,
     )
     request_timeout: float = Field(
         default=DEFAULT_REQUEST_TIMEOUT,
@@ -133,12 +130,12 @@ class Ollama(FunctionCallingLLM):
         self,
         model: str,
         base_url: str = "http://localhost:11434",
-        temperature: float = 0.75,
-        context_window: int = DEFAULT_CONTEXT_WINDOW,
+        temperature: Optional[float] = None,
+        context_window: int = -1,
         request_timeout: Optional[float] = DEFAULT_REQUEST_TIMEOUT,
         prompt_key: str = "prompt",
         json_mode: bool = False,
-        additional_kwargs: Dict[str, Any] = {},
+        additional_kwargs: Optional[Dict[str, Any]] = None,
         client: Optional[Client] = None,
         async_client: Optional[AsyncClient] = None,
         is_function_calling_model: bool = True,
@@ -153,7 +150,7 @@ class Ollama(FunctionCallingLLM):
             request_timeout=request_timeout,
             prompt_key=prompt_key,
             json_mode=json_mode,
-            additional_kwargs=additional_kwargs,
+            additional_kwargs=additional_kwargs or {},
             is_function_calling_model=is_function_calling_model,
             keep_alive=keep_alive,
             **kwargs,
@@ -170,7 +167,7 @@ class Ollama(FunctionCallingLLM):
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
         return LLMMetadata(
-            context_window=self.context_window,
+            context_window=self.get_context_window(),
             num_output=DEFAULT_NUM_OUTPUTS,
             model_name=self.model,
             is_chat_model=True,  # Ollama supports chat API for all models
@@ -196,12 +193,24 @@ class Ollama(FunctionCallingLLM):
     def _model_kwargs(self) -> Dict[str, Any]:
         base_kwargs = {
             "temperature": self.temperature,
-            "num_ctx": self.context_window,
+            "num_ctx": self.get_context_window(),
         }
         return {
             **base_kwargs,
             **self.additional_kwargs,
         }
+
+    def get_context_window(self) -> int:
+        if self.context_window == -1:
+            # Try to get the context window from the model info if not set
+            info = self.client.show(self.model).modelinfo
+            for key, value in info.items():
+                if "context_length" in key:
+                    self.context_window = int(value)
+                    break
+
+        # If the context window is still -1, use the default context window
+        return self.context_window if self.context_window != -1 else DEFAULT_CONTEXT_WINDOW
 
     def _convert_to_ollama_messages(self, messages: Sequence[ChatMessage]) -> Dict:
         ollama_messages = []

@@ -143,7 +143,7 @@ Full notebook guide is available [here](../../../examples/node_postprocessor/Jin
 
 ## FixedRecencyPostprocessor
 
-This postproccesor returns the top K nodes sorted by date. This assumes there is a `date` field to parse in the metadata of each node.
+This postprocessor returns the top K nodes sorted by date. This assumes there is a `date` field to parse in the metadata of each node.
 
 ```python
 from llama_index.core.postprocessor import FixedRecencyPostprocessor
@@ -161,7 +161,7 @@ A full notebook guide is available [here](../../..../../../examples/node_postpro
 
 ## EmbeddingRecencyPostprocessor
 
-This postproccesor returns the top K nodes after sorting by date and removing older nodes that are too similar after measuring embedding similarity.
+This postprocessor returns the top K nodes after sorting by date and removing older nodes that are too similar after measuring embedding similarity.
 
 ```python
 from llama_index.core.postprocessor import EmbeddingRecencyPostprocessor
@@ -177,7 +177,7 @@ A full notebook guide is available [here](../../..../../../examples/node_postpro
 
 ## TimeWeightedPostprocessor
 
-This postproccesor returns the top K nodes applying a time-weighted rerank to each node. Each time a node is retrieved, the time it was retrieved is recorded. This biases search to favor information that has not be returned in a query yet.
+This postprocessor returns the top K nodes applying a time-weighted rerank to each node. Each time a node is retrieved, the time it was retrieved is recorded. This biases search to favor information that has not been returned in a query yet.
 
 ```python
 from llama_index.core.postprocessor import TimeWeightedPostprocessor
@@ -191,7 +191,7 @@ A full notebook guide is available [here](../../../examples/node_postprocessor/T
 
 ## (Beta) PIINodePostprocessor
 
-The PII (Personal Identifiable Information) postprocssor removes information that might be a security risk. It does this by using NER (either with a dedicated NER model, or with a local LLM model).
+The PII (Personal Identifiable Information) postprocessor removes information that might be a security risk. It does this by using NER (either with a dedicated NER model, or with a local LLM model).
 
 ### LLM Version
 
@@ -230,7 +230,7 @@ from llama_index.core.postprocessor import PrevNextNodePostprocessor
 
 postprocessor = PrevNextNodePostprocessor(
     docstore=index.docstore,
-    num_nodes=1,  # number of nodes to fetch when looking forawrds or backwards
+    num_nodes=1,  # number of nodes to fetch when looking forwards or backwards
     mode="next",  # can be either 'next', 'previous', or 'both'
 )
 
@@ -249,7 +249,7 @@ from llama_index.core.postprocessor import AutoPrevNextNodePostprocessor
 postprocessor = AutoPrevNextNodePostprocessor(
     docstore=index.docstore,
     service_context=service_context,
-    num_nodes=1,  # number of nodes to fetch when looking forawrds or backwards)
+    num_nodes=1,  # number of nodes to fetch when looking forwards or backwards)
 )
 postprocessor.postprocess_nodes(nodes)
 ```
