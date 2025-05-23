@@ -1020,6 +1020,7 @@ nav:
           - ./api_reference/llms/deepinfra.md
           - ./api_reference/llms/deepseek.md
           - ./api_reference/llms/everlyai.md
+          - ./api_reference/llms/featherlessai.md
           - ./api_reference/llms/fireworks.md
           - ./api_reference/llms/friendli.md
           - ./api_reference/llms/gaudi.md
