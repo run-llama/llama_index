@@ -31,6 +31,7 @@ class ResultStatus(Enum):
 
 
 NO_TESTS_INDICATOR = "no tests ran"
+MAX_CONSOLE_PRINT_LINES = 50
 
 
 @click.command(short_help="Run tests across the monorepo")
@@ -80,6 +81,7 @@ def test(
 
     console = obj["console"]
     repo_root = obj["repo_root"]
+    debug: bool = obj["debug"]
     packages_to_test: set[Path] = set()
     all_packages = find_all_packages(repo_root)
 
@@ -117,22 +119,27 @@ def test(
 
             # Print results as they complete
             package: Path = result["package"]
+            package_name = package.relative_to(repo_root)
             if result["status"] == ResultStatus.INSTALL_FAILED:
+                console.print(f"❗ Unable to build package {package_name}")
                 console.print(
-                    f"❗ Unable to build package {package.relative_to(repo_root)}"
+                    _trim(debug, f"Error:\n{result['stderr']}"), style="warning"
                 )
-                console.print(f"Error:\n{result['stderr']}", style="warning")
             elif result["status"] == ResultStatus.TESTS_PASSED:
-                console.print(
-                    f"✅ {package.relative_to(repo_root)} succeeded in {result['time']}"
-                )
+                console.print(f"✅ {package_name} succeeded in {result['time']}")
             elif result["status"] == ResultStatus.SKIPPED:
-                console.print(f"⏭️  {package.relative_to(repo_root)} skipped")
-                console.print(f"Error:\n{result['stderr']}", style="warning")
+                console.print(f"⏭️  {package_name} skipped")
+                console.print(
+                    _trim(debug, f"Error:\n{result['stderr']}"), style="warning"
+                )
             else:
-                console.print(f"❌ {package.relative_to(repo_root)} failed")
-                console.print(f"Error:\n{result['stderr']}", style="error")
-                console.print(f"Output:\n{result['stdout']}", style="info")
+                console.print(f"❌ {package_name} failed")
+                console.print(
+                    _trim(debug, f"Error:\n{result['stderr']}"), style="error"
+                )
+                console.print(
+                    _trim(debug, f"Output:\n{result['stdout']}"), style="info"
+                )
 
     # Print summary
     failed = [
@@ -176,6 +183,16 @@ def test(
         )
 
 
+def _trim(debug: bool, msg: str):
+    lines = msg.split("\n")
+    if len(lines) > MAX_CONSOLE_PRINT_LINES and not debug:
+        lines = lines[:MAX_CONSOLE_PRINT_LINES]
+        lines.append(
+            "<-- llama-dev: output truncated, pass '--debug' to see the full log -->"
+        )
+    return "\n".join(lines)
+
+
 def _uv_sync(
     package_path: Path, env: dict[str, str]
 ) -> subprocess.CompletedProcess:  # pragma: no cover
@@ -208,6 +225,7 @@ def _pytest(
     pytest_cmd = [
         "uv",
         "run",
+        "--no-sync",
         "--",
         "pytest",
         "-q",

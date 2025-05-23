@@ -1,6 +1,7 @@
 import functools
 import httpx
 import tiktoken
+import base64
 from openai import AsyncOpenAI, AzureOpenAI
 from openai import OpenAI as SyncOpenAI
 from openai.types.responses import (
@@ -13,7 +14,7 @@ from openai.types.responses import (
     ResponseFunctionCallArgumentsDoneEvent,
     ResponseInProgressEvent,
     ResponseOutputItemAddedEvent,
-    ResponseTextAnnotationDeltaEvent,
+    ResponseOutputTextAnnotationAddedEvent,
     ResponseTextDeltaEvent,
     ResponseWebSearchCallCompletedEvent,
     ResponseOutputItem,
@@ -23,7 +24,10 @@ from openai.types.responses import (
     ResponseFunctionWebSearch,
     ResponseComputerToolCall,
     ResponseReasoningItem,
+    ResponseCodeInterpreterToolCall,
+    ResponseImageGenCallPartialImageEvent,
 )
+from openai.types.responses.response_output_item import ImageGenerationCall, McpCall
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -59,7 +63,9 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
+    ContentBlock,
     TextBlock,
+    ImageBlock,
 )
 from llama_index.core.bridge.pydantic import (
     Field,
@@ -445,9 +451,9 @@ class OpenAIResponses(FunctionCallingLLM):
         message = ChatMessage(role=MessageRole.ASSISTANT, blocks=[])
         additional_kwargs = {"built_in_tool_calls": []}
         tool_calls = []
+        blocks: List[ContentBlock] = []
         for item in output:
             if isinstance(item, ResponseOutputMessage):
-                blocks = []
                 for part in item.content:
                     if hasattr(part, "text"):
                         blocks.append(TextBlock(text=part.text))
@@ -457,6 +463,17 @@ class OpenAIResponses(FunctionCallingLLM):
                         additional_kwargs["refusal"] = part.refusal
 
                 message.blocks.extend(blocks)
+            elif isinstance(item, ImageGenerationCall):
+                # return an ImageBlock if there is image generation
+                if item.status != "failed":
+                    additional_kwargs["built_in_tool_calls"].append(item)
+                    if item.result is not None:
+                        image_bytes = base64.b64decode(item.result)
+                        blocks.append(ImageBlock(image=image_bytes))
+            elif isinstance(item, ResponseCodeInterpreterToolCall):
+                additional_kwargs["built_in_tool_calls"].append(item)
+            elif isinstance(item, McpCall):
+                additional_kwargs["built_in_tool_calls"].append(item)
             elif isinstance(item, ResponseFileSearchToolCall):
                 additional_kwargs["built_in_tool_calls"].append(item)
             elif isinstance(item, ResponseFunctionToolCall):
@@ -475,6 +492,7 @@ class OpenAIResponses(FunctionCallingLLM):
 
     @llm_retry_decorator
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        kwargs_dict = self._get_model_kwargs(**kwargs)
         message_dicts = to_openai_message_dicts(
             messages,
             model=self.model,
@@ -484,7 +502,7 @@ class OpenAIResponses(FunctionCallingLLM):
         response: Response = self._client.responses.create(
             input=message_dicts,
             stream=False,
-            **self._get_model_kwargs(**kwargs),
+            **kwargs_dict,
         )
 
         if self.track_previous_responses:
@@ -499,7 +517,6 @@ class OpenAIResponses(FunctionCallingLLM):
     @staticmethod
     def process_response_event(
         event: ResponseStreamEvent,
-        content: str,
         tool_calls: List[ResponseFunctionToolCall],
         built_in_tool_calls: List[Any],
         additional_kwargs: Dict[str, Any],
@@ -507,7 +524,7 @@ class OpenAIResponses(FunctionCallingLLM):
         track_previous_responses: bool,
         previous_response_id: Optional[str] = None,
     ) -> Tuple[
-        str,
+        List[ContentBlock],
         List[ResponseFunctionToolCall],
         List[Any],
         Dict[str, Any],
@@ -534,7 +551,8 @@ class OpenAIResponses(FunctionCallingLLM):
         """
         delta = ""
         updated_previous_response_id = previous_response_id
-
+        # we use blocks instead of content, since now we also support images! :)
+        blocks: List[ContentBlock] = []
         if isinstance(event, ResponseCreatedEvent) or isinstance(
             event, ResponseInProgressEvent
         ):
@@ -548,7 +566,11 @@ class OpenAIResponses(FunctionCallingLLM):
         elif isinstance(event, ResponseTextDeltaEvent):
             # Text content is being added
             delta = event.delta
-            content += delta
+            blocks.append(TextBlock(text=delta))
+        elif isinstance(event, ResponseImageGenCallPartialImageEvent):
+            # Partial image
+            if event.partial_image_b64:
+                blocks.append(ImageBlock(image=base64.b64decode(event.partial_image_b64), detail=f"id_{event.partial_image_index}"))
         elif isinstance(event, ResponseFunctionCallArgumentsDeltaEvent):
             # Function call arguments are being streamed
             if current_tool_call is not None:
@@ -566,7 +588,7 @@ class OpenAIResponses(FunctionCallingLLM):
 
                 # clear the current tool call
                 current_tool_call = None
-        elif isinstance(event, ResponseTextAnnotationDeltaEvent):
+        elif isinstance(event, ResponseOutputTextAnnotationAddedEvent):
             # Annotations for the text
             annotations = additional_kwargs.get("annotations", [])
             annotations.append(event.annotation)
@@ -586,7 +608,7 @@ class OpenAIResponses(FunctionCallingLLM):
                 additional_kwargs["usage"] = event.response.usage
 
         return (
-            content,
+            blocks,
             tool_calls,
             built_in_tool_calls,
             additional_kwargs,
@@ -606,7 +628,6 @@ class OpenAIResponses(FunctionCallingLLM):
         )
 
         def gen() -> ChatResponseGen:
-            content = ""
             tool_calls = []
             built_in_tool_calls = []
             additional_kwargs = {"built_in_tool_calls": []}
@@ -620,7 +641,7 @@ class OpenAIResponses(FunctionCallingLLM):
             ):
                 # Process the event and update state
                 (
-                    content,
+                    blocks,
                     tool_calls,
                     built_in_tool_calls,
                     additional_kwargs,
@@ -629,7 +650,6 @@ class OpenAIResponses(FunctionCallingLLM):
                     delta,
                 ) = OpenAIResponses.process_response_event(
                     event=event,
-                    content=content,
                     tool_calls=tool_calls,
                     built_in_tool_calls=built_in_tool_calls,
                     additional_kwargs=additional_kwargs,
@@ -651,7 +671,7 @@ class OpenAIResponses(FunctionCallingLLM):
                 yield ChatResponse(
                     message=ChatMessage(
                         role=MessageRole.ASSISTANT,
-                        content=content,
+                        blocks=blocks,
                         additional_kwargs={"tool_calls": tool_calls}
                         if tool_calls
                         else {},
@@ -732,7 +752,6 @@ class OpenAIResponses(FunctionCallingLLM):
         )
 
         async def gen() -> ChatResponseAsyncGen:
-            content = ""
             tool_calls = []
             built_in_tool_calls = []
             additional_kwargs = {"built_in_tool_calls": []}
@@ -748,7 +767,7 @@ class OpenAIResponses(FunctionCallingLLM):
             async for event in response_stream:
                 # Process the event and update state
                 (
-                    content,
+                    blocks,
                     tool_calls,
                     built_in_tool_calls,
                     additional_kwargs,
@@ -757,7 +776,6 @@ class OpenAIResponses(FunctionCallingLLM):
                     delta,
                 ) = OpenAIResponses.process_response_event(
                     event=event,
-                    content=content,
                     tool_calls=tool_calls,
                     built_in_tool_calls=built_in_tool_calls,
                     additional_kwargs=additional_kwargs,
@@ -779,7 +797,7 @@ class OpenAIResponses(FunctionCallingLLM):
                 yield ChatResponse(
                     message=ChatMessage(
                         role=MessageRole.ASSISTANT,
-                        content=content,
+                        blocks=blocks,
                         additional_kwargs={"tool_calls": tool_calls}
                         if tool_calls
                         else {},

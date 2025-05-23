@@ -14,6 +14,7 @@ We support integrations with OpenAI, Anthropic, Google, Hugging Face, and more.
 - [Dashscope](../../../examples/llm/dashscope.ipynb)
 - [Dashscope Multi-Modal](../../../examples/multi_modal/dashscope_multi_modal.ipynb)
 - [EverlyAI](../../../examples/llm/everlyai.ipynb)
+- [Featherless AI](../../../examples/llm/featherlessai.ipynb)
 - [Fireworks](../../../examples/llm/fireworks.ipynb)
 - [Friendli](../../../examples/llm/friendli.ipynb)
 - [Google Gen AI](../../../examples/llm/google_genai.ipynb)

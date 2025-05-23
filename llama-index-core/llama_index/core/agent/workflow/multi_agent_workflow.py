@@ -288,8 +288,10 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
     ) -> ToolOutput:
         """Call the given tool with the given input."""
         try:
-            if isinstance(tool, FunctionTool) and tool.requires_context:
-                tool_output = await tool.acall(ctx=ctx, **tool_input)
+            if isinstance(tool, FunctionTool) and tool.requires_context and tool.ctx_param_name is not None:
+                new_tool_input = {**tool_input}
+                new_tool_input[tool.ctx_param_name] = ctx
+                tool_output = await tool.acall(**new_tool_input)
             else:
                 tool_output = await tool.acall(**tool_input)
         except Exception as e:
@@ -502,6 +504,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         next_agent_name = await ctx.get("next_agent", default=None)
         if next_agent_name:
             await ctx.set("current_agent_name", next_agent_name)
+            await ctx.set("next_agent", None)
 
         if any(
             tool_call_result.return_direct for tool_call_result in tool_call_results
@@ -561,11 +564,11 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 user_msg=user_msg,
                 chat_history=chat_history,
                 memory=memory,
+                **kwargs,
             ),
             ctx=ctx,
             stepwise=stepwise,
             checkpoint_callback=checkpoint_callback,
-            **kwargs,
         )
 
     @classmethod
