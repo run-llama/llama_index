@@ -4,7 +4,13 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from pathlib import Path
-from llama_index.core.base.llms.types import ChatMessage, MessageRole, TextBlock, DocumentBlock, ChatResponse
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    MessageRole,
+    TextBlock,
+    DocumentBlock,
+    ChatResponse,
+)
 from llama_index.llms.openai.responses import OpenAIResponses, ResponseFunctionToolCall
 from llama_index.core.tools import FunctionTool
 from llama_index.core.prompts import PromptTemplate
@@ -12,6 +18,7 @@ from openai.types.responses import (
     ResponseOutputMessage,
     ResponseTextDeltaEvent,
     ResponseFunctionCallArgumentsDeltaEvent,
+    ResponseOutputTextAnnotationAddedEvent,
     ResponseFunctionCallArgumentsDoneEvent,
 )
 from pydantic import BaseModel, Field
@@ -23,8 +30,9 @@ SKIP_OPENAI_TESTS = not os.environ.get("OPENAI_API_KEY")
 @pytest.fixture
 def default_responses_llm():
     """Create a default OpenAIResponses instance with mocked clients."""
-    with patch("llama_index.llms.openai.responses.SyncOpenAI"), patch(
-        "llama_index.llms.openai.responses.AsyncOpenAI"
+    with (
+        patch("llama_index.llms.openai.responses.SyncOpenAI"),
+        patch("llama_index.llms.openai.responses.AsyncOpenAI"),
     ):
         llm = OpenAIResponses(
             model="gpt-4o-mini",
@@ -50,8 +58,9 @@ def test_init_and_properties(default_responses_llm):
 
 def test_get_model_name():
     """Test different model name formats are properly handled."""
-    with patch("llama_index.llms.openai.responses.SyncOpenAI"), patch(
-        "llama_index.llms.openai.responses.AsyncOpenAI"
+    with (
+        patch("llama_index.llms.openai.responses.SyncOpenAI"),
+        patch("llama_index.llms.openai.responses.AsyncOpenAI"),
     ):
         # Standard model
         llm = OpenAIResponses(model="gpt-4o-mini")
@@ -94,8 +103,9 @@ def test_parse_response_output():
         )
     ]
 
-    with patch("llama_index.llms.openai.responses.SyncOpenAI"), patch(
-        "llama_index.llms.openai.responses.AsyncOpenAI"
+    with (
+        patch("llama_index.llms.openai.responses.SyncOpenAI"),
+        patch("llama_index.llms.openai.responses.AsyncOpenAI"),
     ):
         llm = OpenAIResponses(model="gpt-4o-mini")
         chat_response = llm._parse_response_output(output)
@@ -175,7 +185,7 @@ def test_process_response_event():
         output_index=0,
         type="response.function_call_arguments.done",
         arguments='{"arg": "value"}',
-        sequence_number = 1,
+        sequence_number=1,
     )
 
     result = OpenAIResponses.process_response_event(
@@ -194,6 +204,41 @@ def test_process_response_event():
     assert final_current_call is None
 
 
+def test_process_response_event_with_text_annotation():
+    """Test process_response_event handles ResponseOutputTextAnnotationAddedEvent."""
+    tool_calls = []
+    built_in_tool_calls = []
+    additional_kwargs = {}
+    current_tool_call = None
+
+    # Create a dummy annotation event
+    event = ResponseOutputTextAnnotationAddedEvent(
+        item_id="123",
+        output_index=0,
+        content_index=0,
+        annotation_index=0,
+        type="response.output_text_annotation.added",
+        annotation={"type": "test_annotation", "value": 42},
+        sequence_number=1,
+    )
+
+    result = OpenAIResponses.process_response_event(
+        event=event,
+        tool_calls=tool_calls,
+        built_in_tool_calls=built_in_tool_calls,
+        additional_kwargs=additional_kwargs,
+        current_tool_call=current_tool_call,
+        track_previous_responses=False,
+    )
+
+    # The annotation should be added to additional_kwargs["annotations"]
+    _, _, _, updated_additional_kwargs, _, _, _ = result
+    assert "annotations" in updated_additional_kwargs
+    assert updated_additional_kwargs["annotations"] == [
+        {"type": "test_annotation", "value": 42}
+    ]
+
+
 def test_get_tool_calls_from_response():
     """Test extracting tool calls from a chat response."""
     tool_call = ResponseFunctionToolCall(
@@ -209,8 +254,9 @@ def test_get_tool_calls_from_response():
     chat_response = MagicMock()
     chat_response.message.additional_kwargs = {"tool_calls": [tool_call]}
 
-    with patch("llama_index.llms.openai.responses.SyncOpenAI"), patch(
-        "llama_index.llms.openai.responses.AsyncOpenAI"
+    with (
+        patch("llama_index.llms.openai.responses.SyncOpenAI"),
+        patch("llama_index.llms.openai.responses.AsyncOpenAI"),
     ):
         llm = OpenAIResponses(model="gpt-4o-mini")
         tool_selections = llm.get_tool_calls_from_response(chat_response)
@@ -386,9 +432,11 @@ def test_chat_with_built_in_tools():
     # Should contain built-in tool calls in the response
     assert "built_in_tool_calls" in response.additional_kwargs
 
+
 @pytest.fixture()
 def pdf_url() -> str:
     return "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+
 
 @pytest.mark.skipif(SKIP_OPENAI_TESTS, reason="OpenAI API key not available")
 def test_document_upload(tmp_path: Path, pdf_url: str) -> None:
@@ -396,7 +444,13 @@ def test_document_upload(tmp_path: Path, pdf_url: str) -> None:
     pdf_path = tmp_path / "test.pdf"
     pdf_content = httpx.get(pdf_url).content
     pdf_path.write_bytes(pdf_content)
-    msg = ChatMessage(role=MessageRole.USER, blocks=[DocumentBlock(path=pdf_path), TextBlock(text="What does the document contain?")])
+    msg = ChatMessage(
+        role=MessageRole.USER,
+        blocks=[
+            DocumentBlock(path=pdf_path),
+            TextBlock(text="What does the document contain?"),
+        ],
+    )
     messages = [msg]
     response = llm.chat(messages)
     assert isinstance(response, ChatResponse)
