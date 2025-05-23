@@ -13,16 +13,19 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     DocumentBlock,
+    AudioBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.schema import ImageDocument
 from pydantic import AnyUrl
 
+@pytest.fixture()
+def empty_bytes() -> bytes:
+    return b""
 
 @pytest.fixture()
 def png_1px_b64() -> bytes:
     return b"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
-
 
 @pytest.fixture()
 def png_1px(png_1px_b64) -> bytes:
@@ -278,3 +281,27 @@ def test_document_block_from_url(pdf_url: str):
         bytes_base64_encoded = False
     assert bytes_base64_encoded
     assert document.title == "dummy_pdf"
+
+def test_empty_bytes(empty_bytes: bytes, png_1px: bytes):
+    errors = []
+    try:
+        DocumentBlock(data=empty_bytes).resolve_document()
+        errors.append(0)
+    except ValueError:
+        errors.append(1)
+    try:
+        AudioBlock(audio=empty_bytes).resolve_audio()
+        errors.append(0)
+    except ValueError:
+        errors.append(1)
+    try:
+        ImageBlock(image=empty_bytes).resolve_image()
+        errors.append(0)
+    except ValueError:
+        errors.append(1)
+    try:
+        ImageBlock(image=png_1px).resolve_image()
+        errors.append(0)
+    except ValueError:
+        errors.append(1)
+    assert sum(errors) == 3
