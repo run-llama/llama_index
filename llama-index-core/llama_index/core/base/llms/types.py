@@ -124,17 +124,15 @@ class ImageBlock(BaseModel):
             url=str(self.url) if self.url else None,
             as_base64=as_base64,
         )
-        with data_buffer as r:
-            rb = r.read()
-        if len(rb) == 0:
-            raise ValueError("resolve_image returned zero bytes")
-        return resolve_binary(
-            raw_bytes=self.image,
-            path=self.path,
-            url=str(self.url) if self.url else None,
-            as_base64=as_base64,
-        )
 
+        # Check size by seeking to end and getting position
+        data_buffer.seek(0, 2)  # Seek to end
+        size = data_buffer.tell()
+        data_buffer.seek(0)     # Reset to beginning
+
+        if size == 0:
+            raise ValueError("resolve_image returned zero bytes")
+        return data_buffer
 
 class AudioBlock(BaseModel):
     block_type: Literal["audio"] = "audio"
@@ -194,16 +192,15 @@ class AudioBlock(BaseModel):
             url=str(self.url) if self.url else None,
             as_base64=as_base64,
         )
-        with data_buffer as r:
-            rb = r.read()
-        if len(rb) == 0:
-            raise ValueError("resolve_audio returned zero bytes")
-        return resolve_binary(
-            raw_bytes=self.audio,
-            path=self.path,
-            url=str(self.url) if self.url else None,
-            as_base64=as_base64,
-        )
+        # Check size by seeking to end and getting position
+        data_buffer.seek(0, 2)  # Seek to end
+        size = data_buffer.tell()
+        data_buffer.seek(0)     # Reset to beginning
+
+        if size == 0:
+            raise ValueError("resolve_image returned zero bytes")
+        return data_buffer
+
 
 class DocumentBlock(BaseModel):
     block_type: Literal["document"] = "document"
@@ -241,16 +238,15 @@ class DocumentBlock(BaseModel):
             url=str(self.url) if self.url else None,
             as_base64=False,
         )
-        with data_buffer as r:
-            rb = r.read()
-        if len(rb) == 0:
-            raise ValueError("resolve_document returned zero bytes")
-        return resolve_binary(
-                raw_bytes=self.data,
-                path=self.path,
-                url=str(self.url) if self.url else None,
-                as_base64=False,
-            )
+        # Check size by seeking to end and getting position
+        data_buffer.seek(0, 2)  # Seek to end
+        size = data_buffer.tell()
+        data_buffer.seek(0)     # Reset to beginning
+
+        if size == 0:
+            raise ValueError("resolve_image returned zero bytes")
+        return data_buffer
+
 
     def _get_b64_string(self, data_buffer: BytesIO) -> str:
         """
