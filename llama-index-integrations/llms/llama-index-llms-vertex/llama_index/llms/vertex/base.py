@@ -478,8 +478,31 @@ class Vertex(FunctionCallingLLM):
         return {
             "messages": chat_history,
             "tools": tool_dicts or None,
+            "tool_config": self._to_function_calling_config(tool_required),
             **kwargs,
         }
+
+    def _to_function_calling_config(self, tool_required: bool) -> dict:
+
+        if tool_choice and not isinstance(tool_choice, str):
+            raise ValueError("Gemini only supports string tool_choices")
+        tool_choice = tool_choice or ("any" if tool_required else "auto")
+
+        if tool_choice == "auto":
+            tool_mode = FunctionCallingMode.AUTO
+        elif tool_choice == "none":
+            tool_mode = FunctionCallingMode.NONE
+        else:
+            tool_mode = FunctionCallingMode.ANY
+
+        allowed_function_names = None
+        if tool_choice not in ["auto", "none", "any"]:
+            allowed_function_names = [tool_choice]
+        return {
+            "mode": tool_mode,
+            **({"allowed_function_names": allowed_function_names} if allowed_function_names else {}),
+        }
+
 
     def _validate_chat_with_tools_response(
         self,
