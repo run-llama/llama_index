@@ -17,7 +17,6 @@ from typing import (
     cast,
     Union,
     AsyncGenerator,
-    Generator,
 )
 
 from llama_index.core.agent.types import (
@@ -356,19 +355,30 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
     ) -> TaskStepOutput:
         """Run step."""
         if self.verbose:
+            step_count = step.step_state.get("replans", None)
+            if step_count is None:
+                step.step_state["replans"] = 1
             print(
                 f"> Running step {step.step_id} for task {task.task_id}.\n"
                 f"> Step count: {step.step_state['replans']}"
             )
+        is_replan = step.step_state.get("is_replan", None)
+        if is_replan is None:
+            step.step_state["is_replan"] = True
         is_final_iter = (
             step.step_state["is_replan"]
             and step.step_state["replans"] >= self.max_replans
         )
+        step.step_state["replans"] += 1
 
+        contexts = step.step_state.get("contexts", None)
+        if contexts is None:
+            step.step_state["contexts"] = [""]
         if len(step.step_state["contexts"]) == 0:
             formatted_contexts = None
         else:
             formatted_contexts = format_contexts(step.step_state["contexts"])
+
         llm_response = await self.arun_llm(
             task.input,
             previous_context=formatted_contexts,
@@ -393,7 +403,6 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
             tasks,
             is_final=is_final_iter,
         )
-
         # get task step response (with new steps planned)
         return self._get_task_step_response(
             task,
@@ -454,15 +463,25 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
     ) -> TaskStepOutput:
         """Run step (async stream)."""
         if self.verbose:
+            step_count = step.step_state.get("replans", None)
+            if step_count is None:
+                step.step_state["replans"] = 1
             print(
                 f"> Running step {step.step_id} for task {task.task_id}.\n"
                 f"> Step count: {step.step_state['replans']}"
             )
+        is_replan = step.step_state.get("is_replan", None)
+        if is_replan is None:
+            step.step_state["is_replan"] = True
         is_final_iter = (
             step.step_state["is_replan"]
             and step.step_state["replans"] >= self.max_replans
         )
+        step.step_state["replans"] += 1
 
+        contexts = step.step_state.get("contexts", None)
+        if contexts is None:
+            step.step_state["contexts"] = [""]
         if len(step.step_state["contexts"]) == 0:
             formatted_contexts = None
         else:
@@ -569,15 +588,25 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
     ) -> TaskStepOutput:
         """Run step (async stream)."""
         if self.verbose:
+            step_count = step.step_state.get("replans", None)
+            if step_count is None:
+                step.step_state["replans"] = 1
             print(
                 f"> Running step {step.step_id} for task {task.task_id}.\n"
                 f"> Step count: {step.step_state['replans']}"
             )
+        is_replan = step.step_state.get("is_replan", None)
+        if is_replan is None:
+            step.step_state["is_replan"] = True
         is_final_iter = (
             step.step_state["is_replan"]
             and step.step_state["replans"] >= self.max_replans
         )
+        step.step_state["replans"] += 1
 
+        contexts = step.step_state.get("contexts", None)
+        if contexts is None:
+            step.step_state["contexts"] = [""]
         if len(step.step_state["contexts"]) == 0:
             formatted_contexts = None
         else:
