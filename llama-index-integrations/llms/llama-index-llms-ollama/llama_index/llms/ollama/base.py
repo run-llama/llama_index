@@ -96,9 +96,8 @@ class Ollama(FunctionCallingLLM):
         description="The temperature to use for sampling.",
     )
     context_window: int = Field(
-        default=DEFAULT_CONTEXT_WINDOW,
+        default=-1,
         description="The maximum number of context tokens for the model.",
-        gt=0,
     )
     request_timeout: float = Field(
         default=DEFAULT_REQUEST_TIMEOUT,
@@ -132,7 +131,7 @@ class Ollama(FunctionCallingLLM):
         model: str,
         base_url: str = "http://localhost:11434",
         temperature: Optional[float] = None,
-        context_window: int = DEFAULT_CONTEXT_WINDOW,
+        context_window: int = -1,
         request_timeout: Optional[float] = DEFAULT_REQUEST_TIMEOUT,
         prompt_key: str = "prompt",
         json_mode: bool = False,
@@ -168,7 +167,7 @@ class Ollama(FunctionCallingLLM):
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
         return LLMMetadata(
-            context_window=self.context_window,
+            context_window=self.get_context_window(),
             num_output=DEFAULT_NUM_OUTPUTS,
             model_name=self.model,
             is_chat_model=True,  # Ollama supports chat API for all models
@@ -194,12 +193,24 @@ class Ollama(FunctionCallingLLM):
     def _model_kwargs(self) -> Dict[str, Any]:
         base_kwargs = {
             "temperature": self.temperature,
-            "num_ctx": self.context_window,
+            "num_ctx": self.get_context_window(),
         }
         return {
             **base_kwargs,
             **self.additional_kwargs,
         }
+
+    def get_context_window(self) -> int:
+        if self.context_window == -1:
+            # Try to get the context window from the model info if not set
+            info = self.client.show(self.model).modelinfo
+            for key, value in info.items():
+                if "context_length" in key:
+                    self.context_window = int(value)
+                    break
+
+        # If the context window is still -1, use the default context window
+        return self.context_window if self.context_window != -1 else DEFAULT_CONTEXT_WINDOW
 
     def _convert_to_ollama_messages(self, messages: Sequence[ChatMessage]) -> Dict:
         ollama_messages = []
