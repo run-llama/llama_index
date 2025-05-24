@@ -204,6 +204,7 @@ class LiteLLM(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         tool_specs = [
@@ -220,6 +221,7 @@ class LiteLLM(FunctionCallingLLM):
             "messages": messages,
             "tools": tool_specs or None,
             "parallel_tool_calls": allow_parallel_tool_calls,
+            "tool_choice": "required" if tool_required else "auto",
             **kwargs,
         }
 
