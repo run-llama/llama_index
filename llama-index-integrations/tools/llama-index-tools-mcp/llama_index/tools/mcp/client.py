@@ -6,6 +6,7 @@ from urllib.parse import urlparse
 from mcp.client.session import ClientSession
 from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client, StdioServerParameters
+from mcp.client.streamable_http import streamablehttp_client
 
 
 class BasicMCPClient(ClientSession):
@@ -36,8 +37,14 @@ class BasicMCPClient(ClientSession):
 
     @asynccontextmanager
     async def _run_session(self):
-        if urlparse(self.command_or_url).scheme in ("http", "https"):
-            async with sse_client(self.command_or_url) as streams:
+        parsed_url = urlparse(self.command_or_url)
+        if parsed_url.scheme in ("http", "https"):
+            if parsed_url.path.endswith("/mcp/"):
+                client = streamablehttp_client
+            else:
+                client = sse_client
+                
+            async with client(self.command_or_url) as streams:
                 async with ClientSession(
                     *streams, read_timeout_seconds=timedelta(seconds=self.timeout)
                 ) as session:
