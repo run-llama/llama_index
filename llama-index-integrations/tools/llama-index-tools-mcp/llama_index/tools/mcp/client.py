@@ -43,7 +43,7 @@ class BasicMCPClient(ClientSession):
                 client = streamablehttp_client
             else:
                 client = sse_client
-                
+
             async with client(self.command_or_url) as streams:
                 async with ClientSession(
                     *streams, read_timeout_seconds=timedelta(seconds=self.timeout)
