@@ -248,3 +248,34 @@ async def test_async_retry_on_connection_error(mock_client_class):
     # Verify both mocks were called (original + retry)
     fail_mock.assert_called_once()
     success_mock.assert_called_once()
+
+
+@patch("google.genai.Client")
+def test_no_retry_on_auth_error(mock_client_class):
+    """Test that authentication errors from invalid API keys are NOT retried."""
+    # Setup mock client
+    mock_client = mock_client_class.return_value
+    mock_models = mock_client.models
+    mock_embed_content = mock_models.embed_content
+
+    # Make embed_content fail with authentication error (invalid API key)
+    auth_error = APIError(401, response_json={"error": {"message": "Invalid API key"}})
+    mock_embed_content.side_effect = auth_error
+
+    # Test embedding with retries configured
+    emb = GoogleGenAIEmbedding(
+        api_key="invalid_key",
+        retries=3,  # Even with multiple retries configured
+        retry_min_seconds=0.1,
+        retry_max_seconds=0.2
+    )
+
+    # Should raise the APIError without retrying
+    with pytest.raises(APIError) as excinfo:
+        emb.get_text_embedding("test text")
+
+    # Verify error is the same auth error
+    assert excinfo.value == auth_error
+
+    # Verify embed_content was called exactly once (no retries)
+    mock_embed_content.assert_called_once()

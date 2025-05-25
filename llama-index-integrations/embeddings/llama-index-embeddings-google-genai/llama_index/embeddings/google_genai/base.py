@@ -123,6 +123,8 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         retry_min_seconds (float): Minimum wait time between retries. Defaults to 1.
         retry_max_seconds (float): Maximum wait time between retries. Defaults to 10.
         retry_exponential_base (float): Base for exponential backoff calculation. Defaults to 2.
+        retry_auth_errors (bool): Whether to retry authentication errors (401, 403). Not recommended
+            for production as retrying with the same invalid credentials wastes resources. Defaults to False.
 
     Examples:
         `pip install llama-index-embeddings-google-genai`
@@ -152,6 +154,9 @@ class GoogleGenAIEmbedding(BaseEmbedding):
     retry_exponential_base: float = Field(
         default=2, description="Base for exponential backoff calculation."
     )
+    retry_auth_errors: bool = Field(
+        default=False, description="Whether to retry authentication errors (401, 403)."
+    )
 
     def __init__(
         self,
@@ -168,6 +173,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         retry_min_seconds: float = 1,
         retry_max_seconds: float = 60,
         retry_exponential_base: float = 2,
+        retry_auth_errors: bool = False,
         **kwargs: Any,
     ):
         super().__init__(
@@ -180,6 +186,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
             retry_min_seconds=retry_min_seconds,
             retry_max_seconds=retry_max_seconds,
             retry_exponential_base=retry_exponential_base,
+            retry_auth_errors=retry_auth_errors,
             **kwargs,
         )
 
