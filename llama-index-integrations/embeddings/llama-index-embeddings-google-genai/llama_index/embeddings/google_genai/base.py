@@ -1,8 +1,10 @@
 """Gemini embeddings file."""
 
 import os
-from typing import Any, Dict, List, Optional, TypedDict
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception, AsyncRetrying
+from typing import Any, Dict, List, Optional, TypedDict, Callable, TypeVar, Awaitable
 
+import requests
 from llama_index.core.base.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
     BaseEmbedding,
@@ -13,12 +15,93 @@ from llama_index.core.callbacks.base import CallbackManager
 import google.genai
 import google.auth.credentials
 import google.genai.types as types
+from google.genai.errors import APIError
 
+# Define generic types for functions that will be wrapped with retry
+T = TypeVar("T")
+R = TypeVar("R")
 
 class VertexAIConfig(TypedDict):
     credentials: Optional[google.auth.credentials.Credentials] = None
     project: Optional[str] = None
     location: Optional[str] = None
+
+
+def is_retryable_error(exception: BaseException) -> bool:
+    """
+    Checks if the exception is a retryable error based on the criteria.
+    """
+    if isinstance(exception, APIError):
+        return exception.code in [429, 502, 503, 504]
+    if isinstance(exception, requests.exceptions.ConnectionError):  # noqa: SIM103
+        return True
+    return False  # noqa: SIM103
+
+
+def get_retryable_function(
+    func: Callable[..., T],
+    max_retries: int = 3,
+    min_seconds: float = 1,
+    max_seconds: float = 10,
+    exponential_base: float = 2
+) -> Callable[..., T]:
+    """
+    Wraps a function with tenacity retry decorator based on configurable parameters.
+
+    Args:
+        func: The function to wrap with retry logic
+        max_retries: Maximum number of retry attempts
+        min_seconds: Minimum wait time between retries
+        max_seconds: Maximum wait time between retries
+        exponential_base: Base for exponential backoff calculation
+
+    Returns:
+        The wrapped function with retry logic
+
+    """
+    retry_decorator = retry(
+        reraise=True,
+        stop=stop_after_attempt(max_retries),
+        wait=wait_exponential(multiplier=min_seconds, max=max_seconds, exp_base=exponential_base),
+        retry=retry_if_exception(is_retryable_error)
+    )
+
+    return retry_decorator(func)
+
+
+async def get_retryable_async_function(
+    func: Callable[..., Awaitable[R]],
+    max_retries: int = 3,
+    min_seconds: float = 1,
+    max_seconds: float = 10,
+    exponential_base: float = 2
+) -> R:
+    """
+    Wraps an async function with tenacity retry logic based on configurable parameters.
+
+    Args:
+        func: The async function to wrap with retry logic
+        max_retries: Maximum number of retry attempts
+        min_seconds: Minimum wait time between retries
+        max_seconds: Maximum wait time between retries
+        exponential_base: Base for exponential backoff calculation
+
+    Returns:
+        The result of the async function after applying retry logic
+
+    """
+    retry_config = AsyncRetrying(
+        reraise=True,
+        stop=stop_after_attempt(max_retries),
+        wait=wait_exponential(multiplier=min_seconds, max=max_seconds, exp_base=exponential_base),
+        retry=retry_if_exception(is_retryable_error)
+    )
+
+    async for attempt in retry_config:
+        with attempt:
+            return await func()
+
+    raise Exception("Failed to get retryable async function")
 
 
 class GoogleGenAIEmbedding(BaseEmbedding):
@@ -40,8 +123,6 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         retry_min_seconds (float): Minimum wait time between retries. Defaults to 1.
         retry_max_seconds (float): Maximum wait time between retries. Defaults to 10.
         retry_exponential_base (float): Base for exponential backoff calculation. Defaults to 2.
-        retry_auth_errors (bool): Whether to retry authentication errors (401, 403). Not recommended
-            for production as retrying with the same invalid credentials wastes resources. Defaults to False.
 
     Examples:
         `pip install llama-index-embeddings-google-genai`
@@ -71,9 +152,6 @@ class GoogleGenAIEmbedding(BaseEmbedding):
     retry_exponential_base: float = Field(
         default=2, description="Base for exponential backoff calculation."
     )
-    retry_auth_errors: bool = Field(
-        default=False, description="Whether to retry authentication errors (401, 403)."
-    )
 
     def __init__(
         self,
@@ -90,7 +168,6 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         retry_min_seconds: float = 1,
         retry_max_seconds: float = 60,
         retry_exponential_base: float = 2,
-        retry_auth_errors: bool = False,
         **kwargs: Any,
     ):
         super().__init__(
@@ -103,7 +180,6 @@ class GoogleGenAIEmbedding(BaseEmbedding):
             retry_min_seconds=retry_min_seconds,
             retry_max_seconds=retry_max_seconds,
             retry_exponential_base=retry_exponential_base,
-            retry_auth_errors=retry_auth_errors,
             **kwargs,
         )
 
@@ -156,13 +232,28 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         elif task_type and self.embedding_config:
             embedding_config = dict(self.embedding_config)
             embedding_config["task_type"] = task_type
+        else:
+            embedding_config = self.embedding_config
 
-        results = self._client.models.embed_content(
-            model=self.model_name,
-            contents=texts,
-            config=embedding_config,
+        # Create the embedding function with retry logic
+        def embed_with_client() -> List[List[float]]:
+            results = self._client.models.embed_content(
+                model=self.model_name,
+                contents=texts,
+                config=embedding_config,
+            )
+            return [result.values for result in results.embeddings]
+
+        # Apply the retry decorator
+        retryable_embed = get_retryable_function(
+            embed_with_client,
+            max_retries=self.retries,
+            min_seconds=self.retry_min_seconds,
+            max_seconds=self.retry_max_seconds,
+            exponential_base=self.retry_exponential_base
         )
-        return [result.values for result in results.embeddings]
+
+        return retryable_embed()
 
     async def _aembed_texts(
         self, texts: List[str], task_type: Optional[str] = None
@@ -174,13 +265,26 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         elif task_type and self.embedding_config:
             embedding_config = dict(self.embedding_config)
             embedding_config["task_type"] = task_type
+        else:
+            embedding_config = self.embedding_config
 
-        results = await self._client.aio.models.embed_content(
-            model=self.model_name,
-            contents=texts,
-            config=embedding_config,
+        # Create the async embedding function with retry logic
+        async def aembed_with_client() -> List[List[float]]:
+            results = await self._client.aio.models.embed_content(
+                model=self.model_name,
+                contents=texts,
+                config=embedding_config,
+            )
+            return [result.values for result in results.embeddings]
+
+        # Apply the async retry helper
+        return await get_retryable_async_function(
+            aembed_with_client,
+            max_retries=self.retries,
+            min_seconds=self.retry_min_seconds,
+            max_seconds=self.retry_max_seconds,
+            exponential_base=self.retry_exponential_base
         )
-        return [result.values for result in results.embeddings]
 
     def _get_query_embedding(self, query: str) -> List[float]:
         """Get query embedding."""
