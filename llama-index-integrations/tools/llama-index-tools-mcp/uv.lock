@@ -110,6 +110,18 @@ wheels = [
 ]
 
 [[package]]
+name = "aiosqlite"
+version = "0.21.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/13/7d/8bca2bf9a247c2c5dfeec1d7a5f40db6518f88d314b8bca9da29670d2671/aiosqlite-0.21.0.tar.gz", hash = "sha256:131bb8056daa3bc875608c631c678cda73922a2d4ba8aec373b19f18c17e7aa3", size = 13454, upload_time = "2025-02-03T07:30:16.235Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/f5/10/6c25ed6de94c49f88a91fa5018cb4c0f3625f31d5be9f771ebe5cc7cd506/aiosqlite-0.21.0-py3-none-any.whl", hash = "sha256:2549cf4057f95f53dcba16f2b64e8e2791d7e1adedb13197dd8ed77bb226d7d0", size = 15792, upload_time = "2025-02-03T07:30:13.6Z" },
+]
+
+[[package]]
 name = "annotated-types"
 version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1464,10 +1476,11 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.12.33.post1"
+version = "0.12.37"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
+    { name = "aiosqlite" },
     { name = "banks" },
     { name = "dataclasses-json" },
     { name = "deprecated" },
@@ -1491,14 +1504,14 @@ dependencies = [
     { name = "typing-inspect" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a9/51/e99358e80b0d80777c84081159d351f51feaa6c7d7054486bbbb49f6c9c0/llama_index_core-0.12.33.post1.tar.gz", hash = "sha256:d257f6f594dfd9cf6435af02761a3d21f1427df5347f0e5e9fffe4024db6a724", size = 7282200, upload_time = "2025-04-23T18:48:42.505Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/99/96/cb236b066184c5154b391d5028a56d6ca1f9aec69edf6cbef6c9a6ff1eff/llama_index_core-0.12.37.tar.gz", hash = "sha256:c2c13c36229bc9cfffc7bf1daca888e382d5ae484af96273c53f001ed84dc253", size = 7289254, upload_time = "2025-05-19T22:14:39.022Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/87/01/6fcf557a72ad25734327515db506744f8f8ba95846a0f7e055c8fa95a54d/llama_index_core-0.12.33.post1-py3-none-any.whl", hash = "sha256:2c4a316a1ae9ec86c817d44961d1058691632acb3a7021e6af56fcfb8735fd3d", size = 7650733, upload_time = "2025-04-23T18:48:33.433Z" },
+    { url = "https://files.pythonhosted.org/packages/67/e8/1a2c5ca5d2af0f1741964259f09d1c8b7ce27b0e913f39c894038088d430/llama_index_core-0.12.37-py3-none-any.whl", hash = "sha256:1a841db0dcdace161d2fcecfee0ab94d28e50196973974c5142f0d18d3f7663f", size = 7661867, upload_time = "2025-05-19T22:14:30.121Z" },
 ]
 
 [[package]]
 name = "llama-index-tools-mcp"
-version = "0.1.2"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1519,6 +1532,7 @@ dev = [
     { name = "pre-commit" },
     { name = "pylint" },
     { name = "pytest" },
+    { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "pytest-mock" },
     { name = "ruff" },
@@ -1532,8 +1546,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-core", specifier = ">=0.12.0,<0.13" },
-    { name = "mcp", specifier = ">=1.2.0,<2" },
+    { name = "llama-index-core", specifier = ">=0.12.37,<0.13" },
+    { name = "mcp", specifier = ">=1.9.1,<2" },
     { name = "pydantic", specifier = ">=2.0.0,<3" },
 ]
 
@@ -1550,6 +1564,7 @@ dev = [
     { name = "pre-commit", specifier = "==3.2.0" },
     { name = "pylint", specifier = "==2.15.10" },
     { name = "pytest", specifier = "==7.2.1" },
+    { name = "pytest-asyncio", specifier = ">=0.23.8" },
     { name = "pytest-cov", specifier = ">=6.1.1" },
     { name = "pytest-mock", specifier = "==3.11.1" },
     { name = "ruff", specifier = "==0.0.292" },
@@ -1654,7 +1669,7 @@ wheels = [
 
 [[package]]
 name = "mcp"
-version = "1.6.0"
+version = "1.9.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -1662,13 +1677,14 @@ dependencies = [
     { name = "httpx-sse" },
     { name = "pydantic" },
     { name = "pydantic-settings" },
+    { name = "python-multipart" },
     { name = "sse-starlette" },
     { name = "starlette" },
-    { name = "uvicorn" },
+    { name = "uvicorn", marker = "sys_platform != 'emscripten'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/95/d2/f587cb965a56e992634bebc8611c5b579af912b74e04eb9164bd49527d21/mcp-1.6.0.tar.gz", hash = "sha256:d9324876de2c5637369f43161cd71eebfd803df5a95e46225cab8d280e366723", size = 200031, upload_time = "2025-03-27T16:46:32.336Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e7/bc/54aec2c334698cc575ca3b3481eed627125fb66544152fa1af927b1a495c/mcp-1.9.1.tar.gz", hash = "sha256:19879cd6dde3d763297617242888c2f695a95dfa854386a6a68676a646ce75e4", size = 316247, upload_time = "2025-05-22T15:52:21.26Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/10/30/20a7f33b0b884a9d14dd3aa94ff1ac9da1479fe2ad66dd9e2736075d2506/mcp-1.6.0-py3-none-any.whl", hash = "sha256:7bd24c6ea042dbec44c754f100984d186620d8b841ec30f1b19eda9b93a634d0", size = 76077, upload_time = "2025-03-27T16:46:29.919Z" },
+    { url = "https://files.pythonhosted.org/packages/a6/c0/4ac795585a22a0a2d09cd2b1187b0252d2afcdebd01e10a68bbac4d34890/mcp-1.9.1-py3-none-any.whl", hash = "sha256:2900ded8ffafc3c8a7bfcfe8bc5204037e988e753ec398f371663e6a06ecd9a9", size = 130261, upload_time = "2025-05-22T15:52:19.702Z" },
 ]
 
 [[package]]
@@ -2494,6 +2510,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pytest-asyncio"
+version = "0.23.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/de/b4/0b378b7bf26a8ae161c3890c0b48a91a04106c5713ce81b4b080ea2f4f18/pytest_asyncio-0.23.8.tar.gz", hash = "sha256:759b10b33a6dc61cce40a8bd5205e302978bbbcc00e279a8b61d9a6a3c82e4d3", size = 46920, upload_time = "2024-07-17T17:39:34.617Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ee/82/62e2d63639ecb0fbe8a7ee59ef0bc69a4669ec50f6d3459f74ad4e4189a2/pytest_asyncio-0.23.8-py3-none-any.whl", hash = "sha256:50265d892689a5faefb84df80819d1ecef566eb3549cf915dfb33569359d1ce2", size = 17663, upload_time = "2024-07-17T17:39:32.478Z" },
+]
+
+[[package]]
 name = "pytest-cov"
 version = "6.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2546,6 +2574,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/9e/de/d3144a0bceede957f961e975f3752760fbe390d57fbe194baf709d8f1f7b/python_json_logger-3.3.0.tar.gz", hash = "sha256:12b7e74b17775e7d565129296105bbe3910842d9d0eb083fc83a6a617aa8df84", size = 16642, upload_time = "2025-03-07T07:08:27.301Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/08/20/0f2523b9e50a8052bc6a8b732dfc8568abbdc42010aef03a2d750bdab3b2/python_json_logger-3.3.0-py3-none-any.whl", hash = "sha256:dd980fae8cffb24c13caf6e158d3d61c0d6d22342f932cb6e9deedab3d35eec7", size = 15163, upload_time = "2025-03-07T07:08:25.627Z" },
+]
+
+[[package]]
+name = "python-multipart"
+version = "0.0.20"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f3/87/f44d7c9f274c7ee665a29b885ec97089ec5dc034c7f3fafa03da9e39a09e/python_multipart-0.0.20.tar.gz", hash = "sha256:8dd0cab45b8e23064ae09147625994d090fa46f5b0d1e13af944c331a7fa9d13", size = 37158, upload_time = "2024-12-16T19:45:46.972Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/45/58/38b5afbc1a800eeea951b9285d3912613f2603bdf897a4ab0f4bd7f405fc/python_multipart-0.0.20-py3-none-any.whl", hash = "sha256:8a62d3a8335e06589fe01f2a3e178cdcc632f3fbe0d492ad9ee0ec35aab1f104", size = 24546, upload_time = "2024-12-16T19:45:44.423Z" },
 ]
 
 [[package]]

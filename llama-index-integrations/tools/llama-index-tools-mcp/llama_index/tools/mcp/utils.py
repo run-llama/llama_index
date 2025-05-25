@@ -9,10 +9,12 @@ from llama_index.core.workflow import Event, StartEvent, StopEvent, Workflow
 from llama_index.tools.mcp.base import McpToolSpec
 from llama_index.tools.mcp.client import BasicMCPClient
 
+
 def get_tools_from_mcp_url(
     command_or_url: str,
     client: Optional[ClientSession] = None,
-    allowed_tools: Optional[List[str]] = None
+    allowed_tools: Optional[List[str]] = None,
+    include_resources: bool = False,
 ) -> List[FunctionTool]:
     """
     Get tools from an MCP server or command.
@@ -21,16 +23,21 @@ def get_tools_from_mcp_url(
         command_or_url: The command to run or the URL to connect to.
         client (optional): The client to use to connect to the MCP server.
         allowed_tools (optional): The tool names to allow from the MCP server.
+        include_resources (optional): Whether to include resources in the tool list.
 
     """
     client = client or BasicMCPClient(command_or_url)
-    tool_spec = McpToolSpec(client, allowed_tools=allowed_tools)
+    tool_spec = McpToolSpec(
+        client, allowed_tools=allowed_tools, include_resources=include_resources
+    )
     return tool_spec.to_tool_list()
+
 
 async def aget_tools_from_mcp_url(
     command_or_url: str,
     client: Optional[ClientSession] = None,
-    allowed_tools: Optional[List[str]] = None
+    allowed_tools: Optional[List[str]] = None,
+    include_resources: bool = False,
 ) -> List[FunctionTool]:
     """
     Get tools from an MCP server or command.
@@ -39,18 +46,22 @@ async def aget_tools_from_mcp_url(
         command_or_url: The command to run or the URL to connect to.
         client (optional): The client to use to connect to the MCP server.
         allowed_tools (optional): The tool names to allow from the MCP server.
+        include_resources (optional): Whether to include resources in the tool list.
 
     """
     client = client or BasicMCPClient(command_or_url)
-    tool_spec = McpToolSpec(client, allowed_tools=allowed_tools)
+    tool_spec = McpToolSpec(
+        client, allowed_tools=allowed_tools, include_resources=include_resources
+    )
     return await tool_spec.to_tool_list_async()
+
 
 def workflow_as_mcp(
     workflow: Workflow,
     workflow_name: Optional[str] = None,
     workflow_description: Optional[str] = None,
     start_event_model: Optional[BaseModel] = None,
-    **fastmcp_init_kwargs: Any
+    **fastmcp_init_kwargs: Any,
 ) -> FastMCP:
     """
     Convert a workflow to an MCP app.
@@ -88,14 +99,11 @@ def workflow_as_mcp(
     workflow_name = workflow_name or workflow.__class__.__name__
     workflow_description = workflow_description or workflow.__doc__
 
-    @app.tool(
-        name=workflow_name,
-        description=workflow_description
-    )
+    @app.tool(name=workflow_name, description=workflow_description)
     async def _workflow_tool(run_args: StartEventCLS, context: Context) -> Any:
-
         # Handle edge cases where the start event is an Event or a BaseModel
         # If the workflow does not have a custom StartEvent class, then we need to handle the event differently
+        context.session
         if isinstance(run_args, Event) and workflow._start_event_class != StartEvent:
             handler = workflow.run(start_event=run_args)
         elif isinstance(run_args, BaseModel):
