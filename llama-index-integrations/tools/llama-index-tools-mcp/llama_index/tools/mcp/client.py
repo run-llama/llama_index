@@ -89,8 +89,10 @@ class BasicMCPClient(ClientSession):
         redirect_uris: List[str],
         redirect_handler: Callable[[str], None],
         callback_handler: Callable[[], Tuple[str, Optional[str]]],
+        args: Optional[List[str]] = None,
+        env: Optional[Dict[str, str]] = None,
+        timeout: int = 30,
         token_storage: Optional[TokenStorage] = None,
-        **kwargs,
     ) -> "BasicMCPClient":
         """
         Create a client with OAuth authentication.
@@ -103,7 +105,9 @@ class BasicMCPClient(ClientSession):
             callback_handler: Function that returns the auth code and state
             token_storage: Optional token storage for OAuth client. If not provided,
                            a default in-memory storage is used (tokens will be lost on restart).
-            **kwargs: Additional arguments to pass to the client constructor
+            args: The arguments to pass to StdioServerParameters.
+            env: The environment variables to set for StdioServerParameters.
+            timeout: The timeout for the command in seconds.
 
         Returns:
             An authenticated MCP client
@@ -127,7 +131,7 @@ class BasicMCPClient(ClientSession):
             storage=token_storage,
         )
 
-        return cls(command_or_url, auth=oauth_auth, **kwargs)
+        return cls(command_or_url, auth=oauth_auth, args=args, env=env, timeout=timeout)
 
     @asynccontextmanager
     async def _run_session(self) -> AsyncIterator[ClientSession]:
