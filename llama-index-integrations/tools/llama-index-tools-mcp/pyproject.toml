@@ -24,11 +24,12 @@ dev = [
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.4",
     "pytest-cov>=6.1.1",
+    "pytest-asyncio>=0.23.8",
 ]
 
 [project]
 name = "llama-index-tools-mcp"
-version = "0.1.3"
+version = "0.2.0"
 description = "llama-index tools mcp integration"
 authors = [{name = "Chojan Shang", email = "psiace@outlook.com"}]
 requires-python = ">=3.10,<4.0"
@@ -40,8 +41,8 @@ keywords = [
     "tools",
 ]
 dependencies = [
-    "mcp>=1.2.0,<2",
-    "llama-index-core>=0.12.0,<0.13",
+    "mcp>=1.9.1,<2",
+    "llama-index-core>=0.12.37,<0.13",
     "pydantic>=2.0.0,<3",
 ]
 
