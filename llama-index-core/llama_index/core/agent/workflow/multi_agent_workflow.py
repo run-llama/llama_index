@@ -559,17 +559,26 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         checkpoint_callback: Optional[CheckpointCallback] = None,
         **kwargs: Any,
     ) -> WorkflowHandler:
-        return super().run(
-            start_event=AgentWorkflowStartEvent(
-                user_msg=user_msg,
-                chat_history=chat_history,
-                memory=memory,
+        # Detect if hitl is needed
+        if ctx is not None and ctx.is_running:
+            return super().run(
+                ctx=ctx,
+                stepwise=stepwise,
+                checkpoint_callback=checkpoint_callback,
                 **kwargs,
-            ),
-            ctx=ctx,
-            stepwise=stepwise,
-            checkpoint_callback=checkpoint_callback,
-        )
+            )
+        else:
+            return super().run(
+                start_event=AgentWorkflowStartEvent(
+                    user_msg=user_msg,
+                    chat_history=chat_history,
+                    memory=memory,
+                    **kwargs,
+                ),
+                ctx=ctx,
+                stepwise=stepwise,
+                checkpoint_callback=checkpoint_callback,
+            )
 
     @classmethod
     def from_tools_or_functions(
