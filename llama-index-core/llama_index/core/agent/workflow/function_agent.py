@@ -15,11 +15,15 @@ from llama_index.core.memory import BaseMemory
 from llama_index.core.tools import AsyncBaseTool
 from llama_index.core.workflow import Context
 
+from pydantic import Field
 
 class FunctionAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
     """Function calling agent implementation."""
 
     scratchpad_key: str = "scratchpad"
+    allow_parallel_tool_calls: bool = Field(
+        default=True, description="If True, the agent will call multiple tools in parallel. If False, the agent will call tools sequentially."
+    )
 
     async def take_step(
         self,
@@ -40,7 +44,9 @@ class FunctionAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
         )
 
         response = await self.llm.astream_chat_with_tools(  # type: ignore
-            tools, chat_history=current_llm_input, allow_parallel_tool_calls=True
+            tools=tools,
+            chat_history=current_llm_input,
+            allow_parallel_tool_calls=self.allow_parallel_tool_calls,
         )
         # last_chat_response will be used later, after the loop.
         # We initialize it so it's valid even when 'response' is empty
