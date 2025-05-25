@@ -22,12 +22,11 @@ dev = [
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "pytest-cov>=6.1.1",
-    "pytest-asyncio>=0.23.8",
 ]
 
 [project]
 name = "llama-index-embeddings-google-genai"
-version = "0.1.1"
+version = "0.1.0"
 description = "llama-index embeddings google genai integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
