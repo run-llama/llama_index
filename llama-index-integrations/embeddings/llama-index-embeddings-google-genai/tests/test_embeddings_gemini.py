@@ -3,6 +3,8 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import numpy as np
+import requests
+from google.genai.errors import APIError
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 
@@ -158,3 +160,91 @@ async def test_real_async_embedding():
     assert len(query_embedding) > 0
     assert isinstance(query_embedding, list)
     assert all(isinstance(x, float) for x in query_embedding)
+
+
+@patch("google.genai.Client")
+def test_retry_on_api_error(mock_client_class):
+    """Test that the embedding method retries on API rate limit errors."""
+    # Setup mock client
+    mock_client = mock_client_class.return_value
+    mock_models = mock_client.models
+    mock_embed_content = mock_models.embed_content
+
+    # Create mock embedding result for successful attempt
+    mock_embedding = MagicMock()
+    mock_embedding.values = [0.1, 0.2, 0.3]
+    mock_result = MagicMock()
+    mock_result.embeddings = [mock_embedding]
+
+    # Make embed_content fail with rate limit error on first call, then succeed
+    mock_embed_content.side_effect = [
+        APIError(message="Rate limit exceeded", code=429),
+        mock_result
+    ]
+
+    # Test embedding with retries configured
+    emb = GoogleGenAIEmbedding(
+        api_key="fake_key",
+        retries=2,
+        retry_min_seconds=0.1,  # Use small values for faster tests
+        retry_max_seconds=0.2
+    )
+
+    # This should fail once, retry, then succeed
+    result = emb.get_text_embedding("test text")
+
+    # Verify the result is correct
+    assert result == [0.1, 0.2, 0.3]
+
+    # Verify embed_content was called twice (original + 1 retry)
+    assert mock_embed_content.call_count == 2
+
+
+@pytest.mark.asyncio
+@patch("google.genai.Client")
+async def test_async_retry_on_connection_error(mock_client_class):
+    """Test that the async embedding method retries on connection errors."""
+    # Setup mock for async client
+    mock_client = mock_client_class.return_value
+    mock_aio = MagicMock()
+    mock_client.aio = mock_aio
+    mock_aio_models = mock_aio.models
+
+    # Create mock embedding result for successful attempt
+    mock_embedding = MagicMock()
+    mock_embedding.values = [0.4, 0.5, 0.6]
+    mock_result = MagicMock()
+    mock_result.embeddings = [mock_embedding]
+
+    # Create two different AsyncMock objects
+    fail_mock = AsyncMock(side_effect=requests.exceptions.ConnectionError("Connection error"))
+    success_mock = AsyncMock(return_value=mock_result)
+
+    # Configure the mock to return different mocks on consecutive calls
+    mock_aio_models.embed_content = fail_mock
+
+    # Test async embedding with retries
+    emb = GoogleGenAIEmbedding(
+        api_key="fake_key",
+        retries=2,
+        retry_min_seconds=0.1,  # Use small values for faster tests
+        retry_max_seconds=0.2
+    )
+
+    # Replace the mock after the first call to simulate recovery
+    async def side_effect(*args, **kwargs):
+        # Replace the mock after first call
+        mock_aio_models.embed_content = success_mock
+        raise requests.exceptions.ConnectionError("Connection error")
+
+    fail_mock.side_effect = side_effect
+
+    # This should fail once, retry, then succeed
+    result = await emb.aget_query_embedding("test query")
+
+    # Verify the result is correct
+    assert result == [0.4, 0.5, 0.6]
+
+    # Verify both mocks were called (original + retry)
+    fail_mock.assert_called_once()
+    success_mock.assert_called_once()
