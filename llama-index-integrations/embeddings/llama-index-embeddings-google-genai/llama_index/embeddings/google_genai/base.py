@@ -35,7 +35,7 @@ def is_retryable_error(exception: BaseException) -> bool:
         return exception.code in [429, 502, 503, 504]
     if isinstance(exception, requests.exceptions.ConnectionError):  # noqa: SIM103
         return True
-    return False  # noqa: SIM103
+    return False
 
 
 def get_retryable_function(
