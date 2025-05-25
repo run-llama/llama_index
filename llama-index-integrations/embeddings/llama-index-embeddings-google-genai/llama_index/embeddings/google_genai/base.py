@@ -152,12 +152,15 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         """Embed texts."""
         # Set the task type if it is not already set
         if task_type and not self.embedding_config:
-            self.embedding_config = types.EmbedContentConfig(task_type=task_type)
+            embedding_config = types.EmbedContentConfig(task_type=task_type)
+        elif task_type and self.embedding_config:
+            embedding_config = dict(self.embedding_config)
+            embedding_config["task_type"] = task_type
 
         results = self._client.models.embed_content(
             model=self.model_name,
             contents=texts,
-            config=self.embedding_config,
+            config=embedding_config,
         )
         return [result.values for result in results.embeddings]
 
@@ -167,12 +170,15 @@ class GoogleGenAIEmbedding(BaseEmbedding):
         """Asynchronously embed texts."""
         # Set the task type if it is not already set
         if task_type and not self.embedding_config:
-            self.embedding_config = types.EmbedContentConfig(task_type=task_type)
+            embedding_config = types.EmbedContentConfig(task_type=task_type)
+        elif task_type and self.embedding_config:
+            embedding_config = dict(self.embedding_config)
+            embedding_config["task_type"] = task_type
 
         results = await self._client.aio.models.embed_content(
             model=self.model_name,
             contents=texts,
-            config=self.embedding_config,
+            config=embedding_config,
         )
         return [result.values for result in results.embeddings]
 
