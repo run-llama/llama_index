@@ -435,7 +435,8 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
                 for col_name, retriever in cols_retrievers.items():
                     relevant_nodes = retriever.retrieve(query_bundle.query_str)
                     if len(relevant_nodes) > 0:
-                        col_values_context += f"{col_name}: " + ", ".join([str(node.get_content()) for node in relevant_nodes])
+                        col_values_context += f"{col_name}: " + ", ".join([str(node.get_content())
+                                                                           for node in relevant_nodes]) + "\n"
                         has_col_values = True
 
                 if has_col_values:
