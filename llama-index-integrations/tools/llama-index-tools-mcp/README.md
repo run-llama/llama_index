@@ -184,8 +184,9 @@ import os
 class FileTokenStorage(TokenStorage):
     """Store OAuth tokens in a file."""
 
-    def __init__(self, file_path):
+    def __init__(self, file_path: str):
         self.file_path = file_path
+        self._client_info: Optional[OAuthClientInformationFull] = None
 
     async def get_tokens(self):
         if not os.path.exists(self.file_path):
@@ -203,7 +204,15 @@ class FileTokenStorage(TokenStorage):
         with open(self.file_path, "w") as f:
             json.dump(data, f)
 
-    # Implement remaining methods...
+    async def get_client_info(self) -> Optional[OAuthClientInformationFull]:
+        """Get the stored client information."""
+        return self._client_info
+
+    async def set_client_info(
+        self, client_info: OAuthClientInformationFull
+    ) -> None:
+        """Store client information."""
+        self._client_info = client_info
 
 
 # Use custom storage
