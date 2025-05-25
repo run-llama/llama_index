@@ -186,7 +186,7 @@ def messages_to_anthropic_messages(
             content: list[TextBlockParam | ImageBlockParam | DocumentBlockParam] = []
             for block in message.blocks:
                 if isinstance(block, TextBlock):
-                    if block.text or "thinking" in message.additional_kwargs:
+                    if block.text or message.additional_kwargs.get("thinking"):
                         content.append(
                             _text_block_to_anthropic_message(
                                 block, message.additional_kwargs
