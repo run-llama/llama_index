@@ -597,7 +597,7 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
         sql_database: SQLDatabase,
         table_retriever: ObjectRetriever[SQLTableSchema],
         rows_retrievers: Optional[dict[str, BaseRetriever]] = None,
-        cols_retrievers: Optional[dict[str, BaseRetriever]] = None,
+        cols_retrievers: Optional[dict[str, dict[str, BaseRetriever]]] = None,
         llm: Optional[LLM] = None,
         text_to_sql_prompt: Optional[BasePromptTemplate] = None,
         context_query_kwargs: Optional[dict] = None,
