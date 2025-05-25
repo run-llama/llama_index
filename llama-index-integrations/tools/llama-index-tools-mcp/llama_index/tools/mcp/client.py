@@ -3,7 +3,7 @@ from datetime import timedelta
 from typing import Optional, List, Dict, Tuple, Callable, AsyncIterator, Awaitable, Dict
 from urllib.parse import urlparse
 
-from mcp.client.session import ClientSession
+from mcp.client.session import ClientSession, ProgressFnT
 from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client, StdioServerParameters
 from mcp.client.streamable_http import streamablehttp_client
@@ -173,10 +173,11 @@ class BasicMCPClient(ClientSession):
                     yield session
 
     # Tool methods
-    async def call_tool(self, tool_name: str, arguments: dict) -> types.CallToolResult:
+    async def call_tool(self, tool_name: str, arguments: Optional[dict] = None, progress_callback: Optional[ProgressFnT] = None) -> types.CallToolResult:
         """Call a tool on the MCP server."""
         async with self._run_session() as session:
-            return await session.call_tool(tool_name, arguments)
+            return await session.call_tool(tool_name, arguments=arguments, progress_callback=progress_callback)
+
 
     async def list_tools(self) -> types.ListToolsResult:
         """List all available tools on the MCP server."""

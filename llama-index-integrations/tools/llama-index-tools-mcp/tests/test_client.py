@@ -10,13 +10,13 @@ SERVER_SCRIPT = os.path.join(os.path.dirname(__file__), "server.py")
 
 
 @pytest.fixture(scope="session")
-def client():
+def client() -> BasicMCPClient:
     """Create a basic MCP client connected to the test server."""
     return BasicMCPClient("python", args=[SERVER_SCRIPT], timeout=5)
 
 
 @pytest.mark.asyncio
-async def test_list_tools(client):
+async def test_list_tools(client: BasicMCPClient):
     """Test listing tools from the server."""
     tools = await client.list_tools()
 
@@ -32,7 +32,7 @@ async def test_list_tools(client):
 
 
 @pytest.mark.asyncio
-async def test_call_tools(client):
+async def test_call_tools(client: BasicMCPClient):
     """Test calling various tools."""
     # Test echo tool
     result = await client.call_tool("echo", {"message": "Hello, World!"})
@@ -49,7 +49,7 @@ async def test_call_tools(client):
 
 
 @pytest.mark.asyncio
-async def test_list_resources(client):
+async def test_list_resources(client: BasicMCPClient):
     """Test listing resources from the server."""
     resources = await client.list_resources()
 
@@ -66,7 +66,7 @@ async def test_list_resources(client):
 
 
 @pytest.mark.asyncio
-async def test_read_resources(client):
+async def test_read_resources(client: BasicMCPClient):
     """Test reading various resources."""
     # Test static resource
     resource = await client.read_resource("config://app")
@@ -84,7 +84,7 @@ async def test_read_resources(client):
 
 
 @pytest.mark.asyncio
-async def test_list_prompts(client):
+async def test_list_prompts(client: BasicMCPClient):
     """Test listing prompts from the server."""
     prompts = await client.list_prompts()
 
@@ -100,7 +100,7 @@ async def test_list_prompts(client):
 
 
 @pytest.mark.asyncio
-async def test_get_prompts(client):
+async def test_get_prompts(client: BasicMCPClient):
     """Test getting various prompts."""
     # Test simple prompt
     result = await client.get_prompt("simple_greeting")
@@ -118,7 +118,7 @@ async def test_get_prompts(client):
 
 
 @pytest.mark.asyncio
-async def test_resource_updates_via_tool(client):
+async def test_resource_updates_via_tool(client: BasicMCPClient):
     """Test updating a resource via a tool and reading the changes."""
     # First read the initial user profile
     resource = await client.read_resource("users://123/profile")
@@ -153,15 +153,30 @@ async def test_default_in_memory_storage():
 
 
 @pytest.mark.asyncio
-async def test_long_running_task(client):
+async def test_long_running_task(client: BasicMCPClient):
     """Test a long-running task with progress updates."""
     # This will run a task that takes a few seconds and reports progress
-    result = await client.call_tool("long_task", {"steps": 3})
-    assert "Completed 3 steps" in result.content[0].text
+    current_progress = 0
+    current_message = ""
+    expected_total = None
 
+    async def progress_callback(progress: float, total: float, message: str):
+        nonlocal current_progress
+        nonlocal current_message
+        nonlocal expected_total
+
+        current_progress = progress
+        current_message = message
+        expected_total = total
+
+    result = await client.call_tool("long_task", {"steps": 3}, progress_callback=progress_callback)
+    assert "Completed 3 steps" in result.content[0].text
+    assert current_progress == 3.0
+    assert current_progress == expected_total
+    assert current_message == "Processing step 3/3"
 
 @pytest.mark.asyncio
-async def test_image_return_value(client):
+async def test_image_return_value(client: BasicMCPClient):
     """Test tools that return images."""
     result = await client.call_tool(
         "generate_image", {"width": 50, "height": 50, "color": "blue"}

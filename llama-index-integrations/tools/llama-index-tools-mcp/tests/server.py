@@ -127,10 +127,8 @@ def update_user(
 @mcp.tool(description="Long running task with progress updates")
 async def long_task(steps: int, ctx: Context) -> str:
     """Long-running task to test progress reporting."""
-    for i in range(steps):
-        ctx.info(f"Processing step {i + 1}/{steps}")
-        await ctx.report_progress(i, steps)
-        await asyncio.sleep(1)  # Simulate work
+    for i in range(1, steps + 1):
+        await ctx.report_progress(i, steps, f"Processing step {i}/{steps}")
     return f"Completed {steps} steps"
 
 
