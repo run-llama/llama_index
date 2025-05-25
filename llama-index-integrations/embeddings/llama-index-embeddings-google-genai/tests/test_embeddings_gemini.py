@@ -1,10 +1,3 @@
-import os
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-
-import numpy as np
-import requests
-from google.genai.errors import APIError
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 
