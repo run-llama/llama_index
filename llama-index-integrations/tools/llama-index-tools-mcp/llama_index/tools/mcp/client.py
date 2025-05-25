@@ -1,3 +1,4 @@
+import warnings
 from contextlib import asynccontextmanager
 from datetime import timedelta
 from typing import Optional, List, Dict, Tuple, Callable, AsyncIterator, Awaitable, Dict
@@ -111,6 +112,7 @@ class BasicMCPClient(ClientSession):
         # Use default in-memory storage if none provided
         if token_storage is None:
             token_storage = DefaultInMemoryTokenStorage()
+            warnings.warn("Using default in-memory token storage. Tokens will be lost on restart.", UserWarning)
 
         oauth_auth = OAuthClientProvider(
             server_url=command_or_url if urlparse(command_or_url).scheme else None,
