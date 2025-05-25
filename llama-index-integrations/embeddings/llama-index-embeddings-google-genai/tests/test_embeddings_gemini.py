@@ -1,3 +1,8 @@
+import os
+import pytest
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import numpy as np
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 
@@ -5,3 +10,151 @@ from llama_index.embeddings.google_genai import GoogleGenAIEmbedding
 def test_embedding_class():
     emb = GoogleGenAIEmbedding(api_key="...")
     assert isinstance(emb, BaseEmbedding)
+
+# Mock tests that don't require API key
+@patch("google.genai.Client")
+def test_embed_texts_mock(mock_client_class):
+    # Setup mock responses
+    mock_client = mock_client_class.return_value
+    mock_models = mock_client.models
+    mock_embed_content = mock_models.embed_content
+
+    # Create mock embedding result
+    mock_embedding = MagicMock()
+    mock_embedding.values = [0.1, 0.2, 0.3]
+
+    mock_result = MagicMock()
+    mock_result.embeddings = [mock_embedding]
+    mock_embed_content.return_value = mock_result
+
+    # Test embedding
+    emb = GoogleGenAIEmbedding(api_key="fake_key")
+    result = emb.get_text_embedding_batch(["test text"])
+
+    # Verify results and calls
+    assert len(result) == 1
+    assert result[0] == [0.1, 0.2, 0.3]
+    mock_embed_content.assert_called_once()
+
+
+@patch("google.genai.Client")
+def test_task_type_setting_mock(mock_client_class):
+    # Setup mock client
+    mock_client = mock_client_class.return_value
+    mock_models = mock_client.models
+    mock_embed_content = mock_models.embed_content
+
+    # Create mock embedding result
+    mock_embedding = MagicMock()
+    mock_embedding.values = [0.1, 0.2, 0.3]
+
+    mock_result = MagicMock()
+    mock_result.embeddings = [mock_embedding]
+    mock_embed_content.return_value = mock_result
+
+    # Test query embedding (should use RETRIEVAL_QUERY task type)
+    emb = GoogleGenAIEmbedding(api_key="fake_key")
+    emb.get_query_embedding("test query")
+
+    # Check if task_type was set correctly in the call
+    _, kwargs = mock_embed_content.call_args
+    assert kwargs.get("config").task_type == "RETRIEVAL_QUERY"
+
+    # Reset mock
+    mock_embed_content.reset_mock()
+
+    # Test text embedding (should use RETRIEVAL_DOCUMENT task type)
+    emb.get_text_embedding("test text")
+
+    # Check if task_type was set correctly in the call
+    _, kwargs = mock_embed_content.call_args
+    assert kwargs.get("config").task_type == "RETRIEVAL_DOCUMENT"
+
+
+@pytest.mark.asyncio
+@patch("google.genai.Client")
+async def test_async_embed_texts_mock(mock_client_class):
+    # Setup mock for async client
+    mock_client = mock_client_class.return_value
+    mock_aio = MagicMock()
+    mock_client.aio = mock_aio
+    mock_aio_models = mock_aio.models
+    mock_aembed_content = mock_aio_models.embed_content
+
+    # Create mock embedding result
+    mock_embedding = MagicMock()
+    mock_embedding.values = [0.1, 0.2, 0.3]
+
+    mock_result = MagicMock()
+    mock_result.embeddings = [mock_embedding]
+
+    mock_aembed_content = AsyncMock(return_value=mock_result)
+    mock_aio_models.embed_content = mock_aembed_content
+
+    # Test async embedding
+    emb = GoogleGenAIEmbedding(api_key="fake_key")
+    result = await emb.aget_text_embedding_batch(["test text"])
+
+    # Verify results and calls
+    assert len(result) == 1
+    assert result[0] == [0.1, 0.2, 0.3]
+    mock_aembed_content.assert_called_once()
+
+
+# Real API tests (skipped if no API key)
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None,
+    reason="GOOGLE_API_KEY environment variable not set"
+)
+def test_real_embedding():
+    # Initialize with API key from environment
+    emb = GoogleGenAIEmbedding()
+
+    # Test query embedding
+    query_embedding = emb.get_query_embedding("What is the capital of France?")
+
+    # Simple validation
+    assert len(query_embedding) > 0
+    assert isinstance(query_embedding, list)
+    assert all(isinstance(x, float) for x in query_embedding)
+
+
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None,
+    reason="GOOGLE_API_KEY environment variable not set"
+)
+def test_real_batch_embedding():
+    # Initialize with API key from environment
+    emb = GoogleGenAIEmbedding()
+
+    # Test batch embedding
+    texts = ["Hello world", "This is a test", "Embeddings are useful"]
+    embeddings = emb.get_text_embedding_batch(texts)
+
+    # Validate
+    assert len(embeddings) == 3
+    assert all(len(emb) > 0 for emb in embeddings)
+
+    # Check that embeddings are different (basic sanity check)
+    emb1 = np.array(embeddings[0])
+    emb2 = np.array(embeddings[1])
+    cos_sim = np.dot(emb1, emb2) / (np.linalg.norm(emb1) * np.linalg.norm(emb2))
+    assert cos_sim < 0.99  # Different texts should have different embeddings
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(
+    os.environ.get("GOOGLE_API_KEY") is None,
+    reason="GOOGLE_API_KEY environment variable not set"
+)
+async def test_real_async_embedding():
+    # Initialize with API key from environment
+    emb = GoogleGenAIEmbedding()
+
+    # Test async query embedding
+    query_embedding = await emb.aget_query_embedding("What is the capital of France?")
+
+    # Simple validation
+    assert len(query_embedding) > 0
+    assert isinstance(query_embedding, list)
+    assert all(isinstance(x, float) for x in query_embedding)
