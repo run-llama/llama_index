@@ -178,7 +178,7 @@ def test_retry_on_api_error(mock_client_class):
 
     # Make embed_content fail with rate limit error on first call, then succeed
     mock_embed_content.side_effect = [
-        APIError(429, response_json={"error": {"message": "Rate limit exceeded"}}),
+        APIError(message="Rate limit exceeded", code=429),
         mock_result
     ]
 
