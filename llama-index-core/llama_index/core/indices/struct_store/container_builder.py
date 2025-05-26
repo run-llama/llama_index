@@ -1,6 +1,5 @@
 """SQL Container builder."""
 
-
 from typing import Any, Dict, List, Optional, Type
 
 from llama_index.core.indices.base import BaseIndex
@@ -85,7 +84,7 @@ class SQLContextContainerBuilder:
         result_context = {}
         for table_name in sql_database.get_usable_table_names():
             table_desc = sql_database.get_single_table_info(table_name)
-            table_text = f"Schema of table {table_name}:\n" f"{table_desc}\n"
+            table_text = f"Schema of table {table_name}:\n{table_desc}\n"
             if table_name in current_context:
                 table_text += f"Context of table {table_name}:\n"
                 table_text += current_context[table_name]

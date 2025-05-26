@@ -433,7 +433,6 @@ class JaguarVectorStore(BasePydanticVectorStore):
         jd = json.loads(js[0])
         return jd["anomalous"] == "YES"
 
-
     def run(self, query: str, withFile: bool = False) -> dict:
         """
         Run any query statement in jaguardb.

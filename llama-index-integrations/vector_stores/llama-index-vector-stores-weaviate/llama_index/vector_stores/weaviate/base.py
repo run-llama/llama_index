@@ -159,9 +159,7 @@ class WeaviateVectorStore(BasePydanticVectorStore):
     _aclient: weaviate.WeaviateAsyncClient = PrivateAttr()
 
     _collection_initialized: bool = PrivateAttr()
-    _is_self_created_weaviate_client: bool = (
-        PrivateAttr()
-    )  # States if the Weaviate client was created within this class and therefore closing it lies in our responsibility
+    _is_self_created_weaviate_client: bool = PrivateAttr()  # States if the Weaviate client was created within this class and therefore closing it lies in our responsibility
     _custom_batch: Optional[BatchWrapper] = PrivateAttr()
 
     def __init__(

@@ -283,8 +283,7 @@ class OxylabsGoogleBaseReader(OxylabsBaseReader):
 
             if parent_.tag.lower() not in self.excluded_result_attributes:
                 target_snippets.append(
-                    f"{recursion_padding}{parent_.display_tag}:"
-                    f" {target_structure!s}"
+                    f"{recursion_padding}{parent_.display_tag}: {target_structure!s}"
                 )
 
     def _create_knowledge_graph_snippets(

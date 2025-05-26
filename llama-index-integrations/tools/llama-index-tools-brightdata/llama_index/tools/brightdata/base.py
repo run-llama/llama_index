@@ -8,7 +8,12 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 class BrightDataToolSpec(BaseToolSpec):
     """Bright Data tool spec for web scraping and search capabilities."""
 
-    spec_functions = ["scrape_as_markdown", "get_screenshot", "search_engine","web_data_feed"]
+    spec_functions = [
+        "scrape_as_markdown",
+        "get_screenshot",
+        "search_engine",
+        "web_data_feed",
+    ]
 
     def __init__(
         self,
@@ -27,7 +32,7 @@ class BrightDataToolSpec(BaseToolSpec):
         """
         self._headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}"
+            "Authorization": f"Bearer {api_key}",
         }
         self._api_key = api_key
         self._zone = zone
@@ -52,13 +57,13 @@ class BrightDataToolSpec(BaseToolSpec):
             print(f"[Bright Data] Request: {payload['url']}")
 
         response = requests.post(
-            self._endpoint,
-            headers=self._headers,
-            data=json.dumps(payload)
+            self._endpoint, headers=self._headers, data=json.dumps(payload)
         )
 
         if response.status_code != 200:
-            raise Exception(f"Failed to scrape: {response.status_code} - {response.text}")
+            raise Exception(
+                f"Failed to scrape: {response.status_code} - {response.text}"
+            )
 
         return response.text
 
@@ -78,13 +83,15 @@ class BrightDataToolSpec(BaseToolSpec):
             "url": url,
             "zone": zone or self._zone,
             "format": "raw",
-            "data_format": "markdown"
+            "data_format": "markdown",
         }
 
         content = self._make_request(payload)
         return Document(text=content, metadata={"url": url})
 
-    def get_screenshot(self, url: str, output_path: str, zone: Optional[str] = None) -> str:
+    def get_screenshot(
+        self, url: str, output_path: str, zone: Optional[str] = None
+    ) -> str:
         """
         Take a screenshot of a webpage.
 
@@ -104,13 +111,11 @@ class BrightDataToolSpec(BaseToolSpec):
             "url": url,
             "zone": zone or self._zone,
             "format": "raw",
-            "data_format": "screenshot"
+            "data_format": "screenshot",
         }
 
         response = requests.post(
-            self._endpoint,
-            headers=self._headers,
-            data=json.dumps(payload)
+            self._endpoint, headers=self._headers, data=json.dumps(payload)
         )
 
         if response.status_code != 200:
@@ -126,16 +131,18 @@ class BrightDataToolSpec(BaseToolSpec):
         query: str,
         engine: str = "google",
         zone: Optional[str] = None,
-        language: Optional[str] = None,       # hl parameter, e.g., "en"
-        country_code: Optional[str] = None,   # gl parameter, e.g., "us"
-        search_type: Optional[str] = None,    # tbm parameter (images, shopping, news, etc.)
-        start: Optional[int] = None,          # pagination start index
-        num_results: Optional[int] = 10,      # number of results to return
-        location: Optional[str] = None,       # uule parameter for geo-location
-        device: Optional[str] = None,         # device type for user-agent
-        return_json: bool = False,            # parse results as JSON
-        hotel_dates: Optional[str] = None,    # check-in and check-out dates
-        hotel_occupancy: Optional[int] = None # number of guests
+        language: Optional[str] = None,  # hl parameter, e.g., "en"
+        country_code: Optional[str] = None,  # gl parameter, e.g., "us"
+        search_type: Optional[
+            str
+        ] = None,  # tbm parameter (images, shopping, news, etc.)
+        start: Optional[int] = None,  # pagination start index
+        num_results: Optional[int] = 10,  # number of results to return
+        location: Optional[str] = None,  # uule parameter for geo-location
+        device: Optional[str] = None,  # device type for user-agent
+        return_json: bool = False,  # parse results as JSON
+        hotel_dates: Optional[str] = None,  # check-in and check-out dates
+        hotel_occupancy: Optional[int] = None,  # number of guests
     ) -> Document:
         """
         Search using Google, Bing, or Yandex with advanced parameters and return results in Markdown.
@@ -168,11 +175,13 @@ class BrightDataToolSpec(BaseToolSpec):
         base_urls = {
             "google": f"https://www.google.com/search?q={encoded_query}",
             "bing": f"https://www.bing.com/search?q={encoded_query}",
-            "yandex": f"https://yandex.com/search/?text={encoded_query}"
+            "yandex": f"https://yandex.com/search/?text={encoded_query}",
         }
 
         if engine not in base_urls:
-            raise ValueError(f"Unsupported search engine: {engine}. Use 'google', 'bing', or 'yandex'")
+            raise ValueError(
+                f"Unsupported search engine: {engine}. Use 'google', 'bing', or 'yandex'"
+            )
 
         search_url = base_urls[engine]
 
@@ -189,11 +198,7 @@ class BrightDataToolSpec(BaseToolSpec):
                 if search_type == "jobs":
                     params.append("ibp=htl;jobs")
                 else:
-                    search_types = {
-                        "images": "isch",
-                        "shopping": "shop",
-                        "news": "nws"
-                    }
+                    search_types = {"images": "isch", "shopping": "shop", "news": "nws"}
                     tbm_value = search_types.get(search_type, search_type)
                     params.append(f"tbm={tbm_value}")
 
@@ -236,15 +241,13 @@ class BrightDataToolSpec(BaseToolSpec):
             "url": search_url,
             "zone": zone or self._zone,
             "format": "raw",
-            "data_format": "markdown" if not return_json else "raw"
+            "data_format": "markdown" if not return_json else "raw",
         }
 
         content = self._make_request(payload)
-        return Document(text=content, metadata={
-            "query": query,
-            "engine": engine,
-            "url": search_url
-        })
+        return Document(
+            text=content, metadata={"query": query, "engine": engine, "url": search_url}
+        )
 
     def web_data_feed(
         self,
@@ -252,7 +255,7 @@ class BrightDataToolSpec(BaseToolSpec):
         url: str,
         num_of_reviews: Optional[int] = None,
         timeout: int = 600,
-        polling_interval: int = 1
+        polling_interval: int = 1,
     ) -> Dict:
         """
         Retrieve structured web data from various sources like LinkedIn, Amazon, Instagram, etc.
@@ -287,12 +290,14 @@ class BrightDataToolSpec(BaseToolSpec):
             "x_posts": "gd_lwxkxvnf1cynvib9co",
             "zillow_properties_listing": "gd_lfqkr8wm13ixtbd8f5",
             "booking_hotel_listings": "gd_m5mbdl081229ln6t4a",
-            "youtube_videos": "gd_m5mbdl081229ln6t4a"
+            "youtube_videos": "gd_m5mbdl081229ln6t4a",
         }
 
         if source_type not in datasets:
             valid_sources = ", ".join(datasets.keys())
-            raise ValueError(f"Invalid source_type: {source_type}. Valid options are: {valid_sources}")
+            raise ValueError(
+                f"Invalid source_type: {source_type}. Valid options are: {valid_sources}"
+            )
 
         dataset_id = datasets[source_type]
 
@@ -304,7 +309,7 @@ class BrightDataToolSpec(BaseToolSpec):
             "https://api.brightdata.com/datasets/v3/trigger",
             params={"dataset_id": dataset_id, "include_errors": True},
             headers=self._headers,
-            json=[request_data]
+            json=[request_data],
         )
 
         trigger_data = trigger_response.json()
@@ -313,7 +318,9 @@ class BrightDataToolSpec(BaseToolSpec):
 
         snapshot_id = trigger_data["snapshot_id"]
         if self._verbose:
-            print(f"[Bright Data] {source_type} triggered with snapshot ID: {snapshot_id}")
+            print(
+                f"[Bright Data] {source_type} triggered with snapshot ID: {snapshot_id}"
+            )
 
         attempts = 0
         max_attempts = timeout
@@ -323,14 +330,19 @@ class BrightDataToolSpec(BaseToolSpec):
                 snapshot_response = requests.get(
                     f"https://api.brightdata.com/datasets/v3/snapshot/{snapshot_id}",
                     params={"format": "json"},
-                    headers=self._headers
+                    headers=self._headers,
                 )
 
                 snapshot_data = snapshot_response.json()
 
-                if isinstance(snapshot_data, dict) and snapshot_data.get("status") == "running":
+                if (
+                    isinstance(snapshot_data, dict)
+                    and snapshot_data.get("status") == "running"
+                ):
                     if self._verbose:
-                        print(f"[Bright Data] Snapshot not ready, polling again (attempt {attempts + 1}/{max_attempts})")
+                        print(
+                            f"[Bright Data] Snapshot not ready, polling again (attempt {attempts + 1}/{max_attempts})"
+                        )
                     attempts += 1
                     time.sleep(polling_interval)
                     continue
@@ -346,10 +358,13 @@ class BrightDataToolSpec(BaseToolSpec):
                 attempts += 1
                 time.sleep(polling_interval)
 
-        raise TimeoutError(f"Timeout after {max_attempts} seconds waiting for {source_type} data")
+        raise TimeoutError(
+            f"Timeout after {max_attempts} seconds waiting for {source_type} data"
+        )
 
     @staticmethod
     def _encode_query(query: str) -> str:
         """URL encode a search query."""
         from urllib.parse import quote
+
         return quote(query)

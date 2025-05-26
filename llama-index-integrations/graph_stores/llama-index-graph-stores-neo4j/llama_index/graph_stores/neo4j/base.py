@@ -1,4 +1,5 @@
 """Neo4j graph store index."""
+
 import logging
 from typing import Any, Dict, List, Optional, Type
 from types import TracebackType

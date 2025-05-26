@@ -128,11 +128,12 @@ class ImageBlock(BaseModel):
         # Check size by seeking to end and getting position
         data_buffer.seek(0, 2)  # Seek to end
         size = data_buffer.tell()
-        data_buffer.seek(0)     # Reset to beginning
+        data_buffer.seek(0)  # Reset to beginning
 
         if size == 0:
             raise ValueError("resolve_image returned zero bytes")
         return data_buffer
+
 
 class AudioBlock(BaseModel):
     block_type: Literal["audio"] = "audio"
@@ -195,7 +196,7 @@ class AudioBlock(BaseModel):
         # Check size by seeking to end and getting position
         data_buffer.seek(0, 2)  # Seek to end
         size = data_buffer.tell()
-        data_buffer.seek(0)     # Reset to beginning
+        data_buffer.seek(0)  # Reset to beginning
 
         if size == 0:
             raise ValueError("resolve_image returned zero bytes")
@@ -241,12 +242,11 @@ class DocumentBlock(BaseModel):
         # Check size by seeking to end and getting position
         data_buffer.seek(0, 2)  # Seek to end
         size = data_buffer.tell()
-        data_buffer.seek(0)     # Reset to beginning
+        data_buffer.seek(0)  # Reset to beginning
 
         if size == 0:
             raise ValueError("resolve_image returned zero bytes")
         return data_buffer
-
 
     def _get_b64_string(self, data_buffer: BytesIO) -> str:
         """
@@ -281,9 +281,12 @@ class DocumentBlock(BaseModel):
         guess = filetype.get_type(ext=suffix)
         return str(guess.mime) if guess else None
 
+
 ContentBlock = Annotated[
-    Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock], Field(discriminator="block_type")
+    Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock],
+    Field(discriminator="block_type"),
 ]
+
 
 class ChatMessage(BaseModel):
     """Chat message."""

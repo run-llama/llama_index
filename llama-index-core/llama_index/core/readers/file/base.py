@@ -64,9 +64,9 @@ class FileSystemReaderMixin(ABC):
         return self.read_file_content(input_file, **kwargs)
 
 
-def _try_loading_included_file_formats() -> (
-    dict[str, Type[BaseReader]]
-):  # pragma: no cover
+def _try_loading_included_file_formats() -> dict[
+    str, Type[BaseReader]
+]:  # pragma: no cover
     try:
         from llama_index.readers.file import (
             DocxReader,
@@ -738,7 +738,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                     self.input_files,
                     show_progress=show_progress,
                     desc="Loading files",
-                )
+                ),
             )
             for input_file in files_to_process:
                 documents.extend(

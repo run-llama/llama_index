@@ -182,9 +182,9 @@ class SpokeOutputParser(BaseOutputParser):
                             action_input={"message": message},
                         )
                     self.called_functionalities[action] = {}
-                    self.called_functionalities[action][
-                        "function_schema"
-                    ] = function_schema
+                    self.called_functionalities[action]["function_schema"] = (
+                        function_schema
+                    )
                 else:
                     function_schema = self.called_functionalities[action][
                         "function_schema"

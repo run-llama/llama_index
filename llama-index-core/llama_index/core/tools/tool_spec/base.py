@@ -1,6 +1,5 @@
 """Base tool spec class."""
 
-
 import asyncio
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union

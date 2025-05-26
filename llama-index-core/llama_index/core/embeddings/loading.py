@@ -29,9 +29,9 @@ try:
         HuggingFaceInferenceAPIEmbedding,
     )  # pants: no-infer-dep
 
-    RECOGNIZED_EMBEDDINGS[
-        HuggingFaceInferenceAPIEmbedding.class_name()
-    ] = HuggingFaceInferenceAPIEmbedding
+    RECOGNIZED_EMBEDDINGS[HuggingFaceInferenceAPIEmbedding.class_name()] = (
+        HuggingFaceInferenceAPIEmbedding
+    )
 except ImportError:
     pass
 

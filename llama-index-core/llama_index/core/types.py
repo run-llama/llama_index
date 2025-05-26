@@ -158,7 +158,7 @@ class Thread(threading.Thread):
         args: Tuple[Any, ...] = (),
         kwargs: Optional[Dict[str, Any]] = None,
         *,
-        daemon: Optional[bool] = None
+        daemon: Optional[bool] = None,
     ) -> None:
         if target is not None:
             args = (

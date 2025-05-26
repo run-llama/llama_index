@@ -8,7 +8,7 @@ from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.core.settings import Settings
 
 DEFAULT_RESPONSE_TEMPLATE = (
-    "Generated Cypher query:\n{query}\n\n" "Cypher Response:\n{response}"
+    "Generated Cypher query:\n{query}\n\nCypher Response:\n{response}"
 )
 
 DEFAULT_SUMMARY_TEMPLATE = PromptTemplate(

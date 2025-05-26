@@ -100,7 +100,7 @@ def _to_milvus_filter(
 
 
 def _get_index_metric_type(
-    func: Union[BaseSparseEmbeddingFunction, BaseMilvusBuiltInFunction]
+    func: Union[BaseSparseEmbeddingFunction, BaseMilvusBuiltInFunction],
 ):
     if isinstance(func, BM25BuiltInFunction):
         return "BM25"
@@ -439,9 +439,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 if isinstance(
                     self.sparse_embedding_function, BaseSparseEmbeddingFunction
                 ):
-                    entry[
-                        self.sparse_embedding_field
-                    ] = self.sparse_embedding_function.encode_documents([node.text])[0]
+                    entry[self.sparse_embedding_field] = (
+                        self.sparse_embedding_function.encode_documents([node.text])[0]
+                    )
                 else:  # BaseMilvusBuiltInFunction
                     pass
 
@@ -486,9 +486,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 if isinstance(
                     self.sparse_embedding_function, BaseSparseEmbeddingFunction
                 ):
-                    entry[
-                        self.sparse_embedding_field
-                    ] = self.sparse_embedding_function.encode_documents([node.text])[0]
+                    entry[self.sparse_embedding_field] = (
+                        self.sparse_embedding_function.encode_documents([node.text])[0]
+                    )
                 else:  # BaseMilvusBuiltInFunction
                     pass
 

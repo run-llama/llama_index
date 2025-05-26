@@ -311,7 +311,9 @@ class Anthropic(FunctionCallingLLM):
 
         return kwargs
 
-    def _completion_response_from_chat_response(self, chat_response: AnthropicChatResponse) -> AnthropicCompletionResponse:
+    def _completion_response_from_chat_response(
+        self, chat_response: AnthropicChatResponse
+    ) -> AnthropicCompletionResponse:
         return AnthropicCompletionResponse(
             text=chat_response.message.content,
             delta=chat_response.delta,
@@ -343,7 +345,9 @@ class Anthropic(FunctionCallingLLM):
         return content, tool_calls, thinking, [x.model_dump() for x in citations]
 
     @llm_chat_callback()
-    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> AnthropicChatResponse:
+    def chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> AnthropicChatResponse:
         anthropic_messages, system_prompt = messages_to_anthropic_messages(
             messages, self.cache_idx
         )
@@ -356,8 +360,8 @@ class Anthropic(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        content, tool_calls, thinking, citations = self._get_content_and_tool_calls_and_thinking(
-            response
+        content, tool_calls, thinking, citations = (
+            self._get_content_and_tool_calls_and_thinking(response)
         )
 
         return AnthropicChatResponse(
@@ -429,12 +433,17 @@ class Anthropic(FunctionCallingLLM):
                     elif isinstance(r.delta, CitationsDelta):
                         # TODO: handle citation deltas
                         cur_citations.append(r.delta.citation.model_dump())
-                    elif isinstance(r.delta, InputJSONDelta) and not isinstance(cur_tool_call, ToolUseBlock):
+                    elif isinstance(r.delta, InputJSONDelta) and not isinstance(
+                        cur_tool_call, ToolUseBlock
+                    ):
                         # TODO: handle server-side tool calls
                         pass
                     else:
                         if not isinstance(cur_tool_call, ToolUseBlock):
-                            raise ValueError("Tool call not started, but got block type " + str(type(r.delta)))
+                            raise ValueError(
+                                "Tool call not started, but got block type "
+                                + str(type(r.delta))
+                            )
                         content_delta = r.delta.partial_json
                         cur_tool_json += content_delta
                         try:
@@ -484,7 +493,6 @@ class Anthropic(FunctionCallingLLM):
 
         return gen()
 
-
     @llm_chat_callback()
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
@@ -501,8 +509,8 @@ class Anthropic(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        content, tool_calls, thinking, citations = self._get_content_and_tool_calls_and_thinking(
-            response
+        content, tool_calls, thinking, citations = (
+            self._get_content_and_tool_calls_and_thinking(response)
         )
 
         return AnthropicChatResponse(
@@ -574,12 +582,17 @@ class Anthropic(FunctionCallingLLM):
                     elif isinstance(r.delta, CitationsDelta):
                         # TODO: handle citation deltas
                         cur_citations.append(r.delta.citation.model_dump())
-                    elif isinstance(r.delta, InputJSONDelta) and not isinstance(cur_tool_call, ToolUseBlock):
+                    elif isinstance(r.delta, InputJSONDelta) and not isinstance(
+                        cur_tool_call, ToolUseBlock
+                    ):
                         # TODO: handle server-side tool calls
                         pass
                     else:
                         if not isinstance(cur_tool_call, ToolUseBlock):
-                            raise ValueError("Tool call not started, but got block type " + str(type(r.delta)))
+                            raise ValueError(
+                                "Tool call not started, but got block type "
+                                + str(type(r.delta))
+                            )
                         content_delta = r.delta.partial_json
                         cur_tool_json += content_delta
                         try:

@@ -241,31 +241,39 @@ class RocksetVectorStore(BasePydanticVectorStore):
                     _id,
                     {self.metadata_col}
                     {
-                        f''', {self.distance_func.value}(
+                f''', {self.distance_func.value}(
                             {query.query_embedding},
                             {self.embedding_col}
                         )
                             AS {similarity_col}'''
-                        if query.query_embedding
-                        else ''
-                    }
+                if query.query_embedding
+                else ""
+            }
                 FROM
                     "{self.workspace}"."{self.collection}" x
-                {"WHERE" if query.node_ids or (query.filters and len(query.filters.legacy_filters()) > 0) else ""} {
-                    f'''({
-                        ' OR '.join([
-                            f"_id='{node_id}'" for node_id in query.node_ids
-                        ])
-                    })''' if query.node_ids else ""
-                } {
-                    f''' {'AND' if query.node_ids else ''} ({
-                        ' AND '.join([
+                {
+                "WHERE"
+                if query.node_ids
+                or (query.filters and len(query.filters.legacy_filters()) > 0)
+                else ""
+            } {
+                f'''({
+                    " OR ".join([f"_id='{node_id}'" for node_id in query.node_ids])
+                })'''
+                if query.node_ids
+                else ""
+            } {
+                f''' {"AND" if query.node_ids else ""} ({
+                    " AND ".join(
+                        [
                             f"x.{self.metadata_col}.{filter.key}=:{filter.key}"
-                            for filter
-                            in query.filters.legacy_filters()
-                        ])
-                    })''' if query.filters else ""
-                }
+                            for filter in query.filters.legacy_filters()
+                        ]
+                    )
+                })'''
+                if query.filters
+                else ""
+            }
                 ORDER BY
                     {similarity_col} {self.distance_order}
                 LIMIT
@@ -329,10 +337,9 @@ class RocksetVectorStore(BasePydanticVectorStore):
             "embeddings_col", DEFAULT_EMBEDDING_KEY
         )
         if dimensions:
-            collection_args[
-                "field_mapping_query"
-            ] = _get_rockset().model.field_mapping_query.FieldMappingQuery(
-                sql=f"""
+            collection_args["field_mapping_query"] = (
+                _get_rockset().model.field_mapping_query.FieldMappingQuery(
+                    sql=f"""
                     SELECT
                         *, VECTOR_ENFORCE(
                             {embeddings_col},
@@ -342,6 +349,7 @@ class RocksetVectorStore(BasePydanticVectorStore):
                     FROM
                         _input
                 """
+                )
             )
 
         client.Collections.create_s3_collection(**collection_args)  # create collection

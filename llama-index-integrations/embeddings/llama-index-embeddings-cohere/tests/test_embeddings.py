@@ -44,6 +44,7 @@ async def test_async_embedding():
 
     await emb.aget_query_embedding("I love Cohere!")
 
+
 @pytest.mark.skipif(
     os.environ.get("CO_API_KEY") is None, reason="Cohere API key required"
 )
@@ -71,10 +72,13 @@ async def test_embed_batch():
         model_name="embed-v4.0",
     )
 
-    embeddings = await emb.aget_text_embedding_batch(["I love Cohere!", "I love Cohere!"])
+    embeddings = await emb.aget_text_embedding_batch(
+        ["I love Cohere!", "I love Cohere!"]
+    )
     assert len(embeddings) == 2
     assert len(embeddings[0]) > 0
     assert len(embeddings[1]) > 0
+
 
 @pytest.mark.skipif(
     os.environ.get("CO_API_KEY") is None, reason="Cohere API key required"
@@ -95,6 +99,7 @@ async def test_embed_image():
 
     assert len(embedding) > 0
     assert len(embedding2) > 0
+
 
 @pytest.mark.skipif(
     os.environ.get("CO_API_KEY") is None, reason="Cohere API key required"

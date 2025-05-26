@@ -10,6 +10,7 @@ from llama_index.core.base.llms.types import ChatMessage, MessageRole
 from llama_index.core.base.llms.types import ChatResponse
 from llama_index.core.llms import MockLLM
 
+
 class MyMockLLM(MockLLM):
     """Test-specific subclass of MockLLM with mocked achat method."""
 
@@ -27,21 +28,31 @@ class MyMockLLM(MockLLM):
 @pytest.fixture
 def mock_extraction_llm():
     """Create a mock LLM with extraction responses."""
-    return MyMockLLM(responses=[
-        ChatResponse(message=ChatMessage(content="<facts><fact>John lives in New York</fact><fact>John is a software engineer</fact></facts>")),
-    ])
+    return MyMockLLM(
+        responses=[
+            ChatResponse(
+                message=ChatMessage(
+                    content="<facts><fact>John lives in New York</fact><fact>John is a software engineer</fact></facts>"
+                )
+            ),
+        ]
+    )
+
 
 @pytest.fixture
 def sample_messages():
     """Create sample chat messages."""
     return [
-        ChatMessage(role=MessageRole.USER, content="My name is John and I live in New York."),
+        ChatMessage(
+            role=MessageRole.USER, content="My name is John and I live in New York."
+        ),
         ChatMessage(role=MessageRole.ASSISTANT, content="Nice to meet you John!"),
         ChatMessage(
             role=MessageRole.USER,
-            content="I work as a software engineer and I'm allergic to peanuts."
+            content="I work as a software engineer and I'm allergic to peanuts.",
         ),
     ]
+
 
 @pytest.mark.asyncio
 async def test_initialization():
@@ -53,7 +64,9 @@ async def test_initialization():
 
     # Test with custom prompt
     custom_prompt = "Custom prompt"
-    memory_block = FactExtractionMemoryBlock(fact_extraction_prompt_template=custom_prompt)
+    memory_block = FactExtractionMemoryBlock(
+        fact_extraction_prompt_template=custom_prompt
+    )
     assert memory_block.fact_extraction_prompt_template.template == custom_prompt
 
 
@@ -72,7 +85,10 @@ async def test_aget_with_facts():
     memory_block.facts = ["John lives in New York", "John is a software engineer"]
 
     result = await memory_block.aget()
-    assert result == "<fact>John lives in New York</fact>\n<fact>John is a software engineer</fact>"
+    assert (
+        result
+        == "<fact>John lives in New York</fact>\n<fact>John is a software engineer</fact>"
+    )
 
 
 @pytest.mark.asyncio
@@ -107,7 +123,10 @@ async def test_aput_with_duplicate_facts(mock_extraction_llm, sample_messages):
 
     # Verify only new facts were added (no duplicates)
     assert len(memory_block.facts) == 2
-    assert memory_block.facts == ["John lives in New York", "John is a software engineer"]
+    assert memory_block.facts == [
+        "John lives in New York",
+        "John is a software engineer",
+    ]
 
 
 @pytest.mark.asyncio

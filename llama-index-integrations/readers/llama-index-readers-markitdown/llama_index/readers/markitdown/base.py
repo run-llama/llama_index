@@ -7,10 +7,12 @@ from llama_index.core.schema import Document
 from typing import Tuple, Optional, Union, List
 from typing_extensions import Self
 
+
 def is_empty(list_it: list) -> Tuple[bool, Optional[list]]:
     if len(list_it) == 0:
         return True, None
     return False, list_it
+
 
 class ValidFilePath(BaseModel):
     file_path: Union[str, Path, List[str], List[Path]]
@@ -48,15 +50,42 @@ class ValidFilePath(BaseModel):
             files = []
             if isinstance(fls[0], str):
                 for fl in fls:
-                    if Path(fl).is_file() and os.path.splitext(fl)[1] in [".docx", ".html", ".xml", ".csv", ".pdf", ".pptx", ".xlsx", ".json", ".zip", ".txt", "", ".md"]:
+                    if Path(fl).is_file() and os.path.splitext(fl)[1] in [
+                        ".docx",
+                        ".html",
+                        ".xml",
+                        ".csv",
+                        ".pdf",
+                        ".pptx",
+                        ".xlsx",
+                        ".json",
+                        ".zip",
+                        ".txt",
+                        "",
+                        ".md",
+                    ]:
                         files.append(fl)
             else:
                 for fl in fls:
-                    if fl.is_file() and os.path.splitext(fl)[1] in [".docx", ".html", ".xml", ".csv", ".pdf", ".pptx", ".xlsx", ".json", ".zip", ".txt", "", ".md"]:
-                            files.append(fl.__str__())
+                    if fl.is_file() and os.path.splitext(fl)[1] in [
+                        ".docx",
+                        ".html",
+                        ".xml",
+                        ".csv",
+                        ".pdf",
+                        ".pptx",
+                        ".xlsx",
+                        ".json",
+                        ".zip",
+                        ".txt",
+                        "",
+                        ".md",
+                    ]:
+                        files.append(fl.__str__())
             self.file_path = files
 
         return self
+
 
 class MarkItDownReader(BaseReader):
     """
@@ -88,6 +117,15 @@ class MarkItDownReader(BaseReader):
 
         for f in fs:
             res = self._reader.convert(f)
-            docs.append(Document(text=res.text_content, metadata={"file_path": f.__str__(), "file_type": os.path.splitext(f)[1], "content_length": len(res.text_content)}))
+            docs.append(
+                Document(
+                    text=res.text_content,
+                    metadata={
+                        "file_path": f.__str__(),
+                        "file_type": os.path.splitext(f)[1],
+                        "content_length": len(res.text_content),
+                    },
+                )
+            )
 
         return docs

@@ -159,9 +159,7 @@ class SiliconFlowEmbedding(BaseEmbedding):
             callback_manager=callback_manager,
             **kwargs,
         )
-        assert (
-            self.encoding_format in VALID_ENCODING
-        ), f"""\
+        assert self.encoding_format in VALID_ENCODING, f"""\
             Encoding_format parameter {self.encoding_format} not supported.
             Please choose one of {VALID_ENCODING}".
         """
