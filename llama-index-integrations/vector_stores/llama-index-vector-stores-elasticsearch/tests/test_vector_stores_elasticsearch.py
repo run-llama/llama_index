@@ -519,9 +519,9 @@ async def test_add_to_es_and_text_query_ranked_hybrid_large_top_k(
 def test_check_user_agent(es_store: ElasticsearchStore) -> None:
     user_agent = es_store._store.client._headers["User-Agent"]
     pattern = r"^llama_index-py-vs/\d+\.\d+\.\d+(\.post\d+)?$"
-    assert (
-        re.match(pattern, user_agent) is not None
-    ), f"The string '{user_agent}' does not match the expected user-agent."
+    assert re.match(pattern, user_agent) is not None, (
+        f"The string '{user_agent}' does not match the expected user-agent."
+    )
 
 
 async def check_top_match(

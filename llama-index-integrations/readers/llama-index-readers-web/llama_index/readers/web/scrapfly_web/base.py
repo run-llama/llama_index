@@ -1,4 +1,5 @@
 """Scrapfly Web Reader."""
+
 import logging
 from typing import List, Optional, Literal
 

@@ -459,7 +459,7 @@ class SambaNovaCloud(LLM):
                         data = json.loads(event)
                         if data.get("error"):
                             raise RuntimeError(
-                                f'Sambanova /complete call failed: {data["error"]}'
+                                f"Sambanova /complete call failed: {data['error']}"
                             )
                         yield data
                     except json.JSONDecodeError:

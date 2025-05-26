@@ -243,7 +243,7 @@ class BedrockEmbedding(BaseEmbedding):
             session = boto3.Session(**session_kwargs)
         except ImportError:
             raise ImportError(
-                "boto3 package not found, install with" "'pip install boto3'"
+                "boto3 package not found, install with'pip install boto3'"
             )
 
         if "bedrock-runtime" in session.get_available_services():
@@ -315,7 +315,7 @@ class BedrockEmbedding(BaseEmbedding):
             session = boto3.Session(**session_kwargs)
         except ImportError:
             raise ImportError(
-                "boto3 package not found, install with" "'pip install boto3'"
+                "boto3 package not found, install with'pip install boto3'"
             )
 
         if "bedrock-runtime" in session.get_available_services():

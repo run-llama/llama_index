@@ -324,7 +324,7 @@ def test_model_compatible_client_model(MockSyncOpenAI: MagicMock, model: str) ->
 
 def test_model_incompatible_client_model() -> None:
     model_name = "x"
-    err_msg = f"Model {model_name} is unknown, " "check `available_models`"
+    err_msg = f"Model {model_name} is unknown, check `available_models`"
     with pytest.raises(ValueError) as msg:
         NVIDIA(model=model_name)
     assert err_msg == str(msg.value)

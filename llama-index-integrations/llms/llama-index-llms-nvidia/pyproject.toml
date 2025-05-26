@@ -19,7 +19,7 @@ dev = [
     "pytest-httpx>=0.30.0",
     "pytest-mock==3.11.1",
     "respx>=0.21.1,<0.22",
-    "ruff==0.0.292",
+    "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-protobuf>=4.24.0.4,<5",

@@ -430,13 +430,20 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
             if self._cols_retrievers is not None:
                 cols_retrievers = self._cols_retrievers[table_schema_obj.table_name]
 
-                col_values_context = "\nHere are some relevant values of text columns:\n"
+                col_values_context = (
+                    "\nHere are some relevant values of text columns:\n"
+                )
                 has_col_values = False
                 for col_name, retriever in cols_retrievers.items():
                     relevant_nodes = retriever.retrieve(query_bundle.query_str)
                     if len(relevant_nodes) > 0:
-                        col_values_context += f"{col_name}: " + ", ".join([str(node.get_content())
-                                                                           for node in relevant_nodes]) + "\n"
+                        col_values_context += (
+                            f"{col_name}: "
+                            + ", ".join(
+                                [str(node.get_content()) for node in relevant_nodes]
+                            )
+                            + "\n"
+                        )
                         has_col_values = True
 
                 if has_col_values:

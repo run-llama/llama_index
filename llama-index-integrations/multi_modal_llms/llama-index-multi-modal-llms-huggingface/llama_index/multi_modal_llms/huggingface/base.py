@@ -421,7 +421,7 @@ class Phi35VisionMultiModal(HuggingFaceMultiModal):
         Prepares the input messages and images for Phi3.5 models. Images are appended in a custom format.
         """
         images = [Image.open(img_doc.image_path) for img_doc in image_documents]
-        placeholder = "".join(f"<|image_{i+1}|>\n" for i in range(len(images)))
+        placeholder = "".join(f"<|image_{i + 1}|>\n" for i in range(len(images)))
 
         chat_messages = [{"role": message.role, "content": message.content}]
         if images:

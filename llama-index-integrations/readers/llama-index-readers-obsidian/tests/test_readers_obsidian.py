@@ -136,7 +136,7 @@ def test_remove_tasks_from_text(tmp_path: Path):
     """
     Test that when removal is enabled, task lines are removed from the document text.
     """
-    content = "Intro text\n" "- [ ] Task 1\n" "- [x] Task 2\n" "Conclusion text"
+    content = "Intro text\n- [ ] Task 1\n- [x] Task 2\nConclusion text"
     create_markdown_file(tmp_path, "tasks_removed.md", content)
 
     reader = ObsidianReader(

@@ -618,7 +618,7 @@ def serialize_table(table: pd.DataFrame) -> str:
     output_str = f"col : {' | '.join([_esc_newl(c) for c in table.columns])}\n"
     for i in range(len(table)):
         output_str += (
-            f"row {i+1} : {' | '.join([_esc_newl(str(x)) for x in table.iloc[i]])}\n"
+            f"row {i + 1} : {' | '.join([_esc_newl(str(x)) for x in table.iloc[i]])}\n"
         )
     return output_str
 

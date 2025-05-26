@@ -137,9 +137,9 @@ class BM25Retriever(BaseRetriever):
         if docstore is not None:
             nodes = cast(List[BaseNode], list(docstore.docs.values()))
 
-        assert (
-            nodes is not None
-        ), "Please pass exactly one of index, nodes, or docstore."
+        assert nodes is not None, (
+            "Please pass exactly one of index, nodes, or docstore."
+        )
 
         return cls(
             nodes=nodes,

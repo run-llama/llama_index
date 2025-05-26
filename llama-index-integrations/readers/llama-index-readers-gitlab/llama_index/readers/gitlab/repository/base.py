@@ -1,4 +1,4 @@
-""" GitLab repository reader. """
+"""GitLab repository reader."""
 
 from typing import List, Optional
 
