@@ -58,10 +58,7 @@ def test_build_tree_with_embed(
     """Test build tree."""
     index_kwargs, _ = struct_kwargs
     doc_text = (
-        "Hello world.\n"
-        "This is a test.\n"
-        "This is another test.\n"
-        "This is a test v2."
+        "Hello world.\nThis is a test.\nThis is another test.\nThis is a test v2."
     )
     document = Document(text=doc_text, embedding=[0.1, 0.2, 0.3])
     tree = TreeIndex.from_documents([document], **index_kwargs)

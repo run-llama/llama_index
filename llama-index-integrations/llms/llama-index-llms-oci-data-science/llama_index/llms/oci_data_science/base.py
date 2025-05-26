@@ -947,6 +947,6 @@ class OCIDataScience(FunctionCallingLLM):
             )
 
         logger.debug(
-            f"Extracted tool calls: { [tool_selection.model_dump() for tool_selection in tool_selections] }"
+            f"Extracted tool calls: {[tool_selection.model_dump() for tool_selection in tool_selections]}"
         )
         return tool_selections

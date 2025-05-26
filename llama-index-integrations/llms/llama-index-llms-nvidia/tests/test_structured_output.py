@@ -111,9 +111,9 @@ def test_prompt_generation(MockSyncOpenAI: MagicMock, model):
     assert isinstance(output.name, str), "Name should be a string"
     assert isinstance(output.artist, str), "artist should be a string"
     assert isinstance(output.songs, list), "Songs should be a list"
-    assert all(
-        isinstance(song, Song) for song in output.songs
-    ), "All songs should be of type Song"
+    assert all(isinstance(song, Song) for song in output.songs), (
+        "All songs should be of type Song"
+    )
 
     assert len(output.songs) > 0, "Album should contain at least one song"
 

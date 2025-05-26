@@ -173,7 +173,7 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
         try:
             constraint = self.structured_query("CALL db.constraints()")
             index = self.structured_query(
-                "CALL db.indexes() YIELD label, properties, entitytype " "RETURN *"
+                "CALL db.indexes() YIELD label, properties, entitytype RETURN *"
             )
         except (
             redis.exceptions.ResponseError
@@ -354,7 +354,7 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
         WITH e
         CALL {{
             WITH e
-            MATCH (e)-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]->(t:__Entity__)
+            MATCH (e)-[r{":`" + "`|`".join(relation_names) + "`" if relation_names else ""}]->(t:__Entity__)
             RETURN e.name AS source_id, [l in labels(e) WHERE l <> '__Entity__' | l][0] AS source_type,
                    e{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
@@ -362,7 +362,7 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
                    t{{.* , embedding: Null, name: Null}} AS target_properties
             UNION ALL
             WITH e
-            MATCH (e)<-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]-(t:__Entity__)
+            MATCH (e)<-[r{":`" + "`|`".join(relation_names) + "`" if relation_names else ""}]-(t:__Entity__)
             RETURN t.name AS source_id, [l in labels(t) WHERE l <> '__Entity__' | l][0] AS source_type,
                    e{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,

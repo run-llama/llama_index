@@ -114,7 +114,7 @@ class RecursiveRetriever(BaseRetriever):
             if isinstance(node, IndexNode):
                 if self._verbose:
                     print_text(
-                        "Retrieved node with id, entering: " f"{node.index_id}\n",
+                        f"Retrieved node with id, entering: {node.index_id}\n",
                         color="pink",
                     )
                 cur_retrieved_nodes, cur_additional_nodes = self._retrieve_rec(
@@ -126,7 +126,7 @@ class RecursiveRetriever(BaseRetriever):
                 assert isinstance(node, TextNode)
                 if self._verbose:
                     print_text(
-                        "Retrieving text node: " f"{node.get_content()}\n",
+                        f"Retrieving text node: {node.get_content()}\n",
                         color="pink",
                     )
                 cur_retrieved_nodes = [node_with_score]

@@ -14,19 +14,19 @@ MOCK_INSERT_PROMPT = PromptTemplate(
 )
 
 # # single choice
-MOCK_QUERY_PROMPT_TMPL = "{num_chunks}\n" "{context_list}\n" "{query_str}'\n"
+MOCK_QUERY_PROMPT_TMPL = "{num_chunks}\n{context_list}\n{query_str}'\n"
 MOCK_QUERY_PROMPT = PromptTemplate(
     MOCK_QUERY_PROMPT_TMPL, prompt_type=PromptType.TREE_SELECT
 )
 
 
-MOCK_REFINE_PROMPT_TMPL = "{query_str}\n" "{existing_answer}\n" "{context_msg}\n"
+MOCK_REFINE_PROMPT_TMPL = "{query_str}\n{existing_answer}\n{context_msg}\n"
 MOCK_REFINE_PROMPT = PromptTemplate(
     MOCK_REFINE_PROMPT_TMPL, prompt_type=PromptType.REFINE
 )
 
 
-MOCK_TEXT_QA_PROMPT_TMPL = "{context_str}\n" "{query_str}\n"
+MOCK_TEXT_QA_PROMPT_TMPL = "{context_str}\n{query_str}\n"
 MOCK_TEXT_QA_PROMPT = PromptTemplate(
     MOCK_TEXT_QA_PROMPT_TMPL, prompt_type=PromptType.QUESTION_ANSWER
 )

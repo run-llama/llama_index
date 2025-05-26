@@ -126,22 +126,18 @@ class BasePromptTemplate(ChainableMixin, BaseModel, ABC):  # type: ignore[no-red
         return self._map_template_vars(new_kwargs)
 
     @abstractmethod
-    def partial_format(self, **kwargs: Any) -> "BasePromptTemplate":
-        ...
+    def partial_format(self, **kwargs: Any) -> "BasePromptTemplate": ...
 
     @abstractmethod
-    def format(self, llm: Optional[BaseLLM] = None, **kwargs: Any) -> str:
-        ...
+    def format(self, llm: Optional[BaseLLM] = None, **kwargs: Any) -> str: ...
 
     @abstractmethod
     def format_messages(
         self, llm: Optional[BaseLLM] = None, **kwargs: Any
-    ) -> List[ChatMessage]:
-        ...
+    ) -> List[ChatMessage]: ...
 
     @abstractmethod
-    def get_template(self, llm: Optional[BaseLLM] = None) -> str:
-        ...
+    def get_template(self, llm: Optional[BaseLLM] = None) -> str: ...
 
     def _as_query_component(
         self, llm: Optional[BaseLLM] = None, **kwargs: Any

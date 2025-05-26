@@ -35,59 +35,53 @@ class RankLLMRerank(BaseNodePostprocessor):
             - MonoT5. model='monot5'
     """
 
-    model: str = Field(
-        description="Model name.",
-        default="rank_zephyr"
-    )
+    model: str = Field(description="Model name.", default="rank_zephyr")
     top_n: Optional[int] = Field(
         description="Number of nodes to return sorted by reranking score."
     )
     window_size: int = Field(
         description="Reranking window size. Applicable only for listwise and pairwise models.",
-        default=20
+        default=20,
     )
     batch_size: Optional[int] = Field(
         description="Reranking batch size. Applicable only for pointwise models."
     )
     context_size: int = Field(
-        description="Maximum number of tokens for the context window.",
-        default=4096
+        description="Maximum number of tokens for the context window.", default=4096
     )
     prompt_mode: PromptMode = Field(
         description="Prompt format and strategy used when invoking the reranking model.",
-        default=PromptMode.RANK_GPT
+        default=PromptMode.RANK_GPT,
     )
     num_gpus: int = Field(
-        description="Number of GPUs to use for inference if applicable.",
-        default=1
+        description="Number of GPUs to use for inference if applicable.", default=1
     )
     num_few_shot_examples: int = Field(
-        description="Number of few-shot examples to include in the prompt.",
-        default=0
+        description="Number of few-shot examples to include in the prompt.", default=0
     )
     few_shot_file: Optional[str] = Field(
         description="Path to a file containing few-shot examples, used if few-shot prompting is enabled.",
-        default=None
+        default=None,
     )
     use_logits: bool = Field(
         description="Whether to use raw logits for reranking scores instead of probabilities.",
-        default=False
+        default=False,
     )
     use_alpha: bool = Field(
         description="Whether to apply an alpha scaling factor in the reranking score calculation.",
-        default=False
+        default=False,
     )
     variable_passages: bool = Field(
         description="Whether to allow passages of variable lengths instead of fixed-size chunks.",
-        default=False
+        default=False,
     )
     stride: int = Field(
         description="Stride to use when sliding over long documents for reranking.",
-        default=10
+        default=10,
     )
     use_azure_openai: bool = Field(
         description="Whether to use Azure OpenAI instead of the standard OpenAI API.",
-        default=False
+        default=False,
     )
 
     _reranker: Any = PrivateAttr()

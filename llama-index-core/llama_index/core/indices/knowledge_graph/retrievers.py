@@ -474,9 +474,9 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         """Initialize the retriever."""
         # Ensure that we have a graph store
         assert storage_context is not None, "Must provide a storage context."
-        assert (
-            storage_context.graph_store is not None
-        ), "Must provide a graph store in the storage context."
+        assert storage_context.graph_store is not None, (
+            "Must provide a graph store in the storage context."
+        )
         self._storage_context = storage_context
         self._graph_store = storage_context.graph_store
 

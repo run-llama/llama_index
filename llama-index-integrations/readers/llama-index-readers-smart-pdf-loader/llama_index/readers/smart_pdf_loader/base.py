@@ -1,4 +1,5 @@
 """Smart PDF Loader."""
+
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.readers.base import BaseReader

@@ -64,7 +64,7 @@ class DashVectorReader(BaseReader):
         collection = self._client.get(collection_name)
         if not collection:
             raise ValueError(
-                f"Failed to get collection: {collection_name}," f"Error: {collection}"
+                f"Failed to get collection: {collection_name},Error: {collection}"
             )
 
         ret = collection.query(
@@ -77,7 +77,7 @@ class DashVectorReader(BaseReader):
             sparse_vector=sparse_vector,
         )
         if not ret:
-            raise Exception(f"Failed to query document," f"Error: {ret}")
+            raise Exception(f"Failed to query document,Error: {ret}")
 
         doc_metas = ret.output
         documents = []
