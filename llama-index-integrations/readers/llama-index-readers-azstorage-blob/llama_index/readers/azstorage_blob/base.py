@@ -7,26 +7,26 @@ A loader that fetches a file or iterates through a directory from Azure Storage 
 import logging
 import math
 import os
-from pathlib import Path
 import tempfile
 import time
-from typing import Any, Dict, List, Optional, Union
+from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Union
 
 from azure.storage.blob import ContainerClient
+from typing_extensions import Annotated
 
-from llama_index.core.bridge.pydantic import Field
-from llama_index.core.readers import SimpleDirectoryReader
-from llama_index.core.readers.base import BaseReader, BasePydanticReader
+from llama_index.core.bridge.pydantic import Field, WithJsonSchema
+from llama_index.core.readers import FileSystemReaderMixin, SimpleDirectoryReader
+from llama_index.core.readers.base import BasePydanticReader, BaseReader, ResourcesReaderMixin
 from llama_index.core.schema import Document
-from llama_index.core.readers import SimpleDirectoryReader, FileSystemReaderMixin
-from llama_index.core.readers.base import (
-    BaseReader,
-    BasePydanticReader,
-    ResourcesReaderMixin,
-)
 
 logger = logging.getLogger(__name__)
 
+
+FileMetadataCallable = Annotated[
+    Callable[[str], Dict],
+    WithJsonSchema({"type": "string"}),
+]
 
 class AzStorageBlobReader(
     BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin
@@ -53,6 +53,11 @@ class AzStorageBlobReader(
         account_url (str): URI to the storage account, may include SAS token.
         credential (Union[str, Dict[str, str], AzureNamedKeyCredential, AzureSasCredential, TokenCredential, None] = None):
             The credentials with which to authenticate. This is optional if the account URL already has a SAS token.
+        file_metadata_fn (Optional[Callable[str, Dict]]): A function that takes
+            in a filename and returns a Dict of metadata for the Document.
+            Default is None.
+        filename_as_id (bool): Whether to use the filename as the document id.
+            False by default.
 
     """
 
@@ -68,6 +73,8 @@ class AzStorageBlobReader(
     account_url: Optional[str] = None
     credential: Optional[Any] = None
     is_remote: bool = True
+    file_metadata_fn: Optional[FileMetadataCallable] = Field(default=None, exclude=True)
+    filename_as_id: bool = True
 
     # Not in use. As part of the TODO below. Is part of the kwargs.
     # self.preloaded_data_path = kwargs.get('preloaded_data_path', None)
@@ -150,10 +157,15 @@ class AzStorageBlobReader(
         """Load documents from a directory and extract metadata."""
 
         def get_metadata(file_name: str) -> Dict[str, Any]:
-            return files_metadata.get(file_name, {})
+            sanitized_file_name = os.path.basename(file_name)
+            metadata = files_metadata.get(sanitized_file_name, {})
+            return dict(**metadata)
 
         loader = SimpleDirectoryReader(
-            temp_dir, file_extractor=self.file_extractor, file_metadata=get_metadata
+            input_dir=temp_dir,
+            file_extractor=self.file_extractor,
+            file_metadata=self.file_metadata_fn or get_metadata,
+            filename_as_id=self.filename_as_id,
         )
 
         return loader.load_data()
