@@ -20,18 +20,29 @@ class SimpleKVStore(BaseInMemoryKVStore):
 
     Args:
         data (Optional[DATA_TYPE]): data to initialize the store with
+        maximum_data_points (Optional[int]): maximum number of data points that can be stored within a collection in the KVStore
+        size_strict (Optional[bool]): whether to throw an error or not when the maximum size is exceeded
 
     """
 
     def __init__(
         self,
         data: Optional[DATA_TYPE] = None,
+        maximum_data_points: Optional[int] = None,
+        size_strict: Optional[bool] = None,
     ) -> None:
         """Init a SimpleKVStore."""
         self._data: DATA_TYPE = data or {}
+        self._maximum_data_point = maximum_data_points or 1000
+        self._strict = size_strict or False
 
     def put(self, key: str, val: dict, collection: str = DEFAULT_COLLECTION) -> None:
         """Put a key-value pair into the store."""
+        if collection in self._data and len(collection) > self._maximum_data_point:
+            if self._strict:
+                raise ValueError(f"Exceeded the maximum number of data points that can be uploaded to collection {collection}")
+            first_key = next(iter(self._data[collection].keys()))
+            self._data[collection].pop(first_key)
         if collection not in self._data:
             self._data[collection] = {}
         self._data[collection][key] = val.copy()

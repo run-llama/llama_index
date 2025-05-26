@@ -4,12 +4,14 @@ import asyncio
 from abc import abstractmethod
 from enum import Enum
 from typing import Any, Callable, Coroutine, List, Optional, Sequence, Tuple
+from typing_extensions import Self
 
+from llama_index.core.storage.kvstore import SimpleKVStore
 import numpy as np
 from llama_index.core.bridge.pydantic import (
     Field,
     ConfigDict,
-    field_validator,
+    model_validator,
 )
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
@@ -86,13 +88,28 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         default=None,
         description="The number of workers to use for async embedding calls.",
     )
+    cache_embeddings: bool = Field(
+        default=False,
+        description="Whether to cache embeddings or not"
+    )
+    embeddings_cache: Optional[SimpleKVStore] = Field(
+        default=None,
+        description="Cache for the embeddings"
+    )
+    maximum_cached_embeddings: Optional[int] = Field(
+        default = None,
+        description="Maximum number of embeddings to cache"
+    )
 
-    @field_validator("callback_manager")
-    @classmethod
-    def check_callback_manager(cls, v: CallbackManager) -> CallbackManager:
-        if v is None:
-            return CallbackManager([])
-        return v
+    @model_validator(mode="after")
+    def check_base_embeddings_class(self) -> Self:
+        if self.callback_manager is None:
+            self.callback_manager = CallbackManager([])
+        if self.cache_embeddings and not self.embeddings_cache:
+            if not self.maximum_cached_embeddings:
+                self.maximum_cached_embeddings = 1000
+            self.cache_embeddings = SimpleKVStore(maximum_data_points = self.maximum_cached_embeddings)
+        return self
 
     @abstractmethod
     def _get_query_embedding(self, query: str) -> Embedding:
