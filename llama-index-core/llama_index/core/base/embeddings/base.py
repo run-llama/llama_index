@@ -88,28 +88,15 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         default=None,
         description="The number of workers to use for async embedding calls.",
     )
-    cache_embeddings: bool = Field(
-        default=False,
-        description="Whether to cache embeddings or not"
-    )
     embeddings_cache: Optional[SimpleKVStore] = Field(
         default=None,
         description="Cache for the embeddings"
-    )
-    maximum_cached_embeddings: Optional[int] = Field(
-        default = None,
-        description="Maximum number of embeddings to cache"
     )
 
     @model_validator(mode="after")
     def check_base_embeddings_class(self) -> Self:
         if self.callback_manager is None:
             self.callback_manager = CallbackManager([])
-        if self.cache_embeddings and not self.embeddings_cache:
-            if not self.maximum_cached_embeddings:
-                self.maximum_cached_embeddings = 1000
-            self.cache_embeddings = SimpleKVStore(maximum_data_points = self.maximum_cached_embeddings)
-        return self
 
     @abstractmethod
     def _get_query_embedding(self, query: str) -> Embedding:
