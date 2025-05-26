@@ -410,6 +410,8 @@ class OpensearchVectorClient:
             return {"match": {key: {"query": filter.value, "fuzziness": "AUTO"}}}
         elif op == FilterOperator.CONTAINS:
             return {"wildcard": {key: f"*{filter.value}*"}}
+        elif op == FilterOperator.IS_EMPTY:
+            return {"bool": {"must_not": {"exists": {"field": key}}}}
         else:
             raise ValueError(f"Unsupported filter operator: {filter.operator}")
 

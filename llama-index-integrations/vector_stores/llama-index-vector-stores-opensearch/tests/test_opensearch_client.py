@@ -714,6 +714,36 @@ def test_filter_contains(os_stores: List[OpensearchVectorStore], insert_document
 
 
 @pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+def test_filter_is_empty(os_stores: List[OpensearchVectorStore], insert_document):
+    """
+    Test that OpensearchVectorStore correctly applies FilterOperator.IS_EMPTY in filters. Should only match
+    documents where the specified field doesn't exist.
+    """
+    for os_store in os_stores:
+        for metadata, id_ in [
+            ({"author": "John Doe", "category": "fiction"}, "has_author"),
+            ({"category": "non-fiction", "year": 2023}, "no_author1"),
+            ({"year": 2022, "publisher": "ABC Books"}, "no_author2"),
+            ({}, "no_author3"),
+        ]:
+            insert_document(os_store, doc_id=id_, metadata=metadata)
+
+        query = _get_sample_vector_store_query(
+            filters=MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key="author", value=None, operator=FilterOperator.IS_EMPTY
+                    )
+                ]
+            )
+        )
+        query_result = os_store.query(query)
+
+        doc_ids = {node.id_ for node in query_result.nodes}
+        assert doc_ids == {"no_author1", "no_author2", "no_author3"}
+
+
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
 @pytest.mark.parametrize(
     ("filters", "exp_match_ids"),
     [
