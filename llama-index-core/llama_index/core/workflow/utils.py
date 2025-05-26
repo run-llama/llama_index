@@ -1,6 +1,7 @@
 import inspect
 from importlib import import_module
 from typing import (
+    Annotated,
     Any,
     Callable,
     Dict,
@@ -48,6 +49,12 @@ class ServiceDefinition(BaseModel):
     default_value: Optional[Any]
 
 
+class ResourceDefinition(BaseModel):
+    model_config = ConfigDict(frozen=True)
+    name: str
+    callable: Callable
+
+
 class StepSignatureSpec(BaseModel):
     """A Pydantic model representing the signature of a step function or method."""
 
@@ -55,6 +62,7 @@ class StepSignatureSpec(BaseModel):
     return_types: List[Any]
     context_parameter: Optional[str]
     requested_services: Optional[List[ServiceDefinition]]
+    resources: List[Any]
 
 
 def inspect_signature(fn: Callable) -> StepSignatureSpec:
@@ -79,11 +87,12 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
         raise TypeError(f"Expected a callable object, got {type(fn).__name__}")
 
     sig = inspect.signature(fn)
-    type_hints = get_type_hints(fn)
+    type_hints = get_type_hints(fn, include_extras=True)
 
     accepted_events: Dict[str, List[EventType]] = {}
     context_parameter = None
     requested_services = []
+    resources = []
 
     # Inspect function parameters
     for name, t in sig.parameters.items():
@@ -92,6 +101,16 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
             continue
 
         annotation = type_hints.get(name, t.annotation)
+        if get_origin(annotation) is Annotated:
+            base_type, factory = get_args(annotation)
+            resources.append(
+                ResourceDefinition(
+                    name=name,
+                    callable=factory,
+                )
+            )
+            print(f"Base type: {base_type}, Factory: {factory}")
+            continue
 
         # Get name and type of the Context param
         if hasattr(annotation, "__name__") and annotation.__name__ == "Context":
@@ -124,6 +143,7 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
         return_types=_get_return_types(fn),
         context_parameter=context_parameter,
         requested_services=requested_services,
+        resources=resources,
     )
 
 
