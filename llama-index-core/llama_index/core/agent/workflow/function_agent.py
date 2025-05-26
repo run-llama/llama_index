@@ -21,7 +21,8 @@ class FunctionAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
 
     scratchpad_key: str = "scratchpad"
     allow_parallel_tool_calls: bool = Field(
-        default=True, description="If True, the agent will call multiple tools in parallel. If False, the agent will call tools sequentially."
+        default=True,
+        description="If True, the agent will call multiple tools in parallel. If False, the agent will call tools sequentially.",
     )
 
     async def take_step(
