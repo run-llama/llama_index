@@ -53,7 +53,7 @@ class AzStorageBlobReader(
         account_url (str): URI to the storage account, may include SAS token.
         credential (Union[str, Dict[str, str], AzureNamedKeyCredential, AzureSasCredential, TokenCredential, None] = None):
             The credentials with which to authenticate. This is optional if the account URL already has a SAS token.
-        file_metadata (Optional[Callable[str, Dict]]): A function that takes
+        file_metadata_fn (Optional[Callable[str, Dict]]): A function that takes
             in a filename and returns a Dict of metadata for the Document.
             Default is None.
         filename_as_id (bool): Whether to use the filename as the document id.
@@ -73,7 +73,7 @@ class AzStorageBlobReader(
     account_url: Optional[str] = None
     credential: Optional[Any] = None
     is_remote: bool = True
-    file_metadata: Optional[FileMetadataCallable] = Field(default=None, exclude=True)
+    file_metadata_fn: Optional[FileMetadataCallable] = Field(default=None, exclude=True)
     filename_as_id: bool = True
 
     # Not in use. As part of the TODO below. Is part of the kwargs.
@@ -164,7 +164,7 @@ class AzStorageBlobReader(
         loader = SimpleDirectoryReader(
             input_dir=temp_dir,
             file_extractor=self.file_extractor,
-            file_metadata=self.file_metadata or get_metadata,
+            file_metadata=self.file_metadata_fn or get_metadata,
             filename_as_id=self.filename_as_id,
         )
 
