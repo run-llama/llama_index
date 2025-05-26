@@ -50,6 +50,7 @@ class ServiceDefinition(BaseModel):
 
 
 class ResourceDefinition(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     name: str
     callable: Callable
     initialized_resource: Any = Field(
