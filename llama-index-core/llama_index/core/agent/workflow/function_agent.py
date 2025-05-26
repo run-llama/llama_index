@@ -9,13 +9,12 @@ from llama_index.core.agent.workflow.workflow_events import (
     ToolCallResult,
 )
 from llama_index.core.base.llms.types import ChatResponse
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import ChatMessage
 from llama_index.core.memory import BaseMemory
 from llama_index.core.tools import AsyncBaseTool
 from llama_index.core.workflow import Context
 
-from pydantic import Field
 
 class FunctionAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
     """Function calling agent implementation."""
