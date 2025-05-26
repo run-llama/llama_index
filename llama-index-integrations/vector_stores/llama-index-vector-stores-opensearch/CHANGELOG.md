@@ -1,5 +1,9 @@
 # CHANGELOG — llama-index-vector-stores-opensearch
 
+## [0.5.5]
+
+- Added support for IS_EMPTY Filter Operator in case OpensearchVectorClient
+
 ## [0.4.1]
 
 - Added ability to create OpensearchVectorClient with custom os_async_client (like os_client)
