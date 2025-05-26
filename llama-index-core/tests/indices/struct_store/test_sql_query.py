@@ -175,7 +175,7 @@ def test_sql_index_async_query(
 
 def test_default_output_parser() -> None:
     """Test default output parser."""
-    test_str = "user_id:2\n" "foo:bar\n" ",,testing:testing2..\n" "number:123,456,789\n"
+    test_str = "user_id:2\nfoo:bar\n,,testing:testing2..\nnumber:123,456,789\n"
     fields = default_output_parser(test_str)
     assert fields == {
         "user_id": "2",
@@ -390,7 +390,9 @@ def test_sql_table_retriever_query_engine_with_cols_retriever(
     # query the index with natural language
     print(cols_retrievers)
     nl_query_engine = SQLTableRetrieverQueryEngine(
-        sql_database, table_retriever, cols_retrievers=cols_retrievers,
+        sql_database,
+        table_retriever,
+        cols_retrievers=cols_retrievers,
     )
     response = nl_query_engine.query("test_table:user_id,foo")
     assert str(response) == "[(2, 'bar'), (8, 'hello')]"

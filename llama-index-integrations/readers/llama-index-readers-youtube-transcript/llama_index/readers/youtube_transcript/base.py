@@ -1,4 +1,5 @@
 """Simple Reader that reads transcript of youtube video."""
+
 import re
 from typing import Any, List, Optional
 

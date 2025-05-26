@@ -1,4 +1,5 @@
 """Simple reader that reads weather data from OpenWeatherMap API."""
+
 from typing import List
 
 from llama_index.core.readers.base import BaseReader

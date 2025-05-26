@@ -1,7 +1,13 @@
 """Gemini embeddings file."""
 
 import os
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception, AsyncRetrying
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception,
+    AsyncRetrying,
+)
 from typing import Any, Dict, List, Optional, TypedDict, Callable, TypeVar, Awaitable
 
 import requests
@@ -20,6 +26,7 @@ from google.genai.errors import APIError
 # Define generic types for functions that will be wrapped with retry
 T = TypeVar("T")
 R = TypeVar("R")
+
 
 class VertexAIConfig(TypedDict):
     credentials: Optional[google.auth.credentials.Credentials] = None
@@ -43,7 +50,7 @@ def get_retryable_function(
     max_retries: int = 3,
     min_seconds: float = 1,
     max_seconds: float = 10,
-    exponential_base: float = 2
+    exponential_base: float = 2,
 ) -> Callable[..., T]:
     """
     Wraps a function with tenacity retry decorator based on configurable parameters.
@@ -62,8 +69,10 @@ def get_retryable_function(
     retry_decorator = retry(
         reraise=True,
         stop=stop_after_attempt(max_retries),
-        wait=wait_exponential(multiplier=min_seconds, max=max_seconds, exp_base=exponential_base),
-        retry=retry_if_exception(is_retryable_error)
+        wait=wait_exponential(
+            multiplier=min_seconds, max=max_seconds, exp_base=exponential_base
+        ),
+        retry=retry_if_exception(is_retryable_error),
     )
 
     return retry_decorator(func)
@@ -74,7 +83,7 @@ async def get_retryable_async_function(
     max_retries: int = 3,
     min_seconds: float = 1,
     max_seconds: float = 10,
-    exponential_base: float = 2
+    exponential_base: float = 2,
 ) -> R:
     """
     Wraps an async function with tenacity retry logic based on configurable parameters.
@@ -93,8 +102,10 @@ async def get_retryable_async_function(
     retry_config = AsyncRetrying(
         reraise=True,
         stop=stop_after_attempt(max_retries),
-        wait=wait_exponential(multiplier=min_seconds, max=max_seconds, exp_base=exponential_base),
-        retry=retry_if_exception(is_retryable_error)
+        wait=wait_exponential(
+            multiplier=min_seconds, max=max_seconds, exp_base=exponential_base
+        ),
+        retry=retry_if_exception(is_retryable_error),
     )
 
     async for attempt in retry_config:
@@ -250,7 +261,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
             max_retries=self.retries,
             min_seconds=self.retry_min_seconds,
             max_seconds=self.retry_max_seconds,
-            exponential_base=self.retry_exponential_base
+            exponential_base=self.retry_exponential_base,
         )
 
         return retryable_embed()
@@ -283,7 +294,7 @@ class GoogleGenAIEmbedding(BaseEmbedding):
             max_retries=self.retries,
             min_seconds=self.retry_min_seconds,
             max_seconds=self.retry_max_seconds,
-            exponential_base=self.retry_exponential_base
+            exponential_base=self.retry_exponential_base,
         )
 
     def _get_query_embedding(self, query: str) -> List[float]:

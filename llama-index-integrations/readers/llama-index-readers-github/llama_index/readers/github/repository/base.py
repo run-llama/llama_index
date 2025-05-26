@@ -436,9 +436,9 @@ class GithubRepositoryReader(BaseReader):
         documents = []
         async for blob_data, full_path in buffered_iterator:
             print_if_verbose(self._verbose, f"generating document for {full_path}")
-            assert (
-                blob_data.encoding == "base64"
-            ), f"blob encoding {blob_data.encoding} not supported"
+            assert blob_data.encoding == "base64", (
+                f"blob encoding {blob_data.encoding} not supported"
+            )
             decoded_bytes = None
             try:
                 decoded_bytes = base64.b64decode(blob_data.content)

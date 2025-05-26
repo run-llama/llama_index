@@ -4,6 +4,7 @@ Azure Storage Blob file and directory reader.
 A loader that fetches a file or iterates through a directory from Azure Storage Blob.
 
 """
+
 import logging
 import math
 import os
@@ -17,7 +18,11 @@ from typing_extensions import Annotated
 
 from llama_index.core.bridge.pydantic import Field, WithJsonSchema
 from llama_index.core.readers import FileSystemReaderMixin, SimpleDirectoryReader
-from llama_index.core.readers.base import BasePydanticReader, BaseReader, ResourcesReaderMixin
+from llama_index.core.readers.base import (
+    BasePydanticReader,
+    BaseReader,
+    ResourcesReaderMixin,
+)
 from llama_index.core.schema import Document
 
 logger = logging.getLogger(__name__)
@@ -27,6 +32,7 @@ FileMetadataCallable = Annotated[
     Callable[[str], Dict],
     WithJsonSchema({"type": "string"}),
 ]
+
 
 class AzStorageBlobReader(
     BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin

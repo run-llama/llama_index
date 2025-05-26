@@ -66,7 +66,7 @@ class IpexLLM(CustomLLM):
     load_in_4bit: bool = Field(
         default=True,
         description=(
-            "Whether to load model in 4bit." "Unused if `load_in_low_bit` is not None."
+            "Whether to load model in 4bit.Unused if `load_in_low_bit` is not None."
         ),
     )
     load_in_low_bit: str = Field(

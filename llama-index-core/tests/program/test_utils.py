@@ -1,4 +1,5 @@
 """Test program utils."""
+
 import pytest
 from typing import List, Optional
 from llama_index.core.bridge.pydantic import BaseModel, Field
@@ -99,7 +100,9 @@ def test_process_streaming_objects() -> None:
             ]
 
     result = process_streaming_objects(
-        tool_call_response, Person, llm=MockLLM()  # type: ignore
+        tool_call_response,
+        Person,
+        llm=MockLLM(),  # type: ignore
     )
     assert isinstance(result, Person)
     assert result.name == "Jane"

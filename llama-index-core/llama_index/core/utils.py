@@ -125,8 +125,7 @@ globals_helper = GlobalsHelper()
 # Global Tokenizer
 @runtime_checkable
 class Tokenizer(Protocol):
-    def encode(self, text: str, *args: Any, **kwargs: Any) -> List[Any]:
-        ...
+    def encode(self, text: str, *args: Any, **kwargs: Any) -> List[Any]: ...
 
 
 def set_global_tokenizer(tokenizer: Union[Tokenizer, Callable[[str], list]]) -> None:

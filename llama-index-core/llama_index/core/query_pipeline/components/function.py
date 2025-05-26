@@ -99,7 +99,7 @@ class FnComponent(QueryComponent):
         extra_params = set(input.keys()) - self._req_params - self._opt_params
         if extra_params:
             raise ValueError(
-                f"Extra parameters: {extra_params}. " f"Input keys: {input.keys()}"
+                f"Extra parameters: {extra_params}. Input keys: {input.keys()}"
             )
         return input
 

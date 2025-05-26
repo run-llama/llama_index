@@ -6,7 +6,6 @@ we can take inspiration and use few-shot prompting to generate a prompt for impl
 chain of abstraction in an LLM agent.
 """
 
-
 REASONING_PROMPT_TEMPALTE = """Generate an abstract plan of reasoning using placeholders for the specific values and function calls needed.
 The placeholders should be labeled y1, y2, etc.
 Function calls should be represented as inline strings like [FUNC {{function_name}}({{input1}}, {{input2}}, ...) = {{output_placeholder}}].

@@ -13,6 +13,7 @@ def test_embedding_class():
     emb = GoogleGenAIEmbedding(api_key="...")
     assert isinstance(emb, BaseEmbedding)
 
+
 # Mock tests that don't require API key
 @patch("google.genai.Client")
 def test_embed_texts_mock(mock_client_class):
@@ -106,7 +107,7 @@ async def test_async_embed_texts_mock(mock_client_class):
 # Real API tests (skipped if no API key)
 @pytest.mark.skipif(
     os.environ.get("GOOGLE_API_KEY") is None,
-    reason="GOOGLE_API_KEY environment variable not set"
+    reason="GOOGLE_API_KEY environment variable not set",
 )
 def test_real_embedding():
     # Initialize with API key from environment
@@ -123,7 +124,7 @@ def test_real_embedding():
 
 @pytest.mark.skipif(
     os.environ.get("GOOGLE_API_KEY") is None,
-    reason="GOOGLE_API_KEY environment variable not set"
+    reason="GOOGLE_API_KEY environment variable not set",
 )
 def test_real_batch_embedding():
     # Initialize with API key from environment
@@ -147,7 +148,7 @@ def test_real_batch_embedding():
 @pytest.mark.asyncio
 @pytest.mark.skipif(
     os.environ.get("GOOGLE_API_KEY") is None,
-    reason="GOOGLE_API_KEY environment variable not set"
+    reason="GOOGLE_API_KEY environment variable not set",
 )
 async def test_real_async_embedding():
     # Initialize with API key from environment
@@ -179,7 +180,7 @@ def test_retry_on_api_error(mock_client_class):
     # Make embed_content fail with rate limit error on first call, then succeed
     mock_embed_content.side_effect = [
         APIError(429, response_json={"error": {"message": "Rate limit exceeded"}}),
-        mock_result
+        mock_result,
     ]
 
     # Test embedding with retries configured
@@ -187,7 +188,7 @@ def test_retry_on_api_error(mock_client_class):
         api_key="fake_key",
         retries=2,
         retry_min_seconds=0.1,  # Use small values for faster tests
-        retry_max_seconds=0.2
+        retry_max_seconds=0.2,
     )
 
     # This should fail once, retry, then succeed
@@ -217,7 +218,9 @@ async def test_async_retry_on_connection_error(mock_client_class):
     mock_result.embeddings = [mock_embedding]
 
     # Create two different AsyncMock objects
-    fail_mock = AsyncMock(side_effect=requests.exceptions.ConnectionError("Connection error"))
+    fail_mock = AsyncMock(
+        side_effect=requests.exceptions.ConnectionError("Connection error")
+    )
     success_mock = AsyncMock(return_value=mock_result)
 
     # Configure the mock to return different mocks on consecutive calls
@@ -228,7 +231,7 @@ async def test_async_retry_on_connection_error(mock_client_class):
         api_key="fake_key",
         retries=2,
         retry_min_seconds=0.1,  # Use small values for faster tests
-        retry_max_seconds=0.2
+        retry_max_seconds=0.2,
     )
 
     # Replace the mock after the first call to simulate recovery
@@ -267,7 +270,7 @@ def test_no_retry_on_auth_error(mock_client_class):
         api_key="invalid_key",
         retries=3,  # Even with multiple retries configured
         retry_min_seconds=0.1,
-        retry_max_seconds=0.2
+        retry_max_seconds=0.2,
     )
 
     # Should raise the APIError without retrying

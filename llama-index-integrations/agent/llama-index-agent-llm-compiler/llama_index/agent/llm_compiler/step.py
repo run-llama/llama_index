@@ -26,12 +26,20 @@ from llama_index.core.agent.types import (
     TaskStepOutput,
 )
 from llama_index.core.types import Thread
-from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole,ChatResponseGen
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    MessageRole,
+    ChatResponseGen,
+)
 from llama_index.core.callbacks import (
     CallbackManager,
     trace_method,
 )
-from llama_index.core.chat_engine.types import AgentChatResponse,StreamingAgentChatResponse
+from llama_index.core.chat_engine.types import (
+    AgentChatResponse,
+    StreamingAgentChatResponse,
+)
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.core.objects.base import ObjectRetriever
@@ -94,7 +102,7 @@ def generate_llm_compiler_prompt(
         prefix += f"{i + 1}. {tool_desc}\n"
 
     # join operation
-    prefix += f"{i+2}. {JOIN_DESCRIPTION}\n\n"
+    prefix += f"{i + 2}. {JOIN_DESCRIPTION}\n\n"
 
     # Guidelines
     prefix += (
@@ -128,6 +136,7 @@ def generate_llm_compiler_prompt(
         prefix += f"Example:\n{example_prompt}\n\n"
 
     return prefix
+
 
 class LLMCompilerAgentWorker(BaseAgentWorker):
     """
@@ -311,7 +320,7 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
         is_replan: bool,
     ) -> TaskStepOutput:
         """Get task step response."""
-        #agent_answer = AgentChatResponse(response=answer, sources=[])
+        # agent_answer = AgentChatResponse(response=answer, sources=[])
 
         if not is_replan:
             # generate final answer
@@ -348,10 +357,7 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
         )
 
     async def _arun_step(
-        self,
-        step: TaskStep,
-        task: Task,
-        **kwargs: Any
+        self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step."""
         if self.verbose:
@@ -453,13 +459,9 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
         for join_chunk in stream_response:
             yield join_chunk
 
-
     @trace_method("_run_step_stream")
     def _run_step_stream(
-        self,
-        step: TaskStep,
-        task: Task,
-        **kwargs: Any
+        self, step: TaskStep, task: Task, **kwargs: Any
     ) -> TaskStepOutput:
         """Run step (async stream)."""
         if self.verbose:
@@ -489,7 +491,12 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
 
         # Stream LLM response
         messages = [
-            ChatMessage(role=MessageRole.SYSTEM, content=self.system_prompt_replan if step.step_state["is_replan"] else self.system_prompt),
+            ChatMessage(
+                role=MessageRole.SYSTEM,
+                content=self.system_prompt_replan
+                if step.step_state["is_replan"]
+                else self.system_prompt,
+            ),
         ]
 
         if step.step_state["is_replan"]:
@@ -500,11 +507,13 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
 
         messages.append(ChatMessage(role=MessageRole.USER, content=human_prompt))
 
-        llm_response = asyncio.run(self.arun_llm(
-            task.input,
-            previous_context=formatted_contexts,
-            is_replan=step.step_state["is_replan"],
-        ))
+        llm_response = asyncio.run(
+            self.arun_llm(
+                task.input,
+                previous_context=formatted_contexts,
+                is_replan=step.step_state["is_replan"],
+            )
+        )
         if self.verbose:
             print_text(f"> Plan: {llm_response.message.content}\n", color="pink")
 
@@ -530,10 +539,10 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
         )
         # Get the response in a separate thread so we can yield the response
         thread = Thread(
-                target=agent_response_stream.write_response_to_history,
-                args=(task.extra_state["new_memory"],),
-                kwargs={"on_stream_end_fn": partial(self.finalize_task, task)},
-            )
+            target=agent_response_stream.write_response_to_history,
+            args=(task.extra_state["new_memory"],),
+            kwargs={"on_stream_end_fn": partial(self.finalize_task, task)},
+        )
         thread.start()
         # wait until response writing is done
         agent_response_stream._ensure_async_setup()
@@ -551,7 +560,7 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
     def stream_step(self, step: TaskStep, task: Task, **kwargs: Any) -> TaskStepOutput:
         """Run step (stream)."""
         # # TODO: figure out if we need a different type for TaskStepOutput
-        #raise NotImplementedError
+        # raise NotImplementedError
         return self._run_step_stream(step, task, **kwargs)
 
     async def astream_join(
@@ -614,7 +623,12 @@ class LLMCompilerAgentWorker(BaseAgentWorker):
 
         # Stream LLM response
         messages = [
-            ChatMessage(role=MessageRole.SYSTEM, content=self.system_prompt_replan if step.step_state["is_replan"] else self.system_prompt),
+            ChatMessage(
+                role=MessageRole.SYSTEM,
+                content=self.system_prompt_replan
+                if step.step_state["is_replan"]
+                else self.system_prompt,
+            ),
         ]
 
         if step.step_state["is_replan"]:
