@@ -97,6 +97,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
     def check_base_embeddings_class(self) -> Self:
         if self.callback_manager is None:
             self.callback_manager = CallbackManager([])
+        return self
 
     @abstractmethod
     def _get_query_embedding(self, query: str) -> Embedding:
