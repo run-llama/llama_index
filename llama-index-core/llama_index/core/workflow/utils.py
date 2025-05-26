@@ -19,7 +19,7 @@ try:
 except ImportError:  # pragma: no cover
     from typing import Union as UnionType  # type: ignore[assignment]
 
-from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
+from llama_index.core.bridge.pydantic import BaseModel, ConfigDict, Field
 
 from .errors import WorkflowValidationError
 from .events import Event, EventType
@@ -50,10 +50,12 @@ class ServiceDefinition(BaseModel):
 
 
 class ResourceDefinition(BaseModel):
-    model_config = ConfigDict(frozen=True)
     name: str
     callable: Callable
-
+    initialized_resource: Any = Field(
+        description="Initialized resource that would derive from callable()",
+        default = None,
+    )
 
 class StepSignatureSpec(BaseModel):
     """A Pydantic model representing the signature of a step function or method."""

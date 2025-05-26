@@ -11,11 +11,10 @@ T = TypeVar("T")
 
 
 class _ResourceMeta(Generic[T]):
-    def __class_getitem__(cls, item):
-        if not isinstance(item, tuple) or len(item) != 2:
-            raise TypeError("Resource must be used as Resource[type, factory_function]")
-        t_type, factory = item
-        return Annotated[t_type, factory]
-
+    def __class_getitem__(cls, item: tuple) -> Annotated[Any, Any]:
+        if not(isinstance, tuple) or len(item) > 2:
+            return TypeError("A resource should be defined as: Resource[type, factory]")
+        type_t, factory = item
+        return Annotated[type_t, factory]
 
 Resource = _ResourceMeta
