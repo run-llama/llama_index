@@ -9,7 +9,7 @@ def test_class():
     assert BaseToolSpec.__name__ in names_of_base_classes
 
 
-@patch("llama_index.tools.valyu.base.Valyu")
+@patch("valyu.Valyu")
 def test_init(mock_valyu):
     """Test ValyuToolSpec initialization."""
     mock_client = Mock()
@@ -23,7 +23,7 @@ def test_init(mock_valyu):
     mock_valyu.assert_called_once_with(api_key="test_key")
 
 
-@patch("llama_index.tools.valyu.base.Valyu")
+@patch("valyu.Valyu")
 def test_search_with_default_max_price(mock_valyu):
     """Test search method when max_price is None (uses default)."""
     # Mock the Valyu client and response
@@ -75,7 +75,7 @@ def test_search_with_default_max_price(mock_valyu):
     assert documents[0].metadata["relevance_score"] == 0.8
 
 
-@patch("llama_index.tools.valyu.base.Valyu")
+@patch("valyu.Valyu")
 @patch("builtins.print")
 def test_search_with_verbose(mock_print, mock_valyu):
     """Test search method with verbose=True."""
@@ -112,7 +112,7 @@ def test_search_with_verbose(mock_print, mock_valyu):
     assert documents[0].text == "Verbose test content"
 
 
-@patch("llama_index.tools.valyu.base.Valyu")
+@patch("valyu.Valyu")
 def test_search_with_custom_parameters(mock_valyu):
     """Test search method with custom parameters."""
     # Mock the Valyu client and response
@@ -164,7 +164,7 @@ def test_search_with_custom_parameters(mock_valyu):
     assert documents[0].text == "Custom test content"
 
 
-@patch("llama_index.tools.valyu.base.Valyu")
+@patch("valyu.Valyu")
 def test_search_multiple_results(mock_valyu):
     """Test search method with multiple results."""
     # Mock the Valyu client and response
