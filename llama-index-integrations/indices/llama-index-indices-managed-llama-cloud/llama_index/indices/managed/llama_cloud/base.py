@@ -200,8 +200,7 @@ class LlamaCloudIndex(BaseManagedIndex):
 
         if verbose:
             print(
-                f"Loading {resource_name}{'s' if len(resource_ids) > 1 else ''}: ",
-                end="",
+                f"Loading {resource_name}{'s' if len(resource_ids) > 1 else ''}",
             )
 
         pending: set[str] = set(resource_ids)
@@ -273,8 +272,7 @@ class LlamaCloudIndex(BaseManagedIndex):
 
         if verbose:
             print(
-                f"Loading {resource_name}{'s' if len(resource_ids) > 1 else ''}: ",
-                end="",
+                f"Loading {resource_name}{'s' if len(resource_ids) > 1 else ''}",
             )
 
         pending: set[str] = set(resource_ids)
@@ -369,7 +367,7 @@ class LlamaCloudIndex(BaseManagedIndex):
 
         # Finally, wait for the pipeline
         if verbose:
-            print(f"Syncing pipeline {self.pipeline.id}: ", end="")
+            print(f"Syncing pipeline {self.pipeline.id}")
 
         status_response: Optional[ManagedIngestionStatusResponse] = None
         while True:
@@ -399,8 +397,6 @@ class LlamaCloudIndex(BaseManagedIndex):
                 ManagedIngestionStatus.IN_PROGRESS,
             ):
                 if verbose:
-                    print(".", end="")
-                else:
                     print(".", end="")
                 time.sleep(sleep_interval)
             else:
@@ -458,7 +454,7 @@ class LlamaCloudIndex(BaseManagedIndex):
 
         # Finally, wait for the pipeline
         if verbose:
-            print(f"Syncing pipeline {self.pipeline.id}: ", end="")
+            print(f"Syncing pipeline {self.pipeline.id}")
 
         status_response: Optional[ManagedIngestionStatusResponse] = None
         while True:
@@ -488,8 +484,6 @@ class LlamaCloudIndex(BaseManagedIndex):
                 ManagedIngestionStatus.IN_PROGRESS,
             ):
                 if verbose:
-                    print(".", end="")
-                else:
                     print(".", end="")
                 await asyncio.sleep(sleep_interval)
             else:
