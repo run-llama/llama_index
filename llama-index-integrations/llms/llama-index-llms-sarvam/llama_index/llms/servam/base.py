@@ -43,9 +43,7 @@ class Servam(OpenAILike):
 
     """
 
-    model: str = Field(
-        description="The Servam model to use."
-    )
+    model: str = Field(description="The Servam model to use.")
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
         description="The maximum number of context tokens for the model.",

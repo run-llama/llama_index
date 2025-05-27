@@ -189,9 +189,7 @@ class ZepVectorStore(BasePydanticVectorStore):
 
         return ids
 
-    def delete(
-        self, ref_doc_id: Optional[str] = None, **delete_kwargs: Any
-    ) -> None:  # type: ignore
+    def delete(self, ref_doc_id: Optional[str] = None, **delete_kwargs: Any) -> None:  # type: ignore
         """
         Delete a document from the collection.
 

@@ -213,7 +213,9 @@ def messages_to_anthropic_messages(
                     content.append(block)
                 elif isinstance(block, DocumentBlock):
                     content.append(
-                        _document_block_to_anthropic_message(block=block, kwargs=message.additional_kwargs)
+                        _document_block_to_anthropic_message(
+                            block=block, kwargs=message.additional_kwargs
+                        )
                     )
             tool_calls = message.additional_kwargs.get("tool_calls", [])
             for tool_call in tool_calls:
@@ -253,6 +255,7 @@ def _text_block_to_anthropic_message(
     else:
         return TextBlockParam(text=block.text, type="text")
 
+
 def _document_block_to_anthropic_message(
     block: DocumentBlock, kwargs: dict[str, Any]
 ) -> DocumentBlockParam:
@@ -261,7 +264,13 @@ def _document_block_to_anthropic_message(
         b64_string = block._get_b64_string(data_buffer=file_buffer)
     else:
         b64_string = block.data.decode("utf-8")
-    return DocumentBlockParam(source=Base64PDFSourceParam(data=b64_string, media_type="application/pdf", type="base64"), type="document")
+    return DocumentBlockParam(
+        source=Base64PDFSourceParam(
+            data=b64_string, media_type="application/pdf", type="base64"
+        ),
+        type="document",
+    )
+
 
 # Function used in bedrock
 def _message_to_anthropic_prompt(message: ChatMessage) -> str:

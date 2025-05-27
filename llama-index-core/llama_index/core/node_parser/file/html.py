@@ -1,4 +1,5 @@
 """HTML node parser."""
+
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union
 
 from llama_index.core.bridge.pydantic import Field

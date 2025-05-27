@@ -5,12 +5,22 @@ from llama_index.core.base.llms.types import ChatMessage, TextBlock
 from llama_index.core.bridge.pydantic import Field, field_validator
 from llama_index.core.memory.memory import BaseMemoryBlock
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
-from llama_index.core.prompts import BasePromptTemplate, RichPromptTemplate, PromptTemplate
+from llama_index.core.prompts import (
+    BasePromptTemplate,
+    RichPromptTemplate,
+    PromptTemplate,
+)
 from llama_index.core.schema import TextNode, NodeWithScore
 from llama_index.core.settings import Settings
-from llama_index.core.vector_stores.types import BasePydanticVectorStore, MetadataFilter, MetadataFilters, VectorStoreQuery
+from llama_index.core.vector_stores.types import (
+    BasePydanticVectorStore,
+    MetadataFilter,
+    MetadataFilters,
+    VectorStoreQuery,
+)
 
 DEFAULT_RETRIEVED_TEXT_TEMPLATE = RichPromptTemplate("{{ text }}")
+
 
 def get_default_embed_model() -> BaseEmbedding:
     return Settings.embed_model
@@ -25,35 +35,33 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
     """
 
     name: str = Field(
-        default="RetrievedMessages",
-        description="The name of the memory block."
+        default="RetrievedMessages", description="The name of the memory block."
     )
     vector_store: BasePydanticVectorStore = Field(
         description="The vector store to use for retrieval."
     )
     embed_model: BaseEmbedding = Field(
         default_factory=get_default_embed_model,
-        description="The embedding model to use for encoding queries and documents."
+        description="The embedding model to use for encoding queries and documents.",
     )
     similarity_top_k: int = Field(
-        default=2,
-        description="Number of top results to return."
+        default=2, description="Number of top results to return."
     )
     retrieval_context_window: int = Field(
         default=5,
-        description="Maximum number of messages to include for context when retrieving."
+        description="Maximum number of messages to include for context when retrieving.",
     )
     format_template: BasePromptTemplate = Field(
         default=DEFAULT_RETRIEVED_TEXT_TEMPLATE,
-        description="Template for formatting the retrieved information."
+        description="Template for formatting the retrieved information.",
     )
     node_postprocessors: List[BaseNodePostprocessor] = Field(
         default_factory=list,
-        description="List of node postprocessors to apply to the retrieved nodes containing messages."
+        description="List of node postprocessors to apply to the retrieved nodes containing messages.",
     )
     query_kwargs: Dict[str, Any] = Field(
         default_factory=dict,
-        description="Additional keyword arguments for the vector store query."
+        description="Additional keyword arguments for the vector store query.",
     )
 
     @field_validator("vector_store", mode="before")
@@ -61,7 +69,9 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
         if not isinstance(v, BasePydanticVectorStore):
             raise ValueError("vector_store must be a BasePydanticVectorStore")
         if not v.stores_text:
-            raise ValueError("vector_store must store text to be used as a retrieval memory block")
+            raise ValueError(
+                "vector_store must store text to be used as a retrieval memory block"
+            )
 
         return v
 
@@ -86,14 +96,22 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
 
         return text
 
-    async def _aget(self, messages: Optional[List[ChatMessage]] = None, session_id: Optional[str] = None, **block_kwargs: Any) -> str:
+    async def _aget(
+        self,
+        messages: Optional[List[ChatMessage]] = None,
+        session_id: Optional[str] = None,
+        **block_kwargs: Any,
+    ) -> str:
         """Retrieve relevant information based on recent messages."""
         if not messages or len(messages) == 0:
             return ""
 
         # Use the last message or a context window of messages for the query
-        if self.retrieval_context_window > 1 and len(messages) >= self.retrieval_context_window:
-            context = messages[-self.retrieval_context_window:]
+        if (
+            self.retrieval_context_window > 1
+            and len(messages) >= self.retrieval_context_window
+        ):
+            context = messages[-self.retrieval_context_window :]
         else:
             context = messages
 
@@ -104,7 +122,9 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
         # Handle filtering by session_id
         if session_id is not None:
             filter = MetadataFilter(key="session_id", value=session_id)
-            if "filters" in self.query_kwargs and isinstance(self.query_kwargs["filters"], MetadataFilters):
+            if "filters" in self.query_kwargs and isinstance(
+                self.query_kwargs["filters"], MetadataFilters
+            ):
                 self.query_kwargs["filters"].filters.append(filter)
             else:
                 self.query_kwargs["filters"] = MetadataFilters(filters=[filter])
@@ -115,7 +135,7 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
             query_str=query_text,
             query_embedding=query_embedding,
             similarity_top_k=self.similarity_top_k,
-            **self.query_kwargs
+            **self.query_kwargs,
         )
 
         results = await self.vector_store.aquery(query)
@@ -128,7 +148,9 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
 
         # Apply postprocessors
         for postprocessor in self.node_postprocessors:
-            nodes_with_scores = await postprocessor.apostprocess_nodes(nodes_with_scores, query_str=query_text)
+            nodes_with_scores = await postprocessor.apostprocess_nodes(
+                nodes_with_scores, query_str=query_text
+            )
 
         # Format the results
         retrieved_text = "\n\n".join([node.get_content() for node in nodes_with_scores])

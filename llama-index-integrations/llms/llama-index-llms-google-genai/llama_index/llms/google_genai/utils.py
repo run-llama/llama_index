@@ -189,13 +189,12 @@ def chat_message_to_gemini(message: ChatMessage) -> types.Content:
         elif isinstance(block, DocumentBlock):
             file_buffer = block.resolve_document()
             file_bytes = file_buffer.read()
-            mimetype = block.document_mimetype if block.document_mimetype is not None else "application/pdf"
-            parts.append(
-                types.Part.from_bytes(
-                    data=file_bytes,
-                    mime_type=mimetype
-                )
+            mimetype = (
+                block.document_mimetype
+                if block.document_mimetype is not None
+                else "application/pdf"
             )
+            parts.append(types.Part.from_bytes(data=file_bytes, mime_type=mimetype))
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
@@ -343,6 +342,7 @@ def prepare_chat_params(
 
     return next_msg, chat_kwargs
 
+
 def handle_streaming_flexible_model(
     current_json: str,
     candidate: types.Candidate,
@@ -357,7 +357,9 @@ def handle_streaming_flexible_model(
             return output_cls.model_validate_json(current_json), current_json
         except ValidationError:
             try:
-                return flexible_model.model_validate_json(_repair_incomplete_json(current_json)), current_json
+                return flexible_model.model_validate_json(
+                    _repair_incomplete_json(current_json)
+                ), current_json
             except ValidationError:
                 return None, current_json
 

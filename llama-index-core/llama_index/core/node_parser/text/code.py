@@ -181,7 +181,8 @@ class CodeSplitter(TextSplitter):
                 or tree.root_node.children[0].type != "ERROR"
             ):
                 chunks = [
-                    chunk.strip() for chunk in self._chunk_node(tree.root_node, text_bytes)
+                    chunk.strip()
+                    for chunk in self._chunk_node(tree.root_node, text_bytes)
                 ]
                 event.on_end(
                     payload={EventPayload.CHUNKS: chunks},

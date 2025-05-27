@@ -149,19 +149,15 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         kind: str,
     ) -> Dict[str, Any]:
         indexes = {
-                    "name": self._index_name,
-                    "key": {self._embedding_key: "cosmosSearch"},
-                    "cosmosSearchOptions": {
-                        "kind": kind,
-                        "numLists": self._cosmos_search_kwargs.get("numLists", 1),
-                        "similarity": self._cosmos_search_kwargs.get(
-                            "similarity", "COS"
-                        ),
-                        "dimensions": self._cosmos_search_kwargs.get(
-                            "dimensions", 1536
-                        ),
-                    },
-                }
+            "name": self._index_name,
+            "key": {self._embedding_key: "cosmosSearch"},
+            "cosmosSearchOptions": {
+                "kind": kind,
+                "numLists": self._cosmos_search_kwargs.get("numLists", 1),
+                "similarity": self._cosmos_search_kwargs.get("similarity", "COS"),
+                "dimensions": self._cosmos_search_kwargs.get("dimensions", 1536),
+            },
+        }
         if self._cosmos_search_kwargs.get("compression", None) == "half":
             indexes["cosmosSearchOptions"]["compression"] = "half"
         return {
@@ -174,22 +170,16 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         kind: str,
     ) -> Dict[str, Any]:
         indexes = {
-                    "name": self._index_name,
-                    "key": {self._embedding_key: "cosmosSearch"},
-                    "cosmosSearchOptions": {
-                        "kind": kind,
-                        "m": self._cosmos_search_kwargs.get("m", 2),
-                        "efConstruction": self._cosmos_search_kwargs.get(
-                            "efConstruction", 64
-                        ),
-                        "similarity": self._cosmos_search_kwargs.get(
-                            "similarity", "COS"
-                        ),
-                        "dimensions": self._cosmos_search_kwargs.get(
-                            "dimensions", 1536
-                        ),
-                    },
-                }
+            "name": self._index_name,
+            "key": {self._embedding_key: "cosmosSearch"},
+            "cosmosSearchOptions": {
+                "kind": kind,
+                "m": self._cosmos_search_kwargs.get("m", 2),
+                "efConstruction": self._cosmos_search_kwargs.get("efConstruction", 64),
+                "similarity": self._cosmos_search_kwargs.get("similarity", "COS"),
+                "dimensions": self._cosmos_search_kwargs.get("dimensions", 1536),
+            },
+        }
         if self._cosmos_search_kwargs.get("compression", None) == "half":
             indexes["cosmosSearchOptions"]["compression"] = "half"
         return {
@@ -202,24 +192,27 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         kind: str,
     ) -> Dict[str, Any]:
         indexes = {
-                    "name": self._index_name,
-                    "key": {self._embedding_key: "cosmosSearch"},
-                    "cosmosSearchOptions": {
-                        "kind": kind,
-                        "maxDegree": self._cosmos_search_kwargs.get("maxDegree", 32),
-                        "lBuild": self._cosmos_search_kwargs.get("lBuild", 50),
-                        "similarity": self._cosmos_search_kwargs.get(
-                            "similarity", "COS"
-                        ),
-                        "dimensions": self._cosmos_search_kwargs.get(
-                            "dimensions", 1536
-                        ),
-                    },
-                }
+            "name": self._index_name,
+            "key": {self._embedding_key: "cosmosSearch"},
+            "cosmosSearchOptions": {
+                "kind": kind,
+                "maxDegree": self._cosmos_search_kwargs.get("maxDegree", 32),
+                "lBuild": self._cosmos_search_kwargs.get("lBuild", 50),
+                "similarity": self._cosmos_search_kwargs.get("similarity", "COS"),
+                "dimensions": self._cosmos_search_kwargs.get("dimensions", 1536),
+            },
+        }
         if self._cosmos_search_kwargs.get("compression", None) == "pq":
             indexes["cosmosSearchOptions"]["compression"] = "pq"
-            indexes["cosmosSearchOptions"]["pqCompressedDims"] = self._cosmos_search_kwargs.get("pqCompressedDims", self._cosmos_search_kwargs.get("dimensions", 1536)),
-            indexes["cosmosSearchOptions"]["pqSampleSize"] = self._cosmos_search_kwargs.get("pqSampleSize", 1000),
+            indexes["cosmosSearchOptions"]["pqCompressedDims"] = (
+                self._cosmos_search_kwargs.get(
+                    "pqCompressedDims",
+                    self._cosmos_search_kwargs.get("dimensions", 1536),
+                ),
+            )
+            indexes["cosmosSearchOptions"]["pqSampleSize"] = (
+                self._cosmos_search_kwargs.get("pqSampleSize", 1000),
+            )
         return {
             "createIndexes": self._collection_name,
             "indexes": [indexes],
@@ -308,11 +301,17 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
             )
         elif kind == "vector-hnsw":
             pipeline = self._get_pipeline_vector_hnsw(
-                query, kwargs.get("ef_search", 40), kwargs.get("oversampling", 1.0), kwargs.get("pre_filter", {})
+                query,
+                kwargs.get("ef_search", 40),
+                kwargs.get("oversampling", 1.0),
+                kwargs.get("pre_filter", {}),
             )
         elif kind == "vector-diskann":
             pipeline = self._get_pipeline_vector_diskann(
-                query, kwargs.get("lSearch", 40), kwargs.get("oversampling", 1.0), kwargs.get("pre_filter", {})
+                query,
+                kwargs.get("lSearch", 40),
+                kwargs.get("oversampling", 1.0),
+                kwargs.get("pre_filter", {}),
             )
 
         logger.debug("Running query pipeline: %s", pipeline)
@@ -360,7 +359,7 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
             "vector": query.query_embedding,
             "path": self._embedding_key,
             "k": query.similarity_top_k,
-            "oversampling":oversampling,
+            "oversampling": oversampling,
         }
         if pre_filter:
             params["filter"] = pre_filter
@@ -382,14 +381,18 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         return pipeline
 
     def _get_pipeline_vector_hnsw(
-        self, query: VectorStoreQuery, ef_search: int, oversampling: float, pre_filter: Optional[Dict]
+        self,
+        query: VectorStoreQuery,
+        ef_search: int,
+        oversampling: float,
+        pre_filter: Optional[Dict],
     ) -> List[dict[str, Any]]:
         params = {
             "vector": query.query_embedding,
             "path": self._embedding_key,
             "k": query.similarity_top_k,
             "efSearch": ef_search,
-            "oversampling":oversampling,
+            "oversampling": oversampling,
         }
         if pre_filter:
             params["filter"] = pre_filter
@@ -410,14 +413,18 @@ class AzureCosmosDBMongoDBVectorSearch(BasePydanticVectorStore):
         return pipeline
 
     def _get_pipeline_vector_diskann(
-        self, query: VectorStoreQuery, l_search: int, oversampling: float, pre_filter: Optional[Dict]
+        self,
+        query: VectorStoreQuery,
+        l_search: int,
+        oversampling: float,
+        pre_filter: Optional[Dict],
     ) -> List[dict[str, Any]]:
         params = {
             "vector": query.query_embedding,
             "path": self._embedding_key,
             "k": query.similarity_top_k,
             "lSearch": l_search,
-            "oversampling":oversampling,
+            "oversampling": oversampling,
         }
         if pre_filter:
             params["filter"] = pre_filter

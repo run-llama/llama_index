@@ -168,7 +168,7 @@ class MultiStepQueryEngine(BaseQueryEngine):
             )
 
             prev_reasoning += (
-                f"- {updated_query_bundle.query_str}\n" f"- {cur_response!s}\n"
+                f"- {updated_query_bundle.query_str}\n- {cur_response!s}\n"
             )
             cur_steps += 1
 

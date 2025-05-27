@@ -40,7 +40,9 @@ class SimpleKVStore(BaseInMemoryKVStore):
         """Put a key-value pair into the store."""
         if collection in self._data and len(collection) > self._maximum_data_point:
             if self._strict:
-                raise ValueError(f"Exceeded the maximum number of data points that can be uploaded to collection {collection}")
+                raise ValueError(
+                    f"Exceeded the maximum number of data points that can be uploaded to collection {collection}"
+                )
             first_key = next(iter(self._data[collection].keys()))
             self._data[collection].pop(first_key)
         if collection not in self._data:

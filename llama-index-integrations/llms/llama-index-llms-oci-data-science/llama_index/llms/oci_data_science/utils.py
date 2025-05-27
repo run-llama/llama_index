@@ -95,7 +95,7 @@ def _to_message_dicts(
 
 
 def _from_completion_logprobs_dict(
-    completion_logprobs_dict: Dict[str, Any]
+    completion_logprobs_dict: Dict[str, Any],
 ) -> List[List[LogProb]]:
     """
     Convert completion logprobs to a list of generic LogProb objects.
@@ -117,7 +117,7 @@ def _from_completion_logprobs_dict(
 
 
 def _from_token_logprob_dicts(
-    token_logprob_dicts: Sequence[Dict[str, Any]]
+    token_logprob_dicts: Sequence[Dict[str, Any]],
 ) -> List[List[LogProb]]:
     """
     Convert a sequence of token logprob dictionaries to a list of LogProb objects.
@@ -229,7 +229,7 @@ def _update_tool_calls(
 
 
 def _resolve_tool_choice(
-    tool_choice: Union[str, dict] = DEFAULT_TOOL_CHOICE
+    tool_choice: Union[str, dict] = DEFAULT_TOOL_CHOICE,
 ) -> Union[str, dict]:
     """
     Resolve the tool choice into a string or a dictionary.

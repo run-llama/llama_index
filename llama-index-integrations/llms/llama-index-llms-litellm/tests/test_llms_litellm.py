@@ -137,9 +137,9 @@ def test_tool_calling(respx_mock: respx.MockRouter, llm: LiteLLM):
     assert tool_calls[0].tool_kwargs == {"x": 1, "y": 1}
 
 
-def test_get_tool_calls_from_response_returns_empty_arguments_with_invalid_json_arguments(respx_mock: respx.MockRouter, llm: LiteLLM) -> (
-        None
-):
+def test_get_tool_calls_from_response_returns_empty_arguments_with_invalid_json_arguments(
+    respx_mock: respx.MockRouter, llm: LiteLLM
+) -> None:
     mock_tool_response(respx_mock, "INVALID JSON")
     message = "what's 1+1?"
     chat_response = llm.chat_with_tools(tools=[add_tool], user_msg=message)
@@ -148,9 +148,9 @@ def test_get_tool_calls_from_response_returns_empty_arguments_with_invalid_json_
     assert tools[0].tool_kwargs == {}
 
 
-def test_get_tool_calls_from_response_returns_empty_arguments_with_non_dict_json_input(respx_mock: respx.MockRouter, llm: LiteLLM) -> (
-        None
-):
+def test_get_tool_calls_from_response_returns_empty_arguments_with_non_dict_json_input(
+    respx_mock: respx.MockRouter, llm: LiteLLM
+) -> None:
     mock_tool_response(respx_mock, "null")
     message = "what's 1+1?"
     chat_response = llm.chat_with_tools(tools=[add_tool], user_msg=message)
@@ -159,7 +159,9 @@ def test_get_tool_calls_from_response_returns_empty_arguments_with_non_dict_json
     assert tools[0].tool_kwargs == {}
 
 
-def test_get_tool_calls_from_response_returns_arguments_with_dict_json_input(respx_mock: respx.MockRouter, llm: LiteLLM) -> None:
+def test_get_tool_calls_from_response_returns_arguments_with_dict_json_input(
+    respx_mock: respx.MockRouter, llm: LiteLLM
+) -> None:
     arguments = {"test": 123}
     mock_tool_response(respx_mock, json.dumps(arguments))
     message = "what's 1+1?"
@@ -200,9 +202,10 @@ def test_token_calculation_errors():
         assert "The prompt is too long for the model" in str(exc_info.value)
 
     # Test case 3: Unknown model encoding fallback
-    with patch("tiktoken.encoding_for_model") as mock_encoding, patch(
-        "tiktoken.get_encoding"
-    ) as mock_get_encoding:
+    with (
+        patch("tiktoken.encoding_for_model") as mock_encoding,
+        patch("tiktoken.get_encoding") as mock_get_encoding,
+    ):
         # Mock encoding_for_model to raise KeyError
         mock_encoding.side_effect = KeyError("Unknown model")
         # Mock get_encoding to return a working encoding
@@ -240,7 +243,9 @@ def mock_completion_response(respx_mock: respx.MockRouter):
     )
 
 
-def mock_tool_response(respx_mock: respx.MockRouter, arguments: str = '{"x": 1, "y": 1}'):
+def mock_tool_response(
+    respx_mock: respx.MockRouter, arguments: str = '{"x": 1, "y": 1}'
+):
     respx_mock.post("https://api.openai.com/v1/chat/completions").mock(
         return_value=httpx.Response(
             status_code=200,

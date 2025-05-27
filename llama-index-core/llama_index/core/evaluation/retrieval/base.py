@@ -71,7 +71,7 @@ class RetrievalEvalResult(BaseModel):
 
     def __str__(self) -> str:
         """String representation."""
-        return f"Query: {self.query}\n" f"Metrics: {self.metric_vals_dict!s}\n"
+        return f"Query: {self.query}\nMetrics: {self.metric_vals_dict!s}\n"
 
 
 class BaseRetrievalEvaluator(BaseModel):

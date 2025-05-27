@@ -7,8 +7,7 @@ from typing import Any, Dict, Optional, Protocol
 
 
 class BaseGitHubIssuesClient(Protocol):
-    def get_all_endpoints(self) -> Dict[str, str]:
-        ...
+    def get_all_endpoints(self) -> Dict[str, str]: ...
 
     async def request(
         self,
@@ -17,8 +16,7 @@ class BaseGitHubIssuesClient(Protocol):
         headers: Dict[str, Any] = {},
         params: Dict[str, Any] = {},
         **kwargs: Any,
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
     async def get_issues(
         self,
@@ -26,8 +24,7 @@ class BaseGitHubIssuesClient(Protocol):
         repo: str,
         state: str = "open",
         page: int = 1,
-    ) -> Dict:
-        ...
+    ) -> Dict: ...
 
 
 class GitHubIssuesClient:
@@ -136,7 +133,10 @@ class GitHubIssuesClient:
 
         _client: httpx.AsyncClient
         async with httpx.AsyncClient(
-            headers=_headers, base_url=self._base_url, params=params, follow_redirects=True
+            headers=_headers,
+            base_url=self._base_url,
+            params=params,
+            follow_redirects=True,
         ) as _client:
             try:
                 response = await _client.request(

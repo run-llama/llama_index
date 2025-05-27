@@ -116,7 +116,7 @@ def _cast_value(value: Any) -> Value:
 
 
 def deduce_property_types_from_values(
-    property_values: Dict[str, Any]
+    property_values: Dict[str, Any],
 ) -> Dict[str, str]:
     """
     Deduce the data types of properties for NebulaGraph DDL based on the property values.
@@ -322,9 +322,9 @@ def ensure_relation_meta_schema(
             )
         id_to_label = {}
         for row_index in range(result.row_size()):
-            id_to_label[
-                result.row_values(row_index)[0].cast_primitive()
-            ] = result.row_values(row_index)[1].cast_primitive()
+            id_to_label[result.row_values(row_index)[0].cast_primitive()] = (
+                result.row_values(row_index)[1].cast_primitive()
+            )
 
         source_label, dest_label = id_to_label[src_id], id_to_label[dst_id]
 

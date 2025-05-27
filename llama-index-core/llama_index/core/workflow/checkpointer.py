@@ -36,8 +36,7 @@ class CheckpointCallback(Protocol):
         input_ev: Optional[Event],
         output_ev: Optional[Event],
         ctx: "Context",
-    ) -> Awaitable[None]:
-        ...
+    ) -> Awaitable[None]: ...
 
 
 class Checkpoint(BaseModel):

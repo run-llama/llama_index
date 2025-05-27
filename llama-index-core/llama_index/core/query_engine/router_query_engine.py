@@ -167,7 +167,7 @@ class RouterQueryEngine(BaseQueryEngine):
                 responses = []
                 for i, engine_ind in enumerate(result.inds):
                     log_str = (
-                        f"Selecting query engine {engine_ind}: " f"{result.reasons[i]}."
+                        f"Selecting query engine {engine_ind}: {result.reasons[i]}."
                     )
                     logger.info(log_str)
                     if self._verbose:
@@ -212,7 +212,7 @@ class RouterQueryEngine(BaseQueryEngine):
                 tasks = []
                 for i, engine_ind in enumerate(result.inds):
                     log_str = (
-                        f"Selecting query engine {engine_ind}: " f"{result.reasons[i]}."
+                        f"Selecting query engine {engine_ind}: {result.reasons[i]}."
                     )
                     logger.info(log_str)
                     if self._verbose:

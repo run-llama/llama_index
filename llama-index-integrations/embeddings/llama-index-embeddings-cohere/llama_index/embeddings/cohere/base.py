@@ -24,7 +24,7 @@ class CohereAIModelName(str, Enum):
     ENGLISH_V2 = "embed-english-v2.0"
     ENGLISH_LIGHT_V2 = "embed-english-light-v2.0"
     MULTILINGUAL_V2 = "embed-multilingual-v2.0"
-    EMBED_V4="embed-v4.0"
+    EMBED_V4 = "embed-v4.0"
 
 
 class CohereAIInputType(str, Enum):
@@ -88,9 +88,7 @@ VALID_MODEL_INPUT_TYPES = {
 }
 
 # v4 models support input type parameter
-V4_MODELS=[
-    CAMN.EMBED_V4
-]
+V4_MODELS = [CAMN.EMBED_V4]
 
 # v3 models require an input_type field
 # supported models for multimodal embeddings
@@ -266,9 +264,10 @@ class CohereEmbedding(MultiModalEmbedding):
         """Validate image format."""
         return file_type.lower() in SUPPORTED_IMAGE_FORMATS
 
-    def _embed(self,
-        texts: Optional[List[str]]= None,
-        input_type: str ="search_document",
+    def _embed(
+        self,
+        texts: Optional[List[str]] = None,
+        input_type: str = "search_document",
     ) -> List[List[float]]:
         """Embed sentences using Cohere."""
         client = self._get_client()
@@ -288,7 +287,8 @@ class CohereEmbedding(MultiModalEmbedding):
 
         return getattr(result, self.embedding_type, None)
 
-    async def _aembed(self,
+    async def _aembed(
+        self,
         texts: Optional[List[str]] = None,
         input_type: str = "search_document",
     ) -> List[List[float]]:
@@ -300,20 +300,20 @@ class CohereEmbedding(MultiModalEmbedding):
         else:
             input_type = self.input_type or input_type
 
-        result = (await async_client.embed(
-            texts=texts,
-            input_type=input_type,
-            embedding_types=[self.embedding_type],
-            model=self.model_name,
-            truncate=self.truncate,
-        )).embeddings
+        result = (
+            await async_client.embed(
+                texts=texts,
+                input_type=input_type,
+                embedding_types=[self.embedding_type],
+                model=self.model_name,
+                truncate=self.truncate,
+            )
+        ).embeddings
 
         return getattr(result, self.embedding_type, None)
 
     def _embed_image(
-        self,
-        image_paths: List[ImageType],
-        input_type: str
+        self, image_paths: List[ImageType], input_type: str
     ) -> List[List[float]]:
         """Embed images using Cohere."""
         if self.model_name not in (V3_MODELS + V4_MODELS):
@@ -322,14 +322,12 @@ class CohereEmbedding(MultiModalEmbedding):
             )
 
         client = self._get_client()
-        processed_images = [self._image_to_base64_data_url(image_path) for image_path in image_paths]
+        processed_images = [
+            self._image_to_base64_data_url(image_path) for image_path in image_paths
+        ]
 
         inputs = [
-            {
-                "content": [
-                    {"type": "image_url", "image_url": {"url": processed_image}}
-                ]
-            }
+            {"content": [{"type": "image_url", "image_url": {"url": processed_image}}]}
             for processed_image in processed_images
         ]
 
@@ -355,24 +353,24 @@ class CohereEmbedding(MultiModalEmbedding):
             )
 
         async_client = self._get_async_client()
-        processed_images = [self._image_to_base64_data_url(image_path) for image_path in image_paths]
+        processed_images = [
+            self._image_to_base64_data_url(image_path) for image_path in image_paths
+        ]
 
         inputs = [
-            {
-                "content": [
-                    {"type": "image_url", "image_url": {"url": processed_image}}
-                ]
-            }
+            {"content": [{"type": "image_url", "image_url": {"url": processed_image}}]}
             for processed_image in processed_images
         ]
 
-        embeddings = (await async_client.embed(
-            inputs=inputs,
-            input_type=input_type,
-            embedding_types=[self.embedding_type],
-            model=self.model_name,
-            truncate=self.truncate,
-        )).embeddings
+        embeddings = (
+            await async_client.embed(
+                inputs=inputs,
+                input_type=input_type,
+                embedding_types=[self.embedding_type],
+                model=self.model_name,
+                truncate=self.truncate,
+            )
+        ).embeddings
 
         return getattr(embeddings, self.embedding_type, None)
 
@@ -408,10 +406,14 @@ class CohereEmbedding(MultiModalEmbedding):
         """Get image embedding async."""
         return (await self._aembed_image([img_file_path], "image"))[0]
 
-    def _get_image_embeddings(self, img_file_paths: List[ImageType]) -> List[List[float]]:
+    def _get_image_embeddings(
+        self, img_file_paths: List[ImageType]
+    ) -> List[List[float]]:
         """Get image embeddings."""
         return self._embed_image(img_file_paths, "image")
 
-    async def _aget_image_embeddings(self, img_file_paths: List[ImageType]) -> List[List[float]]:
+    async def _aget_image_embeddings(
+        self, img_file_paths: List[ImageType]
+    ) -> List[List[float]]:
         """Get image embeddings async."""
         return await self._aembed_image(img_file_paths, "image")

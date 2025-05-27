@@ -239,7 +239,7 @@ class OneDriveReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderM
             # very frequently for large amount of file
             elif response.status_code in (429, *range(500, 600)):
                 logger.warning(
-                    f"Retrying {retries+1} in {retries+1} secs. Status code: {response.status_code}"
+                    f"Retrying {retries + 1} in {retries + 1} secs. Status code: {response.status_code}"
                 )
                 retries += 1
                 time.sleep(retries)  # Exponential back-off

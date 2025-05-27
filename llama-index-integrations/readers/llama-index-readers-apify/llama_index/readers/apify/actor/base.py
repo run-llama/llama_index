@@ -25,9 +25,9 @@ class ApifyActor(BaseReader):
 
         client = ApifyClient(apify_api_token)
         if hasattr(client.http_client, "httpx_client"):
-            client.http_client.httpx_client.headers[
-                "user-agent"
-            ] += "; Origin/llama_index"
+            client.http_client.httpx_client.headers["user-agent"] += (
+                "; Origin/llama_index"
+            )
         self.apify_client = client
 
     def load_data(

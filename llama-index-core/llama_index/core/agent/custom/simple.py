@@ -204,7 +204,7 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
 
         """
         raise NotImplementedError(
-            "This agent does not support async." "Please implement _arun_step."
+            "This agent does not support async.Please implement _arun_step."
         )
 
     @trace_method("run_step")

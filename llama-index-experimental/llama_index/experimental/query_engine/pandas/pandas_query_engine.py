@@ -181,7 +181,7 @@ class PandasQueryEngine(BaseQueryEngine):
         )
 
         if self._verbose:
-            print_text(f"> Pandas Instructions:\n" f"```\n{pandas_response_str}\n```\n")
+            print_text(f"> Pandas Instructions:\n```\n{pandas_response_str}\n```\n")
         pandas_output = self._instruction_parser.parse(pandas_response_str)
         if self._verbose:
             print_text(f"> Pandas Output: {pandas_output}\n")
