@@ -40,7 +40,7 @@ class PptxReader(BaseReader):
             raise ImportError(
                 "Please install extra dependencies that are required for "
                 "the PptxReader: "
-                "`pip install torch transformers python-pptx Pillow`"
+                "`pip install torch 'transformers<4.50' python-pptx Pillow`"
             )
 
         model = VisionEncoderDecoderModel.from_pretrained(
