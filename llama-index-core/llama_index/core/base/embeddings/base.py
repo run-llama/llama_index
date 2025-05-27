@@ -7,7 +7,6 @@ from enum import Enum
 from typing import Any, Callable, Coroutine, List, Optional, Sequence, Tuple
 from typing_extensions import Self
 
-from llama_index.core.storage.kvstore import SimpleKVStore
 import numpy as np
 from llama_index.core.bridge.pydantic import (
     Field,
@@ -35,6 +34,7 @@ from llama_index.core.instrumentation.events.embedding import (
 import llama_index.core.instrumentation as instrument
 
 dispatcher = instrument.get_dispatcher(__name__)
+
 
 class SimilarityMode(str, Enum):
     """Modes for similarity/distance."""
@@ -65,6 +65,7 @@ def similarity(
         norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
         return product / norm
 
+
 class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
     """Base class for embeddings."""
 
@@ -87,15 +88,19 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         default=None,
         description="The number of workers to use for async embedding calls.",
     )
-    embeddings_cache: Optional[SimpleKVStore] = Field(
+    embeddings_cache: Optional[Any] = Field(
         default=None,
-        description="Cache for the embeddings: if None, the embeddings are not cached"
+        description="Cache for the embeddings: if None, the embeddings are not cached",
     )
 
     @model_validator(mode="after")
     def check_base_embeddings_class(self) -> Self:
+        from llama_index.core.storage.kvstore.simple_kvstore import SimpleKVStore
+
         if self.callback_manager is None:
             self.callback_manager = CallbackManager([])
+        if not isinstance(self.embeddings_cache, SimpleKVStore):
+            raise TypeError("embeddings_cache must be of type SimpleKVStore")
         return self
 
     @abstractmethod
@@ -140,13 +145,19 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             if not self.embeddings_cache:
                 query_embedding = self._get_query_embedding(query)
             elif self.embeddings_cache is not None:
-                cached_emb = self.embeddings_cache.get(key=query, collection="embeddings")
+                cached_emb = self.embeddings_cache.get(
+                    key=query, collection="embeddings"
+                )
                 if cached_emb is not None:
                     cached_key = next(iter(cached_emb.keys()))
                     query_embedding = cached_emb[cached_key]
                 else:
                     query_embedding = self._get_query_embedding(query)
-                    self.embeddings_cache.put(key=query, val={str(uuid.uuid4()): query_embedding}, collection="embeddings")
+                    self.embeddings_cache.put(
+                        key=query,
+                        val={str(uuid.uuid4()): query_embedding},
+                        collection="embeddings",
+                    )
             event.on_end(
                 payload={
                     EventPayload.CHUNKS: [query],
@@ -177,13 +188,19 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             if not self.embeddings_cache:
                 query_embedding = await self._aget_query_embedding(query)
             elif self.embeddings_cache is not None:
-                cached_emb = await self.embeddings_cache.aget(key=query, collection="embeddings")
+                cached_emb = await self.embeddings_cache.aget(
+                    key=query, collection="embeddings"
+                )
                 if cached_emb is not None:
                     cached_key = next(iter(cached_emb.keys()))
                     query_embedding = cached_emb[cached_key]
                 else:
                     query_embedding = await self._aget_query_embedding(query)
-                    await self.embeddings_cache.aput(key=query, val={str(uuid.uuid4()): query_embedding}, collection="embeddings")
+                    await self.embeddings_cache.aput(
+                        key=query,
+                        val={str(uuid.uuid4()): query_embedding},
+                        collection="embeddings",
+                    )
 
             event.on_end(
                 payload={
@@ -281,13 +298,19 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             if not self.embeddings_cache:
                 text_embedding = self._get_text_embedding(text)
             elif self.embeddings_cache is not None:
-                cached_emb = self.embeddings_cache.get(key=text, collection="embeddings")
+                cached_emb = self.embeddings_cache.get(
+                    key=text, collection="embeddings"
+                )
                 if cached_emb is not None:
                     cached_key = next(iter(cached_emb.keys()))
                     text_embedding = cached_emb[cached_key]
                 else:
                     text_embedding = self._get_text_embedding(text)
-                    self.embeddings_cache.put(key=text, val={str(uuid.uuid4()): text_embedding}, collection="embeddings")
+                    self.embeddings_cache.put(
+                        key=text,
+                        val={str(uuid.uuid4()): text_embedding},
+                        collection="embeddings",
+                    )
 
             event.on_end(
                 payload={
@@ -319,13 +342,19 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
             if not self.embeddings_cache:
                 text_embedding = await self._aget_text_embedding(text)
             elif self.embeddings_cache is not None:
-                cached_emb = await self.embeddings_cache.aget(key=text, collection="embeddings")
+                cached_emb = await self.embeddings_cache.aget(
+                    key=text, collection="embeddings"
+                )
                 if cached_emb is not None:
                     cached_key = next(iter(cached_emb.keys()))
                     text_embedding = cached_emb[cached_key]
                 else:
                     text_embedding = await self._aget_text_embedding(text)
-                    await self.embeddings_cache.aput(key=text, val={str(uuid.uuid4()): text_embedding}, collection="embeddings")
+                    await self.embeddings_cache.aput(
+                        key=text,
+                        val={str(uuid.uuid4()): text_embedding},
+                        collection="embeddings",
+                    )
 
             event.on_end(
                 payload={
@@ -376,14 +405,20 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     elif self.embeddings_cache is not None:
                         embeddings = []
                         for txt in cur_batch:
-                            cached_emb = self.embeddings_cache.get(key=txt, collection="embeddings")
+                            cached_emb = self.embeddings_cache.get(
+                                key=txt, collection="embeddings"
+                            )
                             if cached_emb is not None:
                                 cached_key = next(iter(cached_emb.keys()))
                                 embeddings.append(cached_emb[cached_key])
                             else:
                                 text_embedding = self._get_text_embedding(txt)
                                 embeddings.append(text_embedding)
-                                self.embeddings_cache.put(key=txt, val={str(uuid.uuid4()): text_embedding}, collection="embeddings")
+                                self.embeddings_cache.put(
+                                    key=txt,
+                                    val={str(uuid.uuid4()): text_embedding},
+                                    collection="embeddings",
+                                )
                     result_embeddings.extend(embeddings)
                     event.on_end(
                         payload={
@@ -435,12 +470,16 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     embeddings_coroutines.append(self._aget_text_embeddings(cur_batch))
                 elif self.embeddings_cache is not None:
                     for txt in cur_batch:
-                        cached_emb = self.embeddings_cache.get(key=txt, collection="embeddings")
+                        cached_emb = self.embeddings_cache.get(
+                            key=txt, collection="embeddings"
+                        )
                         if cached_emb is not None:
                             cached_key = next(iter(cached_emb.keys()))
                             pre_recorded_embs.append(cached_emb[cached_key])
                         else:
-                            embeddings_coroutines.append(self._aget_text_embeddings([txt]))
+                            embeddings_coroutines.append(
+                                self._aget_text_embeddings([txt])
+                            )
                             non_cached_txts.append(txt)
 
                 cur_batch = []
@@ -477,7 +516,11 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         if self.embeddings_cache is not None:
             if len(result_embeddings) > 0:
                 for j in range(len(result_embeddings)):
-                    self.embeddings_cache.put(key=non_cached_txts[j], val={str(uuid.uuid4()): result_embeddings[j]}, collection="embeddings")
+                    self.embeddings_cache.put(
+                        key=non_cached_txts[j],
+                        val={str(uuid.uuid4()): result_embeddings[j]},
+                        collection="embeddings",
+                    )
                 result_embeddings += pre_recorded_embs
             else:
                 result_embeddings += pre_recorded_embs
