@@ -754,7 +754,9 @@ def validate_openai_api_key(api_key: Optional[str] = None) -> None:
         raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
 
 
-def resolve_tool_choice(tool_choice: Optional[Union[str, dict]], tool_required: bool = False) -> Union[str, dict]:
+def resolve_tool_choice(
+    tool_choice: Optional[Union[str, dict]], tool_required: bool = False
+) -> Union[str, dict]:
     """
     Resolve tool choice.
 
@@ -768,7 +770,6 @@ def resolve_tool_choice(tool_choice: Optional[Union[str, dict]], tool_required: 
         return {"type": "function", "function": {"name": tool_choice}}
 
     return tool_choice
-
 
 
 def update_tool_calls(

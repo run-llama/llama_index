@@ -241,10 +241,9 @@ def search(query: str) -> str:
     """Search for information about a query."""
     return f"Results for {query}"
 
+
 search_tool = FunctionTool.from_defaults(
-    fn=search,
-    name="search_tool",
-    description="A tool for searching information"
+    fn=search, name="search_tool", description="A tool for searching information"
 )
 
 
@@ -295,14 +294,14 @@ def test_prepare_chat_with_tools_tool_required(mock_get_model):
         llm = Gemini(model="models/gemini-1.5-flash", api_key="fake_key")
 
         # Test with tool_required=True
-        result = llm._prepare_chat_with_tools(
-            tools=[search_tool],
-            tool_required=True
-        )
+        result = llm._prepare_chat_with_tools(tools=[search_tool], tool_required=True)
 
         assert "tool_config" in result
         assert "function_calling_config" in result["tool_config"]
-        assert result["tool_config"]["function_calling_config"]["mode"] == FunctionCallingMode.ANY
+        assert (
+            result["tool_config"]["function_calling_config"]["mode"]
+            == FunctionCallingMode.ANY
+        )
         assert len(result["tools"]["function_declarations"]) == 1
         assert result["tools"]["function_declarations"][0].name == "search_tool"
 
@@ -328,6 +327,9 @@ def test_prepare_chat_with_tools_tool_not_required(mock_get_model):
 
         assert "tool_config" in result
         assert "function_calling_config" in result["tool_config"]
-        assert result["tool_config"]["function_calling_config"]["mode"] == FunctionCallingMode.AUTO
+        assert (
+            result["tool_config"]["function_calling_config"]["mode"]
+            == FunctionCallingMode.AUTO
+        )
         assert len(result["tools"]["function_declarations"]) == 1
         assert result["tools"]["function_declarations"][0].name == "search_tool"

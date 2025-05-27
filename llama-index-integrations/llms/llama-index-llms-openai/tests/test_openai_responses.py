@@ -309,16 +309,11 @@ def test_prepare_chat_with_tools_tool_required():
         return f"Results for {query}"
 
     search_tool = FunctionTool.from_defaults(
-        fn=search,
-        name="search_tool",
-        description="A tool for searching information"
+        fn=search, name="search_tool", description="A tool for searching information"
     )
 
     # Test with tool_required=True
-    result = llm._prepare_chat_with_tools(
-        tools=[search_tool],
-        tool_required=True
-    )
+    result = llm._prepare_chat_with_tools(tools=[search_tool], tool_required=True)
 
     assert result["tool_choice"] == "required"
     assert len(result["tools"]) == 1
@@ -341,16 +336,11 @@ def test_prepare_chat_with_tools_tool_not_required():
         return f"Results for {query}"
 
     search_tool = FunctionTool.from_defaults(
-        fn=search,
-        name="search_tool",
-        description="A tool for searching information"
+        fn=search, name="search_tool", description="A tool for searching information"
     )
 
     # Test with tool_required=False (default)
-    result = llm._prepare_chat_with_tools(
-        tools=[search_tool],
-        tool_required=False
-    )
+    result = llm._prepare_chat_with_tools(tools=[search_tool], tool_required=False)
 
     assert result["tool_choice"] == "auto"
     assert len(result["tools"]) == 1
@@ -373,16 +363,12 @@ def test_prepare_chat_with_tools_explicit_tool_choice_overrides_tool_required():
         return f"Results for {query}"
 
     search_tool = FunctionTool.from_defaults(
-        fn=search,
-        name="search_tool",
-        description="A tool for searching information"
+        fn=search, name="search_tool", description="A tool for searching information"
     )
 
     # Test that explicit tool_choice overrides tool_required
     result = llm._prepare_chat_with_tools(
-        tools=[search_tool],
-        tool_required=True,
-        tool_choice="none"
+        tools=[search_tool], tool_required=True, tool_choice="none"
     )
 
     assert result["tool_choice"] == "none"  # Should be "none" not "required"

@@ -423,21 +423,21 @@ async def test_bedrock_converse_integration_astream_chat_multimodal(
     combined = "".join(chunks)
     assert len(combined) > 5
 
+
 def search(query: str) -> str:
     """Search for information about a query."""
     return f"Results for {query}"
 
+
 search_tool = FunctionTool.from_defaults(
-    fn=search,
-    name="search_tool",
-    description="A tool for searching information"
+    fn=search, name="search_tool", description="A tool for searching information"
 )
+
 
 def test_prepare_chat_with_tools_tool_required(bedrock_converse):
     """Test that tool_required=True is correctly passed to the API request."""
     result = bedrock_converse._prepare_chat_with_tools(
-        tools=[search_tool],
-        tool_required=True
+        tools=[search_tool], tool_required=True
     )
 
     assert "tools" in result
@@ -448,8 +448,7 @@ def test_prepare_chat_with_tools_tool_required(bedrock_converse):
 def test_prepare_chat_with_tools_tool_not_required(bedrock_converse):
     """Test that tool_required=False is correctly passed to the API request."""
     result = bedrock_converse._prepare_chat_with_tools(
-        tools=[search_tool],
-        tool_required=False
+        tools=[search_tool], tool_required=False
     )
 
     assert "tools" in result
@@ -461,9 +460,7 @@ def test_prepare_chat_with_tools_custom_tool_choice(bedrock_converse):
     """Test that custom tool_choice overrides tool_required."""
     custom_tool_choice = {"specific": {"name": "search_tool"}}
     result = bedrock_converse._prepare_chat_with_tools(
-        tools=[search_tool],
-        tool_required=True,
-        tool_choice=custom_tool_choice
+        tools=[search_tool], tool_required=True, tool_choice=custom_tool_choice
     )
 
     assert "tools" in result

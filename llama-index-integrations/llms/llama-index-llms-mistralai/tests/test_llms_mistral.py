@@ -16,9 +16,7 @@ def search(query: str) -> str:
 
 
 search_tool = FunctionTool.from_defaults(
-    fn=search,
-    name="search_tool",
-    description="A tool for searching information"
+    fn=search, name="search_tool", description="A tool for searching information"
 )
 
 
@@ -32,10 +30,7 @@ def test_prepare_chat_with_tools_tool_required(mock_mistral_client):
         llm = MistralAI()
 
         # Test with tool_required=True
-        result = llm._prepare_chat_with_tools(
-            tools=[search_tool],
-            tool_required=True
-        )
+        result = llm._prepare_chat_with_tools(tools=[search_tool], tool_required=True)
 
         assert result["tool_choice"] == "required"
         assert len(result["tools"]) == 1

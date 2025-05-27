@@ -309,7 +309,7 @@ class SiliconFlow(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
-        tool_required: bool = False, # unsupported by SiliconFlow - https://docs.siliconflow.cn/en/api-reference/chat-completions/chat-completions
+        tool_required: bool = False,  # unsupported by SiliconFlow - https://docs.siliconflow.cn/en/api-reference/chat-completions/chat-completions
         **kwargs: Any,
     ) -> Dict[str, Any]:
         tool_specs = [

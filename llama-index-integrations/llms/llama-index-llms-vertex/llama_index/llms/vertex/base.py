@@ -455,7 +455,7 @@ class Vertex(FunctionCallingLLM):
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
-        allow_parallel_tool_calls: bool = False, # theoretically supported, but not implemented
+        allow_parallel_tool_calls: bool = False,  # theoretically supported, but not implemented
         tool_required: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
@@ -476,7 +476,11 @@ class Vertex(FunctionCallingLLM):
                 }
             )
 
-        tool_config = { "tool_config": self._to_function_calling_config(tool_required) } if self._is_gemini else {}
+        tool_config = (
+            {"tool_config": self._to_function_calling_config(tool_required)}
+            if self._is_gemini
+            else {}
+        )
 
         print("tool_config", tool_config)
         return {
@@ -487,14 +491,14 @@ class Vertex(FunctionCallingLLM):
         }
 
     def _to_function_calling_config(self, tool_required: bool) -> ToolConfig:
-
         return ToolConfig(
             function_calling_config=ToolConfig.FunctionCallingConfig(
-                mode=ToolConfig.FunctionCallingConfig.Mode.ANY if tool_required else ToolConfig.FunctionCallingConfig.Mode.AUTO,
+                mode=ToolConfig.FunctionCallingConfig.Mode.ANY
+                if tool_required
+                else ToolConfig.FunctionCallingConfig.Mode.AUTO,
                 allowed_function_names=None,
             )
         )
-
 
     def _validate_chat_with_tools_response(
         self,

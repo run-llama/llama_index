@@ -11,13 +11,11 @@ def search(query: str) -> str:
 calculator_tool = FunctionTool.from_defaults(
     fn=lambda a, b: a + b,
     name="calculator",
-    description="A tool for calculating the sum of two numbers"
+    description="A tool for calculating the sum of two numbers",
 )
 
 search_tool = FunctionTool.from_defaults(
-    fn=search,
-    name="search_tool",
-    description="A tool for searching information"
+    fn=search, name="search_tool", description="A tool for searching information"
 )
 
 
@@ -35,14 +33,11 @@ def test_prepare_chat_with_tools_tool_required_single_tool(
         project_id="test_project",
         apikey="test_apikey",
         url="https://test-url.com",
-        api_client=MagicMock()  # Use mock client to bypass credential checks
+        api_client=MagicMock(),  # Use mock client to bypass credential checks
     )
 
     # Test with tool_required=True and a single tool
-    result = llm._prepare_chat_with_tools(
-        tools=[search_tool],
-        tool_required=True
-    )
+    result = llm._prepare_chat_with_tools(tools=[search_tool], tool_required=True)
 
     assert "tool_choice" in result
     assert result["tool_choice"]["type"] == "function"
@@ -65,13 +60,12 @@ def test_prepare_chat_with_tools_tool_required_multiple_tools(
         project_id="test_project",
         apikey="test_apikey",
         url="https://test-url.com",
-        api_client=MagicMock()  # Use mock client to bypass credential checks
+        api_client=MagicMock(),  # Use mock client to bypass credential checks
     )
 
     # Test with tool_required=True and multiple tools
     result = llm._prepare_chat_with_tools(
-        tools=[search_tool, calculator_tool],
-        tool_required=True
+        tools=[search_tool, calculator_tool], tool_required=True
     )
 
     assert "tool_choice" in result
@@ -95,7 +89,7 @@ def test_prepare_chat_with_tools_tool_not_required(
         project_id="test_project",
         apikey="test_apikey",
         url="https://test-url.com",
-        api_client=MagicMock()  # Use mock client to bypass credential checks
+        api_client=MagicMock(),  # Use mock client to bypass credential checks
     )
 
     # Test with tool_required=False (default)
@@ -122,14 +116,14 @@ def test_prepare_chat_with_tools_explicit_tool_choice(
         project_id="test_project",
         apikey="test_apikey",
         url="https://test-url.com",
-        api_client=MagicMock()  # Use mock client to bypass credential checks
+        api_client=MagicMock(),  # Use mock client to bypass credential checks
     )
 
     # Test with explicit tool_choice parameter, which should override tool_required
     result = llm._prepare_chat_with_tools(
         tools=[search_tool, calculator_tool],
         tool_required=True,
-        tool_choice="calculator"
+        tool_choice="calculator",
     )
 
     assert "tool_choice" in result
@@ -140,9 +134,7 @@ def test_prepare_chat_with_tools_explicit_tool_choice(
 
 @patch("llama_index.llms.ibm.base.ModelInference")
 @patch("llama_index.llms.ibm.base.resolve_watsonx_credentials")
-def test_prepare_chat_with_tools_no_tools(
-    mock_resolve_credentials, MockModelInference
-):
+def test_prepare_chat_with_tools_no_tools(mock_resolve_credentials, MockModelInference):
     """Test that tool_required=True with no tools doesn't add a tool_choice."""
     mock_resolve_credentials.return_value = {}
     mock_instance = MockModelInference.return_value
@@ -152,14 +144,11 @@ def test_prepare_chat_with_tools_no_tools(
         project_id="test_project",
         apikey="test_apikey",
         url="https://test-url.com",
-        api_client=MagicMock()  # Use mock client to bypass credential checks
+        api_client=MagicMock(),  # Use mock client to bypass credential checks
     )
 
     # Test with tool_required=True but no tools
-    result = llm._prepare_chat_with_tools(
-        tools=[],
-        tool_required=True
-    )
+    result = llm._prepare_chat_with_tools(tools=[], tool_required=True)
 
     # When there are no tools, tool_choice should not be specified even if tool_required=True
     assert "tool_choice" not in result

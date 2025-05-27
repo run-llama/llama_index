@@ -858,7 +858,9 @@ class OCIDataScience(FunctionCallingLLM):
         return {
             "messages": messages,
             "tools": tool_specs or None,
-            "tool_choice": (_resolve_tool_choice(tool_choice, tool_required) if tool_specs else None),
+            "tool_choice": (
+                _resolve_tool_choice(tool_choice, tool_required) if tool_specs else None
+            ),
             **kwargs,
         }
 

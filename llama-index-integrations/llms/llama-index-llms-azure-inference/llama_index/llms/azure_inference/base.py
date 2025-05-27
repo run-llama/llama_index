@@ -47,8 +47,9 @@ from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.aio import ChatCompletionsClient as ChatCompletionsClientAsync
 from azure.ai.inference.models import (
     ChatCompletionsToolChoicePreset,
-    ChatCompletionsNamedToolChoice
+    ChatCompletionsNamedToolChoice,
 )
+
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
     from llama_index.core.chat_engine.types import AgentChatResponse
@@ -360,9 +361,12 @@ class AzureAICompletionsModel(FunctionCallingLLM):
             message=response_message,
             raw=response.as_dict(),
         )
-    def _to_azure_tool_choice(self, tool_required: bool) -> Optional[
-            Union[str, ChatCompletionsToolChoicePreset, ChatCompletionsNamedToolChoice]
-        ]:
+
+    def _to_azure_tool_choice(
+        self, tool_required: bool
+    ) -> Optional[
+        Union[str, ChatCompletionsToolChoicePreset, ChatCompletionsNamedToolChoice]
+    ]:
         if tool_required:
             return ChatCompletionsToolChoicePreset.REQUIRED
         else:

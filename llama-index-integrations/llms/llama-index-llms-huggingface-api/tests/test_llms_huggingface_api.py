@@ -15,22 +15,20 @@ def search(query: str) -> str:
 
 
 search_tool = FunctionTool.from_defaults(
-    fn=search,
-    name="search_tool",
-    description="A tool for searching information"
+    fn=search, name="search_tool", description="A tool for searching information"
 )
 
 
 def test_prepare_chat_with_tools_tool_required():
     """Test that tool_required is correctly passed to the API request when True."""
-    with patch("huggingface_hub.InferenceClient"), patch("huggingface_hub.AsyncInferenceClient"):
+    with (
+        patch("huggingface_hub.InferenceClient"),
+        patch("huggingface_hub.AsyncInferenceClient"),
+    ):
         llm = HuggingFaceInferenceAPI(model_name="model_name")
 
     # Test with tool_required=True
-    result = llm._prepare_chat_with_tools(
-        tools=[search_tool],
-        tool_required=True
-    )
+    result = llm._prepare_chat_with_tools(tools=[search_tool], tool_required=True)
 
     assert result["tool_choice"] == "required"
     assert len(result["tools"]) == 1
@@ -39,7 +37,10 @@ def test_prepare_chat_with_tools_tool_required():
 
 def test_prepare_chat_with_tools_tool_not_required():
     """Test that tool_required is correctly passed to the API request when False."""
-    with patch("huggingface_hub.InferenceClient"), patch("huggingface_hub.AsyncInferenceClient"):
+    with (
+        patch("huggingface_hub.InferenceClient"),
+        patch("huggingface_hub.AsyncInferenceClient"),
+    ):
         llm = HuggingFaceInferenceAPI(model_name="model_name")
 
     # Test with tool_required=False (default)

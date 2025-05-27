@@ -320,15 +320,16 @@ def test_to_azure_tool_choice():
     tool_choice = llm._to_azure_tool_choice(tool_required=False)
     assert tool_choice == ChatCompletionsToolChoicePreset.AUTO
 
+
 def search(query: str) -> str:
     """Search for information about a query."""
     return f"Results for {query}"
 
+
 search_tool = FunctionTool.from_defaults(
-    fn=search,
-    name="search_tool",
-    description="A tool for searching information"
+    fn=search, name="search_tool", description="A tool for searching information"
 )
+
 
 def test_prepare_chat_with_tools_tool_required():
     """Test that tool_required is correctly passed to the API request when True."""
@@ -338,10 +339,7 @@ def test_prepare_chat_with_tools_tool_required():
     )
 
     # Test with tool_required=True
-    result = llm._prepare_chat_with_tools(
-        tools=[search_tool],
-        tool_required=True
-    )
+    result = llm._prepare_chat_with_tools(tools=[search_tool], tool_required=True)
 
     assert result["tool_choice"] == ChatCompletionsToolChoicePreset.REQUIRED
     assert len(result["tools"]) == 1

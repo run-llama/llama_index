@@ -33,7 +33,7 @@ class FunctionCallingLLM(LLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
-        tool_required: bool = False, # if required, LLM should only call tools, and not return a response
+        tool_required: bool = False,  # if required, LLM should only call tools, and not return a response
         **kwargs: Any,
     ) -> ChatResponse:
         """Chat with function calling."""
@@ -136,7 +136,7 @@ class FunctionCallingLLM(LLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
-        tool_required: bool = False, # if required, LLM should only call tools, and not return a response
+        tool_required: bool = False,  # if required, LLM should only call tools, and not return a response
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Prepare the arguments needed to let the LLM chat with tools."""

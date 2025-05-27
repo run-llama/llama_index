@@ -357,7 +357,7 @@ def tools_to_converse_tools(
         "tools": converse_tools,
         # https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolChoice.html
         # e.g. { "auto": {} }
-        "toolChoice": tool_choice or ({ "any": {} } if tool_required else { "auto": {} }),
+        "toolChoice": tool_choice or ({"any": {}} if tool_required else {"auto": {}}),
     }
 
 

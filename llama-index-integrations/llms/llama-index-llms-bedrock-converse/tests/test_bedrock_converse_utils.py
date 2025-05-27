@@ -1,5 +1,8 @@
 import pytest
-from llama_index.llms.bedrock_converse.utils import get_model_name, tools_to_converse_tools
+from llama_index.llms.bedrock_converse.utils import (
+    get_model_name,
+    tools_to_converse_tools,
+)
 from io import BytesIO
 from unittest.mock import MagicMock, patch
 
@@ -112,14 +115,13 @@ def test_content_block_to_bedrock_format_unsupported(caplog):
 
 def test_tools_to_converse_tools_with_tool_required():
     """Test that tool_required=True sets toolChoice to {"any": {}}."""
+
     def search(query: str) -> str:
         """Search for information about a query."""
         return f"Results for {query}"
 
     tool = FunctionTool.from_defaults(
-        fn=search,
-        name="search_tool",
-        description="A tool for searching information"
+        fn=search, name="search_tool", description="A tool for searching information"
     )
 
     result = tools_to_converse_tools([tool], tool_required=True)
@@ -132,14 +134,13 @@ def test_tools_to_converse_tools_with_tool_required():
 
 def test_tools_to_converse_tools_without_tool_required():
     """Test that tool_required=False sets toolChoice to {"auto": {}}."""
+
     def search(query: str) -> str:
         """Search for information about a query."""
         return f"Results for {query}"
 
     tool = FunctionTool.from_defaults(
-        fn=search,
-        name="search_tool",
-        description="A tool for searching information"
+        fn=search, name="search_tool", description="A tool for searching information"
     )
 
     result = tools_to_converse_tools([tool], tool_required=False)
@@ -152,18 +153,19 @@ def test_tools_to_converse_tools_without_tool_required():
 
 def test_tools_to_converse_tools_with_custom_tool_choice():
     """Test that a custom tool_choice overrides tool_required."""
+
     def search(query: str) -> str:
         """Search for information about a query."""
         return f"Results for {query}"
 
     tool = FunctionTool.from_defaults(
-        fn=search,
-        name="search_tool",
-        description="A tool for searching information"
+        fn=search, name="search_tool", description="A tool for searching information"
     )
 
     custom_tool_choice = {"specific": {"name": "search_tool"}}
-    result = tools_to_converse_tools([tool], tool_choice=custom_tool_choice, tool_required=True)
+    result = tools_to_converse_tools(
+        [tool], tool_choice=custom_tool_choice, tool_required=True
+    )
 
     assert "tools" in result
     assert len(result["tools"]) == 1

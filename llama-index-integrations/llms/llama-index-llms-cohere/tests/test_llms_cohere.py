@@ -101,9 +101,7 @@ def search(query: str) -> str:
 
 
 search_tool = FunctionTool.from_defaults(
-    fn=search,
-    name="search_tool",
-    description="A tool for searching information"
+    fn=search, name="search_tool", description="A tool for searching information"
 )
 
 
@@ -113,10 +111,7 @@ def test_prepare_chat_with_tools_tool_required():
         llm = Cohere(api_key="dummy", temperature=0.3)
 
     # Test with tool_required=True
-    result = llm._prepare_chat_with_tools(
-        tools=[search_tool],
-        tool_required=True
-    )
+    result = llm._prepare_chat_with_tools(tools=[search_tool], tool_required=True)
 
     assert "tool_choice" in result
     assert result["tool_choice"] == "REQUIRED"

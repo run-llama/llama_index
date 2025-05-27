@@ -354,8 +354,9 @@ class Gemini(FunctionCallingLLM):
 
         return gen()
 
-    def _to_function_calling_config(self, tool_required: bool, tool_choice: Optional[str]) -> dict:
-
+    def _to_function_calling_config(
+        self, tool_required: bool, tool_choice: Optional[str]
+    ) -> dict:
         if tool_choice and not isinstance(tool_choice, str):
             raise ValueError("Gemini only supports string tool_choices")
         tool_choice = tool_choice or ("any" if tool_required else "auto")
@@ -372,7 +373,11 @@ class Gemini(FunctionCallingLLM):
             allowed_function_names = [tool_choice]
         return {
             "mode": tool_mode,
-            **({"allowed_function_names": allowed_function_names} if allowed_function_names else {}),
+            **(
+                {"allowed_function_names": allowed_function_names}
+                if allowed_function_names
+                else {}
+            ),
         }
 
     def _prepare_chat_with_tools(
@@ -389,7 +394,9 @@ class Gemini(FunctionCallingLLM):
     ) -> Dict[str, Any]:
         """Predict and call the tool."""
         tool_config = {
-            "function_calling_config": self._to_function_calling_config(tool_required, tool_choice),
+            "function_calling_config": self._to_function_calling_config(
+                tool_required, tool_choice
+            ),
         }
 
         tool_declarations = []

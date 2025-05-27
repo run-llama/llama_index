@@ -16,9 +16,7 @@ def search(query: str) -> str:
 
 # Shared tool for all tests
 search_tool = FunctionTool.from_defaults(
-    fn=search,
-    name="search_tool",
-    description="A tool for searching information"
+    fn=search, name="search_tool", description="A tool for searching information"
 )
 
 
@@ -52,9 +50,7 @@ def test_prepare_chat_with_tools_tool_required():
     llm = OpenAI(api_key="test-key")
 
     result = llm._prepare_chat_with_tools(
-        tools=[search_tool],
-        user_msg="Search for Python tutorials",
-        tool_required=True
+        tools=[search_tool], user_msg="Search for Python tutorials", tool_required=True
     )
 
     assert "messages" in result
@@ -70,9 +66,7 @@ def test_prepare_chat_with_tools_tool_not_required():
     llm = OpenAI(api_key="test-key")
 
     result = llm._prepare_chat_with_tools(
-        tools=[search_tool],
-        user_msg="Search for Python tutorials",
-        tool_required=False
+        tools=[search_tool], user_msg="Search for Python tutorials", tool_required=False
     )
 
     assert "messages" in result
@@ -88,8 +82,7 @@ def test_prepare_chat_with_tools_default_behavior():
     llm = OpenAI(api_key="test-key")
 
     result = llm._prepare_chat_with_tools(
-        tools=[search_tool],
-        user_msg="Search for Python tutorials"
+        tools=[search_tool], user_msg="Search for Python tutorials"
     )
 
     assert "messages" in result
@@ -108,7 +101,7 @@ def test_prepare_chat_with_tools_no_tools():
     result = llm._prepare_chat_with_tools(
         tools=[],
         user_msg="Just a regular message",
-        tool_required=True  # Should be ignored when no tools
+        tool_required=True,  # Should be ignored when no tools
     )
 
     assert "messages" in result
@@ -125,7 +118,7 @@ def test_prepare_chat_with_tools_explicit_tool_choice_overrides_tool_required():
         tools=[search_tool],
         user_msg="Search for Python tutorials",
         tool_required=True,
-        tool_choice="none"
+        tool_choice="none",
     )
 
     assert result["tool_choice"] == "none"  # Should be "none", not "required"
@@ -135,10 +128,13 @@ def test_prepare_chat_with_tools_explicit_tool_choice_overrides_tool_required():
         tools=[search_tool],
         user_msg="Search for Python tutorials",
         tool_required=True,
-        tool_choice="search_tool"
+        tool_choice="search_tool",
     )
 
-    assert result["tool_choice"] == {"type": "function", "function": {"name": "search_tool"}}
+    assert result["tool_choice"] == {
+        "type": "function",
+        "function": {"name": "search_tool"},
+    }
 
 
 def test_prepare_chat_with_tools_explicit_tool_choice_required():
@@ -149,7 +145,7 @@ def test_prepare_chat_with_tools_explicit_tool_choice_required():
         tools=[search_tool],
         user_msg="Search for Python tutorials",
         tool_required=False,
-        tool_choice="required"
+        tool_choice="required",
     )
 
     assert result["tool_choice"] == "required"

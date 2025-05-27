@@ -16,10 +16,9 @@ def search(query: str) -> str:
     """Search for information about a query."""
     return f"Results for {query}"
 
+
 search_tool = FunctionTool.from_defaults(
-    fn=search,
-    name="search_tool",
-    description="A tool for searching information"
+    fn=search, name="search_tool", description="A tool for searching information"
 )
 
 
@@ -277,9 +276,7 @@ def test_prepare_chat_with_tools_tool_required(llm):
 
     # Test with tool_required=True
     result = llm._prepare_chat_with_tools(
-        tools=[search_tool],
-        user_msg=user_msg,
-        tool_required=True
+        tools=[search_tool], user_msg=user_msg, tool_required=True
     )
 
     assert result["tool_choice"] == "required"
@@ -293,9 +290,7 @@ def test_prepare_chat_with_tools_tool_not_required(llm):
 
     # Test with tool_required=False (default)
     result = llm._prepare_chat_with_tools(
-        tools=[search_tool],
-        user_msg=user_msg,
-        tool_required=False
+        tools=[search_tool], user_msg=user_msg, tool_required=False
     )
 
     assert result["tool_choice"] == "auto"
@@ -309,10 +304,7 @@ def test_prepare_chat_with_tools_explicit_tool_choice_overrides_tool_required(ll
 
     # Test that explicit tool_choice overrides tool_required=True
     result = llm._prepare_chat_with_tools(
-        tools=[search_tool],
-        user_msg=user_msg,
-        tool_required=True,
-        tool_choice="none"
+        tools=[search_tool], user_msg=user_msg, tool_required=True, tool_choice="none"
     )
 
     assert result["tool_choice"] == "none"

@@ -854,7 +854,9 @@ class OpenAIResponses(FunctionCallingLLM):
         return {
             "messages": messages,
             "tools": tool_specs or None,
-            "tool_choice": resolve_tool_choice(tool_choice, tool_required) if tool_specs else None,
+            "tool_choice": resolve_tool_choice(tool_choice, tool_required)
+            if tool_specs
+            else None,
             "parallel_tool_calls": allow_parallel_tool_calls,
             **kwargs,
         }

@@ -6,8 +6,9 @@ def test_vertex_metadata_function_calling():
     # This test uses mocks to avoid actual API calls
     from unittest.mock import patch, Mock
 
-    with patch("llama_index.llms.vertex.gemini_utils.create_gemini_client") as mock_create_client:
-
+    with patch(
+        "llama_index.llms.vertex.gemini_utils.create_gemini_client"
+    ) as mock_create_client:
         # Test Gemini model
         mock_client = Mock()
         mock_create_client.return_value = mock_client
@@ -24,8 +25,9 @@ def test_vertex_metadata_non_function_calling():
     """Test that Vertex LLM metadata correctly identifies non-Gemini models as non-function calling models."""
     from unittest.mock import patch, Mock
 
-    with patch("vertexai.language_models.ChatModel.from_pretrained") as mock_from_pretrained:
-
+    with patch(
+        "vertexai.language_models.ChatModel.from_pretrained"
+    ) as mock_from_pretrained:
         mock_chat_client = Mock()
         mock_from_pretrained.return_value = mock_chat_client
 

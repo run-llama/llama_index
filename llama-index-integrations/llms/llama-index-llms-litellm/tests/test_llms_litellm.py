@@ -222,15 +222,16 @@ def test_token_calculation_errors():
 
 add_tool = FunctionTool.from_defaults(fn=add, name="add")
 
+
 def search(query: str) -> str:
     """Search for information about a query."""
     return f"Results for {query}"
 
+
 search_tool = FunctionTool.from_defaults(
-    fn=search,
-    name="search_tool",
-    description="A tool for searching information"
+    fn=search, name="search_tool", description="A tool for searching information"
 )
+
 
 def mock_chat_response(respx_mock: respx.MockRouter):
     respx_mock.post("https://api.openai.com/v1/chat/completions").mock(
@@ -482,10 +483,7 @@ def test_prepare_chat_with_tools_tool_required():
     llm = LiteLLM(model="gpt-3.5-turbo")
 
     # Test with tool_required=True
-    result = llm._prepare_chat_with_tools(
-        tools=[search_tool],
-        tool_required=True
-    )
+    result = llm._prepare_chat_with_tools(tools=[search_tool], tool_required=True)
 
     assert result["tool_choice"] == "required"
     assert len(result["tools"]) == 1
