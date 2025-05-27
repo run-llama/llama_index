@@ -20,7 +20,7 @@ class BeirEvaluator:
             pass
         except ImportError:
             raise ImportError(
-                "Please install beir to use this feature: " "`pip install beir`",
+                "Please install beir to use this feature: `pip install beir`",
             )
 
     def _download_datasets(self, datasets: List[str] = ["nfcorpus"]) -> Dict[str, str]:

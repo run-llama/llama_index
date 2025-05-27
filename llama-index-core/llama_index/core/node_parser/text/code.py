@@ -15,7 +15,8 @@ DEFAULT_MAX_CHARS = 1500
 
 
 class CodeSplitter(TextSplitter):
-    """Split code using a AST parser.
+    """
+    Split code using a AST parser.
 
     Thank you to Kevin Lu / SweepAI for suggesting this elegant code splitting solution.
     https://docs.sweep.dev/blogs/chunking-2m-files
@@ -72,18 +73,18 @@ class CodeSplitter(TextSplitter):
 
         if parser is None:
             try:
-                import tree_sitter_languages  # pants: no-infer-dep
+                import tree_sitter_language_pack  # pants: no-infer-dep
 
-                parser = tree_sitter_languages.get_parser(language)
+                parser = tree_sitter_language_pack.get_parser(language)  # type: ignore
             except ImportError:
                 raise ImportError(
-                    "Please install tree_sitter_languages to use CodeSplitter."
+                    "Please install tree_sitter_language_pack to use CodeSplitter."
                     "Or pass in a parser object."
                 )
             except Exception:
                 print(
                     f"Could not get parser for language {language}. Check "
-                    "https://github.com/grantjenks/py-tree-sitter-languages#license "
+                    "https://github.com/Goldziher/tree-sitter-language-pack?tab=readme-ov-file#available-languages "
                     "for a list of valid languages."
                 )
                 raise
@@ -116,7 +117,19 @@ class CodeSplitter(TextSplitter):
     def class_name(cls) -> str:
         return "CodeSplitter"
 
-    def _chunk_node(self, node: Any, text: str, last_end: int = 0) -> List[str]:
+    def _chunk_node(self, node: Any, text_bytes: bytes, last_end: int = 0) -> List[str]:
+        """
+        Recursively chunk a node into smaller pieces based on character limits.
+
+        Args:
+            node (Any): The AST node to chunk.
+            text_bytes (bytes): The original source code text as bytes.
+            last_end (int, optional): The ending position of the last processed chunk. Defaults to 0.
+
+        Returns:
+            List[str]: A list of code chunks that respect the max_chars limit.
+
+        """
         new_chunks = []
         current_chunk = ""
         for child in node.children:
@@ -125,33 +138,51 @@ class CodeSplitter(TextSplitter):
                 if len(current_chunk) > 0:
                     new_chunks.append(current_chunk)
                 current_chunk = ""
-                new_chunks.extend(self._chunk_node(child, text, last_end))
+                new_chunks.extend(self._chunk_node(child, text_bytes, last_end))
             elif (
                 len(current_chunk) + child.end_byte - child.start_byte > self.max_chars
             ):
                 # Child would make the current chunk too big, so start a new chunk
                 new_chunks.append(current_chunk)
-                current_chunk = text[last_end : child.end_byte]
+                current_chunk = text_bytes[last_end : child.end_byte].decode("utf-8")
             else:
-                current_chunk += text[last_end : child.end_byte]
+                current_chunk += text_bytes[last_end : child.end_byte].decode("utf-8")
             last_end = child.end_byte
         if len(current_chunk) > 0:
             new_chunks.append(current_chunk)
         return new_chunks
 
     def split_text(self, text: str) -> List[str]:
+        """
+        Split incoming code into chunks using the AST parser.
+
+        This method parses the input code into an AST and then chunks it while preserving
+        syntactic structure. It handles error cases and ensures the code can be properly parsed.
+
+        Args:
+            text (str): The source code text to split.
+
+        Returns:
+            List[str]: A list of code chunks.
+
+        Raises:
+            ValueError: If the code cannot be parsed for the specified language.
+
+        """
         """Split incoming code and return chunks using the AST."""
         with self.callback_manager.event(
             CBEventType.CHUNKING, payload={EventPayload.CHUNKS: [text]}
         ) as event:
-            tree = self._parser.parse(bytes(text, "utf-8"))
+            text_bytes = bytes(text, "utf-8")
+            tree = self._parser.parse(text_bytes)
 
             if (
                 not tree.root_node.children
                 or tree.root_node.children[0].type != "ERROR"
             ):
                 chunks = [
-                    chunk.strip() for chunk in self._chunk_node(tree.root_node, text)
+                    chunk.strip()
+                    for chunk in self._chunk_node(tree.root_node, text_bytes)
                 ]
                 event.on_end(
                     payload={EventPayload.CHUNKS: chunks},

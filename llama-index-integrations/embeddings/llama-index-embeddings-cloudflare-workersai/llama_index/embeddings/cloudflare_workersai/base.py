@@ -29,6 +29,7 @@ class CloudflareEmbedding(BaseEmbedding):
 
     Note:
     Ensure you have a valid Cloudflare account and have access to the necessary AI services and models. The account ID and authorization token are sensitive details; secure them appropriately.
+
     """
 
     account_id: str = Field(default=None, description="The Cloudflare Account ID.")

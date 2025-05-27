@@ -1,0 +1,71 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "black>=24.3.0",
+    "diff-cover>=9.2.4",
+    "mypy>=1.11.0",
+    "pre-commit>=4.2.0",
+    "pytest>=8.3.5",
+    "pytest-asyncio>=0.26.0",
+    "pytest-cov>=6.1.1",
+    "ruff==0.11.11",
+]
+
+[project]
+name = "llama-index-readers-oxylabs"
+version = "0.1.2"
+description = "llama-index readers oxylabs integration"
+readme = "README.md"
+requires-python = ">=3.10,<4.0"
+license = "MIT"
+authors = [
+    {name = "Rostyslav Borovyk", email = "rostyslav.borovyk@oxylabs.io"},
+]
+packages = [{include = "llama_index/"}]
+dependencies = [
+    "httpx>=0.28.1",
+    "llama-index-core>=0.12.34.post1",
+    "lxml>=5.4.0",
+    "lxml-html-clean>=0.4.2",
+    "markdownify>=1.1.0",
+    "oxylabs>=2.0.0",
+]
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+# Feel free to un-skip examples, and experimental, you will just need to
+# work through many typos (--write-changes and --interactive will help)
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.readers.oxylabs"
+
+[tool.llamahub.class_authors]
+OxylabsReader = "oxy-rostyslav"
+
+[tool.mypy]
+disallow_untyped_defs = true
+# Remove venv skip when integrated with pre-commit
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
+ignore_missing_imports = true
+python_version = "3.8"
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "session"
+markers = [
+    "integration: marks integration tests",
+    "unit: marks unit tests",
+]

@@ -131,6 +131,7 @@ class HyDEQueryTransform(BaseQueryTransform):
             hyde_prompt (Optional[BasePromptTemplate]): Custom prompt for HyDE
             include_original (bool): Whether to include original query
                 string as one of the embedding strings
+
         """
         super().__init__()
 
@@ -242,6 +243,7 @@ class ImageOutputQueryTransform(BaseQueryTransform):
             width (int): desired image display width in pixels
             query_prompt (ImageOutputQueryTransformPrompt): custom prompt for
                 augmenting query with image output instructions.
+
         """
         self._width = width
         self._query_prompt: BasePromptTemplate = (

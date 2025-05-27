@@ -20,7 +20,8 @@ DEFAULT_PREAMBLE = "Here are some facts extracted from the provided text:\n\n"
 
 
 class BasePGRetriever(BaseRetriever):
-    """The base class for property graph retrievers.
+    """
+    The base class for property graph retrievers.
 
     By default, will retrieve nodes from the graph store and add source text to the nodes if needed.
 
@@ -31,6 +32,7 @@ class BasePGRetriever(BaseRetriever):
             Whether to include source text in the retrieved nodes. Defaults to True.
         include_text_preamble (Optional[str], optional):
             The preamble to include before the source text. Defaults to DEFAULT_PREAMBLE.
+
     """
 
     def __init__(
@@ -45,7 +47,7 @@ class BasePGRetriever(BaseRetriever):
         self.include_text = include_text
         self._include_text_preamble = include_text_preamble
         self.include_properties = include_properties
-        super().__init__(callback_manager=kwargs.get("callback_manager", None))
+        super().__init__(callback_manager=kwargs.get("callback_manager"))
 
     def _get_nodes_with_score(
         self, triplets: List[Triplet], scores: Optional[List[float]] = None
@@ -93,10 +95,10 @@ class BasePGRetriever(BaseRetriever):
             mapped_node = og_node_map.get(node_with_score.node.ref_doc_id or "", None)
 
             if mapped_node:
-                graph_content = graph_node_map.get(node.node_id, [])
+                graph_content = graph_node_map.get(mapped_node.node_id, [])
                 if len(graph_content) > 0:
                     graph_content_str = "\n".join(graph_content)
-                    cur_content = node.get_content()
+                    cur_content = mapped_node.get_content()
                     preamble_text = (
                         self._include_text_preamble
                         if self._include_text_preamble
@@ -105,7 +107,7 @@ class BasePGRetriever(BaseRetriever):
                     new_content = (
                         preamble_text + graph_content_str + "\n\n" + cur_content
                     )
-                    mapped_node = TextNode(**node.dict())
+                    mapped_node = TextNode(**mapped_node.dict())
                     mapped_node.text = new_content
                 result_nodes.append(
                     NodeWithScore(
@@ -140,13 +142,13 @@ class BasePGRetriever(BaseRetriever):
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         nodes = self.retrieve_from_graph(query_bundle)
-        if self.include_text:
+        if self.include_text and nodes:
             nodes = self.add_source_text(nodes)
         return nodes
 
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         nodes = await self.aretrieve_from_graph(query_bundle)
-        if self.include_text:
+        if self.include_text and nodes:
             nodes = await self.async_add_source_text(nodes)
         return nodes
 

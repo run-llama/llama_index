@@ -13,7 +13,8 @@ from .step import LLMCompilerAgentWorker
 
 
 class LLMCompilerAgentPack(BaseLlamaPack):
-    """LLMCompilerAgent pack.
+    """
+    LLMCompilerAgent pack.
 
     Args:
         tools (List[BaseTool]): List of tools to use.
@@ -37,12 +38,12 @@ class LLMCompilerAgentPack(BaseLlamaPack):
             llm=llm,
             verbose=True,
             callback_manager=self.callback_manager,
-            **(agent_worker_kwargs or {})
+            **(agent_worker_kwargs or {}),
         )
         self.agent = AgentRunner(
             self.agent_worker,
             callback_manager=self.callback_manager,
-            **(agent_runner_kwargs or {})
+            **(agent_runner_kwargs or {}),
         )
 
     def get_modules(self) -> Dict[str, Any]:

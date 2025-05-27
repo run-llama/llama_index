@@ -13,11 +13,13 @@ from .step import QueryUnderstandingAgentWorker
 
 
 class QueryUnderstandingAgentPack(BaseLlamaPack):
-    """LLMCompilerAgent pack.
+    """
+    LLMCompilerAgent pack.
 
     Args:
         tools (List[BaseTool]): List of tools to use.
         llm (Optional[LLM]): LLM to use.
+
     """
 
     def __init__(
@@ -36,12 +38,12 @@ class QueryUnderstandingAgentPack(BaseLlamaPack):
             llm=llm,
             verbose=True,
             callback_manager=self.callback_manager,
-            **(agent_worker_kwargs or {})
+            **(agent_worker_kwargs or {}),
         )
         self.agent = AgentRunner(
             self.agent_worker,
             callback_manager=self.callback_manager,
-            **(agent_runner_kwargs or {})
+            **(agent_runner_kwargs or {}),
         )
 
     def get_modules(self) -> Dict[str, Any]:

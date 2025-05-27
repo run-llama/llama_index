@@ -26,6 +26,7 @@ def extract_tool_use(input_text: str) -> Tuple[str, str, str]:
 
     Raises:
         ValueError: If the input text does not contain the required information.
+
     """
     pattern = (
         r"\s*Thought: (.*?)\nAction: ([a-zA-Z0-9_]+).*?\nAction Input: .*?(\{.*\})"
@@ -50,6 +51,7 @@ def action_input_parser(json_str: str) -> dict:
 
     Returns:
         dict: The parsed dictionary.
+
     """
     processed_string = re.sub(r"(?<!\w)\'|\'(?!\w)", '"', json_str)
     pattern = r'"(\w+)":\s*"([^"]*)"'
@@ -69,6 +71,7 @@ def extract_final_response(input_text: str) -> Tuple[str, str]:
 
     Raises:
         ValueError: If the input text does not contain the required information.
+
     """
     pattern = r"\s*Thought:(.*?)Answer:(.*?)(?:$)"
 
@@ -92,6 +95,7 @@ def parse_action_reasoning_step(output: str) -> ActionReasoningStep:
 
     Returns:
         ActionReasoningStep: The parsed action reasoning step.
+
     """
     # Weaker LLMs may generate ReActAgent steps whose Action Input are horrible JSON strings.
     # `dirtyjson` is more lenient than `json` in parsing JSON strings.
@@ -122,6 +126,7 @@ class SpokeOutputParser(BaseOutputParser):
         Args:
             functionality_list (list): A list of functionalities supported by the spoke.
             spoke_operator (SpokeOperator): An instance of SpokeOperator to handle functionality requests.
+
         """
         super().__init__(*args, **kwargs)
         self.functionality_list = functionality_list
@@ -141,6 +146,7 @@ class SpokeOutputParser(BaseOutputParser):
 
         Raises:
             ValueError: If the output cannot be parsed.
+
         """
         if "Thought:" not in output:
             return ResponseReasoningStep(
@@ -176,9 +182,9 @@ class SpokeOutputParser(BaseOutputParser):
                             action_input={"message": message},
                         )
                     self.called_functionalities[action] = {}
-                    self.called_functionalities[action][
-                        "function_schema"
-                    ] = function_schema
+                    self.called_functionalities[action]["function_schema"] = (
+                        function_schema
+                    )
                 else:
                     function_schema = self.called_functionalities[action][
                         "function_schema"
@@ -222,5 +228,6 @@ class SpokeOutputParser(BaseOutputParser):
 
         Raises:
             NotImplementedError: As this method is not implemented.
+
         """
         raise NotImplementedError

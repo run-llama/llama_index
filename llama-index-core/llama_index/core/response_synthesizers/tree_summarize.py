@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any, Optional, Sequence
+from typing import Any, Optional, Sequence, Type
 
 from llama_index.core.async_utils import run_async_tasks
 from llama_index.core.callbacks.base import CallbackManager
@@ -33,7 +33,7 @@ class TreeSummarize(BaseSynthesizer):
         callback_manager: Optional[CallbackManager] = None,
         prompt_helper: Optional[PromptHelper] = None,
         summary_template: Optional[BasePromptTemplate] = None,
-        output_cls: Optional[BaseModel] = None,
+        output_cls: Optional[Type[BaseModel]] = None,
         streaming: bool = False,
         use_async: bool = False,
         verbose: bool = False,
@@ -89,7 +89,7 @@ class TreeSummarize(BaseSynthesizer):
                         **response_kwargs,
                     )
                 else:
-                    response = await self._llm.astructured_predict(  # type: ignore
+                    response = await self._llm.astructured_predict(
                         self._output_cls,
                         summary_template,
                         context_str=text_chunks[0],
@@ -102,7 +102,7 @@ class TreeSummarize(BaseSynthesizer):
         else:
             # summarize each chunk
             if self._output_cls is None:
-                tasks = [
+                str_tasks = [
                     self._llm.apredict(
                         summary_template,
                         context_str=text_chunk,
@@ -110,9 +110,10 @@ class TreeSummarize(BaseSynthesizer):
                     )
                     for text_chunk in text_chunks
                 ]
+                summaries = await asyncio.gather(*str_tasks)
             else:
-                tasks = [
-                    self._llm.astructured_predict(  # type: ignore
+                model_tasks = [
+                    self._llm.astructured_predict(
                         self._output_cls,
                         summary_template,
                         context_str=text_chunk,
@@ -120,12 +121,8 @@ class TreeSummarize(BaseSynthesizer):
                     )
                     for text_chunk in text_chunks
                 ]
-
-            summary_responses = await asyncio.gather(*tasks)
-            if self._output_cls is not None:
-                summaries = [summary.model_dump_json() for summary in summary_responses]
-            else:
-                summaries = summary_responses
+                summary_models = await asyncio.gather(*model_tasks)
+                summaries = [summary.model_dump_json() for summary in summary_models]
 
             # recursively summarize the summaries
             return await self.aget_response(
@@ -165,7 +162,7 @@ class TreeSummarize(BaseSynthesizer):
                         **response_kwargs,
                     )
                 else:
-                    response = self._llm.structured_predict(  # type: ignore
+                    response = self._llm.structured_predict(
                         self._output_cls,
                         summary_template,
                         context_str=text_chunks[0],
@@ -188,7 +185,7 @@ class TreeSummarize(BaseSynthesizer):
                     ]
                 else:
                     tasks = [
-                        self._llm.astructured_predict(  # type: ignore
+                        self._llm.astructured_predict(
                             self._output_cls,
                             summary_template,
                             context_str=text_chunk,
@@ -217,7 +214,7 @@ class TreeSummarize(BaseSynthesizer):
                     ]
                 else:
                     summaries = [
-                        self._llm.structured_predict(  # type: ignore
+                        self._llm.structured_predict(
                             self._output_cls,
                             summary_template,
                             context_str=text_chunk,

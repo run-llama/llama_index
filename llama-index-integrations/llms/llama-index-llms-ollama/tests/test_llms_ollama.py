@@ -1,13 +1,13 @@
-import pytest
 import os
 
-from llama_index.core.bridge.pydantic import BaseModel
+import pytest
+from ollama import Client
+
 from llama_index.core.base.llms.base import BaseLLM
+from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.llms import ChatMessage
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.ollama import Ollama
-from ollama import Client
-
 
 test_model = os.environ.get("OLLAMA_TEST_MODEL", "llama3.1:latest")
 try:
@@ -16,14 +16,14 @@ try:
 
     model_found = False
     for model in models["models"]:
-        if model["name"] == test_model:
+        if model.model == test_model:
             model_found = True
             break
 
     if not model_found:
-        client = None
+        client = None  # type: ignore
 except Exception:
-    client = None
+    client = None  # type: ignore
 
 
 class Song(BaseModel):
@@ -93,7 +93,7 @@ def test_ollama_stream_complete() -> None:
 @pytest.mark.skipif(
     client is None, reason="Ollama client is not available or test model is missing"
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_ollama_async_chat() -> None:
     llm = Ollama(model=test_model)
     response = await llm.achat([ChatMessage(role="user", content="Hello!")])
@@ -104,7 +104,7 @@ async def test_ollama_async_chat() -> None:
 @pytest.mark.skipif(
     client is None, reason="Ollama client is not available or test model is missing"
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_ollama_async_complete() -> None:
     llm = Ollama(model=test_model)
     response = await llm.acomplete("Hello!")
@@ -115,7 +115,7 @@ async def test_ollama_async_complete() -> None:
 @pytest.mark.skipif(
     client is None, reason="Ollama client is not available or test model is missing"
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_ollama_async_stream_chat() -> None:
     llm = Ollama(model=test_model)
     response = await llm.astream_chat([ChatMessage(role="user", content="Hello!")])
@@ -128,7 +128,7 @@ async def test_ollama_async_stream_chat() -> None:
 @pytest.mark.skipif(
     client is None, reason="Ollama client is not available or test model is missing"
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_ollama_async_stream_complete() -> None:
     llm = Ollama(model=test_model)
     response = await llm.astream_complete("Hello!")
@@ -156,7 +156,7 @@ def test_chat_with_tools() -> None:
 @pytest.mark.skipif(
     client is None, reason="Ollama client is not available or test model is missing"
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_chat_with_tools() -> None:
     llm = Ollama(model=test_model)
     response = await llm.achat_with_tools([tool], user_msg="Hello!")

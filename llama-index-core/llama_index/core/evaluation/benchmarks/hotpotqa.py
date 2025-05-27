@@ -16,7 +16,7 @@ from llama_index.core.query_engine.retriever_query_engine import (
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.core.utils import get_cache_dir
 
-DEV_DISTRACTOR_URL = """http://curtis.ml.cmu.edu/datasets/\
+DEV_DISTRACTOR_URL = """https://web.archive.org/web/20250512032701id_/http://curtis.ml.cmu.edu/datasets/\
 hotpot/hotpot_dev_distractor_v1.json"""
 
 
@@ -85,9 +85,9 @@ class HotpotQAEvaluator:
         )
         query_objects = query_objects[:queries_to_load]
 
-        assert isinstance(
-            query_engine, RetrieverQueryEngine
-        ), "query_engine must be a RetrieverQueryEngine for this evaluation"
+        assert isinstance(query_engine, RetrieverQueryEngine), (
+            "query_engine must be a RetrieverQueryEngine for this evaluation"
+        )
         retriever = HotpotQARetriever(query_objects)
         # Mock the query engine with a retriever
         query_engine = query_engine.with_retriever(retriever=retriever)

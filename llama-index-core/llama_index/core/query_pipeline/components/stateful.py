@@ -27,7 +27,8 @@ class BaseStatefulComponent(QueryComponent):
 
 
 class StatefulFnComponent(BaseStatefulComponent, FnComponent):
-    """Query component that takes in an arbitrary function.
+    """
+    Query component that takes in an arbitrary function.
 
     Stateful version of `FnComponent`. Expects functions to have `state` as the first argument.
 
@@ -39,7 +40,7 @@ class StatefulFnComponent(BaseStatefulComponent, FnComponent):
         req_params: Optional[Set[str]] = None,
         opt_params: Optional[Set[str]] = None,
         state: Optional[Dict[str, Any]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Init params."""
         # determine parameters
@@ -63,7 +64,7 @@ class StatefulFnComponent(BaseStatefulComponent, FnComponent):
             req_params=req_params,
             opt_params=opt_params,
             state=state or {},
-            **kwargs
+            **kwargs,
         )
 
     def _run_component(self, **kwargs: Any) -> Dict:

@@ -1,4 +1,5 @@
-"""Minio file and directory reader.
+"""
+Minio file and directory reader.
 
 A loader that fetches a file or iterates through a directory on Minio.
 
@@ -35,7 +36,8 @@ class MinioReader(BaseReader):
         minio_session_token: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize Minio bucket and key, along with credentials if needed.
+        """
+        Initialize Minio bucket and key, along with credentials if needed.
 
         If key is not set, the entire bucket (filtered by prefix) is parsed.
 
@@ -62,6 +64,7 @@ class MinioReader(BaseReader):
         minio_session_token (Optional[str]): The Minio session token.
         minio_secure: MinIO server runs in TLS mode
         minio_cert_check: allows the usage of a self-signed cert for MinIO server
+
         """
         super().__init__(*args, **kwargs)
 
@@ -98,7 +101,7 @@ class MinioReader(BaseReader):
         with tempfile.TemporaryDirectory() as temp_dir:
             if self.key:
                 suffix = Path(self.key).suffix
-                filepath = f"{temp_dir}/{next(tempfile._get_candidate_names())}{suffix}"
+                _, filepath = tempfile.mkstemp(dir=temp_dir, suffix=suffix)
                 minio_client.fget_object(
                     bucket_name=self.bucket, object_name=self.key, file_path=filepath
                 )
@@ -108,7 +111,6 @@ class MinioReader(BaseReader):
                 )
                 for i, obj in enumerate(objects):
                     file_name = obj.object_name.split("/")[-1]
-                    print(file_name)
                     if self.num_files_limit is not None and i > self.num_files_limit:
                         break
 
@@ -124,7 +126,6 @@ class MinioReader(BaseReader):
                         continue
 
                     filepath = f"{temp_dir}/{file_name}"
-                    print(filepath)
                     minio_client.fget_object(self.bucket, obj.object_name, filepath)
 
             loader = SimpleDirectoryReader(

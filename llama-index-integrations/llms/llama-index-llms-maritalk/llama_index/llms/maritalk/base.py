@@ -58,7 +58,8 @@ class MaritalkHTTPError(HTTPError):
 
 
 class Maritalk(LLM):
-    """Maritalk LLM.
+    """
+    Maritalk LLM.
 
     Examples:
         `pip install llama-index-llms-maritalk`
@@ -85,6 +86,7 @@ class Maritalk(LLM):
         response = llm.chat(messages)
         print(response)
         ```
+
     """
 
     api_key: str = Field(
@@ -111,7 +113,7 @@ class Maritalk(LLM):
     max_tokens: int = Field(
         default=512,
         gt=0,
-        description="The maximum number of tokens to" "generate in the reply.",
+        description="The maximum number of tokens togenerate in the reply.",
     )
 
     do_sample: bool = Field(
@@ -151,12 +153,15 @@ class Maritalk(LLM):
         Parses messages from LlamaIndex's format to the format expected by
         the MariTalk API.
 
-        Parameters:
+        Parameters
+        ----------
             messages (Sequence[ChatMessage]): A list of messages in LlamaIndex
             format to be parsed.
 
-        Returns:
+        Returns
+        -------
             A list of messages formatted for the MariTalk API.
+
         """
         formatted_messages = []
 

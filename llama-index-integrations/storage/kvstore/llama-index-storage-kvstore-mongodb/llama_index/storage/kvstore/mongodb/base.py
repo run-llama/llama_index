@@ -10,9 +10,12 @@ IMPORT_ERROR_MSG = (
     "`pymongo` or `motor` package not found, please run `pip install pymongo motor`"
 )
 
+APP_NAME = "Llama-Index-KVStore-Python"
+
 
 class MongoDBKVStore(BaseKVStore):
-    """MongoDB Key-Value store.
+    """
+    MongoDB Key-Value store.
 
     Args:
         mongo_client (Any): MongoDB client
@@ -58,7 +61,8 @@ class MongoDBKVStore(BaseKVStore):
         uri: str,
         db_name: Optional[str] = None,
     ) -> "MongoDBKVStore":
-        """Load a MongoDBKVStore from a MongoDB URI.
+        """
+        Load a MongoDBKVStore from a MongoDB URI.
 
         Args:
             uri (str): MongoDB URI
@@ -71,7 +75,7 @@ class MongoDBKVStore(BaseKVStore):
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
-        mongo_client: MongoClient = MongoClient(uri)
+        mongo_client: MongoClient = MongoClient(uri, appname=APP_NAME)
         mongo_aclient: AsyncIOMotorClient = AsyncIOMotorClient(uri)
         return cls(
             mongo_client=mongo_client,
@@ -87,7 +91,8 @@ class MongoDBKVStore(BaseKVStore):
         port: int,
         db_name: Optional[str] = None,
     ) -> "MongoDBKVStore":
-        """Load a MongoDBKVStore from a MongoDB host and port.
+        """
+        Load a MongoDBKVStore from a MongoDB host and port.
 
         Args:
             host (str): MongoDB host
@@ -101,8 +106,10 @@ class MongoDBKVStore(BaseKVStore):
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
-        mongo_client: MongoClient = MongoClient(host, port)
-        mongo_aclient: AsyncIOMotorClient = AsyncIOMotorClient(host, port)
+        mongo_client: MongoClient = MongoClient(host, port, appname=APP_NAME)
+        mongo_aclient: AsyncIOMotorClient = AsyncIOMotorClient(
+            host, port, appname=APP_NAME
+        )
         return cls(
             mongo_client=mongo_client,
             mongo_aclient=mongo_aclient,
@@ -121,7 +128,8 @@ class MongoDBKVStore(BaseKVStore):
         val: dict,
         collection: str = DEFAULT_COLLECTION,
     ) -> None:
-        """Put a key-value pair into the store.
+        """
+        Put a key-value pair into the store.
 
         Args:
             key (str): key
@@ -137,7 +145,8 @@ class MongoDBKVStore(BaseKVStore):
         val: dict,
         collection: str = DEFAULT_COLLECTION,
     ) -> None:
-        """Put a key-value pair into the store.
+        """
+        Put a key-value pair into the store.
 
         Args:
             key (str): key
@@ -196,7 +205,8 @@ class MongoDBKVStore(BaseKVStore):
             await self._adb[collection].bulk_write(new_docs)
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
-        """Get a value from the store.
+        """
+        Get a value from the store.
 
         Args:
             key (str): key
@@ -212,7 +222,8 @@ class MongoDBKVStore(BaseKVStore):
     async def aget(
         self, key: str, collection: str = DEFAULT_COLLECTION
     ) -> Optional[dict]:
-        """Get a value from the store.
+        """
+        Get a value from the store.
 
         Args:
             key (str): key
@@ -228,7 +239,8 @@ class MongoDBKVStore(BaseKVStore):
         return None
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
-        """Get all values from the store.
+        """
+        Get all values from the store.
 
         Args:
             collection (str): collection name
@@ -242,7 +254,8 @@ class MongoDBKVStore(BaseKVStore):
         return output
 
     async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
-        """Get all values from the store.
+        """
+        Get all values from the store.
 
         Args:
             collection (str): collection name
@@ -258,7 +271,8 @@ class MongoDBKVStore(BaseKVStore):
         return output
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        """Delete a value from the store.
+        """
+        Delete a value from the store.
 
         Args:
             key (str): key
@@ -269,7 +283,8 @@ class MongoDBKVStore(BaseKVStore):
         return result.deleted_count > 0
 
     async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        """Delete a value from the store.
+        """
+        Delete a value from the store.
 
         Args:
             key (str): key

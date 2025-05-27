@@ -1,4 +1,5 @@
-"""Mix Self Consistency Query Engine.
+"""
+Mix Self Consistency Query Engine.
 
 All prompts adapted from original paper by Liu et al. (2023):
 https://arxiv.org/pdf/2312.16702v1.pdf
@@ -234,9 +235,9 @@ def aggregate(
         print(f"Symbolic results: {symbolic_results}")
 
     if aggregation_mode == AggregationMode.SELF_EVALUATION:
-        assert (
-            len(text_results) == 1 and len(symbolic_results) == 1
-        ), "Must use exactly 1 text reasoning path and 1 symbolic reasoning path."
+        assert len(text_results) == 1 and len(symbolic_results) == 1, (
+            "Must use exactly 1 text reasoning path and 1 symbolic reasoning path."
+        )
         result = aggregate_self_evaluation(
             table,
             query_str,

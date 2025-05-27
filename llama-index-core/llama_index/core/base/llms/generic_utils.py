@@ -108,9 +108,12 @@ def chat_response_to_completion_response(
     chat_response: ChatResponse,
 ) -> CompletionResponse:
     """Convert a chat response to a completion response."""
+    additional_kwargs = chat_response.message.additional_kwargs
+    additional_kwargs.update(chat_response.additional_kwargs)
+
     return CompletionResponse(
         text=chat_response.message.content or "",
-        additional_kwargs=chat_response.message.additional_kwargs,
+        additional_kwargs=additional_kwargs,
         raw=chat_response.raw,
     )
 
@@ -122,9 +125,12 @@ def stream_chat_response_to_completion_response(
 
     def gen() -> CompletionResponseGen:
         for response in chat_response_gen:
+            additional_kwargs = response.message.additional_kwargs
+            additional_kwargs.update(response.additional_kwargs)
+
             yield CompletionResponse(
                 text=response.message.content or "",
-                additional_kwargs=response.message.additional_kwargs,
+                additional_kwargs=additional_kwargs,
                 delta=response.delta,
                 raw=response.raw,
             )
@@ -133,7 +139,7 @@ def stream_chat_response_to_completion_response(
 
 
 def completion_to_chat_decorator(
-    func: Callable[..., CompletionResponse]
+    func: Callable[..., CompletionResponse],
 ) -> Callable[..., ChatResponse]:
     """Convert a completion function to a chat function."""
 
@@ -148,7 +154,7 @@ def completion_to_chat_decorator(
 
 
 def stream_completion_to_chat_decorator(
-    func: Callable[..., CompletionResponseGen]
+    func: Callable[..., CompletionResponseGen],
 ) -> Callable[..., ChatResponseGen]:
     """Convert a completion function to a chat function."""
 
@@ -163,7 +169,7 @@ def stream_completion_to_chat_decorator(
 
 
 def chat_to_completion_decorator(
-    func: Callable[..., ChatResponse]
+    func: Callable[..., ChatResponse],
 ) -> Callable[..., CompletionResponse]:
     """Convert a chat function to a completion function."""
 
@@ -178,7 +184,7 @@ def chat_to_completion_decorator(
 
 
 def stream_chat_to_completion_decorator(
-    func: Callable[..., ChatResponseGen]
+    func: Callable[..., ChatResponseGen],
 ) -> Callable[..., CompletionResponseGen]:
     """Convert a chat function to a completion function."""
 
@@ -196,7 +202,7 @@ def stream_chat_to_completion_decorator(
 
 
 def acompletion_to_chat_decorator(
-    func: Callable[..., Awaitable[CompletionResponse]]
+    func: Callable[..., Awaitable[CompletionResponse]],
 ) -> Callable[..., Awaitable[ChatResponse]]:
     """Convert a completion function to a chat function."""
 
@@ -211,7 +217,7 @@ def acompletion_to_chat_decorator(
 
 
 def achat_to_completion_decorator(
-    func: Callable[..., Awaitable[ChatResponse]]
+    func: Callable[..., Awaitable[ChatResponse]],
 ) -> Callable[..., Awaitable[CompletionResponse]]:
     """Convert a chat function to a completion function."""
 
@@ -226,7 +232,7 @@ def achat_to_completion_decorator(
 
 
 def astream_completion_to_chat_decorator(
-    func: Callable[..., Awaitable[CompletionResponseAsyncGen]]
+    func: Callable[..., Awaitable[CompletionResponseAsyncGen]],
 ) -> Callable[..., Awaitable[ChatResponseAsyncGen]]:
     """Convert a completion function to a chat function."""
 
@@ -243,7 +249,7 @@ def astream_completion_to_chat_decorator(
 
 
 def astream_chat_to_completion_decorator(
-    func: Callable[..., Awaitable[ChatResponseAsyncGen]]
+    func: Callable[..., Awaitable[ChatResponseAsyncGen]],
 ) -> Callable[..., Awaitable[CompletionResponseAsyncGen]]:
     """Convert a chat function to a completion function."""
 
@@ -284,9 +290,12 @@ def astream_chat_response_to_completion_response(
 
     async def gen() -> CompletionResponseAsyncGen:
         async for response in chat_response_gen:
+            additional_kwargs = response.message.additional_kwargs
+            additional_kwargs.update(response.additional_kwargs)
+
             yield CompletionResponse(
                 text=response.message.content or "",
-                additional_kwargs=response.message.additional_kwargs,
+                additional_kwargs=additional_kwargs,
                 delta=response.delta,
                 raw=response.raw,
             )

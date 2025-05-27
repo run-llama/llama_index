@@ -122,7 +122,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
 
         if not isinstance(llm, OpenAI):
             raise ValueError(
-                "OpenAIPydanticProgram only supports OpenAI LLMs. " f"Got: {type(llm)}"
+                f"OpenAIPydanticProgram only supports OpenAI LLMs. Got: {type(llm)}"
             )
 
         if not llm.metadata.is_function_calling_model:
@@ -174,17 +174,18 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
 
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
+        if "tool_choice" not in llm_kwargs:
+            llm_kwargs["tool_choice"] = self._tool_choice
+
         chat_response = self._llm.chat(
             messages=messages,
             tools=[openai_fn_spec],
-            tool_choice=self._tool_choice,
             **llm_kwargs,
         )
         message = chat_response.message
         if "tool_calls" not in message.additional_kwargs:
             raise ValueError(
-                "Expected tool_calls in ai_message.additional_kwargs, "
-                "but none found."
+                "Expected tool_calls in ai_message.additional_kwargs, but none found."
             )
 
         tool_calls = message.additional_kwargs["tool_calls"]
@@ -208,10 +209,12 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
 
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
 
+        if "tool_choice" not in llm_kwargs:
+            llm_kwargs["tool_choice"] = self._tool_choice
+
         chat_response = await self._llm.achat(
             messages=messages,
             tools=[openai_fn_spec],
-            tool_choice=self._tool_choice,
             **llm_kwargs,
         )
         message = chat_response.message
@@ -244,10 +247,12 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
         list_output_cls = create_list_model(self._output_cls)
         openai_fn_spec = to_openai_tool(list_output_cls, description=description)
 
+        if "tool_choice" not in llm_kwargs:
+            llm_kwargs["tool_choice"] = _default_tool_choice(list_output_cls)
+
         chat_response_gen = self._llm.stream_chat(
             messages=messages,
             tools=[openai_fn_spec],
-            tool_choice=_default_tool_choice(list_output_cls),
             **llm_kwargs,
         )
         # extract function call arguments
@@ -293,10 +298,13 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
 
         description = self._description_eval(**kwargs)
         openai_fn_spec = to_openai_tool(self._output_cls, description=description)
+
+        if "tool_choice" not in llm_kwargs:
+            llm_kwargs["tool_choice"] = _default_tool_choice(self._output_cls)
+
         chat_response_gen = self._llm.stream_chat(
             messages=messages,
             tools=[openai_fn_spec],
-            tool_choice=self._tool_choice,
             **llm_kwargs,
         )
         for partial_resp in chat_response_gen:
@@ -312,7 +320,7 @@ class OpenAIPydanticProgram(BaseLLMFunctionProgram[LLM]):
                 continue
 
     def _description_eval(self, **kwargs: Any) -> Optional[str]:
-        description = kwargs.get("description", None)
+        description = kwargs.get("description")
 
         ## __doc__ checks if docstring is provided in the Pydantic Model
         if not (self._output_cls.__doc__ or description):

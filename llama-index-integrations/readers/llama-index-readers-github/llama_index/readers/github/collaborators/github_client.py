@@ -7,8 +7,7 @@ from typing import Any, Dict, Optional, Protocol
 
 
 class BaseGitHubCollaboratorsClient(Protocol):
-    def get_all_endpoints(self) -> Dict[str, str]:
-        ...
+    def get_all_endpoints(self) -> Dict[str, str]: ...
 
     async def request(
         self,
@@ -17,16 +16,14 @@ class BaseGitHubCollaboratorsClient(Protocol):
         headers: Dict[str, Any] = {},
         params: Dict[str, Any] = {},
         **kwargs: Any,
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
     async def get_collaborators(
         self,
         owner: str,
         repo: str,
         page: int = 1,
-    ) -> Dict:
-        ...
+    ) -> Dict: ...
 
 
 class GitHubCollaboratorsClient:
@@ -40,6 +37,7 @@ class GitHubCollaboratorsClient:
     Examples:
         >>> client = GitHubCollaboratorsClient("my_github_token")
         >>> collaborators = client.get_collaborators("owner", "repo")
+
     """
 
     DEFAULT_BASE_URL = "https://api.github.com"
@@ -65,6 +63,7 @@ class GitHubCollaboratorsClient:
 
         Raises:
             ValueError: If no GitHub token is provided.
+
         """
         if github_token is None:
             github_token = os.getenv("GITHUB_TOKEN")
@@ -120,6 +119,7 @@ class GitHubCollaboratorsClient:
         Examples:
             >>> response = client.request("getCollaborators", "GET",
                                 owner="owner", repo="repo", state="all")
+
         """
         try:
             import httpx
@@ -162,6 +162,7 @@ class GitHubCollaboratorsClient:
 
         Examples:
             >>> repo_collaborators = client.get_collaborators("owner", "repo")
+
         """
         return (
             await self.request(

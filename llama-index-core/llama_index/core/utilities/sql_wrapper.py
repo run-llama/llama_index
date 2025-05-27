@@ -1,4 +1,5 @@
 """SQL wrapper around SQLDatabase in langchain."""
+
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from sqlalchemy import MetaData, create_engine, insert, inspect, text
@@ -7,7 +8,8 @@ from sqlalchemy.exc import OperationalError, ProgrammingError
 
 
 class SQLDatabase:
-    """SQL Database.
+    """
+    SQL Database.
 
     This class provides a wrapper around the SQLAlchemy engine to interact with a SQL
     database.
@@ -167,8 +169,7 @@ class SQLDatabase:
         for column in self._inspector.get_columns(table_name, schema=self._schema):
             if column.get("comment"):
                 columns.append(
-                    f"{column['name']} ({column['type']!s}): "
-                    f"'{column.get('comment')}'"
+                    f"{column['name']} ({column['type']!s}): '{column.get('comment')}'"
                 )
             else:
                 columns.append(f"{column['name']} ({column['type']!s})")
@@ -212,7 +213,8 @@ class SQLDatabase:
         return content[: length - len(suffix)].rsplit(" ", 1)[0] + suffix
 
     def run_sql(self, command: str) -> Tuple[str, Dict]:
-        """Execute a SQL statement and return a string representing the results.
+        """
+        Execute a SQL statement and return a string representing the results.
 
         If the statement returns rows, a string of the results is returned.
         If the statement returns no rows, an empty string is returned.
@@ -225,7 +227,7 @@ class SQLDatabase:
                 cursor = connection.execute(text(command))
             except (ProgrammingError, OperationalError) as exc:
                 raise NotImplementedError(
-                    f"Statement {command!r} is invalid SQL."
+                    f"Statement {command!r} is invalid SQL.\nError: {exc.orig}"
                 ) from exc
             if cursor.returns_rows:
                 result = cursor.fetchall()

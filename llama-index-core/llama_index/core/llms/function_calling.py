@@ -1,19 +1,14 @@
-from typing import Any, Dict, List, Optional, Sequence, Union, TYPE_CHECKING
-from abc import abstractmethod
 import asyncio
-
-from llama_index.core.base.llms.types import (
-    ChatMessage,
-)
-from llama_index.core.llms.llm import LLM
+from abc import abstractmethod
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
-    ChatResponseGen,
     ChatResponseAsyncGen,
+    ChatResponseGen,
 )
-from llama_index.core.llms.llm import ToolSelection
+from llama_index.core.llms.llm import LLM, ToolSelection
 
 if TYPE_CHECKING:
     from llama_index.core.chat_engine.types import AgentChatResponse
@@ -26,6 +21,10 @@ class FunctionCallingLLM(LLM):
     They support an expanded range of capabilities.
 
     """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        # Help static checkers understand this class hierarchy
+        super().__init__(*args, **kwargs)
 
     def chat_with_tools(
         self,
@@ -162,6 +161,7 @@ class FunctionCallingLLM(LLM):
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         error_on_no_tool_call: bool = True,
+        error_on_tool_error: bool = False,
         **kwargs: Any,
     ) -> "AgentChatResponse":
         """Predict and call the tool."""
@@ -194,7 +194,15 @@ class FunctionCallingLLM(LLM):
             call_tool_with_selection(tool_call, tools, verbose=verbose)
             for tool_call in tool_calls
         ]
-        if allow_parallel_tool_calls:
+        tool_outputs_with_error = [
+            tool_output for tool_output in tool_outputs if tool_output.is_error
+        ]
+        if error_on_tool_error and len(tool_outputs_with_error) > 0:
+            error_text = "\n\n".join(
+                [tool_output.content for tool_output in tool_outputs]
+            )
+            raise ValueError(error_text)
+        elif allow_parallel_tool_calls:
             output_text = "\n\n".join(
                 [tool_output.content for tool_output in tool_outputs]
             )
@@ -219,13 +227,14 @@ class FunctionCallingLLM(LLM):
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         error_on_no_tool_call: bool = True,
+        error_on_tool_error: bool = False,
         **kwargs: Any,
     ) -> "AgentChatResponse":
         """Predict and call the tool."""
+        from llama_index.core.chat_engine.types import AgentChatResponse
         from llama_index.core.tools.calling import (
             acall_tool_with_selection,
         )
-        from llama_index.core.chat_engine.types import AgentChatResponse
 
         if not self.metadata.is_function_calling_model:
             return await super().apredict_and_call(
@@ -253,7 +262,15 @@ class FunctionCallingLLM(LLM):
             for tool_call in tool_calls
         ]
         tool_outputs = await asyncio.gather(*tool_tasks)
-        if allow_parallel_tool_calls:
+        tool_outputs_with_error = [
+            tool_output for tool_output in tool_outputs if tool_output.is_error
+        ]
+        if error_on_tool_error and len(tool_outputs_with_error) > 0:
+            error_text = "\n\n".join(
+                [tool_output.content for tool_output in tool_outputs]
+            )
+            raise ValueError(error_text)
+        elif allow_parallel_tool_calls:
             output_text = "\n\n".join(
                 [tool_output.content for tool_output in tool_outputs]
             )

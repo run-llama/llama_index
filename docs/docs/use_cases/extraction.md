@@ -8,27 +8,25 @@ This can be especially useful when you have unstructured source material like ch
 
 Once you have structured data you can send them to a database, or you can parse structured outputs in code to automate workflows.
 
-## Core Guides
+## Full tutorial
 
-#### Quickstart
-The simplest way to perform structured extraction is with our LLM classes. Take a look at the following starter resources:
-- [Simple Guide to Structured Outputs](../examples/structured_outputs/structured_outputs.ipynb)
+Our Learn section has a [full tutorial on structured data extraction](../understanding/extraction/index.md). We recommend starting out there.
 
-There are also relevant sections for our LLM guides: [OpenAI](../examples/llm/openai.ipynb), [Anthropic](../examples/llm/anthropic.ipynb), and [Mistral](../examples/llm/mistralai.ipynb).
+There is also an [example notebook](../examples/structured_outputs/structured_outputs.ipynb) demonstrating some of the techniques from the tutorial.
 
-#### In-depth Guides
-For a more comprehensive overview of structured data extraction with LlamaIndex, including lower-level modules, check out the following guides. Check out our standalone lower-level modules like Pydantic programs or as part of a RAG workflow.
-We also have standalone output parsing modules that you can use yourself with an LLM / prompt.
+## Other Guides
+
+For a more comprehensive overview of structured data extraction with LlamaIndex, including lower-level modules, check out the following guides:
 
 - [Structured Outputs](../module_guides/querying/structured_outputs/index.md)
-- [Pydantic Program](../module_guides/querying/structured_outputs/pydantic_program.md)
+- [Pydantic Programs](../module_guides/querying/structured_outputs/pydantic_program.md)
 - [Output Parsing](../module_guides/querying/structured_outputs/output_parser.md)
 
 We also have multi-modal structured data extraction. [Check it out](../use_cases/multimodal.md#simple-evaluation-of-multi-modal-rag).
 
-## Misc Examples
+## Miscellaneous Examples
 
-Some additional miscellaneous examples highlighting use cases:
+Some additional examples highlighting use cases:
 
 - [Extracting names and locations from descriptions of people](../examples/output_parsing/df_program.ipynb)
 - [Extracting album data from music reviews](../examples/llm/llama_api.ipynb)

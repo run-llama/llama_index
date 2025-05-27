@@ -441,3 +441,36 @@ def test_completion_model_with_retry(MockSyncOpenAI: MagicMock) -> None:
     # The actual retry count is max_retries - 1
     # see https://github.com/jd/tenacity/issues/459
     assert mock_instance.completions.create.call_count == 3
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_ensure_chat_message_is_serializable(MockSyncOpenAI: MagicMock) -> None:
+    with CachedOpenAIApiKeys(set_fake_key=True):
+        mock_instance = MockSyncOpenAI.return_value
+        mock_instance.chat.completions.create.return_value = mock_chat_completion_v1()
+
+        llm = OpenAI(model="gpt-3.5-turbo")
+        message = ChatMessage(role="user", content="test message")
+
+        response = llm.chat([message])
+        response.message.additional_kwargs["test"] = ChatCompletionChunk(
+            id="chatcmpl-6ptKyqKOGXZT6iQnqiXAH8adNLUzD",
+            object="chat.completion.chunk",
+            created=1677825464,
+            model="gpt-3.5-turbo-0301",
+            choices=[
+                ChunkChoice(
+                    delta=ChoiceDelta(role="assistant", content="test"),
+                    finish_reason=None,
+                    index=0,
+                )
+            ],
+        )
+        data = response.message.dict()
+        assert isinstance(data, dict)
+        assert isinstance(data["additional_kwargs"], dict)
+        assert isinstance(data["additional_kwargs"]["test"]["choices"], list)
+        assert (
+            data["additional_kwargs"]["test"]["choices"][0]["delta"]["content"]
+            == "test"
+        )

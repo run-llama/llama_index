@@ -23,7 +23,8 @@ import_err_msg = (
 
 
 class RelytVectorStore(BasePydanticVectorStore):
-    """Relyt Vector Store.
+    """
+    Relyt Vector Store.
 
     Examples:
         `pip install llama-index-vector-stores-relyt`
@@ -52,6 +53,7 @@ class RelytVectorStore(BasePydanticVectorStore):
         # Initialize RelytVectorStore
         vector_store = RelytVectorStore(client=client)
         ```
+
     """
 
     stores_text: bool = True

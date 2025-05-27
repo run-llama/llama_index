@@ -95,7 +95,8 @@ MAX_CHUNK_SIZE = 41665  # One less than the max chunk size for ChromaDB
 def chunk_list(
     lst: List[BaseNode], max_chunk_size: int
 ) -> Generator[List[BaseNode], None, None]:
-    """Yield successive max_chunk_size-sized chunks from lst.
+    """
+    Yield successive max_chunk_size-sized chunks from lst.
 
     Args:
         lst (List[BaseNode]): list of nodes with embeddings
@@ -103,13 +104,15 @@ def chunk_list(
 
     Yields:
         Generator[List[BaseNode], None, None]: list of nodes with embeddings
+
     """
     for i in range(0, len(lst), max_chunk_size):
         yield lst[i : i + max_chunk_size]
 
 
 class ChromaVectorStore(BasePydanticVectorStore):
-    """Chroma vector store.
+    """
+    Chroma vector store.
 
     In this vector store, embeddings are stored within a ChromaDB collection.
 
@@ -240,7 +243,8 @@ class ChromaVectorStore(BasePydanticVectorStore):
         node_ids: Optional[List[str]],
         filters: Optional[List[MetadataFilters]] = None,
     ) -> List[BaseNode]:
-        """Get nodes from index.
+        """
+        Get nodes from index.
 
         Args:
             node_ids (List[str]): list of node ids
@@ -255,14 +259,15 @@ class ChromaVectorStore(BasePydanticVectorStore):
         if filters:
             where = _to_chroma_filter(filters)
         else:
-            where = {}
+            where = None
 
         result = self._get(None, where=where, ids=node_ids)
 
         return result.nodes
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -317,7 +322,8 @@ class ChromaVectorStore(BasePydanticVectorStore):
         node_ids: Optional[List[str]] = None,
         filters: Optional[List[MetadataFilters]] = None,
     ) -> None:
-        """Delete nodes from index.
+        """
+        Delete nodes from index.
 
         Args:
             node_ids (List[str]): list of node ids
@@ -331,10 +337,10 @@ class ChromaVectorStore(BasePydanticVectorStore):
 
         if filters:
             where = _to_chroma_filter(filters)
-        else:
-            where = {}
+            self._collection.delete(ids=node_ids, where=where)
 
-        self._collection.delete(ids=node_ids, where=where)
+        else:
+            self._collection.delete(ids=node_ids)
 
     def clear(self) -> None:
         """Clear the collection."""
@@ -347,7 +353,8 @@ class ChromaVectorStore(BasePydanticVectorStore):
         return self._collection
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query_embedding (List[float]): query embedding
@@ -363,7 +370,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
                 )
             where = _to_chroma_filter(query.filters)
         else:
-            where = kwargs.pop("where", {})
+            where = kwargs.pop("where", None)
 
         if not query.query_embedding:
             return self._get(limit=query.similarity_top_k, where=where, **kwargs)
@@ -378,12 +385,19 @@ class ChromaVectorStore(BasePydanticVectorStore):
     def _query(
         self, query_embeddings: List["float"], n_results: int, where: dict, **kwargs
     ) -> VectorStoreQueryResult:
-        results = self._collection.query(
-            query_embeddings=query_embeddings,
-            n_results=n_results,
-            where=where,
-            **kwargs,
-        )
+        if where:
+            results = self._collection.query(
+                query_embeddings=query_embeddings,
+                n_results=n_results,
+                where=where,
+                **kwargs,
+            )
+        else:
+            results = self._collection.query(
+                query_embeddings=query_embeddings,
+                n_results=n_results,
+                **kwargs,
+            )
 
         logger.debug(f"> Top {len(results['documents'][0])} nodes:")
         nodes = []
@@ -429,11 +443,17 @@ class ChromaVectorStore(BasePydanticVectorStore):
     def _get(
         self, limit: Optional[int], where: dict, **kwargs
     ) -> VectorStoreQueryResult:
-        results = self._collection.get(
-            limit=limit,
-            where=where,
-            **kwargs,
-        )
+        if where:
+            results = self._collection.get(
+                limit=limit,
+                where=where,
+                **kwargs,
+            )
+        else:
+            results = self._collection.get(
+                limit=limit,
+                **kwargs,
+            )
 
         logger.debug(f"> Top {len(results['documents'])} nodes:")
         nodes = []

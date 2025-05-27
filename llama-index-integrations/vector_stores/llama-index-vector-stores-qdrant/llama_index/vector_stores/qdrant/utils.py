@@ -65,7 +65,7 @@ def default_sparse_encoder(model_id: str) -> SparseEncoderCallable:
 
 
 def fastembed_sparse_encoder(
-    model_name: str = "prithvida/Splade_PP_en_v1",
+    model_name: str = "prithivida/Splade_PP_en_v1",
     batch_size: int = 256,
     cache_dir: Optional[str] = None,
     threads: Optional[int] = None,

@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 class ConfluenceReader(BaseReader):
-    """Confluence reader.
+    """
+    Confluence reader.
 
     Reads a set of confluence pages given a space key and optionally a list of page ids
 
@@ -31,8 +32,10 @@ class ConfluenceReader(BaseReader):
         base_url (str): 'base_url' for confluence cloud instance, this is suffixed with '/wiki', eg 'https://yoursite.atlassian.com/wiki'
         cloud (bool): connecting to Confluence Cloud or self-hosted instance
         api_token (str): Confluence API token, see https://confluence.atlassian.com/cloud/api-tokens-938839638.html
+        cookies (dict): Confluence cookies, see https://atlassian-python-api.readthedocs.io/index.html
         user_name (str): Confluence username, used for basic auth. Must be used with `password`.
         password (str): Confluence password, used for basic auth. Must be used with `user_name`.
+        client_args (dict): Additional keyword arguments to pass directly to the Atlassian Confluence client constructor, for example `{'backoff_and_retry': True}`.
 
     """
 
@@ -42,8 +45,10 @@ class ConfluenceReader(BaseReader):
         oauth2: Optional[Dict] = None,
         cloud: bool = True,
         api_token: Optional[str] = None,
+        cookies: Optional[dict] = None,
         user_name: Optional[str] = None,
         password: Optional[str] = None,
+        client_args: Optional[dict] = None,
     ) -> None:
         if base_url is None:
             raise ValueError("Must provide `base_url`")
@@ -58,20 +63,34 @@ class ConfluenceReader(BaseReader):
                 " atlassian-python-api`"
             )
         self.confluence: Confluence = None
+        if client_args is None:
+            client_args = {}
         if oauth2:
-            self.confluence = Confluence(url=base_url, oauth2=oauth2, cloud=cloud)
+            self.confluence = Confluence(
+                url=base_url, oauth2=oauth2, cloud=cloud, **client_args
+            )
         else:
             if api_token is not None:
-                self.confluence = Confluence(url=base_url, token=api_token, cloud=cloud)
+                self.confluence = Confluence(
+                    url=base_url, token=api_token, cloud=cloud, **client_args
+                )
+            elif cookies is not None:
+                self.confluence = Confluence(
+                    url=base_url, cookies=cookies, cloud=cloud, **client_args
+                )
             elif user_name is not None and password is not None:
                 self.confluence = Confluence(
-                    url=base_url, username=user_name, password=password, cloud=cloud
+                    url=base_url,
+                    username=user_name,
+                    password=password,
+                    cloud=cloud,
+                    **client_args,
                 )
             else:
                 api_token = os.getenv(CONFLUENCE_API_TOKEN)
                 if api_token is not None:
                     self.confluence = Confluence(
-                        url=base_url, token=api_token, cloud=cloud
+                        url=base_url, token=api_token, cloud=cloud, **client_args
                     )
                 else:
                     user_name = os.getenv(CONFLUENCE_USERNAME)
@@ -82,6 +101,7 @@ class ConfluenceReader(BaseReader):
                             username=user_name,
                             password=password,
                             cloud=cloud,
+                            **client_args,
                         )
                     else:
                         raise ValueError(
@@ -106,7 +126,8 @@ class ConfluenceReader(BaseReader):
         limit: Optional[int] = None,
         max_num_results: Optional[int] = None,
     ) -> List[Document]:
-        """Load Confluence pages from Confluence, specifying by one of four mutually exclusive methods:
+        """
+        Load Confluence pages from Confluence, specifying by one of four mutually exclusive methods:
         `space_key`, `page_ids`, `label`, or `cql`
         (Confluence Query Language https://developer.atlassian.com/cloud/confluence/advanced-searching-using-cql/ ).
 
@@ -122,6 +143,7 @@ class ConfluenceReader(BaseReader):
             cursor (str): Skips to the cursor. Used with cql and label, set when the max limit has been hit for cql based search
             limit (int): Deprecated, use `max_num_results` instead.
             max_num_results (int): Maximum number of results to return.  If None, return all results.  Requests are made in batches to achieve the desired number of results.
+
         """
         num_space_key_parameter = 1 if space_key else 0
         num_page_ids_parameter = 1 if page_ids is not None else 0

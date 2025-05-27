@@ -1,4 +1,4 @@
-""" GitLab repository reader. """
+"""GitLab repository reader."""
 
 from typing import List, Optional
 
@@ -64,6 +64,7 @@ class GitLabRepositoryReader(BaseReader):
 
         Returns:
             List[Document]: List of documents loaded from the repository
+
         """
         if file_path:
             return [self._load_single_file(file_path, ref)]
@@ -84,9 +85,7 @@ class GitLabRepositoryReader(BaseReader):
 
         for item in repo_items:
             if item["type"] == "blob":
-                document = self._load_single_file(item["path"], ref)
-
-            documents.append(document)
+                documents.append(self._load_single_file(item["path"], ref))
 
         return documents
 

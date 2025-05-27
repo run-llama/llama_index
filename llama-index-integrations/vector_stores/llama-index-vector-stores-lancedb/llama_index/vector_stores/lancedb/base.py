@@ -139,6 +139,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
 
         vector_store = LanceDBVectorStore()  # native invocation
         ```
+
     """
 
     stores_text: bool = True
@@ -156,7 +157,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
     overfetch_factor: Optional[int]
 
     _table_name: Optional[str] = PrivateAttr()
-    _connection: Any = PrivateAttr()
+    _connection: lancedb.DBConnection = PrivateAttr()
     _table: Any = PrivateAttr()
     _metadata_keys: Any = PrivateAttr()
     _fts_index: Any = PrivateAttr()
@@ -247,9 +248,12 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                     "`table` has to be a lancedb.db.LanceTable or lancedb.remote.table.RemoteTable object."
                 )
         else:
-            if self._table_exists():
-                self._table = self._connection.open_table(table_name)
-            else:
+            try:
+                if self._table_exists() and self.mode != "overwrite":
+                    self._table = self._connection.open_table(table_name)
+                else:
+                    self._table = None
+            except ValueError:
                 self._table = None
 
     @property
@@ -304,6 +308,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                     choice of metrics: 'L2', 'dot', 'cosine'
         Returns:
             None
+
         """
         if scalar is None:
             self._table.create_index(
@@ -351,7 +356,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             )
         else:
             if self.api_key is None:
-                self._table.add(data, mode=self.mode)
+                self._table.add(data)
             else:
                 self._table.add(data)
 

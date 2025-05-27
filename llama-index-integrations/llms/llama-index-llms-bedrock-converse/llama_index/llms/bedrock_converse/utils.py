@@ -1,3 +1,5 @@
+import base64
+import json
 import logging
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 from tenacity import (
@@ -8,7 +10,16 @@ from tenacity import (
     wait_exponential,
 )
 
-from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    MessageRole,
+    ImageBlock,
+    TextBlock,
+    ContentBlock,
+    AudioBlock,
+    DocumentBlock,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -17,6 +28,9 @@ HUMAN_PREFIX = "\n\nHuman:"
 ASSISTANT_PREFIX = "\n\nAssistant:"
 
 BEDROCK_MODELS = {
+    "amazon.nova-pro-v1:0": 300000,
+    "amazon.nova-lite-v1:0": 300000,
+    "amazon.nova-micro-v1:0": 128000,
     "amazon.titan-text-express-v1": 8192,
     "amazon.titan-text-lite-v1": 4096,
     "amazon.titan-text-premier-v1:0": 3072,
@@ -28,6 +42,11 @@ BEDROCK_MODELS = {
     "anthropic.claude-3-haiku-20240307-v1:0": 200000,
     "anthropic.claude-3-opus-20240229-v1:0": 200000,
     "anthropic.claude-3-5-sonnet-20240620-v1:0": 200000,
+    "anthropic.claude-3-5-sonnet-20241022-v2:0": 200000,
+    "anthropic.claude-3-5-haiku-20241022-v1:0": 200000,
+    "anthropic.claude-3-7-sonnet-20250219-v1:0": 200000,
+    "anthropic.claude-opus-4-20250514-v1:0": 200000,
+    "anthropic.claude-sonnet-4-20250514-v1:0": 200000,
     "ai21.j2-mid-v1": 8192,
     "ai21.j2-ultra-v1": 8192,
     "cohere.command-text-v14": 4096,
@@ -38,35 +57,109 @@ BEDROCK_MODELS = {
     "meta.llama2-70b-chat-v1": 4096,
     "meta.llama3-8b-instruct-v1:0": 8192,
     "meta.llama3-70b-instruct-v1:0": 8192,
+    "meta.llama3-1-8b-instruct-v1:0": 128000,
+    "meta.llama3-1-70b-instruct-v1:0": 128000,
+    "meta.llama3-2-1b-instruct-v1:0": 131000,
+    "meta.llama3-2-3b-instruct-v1:0": 131000,
+    "meta.llama3-2-11b-instruct-v1:0": 128000,
+    "meta.llama3-2-90b-instruct-v1:0": 128000,
+    "meta.llama3-3-70b-instruct-v1:0": 128000,
     "mistral.mistral-7b-instruct-v0:2": 32000,
     "mistral.mixtral-8x7b-instruct-v0:1": 32000,
     "mistral.mistral-large-2402-v1:0": 32000,
     "mistral.mistral-small-2402-v1:0": 32000,
+    "mistral.mistral-large-2407-v1:0": 32000,
+    "ai21.jamba-1-5-mini-v1:0": 256000,
+    "ai21.jamba-1-5-large-v1:0": 256000,
+    "deepseek.r1-v1:0": 128000,
 }
 
 BEDROCK_FUNCTION_CALLING_MODELS = (
+    "amazon.nova-pro-v1:0",
+    "amazon.nova-lite-v1:0",
+    "amazon.nova-micro-v1:0",
     "anthropic.claude-3-sonnet-20240229-v1:0",
     "anthropic.claude-3-haiku-20240307-v1:0",
     "anthropic.claude-3-opus-20240229-v1:0",
     "anthropic.claude-3-5-sonnet-20240620-v1:0",
+    "anthropic.claude-3-5-sonnet-20241022-v2:0",
+    "anthropic.claude-3-5-haiku-20241022-v1:0",
+    "anthropic.claude-3-7-sonnet-20250219-v1:0",
+    "anthropic.claude-opus-4-20250514-v1:0",
+    "anthropic.claude-sonnet-4-20250514-v1:0",
     "cohere.command-r-v1:0",
     "cohere.command-r-plus-v1:0",
     "mistral.mistral-large-2402-v1:0",
+    "mistral.mistral-large-2407-v1:0",
+    "meta.llama3-1-8b-instruct-v1:0",
+    "meta.llama3-1-70b-instruct-v1:0",
+    "meta.llama3-2-1b-instruct-v1:0",
+    "meta.llama3-2-3b-instruct-v1:0",
+    "meta.llama3-2-11b-instruct-v1:0",
+    "meta.llama3-2-90b-instruct-v1:0",
+    "meta.llama3-3-70b-instruct-v1:0",
+)
+
+BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
+    "amazon.nova-pro-v1:0",
+    "amazon.nova-lite-v1:0",
+    "amazon.nova-micro-v1:0",
+    "anthropic.claude-3-sonnet-20240229-v1:0",
+    "anthropic.claude-3-haiku-20240307-v1:0",
+    "anthropic.claude-3-opus-20240229-v1:0",
+    "anthropic.claude-3-5-sonnet-20240620-v1:0",
+    "anthropic.claude-3-5-sonnet-20241022-v2:0",
+    "anthropic.claude-3-5-haiku-20241022-v1:0",
+    "anthropic.claude-3-7-sonnet-20250219-v1:0",
+    "anthropic.claude-opus-4-20250514-v1:0",
+    "anthropic.claude-sonnet-4-20250514-v1:0",
+    "meta.llama3-1-8b-instruct-v1:0",
+    "meta.llama3-1-70b-instruct-v1:0",
+    "meta.llama3-2-1b-instruct-v1:0",
+    "meta.llama3-2-3b-instruct-v1:0",
+    "meta.llama3-2-11b-instruct-v1:0",
+    "meta.llama3-2-90b-instruct-v1:0",
+    "meta.llama3-3-70b-instruct-v1:0",
+    "deepseek.r1-v1:0",
 )
 
 
-def is_bedrock_function_calling_model(model_name: str) -> bool:
-    return model_name in BEDROCK_FUNCTION_CALLING_MODELS
+def get_model_name(model_name: str) -> str:
+    """Extract base model name from region-prefixed model identifier."""
+    # Check for region prefixes (us, eu, apac)
+    REGION_PREFIXES = ["us.", "eu.", "apac."]
 
+    # If no region prefix, return the original model name
+    if not any(prefix in model_name for prefix in REGION_PREFIXES):
+        return model_name
 
-def bedrock_modelname_to_context_size(modelname: str) -> int:
-    if modelname not in BEDROCK_MODELS:
+    # Remove region prefix to get the base model name
+    base_model_name = model_name[model_name.find(".") + 1 :]
+
+    if base_model_name not in BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS:
         raise ValueError(
-            f"Unknown model: {modelname}. Please provide a valid Bedrock model name. "
+            f"Model does not support inference profiles but has an inference profile prefix: {model_name}. "
+            "Please provide a valid Bedrock model name. "
+            "Known models are: " + ", ".join(BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS)
+        )
+
+    return base_model_name
+
+
+def is_bedrock_function_calling_model(model_name: str) -> bool:
+    return get_model_name(model_name) in BEDROCK_FUNCTION_CALLING_MODELS
+
+
+def bedrock_modelname_to_context_size(model_name: str) -> int:
+    translated_model_name = get_model_name(model_name)
+
+    if translated_model_name not in BEDROCK_MODELS:
+        raise ValueError(
+            f"Unknown model: {model_name}. Please provide a valid Bedrock model name. "
             "Known models are: " + ", ".join(BEDROCK_MODELS.keys())
         )
 
-    return BEDROCK_MODELS[modelname]
+    return BEDROCK_MODELS[translated_model_name]
 
 
 def __merge_common_role_msgs(
@@ -85,6 +178,62 @@ def __merge_common_role_msgs(
     return postprocessed_messages
 
 
+def _content_block_to_bedrock_format(
+    block: ContentBlock, role: MessageRole
+) -> Optional[Dict[str, Any]]:
+    """Convert content block to AWS Bedrock Converse API required format."""
+    if isinstance(block, TextBlock):
+        return {
+            "text": block.text,
+        }
+    elif isinstance(block, DocumentBlock):
+        if not block.data:
+            file_buffer = block.resolve_document()
+            with file_buffer as f:
+                data = f.read()
+        else:
+            data = base64.b64decode(block.data)
+        title = block.title
+        # NOTE: At the time of writing, "txt" format works for all file types
+        # The API then infers the format from the file type based on the bytes
+        return {"document": {"format": "txt", "name": title, "source": {"bytes": data}}}
+    elif isinstance(block, ImageBlock):
+        if role != MessageRole.USER:
+            logger.warning(
+                "Bedrock Converse API only supports image blocks for user messages."
+            )
+            return None
+        # NOTE: Bedrock Converse API accepts raw image bytes directly
+        # No need to convert the image to base64 or UTF-8 format
+        # The image will be passed to the API in its raw binary form
+        img_format = __get_img_format_from_image_mimetype(block.image_mimetype)
+        raw_image_bytes = block.resolve_image(as_base64=False).read()
+        return {"image": {"format": img_format, "source": {"bytes": raw_image_bytes}}}
+    elif isinstance(block, AudioBlock):
+        logger.warning("Audio blocks are not supported in Bedrock Converse API.")
+        return None
+    else:
+        logger.warning(f"Unsupported block type: {type(block)}")
+        return None
+
+
+def __get_img_format_from_image_mimetype(image_mimetype: str) -> str:
+    """Get the image format from the image mimetype."""
+    mapping = {
+        "image/jpeg": "jpeg",
+        "image/png": "png",
+        "image/gif": "gif",
+        "image/webp": "webp",
+    }
+    img_format = mapping.get(image_mimetype)
+    if img_format is None:
+        logger.warning(
+            f"Unsupported image mimetype: {image_mimetype}. Bedrock Converse API only supports {', '.join(mapping.keys())}, defaulting to png."
+        )
+        return "png"
+    return img_format
+
+
 def messages_to_converse_messages(
     messages: Sequence[ChatMessage],
 ) -> Tuple[Sequence[Dict[str, Any]], str]:
@@ -98,43 +247,51 @@ def messages_to_converse_messages(
         Tuple of:
         - List of AWS Bedrock Converse messages
         - System prompt
+
     """
     converse_messages = []
     system_prompt = ""
     for message in messages:
         if message.role == MessageRole.SYSTEM:
-            # get the system prompt
             system_prompt += message.content + "\n"
-        elif message.role == MessageRole.FUNCTION or message.role == MessageRole.TOOL:
+        elif message.role in [MessageRole.FUNCTION, MessageRole.TOOL]:
             # convert tool output to the AWS Bedrock Converse format
             content = {
                 "toolResult": {
                     "toolUseId": message.additional_kwargs["tool_call_id"],
                     "content": [
                         {
-                            "text": message.content,
+                            "text": message.content or "",
                         },
                     ],
                 }
             }
-            status = message.additional_kwargs.get("status")
-            if status:
+            if status := message.additional_kwargs.get("status"):
                 content["toolResult"]["status"] = status
             converse_messages.append(
                 {
-                    "role": "user",
+                    "role": MessageRole.USER.value,  # bedrock converse api requires the role to be user
                     "content": [content],
                 }
             )
         else:
-            if message.content:
-                # get the text of the message
+            content = []
+            for block in message.blocks:
+                bedrock_format_block = _content_block_to_bedrock_format(
+                    block=block,
+                    role=message.role,
+                )
+                if bedrock_format_block:
+                    content.append(bedrock_format_block)
+
+            if content:
                 converse_messages.append(
                     {
                         "role": message.role.value,
-                        "content": [{"text": message.content}],
+                        "content": content,
                     }
                 )
+
         # convert tool calls to the AWS Bedrock Converse format
         # NOTE tool calls might show up within any message,
         # e.g. within assistant message or in consecutive tool calls,
@@ -145,7 +302,18 @@ def messages_to_converse_messages(
             assert "toolUseId" in tool_call, f"`toolUseId` not found in {tool_call}"
             assert "input" in tool_call, f"`input` not found in {tool_call}"
             assert "name" in tool_call, f"`name` not found in {tool_call}"
-            content.append({"toolUse": tool_call})
+            tool_input = tool_call["input"] if tool_call["input"] else {}
+            if isinstance(tool_input, str):
+                tool_input = json.loads(tool_input)
+            content.append(
+                {
+                    "toolUse": {
+                        "input": tool_input,
+                        "toolUseId": tool_call["toolUseId"],
+                        "name": tool_call["name"],
+                    }
+                }
+            )
         if len(content) > 0:
             converse_messages.append(
                 {
@@ -166,24 +334,14 @@ def tools_to_converse_tools(tools: List["BaseTool"]) -> Dict[str, Any]:
 
     Returns:
         AWS Bedrock Converse tools
+
     """
     converse_tools = []
     for tool in tools:
-        tool_name, tool_description = getattr(tool, "name", None), getattr(
-            tool, "description", None
-        )
-        if not tool_name or not tool_description:
-            # get the tool's name and description from the metadata if they aren't defined
-            tool_name = getattr(tool.metadata, "name", None)
-            if tool_fn := getattr(tool, "fn", None):
-                # get the tool's description from the function's docstring
-                tool_description = tool_fn.__doc__
-                if not tool_name:
-                    tool_name = tool_fn.__name__
-            else:
-                tool_description = getattr(tool.metadata, "description", None)
-            if not tool_name or not tool_description:
-                raise ValueError(f"Tool {tool} does not have a name or description.")
+        tool_name, tool_description = tool.metadata.name, tool.metadata.description
+        if not tool_name:
+            raise ValueError(f"Tool {tool} does not have a name.")
+
         tool_dict = {
             "name": tool_name,
             "description": tool_description,
@@ -255,6 +413,9 @@ def converse_with_retry(
     max_tokens: int = 1000,
     temperature: float = 0.1,
     stream: bool = False,
+    guardrail_identifier: Optional[str] = None,
+    guardrail_version: Optional[str] = None,
+    trace: Optional[str] = None,
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
@@ -271,8 +432,19 @@ def converse_with_retry(
         converse_kwargs["system"] = [{"text": system_prompt}]
     if tool_config := kwargs.get("tools"):
         converse_kwargs["toolConfig"] = tool_config
+    if guardrail_identifier and guardrail_version:
+        converse_kwargs["guardrailConfig"] = {}
+        converse_kwargs["guardrailConfig"]["guardrailIdentifier"] = guardrail_identifier
+        converse_kwargs["guardrailConfig"]["guardrailVersion"] = guardrail_version
+        if trace:
+            converse_kwargs["guardrailConfig"]["trace"] = trace
     converse_kwargs = join_two_dicts(
-        converse_kwargs, {k: v for k, v in kwargs.items() if k != "tools"}
+        converse_kwargs,
+        {
+            k: v
+            for k, v in kwargs.items()
+            if k not in ["tools", "guardrail_identifier", "guardrail_version", "trace"]
+        },
     )
 
     @retry_decorator
@@ -294,6 +466,10 @@ async def converse_with_retry_async(
     max_tokens: int = 1000,
     temperature: float = 0.1,
     stream: bool = False,
+    guardrail_identifier: Optional[str] = None,
+    guardrail_version: Optional[str] = None,
+    trace: Optional[str] = None,
+    boto_client_kwargs: Optional[Dict[str, Any]] = None,
     **kwargs: Any,
 ) -> Any:
     """Use tenacity to retry the completion call."""
@@ -310,19 +486,53 @@ async def converse_with_retry_async(
         converse_kwargs["system"] = [{"text": system_prompt}]
     if tool_config := kwargs.get("tools"):
         converse_kwargs["toolConfig"] = tool_config
+    if guardrail_identifier and guardrail_version:
+        converse_kwargs["guardrailConfig"] = {}
+        converse_kwargs["guardrailConfig"]["guardrailIdentifier"] = guardrail_identifier
+        converse_kwargs["guardrailConfig"]["guardrailVersion"] = guardrail_version
+        if trace:
+            converse_kwargs["guardrailConfig"]["trace"] = trace
     converse_kwargs = join_two_dicts(
-        converse_kwargs, {k: v for k, v in kwargs.items() if k != "tools"}
+        converse_kwargs,
+        {
+            k: v
+            for k, v in kwargs.items()
+            if k not in ["tools", "guardrail_identifier", "guardrail_version", "trace"]
+        },
     )
+    _boto_client_kwargs = {}
+    if boto_client_kwargs is not None:
+        _boto_client_kwargs |= boto_client_kwargs
+
+    ## NOTE: Returning the generator directly from converse_stream doesn't work
+    # So, we have to use two separate functions for streaming and non-streaming
+    # This differs from the synchronous version, and is a bit of a hack
+    # Further investigation is needed
 
     @retry_decorator
     async def _conversion_with_retry(**kwargs: Any) -> Any:
-        # the async boto3 client needs to be defined inside this async with, otherwise it will raise an error
-        async with session.client("bedrock-runtime", config=config) as client:
-            if stream:
-                return await client.converse_stream(**kwargs)
+        async with session.client(
+            "bedrock-runtime",
+            config=config,
+            **_boto_client_kwargs,
+        ) as client:
             return await client.converse(**kwargs)
 
-    return await _conversion_with_retry(**converse_kwargs)
+    @retry_decorator
+    async def _conversion_stream_with_retry(**kwargs: Any) -> Any:
+        async with session.client(
+            "bedrock-runtime",
+            config=config,
+            **_boto_client_kwargs,
+        ) as client:
+            response = await client.converse_stream(**kwargs)
+            async for event in response["stream"]:
+                yield event
+
+    if stream:
+        return _conversion_stream_with_retry(**converse_kwargs)
+    else:
+        return await _conversion_with_retry(**converse_kwargs)
 
 
 def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, Any]:
@@ -335,7 +545,11 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
 
     Returns:
         Joined dictionary
+
     """
+    # These keys should be replaced rather than concatenated
+    REPLACE_KEYS = {"toolUseId", "name", "input"}
+
     new_dict = dict1.copy()
     for key, value in dict2.items():
         if key not in new_dict:
@@ -343,6 +557,9 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
         else:
             if isinstance(value, dict):
                 new_dict[key] = join_two_dicts(new_dict[key], value)
+            elif key in REPLACE_KEYS:
+                # Replace instead of concatenate for special keys
+                new_dict[key] = value
             else:
                 new_dict[key] += value
     return new_dict

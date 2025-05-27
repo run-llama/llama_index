@@ -17,7 +17,6 @@ Some tasks are listed below, from simple to advanced.
 2. Try adding **prompt functions**, allowing you to dynamically inject few-shot examples or process the injected inputs.
 
 - [Advanced Prompts](../../examples/prompts/advanced_prompts.ipynb)
-- [RAG Prompts](../../examples/prompts/prompts_rag.ipynb)
 
 ## Embeddings
 

@@ -35,13 +35,15 @@ class Note(BaseModel):
 
 
 class KibelaReader(BaseReader):
-    """Kibela reader.
+    """
+    Kibela reader.
 
     Reads pages from Kibela.
 
     Args:
         team (str): Kibela team.
         token (str): Kibela API token.
+
     """
 
     def __init__(self, team: str, token: str) -> None:
@@ -61,7 +63,8 @@ class KibelaReader(BaseReader):
         return self.client.execute(q, variable_values=params)
 
     def load_data(self) -> List[Document]:
-        """Load data from Kibela.
+        """
+        Load data from Kibela.
 
         Returns:
             List[Document]: List of documents.

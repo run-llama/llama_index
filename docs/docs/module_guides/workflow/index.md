@@ -110,11 +110,17 @@ class JokeFlow(Workflow):
     ...
 ```
 
-Here, we come to the entry-point of our workflow. While events are use-defined, there are two special-case events, the `StartEvent` and the `StopEvent`. Here, the `StartEvent` signifies where to send the initial workflow input.
+Here, we come to the entry-point of our workflow. While most events are use-defined, there are two special-case events,
+the `StartEvent` and the `StopEvent` that the framework provides out of the box. Here, the `StartEvent` signifies where
+to send the initial workflow input.
 
-The `StartEvent` is a bit of a special object since it can hold arbitrary attributes. Here, we accessed the topic with `ev.topic`, which would raise an error if it wasn't there. You could also do `ev.get("topic")` to handle the case where the attribute might not be there without raising an error.
+The `StartEvent` is a bit of a special object since it can hold arbitrary attributes. Here, we accessed the topic with
+`ev.topic`, which would raise an error if it wasn't there. You could also do `ev.get("topic")` to handle the case where
+the attribute might not be there without raising an error.
 
-At this point, you may have noticed that we haven't explicitly told the workflow what events are handled by which steps. Instead, the `@step` decorator is used to infer the input and output types of each step. Furthermore, these inferred input and output types are also used to verify for you that the workflow is valid before running!
+At this point, you may have noticed that we haven't explicitly told the workflow what events are handled by which steps.
+Instead, the `@step` decorator is used to infer the input and output types of each step. Furthermore, these inferred
+input and output types are also used to verify for you that the workflow is valid before running!
 
 ### Workflow Exit Points
 
@@ -133,7 +139,9 @@ class JokeFlow(Workflow):
     ...
 ```
 
-Here, we have our second, and last step, in the workflow. We know its the last step because the special `StopEvent` is returned. When the workflow encounters a returned `StopEvent`, it immediately stops the workflow and returns whatever the result was.
+Here, we have our second, and last step, in the workflow. We know its the last step because the special `StopEvent` is
+returned. When the workflow encounters a returned `StopEvent`, it immediately stops the workflow and returns whatever
+we passed in the `result` parameter.
 
 In this case, the result is a string, but it could be a dictionary, list, or any other object.
 
@@ -145,15 +153,133 @@ result = await w.run(topic="pirates")
 print(str(result))
 ```
 
-Lastly, we create and run the workflow. There are some settings like timeouts (in seconds) and verbosity to help with debugging.
+Lastly, we create and run the workflow. There are some settings like timeouts (in seconds) and verbosity to help with
+debugging.
 
-The `.run()` method is async, so we use await here to wait for the result.
+The `.run()` method is async, so we use await here to wait for the result. The keyword arguments passed to `run()` will
+become fields of the special `StartEvent` that will be automatically emitted and start the workflow. As we have seen,
+in this case `topic` will be accessed from the step with `ev.topic`.
+
+## Customizing entry and exit points
+
+Most of the times, relying on the default entry and exit points we have seen in the [Getting Started] section is enough.
+However, workflows support custom events where you normally would expect `StartEvent` and `StopEvent`, let's see how.
+
+### Using a custom `StartEvent`
+
+When we call the `run()` method on a workflow instance, the keyword arguments passed become fields of a `StartEvent`
+instance that's automatically created under the hood. In case we want to pass complex data to start a workflow, this
+approach might become cumbersome, and it's when we can introduce a custom start event.
+
+To be able to use a custom start event, the first step is creating a custom class that inherits from `StartEvent`:
+
+```python
+from pathlib import Path
+
+from llama_index.core.workflow import StartEvent
+from llama_index.indices.managed.llama_cloud import LlamaCloudIndex
+from llama_index.llms.openai import OpenAI
+
+
+class MyCustomStartEvent(StartEvent):
+    a_string_field: str
+    a_path_to_somewhere: Path
+    an_index: LlamaCloudIndex
+    an_llm: OpenAI
+```
+
+All we have to do now is using `MyCustomStartEvent` as event type in the steps that act as entry points.
+Take this artificially complex step for example:
+
+```python
+class JokeFlow(Workflow):
+    ...
+
+    @step
+    async def generate_joke_from_index(
+        self, ev: MyCustomStartEvent
+    ) -> JokeEvent:
+        # Build a query engine using the index and the llm from the start event
+        query_engine = ev.an_index.as_query_engine(llm=ev.an_llm)
+        topic = query_engine.query(
+            f"What is the closest topic to {a_string_field}"
+        )
+        # Use the llm attached to the start event to instruct the model
+        prompt = f"Write your best joke about {topic}."
+        response = await ev.an_llm.acomplete(prompt)
+        # Dump the response on disk using the Path object from the event
+        ev.a_path_to_somewhere.write_text(str(response))
+        # Finally, pass the JokeEvent along
+        return JokeEvent(joke=str(response))
+```
+
+We could still pass the fields of `MyCustomStartEvent` as keyword arguments to the `run` method of our workflow, but
+that would be, again, cumbersome. A better approach is to use pass the event instance through the `start_event`
+keyword argument like this:
+
+```python
+custom_start_event = MyCustomStartEvent(...)
+w = JokeFlow(timeout=60, verbose=False)
+result = await w.run(start_event=custom_start_event)
+print(str(result))
+```
+
+This approach makes the code cleaner and more explicit and allows autocompletion in IDEs to work properly.
+
+### Using a custom `StopEvent`
+
+Similarly to `StartEvent`, relying on the built-in `StopEvent` works most of the times but not always. In fact, when we
+use `StopEvent`, the result of a workflow must be set to the `result` field of the event instance. Since a result can
+be any Python object, the `result` field of `StopEvent` is typed as `Any`, losing any advantage from the typing system.
+Additionally, returning more than one object is cumbersome: we usually stuff a bunch of unrelated objects into a
+dictionary that we then assign to `StopEvent.result`.
+
+First step to support custom stop events, we need to create a subclass of `StopEvent`:
+
+```python
+from llama_index.core.workflow import StopEvent
+
+
+class MyStopEvent(StopEvent):
+    critique: CompletionResponse
+```
+
+We can now replace `StopEvent` with `MyStopEvent` in our workflow:
+
+```python
+class JokeFlow(Workflow):
+    ...
+
+    @step
+    async def critique_joke(self, ev: JokeEvent) -> MyStopEvent:
+        joke = ev.joke
+
+        prompt = f"Give a thorough analysis and critique of the following joke: {joke}"
+        response = await self.llm.acomplete(prompt)
+        return MyStopEvent(response)
+
+    ...
+```
+
+The one important thing we need to remember when using a custom stop events, is that the result of a workflow run
+will be the instance of the event:
+
+```python
+w = JokeFlow(timeout=60, verbose=False)
+# Warning! `result` now contains an instance of MyStopEvent!
+result = await w.run(topic="pirates")
+# We can now access the event fields as any normal Event
+print(result.critique.text)
+```
+
+This approach takes advantage of the Python typing system, is friendly to autocompletion in IDEs and allows
+introspection from outer applications that now know exactly what a workflow run will return.
 
 ## Drawing the Workflow
 
 Workflows can be visualized, using the power of type annotations in your step definitions. You can either draw all possible paths through the workflow, or the most recent execution, to help with debugging.
 
-Firs install:
+First install:
 
 ```bash
 pip install llama-index-utils-workflow
@@ -176,6 +302,7 @@ await w.run(topic="Pirates")
 draw_most_recent_execution(w, filename="joke_flow_recent.html")
 ```
 
+<div id="working-with-global-context-state"></div>
 ## Working with Global Context/State
 
 Optionally, you can choose to use global context between steps. For example, maybe multiple steps access the original `query` input from the user. You can store this in global context so that every step has access.
@@ -273,7 +400,7 @@ class MyWorkflow(Workflow):
         self, ctx: Context, ev: GatherEvent | MyEventResult
     ) -> StopEvent | None:
         # wait for events to finish
-        events = ctx.collect_events([MyEventResult, MyEventResult])
+        events = ctx.collect_events(ev, [MyEventResult, MyEventResult])
         if not events:
             return None
 
@@ -282,7 +409,21 @@ class MyWorkflow(Workflow):
 
 ## Streaming Events
 
-You can also iterate over events as they come in. This is useful for streaming purposes, showing progress, or for debugging.
+You can also iterate over events as they come in. This is useful for streaming purposes, showing progress, or for debugging. The handler object will emit events that are explicitly written to the stream using `ctx.write_event_to_stream()`:
+
+```python
+class ProgressEvent(Event):
+    msg: str
+
+
+class MyWorkflow(Workflow):
+    @step
+    async def step_one(self, ctx: Context, ev: StartEvent) -> FirstEvent:
+        ctx.write_event_to_stream(ProgressEvent(msg="Step one is happening"))
+        return FirstEvent(first_output="First step complete.")
+```
+
+You can then pick up the events like this:
 
 ```python
 w = MyWorkflow(...)
@@ -323,7 +464,7 @@ class MyWorkflow(Workflow):
         return StopEvent(result=result)
 ```
 
-You can see the [API docs](../../api_reference/workflow/retry_policy/) for a detailed description of the policies
+You can see the [API docs](../../api_reference/workflow/retry_policy.md) for a detailed description of the policies
 available in the framework. If you can't find a policy that's suitable for your use case, you can easily write a
 custom one. The only requirement for custom policies is to write a Python class that respects the `RetryPolicy`
 protocol. In other words, your custom policy class must have a method with the following signature:
@@ -352,23 +493,82 @@ class RetryOnFridayPolicy:
         return None
 ```
 
+## Human-in-the-loop
+
+Since workflows are so flexible, there are many possible ways to implement human-in-the-loop patterns.
+
+The easiest way to implement a human-in-the-loop is to use the `InputRequiredEvent` and `HumanResponseEvent` events during event streaming.
+
+```python
+from llama_index.core.workflow import InputRequiredEvent, HumanResponseEvent
+
+
+class HumanInTheLoopWorkflow(Workflow):
+    @step
+    async def step1(self, ev: StartEvent) -> InputRequiredEvent:
+        return InputRequiredEvent(prefix="Enter a number: ")
+
+    @step
+    async def step2(self, ev: HumanResponseEvent) -> StopEvent:
+        return StopEvent(result=ev.response)
+
+
+# workflow should work with streaming
+workflow = HumanInTheLoopWorkflow()
+
+handler = workflow.run()
+async for event in handler.stream_events():
+    if isinstance(event, InputRequiredEvent):
+        # here, we can handle human input however you want
+        # this means using input(), websockets, accessing async state, etc.
+        # here, we just use input()
+        response = input(event.prefix)
+        handler.ctx.send_event(HumanResponseEvent(response=response))
+
+final_result = await handler
+```
+
+Here, the workflow will wait until the `HumanResponseEvent` is emitted.
+
+Also note that you can break out of the loop, and resume it later. This is useful if you want to pause the workflow to wait for a human response, but continue the workflow later.
+
+```python
+handler = workflow.run()
+async for event in handler.stream_events():
+    if isinstance(event, InputRequiredEvent):
+        break
+
+# now we handle the human response
+response = input(event.prefix)
+handler.ctx.send_event(HumanResponseEvent(response=response))
+
+# now we resume the workflow streaming
+async for event in handler.stream_events():
+    continue
+
+final_result = await handler
+```
+
 ## Stepwise Execution
 
 Workflows have built-in utilities for stepwise execution, allowing you to control execution and debug state as things progress.
 
 ```python
-w = JokeFlow(...)
+# Create a workflow, same as usual
+workflow = JokeFlow()
+# Get the handler. Passing `stepwise=True` will block execution, waiting for manual intervention
+handler = workflow.run(stepwise=True)
+# Each time we call `run_step`, the workflow will advance and return all the events
+# that were produced in the last step. This events need to be manually propagated
+# for the workflow to keep going (we assign them to `produced_events` with the := operator).
+while produced_events := await handler.run_step():
+    # If we're here, it means there's at least an event we need to propagate,
+    # let's do it with `send_event`
+    for ev in produced_events:
+        handler.ctx.send_event(ev)
 
-# Kick off the workflow
-handler = w.run(topic="Pirates")
-
-# Iterate until done
-async for _ in handler:
-    # inspect context
-    # val = await handler.ctx.get("key")
-    continue
-
-# Get the final result
+# If we're here, it means the workflow execution completed, and
+# we can now access the final result.
 result = await handler
 ```
 
@@ -433,28 +633,77 @@ handler = w.run(ctx=handler.ctx)
 result = await handler
 ```
 
+## Checkpointing Workflows
+
+Workflow runs can also be made to create and store checkpoints upon every step completion via the `WorfklowCheckpointer` object. These checkpoints can be then be used as the starting points for future runs, which can be a helpful feature during the development (and debugging) of your Workflow.
+
+```python
+from llama_index.core.workflow import WorkflowCheckpointer
+
+w = JokeFlow(...)
+w_cptr = WorkflowCheckpointer(workflow=w)
+
+# to checkpoint a run, use the `run` method from w_cptr
+handler = w_cptr.run(topic="Pirates")
+await handler
+
+# to view the stored checkpoints of this run
+w_cptr.checkpoints[handler.run_id]
+
+# to run from one of the checkpoints, use `run_from` method
+ckpt = w_cptr.checkpoints[handler.run_id][0]
+handler = w_cptr.run_from(topic="Ships", checkpoint=ckpt)
+await handler
+```
+
 ## Deploying a Workflow
 
-You can deploy a workflow as a multi-agent service with [llama_deploy](../../module_guides/workflow/deployment.md) ([repo](https://github.com/run-llama/llama_deploy)). Each agent service is orchestrated via a control plane and communicates via a message queue. Deploy locally or on Kubernetes.
+You can deploy a workflow as a multi-agent service with [llama_deploy](../../module_guides/llama_deploy) ([repo](https://github.com/run-llama/llama_deploy)). Each agent service is orchestrated via a control plane and communicates via a message queue. Deploy locally or on Kubernetes.
 
 ## Examples
 
-You can find many useful examples of using workflows in the notebooks below:
+To help you become more familiar with the workflow concept and its features, LlamaIndex documentation offers example
+notebooks that you can run for hands-on learning:
+
+- [Common Workflow Patterns](../../examples/workflow/workflows_cookbook.ipynb) walks you through common usage patterns
+like looping and state management using simple workflows. It's usually a great place to start.
+- [RAG + Reranking](../../examples/workflow/rag.ipynb) shows how to implement a real-world use case with a fairly
+simple workflow that performs both ingestion and querying.
+- [Citation Query Engine](../../examples/workflow/citation_query_engine.ipynb) similar to RAG + Reranking, the
+notebook focuses on how to implement intermediate steps in between retrieval and generation. A good example of how to
+use the [`Context`](#working-with-global-context-state) object in a workflow.
+- [Corrective RAG](../../examples/workflow/corrective_rag_pack.ipynb) adds some more complexity on top of a RAG
+workflow, showcasing how to query a web search engine after an evaluation step.
+- [Utilizing Concurrency](../../examples/workflow/parallel_execution.ipynb) explains how to manage the parallel
+execution of steps in a workflow, something that's important to know as your workflows grow in complexity.
+
+RAG applications are easy to understand and offer a great opportunity to learn the basics of workflows. However, more complex agentic scenarios involving tool calling, memory, and routing are where workflows excel.
+
+The examples below highlight some of these use-cases.
+
+- [ReAct Agent](../../examples/workflow/react_agent.ipynb) is obviously the perfect example to show how to implement
+tools in a workflow.
+- [Function Calling Agent](../../examples/workflow/function_calling_agent.ipynb) is a great example of how to use the
+LlamaIndex framework primitives in a workflow, keeping it small and tidy even in complex scenarios like function
+calling.
+- [CodeAct Agent](../../examples/agent/from_scratch_code_act_agent.ipynb) is a great example of how to create a CodeAct Agent from scratch.
+- [Human In The Loop: Story Crafting](../../examples/workflow/human_in_the_loop_story_crafting.ipynb) is a powerful
+example showing how workflow runs can be interactive and stateful. In this case, to collect input from a human.
+- [Reliable Structured Generation](../../examples/workflow/reflection.ipynb) shows how to implement loops in a
+workflow, in this case to improve structured output through reflection.
+- [Query Planning with Workflows](../../examples/workflow/planning_workflow.ipynb) is an example of a workflow
+that plans a query by breaking it down into smaller items, and executing those smaller items. It highlights how
+to stream events from a workflow, execute steps in parallel, and looping until a condition is met.
+- [Checkpointing Workflows](../../examples/workflow/checkpointing_workflows.ipynb) is a more exhaustive demonstration of how to make full use of `WorkflowCheckpointer` to checkpoint Workflow runs.
+
+Last but not least, a few more advanced use cases that demonstrate how workflows can be extremely handy if you need
+to quickly implement prototypes, for example from literature:
 
 - [Advanced Text-to-SQL](../../examples/workflow/advanced_text_to_sql.ipynb)
-- [Citation Query Engine](../../examples/workflow/citation_query_engine.ipynb)
-- [Common Workflow Patterns](../../examples/workflow/workflows_cookbook.ipynb)
-- [Corrective RAG](../../examples/workflow/corrective_rag_pack.ipynb)
-- [Function Calling Agent](../../examples/workflow/function_calling_agent.ipynb)
-- [Human In The Loop: Story Crafting](../../examples/workflow/human_in_the_loop_story_crafting.ipynb)
 - [JSON Query Engine](../../examples/workflow/JSONalyze_query_engine.ipynb)
 - [Long RAG](../../examples/workflow/long_rag_pack.ipynb)
 - [Multi-Step Query Engine](../../examples/workflow/multi_step_query_engine.ipynb)
 - [Multi-Strategy Workflow](../../examples/workflow/multi_strategy_workflow.ipynb)
-- [RAG + Reranking](../../examples/workflow/rag.ipynb)
-- [ReAct Agent](../../examples/workflow/react_agent.ipynb)
-- [Reliable Structured Generation](../../examples/workflow/reflection.ipynb)
 - [Router Query Engine](../../examples/workflow/router_query_engine.ipynb)
 - [Self Discover Workflow](../../examples/workflow/self_discover_workflow.ipynb)
 - [Sub-Question Query Engine](../../examples/workflow/sub_question_query_engine.ipynb)
-- [Utilizing Concurrency](../../examples/workflow/parallel_execution.ipynb)

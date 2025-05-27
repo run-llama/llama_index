@@ -1,8 +1,9 @@
-import pytest
+from typing import Any, cast
 
-from llama_index.core.workflow.events import Event
+import pytest
 from llama_index.core.bridge.pydantic import PrivateAttr
-from typing import Any
+from llama_index.core.workflow.context_serializers import JsonSerializer
+from llama_index.core.workflow.events import Event
 
 
 class _TestEvent(Event):
@@ -12,7 +13,8 @@ class _TestEvent(Event):
 
 
 class _TestEvent2(Event):
-    """Custom Test Event.
+    """
+    Custom Test Event.
 
     Private Attrs:
         _private_param: doesn't get modified during construction
@@ -87,3 +89,22 @@ def test_event_dict_api():
     assert v == "bar"
     assert next(iter(ev)) == "a_new_key"
     assert ev.dict() == {"a_new_key": "bar"}
+
+
+def test_event_serialization():
+    ev = _TestEvent(param="foo", not_a_field="bar")  # type: ignore
+    serializer = JsonSerializer()
+    serialized_ev = serializer.serialize(ev)
+    deseriazlied_ev = serializer.deserialize(serialized_ev)
+
+    assert type(deseriazlied_ev).__name__ == type(ev).__name__
+    deseriazlied_ev = cast(
+        _TestEvent,
+        deseriazlied_ev,
+    )
+    assert ev.param == deseriazlied_ev.param
+    assert ev._data == deseriazlied_ev._data
+
+
+def test_bool():
+    assert bool(_TestEvent(param="foo")) is True

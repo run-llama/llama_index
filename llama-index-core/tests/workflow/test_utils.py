@@ -1,5 +1,5 @@
 import inspect
-from typing import Union, Any, Optional, List
+from typing import Union, Any, Optional, List, get_type_hints
 
 import pytest
 
@@ -160,7 +160,8 @@ def test_get_param_types():
         pass
 
     sig = inspect.signature(f)
-    res = _get_param_types(sig.parameters["foo"])
+    type_hints = get_type_hints(f)
+    res = _get_param_types(sig.parameters["foo"], type_hints)
     assert len(res) == 1
     assert res[0] is str
 
@@ -170,7 +171,8 @@ def test_get_param_types_no_annotations():
         pass
 
     sig = inspect.signature(f)
-    res = _get_param_types(sig.parameters["foo"])
+    type_hints = get_type_hints(f)
+    res = _get_param_types(sig.parameters["foo"], type_hints)
     assert len(res) == 1
     assert res[0] is Any
 
@@ -180,7 +182,8 @@ def test_get_param_types_union():
         pass
 
     sig = inspect.signature(f)
-    res = _get_param_types(sig.parameters["foo"])
+    type_hints = get_type_hints(f)
+    res = _get_param_types(sig.parameters["foo"], type_hints)
     assert len(res) == 2
     assert res == [str, int]
 

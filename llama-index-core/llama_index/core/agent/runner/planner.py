@@ -106,7 +106,7 @@ class PlannerAgentState(AgentState):
 
 
 DEFAULT_INITIAL_PLAN_PROMPT = """\
-Think step-by-step. Given a task and a set of tools, create a comprehesive, end-to-end plan to accomplish the task.
+Think step-by-step. Given a task and a set of tools, create a comprehensive, end-to-end plan to accomplish the task.
 Keep in mind not every task needs to be decomposed into multiple sub-tasks if it is simple enough.
 The plan should end with a sub-task that can achieve the overall task.
 
@@ -136,7 +136,8 @@ Overall Task: {task}
 
 
 class StructuredPlannerAgent(BasePlanningAgentRunner):
-    """Structured Planner Agent runner.
+    """
+    Structured Planner Agent runner.
 
     Top-level agent orchestrator that can create tasks, run each step in a task,
     or run a task e2e. Stores state and keeps track of tasks.
@@ -324,7 +325,7 @@ class StructuredPlannerAgent(BasePlanningAgentRunner):
         # gather completed sub-tasks and response pairs
         completed_outputs_str = ""
         for sub_task, task_output in completed_sub_task_pairs:
-            task_str = f"{sub_task.name}:\n" f"\t{task_output.output!s}\n"
+            task_str = f"{sub_task.name}:\n\t{task_output.output!s}\n"
             completed_outputs_str += task_str
 
         # get a string for the remaining sub-tasks

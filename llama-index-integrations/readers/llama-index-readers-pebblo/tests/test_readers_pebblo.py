@@ -1,8 +1,6 @@
 import pytest
 import os
 
-import langchain  # noqa
-import langchain_community  # noqa
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.pebblo import PebbloSafeReader
 from pathlib import Path

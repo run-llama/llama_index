@@ -57,6 +57,9 @@ def test_simple_insert(
     # insert into index
     index.insert(Document(text="This is a test v3."))
 
+    # insert empty document to test empty document handling
+    index.insert(Document(text=""))
+
     # check contenst of nodes
     actual_node_tups = [
         ("Hello world.", [1, 0, 0, 0, 0]),

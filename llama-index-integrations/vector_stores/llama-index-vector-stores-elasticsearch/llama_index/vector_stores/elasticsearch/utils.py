@@ -1,6 +1,12 @@
 from typing import Any, Dict, Optional
 
 from elasticsearch import AsyncElasticsearch, Elasticsearch
+from logging import getLogger
+
+from llama_index.core.schema import BaseNode, TextNode
+from llama_index.core.vector_stores.utils import metadata_dict_to_node
+
+logger = getLogger(__name__)
 
 
 def get_user_agent() -> str:
@@ -47,3 +53,48 @@ def get_elasticsearch_client(
     sync_es_client.info()  # use sync client so don't have to 'await' to just get info
 
     return async_es_client
+
+
+def convert_es_hit_to_node(
+    hit: Dict[str, Any], text_field: str = "content"
+) -> BaseNode:
+    """
+    Convert an Elasticsearch search hit to a BaseNode.
+
+    Args:
+        hit: The Elasticsearch search hit
+        text_field: The field name that contains the text content
+
+    Returns:
+        BaseNode: The converted node
+
+    """
+    source = hit.get("_source", {})
+    metadata = source.get("metadata", {})
+    text = source.get(text_field, None)
+    node_id = hit.get("_id")
+
+    try:
+        node = metadata_dict_to_node(metadata)
+        node.text = text
+    except Exception:
+        # Legacy support for old metadata format
+        logger.warning(f"Could not parse metadata from hit {source.get('metadata')}")
+        node_info = source.get("node_info")
+        relationships = source.get("relationships", {})
+        start_char_idx = None
+        end_char_idx = None
+        if isinstance(node_info, dict):
+            start_char_idx = node_info.get("start", None)
+            end_char_idx = node_info.get("end", None)
+
+        node = TextNode(
+            text=text,
+            metadata=metadata,
+            id_=node_id,
+            start_char_idx=start_char_idx,
+            end_char_idx=end_char_idx,
+            relationships=relationships,
+        )
+
+    return node

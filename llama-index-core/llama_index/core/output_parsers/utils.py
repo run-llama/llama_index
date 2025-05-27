@@ -19,6 +19,7 @@ def _marshal_llm_to_json(output: str) -> str:
 
     Returns:
         A string containing a valid JSON object or array.
+
     """
     output = output.strip()
 
@@ -64,6 +65,11 @@ def parse_json_markdown(text: str) -> Any:
 def parse_code_markdown(text: str, only_last: bool) -> List[str]:
     # Regular expression pattern to match code within triple-backticks
     pattern = r"```(.*?)```"
+
+    # Regular expression pattern to match code within triple backticks with
+    # a Python marker. Like: ```python df.columns```
+    python_str_pattern = re.compile(r"^```python", re.IGNORECASE)
+    text = python_str_pattern.sub("```", text)
 
     # Find all matches of the pattern in the text
     matches = re.findall(pattern, text, re.DOTALL)

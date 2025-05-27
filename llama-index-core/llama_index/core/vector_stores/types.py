@@ -75,6 +75,9 @@ class FilterOperator(str, Enum):
     ANY = "any"  # Contains any (array of strings)
     ALL = "all"  # Contains all (array of strings)
     TEXT_MATCH = "text_match"  # full text match (allows you to search for a specific substring, token or phrase within the text field)
+    TEXT_MATCH_INSENSITIVE = (
+        "text_match_insensitive"  # full text match (case insensitive)
+    )
     CONTAINS = "contains"  # metadata array contains value (string or number)
     IS_EMPTY = "is_empty"  # the field is not exist or empty (null or empty array)
 
@@ -85,10 +88,12 @@ class FilterCondition(str, Enum):
     # TODO add more conditions
     AND = "and"
     OR = "or"
+    NOT = "not"  # negates the filter condition
 
 
 class MetadataFilter(BaseModel):
-    r"""Comprehensive metadata filter for vector stores to support more operators.
+    r"""
+    Comprehensive metadata filter for vector stores to support more operators.
 
     Value uses Strict* types, as int, float and str are compatible types and were all
     converted to string before.
@@ -114,7 +119,8 @@ class MetadataFilter(BaseModel):
         cls,
         filter_dict: Dict,
     ) -> "MetadataFilter":
-        """Create MetadataFilter from dictionary.
+        """
+        Create MetadataFilter from dictionary.
 
         Args:
             filter_dict: Dict with key, value and operator.
@@ -160,7 +166,8 @@ class MetadataFilters(BaseModel):
         filter_dicts: List[Dict],
         condition: Optional[FilterCondition] = FilterCondition.AND,
     ) -> "MetadataFilters":
-        """Create MetadataFilters from dicts.
+        """
+        Create MetadataFilters from dicts.
 
         This takes in a list of individual MetadataFilter objects, along
         with the condition.
@@ -194,7 +201,8 @@ class MetadataFilters(BaseModel):
 
 
 class VectorStoreQuerySpec(BaseModel):
-    """Schema for a structured request for vector store
+    """
+    Schema for a structured request for vector store
     (i.e. to be converted to a VectorStoreQuery).
 
     Currently only used by VectorIndexAutoRetriever.
@@ -206,7 +214,8 @@ class VectorStoreQuerySpec(BaseModel):
 
 
 class MetadataInfo(BaseModel):
-    """Information about a metadata filter supported by a vector store.
+    """
+    Information about a metadata filter supported by a vector store.
 
     Currently only used by VectorIndexAutoRetriever.
     """
@@ -217,7 +226,8 @@ class MetadataInfo(BaseModel):
 
 
 class VectorStoreInfo(BaseModel):
-    """Information about a vector store (content and supported metadata filters).
+    """
+    Information about a vector store (content and supported metadata filters).
 
     Currently only used by VectorIndexAutoRetriever.
     """

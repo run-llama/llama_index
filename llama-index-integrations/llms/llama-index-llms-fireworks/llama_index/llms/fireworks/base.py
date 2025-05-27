@@ -16,7 +16,8 @@ DEFAULT_MODEL = "accounts/fireworks/models/llama-v3p1-8b-instruct"
 
 
 class Fireworks(OpenAI):
-    """Fireworks LLM.
+    """
+    Fireworks LLM.
 
     Examples:
         `pip install llama-index-llms-fireworks`
@@ -34,6 +35,7 @@ class Fireworks(OpenAI):
         resp = llm.complete("Hello world!")
         print(resp)
         ```
+
     """
 
     def __init__(

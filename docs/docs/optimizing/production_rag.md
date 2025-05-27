@@ -119,7 +119,6 @@ You can use these modules to do joint question-answering and summarization, or e
 - [Recursive Retriever Agents](../examples/query_engine/recursive_retriever_agents.ipynb)
 - [Router Query Engine](../examples/query_engine/RouterQueryEngine.ipynb)
 - [OpenAI Agent Cookbook](../examples/agent/openai_agent_query_cookbook.ipynb)
-- [OpenAIAgent Query Planning](../examples/agent/openai_agent_query_plan.ipynb)
 
 ## Optimize Context Embeddings
 

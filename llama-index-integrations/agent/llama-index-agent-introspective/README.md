@@ -137,7 +137,3 @@ introspective_worker_agent = IntrospectiveAgentWorker.from_defaults(
 introspective_agent = introspective_worker_agent.as_agent(verbose=verbose)
 introspective_agent.chat("...")
 ```
-
-### Examples
-
-- [Toxicity Reduction Example](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/agent/introspective_agent_toxicity_reduction.ipynb) (WARNING: this notebook contains content that may be considered offensive or sensitive to some.)

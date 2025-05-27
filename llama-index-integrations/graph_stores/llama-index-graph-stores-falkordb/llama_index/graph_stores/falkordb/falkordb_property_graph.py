@@ -23,11 +23,14 @@ def remove_empty_values(input_dict):
     """
     Remove entries with empty values from the dictionary.
 
-    Parameters:
+    Parameters
+    ----------
     input_dict (dict): The dictionary from which empty values need to be removed.
 
-    Returns:
+    Returns
+    -------
     dict: A new dictionary with all empty values removed.
+
     """
     # Create a new dictionary excluding empty values
     return {key: value for key, value in input_dict.items() if value}
@@ -112,6 +115,7 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
             property_graph_store=graph_store,
         )
         ```
+
     """
 
     supports_structured_queries: bool = True
@@ -127,7 +131,8 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
         **falkordb_kwargs: Any,
     ) -> None:
         self.sanitize_query_output = sanitize_query_output
-        self._driver = FalkorDB.from_url(url).select_graph(database)
+        self._driver = FalkorDB.from_url(url)
+        self._graph = self._driver.select_graph(database)
         self._database = database
         self.structured_schema = {}
         if refresh_schema:
@@ -135,7 +140,7 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
 
     @property
     def client(self):
-        return self._driver
+        return self._graph
 
     def refresh_schema(self) -> None:
         """Refresh the schema."""
@@ -168,7 +173,7 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
         try:
             constraint = self.structured_query("CALL db.constraints()")
             index = self.structured_query(
-                "CALL db.indexes() YIELD label, properties, entitytype " "RETURN *"
+                "CALL db.indexes() YIELD label, properties, entitytype RETURN *"
             )
         except (
             redis.exceptions.ResponseError
@@ -349,7 +354,7 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
         WITH e
         CALL {{
             WITH e
-            MATCH (e)-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]->(t:__Entity__)
+            MATCH (e)-[r{":`" + "`|`".join(relation_names) + "`" if relation_names else ""}]->(t:__Entity__)
             RETURN e.name AS source_id, [l in labels(e) WHERE l <> '__Entity__' | l][0] AS source_type,
                    e{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
@@ -357,7 +362,7 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
                    t{{.* , embedding: Null, name: Null}} AS target_properties
             UNION ALL
             WITH e
-            MATCH (e)<-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]-(t:__Entity__)
+            MATCH (e)<-[r{":`" + "`|`".join(relation_names) + "`" if relation_names else ""}]-(t:__Entity__)
             RETURN t.name AS source_id, [l in labels(t) WHERE l <> '__Entity__' | l][0] AS source_type,
                    e{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
@@ -459,7 +464,7 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
     ) -> Any:
         param_map = param_map or {}
 
-        result = self._driver.query(query, param_map)
+        result = self._graph.query(query, param_map)
         full_result = [
             {h[1]: d[i] for i, h in enumerate(result.header)} for d in result.result_set
         ]
@@ -590,6 +595,24 @@ class FalkorDBPropertyGraphStore(PropertyGraphStore):
                 "\n".join(formatted_rels),
             ]
         )
+
+    def switch_graph(self, graph_name: str) -> None:
+        """
+        Switch to the given graph name (`graph_name`).
+
+        This method allows users to change the active graph within the same
+        database connection.
+
+        Args:
+            graph_name (str): The name of the graph to switch to.
+
+        """
+        self._graph = self._driver.select_graph(graph_name)
+
+        try:
+            self.refresh_schema()
+        except Exception as e:
+            raise ValueError(f"Could not refresh schema. Error: {e}")
 
 
 FalkorDBPGStore = FalkorDBPropertyGraphStore

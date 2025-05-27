@@ -1,4 +1,5 @@
-"""Get evaluation utils.
+"""
+Get evaluation utils.
 
 NOTE: These are beta functions, might change.
 
@@ -36,7 +37,8 @@ def get_responses(
     *args: Any,
     **kwargs: Any,
 ) -> List[str]:
-    """Get responses.
+    """
+    Get responses.
 
     Sync version of aget_responses.
 
@@ -49,7 +51,8 @@ def get_results_df(
     names: List[str],
     metric_keys: List[str],
 ) -> Any:
-    """Get results df.
+    """
+    Get results df.
 
     Args:
         eval_results_list (List[Dict[str, List[EvaluationResult]]]):
@@ -175,7 +178,8 @@ def upload_eval_dataset(
 def upload_eval_results(
     project_name: str, app_name: str, results: Dict[str, List[EvaluationResult]]
 ) -> None:
-    """Upload the evaluation results to LlamaCloud.
+    """
+    Upload the evaluation results to LlamaCloud.
 
     Args:
         project_name (str): The name of the project.
@@ -194,6 +198,7 @@ def upload_eval_results(
             results={"evaluator_name": [result]}
         )
         ```
+
     """
     from llama_cloud import ProjectCreate
 
@@ -223,6 +228,7 @@ def default_parser(eval_response: str) -> Tuple[Optional[float], Optional[str]]:
 
     Returns:
         Tuple[float, str]: A tuple containing the score as a float and the reasoning as a string.
+
     """
     if not eval_response.strip():
         # Return None or default values if the response is empty

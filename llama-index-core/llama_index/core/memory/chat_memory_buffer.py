@@ -16,7 +16,11 @@ DEFAULT_TOKEN_LIMIT = 3000
 
 
 class ChatMemoryBuffer(BaseChatStoreMemory):
-    """Simple buffer for storing chat history."""
+    """
+    Deprecated: Please use `llama_index.core.memory.Memory` instead.
+
+    Simple buffer for storing chat history.
+    """
 
     token_limit: int
     tokenizer_fn: Callable[[str], List] = Field(
@@ -38,7 +42,7 @@ class ChatMemoryBuffer(BaseChatStoreMemory):
             raise ValueError("Token limit must be set and greater than 0.")
 
         # Validate tokenizer -- this avoids errors when loading from json/dict
-        tokenizer_fn = values.get("tokenizer_fn", None)
+        tokenizer_fn = values.get("tokenizer_fn")
         if tokenizer_fn is None:
             values["tokenizer_fn"] = get_tokenizer()
 
@@ -84,7 +88,6 @@ class ChatMemoryBuffer(BaseChatStoreMemory):
     def from_string(cls, json_str: str) -> "ChatMemoryBuffer":
         """Create a chat memory buffer from a string."""
         dict_obj = json.loads(json_str)
-        print(f"dict_obj: {dict_obj}", flush=True)
         return cls.from_dict(dict_obj)
 
     def to_dict(self, **kwargs: Any) -> dict:

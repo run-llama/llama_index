@@ -30,7 +30,8 @@ logger = logging.getLogger(__name__)
 
 
 class SQLRetriever(BaseRetriever):
-    """SQL Retriever.
+    """
+    SQL Retriever.
 
     Retrieves via raw SQL statements.
 
@@ -143,7 +144,7 @@ class DefaultSQLParser(BaseSQLParser):
         sql_result_start = response.find("SQLResult:")
         if sql_result_start != -1:
             response = response[:sql_result_start]
-        return response.strip().strip("```sql").strip("```").strip()
+        return response.replace("```sql", "").replace("```", "").strip()
 
 
 class PGVectorSQLParser(BaseSQLParser):
@@ -176,7 +177,8 @@ class PGVectorSQLParser(BaseSQLParser):
 
 
 class NLSQLRetriever(BaseRetriever, PromptMixin):
-    """Text-to-SQL Retriever.
+    """
+    Text-to-SQL Retriever.
 
     Retrieves via text.
 
@@ -189,6 +191,8 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         tables (Union[List[str], List[Table]]): List of table names or Table objects.
         table_retriever (ObjectRetriever[SQLTableSchema]): Object retriever for
             SQLTableSchema objects. Defaults to None.
+        rows_retriever (Dict[str, VectorIndexRetriever]): a mapping between table name and
+            a vector index retriever of its rows. Defaults to None.
         context_str_prefix (str): Prefix for context string. Defaults to None.
         return_raw (bool): Whether to return plain-text dump of SQL results, or parsed into Nodes.
         handle_sql_errors (bool): Whether to handle SQL errors. Defaults to True.
@@ -205,6 +209,8 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         context_query_kwargs: Optional[dict] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
         table_retriever: Optional[ObjectRetriever[SQLTableSchema]] = None,
+        rows_retrievers: Optional[dict[str, BaseRetriever]] = None,
+        cols_retrievers: Optional[dict[str, dict[str, BaseRetriever]]] = None,
         context_str_prefix: Optional[str] = None,
         sql_parser_mode: SQLParserMode = SQLParserMode.DEFAULT,
         llm: Optional[LLM] = None,
@@ -232,7 +238,14 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         self._handle_sql_errors = handle_sql_errors
         self._sql_only = sql_only
         self._verbose = verbose
-        super().__init__(callback_manager=callback_manager or Settings.callback_manager)
+
+        # To retrieve relevant rows or cols from each retrieved table
+        self._rows_retrievers = rows_retrievers
+        self._cols_retrievers = cols_retrievers
+        super().__init__(
+            callback_manager=callback_manager or Settings.callback_manager,
+            verbose=verbose,
+        )
 
     def _get_prompts(self) -> Dict[str, Any]:
         """Get prompts."""
@@ -388,26 +401,56 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         return retrieved_nodes
 
     def _get_table_context(self, query_bundle: QueryBundle) -> str:
-        """Get table context.
-
-        Get tables schema + optional context as a single string.
-
-        """
+        """Get table context string."""
         table_schema_objs = self._get_tables(query_bundle.query_str)
         context_strs = []
-        if self._context_str_prefix is not None:
-            context_strs = [self._context_str_prefix]
 
         for table_schema_obj in table_schema_objs:
+            # first append table info + additional context
             table_info = self._sql_database.get_single_table_info(
                 table_schema_obj.table_name
             )
-
             if table_schema_obj.context_str:
                 table_opt_context = " The table description is: "
                 table_opt_context += table_schema_obj.context_str
                 table_info += table_opt_context
 
+            # also lookup vector index to return relevant table rows
+            # if rows_retrievers was not passed, no rows will be returned
+            if self._rows_retrievers is not None:
+                rows_retriever = self._rows_retrievers[table_schema_obj.table_name]
+                relevant_nodes = rows_retriever.retrieve(query_bundle.query_str)
+                if len(relevant_nodes) > 0:
+                    table_row_context = "\nHere are some relevant example rows (values in the same order as columns above)\n"
+                    for node in relevant_nodes:
+                        table_row_context += str(node.get_content()) + "\n"
+                    table_info += table_row_context
+
+            # lookup column index to return relevant column values
+            if self._cols_retrievers is not None:
+                cols_retrievers = self._cols_retrievers[table_schema_obj.table_name]
+
+                col_values_context = (
+                    "\nHere are some relevant values of text columns:\n"
+                )
+                has_col_values = False
+                for col_name, retriever in cols_retrievers.items():
+                    relevant_nodes = retriever.retrieve(query_bundle.query_str)
+                    if len(relevant_nodes) > 0:
+                        col_values_context += (
+                            f"{col_name}: "
+                            + ", ".join(
+                                [str(node.get_content()) for node in relevant_nodes]
+                            )
+                            + "\n"
+                        )
+                        has_col_values = True
+
+                if has_col_values:
+                    table_info += col_values_context
+
+            if self._verbose:
+                print(f"> Table Info: {table_info}")
             context_strs.append(table_info)
 
         return "\n\n".join(context_strs)

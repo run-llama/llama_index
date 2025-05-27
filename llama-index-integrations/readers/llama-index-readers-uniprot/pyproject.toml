@@ -1,0 +1,51 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "diff-cover>=9.2.0",
+    "pytest>=8.3.5",
+    "pytest-cov>=6.1.1",
+    "ruff==0.11.11",
+]
+
+[project]
+name = "llama-index-readers-uniprot"
+version = "0.1.0"
+description = "UniProt reader for LlamaIndex"
+authors = [{name = "Evgenii Neumerzhitckii", email = "sausageskin@gmail.com"}]
+requires-python = ">=3.9,<4.0"
+readme = "README.md"
+license = "MIT"
+keywords = [
+    "bioinformatics",
+    "llama-index",
+    "uniprot",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+]
+dependencies = ["llama-index-core>=0.12.0,<0.13"]
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.readers.uniprot"
+
+[tool.llamahub.class_authors]
+UniProtReader = "evgenyneu"

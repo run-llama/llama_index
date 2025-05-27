@@ -7,7 +7,7 @@ from llama_index.core.workflow.retry_policy import ConstantDelayRetryPolicy
 from llama_index.core.workflow.workflow import Workflow
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_retry_e2e():
     class CountEvent(Event):
         """Empty event to signal a step to increment a counter in the Context."""

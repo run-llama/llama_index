@@ -1,8 +1,12 @@
-from llama_index.core import Document, MockEmbedding
+from llama_index.core import Document, MockEmbedding, global_tokenizer
 from llama_index.core.llms import MockLLM
 from llama_index.packs.raptor.base import RaptorRetriever
+import pytest
 
 
+@pytest.mark.skipif(
+    condition=(global_tokenizer is None), reason="No global tokenizer set"
+)
 def test_raptor() -> None:
     retriever = RaptorRetriever(
         [
@@ -27,4 +31,4 @@ def test_raptor() -> None:
     assert len(nodes) == 2
 
     nodes = retriever.retrieve("text", mode="tree_traversal")
-    assert len(nodes) == 2
+    assert len(nodes) == 5

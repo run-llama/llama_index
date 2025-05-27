@@ -21,7 +21,8 @@ logger = logging.getLogger(__name__)
 
 
 class OptimumIntelLLM(HuggingFaceLLM):
-    r"""OptimumIntelLLM LLM.
+    r"""
+    OptimumIntelLLM LLM.
 
     Examples:
         `pip install llama-index-llms-optimum-intel`
@@ -69,6 +70,7 @@ class OptimumIntelLLM(HuggingFaceLLM):
         response = llm.complete("What is the meaning of life?")
         print(str(response))
         ```
+
     """
 
     model_name: str = Field(

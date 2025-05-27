@@ -1,19 +1,22 @@
 """Mongo client."""
 
-from typing import Dict, Iterable, List, Optional, Union
+from collections.abc import Callable
+from typing import Dict, Iterable, List, Optional
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
 
 class SimpleMongoReader(BaseReader):
-    """Simple mongo reader.
+    """
+    Simple mongo reader.
 
     Concatenates each Mongo doc into Document used by LlamaIndex.
 
     Args:
         host (str): Mongo host.
         port (int): Mongo port.
+
     """
 
     def __init__(
@@ -40,12 +43,6 @@ class SimpleMongoReader(BaseReader):
 
         self.client = client
 
-    def _flatten(self, texts: List[Union[str, List[str]]]) -> List[str]:
-        result = []
-        for text in texts:
-            result += text if isinstance(text, list) else [text]
-        return result
-
     def lazy_load_data(
         self,
         db_name: str,
@@ -55,8 +52,10 @@ class SimpleMongoReader(BaseReader):
         query_dict: Optional[Dict] = None,
         max_docs: int = 0,
         metadata_names: Optional[List[str]] = None,
+        field_extractors: Optional[Dict[str, Callable[..., str]]] = None,
     ) -> Iterable[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             db_name (str): name of the database.
@@ -72,6 +71,9 @@ class SimpleMongoReader(BaseReader):
                 Defaults to 0 (no limit)
             metadata_names (Optional[List[str]]): names of the fields to be added
                 to the metadata attribute of the Document. Defaults to None
+            field_extractors (Optional[Dict[str, Callable[..., str]]]): dictionary
+                containing field name and a function to extract text from the field.
+                The default extractor function is `str`. Defaults to None.
 
         Returns:
             List[Document]: A list of documents.
@@ -81,18 +83,21 @@ class SimpleMongoReader(BaseReader):
         cursor = db[collection_name].find(
             filter=query_dict or {},
             limit=max_docs,
-            projection={name: 1 for name in field_names + (metadata_names or [])},
+            projection=dict.fromkeys(field_names + (metadata_names or []), 1),
         )
+
+        field_extractors = field_extractors or {}
 
         for item in cursor:
             try:
-                texts = [str(item[name]) for name in field_names]
+                texts = [
+                    field_extractors.get(name, str)(item[name]) for name in field_names
+                ]
             except KeyError as err:
                 raise ValueError(
                     f"{err.args[0]} field not found in Mongo document."
                 ) from err
 
-            texts = self._flatten(texts)
             text = separator.join(texts)
 
             if metadata_names is None:

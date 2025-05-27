@@ -7,7 +7,6 @@ This LlamaPack lets you quickly set up [ZenGuard AI](https://www.zenguard.ai/) i
 - Prompts Attacks
 - Veering of the pre-defined topics
 - PII, sensitive info, and keywords leakage.
-- Toxicity
 - Etc.
 
 Please, also check out our [open-source Python Client](https://github.com/ZenGuard-AI/fast-llm-security-guardrails?tab=readme-ov-file) for more inspiration.
@@ -120,4 +119,3 @@ zenguard = pack.get_modules()["zenguard"]
 - [Detect Banned Topics](https://docs.zenguard.ai/detectors/banned-topics/)
 - [Detect Keywords](https://docs.zenguard.ai/detectors/keywords/)
 - [Detect Secrets](https://docs.zenguard.ai/detectors/secrets/)
-- [Detect Toxicity](https://docs.zenguard.ai/detectors/toxicity/)

@@ -47,6 +47,7 @@ print(result)
 This will simply print "Hello, World!" to the console.
 
 In this code we:
+
 * Define a class `MyWorkflow` that inherits from `Workflow`
 * Use the @step decorator to define a single step `my_step`
 * The step takes a single argument, `ev`, which is an instance of `StartEvent`
@@ -130,6 +131,7 @@ class SecondEvent(Event):
 ## Defining the workflow
 
 Now we define the workflow itself. We do this by defining the input and output types on each step.
+
 * `step_one` takes a `StartEvent` and returns a `FirstEvent`
 * `step_two` takes a `FirstEvent` and returns a `SecondEvent`
 * `step_three` takes a `SecondEvent` and returns a `StopEvent`

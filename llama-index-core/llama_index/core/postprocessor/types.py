@@ -1,3 +1,4 @@
+import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
@@ -61,6 +62,29 @@ class BaseNodePostprocessor(ChainableMixin, BaseComponent, DispatcherSpanMixin, 
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
 
+    async def apostprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+        query_str: Optional[str] = None,
+    ) -> List[NodeWithScore]:
+        """Postprocess nodes (async)."""
+        if query_str is not None and query_bundle is not None:
+            raise ValueError("Cannot specify both query_str and query_bundle")
+        elif query_str is not None:
+            query_bundle = QueryBundle(query_str)
+        else:
+            pass
+        return await self._apostprocess_nodes(nodes, query_bundle)
+
+    async def _apostprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+    ) -> List[NodeWithScore]:
+        """Postprocess nodes (async)."""
+        return await asyncio.to_thread(self._postprocess_nodes, nodes, query_bundle)
+
     def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """As query component."""
         return PostprocessorComponent(postprocessor=self)
@@ -99,7 +123,7 @@ class PostprocessorComponent(QueryComponent):
     def _run_component(self, **kwargs: Any) -> Any:
         """Run component."""
         output = self.postprocessor.postprocess_nodes(
-            kwargs["nodes"], query_str=kwargs.get("query_str", None)
+            kwargs["nodes"], query_str=kwargs.get("query_str")
         )
         return {"nodes": output}
 

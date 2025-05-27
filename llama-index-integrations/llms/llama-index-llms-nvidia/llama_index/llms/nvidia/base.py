@@ -2,21 +2,15 @@ from typing import Any, Optional, List, Literal, Union, Dict, TYPE_CHECKING
 from deprecated import deprecated
 import warnings
 import json
+import os
 
-from llama_index.core.bridge.pydantic import PrivateAttr, BaseModel
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.base.llms.generic_utils import (
     get_from_param_or_env,
 )
 
-from llama_index.llms.nvidia.utils import (
-    is_nvidia_function_calling_model,
-    is_chat_model,
-)
-
 from llama_index.llms.openai_like import OpenAILike
 from llama_index.core.llms.function_calling import FunctionCallingLLM
-from urllib.parse import urlparse, urlunparse
-
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -24,44 +18,38 @@ from llama_index.core.base.llms.types import (
 )
 
 from llama_index.core.llms.llm import ToolSelection
+from .utils import (
+    BASE_URL,
+    DEFAULT_MODEL,
+    MODEL_TABLE,
+    CHAT_MODEL_TABLE,
+    Model,
+    determine_model,
+)
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
 
-DEFAULT_MODEL = "meta/llama3-8b-instruct"
-BASE_URL = "https://integrate.api.nvidia.com/v1/"
 
-KNOWN_URLS = [
-    BASE_URL,
-    "https://integrate.api.nvidia.com/v1",
-]
-
-
-def force_single_tool_call(response: ChatResponse) -> None:
-    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
-    if len(tool_calls) > 1:
-        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
-
-
-class Model(BaseModel):
-    id: str
-    base_model: Optional[str]
-    is_function_calling_model: Optional[bool] = False
-    is_chat_model: Optional[bool] = False
+KNOWN_URLS = {
+    model.endpoint if model.endpoint else None for model in MODEL_TABLE.values()
+}
 
 
 class NVIDIA(OpenAILike, FunctionCallingLLM):
     """NVIDIA's API Catalog Connector."""
 
-    _is_hosted: bool = PrivateAttr(True)
     _mode: str = PrivateAttr(default="nvidia")
+    _client: Any = PrivateAttr()
+    _aclient: Any = PrivateAttr()
+    _is_hosted: bool = PrivateAttr(True)
 
     def __init__(
         self,
         model: Optional[str] = None,
         nvidia_api_key: Optional[str] = None,
         api_key: Optional[str] = None,
-        base_url: Optional[str] = BASE_URL,
+        base_url: Optional[str] = os.getenv("NVIDIA_BASE_URL", BASE_URL),
         max_tokens: Optional[int] = 1024,
         **kwargs: Any,
     ) -> None:
@@ -84,6 +72,7 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
 
         Raises:
             DeprecationWarning: If an API key is not provided for a hosted NIM, a warning is issued. This will become an error in version 0.2.0.
+
         """
         api_key = get_from_param_or_env(
             "api_key",
@@ -92,34 +81,31 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
             "NO_API_KEY_PROVIDED",
         )
 
-        is_hosted = base_url in KNOWN_URLS
-        if base_url not in KNOWN_URLS:
-            base_url = self._validate_url(base_url)
-
-        if is_hosted and api_key == "NO_API_KEY_PROVIDED":
-            warnings.warn(
-                "An API key is required for the hosted NIM. This will become an error in 0.2.0.",
-            )
+        base_url = base_url or BASE_URL
 
         super().__init__(
             api_key=api_key,
             api_base=base_url,
             max_tokens=max_tokens,
-            is_chat_model=is_chat_model(model),
             default_headers={"User-Agent": "llama-index-llms-nvidia"},
-            is_function_calling_model=is_nvidia_function_calling_model(model),
             **kwargs,
         )
         self.model = model
-        self._is_hosted = base_url in KNOWN_URLS
-
+        self._is_hosted = base_url in KNOWN_URLS or base_url == BASE_URL
         if self._is_hosted and api_key == "NO_API_KEY_PROVIDED":
             warnings.warn(
                 "An API key is required for the hosted NIM. This will become an error in 0.2.0.",
             )
+        if not self.model:
+            if self._is_hosted:
+                self.model = DEFAULT_MODEL
+            else:
+                self.__get_default_model()
 
-        if not model:
-            self.__get_default_model()
+        if not self.model.startswith("nvdev/"):
+            self._validate_model(self.model)  ## validate model
+        self.is_chat_model = self._is_chat_model()
+        self.is_function_calling_model = self._is_function_calling_model()
 
     def __get_default_model(self):
         """Set default model."""
@@ -142,38 +128,60 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
         else:
             self.model = DEFAULT_MODEL
 
-    def _validate_url(self, base_url):
+    def _validate_model(self, model_name: str) -> None:
         """
-        Base URL Validation.
-        ValueError : url which do not have valid scheme and netloc.
-        Warning : v1/chat/completions routes.
-        ValueError : Any other routes other than above.
+        Validates compatibility of the hosted model with the client.
+
+        Args:
+            model_name (str): The name of the model.
+
+        Raises:
+            ValueError: If the model is incompatible with the client.
+
         """
-        expected_format = "Expected format is 'http://host:port'."
-        result = urlparse(base_url)
-        if not (result.scheme and result.netloc):
-            raise ValueError(f"Invalid base_url, {expected_format}")
-        if result.path:
-            normalized_path = result.path.strip("/")
-            if normalized_path == "v1":
-                pass
-            elif normalized_path == "v1/chat/completions":
-                warnings.warn(f"{expected_format} Rest is Ignored.")
+        if self._is_hosted:
+            if model := determine_model(model_name):
+                if not model.client:
+                    warnings.warn(f"Unable to determine validity of {model.id}")
+                elif model.client != self.class_name():
+                    raise ValueError(
+                        f"Model {model.id} is incompatible with client {self.class_name()}. "
+                        f"Please check `{self.class_name()}.get_available_models`"
+                    )
+                if model.endpoint:
+                    self.api_base = model.endpoint
             else:
-                raise ValueError(f"Invalid base_url, {expected_format}")
-        return urlunparse((result.scheme, result.netloc, "v1", "", "", ""))
+                candidates = [
+                    model for model in self.available_models if model.id == model_name
+                ]
+                assert len(candidates) <= 1, (
+                    f"Multiple candidates for {model_name} "
+                    f"in `available_models`: {candidates}"
+                )
+                if candidates:
+                    model = candidates[0]
+                    warnings.warn(
+                        f"Found {model_name} in available_models, but type is "
+                        "unknown and inference may fail."
+                    )
+                else:
+                    if model_name.startswith("nvdev/"):  # assume valid
+                        model = Model(id=model_name)
+                    else:
+                        raise ValueError(
+                            f"Model {model_name} is unknown, check `available_models`"
+                        )
+        else:
+            if model_name not in [model.id for model in self.available_models]:
+                raise ValueError(f"No locally hosted {model_name} was found.")
 
     @property
     def available_models(self) -> List[Model]:
-        models = [
-            Model(
-                id=model.id,
-                base_model=getattr(model, "params", {}).get("root", None),
-                is_function_calling_model=is_nvidia_function_calling_model(model.id),
-                is_chat_model=is_chat_model(model.id),
-            )
-            for model in self._get_client().models.list().data
-        ]
+        models = []
+        for element in self._get_client().models.list().data:
+            if not (model := determine_model(element.id)):
+                model = Model(id=element.id)
+            models.append(model)
         # only exclude models in hosted mode. in non-hosted mode, the administrator has control
         # over the model name and may deploy an excluded name that will work.
         if self._is_hosted:
@@ -223,9 +231,13 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
 
         return self
 
-    @property
-    def _is_chat_model(self) -> bool:
-        return is_chat_model(self.model)
+    def _is_chat_model(self):
+        model = determine_model(self.model)
+        return model and model.id in CHAT_MODEL_TABLE
+
+    def _is_function_calling_model(self):
+        model = determine_model(self.model)
+        return model and model.supports_tools
 
     def _prepare_chat_with_tools(
         self,
@@ -254,18 +266,6 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
             "tools": tool_specs or None,
             **kwargs,
         }
-
-    def _validate_chat_with_tools_response(
-        self,
-        response: ChatResponse,
-        tools: List["BaseTool"],
-        allow_parallel_tool_calls: bool = False,
-        **kwargs: Any,
-    ) -> ChatResponse:
-        """Validate the response from chat_with_tools."""
-        if not allow_parallel_tool_calls:
-            force_single_tool_call(response)
-        return response
 
     def get_tool_calls_from_response(
         self,

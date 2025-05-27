@@ -9,9 +9,23 @@ from llama_index.core.workflow.errors import (
     WorkflowTimeoutError,
     WorkflowValidationError,
 )
-from llama_index.core.workflow.events import Event, StartEvent, StopEvent
+from llama_index.core.workflow.events import (
+    Event,
+    StartEvent,
+    StopEvent,
+    InputRequiredEvent,
+    HumanResponseEvent,
+)
 from llama_index.core.workflow.workflow import Workflow
 from llama_index.core.workflow.context import Context
+from llama_index.core.workflow.context_serializers import (
+    JsonPickleSerializer,
+    JsonSerializer,
+)
+from llama_index.core.workflow.checkpointer import (
+    Checkpoint,
+    WorkflowCheckpointer,
+)
 
 __all__ = [
     "Context",
@@ -26,4 +40,10 @@ __all__ = [
     "draw_most_recent_execution",
     "step",
     "Context",
+    "InputRequiredEvent",
+    "HumanResponseEvent",
+    "JsonPickleSerializer",
+    "JsonSerializer",
+    "WorkflowCheckpointer",
+    "Checkpoint",
 ]

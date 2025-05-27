@@ -14,7 +14,8 @@ def load_index_from_storage(
     index_id: Optional[str] = None,
     **kwargs: Any,
 ) -> BaseIndex:
-    """Load index from storage context.
+    """
+    Load index from storage context.
 
     Args:
         storage_context (StorageContext): storage context containing
@@ -23,6 +24,7 @@ def load_index_from_storage(
             Defaults to None, which assumes there's only a single index
             in the index store and load it.
         **kwargs: Additional keyword args to pass to the index constructors.
+
     """
     index_ids: Optional[Sequence[str]]
     if index_id is None:
@@ -50,7 +52,8 @@ def load_indices_from_storage(
     index_ids: Optional[Sequence[str]] = None,
     **kwargs: Any,
 ) -> List[BaseIndex]:
-    """Load multiple indices from storage context.
+    """
+    Load multiple indices from storage context.
 
     Args:
         storage_context (StorageContext): storage context containing
@@ -58,6 +61,7 @@ def load_indices_from_storage(
         index_id (Optional[Sequence[str]]): IDs of the indices to load.
             Defaults to None, which loads all indices in the index store.
         **kwargs: Additional keyword args to pass to the index constructors.
+
     """
     if index_ids is None:
         logger.info("Loading all indices.")
@@ -87,13 +91,15 @@ def load_graph_from_storage(
     root_id: str,
     **kwargs: Any,
 ) -> ComposableGraph:
-    """Load composable graph from storage context.
+    """
+    Load composable graph from storage context.
 
     Args:
         storage_context (StorageContext): storage context containing
             docstore, index store and vector store.
         root_id (str): ID of the root index of the graph.
         **kwargs: Additional keyword args to pass to the index constructors.
+
     """
     indices = load_indices_from_storage(storage_context, index_ids=None, **kwargs)
     all_indices = {index.index_id: index for index in indices}

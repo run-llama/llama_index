@@ -1,6 +1,11 @@
 from typing import Optional
 
-from llama_index.core.workflow.events import StartEvent, StopEvent
+from llama_index.core.workflow.events import (
+    StartEvent,
+    StopEvent,
+    InputRequiredEvent,
+    HumanResponseEvent,
+)
 from llama_index.core.workflow.decorators import StepConfig
 from llama_index.core.workflow.utils import (
     get_steps_from_class,
@@ -19,16 +24,6 @@ def draw_all_possible_flows(
 
     net = Network(directed=True, height="750px", width="100%")
 
-    # Add the nodes + edge for stop events
-    net.add_node(
-        StopEvent.__name__,
-        label=StopEvent.__name__,
-        color="#FFA07A",
-        shape="ellipse",
-    )
-    net.add_node("_done", label="_done", color="#ADD8E6", shape="box")
-    net.add_edge(StopEvent.__name__, "_done")
-
     # Add nodes from all steps
     steps = get_steps_from_class(workflow)
     if not steps:
@@ -36,6 +31,23 @@ def draw_all_possible_flows(
         steps = get_steps_from_instance(workflow)
 
     step_config: Optional[StepConfig] = None
+
+    # Only one kind of `StopEvent` is allowed in a `Workflow`.
+    # Assuming that `Workflow` is validated before drawing, it's enough to find the first one.
+    current_stop_event = None
+    for step_name, step_func in steps.items():
+        step_config = getattr(step_func, "__step_config", None)
+        if step_config is None:
+            continue
+
+        for return_type in step_config.return_types:
+            if issubclass(return_type, StopEvent):
+                current_stop_event = return_type
+                break
+
+        if current_stop_event:
+            break
+
     for step_name, step_func in steps.items():
         step_config = getattr(step_func, "__step_config", None)
         if step_config is None:
@@ -46,12 +58,35 @@ def draw_all_possible_flows(
         )  # Light blue for steps
 
         for event_type in step_config.accepted_events:
+            if event_type == StopEvent and event_type != current_stop_event:
+                continue
+
             net.add_node(
                 event_type.__name__,
                 label=event_type.__name__,
-                color="#90EE90" if event_type != StartEvent else "#E27AFF",
+                color=determine_event_color(event_type),
                 shape="ellipse",
-            )  # Light green for events
+            )
+
+        for return_type in step_config.return_types:
+            if return_type is type(None):
+                continue
+
+            net.add_node(
+                return_type.__name__,
+                label=return_type.__name__,
+                color=determine_event_color(return_type),
+                shape="ellipse",
+            )
+
+            if issubclass(return_type, InputRequiredEvent):
+                # add node for conceptual external step
+                net.add_node(
+                    f"external_step",
+                    label="external_step",
+                    color="#BEDAE4",
+                    shape="box",
+                )
 
     # Add edges from all steps
     for step_name, step_func in steps.items():
@@ -61,13 +96,38 @@ def draw_all_possible_flows(
             continue
 
         for return_type in step_config.return_types:
-            if return_type != type(None):
+            if return_type is not type(None):
                 net.add_edge(step_name, return_type.__name__)
 
+            if issubclass(return_type, InputRequiredEvent):
+                net.add_edge(return_type.__name__, f"external_step")
+
         for event_type in step_config.accepted_events:
-            net.add_edge(event_type.__name__, step_name)
+            if step_name == "_done" and issubclass(event_type, StopEvent):
+                net.add_edge(current_stop_event.__name__, step_name)
+            else:
+                net.add_edge(event_type.__name__, step_name)
+
+            if issubclass(event_type, HumanResponseEvent):
+                net.add_edge(
+                    f"external_step",
+                    event_type.__name__,
+                )
 
     net.show(filename, notebook=notebook)
+
+
+def determine_event_color(event_type):
+    if issubclass(event_type, StartEvent):
+        # Pink for start events
+        event_color = "#E27AFF"
+    elif issubclass(event_type, StopEvent):
+        # Orange for stop events
+        event_color = "#FFA07A"
+    else:
+        # Light green for other events
+        event_color = "#90EE90"
+    return event_color
 
 
 def draw_most_recent_execution(

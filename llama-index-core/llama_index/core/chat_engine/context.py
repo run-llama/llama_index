@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.llms.types import (
@@ -22,6 +22,7 @@ from llama_index.core.chat_engine.types import (
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
+from llama_index.core.prompts import PromptTemplate
 from llama_index.core.response_synthesizers import CompactAndRefine
 from llama_index.core.schema import NodeWithScore, QueryBundle
 from llama_index.core.settings import Settings
@@ -65,8 +66,8 @@ class ContextChatEngine(BaseChatEngine):
         memory: BaseMemory,
         prefix_messages: List[ChatMessage],
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
-        context_template: Optional[str] = None,
-        context_refine_template: Optional[str] = None,
+        context_template: Optional[Union[str, PromptTemplate]] = None,
+        context_refine_template: Optional[Union[str, PromptTemplate]] = None,
         callback_manager: Optional[CallbackManager] = None,
     ) -> None:
         self._retriever = retriever
@@ -74,10 +75,16 @@ class ContextChatEngine(BaseChatEngine):
         self._memory = memory
         self._prefix_messages = prefix_messages
         self._node_postprocessors = node_postprocessors or []
-        self._context_template = context_template or DEFAULT_CONTEXT_TEMPLATE
-        self._context_refine_template = (
-            context_refine_template or DEFAULT_REFINE_TEMPLATE
-        )
+
+        context_template = context_template or DEFAULT_CONTEXT_TEMPLATE
+        if isinstance(context_template, str):
+            context_template = PromptTemplate(context_template)
+        self._context_template = context_template
+
+        context_refine_template = context_refine_template or DEFAULT_REFINE_TEMPLATE
+        if isinstance(context_refine_template, str):
+            context_refine_template = PromptTemplate(context_refine_template)
+        self._context_refine_template = context_refine_template
 
         self.callback_manager = callback_manager or CallbackManager([])
         for node_postprocessor in self._node_postprocessors:
@@ -92,8 +99,8 @@ class ContextChatEngine(BaseChatEngine):
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
         node_postprocessors: Optional[List[BaseNodePostprocessor]] = None,
-        context_template: Optional[str] = None,
-        context_refine_template: Optional[str] = None,
+        context_template: Optional[Union[str, PromptTemplate]] = None,
+        context_refine_template: Optional[Union[str, PromptTemplate]] = None,
         llm: Optional[LLM] = None,
         **kwargs: Any,
     ) -> "ContextChatEngine":
@@ -179,7 +186,13 @@ class ContextChatEngine(BaseChatEngine):
 
         # Get the response synthesizer
         return get_response_synthesizer(
-            self._llm, self.callback_manager, qa_messages, refine_messages, streaming
+            self._llm,
+            self.callback_manager,
+            qa_messages,
+            refine_messages,
+            streaming,
+            qa_function_mappings=self._context_template.function_mappings,
+            refine_function_mappings=self._context_refine_template.function_mappings,
         )
 
     @trace_method("chat")

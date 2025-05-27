@@ -68,7 +68,7 @@ class TextEmbeddingInference(BaseNodePostprocessor):
     ):
         super().__init__(
             base_url=base_url,
-            top_n=TOP_N,
+            top_n=top_n,
             text_instruction=text_instruction,
             query_instruction=query_instruction,
             timeout=timeout,

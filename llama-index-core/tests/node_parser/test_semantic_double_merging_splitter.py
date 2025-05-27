@@ -36,7 +36,7 @@ except Exception:
 def test_number_of_returned_nodes() -> None:
     nodes = splitter.get_nodes_from_documents([doc])
 
-    assert len(nodes) == 3
+    assert len(nodes) == 4
 
 
 @pytest.mark.skipif(not spacy_available, reason="Spacy model not available")
