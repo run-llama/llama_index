@@ -15,6 +15,8 @@ class _ResourceMeta(Generic[T]):
         if not(isinstance, tuple) or len(item) > 2:
             return TypeError("A resource should be defined as: Resource[type, factory]")
         type_t, factory = item
+        if not callable(factory):
+            raise TypeError(f"factory must be a callable, got {type(factory)}")
         return Annotated[type_t, factory]
 
 Resource = _ResourceMeta

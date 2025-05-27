@@ -112,7 +112,6 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
                     callable=factory,
                 )
             )
-            print(f"Base type: {base_type}, Factory: {factory}")
             continue
 
         # Get name and type of the Context param
