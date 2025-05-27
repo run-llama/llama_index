@@ -1,6 +1,7 @@
 """Base embeddings file."""
 
 import asyncio
+import uuid
 from abc import abstractmethod
 from enum import Enum
 from typing import Any, Callable, Coroutine, List, Optional, Sequence, Tuple
@@ -35,7 +36,6 @@ import llama_index.core.instrumentation as instrument
 
 dispatcher = instrument.get_dispatcher(__name__)
 
-
 class SimilarityMode(str, Enum):
     """Modes for similarity/distance."""
 
@@ -65,7 +65,6 @@ def similarity(
         norm = np.linalg.norm(embedding1) * np.linalg.norm(embedding2)
         return product / norm
 
-
 class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
     """Base class for embeddings."""
 
@@ -90,7 +89,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
     )
     embeddings_cache: Optional[SimpleKVStore] = Field(
         default=None,
-        description="Cache for the embeddings"
+        description="Cache for the embeddings: if None, the embeddings are not cached"
     )
 
     @model_validator(mode="after")
@@ -138,8 +137,16 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
-            query_embedding = self._get_query_embedding(query)
-
+            if not self.embeddings_cache:
+                query_embedding = self._get_query_embedding(query)
+            elif self.embeddings_cache is not None:
+                cached_emb = self.embeddings_cache.get(key=query, collection="embeddings")
+                if cached_emb is not None:
+                    cached_key = next(iter(cached_emb.keys()))
+                    query_embedding = cached_emb[cached_key]
+                else:
+                    query_embedding = self._get_query_embedding(query)
+                    self.embeddings_cache.put(key=query, val={str(uuid.uuid4()): query_embedding}, collection="embeddings")
             event.on_end(
                 payload={
                     EventPayload.CHUNKS: [query],
@@ -167,7 +174,16 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
-            query_embedding = await self._aget_query_embedding(query)
+            if not self.embeddings_cache:
+                query_embedding = await self._aget_query_embedding(query)
+            elif self.embeddings_cache is not None:
+                cached_emb = await self.embeddings_cache.aget(key=query, collection="embeddings")
+                if cached_emb is not None:
+                    cached_key = next(iter(cached_emb.keys()))
+                    query_embedding = cached_emb[cached_key]
+                else:
+                    query_embedding = await self._aget_query_embedding(query)
+                    await self.embeddings_cache.aput(key=query, val={str(uuid.uuid4()): query_embedding}, collection="embeddings")
 
             event.on_end(
                 payload={
@@ -262,7 +278,16 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
-            text_embedding = self._get_text_embedding(text)
+            if not self.embeddings_cache:
+                text_embedding = self._get_text_embedding(text)
+            elif self.embeddings_cache is not None:
+                cached_emb = self.embeddings_cache.get(key=text, collection="embeddings")
+                if cached_emb is not None:
+                    cached_key = next(iter(cached_emb.keys()))
+                    text_embedding = cached_emb[cached_key]
+                else:
+                    text_embedding = self._get_text_embedding(text)
+                    self.embeddings_cache.put(key=text, val={str(uuid.uuid4()): text_embedding}, collection="embeddings")
 
             event.on_end(
                 payload={
@@ -291,7 +316,16 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         with self.callback_manager.event(
             CBEventType.EMBEDDING, payload={EventPayload.SERIALIZED: self.to_dict()}
         ) as event:
-            text_embedding = await self._aget_text_embedding(text)
+            if not self.embeddings_cache:
+                text_embedding = await self._aget_text_embedding(text)
+            elif self.embeddings_cache is not None:
+                cached_emb = await self.embeddings_cache.aget(key=text, collection="embeddings")
+                if cached_emb is not None:
+                    cached_key = next(iter(cached_emb.keys()))
+                    text_embedding = cached_emb[cached_key]
+                else:
+                    text_embedding = await self._aget_text_embedding(text)
+                    await self.embeddings_cache.aput(key=text, val={str(uuid.uuid4()): text_embedding}, collection="embeddings")
 
             event.on_end(
                 payload={
@@ -337,7 +371,19 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     CBEventType.EMBEDDING,
                     payload={EventPayload.SERIALIZED: self.to_dict()},
                 ) as event:
-                    embeddings = self._get_text_embeddings(cur_batch)
+                    if not self.embeddings_cache:
+                        embeddings = self._get_text_embeddings(cur_batch)
+                    elif self.embeddings_cache is not None:
+                        embeddings = []
+                        for txt in cur_batch:
+                            cached_emb = self.embeddings_cache.get(key=txt, collection="embeddings")
+                            if cached_emb is not None:
+                                cached_key = next(iter(cached_emb.keys()))
+                                embeddings.append(cached_emb[cached_key])
+                            else:
+                                text_embedding = self._get_text_embedding(txt)
+                                embeddings.append(text_embedding)
+                                self.embeddings_cache.put(key=txt, val={str(uuid.uuid4()): text_embedding}, collection="embeddings")
                     result_embeddings.extend(embeddings)
                     event.on_end(
                         payload={
@@ -366,6 +412,8 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         model_dict.pop("api_key", None)
 
         cur_batch: List[str] = []
+        pre_recorded_embs: List[Embedding] = []
+        non_cached_txts: List[str] = []
         callback_payloads: List[Tuple[str, List[str]]] = []
         result_embeddings: List[Embedding] = []
         embeddings_coroutines: List[Coroutine] = []
@@ -383,37 +431,56 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     payload={EventPayload.SERIALIZED: self.to_dict()},
                 )
                 callback_payloads.append((event_id, cur_batch))
-                embeddings_coroutines.append(self._aget_text_embeddings(cur_batch))
+                if not self.embeddings_cache:
+                    embeddings_coroutines.append(self._aget_text_embeddings(cur_batch))
+                elif self.embeddings_cache is not None:
+                    for txt in cur_batch:
+                        cached_emb = self.embeddings_cache.get(key=txt, collection="embeddings")
+                        if cached_emb is not None:
+                            cached_key = next(iter(cached_emb.keys()))
+                            pre_recorded_embs.append(cached_emb[cached_key])
+                        else:
+                            embeddings_coroutines.append(self._aget_text_embeddings([txt]))
+                            non_cached_txts.append(txt)
+
                 cur_batch = []
 
         # flatten the results of asyncio.gather, which is a list of embeddings lists
         nested_embeddings = []
 
-        if num_workers and num_workers > 1:
-            nested_embeddings = await run_jobs(
-                embeddings_coroutines,
-                show_progress=show_progress,
-                workers=self.num_workers,
-                desc="Generating embeddings",
-            )
-        else:
-            if show_progress:
-                try:
-                    from tqdm.asyncio import tqdm_asyncio
-
-                    nested_embeddings = await tqdm_asyncio.gather(
-                        *embeddings_coroutines,
-                        total=len(embeddings_coroutines),
-                        desc="Generating embeddings",
-                    )
-                except ImportError:
-                    nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+        if len(embeddings_coroutines) > 0:
+            if num_workers and num_workers > 1:
+                nested_embeddings = await run_jobs(
+                    embeddings_coroutines,
+                    show_progress=show_progress,
+                    workers=self.num_workers,
+                    desc="Generating embeddings",
+                )
             else:
-                nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+                if show_progress:
+                    try:
+                        from tqdm.asyncio import tqdm_asyncio
+
+                        nested_embeddings = await tqdm_asyncio.gather(
+                            *embeddings_coroutines,
+                            total=len(embeddings_coroutines),
+                            desc="Generating embeddings",
+                        )
+                    except ImportError:
+                        nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+                else:
+                    nested_embeddings = await asyncio.gather(*embeddings_coroutines)
 
         result_embeddings = [
             embedding for embeddings in nested_embeddings for embedding in embeddings
         ]
+        if self.embeddings_cache is not None:
+            if len(result_embeddings) > 0:
+                for j in range(len(result_embeddings)):
+                    self.embeddings_cache.put(key=non_cached_txts[j], val={str(uuid.uuid4()): result_embeddings[j]}, collection="embeddings")
+                result_embeddings += pre_recorded_embs
+            else:
+                result_embeddings += pre_recorded_embs
 
         for (event_id, text_batch), embeddings in zip(
             callback_payloads, nested_embeddings
