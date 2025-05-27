@@ -99,7 +99,9 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
 
         if self.callback_manager is None:
             self.callback_manager = CallbackManager([])
-        if not isinstance(self.embeddings_cache, SimpleKVStore):
+        if self.embeddings_cache is not None and not isinstance(
+            self.embeddings_cache, SimpleKVStore
+        ):
             raise TypeError("embeddings_cache must be of type SimpleKVStore")
         return self
 
