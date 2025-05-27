@@ -7,7 +7,6 @@ from enum import Enum
 from typing import Any, Callable, Coroutine, List, Optional, Sequence, Tuple
 from typing_extensions import Self
 
-from llama_index.core.storage.kvstore import SimpleKVStore
 import numpy as np
 from llama_index.core.bridge.pydantic import (
     Field,
@@ -87,15 +86,18 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         default=None,
         description="The number of workers to use for async embedding calls.",
     )
-    embeddings_cache: Optional[SimpleKVStore] = Field(
-        default=None,
+    embeddings_cache: Optional[Any] = Field(
+        default = None,
         description="Cache for the embeddings: if None, the embeddings are not cached"
     )
 
     @model_validator(mode="after")
     def check_base_embeddings_class(self) -> Self:
+        from llama_index.core.storage.kvstore.simple_kvstore import SimpleKVStore
         if self.callback_manager is None:
             self.callback_manager = CallbackManager([])
+        if not isinstance(self.embeddings_cache, SimpleKVStore):
+            raise TypeError("embeddings_cache must be of type SimpleKVStore")
         return self
 
     @abstractmethod
