@@ -28,6 +28,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     AudioBlock,
+    DocumentBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 
@@ -410,7 +411,7 @@ def to_openai_responses_message_dict(
     message: ChatMessage,
     drop_none: bool = False,
     model: Optional[str] = None,
-) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+) -> Union[str, Dict[str, Any], List[Dict[str, Any]]]:
     """Convert a ChatMessage to an OpenAI message dict."""
     content = []
     content_txt = ""
@@ -419,6 +420,20 @@ def to_openai_responses_message_dict(
         if isinstance(block, TextBlock):
             content.append({"type": "input_text", "text": block.text})
             content_txt += block.text
+        elif isinstance(block, DocumentBlock):
+            if not block.data:
+                file_buffer = block.resolve_document()
+                b64_string = block._get_b64_string(file_buffer)
+                mimetype = block._guess_mimetype()
+            else:
+                b64_string = block.data.decode("utf-8")
+            content.append(
+                {
+                    "type": "input_file",
+                    "filename": block.title,
+                    "file_data": f"data:{mimetype};base64,{b64_string}",
+                }
+            )
         elif isinstance(block, ImageBlock):
             if block.url:
                 content.append(
@@ -483,6 +498,16 @@ def to_openai_responses_message_dict(
         ]
 
         return message_dicts
+
+    # there are some cases (like image generation or MCP tool call) that only support the string input
+    # this is why, if context_txt is a non-empty string, all the blocks are TextBlocks and the role is user, we return directly context_txt
+    elif (
+        isinstance(content_txt, str)
+        and len(content_txt) != 0
+        and all(item["type"] == "input_text" for item in content)
+        and message.role.value == "user"
+    ):
+        return content_txt
     else:
         message_dict = {
             "role": message.role.value,
@@ -517,10 +542,11 @@ def to_openai_message_dicts(
     drop_none: bool = False,
     model: Optional[str] = None,
     is_responses_api: bool = False,
-) -> List[ChatCompletionMessageParam]:
+) -> Union[List[ChatCompletionMessageParam], str]:
     """Convert generic messages to OpenAI message dicts."""
     if is_responses_api:
         final_message_dicts = []
+        final_message_txt = ""
         for message in messages:
             message_dicts = to_openai_responses_message_dict(
                 message,
@@ -529,9 +555,13 @@ def to_openai_message_dicts(
             )
             if isinstance(message_dicts, list):
                 final_message_dicts.extend(message_dicts)
+            elif isinstance(message_dicts, str):
+                final_message_txt += message_dicts
             else:
                 final_message_dicts.append(message_dicts)
-
+        # this follows the logic of having a string-only input from to_openai_responses_message_dict
+        if final_message_txt:
+            return final_message_txt
         return final_message_dicts
     else:
         return [
@@ -752,7 +782,7 @@ def update_tool_calls(
         List[ChoiceDeltaToolCall]: the updated tool calls
     """
     # openai provides chunks consisting of tool_call deltas one tool at a time
-    if tool_calls_delta is None:
+    if tool_calls_delta is None or len(tool_calls_delta) == 0:
         return tool_calls
 
     tc_delta = tool_calls_delta[0]

@@ -190,6 +190,8 @@ def main():
     search_paths = []
     for folder in INTEGRATION_FOLDERS:
         for root, dirs, files in os.walk(folder):
+            if ".venv" in root:
+                continue
             for file in files:
                 # check if the current root is in the excluded integration folders
                 if any(

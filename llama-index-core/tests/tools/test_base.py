@@ -6,6 +6,7 @@ from typing import List, Optional
 import pytest
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.tools.function_tool import FunctionTool
+from llama_index.core.workflow import Context
 
 try:
     import langchain  # pants: no-infer-dep
@@ -44,6 +45,10 @@ def test_function_tool() -> None:
     assert function_tool.metadata.fn_schema is not None
     actual_schema = function_tool.metadata.fn_schema.model_json_schema()
     assert actual_schema["properties"]["x"]["type"] == "integer"
+
+    # should not have ctx param requirements
+    assert function_tool.ctx_param_name is None
+    assert not function_tool.requires_context
 
 
 @pytest.mark.skipif(langchain is None, reason="langchain not installed")
@@ -158,12 +163,12 @@ from llama_index.core.tools import RetrieverTool, ToolMetadata
 
 def test_retreiver_tool() -> None:
     doc1 = Document(
-        text=("# title1:Hello world.\n" "This is a test.\n"),
+        text=("# title1:Hello world.\nThis is a test.\n"),
         metadata={"file_path": "/data/personal/essay.md"},
     )
 
     doc2 = Document(
-        text=("# title2:This is another test.\n" "This is a test v2."),
+        text=("# title2:This is another test.\nThis is a test v2."),
         metadata={"file_path": "/data/personal/essay.md"},
     )
     vs_index = VectorStoreIndex.from_documents([doc1, doc2])
@@ -177,9 +182,7 @@ def test_retreiver_tool() -> None:
     )
     output = vs_ret_tool.call("arg1", "arg2", key1="v1", key2="v2")
     formated_doc = (
-        "file_path: /data/personal/essay.md\n\n"
-        "# title1:Hello world.\n"
-        "This is a test."
+        "file_path: /data/personal/essay.md\n\n# title1:Hello world.\nThis is a test."
     )
     assert formated_doc in output.content
 
@@ -195,6 +198,7 @@ def test_tool_fn_schema() -> None:
     parameter_dict = json.loads(metadata.fn_schema_str)
     assert set(parameter_dict.keys()) == {"type", "properties", "required"}
 
+
 def test_function_tool_partial_params_schema() -> None:
     def test_function(x: int, y: int) -> str:
         return f"x: {x}, y: {y}"
@@ -204,6 +208,7 @@ def test_function_tool_partial_params_schema() -> None:
     actual_schema = tool.metadata.fn_schema.model_json_schema()
     assert actual_schema["properties"]["x"]["type"] == "integer"
     assert "y" not in actual_schema["properties"]
+
 
 def test_function_tool_partial_params() -> None:
     def test_function(x: int, y: int) -> str:
@@ -215,6 +220,7 @@ def test_function_tool_partial_params() -> None:
     assert tool(x=1, y=3).raw_output == "x: 1, y: 3"
     assert tool(x=1, y=3).raw_input == {"args": (), "kwargs": {"x": 1, "y": 3}}
 
+
 @pytest.mark.asyncio
 async def test_function_tool_partial_params_async() -> None:
     async def test_function(x: int, y: int) -> str:
@@ -224,4 +230,38 @@ async def test_function_tool_partial_params_async() -> None:
     assert (await tool.acall(x=1)).raw_output == "x: 1, y: 2"
     assert (await tool.acall(x=1)).raw_input == {"args": (), "kwargs": {"x": 1, "y": 2}}
     assert (await tool.acall(x=1, y=3)).raw_output == "x: 1, y: 3"
-    assert (await tool.acall(x=1, y=3)).raw_input == {"args": (), "kwargs": {"x": 1, "y": 3}}
+    assert (await tool.acall(x=1, y=3)).raw_input == {
+        "args": (),
+        "kwargs": {"x": 1, "y": 3},
+    }
+
+
+def test_function_tool_ctx_param() -> None:
+    def test_function(x: int, ctx: Context) -> str:
+        return f"x: {x}, ctx: {ctx}"
+
+    tool = FunctionTool.from_defaults(test_function)
+    assert tool.metadata.fn_schema is not None
+    assert tool.ctx_param_name == "ctx"
+    assert tool.requires_context
+
+    actual_schema = tool.metadata.fn_schema.model_json_schema()
+    assert "ctx" not in actual_schema["properties"]
+    assert len(actual_schema["properties"]) == 1
+    assert actual_schema["properties"]["x"]["type"] == "integer"
+
+
+def test_function_tool_self_param() -> None:
+    class FunctionHolder:
+        def test_function(self, x: int, ctx: Context) -> str:
+            return f"x: {x}, ctx: {ctx}"
+
+    tool = FunctionTool.from_defaults(FunctionHolder.test_function)
+    assert tool.metadata.fn_schema is not None
+    assert tool.ctx_param_name == "ctx"
+    assert tool.requires_context
+
+    actual_schema = tool.metadata.fn_schema.model_json_schema()
+    assert "self" not in actual_schema["properties"]
+    assert "ctx" not in actual_schema["properties"]
+    assert "x" in actual_schema["properties"]

@@ -1,4 +1,5 @@
 """Flat reader."""
+
 from fsspec import AbstractFileSystem
 from fsspec.implementations.local import LocalFileSystem
 from pathlib import Path

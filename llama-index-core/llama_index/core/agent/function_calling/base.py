@@ -44,9 +44,9 @@ class FunctionCallingAgent(AgentRunner):
         tools = tools or []
 
         llm = llm or Settings.llm  # type: ignore
-        assert isinstance(
-            llm, FunctionCallingLLM
-        ), "llm must be an instance of FunctionCallingLLM"
+        assert isinstance(llm, FunctionCallingLLM), (
+            "llm must be an instance of FunctionCallingLLM"
+        )
 
         if callback_manager is not None:
             llm.callback_manager = callback_manager

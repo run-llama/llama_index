@@ -23,12 +23,14 @@ async def test_initialization(memory):
     assert memory.token_flush_size == 700
     assert memory.session_id == "test_user"
 
+
 @pytest.mark.asyncio
 async def test_estimate_token_count_text(memory):
     """Test token counting for text."""
     message = ChatMessage(role="user", content="Test message")
     count = memory._estimate_token_count(message)
     assert count == len(memory.tokenizer_fn("Test message"))
+
 
 @pytest.mark.asyncio
 async def test_estimate_token_count_image(memory):
@@ -37,6 +39,7 @@ async def test_estimate_token_count_image(memory):
     message = ChatMessage(role="user", blocks=[block])
     count = memory._estimate_token_count(message)
     assert count == memory.image_token_size_estimate
+
 
 @pytest.mark.asyncio
 async def test_estimate_token_count_audio(memory):
@@ -51,14 +54,13 @@ async def test_estimate_token_count_audio(memory):
 async def test_manage_queue_under_limit(memory):
     """Test queue management when under token limit."""
     # Set up a case where we're under the token limit
-    chat_messages = [
-        ChatMessage(role="user", content="Short message")
-    ]
+    chat_messages = [ChatMessage(role="user", content="Short message")]
 
     await memory.aput_messages(chat_messages)
     cur_messages = await memory.aget()
     assert len(cur_messages) == 1
     assert cur_messages[0].content == "Short message"
+
 
 @pytest.mark.asyncio
 async def test_manage_queue_over_limit(memory):
@@ -77,6 +79,7 @@ async def test_manage_queue_over_limit(memory):
     assert len(cur_messages) == 1
     assert "z " in cur_messages[0].content
 
+
 @pytest.mark.asyncio
 async def test_aput(memory):
     """Test adding a message."""
@@ -88,6 +91,7 @@ async def test_aput(memory):
     messages = await memory.aget()
     assert len(messages) == 1
     assert messages[0].content == "New message"
+
 
 @pytest.mark.asyncio
 async def test_aput_messages(memory):
@@ -105,6 +109,7 @@ async def test_aput_messages(memory):
     assert messages[0].content == "Message 1"
     assert messages[1].content == "Response 1"
 
+
 @pytest.mark.asyncio
 async def test_aset(memory):
     """Test setting the chat history."""
@@ -121,19 +126,23 @@ async def test_aset(memory):
     assert messages[0].content == "Message 1"
     assert messages[1].content == "Response 1"
 
+
 @pytest.mark.asyncio
 async def test_aget_all(memory):
     """Test getting all messages."""
-    await memory.aput_messages([
-        ChatMessage(role="user", content="Message 1"),
-        ChatMessage(role="assistant", content="Response 1"),
-    ])
+    await memory.aput_messages(
+        [
+            ChatMessage(role="user", content="Message 1"),
+            ChatMessage(role="assistant", content="Response 1"),
+        ]
+    )
     messages = await memory.aget_all(status=MessageStatus.ACTIVE)
 
     # Should get all messages from the store
     assert len(messages) == 2
     assert messages[0].content == "Message 1"
     assert messages[1].content == "Response 1"
+
 
 @pytest.mark.asyncio
 async def test_areset(memory):

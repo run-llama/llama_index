@@ -38,6 +38,6 @@ def github_reader():
 )
 def test_get_base_url(github_reader, blob_url, expected_base_url):
     base_url = github_reader._get_base_url(blob_url)
-    assert (
-        base_url == expected_base_url
-    ), f"Expected {expected_base_url}, but got {base_url}"
+    assert base_url == expected_base_url, (
+        f"Expected {expected_base_url}, but got {base_url}"
+    )

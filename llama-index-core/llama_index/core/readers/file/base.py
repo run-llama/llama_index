@@ -19,15 +19,16 @@ from typing import (
     Generator,
     Type,
     cast,
+    Union,
 )
 
 import fsspec
 from fsspec.implementations.local import LocalFileSystem
-from tqdm import tqdm
 
 from llama_index.core.async_utils import get_asyncio_module, run_jobs
 from llama_index.core.readers.base import BaseReader, ResourcesReaderMixin
 from llama_index.core.schema import Document
+from llama_index.core.utils import get_tqdm_iterable
 
 
 logger = logging.getLogger(__name__)
@@ -63,9 +64,9 @@ class FileSystemReaderMixin(ABC):
         return self.read_file_content(input_file, **kwargs)
 
 
-def _try_loading_included_file_formats() -> (
-    dict[str, Type[BaseReader]]
-):  # pragma: no cover
+def _try_loading_included_file_formats() -> dict[
+    str, Type[BaseReader]
+]:  # pragma: no cover
     try:
         from llama_index.readers.file import (
             DocxReader,
@@ -731,10 +732,14 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                 documents = reduce(lambda x, y: x + y, results)
 
         else:
-            if show_progress:
-                files_to_process = tqdm(
-                    self.input_files, desc="Loading files", unit="file"
-                )
+            files_to_process = cast(
+                list[Union[Path, PurePosixPath]],
+                get_tqdm_iterable(
+                    self.input_files,
+                    show_progress=show_progress,
+                    desc="Loading files",
+                ),
+            )
             for input_file in files_to_process:
                 documents.extend(
                     SimpleDirectoryReader.load_file(
@@ -813,11 +818,14 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             Generator[List[Document]]: A list of documents.
 
         """
-        files_to_process = self.input_files
-
-        if show_progress:
-            files_to_process = tqdm(self.input_files, desc="Loading files", unit="file")
-
+        files_to_process = cast(
+            list[Union[Path, PurePosixPath]],
+            get_tqdm_iterable(
+                self.input_files,
+                show_progress=show_progress,
+                desc="Loading files",
+            ),
+        )
         for input_file in files_to_process:
             documents = SimpleDirectoryReader.load_file(
                 input_file=input_file,

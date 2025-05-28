@@ -1,4 +1,5 @@
 """Airtable reader."""
+
 from typing import List
 
 from llama_index.core.readers.base import BaseReader

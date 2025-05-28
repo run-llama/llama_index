@@ -23,7 +23,7 @@ def generate_nodes(
 
 
 def bench_simple_vector_store(
-    num_vectors: List[int] = [10, 50, 100, 500, 1000]
+    num_vectors: List[int] = [10, 50, 100, 500, 1000],
 ) -> None:
     """Benchmark simple vector store."""
     print("Benchmarking SimpleVectorStore\n---------------------------")

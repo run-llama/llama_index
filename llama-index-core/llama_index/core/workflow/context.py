@@ -39,9 +39,11 @@ if TYPE_CHECKING:  # pragma: no cover
 T = TypeVar("T", bound=Event)
 EventBuffer = Dict[str, List[Event]]
 
+
 # Only warn once about unserializable keys
 class UnserializableKeyWarning(Warning):
     pass
+
 
 warnings.simplefilter("once", UnserializableKeyWarning)
 
@@ -60,7 +62,7 @@ class Context:
 
     # These keys are set by pre-built workflows and
     # are known to be unserializable in some cases.
-    known_unserializable_keys = ("memory", )
+    known_unserializable_keys = ("memory",)
 
     def __init__(
         self,

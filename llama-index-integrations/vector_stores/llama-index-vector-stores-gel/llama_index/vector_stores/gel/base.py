@@ -330,7 +330,9 @@ class GelVectorStore(BasePydanticVectorStore):
         ]
 
     async def aget_nodes(
-        self, node_ids: Optional[List[str]] = None, filters: Optional[MetadataFilters] = None
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
     ) -> List[BaseNode]:
         """Async version of get_nodes."""
         assert filters is None, "Filters are not supported in get_nodes"

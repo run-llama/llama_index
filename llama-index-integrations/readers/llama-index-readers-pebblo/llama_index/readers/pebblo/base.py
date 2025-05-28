@@ -147,7 +147,7 @@ class PebbloSafeReader(BaseReader):
                 f"send_loader_doc: request \
                     url {resp.request.url}, \
                     body {str(resp.request.body)[:999]} \
-                    len {len(resp.request.body if resp.request.body  else [])} \
+                    len {len(resp.request.body if resp.request.body else [])} \
                     response status{resp.status_code} body {resp.json()}"
             )
         except requests.exceptions.RequestException:
@@ -189,7 +189,7 @@ class PebbloSafeReader(BaseReader):
                     url {resp.request.url}, \
                     headers {resp.request.headers}, \
                     body {str(resp.request.body)[:999]} \
-                    len {len(resp.request.body if resp.request.body  else [])} \
+                    len {len(resp.request.body if resp.request.body else [])} \
                     response status{resp.status_code} body {resp.json()}"
             )
             if resp.status_code in [HTTPStatus.OK, HTTPStatus.BAD_GATEWAY]:

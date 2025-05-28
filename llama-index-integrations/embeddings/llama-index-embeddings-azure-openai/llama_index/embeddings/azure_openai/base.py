@@ -91,7 +91,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", None
         )
 
-        if use_azure_ad:
+        if not use_azure_ad:
             api_key = get_from_param_or_env(
                 "api_key", api_key, "AZURE_OPENAI_API_KEY", None
             )

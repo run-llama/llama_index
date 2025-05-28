@@ -118,12 +118,21 @@ class ImageBlock(BaseModel):
             as_base64 (bool): whether the resolved image should be returned as base64-encoded bytes
 
         """
-        return resolve_binary(
+        data_buffer = resolve_binary(
             raw_bytes=self.image,
             path=self.path,
             url=str(self.url) if self.url else None,
             as_base64=as_base64,
         )
+
+        # Check size by seeking to end and getting position
+        data_buffer.seek(0, 2)  # Seek to end
+        size = data_buffer.tell()
+        data_buffer.seek(0)  # Reset to beginning
+
+        if size == 0:
+            raise ValueError("resolve_image returned zero bytes")
+        return data_buffer
 
 
 class AudioBlock(BaseModel):
@@ -178,16 +187,104 @@ class AudioBlock(BaseModel):
             as_base64 (bool): whether the resolved audio should be returned as base64-encoded bytes
 
         """
-        return resolve_binary(
+        data_buffer = resolve_binary(
             raw_bytes=self.audio,
             path=self.path,
             url=str(self.url) if self.url else None,
             as_base64=as_base64,
         )
+        # Check size by seeking to end and getting position
+        data_buffer.seek(0, 2)  # Seek to end
+        size = data_buffer.tell()
+        data_buffer.seek(0)  # Reset to beginning
+
+        if size == 0:
+            raise ValueError("resolve_image returned zero bytes")
+        return data_buffer
+
+
+class DocumentBlock(BaseModel):
+    block_type: Literal["document"] = "document"
+    data: Optional[bytes] = None
+    path: Optional[Union[FilePath | str]] = None
+    url: Optional[str] = None
+    title: Optional[str] = None
+    document_mimetype: Optional[str] = None
+
+    @model_validator(mode="after")
+    def document_validation(self) -> Self:
+        self.document_mimetype = self.document_mimetype or self._guess_mimetype()
+
+        if not self.title:
+            self.title = "input_document"
+
+        # skip data validation if it's not provided
+        if not self.data:
+            return self
+
+        try:
+            decoded_document = base64.b64decode(self.data, validate=True)
+        except BinasciiError:
+            self.data = base64.b64encode(self.data)
+
+        return self
+
+    def resolve_document(self) -> BytesIO:
+        """
+        Resolve a document such that it is represented by a BufferIO object.
+        """
+        data_buffer = resolve_binary(
+            raw_bytes=self.data,
+            path=self.path,
+            url=str(self.url) if self.url else None,
+            as_base64=False,
+        )
+        # Check size by seeking to end and getting position
+        data_buffer.seek(0, 2)  # Seek to end
+        size = data_buffer.tell()
+        data_buffer.seek(0)  # Reset to beginning
+
+        if size == 0:
+            raise ValueError("resolve_image returned zero bytes")
+        return data_buffer
+
+    def _get_b64_string(self, data_buffer: BytesIO) -> str:
+        """
+        Get base64-encoded string from a BytesIO buffer.
+        """
+        data = data_buffer.read()
+        return base64.b64encode(data).decode("utf-8")
+
+    def _get_b64_bytes(self, data_buffer: BytesIO) -> bytes:
+        """
+        Get base64-encoded bytes from a BytesIO buffer.
+        """
+        data = data_buffer.read()
+        return base64.b64encode(data)
+
+    def guess_format(self) -> str | None:
+        path = self.path or self.url
+        if not path:
+            return None
+
+        return Path(str(path)).suffix.replace(".", "")
+
+    def _guess_mimetype(self) -> str | None:
+        if self.data:
+            guess = filetype.guess(self.data)
+            return str(guess.mime) if guess else None
+
+        suffix = self.guess_format()
+        if not suffix:
+            return None
+
+        guess = filetype.get_type(ext=suffix)
+        return str(guess.mime) if guess else None
 
 
 ContentBlock = Annotated[
-    Union[TextBlock, ImageBlock, AudioBlock], Field(discriminator="block_type")
+    Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock],
+    Field(discriminator="block_type"),
 ]
 
 
@@ -237,12 +334,12 @@ class ChatMessage(BaseModel):
             The cumulative content of the TextBlock blocks, None if there are none.
 
         """
-        content = ""
+        content_strs = []
         for block in self.blocks:
             if isinstance(block, TextBlock):
-                content += block.text
+                content_strs.append(block.text)
 
-        return content or None
+        return "\n".join(content_strs) or None
 
     @content.setter
     def content(self, content: str) -> None:

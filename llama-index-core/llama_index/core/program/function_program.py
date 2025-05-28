@@ -46,7 +46,9 @@ def get_function_tool(output_cls: Type[Model]) -> FunctionTool:
 
     return FunctionTool.from_defaults(
         fn=model_fn,
-        name=schema["title"],
+        # schema won't always have a title attribute
+        # fallback to using the class name directly
+        name=schema.get("title", output_cls.__name__),
         description=schema_description,
         fn_schema=output_cls,
     )

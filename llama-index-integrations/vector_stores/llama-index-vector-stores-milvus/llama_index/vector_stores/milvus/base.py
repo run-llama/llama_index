@@ -100,7 +100,7 @@ def _to_milvus_filter(
 
 
 def _get_index_metric_type(
-    func: Union[BaseSparseEmbeddingFunction, BaseMilvusBuiltInFunction]
+    func: Union[BaseSparseEmbeddingFunction, BaseMilvusBuiltInFunction],
 ):
     if isinstance(func, BM25BuiltInFunction):
         return "BM25"
@@ -439,9 +439,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 if isinstance(
                     self.sparse_embedding_function, BaseSparseEmbeddingFunction
                 ):
-                    entry[
-                        self.sparse_embedding_field
-                    ] = self.sparse_embedding_function.encode_documents([node.text])[0]
+                    entry[self.sparse_embedding_field] = (
+                        self.sparse_embedding_function.encode_documents([node.text])[0]
+                    )
                 else:  # BaseMilvusBuiltInFunction
                     pass
 
@@ -486,9 +486,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 if isinstance(
                     self.sparse_embedding_function, BaseSparseEmbeddingFunction
                 ):
-                    entry[
-                        self.sparse_embedding_field
-                    ] = self.sparse_embedding_function.encode_documents([node.text])[0]
+                    entry[self.sparse_embedding_field] = (
+                        self.sparse_embedding_function.encode_documents([node.text])[0]
+                    )
                 else:  # BaseMilvusBuiltInFunction
                     pass
 
@@ -1006,7 +1006,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
         node_ids = []
         for node in nodes:
             node_embeddings.append(node["entity"]["embedding"])
-            node_ids.append(node["id"])
+            node_ids.append(self._get_id_from_hit(node))
+
         mmr_similarities, mmr_ids = get_top_k_mmr_embeddings(
             query_embedding=query.query_embedding,
             embeddings=node_embeddings,
@@ -1401,5 +1402,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
 
             nodes.append(node)
             similarities.append(hit["distance"])
-            ids.append(hit["id"])
+            ids.append(self._get_id_from_hit(hit))
         return nodes, similarities, ids
+
+    def _get_id_from_hit(self, hit: Dict) -> str:
+        if "id" in hit:
+            return hit["id"]
+        else:
+            return hit[next(iter(hit))]

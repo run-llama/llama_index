@@ -1,4 +1,5 @@
 """Product extraction pack."""
+
 import asyncio
 from typing import Any, Dict
 

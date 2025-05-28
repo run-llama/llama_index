@@ -193,13 +193,16 @@ def test_image_vision_llm_reader_load_data_with_parser_config(
     in order to avoid having to download checkpoints as part of tests, while
     still covering all essential `ImageVisionLLMReader` class functionality.
     """
-    with mock.patch(
-        "transformers.Blip2ForConditionalGeneration.from_pretrained",
-        return_value=ModelFake(),
-    ) as model, mock.patch(
-        "transformers.Blip2Processor.from_pretrained",
-        return_value=TokenizerFake(),
-    ) as processor:
+    with (
+        mock.patch(
+            "transformers.Blip2ForConditionalGeneration.from_pretrained",
+            return_value=ModelFake(),
+        ) as model,
+        mock.patch(
+            "transformers.Blip2Processor.from_pretrained",
+            return_value=TokenizerFake(),
+        ) as processor,
+    ):
         parser_config = {
             "processor": processor(),
             "model": model(),
@@ -251,12 +254,15 @@ def test_image_vision_llm_reader_load_data_wo_parser_config(
     in order to avoid having to download checkpoints as part of tests, while
     still covering most of the `ImageVisionLLMReader` class functionality.
     """
-    with mock.patch(
-        "transformers.Blip2ForConditionalGeneration.from_pretrained",
-        return_value=ModelFake(),
-    ), mock.patch(
-        "transformers.Blip2Processor.from_pretrained",
-        return_value=TokenizerFake(),
+    with (
+        mock.patch(
+            "transformers.Blip2ForConditionalGeneration.from_pretrained",
+            return_value=ModelFake(),
+        ),
+        mock.patch(
+            "transformers.Blip2Processor.from_pretrained",
+            return_value=TokenizerFake(),
+        ),
     ):
         if torch_installed:
             image_vision_llm_reader = ImageVisionLLMReader()

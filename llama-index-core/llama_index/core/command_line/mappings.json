@@ -432,6 +432,7 @@
   "Neo4jVectorStore": "llama_index.vector_stores.neo4jvector",
   "DeepLakeVectorStore": "llama_index.vector_stores.deeplake",
   "CouchbaseVectorStore": "llama_index.vector_stores.couchbase",
+  "CouchbaseSearchVectorStore": "llama_index.vector_stores.couchbase",
   "WeaviateVectorStore": "llama_index.vector_stores.weaviate",
   "BaiduVectorDB": "llama_index.vector_stores.baiduvectordb",
   "TableParams": "llama_index.vector_stores.baiduvectordb",
