@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Generic, TypeVar, Union
+from typing import Any, Callable, Generic, TypeVar, Union
 
 from .events import StopEvent
 
@@ -10,13 +10,19 @@ RunResultT = Union[StopEventT, Any]
 T = TypeVar("T")
 
 
-class _ResourceMeta(Generic[T]):
-    def __class_getitem__(cls, item: tuple) -> Annotated[Any, Any]:
-        if not(isinstance, tuple) or len(item) > 2:
-            return TypeError("A resource should be defined as: Resource[type, factory]")
-        type_t, factory = item
-        if not callable(factory):
-            raise TypeError(f"factory must be a callable, got {type(factory)}")
-        return Annotated[type_t, factory]
+class _Resource(Generic[T]):
+    def __init__(self, factory: Callable[..., T], cache: bool) -> None:
+        self._factory = factory
+        self._cache = cache
+        self._cached_value: T | None = None
 
-Resource = _ResourceMeta
+    def __call__(self) -> T:
+        if self._cache:
+            if self._cached_value is None:
+                self._cached_value = self._factory()
+            return self._cached_value
+        return self._factory()
+
+
+def Resource(factory: Callable[..., T]) -> _Resource[T]:
+    return _Resource(factory, True)
