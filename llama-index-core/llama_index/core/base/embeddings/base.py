@@ -95,14 +95,14 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
 
     @model_validator(mode="after")
     def check_base_embeddings_class(self) -> Self:
-        from llama_index.core.storage.kvstore.simple_kvstore import SimpleKVStore
+        from llama_index.core.storage.kvstore.types import BaseKVStore
 
         if self.callback_manager is None:
             self.callback_manager = CallbackManager([])
         if self.embeddings_cache is not None and not isinstance(
-            self.embeddings_cache, SimpleKVStore
+            self.embeddings_cache, BaseKVStore
         ):
-            raise TypeError("embeddings_cache must be of type SimpleKVStore")
+            raise TypeError("embeddings_cache must be of type BaseKVStore")
         return self
 
     @abstractmethod
