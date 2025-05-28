@@ -1652,16 +1652,16 @@ wheels = [
 
 [[package]]
 name = "llama-cloud"
-version = "0.1.21"
+version = "0.1.23"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "certifi" },
     { name = "httpx" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/89/70/cbd4078ed7bd1b8b545f6c9352ffbb54994bb289a991a2b63a4c475f7941/llama_cloud-0.1.21.tar.gz", hash = "sha256:5676d54e4650d293691f5ced1597d74d489b33fd41f51d677b3fd35f56df693e", size = 91475, upload_time = "2025-05-08T19:37:02.324Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5b/e4/d1a30167ed6690a408382be1cf7de220a506085f4371baaf067d65bad8fd/llama_cloud-0.1.23.tar.gz", hash = "sha256:3d84a24a860f046d39a106c06742ec0ea39a574ac42bbf91706fe025f44e233e", size = 101292, upload_time = "2025-05-28T03:11:50.373Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4a/fb/21e4190f80d7f80bd42abdfbbdbb88c21a98fff0a05a39d74ef747b7d462/llama_cloud-0.1.21-py3-none-any.whl", hash = "sha256:a10b437f8623f341108d4be8f4ff0eb5809022fee0c05f198d36ad51b60fff30", size = 265819, upload_time = "2025-05-08T19:37:01.081Z" },
+    { url = "https://files.pythonhosted.org/packages/8a/15/3b56acef877dbc5d01d7e1a782c2cc50ef8a08d5773121c3bc20546de582/llama_cloud-0.1.23-py3-none-any.whl", hash = "sha256:ce95b0705d85c99b3b27b0af0d16a17d9a81b14c96bf13c1063a1bd13d8d0446", size = 267343, upload_time = "2025-05-28T03:11:48.942Z" },
 ]
 
 [[package]]
@@ -1750,7 +1750,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-cloud", specifier = "==0.1.21" },
+    { name = "llama-cloud", specifier = "==0.1.23" },
     { name = "llama-index-core", specifier = ">=0.12.0,<0.13" },
 ]
 
