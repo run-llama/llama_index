@@ -1,5 +1,5 @@
 import logging
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 from llama_index.core.graph_stores.types import (
     LabelledNode,
     PropertyGraphStore,
@@ -8,6 +8,7 @@ from llama_index.core.graph_stores.types import (
     ChunkNode,
     Triplet,
 )
+
 query_executor = None
 query_builder = None
 # Prefix for properties that are in the client metadata
@@ -63,6 +64,7 @@ def changed(entity, properties):
             to_delete.append(k)
     return to_update, to_delete
 
+
 def query_for_ids(command: str, ids: List[str]) -> List[dict]:
     """Create a query for a list of ids."""
     constraints = {}
@@ -70,10 +72,11 @@ def query_for_ids(command: str, ids: List[str]) -> List[dict]:
     if command == "FindEntity":
         query = [{command: {"results": {"all_properties": True}}}]
     else:
-        query =[{command:{}}]
+        query = [{command: {}}]
     if len(constraints) > 0:
         query[0][command]["constraints"] = constraints
     return query
+
 
 def query_for_properties(command: str, properties: dict) -> List[dict]:
     """Create a query for a list of properties."""
@@ -84,6 +87,7 @@ def query_for_properties(command: str, properties: dict) -> List[dict]:
     if len(constraints) > 0:
         query[0][command]["constraints"] = constraints
     return query
+
 
 class ApertureDBGraphStore(PropertyGraphStore):
     """
@@ -144,24 +148,23 @@ class ApertureDBGraphStore(PropertyGraphStore):
                 )
             ]
             for i in range(1, 2):
-                query.extend([
-                    {
-                        "FindEntity": {
-                            "_ref": i+1,
-                            "is_connected_to": {
-                                "ref": i,
-                                "direction": "out"
-                            },
-                            "results": {"all_properties": True, "limit": limit},
-                        }
-                    },
-                    {
-                        "FindConnection": {
-                            "src": i,
-                            "results": {"all_properties": True, "limit": limit},
-                        }
-                    }
-                ])
+                query.extend(
+                    [
+                        {
+                            "FindEntity": {
+                                "_ref": i + 1,
+                                "is_connected_to": {"ref": i, "direction": "out"},
+                                "results": {"all_properties": True, "limit": limit},
+                            }
+                        },
+                        {
+                            "FindConnection": {
+                                "src": i,
+                                "results": {"all_properties": True, "limit": limit},
+                            }
+                        },
+                    ]
+                )
             result, response, _ = query_executor(
                 self._client,
                 query,
@@ -178,10 +181,10 @@ class ApertureDBGraphStore(PropertyGraphStore):
                         if ce[UNIQUEID_PROPERTY] in ignore_rels:
                             continue
                         source = EntityNode(
-                                name=entity[UNIQUEID_PROPERTY],
-                                label=entity["label"],
-                                properties=entity,
-                            )
+                            name=entity[UNIQUEID_PROPERTY],
+                            label=entity["label"],
+                            properties=entity,
+                        )
 
                         target = EntityNode(
                             name=c[UNIQUEID_PROPERTY],
@@ -196,7 +199,7 @@ class ApertureDBGraphStore(PropertyGraphStore):
                         )
                         adjacent_nodes.append(target)
                         rel_map.append([source, relation, target])
-                    rel_map.extend(self.get_rel_map(adjacent_nodes, depth-1))
+                    rel_map.extend(self.get_rel_map(adjacent_nodes, depth - 1))
         return rel_map
 
     def delete(
@@ -227,7 +230,7 @@ class ApertureDBGraphStore(PropertyGraphStore):
                     {
                         "DeleteEntity": {
                             "with_class": name,
-                            "constraints": {"_uniqueid": ["!=", "0.0.0"]}
+                            "constraints": {"_uniqueid": ["!=", "0.0.0"]},
                         }
                     }
                 ]
@@ -242,7 +245,7 @@ class ApertureDBGraphStore(PropertyGraphStore):
                     {
                         "DeleteConnection": {
                             "with_class": relation_name,
-                            "constraints": {"_uniqueid": ["!=", "0.0.0"]}
+                            "constraints": {"_uniqueid": ["!=", "0.0.0"]},
                         }
                     }
                 ]
@@ -253,9 +256,7 @@ class ApertureDBGraphStore(PropertyGraphStore):
                 assert result == 0, response
 
     def get(
-        self,
-        properties: Optional[dict] = None,
-        ids: Optional[List[str]] = None
+        self, properties: Optional[dict] = None, ids: Optional[List[str]] = None
     ) -> List[LabelledNode]:
         entities = []
         if ids and len(ids) > 0:
@@ -301,8 +302,14 @@ class ApertureDBGraphStore(PropertyGraphStore):
     ):
         raise NotImplementedError("get_triplets is not implemented")
 
-    def structured_query(self, query, param_map=None):
-        raise NotImplementedError("structured_query is not implemented")
+    def structured_query(
+        self, query: str, param_map: Optional[Dict[str, Any]] = None
+    ) -> Any:
+        query = [{query: param_map}]
+        blobs = []
+        result, response, _ = query_executor(self._client, query, blobs)
+        assert result == 0, response
+        return response
 
     def upsert_nodes(self, nodes: List[EntityNode]) -> List[str]:
         ids = []
@@ -386,9 +393,13 @@ class ApertureDBGraphStore(PropertyGraphStore):
                         "properties": r.properties
                         | {
                             UNIQUEID_PROPERTY: f"{r.id}",
+                            "src_id": r.source_id.capitalize(),
+                            "dst_id": r.target_id.capitalize(),
                         },
                         "if_not_found": {
                             UNIQUEID_PROPERTY: ["==", f"{r.id}"],
+                            "src_id": ["==", r.source_id.capitalize()],
+                            "dst_id": ["==", r.target_id.capitalize()],
                         },
                     }
                 },
