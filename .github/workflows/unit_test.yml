@@ -36,7 +36,7 @@ jobs:
         run: |
           git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
           uv run -- llama-dev \
-            --repo-root ".." ${{ vars.RUNNER_DEBUG && '--debug' || '' }} test \
+            --repo-root ".." ${{ vars.RUNNER_DEBUG }} && '--debug' || '' test \
             --workers ${{ env.NUM_WORKERS }} \
             --base-ref ${{ github.event.pull_request.base.ref }}
 
@@ -47,7 +47,7 @@ jobs:
         run: |
           git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
           uv run -- llama-dev \
-            --repo-root ".." ${{ env.ACTIONS_STEP_DEBUG == 'true' && '--debug' || '' }} test \
+            --repo-root ".." ${{ vars.RUNNER_DEBUG  }} && '--debug' || '' test \
             --workers ${{ env.NUM_WORKERS }} \
             --base-ref=${{ github.event.pull_request.base.ref }} \
             --cov \
