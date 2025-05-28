@@ -476,11 +476,7 @@ class Gemini(FunctionCallingLLM):
         llm_kwargs = llm_kwargs or {}
 
         if self._is_function_call_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in llm_kwargs
-                else llm_kwargs["tool_choice"]
-            )
+            llm_kwargs["tool_required"] = True
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
         return super().structured_predict(
@@ -499,11 +495,7 @@ class Gemini(FunctionCallingLLM):
         llm_kwargs = llm_kwargs or {}
 
         if self._is_function_call_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in llm_kwargs
-                else llm_kwargs["tool_choice"]
-            )
+            llm_kwargs["tool_required"] = True
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
         return await super().astructured_predict(
@@ -522,11 +514,7 @@ class Gemini(FunctionCallingLLM):
         llm_kwargs = llm_kwargs or {}
 
         if self._is_function_call_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in llm_kwargs
-                else llm_kwargs["tool_choice"]
-            )
+            llm_kwargs["tool_required"] = True
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
         return super().stream_structured_predict(
@@ -545,11 +533,7 @@ class Gemini(FunctionCallingLLM):
         llm_kwargs = llm_kwargs or {}
 
         if self._is_function_call_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in llm_kwargs
-                else llm_kwargs["tool_choice"]
-            )
+            llm_kwargs["tool_required"] = True
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
         return await super().astream_structured_predict(

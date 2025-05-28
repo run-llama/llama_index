@@ -5,6 +5,9 @@ from google.ai.generativelanguage_v1beta.types import (
     FunctionCallingConfig,
     ToolConfig,
 )
+from google.generativeai.types.content_types import FunctionCallingMode
+import google.generativeai as genai
+
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.base.llms.types import ChatMessage, ImageBlock, MessageRole
 from llama_index.core.prompts.base import ChatPromptTemplate
@@ -13,6 +16,28 @@ from llama_index.llms.gemini import Gemini
 from llama_index.llms.gemini.utils import chat_message_to_gemini
 from pydantic import BaseModel, Field
 from unittest.mock import MagicMock, patch
+
+
+@pytest.fixture
+def mock_gemini_context():
+    """
+    Fixture that provides a context manager for mocking both google.generativeai.get_model
+    and google.generativeai.GenerativeModel for Gemini LLM testing.
+
+    Yields:
+        MagicMock: A mock that simulates genai.types.Model with the required attributes
+                   for Gemini LLM initialization and testing.
+
+    """
+    mock_model = MagicMock(spec=genai.types.Model)
+    mock_model.supported_generation_methods = ["generateContent"]
+    mock_model.output_token_limit = 2048
+
+    with (
+        patch("google.generativeai.get_model", return_value=mock_model),
+        patch("google.generativeai.GenerativeModel"),
+    ):
+        yield mock_model
 
 
 def test_embedding_class() -> None:
@@ -247,89 +272,56 @@ search_tool = FunctionTool.from_defaults(
 )
 
 
-@patch("google.generativeai.get_model")
-def test_to_function_calling_config(mock_get_model):
-    """Test that tool_required is correctly mapped to FunctionCallingMode."""
-    # Import the needed constants
-    from google.generativeai.types.content_types import FunctionCallingMode
+def test_to_function_calling_config(mock_gemini_context: MagicMock):
+    llm = Gemini(model="models/gemini-1.5-flash", api_key="fake_key")
 
-    # Mock genai.get_model to avoid API calls
-    mock_model = MagicMock()
-    mock_model.supported_generation_methods = ["generateContent"]
-    mock_model.output_token_limit = 2048
-    mock_get_model.return_value = mock_model
+    # Test with tool_required=True
+    config = llm._to_function_calling_config(tool_required=True, tool_choice=None)
+    assert config["mode"] == FunctionCallingMode.ANY
 
-    with patch("google.generativeai.GenerativeModel"):
-        llm = Gemini(model="models/gemini-1.5-flash", api_key="fake_key")
+    # Test with tool_required=False
+    config = llm._to_function_calling_config(tool_required=False, tool_choice=None)
+    assert config["mode"] == FunctionCallingMode.AUTO
 
-        # Test with tool_required=True
-        config = llm._to_function_calling_config(tool_required=True, tool_choice=None)
-        assert config["mode"] == FunctionCallingMode.ANY
+    # Test with tool_choice="any"
+    config = llm._to_function_calling_config(tool_required=False, tool_choice="any")
+    assert config["mode"] == FunctionCallingMode.ANY
 
-        # Test with tool_required=False
-        config = llm._to_function_calling_config(tool_required=False, tool_choice=None)
-        assert config["mode"] == FunctionCallingMode.AUTO
-
-        # Test with tool_choice="any"
-        config = llm._to_function_calling_config(tool_required=False, tool_choice="any")
-        assert config["mode"] == FunctionCallingMode.ANY
-
-        # Test with tool_choice="none"
-        config = llm._to_function_calling_config(tool_required=True, tool_choice="none")
-        assert config["mode"] == FunctionCallingMode.NONE
+    # Test with tool_choice="none"
+    config = llm._to_function_calling_config(tool_required=True, tool_choice="none")
+    assert config["mode"] == FunctionCallingMode.NONE
 
 
-@patch("google.generativeai.get_model")
-def test_prepare_chat_with_tools_tool_required(mock_get_model):
+def test_prepare_chat_with_tools_tool_required(mock_gemini_context: MagicMock):
     """Test that tool_required=True correctly sets FunctionCallingMode.ANY in the request."""
-    from google.generativeai.types.content_types import FunctionCallingMode
+    llm = Gemini(model="models/gemini-1.5-flash", api_key="fake_key")
 
-    # Mock genai.get_model to avoid API calls
-    mock_model = MagicMock()
-    mock_model.supported_generation_methods = ["generateContent"]
-    mock_model.output_token_limit = 2048
-    mock_get_model.return_value = mock_model
+    # Test with tool_required=True
+    result = llm._prepare_chat_with_tools(tools=[search_tool], tool_required=True)
 
-    with patch("google.generativeai.GenerativeModel"):
-        llm = Gemini(model="models/gemini-1.5-flash", api_key="fake_key")
-
-        # Test with tool_required=True
-        result = llm._prepare_chat_with_tools(tools=[search_tool], tool_required=True)
-
-        assert "tool_config" in result
-        assert "function_calling_config" in result["tool_config"]
-        assert (
-            result["tool_config"]["function_calling_config"]["mode"]
-            == FunctionCallingMode.ANY
-        )
-        assert len(result["tools"]["function_declarations"]) == 1
-        assert result["tools"]["function_declarations"][0].name == "search_tool"
+    assert "tool_config" in result
+    assert "function_calling_config" in result["tool_config"]
+    assert (
+        result["tool_config"]["function_calling_config"]["mode"]
+        == FunctionCallingMode.ANY
+    )
+    assert len(result["tools"]["function_declarations"]) == 1
+    assert result["tools"]["function_declarations"][0].name == "search_tool"
 
 
-@patch("google.generativeai.get_model")
-def test_prepare_chat_with_tools_tool_not_required(mock_get_model):
-    """Test that tool_required=False correctly sets FunctionCallingMode.AUTO in the request."""
-    from google.generativeai.types.content_types import FunctionCallingMode
+def test_prepare_chat_with_tools_tool_not_required(mock_gemini_context: MagicMock):
+    llm = Gemini(model="models/gemini-1.5-flash", api_key="fake_key")
 
-    # Mock genai.get_model to avoid API calls
-    mock_model = MagicMock()
-    mock_model.supported_generation_methods = ["generateContent"]
-    mock_model.output_token_limit = 2048
-    mock_get_model.return_value = mock_model
+    # Test with tool_required=False (default)
+    result = llm._prepare_chat_with_tools(
+        tools=[search_tool],
+    )
 
-    with patch("google.generativeai.GenerativeModel"):
-        llm = Gemini(model="models/gemini-1.5-flash", api_key="fake_key")
-
-        # Test with tool_required=False (default)
-        result = llm._prepare_chat_with_tools(
-            tools=[search_tool],
-        )
-
-        assert "tool_config" in result
-        assert "function_calling_config" in result["tool_config"]
-        assert (
-            result["tool_config"]["function_calling_config"]["mode"]
-            == FunctionCallingMode.AUTO
-        )
-        assert len(result["tools"]["function_declarations"]) == 1
-        assert result["tools"]["function_declarations"][0].name == "search_tool"
+    assert "tool_config" in result
+    assert "function_calling_config" in result["tool_config"]
+    assert (
+        result["tool_config"]["function_calling_config"]["mode"]
+        == FunctionCallingMode.AUTO
+    )
+    assert len(result["tools"]["function_declarations"]) == 1
+    assert result["tools"]["function_declarations"][0].name == "search_tool"
