@@ -1,5 +1,7 @@
+import os
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.tools import FunctionTool
+import pytest
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import resolve_tool_choice
 
@@ -149,3 +151,17 @@ def test_prepare_chat_with_tools_explicit_tool_choice_required():
     )
 
     assert result["tool_choice"] == "required"
+
+
+@pytest.mark.skipif(
+    os.getenv("OPENAI_API_KEY") is None, reason="OpenAI API key not available"
+)
+def test_tool_required():
+    llm = OpenAI(model="gpt-4.1-mini")
+    response = llm.chat_with_tools(
+        user_msg="What is the capital of France?",
+        tools=[search_tool],
+        tool_required=True,
+    )
+    print(repr(response))
+    assert len(response.message.additional_kwargs["tool_calls"]) == 1

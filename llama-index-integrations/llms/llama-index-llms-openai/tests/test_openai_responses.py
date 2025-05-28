@@ -537,3 +537,21 @@ def test_document_upload(tmp_path: Path, pdf_url: str) -> None:
     messages = [msg]
     response = llm.chat(messages)
     assert isinstance(response, ChatResponse)
+
+
+def search(query: str) -> str:
+    return f"Results for {query}"
+
+
+search_tool = FunctionTool.from_defaults(fn=search)
+
+
+@pytest.mark.skipif(SKIP_OPENAI_TESTS, reason="OpenAI API key not available")
+def test_tool_required():
+    llm = OpenAIResponses(model="gpt-4.1-mini")
+    response = llm.chat_with_tools(
+        user_msg="What is the capital of France?",
+        tools=[search_tool],
+        tool_required=True,
+    )
+    assert len(response.message.additional_kwargs["tool_calls"]) == 1
