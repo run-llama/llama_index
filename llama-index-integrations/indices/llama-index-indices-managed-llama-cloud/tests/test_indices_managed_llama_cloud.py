@@ -13,7 +13,7 @@ from llama_cloud import (
     LlamaParseParameters,
 )
 from llama_cloud.client import LlamaCloud
-
+from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.constants import DEFAULT_BASE_URL
 from llama_index.core.indices.managed.base import BaseManagedIndex
 from llama_index.core.schema import Document, ImageNode
@@ -426,3 +426,44 @@ async def test_async_index_from_file(index_name: str, local_file: str):
     assert file_id is not None
 
     await index.await_for_completion()
+
+
+class DummySchema(BaseModel):
+    source: str
+
+
+@pytest.mark.skipif(
+    not base_url or not api_key, reason="No platform base url or api key set"
+)
+@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
+def test_search_filters_inference_schema(index_name: str):
+    """Test the use of search_filters_inference_schema in retrieval."""
+    # Define a dummy schema
+    schema = DummySchema(field="test")
+
+    # Create documents
+    documents = [
+        Document(text="Hello world.", doc_id="1", metadata={"source": "test"}),
+    ]
+
+    # Create an index with documents
+    index = LlamaCloudIndex.from_documents(
+        documents=documents,
+        name=index_name,
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+        organization_id=organization_id,
+        verbose=True,
+    )
+
+    # Use the retriever with the schema
+    retriever = index.as_retriever(search_filters_inference_schema=schema)
+    nodes = retriever.retrieve(
+        'Search for documents where the metadata has source="test"'
+    )
+
+    # Verify that nodes are retrieved
+    assert len(nodes) > 0
+    assert all(n.node.ref_doc_id == "1" for n in nodes)
+    assert all(n.node.metadata["source"] == "test" for n in nodes)
