@@ -14,6 +14,7 @@ from llama_index.core.llms import (
 )
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.anthropic import Anthropic
+from llama_index.llms.anthropic.base import AnthropicChatResponse
 
 
 def test_text_inference_embedding_class():
@@ -228,6 +229,36 @@ def pdf_url() -> str:
 
 @pytest.mark.skipif(
     os.getenv("ANTHROPIC_API_KEY") is None,
+    reason="Anthropic API key not available to test Anthropic integration",
+)
+def test_tool_required():
+    llm = Anthropic(model="claude-3-5-sonnet-latest")
+
+    search_tool = FunctionTool.from_defaults(fn=search)
+
+    # Test with tool_required=True
+    response = llm.chat_with_tools(
+        user_msg="What is the weather in Paris?",
+        tools=[search_tool],
+        tool_required=True,
+    )
+    assert isinstance(response, AnthropicChatResponse)
+    assert response.message.additional_kwargs["tool_calls"] is not None
+    assert len(response.message.additional_kwargs["tool_calls"]) > 0
+
+    # Test with tool_required=False
+    response = llm.chat_with_tools(
+        user_msg="Say hello!",
+        tools=[search_tool],
+        tool_required=False,
+    )
+    assert isinstance(response, AnthropicChatResponse)
+    # Should not use tools for a simple greeting
+    assert not response.message.additional_kwargs.get("tool_calls")
+
+
+@pytest.mark.skipif(
+    os.getenv("ANTHROPIC_API_KEY") is None,
     reason="Anthropic API key not available to test Anthropic document uploading ",
 )
 def test_document_upload(tmp_path: Path, pdf_url: str) -> None:
@@ -256,21 +287,21 @@ def test_map_tool_choice_to_anthropic():
         tool_required=True, allow_parallel_tool_calls=False
     )
     assert tool_choice["type"] == "any"
-    assert tool_choice["disable_parallel_tool_calls"]
+    assert tool_choice["disable_parallel_tool_use"]
 
     # Test with tool_required=False
     tool_choice = llm._map_tool_choice_to_anthropic(
         tool_required=False, allow_parallel_tool_calls=False
     )
     assert tool_choice["type"] == "auto"
-    assert tool_choice["disable_parallel_tool_calls"]
+    assert tool_choice["disable_parallel_tool_use"]
 
     # Test with allow_parallel_tool_calls=True
     tool_choice = llm._map_tool_choice_to_anthropic(
         tool_required=True, allow_parallel_tool_calls=True
     )
     assert tool_choice["type"] == "any"
-    assert not tool_choice["disable_parallel_tool_calls"]
+    assert not tool_choice["disable_parallel_tool_use"]
 
 
 def search(query: str) -> str:

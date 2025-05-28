@@ -645,7 +645,7 @@ class Anthropic(FunctionCallingLLM):
         self, tool_required: bool, allow_parallel_tool_calls: bool
     ) -> dict:
         return {
-            "disable_parallel_tool_calls": not allow_parallel_tool_calls,
+            "disable_parallel_tool_use": not allow_parallel_tool_calls,
             "type": "any" if tool_required else "auto",
         }
 
