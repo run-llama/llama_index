@@ -1,14 +1,14 @@
+import asyncio
+import logging
 from typing import Any, Callable, Dict, List, Optional, Type
 
+from llama_index.core.tools.function_tool import FunctionTool
+from llama_index.core.tools.tool_spec.base import BaseToolSpec
+from llama_index.core.tools.types import ToolMetadata
 from pydantic import BaseModel, Field, create_model
+
 from mcp.client.session import ClientSession
 from mcp.types import Resource
-
-import asyncio
-
-from llama_index.core.tools.tool_spec.base import BaseToolSpec
-from llama_index.core.tools.function_tool import FunctionTool
-from llama_index.core.tools.types import ToolMetadata
 
 # Map JSON Schema types to Python types
 json_type_mapping: Dict[str, Type] = {
@@ -76,7 +76,7 @@ class McpToolSpec(BaseToolSpec):
         include_resources: bool = False,
     ) -> None:
         self.client = client
-        self.allowed_tools = allowed_tools if allowed_tools is not None else []
+        self.allowed_tools = allowed_tools
         self.include_resources = include_resources
 
     async def fetch_tools(self) -> List[Any]:
@@ -89,9 +89,16 @@ class McpToolSpec(BaseToolSpec):
         """
         response = await self.client.list_tools()
         tools = response.tools if hasattr(response, "tools") else []
-        if self.allowed_tools:
-            tools = [tool for tool in tools if tool.name in self.allowed_tools]
-        return tools
+        if self.allowed_tools is None:
+            # get all tools by default
+            return tools
+
+        if any(self.allowed_tools):
+            return [tool for tool in tools if tool.name in self.allowed_tools]
+        logging.warning(
+            "Returning an empty tool list due to the empty `allowed_tools` list. Please ensure `allowed_tools` is set appropriately."
+        )
+        return []
 
     async def fetch_resources(self) -> List[Resource]:
         """
