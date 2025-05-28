@@ -1,5 +1,6 @@
 import os
 from typing import List, Optional
+from unittest.mock import MagicMock, patch
 
 import pytest
 from google.genai import types
@@ -402,6 +403,130 @@ def test_get_tool_calls_from_response(llm: GoogleGenAI) -> None:
     assert len(tool_calls) == 1
     assert tool_calls[0].tool_name == "add"
     assert tool_calls[0].tool_kwargs == {"a": 2, "b": 3}
+
+
+def search(query: str) -> str:
+    """Search for information about a query."""
+    return f"Results for {query}"
+
+
+search_tool = FunctionTool.from_defaults(
+    fn=search, name="search_tool", description="A tool for searching information"
+)
+
+
+@pytest.fixture
+def mock_google_genai() -> GoogleGenAI:
+    """Fixture to create a mocked GoogleGenAI instance for unit testing."""
+    with patch("google.genai.Client") as mock_client_class:
+        # Mock the client and its methods
+        mock_client = MagicMock()
+        mock_client.models.get.return_value = MagicMock(
+            input_token_limit=200000, output_token_limit=8192
+        )
+        mock_client_class.return_value = mock_client
+
+        return GoogleGenAI(model="models/gemini-2.0-flash-001", api_key="test-key")
+
+
+def test_prepare_chat_with_tools_tool_required(mock_google_genai: GoogleGenAI) -> None:
+    """Test that tool_required is correctly passed to the API request when True."""
+    # Test with tool_required=True
+    result = mock_google_genai._prepare_chat_with_tools(
+        tools=[search_tool], tool_required=True
+    )
+
+    assert (
+        result["tool_config"].function_calling_config.mode
+        == types.FunctionCallingConfigMode.ANY
+    )
+    assert len(result["tools"]) == 1
+    assert result["tools"][0].function_declarations[0].name == "search_tool"
+
+
+def test_prepare_chat_with_tools_tool_not_required(
+    mock_google_genai: GoogleGenAI,
+) -> None:
+    """Test that tool_required is correctly passed to the API request when False."""
+    # Test with tool_required=False (default)
+    result = mock_google_genai._prepare_chat_with_tools(
+        tools=[search_tool], tool_required=False
+    )
+
+    assert (
+        result["tool_config"].function_calling_config.mode
+        == types.FunctionCallingConfigMode.NONE
+    )
+    assert len(result["tools"]) == 1
+    assert result["tools"][0].function_declarations[0].name == "search_tool"
+
+
+def test_prepare_chat_with_tools_default_behavior(
+    mock_google_genai: GoogleGenAI,
+) -> None:
+    """Test that tool_required defaults to False."""
+    # Test default behavior (should be equivalent to tool_required=False)
+    result = mock_google_genai._prepare_chat_with_tools(tools=[search_tool])
+
+    assert (
+        result["tool_config"].function_calling_config.mode
+        == types.FunctionCallingConfigMode.NONE
+    )
+    assert len(result["tools"]) == 1
+    assert result["tools"][0].function_declarations[0].name == "search_tool"
+
+
+def test_prepare_chat_with_tools_explicit_tool_choice_overrides_tool_required(
+    mock_google_genai: GoogleGenAI,
+) -> None:
+    """Test that explicit tool_choice overrides tool_required parameter."""
+    # Test with tool_required=True but explicit tool_choice="auto"
+    result = mock_google_genai._prepare_chat_with_tools(
+        tools=[search_tool], tool_required=True, tool_choice="auto"
+    )
+
+    assert (
+        result["tool_config"].function_calling_config.mode
+        == types.FunctionCallingConfigMode.AUTO
+    )
+    assert len(result["tools"]) == 1
+    assert result["tools"][0].function_declarations[0].name == "search_tool"
+
+    # Test with tool_required=False but explicit tool_choice="any"
+    result = mock_google_genai._prepare_chat_with_tools(
+        tools=[search_tool], tool_required=False, tool_choice="any"
+    )
+
+    assert (
+        result["tool_config"].function_calling_config.mode
+        == types.FunctionCallingConfigMode.ANY
+    )
+    assert len(result["tools"]) == 1
+    assert result["tools"][0].function_declarations[0].name == "search_tool"
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_tool_required_integration(llm: GoogleGenAI) -> None:
+    """Test tool_required parameter in actual chat_with_tools calls."""
+    # Test with tool_required=True
+    response = llm.chat_with_tools(
+        user_msg="What is the weather in Paris?",
+        tools=[search_tool],
+        tool_required=True,
+    )
+    assert response.message.additional_kwargs.get("tool_calls") is not None
+    assert len(response.message.additional_kwargs["tool_calls"]) > 0
+
+    # Test with tool_required=False
+    response = llm.chat_with_tools(
+        user_msg="Say hello!",
+        tools=[search_tool],
+        tool_required=False,
+    )
+    # Should not use tools for a simple greeting when tool_required=False
+    # Note: This might still use tools depending on the model's behavior,
+    # but the important thing is that the tool_config is set correctly
+    assert response is not None
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")

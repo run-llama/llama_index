@@ -388,11 +388,15 @@ class GoogleGenAI(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
-        tool_choice: Union[str, dict] = "auto",
+        tool_required: bool = False,
+        tool_choice: Optional[Union[str, dict]] = None,
         strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Predict and call the tool."""
+        if tool_choice is None:
+            tool_choice = "any" if tool_required else "none"
+
         if tool_choice == "auto":
             tool_mode = types.FunctionCallingConfigMode.AUTO
         elif tool_choice == "none":
