@@ -382,8 +382,8 @@ def handle_streaming_flexible_model(
 
 
 def _should_retry(exception: BaseException):
-    match exception:
-        case errors.ClientError(status=429) | errors.ClientError(status=408):
+    if isinstance(exception, errors.ClientError):
+        if exception.status in (429, 408):
             return True
     return False
 
