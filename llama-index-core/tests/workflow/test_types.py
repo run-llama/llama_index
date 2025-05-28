@@ -99,7 +99,7 @@ async def test_resource_async():
         def f1(
             self,
             ev: ThirdEvent,
-            history: Annotated[MessageHistory, create_message_history],
+            history: Annotated[MessageHistory, Resource(create_message_history)],
         ) -> SecondEvent:
             global m
             history.put(ChatMessage.from_str(role="user", content=ev.msg))
@@ -124,7 +124,7 @@ async def test_resource_with_llm():
     class TestWorkflow(Workflow):
         @step
         def test_step(
-            self, ev: StartEvent, llm: Annotated[MockLLM, get_llm]
+            self, ev: StartEvent, llm: Annotated[MockLLM, Resource(get_llm, cache=False)]
         ) -> MessageStopEvent:
             response = llm.complete("Hey there, who are you?")
             res = response.text or None

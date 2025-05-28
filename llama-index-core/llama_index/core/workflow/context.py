@@ -1,5 +1,4 @@
 import asyncio
-import inspect
 import functools
 import json
 import time
@@ -605,12 +604,12 @@ class Context:
                 )
                 kwargs[service_definition.name] = service
             for resource in config.resources:
-                if not resource.initialized_resource:
-                    if inspect.iscoroutinefunction(resource.callable):
-                        resource.initialized_resource = await resource.callable()
-                    else:
-                        resource.initialized_resource = resource.callable()
-                kwargs[resource.name] = resource.initialized_resource
+                if resource.resource._cache:
+                    await resource.resource.call()
+                    kwargs[resource.name] = resource.resource._cached_value
+                else:
+                    resource_val = await resource.resource.call()
+                    kwargs[resource.name] = resource_val
             kwargs[config.event_name] = ev
 
             # wrap the step with instrumentation

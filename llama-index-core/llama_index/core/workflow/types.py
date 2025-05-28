@@ -1,4 +1,5 @@
-from typing import Any, Callable, Generic, TypeVar, Union
+import inspect
+from typing import Any, Callable, Generic, TypeVar, Union, Awaitable, cast
 
 from .events import StopEvent
 
@@ -11,18 +12,22 @@ T = TypeVar("T")
 
 
 class _Resource(Generic[T]):
-    def __init__(self, factory: Callable[..., T], cache: bool) -> None:
+    def __init__(self, factory: Callable[..., Union[T, Awaitable[T]]], cache: bool) -> None:
         self._factory = factory
         self._cache = cache
         self._cached_value: T | None = None
+        self._is_async = inspect.iscoroutinefunction(factory)
 
-    def __call__(self) -> T:
-        if self._cache:
-            if self._cached_value is None:
-                self._cached_value = self._factory()
+    async def call(self) -> T:
+        if self._cached_value is not None:
             return self._cached_value
-        return self._factory()
+        if self._is_async:
+            result = await cast(Callable[..., Awaitable[T]], self._factory)()
+        else:
+            result = cast(Callable[..., T], self._factory)()
+        if self._cache:
+            self._cached_value = result
+        return result
 
-
-def Resource(factory: Callable[..., T]) -> _Resource[T]:
-    return _Resource(factory, True)
+def Resource(factory: Callable[..., T], cache: bool = True) -> _Resource[T]:
+    return _Resource(factory, cache)
