@@ -36,10 +36,9 @@ jobs:
         run: |
           git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
           uv run -- llama-dev \
-            --repo-root ".." ${{ runner.debug && '--debug' || '' }} test \
+            --repo-root ".." --debug ${{ runner.debug && '--debug' || '' }} test \
             --workers ${{ env.NUM_WORKERS }} \
-            --base-ref ${{ github.event.pull_request.base.ref }} \
-            --debug
+            --base-ref ${{ github.event.pull_request.base.ref }}
 
       - name: Run tests with coverage
         if: ${{ matrix.python-version == env.COV_PYTHON_VERSION }}
