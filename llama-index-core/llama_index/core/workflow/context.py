@@ -604,12 +604,8 @@ class Context:
                 )
                 kwargs[service_definition.name] = service
             for resource in config.resources:
-                if resource.resource._cache:
-                    await resource.resource.call()
-                    kwargs[resource.name] = resource.resource._cached_value
-                else:
-                    resource_val = await resource.resource.call()
-                    kwargs[resource.name] = resource_val
+                resource_val = await resource.resource.call()
+                kwargs[resource.name] = resource_val
             kwargs[config.event_name] = ev
 
             # wrap the step with instrumentation
