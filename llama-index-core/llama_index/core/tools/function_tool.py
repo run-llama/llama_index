@@ -258,7 +258,9 @@ class FunctionTool(AsyncBaseTool):
         raw_output = self._fn(*args, **all_kwargs)
 
         # Exclude the Context param from the tool output so that the Context can be serialized
-        tool_output_kwargs = {k: v for k, v in all_kwargs.items() if k != self.ctx_param_name}
+        tool_output_kwargs = {
+            k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
+        }
 
         # Default ToolOutput based on the raw output
         default_output = ToolOutput(
@@ -292,7 +294,9 @@ class FunctionTool(AsyncBaseTool):
         raw_output = await self._async_fn(*args, **all_kwargs)
 
         # Exclude the Context param from the tool output so that the Context can be serialized
-        tool_output_kwargs = {k: v for k, v in all_kwargs.items() if k != self.ctx_param_name}
+        tool_output_kwargs = {
+            k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
+        }
 
         # Default ToolOutput based on the raw output
         default_output = ToolOutput(
