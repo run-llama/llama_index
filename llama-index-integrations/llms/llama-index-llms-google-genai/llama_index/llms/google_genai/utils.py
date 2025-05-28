@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Sequence
 from typing import (
     TYPE_CHECKING,
@@ -12,7 +13,9 @@ import typing
 
 import google.genai.types as types
 import google.genai
+import httpx
 from google.genai import _transformers
+from google.genai import errors
 
 from llama_index.core.bridge.pydantic import BaseModel, ValidationError
 from llama_index.core.base.llms.types import (
@@ -24,10 +27,22 @@ from llama_index.core.base.llms.types import (
     DocumentBlock,
 )
 from llama_index.core.program.utils import _repair_incomplete_json
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    retry_if_exception,
+    stop_after_attempt,
+    stop_after_delay,
+    wait_exponential,
+    wait_random_exponential,
+)
+from tenacity.stop import stop_base
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
 
+logger = logging.getLogger(__name__)
 
 ROLES_TO_GEMINI: dict[MessageRole, MessageRole] = {
     MessageRole.USER: MessageRole.USER,
@@ -364,3 +379,41 @@ def handle_streaming_flexible_model(
                 return None, current_json
 
     return None, current_json
+
+
+def _should_retry(exception: BaseException):
+    match exception:
+        case errors.ClientError(status=429) | errors.ClientError(status=408):
+            return True
+    return False
+
+
+def create_retry_decorator(
+    max_retries: int,
+    random_exponential: bool = False,
+    stop_after_delay_seconds: Optional[float] = None,
+    min_seconds: float = 4,
+    max_seconds: float = 60,
+) -> typing.Callable[[Any], Any]:
+    wait_strategy = (
+        wait_random_exponential(min=min_seconds, max=max_seconds)
+        if random_exponential
+        else wait_exponential(multiplier=1, min=min_seconds, max=max_seconds)
+    )
+
+    stop_strategy: stop_base = stop_after_attempt(max_retries)
+    if stop_after_delay_seconds is not None:
+        stop_strategy = stop_strategy | stop_after_delay(stop_after_delay_seconds)
+
+    return retry(
+        reraise=True,
+        stop=stop_strategy,
+        wait=wait_strategy,
+        retry=(
+            retry_if_exception_type(
+                (errors.ServerError, httpx.ConnectError, httpx.ConnectTimeout)
+            )
+            | retry_if_exception(_should_retry)
+        ),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )
