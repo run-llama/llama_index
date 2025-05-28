@@ -685,7 +685,9 @@ class BedrockConverse(FunctionCallingLLM):
             chat_history.append(user_msg)
 
         # convert Llama Index tools to AWS Bedrock Converse tools
-        tool_config = tools_to_converse_tools(tools, tool_required, tool_choice)
+        tool_config = tools_to_converse_tools(
+            tools, tool_choice=tool_choice, tool_required=tool_required
+        )
 
         return {
             "messages": chat_history,
