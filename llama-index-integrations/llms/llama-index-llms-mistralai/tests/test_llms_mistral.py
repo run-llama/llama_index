@@ -1,4 +1,8 @@
+import os
 from unittest.mock import patch
+
+from mistralai import ToolCall
+import pytest
 
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.tools import FunctionTool
@@ -18,6 +22,26 @@ def search(query: str) -> str:
 search_tool = FunctionTool.from_defaults(
     fn=search, name="search_tool", description="A tool for searching information"
 )
+
+
+@pytest.mark.skipif(
+    os.environ.get("MISTRAL_API_KEY") is None, reason="MISTRAL_API_KEY not set"
+)
+def test_tool_required():
+    llm = MistralAI()
+    result = llm.chat_with_tools(
+        tools=[search_tool],
+        user_msg="What is the capital of France?",
+        tool_required=True,
+    )
+    additional_kwargs = result.message.additional_kwargs
+    assert "tool_calls" in additional_kwargs
+    tool_calls = additional_kwargs["tool_calls"]
+    assert len(tool_calls) == 1
+    tool_call = tool_calls[0]
+    assert isinstance(tool_call, ToolCall)
+    assert tool_call.function.name == "search_tool"
+    assert "query" in tool_call.function.arguments
 
 
 @patch("mistralai.Mistral")
