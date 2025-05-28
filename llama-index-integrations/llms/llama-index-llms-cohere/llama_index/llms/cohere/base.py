@@ -165,7 +165,8 @@ class Cohere(FunctionCallingLLM):
         return {
             "messages": chat_history,
             "tools": tools_cohere_format or [],
-            **({"tool_choice": "REQUIRED"} if tool_required else {}),
+            # switch to tool_choice on V2
+            **({"force_single_step": True} if tool_required else {}),
             **kwargs,
         }
 
