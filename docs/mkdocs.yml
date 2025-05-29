@@ -720,7 +720,6 @@ nav:
       - Workflow:
           - ./examples/workflow/JSONalyze_query_engine.ipynb
           - ./examples/workflow/advanced_text_to_sql.ipynb
-          - ./examples/workflow/auto_retrieval.ipynb
           - ./examples/workflow/checkpointing_workflows.ipynb
           - ./examples/workflow/citation_query_engine.ipynb
           - ./examples/workflow/corrective_rag_pack.ipynb
@@ -998,7 +997,6 @@ nav:
           - ./api_reference/instrumentation/span_handlers.md
           - ./api_reference/instrumentation/span_types.md
       - LLMs:
-          - ./api_reference/llms/OptimumIntelLLM.md
           - ./api_reference/llms/ai21.md
           - ./api_reference/llms/alephalpha.md
           - ./api_reference/llms/alibabacloud_aisearch.md
