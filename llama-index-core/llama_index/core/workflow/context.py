@@ -31,6 +31,7 @@ from .errors import (
 )
 from .events import Event, InputRequiredEvent
 from .service import ServiceManager
+from .resource import ResourceManager
 from .types import RunResultT
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -547,6 +548,7 @@ class Context:
         checkpoint_callback: Optional[CheckpointCallback],
         run_id: str,
         service_manager: ServiceManager,
+        resource_manager: ResourceManager,
         dispatcher: Dispatcher,
     ) -> None:
         self._tasks.add(
@@ -560,6 +562,7 @@ class Context:
                     checkpoint_callback=checkpoint_callback,
                     run_id=run_id,
                     service_manager=service_manager,
+                    resource_manager=resource_manager,
                     dispatcher=dispatcher,
                 ),
                 name=name,
@@ -576,6 +579,7 @@ class Context:
         checkpoint_callback: Optional[CheckpointCallback],
         run_id: str,
         service_manager: ServiceManager,
+        resource_manager: ResourceManager,
         dispatcher: Dispatcher,
     ) -> None:
         while True:
@@ -604,7 +608,13 @@ class Context:
                 )
                 kwargs[service_definition.name] = service
             for resource in config.resources:
-                resource_val = await resource.resource.call()
+                if resource.resource.cache:
+                    resource_val = resource_manager.get(resource.name)
+                    if not resource_val:
+                        resource_val = await resource.resource.call()
+                        resource_manager.put(name=resource.name, resource=resource_val)
+                else:
+                    resource_val = await resource.resource.call()
                 kwargs[resource.name] = resource_val
             kwargs[config.event_name] = ev
 

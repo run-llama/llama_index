@@ -21,7 +21,7 @@ except ImportError:  # pragma: no cover
 
 from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
 
-from .types import _Resource
+from .resource import _Resource
 from .errors import WorkflowValidationError
 from .events import Event, EventType
 

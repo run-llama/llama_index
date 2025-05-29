@@ -6,7 +6,7 @@ from llama_index.core.llms import ChatMessage, MockLLM
 from llama_index.core.memory import Memory
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import Event, StartEvent, StopEvent
-from llama_index.core.workflow.types import Resource
+from llama_index.core.workflow.resource import Resource
 from llama_index.core.workflow.workflow import Workflow
 from pydantic import BaseModel, Field
 
@@ -135,3 +135,71 @@ async def test_resource_with_llm():
     response = handler.llm_response
     assert response is not None
     assert isinstance(response, str)
+
+@pytest.mark.asyncio
+async def test_caching_behavior():
+    class CounterThing():
+        counter = 0
+        def incr(self):
+            self.counter += 1
+
+    class StepEvent(Event):
+        pass
+
+    def provide_counter_thing() -> CounterThing:
+        return CounterThing()
+
+    class TestWorkflow(Workflow):
+        @step
+        async def test_step(self, ev: StartEvent, counter_thing: Annotated[CounterThing, Resource(provide_counter_thing)]) -> StepEvent:
+            counter_thing.incr()
+            return StepEvent()
+
+        @step
+        async def test_step_2(self, ev: StepEvent, counter_thing: Annotated[CounterThing, Resource(provide_counter_thing)]) -> StopEvent:
+            global cc
+            counter_thing.incr()
+            cc = counter_thing.counter
+            return StopEvent()
+
+    wf_1 = TestWorkflow(disable_validation=True)
+    await wf_1.run()
+    assert cc == 2 # this is expected to be 2, as it is a cached resource shared by test_step and test_step_2, which means at test_step it counter_thing.counter goes from 0 to 1 and at test_step_2 goes from 1 to 2
+
+    wf_2 = TestWorkflow(disable_validation=True)
+    await wf_2.run()
+    assert cc == 2 # the cache is workflow-specific, so since wf_2 is different from wf_1, we expect no interference between the two
+
+
+@pytest.mark.asyncio
+async def test_non_caching_behavior():
+    class CounterThing():
+        counter = 0
+        def incr(self):
+            self.counter += 1
+
+    class StepEvent(Event):
+        pass
+
+    def provide_counter_thing() -> CounterThing:
+        return CounterThing()
+
+    class TestWorkflow(Workflow):
+        @step
+        async def test_step(self, ev: StartEvent, counter_thing: Annotated[CounterThing, Resource(provide_counter_thing, cache = False)]) -> StepEvent:
+            global cc1
+            counter_thing.incr()
+            cc1 = counter_thing.counter
+            return StepEvent()
+
+        @step
+        async def test_step_2(self, ev: StepEvent, counter_thing: Annotated[CounterThing, Resource(provide_counter_thing, cache = False)]) -> StopEvent:
+            global cc2
+            counter_thing.incr()
+            cc2 = counter_thing.counter
+            return StopEvent()
+
+    wf_1 = TestWorkflow(disable_validation=True)
+    await wf_1.run()
+    assert cc1 == 1
+    assert cc2 == 1
