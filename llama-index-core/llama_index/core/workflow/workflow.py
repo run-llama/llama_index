@@ -31,7 +31,7 @@ from .events import (
 )
 from .handler import WorkflowHandler
 from .service import ServiceManager
-from .resource import ResourceManager
+from .utils import ResourceManager
 from .utils import (
     ServiceDefinition,
     get_steps_from_class,
