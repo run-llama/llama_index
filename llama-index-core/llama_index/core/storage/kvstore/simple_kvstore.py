@@ -5,7 +5,6 @@ from typing import Dict, Optional
 
 import fsspec
 from llama_index.core.storage.kvstore.types import (
-    BaseInMemoryKVStore,
     MutableMappingKVStore,
 )
 
@@ -14,7 +13,7 @@ logger = logging.getLogger(__name__)
 DATA_TYPE = Dict[str, Dict[str, dict]]
 
 
-class SimpleKVStore(MutableMappingKVStore[dict], BaseInMemoryKVStore):
+class SimpleKVStore(MutableMappingKVStore[dict]):
     """
     Simple in-memory Key-Value store.
 

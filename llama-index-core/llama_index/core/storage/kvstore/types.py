@@ -92,7 +92,7 @@ class BaseInMemoryKVStore(BaseKVStore):
 MutableMappingT = TypeVar("MutableMappingT", bound=MutableMapping[str, dict])
 
 
-class MutableMappingKVStore(BaseKVStore, Generic[MutableMappingT]):
+class MutableMappingKVStore(Generic[MutableMappingT], BaseKVStore):
     """
     MutableMapping Key-Value store.
 
@@ -103,7 +103,7 @@ class MutableMappingKVStore(BaseKVStore, Generic[MutableMappingT]):
 
     def __init__(self, mapping_factory: Callable[[], MutableMappingT]) -> None:
         """Initialize a MutableMappingKVStore."""
-        self._collections_mappings = {}
+        self._collections_mappings: Dict[str, MutableMappingT] = {}
         self._mapping_factory = mapping_factory
 
     def _get_collection_mapping(self, collection: str) -> MutableMappingT:
