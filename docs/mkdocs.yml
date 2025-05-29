@@ -331,6 +331,7 @@ nav:
           - ./examples/llm/deepinfra.ipynb
           - ./examples/llm/deepseek.ipynb
           - ./examples/llm/everlyai.ipynb
+          - ./examples/llm/featherlessai.ipynb
           - ./examples/llm/fireworks.ipynb
           - ./examples/llm/fireworks_cookbook.ipynb
           - ./examples/llm/friendli.ipynb
@@ -1083,6 +1084,7 @@ nav:
           - ./api_reference/llms/rungpt.md
           - ./api_reference/llms/sagemaker_endpoint.md
           - ./api_reference/llms/sambanovasystems.md
+          - ./api_reference/llms/servam.md
           - ./api_reference/llms/siliconflow.md
           - ./api_reference/llms/solar.md
           - ./api_reference/llms/stepfun.md
@@ -1281,6 +1283,8 @@ nav:
           - ./api_reference/postprocessor/xinference_rerank.md
       - Object Stores:
           - ./api_reference/objects/index.md
+      - Observability:
+          - ./api_reference/observability/otel.md
       - Output Parsers:
           - ./api_reference/output_parsers/guardrails.md
           - ./api_reference/output_parsers/index.md
@@ -2457,6 +2461,9 @@ plugins:
             - ../llama-index-integrations/retrievers/llama-index-retrievers-vectorize
             - ../llama-index-integrations/tools/llama-index-tools-brightdata
             - ../llama-index-integrations/tools/llama-index-tools-desearch
+            - ../llama-index-integrations/observability/llama-index-observability-otel
+            - ../llama-index-integrations/llms/llama-index-llms-featherlessai
+            - ../llama-index-integrations/llms/llama-index-llms-sarvam
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
