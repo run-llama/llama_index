@@ -1,5 +1,4 @@
 """Markdown node parser."""
-
 import re
 from typing import Any, List, Optional, Sequence
 
@@ -119,7 +118,9 @@ class MarkdownNodeParser(NodeParser):
             separator = self.header_path_separator
             node.metadata["header_path"] = (
                 # ex: "/header1/header2/" || "/"
-                separator + header_path + separator if header_path else separator
+                separator + header_path + separator
+                if header_path
+                else separator
             )
 
         return node

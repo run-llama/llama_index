@@ -570,12 +570,7 @@ class OpenAIResponses(FunctionCallingLLM):
         elif isinstance(event, ResponseImageGenCallPartialImageEvent):
             # Partial image
             if event.partial_image_b64:
-                blocks.append(
-                    ImageBlock(
-                        image=base64.b64decode(event.partial_image_b64),
-                        detail=f"id_{event.partial_image_index}",
-                    )
-                )
+                blocks.append(ImageBlock(image=base64.b64decode(event.partial_image_b64), detail=f"id_{event.partial_image_index}"))
         elif isinstance(event, ResponseFunctionCallArgumentsDeltaEvent):
             # Function call arguments are being streamed
             if current_tool_call is not None:
@@ -865,9 +860,9 @@ class OpenAIResponses(FunctionCallingLLM):
         **kwargs: Any,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
-        tool_calls: List[ResponseFunctionToolCall] = (
-            response.message.additional_kwargs.get("tool_calls", [])
-        )
+        tool_calls: List[
+            ResponseFunctionToolCall
+        ] = response.message.additional_kwargs.get("tool_calls", [])
 
         if len(tool_calls) < 1:
             if error_on_no_tool_call:

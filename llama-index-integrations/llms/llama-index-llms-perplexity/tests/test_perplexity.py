@@ -111,9 +111,9 @@ async def test_astream_chat(perplexity_llm):
         ),
     ]
     stream = await perplexity_llm.astream_chat(messages)
-    assert isinstance(stream, AsyncIterator), (
-        "astream_chat should return an async generator"
-    )
+    assert isinstance(
+        stream, AsyncIterator
+    ), "astream_chat should return an async generator"
 
     full_response = ""
     async for chunk in stream:
@@ -129,9 +129,9 @@ async def test_astream_chat(perplexity_llm):
 async def test_astream_complete(perplexity_llm):
     prompt = "List the first 5 elements in the periodic table:"
     stream = await perplexity_llm.astream_complete(prompt)
-    assert isinstance(stream, AsyncIterator), (
-        "astream_complete should return an async generator"
-    )
+    assert isinstance(
+        stream, AsyncIterator
+    ), "astream_complete should return an async generator"
 
     full_response = ""
     async for chunk in stream:
@@ -139,9 +139,9 @@ async def test_astream_complete(perplexity_llm):
         full_response += chunk.delta
         print(chunk.delta, end="", flush=True)
 
-    assert full_response.strip(), (
-        "Async streamed completion response should not be empty"
-    )
+    assert (
+        full_response.strip()
+    ), "Async streamed completion response should not be empty"
     print(f"\n\nFull async streamed completion response:\n{full_response}")
 
 

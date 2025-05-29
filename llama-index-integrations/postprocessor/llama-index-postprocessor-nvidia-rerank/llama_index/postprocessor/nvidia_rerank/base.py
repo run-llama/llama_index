@@ -171,18 +171,18 @@ class NVIDIARerank(BaseNodePostprocessor):
         response = client.get(url, headers=_headers)
         response.raise_for_status()
 
-        assert "data" in response.json(), (
-            "Response does not contain expected 'data' key"
-        )
-        assert isinstance(response.json()["data"], list), (
-            "Response 'data' is not a list"
-        )
-        assert all(isinstance(result, dict) for result in response.json()["data"]), (
-            "Response 'data' is not a list of dictionaries"
-        )
-        assert all("id" in result for result in response.json()["data"]), (
-            "Response 'rankings' is not a list of dictionaries with 'id'"
-        )
+        assert (
+            "data" in response.json()
+        ), "Response does not contain expected 'data' key"
+        assert isinstance(
+            response.json()["data"], list
+        ), "Response 'data' is not a list"
+        assert all(
+            isinstance(result, dict) for result in response.json()["data"]
+        ), "Response 'data' is not a list of dictionaries"
+        assert all(
+            "id" in result for result in response.json()["data"]
+        ), "Response 'rankings' is not a list of dictionaries with 'id'"
 
         # TODO: hosted now has a model listing, need to merge known and listed models
         # TODO: parse model config for local models
@@ -331,21 +331,19 @@ class NVIDIARerank(BaseNodePostprocessor):
                 #         ...
                 #     ]
                 # }
-                assert "rankings" in response.json(), (
-                    "Response does not contain expected 'rankings' key"
-                )
-                assert isinstance(response.json()["rankings"], list), (
-                    "Response 'rankings' is not a list"
-                )
+                assert (
+                    "rankings" in response.json()
+                ), "Response does not contain expected 'rankings' key"
+                assert isinstance(
+                    response.json()["rankings"], list
+                ), "Response 'rankings' is not a list"
                 assert all(
                     isinstance(result, dict) for result in response.json()["rankings"]
                 ), "Response 'rankings' is not a list of dictionaries"
                 assert all(
                     "index" in result and "logit" in result
                     for result in response.json()["rankings"]
-                ), (
-                    "Response 'rankings' is not a list of dictionaries with 'index' and 'logit' keys"
-                )
+                ), "Response 'rankings' is not a list of dictionaries with 'index' and 'logit' keys"
                 for result in response.json()["rankings"][: self.top_n]:
                     results.append(
                         NodeWithScore(

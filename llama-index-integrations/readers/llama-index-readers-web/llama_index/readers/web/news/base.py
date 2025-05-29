@@ -1,5 +1,4 @@
 """News article reader using Newspaper."""
-
 import logging
 from importlib.util import find_spec
 from typing import Any, Generator, List

@@ -126,7 +126,11 @@ Structured Request:
 {example_output_2.model_dump_json()}
 
 ```
-""".replace("{", "{{").replace("}", "}}")
+""".replace(
+    "{", "{{"
+).replace(
+    "}", "}}"
+)
 
 
 SUFFIX = """

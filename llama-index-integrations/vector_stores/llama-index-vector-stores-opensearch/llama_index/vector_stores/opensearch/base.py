@@ -630,11 +630,7 @@ class OpensearchVectorClient:
 
     def _is_aoss_enabled(self, http_auth: Any) -> bool:
         """Check if the service is http_auth is set as `aoss`."""
-        return (
-            http_auth is not None
-            and hasattr(http_auth, "service")
-            and http_auth.service == "aoss"
-        )
+        return http_auth is not None and hasattr(http_auth, "service") and http_auth.service == "aoss"
 
     def _is_efficient_filtering_enabled(self) -> bool:
         """Check if kNN with efficient filtering is enabled."""

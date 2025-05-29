@@ -68,11 +68,13 @@ class MockLLM(CustomLLM):
 
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> CompletionResponse: ...
+    ) -> CompletionResponse:
+        ...
 
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
-    ) -> Generator[CompletionResponse, None, None]: ...
+    ) -> Generator[CompletionResponse, None, None]:
+        ...
 
 
 class MockAgentWorker(BaseAgentWorker):
@@ -119,7 +121,8 @@ class MockAgentWorker(BaseAgentWorker):
     ) -> TaskStepOutput:
         return self.stream_step(step=step, task=task, **kwargs)
 
-    def finalize_task(self, task: Task, **kwargs: Any) -> None: ...
+    def finalize_task(self, task: Task, **kwargs: Any) -> None:
+        ...
 
 
 @pytest.fixture()

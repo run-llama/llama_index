@@ -49,9 +49,8 @@ def llm_chat_callback() -> Callable:
         async def wrapped_async_llm_chat(
             _self: Any, messages: Sequence[ChatMessage], **kwargs: Any
         ) -> Any:
-            with (
-                wrapper_logic(_self) as callback_manager,
-                callback_manager.as_trace("chat"),
+            with wrapper_logic(_self) as callback_manager, callback_manager.as_trace(
+                "chat"
             ):
                 span_id = active_span_id.get()
                 model_dict = _self.to_dict()
@@ -148,9 +147,8 @@ def llm_chat_callback() -> Callable:
         def wrapped_llm_chat(
             _self: Any, messages: Sequence[ChatMessage], **kwargs: Any
         ) -> Any:
-            with (
-                wrapper_logic(_self) as callback_manager,
-                callback_manager.as_trace("chat"),
+            with wrapper_logic(_self) as callback_manager, callback_manager.as_trace(
+                "chat"
             ):
                 span_id = active_span_id.get()
                 model_dict = _self.to_dict()
@@ -309,9 +307,8 @@ def llm_completion_callback() -> Callable:
             _self: Any, *args: Any, **kwargs: Any
         ) -> Any:
             prompt = extract_prompt(*args, **kwargs)
-            with (
-                wrapper_logic(_self) as callback_manager,
-                callback_manager.as_trace("completion"),
+            with wrapper_logic(_self) as callback_manager, callback_manager.as_trace(
+                "completion"
             ):
                 span_id = active_span_id.get()
                 model_dict = _self.to_dict()
@@ -408,9 +405,8 @@ def llm_completion_callback() -> Callable:
 
         def wrapped_llm_predict(_self: Any, *args: Any, **kwargs: Any) -> Any:
             prompt = extract_prompt(*args, **kwargs)
-            with (
-                wrapper_logic(_self) as callback_manager,
-                callback_manager.as_trace("completion"),
+            with wrapper_logic(_self) as callback_manager, callback_manager.as_trace(
+                "completion"
             ):
                 span_id = active_span_id.get()
                 model_dict = _self.to_dict()

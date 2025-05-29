@@ -1,5 +1,4 @@
 """Apify dataset reader."""
-
 from typing import Callable, Dict, List
 
 from llama_index.core.readers.base import BaseReader
@@ -22,9 +21,9 @@ class ApifyDataset(BaseReader):
 
         client = ApifyClient(apify_api_token)
         if hasattr(client.http_client, "httpx_client"):
-            client.http_client.httpx_client.headers["user-agent"] += (
-                "; Origin/llama_index"
-            )
+            client.http_client.httpx_client.headers[
+                "user-agent"
+            ] += "; Origin/llama_index"
 
         self.apify_client = client
 

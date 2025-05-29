@@ -1,5 +1,4 @@
 """RSS feed reader for news - processes each article with NewsArticleReader."""
-
 import logging
 from typing import Any, List
 

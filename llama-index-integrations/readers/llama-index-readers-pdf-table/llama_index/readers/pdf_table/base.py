@@ -23,7 +23,7 @@ class PDFTableReader(BaseReader):
         *args: Any,
         row_separator: str = "\n",
         col_separator: str = ", ",
-        **kwargs: Any,
+        **kwargs: Any
     ) -> None:
         super().__init__(*args, **kwargs)
         self._row_separator = row_separator

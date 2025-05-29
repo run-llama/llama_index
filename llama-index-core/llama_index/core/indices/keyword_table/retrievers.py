@@ -1,5 +1,4 @@
 """Query for KeywordTableIndex."""
-
 import logging
 from abc import abstractmethod
 from collections import defaultdict

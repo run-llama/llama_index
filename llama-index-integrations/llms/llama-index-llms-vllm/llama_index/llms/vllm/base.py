@@ -178,7 +178,7 @@ class Vllm(LLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
-        is_chat_model: Optional[bool] = False,
+        is_chat_model:Optional[bool] = False,
     ) -> None:
         callback_manager = callback_manager or CallbackManager([])
         super().__init__(
@@ -220,7 +220,7 @@ class Vllm(LLM):
                 trust_remote_code=trust_remote_code,
                 dtype=dtype,
                 download_dir=download_dir,
-                **vllm_kwargs,
+                **vllm_kwargs
             )
         else:
             self._client = None
@@ -421,7 +421,8 @@ class VllmServer(Vllm):
     def class_name(cls) -> str:
         return "VllmServer"
 
-    def __del__(self) -> None: ...
+    def __del__(self) -> None:
+        ...
 
     @llm_completion_callback()
     def complete(

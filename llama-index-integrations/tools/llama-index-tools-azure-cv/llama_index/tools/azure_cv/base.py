@@ -37,7 +37,7 @@ class AzureCVToolSpec(BaseToolSpec):
 
         """
         response = requests.post(
-            f"{self.cv_url}?features={','.join(features)}&language={self.language}&api-version={self.api_version}",
+            f'{self.cv_url}?features={",".join(features)}&language={self.language}&api-version={self.api_version}',
             headers={"Ocp-Apim-Subscription-Key": self.api_key},
             json={"url": url},
         )

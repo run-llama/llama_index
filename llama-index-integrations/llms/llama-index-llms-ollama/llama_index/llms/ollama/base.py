@@ -210,9 +210,7 @@ class Ollama(FunctionCallingLLM):
                     break
 
         # If the context window is still -1, use the default context window
-        return (
-            self.context_window if self.context_window != -1 else DEFAULT_CONTEXT_WINDOW
-        )
+        return self.context_window if self.context_window != -1 else DEFAULT_CONTEXT_WINDOW
 
     def _convert_to_ollama_messages(self, messages: Sequence[ChatMessage]) -> Dict:
         ollama_messages = []

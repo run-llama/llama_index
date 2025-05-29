@@ -15,12 +15,7 @@ from llama_index.core.llms import (
 )
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.tools import FunctionTool, ToolSelection
-from llama_index.core.workflow import (
-    Context,
-    WorkflowRuntimeError,
-    HumanResponseEvent,
-    InputRequiredEvent,
-)
+from llama_index.core.workflow import Context, WorkflowRuntimeError, HumanResponseEvent, InputRequiredEvent
 
 
 class MockLLM(MockLLM):
@@ -386,11 +381,10 @@ async def test_workflow_with_state():
 @pytest.mark.asyncio
 async def test_agent_with_hitl():
     """Test agent with hitl."""
-
     async def hitl(ctx: Context):
         resp = await ctx.wait_for_event(
             HumanResponseEvent,
-            waiter_event=InputRequiredEvent(prefix="What is your name?"),
+            waiter_event=InputRequiredEvent(prefix="What is your name?")
         )
         return f"Your name is {resp.response}"
 
@@ -413,7 +407,9 @@ async def test_agent_with_hitl():
                         ]
                     },
                 ),
-                ChatMessage(role=MessageRole.ASSISTANT, content="HITL successful"),
+                ChatMessage(
+                    role=MessageRole.ASSISTANT, content="HITL successful"
+                ),
             ],
         ),
     )

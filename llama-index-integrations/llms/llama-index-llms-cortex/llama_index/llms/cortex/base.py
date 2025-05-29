@@ -359,7 +359,6 @@ class Cortex(CustomLLM):
                         yield CompletionResponse(
                             text=text, delta=line_delta, raw=line_json
                         )
-
         async def gen() -> CompletionResponseAsyncGen:
             async with aiohttp.ClientSession() as session:
                 api_response = await session.post(

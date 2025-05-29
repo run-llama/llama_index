@@ -47,19 +47,12 @@ class OpenVINOGENAIEmbedding(BaseEmbedding):
         try:
             import openvino_genai
             import openvino as ov
-
             core = ov.Core()
 
         except ImportError as e:
-            raise ImportError(
-                "Could not import openvino_genai python package. "
-                "Please install it with: "
-                "pip install -U openvino_genai"
-            ) from e
+            raise ImportError("Could not import openvino_genai python package. " "Please install it with: " "pip install -U openvino_genai") from e
         # use local model
-        model = model or core.compile_model(
-            Path(model_path) / "openvino_model.xml", device
-        )
+        model = model or core.compile_model(Path(model_path) / "openvino_model.xml", device)
         tokenizer = tokenizer or openvino_genai.Tokenizer(model_path)
 
         if pooling not in ["cls", "mean"]:
@@ -85,15 +78,9 @@ class OpenVINOGENAIEmbedding(BaseEmbedding):
 
     def _mean_pooling(self, model_output: Any, attention_mask: Any) -> Any:
         """Mean Pooling - Take attention mask into account for correct averaging."""
-        token_embeddings = model_output[
-            0
-        ]  # First element of model_output contains all token embeddings
-        input_mask_expanded = np.broadcast_to(
-            np.expand_dims(attention_mask, axis=-1), token_embeddings.size()
-        )
-        return np.sum(token_embeddings * input_mask_expanded, 1) / np.clip(
-            input_mask_expanded.sum(1), a_min=1e-9
-        )
+        token_embeddings = model_output[0]  # First element of model_output contains all token embeddings
+        input_mask_expanded = np.broadcast_to(np.expand_dims(attention_mask, axis=-1), token_embeddings.size())
+        return np.sum(token_embeddings * input_mask_expanded, 1) / np.clip(input_mask_expanded.sum(1), a_min=1e-9)
 
     def _cls_pooling(self, model_output: list) -> Any:
         """Use the CLS token as the pooling token."""
@@ -127,7 +114,9 @@ class OpenVINOGENAIEmbedding(BaseEmbedding):
         if self.pooling == "cls":
             embeddings = self._cls_pooling(model_output)
         else:
-            embeddings = self._mean_pooling(model_output, model_input["attention_mask"])
+            embeddings = self._mean_pooling(
+                model_output, model_input["attention_mask"]
+            )
 
         if self.normalize:
             norm = np.linalg.norm(embeddings, ord=2, axis=1, keepdims=True)

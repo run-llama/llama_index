@@ -1,5 +1,4 @@
 """Wordpress reader."""
-
 import warnings
 from typing import List, Optional
 

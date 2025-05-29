@@ -1,5 +1,4 @@
 """LLM Prompt Program."""
-
 from abc import abstractmethod
 from typing import Any, Generic, Optional, Type, TypeVar
 

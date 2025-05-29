@@ -611,9 +611,9 @@ class DashScope(FunctionCallingLLM):
                                 tool_call["function"].get("arguments", "").strip()
                             )
                             if function_args:
-                                all_tool_calls[index]["function"]["arguments"] += (
-                                    function_args
-                                )
+                                all_tool_calls[index]["function"][
+                                    "arguments"
+                                ] += function_args
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,

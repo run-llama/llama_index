@@ -1,5 +1,4 @@
 """Sample a fraction of the Spider dataset."""
-
 import argparse
 import json
 import os

@@ -27,7 +27,7 @@ Header 2 content
 
 def test_header_splits_with_forwardslash() -> None:
     markdown_parser = MarkdownNodeParser(
-        header_path_separator="\u203a"
+        header_path_separator="\u203A"
     )  # Unicode for "›", infrequently used char
 
     splits = markdown_parser.get_nodes_from_documents(

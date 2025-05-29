@@ -1,5 +1,4 @@
 """Jira tool spec."""
-
 from typing import Optional, Union
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 

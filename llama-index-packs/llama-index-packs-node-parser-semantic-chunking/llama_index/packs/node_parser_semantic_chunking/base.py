@@ -146,7 +146,7 @@ class SemanticChunker(MetadataAwareTextSplitter):
         buffer_size: int = 1,
         embed_model: Optional[BaseEmbedding] = None,
         breakpoint_percentile_threshold: float = 95.0,
-        **kwargs: Any,
+        **kwargs: Any
     ):
         from llama_index.embeddings.openai import OpenAIEmbedding
 

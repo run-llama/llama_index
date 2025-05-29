@@ -70,7 +70,8 @@ def default_output_processor(
             raise
     except Exception as e:
         err_string = (
-            f"There was an error running the output as Python code. Error message: {e}"
+            "There was an error running the output as Python code. "
+            f"Error message: {e}"
         )
         traceback.print_exc()
         return err_string

@@ -1,5 +1,4 @@
 """Memgraph graph store index."""
-
 import logging
 from typing import Any, Dict, List, Optional
 

@@ -32,7 +32,8 @@ class DoclingReader(BasePydanticReader):
 
     @runtime_checkable
     class DocIDGenCallable(Protocol):
-        def __call__(self, doc: DLDocument, file_path: str | Path) -> str: ...
+        def __call__(self, doc: DLDocument, file_path: str | Path) -> str:
+            ...
 
     @staticmethod
     def _uuid4_doc_id_gen(doc: DLDocument, file_path: str | Path) -> str:

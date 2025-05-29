@@ -82,6 +82,7 @@ async def handoff(ctx: Context, to_agent: str, reason: str) -> str:
 
 
 class AgentWorkflowStartEvent(StartEvent):
+
     @model_serializer()
     def serialize_start_event(self) -> dict:
         """Serialize the start event and exclude the memory."""
@@ -287,11 +288,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
     ) -> ToolOutput:
         """Call the given tool with the given input."""
         try:
-            if (
-                isinstance(tool, FunctionTool)
-                and tool.requires_context
-                and tool.ctx_param_name is not None
-            ):
+            if isinstance(tool, FunctionTool) and tool.requires_context and tool.ctx_param_name is not None:
                 new_tool_input = {**tool_input}
                 new_tool_input[tool.ctx_param_name] = ctx
                 tool_output = await tool.acall(**new_tool_input)

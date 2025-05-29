@@ -146,9 +146,9 @@ def main_scraper(
 
     """
     if multithreading:
-        assert max_workers > 0, (
-            "If you are using multithreading, then max_workers should be greater than 1"
-        )
+        assert (
+            max_workers > 0
+        ), "If you are using multithreading, then max_workers should be greater than 1"
 
     ia = imdb.Cinemagoer()
     movies = ia.search_movie(movie_name)

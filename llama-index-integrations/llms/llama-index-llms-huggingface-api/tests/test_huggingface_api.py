@@ -128,9 +128,6 @@ class TestHuggingFaceInferenceAPI:
         ) as mock_chat_completion:
             response = hf_inference_api.complete(prompt)
         mock_chat_completion.assert_called_once_with(
-            model=STUB_MODEL_NAME,
-            temperature=0.1,
-            max_tokens=256,
-            messages=[{"role": "user", "content": prompt}],
+            model=STUB_MODEL_NAME, temperature=0.1, max_tokens=256, messages=[{"role": "user", "content": prompt}]
         )
         assert response.text == generated_text

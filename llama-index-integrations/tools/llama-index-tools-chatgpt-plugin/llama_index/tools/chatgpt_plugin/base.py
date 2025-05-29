@@ -46,8 +46,8 @@ class ChatGPTPluginToolSpec(BaseToolSpec):
         self.openapi = OpenAPIToolSpec(url=manifest["api"]["url"])
 
         self.plugin_description = f"""
-            'human_description': {manifest["description_for_human"]}
-            'model_description': {manifest["description_for_model"]}
+            'human_description': {manifest['description_for_human']}
+            'model_description': {manifest['description_for_model']}
         """
 
     def load_openapi_spec(self) -> List[Document]:

@@ -1,5 +1,4 @@
 """Default prompt for ReAct agent."""
-
 from pathlib import Path
 
 # TODO: have formatting instructions be a part of react output parser

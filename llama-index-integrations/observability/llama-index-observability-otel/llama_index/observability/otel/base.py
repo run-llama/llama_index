@@ -8,7 +8,7 @@ from opentelemetry.sdk.trace.export import (
     BatchSpanProcessor,
     SimpleSpanProcessor,
     SpanExporter,
-    ConsoleSpanExporter,
+    ConsoleSpanExporter
 )
 from termcolor.termcolor import cprint
 from typing import Optional, Any, List, Dict, Union, Sequence, Literal, Mapping
@@ -24,21 +24,7 @@ from llama_index.observability.otel.utils import filter_model_fields
 
 class OTelEventAttributes(BaseModel):
     name: str
-    attributes: Optional[
-        Mapping[
-            str,
-            Union[
-                str,
-                bool,
-                int,
-                float,
-                Sequence[str],
-                Sequence[bool],
-                Sequence[int],
-                Sequence[float],
-            ],
-        ]
-    ]
+    attributes: Optional[Mapping[str, Union[str, bool, int, float, Sequence[str], Sequence[bool], Sequence[int], Sequence[float]]]]
 
 
 class OTelCompatibleSpanHandler(SimpleSpanHandler):
@@ -49,11 +35,12 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         default_factory=dict,
     )
     all_spans: Dict[str, Union[trace.Span, _Span]] = Field(
-        default_factory=dict, description="All the registered OpenTelemetry spans."
+        default_factory=dict,
+        description="All the registered OpenTelemetry spans."
     )
     debug: bool = Field(
         default=False,
-        description="Debug the start and end of span and the recording of events",
+        description="Debug the start and end of span and the recording of events"
     )
 
     def __init__(
@@ -89,9 +76,7 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         tags: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> SimpleSpan:
-        span = super().new_span(
-            id_, bound_args, instance, parent_span_id, tags, **kwargs
-        )
+        span = super().new_span(id_, bound_args, instance, parent_span_id, tags, **kwargs)
         if parent_span_id is not None:
             ctx = set_span_in_context(span=self.all_spans[parent_span_id])
         else:
@@ -99,11 +84,7 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         otel_span = self._tracer.start_span(name=id_, context=ctx)
         self.all_spans.update({id_: otel_span})
         if self.debug:
-            cprint(
-                f"Emitting span {id_} at time: {datetime.now()}",
-                color="yellow",
-                attrs=["bold"],
-            )
+            cprint(f"Emitting span {id_} at time: {datetime.now()}", color="yellow", attrs=["bold"])
         return span
 
     def prepare_to_exit_span(
@@ -115,11 +96,7 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         **kwargs: Any,
     ) -> SimpleSpan:
         if self.debug:
-            cprint(
-                f"Preparing to end span {id_} at time: {datetime.now()}",
-                color="blue",
-                attrs=["bold"],
-            )
+            cprint(f"Preparing to end span {id_} at time: {datetime.now()}", color="blue", attrs=["bold"])
         sp = super().prepare_to_exit_span(id_, bound_args, instance, result, **kwargs)
         span = self.all_spans.pop(id_)
 
@@ -141,11 +118,7 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         **kwargs: Any,
     ) -> Optional[SimpleSpan]:
         if self.debug:
-            cprint(
-                f"Preparing to exit span {id_} with an error at time: {datetime.now()}",
-                color="red",
-                attrs=["bold"],
-            )
+            cprint(f"Preparing to exit span {id_} with an error at time: {datetime.now()}", color="red", attrs=["bold"])
         sp = super().prepare_to_drop_span(id_, bound_args, instance, err, **kwargs)
         span = self.all_spans.pop(id_)
 
@@ -158,7 +131,6 @@ class OTelCompatibleSpanHandler(SimpleSpanHandler):
         span.end()
         return sp
 
-
 class OTelCompatibleEventHandler(BaseEventHandler):
     """OpenTelemetry-compatible event handler."""
 
@@ -167,7 +139,7 @@ class OTelCompatibleEventHandler(BaseEventHandler):
     )
     debug: bool = Field(
         default=False,
-        description="Debug the start and end of span and the recording of events",
+        description="Debug the start and end of span and the recording of events"
     )
 
     @classmethod
@@ -178,11 +150,7 @@ class OTelCompatibleEventHandler(BaseEventHandler):
     def handle(self, event: BaseEvent, **kwargs: Any) -> None:
         """Handle events by pushing them to the correct span's bucket for later attachment to OpenTelemetry."""
         if self.debug:
-            cprint(
-                f"Registering a {event.class_name()} event at time: {datetime.now()}",
-                color="green",
-                attrs=["bold"],
-            )
+            cprint(f"Registering a {event.class_name()} event at time: {datetime.now()}", color="green", attrs=["bold"])
 
         # Get the current span id from the contextvars context
         current_span_id = active_span_id.get()
@@ -197,13 +165,9 @@ class OTelCompatibleEventHandler(BaseEventHandler):
             # so we just convert to a string as a fallback
             event_data = {"event_data": str(event)}
 
-        otel_event = OTelEventAttributes(
-            name=event.class_name(), attributes=filter_model_fields(event_data)
-        )
+        otel_event = OTelEventAttributes(name=event.class_name(), attributes=filter_model_fields(event_data))
 
-        self.span_handler._events_by_span.setdefault(current_span_id, []).append(
-            otel_event
-        )
+        self.span_handler._events_by_span.setdefault(current_span_id, []).append(otel_event)
 
 
 class LlamaIndexOpenTelemetry(BaseModel):
@@ -223,29 +187,29 @@ class LlamaIndexOpenTelemetry(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     span_exporter: Optional[SpanExporter] = Field(
         default=ConsoleSpanExporter(),
-        description="OpenTelemetry span exporter. Supports all SpanExporter-compatible interfaces, defaults to ConsoleSpanExporter.",
+        description="OpenTelemetry span exporter. Supports all SpanExporter-compatible interfaces, defaults to ConsoleSpanExporter."
     )
     span_processor: Literal["simple", "batch"] = Field(
         default="batch",
-        description="OpenTelemetry span processor. Can be either 'batch' (-> BatchSpanProcessor) or 'simple' (-> SimpleSpanProcessor). Defaults to 'batch'",
+        description="OpenTelemetry span processor. Can be either 'batch' (-> BatchSpanProcessor) or 'simple' (-> SimpleSpanProcessor). Defaults to 'batch'"
     )
     service_name_or_resource: Union[str, Resource] = Field(
         default=Resource(attributes={SERVICE_NAME: "llamaindex.opentelemetry"}),
-        description="Service name or resource for OpenTelemetry. Defaults to a Resource with 'llamaindex.opentelemetry' as service name.",
+        description="Service name or resource for OpenTelemetry. Defaults to a Resource with 'llamaindex.opentelemetry' as service name."
     )
     debug: bool = Field(
         default=False,
-        description="Debug the start and end of span and the recording of events",
+        description="Debug the start and end of span and the recording of events"
     )
-    _tracer: Optional[trace.Tracer] = PrivateAttr(default=None)
+    _tracer: Optional[trace.Tracer] = PrivateAttr(
+        default=None
+    )
 
     def _start_otel(
         self,
     ) -> None:
         if isinstance(self.service_name_or_resource, str):
-            self.service_name_or_resource = Resource(
-                attributes={SERVICE_NAME: self.service_name_or_resource}
-            )
+            self.service_name_or_resource = Resource(attributes={SERVICE_NAME: self.service_name_or_resource})
         tracer_provider = TracerProvider(resource=self.service_name_or_resource)
         if self.span_processor == "simple":
             span_processor = SimpleSpanProcessor(self.span_exporter)
@@ -263,6 +227,4 @@ class LlamaIndexOpenTelemetry(BaseModel):
         dispatcher = instrument.get_dispatcher()
         span_handler = OTelCompatibleSpanHandler(tracer=self._tracer, debug=self.debug)
         dispatcher.add_span_handler(span_handler)
-        dispatcher.add_event_handler(
-            OTelCompatibleEventHandler(span_handler=span_handler, debug=self.debug)
-        )
+        dispatcher.add_event_handler(OTelCompatibleEventHandler(span_handler=span_handler, debug=self.debug))

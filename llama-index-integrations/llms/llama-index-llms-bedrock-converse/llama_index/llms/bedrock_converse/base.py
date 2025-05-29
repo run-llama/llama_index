@@ -318,12 +318,12 @@ class BedrockConverse(FunctionCallingLLM):
     def _get_content_and_tool_calls(
         self, response: Optional[Dict[str, Any]] = None, content: Dict[str, Any] = None
     ) -> Tuple[str, Dict[str, Any], List[str], List[str]]:
-        assert response is not None or content is not None, (
-            f"Either response or content must be provided. Got response: {response}, content: {content}"
-        )
-        assert response is None or content is None, (
-            f"Only one of response or content should be provided. Got response: {response}, content: {content}"
-        )
+        assert (
+            response is not None or content is not None
+        ), f"Either response or content must be provided. Got response: {response}, content: {content}"
+        assert (
+            response is None or content is None
+        ), f"Only one of response or content should be provided. Got response: {response}, content: {content}"
         tool_calls = []
         tool_call_ids = []
         status = []
@@ -433,27 +433,17 @@ class BedrockConverse(FunctionCallingLLM):
                             # Handle the input field specially - concatenate partial JSON strings
                             if "input" in tool_use_delta:
                                 if "input" in current_tool_call:
-                                    current_tool_call["input"] += tool_use_delta[
-                                        "input"
-                                    ]
+                                    current_tool_call["input"] += tool_use_delta["input"]
                                 else:
                                     current_tool_call["input"] = tool_use_delta["input"]
 
                                 # Remove input from the delta to prevent it from being processed again
-                                tool_use_without_input = {
-                                    k: v
-                                    for k, v in tool_use_delta.items()
-                                    if k != "input"
-                                }
+                                tool_use_without_input = {k: v for k, v in tool_use_delta.items() if k != "input"}
                                 if tool_use_without_input:
-                                    current_tool_call = join_two_dicts(
-                                        current_tool_call, tool_use_without_input
-                                    )
+                                    current_tool_call = join_two_dicts(current_tool_call, tool_use_without_input)
                             else:
                                 # For other fields, use the normal joining
-                                current_tool_call = join_two_dicts(
-                                    current_tool_call, tool_use_delta
-                                )
+                                current_tool_call = join_two_dicts(current_tool_call, tool_use_delta)
 
                     yield ChatResponse(
                         message=ChatMessage(
@@ -461,9 +451,7 @@ class BedrockConverse(FunctionCallingLLM):
                             content=content.get("text", ""),
                             additional_kwargs={
                                 "tool_calls": tool_calls,
-                                "tool_call_id": [
-                                    tc.get("toolUseId", "") for tc in tool_calls
-                                ],
+                                "tool_call_id": [tc.get("toolUseId", "") for tc in tool_calls],
                                 "status": [],  # Will be populated when tool results come in
                             },
                         ),
@@ -486,9 +474,7 @@ class BedrockConverse(FunctionCallingLLM):
                             content=content.get("text", ""),
                             additional_kwargs={
                                 "tool_calls": tool_calls,
-                                "tool_call_id": [
-                                    tc.get("toolUseId", "") for tc in tool_calls
-                                ],
+                                "tool_call_id": [tc.get("toolUseId", "") for tc in tool_calls],
                                 "status": [],  # Will be populated when tool results come in
                             },
                         ),
@@ -593,27 +579,17 @@ class BedrockConverse(FunctionCallingLLM):
                             # Handle the input field specially - concatenate partial JSON strings
                             if "input" in tool_use_delta:
                                 if "input" in current_tool_call:
-                                    current_tool_call["input"] += tool_use_delta[
-                                        "input"
-                                    ]
+                                    current_tool_call["input"] += tool_use_delta["input"]
                                 else:
                                     current_tool_call["input"] = tool_use_delta["input"]
 
                                 # Remove input from the delta to prevent it from being processed again
-                                tool_use_without_input = {
-                                    k: v
-                                    for k, v in tool_use_delta.items()
-                                    if k != "input"
-                                }
+                                tool_use_without_input = {k: v for k, v in tool_use_delta.items() if k != "input"}
                                 if tool_use_without_input:
-                                    current_tool_call = join_two_dicts(
-                                        current_tool_call, tool_use_without_input
-                                    )
+                                    current_tool_call = join_two_dicts(current_tool_call, tool_use_without_input)
                             else:
                                 # For other fields, use the normal joining
-                                current_tool_call = join_two_dicts(
-                                    current_tool_call, tool_use_delta
-                                )
+                                current_tool_call = join_two_dicts(current_tool_call, tool_use_delta)
 
                     yield ChatResponse(
                         message=ChatMessage(
@@ -621,9 +597,7 @@ class BedrockConverse(FunctionCallingLLM):
                             content=content.get("text", ""),
                             additional_kwargs={
                                 "tool_calls": tool_calls,
-                                "tool_call_id": [
-                                    tc.get("toolUseId", "") for tc in tool_calls
-                                ],
+                                "tool_call_id": [tc.get("toolUseId", "") for tc in tool_calls],
                                 "status": [],  # Will be populated when tool results come in
                             },
                         ),
@@ -646,9 +620,7 @@ class BedrockConverse(FunctionCallingLLM):
                             content=content.get("text", ""),
                             additional_kwargs={
                                 "tool_calls": tool_calls,
-                                "tool_call_id": [
-                                    tc.get("toolUseId", "") for tc in tool_calls
-                                ],
+                                "tool_call_id": [tc.get("toolUseId", "") for tc in tool_calls],
                                 "status": [],  # Will be populated when tool results come in
                             },
                         ),
@@ -728,7 +700,10 @@ class BedrockConverse(FunctionCallingLLM):
 
         tool_selections = []
         for tool_call in tool_calls:
-            if "toolUseId" not in tool_call or "name" not in tool_call:
+            if (
+                "toolUseId" not in tool_call
+                or "name" not in tool_call
+            ):
                 raise ValueError("Invalid tool call.")
 
             # handle empty inputs

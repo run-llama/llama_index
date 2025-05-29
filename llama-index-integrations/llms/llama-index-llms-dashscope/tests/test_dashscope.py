@@ -252,9 +252,9 @@ async def test_astream_chat_with_tools(monkeypatch, dashscope_llm):
 
     async def fake_async_responses(*args, **kwargs) -> AsyncGenerator:
         expected_tools = [{"dummy": "tool_spec"}]
-        assert kwargs.get("tools") == expected_tools, (
-            "tools parameter is not passed correctly"
-        )
+        assert (
+            kwargs.get("tools") == expected_tools
+        ), "tools parameter is not passed correctly"
 
         class FakeOutput:
             def __init__(self) -> None:

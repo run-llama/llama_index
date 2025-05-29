@@ -7,12 +7,7 @@ from typing import Dict, Generator, Union
 
 from llama_index.storage.kvstore.postgres import PostgresKVStore
 
-no_packages = (
-    find_spec("psycopg2") is None
-    or find_spec("sqlalchemy") is None
-    or find_spec("asyncpg") is None
-)
-
+no_packages = find_spec("psycopg2") is None or find_spec("sqlalchemy") is None or find_spec("asyncpg") is None
 
 @pytest.fixture()
 def postgres_container() -> Generator[Dict[str, Union[str, Container]], None, None]:
@@ -38,17 +33,11 @@ def postgres_container() -> Generator[Dict[str, Union[str, Container]], None, No
 
         # Retrieve the container's port
         container.reload()
-        postgres_port = container.attrs["NetworkSettings"]["Ports"]["5432/tcp"][0][
-            "HostPort"
-        ]
+        postgres_port = container.attrs["NetworkSettings"]["Ports"]["5432/tcp"][0]["HostPort"]
 
         # Wait for PostgreSQL to be ready by polling
-        connection_string = (
-            f"postgresql://testuser:testpassword@0.0.0.0:{postgres_port}/testdb"
-        )
-        async_connection_string = (
-            f"postgresql+asyncpg://testuser:testpassword@0.0.0.0:{postgres_port}/testdb"
-        )
+        connection_string = f"postgresql://testuser:testpassword@0.0.0.0:{postgres_port}/testdb"
+        async_connection_string = f"postgresql+asyncpg://testuser:testpassword@0.0.0.0:{postgres_port}/testdb"
 
         # Wait for PostgreSQL to be ready
         max_retries = 30
@@ -64,9 +53,7 @@ def postgres_container() -> Generator[Dict[str, Union[str, Container]], None, No
                 break
             except Exception as e:
                 if i == max_retries - 1:
-                    raise Exception(
-                        f"Failed to connect to PostgreSQL after {max_retries} attempts: {e}"
-                    )
+                    raise Exception(f"Failed to connect to PostgreSQL after {max_retries} attempts: {e}")
                 time.sleep(retry_interval)
 
         # Return connection information
@@ -85,7 +72,6 @@ def postgres_container() -> Generator[Dict[str, Union[str, Container]], None, No
                 pass  # Ignore errors during cleanup
         if client:
             client.close()
-
 
 @pytest.fixture()
 def postgres_kvstore(

@@ -327,9 +327,9 @@ class GoogleGenAI(FunctionCallingLLM):
                             )
                             llama_resp.delta = content_delta
                             llama_resp.message.content = content
-                            llama_resp.message.additional_kwargs["tool_calls"] = (
-                                existing_tool_calls
-                            )
+                            llama_resp.message.additional_kwargs[
+                                "tool_calls"
+                            ] = existing_tool_calls
                             yield llama_resp
 
         return gen()
@@ -574,10 +574,7 @@ class GoogleGenAI(FunctionCallingLLM):
                         yield chunk.parsed
                     elif chunk.candidates:
                         streaming_model, current_json = handle_streaming_flexible_model(
-                            current_json,
-                            chunk.candidates[0],
-                            output_cls,
-                            flexible_model,
+                            current_json, chunk.candidates[0], output_cls, flexible_model
                         )
                         if streaming_model:
                             yield streaming_model
@@ -626,10 +623,7 @@ class GoogleGenAI(FunctionCallingLLM):
                         yield chunk.parsed
                     elif chunk.candidates:
                         streaming_model, current_json = handle_streaming_flexible_model(
-                            current_json,
-                            chunk.candidates[0],
-                            output_cls,
-                            flexible_model,
+                            current_json, chunk.candidates[0], output_cls, flexible_model
                         )
                         if streaming_model:
                             yield streaming_model

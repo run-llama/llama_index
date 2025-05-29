@@ -642,7 +642,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
                             example = (
                                 (
                                     "Available options: "
-                                    f"{[clean_string_values(el) for el in prop['values']]}"
+                                    f'{[clean_string_values(el) for el in prop["values"]]}'
                                 )
                                 if prop["values"]
                                 else ""
@@ -665,7 +665,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
                         "double",
                     ]:
                         if prop.get("min") is not None:
-                            example = f"Min: {prop['min']}, Max: {prop['max']}"
+                            example = f'Min: {prop["min"]}, Max: {prop["max"]}'
                         else:
                             example = (
                                 f'Example: "{prop["values"][0]}"'
@@ -692,7 +692,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
                             example = (
                                 (
                                     "Available options: "
-                                    f"{[clean_string_values(el) for el in prop['values']]}"
+                                    f'{[clean_string_values(el) for el in prop["values"]]}'
                                 )
                                 if prop.get("values")
                                 else ""
@@ -714,7 +714,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
                         "timestamp",
                     ]:
                         if prop.get("min"):  # If we have min/max
-                            example = f"Min: {prop['min']}, Max:  {prop['max']}"
+                            example = f'Min: {prop["min"]}, Max:  {prop["max"]}'
                         else:  # return a single value
                             example = (
                                 f'Example: "{prop["values"][0]}"'
@@ -725,7 +725,7 @@ class NebulaPropertyGraphStore(PropertyGraphStore):
                         # Skip embeddings
                         if prop["min_size"] > LIST_LIMIT:
                             continue
-                        example = f"Min Size: {prop['min_size']}, Max Size: {prop['max_size']}"
+                        example = f'Min Size: {prop["min_size"]}, Max Size: {prop["max_size"]}'
                     formatted_rel_props.append(
                         f"  - `{prop['property']}: {prop['type']}` {example}"
                     )

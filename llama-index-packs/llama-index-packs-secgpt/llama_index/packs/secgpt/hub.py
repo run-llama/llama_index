@@ -1,7 +1,6 @@
 """
 Hub is a central trustworthy that is aware of the existence of isolated apps, and that can reliably receive user queries and route them to the appropriate apps.
 """
-
 from typing import Optional, Sequence, Callable
 
 from llama_index.core.agent.react.output_parser import ReActOutputParser

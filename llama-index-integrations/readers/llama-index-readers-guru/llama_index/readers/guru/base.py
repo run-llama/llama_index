@@ -47,12 +47,12 @@ class GuruReader(BaseReader):
             List[Document]: List of documents.
 
         """
-        assert (collection_ids is None) or (card_ids is None), (
-            "Only pass in card_ids or collection_ids, not both."
-        )
-        assert (collection_ids is not None) or (card_ids is not None), (
-            "Pass in card_ids or collection_ids."
-        )
+        assert (collection_ids is None) or (
+            card_ids is None
+        ), "Only pass in card_ids or collection_ids, not both."
+        assert (collection_ids is not None) or (
+            card_ids is not None
+        ), "Pass in card_ids or collection_ids."
 
         if collection_ids is not None:
             card_ids = self._get_card_ids_from_collection_ids(collection_ids)

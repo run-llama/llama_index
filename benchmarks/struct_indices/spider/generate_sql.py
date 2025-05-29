@@ -1,5 +1,4 @@
 """Generate SQL queries using LlamaIndex."""
-
 import argparse
 import json
 import logging

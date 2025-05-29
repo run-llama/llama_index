@@ -148,7 +148,6 @@ class LLMCompletionInProgressEvent(BaseEvent):
 
         return super().model_dump(**kwargs)
 
-
 class LLMCompletionEndEvent(BaseEvent):
     """
     LLMCompletionEndEvent.

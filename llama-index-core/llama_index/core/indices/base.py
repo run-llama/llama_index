@@ -207,9 +207,7 @@ class BaseIndex(Generic[IS], ABC):
             self._insert(nodes, **insert_kwargs)
             self._storage_context.index_store.add_index_struct(self._index_struct)
 
-    async def ainsert_nodes(
-        self, nodes: Sequence[BaseNode], **insert_kwargs: Any
-    ) -> None:
+    async def ainsert_nodes(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
         """Asynchronously insert nodes."""
         for node in nodes:
             if isinstance(node, IndexNode):
@@ -222,9 +220,7 @@ class BaseIndex(Generic[IS], ABC):
         with self._callback_manager.as_trace("ainsert_nodes"):
             await self.docstore.async_add_documents(nodes, allow_update=True)
             self._insert(nodes=nodes)
-            await self._storage_context.index_store.async_add_index_struct(
-                self._index_struct
-            )
+            await self._storage_context.index_store.async_add_index_struct(self._index_struct)
 
     def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document."""
@@ -294,9 +290,7 @@ class BaseIndex(Generic[IS], ABC):
             if delete_from_docstore:
                 await self.docstore.adelete_document(node_id, raise_error=False)
 
-        await self._storage_context.index_store.async_add_index_struct(
-            self._index_struct
-        )
+        await self._storage_context.index_store.async_add_index_struct(self._index_struct)
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -470,9 +464,7 @@ class BaseIndex(Generic[IS], ABC):
                     document.get_doc_id()
                 )
                 if existing_doc_hash is None:
-                    await self.ainsert(
-                        document, **update_kwargs.pop("insert_kwargs", {})
-                    )
+                    await self.ainsert(document, **update_kwargs.pop("insert_kwargs", {}))
                     refreshed_documents[i] = True
                 elif existing_doc_hash != document.hash:
                     await self.aupdate_ref_doc(
@@ -488,7 +480,8 @@ class BaseIndex(Generic[IS], ABC):
         ...
 
     @abstractmethod
-    def as_retriever(self, **kwargs: Any) -> BaseRetriever: ...
+    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
+        ...
 
     def as_query_engine(
         self, llm: Optional[LLMType] = None, **kwargs: Any

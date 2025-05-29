@@ -143,7 +143,9 @@ COHERE_REFINE_TEMPLATE = ChatPromptTemplate(
         DocumentMessage(content="{context_msg}"),
         ChatMessage(
             content=(
-                "Query: {query_str}\nOriginal Answer: {existing_answer}\nNew Answer: "
+                "Query: {query_str}\n"
+                "Original Answer: {existing_answer}\n"
+                "New Answer: "
             ),
             role=MessageRole.USER,
         ),

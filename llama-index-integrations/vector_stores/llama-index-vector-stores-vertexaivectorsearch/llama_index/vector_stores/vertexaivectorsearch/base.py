@@ -221,7 +221,8 @@ class VertexAIVectorStore(BasePydanticVectorStore):
         else:
             if self._staging_bucket is None:
                 raise ValueError(
-                    "To update a Vector Search index a staging bucket must be defined."
+                    "To update a Vector Search index a staging bucket must"
+                    " be defined."
                 )
             utils.batch_update_index(
                 index=self._index,

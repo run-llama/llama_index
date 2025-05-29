@@ -169,7 +169,8 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
                         model = Model(id=model_name)
                     else:
                         raise ValueError(
-                            f"Model {model_name} is unknown, check `available_models`"
+                            f"Model {model_name} is unknown, "
+                            "check `available_models`"
                         )
         else:
             if model_name not in [model.id for model in self.available_models]:

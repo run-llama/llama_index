@@ -1,5 +1,4 @@
 """Zyte Web Reader."""
-
 import asyncio
 import logging
 from base64 import b64decode

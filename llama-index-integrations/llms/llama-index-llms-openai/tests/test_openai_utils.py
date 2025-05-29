@@ -186,9 +186,7 @@ def test_from_openai_message_dicts_function_calling(
     openai_message_dicts_with_function_calling: List[ChatCompletionMessageParam],
     chat_messages_with_function_calling: List[ChatMessage],
 ) -> None:
-    chat_messages = from_openai_message_dicts(
-        openai_message_dicts_with_function_calling
-    )  # type: ignore
+    chat_messages = from_openai_message_dicts(openai_message_dicts_with_function_calling)  # type: ignore
 
     # assert attributes match
     for chat_message, chat_message_with_function_calling in zip(

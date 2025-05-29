@@ -1,5 +1,4 @@
 """JSON node parser."""
-
 import json
 from typing import Any, Dict, Generator, List, Optional, Sequence
 

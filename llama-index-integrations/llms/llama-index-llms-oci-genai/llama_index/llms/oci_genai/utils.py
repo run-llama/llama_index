@@ -131,9 +131,9 @@ def create_client(auth_type, auth_profile, auth_file_location, service_endpoint)
                 oci_config=client_kwargs["config"]
             )
         elif auth_type == OCIAuthType(3).name:
-            client_kwargs["signer"] = (
-                oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
-            )
+            client_kwargs[
+                "signer"
+            ] = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
         elif auth_type == OCIAuthType(4).name:
             client_kwargs["signer"] = oci.auth.signers.get_resource_principals_signer()
         else:
@@ -203,33 +203,39 @@ def get_chat_generator() -> Any:
 
 class Provider(ABC):
     @abstractmethod
-    def completion_response_to_text(self, response: Any) -> str: ...
+    def completion_response_to_text(self, response: Any) -> str:
+        ...
 
     @abstractmethod
-    def completion_stream_to_text(self, response: Any) -> str: ...
+    def completion_stream_to_text(self, response: Any) -> str:
+        ...
 
     @abstractmethod
-    def chat_response_to_text(self, response: Any) -> str: ...
+    def chat_response_to_text(self, response: Any) -> str:
+        ...
 
     @abstractmethod
-    def chat_stream_to_text(self, event_data: Dict) -> str: ...
+    def chat_stream_to_text(self, event_data: Dict) -> str:
+        ...
 
     @abstractmethod
-    def chat_generation_info(self, response: Any) -> Dict[str, Any]: ...
+    def chat_generation_info(self, response: Any) -> Dict[str, Any]:
+        ...
 
     @abstractmethod
-    def chat_stream_generation_info(self, event_data: Dict) -> Dict[str, Any]: ...
+    def chat_stream_generation_info(self, event_data: Dict) -> Dict[str, Any]:
+        ...
 
     @abstractmethod
-    def messages_to_oci_params(
-        self, messages: Sequence[ChatMessage]
-    ) -> Dict[str, Any]: ...
+    def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
+        ...
 
     @abstractmethod
     def convert_to_oci_tool(
         self,
         tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-    ) -> Dict[str, Any]: ...
+    ) -> Dict[str, Any]:
+        ...
 
 
 class CohereProvider(Provider):
@@ -420,9 +426,8 @@ class CohereProvider(Provider):
         """
         if isinstance(tool, BaseTool):
             # Extract tool name and description for BaseTool
-            tool_name, tool_description = (
-                getattr(tool, "name", None),
-                getattr(tool, "description", None),
+            tool_name, tool_description = getattr(tool, "name", None), getattr(
+                tool, "description", None
             )
             if not tool_name or not tool_description:
                 tool_name = getattr(tool.metadata, "name", None)

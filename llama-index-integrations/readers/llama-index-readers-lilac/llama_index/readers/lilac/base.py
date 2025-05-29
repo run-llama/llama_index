@@ -1,5 +1,4 @@
 """Lilac reader that loads enriched and labeled Lilac datasets into GPTIndex and LangChain."""
-
 from typing import TYPE_CHECKING, List, Optional
 
 from llama_index.core.readers.base import BaseReader

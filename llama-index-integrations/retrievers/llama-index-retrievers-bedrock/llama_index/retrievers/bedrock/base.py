@@ -1,5 +1,4 @@
 """Bedrock Retriever."""
-
 from typing import List, Optional, Dict, Any
 
 from llama_index.core.base.base_retriever import BaseRetriever

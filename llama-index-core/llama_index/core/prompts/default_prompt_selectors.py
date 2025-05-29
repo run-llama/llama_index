@@ -1,5 +1,4 @@
 """Default prompt selectors."""
-
 from llama_index.core.prompts import SelectorPromptTemplate
 from llama_index.core.prompts.chat_prompts import (
     CHAT_REFINE_PROMPT,

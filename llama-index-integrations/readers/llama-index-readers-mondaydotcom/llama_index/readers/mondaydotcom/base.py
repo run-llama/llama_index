@@ -1,5 +1,4 @@
 """monday.com reader."""
-
 from typing import Dict, List
 
 import requests
@@ -51,7 +50,9 @@ class MondayReader(BaseReader):
                         }
                     }
                 }
-            } """ % (board_id)
+            } """ % (
+            board_id
+        )
         data = {"query": query}
 
         response = requests.post(url=self.api_url, json=data, headers=headers)

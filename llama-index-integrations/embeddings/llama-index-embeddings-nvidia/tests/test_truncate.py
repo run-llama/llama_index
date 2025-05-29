@@ -7,7 +7,9 @@ class MockEmbeddingResponse:
     """Mock response matching the structure expected by the code."""
 
     def __init__(self):
-        self.data = [Mock(embedding=[1.0, 2.0, 3.0], index=0)]
+        self.data = [
+            Mock(embedding=[1.0, 2.0, 3.0], index=0)
+        ]
 
 
 @pytest.fixture(autouse=True)
@@ -18,12 +20,9 @@ def mock_openai():
 
     # Patch at the module level where the code imports from
     # NVIDIAEmbedding uses: from openai import OpenAI, AsyncOpenAI
-    with (
-        patch("llama_index.embeddings.nvidia.base.OpenAI") as mock_openai_cls,
-        patch(
-            "llama_index.embeddings.nvidia.base.AsyncOpenAI"
-        ) as mock_async_openai_cls,
-    ):
+    with patch("llama_index.embeddings.nvidia.base.OpenAI") as mock_openai_cls, \
+         patch("llama_index.embeddings.nvidia.base.AsyncOpenAI") as mock_async_openai_cls:
+
         # Set up the sync client mock
         mock_client = Mock()
         mock_embeddings = Mock()
@@ -54,18 +53,14 @@ def test_single_truncate(method_name: str, truncate: str):
 @pytest.mark.asyncio
 async def test_asingle_truncate(method_name: str, truncate: str):
     # Call the method
-    await getattr(NVIDIAEmbedding(api_key="BOGUS", truncate=truncate), method_name)(
-        "nvidia"
-    )
+    await getattr(NVIDIAEmbedding(api_key="BOGUS", truncate=truncate), method_name)("nvidia")
 
 
 @pytest.mark.parametrize("method_name", ["get_text_embedding_batch"])
 @pytest.mark.parametrize("truncate", ["END", "START", "NONE"])
 def test_batch_truncate(method_name: str, truncate: str):
     # Call the method
-    getattr(NVIDIAEmbedding(api_key="BOGUS", truncate=truncate), method_name)(
-        ["nvidia"]
-    )
+    getattr(NVIDIAEmbedding(api_key="BOGUS", truncate=truncate), method_name)(["nvidia"])
 
 
 @pytest.mark.parametrize("method_name", ["aget_text_embedding_batch"])
@@ -73,6 +68,4 @@ def test_batch_truncate(method_name: str, truncate: str):
 @pytest.mark.asyncio
 async def test_abatch_truncate(method_name: str, truncate: str):
     # Call the method
-    await getattr(NVIDIAEmbedding(api_key="BOGUS", truncate=truncate), method_name)(
-        ["nvidia"]
-    )
+    await getattr(NVIDIAEmbedding(api_key="BOGUS", truncate=truncate), method_name)(["nvidia"])

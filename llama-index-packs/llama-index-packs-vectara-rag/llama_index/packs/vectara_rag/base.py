@@ -1,5 +1,6 @@
 """Vectara RAG Pack."""
 
+
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.llama_pack.base import BaseLlamaPack

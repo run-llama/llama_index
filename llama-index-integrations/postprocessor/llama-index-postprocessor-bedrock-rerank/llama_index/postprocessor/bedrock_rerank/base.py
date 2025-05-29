@@ -47,7 +47,8 @@ class BedrockRerank(BaseNodePostprocessor):
     region_name: Optional[str] = Field(
         default=None,
         description=(
-            "AWS region name to use. Uses region configured in AWS CLI if not passed."
+            "AWS region name to use. "
+            "Uses region configured in AWS CLI if not passed."
         ),
     )
     botocore_session: Optional[Any] = Field(

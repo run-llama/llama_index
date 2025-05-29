@@ -1,5 +1,4 @@
 """Init file."""
-
 from llama_index.readers.web.agentql_web.base import (
     AgentQLWebReader,
 )

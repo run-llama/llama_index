@@ -174,7 +174,7 @@ class NeptuneAnalyticsPropertyGraphStore(NeptuneBasePropertyGraph):
                     MERGE (e:`{BASE_NODE_LABEL}` {{id: row.id}})
                     SET e += removeKeyFromMap(row.properties, '')
                     SET e.name = row.name, e:`{BASE_ENTITY_LABEL}`
-                    SET e:`{d["label"]}`
+                    SET e:`{d['label']}`
                     WITH e, row
                     WHERE removeKeyFromMap(row.properties, '').triplet_source_id IS NOT NULL
                     MERGE (c:Chunk {{id: removeKeyFromMap(row.properties, '').triplet_source_id}})

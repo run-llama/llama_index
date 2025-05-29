@@ -175,7 +175,7 @@ def test_sql_index_async_query(
 
 def test_default_output_parser() -> None:
     """Test default output parser."""
-    test_str = "user_id:2\nfoo:bar\n,,testing:testing2..\nnumber:123,456,789\n"
+    test_str = "user_id:2\n" "foo:bar\n" ",,testing:testing2..\n" "number:123,456,789\n"
     fields = default_output_parser(test_str)
     assert fields == {
         "user_id": "2",

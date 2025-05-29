@@ -54,7 +54,8 @@ class ChatMessageCallable(Protocol):
         role: str,
         image_documents: Optional[Sequence[ImageDocument]],
         **kwargs: Any,
-    ) -> ChatMessage: ...
+    ) -> ChatMessage:
+        ...
 
 
 def add_user_step_to_reasoning(

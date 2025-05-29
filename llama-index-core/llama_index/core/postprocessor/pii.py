@@ -1,5 +1,4 @@
 """PII postprocessor."""
-
 import json
 from copy import deepcopy
 from typing import Callable, Dict, List, Optional, Tuple

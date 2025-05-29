@@ -1,5 +1,4 @@
 """Spider evaluation script."""
-
 import argparse
 import ast
 import json

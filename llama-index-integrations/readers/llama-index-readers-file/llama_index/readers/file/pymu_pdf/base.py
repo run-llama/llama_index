@@ -69,7 +69,7 @@ class PyMuPDFReader(BaseReader):
                     extra_info=dict(
                         extra_info,
                         **{
-                            "source": f"{page.number + 1}",
+                            "source": f"{page.number+1}",
                         },
                     ),
                 )

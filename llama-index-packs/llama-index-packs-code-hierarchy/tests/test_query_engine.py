@@ -1,5 +1,4 @@
 """Test CodeHierarchyNodeParser reading itself."""
-
 from typing import Sequence
 
 import pytest

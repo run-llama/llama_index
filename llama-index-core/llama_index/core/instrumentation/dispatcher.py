@@ -40,7 +40,8 @@ def instrument_tags(new_tags: Dict[str, Any]) -> Generator[None, None, None]:
 
 # Keep for backwards compatibility
 class EventDispatcher(Protocol):
-    def __call__(self, event: BaseEvent, **kwargs: Any) -> None: ...
+    def __call__(self, event: BaseEvent, **kwargs: Any) -> None:
+        ...
 
 
 class Dispatcher(BaseModel):

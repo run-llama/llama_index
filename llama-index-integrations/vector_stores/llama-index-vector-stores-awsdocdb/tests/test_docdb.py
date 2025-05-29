@@ -1,5 +1,4 @@
 """Test AWS DocumentDB Vector Store functionality."""
-
 from __future__ import annotations
 
 import os

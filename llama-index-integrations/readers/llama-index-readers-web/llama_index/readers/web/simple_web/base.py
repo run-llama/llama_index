@@ -1,5 +1,4 @@
 """Simple Web scraper."""
-
 from typing import List, Optional, Dict, Callable
 
 import requests

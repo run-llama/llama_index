@@ -1,5 +1,4 @@
 """Module for defining/enumerating the common sections from SEC forms."""
-
 import re
 from enum import Enum
 from typing import List

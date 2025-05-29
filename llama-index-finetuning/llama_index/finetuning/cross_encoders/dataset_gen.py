@@ -1,5 +1,4 @@
 """Dataset Generator for Cross Encoder Finetuning."""
-
 import re
 import warnings
 from dataclasses import dataclass

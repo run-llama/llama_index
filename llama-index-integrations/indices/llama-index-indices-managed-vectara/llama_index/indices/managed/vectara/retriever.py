@@ -653,12 +653,7 @@ class VectaraAutoRetriever(VectorIndexAutoRetriever):
         vector_store_info: VectorStoreInfo,
         **kwargs: Any,
     ) -> None:
-        super().__init__(
-            index,
-            vector_store_info,
-            prompt_template_str=DEFAULT_VECTARA_QUERY_PROMPT_TMPL,
-            **kwargs,
-        )  # type: ignore
+        super().__init__(index, vector_store_info, prompt_template_str=DEFAULT_VECTARA_QUERY_PROMPT_TMPL, **kwargs)  # type: ignore
         self._index = index  # type: ignore
         self._kwargs = kwargs
         self._verbose = self._kwargs.get("verbose", False)

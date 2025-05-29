@@ -287,9 +287,9 @@ async def test_workflow_num_workers():
 
     # Check if the execution time is close to 1 second (with some tolerance)
     execution_time = end_time - start_time
-    assert 1.0 <= execution_time < 1.1, (
-        f"Execution time was {execution_time:.2f} seconds"
-    )
+    assert (
+        1.0 <= execution_time < 1.1
+    ), f"Execution time was {execution_time:.2f} seconds"
 
 
 @pytest.mark.asyncio

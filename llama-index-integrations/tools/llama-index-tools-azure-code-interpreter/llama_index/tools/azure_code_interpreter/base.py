@@ -103,9 +103,9 @@ class AzureCodeInterpreterToolSpec(BaseToolSpec):
 
             return access_token_provider
 
-        self.access_token_provider: Callable[[], Optional[str]] = (
-            _access_token_provider_factory()
-        )
+        self.access_token_provider: Callable[
+            [], Optional[str]
+        ] = _access_token_provider_factory()
         """A function that returns the access token to use for the session pool."""
 
         self.session_id: str = session_id or str(uuid4())

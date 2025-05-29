@@ -25,7 +25,10 @@ class ChonkieAutoEmbedding(BaseEmbedding):
     model_name: str
     embedder: Optional[chonkie.BaseEmbeddings] = None
 
-    def __init__(self, model_name: str) -> None:
+    def __init__(
+        self,
+        model_name: str
+    ) -> None:
         super().__init__(model_name=model_name)
         self.embedder = AutoEmbeddings.get_embeddings(self.model_name)
 

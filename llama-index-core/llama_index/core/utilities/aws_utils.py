@@ -40,9 +40,7 @@ def get_aws_service_client(
             session = boto3.Session(profile_name=profile_name)
             if region_name:
                 client = session.client(
-                    service_name,
-                    region_name=region_name,
-                    config=config,  # type: ignore
+                    service_name, region_name=region_name, config=config  # type: ignore
                 )
             else:
                 client = session.client(service_name, config=config)  # type: ignore

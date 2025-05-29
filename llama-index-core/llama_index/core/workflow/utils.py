@@ -55,7 +55,6 @@ class ResourceDefinition(BaseModel):
     name: str
     resource: _Resource
 
-
 class StepSignatureSpec(BaseModel):
     """A Pydantic model representing the signature of a step function or method."""
 
@@ -107,7 +106,7 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
             resources.append(
                 ResourceDefinition(
                     name=name,
-                    resource=resource,
+                    resource = resource,
                 )
             )
             continue

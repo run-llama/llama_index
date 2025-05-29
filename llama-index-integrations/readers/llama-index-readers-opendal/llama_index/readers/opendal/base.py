@@ -4,7 +4,6 @@ Opendal file and directory reader.
 A loader that fetches a file or iterates through a directory on AWS S3 or other compatible service.
 
 """
-
 import asyncio
 import tempfile
 from pathlib import Path

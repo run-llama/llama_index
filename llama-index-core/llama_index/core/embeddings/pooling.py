@@ -20,7 +20,8 @@ class Pooling(str, Enum):
 
     @classmethod
     @overload
-    def cls_pooling(cls, array: np.ndarray) -> np.ndarray: ...
+    def cls_pooling(cls, array: np.ndarray) -> np.ndarray:
+        ...
 
     @classmethod
     @overload

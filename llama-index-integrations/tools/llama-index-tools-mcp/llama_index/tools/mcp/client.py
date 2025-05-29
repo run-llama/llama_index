@@ -116,10 +116,7 @@ class BasicMCPClient(ClientSession):
         # Use default in-memory storage if none provided
         if token_storage is None:
             token_storage = DefaultInMemoryTokenStorage()
-            warnings.warn(
-                "Using default in-memory token storage. Tokens will be lost on restart.",
-                UserWarning,
-            )
+            warnings.warn("Using default in-memory token storage. Tokens will be lost on restart.", UserWarning)
 
         oauth_auth = OAuthClientProvider(
             server_url=command_or_url if urlparse(command_or_url).scheme else None,
@@ -182,17 +179,11 @@ class BasicMCPClient(ClientSession):
                     yield session
 
     # Tool methods
-    async def call_tool(
-        self,
-        tool_name: str,
-        arguments: Optional[dict] = None,
-        progress_callback: Optional[ProgressFnT] = None,
-    ) -> types.CallToolResult:
+    async def call_tool(self, tool_name: str, arguments: Optional[dict] = None, progress_callback: Optional[ProgressFnT] = None) -> types.CallToolResult:
         """Call a tool on the MCP server."""
         async with self._run_session() as session:
-            return await session.call_tool(
-                tool_name, arguments=arguments, progress_callback=progress_callback
-            )
+            return await session.call_tool(tool_name, arguments=arguments, progress_callback=progress_callback)
+
 
     async def list_tools(self) -> types.ListToolsResult:
         """List all available tools on the MCP server."""

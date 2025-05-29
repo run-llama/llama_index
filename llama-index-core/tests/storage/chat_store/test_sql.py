@@ -257,12 +257,8 @@ async def test_get_keys(chat_store: SQLAlchemyChatStore):
 async def test_dump_load_store(chat_store: SQLAlchemyChatStore):
     """Test dumping and loading the store."""
     # Add some messages
-    await chat_store.add_message(
-        "dump_user1", ChatMessage(role="user", content="message1")
-    )
-    await chat_store.add_message(
-        "dump_user2", ChatMessage(role="user", content="message2")
-    )
+    await chat_store.add_message("dump_user1", ChatMessage(role="user", content="message1"))
+    await chat_store.add_message("dump_user2", ChatMessage(role="user", content="message2"))
 
     # Dump the store
     store_dict = chat_store.model_dump()

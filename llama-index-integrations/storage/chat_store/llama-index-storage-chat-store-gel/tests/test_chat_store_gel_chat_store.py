@@ -15,7 +15,6 @@ try:
 except subprocess.CalledProcessError as e:
     print(e)
 
-
 def test_class():
     names_of_base_classes = [b.__name__ for b in GelChatStore.__mro__]
     assert BaseChatStore.__name__ in names_of_base_classes

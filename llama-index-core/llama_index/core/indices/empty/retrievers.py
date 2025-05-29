@@ -1,5 +1,4 @@
 """Default query for EmptyIndex."""
-
 from typing import Any, List, Optional
 
 from llama_index.core.base.base_retriever import BaseRetriever

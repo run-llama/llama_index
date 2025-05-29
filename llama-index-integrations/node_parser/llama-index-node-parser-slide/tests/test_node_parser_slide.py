@@ -10,6 +10,7 @@ Covers:
 - Handling of inputs shorter than the window (still produces valid nodes with context).
 """
 
+
 import asyncio
 import pytest
 import warnings
@@ -56,12 +57,17 @@ def test_sync_parsing_no_errors(chunk_size, window_size, llm_workers):
         # Every node must have the local_context metadata set
         assert all("local_context" in node.metadata for node in nodes)
 
-
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("chunk_size", "window_size", "llm_workers"),
-    [(1, 1, 1), (10, 3, 2), (100, 5, 4), (390, 10, 8)],
+    [
+        (1, 1, 1),
+        (10, 3, 2),
+        (100, 5, 4),
+        (390, 10, 8)
+    ],
 )
+
 async def test_async_parsing_no_errors(chunk_size, window_size, llm_workers):
     """
     Integration test to ensure the async parsing path (_aget_nodes_from_documents)
@@ -89,7 +95,6 @@ async def test_async_parsing_no_errors(chunk_size, window_size, llm_workers):
         # Every node should have the local_context metadata set
         assert all("local_context" in node.metadata for node in nodes)
 
-
 @pytest.mark.asyncio
 async def test_parallel_achat_calls():
     """Ensure that with max_workers>1, LLM calls overlap (are run in parallel)."""
@@ -110,9 +115,9 @@ async def test_parallel_achat_calls():
         llm = MockLLM()
         parser = SlideNodeParser.from_defaults(
             llm=llm,
-            chunk_size=2,  # ensure each sentence is its own chunk
+            chunk_size=2,    # ensure each sentence is its own chunk
             window_size=1,
-            llm_workers=2,  # allow up to 2 concurrent calls
+            llm_workers=2,    # allow up to 2 concurrent calls
         )
         # Two-sentence doc → 2 chunks → 2 achat calls
         doc = Document(text="First. Second.")
@@ -128,7 +133,6 @@ async def test_parallel_achat_calls():
         f"but got call_events={call_events}"
     )
 
-
 @pytest.mark.asyncio
 async def test_async_aparse_nodes_with_mock_llm():
     """Ensure the async parser path calls achat() once per chunk and attaches contexts."""
@@ -137,14 +141,12 @@ async def test_async_aparse_nodes_with_mock_llm():
     document = Document(text=text)
 
     # Patch MockLLM.achat at the class level
-    with patch.object(
-        MockLLM, "achat", new=AsyncMock(return_value="dummy async context")
-    ) as mock_achat:
+    with patch.object(MockLLM, "achat", new=AsyncMock(return_value="dummy async context")) as mock_achat:
         # Instantiate the LLM and parser as usual
         mock_llm = MockLLM()
         parser = SlideNodeParser.from_defaults(
             llm=mock_llm,
-            chunk_size=3,  # one sentence → one chunk
+            chunk_size=3,   # one sentence → one chunk
             window_size=1,
             llm_workers=2,
         )
@@ -160,27 +162,25 @@ async def test_async_aparse_nodes_with_mock_llm():
         for node in nodes:
             assert node.metadata["local_context"] == "dummy async context"
 
-
 def test_empty_doc():
     """Ensure passing empty docs returns an empty List[TextNode]."""
     warnings.warn(
         "WARNING: This test may fail if the context length of MockLLM is changed.\n"
         "Make sure chunk_size * window_size fits within MockLLM.context_window.",
-        UserWarning,
+        UserWarning
     )
 
     llm = MockLLM()
     node_parser = SlideNodeParser.from_defaults(
-        chunk_size=1300,  # setting non default values to match context length of mock LLM
+        chunk_size=1300, # setting non default values to match context length of mock LLM
         window_size=3,
-        llm=llm,
+        llm=llm
     )
     nodes = node_parser.get_nodes_from_documents(documents=[Document(text="")])
     print(nodes)
 
     assert isinstance(nodes, list)
     assert nodes == []
-
 
 def test_short_text_less_than_window():
     """Ensure parser handles short input without window overflow."""
@@ -193,7 +193,6 @@ def test_short_text_less_than_window():
         nodes = parser.get_nodes_from_documents([Document(text="One. Two.")])
         assert len(nodes) > 0
         assert all(node.metadata["local_context"] == "ctx" for node in nodes)
-
 
 def test_llm_called_expected_times():
     """Ensure LLM.chat() is called once per chunk (class‐level patching)."""
@@ -208,8 +207,8 @@ def test_llm_called_expected_times():
         # Force each sentence to become its own chunk:
         parser = SlideNodeParser.from_defaults(
             llm=mock_llm,
-            chunk_size=3,  # small enough that each sentence splits out
-            window_size=1,  # window of just the chunk itself
+            chunk_size=3,   # small enough that each sentence splits out
+            window_size=1    # window of just the chunk itself
         )
 
         # Run parser

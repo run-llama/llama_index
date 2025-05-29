@@ -1,5 +1,4 @@
 """Simple reader that turns an iterable of strings into a list of Documents."""
-
 from typing import List
 
 from llama_index.core.readers.base import BasePydanticReader

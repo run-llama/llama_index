@@ -2,7 +2,6 @@
 Aggregation pipeline components used in Atlas Full-Text, Vector, and Hybrid Search.
 
 """
-
 from typing import Any, Dict, List, Optional, TypeVar
 
 from llama_index.core.vector_stores.types import (

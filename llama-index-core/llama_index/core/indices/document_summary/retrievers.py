@@ -180,7 +180,8 @@ class DocumentSummaryIndexEmbeddingRetriever(BaseRetriever):
             top_k_summary_ids = [n.node_id for n in query_result.nodes]
         else:
             raise ValueError(
-                "Vector store query result should return at least one of nodes or ids."
+                "Vector store query result should return "
+                "at least one of nodes or ids."
             )
 
         results = []

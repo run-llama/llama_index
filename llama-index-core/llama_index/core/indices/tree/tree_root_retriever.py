@@ -1,5 +1,4 @@
 """Retrieve query."""
-
 import logging
 from typing import Any, List, Optional
 

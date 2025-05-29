@@ -3,10 +3,7 @@ from typing import Any, List, Sequence
 
 import pytest
 from llama_index.core.agent.react.base import ReActAgent, ReActAgentWorker
-from llama_index.core.agent.react.types import (
-    ActionReasoningStep,
-    ObservationReasoningStep,
-)
+from llama_index.core.agent.react.types import ActionReasoningStep, ObservationReasoningStep
 from llama_index.core.agent.types import Task
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -325,7 +322,6 @@ def test_complaint_when_no_reasoning_step():
         == "Observation: Error: Could not parse output. Please follow the thought-action-input format. Try again."
     )
 
-
 def test_max_iterations(add_tool: FunctionTool) -> None:
     """Test that _get_response raises ValueError when max_iterations is reached."""
     # Create a minimal mock LLM
@@ -344,15 +340,15 @@ def test_max_iterations(add_tool: FunctionTool) -> None:
     for i in range(max_iterations + 1):  # Creating more steps than max_iterations
         # Alternate between action and observation steps to simulate a real sequence
         if i % 2 == 0:
-            current_reasoning.append(
-                ActionReasoningStep(
-                    thought=f"Thought {i}", action="add", action_input={"a": i, "b": i}
-                )
-            )
+            current_reasoning.append(ActionReasoningStep(
+                thought=f"Thought {i}",
+                action="add",
+                action_input={"a": i, "b": i}
+            ))
         else:
-            current_reasoning.append(
-                ObservationReasoningStep(observation=f"Result: {i + i}")
-            )
+            current_reasoning.append(ObservationReasoningStep(
+                observation=f"Result: {i + i}"
+            ))
 
     # Mock sources
     sources: List[ToolOutput] = []

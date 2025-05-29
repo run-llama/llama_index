@@ -155,7 +155,7 @@ class OCIDataScienceEmbedding(BaseEmbedding):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         default_headers: Optional[Dict[str, str]] = None,
         callback_manager: Optional[CallbackManager] = None,
-        **kwargs: Any,
+        **kwargs: Any
     ) -> None:
         """
         Initialize the OCIDataScienceEmbedding instance.
@@ -183,7 +183,7 @@ class OCIDataScienceEmbedding(BaseEmbedding):
             additional_kwargs=additional_kwargs or {},
             default_headers=default_headers or {},
             callback_manager=callback_manager,
-            **kwargs,
+            **kwargs
         )
 
     @model_validator(mode="before")

@@ -1,5 +1,4 @@
 """Test EvalQueryEngine tool."""
-
 from typing import Optional, Sequence, Any
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock
@@ -16,9 +15,11 @@ from llama_index.core.tools.types import ToolOutput
 class MockEvaluator(BaseEvaluator):
     """Mock Evaluator for testing purposes."""
 
-    def _get_prompts(self) -> PromptDictType: ...
+    def _get_prompts(self) -> PromptDictType:
+        ...
 
-    def _update_prompts(self, prompts_dict: PromptDictType) -> None: ...
+    def _update_prompts(self, prompts_dict: PromptDictType) -> None:
+        ...
 
     async def aevaluate(
         self,
@@ -26,7 +27,8 @@ class MockEvaluator(BaseEvaluator):
         response: Optional[str] = None,
         contexts: Optional[Sequence[str]] = None,
         **kwargs: Any,
-    ) -> EvaluationResult: ...
+    ) -> EvaluationResult:
+        ...
 
 
 class MockQueryEngine(CustomQueryEngine):

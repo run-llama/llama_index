@@ -47,9 +47,13 @@ class SlideNodeParser(NodeParser):
         description="Number of workers to use for LLM calls. This is only used when using the async version of the parser.",
     )
 
-    llm: LLM = Field(description="The LLM model to use for generating local context")
+    llm: LLM = Field(
+        description="The LLM model to use for generating local context"
+    )
 
-    token_counter: TokenCounter = Field(description="Token counter for sentences")
+    token_counter: TokenCounter = Field(
+        description="Token counter for sentences"
+    )
 
     sentence_splitter: SentenceSplitterCallable = Field(
         default_factory=split_by_sentence_tokenizer,
@@ -104,7 +108,7 @@ class SlideNodeParser(NodeParser):
             warnings.warn(
                 f"chunk_size={self.chunk_size} may be too small for meaningful chunking. "
                 "This could lead to poor context quality and high LLM call overhead.",
-                stacklevel=2,
+                stacklevel=2
             )
 
         # 3) window_size ≥ 1
@@ -112,9 +116,7 @@ class SlideNodeParser(NodeParser):
             raise ValueError("`window_size` must be greater than or equal to 1.")
 
         # 4) Validate LLM context budget: chunk_size × window_size
-        context_window = getattr(
-            getattr(self.llm, "metadata", None), "context_window", None
-        )
+        context_window = getattr(getattr(self.llm, "metadata", None), "context_window", None)
         if context_window is not None:
             estimated_tokens = self.chunk_size * self.window_size
             if estimated_tokens > context_window:
@@ -128,7 +130,7 @@ class SlideNodeParser(NodeParser):
             warnings.warn(
                 "The LLM does not expose `metadata.context_window`. "
                 "SLIDE cannot validate token usage, which may lead to truncation or generation failures.",
-                stacklevel=2,
+                stacklevel=2
             )
 
         return self
@@ -141,11 +143,10 @@ class SlideNodeParser(NodeParser):
         """Parse document into nodes."""
         # Warn if someone set llm_workers > 1 but is using sync parsing
         if self.llm_workers != 1:
-            warnings.warn(
-                "llm_workers has no effect when using synchronous parsing. "
-                "If you want parallel LLM calls, use `aget_nodes_from_documents(...)` "
-                "with llm_workers > 1.",
-                stacklevel=2,
+            warnings.warn("llm_workers has no effect when using synchronous parsing. "
+               "If you want parallel LLM calls, use `aget_nodes_from_documents(...)` "
+               "with llm_workers > 1.",
+               stacklevel=2,
             )
         all_nodes: List[BaseNode] = []
         nodes_with_progress = get_tqdm_iterable(nodes, show_progress, "Parsing nodes")
@@ -170,27 +171,26 @@ class SlideNodeParser(NodeParser):
             )
 
         all_nodes: List[BaseNode] = []
-        nodes_with_progress = get_tqdm_iterable(
-            nodes, show_progress, "Parsing nodes (async)"
-        )
+        nodes_with_progress = get_tqdm_iterable(nodes, show_progress, "Parsing nodes (async)")
 
         for node in nodes_with_progress:
-            nodes = await self.abuild_slide_nodes_from_documents([node], show_progress)
+            nodes = await self.abuild_slide_nodes_from_documents(
+                [node], show_progress
+            )
             all_nodes.extend(nodes)
 
         return all_nodes
 
-    def create_individual_chunks(self, sentences: List[str]) -> List[str]:
+    def create_individual_chunks(
+        self,
+        sentences: List[str]
+    ) -> List[str]:
         """Greedily add sentences to each chunk until we reach the chunk size limit."""
         chunks = []
         current_chunk = ""
         for sentence in sentences:
             potential_chunk = (current_chunk + " " + sentence).strip()
-            if (
-                not current_chunk
-                or self.token_counter.get_string_tokens(potential_chunk)
-                <= self.chunk_size
-            ):
+            if not current_chunk or self.token_counter.get_string_tokens(potential_chunk) <= self.chunk_size:
                 current_chunk = potential_chunk
             else:
                 chunks.append(current_chunk)
@@ -215,22 +215,15 @@ class SlideNodeParser(NodeParser):
             # format prompt with current chunk and window chunk
             llm_messages = [
                 ChatMessage(role="system", content=CONTEXT_GENERATION_SYSTEM_PROMPT),
-                ChatMessage(
-                    role="user",
-                    content=CONTEXT_GENERATION_USER_PROMPT.format(
-                        window_chunk=window_chunk, chunk=chunks[i]
-                    ),
-                ),
+                ChatMessage(role="user", content=CONTEXT_GENERATION_USER_PROMPT.format(window_chunk=window_chunk, chunk=chunks[i])),
             ]
 
             # generate localized context using LLM
             localized_context = str(self.llm.chat(messages=llm_messages))
-            localized_splits.append(
-                {
-                    "text": chunks[i],
-                    "context": localized_context,
-                }
-            )
+            localized_splits.append({
+                "text": chunks[i],
+                "context": localized_context,
+            })
 
         return localized_splits
 
@@ -251,12 +244,7 @@ class SlideNodeParser(NodeParser):
 
             llm_messages = [
                 ChatMessage(role="system", content=CONTEXT_GENERATION_SYSTEM_PROMPT),
-                ChatMessage(
-                    role="user",
-                    content=CONTEXT_GENERATION_USER_PROMPT.format(
-                        window_chunk=window_chunk, chunk=chunk
-                    ),
-                ),
+                ChatMessage(role="user", content=CONTEXT_GENERATION_USER_PROMPT.format(window_chunk=window_chunk, chunk=chunk)),
             ]
             jobs.append(self.llm.achat(messages=llm_messages))
 
@@ -309,7 +297,9 @@ class SlideNodeParser(NodeParser):
 
             # build and annotate nodes
             nodes = build_nodes_from_splits(
-                text_splits=texts, document=document, id_func=self.id_func
+                text_splits=texts,
+                document=document,
+                id_func=self.id_func
             )
 
             nodes = self.post_process_nodes(nodes, contexts)
@@ -339,7 +329,9 @@ class SlideNodeParser(NodeParser):
 
             # build and annotate nodes
             nodes = build_nodes_from_splits(
-                text_splits=texts, document=document, id_func=self.id_func
+                text_splits=texts,
+                document=document,
+                id_func=self.id_func
             )
 
             nodes = self.post_process_nodes(nodes, contexts)

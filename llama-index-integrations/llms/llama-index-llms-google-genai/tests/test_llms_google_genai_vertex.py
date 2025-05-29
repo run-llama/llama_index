@@ -13,7 +13,6 @@ from llama_index.llms.google_genai.utils import convert_schema_to_function_decla
 # Don't forget to export GOOGLE_CLOUD_LOCATION and GOOGLE_CLOUD_PROJECT when testing with VertexAI
 SKIP_VERTEXAI = os.environ.get("GOOGLE_GENAI_USE_VERTEXAI", "false") == "false"
 
-
 @pytest.mark.skipif(
     SKIP_VERTEXAI,
     reason="GOOGLE_GENAI_USE_VERTEXAI not set",
@@ -35,7 +34,6 @@ def test_anyof_supported_vertexai() -> None:
     )
     assert isinstance(content, Content)
     assert isinstance(content.content, int | str)
-
 
 @pytest.mark.skipif(
     SKIP_VERTEXAI,

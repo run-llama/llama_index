@@ -1,5 +1,4 @@
 """Embeddings."""
-
 from typing import Any, List
 from unittest.mock import patch
 

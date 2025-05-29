@@ -1,7 +1,6 @@
 """
 In SecGPT, all messages exchanged among spokes conform to predefined formats, encapsulated within the Message class.
 """
-
 import json
 
 

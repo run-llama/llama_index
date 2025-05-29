@@ -6,7 +6,6 @@ intranet and RAG systems for generative AI agents and apps.
 Vertex AI Search is a part of Vertex AI Agent Builder.
 
 """
-
 from __future__ import annotations
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode

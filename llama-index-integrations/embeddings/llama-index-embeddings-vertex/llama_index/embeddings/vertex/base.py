@@ -275,7 +275,7 @@ class VertexMultiModalEmbedding(MultiModalEmbedding):
         return self._model.get_embeddings(
             contextual_text=text,
             dimension=self.embed_dimension,
-            **self.additional_kwargs,
+            **self.additional_kwargs
         ).text_embedding
 
     def _get_image_embedding(self, img_file_path: ImageType) -> Embedding:

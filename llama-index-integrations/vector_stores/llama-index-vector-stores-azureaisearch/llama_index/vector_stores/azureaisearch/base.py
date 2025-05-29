@@ -145,12 +145,12 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
     _hidden_field_keys: List[str] = PrivateAttr()
     _field_mapping: Dict[str, str] = PrivateAttr()
     _index_management: IndexManagement = PrivateAttr()
-    _index_mapping: Callable[[Dict[str, str], Dict[str, Any]], Dict[str, str]] = (
-        PrivateAttr()
-    )
-    _metadata_to_index_field_map: Dict[str, Tuple[str, MetadataIndexFieldType]] = (
-        PrivateAttr()
-    )
+    _index_mapping: Callable[
+        [Dict[str, str], Dict[str, Any]], Dict[str, str]
+    ] = PrivateAttr()
+    _metadata_to_index_field_map: Dict[
+        str, Tuple[str, MetadataIndexFieldType]
+    ] = PrivateAttr()
     _vector_profile_name: str = PrivateAttr()
     _compression_type: str = PrivateAttr()
     _user_agent: str = PrivateAttr()
@@ -988,7 +988,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             return
 
         # Locate documents to delete
-        filter = f"{self._field_mapping['doc_id']} eq '{ref_doc_id}'"
+        filter = f'{self._field_mapping["doc_id"]} eq \'{ref_doc_id}\''
         batch_size = 1000
 
         while True:
@@ -1019,7 +1019,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             return
 
         # Locate documents to delete
-        filter = f"{self._field_mapping['doc_id']} eq '{ref_doc_id}'"
+        filter = f'{self._field_mapping["doc_id"]} eq \'{ref_doc_id}\''
         batch_size = 1000
 
         while True:
@@ -1119,7 +1119,10 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         """Build the OData filter query for the deletion process."""
         if node_ids:
             return " or ".join(
-                [f"{self._field_mapping['id']} eq '{node_id}'" for node_id in node_ids]
+                [
+                    f'{self._field_mapping["id"]} eq \'{node_id}\''
+                    for node_id in node_ids
+                ]
             )
 
         if filters and filters.filters:

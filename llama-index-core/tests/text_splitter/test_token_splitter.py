@@ -1,5 +1,4 @@
 """Test text splitter."""
-
 from typing import List
 
 import tiktoken

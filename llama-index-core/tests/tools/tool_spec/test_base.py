@@ -23,12 +23,7 @@ class AbcSchema(BaseModel):
 
 
 class TestToolSpec(BaseToolSpec):
-    spec_functions: List[Union[str, Tuple[str, str]]] = [
-        "foo",
-        "bar",
-        "abc",
-        "abc_with_ctx",
-    ]
+    spec_functions: List[Union[str, Tuple[str, str]]] = ["foo", "bar", "abc", "abc_with_ctx"]
 
     def foo(self, arg1: str, arg2: int) -> str:
         """Foo."""
@@ -77,19 +72,13 @@ def test_tool_spec() -> None:
 
     assert tools[2].metadata.name == "abc"
     assert tools[2].metadata.description == "abc(arg1: str) -> str\n"
-    assert (
-        tools[2].metadata.fn_schema.model_json_schema()["properties"]
-        == AbcSchema.model_json_schema()["properties"]
-    )
+    assert tools[2].metadata.fn_schema.model_json_schema()["properties"] == AbcSchema.model_json_schema()["properties"]
     assert tools[2].ctx_param_name is None
     assert not tools[2].requires_context
 
     assert tools[3].metadata.name == "abc_with_ctx"
     assert tools[3].metadata.description == "abc_with_ctx(arg1: str) -> str\n"
-    assert (
-        tools[3].metadata.fn_schema.model_json_schema()["properties"]
-        == AbcSchema.model_json_schema()["properties"]
-    )
+    assert tools[3].metadata.fn_schema.model_json_schema()["properties"] == AbcSchema.model_json_schema()["properties"]
     assert tools[3].ctx_param_name == "ctx"
     assert tools[3].requires_context
 
@@ -142,7 +131,4 @@ def test_tool_spec_subset() -> None:
     assert len(tools) == 1
     assert tools[0].metadata.name == "abc"
     assert tools[0].metadata.description == "abc(arg1: str) -> str\n"
-    assert (
-        tools[0].metadata.fn_schema.model_json_schema()["properties"]
-        == AbcSchema.model_json_schema()["properties"]
-    )
+    assert tools[0].metadata.fn_schema.model_json_schema()["properties"] == AbcSchema.model_json_schema()["properties"]

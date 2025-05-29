@@ -296,9 +296,9 @@ class NileVectorStore(BasePydanticVectorStore):
                     or filter.operator == FilterOperator.TEXT_MATCH_INSENSITIVE
                 ):
                     # Safely handle text match operations
-                    params[param_name] = (
-                        f"%{filter.value}%"  # Add wildcards in parameter, not in SQL
-                    )
+                    params[
+                        param_name
+                    ] = f"%{filter.value}%"  # Add wildcards in parameter, not in SQL
                     where_clauses.append(
                         sql.SQL("metadata->>%({})s {} %({})s").format(
                             sql.Identifier(key_param),

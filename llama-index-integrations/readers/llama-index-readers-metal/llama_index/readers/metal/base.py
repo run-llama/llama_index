@@ -37,7 +37,7 @@ class MetalReader(BaseReader):
         query_embedding: Optional[List[float]] = None,
         filters: Optional[Dict[str, Any]] = None,
         separate_documents: bool = True,
-        **query_kwargs: Any,
+        **query_kwargs: Any
     ) -> List[Document]:
         """
         Load data from Metal.

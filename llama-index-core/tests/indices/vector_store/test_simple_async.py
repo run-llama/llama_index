@@ -4,7 +4,6 @@ from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.schema import Document
 from llama_index.core.vector_stores.simple import SimpleVectorStore
 
-
 @pytest.mark.asyncio
 async def test_simple_insertion(
     documents: List[Document],
@@ -37,7 +36,6 @@ async def test_simple_insertion(
         assert isinstance(index._vector_store, SimpleVectorStore)
         embedding = index._vector_store.get(text_id)
         assert (node.get_content(), embedding) in actual_node_tups
-
 
 @pytest.mark.asyncio
 async def test_simple_deletion(
@@ -88,17 +86,13 @@ async def test_simple_deletion(
         embedding = index._vector_store.get(text_id)
         assert (node.get_content(), embedding, node.ref_doc_id) in actual_node_tups
 
-
 @pytest.mark.asyncio
 async def test_simple_update(
     patch_llm_predictor,
     patch_token_text_splitter,
     mock_embed_model,
 ):
-    new_docs = [
-        Document(id_="1", text="Hello World"),
-        Document(id_="2", text="This is a test"),
-    ]
+    new_docs = [Document(id_="1", text="Hello World"), Document(id_="2", text="This is a test")]
     index = VectorStoreIndex.from_documents(
         documents=new_docs, embed_model=mock_embed_model
     )
@@ -114,27 +108,18 @@ async def test_simple_update(
         # NOTE: this test breaks abstraction
         assert (node.get_content(), node.ref_doc_id) in actual_node_tups
 
-
 @pytest.mark.asyncio
 async def test_simple_refresh(
     patch_llm_predictor,
     patch_token_text_splitter,
     mock_embed_model,
 ):
-    new_docs = [
-        Document(id_="1", text="Hello World"),
-        Document(id_="2", text="This is a test"),
-    ]
+    new_docs = [Document(id_="1", text="Hello World"), Document(id_="2", text="This is a test")]
     index = VectorStoreIndex.from_documents(
         documents=new_docs, embed_model=mock_embed_model
     )
     assert isinstance(index, VectorStoreIndex)
-    await index.arefresh_ref_docs(
-        [
-            Document(id_="1", text="Hello World v1"),
-            Document(id_="2", text="This is a test v1"),
-        ]
-    )
+    await index.arefresh_ref_docs([Document(id_="1", text="Hello World v1"), Document(id_="2", text="This is a test v1")])
     actual_node_tups = [
         ("Hello World v1", "1"),
         ("This is a test v1", "2"),

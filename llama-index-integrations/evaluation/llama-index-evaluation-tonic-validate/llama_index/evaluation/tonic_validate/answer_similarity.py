@@ -35,7 +35,7 @@ class AnswerSimilarityEvaluator(BaseEvaluator):
         response: Optional[str] = None,
         contexts: Optional[Sequence[str]] = None,
         reference_response: Optional[str] = None,
-        **kwargs: Any,
+        **kwargs: Any
     ) -> EvaluationResult:
         from tonic_validate.classes.benchmark import BenchmarkItem
         from tonic_validate.classes.llm_response import LLMResponse

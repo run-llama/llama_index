@@ -1,5 +1,4 @@
 """Intercom reader."""
-
 import json
 from typing import List
 

@@ -1,5 +1,4 @@
 """AgentQL Web Reader."""
-
 import httpx
 from typing import Optional, List
 

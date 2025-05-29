@@ -1,5 +1,4 @@
 """Test CodeHierarchyNodeParser with skeleton option set to False."""
-
 import os
 from typing import List, cast
 

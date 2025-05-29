@@ -55,7 +55,7 @@ class MockVectorStore(BasePydanticVectorStore):
         # For simplicity, return all nodes
         nodes = list(self._nodes.values())
         if query.similarity_top_k and len(nodes) > query.similarity_top_k:
-            nodes = nodes[: query.similarity_top_k]
+            nodes = nodes[:query.similarity_top_k]
 
         # Simulate similarity scores
         similarities = [0.9 - 0.1 * i for i in range(len(nodes))]
@@ -63,9 +63,7 @@ class MockVectorStore(BasePydanticVectorStore):
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
-    async def aquery(
-        self, query: VectorStoreQuery, **kwargs: Any
-    ) -> VectorStoreQueryResult:
+    async def aquery(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Async query vector store."""
         return self.query(query, **kwargs)
 
@@ -73,9 +71,7 @@ class MockVectorStore(BasePydanticVectorStore):
 class MockNodePostprocessor(BaseNodePostprocessor):
     """Mock node postprocessor for testing."""
 
-    def _postprocess_nodes(
-        self, nodes: List[NodeWithScore], query: Any = None
-    ) -> List[NodeWithScore]:
+    def _postprocess_nodes(self, nodes: List[NodeWithScore], query: Any = None) -> List[NodeWithScore]:
         """Add a prefix to each node's text."""
         for node in nodes:
             if isinstance(node.node, TextNode):
@@ -123,10 +119,7 @@ async def test_vector_memory_block_put(vector_memory_block):
     # Check node content contains both messages
     node = next(iter(vector_memory_block.vector_store.nodes.values()))
     assert "<message role='user'>Hello, how are you?</message>" in node.text
-    assert (
-        "<message role='assistant'>I'm doing well, thank you for asking!</message>"
-        in node.text
-    )
+    assert "<message role='assistant'>I'm doing well, thank you for asking!</message>" in node.text
 
 
 @pytest.mark.asyncio

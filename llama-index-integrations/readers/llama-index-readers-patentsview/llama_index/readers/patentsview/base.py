@@ -1,5 +1,4 @@
 """Patentsview reader that reads patent abstract."""
-
 from typing import List
 
 import requests

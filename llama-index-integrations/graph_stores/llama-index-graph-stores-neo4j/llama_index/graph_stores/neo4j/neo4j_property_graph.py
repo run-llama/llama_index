@@ -496,7 +496,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
         WITH e
         CALL (e) {{
             WITH e
-            MATCH (e)-[r{":`" + "`|`".join(relation_names) + "`" if relation_names else ""}]->(t:`{BASE_ENTITY_LABEL}`)
+            MATCH (e)-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]->(t:`{BASE_ENTITY_LABEL}`)
             RETURN e.name AS source_id, [l in labels(e) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS source_type,
                    e{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
@@ -505,7 +505,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                    t{{.* , embedding: Null, name: Null}} AS target_properties
             UNION ALL
             WITH e
-            MATCH (e)<-[r{":`" + "`|`".join(relation_names) + "`" if relation_names else ""}]-(t:`{BASE_ENTITY_LABEL}`)
+            MATCH (e)<-[r{':`' + '`|`'.join(relation_names) + '`' if relation_names else ''}]-(t:`{BASE_ENTITY_LABEL}`)
             RETURN t.name AS source_id, [l in labels(t) WHERE NOT l IN ['{BASE_ENTITY_LABEL}', '{BASE_NODE_LABEL}'] | l][0] AS source_type,
                    t{{.* , embedding: Null, name: Null}} AS source_properties,
                    type(r) AS type,
@@ -955,7 +955,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                             example = (
                                 (
                                     "Available options: "
-                                    f"{[clean_string_values(el) for el in prop['values']]}"
+                                    f'{[clean_string_values(el) for el in prop["values"]]}'
                                 )
                                 if prop["values"]
                                 else ""
@@ -974,7 +974,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                         "LOCAL_DATE_TIME",
                     ]:
                         if prop.get("min") is not None:
-                            example = f"Min: {prop['min']}, Max: {prop['max']}"
+                            example = f'Min: {prop["min"]}, Max: {prop["max"]}'
                         else:
                             example = (
                                 f'Example: "{prop["values"][0]}"'
@@ -986,10 +986,10 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                         # if not prop.get("min_size") or prop["min_size"] > LIST_LIMIT:
                         #    continue
                         example = (
-                            f"Min Size: {prop.get('min_size', 'N/A')}, "
-                            f"Max Size: {prop.get('max_size', 'N/A')}, "
+                            f'Min Size: {prop.get("min_size", "N/A")}, '
+                            f'Max Size: {prop.get("max_size", "N/A")}, '
                             + (
-                                f"Example: [{prop['values'][0]}]"
+                                f'Example: [{prop["values"][0]}]'
                                 if prop.get("values") and len(prop["values"]) > 0
                                 else ""
                             )
@@ -1014,7 +1014,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                             example = (
                                 (
                                     "Available options: "
-                                    f"{[clean_string_values(el) for el in prop['values']]}"
+                                    f'{[clean_string_values(el) for el in prop["values"]]}'
                                 )
                                 if prop.get("values")
                                 else ""
@@ -1027,7 +1027,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                         "LOCAL_DATE_TIME",
                     ]:
                         if prop.get("min"):  # If we have min/max
-                            example = f"Min: {prop['min']}, Max:  {prop['max']}"
+                            example = f'Min: {prop["min"]}, Max:  {prop["max"]}'
                         else:  # return a single value
                             example = (
                                 f'Example: "{prop["values"][0]}"'
@@ -1038,7 +1038,7 @@ class Neo4jPropertyGraphStore(PropertyGraphStore):
                         # Skip embeddings
                         if prop["min_size"] > LIST_LIMIT:
                             continue
-                        example = f"Min Size: {prop['min_size']}, Max Size: {prop['max_size']}"
+                        example = f'Min Size: {prop["min_size"]}, Max Size: {prop["max_size"]}'
                     formatted_rel_props.append(
                         f"  - `{prop['property']}: {prop['type']}` {example}"
                     )

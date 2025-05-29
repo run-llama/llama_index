@@ -19,9 +19,7 @@ class TextMemoryBlock(BaseMemoryBlock[str]):
 class ContentBlocksMemoryBlock(BaseMemoryBlock[List[ContentBlock]]):
     """Memory block that returns content blocks."""
 
-    async def _aget(
-        self, messages: List[ChatMessage], **kwargs: Any
-    ) -> List[ContentBlock]:
+    async def _aget(self, messages: List[ChatMessage], **kwargs: Any) -> List[ContentBlock]:
         return [
             TextBlock(text="Text block 1"),
             TextBlock(text="Text block 2"),
@@ -31,9 +29,7 @@ class ContentBlocksMemoryBlock(BaseMemoryBlock[List[ContentBlock]]):
         # Just a no-op for testing
         pass
 
-    async def atruncate(
-        self, content: List[ContentBlock], tokens_to_truncate: int
-    ) -> Optional[List[ContentBlock]]:
+    async def atruncate(self, content: List[ContentBlock], tokens_to_truncate: int) -> Optional[List[ContentBlock]]:
         # Simple truncation - remove last block
         if not content:
             return None
@@ -43,9 +39,7 @@ class ContentBlocksMemoryBlock(BaseMemoryBlock[List[ContentBlock]]):
 class ChatMessagesMemoryBlock(BaseMemoryBlock[List[ChatMessage]]):
     """Memory block that returns chat messages."""
 
-    async def _aget(
-        self, messages: List[ChatMessage], **kwargs: Any
-    ) -> List[ChatMessage]:
+    async def _aget(self, messages: List[ChatMessage], **kwargs: Any) -> List[ChatMessage]:
         return [
             ChatMessage(role="user", content="Historical user message"),
             ChatMessage(role="assistant", content="Historical assistant response"),
@@ -61,9 +55,7 @@ class ComplexMemoryBlock(BaseMemoryBlock[Union[str, List[ContentBlock]]]):
 
     mode: str = "text"  # Can be "text" or "blocks"
 
-    async def _aget(
-        self, messages: List[ChatMessage], **kwargs: Any
-    ) -> Union[str, List[ContentBlock]]:
+    async def _aget(self, messages: List[ChatMessage], **kwargs: Any) -> Union[str, List[ContentBlock]]:
         if self.mode == "text":
             return "Text content from ComplexMemoryBlock"
         else:
@@ -107,7 +99,6 @@ def memory_with_blocks():
         ],
     )
 
-
 @pytest.mark.asyncio
 async def test_text_memory_block(memory_with_blocks):
     """Test text memory block integration."""
@@ -130,7 +121,6 @@ async def test_text_memory_block(memory_with_blocks):
     assert block_name == "text_block"
     assert len(content) == 1
     assert content[0].text == "Simple text content from TextMemoryBlock"
-
 
 @pytest.mark.asyncio
 async def test_content_blocks_memory_block(memory_with_blocks):
@@ -158,7 +148,6 @@ async def test_content_blocks_memory_block(memory_with_blocks):
     assert content[0].text == "Text block 1"
     assert content[1].text == "Text block 2"
 
-
 @pytest.mark.asyncio
 async def test_chat_messages_memory_block(memory_with_blocks):
     """Test chat messages memory block integration."""
@@ -185,7 +174,6 @@ async def test_chat_messages_memory_block(memory_with_blocks):
     assert chat_messages[1].role == "assistant"
     assert chat_messages[1].content == "Historical assistant response"
 
-
 @pytest.mark.asyncio
 async def test_complex_memory_block_text_mode(memory_with_blocks):
     """Test complex memory block in text mode."""
@@ -201,7 +189,6 @@ async def test_complex_memory_block_text_mode(memory_with_blocks):
     # Verify complex block content in text mode
     assert "complex_block" in content
     assert content["complex_block"] == "Text content from ComplexMemoryBlock"
-
 
 @pytest.mark.asyncio
 async def test_complex_memory_block_blocks_mode(memory_with_blocks):
@@ -221,7 +208,6 @@ async def test_complex_memory_block_blocks_mode(memory_with_blocks):
     assert content["complex_block"][0].text == "Complex block 1"
     assert content["complex_block"][1].text == "Complex block 2"
 
-
 @pytest.mark.asyncio
 async def test_parameterized_memory_block(memory_with_blocks):
     """Test memory block that accepts parameters."""
@@ -238,7 +224,6 @@ async def test_parameterized_memory_block(memory_with_blocks):
     content = await memory_with_blocks._get_memory_blocks_content([])
     assert content["param_block"] == "Parameter value: default"
 
-
 @pytest.mark.asyncio
 async def test_truncation_of_content_blocks(memory_with_blocks):
     """Test truncation of content blocks."""
@@ -248,12 +233,9 @@ async def test_truncation_of_content_blocks(memory_with_blocks):
 
     # Get the memory block for truncation
     content_block = next(
-        (
-            block
-            for block in memory_with_blocks.memory_blocks
-            if isinstance(block, ContentBlocksMemoryBlock)
-        ),
-        None,
+        (block for block in memory_with_blocks.memory_blocks
+            if isinstance(block, ContentBlocksMemoryBlock)),
+        None
     )
     assert content_block is not None
 
@@ -261,7 +243,6 @@ async def test_truncation_of_content_blocks(memory_with_blocks):
     truncated = await content_block.atruncate(content_blocks, 100)
     assert len(truncated) == 1  # Should have truncated to one block
     assert truncated[0].text == "Text block 1"
-
 
 @pytest.mark.asyncio
 async def test_memory_with_all_block_types(memory_with_blocks):
@@ -286,23 +267,18 @@ async def test_memory_with_all_block_types(memory_with_blocks):
     assert "Text block 2" in system_content
 
     # Should also include direct chat messages from ChatMessagesMemoryBlock
-    user_historical = [
-        msg for msg in messages if msg.content == "Historical user message"
-    ]
+    user_historical = [msg for msg in messages if msg.content == "Historical user message"]
     assert len(user_historical) > 0
-
 
 @pytest.mark.asyncio
 async def test_insert_method_setting():
     """Test that insert_method is respected for blocks."""
     # Create blocks with different insert methods
     system_block = TextMemoryBlock(
-        name="system_block",
-        priority=1,
+        name="system_block", priority=1,
     )
     user_block = TextMemoryBlock(
-        name="user_block",
-        priority=2,
+        name="user_block", priority=2,
     )
 
     # Create memory with user insert method

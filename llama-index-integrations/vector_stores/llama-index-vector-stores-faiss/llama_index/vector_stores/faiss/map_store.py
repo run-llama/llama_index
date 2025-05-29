@@ -4,7 +4,6 @@ Faiss Map Vector Store index.
 An index that is built on top of an existing vector store.
 
 """
-
 import os
 from typing import Any, List, Optional, cast
 
@@ -17,7 +16,7 @@ from llama_index.core.vector_stores.simple import DEFAULT_VECTOR_STORE, NAMESPAC
 from llama_index.vector_stores.faiss.base import (
     FaissVectorStore,
     DEFAULT_PERSIST_PATH,
-    DEFAULT_PERSIST_FNAME,
+    DEFAULT_PERSIST_FNAME
 )
 from llama_index.core.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
@@ -27,7 +26,6 @@ from llama_index.core.vector_stores.types import (
 )
 
 DEFAULT_ID_MAP_NAME = "id_map.json"
-
 
 class FaissMapVectorStore(FaissVectorStore):
     """
@@ -84,9 +82,7 @@ class FaissMapVectorStore(FaissVectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
 
-        if not isinstance(faiss_index, faiss.IndexIDMap) and not isinstance(
-            faiss_index, faiss.IndexIDMap2
-        ):
+        if not isinstance(faiss_index, faiss.IndexIDMap) and not isinstance(faiss_index, faiss.IndexIDMap2):
             raise ValueError(
                 "FaissVectorMapStore requires a faiss.IndexIDMap or faiss.IndexIDMap2 index. "
                 "Please create an IndexIDMap2 index and pass it to the FaissVectorMapStore."

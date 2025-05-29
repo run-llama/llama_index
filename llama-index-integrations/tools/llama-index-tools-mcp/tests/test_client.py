@@ -169,14 +169,11 @@ async def test_long_running_task(client: BasicMCPClient):
         current_message = message
         expected_total = total
 
-    result = await client.call_tool(
-        "long_task", {"steps": 3}, progress_callback=progress_callback
-    )
+    result = await client.call_tool("long_task", {"steps": 3}, progress_callback=progress_callback)
     assert "Completed 3 steps" in result.content[0].text
     assert current_progress == 3.0
     assert current_progress == expected_total
     assert current_message == "Processing step 3/3"
-
 
 @pytest.mark.asyncio
 async def test_image_return_value(client: BasicMCPClient):

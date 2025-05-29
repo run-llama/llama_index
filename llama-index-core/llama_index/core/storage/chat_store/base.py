@@ -1,5 +1,4 @@
 """Base interface class for storing chat history per user."""
-
 import asyncio
 from abc import abstractmethod
 from typing import List, Optional

@@ -116,9 +116,9 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         current_retriever_pipelines_by_name = {
             pipeline.name: pipeline for pipeline in (self.retriever_pipelines or [])
         }
-        current_retriever_pipelines_by_name[retriever_pipeline.name] = (
-            retriever_pipeline
-        )
+        current_retriever_pipelines_by_name[
+            retriever_pipeline.name
+        ] = retriever_pipeline
         return self.update_retriever_pipelines(
             list(current_retriever_pipelines_by_name.values())
         )
@@ -163,9 +163,9 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         current_retriever_pipelines_by_name = {
             pipeline.name: pipeline for pipeline in (self.retriever_pipelines or [])
         }
-        current_retriever_pipelines_by_name[retriever_pipeline.name] = (
-            retriever_pipeline
-        )
+        current_retriever_pipelines_by_name[
+            retriever_pipeline.name
+        ] = retriever_pipeline
         return await self.aupdate_retriever_pipelines(
             list(current_retriever_pipelines_by_name.values())
         )

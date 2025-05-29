@@ -311,9 +311,7 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
         if self.task == "conversational":
-            chat_resp = self.chat(
-                messages=[ChatMessage(role=MessageRole.USER, content=prompt)], **kwargs
-            )
+            chat_resp = self.chat(messages=[ChatMessage(role=MessageRole.USER, content=prompt)], **kwargs)
             return chat_response_to_completion_response(chat_resp)
 
         model_kwargs = self._get_model_kwargs(**kwargs)
@@ -352,9 +350,9 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
                             cur_index = tool_call_delta.index
                             tool_call_strs.append(tool_call_delta.function.arguments)
                         else:
-                            tool_call_strs[cur_index] += (
-                                tool_call_delta.function.arguments
-                            )
+                            tool_call_strs[
+                                cur_index
+                            ] += tool_call_delta.function.arguments
 
                     tool_calls = self._parse_streaming_tool_calls(tool_call_strs)
                     additional_kwargs = {"tool_calls": tool_calls} if tool_calls else {}
@@ -378,9 +376,7 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
         if self.task == "conversational":
-            chat_gen = self.stream_chat(
-                messages=[ChatMessage(role=MessageRole.USER, content=prompt)], **kwargs
-            )
+            chat_gen = self.stream_chat(messages=[ChatMessage(role=MessageRole.USER, content=prompt)], **kwargs)
             return stream_chat_response_to_completion_response(chat_gen)
 
         model_kwargs = self._get_model_kwargs(**kwargs)
@@ -433,9 +429,7 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
         if self.task == "conversational":
-            chat_resp = await self.achat(
-                messages=[ChatMessage(role=MessageRole.USER, content=prompt)], **kwargs
-            )
+            chat_resp = await self.achat(messages=[ChatMessage(role=MessageRole.USER, content=prompt)], **kwargs)
             return chat_response_to_completion_response(chat_resp)
 
         model_kwargs = self._get_model_kwargs(**kwargs)
@@ -477,9 +471,9 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
                             cur_index = tool_call_delta.index
                             tool_call_strs.append(tool_call_delta.function.arguments)
                         else:
-                            tool_call_strs[cur_index] += (
-                                tool_call_delta.function.arguments
-                            )
+                            tool_call_strs[
+                                cur_index
+                            ] += tool_call_delta.function.arguments
 
                     tool_calls = self._parse_streaming_tool_calls(tool_call_strs)
 
@@ -509,9 +503,7 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
         if self.task == "conversational":
-            chat_gen = await self.astream_chat(
-                messages=[ChatMessage(role=MessageRole.USER, content=prompt)], **kwargs
-            )
+            chat_gen = await self.astream_chat(messages=[ChatMessage(role=MessageRole.USER, content=prompt)], **kwargs)
             return astream_chat_response_to_completion_response(chat_gen)
 
         model_kwargs = self._get_model_kwargs(**kwargs)
@@ -569,9 +561,9 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
         if not allow_parallel_tool_calls and response.message.additional_kwargs.get(
             "tool_calls", []
         ):
-            response.additional_kwargs["tool_calls"] = (
-                response.message.additional_kwargs["tool_calls"][0]
-            )
+            response.additional_kwargs[
+                "tool_calls"
+            ] = response.message.additional_kwargs["tool_calls"][0]
 
         return response
 
@@ -581,9 +573,9 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
         error_on_no_tool_call: bool = True,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
-        tool_calls: List[ChatCompletionOutputToolCall] = (
-            response.message.additional_kwargs.get("tool_calls", [])
-        )
+        tool_calls: List[
+            ChatCompletionOutputToolCall
+        ] = response.message.additional_kwargs.get("tool_calls", [])
         if len(tool_calls) < 1:
             if error_on_no_tool_call:
                 raise ValueError(

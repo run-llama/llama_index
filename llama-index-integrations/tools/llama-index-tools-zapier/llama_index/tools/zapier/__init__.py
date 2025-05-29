@@ -1,5 +1,4 @@
 """Init file."""
-
 from llama_index.tools.zapier.base import (
     ACTION_URL_TMPL,
     ZapierToolSpec,
