@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-zhipuai"
-version = "0.2.1"
+version = "0.3.0"
 description = "llama-index llms zhipuai integration"
 authors = [{name = "nightosong"}]
 requires-python = ">=3.9,<4.0"
