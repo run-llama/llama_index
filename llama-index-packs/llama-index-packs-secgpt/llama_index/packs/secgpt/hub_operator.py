@@ -1,6 +1,7 @@
 """
 The operator is a rule-based module with a well-defined execution flow that manages interaction among other modules in the hub, with spokes (i.e., isolated app instances), and between spokes.
 """
+
 import socket
 import multiprocessing
 import uuid

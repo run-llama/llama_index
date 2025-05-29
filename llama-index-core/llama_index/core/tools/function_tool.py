@@ -79,11 +79,15 @@ class FunctionTool(AsyncBaseTool):
         self.requires_context = any(
             param.annotation == Context for param in sig.parameters.values()
         )
-        self.ctx_param_name = next(
-            param.name
-            for param in sig.parameters.values()
-            if param.annotation == Context
-        ) if self.requires_context else None
+        self.ctx_param_name = (
+            next(
+                param.name
+                for param in sig.parameters.values()
+                if param.annotation == Context
+            )
+            if self.requires_context
+            else None
+        )
 
         if metadata is None:
             raise ValueError("metadata must be provided")
@@ -169,7 +173,9 @@ class FunctionTool(AsyncBaseTool):
                     has_self = True
                     fn_sig = fn_sig.replace(
                         parameters=[
-                            param for param in fn_sig.parameters.values() if param.name != "self"
+                            param
+                            for param in fn_sig.parameters.values()
+                            if param.name != "self"
                         ]
                     )
                     break
@@ -242,9 +248,7 @@ class FunctionTool(AsyncBaseTool):
         all_kwargs = {**self.partial_params, **kwargs}
         return self.call(*args, **all_kwargs)
 
-    def call(
-        self, *args: Any, **kwargs: Any
-    ) -> ToolOutput:
+    def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Sync Call."""
         all_kwargs = {**self.partial_params, **kwargs}
         if self.requires_context and self.ctx_param_name is not None:
@@ -274,9 +278,7 @@ class FunctionTool(AsyncBaseTool):
                 )
         return default_output
 
-    async def acall(
-        self, *args: Any, **kwargs: Any
-    ) -> ToolOutput:
+    async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Async Call."""
         all_kwargs = {**self.partial_params, **kwargs}
         if self.requires_context and self.ctx_param_name is not None:

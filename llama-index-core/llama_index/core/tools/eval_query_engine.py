@@ -15,7 +15,7 @@ DEFAULT_DESCRIPTION = """Useful for running a natural language query
 against a knowledge base and get back a natural language response.
 """
 FAILED_TOOL_OUTPUT_TEMPLATE = (
-    "Could not use tool {tool_name} because it failed evaluation.\n" "Reason: {reason}"
+    "Could not use tool {tool_name} because it failed evaluation.\nReason: {reason}"
 )
 
 

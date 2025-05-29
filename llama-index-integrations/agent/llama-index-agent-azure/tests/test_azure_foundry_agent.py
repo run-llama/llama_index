@@ -18,13 +18,16 @@ from llama_index.core.base.llms.types import ChatMessage, TextBlock, ImageBlock
 from llama_index.core.agent.workflow.multi_agent_workflow import AgentWorkflow
 from llama_index.core.memory import ChatMemoryBuffer
 
+
 # Helper for async iteration (ensure only one definition)
 class DummyAsyncIterator:
     def __init__(self, items):
         self._items = items
+
     def __aiter__(self):
         self._iter = iter(self._items)
         return self
+
     async def __anext__(self):
         try:
             return next(self._iter)
@@ -49,17 +52,30 @@ def test_azure_foundry_agent_constructor():
     mock_thread_instance.id = thread_id
 
     # Patch async methods with AsyncMock
-    mock_project_client_instance.agents.create_agent = AsyncMock(return_value=mock_azure_agent_instance)
-    mock_project_client_instance.agents.threads.create = AsyncMock(return_value=mock_thread_instance)
+    mock_project_client_instance.agents.create_agent = AsyncMock(
+        return_value=mock_azure_agent_instance
+    )
+    mock_project_client_instance.agents.threads.create = AsyncMock(
+        return_value=mock_thread_instance
+    )
 
     # Mock DefaultAzureCredential to avoid actual credential loading
-    with patch("llama_index.agent.azure_foundry_agent.base.DefaultAzureCredential", MagicMock()) as mock_default_credential:
+    with patch(
+        "llama_index.agent.azure_foundry_agent.base.DefaultAzureCredential", MagicMock()
+    ) as mock_default_credential:
         # Mock AIProjectClient constructor to return our mock instance
-        with patch("llama_index.agent.azure_foundry_agent.base.AIProjectClient", return_value=mock_project_client_instance) as mock_ai_project_client_constructor:
+        with patch(
+            "llama_index.agent.azure_foundry_agent.base.AIProjectClient",
+            return_value=mock_project_client_instance,
+        ) as mock_ai_project_client_constructor:
             # Mock the create_agent call
-            mock_project_client_instance.agents.create_agent.return_value = mock_azure_agent_instance
+            mock_project_client_instance.agents.create_agent.return_value = (
+                mock_azure_agent_instance
+            )
             # Mock the threads.create call for when thread_id is None
-            mock_project_client_instance.agents.threads.create.return_value = mock_thread_instance
+            mock_project_client_instance.agents.threads.create.return_value = (
+                mock_thread_instance
+            )
 
             # Test case 1: Initialize with a specific thread_id
             agent_with_thread = AzureFoundryAgent(
@@ -69,7 +85,7 @@ def test_azure_foundry_agent_constructor():
                 instructions=instructions,
                 thread_id=thread_id,
                 verbose=verbose,
-                run_retrieve_sleep_time=run_retrieve_sleep_time
+                run_retrieve_sleep_time=run_retrieve_sleep_time,
             )
 
             mock_ai_project_client_constructor.assert_called_once_with(
@@ -97,7 +113,9 @@ def test_azure_foundry_agent_constructor():
             new_mock_thread_id = "new-mock-thread-456"
             mock_thread_instance_new = MagicMock(spec=AgentThread)
             mock_thread_instance_new.id = new_mock_thread_id
-            mock_project_client_instance.agents.threads.create = AsyncMock(return_value=mock_thread_instance_new)
+            mock_project_client_instance.agents.threads.create = AsyncMock(
+                return_value=mock_thread_instance_new
+            )
 
             # Test case 2: Initialize without a specific thread_id (should create one)
             agent_new_thread = AzureFoundryAgent(
@@ -105,9 +123,9 @@ def test_azure_foundry_agent_constructor():
                 model=model,
                 name=name,
                 instructions=instructions,
-                thread_id=None, # Test thread creation
+                thread_id=None,  # Test thread creation
                 verbose=verbose,
-                run_retrieve_sleep_time=run_retrieve_sleep_time
+                run_retrieve_sleep_time=run_retrieve_sleep_time,
             )
             assert agent_new_thread.name == name
             assert agent_new_thread._client == mock_project_client_instance
@@ -115,14 +133,16 @@ def test_azure_foundry_agent_constructor():
             mock_project_client_instance.agents.threads.create.assert_not_called()
             # Now, trigger thread creation by calling _ensure_agent
             import asyncio
+
             asyncio.run(agent_new_thread._ensure_agent([]))
             mock_project_client_instance.agents.threads.create.assert_called_once()
             assert agent_new_thread._thread_id == new_mock_thread_id
 
+
 @patch("azure.identity.aio.DefaultAzureCredential")
 @patch("azure.ai.projects.aio.AIProjectClient")
-@pytest.mark.asyncio # Added decorator
-async def test_azure_foundry_agent_constructor_defaults( # Added async and mock arguments
+@pytest.mark.asyncio  # Added decorator
+async def test_azure_foundry_agent_constructor_defaults(  # Added async and mock arguments
     mock_project_client_class: MagicMock, mock_credential_class: MagicMock
 ):
     """Test the constructor of AzureFoundryAgent with default values."""
@@ -141,11 +161,20 @@ async def test_azure_foundry_agent_constructor_defaults( # Added async and mock 
     mock_thread_instance.id = "mock_thread_id_defaults"
 
     # Patch async methods with AsyncMock
-    mock_project_client_instance.agents.create_agent = AsyncMock(return_value=mock_azure_agent_instance)
-    mock_project_client_instance.agents.threads.create = AsyncMock(return_value=mock_thread_instance)
+    mock_project_client_instance.agents.create_agent = AsyncMock(
+        return_value=mock_azure_agent_instance
+    )
+    mock_project_client_instance.agents.threads.create = AsyncMock(
+        return_value=mock_thread_instance
+    )
 
-    with patch("llama_index.agent.azure_foundry_agent.base.DefaultAzureCredential", MagicMock()):
-        with patch("llama_index.agent.azure_foundry_agent.base.AIProjectClient", return_value=mock_project_client_instance):
+    with patch(
+        "llama_index.agent.azure_foundry_agent.base.DefaultAzureCredential", MagicMock()
+    ):
+        with patch(
+            "llama_index.agent.azure_foundry_agent.base.AIProjectClient",
+            return_value=mock_project_client_instance,
+        ):
             # Test initialization with defaults
             agent_defaults = AzureFoundryAgent(
                 endpoint=endpoint,
@@ -154,7 +183,7 @@ async def test_azure_foundry_agent_constructor_defaults( # Added async and mock 
                 instructions=instructions,
                 thread_id=thread_id,
                 verbose=verbose,
-                run_retrieve_sleep_time=run_retrieve_sleep_time
+                run_retrieve_sleep_time=run_retrieve_sleep_time,
             )
 
             assert agent_defaults.name == name
@@ -168,13 +197,18 @@ async def test_azure_foundry_agent_constructor_defaults( # Added async and mock 
 
             # Ensure that create_agent and threads.create are called only after _ensure_agent
             await agent_defaults._ensure_agent([])
-            print(f"create_agent call count: {mock_project_client_instance.agents.create_agent.call_count}")
-            print(f"threads.create call count: {mock_project_client_instance.agents.threads.create.call_count}")
+            print(
+                f"create_agent call count: {mock_project_client_instance.agents.create_agent.call_count}"
+            )
+            print(
+                f"threads.create call count: {mock_project_client_instance.agents.threads.create.call_count}"
+            )
             mock_project_client_instance.agents.create_agent.assert_called_once()
             mock_project_client_instance.agents.threads.create.assert_called_once()
 
             # Check that the thread_id was set to the created thread's ID
             assert agent_defaults._thread_id == mock_thread_instance.id
+
 
 # Tests for _llama_to_azure_content_blocks
 @pytest.mark.parametrize(
@@ -194,7 +228,14 @@ async def test_azure_foundry_agent_constructor_defaults( # Added async and mock 
         ),
         (
             "image url",
-            [ChatMessage(role="user", blocks=[ImageBlock(url="http://example.com/image.png", detail="low")])],
+            [
+                ChatMessage(
+                    role="user",
+                    blocks=[
+                        ImageBlock(url="http://example.com/image.png", detail="low")
+                    ],
+                )
+            ],
             [MessageInputImageUrlBlock],
             ["http://example.com/image.png"],
         ),
@@ -212,13 +253,20 @@ async def test_azure_foundry_agent_constructor_defaults( # Added async and mock 
         ),
         (
             "image block no path no url",
-            [ChatMessage(role="user", blocks=[ImageBlock(image=b"some_image_data", detail="high")])],
+            [
+                ChatMessage(
+                    role="user",
+                    blocks=[ImageBlock(image=b"some_image_data", detail="high")],
+                )
+            ],
             [],
             [],
         ),
-    ]
+    ],
 )
-def test_llama_to_azure_content_blocks_param(desc, chat_messages, expected_types, expected_values):
+def test_llama_to_azure_content_blocks_param(
+    desc, chat_messages, expected_types, expected_values
+):
     agent = AzureFoundryAgent(endpoint="dummy_endpoint")
     result = agent._llama_to_azure_content_blocks(chat_messages)
     assert len(result) == len(expected_types)
@@ -235,7 +283,11 @@ def test_llama_to_azure_content_blocks_image_path_and_mixed():
     agent = AzureFoundryAgent(endpoint="dummy_endpoint")
     with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
         # image path
-        chat_messages = [ChatMessage(role="user", blocks=[ImageBlock(path=Path(tmp.name), detail="high")])]
+        chat_messages = [
+            ChatMessage(
+                role="user", blocks=[ImageBlock(path=Path(tmp.name), detail="high")]
+            )
+        ]
         result = agent._llama_to_azure_content_blocks(chat_messages)
         assert len(result) == 1
         assert isinstance(result[0], MessageInputImageFileBlock)
@@ -244,10 +296,13 @@ def test_llama_to_azure_content_blocks_image_path_and_mixed():
 
         # mixed content
         chat_messages = [
-            ChatMessage(role="user", blocks=[
-                TextBlock(text="Describe this image:"),
-                ImageBlock(path=Path(tmp.name))
-            ])
+            ChatMessage(
+                role="user",
+                blocks=[
+                    TextBlock(text="Describe this image:"),
+                    ImageBlock(path=Path(tmp.name)),
+                ],
+            )
         ]
         result = agent._llama_to_azure_content_blocks(chat_messages)
         assert len(result) == 2
@@ -259,7 +314,10 @@ def test_llama_to_azure_content_blocks_image_path_and_mixed():
     # image block path preferred over image attr
     with tempfile.NamedTemporaryFile(suffix=".png") as tmp:
         chat_messages = [
-            ChatMessage(role="user", blocks=[ImageBlock(path=Path(tmp.name), image=b"image_bytes")])
+            ChatMessage(
+                role="user",
+                blocks=[ImageBlock(path=Path(tmp.name), image=b"image_bytes")],
+            )
         ]
         result = agent._llama_to_azure_content_blocks(chat_messages)
         assert len(result) == 1
@@ -268,7 +326,9 @@ def test_llama_to_azure_content_blocks_image_path_and_mixed():
 
     # image bytes only, should be skipped
     chat_messages_bytes_only = [
-        ChatMessage(role="user", blocks=[ImageBlock(image=b"image_bytes_data", detail="auto")])
+        ChatMessage(
+            role="user", blocks=[ImageBlock(image=b"image_bytes_data", detail="auto")]
+        )
     ]
     result_bytes_only = agent._llama_to_azure_content_blocks(chat_messages_bytes_only)
     assert len(result_bytes_only) == 0
@@ -279,8 +339,16 @@ def test_llama_to_azure_content_blocks_multiple_messages():
     with tempfile.NamedTemporaryFile(suffix=".gif") as tmp:
         chat_messages = [
             ChatMessage(role="user", blocks=[TextBlock(text="First message.")]),
-            ChatMessage(role="user", blocks=[ImageBlock(url="http://images.com/pic.png")]),
-            ChatMessage(role="user", blocks=[TextBlock(text="Third message text."), ImageBlock(path=Path(tmp.name))])
+            ChatMessage(
+                role="user", blocks=[ImageBlock(url="http://images.com/pic.png")]
+            ),
+            ChatMessage(
+                role="user",
+                blocks=[
+                    TextBlock(text="Third message text."),
+                    ImageBlock(path=Path(tmp.name)),
+                ],
+            ),
         ]
         result = agent._llama_to_azure_content_blocks(chat_messages)
         assert len(result) == 4
@@ -293,11 +361,19 @@ def test_llama_to_azure_content_blocks_multiple_messages():
         assert isinstance(result[3], MessageInputImageFileBlock)
         assert result[3].image_file.file_id == tmp.name
 
+
 # --- Workflow and tool call tests from the other file ---
 @pytest.mark.asyncio
 async def test_azure_foundry_agent_workflow():
-    with patch("llama_index.agent.azure_foundry_agent.base.DefaultAzureCredential", MagicMock()), \
-         patch("llama_index.agent.azure_foundry_agent.base.AIProjectClient") as mock_client_class:
+    with (
+        patch(
+            "llama_index.agent.azure_foundry_agent.base.DefaultAzureCredential",
+            MagicMock(),
+        ),
+        patch(
+            "llama_index.agent.azure_foundry_agent.base.AIProjectClient"
+        ) as mock_client_class,
+    ):
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
         mock_client.agents.create_agent = AsyncMock()
@@ -327,10 +403,18 @@ async def test_azure_foundry_agent_workflow():
         response = await handler
         assert response is not None
 
+
 @pytest.mark.asyncio
 async def test_azure_foundry_agent_tool_call():
-    with patch("llama_index.agent.azure_foundry_agent.base.DefaultAzureCredential", MagicMock()), \
-         patch("llama_index.agent.azure_foundry_agent.base.AIProjectClient") as mock_client_class:
+    with (
+        patch(
+            "llama_index.agent.azure_foundry_agent.base.DefaultAzureCredential",
+            MagicMock(),
+        ),
+        patch(
+            "llama_index.agent.azure_foundry_agent.base.AIProjectClient"
+        ) as mock_client_class,
+    ):
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
         mock_client.agents.create_agent = AsyncMock()
@@ -338,11 +422,13 @@ async def test_azure_foundry_agent_tool_call():
         mock_client.agents.get_agent = AsyncMock()
         mock_client.agents.messages.create = AsyncMock()
         mock_client.close = AsyncMock()
+
         class DummyRun:
             def __init__(self, status, required_action=None):
                 self.status = status
                 self.required_action = required_action
                 self.id = "runid"
+
         class DummyRequiredAction:
             type = "submit_tool_outputs"
             submit_tool_outputs = SimpleNamespace(
@@ -350,26 +436,33 @@ async def test_azure_foundry_agent_tool_call():
                     SimpleNamespace(
                         id="toolid",
                         function=SimpleNamespace(
-                            name="my_tool",
-                            arguments=json.dumps({"x": 1})
-                        )
+                            name="my_tool", arguments=json.dumps({"x": 1})
+                        ),
                     )
                 ]
             )
-        mock_client.agents.runs.create = AsyncMock(return_value=DummyRun("requires_action", DummyRequiredAction()))
-        mock_client.agents.runs.get = AsyncMock(side_effect=[
-            DummyRun("requires_action", DummyRequiredAction()),
-            DummyRun("completed")
-        ])
+
+        mock_client.agents.runs.create = AsyncMock(
+            return_value=DummyRun("requires_action", DummyRequiredAction())
+        )
+        mock_client.agents.runs.get = AsyncMock(
+            side_effect=[
+                DummyRun("requires_action", DummyRequiredAction()),
+                DummyRun("completed"),
+            ]
+        )
         assistant_message = SimpleNamespace(
-                role="assistant",
-                content=[SimpleNamespace(type="text", text=SimpleNamespace(value="Tool call complete!"))]
-            )
+            role="assistant",
+            content=[
+                SimpleNamespace(
+                    type="text", text=SimpleNamespace(value="Tool call complete!")
+                )
+            ],
+        )
+
         def messages_list_side_effect(*args, **kwargs):
-                return DummyAsyncIterator([
-                    assistant_message,
-                    assistant_message
-                ])
+            return DummyAsyncIterator([assistant_message, assistant_message])
+
         mock_client.agents.messages.list.side_effect = messages_list_side_effect
         mock_client.agents.runs.submit_tool_outputs = AsyncMock()
         agent = AzureFoundryAgent(
@@ -378,7 +471,7 @@ async def test_azure_foundry_agent_tool_call():
             name="azure-agent",
             instructions="Test agent",
             verbose=True,
-            tools=[lambda x: x]  # Dummy tool
+            tools=[lambda x: x],  # Dummy tool
         )
         workflow = AgentWorkflow(agents=[agent])
         memory = ChatMemoryBuffer.from_defaults()

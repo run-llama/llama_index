@@ -79,8 +79,7 @@ def default_jsonalyzer(
         import sqlite_utils  # pants: no-infer-dep
     except ImportError as exc:
         IMPORT_ERROR_MSG = (
-            "sqlite-utils is needed to use this Query Engine:\n"
-            "pip install sqlite-utils"
+            "sqlite-utils is needed to use this Query Engine:\npip install sqlite-utils"
         )
 
         raise ImportError(IMPORT_ERROR_MSG) from exc
@@ -149,8 +148,7 @@ async def async_default_jsonalyzer(
         import sqlite_utils  # pants: no-infer-dep
     except ImportError as exc:
         IMPORT_ERROR_MSG = (
-            "sqlite-utils is needed to use this Query Engine:\n"
-            "pip install sqlite-utils"
+            "sqlite-utils is needed to use this Query Engine:\npip install sqlite-utils"
         )
 
         raise ImportError(IMPORT_ERROR_MSG) from exc
@@ -207,9 +205,9 @@ def load_jsonalyzer(
 
     """
     if custom_jsonalyzer:
-        assert not use_async or asyncio.iscoroutinefunction(
-            custom_jsonalyzer
-        ), "custom_jsonalyzer function must be async when use_async is True"
+        assert not use_async or asyncio.iscoroutinefunction(custom_jsonalyzer), (
+            "custom_jsonalyzer function must be async when use_async is True"
+        )
         return custom_jsonalyzer
     else:
         # make mypy happy to indent this

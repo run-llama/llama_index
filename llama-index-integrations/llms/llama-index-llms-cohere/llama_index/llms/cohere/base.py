@@ -226,10 +226,9 @@ class Cohere(FunctionCallingLLM):
 
         messages, documents = remove_documents_from_messages(messages)
 
-        tool_results: Optional[
-            List[Dict[str, Any]]
-        ] = _messages_to_cohere_tool_results_curr_chat_turn(messages) or kwargs.get(
-            "tool_results"
+        tool_results: Optional[List[Dict[str, Any]]] = (
+            _messages_to_cohere_tool_results_curr_chat_turn(messages)
+            or kwargs.get("tool_results")
         )
         if not tool_results:
             tool_results = None

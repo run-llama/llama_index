@@ -167,7 +167,7 @@ class JSONQueryEngine(BaseQueryEngine):
 
         if self._verbose:
             print_text(
-                f"> JSONPath Instructions:\n" f"```\n{json_path_response_str}\n```\n"
+                f"> JSONPath Instructions:\n```\n{json_path_response_str}\n```\n"
             )
 
         json_path_output = self._output_processor(
@@ -219,7 +219,7 @@ class JSONQueryEngine(BaseQueryEngine):
 
         if self._verbose:
             print_text(
-                f"> JSONPath Instructions:\n" f"```\n{json_path_response_str}\n```\n"
+                f"> JSONPath Instructions:\n```\n{json_path_response_str}\n```\n"
             )
 
         json_path_output = self._output_processor(

@@ -190,9 +190,9 @@ class LocalTensorRTLLM(CustomLLM):
                 if "pipeline_parallel" in config["builder_config"]:
                     pp_size = config["builder_config"]["pipeline_parallel"]
                 world_size = tp_size * pp_size
-                assert (
-                    world_size == tensorrt_llm.mpi_world_size()
-                ), f"Engine world size ({world_size}) != Runtime world size ({tensorrt_llm.mpi_world_size()})"
+                assert world_size == tensorrt_llm.mpi_world_size(), (
+                    f"Engine world size ({world_size}) != Runtime world size ({tensorrt_llm.mpi_world_size()})"
+                )
                 num_heads = config["builder_config"]["num_heads"] // tp_size
                 hidden_size = config["builder_config"]["hidden_size"] // tp_size
                 vocab_size = config["builder_config"]["vocab_size"]
@@ -218,9 +218,9 @@ class LocalTensorRTLLM(CustomLLM):
                     max_batch_size=config["builder_config"]["max_batch_size"],
                 )
 
-                assert (
-                    pp_size == 1
-                ), "Python runtime does not support pipeline parallelism"
+                assert pp_size == 1, (
+                    "Python runtime does not support pipeline parallelism"
+                )
                 world_size = tp_size * pp_size
 
                 runtime_rank = tensorrt_llm.mpi_rank()
@@ -229,9 +229,9 @@ class LocalTensorRTLLM(CustomLLM):
                 )
 
                 # TensorRT-LLM must run on a GPU.
-                assert (
-                    torch.cuda.is_available()
-                ), "LocalTensorRTLLM requires a Nvidia CUDA enabled GPU to operate"
+                assert torch.cuda.is_available(), (
+                    "LocalTensorRTLLM requires a Nvidia CUDA enabled GPU to operate"
+                )
                 torch.cuda.set_device(runtime_rank % runtime_mapping.gpus_per_node)
                 tokenizer = AutoTokenizer.from_pretrained(tokenizer_dir, legacy=False)
                 sampling_config = SamplingConfig(

@@ -3,8 +3,9 @@ from llama_index.core.llms import MockLLM
 from llama_index.packs.raptor.base import RaptorRetriever
 import pytest
 
+
 @pytest.mark.skipif(
-    condition = (global_tokenizer is None), reason="No global tokenizer set"
+    condition=(global_tokenizer is None), reason="No global tokenizer set"
 )
 def test_raptor() -> None:
     retriever = RaptorRetriever(

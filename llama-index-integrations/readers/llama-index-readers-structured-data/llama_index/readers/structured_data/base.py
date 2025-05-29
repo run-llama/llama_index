@@ -63,22 +63,24 @@ class StructuredDataReader(BaseReader):
 
     def _validate_column(self, index_name, column_index, df):
         if isinstance(column_index, int):
-            assert (
-                -len(df.columns) < column_index < len(df.columns)
-            ), f"The {index_name} {column_index} exceeds the range of columns in the dataframe: ({len(df.columns)})"
+            assert -len(df.columns) < column_index < len(df.columns), (
+                f"The {index_name} {column_index} exceeds the range of columns in the dataframe: ({len(df.columns)})"
+            )
         elif isinstance(column_index, str):
-            assert (
-                column_index in df.columns
-            ), f"The {index_name} must be in the dataframe"
+            assert column_index in df.columns, (
+                f"The {index_name} must be in the dataframe"
+            )
         else:
             if all(isinstance(item, int) for item in column_index):
                 assert all(
                     -len(df.columns) < item < len(df.columns) for item in column_index
-                ), f"Some items in {index_name} exceed the range of columns in the dataframe: ({len(df.columns)})"
+                ), (
+                    f"Some items in {index_name} exceed the range of columns in the dataframe: ({len(df.columns)})"
+                )
             elif all(isinstance(item, str) for item in column_index):
-                assert set(column_index).issubset(
-                    df.columns
-                ), f"All columns in {index_name} must be in the dataframe"
+                assert set(column_index).issubset(df.columns), (
+                    f"All columns in {index_name} must be in the dataframe"
+                )
             else:
                 raise ValueError(
                     "Not support int and str columns both in column configs."

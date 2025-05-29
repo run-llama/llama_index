@@ -3,6 +3,7 @@ from typing import Any
 
 BASE_TYPES = (int, str, bool, bytes, float)
 
+
 def _is_otel_supported_type(obj: Any) -> bool:
     # If it's one of the base types
     if isinstance(obj, BASE_TYPES):
@@ -14,8 +15,9 @@ def _is_otel_supported_type(obj: Any) -> bool:
 
     return False
 
+
 def filter_model_fields(model_dict: dict) -> dict:
-    newdict =  {}
+    newdict = {}
     for field in model_dict:
         if _is_otel_supported_type(model_dict[field]):
             newdict.update({field: model_dict[field]})

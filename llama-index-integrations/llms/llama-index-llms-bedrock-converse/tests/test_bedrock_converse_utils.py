@@ -65,6 +65,7 @@ def test_content_block_to_bedrock_format_text():
     result = _content_block_to_bedrock_format(text_block, MessageRole.USER)
     assert result == {"text": "Hello, world!"}
 
+
 @patch("llama_index.core.base.llms.types.ImageBlock.resolve_image")
 def test_content_block_to_bedrock_format_image_user(mock_resolve):
     mock_bytes = BytesIO(b"fake_image_data")
