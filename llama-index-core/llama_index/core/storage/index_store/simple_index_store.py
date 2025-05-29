@@ -9,7 +9,7 @@ from llama_index.core.storage.index_store.types import (
     DEFAULT_PERSIST_PATH,
 )
 from llama_index.core.storage.kvstore.simple_kvstore import SimpleKVStore
-from llama_index.core.storage.kvstore.types import BaseInMemoryKVStore
+from llama_index.core.storage.kvstore.types import MutableMappingKVStore
 from llama_index.core.utils import concat_dirs
 
 
@@ -60,7 +60,7 @@ class SimpleIndexStore(KVIndexStore):
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
         """Persist the store."""
-        if isinstance(self._kvstore, BaseInMemoryKVStore):
+        if isinstance(self._kvstore, MutableMappingKVStore):
             self._kvstore.persist(persist_path, fs=fs)
 
     @classmethod
