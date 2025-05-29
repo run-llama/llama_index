@@ -93,7 +93,7 @@ class SelectionOutputParser(BaseOutputParser):
         if isinstance(json_obj, dict):
             json_obj = [json_obj]
 
-        if not json_obj:
+        if not isinstance(json_obj, list):
             raise ValueError(f"Failed to convert output to JSON: {output!r}")
 
         json_output = self._format_output(json_obj)
