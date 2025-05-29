@@ -124,7 +124,9 @@ async def test_resource_with_llm():
     class TestWorkflow(Workflow):
         @step
         def test_step(
-            self, ev: StartEvent, llm: Annotated[MockLLM, Resource(get_llm, cache=False)]
+            self,
+            ev: StartEvent,
+            llm: Annotated[MockLLM, Resource(get_llm, cache=False)],
         ) -> MessageStopEvent:
             response = llm.complete("Hey there, who are you?")
             res = response.text or None
@@ -136,10 +138,12 @@ async def test_resource_with_llm():
     assert response is not None
     assert isinstance(response, str)
 
+
 @pytest.mark.asyncio
 async def test_caching_behavior():
-    class CounterThing():
+    class CounterThing:
         counter = 0
+
         def incr(self):
             self.counter += 1
 
@@ -151,12 +155,20 @@ async def test_caching_behavior():
 
     class TestWorkflow(Workflow):
         @step
-        async def test_step(self, ev: StartEvent, counter_thing: Annotated[CounterThing, Resource(provide_counter_thing)]) -> StepEvent:
+        async def test_step(
+            self,
+            ev: StartEvent,
+            counter_thing: Annotated[CounterThing, Resource(provide_counter_thing)],
+        ) -> StepEvent:
             counter_thing.incr()
             return StepEvent()
 
         @step
-        async def test_step_2(self, ev: StepEvent, counter_thing: Annotated[CounterThing, Resource(provide_counter_thing)]) -> StopEvent:
+        async def test_step_2(
+            self,
+            ev: StepEvent,
+            counter_thing: Annotated[CounterThing, Resource(provide_counter_thing)],
+        ) -> StopEvent:
             global cc
             counter_thing.incr()
             cc = counter_thing.counter
@@ -164,17 +176,22 @@ async def test_caching_behavior():
 
     wf_1 = TestWorkflow(disable_validation=True)
     await wf_1.run()
-    assert cc == 2 # this is expected to be 2, as it is a cached resource shared by test_step and test_step_2, which means at test_step it counter_thing.counter goes from 0 to 1 and at test_step_2 goes from 1 to 2
+    assert (
+        cc == 2
+    )  # this is expected to be 2, as it is a cached resource shared by test_step and test_step_2, which means at test_step it counter_thing.counter goes from 0 to 1 and at test_step_2 goes from 1 to 2
 
     wf_2 = TestWorkflow(disable_validation=True)
     await wf_2.run()
-    assert cc == 2 # the cache is workflow-specific, so since wf_2 is different from wf_1, we expect no interference between the two
+    assert (
+        cc == 2
+    )  # the cache is workflow-specific, so since wf_2 is different from wf_1, we expect no interference between the two
 
 
 @pytest.mark.asyncio
 async def test_non_caching_behavior():
-    class CounterThing():
+    class CounterThing:
         counter = 0
+
         def incr(self):
             self.counter += 1
 
@@ -186,14 +203,24 @@ async def test_non_caching_behavior():
 
     class TestWorkflow(Workflow):
         @step
-        async def test_step(self, ev: StartEvent, counter_thing: Annotated[CounterThing, Resource(provide_counter_thing, cache = False)]) -> StepEvent:
+        async def test_step(
+            self,
+            ev: StartEvent,
+            counter_thing: Annotated[CounterThing, Resource(provide_counter_thing)],
+        ) -> StepEvent:
             global cc1
             counter_thing.incr()
             cc1 = counter_thing.counter
             return StepEvent()
 
         @step
-        async def test_step_2(self, ev: StepEvent, counter_thing: Annotated[CounterThing, Resource(provide_counter_thing, cache = False)]) -> StopEvent:
+        async def test_step_2(
+            self,
+            ev: StepEvent,
+            counter_thing: Annotated[
+                CounterThing, Resource(provide_counter_thing, cache=False)
+            ],
+        ) -> StopEvent:
             global cc2
             counter_thing.incr()
             cc2 = counter_thing.counter
