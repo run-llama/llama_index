@@ -1,5 +1,4 @@
 from typing import Any, List, Optional
-import uuid
 
 import httpx
 from llama_cloud import (
@@ -22,6 +21,7 @@ from llama_index.indices.managed.llama_cloud.api_utils import (
     resolve_retriever,
     image_nodes_to_node_with_score,
 )
+
 
 class LlamaCloudCompositeRetriever(BaseRetriever):
     def __init__(
@@ -250,9 +250,9 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
             result = await self._aclient.retrievers.retrieve(
                 self.retriever.id,
                 mode=mode,
-                    rerank_top_n=rerank_top_n,
-                    query=query_bundle.query_str,
-                )
+                rerank_top_n=rerank_top_n,
+                query=query_bundle.query_str,
+            )
         else:
             result = await self._aclient.retrievers.direct_retrieve(
                 project_id=self.project.id,
