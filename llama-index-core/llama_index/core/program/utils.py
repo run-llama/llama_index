@@ -131,6 +131,15 @@ def get_program_for_llm(
             prompt=prompt,
             **kwargs,
         )
+    elif pydantic_program_mode == PydanticProgramMode.JSON_SCHEMA:
+        from llama_index.core.program.json_schema_program import JsonSchemaProgram
+
+        return JsonSchemaProgram.from_defaults(
+            output_cls=output_cls,
+            llm=llm,
+            prompt=prompt,
+            **kwargs,
+        )
     else:
         raise ValueError(f"Unsupported pydantic program mode: {pydantic_program_mode}")
 

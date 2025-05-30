@@ -143,6 +143,7 @@ class PydanticProgramMode(str, Enum):
     FUNCTION = "function"
     GUIDANCE = "guidance"
     LM_FORMAT_ENFORCER = "lm-format-enforcer"
+    JSON_SCHEMA = "json-schema"
 
 
 class Thread(threading.Thread):

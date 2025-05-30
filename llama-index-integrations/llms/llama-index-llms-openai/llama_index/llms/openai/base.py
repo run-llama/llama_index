@@ -77,6 +77,7 @@ from llama_index.llms.openai.utils import (
     resolve_tool_choice,
     to_openai_message_dicts,
     update_tool_calls,
+    is_json_schema_supported,
 )
 from openai import AsyncOpenAI, AzureOpenAI, AsyncAzureOpenAI
 from openai import OpenAI as SyncOpenAI
@@ -286,6 +287,13 @@ class OpenAI(FunctionCallingLLM):
         # TODO: Temp forced to 1.0 for o1
         if model in O1_MODELS:
             temperature = 1.0
+
+        # If supported, use JSON_SCHEMA mode
+        if (
+            is_json_schema_supported(model)
+            and pydantic_program_mode == PydanticProgramMode.DEFAULT
+        ):
+            pydantic_program_mode = PydanticProgramMode.JSON_SCHEMA
 
         super().__init__(
             model=model,
