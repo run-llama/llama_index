@@ -15,7 +15,7 @@ from llama_index.core.agent.workflow import (
     AgentStream,
     ToolCall,
 )
-from llama_index.core.workflow import Context, Workflow, Event
+from llama_index.core.workflow import Context, Event
 from llama_index.protocols.ag_ui.events import (
     TextMessageStartWorkflowEvent,
     TextMessageContentWorkflowEvent,
@@ -487,24 +487,8 @@ class AgentWorkflowRouter:
         return events
 
 
-class WorkflowRouter:
-    def __init__(self, workflow: Workflow):
-        self.workflow = workflow
-        self.router = APIRouter()
-        self.router.add_api_route("/run", self.run, methods=["POST"])
-
-    def run(self, input: RunAgentInput):
-        messages = input.messages
-        state = input.state
-
-
 def get_ag_ui_agent_router(
     agent: Union[AgentWorkflow, FunctionAgent, ReActAgent, CodeActAgent],
 ) -> APIRouter:
     server = AgentWorkflowRouter(agent)
-    return server.router
-
-
-def get_ag_ui_workflow_router(workflow: Workflow) -> APIRouter:
-    server = WorkflowRouter(workflow)
     return server.router
