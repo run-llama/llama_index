@@ -50,7 +50,7 @@ async def test_resource():
             return SecondEvent(msg="Hello")
 
         @step
-        def second_step(self, ev: SecondEvent) -> Union[ThirdEvent,StopEvent]:
+        def second_step(self, ev: SecondEvent) -> Union[ThirdEvent, StopEvent]:
             if ev.msg == "Hello":
                 return ThirdEvent(msg="Hello 2")
             return StopEvent()

@@ -608,7 +608,9 @@ class Context:
                 )
                 kwargs[service_definition.name] = service
             for resource in config.resources:
-                kwargs[resource.name] = await resource_manager.get(resource=resource.resource)
+                kwargs[resource.name] = await resource_manager.get(
+                    resource=resource.resource
+                )
             kwargs[config.event_name] = ev
 
             # wrap the step with instrumentation

@@ -16,6 +16,7 @@ from pydantic import (
 
 T = TypeVar("T")
 
+
 class _Resource(Generic[T]):
     def __init__(
         self, factory: Callable[..., Union[T, Awaitable[T]]], cache: bool
@@ -32,13 +33,16 @@ class _Resource(Generic[T]):
             result = cast(Callable[..., T], self._factory)()
         return result
 
+
 class ResourceDefinition(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
     name: str
     resource: _Resource
 
+
 def Resource(factory: Callable[..., T], cache: bool = True) -> _Resource[T]:
     return _Resource(factory, cache)
+
 
 class ResourceManager:
     def __init__(self) -> None:
