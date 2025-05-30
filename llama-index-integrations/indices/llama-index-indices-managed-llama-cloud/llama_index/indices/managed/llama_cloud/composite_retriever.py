@@ -59,25 +59,27 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
             self._client, project_name, project_id, organization_id
         )
 
-        self.retriever = resolve_retriever(
-            self._client, self.project, name, retriever_id
-        )
         self.name = name
         self.project_name = self.project.name
         self._persisted = persisted
 
-        if self.retriever is None:
-            if create_if_not_exists and persisted:
+        self.retriever = resolve_retriever(
+            self._client, self.project, name, retriever_id
+        )
+
+        if not persisted:
+            self.retriever = Retriever(
+                id=str(uuid.uuid4()),
+                project_id=self.project.id,
+                name=self.name,
+                pipelines=[]
+            )
+
+        if self.retriever is None and persisted:
+            if create_if_not_exists:
                 self.retriever = self._client.retrievers.upsert_retriever(
                     project_id=self.project.id,
                     request=RetrieverCreate(name=self.name, pipelines=[]),
-                )
-            elif not persisted:
-                self.retriever = Retriever(
-                    id=str(uuid.uuid4()),
-                    project_id=self.project.id,
-                    name=self.name,
-                    pipelines=[]
                 )
             else:
                 raise ValueError(
@@ -105,8 +107,8 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
                 self.retriever.id, pipelines=pipelines
             )
         else:
-            # Update in-memory retriever for non-persisted case
-            self.retriever.pipelines = pipelines
+            # Update in-memory retriever for non-persisted case using copy
+            self.retriever = self.retriever.copy(update={"pipelines": pipelines})
         return self.retriever
 
     def add_index(
@@ -156,8 +158,8 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
                 self.retriever.id, pipelines=pipelines
             )
         else:
-            # Update in-memory retriever for non-persisted case
-            self.retriever.pipelines = pipelines
+            # Update in-memory retriever for non-persisted case using copy
+            self.retriever = self.retriever.copy(update={"pipelines": pipelines})
         return self.retriever
 
     async def async_add_index(
@@ -228,7 +230,7 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
             )
         else:
             result = self._client.retrievers.direct_retrieve(
-                self.project.id,
+                project_id=self.project.id,
                 mode=mode,
                 rerank_top_n=rerank_top_n,
                 query=query_bundle.query_str,
@@ -261,7 +263,7 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
                 )
         else:
             result = await self._aclient.retrievers.direct_retrieve(
-                self.project.id,
+                project_id=self.project.id,
                 mode=mode,
                 rerank_top_n=rerank_top_n,
                 query=query_bundle.query_str,
