@@ -13,7 +13,7 @@ resp = llm.chat_with_tools(
     [tool],
     # chat_history=chat_history,  # can optionally pass in chat history instead of user_msg
     user_msg="Extract an invoice from the following text: " + text,
-    # tool_choice="Invoice",  # can optionally force the tool call
+    tool_required=True,  # can optionally force the tool call
 )
 
 tool_calls = llm.get_tool_calls_from_response(

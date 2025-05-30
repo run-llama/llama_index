@@ -293,6 +293,89 @@ def test_prepare_chat_with_tools(default_responses_llm):
     assert result["messages"][0].content == "What is 2+2?"
 
 
+def test_prepare_chat_with_tools_tool_required():
+    """Test that tool_required=True is correctly passed to the API request in OpenAIResponses."""
+    # Create mock clients to avoid API calls
+    mock_sync_client = MagicMock()
+    mock_async_client = MagicMock()
+
+    llm = OpenAIResponses(api_key="test-key")
+    llm._client = mock_sync_client
+    llm._aclient = mock_async_client
+
+    # Create a simple tool for testing
+    def search(query: str) -> str:
+        """Search for information about a query."""
+        return f"Results for {query}"
+
+    search_tool = FunctionTool.from_defaults(
+        fn=search, name="search_tool", description="A tool for searching information"
+    )
+
+    # Test with tool_required=True
+    result = llm._prepare_chat_with_tools(tools=[search_tool], tool_required=True)
+
+    assert result["tool_choice"] == "required"
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["name"] == "search_tool"
+
+
+def test_prepare_chat_with_tools_tool_not_required():
+    """Test that tool_required=False is correctly passed to the API request in OpenAIResponses."""
+    # Create mock clients to avoid API calls
+    mock_sync_client = MagicMock()
+    mock_async_client = MagicMock()
+
+    llm = OpenAIResponses(api_key="test-key")
+    llm._client = mock_sync_client
+    llm._aclient = mock_async_client
+
+    # Create a simple tool for testing
+    def search(query: str) -> str:
+        """Search for information about a query."""
+        return f"Results for {query}"
+
+    search_tool = FunctionTool.from_defaults(
+        fn=search, name="search_tool", description="A tool for searching information"
+    )
+
+    # Test with tool_required=False (default)
+    result = llm._prepare_chat_with_tools(tools=[search_tool], tool_required=False)
+
+    assert result["tool_choice"] == "auto"
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["name"] == "search_tool"
+
+
+def test_prepare_chat_with_tools_explicit_tool_choice_overrides_tool_required():
+    """Test that explicit tool_choice overrides tool_required in OpenAIResponses."""
+    # Create mock clients to avoid API calls
+    mock_sync_client = MagicMock()
+    mock_async_client = MagicMock()
+
+    llm = OpenAIResponses(api_key="test-key")
+    llm._client = mock_sync_client
+    llm._aclient = mock_async_client
+
+    # Create a simple tool for testing
+    def search(query: str) -> str:
+        """Search for information about a query."""
+        return f"Results for {query}"
+
+    search_tool = FunctionTool.from_defaults(
+        fn=search, name="search_tool", description="A tool for searching information"
+    )
+
+    # Test that explicit tool_choice overrides tool_required
+    result = llm._prepare_chat_with_tools(
+        tools=[search_tool], tool_required=True, tool_choice="none"
+    )
+
+    assert result["tool_choice"] == "none"  # Should be "none" not "required"
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["name"] == "search_tool"
+
+
 @pytest.mark.skipif(SKIP_OPENAI_TESTS, reason="OpenAI API key not available")
 def test_chat_with_api():
     """Test the chat method with real API call."""
@@ -454,3 +537,21 @@ def test_document_upload(tmp_path: Path, pdf_url: str) -> None:
     messages = [msg]
     response = llm.chat(messages)
     assert isinstance(response, ChatResponse)
+
+
+def search(query: str) -> str:
+    return f"Results for {query}"
+
+
+search_tool = FunctionTool.from_defaults(fn=search)
+
+
+@pytest.mark.skipif(SKIP_OPENAI_TESTS, reason="OpenAI API key not available")
+def test_tool_required():
+    llm = OpenAIResponses(model="gpt-4.1-mini")
+    response = llm.chat_with_tools(
+        user_msg="What is the capital of France?",
+        tools=[search_tool],
+        tool_required=True,
+    )
+    assert len(response.message.additional_kwargs["tool_calls"]) == 1

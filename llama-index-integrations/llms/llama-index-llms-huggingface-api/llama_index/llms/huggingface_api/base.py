@@ -540,6 +540,7 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         tool_specs = [
@@ -556,6 +557,7 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
         return {
             "messages": messages,
             "tools": tool_specs or None,
+            "tool_choice": "required" if tool_required else "auto",
         }
 
     def _validate_chat_with_tools_response(

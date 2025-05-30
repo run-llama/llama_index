@@ -223,6 +223,16 @@ def test_token_calculation_errors():
 add_tool = FunctionTool.from_defaults(fn=add, name="add")
 
 
+def search(query: str) -> str:
+    """Search for information about a query."""
+    return f"Results for {query}"
+
+
+search_tool = FunctionTool.from_defaults(
+    fn=search, name="search_tool", description="A tool for searching information"
+)
+
+
 def mock_chat_response(respx_mock: respx.MockRouter):
     respx_mock.post("https://api.openai.com/v1/chat/completions").mock(
         return_value=httpx.Response(
@@ -466,3 +476,29 @@ def test_image_block_chat(respx_mock: respx.MockRouter, llm: LiteLLM):
     )
     assert text_content is not None
     assert text_content["text"] == "What's in this image?"
+
+
+def test_prepare_chat_with_tools_tool_required():
+    """Test that tool_required is correctly passed to the API request when True."""
+    llm = LiteLLM(model="gpt-3.5-turbo")
+
+    # Test with tool_required=True
+    result = llm._prepare_chat_with_tools(tools=[search_tool], tool_required=True)
+
+    assert result["tool_choice"] == "required"
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["function"]["name"] == "search_tool"
+
+
+def test_prepare_chat_with_tools_tool_not_required():
+    """Test that tool_required is correctly passed to the API request when False."""
+    llm = LiteLLM(model="gpt-3.5-turbo")
+
+    # Test with tool_required=False (default)
+    result = llm._prepare_chat_with_tools(
+        tools=[search_tool],
+    )
+
+    assert result["tool_choice"] == "auto"
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["function"]["name"] == "search_tool"

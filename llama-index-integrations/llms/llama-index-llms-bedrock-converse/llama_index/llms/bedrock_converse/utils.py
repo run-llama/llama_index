@@ -325,7 +325,11 @@ def messages_to_converse_messages(
     return __merge_common_role_msgs(converse_messages), system_prompt.strip()
 
 
-def tools_to_converse_tools(tools: List["BaseTool"]) -> Dict[str, Any]:
+def tools_to_converse_tools(
+    tools: List["BaseTool"],
+    tool_choice: Optional[dict] = None,
+    tool_required: bool = False,
+) -> Dict[str, Any]:
     """
     Converts a list of tools to AWS Bedrock Converse tools.
 
@@ -349,7 +353,12 @@ def tools_to_converse_tools(tools: List["BaseTool"]) -> Dict[str, Any]:
             "inputSchema": {"json": tool.metadata.get_parameters_dict()},
         }
         converse_tools.append({"toolSpec": tool_dict})
-    return {"tools": converse_tools}
+    return {
+        "tools": converse_tools,
+        # https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolChoice.html
+        # e.g. { "auto": {} }
+        "toolChoice": tool_choice or ({"any": {}} if tool_required else {"auto": {}}),
+    }
 
 
 def force_single_tool_call(response: ChatResponse) -> None:

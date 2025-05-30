@@ -820,7 +820,8 @@ class OpenAIResponses(FunctionCallingLLM):
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         allow_parallel_tool_calls: bool = True,
-        tool_choice: Union[str, dict] = "auto",
+        tool_required: bool = False,
+        tool_choice: Optional[Union[str, dict]] = None,
         verbose: bool = False,
         strict: Optional[bool] = None,
         **kwargs: Any,
@@ -853,7 +854,9 @@ class OpenAIResponses(FunctionCallingLLM):
         return {
             "messages": messages,
             "tools": tool_specs or None,
-            "tool_choice": resolve_tool_choice(tool_choice) if tool_specs else None,
+            "tool_choice": resolve_tool_choice(tool_choice, tool_required)
+            if tool_specs
+            else None,
             "parallel_tool_calls": allow_parallel_tool_calls,
             **kwargs,
         }

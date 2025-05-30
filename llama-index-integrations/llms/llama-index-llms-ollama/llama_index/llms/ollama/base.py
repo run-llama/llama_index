@@ -264,7 +264,8 @@ class Ollama(FunctionCallingLLM):
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
-        allow_parallel_tool_calls: bool = False,
+        allow_parallel_tool_calls: bool = False,  # doesn't appear to be supported by Ollama
+        tool_required: bool = False,  # not yet supported https://github.com/ollama/ollama/blob/main/docs/openai.md#supported-request-fields
         **kwargs: Any,
     ) -> Dict[str, Any]:
         tool_specs = [

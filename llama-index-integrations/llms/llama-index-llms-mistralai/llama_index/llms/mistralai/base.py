@@ -420,6 +420,7 @@ class MistralAI(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Prepare the chat with tools."""
@@ -438,6 +439,7 @@ class MistralAI(FunctionCallingLLM):
         return {
             "messages": messages,
             "tools": tool_specs or None,
+            "tool_choice": "required" if tool_required else "auto",
             **kwargs,
         }
 
