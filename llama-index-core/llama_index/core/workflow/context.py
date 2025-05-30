@@ -31,7 +31,7 @@ from .errors import (
 )
 from .events import Event, InputRequiredEvent
 from .service import ServiceManager
-from .utils import ResourceManager
+from .resource import ResourceManager
 from .types import RunResultT
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -608,7 +608,7 @@ class Context:
                 )
                 kwargs[service_definition.name] = service
             for resource in config.resources:
-                kwargs[resource.name] = await resource_manager.get(resource=resource)
+                kwargs[resource.name] = await resource_manager.get(resource=resource.resource)
             kwargs[config.event_name] = ev
 
             # wrap the step with instrumentation

@@ -21,7 +21,7 @@ except ImportError:  # pragma: no cover
 
 from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
 
-from .resource import _Resource
+from .resource import ResourceDefinition
 from .errors import WorkflowValidationError
 from .events import Event, EventType
 
@@ -49,28 +49,6 @@ class ServiceDefinition(BaseModel):
     service: Any
     default_value: Optional[Any]
 
-
-class ResourceDefinition(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    name: str
-    resource: _Resource
-
-class ResourceManager:
-    def __init__(self) -> None:
-        self.resources: Dict[str, Any] = {}
-
-    async def set(self, name: str, val: Any) -> None:
-        self.resources.update({name: val})
-
-    async def get(self, resource: ResourceDefinition) -> Any:
-        if not resource.resource.cache:
-            val = await resource.resource.call()
-        elif resource.resource.cache and not self.resources.get(resource.name, None):
-            val = await resource.resource.call()
-            await self.set(resource.name, val)
-        else:
-            val = self.resources.get(resource.name)
-        return val
 
 class StepSignatureSpec(BaseModel):
     """A Pydantic model representing the signature of a step function or method."""
@@ -123,7 +101,7 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
             resources.append(
                 ResourceDefinition(
                     name=name,
-                    resource=resource,
+                    resource=resource
                 )
             )
             continue

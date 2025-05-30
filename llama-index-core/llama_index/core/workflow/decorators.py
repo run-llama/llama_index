@@ -4,12 +4,12 @@ from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
 
 from .errors import WorkflowValidationError
 from .utils import (
-    ResourceDefinition,
     ServiceDefinition,
     inspect_signature,
     is_free_function,
     validate_step_signature,
 )
+from .resource import ResourceDefinition
 
 if TYPE_CHECKING:  # pragma: no cover
     from .workflow import Workflow

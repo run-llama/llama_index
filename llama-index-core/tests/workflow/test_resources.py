@@ -1,5 +1,5 @@
 import random
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Optional, Union
 
 import pytest
 from llama_index.core.llms import ChatMessage, MockLLM
@@ -50,7 +50,7 @@ async def test_resource():
             return SecondEvent(msg="Hello")
 
         @step
-        def second_step(self, ev: SecondEvent) -> ThirdEvent | StopEvent:
+        def second_step(self, ev: SecondEvent) -> Union[ThirdEvent,StopEvent]:
             if ev.msg == "Hello":
                 return ThirdEvent(msg="Hello 2")
             return StopEvent()
@@ -90,7 +90,7 @@ async def test_resource_async():
             return SecondEvent(msg="Hello")
 
         @step
-        def second_step(self, ev: SecondEvent) -> ThirdEvent | StopEvent:
+        def second_step(self, ev: SecondEvent) -> Union[ThirdEvent, StopEvent]:
             if ev.msg == "Hello":
                 return ThirdEvent(msg="Hello world!")
             return StopEvent()

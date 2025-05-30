@@ -100,6 +100,7 @@ def test_send_event_to_wrong_step(ctx):
         num_workers=99,
         requested_services=[],
         retry_policy=None,
+        resources=[],
     )
 
     with pytest.raises(
