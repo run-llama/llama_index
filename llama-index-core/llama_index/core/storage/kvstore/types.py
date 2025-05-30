@@ -156,13 +156,18 @@ class MutableMappingKVStore(Generic[MutableMappingT], BaseKVStore):
         """Delete a value from the store."""
         return self.delete(key, collection=collection)
 
-    @abstractmethod
+    # this method is here to avoid TypeChecker shows an error
     def persist(
         self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
     ) -> None:
-        pass
+        """Persist the store."""
+        raise NotImplementedError(
+            "Use subclasses of MutableMappingKVStore (such as SimpleKVStore) to call this method"
+        )
 
-    @classmethod
-    @abstractmethod
+    # this method is here to avoid TypeChecker shows an error
     def from_persist_path(cls, persist_path: str) -> "MutableMappingKVStore":
         """Create a MutableMappingKVStore from a persist directory."""
+        raise NotImplementedError(
+            "Use subclasses of MutableMappingKVStore (such as SimpleKVStore) to call this method"
+        )
