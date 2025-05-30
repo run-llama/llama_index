@@ -166,9 +166,10 @@ class TestGoogleDriveReader(unittest.TestCase):
         mock_build = MagicMock(return_value=mock_service)
 
         # setup a bunch of mocks to imitate calling Google Drive and downloading file
-        with patch("googleapiclient.discovery.build", mock_build), patch(
-            "builtins.open", mock_open()
-        ) as mock_file:
+        with (
+            patch("googleapiclient.discovery.build", mock_build),
+            patch("builtins.open", mock_open()) as mock_file,
+        ):
             reader = GoogleDriveReader(
                 client_config={
                     "client_id": "example_client_id",

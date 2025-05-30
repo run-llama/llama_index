@@ -1,4 +1,5 @@
 """Program utils."""
+
 import logging
 from typing import Any, List, Type, Sequence, Union, Optional, Dict
 
@@ -262,7 +263,7 @@ def process_streaming_objects(
 
 
 def num_valid_fields(
-    obj: Union[BaseModel, Sequence[BaseModel], Dict[str, BaseModel]]
+    obj: Union[BaseModel, Sequence[BaseModel], Dict[str, BaseModel]],
 ) -> int:
     """
     Recursively count the number of fields in a Pydantic object (including nested objects) that aren't None.

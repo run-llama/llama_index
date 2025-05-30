@@ -14,13 +14,17 @@ from llama_index.multi_modal_llms.huggingface import HuggingFaceMultiModal
 
 @pytest.fixture(scope="module")
 def mock_model():
-    with patch(
-        "llama_index.multi_modal_llms.huggingface.base.AutoConfig"
-    ) as mock_config, patch(
-        "llama_index.multi_modal_llms.huggingface.base.Qwen2VLForConditionalGeneration"
-    ) as mock_model_class, patch(
-        "llama_index.multi_modal_llms.huggingface.base.AutoProcessor"
-    ) as mock_processor:
+    with (
+        patch(
+            "llama_index.multi_modal_llms.huggingface.base.AutoConfig"
+        ) as mock_config,
+        patch(
+            "llama_index.multi_modal_llms.huggingface.base.Qwen2VLForConditionalGeneration"
+        ) as mock_model_class,
+        patch(
+            "llama_index.multi_modal_llms.huggingface.base.AutoProcessor"
+        ) as mock_processor,
+    ):
         mock_config.from_pretrained.return_value = MagicMock(
             architectures=["Qwen2VLForConditionalGeneration"]
         )

@@ -22,7 +22,7 @@ dev = [
     "pytest-dotenv==0.5.2",
     "pytest-mock==3.11.1",
     "rake-nltk==1.0.6",
-    "ruff==0.0.292",
+    "ruff==0.11.11",
     "tree-sitter",
     "tree-sitter-language-pack",
     "types-Deprecated>=0.1.0",
@@ -33,7 +33,7 @@ dev = [
 
 [project]
 name = "llama-index-core"
-version = "0.12.37"
+version = "0.12.38"
 description = "Interface between LLMs and your data"
 authors = [{name = "Jerry Liu", email = "jerry@llamaindex.ai"}]
 requires-python = ">=3.9,<4.0"

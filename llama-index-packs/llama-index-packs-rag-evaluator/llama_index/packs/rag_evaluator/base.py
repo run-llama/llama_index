@@ -329,9 +329,10 @@ class RagEvaluatorPack(BaseLlamaPack):
         """Batches examples and predictions with a given batch_size."""
         assert self._num_examples == len(predictions)
         for ndx in range(start_position, self._num_examples, batch_size):
-            yield examples[
-                ndx : min(ndx + batch_size, self._num_examples)
-            ], predictions[ndx : min(ndx + batch_size, self._num_examples)]
+            yield (
+                examples[ndx : min(ndx + batch_size, self._num_examples)],
+                predictions[ndx : min(ndx + batch_size, self._num_examples)],
+            )
 
     async def _amake_evaluations(self, batch_size, sleep_time_in_seconds):
         """Async make evaluations."""

@@ -27,7 +27,6 @@ from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.oci_data_science.client import AsyncClient, Client
 from llama_index.llms.oci_data_science.utils import (
-    DEFAULT_TOOL_CHOICE,
     _from_completion_logprobs_dict,
     _from_message_dict,
     _from_token_logprob_dicts,
@@ -809,7 +808,8 @@ class OCIDataScience(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
-        tool_choice: Union[str, dict] = DEFAULT_TOOL_CHOICE,
+        tool_required: bool = False,
+        tool_choice: Optional[Union[str, dict]] = None,
         strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
@@ -822,6 +822,7 @@ class OCIDataScience(FunctionCallingLLM):
             chat_history (Optional[List[ChatMessage]]): The chat history.
             verbose (bool): Whether to output verbose logs.
             allow_parallel_tool_calls (bool): Whether to allow parallel tool calls.
+            tool_required (bool): Whether to require a tool call. tool_choice supersedes this if provided.
             tool_choice (Union[str, dict]): Tool choice strategy.
             strict (Optional[bool]): Whether to enforce strict mode.
             **kwargs: Additional keyword arguments.
@@ -857,7 +858,9 @@ class OCIDataScience(FunctionCallingLLM):
         return {
             "messages": messages,
             "tools": tool_specs or None,
-            "tool_choice": (_resolve_tool_choice(tool_choice) if tool_specs else None),
+            "tool_choice": (
+                _resolve_tool_choice(tool_choice, tool_required) if tool_specs else None
+            ),
             **kwargs,
         }
 
@@ -947,6 +950,6 @@ class OCIDataScience(FunctionCallingLLM):
             )
 
         logger.debug(
-            f"Extracted tool calls: { [tool_selection.model_dump() for tool_selection in tool_selections] }"
+            f"Extracted tool calls: {[tool_selection.model_dump() for tool_selection in tool_selections]}"
         )
         return tool_selections

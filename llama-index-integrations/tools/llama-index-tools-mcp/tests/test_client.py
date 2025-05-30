@@ -2,6 +2,7 @@ import os
 import pytest
 
 from llama_index.tools.mcp import BasicMCPClient
+from llama_index.tools.mcp.client import enable_sse
 from mcp import types
 
 
@@ -169,11 +170,14 @@ async def test_long_running_task(client: BasicMCPClient):
         current_message = message
         expected_total = total
 
-    result = await client.call_tool("long_task", {"steps": 3}, progress_callback=progress_callback)
+    result = await client.call_tool(
+        "long_task", {"steps": 3}, progress_callback=progress_callback
+    )
     assert "Completed 3 steps" in result.content[0].text
     assert current_progress == 3.0
     assert current_progress == expected_total
     assert current_message == "Processing step 3/3"
+
 
 @pytest.mark.asyncio
 async def test_image_return_value(client: BasicMCPClient):
@@ -185,3 +189,39 @@ async def test_image_return_value(client: BasicMCPClient):
     # Check that we got image data back
     assert isinstance(result, types.CallToolResult)
     assert len(result.content[0].data) > 0
+
+
+def test_enable_sse():
+    """Test the enable_sse function with various URL formats."""
+    # Test query parameter detection (composio style)
+    assert enable_sse("https://example.com/api?transport=sse") is True
+    assert enable_sse("http://localhost:8080?transport=sse&other=param") is True
+    assert enable_sse("https://example.com/api?other=param&transport=sse") is True
+
+    # Test path suffix detection
+    assert enable_sse("https://example.com/sse") is True
+    assert enable_sse("http://localhost:8080/api/sse") is True
+    assert enable_sse("https://example.com/sse/") is True
+
+    # Test path containing /sse/
+    assert enable_sse("https://example.com/api/sse/v1") is True
+    assert enable_sse("http://localhost:8080/sse/events") is True
+    assert enable_sse("https://example.com/v1/sse/stream") is True
+
+    # Test non-SSE URLs
+    assert enable_sse("https://example.com/api") is False
+    assert enable_sse("http://localhost:8080") is False
+    assert enable_sse("https://example.com/api?transport=http") is False
+    assert enable_sse("https://example.com/assets") is False
+
+    # Test edge cases
+    assert enable_sse("https://example.com/sse-like") is False
+    assert enable_sse("https://example.com/my-sse") is False
+    assert enable_sse("https://example.com/api?sse=true") is False
+
+    # Test with multiple transport values (should use first one)
+    assert enable_sse("https://example.com?transport=sse&transport=http") is True
+
+    # Test command-style inputs (non-URL)
+    assert enable_sse("python") is False
+    assert enable_sse("/usr/bin/python") is False

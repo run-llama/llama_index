@@ -37,14 +37,14 @@ class TokenCountingEvent:
 
 
 def get_tokens_from_response(
-    response: Union["CompletionResponse", "ChatResponse"]
+    response: Union["CompletionResponse", "ChatResponse"],
 ) -> Tuple[int, int]:
     """Get the token counts from a raw response."""
     raw_response = response.raw
     if not isinstance(raw_response, dict):
         raw_response = dict(raw_response or {})
 
-    usage = raw_response.get("usage", {})
+    usage = raw_response.get("usage", raw_response.get("usage_metadata", {}))
     if usage is None:
         usage = response.additional_kwargs
 
@@ -54,8 +54,12 @@ def get_tokens_from_response(
     if not isinstance(usage, dict):
         usage = usage.model_dump()
 
-    possible_input_keys = ("prompt_tokens", "input_tokens")
-    possible_output_keys = ("completion_tokens", "output_tokens")
+    possible_input_keys = ("prompt_tokens", "input_tokens", "prompt_token_count")
+    possible_output_keys = (
+        "completion_tokens",
+        "output_tokens",
+        "candidates_token_count",
+    )
 
     prompt_tokens = 0
     for input_key in possible_input_keys:

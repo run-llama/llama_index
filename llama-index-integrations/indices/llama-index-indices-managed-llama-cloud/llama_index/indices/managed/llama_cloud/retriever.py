@@ -7,6 +7,7 @@ from llama_cloud import (
 from llama_cloud.resources.pipelines.client import OMIT
 
 from llama_index.core.base.base_retriever import BaseRetriever
+from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.constants import DEFAULT_PROJECT_NAME
 from llama_index.core.ingestion.api_utils import get_aclient, get_client
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
@@ -47,6 +48,7 @@ class LlamaCloudRetriever(BaseRetriever):
         retrieval_mode: Optional[str] = None,
         files_top_k: Optional[int] = None,
         retrieve_image_nodes: Optional[bool] = None,
+        search_filters_inference_schema: Optional[BaseModel] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the Platform Retriever."""
@@ -88,6 +90,7 @@ class LlamaCloudRetriever(BaseRetriever):
         self._retrieve_image_nodes = (
             retrieve_image_nodes if retrieve_image_nodes is not None else OMIT
         )
+        self._search_filters_inference_schema = search_filters_inference_schema
 
         super().__init__(
             callback_manager=kwargs.get("callback_manager"),
@@ -106,6 +109,11 @@ class LlamaCloudRetriever(BaseRetriever):
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Retrieve from the platform."""
+        search_filters_inference_schema = OMIT
+        if self._search_filters_inference_schema is not None:
+            search_filters_inference_schema = (
+                self._search_filters_inference_schema.model_json_schema()
+            )
         results = self._client.pipelines.run_search(
             query=query_bundle.query_str,
             pipeline_id=self.pipeline.id,
@@ -118,6 +126,7 @@ class LlamaCloudRetriever(BaseRetriever):
             files_top_k=self._files_top_k,
             retrieval_mode=self._retrieval_mode,
             retrieve_image_nodes=self._retrieve_image_nodes,
+            search_filters_inference_schema=search_filters_inference_schema,
         )
 
         result_nodes = self._result_nodes_to_node_with_score(results.retrieval_nodes)
@@ -132,6 +141,11 @@ class LlamaCloudRetriever(BaseRetriever):
 
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """Asynchronously retrieve from the platform."""
+        search_filters_inference_schema = OMIT
+        if self._search_filters_inference_schema is not None:
+            search_filters_inference_schema = (
+                self._search_filters_inference_schema.model_json_schema()
+            )
         results = await self._aclient.pipelines.run_search(
             query=query_bundle.query_str,
             pipeline_id=self.pipeline.id,
@@ -144,6 +158,7 @@ class LlamaCloudRetriever(BaseRetriever):
             files_top_k=self._files_top_k,
             retrieval_mode=self._retrieval_mode,
             retrieve_image_nodes=self._retrieve_image_nodes,
+            search_filters_inference_schema=search_filters_inference_schema,
         )
 
         result_nodes = self._result_nodes_to_node_with_score(results.retrieval_nodes)

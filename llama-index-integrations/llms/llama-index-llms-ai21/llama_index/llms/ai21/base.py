@@ -216,6 +216,7 @@ class AI21(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,  # ai21 does not support configuring the tool_choice
         **kwargs: Any,
     ) -> Dict[str, Any]:
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]

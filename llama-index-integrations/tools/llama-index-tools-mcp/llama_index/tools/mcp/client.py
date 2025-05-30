@@ -2,8 +2,7 @@ import warnings
 from contextlib import asynccontextmanager
 from datetime import timedelta
 from typing import Optional, List, Dict, Tuple, Callable, AsyncIterator, Awaitable, Dict
-from urllib.parse import urlparse
-
+from urllib.parse import urlparse, parse_qs
 from mcp.client.session import ClientSession, ProgressFnT
 from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client, StdioServerParameters
@@ -12,7 +11,23 @@ from mcp.client.auth import OAuthClientProvider, TokenStorage
 from mcp.shared.auth import OAuthClientMetadata, OAuthToken, OAuthClientInformationFull
 from mcp import types
 
+
 from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock
+
+
+def enable_sse(command_or_url: str) -> bool:
+    """
+    Check if the command or URL is an SSE endpoint.
+    """
+    url = urlparse(command_or_url)
+    query_params = parse_qs(url.query)
+    if "transport" in query_params and query_params["transport"][0] == "sse":
+        return True
+    elif url.path.rstrip("/").endswith("/sse"):
+        return True
+    elif "/sse/" in url.path:
+        return True
+    return False
 
 
 class DefaultInMemoryTokenStorage(TokenStorage):
@@ -116,7 +131,10 @@ class BasicMCPClient(ClientSession):
         # Use default in-memory storage if none provided
         if token_storage is None:
             token_storage = DefaultInMemoryTokenStorage()
-            warnings.warn("Using default in-memory token storage. Tokens will be lost on restart.", UserWarning)
+            warnings.warn(
+                "Using default in-memory token storage. Tokens will be lost on restart.",
+                UserWarning,
+            )
 
         oauth_auth = OAuthClientProvider(
             server_url=command_or_url if urlparse(command_or_url).scheme else None,
@@ -141,7 +159,7 @@ class BasicMCPClient(ClientSession):
 
         if scheme in ("http", "https"):
             # Check if this is a streamable HTTP endpoint (default) or SSE
-            if url.path.endswith("/sse"):
+            if enable_sse(self.command_or_url):
                 # SSE transport
                 async with sse_client(self.command_or_url, auth=self.auth) as streams:
                     async with ClientSession(
@@ -179,11 +197,17 @@ class BasicMCPClient(ClientSession):
                     yield session
 
     # Tool methods
-    async def call_tool(self, tool_name: str, arguments: Optional[dict] = None, progress_callback: Optional[ProgressFnT] = None) -> types.CallToolResult:
+    async def call_tool(
+        self,
+        tool_name: str,
+        arguments: Optional[dict] = None,
+        progress_callback: Optional[ProgressFnT] = None,
+    ) -> types.CallToolResult:
         """Call a tool on the MCP server."""
         async with self._run_session() as session:
-            return await session.call_tool(tool_name, arguments=arguments, progress_callback=progress_callback)
-
+            return await session.call_tool(
+                tool_name, arguments=arguments, progress_callback=progress_callback
+            )
 
     async def list_tools(self) -> types.ListToolsResult:
         """List all available tools on the MCP server."""

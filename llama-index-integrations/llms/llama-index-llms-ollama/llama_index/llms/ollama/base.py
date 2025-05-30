@@ -210,7 +210,9 @@ class Ollama(FunctionCallingLLM):
                     break
 
         # If the context window is still -1, use the default context window
-        return self.context_window if self.context_window != -1 else DEFAULT_CONTEXT_WINDOW
+        return (
+            self.context_window if self.context_window != -1 else DEFAULT_CONTEXT_WINDOW
+        )
 
     def _convert_to_ollama_messages(self, messages: Sequence[ChatMessage]) -> Dict:
         ollama_messages = []
@@ -262,7 +264,8 @@ class Ollama(FunctionCallingLLM):
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
-        allow_parallel_tool_calls: bool = False,
+        allow_parallel_tool_calls: bool = False,  # doesn't appear to be supported by Ollama
+        tool_required: bool = False,  # not yet supported https://github.com/ollama/ollama/blob/main/docs/openai.md#supported-request-fields
         **kwargs: Any,
     ) -> Dict[str, Any]:
         tool_specs = [
@@ -387,8 +390,7 @@ class Ollama(FunctionCallingLLM):
                 r = dict(r)
 
                 response_txt += r["message"]["content"]
-
-                new_tool_calls = [dict(t) for t in r["message"].get("tool_calls", [])]
+                new_tool_calls = [dict(t) for t in r["message"].get("tool_calls") or []]
                 for tool_call in new_tool_calls:
                     if (
                         str(tool_call["function"]["name"]),
@@ -450,7 +452,7 @@ class Ollama(FunctionCallingLLM):
 
                 response_txt += r["message"]["content"]
 
-                new_tool_calls = [dict(t) for t in r["message"].get("tool_calls", [])]
+                new_tool_calls = [dict(t) for t in r["message"].get("tool_calls") or []]
                 for tool_call in new_tool_calls:
                     if (
                         str(tool_call["function"]["name"]),

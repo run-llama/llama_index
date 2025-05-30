@@ -11,12 +11,10 @@ from .utils import import_module_from_qualified_name, get_qualified_name
 
 class BaseSerializer(ABC):
     @abstractmethod
-    def serialize(self, value: Any) -> str:
-        ...
+    def serialize(self, value: Any) -> str: ...
 
     @abstractmethod
-    def deserialize(self, value: str) -> Any:
-        ...
+    def deserialize(self, value: str) -> Any: ...
 
 
 class JsonSerializer(BaseSerializer):

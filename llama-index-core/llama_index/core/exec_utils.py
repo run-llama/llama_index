@@ -5,6 +5,7 @@ This module provides utilities for safely executing and evaluating code by restr
 access to potentially dangerous operations. It includes a set of allowed imports and
 builtins, and prevents access to private methods and attributes.
 """
+
 import ast
 import copy
 from types import CodeType, ModuleType

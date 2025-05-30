@@ -8,6 +8,7 @@ dev = [
     "black[jupyter]<=23.9.1,>=23.7.0",
     "diff-cover>=9.2.0",
     "pytest-cov>=6.1.1",
+    "ruff==0.11.11",
 ]
 
 [project]

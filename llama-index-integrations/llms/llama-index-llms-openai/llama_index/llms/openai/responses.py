@@ -570,7 +570,12 @@ class OpenAIResponses(FunctionCallingLLM):
         elif isinstance(event, ResponseImageGenCallPartialImageEvent):
             # Partial image
             if event.partial_image_b64:
-                blocks.append(ImageBlock(image=base64.b64decode(event.partial_image_b64), detail=f"id_{event.partial_image_index}"))
+                blocks.append(
+                    ImageBlock(
+                        image=base64.b64decode(event.partial_image_b64),
+                        detail=f"id_{event.partial_image_index}",
+                    )
+                )
         elif isinstance(event, ResponseFunctionCallArgumentsDeltaEvent):
             # Function call arguments are being streamed
             if current_tool_call is not None:
@@ -815,7 +820,8 @@ class OpenAIResponses(FunctionCallingLLM):
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         allow_parallel_tool_calls: bool = True,
-        tool_choice: Union[str, dict] = "auto",
+        tool_required: bool = False,
+        tool_choice: Optional[Union[str, dict]] = None,
         verbose: bool = False,
         strict: Optional[bool] = None,
         **kwargs: Any,
@@ -848,7 +854,9 @@ class OpenAIResponses(FunctionCallingLLM):
         return {
             "messages": messages,
             "tools": tool_specs or None,
-            "tool_choice": resolve_tool_choice(tool_choice) if tool_specs else None,
+            "tool_choice": resolve_tool_choice(tool_choice, tool_required)
+            if tool_specs
+            else None,
             "parallel_tool_calls": allow_parallel_tool_calls,
             **kwargs,
         }
@@ -860,9 +868,9 @@ class OpenAIResponses(FunctionCallingLLM):
         **kwargs: Any,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
-        tool_calls: List[
-            ResponseFunctionToolCall
-        ] = response.message.additional_kwargs.get("tool_calls", [])
+        tool_calls: List[ResponseFunctionToolCall] = (
+            response.message.additional_kwargs.get("tool_calls", [])
+        )
 
         if len(tool_calls) < 1:
             if error_on_no_tool_call:

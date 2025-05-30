@@ -45,11 +45,16 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM
 
 from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.aio import ChatCompletionsClient as ChatCompletionsClientAsync
+from azure.ai.inference.models import (
+    ChatCompletionsToolChoicePreset,
+    ChatCompletionsNamedToolChoice,
+)
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
     from llama_index.core.chat_engine.types import AgentChatResponse
     from azure.core.credentials import TokenCredential
+
 
 from azure.core.credentials import AzureKeyCredential
 from azure.core.exceptions import HttpResponseError
@@ -357,6 +362,16 @@ class AzureAICompletionsModel(FunctionCallingLLM):
             raw=response.as_dict(),
         )
 
+    def _to_azure_tool_choice(
+        self, tool_required: bool
+    ) -> Optional[
+        Union[str, ChatCompletionsToolChoicePreset, ChatCompletionsNamedToolChoice]
+    ]:
+        if tool_required:
+            return ChatCompletionsToolChoicePreset.REQUIRED
+        else:
+            return ChatCompletionsToolChoicePreset.AUTO
+
     @llm_completion_callback()
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
@@ -463,6 +478,7 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> ChatResponse:
         """Predict and call the tool."""
@@ -481,6 +497,7 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         response = self.chat(
             messages,
             tools=tool_specs,
+            tool_choice=self._to_azure_tool_choice(tool_required),
             **kwargs,
         )
         if not allow_parallel_tool_calls:
@@ -494,6 +511,7 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> ChatResponse:
         """Predict and call the tool."""
@@ -512,6 +530,7 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         response = await self.achat(
             messages,
             tools=tool_specs,
+            tool_choice=self._to_azure_tool_choice(tool_required),
             **kwargs,
         )
         if not allow_parallel_tool_calls:
@@ -561,6 +580,7 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Prepare the arguments needed to let the LLM chat with tools."""
@@ -575,5 +595,6 @@ class AzureAICompletionsModel(FunctionCallingLLM):
         return {
             "messages": chat_history,
             "tools": tool_dicts or None,
+            "tool_choice": self._to_azure_tool_choice(tool_required),
             **kwargs,
         }

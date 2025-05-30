@@ -189,7 +189,7 @@ class Bedrock(LLM):
             session = boto3.Session(**session_kwargs)
         except ImportError:
             raise ImportError(
-                "boto3 package not found, install with" "'pip install boto3'"
+                "boto3 package not found, install with'pip install boto3'"
             )
 
         additional_kwargs = additional_kwargs or {}

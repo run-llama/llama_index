@@ -46,7 +46,7 @@ class GmailToolSpec(BaseToolSpec):
         """Load emails from the user's account."""
         self._cache_service()
 
-        return self.search_messages()
+        return self.search_messages(query="")
 
     def _get_credentials(self) -> Any:
         """
@@ -91,7 +91,7 @@ class GmailToolSpec(BaseToolSpec):
            Returns: List of relevant message objects up to the maximum number of results.
 
         Args:
-            query[str]: The user's query
+            query (str): The user's query
             max_results (Optional[int]): The maximum number of search results
             to return.
 
@@ -104,7 +104,7 @@ class GmailToolSpec(BaseToolSpec):
         messages = (
             self.service.users()
             .messages()
-            .list(userId="me", q=query, maxResults=int(max_results))
+            .list(userId="me", q=query or None, maxResults=int(max_results))
             .execute()
             .get("messages", [])
         )
@@ -114,8 +114,8 @@ class GmailToolSpec(BaseToolSpec):
             for message in messages:
                 message_data = self.get_message_data(message)
                 text = message_data.pop("body")
-                extra_info = message_data
-                results.append(Document(text=text, extra_info=extra_info))
+                metadata = message_data
+                results.append(Document(text=text, metadata=metadata))
         except Exception as e:
             raise Exception("Can't get message data" + str(e))
 
