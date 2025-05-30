@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-opea"
-version = "0.1.0"
+version = "0.1.1"
 description = "llama-index llms opea integration"
 authors = [{name = "Logan Markewich", email = "logan@runllama.ai"}]
 requires-python = ">=3.8.1,<4.0"
@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "llama-index-core>=0.11.0,<0.12",
-    "llama-index-llms-openai-like>=0.2.0,<0.3",
+    "llama-index-llms-openai-like>=0.4.0,<0.5",
 ]
 
 [tool.codespell]
