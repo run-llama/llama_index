@@ -155,3 +155,14 @@ class MutableMappingKVStore(Generic[MutableMappingT], BaseKVStore):
     async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
         """Delete a value from the store."""
         return self.delete(key, collection=collection)
+
+    @abstractmethod
+    def persist(
+        self, persist_path: str, fs: Optional[fsspec.AbstractFileSystem] = None
+    ) -> None:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def from_persist_path(cls, persist_path: str) -> "MutableMappingKVStore":
+        """Create a MutableMappingKVStore from a persist directory."""
