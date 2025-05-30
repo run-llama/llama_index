@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-openllm"
-version = "0.4.1"
+version = "0.4.2"
 description = "llama-index llms openllm integration"
 authors = [{name = "Aaron Pham", email = "aarnphm@bentoml.com"}]
 requires-python = ">=3.9,<4.0"

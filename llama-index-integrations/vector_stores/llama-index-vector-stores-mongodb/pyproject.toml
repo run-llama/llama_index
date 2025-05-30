@@ -29,7 +29,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-mongodb"
-version = "0.6.0"
+version = "0.6.1"
 description = "llama-index vector_stores mongodb integration"
 authors = [{name = "The MongoDB Python Team"}]
 requires-python = ">=3.9,<4.0"

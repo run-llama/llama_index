@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-fireworks"
-version = "0.3.0"
+version = "0.3.1"
 description = "llama-index embeddings fireworks integration"
 authors = [{name = "benjibc"}]
 requires-python = ">=3.9,<4.0"

@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-paieas"
-version = "0.3.1"
+version = "0.3.2"
 description = "llama-index llms aliyun paieas integration"
 authors = [{name = "ZhangXiaowen", email = "zxw320697@alibaba-inc.com"}]
 requires-python = ">=3.9,<4.0"

@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-pipeshift"
-version = "0.2.1"
+version = "0.2.2"
 description = "llama-index llms pipeshift integration"
 authors = [{name = "Pipeshift"}]
 requires-python = ">=3.9,<4.0"
