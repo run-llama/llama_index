@@ -39,7 +39,7 @@ keywords = [
     "retriever",
 ]
 dependencies = [
-    "llama-index-llms-openai>=0.3.0,<0.4",
+    "llama-index-llms-openai>=0.4.0,<0.5",
     "llama-index-core>=0.12.0,<0.13",
 ]
 

@@ -43,7 +43,7 @@ dependencies = [
     "llama-index-core>=0.12.0,<0.13",
     "llama-index-tools-arxiv>=0.3.0,<0.4",
     "llama-index-tools-wikipedia>=0.3.0,<0.4",
-    "llama-index-llms-openai>=0.3.0,<0.4",
+    "llama-index-llms-openai>=0.4.0,<0.5",
 ]
 
 [tool.codespell]

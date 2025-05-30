@@ -35,7 +35,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "openai>=1.14.0",
-    "llama-index-llms-openai>=0.3.0,<0.4",
+    "llama-index-llms-openai>=0.4.0,<0.5",
     "llama-index-core>=0.12.18,<0.13",
 ]
 
