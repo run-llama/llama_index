@@ -1,6 +1,7 @@
 import inspect
 from importlib import import_module
 from typing import (
+    Annotated,
     Any,
     Callable,
     Dict,
@@ -20,6 +21,7 @@ except ImportError:  # pragma: no cover
 
 from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
 
+from .resource import ResourceDefinition
 from .errors import WorkflowValidationError
 from .events import Event, EventType
 
@@ -55,6 +57,7 @@ class StepSignatureSpec(BaseModel):
     return_types: List[Any]
     context_parameter: Optional[str]
     requested_services: Optional[List[ServiceDefinition]]
+    resources: List[Any]
 
 
 def inspect_signature(fn: Callable) -> StepSignatureSpec:
@@ -79,11 +82,12 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
         raise TypeError(f"Expected a callable object, got {type(fn).__name__}")
 
     sig = inspect.signature(fn)
-    type_hints = get_type_hints(fn)
+    type_hints = get_type_hints(fn, include_extras=True)
 
     accepted_events: Dict[str, List[EventType]] = {}
     context_parameter = None
     requested_services = []
+    resources = []
 
     # Inspect function parameters
     for name, t in sig.parameters.items():
@@ -92,6 +96,10 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
             continue
 
         annotation = type_hints.get(name, t.annotation)
+        if get_origin(annotation) is Annotated:
+            base_type, resource = get_args(annotation)
+            resources.append(ResourceDefinition(name=name, resource=resource))
+            continue
 
         # Get name and type of the Context param
         if hasattr(annotation, "__name__") and annotation.__name__ == "Context":
@@ -124,6 +132,7 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
         return_types=_get_return_types(fn),
         context_parameter=context_parameter,
         requested_services=requested_services,
+        resources=resources,
     )
 
 
