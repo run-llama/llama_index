@@ -64,16 +64,8 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         self._persisted = persisted
 
         self.retriever = resolve_retriever(
-            self._client, self.project, name, retriever_id
+            self._client, self.project, name, retriever_id, persisted
         )
-
-        if not persisted:
-            self.retriever = Retriever(
-                id=str(uuid.uuid4()),
-                project_id=self.project.id,
-                name=self.name,
-                pipelines=[]
-            )
 
         if self.retriever is None and persisted:
             if create_if_not_exists:
