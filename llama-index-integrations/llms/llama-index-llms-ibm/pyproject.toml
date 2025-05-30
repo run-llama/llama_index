@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-ibm"
-version = "0.3.5"
+version = "0.4.0"
 description = "llama-index llms IBM watsonx.ai integration"
 authors = [{name = "IBM"}]
 requires-python = ">=3.10,<3.13"

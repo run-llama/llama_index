@@ -17,10 +17,12 @@ from typing import (
     Union,
     cast,
 )
-
 import google.generativeai as genai
+from google.generativeai.types import generation_types, FunctionDeclaration, ToolDict
+from google.generativeai.types.content_types import FunctionCallingMode
+
 import llama_index.core.instrumentation as instrument
-from google.generativeai.types import generation_types
+
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -352,20 +354,12 @@ class Gemini(FunctionCallingLLM):
 
         return gen()
 
-    def _prepare_chat_with_tools(
-        self,
-        tools: Sequence["BaseTool"],
-        user_msg: Optional[Union[str, ChatMessage]] = None,
-        chat_history: Optional[List[ChatMessage]] = None,
-        verbose: bool = False,
-        allow_parallel_tool_calls: bool = False,
-        tool_choice: Union[str, dict] = "auto",
-        strict: Optional[bool] = None,
-        **kwargs: Any,
-    ) -> Dict[str, Any]:
-        """Predict and call the tool."""
-        from google.generativeai.types import FunctionDeclaration, ToolDict
-        from google.generativeai.types.content_types import FunctionCallingMode
+    def _to_function_calling_config(
+        self, tool_required: bool, tool_choice: Optional[str]
+    ) -> dict:
+        if tool_choice and not isinstance(tool_choice, str):
+            raise ValueError("Gemini only supports string tool_choices")
+        tool_choice = tool_choice or ("any" if tool_required else "auto")
 
         if tool_choice == "auto":
             tool_mode = FunctionCallingMode.AUTO
@@ -374,28 +368,36 @@ class Gemini(FunctionCallingLLM):
         else:
             tool_mode = FunctionCallingMode.ANY
 
-        tool_config = {
-            "function_calling_config": {
-                "mode": tool_mode,
-            }
+        allowed_function_names = None
+        if tool_choice not in ["auto", "none", "any"]:
+            allowed_function_names = [tool_choice]
+        return {
+            "mode": tool_mode,
+            **(
+                {"allowed_function_names": allowed_function_names}
+                if allowed_function_names
+                else {}
+            ),
         }
 
-        if tool_choice not in ["auto", "none"]:
-            if isinstance(tool_choice, dict):
-                raise ValueError("Gemini does not support tool_choice as a dict")
-
-            # assume that the user wants a tool call to be made
-            # if the tool choice is not in the list of tools, then we will make a tool call to all tools
-            # otherwise, we will make a tool call to the tool choice
-            tool_names = [tool.metadata.name for tool in tools]
-            if tool_choice not in tool_names:
-                tool_config["function_calling_config"]["allowed_function_names"] = (
-                    tool_names
-                )
-            else:
-                tool_config["function_calling_config"]["allowed_function_names"] = [
-                    tool_choice
-                ]
+    def _prepare_chat_with_tools(
+        self,
+        tools: Sequence["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
+        tool_choice: Optional[Union[str, dict]] = None,
+        strict: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Predict and call the tool."""
+        tool_config = {
+            "function_calling_config": self._to_function_calling_config(
+                tool_required, tool_choice
+            ),
+        }
 
         tool_declarations = []
         for tool in tools:
@@ -474,11 +476,7 @@ class Gemini(FunctionCallingLLM):
         llm_kwargs = llm_kwargs or {}
 
         if self._is_function_call_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in llm_kwargs
-                else llm_kwargs["tool_choice"]
-            )
+            llm_kwargs["tool_required"] = True
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
         return super().structured_predict(
@@ -497,11 +495,7 @@ class Gemini(FunctionCallingLLM):
         llm_kwargs = llm_kwargs or {}
 
         if self._is_function_call_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in llm_kwargs
-                else llm_kwargs["tool_choice"]
-            )
+            llm_kwargs["tool_required"] = True
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
         return await super().astructured_predict(
@@ -520,11 +514,7 @@ class Gemini(FunctionCallingLLM):
         llm_kwargs = llm_kwargs or {}
 
         if self._is_function_call_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in llm_kwargs
-                else llm_kwargs["tool_choice"]
-            )
+            llm_kwargs["tool_required"] = True
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
         return super().stream_structured_predict(
@@ -543,11 +533,7 @@ class Gemini(FunctionCallingLLM):
         llm_kwargs = llm_kwargs or {}
 
         if self._is_function_call_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in llm_kwargs
-                else llm_kwargs["tool_choice"]
-            )
+            llm_kwargs["tool_required"] = True
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
         return await super().astream_structured_predict(
