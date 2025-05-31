@@ -12,6 +12,7 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.tools import FunctionTool
+from llama_index.core.agent.workflow import AgentWorkflow, FunctionAgent
 from PIL import Image
 import io
 import numpy as np
@@ -21,7 +22,7 @@ EXP_RESPONSE = "Test"
 EXP_STREAM_RESPONSE = ["Test ", "value"]
 EXP_MAX_TOKENS = 100
 EXP_TEMPERATURE = 0.7
-EXP_MODEL = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+EXP_MODEL = "us.anthropic.claude-sonnet-4-20250514-v1:0"
 EXP_APP_INF_PROFILE_ARN = "arn:aws:bedrock:us-east-1:012345678901:application-inference-profile/test-profile-name"
 EXP_GUARDRAIL_ID = "IDENTIFIER"
 EXP_GUARDRAIL_VERSION = "DRAFT"
@@ -466,3 +467,60 @@ def test_prepare_chat_with_tools_custom_tool_choice(bedrock_converse):
     assert "tools" in result
     assert "toolChoice" in result["tools"]
     assert result["tools"]["toolChoice"] == custom_tool_choice
+
+
+# Integration test for reproducing the empty text field error
+def get_temperature(location: str) -> float:
+    """
+    A tool that returns the temperature of a given location.
+
+    Args:
+        location: The location to get the temperature for.
+
+    Returns:
+        The temperature of the location in Celsius.
+
+    """
+    return 18.0
+
+
+@needs_aws_creds
+@pytest.mark.asyncio
+async def test_bedrock_converse_agent_workflow_empty_text_error(
+    bedrock_converse_integration,
+):
+    """
+    Test that reproduces the empty text field error when BedrockConverse
+    calls tools without outputting any text in AgentWorkflow.
+
+    This test reproduces the issue described in:
+    https://github.com/run-llama/llama_index/issues/18449
+    """
+    get_temperature_tool = FunctionTool.from_defaults(
+        name="get_temperature",
+        description="A tool that returns the temperature of a given location.",
+        fn=get_temperature,
+    )
+    agent = FunctionAgent(
+        name="weather_agent",
+        tools=[get_temperature_tool],
+        llm=bedrock_converse_integration,
+        system_prompt="You are a helpful assistant that helps users with their queries about the weather.",
+    )
+    workflow = AgentWorkflow(agents=[agent])
+
+    try:
+        response = await workflow.run(
+            user_msg="Sort the temperatures of the following locations: Paris, London, Lisbon, Madrid, and Rome."
+        )
+        assert response is not None
+
+    except Exception as e:
+        error_msg = str(e)
+        if (
+            "The text field in the ContentBlock object" in error_msg
+            and "is blank" in error_msg
+        ):
+            pytest.fail(f"Empty text field error occurred: {error_msg}")
+        else:
+            raise
