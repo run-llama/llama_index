@@ -179,6 +179,7 @@ class OpenAI(FunctionCallingLLM):
     )
     max_tokens: Optional[int] = Field(
         description="The maximum number of tokens to generate.",
+        default=None,
         gt=0,
     )
     logprobs: Optional[bool] = Field(
@@ -215,9 +216,13 @@ class OpenAI(FunctionCallingLLM):
         ),
     )
 
-    api_key: str = Field(default=None, description="The OpenAI API key.")
-    api_base: str = Field(description="The base URL for OpenAI API.")
-    api_version: str = Field(description="The API version for OpenAI API.")
+    api_key: Optional[str] = Field(default=None, description="The OpenAI API key.")
+    api_base: Optional[str] = Field(
+        default=None, description="The base URL for OpenAI API."
+    )
+    api_version: Optional[str] = Field(
+        default=None, description="The API version for OpenAI API."
+    )
     strict: bool = Field(
         default=False,
         description="Whether to use strict mode for invoking tools/using schemas.",
