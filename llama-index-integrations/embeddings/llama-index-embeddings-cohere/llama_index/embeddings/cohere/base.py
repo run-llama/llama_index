@@ -117,6 +117,9 @@ VALID_TRUNCATE_OPTIONS = [CAT.START, CAT.END, CAT.NONE]
 # supported image formats
 SUPPORTED_IMAGE_FORMATS = {"png", "jpeg", "jpg", "webp", "gif"}
 
+# Maximum batch size for Cohere API
+MAX_EMBED_BATCH_SIZE = 96
+
 
 # Assuming BaseEmbedding is a Pydantic model and handles its own initializations
 class CohereEmbedding(MultiModalEmbedding):
@@ -171,6 +174,8 @@ class CohereEmbedding(MultiModalEmbedding):
                                     'search_document', 'classification', or 'clustering'.
             model_name (str): The name of the model to be used for generating embeddings. The class ensures that
                           this model is supported and that the input type provided is compatible with the model.
+            embed_batch_size (int): The batch size for embedding generation. Maximum allowed value is 96 (MAX_EMBED_BATCH_SIZE)
+                                   due to Cohere API limitations. Defaults to DEFAULT_EMBED_BATCH_SIZE.
 
         """
         # Validate model_name and input_type
@@ -188,6 +193,12 @@ class CohereEmbedding(MultiModalEmbedding):
 
         if truncate not in VALID_TRUNCATE_OPTIONS:
             raise ValueError(f"truncate must be one of {VALID_TRUNCATE_OPTIONS}")
+
+        # Validate embed_batch_size
+        if embed_batch_size > MAX_EMBED_BATCH_SIZE:
+            raise ValueError(
+                f"embed_batch_size {embed_batch_size} exceeds the maximum allowed value of {MAX_EMBED_BATCH_SIZE} for Cohere API"
+            )
 
         super().__init__(
             api_key=api_key or cohere_api_key,
