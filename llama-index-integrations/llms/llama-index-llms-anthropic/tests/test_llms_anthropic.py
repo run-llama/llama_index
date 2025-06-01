@@ -256,6 +256,15 @@ def test_tool_required():
     # Should not use tools for a simple greeting
     assert not response.message.additional_kwargs.get("tool_calls")
 
+    # should not blow up with no tools (regression test)
+    response = llm.chat_with_tools(
+        user_msg="Say hello!",
+        tools=[],
+        tool_required=False,
+    )
+    assert isinstance(response, AnthropicChatResponse)
+    assert not response.message.additional_kwargs.get("tool_calls")
+
 
 @pytest.mark.skipif(
     os.getenv("ANTHROPIC_API_KEY") is None,
@@ -338,3 +347,13 @@ def test_prepare_chat_with_tools_tool_not_required():
     assert result["tool_choice"]["type"] == "auto"
     assert len(result["tools"]) == 1
     assert result["tools"][0]["name"] == "search_tool"
+
+
+def test_prepare_chat_with_no_tools_tool_not_required():
+    """Test that tool_required is correctly passed to the API request when False."""
+    llm = Anthropic()
+
+    result = llm._prepare_chat_with_tools(tools=[])
+
+    assert "tool_choice" not in result
+    assert len(result["tools"]) == 0

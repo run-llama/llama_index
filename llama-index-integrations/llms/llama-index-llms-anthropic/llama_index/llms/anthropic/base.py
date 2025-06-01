@@ -681,12 +681,21 @@ class Anthropic(FunctionCallingLLM):
             ):
                 tool_dicts[-1]["cache_control"] = {"type": "ephemeral"}
 
+        # anthropic doesn't like you specifying a tool choice if you don't have any tools
+        tool_choice_dict = (
+            {}
+            if not tools and not tool_required
+            else {
+                "tool_choice": self._map_tool_choice_to_anthropic(
+                    tool_required, allow_parallel_tool_calls
+                )
+            }
+        )
+
         return {
             "messages": chat_history,
             "tools": tool_dicts,
-            "tool_choice": self._map_tool_choice_to_anthropic(
-                tool_required, allow_parallel_tool_calls
-            ),
+            **tool_choice_dict,
             **kwargs,
         }
 
