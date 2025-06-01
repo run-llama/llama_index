@@ -411,7 +411,7 @@ class OpenAIResponses(FunctionCallingLLM):
 
         if self.model in O1_MODELS and self.reasoning_effort is not None:
             # O1 models support reasoning_effort of low, medium, high
-            model_kwargs["reasoning_effort"] = {"effort": self.reasoning_effort}
+            model_kwargs["reasoning"] = {"effort": self.reasoning_effort}
 
         # priority is class args > additional_kwargs > runtime args
         model_kwargs.update(self.additional_kwargs)
