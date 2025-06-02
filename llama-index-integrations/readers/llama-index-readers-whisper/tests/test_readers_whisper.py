@@ -60,7 +60,7 @@ def test_load_data_file():
 
 
 @pytest.mark.skipif(not OPENAI_AVAILABLE, reason="OpenAI API key not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_load_data_async_bytes():
     reader = WhisperReader(model="whisper-1")
     audio_bytes = requests.get(AUDIO_URL).content

@@ -22,7 +22,8 @@ dispatcher = instrument.get_dispatcher(__name__)
 
 
 class VectorIndexRetriever(BaseRetriever):
-    """Vector index retriever.
+    """
+    Vector index retriever.
 
     Args:
         index (VectorStoreIndex): vector store index.

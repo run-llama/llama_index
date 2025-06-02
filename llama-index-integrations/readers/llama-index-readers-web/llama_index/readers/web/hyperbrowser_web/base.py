@@ -20,7 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 class HyperbrowserWebReader(BaseReader):
-    """Hyperbrowser Web Reader.
+    """
+    Hyperbrowser Web Reader.
 
     Scrape or crawl web pages with optional parameters for configuring content extraction.
     Requires the `hyperbrowser` package.
@@ -28,6 +29,7 @@ class HyperbrowserWebReader(BaseReader):
 
     Args:
         api_key: The Hyperbrowser API key, can be set as an environment variable `HYPERBROWSER_API_KEY` or passed directly
+
     """
 
     def __init__(self, api_key: Optional[str] = None):
@@ -89,12 +91,14 @@ class HyperbrowserWebReader(BaseReader):
         operation: Literal["scrape", "crawl"] = "scrape",
         params: Optional[Dict] = {},
     ) -> Iterable[Document]:
-        """Lazy load documents.
+        """
+        Lazy load documents.
 
         Args:
             urls: List of URLs to scrape or crawl
             operation: Operation to perform. Can be "scrape" or "crawl"
             params: Optional params for scrape or crawl. For more information on the supported params, visit https://docs.hyperbrowser.ai/reference/sdks/python/scrape#start-scrape-job-and-wait or https://docs.hyperbrowser.ai/reference/sdks/python/crawl#start-crawl-job-and-wait
+
         """
         try:
             from hyperbrowser.models.scrape import StartScrapeJobParams
@@ -135,12 +139,14 @@ class HyperbrowserWebReader(BaseReader):
         operation: Literal["scrape", "crawl"] = "scrape",
         params: Optional[Dict] = {},
     ) -> AsyncIterable[Document]:
-        """Async lazy load documents.
+        """
+        Async lazy load documents.
 
         Args:
             urls: List of URLs to scrape or crawl
             operation: Operation to perform. Can be "scrape" or "crawl"
             params: Optional params for scrape or crawl. For more information on the supported params, visit https://docs.hyperbrowser.ai/reference/sdks/python/scrape#start-scrape-job-and-wait or https://docs.hyperbrowser.ai/reference/sdks/python/crawl#start-crawl-job-and-wait
+
         """
         try:
             from hyperbrowser.models.scrape import StartScrapeJobParams

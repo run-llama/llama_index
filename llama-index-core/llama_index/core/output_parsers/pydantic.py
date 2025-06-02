@@ -16,7 +16,8 @@ Output a valid JSON object but do not repeat the schema.
 
 
 class PydanticOutputParser(ChainableOutputParser, Generic[Model]):
-    """Pydantic Output Parser.
+    """
+    Pydantic Output Parser.
 
     Args:
         output_cls (BaseModel): Pydantic output class.

@@ -138,10 +138,18 @@ class OpensearchVectorClient:
                         index=self._index, body=idx_conf
                     )
                 )
-                asyncio_run(self._os_async_client.indices.refresh(index=self._index))
+                if self.is_aoss:
+                    asyncio_run(self._os_async_client.indices.exists(index=self._index))
+                else:
+                    asyncio_run(
+                        self._os_async_client.indices.refresh(index=self._index)
+                    )
         except not_found_error:
             self._os_client.indices.create(index=self._index, body=idx_conf)
-            self._os_client.indices.refresh(index=self._index)
+            if self.is_aoss:
+                self._os_client.indices.exists(index=self._index)
+            else:
+                self._os_client.indices.refresh(index=self._index)
 
     def _import_opensearch(self) -> Any:
         """Import OpenSearch if available, otherwise raise error."""
@@ -340,7 +348,8 @@ class OpensearchVectorClient:
         return query
 
     def _is_text_field(self, value: Any) -> bool:
-        """Check if value is a string and keyword filtering needs to be performed.
+        """
+        Check if value is a string and keyword filtering needs to be performed.
 
         Not applied to datetime strings.
         """
@@ -354,7 +363,8 @@ class OpensearchVectorClient:
             return False
 
     def _parse_filter(self, filter: MetadataFilter) -> dict:
-        """Parse a single MetadataFilter to equivalent OpenSearch expression.
+        """
+        Parse a single MetadataFilter to equivalent OpenSearch expression.
 
         As Opensearch does not differentiate between scalar/array keyword fields, IN and ANY are equivalent.
         """
@@ -400,6 +410,8 @@ class OpensearchVectorClient:
             return {"match": {key: {"query": filter.value, "fuzziness": "AUTO"}}}
         elif op == FilterOperator.CONTAINS:
             return {"wildcard": {key: f"*{filter.value}*"}}
+        elif op == FilterOperator.IS_EMPTY:
+            return {"bool": {"must_not": {"exists": {"field": key}}}}
         else:
             raise ValueError(f"Unsupported filter operator: {filter.operator}")
 
@@ -456,6 +468,7 @@ class OpensearchVectorClient:
 
         Returns:
             Dict: Up to k documents closest to query_embedding.
+
         """
         filters = self._parse_filters(filters)
 
@@ -545,7 +558,8 @@ class OpensearchVectorClient:
     def __get_painless_scripting_source(
         self, space_type: str, vector_field: str = "embedding"
     ) -> str:
-        """For Painless Scripting, it returns the script source based on space type.
+        """
+        For Painless Scripting, it returns the script source based on space type.
         This does not work with Opensearch Serverless currently.
         """
         source_value = (
@@ -586,7 +600,8 @@ class OpensearchVectorClient:
         pre_filter: Optional[Union[Dict, List]] = None,
         vector_field: str = "embedding",
     ) -> Dict:
-        """For Scoring Script Search, this is the default query. Has to account for Opensearch Service
+        """
+        For Scoring Script Search, this is the default query. Has to account for Opensearch Service
         Serverless which does not support painless scripting functions so defaults to knn_score.
         """
         if not pre_filter:
@@ -617,13 +632,11 @@ class OpensearchVectorClient:
 
     def _is_aoss_enabled(self, http_auth: Any) -> bool:
         """Check if the service is http_auth is set as `aoss`."""
-        if (
+        return (
             http_auth is not None
             and hasattr(http_auth, "service")
             and http_auth.service == "aoss"
-        ):
-            return True
-        return False
+        )
 
     def _is_efficient_filtering_enabled(self) -> bool:
         """Check if kNN with efficient filtering is enabled."""
@@ -696,6 +709,7 @@ class OpensearchVectorClient:
 
         Args:
             doc_id (str): a LlamaIndex `Document` id
+
         """
         search_query = {
             "query": {"term": {"metadata.doc_id.keyword": {"value": doc_id}}}
@@ -710,6 +724,7 @@ class OpensearchVectorClient:
 
         Args:
             doc_id (str): a LlamaIndex `Document` id
+
         """
         search_query = {
             "query": {"term": {"metadata.doc_id.keyword": {"value": doc_id}}}
@@ -724,11 +739,13 @@ class OpensearchVectorClient:
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes.
+        """
+        Deletes nodes.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+
         """
         if not node_ids and not filters:
             return
@@ -748,11 +765,13 @@ class OpensearchVectorClient:
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes.
+        """
+        Deletes nodes.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+
         """
         if not node_ids and not filters:
             return
@@ -888,7 +907,6 @@ class OpensearchVectorClient:
                     start_char_idx=start_char_idx,
                     end_char_idx=end_char_idx,
                     relationships=relationships,
-                    extra_info=source,
                 )
             ids.append(node_id)
             nodes.append(node)
@@ -933,6 +951,7 @@ class OpensearchVectorStore(BasePydanticVectorStore):
         # initialize vector store
         vector_store = OpensearchVectorStore(client)
         ```
+
     """
 
     stores_text: bool = True
@@ -1007,11 +1026,13 @@ class OpensearchVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes async.
+        """
+        Deletes nodes async.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+
         """
         self._client.delete_nodes(node_ids, filters, **delete_kwargs)
 
@@ -1021,11 +1042,13 @@ class OpensearchVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Async deletes nodes async.
+        """
+        Async deletes nodes async.
 
         Args:
             node_ids (Optional[List[str]], optional): IDs of nodes to delete. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+
         """
         await self._client.adelete_nodes(node_ids, filters, **delete_kwargs)
 

@@ -18,7 +18,8 @@ lock = threading.Lock()
 
 @pytest.fixture(scope="session")
 def documents() -> List[Document]:
-    """List of documents represents data to be embedded in the datastore.
+    """
+    List of documents represents data to be embedded in the datastore.
     Minimum requirements for Documents in the /upsert endpoint's UpsertRequest.
     """
     text = Document.example().text

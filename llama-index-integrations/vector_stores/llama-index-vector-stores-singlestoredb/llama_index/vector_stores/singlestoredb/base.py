@@ -239,6 +239,7 @@ class SingleStoreVectorStore(BasePydanticVectorStore):
 
         Returns:
             VectorStoreQueryResult: Contains nodes, similarities, and ids attributes.
+
         """
         query_embedding = query.query_embedding
         similarity_top_k = query.similarity_top_k

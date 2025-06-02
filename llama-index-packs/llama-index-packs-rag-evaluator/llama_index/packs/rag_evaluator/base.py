@@ -31,12 +31,14 @@ from tqdm.asyncio import tqdm_asyncio
 
 
 class RagEvaluatorPack(BaseLlamaPack):
-    """A pack for performing evaluation with your own RAG pipeline.
+    """
+    A pack for performing evaluation with your own RAG pipeline.
 
     Args:
         query_engine: The RAG pipeline to evaluate.
         rag_dataset: The BaseLlamaDataset to evaluate on.
         judge_llm: The LLM to use as the evaluator.
+
     """
 
     def __init__(
@@ -125,7 +127,8 @@ class RagEvaluatorPack(BaseLlamaPack):
         return judges
 
     async def _areturn_null_eval_result(self, query) -> EvaluationResult:
-        """A dummy async method that returns None.
+        """
+        A dummy async method that returns None.
 
         NOTE: this is used to handle case when creating async tasks for evaluating
         predictions where contexts do not exist.
@@ -135,7 +138,8 @@ class RagEvaluatorPack(BaseLlamaPack):
         )
 
     def _return_null_eval_result(self, query) -> EvaluationResult:
-        """A dummy async method that returns None.
+        """
+        A dummy async method that returns None.
 
         NOTE: this is used to handle case when creating async tasks for evaluating
         predictions where contexts do not exist.
@@ -325,9 +329,10 @@ class RagEvaluatorPack(BaseLlamaPack):
         """Batches examples and predictions with a given batch_size."""
         assert self._num_examples == len(predictions)
         for ndx in range(start_position, self._num_examples, batch_size):
-            yield examples[
-                ndx : min(ndx + batch_size, self._num_examples)
-            ], predictions[ndx : min(ndx + batch_size, self._num_examples)]
+            yield (
+                examples[ndx : min(ndx + batch_size, self._num_examples)],
+                predictions[ndx : min(ndx + batch_size, self._num_examples)],
+            )
 
     async def _amake_evaluations(self, batch_size, sleep_time_in_seconds):
         """Async make evaluations."""

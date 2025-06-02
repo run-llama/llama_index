@@ -5,9 +5,21 @@ from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageR
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.tools.types import BaseTool
+from llama_index.core.tools import FunctionTool
 from llama_index.llms.oci_data_science import OCIDataScience
 from llama_index.llms.oci_data_science.base import OCIDataScience
 from llama_index.llms.oci_data_science.client import AsyncClient, Client
+
+
+# Shared tool for testing
+def search(query: str) -> str:
+    """Search for information about a query."""
+    return f"Results for {query}"
+
+
+search_tool = FunctionTool.from_defaults(
+    fn=search, name="search_tool", description="A tool for searching information"
+)
 
 
 def test_embedding_class():
@@ -207,31 +219,100 @@ def test_prepare_chat_with_tools(llm):
 
 
 def test_get_tool_calls_from_response(llm):
-    tool_call = {
-        "type": "function",
-        "id": "123",
-        "function": {
-            "name": "multiply",
-            "arguments": '{"a": 2, "b": 3}',
-        },
+    response_data = {
+        "choices": [
+            {
+                "message": {
+                    "role": "assistant",
+                    "content": "",
+                    "tool_calls": [
+                        {
+                            "id": "call_abc123",
+                            "type": "function",
+                            "function": {
+                                "name": "search",
+                                "arguments": '{"query": "test"}',
+                            },
+                        }
+                    ],
+                }
+            }
+        ]
     }
     response = ChatResponse(
         message=ChatMessage(
             role=MessageRole.ASSISTANT,
             content="",
-            additional_kwargs={"tool_calls": [tool_call]},
-        ),
-        raw={},
+            additional_kwargs=response_data["choices"][0]["message"],
+        )
     )
 
-    tool_selections = llm.get_tool_calls_from_response(response)
+    tool_calls = llm.get_tool_calls_from_response(response)
+    assert len(tool_calls) == 1
+    assert tool_calls[0].tool_name == "search"
+    assert tool_calls[0].tool_kwargs == {"query": "test"}
 
-    assert len(tool_selections) == 1
-    assert tool_selections[0].tool_name == "multiply"
-    assert tool_selections[0].tool_kwargs == {"a": 2, "b": 3}
+
+def test_resolve_tool_choice_tool_required():
+    """Test that tool_required=True correctly sets tool_choice to 'required'."""
+    from llama_index.llms.oci_data_science.utils import _resolve_tool_choice
+
+    # Test with tool_required=True and no explicit tool_choice
+    result = _resolve_tool_choice(tool_choice=None, tool_required=True)
+    assert result == "required"
+
+    # Test with tool_required=False and no explicit tool_choice
+    result = _resolve_tool_choice(tool_choice=None, tool_required=False)
+    assert result == "auto"
+
+    # Test that explicit tool_choice overrides tool_required
+    result = _resolve_tool_choice(tool_choice="none", tool_required=True)
+    assert result == "none"
 
 
-@pytest.mark.asyncio()
+def test_prepare_chat_with_tools_tool_required(llm):
+    """Test that tool_required correctly influences the tool_choice in _prepare_chat_with_tools."""
+    user_msg = "Search for information about Python"
+
+    # Test with tool_required=True
+    result = llm._prepare_chat_with_tools(
+        tools=[search_tool], user_msg=user_msg, tool_required=True
+    )
+
+    assert result["tool_choice"] == "required"
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["function"]["name"] == "search_tool"
+
+
+def test_prepare_chat_with_tools_tool_not_required(llm):
+    """Test that tool_required=False correctly sets tool_choice to 'auto'."""
+    user_msg = "Search for information about Python"
+
+    # Test with tool_required=False (default)
+    result = llm._prepare_chat_with_tools(
+        tools=[search_tool], user_msg=user_msg, tool_required=False
+    )
+
+    assert result["tool_choice"] == "auto"
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["function"]["name"] == "search_tool"
+
+
+def test_prepare_chat_with_tools_explicit_tool_choice_overrides_tool_required(llm):
+    """Test that explicit tool_choice parameter overrides tool_required."""
+    user_msg = "Search for information about Python"
+
+    # Test that explicit tool_choice overrides tool_required=True
+    result = llm._prepare_chat_with_tools(
+        tools=[search_tool], user_msg=user_msg, tool_required=True, tool_choice="none"
+    )
+
+    assert result["tool_choice"] == "none"
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["function"]["name"] == "search_tool"
+
+
+@pytest.mark.asyncio
 async def test_acomplete_success(llm):
     prompt = "What is the capital of France?"
     response_data = {
@@ -256,7 +337,7 @@ async def test_acomplete_success(llm):
     assert response.additional_kwargs["total_tokens"] == 12
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete(llm):
     prompt = "Once upon a time"
 
@@ -282,7 +363,7 @@ async def test_astream_complete(llm):
     assert responses[-1].text == "Once upon a time."
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat_success(llm):
     messages = [ChatMessage(role=MessageRole.USER, content="Tell me a joke.")]
     response_data = {
@@ -313,7 +394,7 @@ async def test_achat_success(llm):
     assert response.additional_kwargs["total_tokens"] == 25
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat(llm):
     messages = [ChatMessage(role=MessageRole.USER, content="Tell me a joke.")]
 

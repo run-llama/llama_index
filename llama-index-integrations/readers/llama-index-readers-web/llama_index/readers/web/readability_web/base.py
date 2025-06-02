@@ -21,7 +21,8 @@ def async_to_sync(awaitable):
 
 
 class ReadabilityWebPageReader(BaseReader):
-    """Readability Webpage Loader.
+    """
+    Readability Webpage Loader.
 
     Extracting relevant information from a fully rendered web page.
     During the processing, it is always assumed that web pages used as data sources contain textual content.
@@ -34,6 +35,7 @@ class ReadabilityWebPageReader(BaseReader):
         wait_until (Optional[Literal["commit", "domcontentloaded", "load", "networkidle"]], optional): Wait until the page is loaded. Defaults to "domcontentloaded".
         text_splitter (TextSplitter, optional): Text splitter. Defaults to None.
         normalizer (Optional[Callable[[str], str]], optional): Text normalizer. Defaults to nfkc_normalize.
+
     """
 
     def __init__(
@@ -58,7 +60,8 @@ class ReadabilityWebPageReader(BaseReader):
         self._readability_js = None
 
     async def async_load_data(self, url: str) -> List[Document]:
-        """Render and load data content from url.
+        """
+        Render and load data content from url.
 
         Args:
             url (str): URL to scrape.
@@ -109,7 +112,8 @@ class ReadabilityWebPageReader(BaseReader):
         browser: Browser,
         url: str,
     ) -> Dict[str, str]:
-        """Scrape a single article url.
+        """
+        Scrape a single article url.
 
         Args:
             browser (Any): a Playwright Chromium browser.

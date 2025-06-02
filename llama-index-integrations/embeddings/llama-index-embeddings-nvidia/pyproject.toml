@@ -14,8 +14,7 @@ dev = [
     "pytest-asyncio>=0.23.6,<0.24",
     "pytest-mock==3.11.1",
     "respx>=0.21.1,<0.22",
-    "ruff==0.0.292",
-    "tree-sitter-languages>=1.8.0,<2",
+    "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-protobuf>=4.24.0.4,<5",
@@ -25,6 +24,10 @@ dev = [
     "black[jupyter]<=23.9.1,>=23.7.0",
     "codespell[toml]>=v2.2.6",
     "openai>=1.76.0",
+    "diff-cover>=9.2.0",
+    "pytest-cov>=6.1.1",
+    "pytest-httpx",
+    "requests-mock>=1.12.1,<2",
 ]
 test_integration = [
     "pytest-httpx",

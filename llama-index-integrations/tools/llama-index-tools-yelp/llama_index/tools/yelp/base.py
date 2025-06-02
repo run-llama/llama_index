@@ -59,6 +59,7 @@ class YelpToolSpec(BaseToolSpec):
 
         Args:
             # The id
+
         """
         response = self.client.reviews_query(id=id)
         return [Document(text=str(response))]

@@ -31,6 +31,14 @@ jobs:
       - name: Build and publish to pypi
         run: uv build && uv publish --token ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}
 
+      - name: Generate Release Notes
+        uses: CSchoel/release-notes-from-changelog@v1
+        with:
+          version: "$(date +'%Y-%m-%d')"
+          begin-pattern: "/^## \\[$(date +'%Y-%m-%d')\\]/"
+          end-pattern: "/^## \\[/"
+          working-directory: "."
+
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
@@ -39,6 +47,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: ${{ github.ref }}
+          body_path: "RELEASE.md"
           draft: false
           prerelease: false
 

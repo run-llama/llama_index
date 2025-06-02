@@ -16,7 +16,7 @@ jobs:
         uses: astral-sh/setup-uv@v6
 
       - name: Set up Python
-        run: uv python install
+        run: uv python install 3.12
 
       - name: Run linter
         shell: bash

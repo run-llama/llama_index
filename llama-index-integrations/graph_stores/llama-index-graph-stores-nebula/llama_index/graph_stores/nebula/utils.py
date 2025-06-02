@@ -8,11 +8,14 @@ def url_scheme_parse(url) -> Tuple[str, int]:
     """
     Parse the URL scheme and host from the URL.
 
-    Parameters:
+    Parameters
+    ----------
     url (str): The URL to parse. i.e. nebula://localhost:9669
 
-    Returns:
+    Returns
+    -------
     Tuple[str, int]: A tuple containing the address and port.
+
     """
     scheme, address = url.split("://")
     if scheme not in ["nebula", "nebula3"]:
@@ -31,11 +34,14 @@ def remove_empty_values(input_dict):
     """
     Remove entries with empty values from the dictionary.
 
-    Parameters:
+    Parameters
+    ----------
     input_dict (dict): The dictionary from which empty values need to be removed.
 
-    Returns:
+    Returns
+    -------
     dict: A new dictionary with all empty values removed.
+
     """
     # Create a new dictionary excluding empty values
     return {key: value for key, value in input_dict.items() if value}
@@ -57,7 +63,8 @@ def build_param_map(params: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _cast_value(value: Any) -> Value:
-    """Cast the value to nebula Value type.
+    """
+    Cast the value to nebula Value type.
 
     ref: https://github.com/vesoft-inc/nebula/blob/master/src/common/datatypes/Value.cpp
     :param value: the value to be casted
@@ -109,16 +116,19 @@ def _cast_value(value: Any) -> Value:
 
 
 def deduce_property_types_from_values(
-    property_values: Dict[str, Any]
+    property_values: Dict[str, Any],
 ) -> Dict[str, str]:
     """
     Deduce the data types of properties for NebulaGraph DDL based on the property values.
 
-    Parameters:
+    Parameters
+    ----------
     property_values (dict): The properties of the tag.
 
-    Returns:
+    Returns
+    -------
     dict: A dictionary mapping property names to their deduced data types.
+
     """
     property_type_mapping = {}
     for property_name, value in property_values.items():
@@ -139,12 +149,15 @@ def generate_ddl_create_tag(tag_name: str, properties: Dict[str, Any]) -> str:
     """
     Generate the DDL to create a NebulaGraph tag.
 
-    Parameters:
+    Parameters
+    ----------
     tag_name (str): The name of the tag.
     properties (dict): The properties of the tag.
 
-    Returns:
+    Returns
+    -------
     str: The DDL string.
+
     """
     # infer properties type in NebulaGraph DDL
     property_type_map = deduce_property_types_from_values(properties)
@@ -169,14 +182,17 @@ def generate_ddl_alter_tag(
     """
     Generate the DDL to alter a NebulaGraph tag.
 
-    Parameters:
+    Parameters
+    ----------
     tag_name (str): The name of the tag.
     existing_property_type_map (dict): The existing properties of the tag.
     new_properties (dict): The new properties to add to the tag.
     perform_prop_drop_if_missing (bool): Whether to drop properties that are not in the new properties.
 
-    Returns:
+    Returns
+    -------
     str: The DDL string.
+
     """
     # infer properties type in NebulaGraph DDL
     new_property_type_map = deduce_property_types_from_values(new_properties)
@@ -226,14 +242,17 @@ def ensure_node_meta_schema(
     """
     Ensure the meta schema for the node label is present.
 
-    Parameters:
+    Parameters
+    ----------
     label (str): The node label.
     structured_schema (dict): The structured schema of the graph.
     client (BaseExecutor): The Nebula Graph client.
     node_props (dict): The properties of the node.
 
-    Returns:
+    Returns
+    -------
     bool: Whether the meta schema is mutated.
+
     """
     if not structured_schema:
         raise ValueError("structured_schema cannot be empty.")
@@ -267,7 +286,8 @@ def ensure_relation_meta_schema(
     """
     Ensure the meta schema for the relation type is present.
 
-    Parameters:
+    Parameters
+    ----------
     src_id (str): The source node id.
     dst_id (str): The destination node id.
     rel_type (str): The relation type.
@@ -275,8 +295,10 @@ def ensure_relation_meta_schema(
     client (BaseExecutor): The Nebula Graph client.
     edge_props (dict): The properties of the edge.
 
-    Returns:
+    Returns
+    -------
     bool: Whether the meta schema is mutated.
+
     """
     if not structured_schema:
         raise ValueError("structured_schema cannot be empty.")
@@ -300,9 +322,9 @@ def ensure_relation_meta_schema(
             )
         id_to_label = {}
         for row_index in range(result.row_size()):
-            id_to_label[
-                result.row_values(row_index)[0].cast_primitive()
-            ] = result.row_values(row_index)[1].cast_primitive()
+            id_to_label[result.row_values(row_index)[0].cast_primitive()] = (
+                result.row_values(row_index)[1].cast_primitive()
+            )
 
         source_label, dest_label = id_to_label[src_id], id_to_label[dst_id]
 

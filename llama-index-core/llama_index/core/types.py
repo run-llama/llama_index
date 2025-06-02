@@ -101,7 +101,8 @@ class BaseOutputParser(DispatcherSpanMixin, ABC):
 
 
 class BasePydanticProgram(DispatcherSpanMixin, ABC, Generic[Model]):
-    """A base class for LLM-powered function that return a pydantic model.
+    """
+    A base class for LLM-powered function that return a pydantic model.
 
     Note: this interface is not yet stable.
     """
@@ -157,7 +158,7 @@ class Thread(threading.Thread):
         args: Tuple[Any, ...] = (),
         kwargs: Optional[Dict[str, Any]] = None,
         *,
-        daemon: Optional[bool] = None
+        daemon: Optional[bool] = None,
     ) -> None:
         if target is not None:
             args = (

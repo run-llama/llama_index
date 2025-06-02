@@ -18,7 +18,7 @@ as the storage backend for `VectorStoreIndex`.
 - Azure AI Search (`AzureAISearchVectorStore`). [Quickstart](https://learn.microsoft.com/en-us/azure/search/search-get-started-vector)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
 - ClickHouse (`ClickHouseVectorStore`) [Installation](https://clickhouse.com/docs/en/install)
-- Couchbase (`CouchbaseVectorStore`) [Installation](https://www.couchbase.com/products/capella/)
+- Couchbase (`CouchbaseSearchVectorStore`) [Installation](https://www.couchbase.com/products/capella/)
 - DashVector (`DashVectorStore`). [Installation](https://help.aliyun.com/document_detail/2510230.html).
 - DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
 - DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
@@ -291,7 +291,7 @@ cluster = Cluster("CLUSTER_CONNECTION_STRING", options)
 cluster.wait_until_ready(timedelta(seconds=5))
 
 # Create the Vector Store
-vector_store = CouchbaseVectorStore(
+vector_store = CouchbaseSearchVectorStore(
     cluster=cluster,
     bucket_name="BUCKET_NAME",
     scope_name="SCOPE_NAME",
@@ -413,6 +413,13 @@ faiss_index = faiss.IndexFlatL2(d)
 
 # construct vector store
 vector_store = FaissVectorStore(faiss_index)
+
+# if update/delete functionality is needed you can leverage the FaissMapVectorStore
+
+d = 1536
+faiss_index = faiss.IndexFlatL2(d)
+id_map_index = faiss.IndexIDMap2(faiss_index)
+vector_store = FaissMapVectorStore(id_map_index)
 
 ...
 

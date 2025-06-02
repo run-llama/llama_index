@@ -39,7 +39,8 @@ class EvaluationData(BaseModel):
 
 
 class GuidelineEvaluator(BaseEvaluator):
-    """Guideline evaluator.
+    """
+    Guideline evaluator.
 
     Evaluates whether a query and response pair passes the given guidelines.
 
@@ -50,6 +51,7 @@ class GuidelineEvaluator(BaseEvaluator):
             Defaults to None, which uses the default guidelines.
         eval_template(Optional[Union[str, BasePromptTemplate]] ):
             The template to use for evaluation.
+
     """
 
     def __init__(

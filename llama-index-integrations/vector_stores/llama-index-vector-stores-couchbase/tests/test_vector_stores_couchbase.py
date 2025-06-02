@@ -14,7 +14,10 @@ from llama_index.core.vector_stores.types import (
     MetadataFilters,
     MetadataFilter,
 )
-from llama_index.vector_stores.couchbase import CouchbaseVectorStore
+from llama_index.vector_stores.couchbase import (
+    CouchbaseVectorStore,
+    CouchbaseSearchVectorStore,
+)
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core import VectorStoreIndex
 
@@ -124,16 +127,13 @@ def node_embeddings() -> list[TextNode]:
 @pytest.mark.skipif(
     not set_all_env_vars(), reason="missing Couchbase environment variables"
 )
-class TestCouchbaseVectorStore:
+class TestCouchbaseSearchVectorStore:
     @classmethod
     def setup_method(self) -> None:
         self.cluster = get_cluster()
         # Delete all the documents in the collection
         delete_documents(self.cluster, BUCKET_NAME, SCOPE_NAME, COLLECTION_NAME)
-
-    def test_add_documents(self, node_embeddings: List[TextNode]) -> None:
-        """Test adding documents to Couchbase vector store."""
-        vector_store = CouchbaseVectorStore(
+        self.vector_store = CouchbaseSearchVectorStore(
             cluster=self.cluster,
             bucket_name=BUCKET_NAME,
             scope_name=SCOPE_NAME,
@@ -141,9 +141,11 @@ class TestCouchbaseVectorStore:
             index_name=INDEX_NAME,
         )
 
+    def test_add_documents(self, node_embeddings: List[TextNode]) -> None:
+        """Test adding documents to Couchbase vector store."""
         input_doc_ids = [node_embedding.id_ for node_embedding in node_embeddings]
         # Add nodes to the couchbase vector
-        doc_ids = vector_store.add(node_embeddings)
+        doc_ids = self.vector_store.add(node_embeddings)
 
         # Ensure that all nodes are returned & they are the same as input
         assert len(doc_ids) == len(node_embeddings)
@@ -152,16 +154,8 @@ class TestCouchbaseVectorStore:
 
     def test_search(self, node_embeddings: List[TextNode]) -> None:
         """Test end to end Couchbase vector search."""
-        vector_store = CouchbaseVectorStore(
-            cluster=self.cluster,
-            bucket_name=BUCKET_NAME,
-            scope_name=SCOPE_NAME,
-            collection_name=COLLECTION_NAME,
-            index_name=INDEX_NAME,
-        )
-
         # Add nodes to the couchbase vector
-        vector_store.add(node_embeddings)
+        self.vector_store.add(node_embeddings)
 
         # Wait for the documents to be indexed
         time.sleep(SLEEP_DURATION)
@@ -171,7 +165,7 @@ class TestCouchbaseVectorStore:
             query_embedding=text_to_embedding("foo"), similarity_top_k=1
         )
 
-        result = vector_store.query(q)
+        result = self.vector_store.query(q)
         assert result.nodes is not None and len(result.nodes) == 1
         assert (
             result.nodes[0].get_content(metadata_mode=MetadataMode.NONE)
@@ -181,15 +175,7 @@ class TestCouchbaseVectorStore:
 
     def test_delete_doc(self) -> None:
         """Test delete document from Couchbase vector store."""
-        vector_store = CouchbaseVectorStore(
-            cluster=self.cluster,
-            bucket_name=BUCKET_NAME,
-            scope_name=SCOPE_NAME,
-            collection_name=COLLECTION_NAME,
-            index_name=INDEX_NAME,
-        )
-
-        storage_context = StorageContext.from_defaults(vector_store=vector_store)
+        storage_context = StorageContext.from_defaults(vector_store=self.vector_store)
 
         # Add nodes to the couchbase vector
         VectorStoreIndex.from_documents(
@@ -212,34 +198,26 @@ class TestCouchbaseVectorStore:
             similarity_top_k=1,
         )
 
-        result = vector_store.query(q)
+        result = self.vector_store.query(q)
         assert result.nodes is not None and len(result.nodes) == 1
 
         # Identify the document to delete
         ref_id_to_delete = result.nodes[0].ref_doc_id
 
         # Delete the document
-        vector_store.delete(ref_doc_id=ref_id_to_delete)
+        self.vector_store.delete(ref_doc_id=ref_id_to_delete)
 
         # Wait for the documents to be indexed
         time.sleep(SLEEP_DURATION)
 
         # Ensure that no results are returned
-        result = vector_store.query(q)
+        result = self.vector_store.query(q)
         assert len(result.nodes) == 0
 
     def test_search_with_filter(self, node_embeddings: List[TextNode]) -> None:
         """Test end to end Couchbase vector search with filter."""
-        vector_store = CouchbaseVectorStore(
-            cluster=self.cluster,
-            bucket_name=BUCKET_NAME,
-            scope_name=SCOPE_NAME,
-            collection_name=COLLECTION_NAME,
-            index_name=INDEX_NAME,
-        )
-
         # Add nodes to the couchbase vector
-        vector_store.add(node_embeddings)
+        self.vector_store.add(node_embeddings)
 
         # Wait for the documents to be indexed
         time.sleep(SLEEP_DURATION)
@@ -256,7 +234,7 @@ class TestCouchbaseVectorStore:
             ),
         )
 
-        result = vector_store.query(q)
+        result = self.vector_store.query(q)
         assert result.nodes is not None and len(result.nodes) == 1
         assert (
             result.nodes[0].metadata.get("genre") == "Thriller"
@@ -265,16 +243,8 @@ class TestCouchbaseVectorStore:
 
     def test_hybrid_search(self, node_embeddings: List[TextNode]) -> None:
         """Test the hybrid search functionality."""
-        vector_store = CouchbaseVectorStore(
-            cluster=self.cluster,
-            bucket_name=BUCKET_NAME,
-            scope_name=SCOPE_NAME,
-            collection_name=COLLECTION_NAME,
-            index_name=INDEX_NAME,
-        )
-
         # Add nodes to the couchbase vector
-        vector_store.add(node_embeddings)
+        self.vector_store.add(node_embeddings)
 
         # Wait for the documents to be indexed
         time.sleep(SLEEP_DURATION)
@@ -283,7 +253,7 @@ class TestCouchbaseVectorStore:
             query_embedding=text_to_embedding("baz"),
             similarity_top_k=1,
         )
-        result = vector_store.query(query)
+        result = self.vector_store.query(query)
 
         # similarity search
         hybrid_query = VectorStoreQuery(
@@ -291,7 +261,7 @@ class TestCouchbaseVectorStore:
             similarity_top_k=1,
         )
 
-        hybrid_result = vector_store.query(
+        hybrid_result = self.vector_store.query(
             hybrid_query,
             cb_search_options={
                 "query": {"field": "metadata.genre", "match": "Thriller"}
@@ -305,16 +275,8 @@ class TestCouchbaseVectorStore:
 
     def test_output_fields(self, node_embeddings: List[TextNode]) -> None:
         """Test the output fields functionality."""
-        vector_store = CouchbaseVectorStore(
-            cluster=self.cluster,
-            bucket_name=BUCKET_NAME,
-            scope_name=SCOPE_NAME,
-            collection_name=COLLECTION_NAME,
-            index_name=INDEX_NAME,
-        )
-
         # Add nodes to the couchbase vector
-        vector_store.add(node_embeddings)
+        self.vector_store.add(node_embeddings)
 
         # Wait for the documents to be indexed
         time.sleep(SLEEP_DURATION)
@@ -325,8 +287,39 @@ class TestCouchbaseVectorStore:
             output_fields=["text", "metadata.genre"],
         )
 
-        result = vector_store.query(q)
+        result = self.vector_store.query(q)
 
         assert result.nodes is not None and len(result.nodes) == 1
         assert result.nodes[0].get_content(metadata_mode=MetadataMode.NONE) == "baz"
         assert result.nodes[0].metadata.get("genre") == "Thriller"
+
+
+class TestCouchbaseVectorStore(TestCouchbaseSearchVectorStore):
+    @classmethod
+    def setup_method(self) -> None:
+        self.cluster = get_cluster()
+        # Delete all the documents in the collection
+        delete_documents(self.cluster, BUCKET_NAME, SCOPE_NAME, COLLECTION_NAME)
+
+        # Now, actually instantiate and assign to self.vector_store so inherited tests use it.
+        # The warning has already been checked.
+        self.vector_store = CouchbaseVectorStore(
+            cluster=self.cluster,
+            bucket_name=BUCKET_NAME,
+            scope_name=SCOPE_NAME,
+            collection_name=COLLECTION_NAME,
+            index_name=INDEX_NAME,
+        )
+
+    def test_deprecation_warning(self) -> None:
+        """Test that a deprecation warning is raised when instantiating CouchbaseVectorStore."""
+        with pytest.warns(DeprecationWarning) as warnings_raised:
+            CouchbaseVectorStore(
+                cluster=self.cluster,
+                bucket_name=BUCKET_NAME,
+                scope_name=SCOPE_NAME,
+                collection_name=COLLECTION_NAME,
+                index_name=INDEX_NAME,
+            )
+
+        assert len(warnings_raised) >= 1, "DeprecationWarning was not raised."

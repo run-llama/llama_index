@@ -5,7 +5,7 @@ from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.llms.huggingface_api import HuggingFaceInferenceAPI
 from huggingface_hub.inference._generated.types import ChatCompletionOutput
 
-STUB_MODEL_NAME = "microsoft/Phi-4-multimodal-instruct"
+STUB_MODEL_NAME = "Qwen/Qwen2.5-Coder-32B-Instruct"
 
 
 @pytest.fixture(name="hf_inference_api")
@@ -108,15 +108,29 @@ class TestHuggingFaceInferenceAPI:
         )
 
     def test_complete(self, hf_inference_api: HuggingFaceInferenceAPI) -> None:
-        prompt = "My favorite color is "
+        prompt = "My favorite color is what?"
         generated_text = '"green" and I love to paint. I have been painting for 30 years and have been'
+        generated_response = ChatCompletionOutput.parse_obj(
+            {
+                "choices": [
+                    {
+                        "message": {
+                            "content": generated_text,
+                        }
+                    }
+                ],
+            }
+        )
         with patch.object(
             hf_inference_api._sync_client,
-            "text_generation",
-            return_value=generated_text,
-        ) as mock_text_generation:
+            "chat_completion",
+            return_value=generated_response,
+        ) as mock_chat_completion:
             response = hf_inference_api.complete(prompt)
-        mock_text_generation.assert_called_once_with(
-            prompt, model=STUB_MODEL_NAME, temperature=0.1, max_new_tokens=256
+        mock_chat_completion.assert_called_once_with(
+            model=STUB_MODEL_NAME,
+            temperature=0.1,
+            max_tokens=256,
+            messages=[{"role": "user", "content": prompt}],
         )
         assert response.text == generated_text

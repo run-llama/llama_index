@@ -64,20 +64,20 @@ def draw_all_possible_flows(
             net.add_node(
                 event_type.__name__,
                 label=event_type.__name__,
-                color="#90EE90" if event_type != StartEvent else "#E27AFF",
+                color=determine_event_color(event_type),
                 shape="ellipse",
-            )  # Light green for events
+            )
 
         for return_type in step_config.return_types:
-            if return_type == type(None):
+            if return_type is type(None):
                 continue
 
             net.add_node(
                 return_type.__name__,
                 label=return_type.__name__,
-                color="#90EE90",
+                color=determine_event_color(return_type),
                 shape="ellipse",
-            )  # Light green for events
+            )
 
             if issubclass(return_type, InputRequiredEvent):
                 # add node for conceptual external step
@@ -96,7 +96,7 @@ def draw_all_possible_flows(
             continue
 
         for return_type in step_config.return_types:
-            if return_type != type(None):
+            if return_type is not type(None):
                 net.add_edge(step_name, return_type.__name__)
 
             if issubclass(return_type, InputRequiredEvent):
@@ -115,6 +115,19 @@ def draw_all_possible_flows(
                 )
 
     net.show(filename, notebook=notebook)
+
+
+def determine_event_color(event_type):
+    if issubclass(event_type, StartEvent):
+        # Pink for start events
+        event_color = "#E27AFF"
+    elif issubclass(event_type, StopEvent):
+        # Orange for stop events
+        event_color = "#FFA07A"
+    else:
+        # Light green for other events
+        event_color = "#90EE90"
+    return event_color
 
 
 def draw_most_recent_execution(

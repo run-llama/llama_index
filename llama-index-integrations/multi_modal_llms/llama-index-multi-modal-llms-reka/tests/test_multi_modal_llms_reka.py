@@ -82,7 +82,7 @@ def test_stream_complete_with_image(reka_mm_llm, image_document):
     print(f"\n\nFull streamed completion response with image:\n{full_response}")
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat_with_image(reka_mm_llm, image_document):
     messages = [
         ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
@@ -96,7 +96,7 @@ async def test_achat_with_image(reka_mm_llm, image_document):
     print(f"\nAsync chat response with image:\n{response.message.content}")
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_acomplete_with_image(reka_mm_llm, image_document):
     prompt = "Describe the background of this image:"
     response = await reka_mm_llm.acomplete(prompt, image_documents=[image_document])
@@ -105,7 +105,7 @@ async def test_acomplete_with_image(reka_mm_llm, image_document):
     print(f"\nAsync completion response with image:\n{response.text}")
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat_with_image(reka_mm_llm, image_document):
     messages = [
         ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
@@ -114,9 +114,9 @@ async def test_astream_chat_with_image(reka_mm_llm, image_document):
         ),
     ]
     stream = await reka_mm_llm.astream_chat(messages, image_documents=[image_document])
-    assert isinstance(
-        stream, AsyncIterator
-    ), "astream_chat should return an async generator"
+    assert isinstance(stream, AsyncIterator), (
+        "astream_chat should return an async generator"
+    )
 
     full_response = ""
     async for chunk in stream:
@@ -128,15 +128,15 @@ async def test_astream_chat_with_image(reka_mm_llm, image_document):
     print(f"\n\nFull async streamed chat response with image:\n{full_response}")
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete_with_image(reka_mm_llm, image_document):
     prompt = "List the colors present in this image:"
     stream = await reka_mm_llm.astream_complete(
         prompt, image_documents=[image_document]
     )
-    assert isinstance(
-        stream, AsyncIterator
-    ), "astream_complete should return an async generator"
+    assert isinstance(stream, AsyncIterator), (
+        "astream_complete should return an async generator"
+    )
 
     full_response = ""
     async for chunk in stream:
@@ -144,9 +144,9 @@ async def test_astream_complete_with_image(reka_mm_llm, image_document):
         full_response += chunk.delta
         print(chunk.delta, end="", flush=True)
 
-    assert (
-        full_response.strip()
-    ), "Async streamed completion response should not be empty"
+    assert full_response.strip(), (
+        "Async streamed completion response should not be empty"
+    )
     print(f"\n\nFull async streamed completion response with image:\n{full_response}")
 
 
@@ -223,7 +223,7 @@ def test_complete_mock_with_image(mock_reka_mm_llm, mock_image_document):
         mock_create.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat_mock_with_image(mock_reka_mm_llm, mock_image_document):
     with mock.patch.object(mock_reka_mm_llm._aclient.chat, "create") as mock_acreate:
         mock_acreate.return_value = mock.MagicMock(
@@ -249,7 +249,7 @@ async def test_achat_mock_with_image(mock_reka_mm_llm, mock_image_document):
         mock_acreate.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_acomplete_mock_with_image(mock_reka_mm_llm, mock_image_document):
     with mock.patch.object(mock_reka_mm_llm._aclient.chat, "create") as mock_acreate:
         mock_acreate.return_value = mock.MagicMock(
@@ -324,7 +324,7 @@ def test_stream_complete_mock_with_image(mock_reka_mm_llm, mock_image_document):
         mock_create_stream.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat_mock_with_image(mock_reka_mm_llm, mock_image_document):
     with mock.patch.object(
         mock_reka_mm_llm._aclient.chat, "create_stream"
@@ -353,7 +353,7 @@ async def test_astream_chat_mock_with_image(mock_reka_mm_llm, mock_image_documen
         mock_acreate_stream.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_complete_mock_with_image(mock_reka_mm_llm, mock_image_document):
     with mock.patch.object(
         mock_reka_mm_llm._aclient.chat, "create_stream"

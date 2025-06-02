@@ -113,7 +113,7 @@ def test_llm_chat_and_complete():
     assert llm.complete("a bird flying in the sky")
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.skipif(
     os.getenv("ZHIPUAI_API_KEY") is None, reason="ZHIPUAI_API_KEY not set"
 )

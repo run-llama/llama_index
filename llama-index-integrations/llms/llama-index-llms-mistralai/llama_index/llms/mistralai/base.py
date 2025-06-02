@@ -122,7 +122,8 @@ def force_single_tool_call(response: ChatResponse) -> None:
 
 
 class MistralAI(FunctionCallingLLM):
-    """MistralAI LLM.
+    """
+    MistralAI LLM.
 
     Examples:
         `pip install llama-index-llms-mistralai`
@@ -144,6 +145,7 @@ class MistralAI(FunctionCallingLLM):
 
         print(resp)
         ```
+
     """
 
     model: str = Field(
@@ -418,6 +420,7 @@ class MistralAI(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Prepare the chat with tools."""
@@ -436,6 +439,7 @@ class MistralAI(FunctionCallingLLM):
         return {
             "messages": messages,
             "tools": tool_specs or None,
+            "tool_choice": "required" if tool_required else "auto",
             **kwargs,
         }
 

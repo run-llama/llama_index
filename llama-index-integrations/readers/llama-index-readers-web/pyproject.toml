@@ -11,8 +11,7 @@ dev = [
     "pylint==2.15.10",
     "pytest==7.2.1",
     "pytest-mock==3.11.1",
-    "ruff==0.0.292",
-    "tree-sitter-languages>=1.8.0,<2",
+    "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-protobuf>=4.24.0.4,<5",
@@ -21,11 +20,13 @@ dev = [
     "types-setuptools==67.1.0.0",
     "black[jupyter]<=23.9.1,>=23.7.0",
     "codespell[toml]>=v2.2.6",
+    "diff-cover>=9.2.0",
+    "pytest-cov>=6.1.1",
 ]
 
 [project]
 name = "llama-index-readers-web"
-version = "0.3.9"
+version = "0.4.1"
 description = "llama-index readers web integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -79,6 +80,11 @@ dependencies = [
     "spider-client>=0.0.27,<0.0.28",
     "llama-index-core>=0.12.0,<0.13",
     "defusedxml>=0.7.1,<0.8",
+    "httpx>=0.28.1",
+    "lxml>=5.4.0",
+    "lxml-html-clean>=0.4.2",
+    "markdownify>=1.1.0",
+    "oxylabs>=2.0.0",
 ]
 
 [tool.codespell]
@@ -108,6 +114,7 @@ HyperbrowserWebReader = "NikhilShahi"
 KnowledgeBaseWebReader = "jasonwcfan"
 MainContentExtractorReader = "HawkClaws"
 NewsArticleReader = "ruze00"
+OxylabsWebReader = "oxy-rostyslav"
 ReadabilityWebPageReader = "pandazki"
 RssNewsReader = "ruze00"
 RssReader = "bborn"

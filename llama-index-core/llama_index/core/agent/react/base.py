@@ -1,4 +1,5 @@
-"""ReAct agent.
+"""
+ReAct agent.
 
 Simple wrapper around AgentRunner + ReActAgentWorker.
 
@@ -8,6 +9,7 @@ from llama_index.core.agent.legacy.react.base import ReActAgent
 ```
 
 """
+
 from typing import (
     Any,
     List,
@@ -35,7 +37,8 @@ from llama_index.core.prompts.mixin import PromptMixinType
 
 
 class ReActAgent(AgentRunner):
-    """ReAct agent.
+    """
+    ReAct agent.
 
     Subclasses AgentRunner with a ReActAgentWorker.
 
@@ -108,7 +111,8 @@ class ReActAgent(AgentRunner):
         ] = None,
         **kwargs: Any,
     ) -> "ReActAgent":
-        """Convenience constructor method from set of BaseTools (Optional).
+        """
+        Convenience constructor method from set of BaseTools (Optional).
 
         NOTE: kwargs should have been exhausted by this point. In other words
         the various upstream components such as BaseSynthesizer (response synthesizer)
@@ -125,6 +129,7 @@ class ReActAgent(AgentRunner):
 
         Returns:
             ReActAgent
+
         """
         llm = llm or Settings.llm
         if callback_manager is not None:

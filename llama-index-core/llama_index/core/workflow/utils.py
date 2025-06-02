@@ -1,6 +1,7 @@
 import inspect
 from importlib import import_module
 from typing import (
+    Annotated,
     Any,
     Callable,
     Dict,
@@ -20,6 +21,7 @@ except ImportError:  # pragma: no cover
 
 from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
 
+from .resource import ResourceDefinition
 from .errors import WorkflowValidationError
 from .events import Event, EventType
 
@@ -27,7 +29,8 @@ BUSY_WAIT_DELAY = 0.01
 
 
 class ServiceDefinition(BaseModel):
-    """A Pydantic model representing a service definition in a workflow step.
+    """
+    A Pydantic model representing a service definition in a workflow step.
 
     This class defines a service that can be injected into a workflow step.
     It is made hashable through Pydantic's ConfigDict to enable its use in collections.
@@ -36,6 +39,7 @@ class ServiceDefinition(BaseModel):
         name (str): The name of the service parameter in the step function.
         service (Any): The type or class of the service to be injected.
         default_value (Optional[Any]): Default value for the service if not provided.
+
     """
 
     # Make the service definition hashable
@@ -53,10 +57,12 @@ class StepSignatureSpec(BaseModel):
     return_types: List[Any]
     context_parameter: Optional[str]
     requested_services: Optional[List[ServiceDefinition]]
+    resources: List[Any]
 
 
 def inspect_signature(fn: Callable) -> StepSignatureSpec:
-    """Given a function, ensure the signature is compatible with a workflow step.
+    """
+    Given a function, ensure the signature is compatible with a workflow step.
 
     Args:
         fn (Callable): The function to inspect.
@@ -70,16 +76,18 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
 
     Raises:
         TypeError: If fn is not a callable object
+
     """
     if not callable(fn):
         raise TypeError(f"Expected a callable object, got {type(fn).__name__}")
 
     sig = inspect.signature(fn)
-    type_hints = get_type_hints(fn)
+    type_hints = get_type_hints(fn, include_extras=True)
 
     accepted_events: Dict[str, List[EventType]] = {}
     context_parameter = None
     requested_services = []
+    resources = []
 
     # Inspect function parameters
     for name, t in sig.parameters.items():
@@ -88,6 +96,10 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
             continue
 
         annotation = type_hints.get(name, t.annotation)
+        if get_origin(annotation) is Annotated:
+            base_type, resource = get_args(annotation)
+            resources.append(ResourceDefinition(name=name, resource=resource))
+            continue
 
         # Get name and type of the Context param
         if hasattr(annotation, "__name__") and annotation.__name__ == "Context":
@@ -120,17 +132,20 @@ def inspect_signature(fn: Callable) -> StepSignatureSpec:
         return_types=_get_return_types(fn),
         context_parameter=context_parameter,
         requested_services=requested_services,
+        resources=resources,
     )
 
 
 def validate_step_signature(spec: StepSignatureSpec) -> None:
-    """Validate that a step signature specification meets workflow requirements.
+    """
+    Validate that a step signature specification meets workflow requirements.
 
     Args:
         spec (StepSignatureSpec): The signature specification to validate.
 
     Raises:
         WorkflowValidationError: If the signature is invalid for a workflow step.
+
     """
     num_of_events = len(spec.accepted_events)
     if num_of_events == 0:
@@ -146,13 +161,15 @@ def validate_step_signature(spec: StepSignatureSpec) -> None:
 
 
 def get_steps_from_class(_class: object) -> Dict[str, Callable]:
-    """Given a class, return the list of its methods that were defined as steps.
+    """
+    Given a class, return the list of its methods that were defined as steps.
 
     Args:
         _class (object): The class to inspect for step methods.
 
     Returns:
         Dict[str, Callable]: A dictionary mapping step names to their corresponding methods.
+
     """
     step_methods = {}
     all_methods = inspect.getmembers(_class, predicate=inspect.isfunction)
@@ -165,13 +182,15 @@ def get_steps_from_class(_class: object) -> Dict[str, Callable]:
 
 
 def get_steps_from_instance(workflow: object) -> Dict[str, Callable]:
-    """Given a workflow instance, return the list of its methods that were defined as steps.
+    """
+    Given a workflow instance, return the list of its methods that were defined as steps.
 
     Args:
         workflow (object): The workflow instance to inspect.
 
     Returns:
         Dict[str, Callable]: A dictionary mapping step names to their corresponding methods.
+
     """
     step_methods = {}
     all_methods = inspect.getmembers(workflow, predicate=inspect.ismethod)
@@ -184,7 +203,8 @@ def get_steps_from_instance(workflow: object) -> Dict[str, Callable]:
 
 
 def _get_param_types(param: inspect.Parameter, type_hints: dict) -> List[Any]:
-    """Extract and process the types of a parameter.
+    """
+    Extract and process the types of a parameter.
 
     This helper function handles Union and Optional types, returning a list of the actual types.
     For Union[A, None] (Optional[A]), it returns [A].
@@ -195,6 +215,7 @@ def _get_param_types(param: inspect.Parameter, type_hints: dict) -> List[Any]:
 
     Returns:
         List[Any]: A list of extracted types, excluding None from Unions/Optionals.
+
     """
     typ = type_hints.get(param.name, param.annotation)
     if typ is inspect.Parameter.empty:
@@ -205,7 +226,8 @@ def _get_param_types(param: inspect.Parameter, type_hints: dict) -> List[Any]:
 
 
 def _get_return_types(func: Callable) -> List[Any]:
-    """Extract the return type hints from a function.
+    """
+    Extract the return type hints from a function.
 
     Handles Union, Optional, and List types.
     """
@@ -223,7 +245,8 @@ def _get_return_types(func: Callable) -> List[Any]:
 
 
 def is_free_function(qualname: str) -> bool:
-    """Determines whether a certain qualified name points to a free function.
+    """
+    Determines whether a certain qualified name points to a free function.
 
     A free function is either a module-level function or a nested function.
     This implementation follows PEP-3155 for handling nested function detection.
@@ -236,6 +259,7 @@ def is_free_function(qualname: str) -> bool:
 
     Raises:
         ValueError: If the qualified name is empty.
+
     """
     if not qualname:
         msg = "The qualified name cannot be empty"
@@ -253,7 +277,8 @@ def is_free_function(qualname: str) -> bool:
 
 
 def get_qualified_name(value: Any) -> str:
-    """Get the qualified name of a value.
+    """
+    Get the qualified name of a value.
 
     Args:
         value (Any): The value to get the qualified name for.
@@ -263,6 +288,7 @@ def get_qualified_name(value: Any) -> str:
 
     Raises:
         AttributeError: If value does not have __module__ or __class__ attributes
+
     """
     try:
         return value.__module__ + "." + value.__class__.__name__
@@ -271,7 +297,8 @@ def get_qualified_name(value: Any) -> str:
 
 
 def import_module_from_qualified_name(qualified_name: str) -> Any:
-    """Import a module from a qualified name.
+    """
+    Import a module from a qualified name.
 
     Args:
         qualified_name (str): The fully qualified name of the module to import.
@@ -283,6 +310,7 @@ def import_module_from_qualified_name(qualified_name: str) -> Any:
         ValueError: If qualified_name is empty or malformed
         ImportError: If module cannot be imported
         AttributeError: If attribute cannot be found in module
+
     """
     if not qualified_name or "." not in qualified_name:
         raise ValueError("Qualified name must be in format 'module.attribute'")

@@ -33,7 +33,8 @@ DEFAULT_PERSIST_FILENAME = "retriever.json"
 
 
 class BM25Retriever(BaseRetriever):
-    r"""A BM25 retriever that uses the BM25 algorithm to retrieve nodes.
+    r"""
+    A BM25 retriever that uses the BM25 algorithm to retrieve nodes.
 
     Args:
         nodes (List[BaseNode], optional):
@@ -58,6 +59,7 @@ class BM25Retriever(BaseRetriever):
             Whether to skip stemming. Defaults to False.
         verbose (bool, optional):
             Whether to show progress. Defaults to False.
+
     """
 
     def __init__(
@@ -135,9 +137,9 @@ class BM25Retriever(BaseRetriever):
         if docstore is not None:
             nodes = cast(List[BaseNode], list(docstore.docs.values()))
 
-        assert (
-            nodes is not None
-        ), "Please pass exactly one of index, nodes, or docstore."
+        assert nodes is not None, (
+            "Please pass exactly one of index, nodes, or docstore."
+        )
 
         return cls(
             nodes=nodes,

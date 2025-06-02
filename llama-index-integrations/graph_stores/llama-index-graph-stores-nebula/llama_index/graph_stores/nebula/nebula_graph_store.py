@@ -133,6 +133,7 @@ class NebulaGraphStore(GraphStore):
             tag_prop_names: Tag property names corresponding to tags.
             session_pool_kwargs: Keyword arguments for NebulaGraph session pool.
             **kwargs: Keyword arguments.
+
         """
         assert space_name is not None, "space_name should be provided."
         self._space_name = space_name
@@ -256,6 +257,7 @@ class NebulaGraphStore(GraphStore):
 
         Returns:
             Query result.
+
         """
         # Clean the query string by removing triple backticks
         query = query.replace("```", "").strip()
@@ -306,6 +308,7 @@ class NebulaGraphStore(GraphStore):
 
         Returns:
             Graph store.
+
         """
         return cls(**config_dict)
 
@@ -334,6 +337,7 @@ class NebulaGraphStore(GraphStore):
 
         Returns:
             Triplets.
+
         """
         rel_map = self.get_flat_rel_map([subj], depth=1)
         rels = list(rel_map.values())

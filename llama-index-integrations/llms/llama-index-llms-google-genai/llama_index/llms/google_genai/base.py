@@ -1,5 +1,6 @@
 """Google's hosted Gemini API."""
 
+import functools
 import os
 import typing
 from typing import (
@@ -13,7 +14,9 @@ from typing import (
     Sequence,
     Type,
     Union,
+    Callable,
 )
+
 
 import llama_index.core.instrumentation as instrument
 from llama_index.core.base.llms.generic_utils import (
@@ -48,12 +51,12 @@ from llama_index.llms.google_genai.utils import (
     convert_schema_to_function_declaration,
     prepare_chat_params,
     handle_streaming_flexible_model,
+    create_retry_decorator,
 )
 
 import google.genai
 import google.auth
 import google.genai.types as types
-
 
 dispatcher = instrument.get_dispatcher(__name__)
 
@@ -67,6 +70,25 @@ class VertexAIConfig(typing.TypedDict):
     credentials: Optional[google.auth.credentials.Credentials] = None
     project: Optional[str] = None
     location: Optional[str] = None
+
+
+def llm_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
+    @functools.wraps(f)
+    def wrapper(self, *args: Any, **kwargs: Any) -> Any:
+        max_retries = getattr(self, "max_retries", 0)
+        if max_retries <= 0:
+            return f(self, *args, **kwargs)
+
+        retry = create_retry_decorator(
+            max_retries=max_retries,
+            random_exponential=True,
+            stop_after_delay_seconds=60,
+            min_seconds=1,
+            max_seconds=20,
+        )
+        return retry(f)(self, *args, **kwargs)
+
+    return wrapper
 
 
 class GoogleGenAI(FunctionCallingLLM):
@@ -83,6 +105,7 @@ class GoogleGenAI(FunctionCallingLLM):
         resp = llm.complete("Write a poem about a magic backpack")
         print(resp)
         ```
+
     """
 
     model: str = Field(default=DEFAULT_MODEL, description="The Gemini model to use.")
@@ -95,6 +118,11 @@ class GoogleGenAI(FunctionCallingLLM):
     context_window: Optional[int] = Field(
         default=None,
         description="The context window of the model. If not provided, the default context window 200000 will be used.",
+    )
+    max_retries: int = Field(
+        default=3,
+        description="The maximum number of API retries.",
+        ge=0,
     )
     is_function_calling_model: bool = Field(
         default=True, description="Whether the model is a function calling model."
@@ -112,6 +140,7 @@ class GoogleGenAI(FunctionCallingLLM):
         temperature: float = DEFAULT_TEMPERATURE,
         max_tokens: Optional[int] = None,
         context_window: Optional[int] = None,
+        max_retries: int = 3,
         vertexai_config: Optional[VertexAIConfig] = None,
         http_options: Optional[types.HttpOptions] = None,
         debug_config: Optional[google.genai.client.DebugConfig] = None,
@@ -163,6 +192,7 @@ class GoogleGenAI(FunctionCallingLLM):
             context_window=context_window,
             callback_manager=callback_manager,
             is_function_calling_model=is_function_calling_model,
+            max_retries=max_retries,
             **kwargs,
         )
 
@@ -207,21 +237,21 @@ class GoogleGenAI(FunctionCallingLLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        chat_fn = chat_to_completion_decorator(self.chat)
+        chat_fn = chat_to_completion_decorator(self._chat)
         return chat_fn(prompt, **kwargs)
 
     @llm_completion_callback()
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        chat_fn = achat_to_completion_decorator(self.achat)
+        chat_fn = achat_to_completion_decorator(self._achat)
         return await chat_fn(prompt, **kwargs)
 
     @llm_completion_callback()
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
-        chat_fn = stream_chat_to_completion_decorator(self.stream_chat)
+        chat_fn = stream_chat_to_completion_decorator(self._stream_chat)
         return chat_fn(prompt, **kwargs)
 
     @llm_completion_callback()
@@ -231,8 +261,8 @@ class GoogleGenAI(FunctionCallingLLM):
         chat_fn = astream_chat_to_completion_decorator(self.astream_chat)
         return await chat_fn(prompt, **kwargs)
 
-    @llm_chat_callback()
-    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+    @llm_retry_decorator
+    def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any):
         generation_config = {
             **(self._generation_config or {}),
             **kwargs.pop("generation_config", {}),
@@ -243,10 +273,8 @@ class GoogleGenAI(FunctionCallingLLM):
         response = chat.send_message(next_msg.parts)
         return chat_from_gemini_response(response)
 
-    @llm_chat_callback()
-    async def achat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponse:
+    @llm_retry_decorator
+    async def _achat(self, messages: Sequence[ChatMessage], **kwargs: Any):
         generation_config = {
             **(self._generation_config or {}),
             **kwargs.pop("generation_config", {}),
@@ -258,7 +286,16 @@ class GoogleGenAI(FunctionCallingLLM):
         return chat_from_gemini_response(response)
 
     @llm_chat_callback()
-    def stream_chat(
+    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
+        return self._chat(messages, **kwargs)
+
+    @llm_chat_callback()
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        return await self._achat(messages, **kwargs)
+
+    def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         generation_config = {
@@ -293,7 +330,12 @@ class GoogleGenAI(FunctionCallingLLM):
         return gen()
 
     @llm_chat_callback()
-    async def astream_chat(
+    def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseGen:
+        return self._stream_chat(messages, **kwargs)
+
+    async def _astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         generation_config = {
@@ -326,12 +368,18 @@ class GoogleGenAI(FunctionCallingLLM):
                             )
                             llama_resp.delta = content_delta
                             llama_resp.message.content = content
-                            llama_resp.message.additional_kwargs[
-                                "tool_calls"
-                            ] = existing_tool_calls
+                            llama_resp.message.additional_kwargs["tool_calls"] = (
+                                existing_tool_calls
+                            )
                             yield llama_resp
 
         return gen()
+
+    @llm_chat_callback()
+    async def astream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        return await self._astream_chat(messages, **kwargs)
 
     def _prepare_chat_with_tools(
         self,
@@ -340,11 +388,15 @@ class GoogleGenAI(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
-        tool_choice: Union[str, dict] = "auto",
+        tool_required: bool = False,
+        tool_choice: Optional[Union[str, dict]] = None,
         strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Predict and call the tool."""
+        if tool_choice is None:
+            tool_choice = "any" if tool_required else "auto"
+
         if tool_choice == "auto":
             tool_mode = types.FunctionCallingConfigMode.AUTO
         elif tool_choice == "none":
@@ -573,7 +625,10 @@ class GoogleGenAI(FunctionCallingLLM):
                         yield chunk.parsed
                     elif chunk.candidates:
                         streaming_model, current_json = handle_streaming_flexible_model(
-                            current_json, chunk.candidates[0], output_cls, flexible_model
+                            current_json,
+                            chunk.candidates[0],
+                            output_cls,
+                            flexible_model,
                         )
                         if streaming_model:
                             yield streaming_model
@@ -622,7 +677,10 @@ class GoogleGenAI(FunctionCallingLLM):
                         yield chunk.parsed
                     elif chunk.candidates:
                         streaming_model, current_json = handle_streaming_flexible_model(
-                            current_json, chunk.candidates[0], output_cls, flexible_model
+                            current_json,
+                            chunk.candidates[0],
+                            output_cls,
+                            flexible_model,
                         )
                         if streaming_model:
                             yield streaming_model

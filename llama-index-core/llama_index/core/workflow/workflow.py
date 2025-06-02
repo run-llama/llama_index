@@ -31,6 +31,7 @@ from .events import (
 )
 from .handler import WorkflowHandler
 from .service import ServiceManager
+from .resource import ResourceManager
 from .utils import (
     ServiceDefinition,
     get_steps_from_class,
@@ -48,7 +49,8 @@ class WorkflowMeta(type):
 
 
 class Workflow(metaclass=WorkflowMeta):
-    """An event-driven abstraction used to orchestrate the execution of different components called "steps".
+    """
+    An event-driven abstraction used to orchestrate the execution of different components called "steps".
 
     Each step is responsible for handling certain event types and possibly emitting new events. Steps can be "bound"
     when they are defined as methods of the `Workflow` class itself, or "unbound" when they are defined as free
@@ -67,9 +69,11 @@ class Workflow(metaclass=WorkflowMeta):
         disable_validation: bool = False,
         verbose: bool = False,
         service_manager: Optional[ServiceManager] = None,
+        resource_manager: Optional[ResourceManager] = None,
         num_concurrent_runs: Optional[int] = None,
     ) -> None:
-        """Create an instance of the workflow.
+        """
+        Create an instance of the workflow.
 
         Args:
             timeout:
@@ -87,6 +91,7 @@ class Workflow(metaclass=WorkflowMeta):
             num_concurrent_runs:
                 maximum number of .run() executions occurring simultaneously. If set to `None`, there
                 is no limit to this number.
+
         """
         # Configuration
         self._timeout = timeout
@@ -103,9 +108,12 @@ class Workflow(metaclass=WorkflowMeta):
         self._stepwise_context: Optional[Context] = None
         # Services management
         self._service_manager = service_manager or ServiceManager()
+        # Resource management
+        self._resource_manager = resource_manager or ResourceManager()
 
     def _ensure_start_event_class(self) -> type[StartEvent]:
-        """Returns the StartEvent type used in this workflow.
+        """
+        Returns the StartEvent type used in this workflow.
 
         It works by inspecting the events received by the step methods.
         """
@@ -127,7 +135,8 @@ class Workflow(metaclass=WorkflowMeta):
             return start_events_found.pop()
 
     def _ensure_stop_event_class(self) -> type[RunResultT]:
-        """Returns the StopEvent type used in this workflow.
+        """
+        Returns the StopEvent type used in this workflow.
 
         It works by inspecting the events returned.
         """
@@ -149,7 +158,8 @@ class Workflow(metaclass=WorkflowMeta):
             return stop_events_found.pop()
 
     async def stream_events(self) -> AsyncGenerator[Event, None]:
-        """Returns an async generator to consume any event that workflow steps decide to stream.
+        """
+        Returns an async generator to consume any event that workflow steps decide to stream.
 
         To be able to use this generator, the usual pattern is to wrap the `run` call in a background task using
         `asyncio.create_task`, then enter a for loop like this:
@@ -189,7 +199,8 @@ class Workflow(metaclass=WorkflowMeta):
 
     @classmethod
     def add_step(cls, func: Callable) -> None:
-        """Adds a free function as step for this workflow instance.
+        """
+        Adds a free function as step for this workflow instance.
 
         It raises an exception if a step with the same name was already added to the workflow.
         """
@@ -205,7 +216,8 @@ class Workflow(metaclass=WorkflowMeta):
         cls._step_functions[func.__name__] = func
 
     def add_workflows(self, **workflows: "Workflow") -> None:
-        """Adds one or more nested workflows to this workflow.
+        """
+        Adds one or more nested workflows to this workflow.
 
         This method only accepts keyword arguments, and the name of the parameter
         will be used as the name of the workflow.
@@ -223,7 +235,8 @@ class Workflow(metaclass=WorkflowMeta):
         ctx: Optional[Context] = None,
         checkpoint_callback: Optional[CheckpointCallback] = None,
     ) -> Tuple[Context, str]:
-        """Sets up the queues and tasks for each declared step.
+        """
+        Sets up the queues and tasks for each declared step.
 
         This method also launches each step as an async task.
         """
@@ -265,6 +278,7 @@ class Workflow(metaclass=WorkflowMeta):
                     checkpoint_callback=checkpoint_callback,
                     run_id=run_id,
                     service_manager=self._service_manager,
+                    resource_manager=self._resource_manager,
                     dispatcher=dispatcher,
                 )
 
@@ -419,7 +433,8 @@ class Workflow(metaclass=WorkflowMeta):
         checkpoint_callback: Optional[CheckpointCallback] = None,
         **kwargs: Any,
     ) -> WorkflowHandler:
-        """Run from a specified Checkpoint.
+        """
+        Run from a specified Checkpoint.
 
         The `Context` snapshot contained in the checkpoint is loaded and used
         to execute the `Workflow`.
@@ -463,7 +478,8 @@ class Workflow(metaclass=WorkflowMeta):
         raise WorkflowDone
 
     def _validate(self) -> bool:
-        """Validate the workflow to ensure it's well-formed.
+        """
+        Validate the workflow to ensure it's well-formed.
 
         Returns True if the workflow uses human-in-the-loop, False otherwise.
         """

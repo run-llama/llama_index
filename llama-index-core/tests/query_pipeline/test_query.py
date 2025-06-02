@@ -17,7 +17,8 @@ from llama_index.core.query_pipeline.query import QueryPipeline
 
 
 class QueryComponent1(QueryComponent):
-    """Query component 1.
+    """
+    Query component 1.
 
     Adds two numbers together.
 
@@ -54,7 +55,8 @@ class QueryComponent1(QueryComponent):
 
 
 class QueryComponent2(QueryComponent):
-    """Query component 1.
+    """
+    Query component 1.
 
     Joins two strings together with ':'
 
@@ -91,7 +93,8 @@ class QueryComponent2(QueryComponent):
 
 
 class QueryComponent3(QueryComponent):
-    """Query component 3.
+    """
+    Query component 3.
 
     Takes one input and doubles it.
 
@@ -281,7 +284,7 @@ def test_query_pipeline_multi_intermediate_output() -> None:
     assert intermediates["qc2"].outputs == {"output": "3:7"}
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_query_pipeline_async() -> None:
     """Test query pipeline in async fashion."""
     # run some synchronous tests above

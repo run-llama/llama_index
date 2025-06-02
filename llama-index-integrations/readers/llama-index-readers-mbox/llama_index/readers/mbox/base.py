@@ -10,7 +10,8 @@ from llama_index.core.schema import Document
 
 
 class MboxReader(BaseReader):
-    """Mbox e-mail reader.
+    """
+    Mbox e-mail reader.
 
     Reads a set of e-mails saved in the mbox format.
     """
@@ -19,7 +20,8 @@ class MboxReader(BaseReader):
         """Initialize."""
 
     def load_data(self, input_dir: str, **load_kwargs: Any) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         load_kwargs:
             max_count (int): Maximum amount of messages to read.

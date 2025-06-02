@@ -1,9 +1,11 @@
-"""Slides parser.
+"""
+Slides parser.
 
 Contains parsers for .pptx files.
 
 """
 
+import io
 import os
 import tempfile
 from pathlib import Path
@@ -16,7 +18,8 @@ from llama_index.core.utils import infer_torch_device
 
 
 class PptxReader(BaseReader):
-    """Powerpoint parser.
+    """
+    Powerpoint parser.
 
     Extract text, caption images, and specify slides.
 
@@ -37,7 +40,7 @@ class PptxReader(BaseReader):
             raise ImportError(
                 "Please install extra dependencies that are required for "
                 "the PptxReader: "
-                "`pip install torch transformers python-pptx Pillow`"
+                "`pip install torch 'transformers<4.50' python-pptx Pillow`"
             )
 
         model = VisionEncoderDecoderModel.from_pretrained(
@@ -95,8 +98,8 @@ class PptxReader(BaseReader):
         from pptx import Presentation
 
         if fs:
-            with fs.open(file) as f:
-                presentation = Presentation(f)
+            with fs.open(str(file)) as f:
+                presentation = Presentation(io.BytesIO(f.read()))
         else:
             presentation = Presentation(file)
         result = ""

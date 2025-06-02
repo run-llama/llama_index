@@ -52,7 +52,8 @@ class BaseAgentRunner(BaseAgent):
         self,
         task_id: str,
     ) -> None:
-        """Delete task.
+        """
+        Delete task.
 
         NOTE: this will not delete any previous executions from memory.
 
@@ -206,7 +207,8 @@ class AgentState(BaseModel):
 
 
 class AgentRunner(BaseAgentRunner):
-    """Agent runner.
+    """
+    Agent runner.
 
     Top-level agent orchestrator that can create tasks, run each step in a task,
     or run a task e2e. Stores state and keeps track of tasks.
@@ -349,7 +351,8 @@ class AgentRunner(BaseAgentRunner):
         self,
         task_id: str,
     ) -> None:
-        """Delete task.
+        """
+        Delete task.
 
         NOTE: this will not delete any previous executions from memory.
 

@@ -1,0 +1,9 @@
+module default {
+    type Record {
+        required key: str;
+        required namespace: str;
+        value: json;
+
+        constraint exclusive on ((.key, .namespace));
+    }
+}

@@ -16,7 +16,7 @@ from llama_index.core.graph_stores.simple import (
 )
 from llama_index.core.graph_stores.simple import SimpleGraphStore
 from llama_index.core.graph_stores.simple_labelled import SimplePropertyGraphStore
-from llama_index.core.graph_stores.types import DEFUALT_PG_PERSIST_FNAME as PG_FNAME
+from llama_index.core.graph_stores.types import DEFAULT_PG_PERSIST_FNAME as PG_FNAME
 from llama_index.core.graph_stores.types import GraphStore, PropertyGraphStore
 from llama_index.core.storage.docstore.simple_docstore import SimpleDocumentStore
 from llama_index.core.storage.docstore.types import (
@@ -51,7 +51,8 @@ IMAGE_VECTOR_STORE_NAMESPACE = "image"
 
 @dataclass
 class StorageContext:
-    """Storage context.
+    """
+    Storage context.
 
     The storage context container is a utility container for storing nodes,
     indices, and vectors. It contains the following:
@@ -82,7 +83,8 @@ class StorageContext:
         persist_dir: Optional[str] = None,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "StorageContext":
-        """Create a StorageContext from defaults.
+        """
+        Create a StorageContext from defaults.
 
         Args:
             docstore (Optional[BaseDocumentStore]): document store
@@ -157,10 +159,12 @@ class StorageContext:
         pg_graph_store_fname: str = PG_FNAME,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
-        """Persist the storage context.
+        """
+        Persist the storage context.
 
         Args:
             persist_dir (str): directory to persist the storage context
+
         """
         if fs is not None:
             persist_dir = str(persist_dir)  # NOTE: doesn't support Windows here

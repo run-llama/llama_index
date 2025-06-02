@@ -28,7 +28,8 @@ class NeptuneDatabasePropertyGraphStore(NeptuneBasePropertyGraph):
         use_https: bool = True,
         **kwargs: Any,
     ) -> None:
-        """Init.
+        """
+        Init.
 
         Args:
             host (str): The host endpoint
@@ -38,13 +39,15 @@ class NeptuneDatabasePropertyGraphStore(NeptuneBasePropertyGraph):
             region_name (Optional[str], optional): The region to use. Defaults to None.
             sign (bool, optional): True will SigV4 sign all requests, False will not. Defaults to True.
             use_https (bool, optional): True to use https, False to use http. Defaults to True.
+
         """
         self._client = create_neptune_database_client(
             host, port, client, credentials_profile_name, region_name, sign, use_https
         )
 
     def structured_query(self, query: str, param_map: Dict[str, Any] = None) -> Any:
-        """Run the structured query.
+        """
+        Run the structured query.
 
         Args:
             query (str): The query to run
@@ -55,6 +58,7 @@ class NeptuneDatabasePropertyGraphStore(NeptuneBasePropertyGraph):
 
         Returns:
             Any: The results of the query
+
         """
         param_map = param_map or {}
 
@@ -77,7 +81,8 @@ class NeptuneDatabasePropertyGraphStore(NeptuneBasePropertyGraph):
             )
 
     def vector_query(self, query: VectorStoreQuery, **kwargs: Any) -> Tuple[List[Any]]:
-        """NOT SUPPORTED.
+        """
+        NOT SUPPORTED.
 
         Args:
             query (VectorStoreQuery): _description_
@@ -87,14 +92,17 @@ class NeptuneDatabasePropertyGraphStore(NeptuneBasePropertyGraph):
 
         Returns:
             Tuple[List[LabelledNode] | List[float]]: _description_
+
         """
         raise NotImplementedError
 
     def upsert_nodes(self, nodes: List[LabelledNode]) -> None:
-        """Upsert the nodes in the graph.
+        """
+        Upsert the nodes in the graph.
 
         Args:
             nodes (List[LabelledNode]): The list of nodes to upsert
+
         """
         # Lists to hold separated types
         entity_dicts: List[dict] = []
@@ -132,7 +140,7 @@ class NeptuneDatabasePropertyGraphStore(NeptuneBasePropertyGraph):
                     MERGE (e:`{BASE_NODE_LABEL}` {{id: row.id}})
                     SET e += removeKeyFromMap(row.properties, '')
                     SET e.name = row.name, e:`{BASE_ENTITY_LABEL}`
-                    SET e:`{d['label']}`
+                    SET e:`{d["label"]}`
                     WITH e, row
                     WHERE removeKeyFromMap(row.properties, '').triplet_source_id IS NOT NULL
                     MERGE (c:Chunk {{id: removeKeyFromMap(row.properties, '').triplet_source_id}})
@@ -143,10 +151,12 @@ class NeptuneDatabasePropertyGraphStore(NeptuneBasePropertyGraph):
                 )
 
     def _get_summary(self) -> Dict:
-        """Get the Summary of the graph schema.
+        """
+        Get the Summary of the graph schema.
 
         Returns:
             Dict: The graph summary
+
         """
         try:
             response = self.client.get_propertygraph_summary()

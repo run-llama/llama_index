@@ -74,7 +74,7 @@ def test_completion():
     assert llm.complete("who are you")
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.skipif(
     os.getenv("ZHIPUAI_API_KEY") is None, reason="ZHIPUAI_API_KEY not set"
 )

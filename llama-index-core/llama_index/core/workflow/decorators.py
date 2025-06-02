@@ -4,11 +4,12 @@ from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
 
 from .errors import WorkflowValidationError
 from .utils import (
+    ServiceDefinition,
+    inspect_signature,
     is_free_function,
     validate_step_signature,
-    inspect_signature,
-    ServiceDefinition,
 )
+from .resource import ResourceDefinition
 
 if TYPE_CHECKING:  # pragma: no cover
     from .workflow import Workflow
@@ -25,6 +26,7 @@ class StepConfig(BaseModel):
     num_workers: int
     requested_services: List[ServiceDefinition]
     retry_policy: Optional[RetryPolicy]
+    resources: List[ResourceDefinition]
 
 
 def step(
@@ -34,7 +36,8 @@ def step(
     num_workers: int = 4,
     retry_policy: Optional[RetryPolicy] = None,
 ) -> Callable:
-    """Decorator used to mark methods and functions as workflow steps.
+    """
+    Decorator used to mark methods and functions as workflow steps.
 
     Decorators are evaluated at import time, but we need to wait for
     starting the communication channels until runtime. For this reason,
@@ -47,6 +50,7 @@ def step(
         num_workers: The number of workers that will process events for the decorated step. The default
             value works most of the times.
         retry_policy: The policy used to retry a step that encountered an error while running.
+
     """
 
     def decorator(func: Callable) -> Callable:
@@ -69,6 +73,7 @@ def step(
             num_workers=num_workers,
             requested_services=spec.requested_services or [],
             retry_policy=retry_policy,
+            resources=spec.resources,
         )
 
         # If this is a free function, call add_step() explicitly.

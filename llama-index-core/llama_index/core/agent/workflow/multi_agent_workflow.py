@@ -15,6 +15,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentSetup,
     AgentOutput,
 )
+from llama_index.core.bridge.pydantic import model_serializer
 from llama_index.core.llms import ChatMessage, TextBlock
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
@@ -78,6 +79,16 @@ async def handoff(ctx: Context, to_agent: str, reason: str) -> str:
     )
 
     return handoff_output_prompt.format(to_agent=to_agent, reason=reason)
+
+
+class AgentWorkflowStartEvent(StartEvent):
+    @model_serializer()
+    def serialize_start_event(self) -> dict:
+        """Serialize the start event and exclude the memory."""
+        return {
+            "user_msg": self.user_msg,
+            "chat_history": self.chat_history,
+        }
 
 
 class AgentWorkflowMeta(WorkflowMeta, ABCMeta):
@@ -276,8 +287,14 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
     ) -> ToolOutput:
         """Call the given tool with the given input."""
         try:
-            if isinstance(tool, FunctionTool) and tool.requires_context:
-                tool_output = await tool.acall(ctx=ctx, **tool_input)
+            if (
+                isinstance(tool, FunctionTool)
+                and tool.requires_context
+                and tool.ctx_param_name is not None
+            ):
+                new_tool_input = {**tool_input}
+                new_tool_input[tool.ctx_param_name] = ctx
+                tool_output = await tool.acall(**new_tool_input)
             else:
                 tool_output = await tool.acall(**tool_input)
         except Exception as e:
@@ -292,7 +309,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         return tool_output
 
     @step
-    async def init_run(self, ctx: Context, ev: StartEvent) -> AgentInput:
+    async def init_run(self, ctx: Context, ev: AgentWorkflowStartEvent) -> AgentInput:
         """Sets up the workflow and validates inputs."""
         await self._init_context(ctx, ev)
 
@@ -490,6 +507,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         next_agent_name = await ctx.get("next_agent", default=None)
         if next_agent_name:
             await ctx.set("current_agent_name", next_agent_name)
+            await ctx.set("next_agent", None)
 
         if any(
             tool_call_result.return_direct for tool_call_result in tool_call_results
@@ -544,15 +562,26 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         checkpoint_callback: Optional[CheckpointCallback] = None,
         **kwargs: Any,
     ) -> WorkflowHandler:
-        return super().run(
-            user_msg=user_msg,
-            chat_history=chat_history,
-            memory=memory,
-            ctx=ctx,
-            stepwise=stepwise,
-            checkpoint_callback=checkpoint_callback,
-            **kwargs,
-        )
+        # Detect if hitl is needed
+        if ctx is not None and ctx.is_running:
+            return super().run(
+                ctx=ctx,
+                stepwise=stepwise,
+                checkpoint_callback=checkpoint_callback,
+                **kwargs,
+            )
+        else:
+            return super().run(
+                start_event=AgentWorkflowStartEvent(
+                    user_msg=user_msg,
+                    chat_history=chat_history,
+                    memory=memory,
+                    **kwargs,
+                ),
+                ctx=ctx,
+                stepwise=stepwise,
+                checkpoint_callback=checkpoint_callback,
+            )
 
     @classmethod
     def from_tools_or_functions(
@@ -565,7 +594,8 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         timeout: Optional[float] = None,
         verbose: bool = False,
     ) -> "AgentWorkflow":
-        """Initializes an AgentWorkflow from a list of tools or functions.
+        """
+        Initializes an AgentWorkflow from a list of tools or functions.
 
         The workflow will be initialized with a single agent that uses the provided tools or functions.
 

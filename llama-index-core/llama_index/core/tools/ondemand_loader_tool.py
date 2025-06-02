@@ -1,9 +1,9 @@
-"""Ad-hoc data loader tool.
+"""
+Ad-hoc data loader tool.
 
 Tool that wraps any data loader, and is able to load data on-demand.
 
 """
-
 
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
@@ -18,7 +18,8 @@ from llama_index.core.tools.utils import create_schema_from_function
 
 
 class OnDemandLoaderTool(AsyncBaseTool):
-    """On-demand data loader tool.
+    """
+    On-demand data loader tool.
 
     Loads data with by calling the provided loader function,
     stores in index, and queries for relevant data with a

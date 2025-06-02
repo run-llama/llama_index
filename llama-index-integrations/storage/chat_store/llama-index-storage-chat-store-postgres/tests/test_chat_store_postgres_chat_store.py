@@ -171,7 +171,7 @@ async def test_delete_last_message(postgres_chat_store: PostgresChatStore):
 
 
 @pytest.mark.skipif(no_packages, reason="ayncpg, pscopg and sqlalchemy not installed")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_postgres_add_message(postgres_chat_store: PostgresChatStore):
     key = "test_async_add_key"
 
@@ -183,7 +183,7 @@ async def test_async_postgres_add_message(postgres_chat_store: PostgresChatStore
     assert result[0].content == "async_add_message_test" and result[0].role == "user"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_set_and_retrieve_messages(postgres_chat_store: PostgresChatStore):
     messages = [
         ChatMessage(content="First async message", role="user"),
@@ -199,7 +199,7 @@ async def test_async_set_and_retrieve_messages(postgres_chat_store: PostgresChat
 
 
 @pytest.mark.skipif(no_packages, reason="ayncpg, pscopg and sqlalchemy not installed")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_adelete_messages(postgres_chat_store: PostgresChatStore):
     messages = [ChatMessage(content="Async message to delete", role="user")]
     key = "test_async_delete_key"
@@ -211,7 +211,7 @@ async def test_adelete_messages(postgres_chat_store: PostgresChatStore):
 
 
 @pytest.mark.skipif(no_packages, reason="ayncpg, pscopg and sqlalchemy not installed")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_delete_specific_message(postgres_chat_store: PostgresChatStore):
     messages = [
         ChatMessage(content="Async keep me", role="user"),
@@ -227,7 +227,7 @@ async def test_async_delete_specific_message(postgres_chat_store: PostgresChatSt
 
 
 @pytest.mark.skipif(no_packages, reason="ayncpg, pscopg and sqlalchemy not installed")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_get_keys(postgres_chat_store: PostgresChatStore):
     # Add some test data
     await postgres_chat_store.aset_messages(
@@ -243,7 +243,7 @@ async def test_async_get_keys(postgres_chat_store: PostgresChatStore):
 
 
 @pytest.mark.skipif(no_packages, reason="ayncpg, pscopg and sqlalchemy not installed")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_delete_last_message(postgres_chat_store: PostgresChatStore):
     key = "test_async_delete_last_message"
     messages = [
@@ -263,7 +263,7 @@ async def test_async_delete_last_message(postgres_chat_store: PostgresChatStore)
 
 
 @pytest.mark.skipif(no_packages, reason="ayncpg, pscopg and sqlalchemy not installed")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_multimodal_messages(postgres_chat_store: PostgresChatStore):
     key = "test_async_multimodal"
     image_url = "https://images.unsplash.com/photo-1579546929518-9e396f3cc809"

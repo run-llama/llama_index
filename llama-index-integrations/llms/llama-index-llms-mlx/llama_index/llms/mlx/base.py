@@ -41,7 +41,8 @@ DEFAULT_MLX_MODEL = "microsoft/phi-2"
 
 
 class MLXLLM(CustomLLM):
-    r"""MLX LLM.
+    r"""
+    MLX LLM.
 
     Examples:
         Thanks to the HuggingFace team for the example code.
@@ -90,6 +91,7 @@ class MLXLLM(CustomLLM):
         response = llm.complete("What is the meaning of life?")
         print(str(response))
         ```
+
     """
 
     model_name: str = Field(

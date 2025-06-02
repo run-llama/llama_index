@@ -1,4 +1,5 @@
 import json
+from json import JSONDecodeError
 from typing import (
     Any,
     Awaitable,
@@ -61,7 +62,8 @@ def force_single_tool_call(response: ChatResponse) -> None:
 
 
 class LiteLLM(FunctionCallingLLM):
-    """LiteLLM.
+    """
+    LiteLLM.
 
     Examples:
         `pip install llama-index-llms-litellm`
@@ -87,6 +89,7 @@ class LiteLLM(FunctionCallingLLM):
         # Print the response
         print(chat_response)
         ```
+
     """
 
     model: str = Field(
@@ -167,7 +170,7 @@ class LiteLLM(FunctionCallingLLM):
             **kwargs,
         )
 
-        self._custom_llm_provider = kwargs.get("custom_llm_provider", None)
+        self._custom_llm_provider = kwargs.get("custom_llm_provider")
 
     def _get_model_name(self) -> str:
         model_name = self.model
@@ -201,6 +204,7 @@ class LiteLLM(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         tool_specs = [
@@ -217,6 +221,7 @@ class LiteLLM(FunctionCallingLLM):
             "messages": messages,
             "tools": tool_specs or None,
             "parallel_tool_calls": allow_parallel_tool_calls,
+            "tool_choice": "required" if tool_required else "auto",
             **kwargs,
         }
 
@@ -252,7 +257,13 @@ class LiteLLM(FunctionCallingLLM):
             if tool_call["type"] != "function" or "function" not in tool_call:
                 raise ValueError(f"Invalid tool call of type {tool_call['type']}")
             function = tool_call["function"]
-            argument_dict = json.loads(function["arguments"])
+
+            # this should handle both complete and partial jsons
+            try:
+                argument_dict = json.loads(function["arguments"])
+            except (ValueError, TypeError, JSONDecodeError):
+                argument_dict = {}
+
             tool_selections.append(
                 ToolSelection(
                     tool_id=tool_call["id"],

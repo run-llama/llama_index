@@ -26,6 +26,7 @@ from llama_index.core.llms import (
     ImageBlock,
     LLM,
     TextBlock,
+    DocumentBlock,
 )
 from llama_index.core.schema import BaseNode, Node, TextNode
 from llama_index.core.storage.docstore.simple_docstore import DocumentStore
@@ -80,6 +81,7 @@ class DocumentContextExtractor(BaseExtractor):
         )
         metadata_list = await extractor.aextract(nodes)
         ```
+
     """
 
     # Pydantic fields
@@ -167,6 +169,7 @@ class DocumentContextExtractor(BaseExtractor):
         Note:
             Uses exponential backoff starting at 60 seconds with up to 5 retries
             for rate limit handling.
+
         """
         cached_text = f"<document>{document.get_content()}</document>"
         messages = [
@@ -203,9 +206,9 @@ class DocumentContextExtractor(BaseExtractor):
                     messages, max_tokens=self.max_output_tokens, extra_headers=headers
                 )
 
-                first_block: Union[
-                    TextBlock, ImageBlock, AudioBlock
-                ] = response.message.blocks[0]
+                first_block: Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock] = (
+                    response.message.blocks[0]
+                )
                 if isinstance(first_block, TextBlock):
                     metadata[key] = first_block.text
                 else:
@@ -290,6 +293,7 @@ class DocumentContextExtractor(BaseExtractor):
 
         Returns:
             List of metadata dictionaries with generated context
+
         """
         metadata_list: List[Dict] = []
         for _ in nodes:

@@ -88,6 +88,7 @@ INTEGRATION_FOLDER_TO_LABEL = {
     "node_parsers": "Node Parsers & Text Splitters",
     "node_parser": "Node Parsers & Text Splitters",
     "objects": "Object Stores",
+    "observability": "Observability",
     "output_parsers": "Output Parsers",
     "postprocessor": "Node Postprocessors",
     "program": "Programs",
@@ -190,6 +191,8 @@ def main():
     search_paths = []
     for folder in INTEGRATION_FOLDERS:
         for root, dirs, files in os.walk(folder):
+            if ".venv" in root:
+                continue
             for file in files:
                 # check if the current root is in the excluded integration folders
                 if any(
@@ -200,6 +203,9 @@ def main():
 
                 if file == "pyproject.toml":
                     toml_path = os.path.join(root, file)
+                    if ".venv" in toml_path:
+                        continue
+
                     with open(toml_path) as f:
                         toml_data = toml.load(f)
                     import_path = toml_data["tool"]["llamahub"]["import_path"]

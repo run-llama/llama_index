@@ -1,4 +1,5 @@
 """Test Bedrock multi-modal LLM."""
+
 import json
 from io import BytesIO
 import pytest
@@ -61,7 +62,7 @@ def test_completion(mock_session):
     mock_client.invoke_model.assert_called_once()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch("aioboto3.Session")
 async def test_async_completion(mock_session):
     """Test async completion."""

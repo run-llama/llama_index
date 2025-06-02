@@ -37,7 +37,8 @@ from llama_index.core.tools.types import AsyncBaseTool
 
 
 class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
-    """Custom simple agent worker.
+    """
+    Custom simple agent worker.
 
     This is "simple" in the sense that some of the scaffolding is setup already.
     Assumptions:
@@ -182,7 +183,8 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
     def _run_step(
         self, state: Dict[str, Any], task: Task, input: Optional[str] = None
     ) -> Tuple[AgentChatResponse, bool]:
-        """Run step.
+        """
+        Run step.
 
         Returns:
             Tuple of (agent_response, is_done)
@@ -192,7 +194,8 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
     async def _arun_step(
         self, state: Dict[str, Any], task: Task, input: Optional[str] = None
     ) -> Tuple[AgentChatResponse, bool]:
-        """Run step (async).
+        """
+        Run step (async).
 
         Can override this method if you want to run the step asynchronously.
 
@@ -201,7 +204,7 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
 
         """
         raise NotImplementedError(
-            "This agent does not support async." "Please implement _arun_step."
+            "This agent does not support async.Please implement _arun_step."
         )
 
     @trace_method("run_step")
@@ -241,7 +244,8 @@ class CustomSimpleAgentWorker(BaseModel, BaseAgentWorker):
 
     @abstractmethod
     def _finalize_task(self, state: Dict[str, Any], **kwargs: Any) -> None:
-        """Finalize task, after all the steps are completed.
+        """
+        Finalize task, after all the steps are completed.
 
         State is all the step states.
 

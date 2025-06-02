@@ -241,7 +241,7 @@ def test_functionality(
         assert count_docs_in_index(os_store) == len(node_embeddings) - 1
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
 async def test_async_functionality(
     os_stores: List[OpensearchVectorStore], node_embeddings: List[TextNode]
@@ -291,7 +291,7 @@ def test_delete_nodes(
         assert "ccc" in res.ids
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
 async def test_adelete_nodes(
     os_stores: List[OpensearchVectorStore], node_embeddings_2: List[TextNode]
@@ -421,7 +421,7 @@ def test_clear(
         assert len(res.ids) == 0
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
 async def test_aclear(
     os_stores: List[OpensearchVectorStore], node_embeddings_2: List[TextNode]
@@ -656,7 +656,8 @@ def test_filter_text_match(
     os_stores: List[OpensearchVectorStore],
     insert_document,
 ):
-    """Test that OpensearchVectorStore correctly applies FilterOperator.TEXT_MATCH in filters. Also tests that
+    """
+    Test that OpensearchVectorStore correctly applies FilterOperator.TEXT_MATCH in filters. Also tests that
     fuzzy matching works as intended.
     """
     for os_store in os_stores:
@@ -685,7 +686,8 @@ def test_filter_text_match(
 
 @pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
 def test_filter_contains(os_stores: List[OpensearchVectorStore], insert_document):
-    """Test that OpensearchVectorStore correctly applies FilterOperator.CONTAINS in filters. Should only match
+    """
+    Test that OpensearchVectorStore correctly applies FilterOperator.CONTAINS in filters. Should only match
     exact substring matches.
     """
     for os_store in os_stores:
@@ -709,6 +711,36 @@ def test_filter_contains(os_stores: List[OpensearchVectorStore], insert_document
 
         doc_ids = {node.id_ for node in query_result.nodes}
         assert doc_ids == {"match1", "match2"}
+
+
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+def test_filter_is_empty(os_stores: List[OpensearchVectorStore], insert_document):
+    """
+    Test that OpensearchVectorStore correctly applies FilterOperator.IS_EMPTY in filters. Should only match
+    documents where the specified field doesn't exist.
+    """
+    for os_store in os_stores:
+        for metadata, id_ in [
+            ({"author": "John Doe", "category": "fiction"}, "has_author"),
+            ({"category": "non-fiction", "year": 2023}, "no_author1"),
+            ({"year": 2022, "publisher": "ABC Books"}, "no_author2"),
+            ({}, "no_author3"),
+        ]:
+            insert_document(os_store, doc_id=id_, metadata=metadata)
+
+        query = _get_sample_vector_store_query(
+            filters=MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key="author", value=None, operator=FilterOperator.IS_EMPTY
+                    )
+                ]
+            )
+        )
+        query_result = os_store.query(query)
+
+        doc_ids = {node.id_ for node in query_result.nodes}
+        assert doc_ids == {"no_author1", "no_author2", "no_author3"}
 
 
 @pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
@@ -788,7 +820,8 @@ def test_filter_nested(
 def test_filter_array_of_strings(
     os_stores: List[OpensearchVectorStore], insert_document
 ):
-    """Test that OpensearchVectorStore correctly applies Filter.Operator.IN filters
+    """
+    Test that OpensearchVectorStore correctly applies Filter.Operator.IN filters
     when the filter value is an array of strings. Should only match all members
     of the input array exist in the field.
     """

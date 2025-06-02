@@ -1,5 +1,6 @@
 """Firecrawl Web Reader."""
-from typing import List, Optional, Dict, Callable
+
+from typing import Any, List, Optional, Dict, Callable
 from pydantic import Field
 
 from llama_index.core.bridge.pydantic import PrivateAttr
@@ -8,7 +9,8 @@ from llama_index.core.schema import Document
 
 
 class FireCrawlWebReader(BasePydanticReader):
-    """turn a url to llm accessible markdown with `Firecrawl.dev`.
+    """
+    turn a url to llm accessible markdown with `Firecrawl.dev`.
 
     Args:
     api_key: The Firecrawl API key.
@@ -25,7 +27,7 @@ class FireCrawlWebReader(BasePydanticReader):
 
     """
 
-    firecrawl: Optional[object] = Field(None)
+    firecrawl: Optional[Any] = Field(None)
     api_key: str
     api_url: Optional[str]
     mode: Optional[str]
@@ -63,7 +65,8 @@ class FireCrawlWebReader(BasePydanticReader):
         query: Optional[str] = None,
         urls: Optional[List[str]] = None,
     ) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             url (Optional[str]): URL to scrape or crawl.
@@ -75,6 +78,7 @@ class FireCrawlWebReader(BasePydanticReader):
 
         Raises:
             ValueError: If invalid combination of parameters is provided.
+
         """
         if sum(x is not None for x in [url, query, urls]) != 1:
             raise ValueError("Exactly one of url, query, or urls must be provided.")
@@ -85,7 +89,7 @@ class FireCrawlWebReader(BasePydanticReader):
             # [SCRAPE] params: https://docs.firecrawl.dev/api-reference/endpoint/scrape
             if url is None:
                 raise ValueError("URL must be provided for scrape mode.")
-            firecrawl_docs = self.firecrawl.scrape_url(url, params=self.params)
+            firecrawl_docs = self.firecrawl.scrape_url(url, **self.params)
             documents.append(
                 Document(
                     text=firecrawl_docs.get("markdown", ""),
@@ -96,8 +100,8 @@ class FireCrawlWebReader(BasePydanticReader):
             # [CRAWL] params: https://docs.firecrawl.dev/api-reference/endpoint/crawl-post
             if url is None:
                 raise ValueError("URL must be provided for crawl mode.")
-            firecrawl_docs = self.firecrawl.crawl_url(url, params=self.params)
-            firecrawl_docs = firecrawl_docs.get("data", [])
+            firecrawl_docs = self.firecrawl.crawl_url(url, **self.params)
+            firecrawl_docs = firecrawl_docs.data
             for doc in firecrawl_docs:
                 documents.append(
                     Document(
@@ -116,7 +120,7 @@ class FireCrawlWebReader(BasePydanticReader):
                 del search_params["query"]
 
             # Get search results
-            search_response = self.firecrawl.search(query, params=search_params)
+            search_response = self.firecrawl.search(query, **search_params)
 
             # Handle the search response format
             if isinstance(search_response, dict):
@@ -196,7 +200,7 @@ class FireCrawlWebReader(BasePydanticReader):
             payload = {"prompt": extract_params.pop("prompt")}
 
             # Call the extract method with the urls and params
-            extract_response = self.firecrawl.extract(urls=urls, params=payload)
+            extract_response = self.firecrawl.extract(urls=urls, **payload)
 
             # Handle the extract response format
             if isinstance(extract_response, dict):

@@ -1,4 +1,4 @@
-""" GitLab issues reader. """
+"""GitLab issues reader."""
 
 from datetime import datetime
 import enum
@@ -25,6 +25,7 @@ class GitLabIssuesReader(BaseReader):
             - OPEN: Issues that are open.
             - CLOSED: Issues that are closed.
             - ALL: All issues, open and closed.
+
         """
 
         OPEN = "opened"
@@ -42,6 +43,7 @@ class GitLabIssuesReader(BaseReader):
             - INCIDENT: Incident.
             - TEST_CASE: Test case.
             - TASK: Task.
+
         """
 
         ISSUE = "issue"
@@ -59,6 +61,7 @@ class GitLabIssuesReader(BaseReader):
             - CREATED_BY_ME: Issues created by the authenticated user.
             - ASSIGNED_TO_ME: Issues assigned to the authenticated user.
             - ALL: All issues.
+
         """
 
         CREATED_BY_ME = "created_by_me"
@@ -168,6 +171,7 @@ class GitLabIssuesReader(BaseReader):
 
         Returns:
             List[Document]: List of documents.
+
         """
         to_gitlab_datetime_format = self._to_gitlab_datetime_format
         params = {

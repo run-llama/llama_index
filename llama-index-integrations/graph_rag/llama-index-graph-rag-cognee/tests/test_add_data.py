@@ -13,7 +13,7 @@ def test_smoke():
 @pytest.mark.skipif(
     sys.version_info < (3, 10), reason="mock strategy requires python3.10 or higher"
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_add_data(monkeypatch):
     # Instantiate cognee GraphRAG
     cogneeGraphRAG = CogneeGraphRAG(

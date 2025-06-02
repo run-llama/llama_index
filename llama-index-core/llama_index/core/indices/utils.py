@@ -1,4 +1,5 @@
 """Utilities for GPT indices."""
+
 import logging
 import re
 from llama_index.core.base.embeddings.base import BaseEmbedding
@@ -18,7 +19,8 @@ def get_sorted_node_list(node_dict: Dict[int, BaseNode]) -> List[BaseNode]:
 
 
 def extract_numbers_given_response(response: str, n: int = 1) -> Optional[List[int]]:
-    """Extract number given the GPT-generated response.
+    """
+    Extract number given the GPT-generated response.
 
     Used by tree-structured indices.
 
@@ -68,7 +70,8 @@ def log_vector_store_query_result(
 def default_format_node_batch_fn(
     summary_nodes: List[BaseNode],
 ) -> str:
-    """Default format node batch function.
+    """
+    Default format node batch function.
 
     Assign each summary node a number, and format the batch of nodes.
 
@@ -136,7 +139,8 @@ def default_parse_choice_select_answer_fn(
 def embed_nodes(
     nodes: Sequence[BaseNode], embed_model: BaseEmbedding, show_progress: bool = False
 ) -> Dict[str, List[float]]:
-    """Get embeddings of the given nodes, run embedding model if necessary.
+    """
+    Get embeddings of the given nodes, run embedding model if necessary.
 
     Args:
         nodes (Sequence[BaseNode]): The nodes to embed.
@@ -145,6 +149,7 @@ def embed_nodes(
 
     Returns:
         Dict[str, List[float]]: A map from node id to embedding.
+
     """
     id_to_embed_map: Dict[str, List[float]] = {}
 
@@ -172,7 +177,8 @@ def embed_image_nodes(
     embed_model: MultiModalEmbedding,
     show_progress: bool = False,
 ) -> Dict[str, List[float]]:
-    """Get image embeddings of the given nodes, run image embedding model if necessary.
+    """
+    Get image embeddings of the given nodes, run image embedding model if necessary.
 
     Args:
         nodes (Sequence[ImageNode]): The nodes to embed.
@@ -181,6 +187,7 @@ def embed_image_nodes(
 
     Returns:
         Dict[str, List[float]]: A map from node id to embedding.
+
     """
     id_to_embed_map: Dict[str, List[float]] = {}
 
@@ -206,7 +213,8 @@ def embed_image_nodes(
 async def async_embed_nodes(
     nodes: Sequence[BaseNode], embed_model: BaseEmbedding, show_progress: bool = False
 ) -> Dict[str, List[float]]:
-    """Async get embeddings of the given nodes, run embedding model if necessary.
+    """
+    Async get embeddings of the given nodes, run embedding model if necessary.
 
     Args:
         nodes (Sequence[BaseNode]): The nodes to embed.
@@ -215,6 +223,7 @@ async def async_embed_nodes(
 
     Returns:
         Dict[str, List[float]]: A map from node id to embedding.
+
     """
     id_to_embed_map: Dict[str, List[float]] = {}
 
@@ -242,7 +251,8 @@ async def async_embed_image_nodes(
     embed_model: MultiModalEmbedding,
     show_progress: bool = False,
 ) -> Dict[str, List[float]]:
-    """Get image embeddings of the given nodes, run image embedding model if necessary.
+    """
+    Get image embeddings of the given nodes, run image embedding model if necessary.
 
     Args:
         nodes (Sequence[ImageNode]): The nodes to embed.
@@ -251,6 +261,7 @@ async def async_embed_image_nodes(
 
     Returns:
         Dict[str, List[float]]: A map from node id to embedding.
+
     """
     id_to_embed_map: Dict[str, List[float]] = {}
 

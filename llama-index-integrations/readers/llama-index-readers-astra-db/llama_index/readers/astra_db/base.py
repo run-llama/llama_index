@@ -8,7 +8,8 @@ from llama_index.core.schema import Document
 
 
 class AstraDBReader(BaseReader):
-    """Astra DB reader.
+    """
+    Astra DB reader.
 
     Retrieve documents from an Astra DB Instance.
 
@@ -64,7 +65,8 @@ class AstraDBReader(BaseReader):
         )
 
     def load_data(self, vector: List[float], limit: int = 10, **kwargs: Any) -> Any:
-        """Load data from Astra DB.
+        """
+        Load data from Astra DB.
 
         Args:
             vector (Any): Query
@@ -73,6 +75,7 @@ class AstraDBReader(BaseReader):
 
         Returns:
             List[Document]: A list of documents.
+
         """
         results = self._collection.vector_find(
             vector,

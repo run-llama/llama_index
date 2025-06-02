@@ -14,7 +14,8 @@ from llama_index.llms.openai import OpenAI
 
 
 class MultiDocumentAgentsPack(BaseLlamaPack):
-    """Multi-document Agents pack.
+    """
+    Multi-document Agents pack.
 
     Given a set of documents, build our multi-document agents architecture.
     - setup a document agent over agent doc (capable of QA and summarization)

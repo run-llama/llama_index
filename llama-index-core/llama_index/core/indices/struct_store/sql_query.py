@@ -71,7 +71,8 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT_V2 = PromptTemplate(
 
 
 class SQLStructStoreQueryEngine(BaseQueryEngine):
-    """GPT SQL query engine over a structured database.
+    """
+    GPT SQL query engine over a structured database.
 
     NOTE: deprecated in favor of SQLTableRetriever, kept for backward compatibility.
 
@@ -130,7 +131,8 @@ class SQLStructStoreQueryEngine(BaseQueryEngine):
 
 
 class NLStructStoreQueryEngine(BaseQueryEngine):
-    """GPT natural language query engine over a structured database.
+    """
+    GPT natural language query engine over a structured database.
 
     NOTE: deprecated in favor of SQLTableRetriever, kept for backward compatibility.
 
@@ -160,6 +162,7 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         response_synthesis_prompt (Optional[BasePromptTemplate]): A
             Response Synthesis BasePromptTemplate to use for the query. Defaults to
             DEFAULT_RESPONSE_SYNTHESIS_PROMPT.
+
     """
 
     def __init__(
@@ -218,7 +221,8 @@ class NLStructStoreQueryEngine(BaseQueryEngine):
         return response.strip()
 
     def _get_table_context(self, query_bundle: QueryBundle) -> str:
-        """Get table context.
+        """
+        Get table context.
 
         Get tables schema + optional context as a single string. Taken from
         SQLContextContainer.
@@ -316,7 +320,8 @@ def _validate_prompt(
 
 
 class BaseSQLTableQueryEngine(BaseQueryEngine):
-    """Base SQL Table query engine.
+    """
+    Base SQL Table query engine.
 
     NOTE: Any Text-to-SQL application should be aware that executing
     arbitrary SQL queries can be a security risk. It is recommended to
@@ -487,6 +492,9 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
         response_synthesis_prompt: Optional[BasePromptTemplate] = None,
         refine_synthesis_prompt: Optional[BasePromptTemplate] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
+        table_retriever: Optional[ObjectRetriever[SQLTableSchema]] = None,
+        rows_retrievers: Optional[dict[str, BaseRetriever]] = None,
+        cols_retrievers: Optional[dict[str, dict[str, BaseRetriever]]] = None,
         context_str_prefix: Optional[str] = None,
         embed_model: Optional[BaseEmbedding] = None,
         sql_only: bool = False,
@@ -502,6 +510,9 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
             text_to_sql_prompt=text_to_sql_prompt,
             context_query_kwargs=context_query_kwargs,
             tables=tables,
+            table_retriever=table_retriever,
+            rows_retrievers=rows_retrievers,
+            cols_retrievers=cols_retrievers,
             context_str_prefix=context_str_prefix,
             embed_model=embed_model,
             sql_only=sql_only,
@@ -526,7 +537,8 @@ class NLSQLTableQueryEngine(BaseSQLTableQueryEngine):
 
 
 class PGVectorSQLQueryEngine(BaseSQLTableQueryEngine):
-    """PGvector SQL query engine.
+    """
+    PGvector SQL query engine.
 
     A modified version of the normal text-to-SQL query engine because
     we can infer embedding vectors in the sql query.
@@ -591,6 +603,7 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
         sql_database: SQLDatabase,
         table_retriever: ObjectRetriever[SQLTableSchema],
         rows_retrievers: Optional[dict[str, BaseRetriever]] = None,
+        cols_retrievers: Optional[dict[str, dict[str, BaseRetriever]]] = None,
         llm: Optional[LLM] = None,
         text_to_sql_prompt: Optional[BasePromptTemplate] = None,
         context_query_kwargs: Optional[dict] = None,
@@ -610,6 +623,7 @@ class SQLTableRetrieverQueryEngine(BaseSQLTableQueryEngine):
             context_query_kwargs=context_query_kwargs,
             table_retriever=table_retriever,
             rows_retrievers=rows_retrievers,
+            cols_retrievers=cols_retrievers,
             context_str_prefix=context_str_prefix,
             sql_only=sql_only,
             callback_manager=callback_manager,

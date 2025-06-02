@@ -29,7 +29,8 @@ def _default_stringify_rule_for_arguments(args: Union[List, Tuple]) -> str:
 
 
 class LLMCompilerTask(BaseModel):
-    """LLM Compiler Task.
+    """
+    LLM Compiler Task.
 
     Object taken from
     https://github.com/SqueezeAILab/LLMCompiler/blob/main/src/llm_compiler/task_fetching_unit.py.
@@ -72,8 +73,7 @@ class LLMCompilerTask(BaseModel):
             # else:
             # Otherwise, we have a default stringify rule
             thought_action_observation += (
-                f"{idx}{self.name}"
-                f"{_default_stringify_rule_for_arguments(self.args)}\n"
+                f"{idx}{self.name}{_default_stringify_rule_for_arguments(self.args)}\n"
             )
         if self.observation is not None:
             thought_action_observation += f"Observation: {self.observation}\n"

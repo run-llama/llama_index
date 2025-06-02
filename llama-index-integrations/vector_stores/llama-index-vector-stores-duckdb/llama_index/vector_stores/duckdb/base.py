@@ -76,6 +76,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         # persist to disk
         vector_store = DuckDBVectorStore("pg.duckdb", persist_dir="./persist/")
         ```
+
     """
 
     stores_text: bool = True

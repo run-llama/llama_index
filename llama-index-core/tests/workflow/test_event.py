@@ -13,7 +13,8 @@ class _TestEvent(Event):
 
 
 class _TestEvent2(Event):
-    """Custom Test Event.
+    """
+    Custom Test Event.
 
     Private Attrs:
         _private_param: doesn't get modified during construction

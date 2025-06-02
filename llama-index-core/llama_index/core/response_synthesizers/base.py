@@ -1,4 +1,5 @@
-"""Response builder class.
+"""
+Response builder class.
 
 This class provides general functions for taking in a set of text
 and generating a response.

@@ -4,14 +4,14 @@ from typing import Any, Dict, Type
 from llama_index.core.bridge.pydantic import (
     BaseModel,
     ConfigDict,
-    Field,
     PrivateAttr,
     model_serializer,
 )
 
 
 class Event(BaseModel):
-    """Base class for event types that mimics dict interface.
+    """
+    Base class for event types that mimics dict interface.
 
     PrivateAttr:
         _data (Dict[str, Any]): Underlying Python dict.
@@ -50,13 +50,15 @@ class Event(BaseModel):
         # `a` and `b` get set in the underlying dict, namely `evt._data`
         print((evt.a, evt.b))
         ```
+
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
     _data: Dict[str, Any] = PrivateAttr(default_factory=dict)
 
     def __init__(self, **params: Any):
-        """__init__.
+        """
+        __init__.
 
         NOTE: fields and private_attrs are pulled from params by name.
         """
@@ -162,15 +164,9 @@ class StopEvent(Event):
 class InputRequiredEvent(Event):
     """InputRequiredEvent is sent when an input is required for a step."""
 
-    prefix: str = Field(
-        description="The prefix and description of the input that is required."
-    )
-
 
 class HumanResponseEvent(Event):
     """HumanResponseEvent is sent when a human response is required for a step."""
-
-    response: str = Field(description="The response from the human.")
 
 
 EventType = Type[Event]

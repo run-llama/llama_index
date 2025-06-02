@@ -1,10 +1,20 @@
 import os
+import httpx
 from unittest.mock import MagicMock
 
 import pytest
+from pathlib import Path
 from llama_index.core.base.llms.base import BaseLLM
-from llama_index.core.llms import ChatMessage
+from llama_index.core.llms import (
+    ChatMessage,
+    DocumentBlock,
+    TextBlock,
+    MessageRole,
+    ChatResponse,
+)
+from llama_index.core.tools import FunctionTool
 from llama_index.llms.anthropic import Anthropic
+from llama_index.llms.anthropic.base import AnthropicChatResponse
 
 
 def test_text_inference_embedding_class():
@@ -40,10 +50,11 @@ def test_anthropic_through_vertex_ai():
     reason="AWS region not available to test Bedrock integration",
 )
 def test_anthropic_through_bedrock():
-    # Note: this assumes you have AWS credentials configured.
     anthropic_llm = Anthropic(
         aws_region=os.getenv("ANTHROPIC_AWS_REGION", "us-east-1"),
         model=os.getenv("ANTHROPIC_MODEL", "anthropic.claude-3-5-sonnet-20240620-v1:0"),
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
     )
 
     completion_response = anthropic_llm.complete("Give me a recipe for banana bread")
@@ -111,12 +122,14 @@ def test_anthropic_through_bedrock():
     os.getenv("ANTHROPIC_AWS_REGION") is None,
     reason="AWS region not available to test Bedrock integration",
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_anthropic_through_bedrock_async():
     # Note: this assumes you have AWS credentials configured.
     anthropic_llm = Anthropic(
         aws_region=os.getenv("ANTHROPIC_AWS_REGION", "us-east-1"),
         model=os.getenv("ANTHROPIC_MODEL", "anthropic.claude-3-5-sonnet-20240620-v1:0"),
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
     )
 
     # Test standard async completion
@@ -210,3 +223,140 @@ def test__prepare_chat_with_tools_empty():
     llm = Anthropic()
     retval = llm._prepare_chat_with_tools(tools=[])
     assert retval["tools"] == []
+
+
+@pytest.fixture()
+def pdf_url() -> str:
+    return "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+
+
+@pytest.mark.skipif(
+    os.getenv("ANTHROPIC_API_KEY") is None,
+    reason="Anthropic API key not available to test Anthropic integration",
+)
+def test_tool_required():
+    llm = Anthropic(model="claude-3-5-sonnet-latest")
+
+    search_tool = FunctionTool.from_defaults(fn=search)
+
+    # Test with tool_required=True
+    response = llm.chat_with_tools(
+        user_msg="What is the weather in Paris?",
+        tools=[search_tool],
+        tool_required=True,
+    )
+    assert isinstance(response, AnthropicChatResponse)
+    assert response.message.additional_kwargs["tool_calls"] is not None
+    assert len(response.message.additional_kwargs["tool_calls"]) > 0
+
+    # Test with tool_required=False
+    response = llm.chat_with_tools(
+        user_msg="Say hello!",
+        tools=[search_tool],
+        tool_required=False,
+    )
+    assert isinstance(response, AnthropicChatResponse)
+    # Should not use tools for a simple greeting
+    assert not response.message.additional_kwargs.get("tool_calls")
+
+    # should not blow up with no tools (regression test)
+    response = llm.chat_with_tools(
+        user_msg="Say hello!",
+        tools=[],
+        tool_required=False,
+    )
+    assert isinstance(response, AnthropicChatResponse)
+    assert not response.message.additional_kwargs.get("tool_calls")
+
+
+@pytest.mark.skipif(
+    os.getenv("ANTHROPIC_API_KEY") is None,
+    reason="Anthropic API key not available to test Anthropic document uploading ",
+)
+def test_document_upload(tmp_path: Path, pdf_url: str) -> None:
+    llm = Anthropic(model="claude-3-5-sonnet-latest")
+    pdf_path = tmp_path / "test.pdf"
+    pdf_content = httpx.get(pdf_url).content
+    pdf_path.write_bytes(pdf_content)
+    msg = ChatMessage(
+        role=MessageRole.USER,
+        blocks=[
+            DocumentBlock(path=pdf_path),
+            TextBlock(text="What does the document contain?"),
+        ],
+    )
+    messages = [msg]
+    response = llm.chat(messages)
+    assert isinstance(response, ChatResponse)
+
+
+def test_map_tool_choice_to_anthropic():
+    """Test that tool_required is correctly mapped to Anthropic's tool_choice parameter."""
+    llm = Anthropic()
+
+    # Test with tool_required=True
+    tool_choice = llm._map_tool_choice_to_anthropic(
+        tool_required=True, allow_parallel_tool_calls=False
+    )
+    assert tool_choice["type"] == "any"
+    assert tool_choice["disable_parallel_tool_use"]
+
+    # Test with tool_required=False
+    tool_choice = llm._map_tool_choice_to_anthropic(
+        tool_required=False, allow_parallel_tool_calls=False
+    )
+    assert tool_choice["type"] == "auto"
+    assert tool_choice["disable_parallel_tool_use"]
+
+    # Test with allow_parallel_tool_calls=True
+    tool_choice = llm._map_tool_choice_to_anthropic(
+        tool_required=True, allow_parallel_tool_calls=True
+    )
+    assert tool_choice["type"] == "any"
+    assert not tool_choice["disable_parallel_tool_use"]
+
+
+def search(query: str) -> str:
+    """Search for information about a query."""
+    return f"Results for {query}"
+
+
+search_tool = FunctionTool.from_defaults(
+    fn=search, name="search_tool", description="A tool for searching information"
+)
+
+
+def test_prepare_chat_with_tools_tool_required():
+    """Test that tool_required is correctly passed to the API request when True."""
+    llm = Anthropic()
+
+    # Test with tool_required=True
+    result = llm._prepare_chat_with_tools(tools=[search_tool], tool_required=True)
+
+    assert result["tool_choice"]["type"] == "any"
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["name"] == "search_tool"
+
+
+def test_prepare_chat_with_tools_tool_not_required():
+    """Test that tool_required is correctly passed to the API request when False."""
+    llm = Anthropic()
+
+    # Test with tool_required=False (default)
+    result = llm._prepare_chat_with_tools(
+        tools=[search_tool],
+    )
+
+    assert result["tool_choice"]["type"] == "auto"
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["name"] == "search_tool"
+
+
+def test_prepare_chat_with_no_tools_tool_not_required():
+    """Test that tool_required is correctly passed to the API request when False."""
+    llm = Anthropic()
+
+    result = llm._prepare_chat_with_tools(tools=[])
+
+    assert "tool_choice" not in result
+    assert len(result["tools"]) == 0

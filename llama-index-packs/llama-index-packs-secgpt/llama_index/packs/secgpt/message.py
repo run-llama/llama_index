@@ -1,6 +1,7 @@
 """
 In SecGPT, all messages exchanged among spokes conform to predefined formats, encapsulated within the Message class.
 """
+
 import json
 
 
@@ -16,6 +17,7 @@ class Message:
 
         Returns:
             bytes: The JSON-encoded function probe request message.
+
         """
         message = {}
         message["message_type"] = "function_probe_request"
@@ -34,6 +36,7 @@ class Message:
 
         Returns:
             bytes: The JSON-encoded function probe response message.
+
         """
         message = {}
         message["message_type"] = "function_probe_response"
@@ -53,6 +56,7 @@ class Message:
 
         Returns:
             bytes: The JSON-encoded application request message.
+
         """
         message = {}
         message["message_type"] = "app_request"
@@ -72,6 +76,7 @@ class Message:
 
         Returns:
             bytes: The JSON-encoded application response message.
+
         """
         message = {}
         message["message_type"] = "app_response"
@@ -90,6 +95,7 @@ class Message:
 
         Returns:
             bytes: The JSON-encoded final response message.
+
         """
         message = {}
         message["message_type"] = "final_response"
@@ -108,6 +114,7 @@ class Message:
 
         Returns:
             bytes: The JSON-encoded no functionality response message.
+
         """
         message = {}
         message["message_type"] = "no_functionality_response"
@@ -126,6 +133,7 @@ class Message:
 
         Returns:
             bytes: The JSON-encoded functionality denial response message.
+
         """
         message = {}
         message["message_type"] = "functionality_denial_response"

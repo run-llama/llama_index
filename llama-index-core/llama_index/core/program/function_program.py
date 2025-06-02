@@ -46,14 +46,17 @@ def get_function_tool(output_cls: Type[Model]) -> FunctionTool:
 
     return FunctionTool.from_defaults(
         fn=model_fn,
-        name=schema["title"],
+        # schema won't always have a title attribute
+        # fallback to using the class name directly
+        name=schema.get("title", output_cls.__name__),
         description=schema_description,
         fn_schema=output_cls,
     )
 
 
 class FunctionCallingProgram(BasePydanticProgram[Model]):
-    """Function Calling Program.
+    """
+    Function Calling Program.
 
     Uses function calling LLMs to obtain a structured output.
     """
@@ -240,7 +243,8 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
     ) -> Generator[
         Union[Model, List[Model], FlexibleModel, List[FlexibleModel]], None, None
     ]:
-        """Stream object.
+        """
+        Stream object.
 
         Returns a generator returning partials of the same object
         or a list of objects until it returns.
@@ -285,7 +289,8 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
     ) -> AsyncGenerator[
         Union[Model, List[Model], FlexibleModel, List[FlexibleModel]], None
     ]:
-        """Stream objects.
+        """
+        Stream objects.
 
         Returns a generator returning partials of the same object
         or a list of objects until it returns.

@@ -10,7 +10,7 @@ class ValyuToolSpec(BaseToolSpec):
     """Valyu tool spec."""
 
     spec_functions = [
-        "context",
+        "search",
     ]
 
     def __init__(
@@ -26,55 +26,65 @@ class ValyuToolSpec(BaseToolSpec):
         self._verbose = verbose
         self._max_price = max_price
 
-    def context(
+    def search(
         self,
         query: str,
-        search_type: str = "both",
-        data_sources: Optional[List[str]] = None,
-        max_num_results: int = 10,
+        search_type: str = "all",
+        max_num_results: int = 5,
+        relevance_threshold: float = 0.5,
         max_price: Optional[float] = None,
-        query_rewrite: bool = True,
-        similarity_threshold: float = 0.5,
+        start_date: Optional[str] = None,
+        end_date: Optional[str] = None,
     ) -> List[Document]:
-        """Find relevant programmaticly licensed proprietary content and the web to answer your query.
+        """
+        Search and retrieve relevant content from proprietary and public sources using Valyu's deep search.
 
         Args:
-            query (str): The question or topic to search for
-            search_type (str): Type of sources to search - "proprietary", "web", or "both"
-            data_sources (Optional[List[str]]): Specific indexes to query from
-            max_num_results (int): Maximum number of results to return. Defaults to 10
-            max_price (Optional[float]): Maximum price per content in PCM. Defaults to 100
-            query_rewrite (bool): Whether to rewrite the query to improve results. Defaults to True
-            similarity_threshold (float): Minimum similarity score for results. Defaults to 0.5
+            query (str): The input query to be processed
+            search_type (str): Type of search - "all" (both proprietary and web), "proprietary" (Valyu indices only), or "web" (web search only). Defaults to "all"
+            max_num_results (int): Maximum number of results to return (1-20). Defaults to 5
+            relevance_threshold (float): Minimum relevance score required for results (0.0-1.0). Defaults to 0.5
+            max_price (Optional[float]): Maximum cost in dollars for this search. Defaults to 20.0
+            start_date (Optional[str]): Start date for time filtering in YYYY-MM-DD format
+            end_date (Optional[str]): End date for time filtering in YYYY-MM-DD format
 
         Returns:
             List[Document]: List of Document objects containing the search results
+
         """
         if max_price is None:
             max_price = self._max_price
 
-        response = self.client.context(
+        response = self.client.search(
             query=query,
             search_type=search_type,
-            data_sources=data_sources,
             max_num_results=max_num_results,
+            relevance_threshold=relevance_threshold,
             max_price=max_price,
-            query_rewrite=query_rewrite,
-            similarity_threshold=similarity_threshold,
+            start_date=start_date,
+            end_date=end_date,
         )
 
         if self._verbose:
             print(f"[Valyu Tool] Response: {response}")
 
-        return [
-            Document(
-                text=result.content,
-                metadata={
-                    "title": result.title,
-                    "url": result.url,
-                    "source": result.source,
-                    "price": result.price,
-                },
+        documents = []
+        for result in response.results:
+            metadata = {
+                "title": result.title,
+                "url": result.url,
+                "source": result.source,
+                "price": result.price,
+                "length": result.length,
+                "data_type": result.data_type,
+                "relevance_score": result.relevance_score,
+            }
+
+            documents.append(
+                Document(
+                    text=result.content,
+                    metadata=metadata,
+                )
             )
-            for result in response.results
-        ]
+
+        return documents

@@ -133,7 +133,7 @@ def test_lazy_load_data_generator(sqlite_engine):
     assert all(hasattr(d.text_resource, "text") for d in docs)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_aload_data_async(sqlite_engine):
     """`aload_data` wraps the sync loader via asyncio.to_thread()."""
     reader = _create_reader(sqlite_engine)

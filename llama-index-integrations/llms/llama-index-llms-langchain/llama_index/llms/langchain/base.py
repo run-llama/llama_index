@@ -25,7 +25,8 @@ from langchain.schema import AIMessage
 
 
 class LangChainLLM(LLM):
-    """Adapter for a LangChain LLM.
+    """
+    Adapter for a LangChain LLM.
 
     Examples:
         `pip install llama-index-llms-langchain`
@@ -42,6 +43,7 @@ class LangChainLLM(LLM):
         for r in response_gen:
             print(r.delta, end="")
         ```
+
     """
 
     _llm: Any = PrivateAttr()

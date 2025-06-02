@@ -1,4 +1,5 @@
-"""Chain of table.
+"""
+Chain of table.
 
 All prompts adapted from original paper by Wang et al.:
 https://arxiv.org/pdf/2401.04398v1.pdf
@@ -584,7 +585,8 @@ def _dynamic_plan_parser(dynamic_plan: Any) -> Dict[str, Any]:
 
 
 def serialize_chain(op_chain: List[Tuple[str, str]]) -> str:
-    """Serialize operation chain.
+    """
+    Serialize operation chain.
 
     Operation chain is list of (fn, args) tuples.
 
@@ -616,7 +618,7 @@ def serialize_table(table: pd.DataFrame) -> str:
     output_str = f"col : {' | '.join([_esc_newl(c) for c in table.columns])}\n"
     for i in range(len(table)):
         output_str += (
-            f"row {i+1} : {' | '.join([_esc_newl(str(x)) for x in table.iloc[i]])}\n"
+            f"row {i + 1} : {' | '.join([_esc_newl(str(x)) for x in table.iloc[i]])}\n"
         )
     return output_str
 

@@ -1,4 +1,5 @@
 """Utils for LLM Compiler."""
+
 import ast
 import re
 from typing import Any, Dict, List, Sequence, Tuple, Union
@@ -41,13 +42,15 @@ def parse_llm_compiler_action_args(args: str) -> Union[List, Tuple]:
 
 
 def _find_tool(tool_name: str, tools: Sequence[BaseTool]) -> BaseTool:
-    """Find a tool by name.
+    """
+    Find a tool by name.
 
     Args:
         tool_name: Name of the tool to find.
 
     Returns:
         Tool or StructuredTool.
+
     """
     for tool in tools:
         if tool.metadata.name == tool_name:
@@ -128,7 +131,8 @@ def get_graph_dict(
 def generate_context_for_replanner(
     tasks: Dict[int, LLMCompilerTask], joiner_thought: str
 ) -> str:
-    """Generate context for replanning.
+    """
+    Generate context for replanning.
 
     Formatted like this.
     ```
@@ -155,7 +159,8 @@ def generate_context_for_replanner(
 
 
 def format_contexts(contexts: Sequence[str]) -> str:
-    """Format contexts.
+    """
+    Format contexts.
 
     Taken from https://github.com/SqueezeAILab/LLMCompiler/blob/main/src/llm_compiler/llm_compiler.py
 

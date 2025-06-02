@@ -31,6 +31,7 @@ class SnowflakeReader(BaseReader):
         schema (Optional[str]): Snowflake schema name.
         warehouse (Optional[str]): Snowflake warehouse name.
         proxy (Optional[str]): Proxy setting for the connection.
+
     """
 
     def __init__(
@@ -58,6 +59,7 @@ class SnowflakeReader(BaseReader):
             role (Optional[str]): Snowflake role name.
             proxy (Optional[str]): Proxy setting for the connection.
             engine (Optional[Engine]): Existing SQLAlchemy engine.
+
         """
         from snowflake.sqlalchemy import URL
 
@@ -94,6 +96,7 @@ class SnowflakeReader(BaseReader):
 
         Returns:
             List[Any]: The fetched results from the query.
+
         """
         # Create a session and execute the query
         session = self.Session()
@@ -105,13 +108,15 @@ class SnowflakeReader(BaseReader):
             session.close()
 
     def load_data(self, query: str) -> List[Document]:
-        """Query and load data from the Database, returning a list of Documents.
+        """
+        Query and load data from the Database, returning a list of Documents.
 
         Args:
             query (str): Query parameter to filter tables and rows.
 
         Returns:
             List[Document]: A list of Document objects.
+
         """
         documents = []
 
