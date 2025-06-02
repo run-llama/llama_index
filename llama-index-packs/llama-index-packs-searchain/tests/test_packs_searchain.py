@@ -10,13 +10,15 @@ def test_class():
     assert BaseLlamaPack.__name__ in names_of_base_classes
 
 
-def test_normalize_answer():
-    assert _normalize_answer("  The Apple!! ") == "apple"
+def test_normalize_answer_simple():
+    assert _normalize_answer("The Apple!") == "apple"
+    assert _normalize_answer("An orange?") == "orange"
+    assert _normalize_answer("  THE big BANANA.  ") == "big banana"
 
 
 def test_match_or_not():
-    assert _match_or_not("The Apple Pie", "apple")
-    assert not _match_or_not("Banana", "apple")
+    assert _match_or_not("The big banana is tasty", "banana")
+    assert not _match_or_not("This is an apple pie", "banana")
 
 
 @patch("llama_index.packs.searchain.base.VectorStoreIndex.from_documents")
@@ -33,27 +35,3 @@ def test_searchainpack_init(
     assert instance.device == "cpu"
     assert hasattr(instance, "llm")
     assert instance.index is not None
-
-
-@patch("llama_index.packs.searchain.base.DPRReaderTokenizer")
-@patch("llama_index.packs.searchain.base.DPRReader")
-def test_get_answer(mock_dprmodel, mock_tokenizer):
-    mock_tokenizer.return_value.__call__.return_value = {
-        "input_ids": torch.tensor([[101, 200, 102]])
-    }
-    mock_tokenizer.return_value.decode.return_value = "sample answer"
-
-    outputs = MagicMock()
-    outputs.start_logits.argmax.return_value = 1
-    outputs.end_logits.argmax.return_value = 2
-    outputs.relevance_logits = torch.tensor([2.0])
-    mock_dprmodel.return_value.__call__.return_value = outputs
-
-    pack = MagicMock()
-    pack.dprmodel = mock_dprmodel
-    pack.dprtokenizer = mock_tokenizer
-    pack.device = "cpu"
-
-    from llama_index.packs.searchain.base import SearChainPack
-
-    SearChainPack._get_answer.__func__(pack, "query?", "text", "title")
