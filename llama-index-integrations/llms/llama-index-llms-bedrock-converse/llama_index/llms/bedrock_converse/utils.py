@@ -183,8 +183,10 @@ def _content_block_to_bedrock_format(
 ) -> Optional[Dict[str, Any]]:
     """Convert content block to AWS Bedrock Converse API required format."""
     if isinstance(block, TextBlock):
+        if not block.text:
+            return None
         return {
-            "text": block.text or "-",
+            "text": block.text,
         }
     elif isinstance(block, DocumentBlock):
         if not block.data:
@@ -252,8 +254,8 @@ def messages_to_converse_messages(
     converse_messages = []
     system_prompt = ""
     for message in messages:
-        if message.role == MessageRole.SYSTEM:
-            system_prompt += (message.content or "-") + "\n"
+        if message.role == MessageRole.SYSTEM and message.content:
+            system_prompt += (message.content) + "\n"
         elif message.role in [MessageRole.FUNCTION, MessageRole.TOOL]:
             # convert tool output to the AWS Bedrock Converse format
             content = {

@@ -524,3 +524,64 @@ async def test_bedrock_converse_agent_workflow_empty_text_error(
             pytest.fail(f"Empty text field error occurred: {error_msg}")
         else:
             raise
+
+
+@needs_aws_creds
+def test_bedrock_converse_integration_chat_with_empty_system_prompt(
+    bedrock_converse_integration,
+):
+    """Test chat integration with empty system prompt."""
+    llm = bedrock_converse_integration
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content=""),
+        ChatMessage(role=MessageRole.USER, content="What is 2 + 2?"),
+    ]
+
+    response = llm.chat(messages)
+
+    assert isinstance(response, ChatResponse)
+    assert response.message.role == MessageRole.ASSISTANT
+    assert isinstance(response.message.content, str)
+    assert len(response.message.content) > 0
+    assert "4" in response.message.content
+
+
+@needs_aws_creds
+def test_bedrock_converse_integration_chat_with_empty_assistant_message(
+    bedrock_converse_integration,
+):
+    """Test chat integration with empty assistant message in conversation history."""
+    llm = bedrock_converse_integration
+    messages = [
+        ChatMessage(role=MessageRole.USER, content="Hello"),
+        ChatMessage(role=MessageRole.ASSISTANT, content=""),
+        ChatMessage(role=MessageRole.USER, content="Can you count to 3?"),
+    ]
+
+    response = llm.chat(messages)
+
+    assert isinstance(response, ChatResponse)
+    assert response.message.role == MessageRole.ASSISTANT
+    assert isinstance(response.message.content, str)
+    assert len(response.message.content) > 0
+    assert any(num in response.message.content for num in ["1", "2", "3"])
+
+
+@needs_aws_creds
+def test_bedrock_converse_integration_chat_with_empty_user_message(
+    bedrock_converse_integration,
+):
+    """Test chat integration with empty user message."""
+    llm = bedrock_converse_integration
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
+        ChatMessage(role=MessageRole.USER, content=""),
+        ChatMessage(role=MessageRole.USER, content="What is 2 + 2?"),
+    ]
+
+    response = llm.chat(messages)
+
+    assert isinstance(response, ChatResponse)
+    assert response.message.role == MessageRole.ASSISTANT
+    assert isinstance(response.message.content, str)
+    assert len(response.message.content) > 0
