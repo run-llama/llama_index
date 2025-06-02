@@ -16,7 +16,7 @@ class MeasureSpaceToolSpec(BaseToolSpec):
         "get_daily_air_quality_forecast",
         "get_latitude_longitude_from_location",
         "get_location_from_latitude_longitude",
-        ]
+    ]
 
     def __init__(self, api_keys: Dict[str, str], unit: str = "metric") -> None:
         """Initialize with parameters."""
@@ -42,7 +42,9 @@ class MeasureSpaceToolSpec(BaseToolSpec):
         """
         api_key = self.api_keys.get(api_name)
         if not api_key:
-            raise ValueError(f"API key is required for {api_name} service. Please get your API key from measurespace.io/pricing.")
+            raise ValueError(
+                f"API key is required for {api_name} service. Please get your API key from measurespace.io/pricing."
+            )
 
         return api_key
 
@@ -68,7 +70,6 @@ class MeasureSpaceToolSpec(BaseToolSpec):
 
         return wx_list
 
-
     def get_hourly_weather_forecast(self, location: str) -> List[Document]:
         """
         Get hourly weather forecast for given location.
@@ -79,15 +80,13 @@ class MeasureSpaceToolSpec(BaseToolSpec):
         """
         api_key = self._get_api_key("hourly_weather")
         geocoding_api_key = self._get_api_key("geocoding")
-        params = {
-            "variables": "tp, t2m, windSpeed, windDegree, r2"
-        }
+        params = {"variables": "tp, t2m, windSpeed, windDegree, r2"}
         wx = self.msa.get_hourly_weather(
-                    api_key,
-                    geocoding_api_key,
-                    location,
-                    params,
-                    )
+            api_key,
+            geocoding_api_key,
+            location,
+            params,
+        )
         # Get variable metadata
         for x in ["latitude", "longitude"]:
             if x in wx:
@@ -95,10 +94,17 @@ class MeasureSpaceToolSpec(BaseToolSpec):
         output = self._format_output(wx)
         documents = []
         for i in range(len(wx["time"])):
-            documents.append(Document(text=output[i], metadata={"Hourly weather for location": location, "Date and time": wx["time"][i]}))
+            documents.append(
+                Document(
+                    text=output[i],
+                    metadata={
+                        "Hourly weather for location": location,
+                        "Date and time": wx["time"][i],
+                    },
+                )
+            )
 
         return documents
-
 
     def get_daily_weather_forecast(self, location: str) -> List[Document]:
         """
@@ -110,16 +116,14 @@ class MeasureSpaceToolSpec(BaseToolSpec):
         """
         api_key = self._get_api_key("daily_weather")
         geocoding_api_key = self._get_api_key("geocoding")
-        params = {
-            "variables": "tp, minT, maxT, meanwindSpeed, meanwindDegree, meanRH"
-        }
+        params = {"variables": "tp, minT, maxT, meanwindSpeed, meanwindDegree, meanRH"}
 
         wx = self.msa.get_daily_weather(
-                    api_key,
-                    geocoding_api_key,
-                    location,
-                    params,
-                    )
+            api_key,
+            geocoding_api_key,
+            location,
+            params,
+        )
         # Get variable metadata
         for x in ["latitude", "longitude"]:
             if x in wx:
@@ -128,7 +132,15 @@ class MeasureSpaceToolSpec(BaseToolSpec):
         documents = []
 
         for i in range(len(wx["time"])):
-            documents.append(Document(text=output[i], metadata={"Daily weather for location": location, "Date": wx["time"][i]}))
+            documents.append(
+                Document(
+                    text=output[i],
+                    metadata={
+                        "Daily weather for location": location,
+                        "Date": wx["time"][i],
+                    },
+                )
+            )
 
         return documents
 
@@ -142,16 +154,14 @@ class MeasureSpaceToolSpec(BaseToolSpec):
         """
         api_key = self._get_api_key("daily_climate")
         geocoding_api_key = self._get_api_key("geocoding")
-        params = {
-            "variables": "t2m, tmin, tmax, sh2"
-        }
+        params = {"variables": "t2m, tmin, tmax, sh2"}
 
         wx = self.msa.get_daily_climate(
-                    api_key,
-                    geocoding_api_key,
-                    location,
-                    params,
-                    )
+            api_key,
+            geocoding_api_key,
+            location,
+            params,
+        )
         # Get variable metadata
         for x in ["latitude", "longitude"]:
             if x in wx:
@@ -160,7 +170,15 @@ class MeasureSpaceToolSpec(BaseToolSpec):
         documents = []
 
         for i in range(len(wx["time"])):
-            documents.append(Document(text=output[i], metadata={"Daily climate for location": location, "Date": wx["time"][i]}))
+            documents.append(
+                Document(
+                    text=output[i],
+                    metadata={
+                        "Daily climate for location": location,
+                        "Date": wx["time"][i],
+                    },
+                )
+            )
 
         return documents
 
@@ -174,16 +192,14 @@ class MeasureSpaceToolSpec(BaseToolSpec):
         """
         api_key = self._get_api_key("daily_air_quality")
         geocoding_api_key = self._get_api_key("geocoding")
-        params = {
-            "variables": "AQI, maxPM10, maxPM25"
-        }
+        params = {"variables": "AQI, maxPM10, maxPM25"}
 
         wx = self.msa.get_daily_air_quality(
-                    api_key,
-                    geocoding_api_key,
-                    location,
-                    params,
-                    )
+            api_key,
+            geocoding_api_key,
+            location,
+            params,
+        )
         # Get variable metadata
         for x in ["latitude", "longitude"]:
             if x in wx:
@@ -192,10 +208,17 @@ class MeasureSpaceToolSpec(BaseToolSpec):
         documents = []
 
         for i in range(len(wx["time"])):
-            documents.append(Document(text=output[i], metadata={"Daily air quality for location": location, "Date": wx["time"][i]}))
+            documents.append(
+                Document(
+                    text=output[i],
+                    metadata={
+                        "Daily air quality for location": location,
+                        "Date": wx["time"][i],
+                    },
+                )
+            )
 
         return documents
-
 
     def get_latitude_longitude_from_location(self, location: str) -> List[Document]:
         """
@@ -206,11 +229,20 @@ class MeasureSpaceToolSpec(BaseToolSpec):
 
         """
         api_key = self._get_api_key("geocoding")
-        latitude, longitude = self.msa.get_lat_lon_from_city(api_key=api_key, location_name=location)
+        latitude, longitude = self.msa.get_lat_lon_from_city(
+            api_key=api_key, location_name=location
+        )
 
-        return [Document(text=f"latitude: {latitude}, longitude: {longitude}", metadata={"Latitude and longitude for location": location})]
+        return [
+            Document(
+                text=f"latitude: {latitude}, longitude: {longitude}",
+                metadata={"Latitude and longitude for location": location},
+            )
+        ]
 
-    def get_location_from_latitude_longitude(self, latitude: float, longitude: float) -> List[Document]:
+    def get_location_from_latitude_longitude(
+        self, latitude: float, longitude: float
+    ) -> List[Document]:
         """
         Get nearest location name from given latitude and longitude.
 
@@ -222,4 +254,9 @@ class MeasureSpaceToolSpec(BaseToolSpec):
         api_key = self._get_api_key("geocoding")
         res = self.msa.get_city_from_lat_lon(api_key, latitude, longitude)
 
-        return [Document(text=f"Location name: {res}", metadata="Nearest location for given longitude and latitude")]
+        return [
+            Document(
+                text=f"Location name: {res}",
+                metadata="Nearest location for given longitude and latitude",
+            )
+        ]
