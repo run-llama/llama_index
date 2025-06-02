@@ -35,11 +35,11 @@ import os
 load_dotenv()
 
 api_keys = {
-    'hourly_weather': os.getenv('HOURLY_WEATHER_API_KEY'),
-    'daily_weather': os.getenv('DAILY_WEATHER_API_KEY'),
-    'daily_climate': os.getenv('DAILY_CLIMATE_API_KEY'),
-    'air_quality': os.getenv('AIR_QUALITY_API_KEY'),
-    'geocoding': os.getenv('GEOCODING_API_KEY'),
+    "hourly_weather": os.getenv("HOURLY_WEATHER_API_KEY"),
+    "daily_weather": os.getenv("DAILY_WEATHER_API_KEY"),
+    "daily_climate": os.getenv("DAILY_CLIMATE_API_KEY"),
+    "air_quality": os.getenv("AIR_QUALITY_API_KEY"),
+    "geocoding": os.getenv("GEOCODING_API_KEY"),
 }
 
 tool_spec = MeasureSpaceToolSpec(api_keys)
@@ -53,6 +53,6 @@ for tool in tool_spec.to_tool_list():
     print(tool.metadata.name)
 
 # Use a specific tool
-tool_spec.get_daily_weather_forecast('New York')
-tool_spec.get_latitude_longitude_from_location('New York')
+tool_spec.get_daily_weather_forecast("New York")
+tool_spec.get_latitude_longitude_from_location("New York")
 ```
