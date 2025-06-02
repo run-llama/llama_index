@@ -277,6 +277,21 @@ class ApertureDBGraphStore(PropertyGraphStore):
             assert result == 0, response
             entities.extend(response[0]["FindEntity"].get("entities", []))
 
+        else:
+            query = [
+                {
+                    "FindEntity": {
+                        "results": {"all_properties": True, "limit": BATCHSIZE}
+                    }
+                }
+            ]
+            result, response, _ = query_executor(
+                self._client,
+                query,
+            )
+            assert result == 0, response
+            entities.extend(response[0]["FindEntity"].get("entities", []))
+
         response = []
         if len(entities) > 0:
             for e in entities:
