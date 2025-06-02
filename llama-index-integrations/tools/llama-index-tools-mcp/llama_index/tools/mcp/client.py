@@ -99,7 +99,7 @@ class BasicMCPClient(ClientSession):
                 [types.CreateMessageRequestParams], Awaitable[types.CreateMessageResult]
             ]
         ] = None,
-        headers: dict[str, Any] | None = None,
+        headers: Optional[Dict[str, Any]] = None,
     ):
         self.command_or_url = command_or_url
         self.args = args or []
