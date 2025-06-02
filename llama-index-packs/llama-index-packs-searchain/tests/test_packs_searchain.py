@@ -33,3 +33,27 @@ def test_searchainpack_init(
     assert instance.device == "cpu"
     assert hasattr(instance, "llm")
     assert instance.index is not None
+
+
+@patch("llama_index.packs.searchain.base.DPRReaderTokenizer")
+@patch("llama_index.packs.searchain.base.DPRReader")
+def test_get_answer(mock_dprmodel, mock_tokenizer):
+    mock_tokenizer.return_value.__call__.return_value = {
+        "input_ids": torch.tensor([[101, 200, 102]])
+    }
+    mock_tokenizer.return_value.decode.return_value = "sample answer"
+
+    outputs = MagicMock()
+    outputs.start_logits.argmax.return_value = 1
+    outputs.end_logits.argmax.return_value = 2
+    outputs.relevance_logits = torch.tensor([2.0])
+    mock_dprmodel.return_value.__call__.return_value = outputs
+
+    pack = MagicMock()
+    pack.dprmodel = mock_dprmodel
+    pack.dprtokenizer = mock_tokenizer
+    pack.device = "cpu"
+
+    from llama_index.packs.searchain.base import SearChainPack
+
+    SearChainPack._get_answer.__func__(pack, "query?", "text", "title")
