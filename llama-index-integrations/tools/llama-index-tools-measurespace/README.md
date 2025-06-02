@@ -1,5 +1,9 @@
 # Measure Space Weather, Climate, Air Quality and Geocoding Tool
 
+```bash
+pip install llama-index-tools-measurespace
+```
+
 This tool connects to the [MeasureSpace](https://measurespace.io/documentation)'s API, using the [measure-space-api](https://pypi.org/project/measure-space-api/) Python package. You must initialize the tool with corresponding API keys from [MeasureSpace](https://measurespace.io/pricing) and [OpenAI](https://platform.openai.com/api-keys) (if you use OpenAI).
 
 The tool has access to the following functions:
