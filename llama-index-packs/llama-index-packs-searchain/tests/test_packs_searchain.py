@@ -1,6 +1,7 @@
 from llama_index.core.llama_pack import BaseLlamaPack
 from llama_index.packs.searchain import SearChainPack
 from llama_index.packs.searchain.base import _normalize_answer, _match_or_not
+from llama_index.packs.searchain.base import _have_seen_or_not
 from unittest.mock import patch, MagicMock
 from llama_index.packs.searchain.base import SearChainPack
 
@@ -19,6 +20,32 @@ def test_normalize_answer_simple():
 def test_match_or_not():
     assert _match_or_not("The big banana is tasty", "banana")
     assert not _match_or_not("This is an apple pie", "banana")
+
+
+def test_have_seen_or_not_unsolved():
+    mock_model = MagicMock()
+    result = _have_seen_or_not(
+        mock_model, "new query", ["seen one"], query_type="Unsolved Query"
+    )
+    assert result is False
+
+
+def test_have_seen_or_not_seen_above_threshold():
+    mock_model = MagicMock()
+    mock_model.predict.return_value = 0.8  # ✅ 改为 float 而不是 [0.8]
+    result = _have_seen_or_not(
+        mock_model, "new query", ["seen one"], query_type="Normal Query"
+    )
+    assert result is True
+
+
+def test_have_seen_or_not_all_below_threshold():
+    mock_model = MagicMock()
+    mock_model.predict.return_value = 0.2  # ✅ 改为 float
+    result = _have_seen_or_not(
+        mock_model, "new query", ["seen one"], query_type="Normal Query"
+    )
+    assert result is False
 
 
 @patch("llama_index.packs.searchain.base.VectorStoreIndex.from_documents")
