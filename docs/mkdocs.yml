@@ -1171,10 +1171,7 @@ nav:
           - ./api_reference/llama_deploy/control_plane.md
           - ./api_reference/llama_deploy/deploy.md
           - ./api_reference/llama_deploy/deployment.md
-          - ./api_reference/llama_deploy/message_consumers.md
-          - ./api_reference/llama_deploy/message_publishers.md
           - ./api_reference/llama_deploy/messages.md
-          - ./api_reference/llama_deploy/orchestrators.md
           - ./api_reference/llama_deploy/python_sdk.md
           - ./api_reference/llama_deploy/services.md
           - ./api_reference/llama_deploy/types.md
@@ -1191,7 +1188,6 @@ nav:
           - ./api_reference/llama_deploy/message_queues/rabbitmq.md
           - ./api_reference/llama_deploy/message_queues/redis.md
           - ./api_reference/llama_deploy/message_queues/simple.md
-          - ./api_reference/llama_deploy/message_queues/solace.md
       - Metadata Extractors:
           - ./api_reference/extractors/documentcontext.md
           - ./api_reference/extractors/entity.md

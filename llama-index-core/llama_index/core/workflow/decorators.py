@@ -4,11 +4,12 @@ from llama_index.core.bridge.pydantic import BaseModel, ConfigDict
 
 from .errors import WorkflowValidationError
 from .utils import (
+    ServiceDefinition,
+    inspect_signature,
     is_free_function,
     validate_step_signature,
-    inspect_signature,
-    ServiceDefinition,
 )
+from .resource import ResourceDefinition
 
 if TYPE_CHECKING:  # pragma: no cover
     from .workflow import Workflow
@@ -25,6 +26,7 @@ class StepConfig(BaseModel):
     num_workers: int
     requested_services: List[ServiceDefinition]
     retry_policy: Optional[RetryPolicy]
+    resources: List[ResourceDefinition]
 
 
 def step(
@@ -71,6 +73,7 @@ def step(
             num_workers=num_workers,
             requested_services=spec.requested_services or [],
             retry_policy=retry_policy,
+            resources=spec.resources,
         )
 
         # If this is a free function, call add_step() explicitly.

@@ -31,6 +31,7 @@ from .events import (
 )
 from .handler import WorkflowHandler
 from .service import ServiceManager
+from .resource import ResourceManager
 from .utils import (
     ServiceDefinition,
     get_steps_from_class,
@@ -68,6 +69,7 @@ class Workflow(metaclass=WorkflowMeta):
         disable_validation: bool = False,
         verbose: bool = False,
         service_manager: Optional[ServiceManager] = None,
+        resource_manager: Optional[ResourceManager] = None,
         num_concurrent_runs: Optional[int] = None,
     ) -> None:
         """
@@ -106,6 +108,8 @@ class Workflow(metaclass=WorkflowMeta):
         self._stepwise_context: Optional[Context] = None
         # Services management
         self._service_manager = service_manager or ServiceManager()
+        # Resource management
+        self._resource_manager = resource_manager or ResourceManager()
 
     def _ensure_start_event_class(self) -> type[StartEvent]:
         """
@@ -274,6 +278,7 @@ class Workflow(metaclass=WorkflowMeta):
                     checkpoint_callback=checkpoint_callback,
                     run_id=run_id,
                     service_manager=self._service_manager,
+                    resource_manager=self._resource_manager,
                     dispatcher=dispatcher,
                 )
 

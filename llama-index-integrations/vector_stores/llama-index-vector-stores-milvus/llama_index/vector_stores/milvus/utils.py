@@ -255,6 +255,7 @@ class BM25BuiltInFunction(BaseMilvusBuiltInFunction):
         function_description: str = "",
         function_params: Optional[Dict] = None,
         analyzer_params: Optional[Dict[Any, Any]] = None,
+        multi_analyzer_params: Optional[Dict[Any, Any]] = None,
         enable_match: bool = False,
     ):
         if not function_name:
@@ -269,6 +270,7 @@ class BM25BuiltInFunction(BaseMilvusBuiltInFunction):
         )
         self.analyzer_params = analyzer_params
         self.enable_match = enable_match
+        self.multi_analyzer_params = multi_analyzer_params
 
     def get_field_kwargs(self) -> dict:
         field_schema_kwargs: Dict[Any, Any] = {
@@ -277,6 +279,8 @@ class BM25BuiltInFunction(BaseMilvusBuiltInFunction):
         }
         if self.analyzer_params is not None:
             field_schema_kwargs["analyzer_params"] = self.analyzer_params
+        if self.multi_analyzer_params is not None:
+            field_schema_kwargs["multi_analyzer_params"] = self.multi_analyzer_params
         return field_schema_kwargs
 
 

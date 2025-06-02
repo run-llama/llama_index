@@ -390,8 +390,7 @@ class Ollama(FunctionCallingLLM):
                 r = dict(r)
 
                 response_txt += r["message"]["content"]
-
-                new_tool_calls = [dict(t) for t in r["message"].get("tool_calls", [])]
+                new_tool_calls = [dict(t) for t in r["message"].get("tool_calls") or []]
                 for tool_call in new_tool_calls:
                     if (
                         str(tool_call["function"]["name"]),
@@ -453,7 +452,7 @@ class Ollama(FunctionCallingLLM):
 
                 response_txt += r["message"]["content"]
 
-                new_tool_calls = [dict(t) for t in r["message"].get("tool_calls", [])]
+                new_tool_calls = [dict(t) for t in r["message"].get("tool_calls") or []]
                 for tool_call in new_tool_calls:
                     if (
                         str(tool_call["function"]["name"]),
