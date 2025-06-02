@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-openai"
-version = "0.4.1"
+version = "0.4.2"
 description = "llama-index llms openai integration"
 authors = [{name = "llama-index"}]
 requires-python = ">=3.9,<4.0"
