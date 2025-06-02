@@ -32,7 +32,7 @@ def test_have_seen_or_not_unsolved():
 
 def test_have_seen_or_not_seen_above_threshold():
     mock_model = MagicMock()
-    mock_model.predict.return_value = 0.8  # ✅ 改为 float 而不是 [0.8]
+    mock_model.predict.return_value = 0.8
     result = _have_seen_or_not(
         mock_model, "new query", ["seen one"], query_type="Normal Query"
     )
@@ -41,7 +41,7 @@ def test_have_seen_or_not_seen_above_threshold():
 
 def test_have_seen_or_not_all_below_threshold():
     mock_model = MagicMock()
-    mock_model.predict.return_value = 0.2  # ✅ 改为 float
+    mock_model.predict.return_value = 0.2
     result = _have_seen_or_not(
         mock_model, "new query", ["seen one"], query_type="Normal Query"
     )
