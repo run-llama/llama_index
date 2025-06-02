@@ -8,22 +8,50 @@ from ag_ui.core import (
     AssistantMessage,
     ToolMessage,
     DeveloperMessage,
+    ToolCall,
+    FunctionCall,
 )
+from typing import List
 
+from llama_index.core.agent.workflow import ToolCall as LlamaIndexToolCall
 from llama_index.core.llms import ChatMessage
 from llama_index.core.workflow import Event
 
 
-def llama_index_message_to_ag_ui_message(message: ChatMessage) -> Message:
+def llama_index_message_to_ag_ui_message(
+    message: ChatMessage, current_tool_calls: List[LlamaIndexToolCall]
+) -> Message:
     msg_id = message.additional_kwargs.get("id", str(uuid.uuid4()))
     if message.role == "system":
-        return SystemMessage(id=msg_id, content=message.content)
+        return SystemMessage(id=msg_id, content=message.content, role="system")
     elif message.role == "user":
-        return UserMessage(id=msg_id, content=message.content)
+        return UserMessage(id=msg_id, content=message.content, role="user")
     elif message.role == "assistant":
-        return AssistantMessage(id=msg_id, content=message.content)
+        ag_ui_tool_calls = [
+            ToolCall(
+                id=tool_call.tool_id,
+                function=FunctionCall(
+                    name=tool_call.tool_name,
+                    arguments=json.dumps(
+                        tool_call.tool_kwargs, sort_keys=True, separators=(",", ":")
+                    ),
+                ),
+            )
+            for tool_call in current_tool_calls
+        ]
+        return AssistantMessage(
+            id=msg_id,
+            content=message.content,
+            role="assistant",
+            tool_calls=ag_ui_tool_calls,
+        )
     elif message.role == "tool":
-        return ToolMessage(id=msg_id, content=message.content)
+        return ToolMessage(
+            id=msg_id,
+            content=message.content,
+            role="tool",
+            tool_call_id=message.additional_kwargs.get("tool_call_id"),
+        )
     else:
         raise ValueError(f"Unknown message role: {message.role}")
 

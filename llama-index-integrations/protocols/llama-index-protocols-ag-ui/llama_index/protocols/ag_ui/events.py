@@ -1,12 +1,14 @@
 # Converts ag_ui events to llama_index workflow events
 
-from ag_ui.core import (
+from ag_ui.core.events import (
     EventType,
     TextMessageStartEvent,
     TextMessageContentEvent,
+    TextMessageChunkEvent,
     TextMessageEndEvent,
     ToolCallStartEvent,
     ToolCallArgsEvent,
+    ToolCallChunkEvent,
     ToolCallEndEvent,
     StateSnapshotEvent,
     StateDeltaEvent,
@@ -31,6 +33,10 @@ class TextMessageContentWorkflowEvent(TextMessageContentEvent, Event):
     type: EventType = EventType.TEXT_MESSAGE_CONTENT
 
 
+class TextMessageChunkWorkflowEvent(TextMessageChunkEvent, Event):
+    type: EventType = EventType.TEXT_MESSAGE_CHUNK
+
+
 class TextMessageEndWorkflowEvent(TextMessageEndEvent, Event):
     type: EventType = EventType.TEXT_MESSAGE_END
 
@@ -41,6 +47,10 @@ class ToolCallStartWorkflowEvent(ToolCallStartEvent, Event):
 
 class ToolCallArgsWorkflowEvent(ToolCallArgsEvent, Event):
     type: EventType = EventType.TOOL_CALL_ARGS
+
+
+class ToolCallChunkWorkflowEvent(ToolCallChunkEvent, Event):
+    type: EventType = EventType.TOOL_CALL_CHUNK
 
 
 class ToolCallEndWorkflowEvent(ToolCallEndEvent, Event):
