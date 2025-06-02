@@ -13,8 +13,6 @@ To use this loader, you need to pass in the name of your Minio Bucket. After tha
 Otherwise, you may specify a prefix if you only want to parse certain files in the Bucket, or a subdirectory.
 
 ```python
-from llama_index import download_loader
-
 MinioReader = download_loader("BotoMinioReader")
 loader = MinioReader(
     bucket="documents",
@@ -27,7 +25,7 @@ documents = loader.load_data()
 
 ## Minio File
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).
 
 All files are temporarily downloaded locally and subsequently parsed with `SimpleDirectoryReader`. Hence, you may also specify a custom `file_extractor`, relying on any of the loaders in this library (or your own)!
 
@@ -40,8 +38,6 @@ Otherwise, you may specify a prefix if you only want to parse certain files in t
 You can now use the client with a TLS-secured MinIO instance (`minio_secure=True`), even if server's certificate isn't trusted (`minio_cert_check=False`).
 
 ```python
-from llama_index import download_loader
-
 MinioReader = download_loader("MinioReader")
 loader = MinioReader(
     bucket="documents",
@@ -54,4 +50,4 @@ loader = MinioReader(
 documents = loader.load_data()
 ```
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).

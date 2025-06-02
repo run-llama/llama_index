@@ -11,7 +11,6 @@ from llama_index.core.schema import (
     ObjectType,
     RelatedNodeInfo,
 )
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.storage.storage_context import StorageContext
 
 
@@ -45,23 +44,19 @@ class ComposableGraph:
     def index_struct(self) -> IndexStruct:
         return self._all_indices[self._root_id].index_struct
 
-    @property
-    def service_context(self) -> Optional[ServiceContext]:
-        return self._all_indices[self._root_id].service_context
-
     @classmethod
     def from_indices(
         cls,
         root_index_cls: Type[BaseIndex],
         children_indices: Sequence[BaseIndex],
         index_summaries: Optional[Sequence[str]] = None,
-        service_context: Optional[ServiceContext] = None,
         storage_context: Optional[StorageContext] = None,
         **kwargs: Any,
     ) -> "ComposableGraph":  # type: ignore
         """Create composable graph using this index class as the root."""
-        service_context = service_context or ServiceContext.from_defaults()
-        with service_context.callback_manager.as_trace("graph_construction"):
+        from llama_index.core import Settings
+
+        with Settings.callback_manager.as_trace("graph_construction"):
             if index_summaries is None:
                 for index in children_indices:
                     if index.index_struct.summary is None:
@@ -102,7 +97,6 @@ class ComposableGraph:
             # construct root index
             root_index = root_index_cls(
                 nodes=index_nodes,
-                service_context=service_context,
                 storage_context=storage_context,
                 **kwargs,
             )

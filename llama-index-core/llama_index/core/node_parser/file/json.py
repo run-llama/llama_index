@@ -1,4 +1,5 @@
 """JSON node parser."""
+
 import json
 from typing import Any, Dict, Generator, List, Optional, Sequence
 
@@ -10,7 +11,8 @@ from llama_index.core.utils import get_tqdm_iterable
 
 
 class JSONNodeParser(NodeParser):
-    """JSON node parser.
+    """
+    JSON node parser.
 
     Splits a document into Nodes using custom JSON splitting logic.
 
@@ -83,7 +85,8 @@ class JSONNodeParser(NodeParser):
     def _depth_first_yield(
         self, json_data: Dict, levels_back: int, path: List[str]
     ) -> Generator[str, None, None]:
-        """Do depth first yield of all of the leaf nodes of a JSON.
+        """
+        Do depth first yield of all of the leaf nodes of a JSON.
 
         Combines keys in the JSON tree using spaces.
 

@@ -1,22 +1,23 @@
-from typing import Sequence, Union
+from typing import Union, Dict, Any
 
 import google.ai.generativelanguage as glm
 import google.generativeai as genai
-import PIL
-from llama_index.core.base.llms.types import MessageRole
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     CompletionResponse,
+    ImageBlock,
+    TextBlock,
 )
+from llama_index.core.multi_modal_llms.base import ChatMessage
+from llama_index.core.utilities.gemini_utils import ROLES_FROM_GEMINI, ROLES_TO_GEMINI
 
-ROLES_TO_GEMINI = {
-    MessageRole.USER: "user",
-    MessageRole.ASSISTANT: "model",
-    ## Gemini only has user and model roles. Put the rest in user role.
-    MessageRole.SYSTEM: "user",
-}
-ROLES_FROM_GEMINI = {v: k for k, v in ROLES_TO_GEMINI.items()}
+# These are the shortened model names
+# Any model that contains one of these names will not support function calling
+MODELS_WITHOUT_FUNCTION_CALLING_SUPPORT = [
+    "gemini-2.0-flash-thinking",
+    "gemini-2.0-flash-lite",
+]
 
 
 def _error_if_finished_early(candidate: "glm.Candidate") -> None:  # type: ignore[name-defined] # only until release
@@ -41,15 +42,25 @@ def completion_from_gemini_response(
         "genai.types.GenerateContentResponse",
         "genai.types.AsyncGenerateContentResponse",
     ],
+    text: str = None,
+    delta: str = None,
 ) -> CompletionResponse:
     top_candidate = response.candidates[0]
     _error_if_finished_early(top_candidate)
 
     raw = {
-        **(type(top_candidate).to_dict(top_candidate)),
-        **(type(response.prompt_feedback).to_dict(response.prompt_feedback)),
+        **(type(top_candidate).to_dict(top_candidate)),  # type: ignore
+        **(type(response.prompt_feedback).to_dict(response.prompt_feedback)),  # type: ignore
     }
-    return CompletionResponse(text=response.text, raw=raw)
+    if response.usage_metadata:
+        raw["usage_metadata"] = type(response.usage_metadata).to_dict(
+            response.usage_metadata
+        )
+    return CompletionResponse(
+        text=text if text is not None else response.text,
+        delta=delta if delta is not None else response.text,
+        raw=raw,
+    )
 
 
 def chat_from_gemini_response(
@@ -62,18 +73,61 @@ def chat_from_gemini_response(
     _error_if_finished_early(top_candidate)
 
     raw = {
-        **(type(top_candidate).to_dict(top_candidate)),
-        **(type(response.prompt_feedback).to_dict(response.prompt_feedback)),
+        **(type(top_candidate).to_dict(top_candidate)),  # type: ignore
+        **(type(response.prompt_feedback).to_dict(response.prompt_feedback)),  # type: ignore
     }
+    if response.usage_metadata:
+        raw["usage_metadata"] = type(response.usage_metadata).to_dict(
+            response.usage_metadata
+        )
     role = ROLES_FROM_GEMINI[top_candidate.content.role]
-    return ChatResponse(message=ChatMessage(role=role, content=response.text), raw=raw)
+    try:
+        # When the response contains only a function call, the library
+        # raises an exception.
+        # The easiest way to detect this is to try access the text attribute and
+        # catch the exception.
+        # https://github.com/google-gemini/generative-ai-python/issues/670
+        text = response.text
+    except (ValueError, AttributeError):
+        text = None
+
+    additional_kwargs: Dict[str, Any] = {}
+    for part in response.parts:
+        if fn := part.function_call:
+            if "tool_calls" not in additional_kwargs:
+                additional_kwargs["tool_calls"] = []
+            additional_kwargs["tool_calls"].append(fn)
+
+    return ChatResponse(
+        message=ChatMessage(
+            role=role, content=text, additional_kwargs=additional_kwargs
+        ),
+        raw=raw,
+        additional_kwargs=additional_kwargs,
+    )
 
 
 def chat_message_to_gemini(message: ChatMessage) -> "genai.types.ContentDict":
     """Convert ChatMessages to Gemini-specific history, including ImageDocuments."""
-    parts = [message.content]
-    if images := message.additional_kwargs.get("images"):
-        parts += [PIL.Image.open(doc.resolve_image()) for doc in images]
+    parts = []
+    for block in message.blocks:
+        if isinstance(block, TextBlock):
+            if block.text:
+                parts.append({"text": block.text})
+        elif isinstance(block, ImageBlock):
+            base64_bytes = block.resolve_image(as_base64=False).read()
+            parts.append(
+                {
+                    "mime_type": block.image_mimetype,
+                    "data": base64_bytes,
+                }
+            )
+        else:
+            msg = f"Unsupported content block type: {type(block).__name__}"
+            raise ValueError(msg)
+
+    for tool_call in message.additional_kwargs.get("tool_calls", []):
+        parts.append(tool_call)
 
     return {
         "role": ROLES_TO_GEMINI[message.role],
@@ -81,35 +135,8 @@ def chat_message_to_gemini(message: ChatMessage) -> "genai.types.ContentDict":
     }
 
 
-def merge_neighboring_same_role_messages(
-    messages: Sequence[ChatMessage],
-) -> Sequence[ChatMessage]:
-    # Gemini does not support multiple messages of the same role in a row, so we merge them
-    merged_messages = []
-    i = 0
-
-    while i < len(messages):
-        current_message = messages[i]
-        # Initialize merged content with current message content
-        merged_content = [current_message.content]
-
-        # Check if the next message exists and has the same role
-        while (
-            i + 1 < len(messages)
-            and ROLES_TO_GEMINI[messages[i + 1].role]
-            == ROLES_TO_GEMINI[current_message.role]
-        ):
-            i += 1
-            next_message = messages[i]
-            merged_content.extend([next_message.content])
-
-        # Create a new ChatMessage or similar object with merged content
-        merged_message = ChatMessage(
-            role=current_message.role,
-            content="\n".join([str(msg_content) for msg_content in merged_content]),
-            additional_kwargs=current_message.additional_kwargs,
-        )
-        merged_messages.append(merged_message)
-        i += 1
-
-    return merged_messages
+def is_function_calling_model(model: str) -> bool:
+    for model_name in MODELS_WITHOUT_FUNCTION_CALLING_SUPPORT:
+        if model_name in model:
+            return False
+    return True

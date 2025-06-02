@@ -1,0 +1,46 @@
+.md-container .jp-Cell-outputWrapper .jp-OutputPrompt.jp-OutputArea-prompt,
+.md-container .jp-Cell-inputWrapper .jp-InputPrompt.jp-InputArea-prompt {
+  display: none !important;
+}
+
+/* CSS styles for side-by-side layout */
+.container {
+  display: flex-col;
+  justify-content: space-between;
+  margin-bottom: 20px; /* Adjust spacing between sections */
+  position: sticky;
+  top: 2.4rem;
+  z-index: 1000; /* Ensure it's above other content */
+  background-color: white; /* Match your page background */
+  padding: 0.2rem;
+}
+
+.example-heading {
+  margin: 0.2rem !important;
+}
+
+.usage-examples {
+  width: 100%; /* Adjust the width as needed */
+  border: 1px solid var(--md-default-fg-color--light);
+  border-radius: 2px;
+  padding: 0.2rem;
+}
+
+/* Additional styling for the toggle */
+.toggle-example {
+  cursor: pointer;
+  color: white;
+  text-decoration: underline;
+  background-color: var(--md-primary-fg-color);
+  padding: 0.2rem;
+  border-radius: 2px;
+}
+
+.hidden {
+  display: none;
+}
+
+/* mendable search styling */
+#my-component-root > div {
+  bottom: 100px;
+}

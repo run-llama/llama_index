@@ -1,4 +1,5 @@
-"""Data structures.
+"""
+Data structures.
 
 Nodes are decoupled from the indices.
 
@@ -160,6 +161,18 @@ class IndexList(IndexStruct):
     def get_type(cls) -> IndexStructType:
         """Get type."""
         return IndexStructType.LIST
+
+
+@dataclass
+class IndexLPG(IndexStruct):
+    """An index struct for LPG index (doesn't actually store anything)."""
+
+    def add_node(self, node: BaseNode) -> None:
+        pass
+
+    @classmethod
+    def get_type(cls) -> IndexStructType:
+        return IndexStructType.SIMPLE_LPG
 
 
 @dataclass

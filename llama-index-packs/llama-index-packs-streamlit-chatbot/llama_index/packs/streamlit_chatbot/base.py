@@ -2,7 +2,7 @@ import asyncio
 from typing import Any, Dict
 
 from llama_index.core import (
-    ServiceContext,
+    Settings,
     VectorStoreIndex,
 )
 from llama_index.core.llama_pack.base import BaseLlamaPack
@@ -74,12 +74,9 @@ class StreamlitChatPack(BaseLlamaPack):
         def load_index_data():
             loader = WikipediaReader()
             docs = loader.load_data(pages=[self.wikipedia_page])
-            service_context = ServiceContext.from_defaults(
-                llm=OpenAI(model="gpt-3.5-turbo", temperature=0.5)
-            )
-            return VectorStoreIndex.from_documents(
-                docs, service_context=service_context
-            )
+            Settings.llm = OpenAI(model="gpt-3.5-turbo", temperature=0.5)
+
+            return VectorStoreIndex.from_documents(docs)
 
         index = load_index_data()
 

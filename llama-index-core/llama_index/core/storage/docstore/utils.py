@@ -13,7 +13,7 @@ from llama_index.core.schema import (
 
 def doc_to_json(doc: BaseNode) -> dict:
     return {
-        DATA_KEY: doc.dict(),
+        DATA_KEY: doc.to_dict(),
         TYPE_KEY: doc.get_type(),
     }
 
@@ -27,9 +27,10 @@ def json_to_doc(doc_dict: dict) -> BaseNode:
         return legacy_json_to_doc(doc_dict)
     else:
         if doc_type == Document.get_type():
-            doc = Document.from_dict(data_dict)
-        elif doc_type == ImageDocument.get_type():
-            doc = ImageDocument.from_dict(data_dict)
+            if data_dict["class_name"] == ImageDocument.class_name():
+                doc = ImageDocument.from_dict(data_dict)
+            else:
+                doc = Document.from_dict(data_dict)
         elif doc_type == TextNode.get_type():
             doc = TextNode.from_dict(data_dict)
         elif doc_type == ImageNode.get_type():
@@ -54,7 +55,7 @@ def legacy_json_to_doc(doc_dict: dict) -> BaseNode:
 
     relationships = data_dict.get("relationships", {})
     relationships = {
-        NodeRelationship(k): RelatedNodeInfo(node_id=v)
+        NodeRelationship(k): RelatedNodeInfo(node_id=str(v))
         for k, v in relationships.items()
     }
 

@@ -56,7 +56,7 @@ def resolve_embed_model(
             )  # pants: no-infer-dep
 
             embed_model = OpenAIEmbedding()
-            validate_openai_api_key(embed_model.api_key)
+            validate_openai_api_key(embed_model.api_key)  # type: ignore
         except ImportError:
             raise ImportError(
                 "`llama-index-embeddings-openai` package not found, "
@@ -75,17 +75,19 @@ def resolve_embed_model(
                 "embeddings.html#modules"
                 "\n******"
             )
-
-    # for image embeddings
-    if embed_model == "clip":
+    # for image multi-modal embeddings
+    elif isinstance(embed_model, str) and embed_model.startswith("clip"):
         try:
             from llama_index.embeddings.clip import ClipEmbedding  # pants: no-infer-dep
 
-            embed_model = ClipEmbedding()
+            clip_model_name = (
+                embed_model.split(":")[1] if ":" in embed_model else "ViT-B/32"
+            )
+            embed_model = ClipEmbedding(model_name=clip_model_name)
         except ImportError as e:
             raise ImportError(
                 "`llama-index-embeddings-clip` package not found, "
-                "please run `pip install llama-index-embeddings-clip`"
+                "please run `pip install llama-index-embeddings-clip` and `pip install git+https://github.com/openai/CLIP.git`"
             )
 
     if isinstance(embed_model, str):
@@ -130,6 +132,8 @@ def resolve_embed_model(
     if embed_model is None:
         print("Embeddings have been explicitly disabled. Using MockEmbedding.")
         embed_model = MockEmbedding(embed_dim=1)
+
+    assert isinstance(embed_model, BaseEmbedding)
 
     embed_model.callback_manager = callback_manager or Settings.callback_manager
 

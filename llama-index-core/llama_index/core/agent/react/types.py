@@ -43,6 +43,7 @@ class ObservationReasoningStep(BaseReasoningStep):
     """Observation reasoning step."""
 
     observation: str
+    return_direct: bool = False
 
     def get_content(self) -> str:
         """Get content."""
@@ -51,7 +52,7 @@ class ObservationReasoningStep(BaseReasoningStep):
     @property
     def is_done(self) -> bool:
         """Is the reasoning step the last one."""
-        return False
+        return self.return_direct
 
 
 class ResponseReasoningStep(BaseReasoningStep):
@@ -64,12 +65,9 @@ class ResponseReasoningStep(BaseReasoningStep):
     def get_content(self) -> str:
         """Get content."""
         if self.is_streaming:
-            return (
-                f"Thought: {self.thought}\n"
-                f"Answer (Starts With): {self.response} ..."
-            )
+            return f"Thought: {self.thought}\nAnswer (Starts With): {self.response} ..."
         else:
-            return f"Thought: {self.thought}\n" f"Answer: {self.response}"
+            return f"Thought: {self.thought}\nAnswer: {self.response}"
 
     @property
     def is_done(self) -> bool:

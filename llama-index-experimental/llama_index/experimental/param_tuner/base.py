@@ -1,6 +1,5 @@
 """Param tuner."""
 
-
 import asyncio
 from abc import abstractmethod
 from copy import deepcopy
@@ -67,7 +66,8 @@ class BaseParamTuner(BaseModel):
         """Tune parameters."""
 
     async def atune(self) -> TunedResult:
-        """Async Tune parameters.
+        """
+        Async Tune parameters.
 
         Override if you implement a native async method.
 
@@ -76,7 +76,8 @@ class BaseParamTuner(BaseModel):
 
 
 class ParamTuner(BaseParamTuner):
-    """Parameter tuner.
+    """
+    Parameter tuner.
 
     Args:
         param_dict(Dict): A dictionary of parameters to iterate over.
@@ -128,7 +129,8 @@ class ParamTuner(BaseParamTuner):
 
 
 class AsyncParamTuner(BaseParamTuner):
-    """Async Parameter tuner.
+    """
+    Async Parameter tuner.
 
     Args:
         param_dict(Dict): A dictionary of parameters to iterate over.
@@ -203,7 +205,8 @@ class AsyncParamTuner(BaseParamTuner):
 
 
 class RayTuneParamTuner(BaseParamTuner):
-    """Parameter tuner powered by Ray Tune.
+    """
+    Parameter tuner powered by Ray Tune.
 
     Args:
         param_dict(Dict): A dictionary of parameters to iterate over.
@@ -246,7 +249,7 @@ class RayTuneParamTuner(BaseParamTuner):
             tuned_result = self.param_fn(full_param_dict)
             # need to convert RunResult to dict to obey
             # Ray Tune's API
-            return tuned_result.dict()
+            return tuned_result.model_dump()
 
         run_config = RunConfig(**self.run_config_dict) if self.run_config_dict else None
 

@@ -1,0 +1,18 @@
+{
+  "self": null,
+  "first": null,
+  "prev": null,
+  "next": null,
+  "last": null,
+  "items": [
+    {
+      "text": "lorem ipsum",
+      "metadata": {},
+      "score": 0.7947013974189758,
+      "iri": "example",
+      "fields": {},
+      "id": "https://data.example.org/dataset/entity241243214325432",
+      "node_id": "cc20b5da-d7f9-4491-bea0-056d501d80f3"
+    }
+  ]
+}

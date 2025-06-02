@@ -92,7 +92,7 @@ def download_module_and_reqs(
 
     # Install dependencies
     if os.path.exists(pyproject_toml_path):
-        with ChangeDirectory(local_dir_path):
+        with ChangeDirectory(str(local_dir_path)):
             subprocess.check_call([sys.executable, "-m", "pip", "install", "."])
 
 
@@ -134,11 +134,13 @@ def download_llama_pack_template(
 
 
 def track_download(module_class: str, module_type: str) -> None:
-    """Tracks number of downloads via Llamahub proxy.
+    """
+    Tracks number of downloads via Llamahub proxy.
 
     Args:
         module_class: The name of the llama module being downloaded, e.g.,`GmailOpenAIAgentPack`.
         module_type: Can be "loader", "tool", "llamapack", or "datasets"
+
     """
     try:
         requests.post(

@@ -8,19 +8,20 @@ from llama_index.core.base.embeddings.base import (
     DEFAULT_EMBED_BATCH_SIZE,
     BaseEmbedding,
 )
-from llama_index.embeddings import OpenAIEmbedding, resolve_embed_model
 
 
 def generate_strings(num_strings: int = 100, string_length: int = 10) -> List[str]:
     """
-    Generate random strings sliced from the paul graham essay of the following form:
+    Generate random strings sliced from the paul graham essay.
+
+    Has the following form:
 
     offset 0: [0:string_length], [string_length:2*string_length], ...
     offset 1: [1:1+string_length], [1+string_length:1+2*string_length],...
     ...
     """  # noqa: D415
     content = (
-        SimpleDirectoryReader("../../examples/paul_graham_essay/data")
+        SimpleDirectoryReader("../../docs/docs/examples/data/paul_graham")
         .load_data()[0]
         .get_content()
     )
@@ -42,6 +43,8 @@ def generate_strings(num_strings: int = 100, string_length: int = 10) -> List[st
 
 
 def create_open_ai_embedding(batch_size: int) -> Tuple[BaseEmbedding, str, int]:
+    from llama_index.embeddings.openai import OpenAIEmbedding
+
     return (
         OpenAIEmbedding(embed_batch_size=batch_size),
         "OpenAIEmbedding",
@@ -50,13 +53,15 @@ def create_open_ai_embedding(batch_size: int) -> Tuple[BaseEmbedding, str, int]:
 
 
 def create_local_embedding(
-    model_name: str, batch_size: int
+    model_name: str, batch_size: int, **kwargs: Optional[dict]
 ) -> Tuple[BaseEmbedding, str, int]:
-    model = resolve_embed_model(f"local:{model_name}")
+    from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+
+    model = HuggingFaceEmbedding(model_name, embed_batch_size=batch_size, **kwargs)
     return (
         model,
         "hf/" + model_name,
-        model._langchain_embedding.client.max_seq_length,  # type: ignore
+        model._model.max_seq_length,  # type: ignore
     )
 
 
@@ -64,7 +69,10 @@ def bench_simple_vector_store(
     embed_models: List[Callable[[int], Tuple[BaseEmbedding, str, int]]],
     num_strings: List[int] = [100],
     string_lengths: List[int] = [64, 256],
-    embed_batch_sizes: List[int] = [1, DEFAULT_EMBED_BATCH_SIZE],
+    embed_batch_sizes: List[int] = [
+        DEFAULT_EMBED_BATCH_SIZE,
+        2 * DEFAULT_EMBED_BATCH_SIZE,
+    ],
     torch_num_threads: Optional[int] = None,
 ) -> None:
     """Benchmark embeddings."""
@@ -102,13 +110,20 @@ def bench_simple_vector_store(
                         f"{string_count} strings of length {string_length} took "
                         f"{time2 - time1} seconds."
                     )
-                    results.append((model[1], batch_size, string_length, time2 - time1))
+                    results.append(
+                        (
+                            model[1],
+                            batch_size,
+                            string_length,
+                            batch_size / (time2 - time1),
+                        )
+                    )
                 # TODO: async version
 
     # print final results
     print("\n\nFinal Results\n---------------------------")
     results_df = pd.DataFrame(
-        results, columns=["model", "batch_size", "string_length", "time"]
+        results, columns=["model", "batch_size", "string_length", "strings_per_second"]
     )
     print(results_df)
 
@@ -119,19 +134,48 @@ if __name__ == "__main__":
             # create_open_ai_embedding,
             partial(
                 create_local_embedding,
-                model_name="sentence-transformers/all-MiniLM-L6-v2",
+                model_name="sentence-transformers/all-MiniLM-L6-v2",  # 22.7M params
             ),
             partial(
                 create_local_embedding,
-                model_name="sentence-transformers/all-MiniLM-L12-v2",
+                model_name="ibm-granite/granite-embedding-30m-english",  # 30.3M params
             ),
             partial(
                 create_local_embedding,
-                model_name="BAAI/bge-small-en",
+                model_name="sentence-transformers/all-MiniLM-L12-v2",  # 33.4M params
             ),
             partial(
                 create_local_embedding,
-                model_name="sentence-transformers/all-mpnet-base-v2",
+                model_name="BAAI/bge-small-en-v1.5",  # 33.4M params
+            ),
+            partial(
+                create_local_embedding,
+                model_name="sentence-transformers/all-mpnet-base-v2",  # 109M params
+            ),
+            partial(
+                create_local_embedding,
+                model_name="ibm-granite/granite-embedding-125m-english",  # 125M params
+            ),
+            partial(
+                create_local_embedding,
+                model_name="nomic-ai/nomic-embed-text-v1.5",  # 137M params
+                trust_remote_code=True,
+            ),
+            partial(
+                create_local_embedding,
+                model_name="Alibaba-NLP/gte-modernbert-base",  # 149M params
+            ),
+            partial(
+                create_local_embedding,
+                model_name="mixedbread-ai/mxbai-embed-large-v1",  # 335M params
+            ),
+            partial(
+                create_local_embedding,
+                model_name="BAAI/bge-large-en-v1.5",  # 335M params
+            ),
+            partial(
+                create_local_embedding,
+                model_name="Snowflake/snowflake-arctic-embed-l-v2.0",  # 568M params
             ),
         ],
         torch_num_threads=None,

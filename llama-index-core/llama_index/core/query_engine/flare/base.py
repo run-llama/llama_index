@@ -1,10 +1,11 @@
-"""Query engines based on the FLARE paper.
+"""
+Query engines based on the FLARE paper.
 
 Active Retrieval Augmented Generation.
 
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, List
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
 from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
@@ -20,9 +21,10 @@ from llama_index.core.query_engine.flare.output_parser import (
     IsDoneOutputParser,
     QueryTaskOutputParser,
 )
-from llama_index.core.schema import QueryBundle
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+
+from llama_index.core.query_engine.retriever_query_engine import RetrieverQueryEngine
+from llama_index.core.schema import QueryBundle, NodeWithScore
+from llama_index.core.settings import Settings
 from llama_index.core.utils import print_text
 
 # These prompts are taken from the FLARE repo:
@@ -94,7 +96,8 @@ DEFAULT_INSTRUCT_PROMPT = PromptTemplate(DEFAULT_INSTRUCT_PROMPT_TMPL)
 
 
 class FLAREInstructQueryEngine(BaseQueryEngine):
-    """FLARE Instruct query engine.
+    """
+    FLARE Instruct query engine.
 
     This is the version of FLARE that uses retrieval-encouraging instructions.
 
@@ -104,8 +107,6 @@ class FLAREInstructQueryEngine(BaseQueryEngine):
     Args:
         query_engine (BaseQueryEngine): query engine to use
         llm (Optional[LLM]): LLM model. Defaults to None.
-        service_context (Optional[ServiceContext]): service context.
-            Defaults to None.
         instruct_prompt (Optional[PromptTemplate]): instruct prompt. Defaults to None.
         lookahead_answer_inserter (Optional[BaseLookaheadAnswerInserter]):
             lookahead answer inserter. Defaults to None.
@@ -125,7 +126,6 @@ class FLAREInstructQueryEngine(BaseQueryEngine):
         self,
         query_engine: BaseQueryEngine,
         llm: Optional[LLM] = None,
-        service_context: Optional[ServiceContext] = None,
         instruct_prompt: Optional[BasePromptTemplate] = None,
         lookahead_answer_inserter: Optional[BaseLookaheadAnswerInserter] = None,
         done_output_parser: Optional[IsDoneOutputParser] = None,
@@ -138,7 +138,7 @@ class FLAREInstructQueryEngine(BaseQueryEngine):
         """Init params."""
         super().__init__(callback_manager=callback_manager)
         self._query_engine = query_engine
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         self._instruct_prompt = instruct_prompt or DEFAULT_INSTRUCT_PROMPT
         self._lookahead_answer_inserter = lookahead_answer_inserter or (
             LLMLookaheadAnswerInserter(llm=self._llm)
@@ -258,3 +258,21 @@ class FLAREInstructQueryEngine(BaseQueryEngine):
 
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         return self._query(query_bundle)
+
+    def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        # if the query engine is a retriever, then use the retrieve method
+        if isinstance(self._query_engine, RetrieverQueryEngine):
+            return self._query_engine.retrieve(query_bundle)
+        else:
+            raise NotImplementedError(
+                "This query engine does not support retrieve, use query directly"
+            )
+
+    async def aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
+        # if the query engine is a retriever, then use the retrieve method
+        if isinstance(self._query_engine, RetrieverQueryEngine):
+            return await self._query_engine.aretrieve(query_bundle)
+        else:
+            raise NotImplementedError(
+                "This query engine does not support retrieve, use query directly"
+            )

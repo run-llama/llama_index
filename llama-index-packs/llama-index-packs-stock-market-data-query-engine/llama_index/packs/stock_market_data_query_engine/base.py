@@ -1,13 +1,12 @@
 from typing import Any, Dict, List, Optional
 
-from llama_index.core import VectorStoreIndex
+from llama_index.core import Settings, VectorStoreIndex
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.llms.llm import LLM
 from llama_index.core.query_engine import PandasQueryEngine, RetrieverQueryEngine
 from llama_index.core.response_synthesizers import get_response_synthesizer
 from llama_index.core.retrievers import RecursiveRetriever
 from llama_index.core.schema import IndexNode
-from llama_index.core.service_context import ServiceContext
 from llama_index.llms.openai import OpenAI
 
 
@@ -42,11 +41,10 @@ class StockMarketDataQueryEnginePack(BaseLlamaPack):
             stocks_market_data.append(hist)
         self.stocks_market_data = stocks_market_data
 
-        service_context = ServiceContext.from_defaults(llm=llm or OpenAI(model="gpt-4"))
+        Settings.llm = llm or OpenAI(model="gpt-4")
 
         df_price_query_engines = [
-            PandasQueryEngine(stock, service_context=service_context)
-            for stock in stocks_market_data
+            PandasQueryEngine(stock) for stock in stocks_market_data
         ]
 
         summaries = [f"{ticker} historical market data" for ticker in tickers]
@@ -61,9 +59,7 @@ class StockMarketDataQueryEnginePack(BaseLlamaPack):
             for idx, df_engine in enumerate(df_price_query_engines)
         }
 
-        stock_price_vector_index = VectorStoreIndex(
-            df_price_nodes, service_context=service_context
-        )
+        stock_price_vector_index = VectorStoreIndex(df_price_nodes)
         stock_price_vector_retriever = stock_price_vector_index.as_retriever(
             similarity_top_k=1
         )
@@ -76,9 +72,7 @@ class StockMarketDataQueryEnginePack(BaseLlamaPack):
         )
 
         stock_price_response_synthesizer = get_response_synthesizer(
-            # service_context=service_context,
-            response_mode="compact",
-            service_context=service_context,
+            response_mode="compact"
         )
 
         stock_price_query_engine = RetrieverQueryEngine.from_args(

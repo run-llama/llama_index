@@ -1,5 +1,9 @@
 # News Article Loader
 
+```bash
+pip install llama-index-readers-web
+```
+
 This loader makes use of the `newspaper3k` library to parse web page urls which have news
 articles in them.
 
@@ -12,7 +16,7 @@ pip install newspaper3k
 Pass in an array of individual page URLs:
 
 ```python
-from llama_index.readers.web.news import NewsArticleReader
+from llama_index.readers.web import NewsArticleReader
 
 reader = NewsArticleReader(use_nlp=False)
 documents = reader.load_data(

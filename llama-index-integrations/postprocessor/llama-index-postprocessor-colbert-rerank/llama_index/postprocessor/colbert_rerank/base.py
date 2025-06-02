@@ -2,6 +2,11 @@ from typing import Any, List, Optional
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CBEventType, EventPayload
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.events.rerank import (
+    ReRankEndEvent,
+    ReRankStartEvent,
+)
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 from llama_index.core.utils import infer_torch_device
@@ -10,6 +15,8 @@ import torch
 from transformers import AutoTokenizer, AutoModel
 
 DEFAULT_COLBERT_MAX_LENGTH = 512
+
+dispatcher = get_dispatcher(__name__)
 
 
 class ColbertRerank(BaseNodePostprocessor):
@@ -35,15 +42,14 @@ class ColbertRerank(BaseNodePostprocessor):
         keep_retrieval_score: Optional[bool] = False,
     ):
         device = infer_torch_device() if device is None else device
-        self._tokenizer = AutoTokenizer.from_pretrained(tokenizer)
-        self._model = AutoModel.from_pretrained(model)
         super().__init__(
             top_n=top_n,
-            model=model,
-            tokenizer=tokenizer,
             device=device,
             keep_retrieval_score=keep_retrieval_score,
+            model=model,
         )
+        self._tokenizer = AutoTokenizer.from_pretrained(tokenizer)
+        self._model = AutoModel.from_pretrained(model)
 
     @classmethod
     def class_name(cls) -> str:
@@ -78,6 +84,12 @@ class ColbertRerank(BaseNodePostprocessor):
         nodes: List[NodeWithScore],
         query_bundle: Optional[QueryBundle] = None,
     ) -> List[NodeWithScore]:
+        dispatcher.event(
+            ReRankStartEvent(
+                query=query_bundle, nodes=nodes, top_n=self.top_n, model_name=self.model
+            )
+        )
+
         if query_bundle is None:
             raise ValueError("Missing query bundle in extra info.")
         if len(nodes) == 0:
@@ -112,4 +124,5 @@ class ColbertRerank(BaseNodePostprocessor):
             ]
             event.on_end(payload={EventPayload.NODES: reranked_nodes})
 
+        dispatcher.event(ReRankEndEvent(nodes=reranked_nodes))
         return reranked_nodes

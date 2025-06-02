@@ -3,12 +3,10 @@ from typing import Dict, Optional
 
 from llama_index.core.evaluation.base import Evaluation
 from llama_index.core.indices.query.query_transform.base import BaseQueryTransform
+from llama_index.core.llms import LLM
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.schema import QueryBundle
-from llama_index.core.service_context_elements.llm_predictor import (
-    LLMPredictorType,
-)
 from llama_index.core.settings import Settings
 
 logger = logging.getLogger(__name__)
@@ -28,7 +26,8 @@ DEFAULT_RESYNTHESIS_PROMPT = PromptTemplate(DEFAULT_RESYNTHESIS_PROMPT_TMPL)
 
 
 class FeedbackQueryTransformation(BaseQueryTransform):
-    """Transform the query given the evaluation feedback.
+    """
+    Transform the query given the evaluation feedback.
 
     Args:
         eval(Evaluation): An evaluation object.
@@ -40,7 +39,7 @@ class FeedbackQueryTransformation(BaseQueryTransform):
 
     def __init__(
         self,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         resynthesize_query: bool = False,
         resynthesis_prompt: Optional[BasePromptTemplate] = None,
     ) -> None:

@@ -6,7 +6,8 @@ from llama_index.core.output_parsers.utils import parse_json_markdown
 
 
 def convert_to_handlebars(text: str) -> str:
-    """Convert a python format string to handlebars-style template.
+    """
+    Convert a python format string to handlebars-style template.
 
     In python format string, single braces {} are used for variable substitution,
         and double braces {{}} are used for escaping actual braces (e.g. for JSON dict)
@@ -38,12 +39,16 @@ def wrap_json_markdown(text: str) -> str:
 
 def pydantic_to_guidance_output_template(cls: Type[BaseModel]) -> str:
     """Convert a pydantic model to guidance output template."""
-    return json_schema_to_guidance_output_template(cls.schema(), root=cls.schema())
+    return json_schema_to_guidance_output_template(
+        cls.model_json_schema(), root=cls.model_json_schema()
+    )
 
 
 def pydantic_to_guidance_output_template_markdown(cls: Type[BaseModel]) -> str:
     """Convert a pydantic model to guidance output template wrapped in json markdown."""
-    output = json_schema_to_guidance_output_template(cls.schema(), root=cls.schema())
+    output = json_schema_to_guidance_output_template(
+        cls.model_json_schema(), root=cls.model_json_schema()
+    )
     return wrap_json_markdown(output)
 
 
@@ -54,7 +59,8 @@ def json_schema_to_guidance_output_template(
     root: Optional[dict] = None,
     use_pattern_control: bool = False,
 ) -> str:
-    """Convert a json schema to guidance output template.
+    """
+    Convert a json schema to guidance output template.
 
     Implementation based on https://github.com/microsoft/guidance/\
         blob/main/notebooks/applications/jsonformer.ipynb
@@ -68,7 +74,7 @@ def json_schema_to_guidance_output_template(
         ref = schema["$ref"]
         model = ref.split("/")[-1]
         return json_schema_to_guidance_output_template(
-            root["definitions"][model], key, indent, root
+            root["$defs"][model], key, indent, root
         )
 
     if schema["type"] == "object":
@@ -125,7 +131,8 @@ Model = TypeVar("Model", bound=BaseModel)
 def parse_pydantic_from_guidance_program(
     response: str, cls: Type[Model], verbose: bool = False
 ) -> Model:
-    """Parse output from guidance program.
+    """
+    Parse output from guidance program.
 
     This is a temporary solution for parsing a pydantic object out of an executed
     guidance program.
@@ -143,7 +150,7 @@ def parse_pydantic_from_guidance_program(
             print("Raw output:")
             print(output)
         json_dict = parse_json_markdown(output)
-        sub_questions = cls.parse_obj(json_dict)
+        sub_questions = cls.model_validate(json_dict)
     except Exception as e:
         raise OutputParserException(
             "Failed to parse pydantic object from guidance program"

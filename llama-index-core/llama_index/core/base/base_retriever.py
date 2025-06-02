@@ -1,4 +1,5 @@
 """Base retriever."""
+
 from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
@@ -10,7 +11,7 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, ConfigDict
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.prompts.mixin import (
@@ -26,12 +27,19 @@ from llama_index.core.schema import (
     QueryType,
     TextNode,
 )
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.settings import Settings
 from llama_index.core.utils import print_text
+from llama_index.core.instrumentation import DispatcherSpanMixin
+from llama_index.core.instrumentation.events.retrieval import (
+    RetrievalEndEvent,
+    RetrievalStartEvent,
+)
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 
-class BaseRetriever(ChainableMixin, PromptMixin):
+class BaseRetriever(ChainableMixin, PromptMixin, DispatcherSpanMixin):
     """Base retriever."""
 
     def __init__(
@@ -199,16 +207,21 @@ class BaseRetriever(ChainableMixin, PromptMixin):
             else:
                 retrieved_nodes.append(n)
 
-        # remove any duplicates based on hash
+        # remove any duplicates based on hash and ref_doc_id
         seen = set()
         return [
             n
             for n in retrieved_nodes
-            if not (n.node.hash in seen or seen.add(n.node.hash))  # type: ignore[func-returns-value]
+            if not (
+                (n.node.hash, n.node.ref_doc_id) in seen
+                or seen.add((n.node.hash, n.node.ref_doc_id))  # type: ignore[func-returns-value]
+            )
         ]
 
+    @dispatcher.span
     def retrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
-        """Retrieve nodes given query.
+        """
+        Retrieve nodes given query.
 
         Args:
             str_or_query_bundle (QueryType): Either a query string or
@@ -216,7 +229,11 @@ class BaseRetriever(ChainableMixin, PromptMixin):
 
         """
         self._check_callback_manager()
-
+        dispatcher.event(
+            RetrievalStartEvent(
+                str_or_query_bundle=str_or_query_bundle,
+            )
+        )
         if isinstance(str_or_query_bundle, str):
             query_bundle = QueryBundle(str_or_query_bundle)
         else:
@@ -231,12 +248,23 @@ class BaseRetriever(ChainableMixin, PromptMixin):
                 retrieve_event.on_end(
                     payload={EventPayload.NODES: nodes},
                 )
-
+        dispatcher.event(
+            RetrievalEndEvent(
+                str_or_query_bundle=str_or_query_bundle,
+                nodes=nodes,
+            )
+        )
         return nodes
 
+    @dispatcher.span
     async def aretrieve(self, str_or_query_bundle: QueryType) -> List[NodeWithScore]:
         self._check_callback_manager()
 
+        dispatcher.event(
+            RetrievalStartEvent(
+                str_or_query_bundle=str_or_query_bundle,
+            )
+        )
         if isinstance(str_or_query_bundle, str):
             query_bundle = QueryBundle(str_or_query_bundle)
         else:
@@ -246,17 +274,25 @@ class BaseRetriever(ChainableMixin, PromptMixin):
                 CBEventType.RETRIEVE,
                 payload={EventPayload.QUERY_STR: query_bundle.query_str},
             ) as retrieve_event:
-                nodes = await self._aretrieve(query_bundle)
-                nodes = await self._ahandle_recursive_retrieval(query_bundle, nodes)
+                nodes = await self._aretrieve(query_bundle=query_bundle)
+                nodes = await self._ahandle_recursive_retrieval(
+                    query_bundle=query_bundle, nodes=nodes
+                )
                 retrieve_event.on_end(
                     payload={EventPayload.NODES: nodes},
                 )
-
+        dispatcher.event(
+            RetrievalEndEvent(
+                str_or_query_bundle=str_or_query_bundle,
+                nodes=nodes,
+            )
+        )
         return nodes
 
     @abstractmethod
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        """Retrieve nodes given query.
+        """
+        Retrieve nodes given query.
 
         Implemented by the user.
 
@@ -265,25 +301,13 @@ class BaseRetriever(ChainableMixin, PromptMixin):
     # TODO: make this abstract
     # @abstractmethod
     async def _aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        """Asynchronously retrieve nodes given query.
+        """
+        Asynchronously retrieve nodes given query.
 
         Implemented by the user.
 
         """
         return self._retrieve(query_bundle)
-
-    def get_service_context(self) -> Optional[ServiceContext]:
-        """Attempts to resolve a service context.
-        Short-circuits at self.service_context, self._service_context,
-        or self._index.service_context.
-        """
-        if hasattr(self, "service_context"):
-            return self.service_context
-        if hasattr(self, "_service_context"):
-            return self._service_context
-        elif hasattr(self, "_index") and hasattr(self._index, "service_context"):
-            return self._index.service_context
-        return None
 
     def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """Return a query component."""
@@ -293,10 +317,8 @@ class BaseRetriever(ChainableMixin, PromptMixin):
 class RetrieverComponent(QueryComponent):
     """Retriever component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     retriever: BaseRetriever = Field(..., description="Retriever")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""

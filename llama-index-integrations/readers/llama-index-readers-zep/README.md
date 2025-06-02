@@ -1,5 +1,9 @@
 # Zep Reader
 
+```bash
+pip install llama-index-readers-zep
+```
+
 The Zep Reader returns a set of texts corresponding to a text query or embeddings retrieved from a Zep Collection.
 The Reader is initialized with a Zep API URL and optionally an API key. The Reader can then be used to load data
 from a Zep Document Collection.
@@ -23,14 +27,13 @@ results.
 import time
 from uuid import uuid4
 
-from llama_index.node_parser import SimpleNodeParser
-from llama_index.readers.schema import Document
+from llama_index.core.node_parser import SimpleNodeParser
+from llama_index.core import Document
 from zep_python import ZepClient
 from zep_python.document import Document as ZepDocument
 
-from llama_index import download_loader
 
-ZepReader = download_loader("ZepReader")
+from llama_index.readers.zep import ZepReader
 
 # Create a Zep collection
 zep_api_url = "http://localhost:8000"  # replace with your Zep API URL

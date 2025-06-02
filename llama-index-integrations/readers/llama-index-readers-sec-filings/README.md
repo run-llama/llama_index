@@ -1,5 +1,9 @@
 # SEC DATA DOWNLOADER
 
+```bash
+pip install llama-index-readers-sec-filings
+```
+
 Please checkout this repo that I am building on SEC Question Answering Agent [SEC-QA](https://github.com/Athe-kunal/SEC-QA-Agent)
 
 This repository downloads all the texts from SEC documents (10-K and 10-Q). Currently, it is not supporting documents that are amended, but that will be added in the near futures.
@@ -21,9 +25,7 @@ The SEC Downloader expects 5 attributes
 ## Usage
 
 ```python
-from llama_index import download_loader
-
-SECFilingsLoader = download_loader("SECFilingsLoader")
+from llama_index.readers.sec_filings import SECFilingsLoader
 
 loader = SECFilingsLoader(tickers=["TSLA"], amount=3, filing_type="10-K")
 loader.load_data()
@@ -95,10 +97,10 @@ This loader is can be used with both Langchain and LlamaIndex.
 ### LlamaIndex
 
 ```python
-from llama_index import VectorStoreIndex, download_loader
-from llama_index import SimpleDirectoryReader
+from llama_index.core import VectorStoreIndex, download_loader
+from llama_index.core import SimpleDirectoryReader
 
-SECFilingsLoader = download_loader("SECFilingsLoader")
+from llama_index.readers.sec_filings import SECFilingsLoader
 
 loader = SECFilingsLoader(tickers=["TSLA"], amount=3, filing_type="10-K")
 loader.load_data()
@@ -111,13 +113,12 @@ index.query("What are the risk factors of Tesla for the year 2022?")
 ### Langchain
 
 ```python
-from llama_index import download_loader
 from langchain.llms import OpenAI
 from langchain.chains import RetrievalQA
 from langchain.document_loaders import DirectoryLoader
 from langchain.indexes import VectorstoreIndexCreator
 
-SECFilingsLoader = download_loader("SECFilingsLoader")
+from llama_index.readers.sec_filings import SECFilingsLoader
 
 loader = SECFilingsLoader(tickers=["TSLA"], amount=3, filing_type="10-K")
 loader.load_data()

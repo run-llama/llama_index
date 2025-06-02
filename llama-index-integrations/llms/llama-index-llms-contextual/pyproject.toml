@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "black[jupyter]<=23.9.1,>=23.7.0",
+    "codespell[toml]>=v2.2.6",
+    "diff-cover>=9.2.0",
+    "pytest>=8.3.5",
+    "pytest-cov>=6.1.1",
+    "ruff==0.11.11",
+]
+
+[project]
+name = "llama-index-llms-contextual"
+version = "0.0.3"
+description = "llama-index contextual integration"
+authors = [{name = "Sean Smith", email = "sean.smith@contextual.ai"}]
+requires-python = ">=3.9,<4.0"
+readme = "README.md"
+license = "MIT"
+dependencies = [
+    "llama-index-llms-openai-like>=0.4.0,<0.5",
+    "contextual-client>=0.4.0,<0.5",
+]
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.llms.contextual"
+
+[tool.llamahub.class_authors]
+Contextual = "sean-smith"
+
+[tool.mypy]
+disallow_untyped_defs = true
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
+ignore_missing_imports = true
+python_version = "3.8"

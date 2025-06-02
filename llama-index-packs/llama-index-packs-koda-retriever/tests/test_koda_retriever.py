@@ -7,13 +7,13 @@ from llama_index.core.llms.llm import BaseLLM
 def test_init(setup):
     retriever = setup.get("retriever")
 
-    assert isinstance(
-        retriever.index, BaseIndex
-    ), "index should be an instance of BaseIndex"
+    assert isinstance(retriever.index, BaseIndex), (
+        "index should be an instance of BaseIndex"
+    )
     assert isinstance(retriever.llm, BaseLLM), "llm should be an instance of LLM"
-    assert isinstance(
-        retriever, KodaRetriever
-    ), "retriever should be an instance of KodaRetriever"
+    assert isinstance(retriever, KodaRetriever), (
+        "retriever should be an instance of KodaRetriever"
+    )
 
 
 def test_retrieve(setup):
@@ -43,9 +43,9 @@ def test_categorize(setup):
     category = retriever.categorize(query)
 
     assert isinstance(category, str), "categorize should return a string"
-    assert (
-        category in expected_categories
-    ), "categorize should return a category from the matrix"
+    assert category in expected_categories, (
+        "categorize should return a category from the matrix"
+    )
 
 
 def test_category_retrieve(setup):

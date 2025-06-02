@@ -1,5 +1,9 @@
 # Azure Cognitive Search Loader
 
+```bash
+pip install llama-index-readers-azcognitive-search
+```
+
 The AzCognitiveSearchReader Loader returns a set of texts corresponding to documents retrieved from specific index of Azure Cognitive Search.
 The user initializes the loader with credentials (service name and key) and the index name.
 
@@ -8,9 +12,7 @@ The user initializes the loader with credentials (service name and key) and the 
 Here's an example usage of the AzCognitiveSearchReader.
 
 ```python
-from llama_index import download_loader
-
-AzCognitiveSearchReader = download_loader("AzCognitiveSearchReader")
+from llama_index.readers.azcognitive_search import AzCognitiveSearchReader
 
 reader = AzCognitiveSearchReader(
     "<Azure_Cognitive_Search_NAME>",
@@ -30,11 +32,11 @@ documents = reader.load_data(
 ## Usage in combination with langchain
 
 ```python
-from llama_index import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex, download_loader
 from langchain.chains.conversation.memory import ConversationBufferMemory
 from langchain.agents import Tool, AgentExecutor, load_tools, initialize_agent
 
-AzCognitiveSearchReader = download_loader("AzCognitiveSearchReader")
+from llama_index.readers.azcognitive_search import AzCognitiveSearchReader
 
 az_loader = AzCognitiveSearchReader(
     COGNITIVE_SEARCH_SERVICE_NAME, COGNITIVE_SEARCH_KEY, INDEX_NAME
@@ -61,4 +63,4 @@ agent_chain = initialize_agent(
 result = agent_chain.run(input="How can I contact with my health insurance?")
 ```
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).

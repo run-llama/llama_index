@@ -4,11 +4,11 @@ This tool allows Agents to use Microsoft Azure speech services to transcribe aud
 
 ## Usage
 
-This tool has a more extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/azure_speech.ipynb)
+This tool has a more extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-azure-speech/examples/azure_speech.ipynb)
 
 ```python
 from llama_index.tools.azure_speech import AzureSpeechToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 speech_tool = AzureSpeechToolSpec(speech_key="your-key", region="eastus")
 
@@ -25,4 +25,4 @@ print(
 `text_to_speech`: Takes an input string and synthesizes audio to play on the users computer
 `speech_to_text`: Takes a .wav file and transcribes it into text
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.

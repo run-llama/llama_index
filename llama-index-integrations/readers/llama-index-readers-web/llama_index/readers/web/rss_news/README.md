@@ -9,7 +9,7 @@ To use this loader, pass in an array of URLs of RSS feeds. It will download the 
 combine them:
 
 ```python
-from llama_index.readers.web.rss_news import RSSNewsReader
+from llama_index.core.readers.web.rss_news import RSSNewsReader
 
 urls = [
     "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",

@@ -22,7 +22,8 @@ class BaseObjectNodeMapping(Generic[OT]):
     def from_objects(
         cls, objs: Sequence[OT], *args: Any, **kwargs: Any
     ) -> "BaseObjectNodeMapping":
-        """Initialize node mapping from a list of objects.
+        """
+        Initialize node mapping from a list of objects.
 
         Only needs to be specified if the node mapping
         needs to be initialized with a list of objects.
@@ -33,7 +34,8 @@ class BaseObjectNodeMapping(Generic[OT]):
         """Validate object."""
 
     def add_object(self, obj: OT) -> None:
-        """Add object.
+        """
+        Add object.
 
         Only needs to be specified if the node mapping
         needs to be initialized with a list of objects.
@@ -49,7 +51,8 @@ class BaseObjectNodeMapping(Generic[OT]):
 
     @abstractmethod
     def _add_object(self, obj: OT) -> None:
-        """Add object.
+        """
+        Add object.
 
         Only needs to be specified if the node mapping
         needs to be initialized with a list of objects.
@@ -57,10 +60,10 @@ class BaseObjectNodeMapping(Generic[OT]):
         """
 
     @abstractmethod
-    def to_node(self, obj: OT) -> TextNode:
+    def to_node(self, obj: OT) -> BaseNode:
         """To node."""
 
-    def to_nodes(self, objs: Sequence[OT]) -> Sequence[TextNode]:
+    def to_nodes(self, objs: Sequence[OT]) -> Sequence[BaseNode]:
         return [self.to_node(obj) for obj in objs]
 
     def from_node(self, node: BaseNode) -> OT:
@@ -90,7 +93,7 @@ class BaseObjectNodeMapping(Generic[OT]):
         """Load from serialization."""
         obj_node_mapping = None
         errors = []
-        for cls in BaseObjectNodeMapping.__subclasses__():  # type: ignore[misc]
+        for cls in BaseObjectNodeMapping.__subclasses__():  # type: ignore
             try:
                 obj_node_mapping = cls.from_persist_dir(
                     persist_dir=persist_dir,
@@ -107,7 +110,8 @@ class BaseObjectNodeMapping(Generic[OT]):
 
 
 class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
-    """General node mapping that works for any obj.
+    """
+    General node mapping that works for any obj.
 
     More specifically, any object with a meaningful string representation.
 
@@ -137,7 +141,7 @@ class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
         self._objs[hash(str(obj))] = obj
 
     def to_node(self, obj: Any) -> TextNode:
-        return TextNode(text=str(obj))
+        return TextNode(id_=str(hash(str(obj))), text=str(obj))
 
     def _from_node(self, node: BaseNode) -> Any:
         return self._objs[hash(node.get_content(metadata_mode=MetadataMode.NONE))]
@@ -147,7 +151,8 @@ class SimpleObjectNodeMapping(BaseObjectNodeMapping[Any]):
         persist_dir: str = DEFAULT_PERSIST_DIR,
         obj_node_mapping_fname: str = DEFAULT_PERSIST_FNAME,
     ) -> None:
-        """Persist object node mapping.
+        """
+        Persist object node mapping.
 
         NOTE: This may fail depending on whether the object types are
         pickle-able.

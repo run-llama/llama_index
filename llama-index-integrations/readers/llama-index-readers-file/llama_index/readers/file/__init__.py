@@ -11,8 +11,13 @@ from llama_index.readers.file.markdown import MarkdownReader
 from llama_index.readers.file.mbox import MboxReader
 from llama_index.readers.file.paged_csv import PagedCSVReader
 from llama_index.readers.file.pymu_pdf import PyMuPDFReader
+from llama_index.readers.file.rtf import RTFReader
 from llama_index.readers.file.slides import PptxReader
-from llama_index.readers.file.tabular import PandasCSVReader, CSVReader
+from llama_index.readers.file.tabular import (
+    CSVReader,
+    PandasCSVReader,
+    PandasExcelReader,
+)
 from llama_index.readers.file.unstructured import UnstructuredReader
 from llama_index.readers.file.video_audio import VideoAudioReader
 from llama_index.readers.file.xml import XMLReader
@@ -32,6 +37,7 @@ __all__ = [
     "MboxReader",
     "PptxReader",
     "PandasCSVReader",
+    "PandasExcelReader",
     "VideoAudioReader",
     "UnstructuredReader",
     "PyMuPDFReader",
@@ -39,4 +45,5 @@ __all__ = [
     "XMLReader",
     "PagedCSVReader",
     "CSVReader",
+    "RTFReader",
 ]

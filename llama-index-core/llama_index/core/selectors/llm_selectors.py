@@ -5,8 +5,10 @@ from llama_index.core.base.base_selector import (
     SelectorResult,
     SingleSelection,
 )
+from llama_index.core.llms import LLM
 from llama_index.core.output_parsers.base import StructuredOutput
 from llama_index.core.output_parsers.selection import Answer, SelectionOutputParser
+from llama_index.core.prompts.base import BasePromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.schema import QueryBundle
@@ -16,11 +18,7 @@ from llama_index.core.selectors.prompts import (
     MultiSelectPrompt,
     SingleSelectPrompt,
 )
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.service_context_elements.llm_predictor import (
-    LLMPredictorType,
-)
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+from llama_index.core.settings import Settings
 from llama_index.core.tools.types import ToolMetadata
 from llama_index.core.types import BaseOutputParser
 
@@ -49,22 +47,24 @@ def _structured_output_to_selector_result(output: Any) -> SelectorResult:
 
 
 class LLMSingleSelector(BaseSelector):
-    """LLM single selector.
+    """
+    LLM single selector.
 
     LLM-based selector that chooses one out of many options.
 
     Args:
         LLM (LLM): An LLM.
         prompt (SingleSelectPrompt): A LLM prompt for selecting one out of many options.
+
     """
 
     def __init__(
         self,
-        llm: LLMPredictorType,
+        llm: LLM,
         prompt: SingleSelectPrompt,
     ) -> None:
         self._llm = llm
-        self._prompt = prompt
+        self._prompt: BasePromptTemplate = prompt
 
         if self._prompt.output_parser is None:
             raise ValueError("Prompt should have output parser.")
@@ -72,13 +72,12 @@ class LLMSingleSelector(BaseSelector):
     @classmethod
     def from_defaults(
         cls,
-        llm: Optional[LLMPredictorType] = None,
-        service_context: Optional[ServiceContext] = None,
+        llm: Optional[LLM] = None,
         prompt_template_str: Optional[str] = None,
         output_parser: Optional[BaseOutputParser] = None,
     ) -> "LLMSingleSelector":
         # optionally initialize defaults
-        llm = llm or llm_from_settings_or_context(Settings, service_context)
+        llm = llm or Settings.llm
         prompt_template_str = prompt_template_str or DEFAULT_SINGLE_SELECT_PROMPT_TMPL
         output_parser = output_parser or SelectionOutputParser()
 
@@ -139,7 +138,8 @@ class LLMSingleSelector(BaseSelector):
 
 
 class LLMMultiSelector(BaseSelector):
-    """LLM multi selector.
+    """
+    LLM multi selector.
 
     LLM-based selector that chooses multiple out of many options.
 
@@ -147,16 +147,17 @@ class LLMMultiSelector(BaseSelector):
         llm (LLM): An LLM.
         prompt (SingleSelectPrompt): A LLM prompt for selecting multiple out of many
             options.
+
     """
 
     def __init__(
         self,
-        llm: LLMPredictorType,
+        llm: LLM,
         prompt: MultiSelectPrompt,
         max_outputs: Optional[int] = None,
     ) -> None:
         self._llm = llm
-        self._prompt = prompt
+        self._prompt: BasePromptTemplate = prompt
         self._max_outputs = max_outputs
 
         if self._prompt.output_parser is None:
@@ -165,14 +166,12 @@ class LLMMultiSelector(BaseSelector):
     @classmethod
     def from_defaults(
         cls,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         prompt_template_str: Optional[str] = None,
         output_parser: Optional[BaseOutputParser] = None,
         max_outputs: Optional[int] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
     ) -> "LLMMultiSelector":
-        llm = llm or llm_from_settings_or_context(Settings, service_context)
+        llm = llm or Settings.llm
         prompt_template_str = prompt_template_str or DEFAULT_MULTI_SELECT_PROMPT_TMPL
         output_parser = output_parser or SelectionOutputParser()
 

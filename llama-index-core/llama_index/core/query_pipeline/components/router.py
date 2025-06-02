@@ -1,6 +1,5 @@
 """Router components."""
 
-
 from typing import Any, Dict, List
 
 from llama_index.core.base.base_selector import BaseSelector
@@ -12,7 +11,12 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import (
+    Field,
+    PrivateAttr,
+    SerializeAsAny,
+    ConfigDict,
+)
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.utils import print_text
 
@@ -20,10 +24,8 @@ from llama_index.core.utils import print_text
 class SelectorComponent(QueryComponent):
     """Selector component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     selector: BaseSelector = Field(..., description="Selector")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
@@ -68,7 +70,8 @@ class SelectorComponent(QueryComponent):
 
 
 class RouterComponent(QueryComponent):
-    """Router Component.
+    """
+    Router Component.
 
     Routes queries to different query components based on a selector.
 
@@ -76,19 +79,17 @@ class RouterComponent(QueryComponent):
 
     """
 
-    selector: BaseSelector = Field(..., description="Selector")
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    selector: SerializeAsAny[BaseSelector] = Field(..., description="Selector")
     choices: List[str] = Field(
         ..., description="Choices (must correspond to components)"
     )
-    components: List[QueryComponent] = Field(
+    components: List[SerializeAsAny[QueryComponent]] = Field(
         ..., description="Components (must correspond to choices)"
     )
     verbose: bool = Field(default=False, description="Verbose")
 
     _query_keys: List[str] = PrivateAttr()
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def __init__(
         self,
@@ -111,15 +112,13 @@ class RouterComponent(QueryComponent):
                 raise ValueError("Expected one required input key")
             query_keys.append(next(iter(new_component.free_req_input_keys)))
             new_components.append(new_component)
-
-        self._query_keys = query_keys
-
         super().__init__(
             selector=selector,
             choices=choices,
             components=new_components,
             verbose=verbose,
         )
+        self._query_keys = query_keys
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
@@ -150,7 +149,7 @@ class RouterComponent(QueryComponent):
         if len(sel_output.selections) != 1:
             raise ValueError("Expected one selection")
         component = self.components[sel_output.ind]
-        log_str = f"Selecting component {sel_output.ind}: " f"{sel_output.reason}."
+        log_str = f"Selecting component {sel_output.ind}: {sel_output.reason}."
         if self.verbose:
             print_text(log_str + "\n", color="pink")
         # run component
@@ -167,7 +166,7 @@ class RouterComponent(QueryComponent):
         if len(sel_output.selections) != 1:
             raise ValueError("Expected one selection")
         component = self.components[sel_output.ind]
-        log_str = f"Selecting component {sel_output.ind}: " f"{sel_output.reason}."
+        log_str = f"Selecting component {sel_output.ind}: {sel_output.reason}."
         if self.verbose:
             print_text(log_str + "\n", color="pink")
         # run component
@@ -188,7 +187,8 @@ class RouterComponent(QueryComponent):
 
     @property
     def sub_query_components(self) -> List["QueryComponent"]:
-        """Get sub query components.
+        """
+        Get sub query components.
 
         Certain query components may have sub query components, e.g. a
         query pipeline will have sub query components, and so will

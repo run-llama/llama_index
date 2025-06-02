@@ -96,3 +96,28 @@ app = service.app
 As we continue to build out this library extension, we welcome any feedback or
 suggestions on what can be incorporated on this regard and others in order to
 make our tools more helpful to our users.
+
+## 📖 Citation
+
+Reference to cite if you use LlamaIndex Networks in a paper, please cite both
+the main library as well as this extension.
+
+```latex
+@software{Liu_LlamaIndex_2022,
+author = {Liu, Jerry},
+doi = {10.5281/zenodo.1234},
+month = {11},
+title = {{LlamaIndex}},
+url = {https://github.com/jerryjliu/llama_index},
+year = {2022}
+}
+
+@software{Fajardo_LlamaIndexNetworks_2024,
+author = {Fajardo, Val Andrei and Liu, Jerry and Markewich, Logan and Suo, Simon and Zhang, Haotian and Desai, Sourabh},
+doi = {10.5281/zenodo.1234},
+month = {11},
+title = {{LlamaIndex Networks}},
+url = {https://github.com/run-llama/llama_index/llama-index-networks},
+year = {2024}
+}
+```

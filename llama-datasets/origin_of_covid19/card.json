@@ -1,0 +1,27 @@
+{
+  "name": "Origin Of Covid19 Dataset",
+  "className": "LabelledRagDataset",
+  "description": "A labelled RAG dataset based off an article, The Origin Of COVID-19 and Why It Matters, by Morens DM, Breman JG, Calisher CH, Doherty PC, Hahn BH, Keusch GT, Kramer LD, LeDuc JW, Monath TP, Taubenberger JK, consisting of queries, reference answers, and reference contexts.",
+  "numberObservations": 24,
+  "containsExamplesByHumans": false,
+  "containsExamplesByAi": true,
+  "sourceUrls": ["https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7470595/"],
+  "baselines": [
+    {
+      "name": "llamaindex",
+      "config": {
+        "chunkSize": 1024,
+        "llm": "gpt-3.5-turbo",
+        "similarityTopK": 2,
+        "embedModel": "text-embedding-ada-002"
+      },
+      "metrics": {
+        "contextSimilarity": 0.952,
+        "correctness": 4.562,
+        "faithfulness": 1.0,
+        "relevancy": 0.958
+      },
+      "codeUrl": "https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_datasets/origin_of_covid19/llamaindex_baseline.py"
+    }
+  ]
+}

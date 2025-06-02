@@ -1,13 +1,12 @@
 from typing import List, Tuple, Type
 
-from llama_index.core import Document
 from llama_index.core.download.dataset import (
     LLAMA_DATASETS_LFS_URL,
     LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
+    LLAMA_DATASETS_URL,
 )
 from llama_index.core.download.dataset import download_llama_dataset as download
 from llama_index.core.download.module import (
-    LLAMA_HUB_URL,
     MODULE_TYPE,
     track_download,
 )
@@ -18,6 +17,7 @@ from llama_index.core.llama_dataset.evaluator_evaluation import (
 )
 from llama_index.core.llama_dataset.rag import LabelledRagDataset
 from llama_index.core.readers import SimpleDirectoryReader
+from llama_index.core.schema import Document
 
 
 def _resolve_dataset_class(filename: str) -> Type[BaseLlamaDataset]:
@@ -35,13 +35,14 @@ def _resolve_dataset_class(filename: str) -> Type[BaseLlamaDataset]:
 def download_llama_dataset(
     llama_dataset_class: str,
     download_dir: str,
-    llama_hub_url: str = LLAMA_HUB_URL,
+    llama_datasets_url: str = LLAMA_DATASETS_URL,
     llama_datasets_lfs_url: str = LLAMA_DATASETS_LFS_URL,
     llama_datasets_source_files_tree_url: str = LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
     show_progress: bool = False,
     load_documents: bool = True,
-) -> Tuple[Type[BaseLlamaDataset], List[Document]]:
-    """Download dataset from datasets-LFS and llamahub.
+) -> Tuple[BaseLlamaDataset, List[Document]]:
+    """
+    Download dataset from datasets-LFS and llamahub.
 
     Args:
         dataset_class: The name of the llamadataset class you want to download,
@@ -64,15 +65,16 @@ def download_llama_dataset(
 
     Returns:
         a `BaseLlamaDataset` and a `List[Document]`
+
     """
     filenames: Tuple[str, str] = download(
         llama_dataset_class,
-        llama_hub_url=llama_hub_url,
+        llama_datasets_url=llama_datasets_url,
         llama_datasets_lfs_url=llama_datasets_lfs_url,
         llama_datasets_source_files_tree_url=llama_datasets_source_files_tree_url,
         refresh_cache=True,
         custom_path=download_dir,
-        library_path="llama_datasets/library.json",
+        library_path="library.json",
         disable_library_cache=True,
         override_path=True,
         show_progress=show_progress,

@@ -19,19 +19,21 @@ The prompts used to generate the metadata are specifically aimed to help
 disambiguate the document or subsection from other similar documents or subsections.
 (similar with contrastive learning)
 """
-from typing import Any, Dict, List, Optional, Sequence, cast
+
+from typing import Any, Callable, Dict, Generic, List, Optional, Sequence, cast
 
 from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.bridge.pydantic import (
+    Field,
+    PrivateAttr,
+    SerializeAsAny,
+)
 from llama_index.core.extractors.interface import BaseExtractor
 from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.schema import BaseNode, TextNode
-from llama_index.core.service_context_elements.llm_predictor import (
-    LLMPredictorType,
-)
 from llama_index.core.settings import Settings
-from llama_index.core.types import BasePydanticProgram
+from llama_index.core.types import BasePydanticProgram, Model
 
 DEFAULT_TITLE_NODE_TEMPLATE = """\
 Context: {context_str}. Give a title that summarizes all of \
@@ -43,8 +45,16 @@ DEFAULT_TITLE_COMBINE_TEMPLATE = """\
 what is the comprehensive title for this document? Title: """
 
 
+def add_class_name(value: Any, handler: Callable, info: Any) -> Dict[str, Any]:
+    partial_result = handler(value, info)
+    if hasattr(value, "class_name"):
+        partial_result.update({"class_name": value.class_name()})
+    return partial_result
+
+
 class TitleExtractor(BaseExtractor):
-    """Title extractor. Useful for long documents. Extracts `document_title`
+    """
+    Title extractor. Useful for long documents. Extracts `document_title`
     metadata field.
 
     Args:
@@ -53,10 +63,11 @@ class TitleExtractor(BaseExtractor):
         node_template (str): template for node-level title clues extraction
         combine_template (str): template for combining node-level clues into
             a document-level title
+
     """
 
     is_text_node_only: bool = False  # can work for mixture of text and non-text nodes
-    llm: LLMPredictorType = Field(description="The LLM to use for generation.")
+    llm: SerializeAsAny[LLM] = Field(description="The LLM to use for generation.")
     nodes: int = Field(
         default=5,
         description="The number of nodes to extract titles from.",
@@ -75,7 +86,7 @@ class TitleExtractor(BaseExtractor):
         self,
         llm: Optional[LLM] = None,
         # TODO: llm_predictor arg is deprecated
-        llm_predictor: Optional[LLMPredictorType] = None,
+        llm_predictor: Optional[LLM] = None,
         nodes: int = 5,
         node_template: str = DEFAULT_TITLE_NODE_TEMPLATE,
         combine_template: str = DEFAULT_TITLE_COMBINE_TEMPLATE,
@@ -149,26 +160,40 @@ class TitleExtractor(BaseExtractor):
         )
 
 
+DEFAULT_KEYWORD_EXTRACT_TEMPLATE = """\
+{context_str}. Give {keywords} unique keywords for this \
+document. Format as comma separated. Keywords: """
+
+
 class KeywordExtractor(BaseExtractor):
-    """Keyword extractor. Node-level extractor. Extracts
+    """
+    Keyword extractor. Node-level extractor. Extracts
     `excerpt_keywords` metadata field.
 
     Args:
         llm (Optional[LLM]): LLM
         keywords (int): number of keywords to extract
+        prompt_template (str): template for keyword extraction
+
     """
 
-    llm: LLMPredictorType = Field(description="The LLM to use for generation.")
+    llm: SerializeAsAny[LLM] = Field(description="The LLM to use for generation.")
     keywords: int = Field(
         default=5, description="The number of keywords to extract.", gt=0
+    )
+
+    prompt_template: str = Field(
+        default=DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
+        description="Prompt template to use when generating keywords.",
     )
 
     def __init__(
         self,
         llm: Optional[LLM] = None,
         # TODO: llm_predictor arg is deprecated
-        llm_predictor: Optional[LLMPredictorType] = None,
+        llm_predictor: Optional[LLM] = None,
         keywords: int = 5,
+        prompt_template: str = DEFAULT_KEYWORD_EXTRACT_TEMPLATE,
         num_workers: int = DEFAULT_NUM_WORKERS,
         **kwargs: Any,
     ) -> None:
@@ -179,6 +204,7 @@ class KeywordExtractor(BaseExtractor):
         super().__init__(
             llm=llm or llm_predictor or Settings.llm,
             keywords=keywords,
+            prompt_template=prompt_template,
             num_workers=num_workers,
             **kwargs,
         )
@@ -192,14 +218,10 @@ class KeywordExtractor(BaseExtractor):
         if self.is_text_node_only and not isinstance(node, TextNode):
             return {}
 
-        # TODO: figure out a good way to allow users to customize keyword template
         context_str = node.get_content(metadata_mode=self.metadata_mode)
         keywords = await self.llm.apredict(
-            PromptTemplate(
-                template=f"""\
-{{context_str}}. Give {self.keywords} unique keywords for this \
-document. Format as comma separated. Keywords: """
-            ),
+            PromptTemplate(template=self.prompt_template),
+            keywords=self.keywords,
             context_str=context_str,
         )
 
@@ -242,9 +264,10 @@ class QuestionsAnsweredExtractor(BaseExtractor):
         questions (int): number of questions to extract
         prompt_template (str): template for question extraction,
         embedding_only (bool): whether to use embedding only
+
     """
 
-    llm: LLMPredictorType = Field(description="The LLM to use for generation.")
+    llm: SerializeAsAny[LLM] = Field(description="The LLM to use for generation.")
     questions: int = Field(
         default=5,
         description="The number of questions to generate.",
@@ -262,7 +285,7 @@ class QuestionsAnsweredExtractor(BaseExtractor):
         self,
         llm: Optional[LLM] = None,
         # TODO: llm_predictor arg is deprecated
-        llm_predictor: Optional[LLMPredictorType] = None,
+        llm_predictor: Optional[LLM] = None,
         questions: int = 5,
         prompt_template: str = DEFAULT_QUESTION_GEN_TMPL,
         embedding_only: bool = True,
@@ -330,9 +353,10 @@ class SummaryExtractor(BaseExtractor):
         llm (Optional[LLM]): LLM
         summaries (List[str]): list of summaries to extract: 'self', 'prev', 'next'
         prompt_template (str): template for summary extraction
+
     """
 
-    llm: LLMPredictorType = Field(description="The LLM to use for generation.")
+    llm: SerializeAsAny[LLM] = Field(description="The LLM to use for generation.")
     summaries: List[str] = Field(
         description="List of summaries to extract: 'self', 'prev', 'next'"
     )
@@ -349,7 +373,7 @@ class SummaryExtractor(BaseExtractor):
         self,
         llm: Optional[LLM] = None,
         # TODO: llm_predictor arg is deprecated
-        llm_predictor: Optional[LLMPredictorType] = None,
+        llm_predictor: Optional[LLM] = None,
         summaries: List[str] = ["self"],
         prompt_template: str = DEFAULT_SUMMARY_EXTRACT_TEMPLATE,
         num_workers: int = DEFAULT_NUM_WORKERS,
@@ -358,9 +382,6 @@ class SummaryExtractor(BaseExtractor):
         # validation
         if not all(s in ["self", "prev", "next"] for s in summaries):
             raise ValueError("summaries must be one of ['self', 'prev', 'next']")
-        self._self_summary = "self" in summaries
-        self._prev_summary = "prev" in summaries
-        self._next_summary = "next" in summaries
 
         super().__init__(
             llm=llm or llm_predictor or Settings.llm,
@@ -369,6 +390,10 @@ class SummaryExtractor(BaseExtractor):
             num_workers=num_workers,
             **kwargs,
         )
+
+        self._self_summary = "self" in summaries
+        self._prev_summary = "prev" in summaries
+        self._next_summary = "next" in summaries
 
     @classmethod
     def class_name(cls) -> str:
@@ -443,15 +468,16 @@ Given the contextual information, extract out a {class_name} object.\
 """
 
 
-class PydanticProgramExtractor(BaseExtractor):
-    """Pydantic program extractor.
+class PydanticProgramExtractor(BaseExtractor, Generic[Model]):
+    """
+    Pydantic program extractor.
 
     Uses an LLM to extract out a Pydantic object. Return attributes of that object
     in a dictionary.
 
     """
 
-    program: BasePydanticProgram = Field(
+    program: SerializeAsAny[BasePydanticProgram[Model]] = Field(
         ..., description="Pydantic program to extract."
     )
     input_key: str = Field(
@@ -481,7 +507,9 @@ class PydanticProgramExtractor(BaseExtractor):
         )
 
         ret_object = await self.program.acall(**{self.input_key: extract_str})
-        return ret_object.dict()
+        assert not isinstance(ret_object, list)
+
+        return ret_object.model_dump()
 
     async def aextract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         """Extract pydantic program."""

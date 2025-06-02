@@ -52,8 +52,8 @@ print(index.query("Which table contains most columns?"))
 #### Initialize the agent:
 
 ```python
-from llama_index.agent import OpenAIAgent
-from llama_index.llms import OpenAI
+from llama_index.agent.openai import OpenAIAgent
+from llama_index.llms.openai import OpenAI
 
 agent = OpenAIAgent.from_tools(
     waii_tool.to_tool_list(), llm=OpenAI(model="gpt-4-1106-preview")

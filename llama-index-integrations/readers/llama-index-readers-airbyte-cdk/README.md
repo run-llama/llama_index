@@ -1,10 +1,14 @@
 # Airbyte CDK Loader
 
+```bash
+pip install llama-index-readers-airbyte-cdk
+```
+
 The Airbyte CDK Loader is a shim for sources created using the [Airbyte Python CDK](https://docs.airbyte.com/connector-development/cdk-python/). It allows you to load data from any Airbyte source into LlamaIndex.
 
 ## Installation
 
-- Install llama_hub: `pip install llama_hub`
+- Install llama-index reader: `pip install llama-index-readers-airbyte-cdk`
 - Install airbyte-cdk: `pip install airbyte-cdk`
 - Install a source via git (or implement your own): `pip install git+https://github.com/airbytehq/airbyte.git@master#egg=source_github&subdirectory=airbyte-integrations/connectors/source-github`
 
@@ -15,8 +19,7 @@ Implement and import your own source. You can find lots of resources for how to 
 Here's an example usage of the AirbyteCdkReader.
 
 ```python
-from llama_index import download_loader
-from llama_hub.airbyte_cdk import AirbyteCDKReader
+from llama_index.readers.airbyte_cdk import AirbyteCDKReader
 from source_github.source import (
     SourceGithub,
 )  # this is just an example, you can use any source here - this one is loaded from the Airbyte Github repo via pip install git+https://github.com/airbytehq/airbyte.git@master#egg=source_github&subdirectory=airbyte-integrations/connectors/source-github`
@@ -63,4 +66,4 @@ updated_documents = reader.load_data(
 )  # only loads documents that were updated since last time
 ```
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).

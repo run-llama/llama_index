@@ -1,10 +1,12 @@
-"""Document summary index.
+"""
+Document summary index.
 
 A data structure where LlamaIndex stores the summary per document, and maps
 the summary to the underlying Nodes.
 This summary can be used for retrieval.
 
 """
+
 import logging
 from collections import defaultdict
 from enum import Enum
@@ -30,16 +32,11 @@ from llama_index.core.schema import (
     RelatedNodeInfo,
     TextNode,
 )
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    embed_model_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.utils import get_tqdm_iterable
-from llama_index.core.vector_stores.types import VectorStore
+from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +56,8 @@ _RetrieverMode = DocumentSummaryRetrieverMode
 
 
 class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
-    """Document Summary Index.
+    """
+    Document Summary Index.
 
     Args:
         response_synthesizer (BaseSynthesizer): A response synthesizer for generating
@@ -87,16 +85,11 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         summary_query: str = DEFAULT_SUMMARY_QUERY,
         show_progress: bool = False,
         embed_summaries: bool = True,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
-        self._embed_model = embed_model or embed_model_from_settings_or_context(
-            Settings, service_context
-        )
-
+        self._llm = llm or Settings.llm
+        self._embed_model = embed_model or Settings.embed_model
         self._response_synthesizer = response_synthesizer or get_response_synthesizer(
             llm=self._llm, response_mode=ResponseMode.TREE_SUMMARIZE
         )
@@ -106,7 +99,6 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
             objects=objects,
@@ -114,7 +106,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         )
 
     @property
-    def vector_store(self) -> VectorStore:
+    def vector_store(self) -> BasePydanticVectorStore:
         return self._vector_store
 
     def as_retriever(
@@ -122,7 +114,8 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         retriever_mode: Union[str, _RetrieverMode] = _RetrieverMode.EMBEDDING,
         **kwargs: Any,
     ) -> BaseRetriever:
-        """Get retriever.
+        """
+        Get retriever.
 
         Args:
             retriever_mode (Union[str, DocumentSummaryRetrieverMode]): A retriever mode.
@@ -157,7 +150,8 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             raise ValueError(f"Unknown retriever mode: {retriever_mode}")
 
     def get_document_summary(self, doc_id: str) -> str:
-        """Get document summary by doc id.
+        """
+        Get document summary by doc id.
 
         Args:
             doc_id (str): A document id.
@@ -199,15 +193,19 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
                 nodes=nodes_with_scores,
             )
             summary_response = cast(Response, summary_response)
+            docid_first_node = doc_id_to_nodes.get(doc_id, [TextNode()])[0]
             summary_node_dict[doc_id] = TextNode(
                 text=summary_response.response,
                 relationships={
                     NodeRelationship.SOURCE: RelatedNodeInfo(node_id=doc_id)
                 },
+                metadata=docid_first_node.metadata,
+                excluded_embed_metadata_keys=docid_first_node.excluded_embed_metadata_keys,
+                excluded_llm_metadata_keys=docid_first_node.excluded_llm_metadata_keys,
             )
             self.docstore.add_documents([summary_node_dict[doc_id]])
             logger.info(
-                f"> Generated summary for doc {doc_id}: " f"{summary_response.response}"
+                f"> Generated summary for doc {doc_id}: {summary_response.response}"
             )
 
         for doc_id, nodes in doc_id_to_nodes.items():
@@ -221,14 +219,15 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
 
             summary_nodes_with_embedding = []
             for node in summary_nodes:
-                node_with_embedding = node.copy()
+                node_with_embedding = node.model_copy()
                 node_with_embedding.embedding = id_to_embed_map[node.node_id]
                 summary_nodes_with_embedding.append(node_with_embedding)
-
             self._vector_store.add(summary_nodes_with_embedding)
 
     def _build_index_from_nodes(
-        self, nodes: Sequence[BaseNode]
+        self,
+        nodes: Sequence[BaseNode],
+        **build_kwargs: Any,
     ) -> IndexDocumentSummary:
         """Build index from nodes."""
         # first get doc_id to nodes_dict, generate a summary for each doc_id,
@@ -250,7 +249,8 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
         delete_from_docstore: bool = False,
         **delete_kwargs: Any,
     ) -> None:
-        """Delete a list of nodes from the index.
+        """
+        Delete a list of nodes from the index.
 
         Args:
             node_ids (List[str]): A list of node_ids from the nodes to delete
@@ -282,7 +282,8 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
     def delete_ref_doc(
         self, ref_doc_id: str, delete_from_docstore: bool = False, **delete_kwargs: Any
     ) -> None:
-        """Delete a document from the index.
+        """
+        Delete a document from the index.
         All nodes in the index related to the document will be deleted.
         """
         ref_doc_info = self.docstore.get_ref_doc_info(ref_doc_id)

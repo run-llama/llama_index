@@ -25,7 +25,8 @@ SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 
 class GoogleCalendarToolSpec(BaseToolSpec):
-    """Google Calendar tool spec.
+    """
+    Google Calendar tool spec.
 
     Currently a simple wrapper around the data loader.
     TODO: add more methods to the Google Calendar spec.
@@ -39,11 +40,13 @@ class GoogleCalendarToolSpec(BaseToolSpec):
         number_of_results: Optional[int] = 100,
         start_date: Optional[Union[str, datetime.date]] = None,
     ) -> List[Document]:
-        """Load data from user's calendar.
+        """
+        Load data from user's calendar.
 
         Args:
             number_of_results (Optional[int]): the number of events to return. Defaults to 100.
             start_date (Optional[Union[str, datetime.date]]): the start date to return events from in date isoformat. Defaults to today.
+
         """
         from googleapiclient.discovery import build
 
@@ -105,7 +108,8 @@ class GoogleCalendarToolSpec(BaseToolSpec):
         return results
 
     def _get_credentials(self) -> Any:
-        """Get valid user credentials from storage.
+        """
+        Get valid user credentials from storage.
 
         The file token.json stores the user's access and refresh tokens, and is
         created automatically when the authorization flow completes for the first
@@ -113,6 +117,7 @@ class GoogleCalendarToolSpec(BaseToolSpec):
 
         Returns:
             Credentials, the obtained credential.
+
         """
         from google_auth_oauthlib.flow import InstalledAppFlow
 
@@ -156,22 +161,24 @@ class GoogleCalendarToolSpec(BaseToolSpec):
             start_datetime Optional[Union[str, datetime.datetime]]: The start datetime for the event
             end_datetime Optional[Union[str, datetime.datetime]]: The end datetime for the event
             attendees Optional[List[str]]: A list of email address to invite to the event
+
         """
         from googleapiclient.discovery import build
 
         credentials = self._get_credentials()
         service = build("calendar", "v3", credentials=credentials)
 
-        attendees_list = []
-        for attendee in attendees:
-            attendees_list.append({"email": attendee})
+        attendees_list = (
+            [{"email": attendee} for attendee in attendees] if attendees else []
+        )
+
         start_time = (
-            datetime.datetime.strptime(start_datetime, "%Y-%m-%dT%H:%M:%S")
+            datetime.datetime.strptime(start_datetime, "%Y-%m-%dT%H:%M:%S%z")
             .astimezone()
             .strftime("%Y-%m-%dT%H:%M:%S.%f%z")
         )
         end_time = (
-            datetime.datetime.strptime(end_datetime, "%Y-%m-%dT%H:%M:%S")
+            datetime.datetime.strptime(end_datetime, "%Y-%m-%dT%H:%M:%S%z")
             .astimezone()
             .strftime("%Y-%m-%dT%H:%M:%S.%f%z")
         )

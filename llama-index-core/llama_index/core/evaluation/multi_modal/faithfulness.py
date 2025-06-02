@@ -57,7 +57,8 @@ DEFAULT_REFINE_TEMPLATE = PromptTemplate(
 
 
 class MultiModalFaithfulnessEvaluator(BaseEvaluator):
-    """Multi-Modal Faithfulness evaluator.
+    """
+    Multi-Modal Faithfulness evaluator.
 
     Evaluates whether a response is faithful to the contexts
     (i.e. whether the response is supported by the contexts or hallucinated.)
@@ -73,6 +74,7 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
             The template to use for evaluation.
         refine_template(Optional[Union[str, BasePromptTemplate]]):
             The template to use for refining the evaluation.
+
     """
 
     def __init__(
@@ -94,7 +96,7 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
                     "Please install it using `pip install llama-index-multi-modal-llms-openai`"
                 )
 
-            self._multi_modal_llm = OpenAIMultiModal(
+            self._multi_modal_llm: MultiModalLLM = OpenAIMultiModal(
                 model="gpt-4-vision-preview", max_new_tokens=1000
             )
         else:

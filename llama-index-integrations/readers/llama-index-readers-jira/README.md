@@ -1,7 +1,11 @@
 # JIRA Reader
 
+```bash
+pip install llama-index-readers-jira
+```
+
 The Jira loader returns a set of issues based on the query provided to the dataloader.
-We can follow two methods to initialize the loader-
+We can follow three methods to initialize the loader-
 1- basic_auth -> this takes a dict with the following keys
 `basic_auth:{
 "email": "email",
@@ -13,6 +17,11 @@ We can follow two methods to initialize the loader-
 "cloud_id": "cloud_id",
 "api_token": "token"
 }`
+3- Personal access Token with Server hosted instance
+`PATauth:{
+"server_url": "server_url",
+"api_token": "token"
+}`
 
 You can follow this link for more information regarding Oauth2 -> https://developer.atlassian.com/cloud/confluence/oauth-2-3lo-apps/
 
@@ -21,7 +30,7 @@ You can follow this link for more information regarding Oauth2 -> https://develo
 Here's an example of how to use it
 
 ```python
-from llama_hub.jira import JiraReader
+from llama_index.readers.jira import JiraReader
 
 reader = JiraReader(
     email=email, api_token=api_token, server_url="your-jira-server.com"
@@ -32,9 +41,7 @@ documents = reader.load_data(query="project = <your-project>")
 Alternately, you can also use download_loader from llama_index
 
 ```python
-from llama_index import download_loader
-
-JiraReader = download_loader("JiraReader")
+from llama_index.readers.jira import JiraReader
 
 reader = JiraReader(
     email=email, api_token=api_token, server_url="your-jira-server.com"

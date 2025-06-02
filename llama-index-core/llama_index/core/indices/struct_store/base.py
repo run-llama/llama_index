@@ -8,14 +8,14 @@ from llama_index.core.indices.base import BaseIndex
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompts import DEFAULT_SCHEMA_EXTRACT_PROMPT
 from llama_index.core.schema import BaseNode
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.storage.docstore.types import RefDocInfo
 
 BST = TypeVar("BST", bound=BaseStructTable)
 
 
 def default_output_parser(output: str) -> Optional[Dict[str, Any]]:
-    """Parse output of schema extraction.
+    """
+    Parse output of schema extraction.
 
     Attempt to parse the following format from the default prompt:
     field1: <value>, field2: <value>, ...
@@ -43,7 +43,6 @@ class BaseStructStoreIndex(BaseIndex[BST], Generic[BST]):
         self,
         nodes: Optional[Sequence[BaseNode]] = None,
         index_struct: Optional[BST] = None,
-        service_context: Optional[ServiceContext] = None,
         schema_extract_prompt: Optional[BasePromptTemplate] = None,
         output_parser: Optional[OUTPUT_PARSER_TYPE] = None,
         **kwargs: Any,
@@ -56,7 +55,6 @@ class BaseStructStoreIndex(BaseIndex[BST], Generic[BST]):
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            service_context=service_context,
             **kwargs,
         )
 

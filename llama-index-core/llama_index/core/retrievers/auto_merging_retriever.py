@@ -11,14 +11,21 @@ from llama_index.core.indices.utils import truncate_text
 from llama_index.core.indices.vector_store.retrievers.retriever import (
     VectorIndexRetriever,
 )
-from llama_index.core.schema import BaseNode, IndexNode, NodeWithScore, QueryBundle
+from llama_index.core.schema import (
+    BaseNode,
+    IndexNode,
+    NodeWithScore,
+    MetadataMode,
+    QueryBundle,
+)
 from llama_index.core.storage.storage_context import StorageContext
 
 logger = logging.getLogger(__name__)
 
 
 class AutoMergingRetriever(BaseRetriever):
-    """This retriever will try to merge context into parent context.
+    """
+    This retriever will try to merge context into parent context.
 
     The retriever first retrieves chunks from a vector store.
     Then, it will try to merge the chunks into a single context.
@@ -72,7 +79,7 @@ class AutoMergingRetriever(BaseRetriever):
         # compute ratios and "merge" nodes
         # merging: delete some children nodes, add some parent nodes
         node_ids_to_delete = set()
-        nodes_to_add: Dict[str, BaseNode] = {}
+        nodes_to_add: Dict[str, NodeWithScore] = {}
         for parent_node_id, parent_node in parent_nodes.items():
             parent_child_nodes = parent_node.child_nodes
             parent_num_children = len(parent_child_nodes) if parent_child_nodes else 1
@@ -85,7 +92,9 @@ class AutoMergingRetriever(BaseRetriever):
                     set({n.node.node_id for n in parent_cur_children})
                 )
 
-                parent_node_text = truncate_text(parent_node.text, 100)
+                parent_node_text = truncate_text(
+                    parent_node.get_content(metadata_mode=MetadataMode.NONE), 100
+                )
                 info_str = (
                     f"> Merging {len(parent_cur_children)} nodes into parent node.\n"
                     f"> Parent node id: {parent_node_id}.\n"
@@ -138,7 +147,9 @@ class AutoMergingRetriever(BaseRetriever):
                 )
                 next_node = cast(BaseNode, next_node)
 
-                next_node_text = truncate_text(next_node.get_text(), 100)
+                next_node_text = truncate_text(
+                    next_node.get_content(metadata_mode=MetadataMode.NONE), 100
+                )
                 info_str = (
                     f"> Filling in node. Node id: {cur_node.next_node.node_id}"
                     f"> Node text: {next_node_text}\n"
@@ -163,7 +174,8 @@ class AutoMergingRetriever(BaseRetriever):
         return nodes, is_changed_0 or is_changed_1
 
     def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
-        """Retrieve nodes given query.
+        """
+        Retrieve nodes given query.
 
         Implemented by the user.
 

@@ -1,4 +1,5 @@
-"""Outlook local calendar reader for Windows.
+"""
+Outlook local calendar reader for Windows.
 
 Created on Sun Apr 16 12:03:19 2023
 
@@ -29,7 +30,8 @@ from llama_index.core.schema import Document
 
 
 class OutlookLocalCalendarReader(BaseReader):
-    """Outlook local calendar reader for Windows.
+    """
+    Outlook local calendar reader for Windows.
     Reads events from local copy of Outlook calendar.
     """
 
@@ -40,7 +42,8 @@ class OutlookLocalCalendarReader(BaseReader):
         end_date: Optional[Union[str, datetime.date]] = None,
         more_attributes: Optional[List[str]] = None,
     ) -> List[Document]:
-        """Load data from user's local calendar.
+        """
+        Load data from user's local calendar.
 
         Args:
             number_of_results (Optional[int]): the number of events to return. Defaults to 100.
@@ -50,6 +53,7 @@ class OutlookLocalCalendarReader(BaseReader):
 
         Returns a list of documents sutitable for indexing by llam_index. Always returns Start, End, Subject, Location, and Organizer
         attributes and optionally returns additional attributes specified in the more_attributes parameter.
+
         """
         if platform.system().lower() != "windows":
             return []
@@ -91,7 +95,7 @@ class OutlookLocalCalendarReader(BaseReader):
                 eventstring = ""
                 for attribute in attributes:
                     if hasattr(event, attribute):
-                        eventstring += f"{attribute}: {getattr(event,attribute)}, "
+                        eventstring += f"{attribute}: {getattr(event, attribute)}, "
                 results.append(Document(text=eventstring))
             if numberReturned >= number_of_results:
                 break

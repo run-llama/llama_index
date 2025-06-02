@@ -1,5 +1,9 @@
 # Joplin (Markdown) Loader
 
+```bash
+pip install llama-index-readers-joplin
+```
+
 > [Joplin](https://joplinapp.org/) is an open source note-taking app. Capture your thoughts and securely access them from any device.
 
 This readme covers how to load documents from a `Joplin` database.
@@ -20,10 +24,10 @@ An alternative to this approach is to export the `Joplin`'s note database to Mar
 Here's an example usage of the JoplinReader.
 
 ```python
-from llama_index import download_loader
 import os
 
-JoplinReader = download_loader("JoplinReader")
+from llama_index.readers.joplin import JoplinReader
+
 documents = JoplinReader(
     access_token="<access_token>"
 ).load_data()  # Returns list of documents

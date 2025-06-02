@@ -1,13 +1,15 @@
 # MangaDex Loader
 
+```bash
+pip install llama-index-readers-mangadex
+```
+
 This loader fetches information from the MangaDex API, by manga title.
 
 ## Usage
 
 ```python
-from llama_index import download_loader
-
-MangaDexReader = download_loader("MangaDexReader")
+from llama_index.readers.mangadex import MangaDexReader
 
 loader = MangaDexReader()
 documents = loader.load_data(
@@ -36,4 +38,4 @@ Document text is the manga title. There are alternate titles for many manga, so 
 
 ## Examples
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).

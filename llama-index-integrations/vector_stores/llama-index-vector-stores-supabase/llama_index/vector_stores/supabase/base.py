@@ -1,14 +1,16 @@
 import logging
 import math
 from collections import defaultdict
-from typing import Any, List
+from typing import Any, List, Optional
 
 import vecs
+from vecs.collection import Collection
 from llama_index.core.constants import DEFAULT_EMBEDDING_DIM
 from llama_index.core.schema import BaseNode, TextNode
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -22,8 +24,9 @@ from vecs.collection import CollectionNotFound
 logger = logging.getLogger(__name__)
 
 
-class SupabaseVectorStore(VectorStore):
-    """Supbabase Vector.
+class SupabaseVectorStore(BasePydanticVectorStore):
+    """
+    Supbabase Vector.
 
     In this vector store, embeddings are stored in Postgres table using pgvector.
 
@@ -33,14 +36,30 @@ class SupabaseVectorStore(VectorStore):
     Args:
         postgres_connection_string (str):
             postgres connection string
-
         collection_name (str):
             name of the collection to store the embeddings in
+        dimension (int, optional):
+            dimension of the embeddings. Defaults to 1536.
+
+    Examples:
+        `pip install llama-index-vector-stores-supabase`
+
+        ```python
+        from llama_index.vector_stores.supabase import SupabaseVectorStore
+
+        # Set up SupabaseVectorStore
+        vector_store = SupabaseVectorStore(
+            postgres_connection_string="postgresql://<user>:<password>@<host>:<port>/<db_name>",
+            collection_name="base_demo",
+        )
+        ```
 
     """
 
-    stores_text = True
-    flat_metadata = False
+    stores_text: bool = True
+    flat_metadata: bool = False
+    _client: Optional[Any] = PrivateAttr()
+    _collection: Optional[Collection] = PrivateAttr()
 
     def __init__(
         self,
@@ -49,19 +68,26 @@ class SupabaseVectorStore(VectorStore):
         dimension: int = DEFAULT_EMBEDDING_DIM,
         **kwargs: Any,
     ) -> None:
-        """Init params."""
-        client = vecs.create_client(postgres_connection_string)
+        super().__init__()
+        self._client = vecs.create_client(postgres_connection_string)
 
         try:
-            self._collection = client.get_collection(name=collection_name)
+            self._collection = self._client.get_collection(name=collection_name)
         except CollectionNotFound:
             logger.info(
                 f"Collection {collection_name} does not exist, "
                 f"try creating one with dimension={dimension}"
             )
-            self._collection = client.create_collection(
+            self._collection = self._client.create_collection(
                 name=collection_name, dimension=dimension
             )
+
+    def __del__(self) -> None:
+        """Close the client when the object is deleted."""
+        try:  # try-catch in case the attribute is not present
+            self._client.disconnect()
+        except AttributeError:
+            pass
 
     @property
     def client(self) -> None:
@@ -80,7 +106,8 @@ class SupabaseVectorStore(VectorStore):
         return vecs_filter
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -107,10 +134,12 @@ class SupabaseVectorStore(VectorStore):
         return ids
 
     def get_by_id(self, doc_id: str, **kwargs: Any) -> list:
-        """Get row ids by doc id.
+        """
+        Get row ids by doc id.
 
         Args:
             doc_id (str): document id
+
         """
         filters = {"doc_id": {"$eq": doc_id}}
 
@@ -125,7 +154,8 @@ class SupabaseVectorStore(VectorStore):
         # NOTE: list of row ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete doc.
+        """
+        Delete doc.
 
         Args:
             :param ref_doc_id (str): document id
@@ -141,7 +171,8 @@ class SupabaseVectorStore(VectorStore):
         query: VectorStoreQuery,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query (List[float]): query embedding

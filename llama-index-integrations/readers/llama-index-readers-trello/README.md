@@ -1,5 +1,9 @@
 # Trello Loader
 
+```bash
+pip install llama-index-readers-trello
+```
+
 This loader loads documents from Trello. The user specifies an API key and API token to initialize the TrelloReader. They then specify a board_id to
 load in the corresponding Document objects representing Trello cards.
 
@@ -8,10 +12,9 @@ load in the corresponding Document objects representing Trello cards.
 Here's an example usage of the TrelloReader.
 
 ```python
-from llama_index import download_loader
 import os
 
-TrelloReader = download_loader("TrelloReader")
+from llama_index.readers.trello import TrelloReader
 
 reader = TrelloReader("<Trello_API_KEY>", "<Trello_API_TOKEN>")
 documents = reader.load_data(board_id="<BOARD_ID>")

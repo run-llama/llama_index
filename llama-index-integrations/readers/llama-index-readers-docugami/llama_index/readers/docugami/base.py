@@ -31,7 +31,8 @@ logger = logging.getLogger(__name__)
 
 
 class DocugamiReader(BaseReader):
-    """Docugami reader.
+    """
+    Docugami reader.
 
     Reads Documents as nodes in a Document XML Knowledge Graph, from Docugami.
 
@@ -79,6 +80,40 @@ class DocugamiReader(BaseReader):
 
     include_project_metadata_in_doc_metadata: bool = True
     """Set to True if you want to include the project metadata in the doc metadata."""
+
+    def __init__(
+        self,
+        api: str = DEFAULT_API_ENDPOINT,
+        access_token: Optional[str] = os.environ.get("DOCUGAMI_API_KEY"),
+        max_text_length=4096,
+        min_text_length: int = 32,
+        max_metadata_length=512,
+        include_xml_tags: bool = False,
+        parent_hierarchy_levels: int = 0,
+        parent_id_key: str = "doc_id",
+        sub_chunk_tables: bool = False,
+        whitespace_normalize_text: bool = True,
+        docset_id: Optional[str] = None,
+        document_ids: Optional[Sequence[str]] = None,
+        file_paths: Optional[Sequence[Union[Path, str]]] = None,
+        include_project_metadata_in_doc_metadata: bool = True,
+    ):
+        self.api = api
+        self.access_token = access_token
+        self.max_text_length = max_text_length
+        self.min_text_length = min_text_length
+        self.max_metadata_length = max_metadata_length
+        self.include_xml_tags = include_xml_tags
+        self.parent_hierarchy_levels = parent_hierarchy_levels
+        self.parent_id_key = parent_id_key
+        self.sub_chunk_tables = sub_chunk_tables
+        self.whitespace_normalize_text = whitespace_normalize_text
+        self.docset_id = docset_id
+        self.document_ids = document_ids
+        self.file_paths = file_paths
+        self.include_project_metadata_in_doc_metadata = (
+            include_project_metadata_in_doc_metadata
+        )
 
     def _parse_dgml(
         self,
@@ -169,7 +204,7 @@ class DocugamiReader(BaseReader):
                 if dg_chunk.parent:
                     framework_parent_chunk = _build_framework_chunk(dg_chunk.parent)
                     parent_id = framework_parent_chunk.metadata.get(ID_KEY)
-                    if parent_id and framework_parent_chunk.page_content:
+                    if parent_id and framework_parent_chunk.text:
                         framework_chunk.metadata[self.parent_id_key] = parent_id
                         framework_chunks[parent_id] = framework_parent_chunk
 
@@ -324,12 +359,14 @@ class DocugamiReader(BaseReader):
         document_ids: Optional[List[str]] = None,
         access_token: Optional[str] = None,
     ) -> List[Document]:
-        """Load data the given docset_id in Docugami.
+        """
+        Load data the given docset_id in Docugami.
 
         Args:
             docset_id (str): Document set ID to load data for.
             document_ids (Optional[List[str]]): Optional list of document ids to load data for.
                                     If not specified, all documents from docset_id are loaded.
+
         """
         chunks: List[Document] = []
 

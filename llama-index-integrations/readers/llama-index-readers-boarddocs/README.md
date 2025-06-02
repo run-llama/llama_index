@@ -1,5 +1,9 @@
 # BoardDocs Loader
 
+```bash
+pip install llama-index-readers-boarddocs
+```
+
 This loader retrieves an agenda and associated material from a BoardDocs site.
 
 This loader is not endorsed by, developed by, supported by, or in any way formally affiliated with Diligent Corporation.
@@ -10,9 +14,7 @@ To use this loader, you'll need to specify which BoardDocs site you want to load
 as well as the committee on the site you want to scrape.
 
 ```python
-from llama_index import download_loader
-
-BoardDocsReader = download_loader("BoardDocsReader")
+from llama_index.readers.boarddocs import BoardDocsReader
 
 # For a site URL https://go.boarddocs.com/ca/redwood/Board.nsf/Public
 # your site should be set to 'ca/redwood'
@@ -26,4 +28,4 @@ loader = BoardDocsReader(site="ca/redwood", committee_id="A4EP6J588C05")
 documents = loader.load_data(meeting_ids=["CPSNV9612DF1"])
 ```
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).

@@ -48,6 +48,10 @@ def _transform_chroma_filter_operator(operator: str) -> str:
         return "$gte"
     elif operator == "<=":
         return "$lte"
+    elif operator == "in":
+        return "$in"
+    elif operator == "nin":
+        return "$nin"
     else:
         raise ValueError(f"Filter operator {operator} not supported")
 
@@ -91,7 +95,8 @@ MAX_CHUNK_SIZE = 41665  # One less than the max chunk size for ChromaDB
 def chunk_list(
     lst: List[BaseNode], max_chunk_size: int
 ) -> Generator[List[BaseNode], None, None]:
-    """Yield successive max_chunk_size-sized chunks from lst.
+    """
+    Yield successive max_chunk_size-sized chunks from lst.
 
     Args:
         lst (List[BaseNode]): list of nodes with embeddings
@@ -99,13 +104,15 @@ def chunk_list(
 
     Yields:
         Generator[List[BaseNode], None, None]: list of nodes with embeddings
+
     """
     for i in range(0, len(lst), max_chunk_size):
         yield lst[i : i + max_chunk_size]
 
 
 class ChromaVectorStore(BasePydanticVectorStore):
-    """Chroma vector store.
+    """
+    Chroma vector store.
 
     In this vector store, embeddings are stored within a ChromaDB collection.
 
@@ -115,6 +122,21 @@ class ChromaVectorStore(BasePydanticVectorStore):
     Args:
         chroma_collection (chromadb.api.models.Collection.Collection):
             ChromaDB collection instance
+
+    Examples:
+        `pip install llama-index-vector-stores-chroma`
+
+        ```python
+        import chromadb
+        from llama_index.vector_stores.chroma import ChromaVectorStore
+
+        # Create a Chroma client and collection
+        chroma_client = chromadb.EphemeralClient()
+        chroma_collection = chroma_client.create_collection("example_collection")
+
+        # Set up the ChromaVectorStore and StorageContext
+        vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+        ```
 
     """
 
@@ -129,7 +151,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
     persist_dir: Optional[str]
     collection_kwargs: Dict[str, Any] = Field(default_factory=dict)
 
-    _collection: Any = PrivateAttr()
+    _collection: Collection = PrivateAttr()
 
     def __init__(
         self,
@@ -145,13 +167,6 @@ class ChromaVectorStore(BasePydanticVectorStore):
     ) -> None:
         """Init params."""
         collection_kwargs = collection_kwargs or {}
-        if chroma_collection is None:
-            client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
-            self._collection = client.get_or_create_collection(
-                name=collection_name, **collection_kwargs
-            )
-        else:
-            self._collection = cast(Collection, chroma_collection)
 
         super().__init__(
             host=host,
@@ -162,6 +177,13 @@ class ChromaVectorStore(BasePydanticVectorStore):
             persist_dir=persist_dir,
             collection_kwargs=collection_kwargs or {},
         )
+        if chroma_collection is None:
+            client = chromadb.HttpClient(host=host, port=port, ssl=ssl, headers=headers)
+            self._collection = client.get_or_create_collection(
+                name=collection_name, **collection_kwargs
+            )
+        else:
+            self._collection = cast(Collection, chroma_collection)
 
     @classmethod
     def from_collection(cls, collection: Any) -> "ChromaVectorStore":
@@ -216,8 +238,36 @@ class ChromaVectorStore(BasePydanticVectorStore):
     def class_name(cls) -> str:
         return "ChromaVectorStore"
 
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]],
+        filters: Optional[List[MetadataFilters]] = None,
+    ) -> List[BaseNode]:
+        """
+        Get nodes from index.
+
+        Args:
+            node_ids (List[str]): list of node ids
+            filters (List[MetadataFilters]): list of metadata filters
+
+        """
+        if not self._collection:
+            raise ValueError("Collection not initialized")
+
+        node_ids = node_ids or []
+
+        if filters:
+            where = _to_chroma_filter(filters)
+        else:
+            where = None
+
+        result = self._get(None, where=where, ids=node_ids)
+
+        return result.nodes
+
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -267,13 +317,44 @@ class ChromaVectorStore(BasePydanticVectorStore):
         """
         self._collection.delete(where={"document_id": ref_doc_id})
 
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[List[MetadataFilters]] = None,
+    ) -> None:
+        """
+        Delete nodes from index.
+
+        Args:
+            node_ids (List[str]): list of node ids
+            filters (List[MetadataFilters]): list of metadata filters
+
+        """
+        if not self._collection:
+            raise ValueError("Collection not initialized")
+
+        node_ids = node_ids or []
+
+        if filters:
+            where = _to_chroma_filter(filters)
+            self._collection.delete(ids=node_ids, where=where)
+
+        else:
+            self._collection.delete(ids=node_ids)
+
+    def clear(self) -> None:
+        """Clear the collection."""
+        ids = self._collection.get()["ids"]
+        self._collection.delete(ids=ids)
+
     @property
     def client(self) -> Any:
         """Return client."""
         return self._collection
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query_embedding (List[float]): query embedding
@@ -289,16 +370,36 @@ class ChromaVectorStore(BasePydanticVectorStore):
                 )
             where = _to_chroma_filter(query.filters)
         else:
-            where = kwargs.pop("where", {})
+            where = kwargs.pop("where", None)
 
-        results = self._collection.query(
+        if not query.query_embedding:
+            return self._get(limit=query.similarity_top_k, where=where, **kwargs)
+
+        return self._query(
             query_embeddings=query.query_embedding,
             n_results=query.similarity_top_k,
             where=where,
             **kwargs,
         )
 
-        logger.debug(f"> Top {len(results['documents'])} nodes:")
+    def _query(
+        self, query_embeddings: List["float"], n_results: int, where: dict, **kwargs
+    ) -> VectorStoreQueryResult:
+        if where:
+            results = self._collection.query(
+                query_embeddings=query_embeddings,
+                n_results=n_results,
+                where=where,
+                **kwargs,
+            )
+        else:
+            results = self._collection.query(
+                query_embeddings=query_embeddings,
+                n_results=n_results,
+                **kwargs,
+            )
+
+        logger.debug(f"> Top {len(results['documents'][0])} nodes:")
         nodes = []
         similarities = []
         ids = []
@@ -338,3 +439,56 @@ class ChromaVectorStore(BasePydanticVectorStore):
             ids.append(node_id)
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
+
+    def _get(
+        self, limit: Optional[int], where: dict, **kwargs
+    ) -> VectorStoreQueryResult:
+        if where:
+            results = self._collection.get(
+                limit=limit,
+                where=where,
+                **kwargs,
+            )
+        else:
+            results = self._collection.get(
+                limit=limit,
+                **kwargs,
+            )
+
+        logger.debug(f"> Top {len(results['documents'])} nodes:")
+        nodes = []
+        ids = []
+
+        if not results["ids"]:
+            results["ids"] = [[]]
+
+        for node_id, text, metadata in zip(
+            results["ids"], results["documents"], results["metadatas"]
+        ):
+            try:
+                node = metadata_dict_to_node(metadata)
+                node.set_content(text)
+            except Exception:
+                # NOTE: deprecated legacy logic for backward compatibility
+                metadata, node_info, relationships = legacy_metadata_dict_to_node(
+                    metadata
+                )
+
+                node = TextNode(
+                    text=text,
+                    id_=node_id,
+                    metadata=metadata,
+                    start_char_idx=node_info.get("start", None),
+                    end_char_idx=node_info.get("end", None),
+                    relationships=relationships,
+                )
+
+            nodes.append(node)
+
+            logger.debug(
+                f"> [Node {node_id}] [Similarity score: N/A - using get()] "
+                f"{truncate_text(str(text), 100)}"
+            )
+            ids.append(node_id)
+
+        return VectorStoreQueryResult(nodes=nodes, ids=ids)

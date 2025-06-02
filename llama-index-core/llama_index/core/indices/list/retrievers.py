@@ -1,4 +1,5 @@
 """Retrievers for SummaryIndex."""
+
 import logging
 from typing import Any, Callable, List, Optional, Tuple
 
@@ -22,18 +23,14 @@ from llama_index.core.schema import (
     NodeWithScore,
     QueryBundle,
 )
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    embed_model_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 
 logger = logging.getLogger(__name__)
 
 
 class SummaryIndexRetriever(BaseRetriever):
-    """Simple retriever for SummaryIndex that returns all nodes.
+    """
+    Simple retriever for SummaryIndex that returns all nodes.
 
     Args:
         index (SummaryIndex): The index to retrieve from.
@@ -66,7 +63,8 @@ class SummaryIndexRetriever(BaseRetriever):
 
 
 class SummaryIndexEmbeddingRetriever(BaseRetriever):
-    """Embedding based retriever for SummaryIndex.
+    """
+    Embedding based retriever for SummaryIndex.
 
     Generates embeddings in a lazy fashion for all
     nodes that are traversed.
@@ -89,9 +87,8 @@ class SummaryIndexEmbeddingRetriever(BaseRetriever):
     ) -> None:
         self._index = index
         self._similarity_top_k = similarity_top_k
-        self._embed_model = embed_model or embed_model_from_settings_or_context(
-            Settings, index.service_context
-        )
+        self._embed_model = embed_model or Settings.embed_model
+
         super().__init__(
             callback_manager=callback_manager, object_map=object_map, verbose=verbose
         )
@@ -121,7 +118,7 @@ class SummaryIndexEmbeddingRetriever(BaseRetriever):
 
         logger.debug(f"> Top {len(top_idxs)} nodes:\n")
         nl = "\n"
-        logger.debug(f"{ nl.join([n.get_content() for n in top_k_nodes]) }")
+        logger.debug(f"{nl.join([n.get_content() for n in top_k_nodes])}")
         return node_with_scores
 
     def _get_embeddings(
@@ -147,7 +144,8 @@ class SummaryIndexEmbeddingRetriever(BaseRetriever):
 
 
 class SummaryIndexLLMRetriever(BaseRetriever):
-    """LLM retriever for SummaryIndex.
+    """
+    LLM retriever for SummaryIndex.
 
     Args:
         index (SummaryIndex): The index to retrieve from.
@@ -158,7 +156,6 @@ class SummaryIndexLLMRetriever(BaseRetriever):
             batch of nodes.
         parse_choice_select_answer_fn (Optional[Callable]): A function that parses the
             choice select answer.
-        service_context (Optional[ServiceContext]): A service context.
 
     """
 
@@ -170,7 +167,6 @@ class SummaryIndexLLMRetriever(BaseRetriever):
         choice_batch_size: int = 10,
         format_node_batch_fn: Optional[Callable] = None,
         parse_choice_select_answer_fn: Optional[Callable] = None,
-        service_context: Optional[ServiceContext] = None,
         callback_manager: Optional[CallbackManager] = None,
         object_map: Optional[dict] = None,
         verbose: bool = False,
@@ -187,7 +183,7 @@ class SummaryIndexLLMRetriever(BaseRetriever):
         self._parse_choice_select_answer_fn = (
             parse_choice_select_answer_fn or default_parse_choice_select_answer_fn
         )
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         super().__init__(
             callback_manager=callback_manager, object_map=object_map, verbose=verbose
         )

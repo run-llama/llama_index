@@ -2,7 +2,11 @@ import logging
 from typing import Optional
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
-from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
+from llama_index.core.base.response.schema import (
+    RESPONSE_TYPE,
+    Response,
+    AsyncStreamingResponse,
+)
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.evaluation.base import BaseEvaluator
 from llama_index.core.evaluation.guideline import GuidelineEvaluator
@@ -16,13 +20,15 @@ logger = logging.getLogger(__name__)
 
 
 class RetryQueryEngine(BaseQueryEngine):
-    """Does retry on query engine if it fails evaluation.
+    """
+    Does retry on query engine if it fails evaluation.
 
     Args:
         query_engine (BaseQueryEngine): A query engine object
         evaluator (BaseEvaluator): An evaluator object
         max_retries (int): Maximum number of retries
         callback_manager (Optional[CallbackManager]): A callback manager object
+
     """
 
     def __init__(
@@ -44,6 +50,7 @@ class RetryQueryEngine(BaseQueryEngine):
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         response = self._query_engine._query(query_bundle)
+        assert not isinstance(response, AsyncStreamingResponse)
         if self.max_retries <= 0:
             return response
         typed_response = (
@@ -69,7 +76,8 @@ class RetryQueryEngine(BaseQueryEngine):
 
 
 class RetryGuidelineQueryEngine(BaseQueryEngine):
-    """Does retry with evaluator feedback
+    """
+    Does retry with evaluator feedback
     if query engine fails evaluation.
 
     Args:
@@ -78,6 +86,7 @@ class RetryGuidelineQueryEngine(BaseQueryEngine):
         resynthesize_query (bool): Whether to resynthesize query
         max_retries (int): Maximum number of retries
         callback_manager (Optional[CallbackManager]): A callback manager object
+
     """
 
     def __init__(
@@ -108,6 +117,7 @@ class RetryGuidelineQueryEngine(BaseQueryEngine):
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         """Answer a query."""
         response = self._query_engine._query(query_bundle)
+        assert not isinstance(response, AsyncStreamingResponse)
         if self.max_retries <= 0:
             return response
         typed_response = (

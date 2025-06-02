@@ -1,11 +1,11 @@
 """Test json index."""
 
-import asyncio
 import json
 from typing import Any, Dict, cast
 from unittest.mock import patch
 
 import pytest
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.base.response.schema import Response
 from llama_index.core.indices.struct_store.json_query import (
     JSONQueryEngine,
@@ -14,8 +14,6 @@ from llama_index.core.indices.struct_store.json_query import (
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.prompts.base import BasePromptTemplate
 from llama_index.core.schema import QueryBundle
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.service_context_elements.llm_predictor import LLMPredictor
 
 TEST_PARAMS = [
     # synthesize_response, call_apredict
@@ -51,11 +49,10 @@ async def amock_predict(
 def test_json_query_engine(
     synthesize_response: bool,
     call_apredict: bool,
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
 ) -> None:
     """Test GPTNLJSONQueryEngine."""
-    mock_service_context.llm_predictor = LLMPredictor(MockLLM())
-
     # Test on some sample data
     json_val = cast(JSONType, {})
     json_schema = cast(JSONType, {})
@@ -71,7 +68,6 @@ def test_json_query_engine(
     query_engine = JSONQueryEngine(
         json_value=json_val,
         json_schema=json_schema,
-        service_context=mock_service_context,
         output_processor=test_output_processor,
         verbose=True,
         synthesize_response=synthesize_response,
@@ -79,7 +75,7 @@ def test_json_query_engine(
 
     if call_apredict:
         task = query_engine.aquery(QueryBundle("test_nl_query"))
-        response: Response = cast(Response, asyncio.run(task))
+        response: Response = cast(Response, asyncio_run(task))
     else:
         response = cast(Response, query_engine.query(QueryBundle("test_nl_query")))
 

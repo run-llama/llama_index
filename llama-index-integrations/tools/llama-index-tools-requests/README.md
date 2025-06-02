@@ -12,7 +12,7 @@ Here's an example usage of the RequestsToolSpec.
 
 ```python
 from llama_index.tools.requests import RequestsToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 domain_headers = {
     "api.openai.com": {
@@ -32,4 +32,4 @@ agent.chat("")
 `post_request`: Performs a post request against the URL
 `patch_request`: Performs a patch request against the URL
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.

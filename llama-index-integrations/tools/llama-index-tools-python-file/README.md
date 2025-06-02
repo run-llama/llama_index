@@ -10,7 +10,7 @@ Here's an example usage of the PythonFileToolSpec.
 
 ```python
 from llama_index.tools.python_file import PythonFileToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 pyfile = PythonFileToolSpec("./numpy_linalg.py")
 
@@ -28,4 +28,4 @@ with a short 5-10 line doc string tool prompts for the functions that only has a
 `get_function`: Get a specific function definition from the Python file
 `get_functions`: Get a list of functions from the python file
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.

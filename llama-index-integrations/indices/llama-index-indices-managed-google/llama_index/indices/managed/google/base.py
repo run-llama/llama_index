@@ -1,4 +1,5 @@
-"""Google GenerativeAI Semantic Vector Store & Attributed Question and Answering.
+"""
+Google GenerativeAI Semantic Vector Store & Attributed Question and Answering.
 
 Google Generative AI Semantic Retriever API is a managed end to end service that
 allows developers to create a corpus of documents to perform semantic search on
@@ -25,7 +26,6 @@ from llama_index.core.indices.base import IndexType
 from llama_index.core.indices.base_retriever import BaseRetriever
 from llama_index.core.indices.managed.base import BaseManagedIndex
 from llama_index.core.indices.query.base import BaseQueryEngine
-from llama_index.core.indices.service_context import ServiceContext
 from llama_index.core.llms.utils import LLMType
 from llama_index.core.schema import BaseNode, Document, TransformComponent
 from llama_index.core.storage.storage_context import StorageContext
@@ -50,10 +50,10 @@ class GoogleIndex(BaseManagedIndex):
         vector_store: GoogleVectorStore,
         embed_model: Optional[BaseEmbedding] = None,
         # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
-        """Creates an instance of GoogleIndex.
+        """
+        Creates an instance of GoogleIndex.
 
         Prefer to use the factories `from_corpus` or `create_corpus` instead.
         """
@@ -66,7 +66,6 @@ class GoogleIndex(BaseManagedIndex):
 
         super().__init__(
             index_struct=self._index.index_struct,
-            service_context=service_context,
             **kwargs,
         )
 
@@ -74,13 +73,15 @@ class GoogleIndex(BaseManagedIndex):
     def from_corpus(
         cls: Type[IndexType], *, corpus_id: str, **kwargs: Any
     ) -> IndexType:
-        """Creates a GoogleIndex from an existing corpus.
+        """
+        Creates a GoogleIndex from an existing corpus.
 
         Args:
             corpus_id: ID of an existing corpus on Google's server.
 
         Returns:
             An instance of GoogleIndex pointing to the specified corpus.
+
         """
         _logger.debug(f"\n\nGoogleIndex.from_corpus(corpus_id={corpus_id})")
         return cls(
@@ -95,7 +96,8 @@ class GoogleIndex(BaseManagedIndex):
         display_name: Optional[str] = None,
         **kwargs: Any,
     ) -> IndexType:
-        """Creates a GoogleIndex from a new corpus.
+        """
+        Creates a GoogleIndex from a new corpus.
 
         Args:
             corpus_id: ID of the new corpus to be created. If not provided,
@@ -105,6 +107,7 @@ class GoogleIndex(BaseManagedIndex):
 
         Returns:
             An instance of GoogleIndex pointing to the specified corpus.
+
         """
         _logger.debug(
             f"\n\nGoogleIndex.from_new_corpus(new_corpus_id={corpus_id}, new_display_name={display_name})"
@@ -125,7 +128,6 @@ class GoogleIndex(BaseManagedIndex):
         callback_manager: Optional[CallbackManager] = None,
         transformations: Optional[List[TransformComponent]] = None,
         # deprecated
-        service_context: Optional[ServiceContext] = None,
         embed_model: Optional[BaseEmbedding] = None,
         **kwargs: Any,
     ) -> IndexType:
@@ -136,7 +138,6 @@ class GoogleIndex(BaseManagedIndex):
         instance = cls(
             vector_store=GoogleVectorStore.create_corpus(display_name=new_display_name),
             embed_model=embed_model,
-            service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
             callback_manager=callback_manager,
@@ -147,7 +148,6 @@ class GoogleIndex(BaseManagedIndex):
         index = cast(GoogleIndex, instance)
         index.insert_documents(
             documents=documents,
-            service_context=service_context,
         )
 
         return instance
@@ -188,7 +188,8 @@ class GoogleIndex(BaseManagedIndex):
         safety_setting: List[Any] = [],
         **kwargs: Any,
     ) -> BaseQueryEngine:
-        """Returns the AQA engine for this index.
+        """
+        Returns the AQA engine for this index.
 
         Example:
           query_engine = index.as_query_engine(
@@ -221,6 +222,7 @@ class GoogleIndex(BaseManagedIndex):
             `Response`'s `metadata` may also have have an entry with key
             `answerable_probability`, which is the probability that the grounded
             answer is likely correct.
+
         """
         # NOTE: lazy import
         from llama_index.core.query_engine.retriever_query_engine import (
@@ -250,8 +252,6 @@ class GoogleIndex(BaseManagedIndex):
             answer_style=answer_style,
             safety_setting=safety_setting,
         )
-        if "service_context" not in local_kwargs:
-            local_kwargs["service_context"] = self._service_context
 
         return RetrieverQueryEngine.from_args(**local_kwargs)
 

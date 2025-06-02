@@ -28,7 +28,7 @@ huggingface-cli download m4r1/selfrag_llama2_7b-GGUF selfrag_llama2_7b.q4_k_m.gg
 ```
 
 ```python
-from llama_index.llama_pack import download_llama_pack
+from llama_index.core.llama_pack import download_llama_pack
 
 # download and install dependencies
 SelfRAGPack = download_llama_pack("SelfRAGPack", "./self_rag_pack")

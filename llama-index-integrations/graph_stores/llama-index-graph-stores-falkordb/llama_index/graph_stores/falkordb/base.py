@@ -4,13 +4,15 @@ import logging
 from typing import Any, Dict, List, Optional
 
 import redis
+from falkordb import FalkorDB
 from llama_index.core.graph_stores.types import GraphStore
 
 logger = logging.getLogger(__name__)
 
 
 class FalkorDBGraphStore(GraphStore):
-    """FalkorDB Graph Store.
+    """
+    FalkorDB Graph Store.
 
     In this graph store, triplets are stored within FalkorDB.
 
@@ -18,6 +20,7 @@ class FalkorDBGraphStore(GraphStore):
         simple_graph_store_data_dict (Optional[dict]): data dict
             containing the triplets. See FalkorDBGraphStoreData
             for more details.
+
     """
 
     def __init__(
@@ -30,8 +33,14 @@ class FalkorDBGraphStore(GraphStore):
         """Initialize params."""
         self._node_label = node_label
 
-        self._driver = redis.Redis.from_url(url).graph(database)
-        self._driver.query(f"CREATE INDEX FOR (n:`{self._node_label}`) ON (n.id)")
+        self._driver = FalkorDB.from_url(url)
+        self._graph = self._driver.select_graph(database)
+
+        try:
+            self._graph.query(f"CREATE INDEX FOR (n:`{self._node_label}`) ON (n.id)")
+        except redis.ResponseError as e:
+            # TODO: to find an appropriate way to handle this issue.
+            logger.warning("Create index failed: %s", e)
 
         self._database = database
 
@@ -43,13 +52,11 @@ class FalkorDBGraphStore(GraphStore):
 
     @property
     def client(self) -> None:
-        return self._driver
+        return self._graph
 
     def get(self, subj: str) -> List[List[str]]:
         """Get triplets."""
-        result = self._driver.query(
-            self.get_query, params={"subj": subj}, read_only=True
-        )
+        result = self._graph.query(self.get_query, params={"subj": subj})
         return result.result_set
 
     def get_rel_map(
@@ -117,7 +124,7 @@ class FalkorDBGraphStore(GraphStore):
         )
 
         # Call FalkorDB with prepared statement
-        self._driver.query(prepared_statement, params={"subj": subj, "obj": obj})
+        self._graph.query(prepared_statement, params={"subj": subj, "obj": obj})
 
     def delete(self, subj: str, rel: str, obj: str) -> None:
         """Delete triplet."""
@@ -130,13 +137,13 @@ class FalkorDBGraphStore(GraphStore):
             """
 
             # Call FalkorDB with prepared statement
-            self._driver.query(query, params={"subj": subj, "obj": obj})
+            self._graph.query(query, params={"subj": subj, "obj": obj})
 
         def delete_entity(entity: str) -> None:
             query = f"MATCH (n:`{self._node_label}`) WHERE n.id = $entity DELETE n"
 
             # Call FalkorDB with prepared statement
-            self._driver.query(query, params={"entity": entity})
+            self._graph.query(query, params={"entity": entity})
 
         def check_edges(entity: str) -> bool:
             query = f"""
@@ -145,9 +152,7 @@ class FalkorDBGraphStore(GraphStore):
             """
 
             # Call FalkorDB with prepared statement
-            result = self._driver.query(
-                query, params={"entity": entity}, read_only=True
-            )
+            result = self._graph.query(query, params={"entity": entity})
             return bool(result.result_set)
 
         delete_rel(subj, obj, rel)
@@ -177,5 +182,23 @@ class FalkorDBGraphStore(GraphStore):
         return self.schema
 
     def query(self, query: str, params: Optional[Dict[str, Any]] = None) -> Any:
-        result = self._driver.query(query, params=params)
+        result = self._graph.query(query, params=params)
         return result.result_set
+
+    def switch_graph(self, graph_name: str) -> None:
+        """
+        Switch to the given graph name (`graph_name`).
+
+        This method allows users to change the active graph within the same
+        database connection.
+
+        Args:
+            graph_name (str): The name of the graph to switch to.
+
+        """
+        self._graph = self._driver.select_graph(graph_name)
+
+        try:
+            self.refresh_schema()
+        except Exception as e:
+            raise ValueError(f"Could not refresh schema. Error: {e}")

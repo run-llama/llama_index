@@ -6,6 +6,7 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
 )
 from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.prompts.mixin import PromptMixin, PromptMixinType
 from llama_index.core.schema import QueryBundle, QueryType
 from llama_index.core.tools.types import ToolMetadata
@@ -29,7 +30,7 @@ class MultiSelection(BaseModel):
     def ind(self) -> int:
         if len(self.selections) != 1:
             raise ValueError(
-                f"There are {len(self.selections)} selections, " "please use .inds."
+                f"There are {len(self.selections)} selections, please use .inds."
             )
         return self.selections[0].index
 
@@ -37,7 +38,7 @@ class MultiSelection(BaseModel):
     def reason(self) -> str:
         if len(self.reasons) != 1:
             raise ValueError(
-                f"There are {len(self.reasons)} selections, " "please use .reasons."
+                f"There are {len(self.reasons)} selections, please use .reasons."
             )
         return self.selections[0].reason
 
@@ -72,7 +73,7 @@ def _wrap_query(query: QueryType) -> QueryBundle:
         raise ValueError(f"Unexpected type: {type(query)}")
 
 
-class BaseSelector(PromptMixin, ChainableMixin):
+class BaseSelector(PromptMixin, ChainableMixin, DispatcherSpanMixin):
     """Base selector."""
 
     def _get_prompt_modules(self) -> PromptMixinType:

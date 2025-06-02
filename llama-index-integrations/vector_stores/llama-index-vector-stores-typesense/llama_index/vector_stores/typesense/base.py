@@ -1,4 +1,5 @@
-"""Typesense Vector store index.
+"""
+Typesense Vector store index.
 
 An index that is built on top of an existing vector store.
 
@@ -7,11 +8,12 @@ An index that is built on top of an existing vector store.
 import logging
 from typing import Any, Callable, List, Optional, cast
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.utils import get_tokenizer
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -34,8 +36,9 @@ DEFAULT_BATCH_SIZE = 100
 DEFAULT_METADATA_KEY = "metadata"
 
 
-class TypesenseVectorStore(VectorStore):
-    """Typesense Vector Store.
+class TypesenseVectorStore(BasePydanticVectorStore):
+    """
+    Typesense Vector Store.
 
     In this vector store, embeddings and docs are stored within a
     Typesense index.
@@ -47,11 +50,39 @@ class TypesenseVectorStore(VectorStore):
         client (Any): Typesense client
         tokenizer (Optional[Callable[[str], List]]): tokenizer function.
 
+    Examples:
+        `pip install llama-index-vector-stores-typesense`
+
+        ```python
+        from llama_index.vector_stores.typesense import TypesenseVectorStore
+        from typesense import Client
+
+        # Sign up for Typesense and get your API key
+        typesense_client = Client(
+            {
+                "api_key": "your_api_key_here",
+                "nodes": [{"host": "localhost", "port": "8108", "protocol": "http"}],
+                "connection_timeout_seconds": 2,
+            }
+        )
+
+        # Create an instance of TypesenseVectorStore
+        vector_store = TypesenseVectorStore(typesense_client)
+        ```
+
     """
 
     stores_text: bool = True
     is_embedding_query: bool = False
     flat_metadata: bool = False
+
+    _tokenizer: Callable[[str], List] = PrivateAttr()
+    _text_key: str = PrivateAttr()
+    _collection_name: str = PrivateAttr()
+    _collection: Any = PrivateAttr()
+    _batch_size: int = PrivateAttr()
+    _metadata_key: str = PrivateAttr()
+    _client: typesense.Client = PrivateAttr()
 
     def __init__(
         self,
@@ -64,6 +95,8 @@ class TypesenseVectorStore(VectorStore):
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
+        super().__init__()
+
         if client is not None:
             if not isinstance(client, typesense.Client):
                 raise ValueError(
@@ -77,6 +110,11 @@ class TypesenseVectorStore(VectorStore):
         self._collection = self._client.collections[self._collection_name]
         self._batch_size = batch_size
         self._metadata_key = metadata_key
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Class name."""
+        return "TypesenseVectorStore"
 
     @property
     def client(self) -> Any:
@@ -128,7 +166,8 @@ class TypesenseVectorStore(VectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -163,7 +202,8 @@ class TypesenseVectorStore(VectorStore):
         collection.documents.delete({"filter_by": f"ref_doc_id:={ref_doc_id}"})
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query Typesense index for top k most similar nodes.
+        """
+        Query Typesense index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): Vector store query object.
@@ -182,7 +222,7 @@ class TypesenseVectorStore(VectorStore):
                         {
                             "collection": self._collection_name,
                             "q": "*",
-                            "vector_query": f'vec:([{",".join(embedded_query)}],'
+                            "vector_query": f"vec:([{','.join(embedded_query)}],"
                             + f"k:{query.similarity_top_k})",
                             "filter_by": typesense_filter,
                         }

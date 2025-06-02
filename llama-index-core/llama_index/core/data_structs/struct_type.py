@@ -4,7 +4,8 @@ from enum import Enum
 
 
 class IndexStructType(str, Enum):
-    """Index struct type. Identifier for a "type" of index.
+    """
+    Index struct type. Identifier for a "type" of index.
 
     Attributes:
         TREE ("tree"): Tree index. See :ref:`Ref-Indices-Tree` for tree indices.
@@ -98,6 +99,7 @@ class IndexStructType(str, Enum):
     # for KG index
     KG = "kg"
     SIMPLE_KG = "simple_kg"
+    SIMPLE_LPG = "simple_lpg"
     NEBULAGRAPH = "nebulagraph"
     FALKORDB = "falkordb"
 
@@ -111,4 +113,4 @@ class IndexStructType(str, Enum):
 
     # Managed
     VECTARA = "vectara"
-    ZILLIZ_CLOUD_PIPELINE = "zilliz_cloud_pipeline"
+    POSTGRESML = "postgresml"

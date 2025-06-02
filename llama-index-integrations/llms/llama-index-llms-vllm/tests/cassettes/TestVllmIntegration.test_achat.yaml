@@ -1,0 +1,40 @@
+interactions:
+  - request:
+      body:
+        '{"temperature": 1.0, "max_tokens": 512, "n": 1, "frequency_penalty": 0.0,
+        "presence_penalty": 0.0, "use_beam_search": false, "best_of": null, "ignore_eos":
+        false, "stop": null, "logprobs": null, "top_k": -1, "top_p": 1.0, "prompt":
+        "user: When AI hype is over?\nassistant: ", "stream": false}'
+      headers:
+        Accept:
+          - "*/*"
+        Accept-Encoding:
+          - gzip, deflate
+        Connection:
+          - keep-alive
+        Content-Length:
+          - "292"
+        Content-Type:
+          - application/json
+        User-Agent:
+          - Test Client
+      method: POST
+      uri: http://localhost:8000/generate
+    response:
+      body:
+        string:
+          '{"text":["user: When AI hype is over?\nassistant:  GIMME A BREAK  User:
+          ?\nfathef rte people seeing this now."]}'
+      headers:
+        content-length:
+          - "112"
+        content-type:
+          - application/json
+        date:
+          - Thu, 21 Mar 2024 11:07:58 GMT
+        server:
+          - uvicorn
+      status:
+        code: 200
+        message: OK
+version: 1

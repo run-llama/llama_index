@@ -1,9 +1,10 @@
-"""Vector store index types."""
+"""Managed index types."""
+
 from enum import Enum
 
 
 class ManagedIndexQueryMode(str, Enum):
-    """Vector store query mode."""
+    """Managed Index query mode."""
 
     DEFAULT = "default"
     MMR = "mmr"

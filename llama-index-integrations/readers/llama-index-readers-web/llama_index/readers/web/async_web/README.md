@@ -1,5 +1,9 @@
 # Async Website Loader
 
+```bash
+pip install llama-index-readers-web
+```
+
 This loader is an asynchronous web scraper that fetches the text from static websites by converting the HTML to text.
 
 ## Usage
@@ -7,7 +11,7 @@ This loader is an asynchronous web scraper that fetches the text from static web
 To use this loader, you need to pass in an array of URLs.
 
 ```python
-from llama_index.readers.web.async_web.base import AsyncWebPageReader
+from llama_index.readers.web import AsyncWebPageReader
 
 # for jupyter notebooks uncomment the following two lines of code:
 # import nest_asyncio

@@ -11,6 +11,7 @@ from llama_index.core.agent.types import (
     TaskStep,
     TaskStepOutput,
 )
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.callbacks import (
     CallbackManager,
@@ -69,7 +70,8 @@ class DAGAgentState(BaseModel):
 
 
 class ParallelAgentRunner(BaseAgentRunner):
-    """Parallel agent runner.
+    """
+    Parallel agent runner.
 
     Executes steps in queue in parallel. Requires async support.
 
@@ -129,12 +131,30 @@ class ParallelAgentRunner(BaseAgentRunner):
         self,
         task_id: str,
     ) -> None:
-        """Delete task.
+        """
+        Delete task.
 
         NOTE: this will not delete any previous executions from memory.
 
         """
         self.state.task_dict.pop(task_id)
+
+    def get_completed_tasks(self, **kwargs: Any) -> List[Task]:
+        """Get completed tasks."""
+        task_states = list(self.state.task_dict.values())
+        return [
+            task_state.task
+            for task_state in task_states
+            if len(task_state.completed_steps) > 0
+            and task_state.completed_steps[-1].is_last
+        ]
+
+    def get_task_output(self, task_id: str, **kwargs: Any) -> TaskStepOutput:
+        """Get task output."""
+        task_state = self.state.task_dict[task_id]
+        if len(task_state.completed_steps) == 0:
+            raise ValueError(f"No completed steps for task_id: {task_id}")
+        return task_state.completed_steps[-1]
 
     def list_tasks(self, **kwargs: Any) -> List[Task]:
         """List tasks."""
@@ -159,14 +179,15 @@ class ParallelAgentRunner(BaseAgentRunner):
         mode: ChatResponseMode = ChatResponseMode.WAIT,
         **kwargs: Any,
     ) -> List[TaskStepOutput]:
-        """Execute steps in queue.
+        """
+        Execute steps in queue.
 
         Run all steps in queue, clearing it out.
 
         Assume that all steps can be run in parallel.
 
         """
-        return asyncio.run(self.arun_steps_in_queue(task_id, mode=mode, **kwargs))
+        return asyncio_run(self.arun_steps_in_queue(task_id, mode=mode, **kwargs))
 
     async def arun_steps_in_queue(
         self,
@@ -174,7 +195,8 @@ class ParallelAgentRunner(BaseAgentRunner):
         mode: ChatResponseMode = ChatResponseMode.WAIT,
         **kwargs: Any,
     ) -> List[TaskStepOutput]:
-        """Execute all steps in queue.
+        """
+        Execute all steps in queue.
 
         All steps in queue are assumed to be ready.
 
@@ -361,7 +383,10 @@ class ParallelAgentRunner(BaseAgentRunner):
                 result_output = cur_step_output
                 break
 
-        return self.finalize_response(task.task_id, result_output)
+        return self.finalize_response(
+            task.task_id,
+            result_output,
+        )
 
     async def _achat(
         self,
@@ -393,7 +418,10 @@ class ParallelAgentRunner(BaseAgentRunner):
                 result_output = cur_step_output
                 break
 
-        return self.finalize_response(task.task_id, result_output)
+        return self.finalize_response(
+            task.task_id,
+            result_output,
+        )
 
     @trace_method("chat")
     def chat(
@@ -445,9 +473,9 @@ class ParallelAgentRunner(BaseAgentRunner):
             chat_response = self._chat(
                 message, chat_history, tool_choice, mode=ChatResponseMode.STREAM
             )
-            assert isinstance(chat_response, StreamingAgentChatResponse)
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
-        return chat_response
+
+        return chat_response  # type: ignore
 
     @trace_method("chat")
     async def astream_chat(
@@ -463,9 +491,9 @@ class ParallelAgentRunner(BaseAgentRunner):
             chat_response = await self._achat(
                 message, chat_history, tool_choice, mode=ChatResponseMode.STREAM
             )
-            assert isinstance(chat_response, StreamingAgentChatResponse)
+
             e.on_end(payload={EventPayload.RESPONSE: chat_response})
-        return chat_response
+        return chat_response  # type: ignore
 
     def undo_step(self, task_id: str) -> None:
         """Undo previous step."""

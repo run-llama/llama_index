@@ -7,10 +7,11 @@ It is used by the Github readers to retrieve the data from Github.
 
 import os
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Protocol
 
-from dataclasses_json import DataClassJsonMixin
+from dataclasses_json import DataClassJsonMixin, config
+from httpx import HTTPError
 
 
 @dataclass
@@ -27,6 +28,7 @@ class GitTreeResponseModel(DataClassJsonMixin):
     Examples:
         >>> tree = client.get_tree("owner", "repo", "branch")
         >>> tree.sha
+
     """
 
     @dataclass
@@ -41,6 +43,7 @@ class GitTreeResponseModel(DataClassJsonMixin):
             - sha (str): SHA1 checksum ID of the object.
             - url (str): URL for the object.
             - size (Optional[int]): Size of the object (only for blobs).
+
         """
 
         path: str
@@ -68,6 +71,7 @@ class GitBlobResponseModel(DataClassJsonMixin):
         - sha (str): SHA1 checksum ID of the blob.
         - size (int): Size of the blob.
         - node_id (str): Node ID of the blob.
+
     """
 
     content: str
@@ -85,6 +89,7 @@ class GitCommitResponseModel(DataClassJsonMixin):
 
     Attributes:
         - tree (Tree): Tree object for the commit.
+
     """
 
     @dataclass
@@ -98,6 +103,7 @@ class GitCommitResponseModel(DataClassJsonMixin):
 
             Attributes:
                 - sha (str): SHA for the commit
+
             """
 
             sha: str
@@ -116,6 +122,7 @@ class GitBranchResponseModel(DataClassJsonMixin):
 
     Attributes:
         - commit (Commit): Commit object for the branch.
+
     """
 
     @dataclass
@@ -142,7 +149,7 @@ class GitBranchResponseModel(DataClassJsonMixin):
 
     @dataclass
     class Links(DataClassJsonMixin):
-        self: str
+        _self: str = field(metadata=config(field_name="self"))
         html: str
 
     commit: Commit
@@ -151,8 +158,7 @@ class GitBranchResponseModel(DataClassJsonMixin):
 
 
 class BaseGithubClient(Protocol):
-    def get_all_endpoints(self) -> Dict[str, str]:
-        ...
+    def get_all_endpoints(self) -> Dict[str, str]: ...
 
     async def request(
         self,
@@ -160,32 +166,28 @@ class BaseGithubClient(Protocol):
         method: str,
         headers: Dict[str, Any] = {},
         **kwargs: Any,
-    ) -> Any:
-        ...
+    ) -> Any: ...
 
     async def get_tree(
         self,
         owner: str,
         repo: str,
         tree_sha: str,
-    ) -> GitTreeResponseModel:
-        ...
+    ) -> GitTreeResponseModel: ...
 
     async def get_blob(
         self,
         owner: str,
         repo: str,
         file_sha: str,
-    ) -> Optional[GitBlobResponseModel]:
-        ...
+    ) -> Optional[GitBlobResponseModel]: ...
 
     async def get_commit(
         self,
         owner: str,
         repo: str,
         commit_sha: str,
-    ) -> GitCommitResponseModel:
-        ...
+    ) -> GitCommitResponseModel: ...
 
     async def get_branch(
         self,
@@ -193,8 +195,7 @@ class BaseGithubClient(Protocol):
         repo: str,
         branch: Optional[str],
         branch_name: Optional[str],
-    ) -> GitBranchResponseModel:
-        ...
+    ) -> GitBranchResponseModel: ...
 
 
 class GithubClient:
@@ -210,6 +211,7 @@ class GithubClient:
     Examples:
         >>> client = GithubClient("my_github_token")
         >>> branch_info = client.get_branch("owner", "repo", "branch")
+
     """
 
     DEFAULT_BASE_URL = "https://api.github.com"
@@ -221,6 +223,7 @@ class GithubClient:
         base_url: str = DEFAULT_BASE_URL,
         api_version: str = DEFAULT_API_VERSION,
         verbose: bool = False,
+        fail_on_http_error: bool = True,
     ) -> None:
         """
         Initialize the GithubClient.
@@ -232,9 +235,12 @@ class GithubClient:
             - base_url (str): Base URL for the Github API
                 (defaults to "https://api.github.com").
             - api_version (str): Github API version (defaults to "2022-11-28").
+            - verbose (bool): Whether to print verbose output (defaults to False).
+            - fail_on_http_error (bool): Whether to raise an exception on HTTP errors (defaults to True).
 
         Raises:
             ValueError: If no Github token is provided.
+
         """
         if github_token is None:
             github_token = os.getenv("GITHUB_TOKEN")
@@ -248,6 +254,7 @@ class GithubClient:
         self._base_url = base_url
         self._api_version = api_version
         self._verbose = verbose
+        self._fail_on_http_error = fail_on_http_error
 
         self._endpoints = {
             "getTree": "/repos/{owner}/{repo}/git/trees/{tree_sha}",
@@ -294,12 +301,13 @@ class GithubClient:
 
         Raises:
             - ImportError: If the `httpx` library is not installed.
-            - httpx.HTTPError: If the API request fails.
+            - httpx.HTTPError: If the API request fails and fail_on_http_error is True.
 
         Examples:
             >>> response = client.request("getTree", "GET",
                                 owner="owner", repo="repo",
                                 tree_sha="tree_sha", timeout=5, retries=0)
+
         """
         try:
             import httpx
@@ -352,6 +360,7 @@ class GithubClient:
 
         Examples:
             >>> branch_info = client.get_branch("owner", "repo", "branch")
+
         """
         if branch is None:
             if branch_name is None:
@@ -395,6 +404,7 @@ class GithubClient:
 
         Examples:
             >>> tree_info = client.get_tree("owner", "repo", "tree_sha")
+
         """
         return GitTreeResponseModel.from_json(
             (
@@ -433,6 +443,7 @@ class GithubClient:
 
         Examples:
             >>> blob_info = client.get_blob("owner", "repo", "file_sha")
+
         """
         try:
             return GitBlobResponseModel.from_json(
@@ -451,6 +462,12 @@ class GithubClient:
         except KeyError:
             print(f"Failed to get blob for {owner}/{repo}/{file_sha}")
             return None
+        except HTTPError as excp:
+            print(f"HTTP Exception for {excp.request.url} - {excp}")
+            if self._fail_on_http_error:
+                raise
+            else:
+                return None
 
     async def get_commit(
         self,
@@ -475,6 +492,7 @@ class GithubClient:
 
         Examples:
             >>> commit_info = client.get_commit("owner", "repo", "commit_sha")
+
         """
         return GitCommitResponseModel.from_json(
             (

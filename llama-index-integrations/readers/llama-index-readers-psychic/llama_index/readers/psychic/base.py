@@ -1,4 +1,5 @@
 """Psychic reader."""
+
 import logging
 import os
 from typing import List, Optional
@@ -10,7 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 class PsychicReader(BaseReader):
-    """Psychic reader.
+    """
+    Psychic reader.
 
     Psychic is a platform that allows syncing data from many SaaS apps through one
         universal API.
@@ -47,7 +49,8 @@ class PsychicReader(BaseReader):
     def load_data(
         self, connector_id: Optional[str] = None, account_id: Optional[str] = None
     ) -> List[Document]:
-        """Load data from a Psychic connection.
+        """
+        Load data from a Psychic connection.
 
         Args:
             connector_id (str): The connector ID to connect to

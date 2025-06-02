@@ -1,17 +1,21 @@
 """Common utils for embeddings."""
+
 import json
 import re
 import uuid
-from typing import Dict, List, Tuple
+import warnings
+from typing import Dict, List, Optional, Tuple
 
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.llms.utils import LLM
 from llama_index.core.schema import MetadataMode, TextNode
+from llama_index.core.settings import Settings
 from tqdm import tqdm
 
 
 class EmbeddingQAFinetuneDataset(BaseModel):
-    """Embedding QA Finetuning Dataset.
+    """
+    Embedding QA Finetuning Dataset.
 
     Args:
         queries (Dict[str, str]): Dict id -> query.
@@ -36,7 +40,7 @@ class EmbeddingQAFinetuneDataset(BaseModel):
     def save_json(self, path: str) -> None:
         """Save json."""
         with open(path, "w") as f:
-            json.dump(self.dict(), f, indent=4)
+            json.dump(self.model_dump(), f, indent=4)
 
     @classmethod
     def from_json(cls, path: str) -> "EmbeddingQAFinetuneDataset":
@@ -67,11 +71,12 @@ context information provided."
 # generate queries as a convenience function
 def generate_qa_embedding_pairs(
     nodes: List[TextNode],
-    llm: LLM,
+    llm: Optional[LLM] = None,
     qa_generate_prompt_tmpl: str = DEFAULT_QA_GENERATE_PROMPT_TMPL,
     num_questions_per_chunk: int = 2,
 ) -> EmbeddingQAFinetuneDataset:
     """Generate examples given a set of nodes."""
+    llm = llm or Settings.llm
     node_dict = {
         node.node_id: node.get_content(metadata_mode=MetadataMode.NONE)
         for node in nodes
@@ -89,7 +94,16 @@ def generate_qa_embedding_pairs(
         questions = [
             re.sub(r"^\d+[\).\s]", "", question).strip() for question in result
         ]
-        questions = [question for question in questions if len(question) > 0]
+        questions = [question for question in questions if len(question) > 0][
+            :num_questions_per_chunk
+        ]
+
+        num_questions_generated = len(questions)
+        if num_questions_generated < num_questions_per_chunk:
+            warnings.warn(
+                f"Fewer questions generated ({num_questions_generated}) "
+                f"than requested ({num_questions_per_chunk})."
+            )
 
         for question in questions:
             question_id = str(uuid.uuid4())

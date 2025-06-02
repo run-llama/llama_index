@@ -1,0 +1,244 @@
+interactions:
+  - request:
+      body:
+        '{"temperature": 1.0, "max_tokens": 512, "n": 1, "frequency_penalty": 0.0,
+        "presence_penalty": 0.0, "use_beam_search": false, "best_of": null, "ignore_eos":
+        false, "stop": null, "logprobs": null, "top_k": -1, "top_p": 1.0, "prompt":
+        "user: When AI hype is over?\nassistant: ", "stream": true}'
+      headers:
+        Accept:
+          - "*/*"
+        Accept-Encoding:
+          - gzip, deflate
+        Connection:
+          - keep-alive
+        Content-Length:
+          - "291"
+        Content-Type:
+          - application/json
+        User-Agent:
+          - Test Client
+      method: POST
+      uri: http://localhost:8000/generate
+    response:
+      body:
+        string:
+          "{\"text\": [\"user: When AI hype is over?\\nassistant:  like\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when\"]}\0{\"text\": [\"user:
+          When AI hype is over?\\nassistant:  like when people\"]}\0{\"text\": [\"user:
+          When AI hype is over?\\nassistant:  like when people say\"]}\0{\"text\": [\"user:
+          When AI hype is over?\\nassistant:  like when people say r\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is over\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyp\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\n\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:  like when
+          people say rbi is overhyped?\\nwhen those i\"]}\0{\"text\": [\"user: When
+          AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:  like
+          when people say rbi is overhyped?\\nwhen those i.g\"]}\0{\"text\": [\"user:
+          When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ like when people say rbi is overhyped?\\nwhen those i.g charity-\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ like when people say rbi is overhyped?\\nwhen those i.g charity-funded games\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are\"]}\0{\"text\": [\"user: When AI hype is
+          over?\\nassistant:  like when people say rbi is overhyped?\\nwhen those i.g
+          charity-funded games are praised\"]}\0{\"text\": [\"user: When AI hype is
+          over?\\nassistant:  like when people say rbi is overhyped?\\nwhen those i.g
+          charity-funded games are praised\\n\"]}\0{\"text\": [\"user: When AI hype
+          is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen those
+          i.g charity-funded games are praised\\n>\"]}\0{\"text\": [\"user: When AI
+          hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom\"]}\0{\"text\": [\"user:
+          When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom Reddit\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom Reddit targeted\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom Reddit targeted and\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom Reddit targeted and did\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom Reddit targeted and did
+          casual\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:  like when
+          people say rbi is overhyped?\\nwhen those i.g charity-funded games are praised\\n>
+          boom Reddit targeted and did casual game\"]}\0{\"text\": [\"user: When AI
+          hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom Reddit targeted and did
+          casual game shit\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ like when people say rbi is overhyped?\\nwhen those i.g charity-funded games
+          are praised\\n> boom Reddit targeted and did casual game shit talking\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom Reddit targeted and did
+          casual game shit talking so\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ like when people say rbi is overhyped?\\nwhen those i.g charity-funded games
+          are praised\\n> boom Reddit targeted and did casual game shit talking so its\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom Reddit targeted and did
+          casual game shit talking so its only\"]}\0{\"text\": [\"user: When AI hype
+          is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen those
+          i.g charity-funded games are praised\\n> boom Reddit targeted and did casual
+          game shit talking so its only fair\"]}\0{\"text\": [\"user: When AI hype is
+          over?\\nassistant:  like when people say rbi is overhyped?\\nwhen those i.g
+          charity-funded games are praised\\n> boom Reddit targeted and did casual game
+          shit talking so its only fair that\"]}\0{\"text\": [\"user: When AI hype is
+          over?\\nassistant:  like when people say rbi is overhyped?\\nwhen those i.g
+          charity-funded games are praised\\n> boom Reddit targeted and did casual game
+          shit talking so its only fair that gamers\"]}\0{\"text\": [\"user: When AI
+          hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom Reddit targeted and did
+          casual game shit talking so its only fair that gamers should\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom Reddit targeted and did
+          casual game shit talking so its only fair that gamers should show\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom Reddit targeted and did
+          casual game shit talking so its only fair that gamers should show PC\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom Reddit targeted and did
+          casual game shit talking so its only fair that gamers should show PC more\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom Reddit targeted and did
+          casual game shit talking so its only fair that gamers should show PC more
+          respect\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:  like
+          when people say rbi is overhyped?\\nwhen those i.g charity-funded games are
+          praised\\n> boom Reddit targeted and did casual game shit talking so its only
+          fair that gamers should show PC more respect.\"]}\0{\"text\": [\"user: When
+          AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom Reddit targeted and did
+          casual game shit talking so its only fair that gamers should show PC more
+          respect. except\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ like when people say rbi is overhyped?\\nwhen those i.g charity-funded games
+          are praised\\n> boom Reddit targeted and did casual game shit talking so its
+          only fair that gamers should show PC more respect. except y\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom Reddit targeted and did
+          casual game shit talking so its only fair that gamers should show PC more
+          respect. except yall\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ like when people say rbi is overhyped?\\nwhen those i.g charity-funded games
+          are praised\\n> boom Reddit targeted and did casual game shit talking so its
+          only fair that gamers should show PC more respect. except yall make\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom Reddit targeted and did
+          casual game shit talking so its only fair that gamers should show PC more
+          respect. except yall make up\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ like when people say rbi is overhyped?\\nwhen those i.g charity-funded games
+          are praised\\n> boom Reddit targeted and did casual game shit talking so its
+          only fair that gamers should show PC more respect. except yall make up a\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom Reddit targeted and did
+          casual game shit talking so its only fair that gamers should show PC more
+          respect. except yall make up a lot\"]}\0{\"text\": [\"user: When AI hype is
+          over?\\nassistant:  like when people say rbi is overhyped?\\nwhen those i.g
+          charity-funded games are praised\\n> boom Reddit targeted and did casual game
+          shit talking so its only fair that gamers should show PC more respect. except
+          yall make up a lot of\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ like when people say rbi is overhyped?\\nwhen those i.g charity-funded games
+          are praised\\n> boom Reddit targeted and did casual game shit talking so its
+          only fair that gamers should show PC more respect. except yall make up a lot
+          of negativity\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ like when people say rbi is overhyped?\\nwhen those i.g charity-funded games
+          are praised\\n> boom Reddit targeted and did casual game shit talking so its
+          only fair that gamers should show PC more respect. except yall make up a lot
+          of negativity and\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ like when people say rbi is overhyped?\\nwhen those i.g charity-funded games
+          are praised\\n> boom Reddit targeted and did casual game shit talking so its
+          only fair that gamers should show PC more respect. except yall make up a lot
+          of negativity and people\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ like when people say rbi is overhyped?\\nwhen those i.g charity-funded games
+          are praised\\n> boom Reddit targeted and did casual game shit talking so its
+          only fair that gamers should show PC more respect. except yall make up a lot
+          of negativity and people like\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ like when people say rbi is overhyped?\\nwhen those i.g charity-funded games
+          are praised\\n> boom Reddit targeted and did casual game shit talking so its
+          only fair that gamers should show PC more respect. except yall make up a lot
+          of negativity and people like me\"]}\0{\"text\": [\"user: When AI hype is
+          over?\\nassistant:  like when people say rbi is overhyped?\\nwhen those i.g
+          charity-funded games are praised\\n> boom Reddit targeted and did casual game
+          shit talking so its only fair that gamers should show PC more respect. except
+          yall make up a lot of negativity and people like me post\"]}\0{\"text\": [\"user:
+          When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom Reddit targeted and did
+          casual game shit talking so its only fair that gamers should show PC more
+          respect. except yall make up a lot of negativity and people like me post this\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom Reddit targeted and did
+          casual game shit talking so its only fair that gamers should show PC more
+          respect. except yall make up a lot of negativity and people like me post this
+          shit\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:  like when
+          people say rbi is overhyped?\\nwhen those i.g charity-funded games are praised\\n>
+          boom Reddit targeted and did casual game shit talking so its only fair that
+          gamers should show PC more respect. except yall make up a lot of negativity
+          and people like me post this shit and\"]}\0{\"text\": [\"user: When AI hype
+          is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen those
+          i.g charity-funded games are praised\\n> boom Reddit targeted and did casual
+          game shit talking so its only fair that gamers should show PC more respect.
+          except yall make up a lot of negativity and people like me post this shit
+          and understand\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ like when people say rbi is overhyped?\\nwhen those i.g charity-funded games
+          are praised\\n> boom Reddit targeted and did casual game shit talking so its
+          only fair that gamers should show PC more respect. except yall make up a lot
+          of negativity and people like me post this shit and understand what\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom Reddit targeted and did
+          casual game shit talking so its only fair that gamers should show PC more
+          respect. except yall make up a lot of negativity and people like me post this
+          shit and understand what no\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ like when people say rbi is overhyped?\\nwhen those i.g charity-funded games
+          are praised\\n> boom Reddit targeted and did casual game shit talking so its
+          only fair that gamers should show PC more respect. except yall make up a lot
+          of negativity and people like me post this shit and understand what no one\"]}\0{\"text\":
+          [\"user: When AI hype is over?\\nassistant:  like when people say rbi is overhyped?\\nwhen
+          those i.g charity-funded games are praised\\n> boom Reddit targeted and did
+          casual game shit talking so its only fair that gamers should show PC more
+          respect. except yall make up a lot of negativity and people like me post this
+          shit and understand what no one's\"]}\0{\"text\": [\"user: When AI hype is
+          over?\\nassistant:  like when people say rbi is overhyped?\\nwhen those i.g
+          charity-funded games are praised\\n> boom Reddit targeted and did casual game
+          shit talking so its only fair that gamers should show PC more respect. except
+          yall make up a lot of negativity and people like me post this shit and understand
+          what no one's saying\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ like when people say rbi is overhyped?\\nwhen those i.g charity-funded games
+          are praised\\n> boom Reddit targeted and did casual game shit talking so its
+          only fair that gamers should show PC more respect. except yall make up a lot
+          of negativity and people like me post this shit and understand what no one's
+          saying and\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:  like
+          when people say rbi is overhyped?\\nwhen those i.g charity-funded games are
+          praised\\n> boom Reddit targeted and did casual game shit talking so its only
+          fair that gamers should show PC more respect. except yall make up a lot of
+          negativity and people like me post this shit and understand what no one's
+          saying and accept\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ like when people say rbi is overhyped?\\nwhen those i.g charity-funded games
+          are praised\\n> boom Reddit targeted and did casual game shit talking so its
+          only fair that gamers should show PC more respect. except yall make up a lot
+          of negativity and people like me post this shit and understand what no one's
+          saying and accept it\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ like when people say rbi is overhyped?\\nwhen those i.g charity-funded games
+          are praised\\n> boom Reddit targeted and did casual game shit talking so its
+          only fair that gamers should show PC more respect. except yall make up a lot
+          of negativity and people like me post this shit and understand what no one's
+          saying and accept it.\"]}\0{\"text\": [\"user: When AI hype is over?\\nassistant:
+          \ like when people say rbi is overhyped?\\nwhen those i.g charity-funded games
+          are praised\\n> boom Reddit targeted and did casual game shit talking so its
+          only fair that gamers should show PC more respect. except yall make up a lot
+          of negativity and people like me post this shit and understand what no one's
+          saying and accept it.\"]}\0"
+      headers:
+        date:
+          - Thu, 21 Mar 2024 11:08:01 GMT
+        server:
+          - uvicorn
+        transfer-encoding:
+          - chunked
+      status:
+        code: 200
+        message: OK
+version: 1

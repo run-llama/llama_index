@@ -1,18 +1,17 @@
 # Airbyte Hubspot Loader
 
+```bash
+pip install llama-index-readers-airbyte-hubspot
+```
+
 The Airbyte Hubspot Loader allows you to access different Hubspot objects.
-
-## Installation
-
-- Install llama_hub: `pip install llama_hub`
-- Install the hubspot source: `pip install airbyte-source-hubspot`
 
 ## Usage
 
 Here's an example usage of the AirbyteHubspotReader.
 
 ```python
-from llama_hub.airbyte_hubspot import AirbyteHubspotReader
+from llama_index.readers.airbyte_hubspot import AirbyteHubspotReader
 
 hubspot_config = {
     # ...
@@ -70,4 +69,4 @@ updated_documents = reader.load_data(
 )  # only loads documents that were updated since last time
 ```
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).

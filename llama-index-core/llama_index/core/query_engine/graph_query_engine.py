@@ -5,14 +5,16 @@ from llama_index.core.base.response.schema import RESPONSE_TYPE
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.indices.composability.graph import ComposableGraph
 from llama_index.core.schema import IndexNode, NodeWithScore, QueryBundle, TextNode
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
+
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 
 class ComposableGraphQueryEngine(BaseQueryEngine):
-    """Composable graph query engine.
+    """
+    Composable graph query engine.
 
     This query engine can operate over a ComposableGraph.
     It can take in custom query engines for its sub-indices.
@@ -32,7 +34,7 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         graph: ComposableGraph,
         custom_query_engines: Optional[Dict[str, BaseQueryEngine]] = None,
         recursive: bool = True,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Init params."""
         self._graph = graph
@@ -41,9 +43,7 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
 
         # additional configs
         self._recursive = recursive
-        callback_manager = callback_manager_from_settings_or_context(
-            Settings, self._graph.service_context
-        )
+        callback_manager = Settings.callback_manager
         super().__init__(callback_manager=callback_manager)
 
     def _get_prompt_modules(self) -> Dict[str, Any]:
@@ -53,6 +53,7 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
     async def _aquery(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         return self._query_index(query_bundle, index_id=None, level=0)
 
+    @dispatcher.span
     def _query(self, query_bundle: QueryBundle) -> RESPONSE_TYPE:
         return self._query_index(query_bundle, index_id=None, level=0)
 
@@ -109,7 +110,8 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         query_bundle: QueryBundle,
         level: int,
     ) -> Tuple[NodeWithScore, List[NodeWithScore]]:
-        """Fetch nodes.
+        """
+        Fetch nodes.
 
         Uses existing node if it's not an index node.
         Otherwise fetch response from corresponding index.

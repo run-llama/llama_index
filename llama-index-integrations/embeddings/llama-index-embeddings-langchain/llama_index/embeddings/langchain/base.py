@@ -14,11 +14,13 @@ if TYPE_CHECKING:
 
 
 class LangchainEmbedding(BaseEmbedding):
-    """External embeddings (taken from Langchain).
+    """
+    External embeddings (taken from Langchain).
 
     Args:
         langchain_embedding (langchain.embeddings.Embeddings): Langchain
             embeddings class.
+
     """
 
     _langchain_embedding: "LCEmbeddings" = PrivateAttr()
@@ -41,12 +43,12 @@ class LangchainEmbedding(BaseEmbedding):
         else:
             model_name = type(langchain_embeddings).__name__
 
-        self._langchain_embedding = langchain_embeddings
         super().__init__(
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
             model_name=model_name,
         )
+        self._langchain_embedding = langchain_embeddings
 
     @classmethod
     def class_name(cls) -> str:

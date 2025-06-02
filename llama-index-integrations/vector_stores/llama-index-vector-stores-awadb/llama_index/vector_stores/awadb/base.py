@@ -1,15 +1,18 @@
-"""AwaDB vector store index.
+"""
+AwaDB vector store index.
 
 An index that is built on top of an existing vector store.
 
 """
+
 import logging
 import uuid
 from typing import Any, List, Optional, Set
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -22,28 +25,36 @@ from llama_index.core.vector_stores.utils import (
 logger = logging.getLogger(__name__)
 
 
-class AwaDBVectorStore(VectorStore):
-    """AwaDB vector store.
+class AwaDBVectorStore(BasePydanticVectorStore):
+    """
+    AwaDB vector store.
 
     In this vector store, embeddings are stored within a AwaDB table.
 
     During query time, the index uses AwaDB to query for the top
     k most similar nodes.
 
-    Args:
-        chroma_collection (chromadb.api.models.Collection.Collection):
-            ChromaDB collection instance
+    Examples:
+        `pip install llama-index-vector-stores-awadb`
+
+        ```python
+        from llama_index.vector_stores.awadb import AwaDBVectorStore
+
+        vector_store = AwaDBVectorStore(table_name="llamaindex")
+        ```
 
     """
 
     flat_metadata: bool = True
     stores_text: bool = True
-    DEFAULT_TABLE_NAME = "llamaindex_awadb"
+    DEFAULT_TABLE_NAME: str = "llamaindex_awadb"
+
+    _awadb_client: Any = PrivateAttr()
 
     @property
     def client(self) -> Any:
         """Get AwaDB client."""
-        return self.awadb_client
+        return self._awadb_client
 
     def __init__(
         self,
@@ -51,7 +62,8 @@ class AwaDBVectorStore(VectorStore):
         log_and_data_dir: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
-        """Initialize with AwaDB client.
+        """
+        Initialize with AwaDB client.
            If table_name is not specified,
            a random table name of `DEFAULT_TABLE_NAME + last segment of uuid`
            would be created automatically.
@@ -63,37 +75,46 @@ class AwaDBVectorStore(VectorStore):
 
         Returns:
             None.
+
         """
+        super().__init__()
+
         import_err_msg = "`awadb` package not found, please run `pip install awadb`"
         try:
             import awadb
         except ImportError:
             raise ImportError(import_err_msg)
         if log_and_data_dir is not None:
-            self.awadb_client = awadb.Client(log_and_data_dir)
+            self._awadb_client = awadb.Client(log_and_data_dir)
         else:
-            self.awadb_client = awadb.Client()
+            self._awadb_client = awadb.Client()
 
         if table_name == self.DEFAULT_TABLE_NAME:
             table_name += "_"
             table_name += str(uuid.uuid4()).split("-")[-1]
 
-        self.awadb_client.Create(table_name)
+        self._awadb_client.Create(table_name)
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "AwaDBVectorStore"
 
     def add(
         self,
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to AwaDB.
+        """
+        Add nodes to AwaDB.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
 
         Returns:
             Added node ids
+
         """
-        if not self.awadb_client:
+        if not self._awadb_client:
             raise ValueError("AwaDB client not initialized")
 
         embeddings = []
@@ -110,7 +131,7 @@ class AwaDBVectorStore(VectorStore):
             ids.append(node.node_id)
             texts.append(node.get_content(metadata_mode=MetadataMode.NONE) or "")
 
-        self.awadb_client.AddTexts(
+        self._awadb_client.AddTexts(
             "embedding_text",
             "text_embedding",
             texts,
@@ -123,28 +144,32 @@ class AwaDBVectorStore(VectorStore):
         return ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete nodes using with ref_doc_id.
+        """
+        Delete nodes using with ref_doc_id.
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
 
         Returns:
             None
+
         """
         if len(ref_doc_id) == 0:
             return
         ids: List[str] = []
         ids.append(ref_doc_id)
-        self.awadb_client.Delete(ids)
+        self._awadb_client.Delete(ids)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query : vector store query
 
         Returns:
             VectorStoreQueryResult: Query results
+
         """
         meta_filters = {}
         if query.filters is not None:
@@ -152,7 +177,7 @@ class AwaDBVectorStore(VectorStore):
                 meta_filters[filter.key] = filter.value
 
         not_include_fields: Set[str] = {"text_embedding"}
-        results = self.awadb_client.Search(
+        results = self._awadb_client.Search(
             query=query.query_embedding,
             topn=query.similarity_top_k,
             meta_filter=meta_filters,

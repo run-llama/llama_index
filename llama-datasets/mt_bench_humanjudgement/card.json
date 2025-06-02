@@ -1,0 +1,58 @@
+{
+  "name": "MT Bench Human Judgement Dataset",
+  "className": "LabelledPairwiseEvaluatorDataset",
+  "description": "This is an adaptation of the original MT Bench Human Judgement dataset, where human evaluators compare two llm model responses and rank them according to their own preference. In the original version, there can be more than one human evaluator for a given example (query, two model responses). In this adapted version however, we aggregate these 'repeated' entries and convert the 'winner' column of the original schema to instead represent the proportion of times 'model_a' wins across all of the human evaluators. To adapt this to a llama-dataset, and to better consider ties (albeit with small samples) we set an uncertainty threshold for this proportion in that if it is between [0.4, 0.6] then we consider there to be no winner between the two models.",
+  "numberObservations": 1204,
+  "containsExamplesByHumans": true,
+  "containsExamplesByAi": false,
+  "sourceUrls": [
+    "https://huggingface.co/datasets/lmsys/mt_bench_human_judgments"
+  ],
+  "baselines": [
+    {
+      "name": "gpt-3.5",
+      "config": {
+        "promptUrl": "https://github.com/run-llama/llama_index.core/blob/e471e5f8a93ddae6d366cdbba8a497cd6728c7f8/llama_index.core/evaluation/pairwise.py#L21",
+        "llm": "gpt-3.5"
+      },
+      "metrics": {
+        "invalidPredictions": 89,
+        "inconclusives": 407,
+        "ties": 51,
+        "agreementRateWithTies": 0.743,
+        "agreementRateWithoutTies": 0.798
+      },
+      "codeUrl": "https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_datasets/mt_bench_humanjudgement/baselines.py"
+    },
+    {
+      "name": "gpt-4",
+      "config": {
+        "promptUrl": "https://github.com/run-llama/llama_index.core/blob/e471e5f8a93ddae6d366cdbba8a497cd6728c7f8/llama_index.core/evaluation/pairwise.py#L21",
+        "llm": "gpt-4"
+      },
+      "metrics": {
+        "invalidPredictions": 1,
+        "inconclusives": 107,
+        "ties": 102,
+        "agreementRateWithTies": 0.709,
+        "agreementRateWithoutTies": 0.779
+      },
+      "codeUrl": "https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_datasets/mt_bench_humanjudgement/baselines.py"
+    },
+    {
+      "name": "gemini-pro",
+      "config": {
+        "promptUrl": "https://github.com/run-llama/llama_index.core/blob/e471e5f8a93ddae6d366cdbba8a497cd6728c7f8/llama_index.core/evaluation/pairwise.py#L21",
+        "llm": "gemini-pro"
+      },
+      "metrics": {
+        "invalidPredictions": 2,
+        "inconclusives": 295,
+        "ties": 60,
+        "agreementRateWithTies": 0.742,
+        "agreementRateWithoutTies": 0.793
+      },
+      "codeUrl": "https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_datasets/mt_bench_humanjudgement/baselines.py"
+    }
+  ]
+}

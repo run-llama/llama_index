@@ -1,0 +1,55 @@
+{
+  "name": "Mini MT Bench Dataset",
+  "className": "LabelledEvaluatorDataset",
+  "description": "This is a miniature version to the original MT Bench (Single-Grading) Dataset. In particular, this dataset only consists of answers produced by Llama2-70b LLM to the 160 questions i.e., 80 x 2 since there are two turns. The reference evaluations are done using the `CorrectnessEvaluator` class and with GPT-4 as the judge LLM.",
+  "numberObservations": 160,
+  "containsExamplesByHumans": false,
+  "containsExamplesByAi": true,
+  "sourceUrls": [
+    "https://huggingface.co/spaces/lmsys/mt-bench/tree/main/data/mt_bench"
+  ],
+  "baselines": [
+    {
+      "name": "gpt-3.5",
+      "config": {
+        "promptUrl": "https://github.com/run-llama/llama_index.core/blob/e471e5f8a93ddae6d366cdbba8a497cd6728c7f8/llama_index.core/evaluation/correctness.py#L17",
+        "llm": "gpt-3.5"
+      },
+      "metrics": {
+        "invalidPredictions": 0,
+        "correlation": 0.317,
+        "meanAbsoluteError": 1.119,
+        "hamming": 27
+      },
+      "codeUrl": "https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_datasets/mini_mt_bench_singlegrading/baselines.py"
+    },
+    {
+      "name": "gpt-4",
+      "config": {
+        "promptUrl": "https://github.com/run-llama/llama_index.core/blob/e471e5f8a93ddae6d366cdbba8a497cd6728c7f8/llama_index.core/evaluation/correctness.py#L17",
+        "llm": "gpt-4"
+      },
+      "metrics": {
+        "invalidPredictions": 0,
+        "correlation": 0.966,
+        "meanAbsoluteError": 0.094,
+        "hamming": 143
+      },
+      "codeUrl": "https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_datasets/mini_mt_bench_singlegrading/baselines.py"
+    },
+    {
+      "name": "gemini-pro",
+      "config": {
+        "promptUrl": "https://github.com/run-llama/llama_index.core/blob/e471e5f8a93ddae6d366cdbba8a497cd6728c7f8/llama_index.core/evaluation/correctness.py#L17",
+        "llm": "gemini-pro"
+      },
+      "metrics": {
+        "invalidPredictions": 1,
+        "correlation": 0.295,
+        "meanAbsoluteError": 1.22,
+        "hamming": 12
+      },
+      "codeUrl": "https://github.com/run-llama/llama-hub/blob/main/llama_hub/llama_datasets/mini_mt_bench_singlegrading/baselines.py"
+    }
+  ]
+}

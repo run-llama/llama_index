@@ -15,7 +15,8 @@ EXAMPLE_URL = "https://clarifai.com/anthropic/completion/models/claude-v2"
 
 
 class ClarifaiEmbedding(BaseEmbedding):
-    """Clarifai embeddings class.
+    """
+    Clarifai embeddings class.
 
     Clarifai uses Personal Access Tokens(PAT) to validate requests.
     You can create and manage PATs under your Clarifai account security settings.
@@ -67,7 +68,7 @@ class ClarifaiEmbedding(BaseEmbedding):
                     f"Missing one app ID or user ID of the model: {app_id=}, {user_id=}"
                 )
             else:
-                self._model = Model(
+                model = Model(
                     user_id=user_id,
                     app_id=app_id,
                     model_id=model_name,
@@ -76,14 +77,15 @@ class ClarifaiEmbedding(BaseEmbedding):
                 )
 
         if model_url is not None:
-            self._model = Model(model_url, pat=pat)
-            model_name = self._model.id
+            model = Model(model_url, pat=pat)
+            model_name = model.id
 
         super().__init__(
             embed_batch_size=embed_batch_size,
             callback_manager=callback_manager,
             model_name=model_name,
         )
+        self._model = model
 
     @classmethod
     def class_name(cls) -> str:

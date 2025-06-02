@@ -1,4 +1,5 @@
 """Vector store index types."""
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from enum import Enum
@@ -17,6 +18,7 @@ import fsspec
 from deprecated import deprecated
 from llama_index.core.bridge.pydantic import (
     BaseModel,
+    ConfigDict,
     StrictFloat,
     StrictInt,
     StrictStr,
@@ -70,7 +72,14 @@ class FilterOperator(str, Enum):
     LTE = "<="  # less than or equal to (int, float)
     IN = "in"  # In array (string or number)
     NIN = "nin"  # Not in array (string or number)
+    ANY = "any"  # Contains any (array of strings)
+    ALL = "all"  # Contains all (array of strings)
     TEXT_MATCH = "text_match"  # full text match (allows you to search for a specific substring, token or phrase within the text field)
+    TEXT_MATCH_INSENSITIVE = (
+        "text_match_insensitive"  # full text match (case insensitive)
+    )
+    CONTAINS = "contains"  # metadata array contains value (string or number)
+    IS_EMPTY = "is_empty"  # the field is not exist or empty (null or empty array)
 
 
 class FilterCondition(str, Enum):
@@ -79,10 +88,12 @@ class FilterCondition(str, Enum):
     # TODO add more conditions
     AND = "and"
     OR = "or"
+    NOT = "not"  # negates the filter condition
 
 
 class MetadataFilter(BaseModel):
-    """Comprehensive metadata filter for vector stores to support more operators.
+    r"""
+    Comprehensive metadata filter for vector stores to support more operators.
 
     Value uses Strict* types, as int, float and str are compatible types and were all
     converted to string before.
@@ -91,7 +102,16 @@ class MetadataFilter(BaseModel):
     """
 
     key: str
-    value: Union[StrictInt, StrictFloat, StrictStr]
+    value: Optional[
+        Union[
+            StrictInt,
+            StrictFloat,
+            StrictStr,
+            List[StrictStr],
+            List[StrictFloat],
+            List[StrictInt],
+        ]
+    ]
     operator: FilterOperator = FilterOperator.EQ
 
     @classmethod
@@ -99,13 +119,14 @@ class MetadataFilter(BaseModel):
         cls,
         filter_dict: Dict,
     ) -> "MetadataFilter":
-        """Create MetadataFilter from dictionary.
+        """
+        Create MetadataFilter from dictionary.
 
         Args:
             filter_dict: Dict with key, value and operator.
 
         """
-        return MetadataFilter.parse_obj(filter_dict)
+        return MetadataFilter.model_validate(filter_dict)
 
 
 # # TODO: Deprecate ExactMatchFilter and use MetadataFilter instead
@@ -119,14 +140,10 @@ ExactMatchFilter = MetadataFilter
 
 
 class MetadataFilters(BaseModel):
-    """Metadata filters for vector stores.
-
-    Currently only supports exact match filters.
-    TODO: support more advanced expressions.
-    """
+    """Metadata filters for vector stores."""
 
     # Exact match filters and Advanced filters with operators like >, <, >=, <=, !=, etc.
-    filters: List[Union[MetadataFilter, ExactMatchFilter]]
+    filters: List[Union[MetadataFilter, ExactMatchFilter, "MetadataFilters"]]
     # and/or such conditions for combining different filters
     condition: Optional[FilterCondition] = FilterCondition.AND
 
@@ -149,7 +166,8 @@ class MetadataFilters(BaseModel):
         filter_dicts: List[Dict],
         condition: Optional[FilterCondition] = FilterCondition.AND,
     ) -> "MetadataFilters":
-        """Create MetadataFilters from dicts.
+        """
+        Create MetadataFilters from dicts.
 
         This takes in a list of individual MetadataFilter objects, along
         with the condition.
@@ -170,7 +188,10 @@ class MetadataFilters(BaseModel):
         """Convert MetadataFilters to legacy ExactMatchFilters."""
         filters = []
         for filter in self.filters:
-            if filter.operator != FilterOperator.EQ:
+            if (
+                isinstance(filter, MetadataFilters)
+                or filter.operator != FilterOperator.EQ
+            ):
                 raise ValueError(
                     "Vector Store only supports exact match filters. "
                     "Please use ExactMatchFilter or FilterOperator.EQ instead."
@@ -180,7 +201,8 @@ class MetadataFilters(BaseModel):
 
 
 class VectorStoreQuerySpec(BaseModel):
-    """Schema for a structured request for vector store
+    """
+    Schema for a structured request for vector store
     (i.e. to be converted to a VectorStoreQuery).
 
     Currently only used by VectorIndexAutoRetriever.
@@ -192,7 +214,8 @@ class VectorStoreQuerySpec(BaseModel):
 
 
 class MetadataInfo(BaseModel):
-    """Information about a metadata filter supported by a vector store.
+    """
+    Information about a metadata filter supported by a vector store.
 
     Currently only used by VectorIndexAutoRetriever.
     """
@@ -203,7 +226,8 @@ class MetadataInfo(BaseModel):
 
 
 class VectorStoreInfo(BaseModel):
-    """Information about a vector store (content and supported metadata filters).
+    """
+    Information about a vector store (content and supported metadata filters).
 
     Currently only used by VectorIndexAutoRetriever.
     """
@@ -310,6 +334,7 @@ class VectorStore(Protocol):
 class BasePydanticVectorStore(BaseComponent, ABC):
     """Abstract vector store protocol."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     stores_text: bool
     is_embedding_query: bool = True
 
@@ -318,16 +343,33 @@ class BasePydanticVectorStore(BaseComponent, ABC):
     def client(self) -> Any:
         """Get client."""
 
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Get nodes from vector store."""
+        raise NotImplementedError("get_nodes not implemented")
+
+    async def aget_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """Asynchronously get nodes from vector store."""
+        return self.get_nodes(node_ids, filters)
+
     @abstractmethod
     def add(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
+        **kwargs: Any,
     ) -> List[str]:
         """Add nodes to vector store."""
 
     async def async_add(
         self,
-        nodes: List[BaseNode],
+        nodes: Sequence[BaseNode],
         **kwargs: Any,
     ) -> List[str]:
         """
@@ -335,7 +377,7 @@ class BasePydanticVectorStore(BaseComponent, ABC):
         NOTE: this is not implemented for all vector stores. If not implemented,
         it will just call add synchronously.
         """
-        return self.add(nodes)
+        return self.add(nodes, **kwargs)
 
     @abstractmethod
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -349,6 +391,32 @@ class BasePydanticVectorStore(BaseComponent, ABC):
         it will just call delete synchronously.
         """
         self.delete(ref_doc_id, **delete_kwargs)
+
+    def delete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Delete nodes from vector store."""
+        raise NotImplementedError("delete_nodes not implemented")
+
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Asynchronously delete nodes from vector store."""
+        self.delete_nodes(node_ids, filters)
+
+    def clear(self) -> None:
+        """Clear all nodes from configured vector store."""
+        raise NotImplementedError("clear not implemented")
+
+    async def aclear(self) -> None:
+        """Asynchronously clear all nodes from configured vector store."""
+        self.clear()
 
     @abstractmethod
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:

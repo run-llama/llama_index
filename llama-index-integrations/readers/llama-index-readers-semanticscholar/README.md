@@ -1,5 +1,11 @@
 # Semantic Scholar Loader
 
+```bash
+pip install llama-index-readers-semanticscholar
+
+pip install llama-index-llms-openai
+```
+
 Welcome to Semantic Scholar Loader. This module serves as a crucial utility for researchers and professionals looking to get scholarly articles and publications from the Semantic Scholar database.
 
 For any research topic you are interested in, this loader reads relevant papers from a search result in Semantic Scholar into `Documents`.
@@ -27,13 +33,10 @@ Here is an example of how to use this loader in `llama_index` and get citations 
 ### LlamaIndex
 
 ```python
-from llama_index.llms import OpenAI
-from llama_index.query_engine import CitationQueryEngine
-from llama_index import (
-    VectorStoreIndex,
-    ServiceContext,
-)
-from llama_hub.semanticscholar import SemanticScholarReader
+from llama_index.llms.openai import OpenAI
+from llama_index.core.query_engine import CitationQueryEngine
+from llama_index.core import VectorStoreIndex, ServiceContext
+from llama_index.readers.semanticscholar import SemanticScholarReader
 
 s2reader = SemanticScholarReader()
 

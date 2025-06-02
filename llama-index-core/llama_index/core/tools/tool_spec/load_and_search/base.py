@@ -1,15 +1,16 @@
-"""Ad-hoc data loader tool.
+"""
+Ad-hoc data loader tool.
 
 Tool that wraps any data loader, and is able to load data on-demand.
 
 """
-
 
 from typing import Any, Dict, List, Optional, Type
 
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.vector_store import VectorStoreIndex
+from llama_index.core.schema import Document
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.tools.tool_spec.base import SPEC_FUNCTION_TYPE, BaseToolSpec
 from llama_index.core.tools.types import ToolMetadata
@@ -17,7 +18,8 @@ from llama_index.core.tools.utils import create_schema_from_function
 
 
 class LoadAndSearchToolSpec(BaseToolSpec):
-    """Load and Search Tool.
+    """
+    Load and Search Tool.
 
     This tool can be used with other tools that load large amounts of
     information. Compared to OndemandLoaderTool this returns two tools,
@@ -123,16 +125,25 @@ class LoadAndSearchToolSpec(BaseToolSpec):
     def load(self, *args: Any, **kwargs: Any) -> Any:
         # Call the wrapped tool and save the result in the index
         docs = self._tool(*args, **kwargs).raw_output
+
+        # convert to Document if necessary
+        if isinstance(docs, list):
+            for i, doc in enumerate(docs):
+                if not isinstance(doc, Document):
+                    docs[i] = Document(text=str(doc))
+        elif isinstance(docs, str):
+            docs = [Document(text=docs)]
+        elif isinstance(docs, Document):
+            docs = [docs]
+        else:
+            docs = [Document(text=str(docs))]
+
         if self._index:
             for doc in docs:
                 self._index.insert(doc, **self._index_kwargs)
         else:
             self._index = self._index_cls.from_documents(docs, **self._index_kwargs)
-        return (
-            "Content loaded! You can now search the information using read_{}".format(
-                self._metadata.name
-            )
-        )
+        return f"Content loaded! You can now search the information using read_{self._metadata.name}"
 
     def read(self, query: str) -> Any:
         # Query the index for the result

@@ -31,7 +31,7 @@ Then, you can set up the pack like so:
 
 ```python
 # setup pack arguments
-from llama_index.core.vector_stores.types import MetadataInfo, VectorStoreInfo
+from llama_index.core.vector_stores import MetadataInfo, VectorStoreInfo
 
 vector_store_info = VectorStoreInfo(
     content_info="brief biography of celebrities",

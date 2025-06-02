@@ -1,4 +1,5 @@
-"""Keyword-table based index.
+"""
+Keyword-table based index.
 
 Similar to a "hash table" in concept. LlamaIndex first tries
 to extract keywords from the source text, and stores the
@@ -26,8 +27,7 @@ from llama_index.core.prompts.default_prompts import (
     DEFAULT_QUERY_KEYWORD_EXTRACT_TEMPLATE,
 )
 from llama_index.core.schema import BaseNode, IndexNode, MetadataMode
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+from llama_index.core.settings import Settings
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.utils import get_tqdm_iterable
 
@@ -41,7 +41,8 @@ class KeywordTableRetrieverMode(str, Enum):
 
 
 class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
-    """Base Keyword Table Index.
+    """
+    Base Keyword Table Index.
 
     This index extracts keywords from the text, and maps each
     keyword to the node(s) that it corresponds to. In this sense it mimics a
@@ -69,7 +70,6 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
         objects: Optional[Sequence[IndexNode]] = None,
         index_struct: Optional[KeywordTable] = None,
         llm: Optional[LLM] = None,
-        service_context: Optional[ServiceContext] = None,
         keyword_extract_template: Optional[BasePromptTemplate] = None,
         max_keywords_per_chunk: int = 10,
         use_async: bool = False,
@@ -78,7 +78,7 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
     ) -> None:
         """Initialize params."""
         # need to set parameters before building index in base class.
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
 
         self.max_keywords_per_chunk = max_keywords_per_chunk
         self.keyword_extract_template = (
@@ -92,7 +92,6 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            service_context=service_context,
             show_progress=show_progress,
             objects=objects,
             **kwargs,
@@ -168,7 +167,9 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
             )
             index_struct.add_node(list(keywords), n)
 
-    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> KeywordTable:
+    def _build_index_from_nodes(
+        self, nodes: Sequence[BaseNode], **build_kwargs: Any
+    ) -> KeywordTable:
         """Build the index from nodes."""
         # do simple concatenation
         index_struct = KeywordTable(table={})
@@ -226,7 +227,8 @@ class BaseKeywordTableIndex(BaseIndex[KeywordTable]):
 
 
 class KeywordTableIndex(BaseKeywordTableIndex):
-    """Keyword Table Index.
+    """
+    Keyword Table Index.
 
     This index uses a GPT model to extract keywords from the text.
 

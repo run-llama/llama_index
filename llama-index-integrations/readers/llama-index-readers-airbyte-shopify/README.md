@@ -1,18 +1,17 @@
 # Airbyte Shopify Loader
 
+```bash
+pip install llama-index-readers-airbyte-shopify
+```
+
 The Airbyte Shopify Loader allows you to access different Shopify objects.
-
-## Installation
-
-- Install llama_hub: `pip install llama_hub`
-- Install the shopify source: `pip install airbyte-source-shopify`
 
 ## Usage
 
 Here's an example usage of the AirbyteShopifyReader.
 
 ```python
-from llama_hub.airbyte_shopify import AirbyteShopifyReader
+from llama_index.readers.airbyte_shopify import AirbyteShopifyReader
 
 shopify_config = {
     # ...
@@ -71,4 +70,4 @@ updated_documents = reader.load_data(
 )  # only loads documents that were updated since last time
 ```
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).

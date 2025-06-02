@@ -1,5 +1,9 @@
 # Trafilatura Website Loader
 
+```bash
+pip install llama-index-readers-web
+```
+
 This loader is a web scraper that fetches the text from static websites using the `trafilatura` Python package.
 
 ## Usage
@@ -7,24 +11,32 @@ This loader is a web scraper that fetches the text from static websites using th
 To use this loader, you need to pass in an array of URLs.
 
 ```python
-from llama_index import download_loader
-
-TrafilaturaWebReader = download_loader("TrafilaturaWebReader")
+from llama_index.readers.web import TrafilaturaWebReader
 
 loader = TrafilaturaWebReader()
 documents = loader.load_data(urls=["https://google.com"])
 ```
 
+### Additional Parameters
+
+You can also pass in additional parameters to the `load_data` function.
+
+Most of the functions follow the original `trafilatura.extract` API. You can find more information [here](https://trafilatura.readthedocs.io/en/latest/corefunctions.html#extract).
+
+```python
+documents = loader.load_data(urls=["https://google.com"], favor_recall=True)
+```
+
 ## Examples
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).
 
 ### LlamaIndex
 
 ```python
-from llama_index import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex, download_loader
 
-TrafilaturaWebReader = download_loader("TrafilaturaWebReader")
+from llama_index.readers.web import TrafilaturaWebReader
 
 loader = TrafilaturaWebReader()
 documents = loader.load_data(urls=["https://google.com"])
@@ -37,12 +49,12 @@ index.query("What language is on this website?")
 Note: Make sure you change the description of the `Tool` to match your use-case.
 
 ```python
-from llama_index import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex, download_loader
 from langchain.agents import initialize_agent, Tool
 from langchain.llms import OpenAI
 from langchain.chains.conversation.memory import ConversationBufferMemory
 
-TrafilaturaWebReader = download_loader("TrafilaturaWebReader")
+from llama_index.readers.web import TrafilaturaWebReader
 
 loader = TrafilaturaWebReader()
 documents = loader.load_data(urls=["https://google.com"])

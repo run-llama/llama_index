@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 class AdapterEmbeddingModel(BaseEmbedding):
-    """Adapter for any embedding model.
+    """
+    Adapter for any embedding model.
 
     This is a wrapper around any embedding model that adds an adapter layer \
         on top of it.
@@ -53,6 +54,12 @@ class AdapterEmbeddingModel(BaseEmbedding):
         import torch
         from llama_index.embeddings.adapter.utils import BaseAdapter, LinearLayer
 
+        super().__init__(
+            embed_batch_size=embed_batch_size,
+            callback_manager=callback_manager,
+            model_name=f"Adapter for {base_embed_model.model_name}",
+        )
+
         if device is None:
             device = infer_torch_device()
             logger.info(f"Use pytorch device: {device}")
@@ -70,11 +77,6 @@ class AdapterEmbeddingModel(BaseEmbedding):
         self._adapter.to(self._target_device)
 
         self._transform_query = transform_query
-        super().__init__(
-            embed_batch_size=embed_batch_size,
-            callback_manager=callback_manager,
-            model_name=f"Adapter for {base_embed_model.model_name}",
-        )
 
     @classmethod
     def class_name(cls) -> str:

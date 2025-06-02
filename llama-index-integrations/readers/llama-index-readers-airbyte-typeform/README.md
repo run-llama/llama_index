@@ -1,18 +1,17 @@
 # Airbyte Typeform Loader
 
+```bash
+pip install llama-index-readers-airbyte-typeform
+```
+
 The Airbyte Typeform Loader allows you to access different Typeform objects.
-
-## Installation
-
-- Install llama_hub: `pip install llama_hub`
-- Install the typeform source: `pip install airbyte-source-typeform`
 
 ## Usage
 
 Here's an example usage of the AirbyteTypeformReader.
 
 ```python
-from llama_hub.airbyte_typeform import AirbyteTypeformReader
+from llama_index.readers.airbyte_typeform import AirbyteTypeformReader
 
 typeform_config = {
     # ...
@@ -73,4 +72,4 @@ updated_documents = reader.load_data(
 )  # only loads documents that were updated since last time
 ```
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).

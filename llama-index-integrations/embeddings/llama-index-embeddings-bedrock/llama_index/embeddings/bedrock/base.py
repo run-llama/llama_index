@@ -3,7 +3,7 @@ import os
 import warnings
 from enum import Enum
 from deprecated import deprecated
-from typing import Any, Callable, Dict, List, Literal, Optional, Sequence
+from typing import Any, Callable, Dict, List, Literal, Optional, Sequence, Union
 
 from llama_index.core.base.embeddings.base import BaseEmbedding, Embedding
 from llama_index.core.base.llms.types import ChatMessage
@@ -20,6 +20,7 @@ class PROVIDERS(str, Enum):
 
 class Models(str, Enum):
     TITAN_EMBEDDING = "amazon.titan-embed-text-v1"
+    TITAN_EMBEDDING_V2_0 = "amazon.titan-embed-text-v2:0"
     TITAN_EMBEDDING_G1_TEXT_02 = "amazon.titan-embed-g1-text-02"
     COHERE_EMBED_ENGLISH_V3 = "cohere.embed-english-v3"
     COHERE_EMBED_MULTILINGUAL_V3 = "cohere.embed-multilingual-v3"
@@ -27,38 +28,42 @@ class Models(str, Enum):
 
 PROVIDER_SPECIFIC_IDENTIFIERS = {
     PROVIDERS.AMAZON.value: {
-        "get_embeddings_func": lambda r: r.get("embedding"),
+        "get_embeddings_func": lambda r, isbatch: r.get("embedding"),
     },
     PROVIDERS.COHERE.value: {
-        "get_embeddings_func": lambda r: r.get("embeddings")[0],
+        "get_embeddings_func": lambda r, isbatch: (
+            r.get("embeddings") if isbatch else r.get("embeddings")[0]
+        ),
     },
 }
 
 
 class BedrockEmbedding(BaseEmbedding):
-    model: str = Field(description="The modelId of the Bedrock model to use.")
+    model_name: str = Field(description="The modelId of the Bedrock model to use.")
     profile_name: Optional[str] = Field(
+        default=None,
         description="The name of aws profile to use. If not given, then the default profile is used.",
-        exclude=True,
     )
     aws_access_key_id: Optional[str] = Field(
-        description="AWS Access Key ID to use", exclude=True
+        default=None, description="AWS Access Key ID to use"
     )
     aws_secret_access_key: Optional[str] = Field(
-        description="AWS Secret Access Key to use", exclude=True
+        default=None, description="AWS Secret Access Key to use"
     )
     aws_session_token: Optional[str] = Field(
-        description="AWS Session Token to use", exclude=True
+        default=None, description="AWS Session Token to use"
     )
     region_name: Optional[str] = Field(
+        default=None,
         description="AWS region name to use. Uses region configured in AWS CLI if not passed",
-        exclude=True,
     )
     botocore_session: Optional[Any] = Field(
+        default=None,
         description="Use this Botocore session instead of creating a new default one.",
         exclude=True,
     )
     botocore_config: Optional[Any] = Field(
+        default=None,
         description="Custom configuration object to use instead of the default generated one.",
         exclude=True,
     )
@@ -72,11 +77,14 @@ class BedrockEmbedding(BaseEmbedding):
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the bedrock client."
     )
+
+    _config: Any = PrivateAttr()
     _client: Any = PrivateAttr()
+    _asession: Any = PrivateAttr()
 
     def __init__(
         self,
-        model: str = Models.TITAN_EMBEDDING,
+        model_name: str = Models.TITAN_EMBEDDING,
         profile_name: Optional[str] = None,
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
@@ -107,42 +115,12 @@ class BedrockEmbedding(BaseEmbedding):
             "aws_session_token": aws_session_token,
             "botocore_session": botocore_session,
         }
-        config = None
-        try:
-            import boto3
-            from botocore.config import Config
-
-            config = (
-                Config(
-                    retries={"max_attempts": max_retries, "mode": "standard"},
-                    connect_timeout=timeout,
-                    read_timeout=timeout,
-                )
-                if botocore_config is None
-                else botocore_config
-            )
-            session = boto3.Session(**session_kwargs)
-        except ImportError:
-            raise ImportError(
-                "boto3 package not found, install with" "'pip install boto3'"
-            )
-
-        # Prior to general availability, custom boto3 wheel files were
-        # distributed that used the bedrock service to invokeModel.
-        # This check prevents any services still using those wheel files
-        # from breaking
-        if client is not None:
-            self._client = client
-        elif "bedrock-runtime" in session.get_available_services():
-            self._client = session.client("bedrock-runtime", config=config)
-        else:
-            self._client = session.client("bedrock", config=config)
 
         super().__init__(
-            model=model,
+            model_name=model_name,
             max_retries=max_retries,
             timeout=timeout,
-            botocore_config=config,
+            botocore_config=botocore_config,
             profile_name=profile_name,
             aws_access_key_id=aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key,
@@ -159,11 +137,46 @@ class BedrockEmbedding(BaseEmbedding):
             **kwargs,
         )
 
+        try:
+            import boto3
+            import aioboto3
+            from botocore.config import Config
+
+            self._config = (
+                Config(
+                    retries={"max_attempts": max_retries, "mode": "standard"},
+                    connect_timeout=timeout,
+                    read_timeout=timeout,
+                )
+                if botocore_config is None
+                else botocore_config
+            )
+            session = boto3.Session(**session_kwargs)
+            self._asession = aioboto3.Session(**session_kwargs)
+        except ImportError:
+            raise ImportError(
+                "boto3 and/or aioboto3 package not found, install with"
+                "'pip install boto3 aioboto3"
+            )
+
+        # Prior to general availability, custom boto3 wheel files were
+        # distributed that used the bedrock service to invokeModel.
+        # This check prevents any services still using those wheel files
+        # from breaking
+        if client is not None:
+            self._client = client
+        elif "bedrock-runtime" in session.get_available_services():
+            self._client = session.client("bedrock-runtime", config=self._config)
+        else:
+            self._client = session.client("bedrock", config=self._config)
+
     @staticmethod
     def list_supported_models() -> Dict[str, List[str]]:
         list_models = {}
         for provider in PROVIDERS:
-            list_models[provider.value] = [m.value for m in Models]
+            list_models[provider.value] = [
+                m.value for m in Models if provider.value in m.value
+            ]
         return list_models
 
     @classmethod
@@ -230,7 +243,7 @@ class BedrockEmbedding(BaseEmbedding):
             session = boto3.Session(**session_kwargs)
         except ImportError:
             raise ImportError(
-                "boto3 package not found, install with" "'pip install boto3'"
+                "boto3 package not found, install with'pip install boto3'"
             )
 
         if "bedrock-runtime" in session.get_available_services():
@@ -302,7 +315,7 @@ class BedrockEmbedding(BaseEmbedding):
             session = boto3.Session(**session_kwargs)
         except ImportError:
             raise ImportError(
-                "boto3 package not found, install with" "'pip install boto3'"
+                "boto3 package not found, install with'pip install boto3'"
             )
 
         if "bedrock-runtime" in session.get_available_services():
@@ -317,28 +330,41 @@ class BedrockEmbedding(BaseEmbedding):
             verbose=verbose,
         )
 
-    def _get_embedding(self, payload: str, type: Literal["text", "query"]) -> Embedding:
+    def _get_embedding(
+        self, payload: Union[str, List[str]], type: Literal["text", "query"]
+    ) -> Union[Embedding, List[Embedding]]:
+        """
+        Get the embedding for the given payload.
+
+        Args:
+            payload (Union[str, List[str]]): The text or list of texts for which the embeddings are to be obtained.
+            type (Literal[&quot;text&quot;, &quot;query&quot;]): The type of the payload. It can be either "text" or "query".
+
+        Returns:
+            Union[Embedding, List[Embedding]]: The embedding or list of embeddings for the given payload. If the payload is a list of strings, then the response will be a list of embeddings.
+
+        """
         if self._client is None:
             self.set_credentials()
 
         if self._client is None:
             raise ValueError("Client not set")
 
-        provider = self.model.split(".")[0]
+        provider = self.model_name.split(".")[0]
         request_body = self._get_request_body(provider, payload, type)
 
         response = self._client.invoke_model(
             body=request_body,
-            modelId=self.model,
+            modelId=self.model_name,
             accept="application/json",
             contentType="application/json",
         )
 
         resp = json.loads(response.get("body").read().decode("utf-8"))
-        identifiers = PROVIDER_SPECIFIC_IDENTIFIERS.get(provider, None)
+        identifiers = PROVIDER_SPECIFIC_IDENTIFIERS.get(provider)
         if identifiers is None:
             raise ValueError("Provider not supported")
-        return identifiers["get_embeddings_func"](resp)
+        return identifiers["get_embeddings_func"](resp, isinstance(payload, list))
 
     def _get_query_embedding(self, query: str) -> Embedding:
         return self._get_embedding(query, "query")
@@ -346,10 +372,20 @@ class BedrockEmbedding(BaseEmbedding):
     def _get_text_embedding(self, text: str) -> Embedding:
         return self._get_embedding(text, "text")
 
+    def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
+        provider = self.model_name.split(".")[0]
+        if provider == PROVIDERS.COHERE:
+            return self._get_embedding(texts, "text")
+        return super()._get_text_embeddings(texts)
+
     def _get_request_body(
-        self, provider: str, payload: str, type: Literal["text", "query"]
+        self,
+        provider: str,
+        payload: Union[str, List[str]],
+        input_type: Literal["text", "query"],
     ) -> Any:
-        """Build the request body as per the provider.
+        """
+        Build the request body as per the provider.
         Currently supported providers are amazon, cohere.
 
         amazon:
@@ -360,31 +396,94 @@ class BedrockEmbedding(BaseEmbedding):
             Sample Payload of type dict of following format
             {
                 'texts': ["This is a test document", "This is another document"],
-                'input_type': 'search_document',
-                'truncate': 'NONE'
+                'input_type': 'search_document'
             }
 
         """
         if provider == PROVIDERS.AMAZON:
-            request_body = json.dumps({"inputText": payload})
+            if isinstance(payload, list):
+                raise ValueError("Amazon provider does not support list of texts")
+
+            titan_body_request = {"inputText": payload}
+
+            # Titan Embedding V2.0 has additional body parameters to check.
+            if "dimensions" in self.additional_kwargs:
+                if self.model_name == Models.TITAN_EMBEDDING_V2_0:
+                    titan_body_request["dimensions"] = self.additional_kwargs[
+                        "dimensions"
+                    ]
+                else:
+                    raise ValueError(
+                        "'dimensions' param not supported outside of 'titan-embed-text-v2:0' model."
+                    )
+            if "normalize" in self.additional_kwargs:
+                if self.model_name == Models.TITAN_EMBEDDING_V2_0:
+                    titan_body_request["normalize"] = self.additional_kwargs[
+                        "normalize"
+                    ]
+                else:
+                    raise ValueError(
+                        "'normalize' param not supported outside of 'titan-embed-text-v2:0' model."
+                    )
+
+            request_body = json.dumps(titan_body_request)
+
         elif provider == PROVIDERS.COHERE:
             input_types = {
                 "text": "search_document",
                 "query": "search_query",
             }
+            payload = [payload] if isinstance(payload, str) else payload
+            payload = [p[:2048] if len(p) > 2048 else p for p in payload]
             request_body = json.dumps(
                 {
-                    "texts": [payload],
-                    "input_type": input_types[type],
-                    "truncate": "NONE",
+                    "texts": payload,
+                    "input_type": input_types[input_type],
                 }
             )
         else:
             raise ValueError("Provider not supported")
         return request_body
 
+    async def _aget_embedding(
+        self, payload: Union[str, List[str]], type: Literal["text", "query"]
+    ) -> Union[Embedding, List[Embedding]]:
+        """
+        Get the embedding asynchronously for the given payload.
+
+        Args:
+            payload (Union[str, List[str]]): The text or list of texts for which the embeddings are to be obtained.
+            type (Literal[&quot;text&quot;, &quot;query&quot;]): The type of the payload. It can be either "text" or "query".
+
+        Returns:
+            Union[Embedding, List[Embedding]]: The embedding or list of embeddings for the given payload. If the payload is a list of strings, then the response will be a list of embeddings.
+
+        """
+        if self._asession is None:
+            raise ValueError("Client not set")
+
+        provider = self.model_name.split(".")[0]
+        request_body = self._get_request_body(provider, payload, type)
+
+        async with self._asession.client(
+            "bedrock-runtime", config=self._config
+        ) as client:
+            response = await client.invoke_model(
+                body=request_body,
+                modelId=self.model_name,
+                accept="application/json",
+                contentType="application/json",
+            )
+            streaming_body = await response.get("body").read()
+            resp = json.loads(streaming_body.decode("utf-8"))
+
+        identifiers = PROVIDER_SPECIFIC_IDENTIFIERS.get(provider)
+        if identifiers is None:
+            raise ValueError("Provider not supported")
+        return identifiers["get_embeddings_func"](resp, isinstance(payload, list))
+
     async def _aget_query_embedding(self, query: str) -> Embedding:
-        return self._get_embedding(query, "query")
+        return await self._aget_embedding(query, "query")
 
     async def _aget_text_embedding(self, text: str) -> Embedding:
-        return self._get_embedding(text, "text")
+        return await self._aget_embedding(text, "text")

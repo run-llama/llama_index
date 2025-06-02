@@ -1,4 +1,5 @@
-"""Faiss Vector store index.
+"""
+Faiss Vector store index.
 
 An index that is built on top of an existing vector store.
 
@@ -30,7 +31,8 @@ DEFAULT_PERSIST_PATH = os.path.join(
 
 
 class FaissVectorStore(BasePydanticVectorStore):
-    """Faiss Vector Store.
+    """
+    Faiss Vector Store.
 
     Embeddings are stored within a Faiss index.
 
@@ -39,6 +41,20 @@ class FaissVectorStore(BasePydanticVectorStore):
 
     Args:
         faiss_index (faiss.Index): Faiss index instance
+
+    Examples:
+        `pip install llama-index-vector-stores-faiss faiss-cpu`
+
+        ```python
+        from llama_index.vector_stores.faiss import FaissVectorStore
+        import faiss
+
+        # create a faiss index
+        d = 1536  # dimension
+        faiss_index = faiss.IndexFlatL2(d)
+
+        vector_store = FaissVectorStore(faiss_index=faiss_index)
+        ```
 
     """
 
@@ -61,9 +77,9 @@ class FaissVectorStore(BasePydanticVectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
 
-        self._faiss_index = cast(faiss.Index, faiss_index)
-
         super().__init__()
+
+        self._faiss_index = cast(faiss.Index, faiss_index)
 
     @classmethod
     def from_persist_dir(
@@ -105,7 +121,8 @@ class FaissVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         NOTE: in the Faiss vector store, we do not store text in Faiss.
 
@@ -132,7 +149,8 @@ class FaissVectorStore(BasePydanticVectorStore):
         persist_path: str = DEFAULT_PERSIST_PATH,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
-        """Save to file.
+        """
+        Save to file.
 
         This method saves the vector store to disk.
 
@@ -167,7 +185,8 @@ class FaissVectorStore(BasePydanticVectorStore):
         query: VectorStoreQuery,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query_embedding (List[float]): query embedding

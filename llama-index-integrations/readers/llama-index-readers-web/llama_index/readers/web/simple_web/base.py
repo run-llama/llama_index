@@ -1,4 +1,5 @@
 """Simple Web scraper."""
+
 from typing import List, Optional, Dict, Callable
 
 import requests
@@ -9,7 +10,8 @@ from llama_index.core.schema import Document
 
 
 class SimpleWebPageReader(BasePydanticReader):
-    """Simple web page reader.
+    """
+    Simple web page reader.
 
     Reads pages from the web.
 
@@ -19,6 +21,7 @@ class SimpleWebPageReader(BasePydanticReader):
         metadata_fn (Optional[Callable[[str], Dict]]): A function that takes in
             a URL and returns a dictionary of metadata.
             Default is None.
+
     """
 
     is_remote: bool = True
@@ -38,15 +41,16 @@ class SimpleWebPageReader(BasePydanticReader):
             raise ImportError(
                 "`html2text` package not found, please run `pip install html2text`"
             )
-        self._metadata_fn = metadata_fn
         super().__init__(html_to_text=html_to_text)
+        self._metadata_fn = metadata_fn
 
     @classmethod
     def class_name(cls) -> str:
         return "SimpleWebPageReader"
 
     def load_data(self, urls: List[str]) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             urls (List[str]): List of URLs to scrape.

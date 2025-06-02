@@ -1,5 +1,9 @@
 # Sitemap Loader
 
+```bash
+pip install llama-index-readers-web
+```
+
 This loader is an asynchronous web scraper that fetches the text from static websites by using its sitemap and optionally converting the HTML to text.
 
 It is based on the [Async Website Loader](https://llama-hub-ui.vercel.app/l/web-async_web)
@@ -9,7 +13,7 @@ It is based on the [Async Website Loader](https://llama-hub-ui.vercel.app/l/web-
 To use this loader, you just declare the sitemap.xml url like this:
 
 ```python
-from llama_index.readers.web.sitemap import SitemapReader
+from llama_index.readers.web import SitemapReader
 
 # for jupyter notebooks uncomment the following two lines of code:
 # import nest_asyncio

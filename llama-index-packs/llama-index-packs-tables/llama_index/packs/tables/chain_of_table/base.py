@@ -1,4 +1,5 @@
-"""Chain of table.
+"""
+Chain of table.
 
 All prompts adapted from original paper by Wang et al.:
 https://arxiv.org/pdf/2401.04398v1.pdf
@@ -99,7 +100,7 @@ row 3 : richmond | 20.17 (137) | fitzroy | 13.22 (100) | mcg | 27651
 Question : Whose home team score is higher, richmond or st kilda?
 Function : f_select_row(row 1, row 3)
 Explanation: The question asks about the home team score of richmond and st kilda. We need
-to know the the information of richmond and st kilda in row 1 and row 3. We select row 1
+to know the information of richmond and st kilda in row 1 and row 3. We select row 1
 and row 3.
 
 If the table only needs a few columns to answer the question, we use
@@ -584,7 +585,8 @@ def _dynamic_plan_parser(dynamic_plan: Any) -> Dict[str, Any]:
 
 
 def serialize_chain(op_chain: List[Tuple[str, str]]) -> str:
-    """Serialize operation chain.
+    """
+    Serialize operation chain.
 
     Operation chain is list of (fn, args) tuples.
 
@@ -616,7 +618,7 @@ def serialize_table(table: pd.DataFrame) -> str:
     output_str = f"col : {' | '.join([_esc_newl(c) for c in table.columns])}\n"
     for i in range(len(table)):
         output_str += (
-            f"row {i+1} : {' | '.join([_esc_newl(str(x)) for x in table.iloc[i]])}\n"
+            f"row {i + 1} : {' | '.join([_esc_newl(str(x)) for x in table.iloc[i]])}\n"
         )
     return output_str
 
@@ -647,7 +649,7 @@ class ChainOfTableQueryEngine(CustomQueryEngine):
         super().__init__(table=table, llm=llm, verbose=verbose, **kwargs)
 
     def custom_query(self, query_str: str) -> Response:
-        """Run chain of thought query engine."""
+        """Run chain of table query engine."""
         op_chain = []
         dynamic_plan_parser = FnComponent(fn=_dynamic_plan_parser)
 

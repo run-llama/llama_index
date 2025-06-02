@@ -1,10 +1,12 @@
-"""Knowledge Graph Index.
+"""
+Knowledge Graph Index.
 
 Build a KG by extracting triplets, and leveraging the KG during query-time.
 
 """
 
 import logging
+import deprecated
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from llama_index.core.base.base_retriever import BaseRetriever
@@ -20,12 +22,7 @@ from llama_index.core.prompts.default_prompts import (
     DEFAULT_KG_TRIPLET_EXTRACT_PROMPT,
 )
 from llama_index.core.schema import BaseNode, IndexNode, MetadataMode
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    embed_model_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.utils import get_tqdm_iterable
@@ -33,16 +30,25 @@ from llama_index.core.utils import get_tqdm_iterable
 logger = logging.getLogger(__name__)
 
 
+@deprecated.deprecated(
+    version="0.10.53",
+    reason=(
+        "The KnowledgeGraphIndex class has been deprecated. "
+        "Please use the new PropertyGraphIndex class instead. "
+        "If a certain graph store integration is missing in the new class, "
+        "please open an issue on the GitHub repository or contribute it!"
+    ),
+)
 class KnowledgeGraphIndex(BaseIndex[KG]):
-    """Knowledge Graph Index.
+    """
+    Knowledge Graph Index.
 
     Build a KG by extracting triplets, and leveraging the KG during query-time.
 
     Args:
-        kg_triple_extract_template (BasePromptTemplate): The prompt to use for
+        kg_triplet_extract_template (BasePromptTemplate): The prompt to use for
             extracting triplets.
         max_triplets_per_chunk (int): The maximum number of triplets to extract.
-        service_context (Optional[ServiceContext]): The service context to use.
         storage_context (Optional[StorageContext]): The storage context to use.
         graph_store (Optional[GraphStore]): The graph store to use.
         show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
@@ -65,41 +71,36 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         llm: Optional[LLM] = None,
         embed_model: Optional[BaseEmbedding] = None,
         storage_context: Optional[StorageContext] = None,
-        kg_triple_extract_template: Optional[BasePromptTemplate] = None,
+        kg_triplet_extract_template: Optional[BasePromptTemplate] = None,
         max_triplets_per_chunk: int = 10,
         include_embeddings: bool = False,
         show_progress: bool = False,
         max_object_length: int = 128,
         kg_triplet_extract_fn: Optional[Callable] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         # need to set parameters before building index in base class.
         self.include_embeddings = include_embeddings
         self.max_triplets_per_chunk = max_triplets_per_chunk
-        self.kg_triple_extract_template = (
-            kg_triple_extract_template or DEFAULT_KG_TRIPLET_EXTRACT_PROMPT
+        self.kg_triplet_extract_template = (
+            kg_triplet_extract_template or DEFAULT_KG_TRIPLET_EXTRACT_PROMPT
         )
         # NOTE: Partially format keyword extract template here.
-        self.kg_triple_extract_template = (
-            self.kg_triple_extract_template.partial_format(
+        self.kg_triplet_extract_template = (
+            self.kg_triplet_extract_template.partial_format(
                 max_knowledge_triplets=self.max_triplets_per_chunk
             )
         )
         self._max_object_length = max_object_length
         self._kg_triplet_extract_fn = kg_triplet_extract_fn
 
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
-        self._embed_model = embed_model or embed_model_from_settings_or_context(
-            Settings, service_context
-        )
+        self._llm = llm or Settings.llm
+        self._embed_model = embed_model or Settings.embed_model
 
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
             objects=objects,
@@ -132,6 +133,12 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
 
         if len(self.index_struct.embedding_dict) > 0 and retriever_mode is None:
             retriever_mode = KGRetrieverMode.HYBRID
+        elif retriever_mode is None:
+            retriever_mode = KGRetrieverMode.KEYWORD
+        elif isinstance(retriever_mode, str):
+            retriever_mode = KGRetrieverMode(retriever_mode)
+        else:
+            retriever_mode = retriever_mode
 
         return KGTableRetriever(
             self,
@@ -151,7 +158,7 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
     def _llm_extract_triplets(self, text: str) -> List[Tuple[str, str, str]]:
         """Extract keywords from text."""
         response = self._llm.predict(
-            self.kg_triple_extract_template,
+            self.kg_triplet_extract_template,
             text=text,
         )
         return self._parse_triplet_response(
@@ -194,7 +201,9 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
             results.append((subj, pred, obj))
         return results
 
-    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> KG:
+    def _build_index_from_nodes(
+        self, nodes: Sequence[BaseNode], **build_kwargs: Any
+    ) -> KG:
         """Build the index from nodes."""
         # do simple concatenation
         index_struct = self.index_struct_cls()
@@ -247,7 +256,8 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
     def upsert_triplet(
         self, triplet: Tuple[str, str, str], include_embeddings: bool = False
     ) -> None:
-        """Insert triplets and optionally embeddings.
+        """
+        Insert triplets and optionally embeddings.
 
         Used for manual insertion of KG triplets (in the form
         of (subject, relationship, object)).
@@ -255,17 +265,18 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         Args:
             triplet (tuple): Knowledge triplet
             embedding (Any, optional): Embedding option for the triplet. Defaults to None.
+
         """
         self._graph_store.upsert_triplet(*triplet)
         triplet_str = str(triplet)
         if include_embeddings:
-            set_embedding = self._service_context.embed_model.get_text_embedding(
-                triplet_str
-            )
+            set_embedding = self._embed_model.get_text_embedding(triplet_str)
             self._index_struct.add_to_embedding_dict(str(triplet), set_embedding)
+            self._storage_context.index_store.add_index_struct(self._index_struct)
 
     def add_node(self, keywords: List[str], node: BaseNode) -> None:
-        """Add node.
+        """
+        Add node.
 
         Used for manual insertion of nodes (keyed by keywords).
 
@@ -283,7 +294,8 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         node: BaseNode,
         include_embeddings: bool = False,
     ) -> None:
-        """Upsert KG triplet and node.
+        """
+        Upsert KG triplet and node.
 
         Calls both upsert_triplet and add_node.
         Behavior is idempotent; if Node already exists,
@@ -300,10 +312,9 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         self.add_node([subj, obj], node)
         triplet_str = str(triplet)
         if include_embeddings:
-            set_embedding = self._service_context.embed_model.get_text_embedding(
-                triplet_str
-            )
+            set_embedding = self._embed_model.get_text_embedding(triplet_str)
             self._index_struct.add_to_embedding_dict(str(triplet), set_embedding)
+            self._storage_context.index_store.add_index_struct(self._index_struct)
 
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
         """Delete a node."""
@@ -330,7 +341,8 @@ class KnowledgeGraphIndex(BaseIndex[KG]):
         return all_ref_doc_info
 
     def get_networkx_graph(self, limit: int = 100) -> Any:
-        """Get networkx representation of the graph structure.
+        """
+        Get networkx representation of the graph structure.
 
         Args:
             limit (int): Number of starting nodes to be included in the graph.

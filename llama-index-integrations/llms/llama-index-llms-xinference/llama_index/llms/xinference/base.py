@@ -29,10 +29,36 @@ DEFAULT_XINFERENCE_TEMP = 1.0
 
 
 class Xinference(CustomLLM):
+    """
+    Xinference LLM.
+
+    Examples:
+        `pip install llama-index-llms-xinference`
+
+        ```python
+        from llama_index.llms.xinference import Xinference
+
+        # Set up Xinference with required parameters
+        llm = Xinference(
+            model_name="xinference-1.0",
+            app_id="ml",
+            user_id="xinference",
+            api_key="<YOUR XINFERENCE API KEY>"
+            temperature=0.5,
+            max_tokens=256,
+        )
+
+        # Call the complete function
+        response = llm.complete("Hello World!")
+        print(response)
+        ```
+
+    """
+
     model_uid: str = Field(description="The Xinference model to use.")
     endpoint: str = Field(description="The Xinference endpoint URL to use.")
     temperature: float = Field(
-        description="The temperature to use for sampling.", gte=0.0, lte=1.0
+        description="The temperature to use for sampling.", ge=0.0, le=1.0
     )
     max_tokens: int = Field(
         description="The maximum new tokens to generate as answer.", gt=0
@@ -62,7 +88,6 @@ class Xinference(CustomLLM):
         generator, context_window, model_description = self.load_model(
             model_uid, endpoint
         )
-        self._generator = generator
         if max_tokens is None:
             max_tokens = context_window // 4
         elif max_tokens > context_window:
@@ -85,6 +110,7 @@ class Xinference(CustomLLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
+        self._generator = generator
 
     def load_model(self, model_uid: str, endpoint: str) -> Tuple[Any, int, dict]:
         try:

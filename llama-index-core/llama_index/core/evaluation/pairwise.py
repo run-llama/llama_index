@@ -4,7 +4,6 @@ import asyncio
 from enum import Enum
 from typing import Any, Callable, Optional, Sequence, Tuple, Union
 
-from llama_index.core import ServiceContext
 from llama_index.core.evaluation.base import (
     BaseEvaluator,
     EvaluationResult,
@@ -18,7 +17,7 @@ from llama_index.core.prompts import (
     PromptTemplate,
 )
 from llama_index.core.prompts.mixin import PromptDictType
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+from llama_index.core.settings import Settings
 
 DEFAULT_SYSTEM_TEMPLATE = (
     "Please act as an impartial judge and evaluate the quality of the responses provided by two "
@@ -91,7 +90,8 @@ class EvaluationSource(str, Enum):
 
 
 class PairwiseComparisonEvaluator(BaseEvaluator):
-    """Pairwise comparison evaluator.
+    """
+    Pairwise comparison evaluator.
 
     Evaluates the quality of a response vs. a "reference" response given a question by
     having an LLM judge which response is better.
@@ -99,8 +99,6 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
     Outputs whether the `response` given is better than the `reference` response.
 
     Args:
-        service_context (Optional[ServiceContext]):
-            The service context to use for evaluation.
         eval_template (Optional[Union[str, BasePromptTemplate]]):
             The template to use for evaluation.
         enforce_consensus (bool): Whether to enforce consensus (consistency if we
@@ -116,10 +114,8 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
             [str], Tuple[Optional[bool], Optional[float], Optional[str]]
         ] = _default_parser_function,
         enforce_consensus: bool = True,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
     ) -> None:
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
 
         self._eval_template: BasePromptTemplate
         if isinstance(eval_template, str):
@@ -182,7 +178,8 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
         eval_result: EvaluationResult,
         flipped_eval_result: EvaluationResult,
     ) -> EvaluationResult:
-        """Resolve eval results from evaluation + flipped evaluation.
+        """
+        Resolve eval results from evaluation + flipped evaluation.
 
         Args:
             eval_result (EvaluationResult): Result when answer_1 is shown first
@@ -190,6 +187,7 @@ class PairwiseComparisonEvaluator(BaseEvaluator):
 
         Returns:
             EvaluationResult: The final evaluation result
+
         """
         # add pairwise_source to eval_result and flipped_eval_result
         eval_result.pairwise_source = EvaluationSource.ORIGINAL

@@ -25,13 +25,13 @@ except ImportError:
     pass
 
 try:
-    from llama_index.embeddings.huggingface import (
+    from llama_index.embeddings.huggingface_api import (
         HuggingFaceInferenceAPIEmbedding,
     )  # pants: no-infer-dep
 
-    RECOGNIZED_EMBEDDINGS[
-        HuggingFaceInferenceAPIEmbedding.class_name()
-    ] = HuggingFaceInferenceAPIEmbedding
+    RECOGNIZED_EMBEDDINGS[HuggingFaceInferenceAPIEmbedding.class_name()] = (
+        HuggingFaceInferenceAPIEmbedding
+    )
 except ImportError:
     pass
 
@@ -40,7 +40,7 @@ def load_embed_model(data: dict) -> BaseEmbedding:
     """Load Embedding by name."""
     if isinstance(data, BaseEmbedding):
         return data
-    name = data.get("class_name", None)
+    name = data.get("class_name")
     if name is None:
         raise ValueError("Embedding loading requires a class_name")
     if name not in RECOGNIZED_EMBEDDINGS:

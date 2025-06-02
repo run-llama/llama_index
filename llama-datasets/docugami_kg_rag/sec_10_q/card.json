@@ -1,0 +1,27 @@
+{
+  "name": "Docugami KG-RAG - SEC 10-Q",
+  "className": "LabelledRagDataset",
+  "description": "A labelled RAG dataset with SEC 10-Q documents for major tech companies including queries across multiple docs and chunks, with reference answers. See https://github.com/docugami/KG-RAG-datasets for details.",
+  "numberObservations": 195,
+  "containsExamplesByHumans": true,
+  "containsExamplesByAi": false,
+  "sourceUrls": [],
+  "baselines": [
+    {
+      "name": "llamaindex",
+      "config": {
+        "chunkSize": 1024,
+        "llm": "gpt-3.5-turbo",
+        "similarityTopK": 2,
+        "embedModel": "text-embedding-ada-002"
+      },
+      "metrics": {
+        "contextSimilarity": null,
+        "correctness": 2.703,
+        "faithfulness": 0.897,
+        "relevancy": 0.826
+      },
+      "codeUrl": ""
+    }
+  ]
+}

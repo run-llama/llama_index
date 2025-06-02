@@ -1,7 +1,13 @@
 """Async utils."""
+
 import asyncio
+import concurrent.futures
 from itertools import zip_longest
-from typing import Any, Coroutine, Iterable, List
+from typing import Any, Coroutine, Iterable, List, Optional, TypeVar
+
+import llama_index.core.instrumentation as instrument
+
+dispatcher = instrument.get_dispatcher(__name__)
 
 
 def asyncio_module(show_progress: bool = False) -> Any:
@@ -13,6 +19,47 @@ def asyncio_module(show_progress: bool = False) -> Any:
         module = asyncio
 
     return module
+
+
+def asyncio_run(coro: Coroutine) -> Any:
+    """
+    Gets an existing event loop to run the coroutine.
+
+    If there is no existing event loop, creates a new one.
+    If an event loop is already running, uses threading to run in a separate thread.
+    """
+    try:
+        # Check if there's an existing event loop
+        loop = asyncio.get_event_loop()
+
+        # Check if the loop is already running
+        if loop.is_running():
+            # If loop is already running, run in a separate thread
+
+            def run_coro_in_thread() -> Any:
+                new_loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(new_loop)
+                try:
+                    return new_loop.run_until_complete(coro)
+                finally:
+                    new_loop.close()
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(run_coro_in_thread)
+                return future.result()
+        else:
+            # If we're here, there's an existing loop but it's not running
+            return loop.run_until_complete(coro)
+
+    except RuntimeError as e:
+        # If we can't get the event loop, we're likely in a different thread
+        try:
+            return asyncio.run(coro)
+        except RuntimeError as e:
+            raise RuntimeError(
+                "Detected nested async. Please use nest_asyncio.apply() to allow nested event loops."
+                "Or, use async entry methods like `aquery()`, `aretriever`, `achat`, etc."
+            )
 
 
 def run_async_tasks(
@@ -46,7 +93,7 @@ def run_async_tasks(
     async def _gather() -> List[Any]:
         return await asyncio.gather(*tasks_to_execute)
 
-    outputs: List[Any] = asyncio.run(_gather())
+    outputs: List[Any] = asyncio_run(_gather())
     return outputs
 
 
@@ -60,6 +107,7 @@ async def batch_gather(
 ) -> List[Any]:
     output: List[Any] = []
     for task_chunk in chunks(tasks, batch_size):
+        task_chunk = (task for task in task_chunk if task is not None)
         output_chunk = await asyncio.gather(*task_chunk)
         output.extend(output_chunk)
         if verbose:
@@ -80,13 +128,18 @@ def get_asyncio_module(show_progress: bool = False) -> Any:
 
 DEFAULT_NUM_WORKERS = 4
 
+T = TypeVar("T")
 
+
+@dispatcher.span
 async def run_jobs(
-    jobs: List[Coroutine],
+    jobs: List[Coroutine[Any, Any, T]],
     show_progress: bool = False,
     workers: int = DEFAULT_NUM_WORKERS,
-) -> List[Any]:
-    """Run jobs.
+    desc: Optional[str] = None,
+) -> List[T]:
+    """
+    Run jobs.
 
     Args:
         jobs (List[Coroutine]):
@@ -97,14 +150,22 @@ async def run_jobs(
     Returns:
         List[Any]:
             List of results.
+
     """
-    asyncio_mod = get_asyncio_module(show_progress=show_progress)
     semaphore = asyncio.Semaphore(workers)
 
+    @dispatcher.span
     async def worker(job: Coroutine) -> Any:
         async with semaphore:
             return await job
 
     pool_jobs = [worker(job) for job in jobs]
 
-    return await asyncio_mod.gather(*pool_jobs)
+    if show_progress:
+        from tqdm.asyncio import tqdm_asyncio
+
+        results = await tqdm_asyncio.gather(*pool_jobs, desc=desc)
+    else:
+        results = await asyncio.gather(*pool_jobs)
+
+    return results

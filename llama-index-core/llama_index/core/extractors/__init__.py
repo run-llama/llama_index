@@ -6,6 +6,7 @@ from llama_index.core.extractors.metadata_extractors import (
     SummaryExtractor,
     TitleExtractor,
 )
+from llama_index.core.extractors.document_context import DocumentContextExtractor
 
 __all__ = [
     "SummaryExtractor",
@@ -14,4 +15,5 @@ __all__ = [
     "KeywordExtractor",
     "BaseExtractor",
     "PydanticProgramExtractor",
+    "DocumentContextExtractor",
 ]

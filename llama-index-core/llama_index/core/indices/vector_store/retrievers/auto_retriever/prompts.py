@@ -1,6 +1,5 @@
 """Autoretriever prompts."""
 
-
 from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.vector_stores.types import (
@@ -102,7 +101,7 @@ EXAMPLES = f"""\
 << Example 1. >>
 Data Source:
 ```json
-{example_info.json(indent=4)}
+{example_info.model_dump_json(indent=4)}
 ```
 
 User Query:
@@ -110,13 +109,13 @@ User Query:
 
 Structured Request:
 ```json
-{example_output.json()}
+{example_output.model_dump_json()}
 
 
 << Example 2. >>
 Data Source:
 ```json
-{example_info_2.json(indent=4)}
+{example_info_2.model_dump_json(indent=4)}
 ```
 
 User Query:
@@ -124,14 +123,10 @@ User Query:
 
 Structured Request:
 ```json
-{example_output_2.json()}
+{example_output_2.model_dump_json()}
 
 ```
-""".replace(
-    "{", "{{"
-).replace(
-    "}", "}}"
-)
+""".replace("{", "{{").replace("}", "}}")
 
 
 SUFFIX = """

@@ -41,10 +41,51 @@ DEFAULT_PORTKEY_MODEL = "gpt-3.5-turbo"
 
 
 class Portkey(CustomLLM):
-    """_summary_.
+    """
+    Portkey LLM.
 
-    Args:
-        LLM (_type_): _description_
+    Examples:
+        `pip install llama-index-llms-portkey`
+
+        ```python
+        # Importing necessary libraries and modules
+        from llama_index.llms.portkey import Portkey
+        from llama_index.core.llms import ChatMessage
+        import portkey as pk
+
+        # Setting up Portkey API Key
+        import os
+        os.environ["PORTKEY_API_KEY"] = "YOUR_PORTKEY_API_KEY"
+
+        # Setting up Virtual Keys for OpenAI
+        openai_virtual_key_a = "YOUR_OPENAI_VIRTUAL_KEY_A"
+        openai_virtual_key_b = "YOUR_OPENAI_VIRTUAL_KEY_B"
+
+        # Creating an instance of Portkey with required configurations
+        portkey_client = Portkey(api_key=os.environ.get("PORTKEY_API_KEY"), mode="single")
+
+        # Configuring an LLM option for OpenAI with semantic caching
+        openai_llm = pk.LLMOptions(
+            provider="openai",
+            model="gpt-3.5-turbo",
+            virtual_key=openai_virtual_key_a,
+            cache_status="semantic",
+        )
+
+        # Adding the LLM option to the Portkey client
+        portkey_client.add_llms(openai_llm)
+
+        # Defining chat messages for testing
+        current_messages = [
+            ChatMessage(role="system", content="You are a helpful assistant"),
+            ChatMessage(role="user", content="What are the ingredients of a pizza?"),
+        ]
+
+        # Testing Portkey Semantic Cache
+        response = portkey_client.chat(current_messages)
+        print(str(response))
+        ```
+
     """
 
     mode: Optional[Union["Modes", "ModesLiteral"]] = Field(
@@ -79,6 +120,7 @@ class Portkey(CustomLLM):
             api_key (Optional[str]): The API key to authenticate with Portkey.
             base_url (Optional[str]): The Base url to the self hosted rubeus \
                 (the opensource version of portkey) or any other self hosted server.
+
         """
         try:
             import portkey
@@ -140,6 +182,7 @@ class Portkey(CustomLLM):
 
         Returns:
             self
+
         """
         try:
             from portkey import LLMOptions
@@ -303,11 +346,13 @@ class Portkey(CustomLLM):
 
     @property
     def _is_chat_model(self) -> bool:
-        """Check if a given model is a chat-based language model.
+        """
+        Check if a given model is a chat-based language model.
 
         Returns:
             bool: True if the provided model is a chat-based language model,
             False otherwise.
+
         """
         return is_chat_model(self.model or "")
 

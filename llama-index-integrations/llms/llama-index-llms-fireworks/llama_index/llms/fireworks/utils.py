@@ -12,17 +12,38 @@ LLAMA_MODELS = {
     "accounts/fireworks/models/llama-v2-70b-chat": 4096,
     "accounts/fireworks/models/llama-v2-34b-code-instruct": 16384,
     "accounts/fireworks/models/llamaguard-7b": 4096,
+    "accounts/fireworks/models/llama-v3-8b-instruct": 8192,
+    "accounts/fireworks/models/llama-v3-70b-instruct": 8192,
+    "accounts/fireworks/models/llama-v3p1-8b-instruct": 131072,
+    "accounts/fireworks/models/llama-v3p1-70b-instruct": 131072,
+    "accounts/fireworks/models/llama-v3p1-405b-instruct": 131072,
+    "accounts/fireworks/models/llama-v3p2-1b-instruct": 131072,
+    "accounts/fireworks/models/llama-v3p2-3b-instruct": 131072,
+    "accounts/fireworks/models/llama-v3p2-11b-vision-instruct": 131072,
+    "accounts/fireworks/models/llama-v3p2-90b-vision-instruct": 131072,
 }
 
 MISTRAL_MODELS = {
     "accounts/fireworks/models/mistral-7b-instruct-4k": 16384,
     "accounts/fireworks/models/mixtral-8x7b-instruct": 32768,
     "accounts/fireworks/models/firefunction-v1": 32768,
+    "accounts/fireworks/models/mixtral-8x22b-instruct": 65536,
+}
+
+FUNCTION_CALLING_MODELS = {
+    "accounts/fireworks/models/firefunction-v2": 8192,
+}
+
+DEEPSEEK_MODELS = {
+    "accounts/fireworks/models/deepseek-v3": 131072,
+    "accounts/fireworks/models/deepseek-r1": 163840,
 }
 
 ALL_AVAILABLE_MODELS = {
     **LLAMA_MODELS,
     **MISTRAL_MODELS,
+    **FUNCTION_CALLING_MODELS,
+    **DEEPSEEK_MODELS,
 }
 
 DISCONTINUED_MODELS: Dict[str, int] = {}
@@ -42,6 +63,7 @@ def fireworks_modelname_to_contextsize(modelname: str) -> int:
         .. code-block:: python
 
             max_tokens = fireworks_modelname_to_contextsize(model_name)
+
     """
     # handling finetuned models
     # TO BE FILLED
@@ -52,7 +74,7 @@ def fireworks_modelname_to_contextsize(modelname: str) -> int:
             "Please choose another model."
         )
 
-    context_size = ALL_AVAILABLE_MODELS.get(modelname, None)
+    context_size = ALL_AVAILABLE_MODELS.get(modelname)
 
     if context_size is None:
         raise ValueError(

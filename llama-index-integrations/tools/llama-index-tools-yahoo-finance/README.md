@@ -2,13 +2,17 @@
 
 This tool connects to Yahoo Finance and allows an Agent to access stock, news, and financial data of a company.
 
+## Installation
+
+pip install llama-index-tools-yahoo-finance
+
 ## Usage
 
 Here's an example of how to use this tool:
 
 ```python
 from llama_index.tools.yahoo_finance import YahooFinanceToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 tool_spec = YahooFinanceToolSpec()
 agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
@@ -31,4 +35,4 @@ The tools available are:
 
 `stock_analyst_recommendations`: A tool that returns analyst recommendations for a company.
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.

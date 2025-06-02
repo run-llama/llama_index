@@ -1,11 +1,13 @@
 """Epsilla vector store."""
+
 import logging
 from typing import Any, List, Optional
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     DEFAULT_PERSIST_DIR,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -23,8 +25,9 @@ from pyepsilla import vectordb
 logger = logging.getLogger(__name__)
 
 
-class EpsillaVectorStore(VectorStore):
-    """The Epsilla Vector Store.
+class EpsillaVectorStore(BasePydanticVectorStore):
+    """
+    The Epsilla Vector Store.
 
     In this vector store we store the text, its embedding and
     a few pieces of its metadata in a Epsilla collection. This implemnetation
@@ -52,10 +55,26 @@ class EpsillaVectorStore(VectorStore):
 
     Returns:
         EpsillaVectorStore: Vectorstore that supports add, delete, and query.
+
+    Examples:
+        `pip install llama-index-vector-stores-epsilla`
+
+        ```python
+        from llama_index.vector_stores.epsilla import EpsillaVectorStore
+        from pyepsilla import vectordb
+
+        client = vectordb.Client()
+        vector_store = EpsillaVectorStore(client=client, db_path="/tmp/llamastore")
+        ```
+
     """
 
-    stores_text = True
+    stores_text: bool = True
     flat_metadata: bool = False
+
+    _client: vectordb.Client = PrivateAttr()
+    _collection_name: str = PrivateAttr()
+    _collection_created: bool = PrivateAttr()
 
     def __init__(
         self,
@@ -68,6 +87,8 @@ class EpsillaVectorStore(VectorStore):
         **kwargs: Any,
     ) -> None:
         """Init params."""
+        super().__init__()
+
         if not isinstance(client, vectordb.Client):
             raise TypeError(
                 f"client should be an instance of pyepsilla.vectordb.Client, "
@@ -103,6 +124,11 @@ class EpsillaVectorStore(VectorStore):
         if self._collection_name not in table_list and dimension is not None:
             self._create_collection(dimension)
 
+    @classmethod
+    def class_name(cls) -> str:
+        return "EpsillaVectorStore"
+
+    @property
     def client(self) -> Any:
         """Return the Epsilla client."""
         return self._client
@@ -118,6 +144,7 @@ class EpsillaVectorStore(VectorStore):
 
         Args:
             dimension (int): The dimension of the embeddings.
+
         """
         fields: List[dict] = [
             {"name": "id", "dataType": "STRING", "primaryKey": True},
@@ -151,6 +178,7 @@ class EpsillaVectorStore(VectorStore):
 
         Returns:
             List[str]: List of ids inserted.
+
         """
         # If the collection doesn't exist yet, create the collection
         if not self._collection_created and len(nodes) > 0:
@@ -190,17 +218,20 @@ class EpsillaVectorStore(VectorStore):
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
+
         """
         raise NotImplementedError("Delete with filtering will be coming soon.")
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): query.
 
         Returns:
             Vector store query result.
+
         """
         if not self._collection_created:
             raise ValueError("Please initialize a collection first.")

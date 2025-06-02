@@ -2,10 +2,11 @@ import logging
 import math
 from typing import Any, List
 
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -28,14 +29,37 @@ def _to_bagel_filter(standard_filters: MetadataFilters) -> dict:
     return filters
 
 
-class BagelVectorStore(VectorStore):
+class BagelVectorStore(BasePydanticVectorStore):
     """
     Vector store for Bagel.
+
+    Examples:
+        `pip install llama-index-vector-stores-bagel`
+
+        ```python
+        from llama_index.core import VectorStoreIndex, StorageContext
+        from llama_index.vector_stores.bagel import BagelVectorStore
+
+        import bagel
+        from bagel import Settings
+
+        server_settings = Settings(
+            bagel_api_impl="rest", bagel_server_host="api.bageldb.ai"
+        )
+
+        client = bagel.Client(server_settings)
+
+        collection = client.get_or_create_cluster("testing_embeddings")
+        vector_store = BagelVectorStore(collection=collection)
+        ```
+
     """
 
     # support for Bagel specific parameters
     stores_text: bool = True
     flat_metadata: bool = True
+
+    _collection: Any = PrivateAttr()
 
     def __init__(self, collection: Any, **kwargs: Any) -> None:
         """
@@ -44,7 +68,10 @@ class BagelVectorStore(VectorStore):
         Args:
             collection: Bagel collection.
             **kwargs: Additional arguments.
+
         """
+        super().__init__()
+
         try:
             from bagel.api.Cluster import Cluster
         except ImportError:
@@ -54,6 +81,10 @@ class BagelVectorStore(VectorStore):
             raise ValueError("Collection must be a bagel Cluster.")
 
         self._collection = collection
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "BagelVectorStore"
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
         """
@@ -65,6 +96,7 @@ class BagelVectorStore(VectorStore):
 
         Returns:
             List of document ids.
+
         """
         if not self._collection:
             raise ValueError("collection not set")
@@ -99,6 +131,7 @@ class BagelVectorStore(VectorStore):
         Args:
             ref_doc_id: Reference document id.
             kwargs: Additional arguments.
+
         """
         if not self._collection:
             raise ValueError("collection not set")
@@ -124,6 +157,7 @@ class BagelVectorStore(VectorStore):
 
         Returns:
             Query result.
+
         """
         if not self._collection:
             raise ValueError("collection not set")

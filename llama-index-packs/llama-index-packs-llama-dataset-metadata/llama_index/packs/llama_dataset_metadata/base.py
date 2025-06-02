@@ -7,6 +7,7 @@ from llama_index.core.download.module import LLAMA_HUB_URL
 from llama_index.core.download.utils import get_file_content
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.llama_pack.base import BaseLlamaPack
+from llama_index.core.settings import Settings
 
 if TYPE_CHECKING:
     from llama_index.core.llama_dataset import LabelledRagDataset
@@ -94,10 +95,12 @@ class DatasetCard(BaseMetadata):
 
     @staticmethod
     def _format_metric(val: float):
-        """Formats a metric to 3 decimal places.
+        """
+        Formats a metric to 3 decimal places.
 
         Args:
             val (float): the value to format.
+
         """
         return float(f"{val:,.3f}")
 
@@ -113,7 +116,8 @@ class DatasetCard(BaseMetadata):
         source_urls: Optional[List[str]] = None,
         code_url: Optional[str] = None,
     ) -> "DatasetCard":
-        """Convenience constructor method for building a DatasetCard.
+        """
+        Convenience constructor method for building a DatasetCard.
 
         Args:
             index (BaseIndex): the index from which query_engine is derived and
@@ -130,6 +134,7 @@ class DatasetCard(BaseMetadata):
 
         Returns:
             DatasetCard
+
         """
         # extract metadata from rag_dataset
         num_observations = len(rag_dataset.examples)
@@ -143,11 +148,9 @@ class DatasetCard(BaseMetadata):
         )
 
         # extract baseline config info from index
-        llm = index.service_context.llm.model
-        embed_model = index.as_retriever().get_service_context().embed_model.model_name
-        chunk_size = (
-            index.as_retriever().get_service_context().transformations[0].chunk_size
-        )
+        llm = Settings.llm.metadata.model_name
+        embed_model = Settings.embed_model.model_name
+        chunk_size = index._transformations[0].chunk_size
         similarity_top_k = index.as_retriever()._similarity_top_k
         baseline_config = BaselineConfig(
             llm=llm,
@@ -197,7 +200,8 @@ class DatasetCard(BaseMetadata):
 
 
 class LlamaDatasetMetadataPack(BaseLlamaPack):
-    """A llamapack for creating and saving the necessary metadata files for
+    """
+    A llamapack for creating and saving the necessary metadata files for
     submitting a llamadataset: card.json and README.md.
     """
 
@@ -212,7 +216,8 @@ class LlamaDatasetMetadataPack(BaseLlamaPack):
         source_urls: Optional[List[str]] = None,
         code_url: Optional[str] = None,
     ):
-        """Main usage for a llamapack. This will build the card.json and README.md
+        """
+        Main usage for a llamapack. This will build the card.json and README.md
         and save them to local disk.
 
         Args:
@@ -227,6 +232,7 @@ class LlamaDatasetMetadataPack(BaseLlamaPack):
             description (str): The description of the new dataset.
             source_urls (Optional[List[str]], optional): _description_. Defaults to None.
             code_url (Optional[str], optional): _description_. Defaults to None.
+
         """
         readme_obj = Readme(name=name)
         card_obj = DatasetCard.from_rag_evaluation(

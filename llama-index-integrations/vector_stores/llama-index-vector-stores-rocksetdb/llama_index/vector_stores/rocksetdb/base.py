@@ -9,7 +9,7 @@ from typing import Any, List, Type, TypeVar
 import rockset
 from llama_index.core.schema import BaseNode
 from llama_index.core.vector_stores.types import (
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -24,21 +24,25 @@ T = TypeVar("T", bound="RocksetVectorStore")
 
 
 def _get_rockset() -> ModuleType:
-    """Gets the rockset module and raises an ImportError if
+    """
+    Gets the rockset module and raises an ImportError if
     the rockset package hasn't been installed.
 
     Returns:
         rockset module (ModuleType)
+
     """
     return rockset
 
 
 def _get_client(api_key: str | None, api_server: str | None, client: Any | None) -> Any:
-    """Returns the passed in client object if valid, else
+    """
+    Returns the passed in client object if valid, else
     constructs and returns one.
 
     Returns:
         The rockset client object (rockset.RocksetClient)
+
     """
     rockset = _get_rockset()
     if client:
@@ -56,7 +60,29 @@ def _get_client(api_key: str | None, api_server: str | None, client: Any | None)
     return client
 
 
-class RocksetVectorStore(VectorStore):
+class RocksetVectorStore(BasePydanticVectorStore):
+    """
+    Rockset Vector Store.
+
+    Examples:
+        `pip install llama-index-vector-stores-rocksetdb`
+
+        ```python
+        from llama_index.vector_stores.rocksetdb import RocksetVectorStore
+
+        # Set up RocksetVectorStore with necessary configurations
+        vector_store = RocksetVectorStore(
+            collection="my_collection",
+            api_key="your_rockset_api_key",
+            api_server="https://api.use1a1.rockset.com",
+            embedding_col="my_embedding",
+            metadata_col="node",
+            distance_func=RocksetVectorStore.DistanceFunc.DOT_PRODUCT
+        )
+        ```
+
+    """
+
     stores_text: bool = True
     is_embedding_query: bool = True
     flat_metadata: bool = False
@@ -65,6 +91,16 @@ class RocksetVectorStore(VectorStore):
         COSINE_SIM = "COSINE_SIM"
         EUCLIDEAN_DIST = "EUCLIDEAN_DIST"
         DOT_PRODUCT = "DOT_PRODUCT"
+
+    rockset: ModuleType
+    rs: Any
+    workspace: str
+    collection: str
+    text_key: str
+    embedding_col: str
+    metadata_col: str
+    distance_func: DistanceFunc
+    distance_order: str
 
     def __init__(
         self,
@@ -78,7 +114,8 @@ class RocksetVectorStore(VectorStore):
         api_key: str | None = None,
         distance_func: DistanceFunc = DistanceFunc.COSINE_SIM,
     ) -> None:
-        """Rockset Vector Store Data container.
+        """
+        Rockset Vector Store Data container.
 
         Args:
             collection (str): The name of the collection of vectors
@@ -96,17 +133,20 @@ class RocksetVectorStore(VectorStore):
             distance_func (RocksetVectorStore.DistanceFunc): The metric to measure
                 vector relationship
                 (default: RocksetVectorStore.DistanceFunc.COSINE_SIM)
+
         """
-        self.rockset = _get_rockset()
-        self.rs = _get_client(api_key, api_server, client)
-        self.workspace = workspace
-        self.collection = collection
-        self.text_key = text_key
-        self.embedding_col = embedding_col
-        self.metadata_col = metadata_col
-        self.distance_func = distance_func
-        self.distance_order = (
-            "ASC" if distance_func is distance_func.EUCLIDEAN_DIST else "DESC"
+        super().__init__(
+            rockset=_get_rockset(),
+            rs=_get_client(api_key, api_server, client),
+            collection=collection,
+            text_key=text_key,
+            embedding_col=embedding_col,
+            metadata_col=metadata_col,
+            workspace=workspace,
+            distance_func=distance_func,
+            distance_order=(
+                "ASC" if distance_func is distance_func.EUCLIDEAN_DIST else "DESC"
+            ),
         )
 
         try:
@@ -116,18 +156,24 @@ class RocksetVectorStore(VectorStore):
             # rockset version < 2.1.0
             pass
 
+    @classmethod
+    def class_name(cls) -> str:
+        return "RocksetVectorStore"
+
     @property
     def client(self) -> Any:
         return self.rs
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Stores vectors in the collection.
+        """
+        Stores vectors in the collection.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings
 
         Returns:
             Stored node IDs (List[str])
+
         """
         return [
             row["_id"]
@@ -148,11 +194,13 @@ class RocksetVectorStore(VectorStore):
         ]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        """Deletes nodes stored in the collection by their ref_doc_id.
+        """
+        Deletes nodes stored in the collection by their ref_doc_id.
 
         Args:
             ref_doc_id (str): The ref_doc_id of the document
                 whose nodes are to be deleted
+
         """
         self.rs.Documents.delete_documents(
             collection=self.collection,
@@ -174,7 +222,8 @@ class RocksetVectorStore(VectorStore):
         )
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Gets nodes relevant to a query.
+        """
+        Gets nodes relevant to a query.
 
         Args:
             query (llama_index.core.vector_stores.types.VectorStoreQuery): The query
@@ -183,6 +232,7 @@ class RocksetVectorStore(VectorStore):
 
         Returns:
             query results (llama_index.core.vector_stores.types.VectorStoreQueryResult)
+
         """
         similarity_col = kwargs.get("similarity_col", "_similarity")
         res = self.rs.sql(
@@ -191,41 +241,49 @@ class RocksetVectorStore(VectorStore):
                     _id,
                     {self.metadata_col}
                     {
-                        f''', {self.distance_func.value}(
+                f''', {self.distance_func.value}(
                             {query.query_embedding},
                             {self.embedding_col}
                         )
                             AS {similarity_col}'''
-                        if query.query_embedding
-                        else ''
-                    }
+                if query.query_embedding
+                else ""
+            }
                 FROM
                     "{self.workspace}"."{self.collection}" x
-                {"WHERE" if query.node_ids or (query.filters and len(query.filters.legacy_filters()) > 0) else ""} {
-                    f'''({
-                        ' OR '.join([
-                            f"_id='{node_id}'" for node_id in query.node_ids
-                        ])
-                    })''' if query.node_ids else ""
-                } {
-                    f''' {'AND' if query.node_ids else ''} ({
-                        ' AND '.join([
+                {
+                "WHERE"
+                if query.node_ids
+                or (query.filters and len(query.filters.legacy_filters()) > 0)
+                else ""
+            } {
+                f'''({
+                    " OR ".join([f"_id='{node_id}'" for node_id in query.node_ids])
+                })'''
+                if query.node_ids
+                else ""
+            } {
+                f''' {"AND" if query.node_ids else ""} ({
+                    " AND ".join(
+                        [
                             f"x.{self.metadata_col}.{filter.key}=:{filter.key}"
-                            for filter
-                            in query.filters.legacy_filters()
-                        ])
-                    })''' if query.filters else ""
-                }
+                            for filter in query.filters.legacy_filters()
+                        ]
+                    )
+                })'''
+                if query.filters
+                else ""
+            }
                 ORDER BY
                     {similarity_col} {self.distance_order}
                 LIMIT
                     {query.similarity_top_k}
             """,
-            params={
-                filter.key: filter.value for filter in query.filters.legacy_filters()
-            }
-            if query.filters
-            else {},
+            params=(
+                {filter.key: filter.value for filter in query.filters.legacy_filters()}
+                if query.filters
+                else {}
+            ),
         )
 
         similarities: List[float] | None = [] if query.query_embedding else None
@@ -242,7 +300,8 @@ class RocksetVectorStore(VectorStore):
     def with_new_collection(
         cls: Type[T], dimensions: int | None = None, **rockset_vector_store_args: Any
     ) -> RocksetVectorStore:
-        """Creates a new collection and returns its RocksetVectorStore.
+        """
+        Creates a new collection and returns its RocksetVectorStore.
 
         Args:
             dimensions (Optional[int]): The length of the vectors to enforce
@@ -263,6 +322,7 @@ class RocksetVectorStore(VectorStore):
             distance_func (RocksetVectorStore.DistanceFunc): The metric to measure
                 vector relationship
                 (default: RocksetVectorStore.DistanceFunc.COSINE_SIM)
+
         """
         client = rockset_vector_store_args["client"] = _get_client(
             api_key=rockset_vector_store_args.get("api_key"),
@@ -277,10 +337,9 @@ class RocksetVectorStore(VectorStore):
             "embeddings_col", DEFAULT_EMBEDDING_KEY
         )
         if dimensions:
-            collection_args[
-                "field_mapping_query"
-            ] = _get_rockset().model.field_mapping_query.FieldMappingQuery(
-                sql=f"""
+            collection_args["field_mapping_query"] = (
+                _get_rockset().model.field_mapping_query.FieldMappingQuery(
+                    sql=f"""
                     SELECT
                         *, VECTOR_ENFORCE(
                             {embeddings_col},
@@ -290,6 +349,7 @@ class RocksetVectorStore(VectorStore):
                     FROM
                         _input
                 """
+                )
             )
 
         client.Collections.create_s3_collection(**collection_args)  # create collection

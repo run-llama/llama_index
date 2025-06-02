@@ -10,9 +10,14 @@ from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 from llama_index.readers.file import PandasCSVReader
 
+from pandasai.llm.openai import OpenAI
+from pandasai.llm import LLM as PandasLLM
+from pandasai import SmartDataframe
+
 
 class PandasAIReader(BaseReader):
-    r"""Pandas AI reader.
+    r"""
+    Pandas AI reader.
 
     Light wrapper around https://github.com/gventuri/pandas-ai.
 
@@ -39,21 +44,15 @@ class PandasAIReader(BaseReader):
 
     def __init__(
         self,
-        llm: Optional[Any] = None,
+        pandas_llm: Optional[PandasLLM] = None,
         concat_rows: bool = True,
         col_joiner: str = ", ",
         row_joiner: str = "\n",
         pandas_config: dict = {},
     ) -> None:
         """Init params."""
-        try:
-            from pandasai import PandasAI
-            from pandasai.llm.openai import OpenAI
-        except ImportError:
-            raise ImportError("Please install pandasai to use this reader.")
-
-        self._llm = llm or OpenAI()
-        self._pandas_ai = PandasAI(llm)
+        self._llm = pandas_llm or OpenAI()
+        self._pandasai_config = {"llm": self._llm}
 
         self._concat_rows = concat_rows
         self._col_joiner = col_joiner
@@ -67,9 +66,8 @@ class PandasAIReader(BaseReader):
         is_conversational_answer: bool = False,
     ) -> Any:
         """Load dataframe."""
-        return self._pandas_ai.run(
-            initial_df, prompt=query, is_conversational_answer=is_conversational_answer
-        )
+        smart_df = SmartDataframe(initial_df, config=self._pandasai_config)
+        return smart_df.chat(query=query)
 
     def load_data(
         self,

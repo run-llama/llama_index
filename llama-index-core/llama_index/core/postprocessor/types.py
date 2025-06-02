@@ -1,3 +1,4 @@
+import asyncio
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
@@ -8,19 +9,18 @@ from llama_index.core.base.query_pipeline.query import (
     QueryComponent,
     validate_and_convert_stringable,
 )
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, SerializeAsAny, ConfigDict
 from llama_index.core.callbacks import CallbackManager
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.prompts.mixin import PromptDictType, PromptMixinType
 from llama_index.core.schema import BaseComponent, NodeWithScore, QueryBundle
 
 
-class BaseNodePostprocessor(ChainableMixin, BaseComponent, ABC):
+class BaseNodePostprocessor(ChainableMixin, BaseComponent, DispatcherSpanMixin, ABC):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, exclude=True
     )
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
@@ -62,6 +62,29 @@ class BaseNodePostprocessor(ChainableMixin, BaseComponent, ABC):
     ) -> List[NodeWithScore]:
         """Postprocess nodes."""
 
+    async def apostprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+        query_str: Optional[str] = None,
+    ) -> List[NodeWithScore]:
+        """Postprocess nodes (async)."""
+        if query_str is not None and query_bundle is not None:
+            raise ValueError("Cannot specify both query_str and query_bundle")
+        elif query_str is not None:
+            query_bundle = QueryBundle(query_str)
+        else:
+            pass
+        return await self._apostprocess_nodes(nodes, query_bundle)
+
+    async def _apostprocess_nodes(
+        self,
+        nodes: List[NodeWithScore],
+        query_bundle: Optional[QueryBundle] = None,
+    ) -> List[NodeWithScore]:
+        """Postprocess nodes (async)."""
+        return await asyncio.to_thread(self._postprocess_nodes, nodes, query_bundle)
+
     def _as_query_component(self, **kwargs: Any) -> QueryComponent:
         """As query component."""
         return PostprocessorComponent(postprocessor=self)
@@ -70,10 +93,10 @@ class BaseNodePostprocessor(ChainableMixin, BaseComponent, ABC):
 class PostprocessorComponent(QueryComponent):
     """Postprocessor component."""
 
-    postprocessor: BaseNodePostprocessor = Field(..., description="Postprocessor")
-
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    postprocessor: SerializeAsAny[BaseNodePostprocessor] = Field(
+        ..., description="Postprocessor"
+    )
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
@@ -100,7 +123,7 @@ class PostprocessorComponent(QueryComponent):
     def _run_component(self, **kwargs: Any) -> Any:
         """Run component."""
         output = self.postprocessor.postprocess_nodes(
-            kwargs["nodes"], query_str=kwargs.get("query_str", None)
+            kwargs["nodes"], query_str=kwargs.get("query_str")
         )
         return {"nodes": output}
 

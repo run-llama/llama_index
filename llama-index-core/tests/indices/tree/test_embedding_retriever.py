@@ -10,7 +10,6 @@ from llama_index.core.indices.tree.select_leaf_embedding_retriever import (
     TreeSelectLeafEmbeddingRetriever,
 )
 from llama_index.core.schema import BaseNode, Document, QueryBundle
-from llama_index.core.service_context import ServiceContext
 from tests.mock_utils.mock_prompts import (
     MOCK_INSERT_PROMPT,
     MOCK_SUMMARY_PROMPT,
@@ -32,10 +31,7 @@ def documents() -> List[Document]:
     """Get documents."""
     # NOTE: one document for now
     doc_text = (
-        "Hello world.\n"
-        "This is a test.\n"
-        "This is another test.\n"
-        "This is a test v2."
+        "Hello world.\nThis is a test.\nThis is another test.\nThis is a test v2."
     )
     return [Document(text=doc_text)]
 
@@ -66,20 +62,14 @@ def test_embedding_query(
     _patch_similarity: Any,
     index_kwargs: Dict,
     documents: List[Document],
-    mock_service_context: ServiceContext,
+    patch_llm_predictor,
+    patch_token_text_splitter,
 ) -> None:
     """Test embedding query."""
-    tree = TreeIndex.from_documents(
-        documents, service_context=mock_service_context, **index_kwargs
-    )
+    tree = TreeIndex.from_documents(documents, **index_kwargs)
 
     # test embedding query
     query_str = "What is?"
     retriever = tree.as_retriever(retriever_mode="select_leaf_embedding")
     nodes = retriever.retrieve(QueryBundle(query_str))
     assert nodes[0].node.get_content() == "Hello world."
-
-
-def _mock_tokenizer(text: str) -> int:
-    """Mock tokenizer that splits by spaces."""
-    return len(text.split(" "))

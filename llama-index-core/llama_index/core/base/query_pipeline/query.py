@@ -16,10 +16,11 @@ from typing import (
 
 from llama_index.core.base.llms.types import (
     ChatResponse,
+    ChatMessage,
     CompletionResponse,
 )
 from llama_index.core.base.response.schema import Response
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 
@@ -27,6 +28,7 @@ from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 StringableInput = Union[
     CompletionResponse,
     ChatResponse,
+    ChatMessage,
     str,
     QueryBundle,
     Response,
@@ -58,6 +60,8 @@ def validate_and_convert_stringable(input: Any) -> str:
         return str(new_input_list)
     elif isinstance(input, ChatResponse):
         return input.message.content or ""
+    elif isinstance(input, NodeWithScore) and isinstance(input.node, TextNode):
+        return input.get_content()
     elif isinstance(input, get_args(StringableInput)):
         return str(input)
     else:
@@ -77,7 +81,7 @@ class InputKeys(BaseModel):
         """Create InputKeys from tuple."""
         return cls(required_keys=required_keys, optional_keys=optional_keys or set())
 
-    def validate(self, input_keys: Set[str]) -> None:
+    def validate_keys(self, input_keys: Set[str]) -> None:
         """Validate input keys."""
         # check if required keys are present, and that keys all are in required or optional
         if not self.required_keys.issubset(input_keys):
@@ -107,11 +111,11 @@ class OutputKeys(BaseModel):
     def from_keys(
         cls,
         required_keys: Set[str],
-    ) -> "InputKeys":
-        """Create InputKeys from tuple."""
+    ) -> "OutputKeys":
+        """Create OutputKeys from tuple."""
         return cls(required_keys=required_keys)
 
-    def validate(self, input_keys: Set[str]) -> None:
+    def validate_keys(self, input_keys: Set[str]) -> None:
         """Validate input keys."""
         # validate that input keys exactly match required keys
         if input_keys != self.required_keys:
@@ -121,7 +125,8 @@ class OutputKeys(BaseModel):
 
 
 class ChainableMixin(ABC):
-    """Chainable mixin.
+    """
+    Chainable mixin.
 
     A module that can produce a `QueryComponent` from a set of inputs through
     `as_query_component`.
@@ -145,7 +150,8 @@ class ChainableMixin(ABC):
 
 
 class QueryComponent(BaseModel):
-    """Query component.
+    """
+    Query component.
 
     Represents a component that can be run in a `QueryPipeline`.
 
@@ -183,13 +189,13 @@ class QueryComponent(BaseModel):
     def validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component inputs."""
         # make sure set of input keys == self.input_keys
-        self.input_keys.validate(set(input.keys()))
+        self.input_keys.validate_keys(set(input.keys()))
         return self._validate_component_inputs(input)
 
     def validate_component_outputs(self, output: Dict[str, Any]) -> Dict[str, Any]:
         """Validate component outputs."""
         # make sure set of output keys == self.output_keys
-        self.output_keys.validate(set(output.keys()))
+        self.output_keys.validate_keys(set(output.keys()))
         return self._validate_component_outputs(output)
 
     def run_component(self, **kwargs: Any) -> Dict[str, Any]:
@@ -226,7 +232,8 @@ class QueryComponent(BaseModel):
 
     @property
     def sub_query_components(self) -> List["QueryComponent"]:
-        """Get sub query components.
+        """
+        Get sub query components.
 
         Certain query components may have sub query components, e.g. a
         query pipeline will have sub query components, and so will
@@ -239,12 +246,10 @@ class QueryComponent(BaseModel):
 class CustomQueryComponent(QueryComponent):
     """Custom query component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     callback_manager: CallbackManager = Field(
         default_factory=CallbackManager, description="Callback manager"
     )
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: CallbackManager) -> None:
         """Set callback manager."""
@@ -331,6 +336,27 @@ class Link(BaseModel):
             condition_fn=condition_fn,
             input_fn=input_fn,
         )
+
+
+class ComponentIntermediates:
+    """Component intermediate inputs and outputs."""
+
+    def __init__(
+        self,
+        inputs: Dict[str, Any],
+        outputs: Dict[str, Any],
+    ) -> None:
+        """Initialize."""
+        self.inputs = inputs
+        self.outputs = outputs
+
+    def __repr__(self) -> str:
+        return (
+            f"ComponentIntermediates(inputs={self.inputs!s}, outputs={self.outputs!s})"
+        )
+
+    def __str__(self) -> str:
+        return self.__repr__()
 
 
 # accept both QueryComponent and ChainableMixin as inputs to query pipeline

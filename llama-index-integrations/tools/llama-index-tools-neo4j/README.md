@@ -1,5 +1,9 @@
 # Neo4j Schema Query Builder
 
+```bash
+pip install llama-index-tools-neo4j
+```
+
 The `Neo4jQueryToolSpec` class provides a way to query a Neo4j graph database based on a provided schema definition. The class uses a language model to generate Cypher queries from user questions and has the capability to recover from Cypher syntax errors through a self-healing mechanism.
 
 ## Table of Contents
@@ -16,9 +20,9 @@ The `Neo4jQueryToolSpec` class provides a way to query a Neo4j graph database ba
 Initialize the `Neo4jQueryToolSpec` class with:
 
 ```python
-from llama_index.tools.neo4j_db import Neo4jQueryToolSpec
-from llama_index.llms import OpenAI
-from llama_index.agent import OpenAIAgent
+from llama_index.tools.neo4j import Neo4jQueryToolSpec
+from llama_index.llms.openai import OpenAI
+from llama_index.agent.openai import OpenAIAgent
 
 llm = OpenAI(model="gpt-4", openai_api_key="XXXX-XXXX", temperature=0)
 

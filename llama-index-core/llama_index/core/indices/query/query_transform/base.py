@@ -12,7 +12,7 @@ from llama_index.core.base.query_pipeline.query import (
     validate_and_convert_stringable,
 )
 from llama_index.core.base.response.schema import Response
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, ConfigDict
 from llama_index.core.indices.query.query_transform.prompts import (
     DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT,
     DEFAULT_IMAGE_OUTPUT_PROMPT,
@@ -21,6 +21,8 @@ from llama_index.core.indices.query.query_transform.prompts import (
     ImageOutputQueryTransformPrompt,
     StepDecomposeQueryTransformPrompt,
 )
+from llama_index.core.instrumentation import DispatcherSpanMixin
+from llama_index.core.llms import LLM
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompts import DEFAULT_HYDE_PROMPT
 from llama_index.core.prompts.mixin import (
@@ -29,15 +31,13 @@ from llama_index.core.prompts.mixin import (
     PromptMixinType,
 )
 from llama_index.core.schema import QueryBundle, QueryType
-from llama_index.core.service_context_elements.llm_predictor import (
-    LLMPredictorType,
-)
 from llama_index.core.settings import Settings
 from llama_index.core.utils import print_text
 
 
-class BaseQueryTransform(ChainableMixin, PromptMixin):
-    """Base class for query transform.
+class BaseQueryTransform(ChainableMixin, PromptMixin, DispatcherSpanMixin):
+    """
+    Base class for query transform.
 
     A query transform augments a raw query string with associated transformations
     to improve index querying.
@@ -86,7 +86,8 @@ class BaseQueryTransform(ChainableMixin, PromptMixin):
 
 
 class IdentityQueryTransform(BaseQueryTransform):
-    """Identity query transform.
+    """
+    Identity query transform.
 
     Do nothing to the query.
 
@@ -105,7 +106,8 @@ class IdentityQueryTransform(BaseQueryTransform):
 
 
 class HyDEQueryTransform(BaseQueryTransform):
-    """Hypothetical Document Embeddings (HyDE) query transform.
+    """
+    Hypothetical Document Embeddings (HyDE) query transform.
 
     It uses an LLM to generate hypothetical answer(s) to a given query,
     and use the resulting documents as embedding strings.
@@ -116,11 +118,12 @@ class HyDEQueryTransform(BaseQueryTransform):
 
     def __init__(
         self,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         hyde_prompt: Optional[BasePromptTemplate] = None,
         include_original: bool = True,
     ) -> None:
-        """Initialize HyDEQueryTransform.
+        """
+        Initialize HyDEQueryTransform.
 
         Args:
             llm_predictor (Optional[LLM]): LLM for generating
@@ -128,6 +131,7 @@ class HyDEQueryTransform(BaseQueryTransform):
             hyde_prompt (Optional[BasePromptTemplate]): Custom prompt for HyDE
             include_original (bool): Whether to include original query
                 string as one of the embedding strings
+
         """
         super().__init__()
 
@@ -159,7 +163,8 @@ class HyDEQueryTransform(BaseQueryTransform):
 
 
 class DecomposeQueryTransform(BaseQueryTransform):
-    """Decompose query transform.
+    """
+    Decompose query transform.
 
     Decomposes query into a subquery given the current index struct.
     Performs a single step transformation.
@@ -172,14 +177,14 @@ class DecomposeQueryTransform(BaseQueryTransform):
 
     def __init__(
         self,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         decompose_query_prompt: Optional[DecomposeQueryTransformPrompt] = None,
         verbose: bool = False,
     ) -> None:
         """Init params."""
         super().__init__()
         self._llm = llm or Settings.llm
-        self._decompose_query_prompt = (
+        self._decompose_query_prompt: BasePromptTemplate = (
             decompose_query_prompt or DEFAULT_DECOMPOSE_QUERY_TRANSFORM_PROMPT
         )
         self.verbose = verbose
@@ -218,7 +223,8 @@ class DecomposeQueryTransform(BaseQueryTransform):
 
 
 class ImageOutputQueryTransform(BaseQueryTransform):
-    """Image output query transform.
+    """
+    Image output query transform.
 
     Adds instructions for formatting image output.
     By default, this prompts the LLM to format image output as an HTML <img> tag,
@@ -230,15 +236,19 @@ class ImageOutputQueryTransform(BaseQueryTransform):
         width: int = 400,
         query_prompt: Optional[ImageOutputQueryTransformPrompt] = None,
     ) -> None:
-        """Init ImageOutputQueryTransform.
+        """
+        Init ImageOutputQueryTransform.
 
         Args:
             width (int): desired image display width in pixels
             query_prompt (ImageOutputQueryTransformPrompt): custom prompt for
                 augmenting query with image output instructions.
+
         """
         self._width = width
-        self._query_prompt = query_prompt or DEFAULT_IMAGE_OUTPUT_PROMPT
+        self._query_prompt: BasePromptTemplate = (
+            query_prompt or DEFAULT_IMAGE_OUTPUT_PROMPT
+        )
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
@@ -259,7 +269,8 @@ class ImageOutputQueryTransform(BaseQueryTransform):
 
 
 class StepDecomposeQueryTransform(BaseQueryTransform):
-    """Step decompose query transform.
+    """
+    Step decompose query transform.
 
     Decomposes query into a subquery given the current index struct
     and previous reasoning.
@@ -274,14 +285,14 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
 
     def __init__(
         self,
-        llm: Optional[LLMPredictorType] = None,
+        llm: Optional[LLM] = None,
         step_decompose_query_prompt: Optional[StepDecomposeQueryTransformPrompt] = None,
         verbose: bool = False,
     ) -> None:
         """Init params."""
         super().__init__()
         self._llm = llm or Settings.llm
-        self._step_decompose_query_prompt = (
+        self._step_decompose_query_prompt: BasePromptTemplate = (
             step_decompose_query_prompt or DEFAULT_STEP_DECOMPOSE_QUERY_TRANSFORM_PROMPT
         )
         self.verbose = verbose
@@ -325,10 +336,8 @@ class StepDecomposeQueryTransform(BaseQueryTransform):
 class QueryTransformComponent(QueryComponent):
     """Query transform component."""
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     query_transform: BaseQueryTransform = Field(..., description="Query transform.")
-
-    class Config:
-        arbitrary_types_allowed = True
 
     def set_callback_manager(self, callback_manager: Any) -> None:
         """Set callback manager."""
@@ -346,7 +355,7 @@ class QueryTransformComponent(QueryComponent):
 
     def _run_component(self, **kwargs: Any) -> Any:
         """Run component."""
-        output = self._query_transform.run(
+        output = self.query_transform.run(
             kwargs["query_str"],
             metadata=kwargs["metadata"],
         )

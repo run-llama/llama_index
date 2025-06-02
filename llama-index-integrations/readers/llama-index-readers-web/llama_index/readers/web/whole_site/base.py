@@ -1,5 +1,5 @@
 import time
-from typing import List
+from typing import List, Optional
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -24,15 +24,24 @@ class WholeSiteReader(BaseReader):
     Args:
         prefix (str): URL prefix for scraping.
         max_depth (int, optional): Maximum depth for BFS. Defaults to 10.
+        uri_as_id (bool, optional): Whether to use the URI as the document ID. Defaults to False.
+
     """
 
-    def __init__(self, prefix: str, max_depth: int = 10) -> None:
+    def __init__(
+        self,
+        prefix: str,
+        max_depth: int = 10,
+        uri_as_id: bool = False,
+        driver: Optional[webdriver.Chrome] = None,
+    ) -> None:
         """
         Initialize the WholeSiteReader with the provided prefix and maximum depth.
         """
         self.prefix = prefix
         self.max_depth = max_depth
-        self.driver = self.setup_driver()
+        self.uri_as_id = uri_as_id
+        self.driver = driver if driver else self.setup_driver()
 
     def setup_driver(self):
         """
@@ -40,6 +49,7 @@ class WholeSiteReader(BaseReader):
 
         Returns:
             WebDriver: An instance of Chrome WebDriver.
+
         """
         try:
             import chromedriver_autoinstaller
@@ -80,7 +90,8 @@ class WholeSiteReader(BaseReader):
         return self.driver.execute_script(js_script)
 
     def load_data(self, base_url: str) -> List[Document]:
-        """Load data from the base URL using BFS algorithm.
+        """
+        Load data from the base URL using BFS algorithm.
 
         Args:
             base_url (str): Base URL to start scraping.
@@ -88,6 +99,7 @@ class WholeSiteReader(BaseReader):
 
         Returns:
             List[Document]: List of scraped documents.
+
         """
         added_urls = set()
         urls_to_visit = [(base_url, 0)]
@@ -95,33 +107,35 @@ class WholeSiteReader(BaseReader):
 
         while urls_to_visit:
             current_url, depth = urls_to_visit.pop(0)
-
             print(f"Visiting: {current_url}, {len(urls_to_visit)} left")
 
-            if depth > self.max_depth:
-                continue
             try:
                 self.driver.get(current_url)
                 page_content = self.extract_content()
+                added_urls.add(current_url)
 
-                # links = self.driver.find_elements(By.TAG_NAME, 'a')
-                links = self.extract_links()
-                # clean all urls
-                links = [self.clean_url(link) for link in links]
-                # extract new links
-                links = [link for link in links if link not in added_urls]
-                print(f"Found {len(links)} new potential links")
-                for href in links:
-                    try:
-                        if href.startswith(self.prefix) and href not in added_urls:
-                            urls_to_visit.append((href, depth + 1))
-                            added_urls.add(href)
-                    except Exception:
-                        continue
+                next_depth = depth + 1
+                if next_depth <= self.max_depth:
+                    # links = self.driver.find_elements(By.TAG_NAME, 'a')
+                    links = self.extract_links()
+                    # clean all urls
+                    links = [self.clean_url(link) for link in links]
+                    # extract new links
+                    links = [link for link in links if link not in added_urls]
+                    print(f"Found {len(links)} new potential links")
 
-                documents.append(
-                    Document(text=page_content, extra_info={"URL": current_url})
-                )
+                    for href in links:
+                        try:
+                            if href.startswith(self.prefix) and href not in added_urls:
+                                urls_to_visit.append((href, next_depth))
+                                added_urls.add(href)
+                        except Exception:
+                            continue
+
+                doc = Document(text=page_content, extra_info={"URL": current_url})
+                if self.uri_as_id:
+                    doc.id_ = current_url
+                documents.append(doc)
                 time.sleep(1)
 
             except WebDriverException:

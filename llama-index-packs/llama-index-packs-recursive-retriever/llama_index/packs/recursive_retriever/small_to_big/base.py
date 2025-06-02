@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List
 
-from llama_index.core import ServiceContext, VectorStoreIndex
+from llama_index.core import Settings, VectorStoreIndex
 from llama_index.core.embeddings.utils import resolve_embed_model
 from llama_index.core.llama_pack.base import BaseLlamaPack
 from llama_index.core.node_parser import SentenceSplitter
@@ -13,7 +13,8 @@ from llama_index.llms.openai import OpenAI
 
 
 class RecursiveRetrieverSmallToBigPack(BaseLlamaPack):
-    """Small-to-big retrieval (with recursive retriever).
+    """
+    Small-to-big retrieval (with recursive retriever).
 
     Given input documents, and an initial set of "parent" chunks,
     subdivide each chunk further into "child" chunks.
@@ -35,9 +36,9 @@ class RecursiveRetrieverSmallToBigPack(BaseLlamaPack):
             node.id_ = f"node-{idx}"
         self.embed_model = resolve_embed_model("local:BAAI/bge-small-en")
         self.llm = OpenAI(model="gpt-3.5-turbo")
-        self.service_context = ServiceContext.from_defaults(
-            llm=self.llm, embed_model=self.embed_model
-        )
+        Settings.llm = self.llm
+        Settings.embed_model = self.embed_model
+
         # build graph of smaller chunks pointing to bigger parent chunks
         # make chunk overlap 0
         sub_chunk_sizes = [128, 256, 512]
@@ -60,9 +61,7 @@ class RecursiveRetrieverSmallToBigPack(BaseLlamaPack):
         all_nodes_dict = {n.node_id: n for n in all_nodes}
 
         # define recursive retriever
-        self.vector_index_chunk = VectorStoreIndex(
-            all_nodes, service_context=self.service_context
-        )
+        self.vector_index_chunk = VectorStoreIndex(all_nodes)
         vector_retriever_chunk = self.vector_index_chunk.as_retriever(
             similarity_top_k=2
         )
@@ -72,9 +71,7 @@ class RecursiveRetrieverSmallToBigPack(BaseLlamaPack):
             node_dict=all_nodes_dict,
             verbose=True,
         )
-        self.query_engine = RetrieverQueryEngine.from_args(
-            self.recursive_retriever, service_context=self.service_context
-        )
+        self.query_engine = RetrieverQueryEngine.from_args(self.recursive_retriever)
 
     def get_modules(self) -> Dict[str, Any]:
         """Get modules."""
@@ -83,7 +80,6 @@ class RecursiveRetrieverSmallToBigPack(BaseLlamaPack):
             "recursive_retriever": self.recursive_retriever,
             "llm": self.llm,
             "embed_model": self.embed_model,
-            "service_context": self.service_context,
         }
 
     def run(self, *args: Any, **kwargs: Any) -> Any:

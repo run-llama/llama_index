@@ -2,8 +2,11 @@ import re
 from typing import Any, List, Sequence
 
 import pytest
-from llama_index.core.agent.react.base import ReActAgent
-from llama_index.core.agent.react.types import ObservationReasoningStep
+from llama_index.core.agent.react.base import ReActAgent, ReActAgentWorker
+from llama_index.core.agent.react.types import (
+    ActionReasoningStep,
+    ObservationReasoningStep,
+)
 from llama_index.core.agent.types import Task
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -35,10 +38,9 @@ class MockChatLLM(MockLLM):
     _responses: List[ChatMessage] = PrivateAttr()
 
     def __init__(self, responses: List[ChatMessage]) -> None:
+        super().__init__()
         self._i = 0  # call counter, determines which response to return
         self._responses = responses  # list of responses to return
-
-        super().__init__()
 
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         del messages  # unused
@@ -98,7 +100,7 @@ def test_chat_basic(
     ]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat_basic(
     add_tool: FunctionTool,
 ) -> None:
@@ -141,10 +143,9 @@ class MockStreamChatLLM(MockLLM):
     _responses: List[ChatMessage] = PrivateAttr()
 
     def __init__(self, responses: List[ChatMessage]) -> None:
+        super().__init__()
         self._i = 0  # call counter, determines which response to return
         self._responses = responses  # list of responses to return
-
-        super().__init__()
 
     def stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
@@ -218,7 +219,7 @@ def test_stream_chat_basic(
     ]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_astream_chat_basic(
     add_tool: FunctionTool,
 ) -> None:
@@ -305,6 +306,61 @@ def _get_observations(task: Task) -> List[str]:
     return [s.observation for s in obs_steps]
 
 
+def test_complaint_when_no_reasoning_step():
+    runner = ReActAgent.from_tools(
+        tools=[],
+        llm=MockLLM(),
+    )
+    task = runner.create_task("lorem")
+    chat_response = ChatResponse(
+        message=ChatMessage(
+            content="Thought: ipsum\nAction: dolor", role=MessageRole.ASSISTANT
+        )
+    )
+    current_reasoning, is_done = runner.agent_worker._process_actions(
+        task, tools=[], output=chat_response
+    )
+    assert (
+        current_reasoning[0].get_content()
+        == "Observation: Error: Could not parse output. Please follow the thought-action-input format. Try again."
+    )
+
+
+def test_max_iterations(add_tool: FunctionTool) -> None:
+    """Test that _get_response raises ValueError when max_iterations is reached."""
+    # Create a minimal mock LLM
+    mock_llm = MockLLM()
+
+    # Create agent with a small max_iterations value
+    max_iterations = 3
+    agent_worker = ReActAgentWorker.from_tools(
+        tools=[add_tool],
+        llm=mock_llm,
+        max_iterations=max_iterations,
+    )
+
+    # Create a list of reasoning steps that exceeds max_iterations
+    current_reasoning = []
+    for i in range(max_iterations + 1):  # Creating more steps than max_iterations
+        # Alternate between action and observation steps to simulate a real sequence
+        if i % 2 == 0:
+            current_reasoning.append(
+                ActionReasoningStep(
+                    thought=f"Thought {i}", action="add", action_input={"a": i, "b": i}
+                )
+            )
+        else:
+            current_reasoning.append(
+                ObservationReasoningStep(observation=f"Result: {i + i}")
+            )
+
+    # Mock sources
+    sources: List[ToolOutput] = []
+    # Assert that ValueError is raised with the expected message
+    with pytest.raises(ValueError, match="Reached max iterations."):
+        agent_worker._get_response(current_reasoning, sources)
+
+
 def test_add_step(
     add_tool: FunctionTool,
 ) -> None:
@@ -329,7 +385,7 @@ def test_add_step(
     assert "tmp" in observations
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_add_step(
     add_tool: FunctionTool,
 ) -> None:

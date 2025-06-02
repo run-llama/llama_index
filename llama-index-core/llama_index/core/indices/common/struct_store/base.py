@@ -8,6 +8,7 @@ from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.data_structs.table import StructDatapoint
 from llama_index.core.indices.prompt_helper import PromptHelper
 from llama_index.core.node_parser.interface import TextSplitter
+from llama_index.core.llms import LLM
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompt_selectors import (
     DEFAULT_REFINE_TABLE_CONTEXT_PROMPT_SEL,
@@ -19,15 +20,7 @@ from llama_index.core.prompts.default_prompts import (
 from llama_index.core.prompts.prompt_type import PromptType
 from llama_index.core.response_synthesizers import get_response_synthesizer
 from llama_index.core.schema import BaseNode, MetadataMode
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.service_context_elements.llm_predictor import (
-    LLMPredictorType,
-)
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
 from llama_index.core.utils import truncate_text
 
@@ -35,11 +28,11 @@ logger = logging.getLogger(__name__)
 
 
 class SQLDocumentContextBuilder:
-    """Builder that builds context for a given set of SQL tables.
+    """
+    Builder that builds context for a given set of SQL tables.
 
     Args:
         sql_database (Optional[SQLDatabase]): SQL database to use,
-        service_context (Optional[ServiceContext]): Service Context to use.
         text_splitter (Optional[TextSplitter]): Text Splitter to use.
         table_context_prompt (Optional[BasePromptTemplate]): A
             Table Context Prompt (see :ref:`Prompt-Templates`).
@@ -48,13 +41,13 @@ class SQLDocumentContextBuilder:
         table_context_task (Optional[str]): The query to perform
             on the table context. A default query string is used
             if none is provided by the user.
+
     """
 
     def __init__(
         self,
         sql_database: SQLDatabase,
-        llm: Optional[LLMPredictorType] = None,
-        service_context: Optional[ServiceContext] = None,
+        llm: Optional[LLM] = None,
         text_splitter: Optional[TextSplitter] = None,
         table_context_prompt: Optional[BasePromptTemplate] = None,
         refine_table_context_prompt: Optional[BasePromptTemplate] = None,
@@ -66,13 +59,11 @@ class SQLDocumentContextBuilder:
             raise ValueError("sql_database must be provided.")
         self._sql_database = sql_database
         self._text_splitter = text_splitter
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         self._prompt_helper = Settings._prompt_helper or PromptHelper.from_llm_metadata(
             self._llm.metadata,
         )
-        self._callback_manager = callback_manager_from_settings_or_context(
-            Settings, service_context
-        )
+        self._callback_manager = Settings.callback_manager
         self._table_context_prompt = (
             table_context_prompt or DEFAULT_TABLE_CONTEXT_PROMPT
         )
@@ -109,7 +100,9 @@ class SQLDocumentContextBuilder:
 
         text_splitter = (
             self._text_splitter
-            or self._prompt_helper.get_text_splitter_given_prompt(prompt_with_schema)
+            or self._prompt_helper.get_text_splitter_given_prompt(
+                prompt_with_schema, llm=self._llm
+            )
         )
         # we use the ResponseBuilder to iteratively go through all texts
         response_builder = get_response_synthesizer(
@@ -147,7 +140,7 @@ class BaseStructDatapointExtractor:
 
     def __init__(
         self,
-        llm: LLMPredictorType,
+        llm: LLM,
         schema_extract_prompt: BasePromptTemplate,
         output_parser: OUTPUT_PARSER_TYPE,
     ) -> None:
@@ -166,12 +159,12 @@ class BaseStructDatapointExtractor:
                 continue
             # if expected type is int or float, try to convert value to int or float
             expected_type = col_types_map[field]
-            if expected_type == int:
+            if expected_type is int:
                 try:
                     clean_value = int(value)
                 except ValueError:
                     continue
-            elif expected_type == float:
+            elif expected_type is float:
                 try:
                     clean_value = float(value)
                 except ValueError:

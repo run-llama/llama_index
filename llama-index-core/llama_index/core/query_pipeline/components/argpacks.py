@@ -11,7 +11,8 @@ from llama_index.core.bridge.pydantic import Field
 
 
 class ArgPackComponent(QueryComponent):
-    """Arg pack component.
+    """
+    Arg pack component.
 
     Packs arbitrary number of args into a list.
 
@@ -46,7 +47,11 @@ class ArgPackComponent(QueryComponent):
         for v in kwargs.values():
             if self.convert_fn is not None:
                 v = self.convert_fn(v)
-            output.append(v)
+
+            if isinstance(v, list):
+                output.extend(v)
+            else:
+                output.append(v)
         return {"output": output}
 
     async def _arun_component(self, **kwargs: Any) -> Any:
@@ -66,7 +71,8 @@ class ArgPackComponent(QueryComponent):
 
 
 class KwargPackComponent(QueryComponent):
-    """Kwarg pack component.
+    """
+    Kwarg pack component.
 
     Packs arbitrary number of kwargs into a dict.
 

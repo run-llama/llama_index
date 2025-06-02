@@ -7,8 +7,7 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 
 from llama_index.core.llms.llm import LLM
 from llama_index.core.schema import BaseNode, MetadataMode, NodeWithScore, QueryBundle
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+from llama_index.core.settings import Settings
 from llama_index.program.evaporate.prompts import (
     DEFAULT_EXPECTED_OUTPUT_PREFIX_TMPL,
     DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
@@ -25,7 +24,8 @@ class TimeoutException(Exception):
 
 @contextmanager
 def time_limit(seconds: int) -> Any:
-    """Time limit context manager.
+    """
+    Time limit context manager.
 
     NOTE: copied from https://github.com/HazyResearch/evaporate.
 
@@ -43,7 +43,8 @@ def time_limit(seconds: int) -> Any:
 
 
 def get_function_field_from_attribute(attribute: str) -> str:
-    """Get function field from attribute.
+    """
+    Get function field from attribute.
 
     NOTE: copied from https://github.com/HazyResearch/evaporate.
 
@@ -85,7 +86,8 @@ def extract_field_dicts(result: str, text_chunk: str) -> Set:
 
 # since we define globals below
 class EvaporateExtractor:
-    """Wrapper around Evaporate.
+    """
+    Wrapper around Evaporate.
 
     Evaporate is an open-source project from Stanford's AI Lab:
     https://github.com/HazyResearch/evaporate.
@@ -98,7 +100,6 @@ class EvaporateExtractor:
     def __init__(
         self,
         llm: Optional[LLM] = None,
-        service_context: Optional[ServiceContext] = None,
         schema_id_prompt: Optional[SchemaIDPrompt] = None,
         fn_generate_prompt: Optional[FnGeneratePrompt] = None,
         field_extract_query_tmpl: str = DEFAULT_FIELD_EXTRACT_QUERY_TMPL,
@@ -107,7 +108,7 @@ class EvaporateExtractor:
     ) -> None:
         """Initialize params."""
         # TODO: take in an entire index instead of forming a response builder
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         self._schema_id_prompt = schema_id_prompt or SCHEMA_ID_PROMPT
         self._fn_generate_prompt = fn_generate_prompt or FN_GENERATION_PROMPT
         self._field_extract_query_tmpl = field_extract_query_tmpl
@@ -117,7 +118,8 @@ class EvaporateExtractor:
     def identify_fields(
         self, nodes: List[BaseNode], topic: str, fields_top_k: int = 5
     ) -> List:
-        """Identify fields from nodes.
+        """
+        Identify fields from nodes.
 
         Will extract fields independently per node, and then
         return the top k fields.
@@ -210,7 +212,8 @@ class EvaporateExtractor:
     def run_fn_on_nodes(
         self, nodes: List[BaseNode], fn_str: str, field_name: str, num_timeouts: int = 1
     ) -> List:
-        """Run function on nodes.
+        """
+        Run function on nodes.
 
         Calls python exec().
 

@@ -1,4 +1,5 @@
 """Embedding utils for queries."""
+
 import heapq
 import math
 from typing import Any, Callable, List, Optional, Tuple
@@ -27,7 +28,7 @@ def get_top_k_embeddings(
 
     similarity_heap: List[Tuple[float, Any]] = []
     for i, emb in enumerate(embeddings_np):
-        similarity = similarity_fn(query_embedding_np, emb)
+        similarity = similarity_fn(query_embedding_np, emb)  # type: ignore[arg-type]
         if similarity_cutoff is None or similarity > similarity_cutoff:
             heapq.heappush(similarity_heap, (similarity, embedding_ids[i]))
             if similarity_top_k and len(similarity_heap) > similarity_top_k:
@@ -47,7 +48,8 @@ def get_top_k_embeddings_learner(
     embedding_ids: Optional[List] = None,
     query_mode: VectorStoreQueryMode = VectorStoreQueryMode.SVM,
 ) -> Tuple[List[float], List]:
-    """Get top embeddings by fitting a learner against query.
+    """
+    Get top embeddings by fitting a learner against query.
 
     Inspired by Karpathy's SVM demo:
     https://github.com/karpathy/randomfun/blob/master/knn_vs_svm.ipynb
@@ -105,7 +107,8 @@ def get_top_k_mmr_embeddings(
     similarity_cutoff: Optional[float] = None,
     mmr_threshold: Optional[float] = None,
 ) -> Tuple[List[float], List]:
-    """Get top nodes by similarity to the query,
+    """
+    Get top nodes by similarity to the query,
     discount by their similarity to previous results.
 
     A mmr_threshold of 0 will strongly avoid similarity to previous results.

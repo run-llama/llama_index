@@ -1,14 +1,15 @@
-"""Multi Modal Vector Store Index.
+"""
+Multi Modal Vector Store Index.
 
 An index that is built on top of multiple vector stores for different modalities.
 
 """
+
 import logging
 from typing import Any, List, Optional, Sequence, cast
 
-from llama_index.core.base.base_query_engine import BaseQueryEngine
-from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.data_structs.data_structs import (
     IndexDict,
     MultiModelIndexDict,
@@ -21,30 +22,35 @@ from llama_index.core.indices.utils import (
     embed_image_nodes,
     embed_nodes,
 )
+from llama_index.core.indices.multi_modal.retriever import (
+    MultiModalVectorIndexRetriever,
+)
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.llms.utils import LLMType
-from llama_index.core.multi_modal_llms import MultiModalLLM
-from llama_index.core.schema import BaseNode, ImageNode
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import Settings, llm_from_settings_or_context
+from llama_index.core.multi_modal_llms.base import MultiModalLLM
+from llama_index.core.query_engine.multi_modal import SimpleMultiModalQueryEngine
+from llama_index.core.schema import BaseNode, ImageNode, TextNode
+from llama_index.core.settings import Settings
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.vector_stores.simple import (
     DEFAULT_VECTOR_STORE,
     SimpleVectorStore,
 )
-from llama_index.core.vector_stores.types import VectorStore
+from llama_index.core.vector_stores.types import BasePydanticVectorStore
 
 logger = logging.getLogger(__name__)
 
 
 class MultiModalVectorStoreIndex(VectorStoreIndex):
-    """Multi-Modal Vector Store Index.
+    """
+    Multi-Modal Vector Store Index.
 
     Args:
         use_async (bool): Whether to use asynchronous calls. Defaults to False.
         show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
         store_nodes_override (bool): set to True to always store Node objects in index
             store and document store even if vector store keeps text. Defaults to False
+
     """
 
     image_namespace = "image"
@@ -62,20 +68,18 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         # Image-related kwargs
         # image_vector_store going to be deprecated. image_store can be passed from storage_context
         # keep image_vector_store here for backward compatibility
-        image_vector_store: Optional[VectorStore] = None,
-        image_embed_model: EmbedType = "clip",
+        image_vector_store: Optional[BasePydanticVectorStore] = None,
+        image_embed_model: EmbedType = "clip:ViT-B/32",
         is_image_to_text: bool = False,
         # is_image_vector_store_empty is used to indicate whether image_vector_store is empty
         # those flags are used for cases when only one vector store is used
         is_image_vector_store_empty: bool = False,
         is_text_vector_store_empty: bool = False,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         image_embed_model = resolve_embed_model(
-            image_embed_model, callback_manager=kwargs.get("callback_manager", None)
+            image_embed_model, callback_manager=kwargs.get("callback_manager")
         )
         assert isinstance(image_embed_model, MultiModalEmbedding)
         self._image_embed_model = image_embed_model
@@ -102,7 +106,6 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             nodes=nodes,
             index_struct=index_struct,
             embed_model=embed_model,
-            service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
             use_async=use_async,
@@ -111,7 +114,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         )
 
     @property
-    def image_vector_store(self) -> VectorStore:
+    def image_vector_store(self) -> BasePydanticVectorStore:
         return self._image_vector_store
 
     @property
@@ -126,12 +129,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
     def is_text_vector_store_empty(self) -> bool:
         return self._is_text_vector_store_empty
 
-    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
-        # NOTE: lazy import
-        from llama_index.core.indices.multi_modal.retriever import (
-            MultiModalVectorIndexRetriever,
-        )
-
+    def as_retriever(self, **kwargs: Any) -> MultiModalVectorIndexRetriever:
         return MultiModalVectorIndexRetriever(
             self,
             node_ids=list(self.index_struct.nodes_dict.values()),
@@ -139,39 +137,36 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         )
 
     def as_query_engine(
-        self, llm: Optional[LLMType] = None, **kwargs: Any
-    ) -> BaseQueryEngine:
-        """As query engine."""
-        from llama_index.core.indices.multi_modal.retriever import (
-            MultiModalVectorIndexRetriever,
-        )
-        from llama_index.core.query_engine.multi_modal import (
-            SimpleMultiModalQueryEngine,
-        )
-
+        self,
+        llm: Optional[LLMType] = None,
+        **kwargs: Any,
+    ) -> SimpleMultiModalQueryEngine:
         retriever = cast(MultiModalVectorIndexRetriever, self.as_retriever(**kwargs))
 
-        llm = llm or llm_from_settings_or_context(Settings, self._service_context)
-        assert isinstance(llm, MultiModalLLM)
+        llm = llm or Settings.llm
+        assert isinstance(llm, (BaseLLM, MultiModalLLM))
+        class_name = llm.class_name()
+        if "multi" not in class_name:
+            logger.warning(
+                f"Warning: {class_name} does not appear to be a multi-modal LLM. This may not work as expected."
+            )
 
         return SimpleMultiModalQueryEngine(
             retriever,
-            multi_modal_llm=llm,
+            multi_modal_llm=llm,  # type: ignore
             **kwargs,
         )
 
     @classmethod
     def from_vector_store(
         cls,
-        vector_store: VectorStore,
+        vector_store: BasePydanticVectorStore,
         embed_model: Optional[EmbedType] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         # Image-related kwargs
-        image_vector_store: Optional[VectorStore] = None,
+        image_vector_store: Optional[BasePydanticVectorStore] = None,
         image_embed_model: EmbedType = "clip",
         **kwargs: Any,
-    ) -> "VectorStoreIndex":
+    ) -> "MultiModalVectorStoreIndex":
         if not vector_store.stores_text:
             raise ValueError(
                 "Cannot initialize from a vector store that does not store text."
@@ -180,15 +175,16 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
         return cls(
             nodes=[],
-            service_context=service_context,
             storage_context=storage_context,
             image_vector_store=image_vector_store,
             image_embed_model=image_embed_model,
-            embed_model=resolve_embed_model(
-                embed_model, callback_manager=kwargs.get("callback_manager", None)
-            )
-            if embed_model
-            else Settings.embed_model,
+            embed_model=(
+                resolve_embed_model(
+                    embed_model, callback_manager=kwargs.get("callback_manager")
+                )
+                if embed_model
+                else Settings.embed_model
+            ),
             **kwargs,
         )
 
@@ -198,7 +194,8 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         show_progress: bool = False,
         is_image: bool = False,
     ) -> List[BaseNode]:
-        """Get tuples of id, node, and embedding.
+        """
+        Get tuples of id, node, and embedding.
 
         Allows us to store these nodes in a vector store.
         Embeddings are called in batches.
@@ -207,8 +204,9 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         id_to_text_embed_map = None
 
         if is_image:
+            assert all(isinstance(node, ImageNode) for node in nodes)
             id_to_embed_map = embed_image_nodes(
-                nodes,
+                nodes,  # type: ignore
                 embed_model=self._image_embed_model,
                 show_progress=show_progress,
             )
@@ -221,7 +219,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
                     show_progress=show_progress,
                 )
                 # TODO: refactor this change of image embed model to same as text
-                self._image_embed_model = self._embed_model
+                self._image_embed_model = self._embed_model  # type: ignore
 
         else:
             id_to_embed_map = embed_nodes(
@@ -233,9 +231,10 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         results = []
         for node in nodes:
             embedding = id_to_embed_map[node.node_id]
-            result = node.copy()
+            result = node.model_copy()
             result.embedding = embedding
             if is_image and id_to_text_embed_map:
+                assert isinstance(result, ImageNode)
                 text_embedding = id_to_text_embed_map[node.node_id]
                 result.text_embedding = text_embedding
                 result.embedding = (
@@ -250,7 +249,8 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         show_progress: bool = False,
         is_image: bool = False,
     ) -> List[BaseNode]:
-        """Asynchronously get tuples of id, node, and embedding.
+        """
+        Asynchronously get tuples of id, node, and embedding.
 
         Allows us to store these nodes in a vector store.
         Embeddings are called in batches.
@@ -259,8 +259,9 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         id_to_text_embed_map = None
 
         if is_image:
+            assert all(isinstance(node, ImageNode) for node in nodes)
             id_to_embed_map = await async_embed_image_nodes(
-                nodes,
+                nodes,  # type: ignore
                 embed_model=self._image_embed_model,
                 show_progress=show_progress,
             )
@@ -272,7 +273,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
                     show_progress=show_progress,
                 )
                 # TODO: refactor this change of image embed model to same as text
-                self._image_embed_model = self._embed_model
+                self._image_embed_model = self._embed_model  # type: ignore
 
         else:
             id_to_embed_map = await async_embed_nodes(
@@ -284,9 +285,10 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         results = []
         for node in nodes:
             embedding = id_to_embed_map[node.node_id]
-            result = node.copy()
+            result = node.model_copy()
             result.embedding = embedding
             if is_image and id_to_text_embed_map:
+                assert isinstance(result, ImageNode)
                 text_embedding = id_to_text_embed_map[node.node_id]
                 result.text_embedding = text_embedding
                 result.embedding = (
@@ -314,7 +316,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         for node in nodes:
             if isinstance(node, ImageNode):
                 image_nodes.append(node)
-            if node.text:
+            if isinstance(node, TextNode) and node.text:
                 text_nodes.append(node)
 
         if len(text_nodes) > 0:
@@ -330,7 +332,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
 
         if len(image_nodes) > 0:
             # embed image nodes as images directly
-            image_nodes = await self._aget_node_with_embedding(
+            image_nodes = await self._aget_node_with_embedding(  # type: ignore
                 image_nodes,
                 show_progress,
                 is_image=True,
@@ -348,7 +350,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         if not self._vector_store.stores_text or self._store_nodes_override:
             for node, new_id in zip(all_nodes, all_new_ids):
                 # NOTE: remove embedding from node to avoid duplication
-                node_without_embedding = node.copy()
+                node_without_embedding = node.model_copy()
                 node_without_embedding.embedding = None
 
                 index_struct.add_node(node_without_embedding, text_id=new_id)
@@ -368,19 +370,19 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
             return
 
         image_nodes: List[ImageNode] = []
-        text_nodes: List[BaseNode] = []
+        text_nodes: List[TextNode] = []
         new_text_ids: List[str] = []
         new_img_ids: List[str] = []
 
         for node in nodes:
             if isinstance(node, ImageNode):
                 image_nodes.append(node)
-            if node.text:
+            if isinstance(node, TextNode) and node.text:
                 text_nodes.append(node)
 
         if len(text_nodes) > 0:
             # embed all nodes as text - include image nodes that have text attached
-            text_nodes = self._get_node_with_embedding(
+            text_nodes = self._get_node_with_embedding(  # type: ignore
                 text_nodes, show_progress, is_image=False
             )
             new_text_ids = self.storage_context.vector_stores[DEFAULT_VECTOR_STORE].add(
@@ -392,7 +394,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         if len(image_nodes) > 0:
             # embed image nodes as images directly
             # check if we should use text embedding for images instead of default
-            image_nodes = self._get_node_with_embedding(
+            image_nodes = self._get_node_with_embedding(  # type: ignore
                 image_nodes,
                 show_progress,
                 is_image=True,
@@ -410,7 +412,7 @@ class MultiModalVectorStoreIndex(VectorStoreIndex):
         if not self._vector_store.stores_text or self._store_nodes_override:
             for node, new_id in zip(all_nodes, all_new_ids):
                 # NOTE: remove embedding from node to avoid duplication
-                node_without_embedding = node.copy()
+                node_without_embedding = node.model_copy()
                 node_without_embedding.embedding = None
 
                 index_struct.add_node(node_without_embedding, text_id=new_id)

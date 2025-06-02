@@ -8,6 +8,8 @@ from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.indices.query.embedding_utils import get_top_k_embeddings
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
+from llama_index.core.settings import Settings
+from llama_index.core.utils import globals_helper
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +44,8 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
         context_before: Optional[int] = None,
         context_after: Optional[int] = None,
     ):
-        """Optimizer class that is passed into BaseGPTIndexQuery.
+        """
+        Optimizer class that is passed into BaseGPTIndexQuery.
 
         Should be set like this:
 
@@ -63,9 +66,14 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
         )
         response = query_engine.query("<query_str>")
         """
-        if embed_model is not None:
-            self._embed_model = embed_model
-        else:
+        super().__init__(
+            percentile_cutoff=percentile_cutoff,
+            threshold_cutoff=threshold_cutoff,
+            context_after=context_after,
+            context_before=context_before,
+        )
+        self._embed_model = embed_model or Settings.embed_model
+        if self._embed_model is None:
             try:
                 from llama_index.embeddings.openai import (
                     OpenAIEmbedding,
@@ -79,18 +87,9 @@ class SentenceEmbeddingOptimizer(BaseNodePostprocessor):
                 )
 
         if tokenizer_fn is None:
-            import nltk.data
-
-            tokenizer = nltk.data.load("tokenizers/punkt/english.pickle")
+            tokenizer = globals_helper.punkt_tokenizer
             tokenizer_fn = tokenizer.tokenize
         self._tokenizer_fn = tokenizer_fn
-
-        super().__init__(
-            percentile_cutoff=percentile_cutoff,
-            threshold_cutoff=threshold_cutoff,
-            context_after=context_after,
-            context_before=context_before,
-        )
 
     @classmethod
     def class_name(cls) -> str:

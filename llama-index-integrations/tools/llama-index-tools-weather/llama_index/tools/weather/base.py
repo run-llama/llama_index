@@ -9,7 +9,7 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 class OpenWeatherMapToolSpec(BaseToolSpec):
     """Open Weather tool spec."""
 
-    spec_functions = ["weather_at_location", "forecast_tommorrow_at_location"]
+    spec_functions = ["weather_at_location", "forecast_tomorrow_at_location"]
 
     def __init__(self, key: str, temp_units: str = "celsius") -> None:
         """Initialize with parameters."""
@@ -26,7 +26,7 @@ class OpenWeatherMapToolSpec(BaseToolSpec):
         self._owm = OWM(self.key)
         self._mgr = self._owm.weather_manager()
 
-    def _format_current_temp(self, temperature: Any, temp_unit: str) -> str:
+    def _format_temp(self, temperature: Any, temp_unit: str) -> str:
         return (
             f"  - Current: {temperature['temp']}{temp_unit}\n"
             f"  - High: {temperature['temp_max']}{temp_unit}\n"
@@ -34,14 +34,11 @@ class OpenWeatherMapToolSpec(BaseToolSpec):
             f"  - Feels like: {temperature['feels_like']}{temp_unit}"
         )
 
-    def _format_forecast_temp(self, temperature: Any, temp_unit: str) -> str:
-        return (
-            f"  - High: {temperature['max']}{temp_unit}\n"
-            f"  - Low: {temperature['min']}{temp_unit}"
-        )
-
-    def _format_weather(self, place: str, temp_str: str, w: Any) -> str:
-        """Format weather response from OpenWeatherMap.
+    def _format_weather(
+        self, place: str, temp_str: str, w: Any, time_str: str = "now"
+    ) -> str:
+        """
+        Format weather response from OpenWeatherMap.
 
         Function thanks to
         langchain/utilities/openweathermap.py
@@ -54,7 +51,7 @@ class OpenWeatherMapToolSpec(BaseToolSpec):
         clouds = w.clouds
 
         return (
-            f"In {place}, the current weather is as follows:\n"
+            f"In {place}, the weather for {time_str} is as follows:\n"
             f"Detailed status: {detailed_status}\n"
             f"Wind speed: {wind['speed']} m/s, direction: {wind['deg']}°\n"
             f"Humidity: {humidity}%\n"
@@ -73,6 +70,7 @@ class OpenWeatherMapToolSpec(BaseToolSpec):
             place (str):
                 The place to find the weather at.
                 Should be a city name and country.
+
         """
         from pyowm.commons.exceptions import NotFoundError
 
@@ -85,13 +83,13 @@ class OpenWeatherMapToolSpec(BaseToolSpec):
 
         temperature = w.temperature(self.temp_units)
         temp_unit = "°C" if self.temp_units == "celsius" else "°F"
-        temp_str = self._format_current_temp(temperature, temp_unit)
+        temp_str = self._format_temp(temperature, temp_unit)
 
         weather_text = self._format_weather(location, temp_str, w)
 
         return [Document(text=weather_text, metadata={"weather from": location})]
 
-    def forecast_tommorrow_at_location(self, location: str) -> List[Document]:
+    def forecast_tomorrow_at_location(self, location: str) -> List[Document]:
         """
         Finds the weather forecast for tomorrow at a location.
 
@@ -99,12 +97,13 @@ class OpenWeatherMapToolSpec(BaseToolSpec):
             location (str):
                 The location to find the weather tomorrow at.
                 Should be a city name and country.
+
         """
         from pyowm.commons.exceptions import NotFoundError
         from pyowm.utils import timestamps
 
         try:
-            forecast = self._mgr.forecast_at_place(location, "daily")
+            forecast = self._mgr.forecast_at_place(location, "3h")
         except NotFoundError:
             return [Document(text=f"Unable to find weather at {location}.")]
 
@@ -113,9 +112,9 @@ class OpenWeatherMapToolSpec(BaseToolSpec):
 
         temperature = w.temperature(self.temp_units)
         temp_unit = "°C" if self.temp_units == "celsius" else "°F"
-        temp_str = self._format_forecast_temp(temperature, temp_unit)
+        temp_str = self._format_temp(temperature, temp_unit)
 
-        weather_text = self._format_weather(location, temp_str, w)
+        weather_text = self._format_weather(location, temp_str, w, "tomorrow")
 
         return [
             Document(

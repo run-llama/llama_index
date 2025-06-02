@@ -11,22 +11,12 @@ from PIL import Image
 logger = logging.getLogger(__name__)
 
 
-AVAILABLE_CLIP_MODELS = (
-    "RN50",
-    "RN101",
-    "RN50x4",
-    "RN50x16",
-    "RN50x64",
-    "ViT-B/32",
-    "ViT-B/16",
-    "ViT-L/14",
-    "ViT-L/14@336px",
-)
 DEFAULT_CLIP_MODEL = "ViT-B/32"
 
 
 class ClipEmbedding(MultiModalEmbedding):
-    """CLIP embedding models for encoding text and image for Multi-Modal purpose.
+    """
+    CLIP embedding models for encoding text and image for Multi-Modal purpose.
 
     This class provides an interface to generate embeddings using a model
     deployed in OpenAI CLIP. At the initialization it requires a model name
@@ -35,6 +25,7 @@ class ClipEmbedding(MultiModalEmbedding):
     Note:
         Requires `clip` package to be available in the PYTHONPATH. It can be installed with
         `pip install git+https://github.com/openai/CLIP.git`.
+
     """
 
     embed_batch_size: int = Field(default=DEFAULT_EMBED_BATCH_SIZE, gt=0)
@@ -55,7 +46,8 @@ class ClipEmbedding(MultiModalEmbedding):
         model_name: str = DEFAULT_CLIP_MODEL,
         **kwargs: Any,
     ):
-        """Initializes the ClipEmbedding class.
+        """
+        Initializes the ClipEmbedding class.
 
         During the initialization the `clip` package is imported.
 
@@ -68,6 +60,7 @@ class ClipEmbedding(MultiModalEmbedding):
             ImportError: If the `clip` package is not available in the PYTHONPATH.
             ValueError: If the model cannot be fetched from Open AI. or if the embed_batch_size
                 is not in the range (0, 100].
+
         """
         if embed_batch_size <= 0:
             raise ValueError(f"Embed batch size {embed_batch_size}  must be > 0.")
@@ -86,10 +79,6 @@ class ClipEmbedding(MultiModalEmbedding):
 
         try:
             self._device = "cuda" if torch.cuda.is_available() else "cpu"
-            if self.model_name not in AVAILABLE_CLIP_MODELS:
-                raise ValueError(
-                    f"Model name {self.model_name} is not available in CLIP."
-                )
             self._model, self._preprocess = clip.load(
                 self.model_name, device=self._device
             )

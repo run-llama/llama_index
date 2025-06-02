@@ -1,4 +1,5 @@
-"""txtai Vector store index.
+"""
+txtai Vector store index.
 
 An index that is built on top of an existing vector store.
 
@@ -38,15 +39,29 @@ IMPORT_ERROR_MSG = """
 
 
 class TxtaiVectorStore(BasePydanticVectorStore):
-    """txtai Vector Store.
+    """
+    txtai Vector Store.
 
-    Embeddings are stored within a txtai index.
+        Embeddings are stored within a txtai index.
 
-    During query time, the index uses txtai to query for the top
-    k embeddings, and returns the corresponding indices.
+        During query time, the index uses txtai to query for the top
+        k embeddings, and returns the corresponding indices.
 
     Args:
-        txtai_index (txtai.ann.ANN): txtai index instance
+            txtai_index (txtai.ann.ANN): txtai index instance
+
+    Examples:
+            `pip install llama-index-vector-stores-txtai`
+
+            ```python
+            import txtai
+            from llama_index.vector_stores.txtai import TxtaiVectorStore
+
+            # Create txtai ann index
+            txtai_index = txtai.ann.ANNFactory.create({"backend": "numpy"})
+
+            vector_store = TxtaiVectorStore(txtai_index=txtai_index)
+    ```
 
     """
 
@@ -64,9 +79,9 @@ class TxtaiVectorStore(BasePydanticVectorStore):
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
-        self._txtai_index = cast(txtai.ann.ANN, txtai_index)
-
         super().__init__()
+
+        self._txtai_index = cast(txtai.ann.ANN, txtai_index)
 
     @classmethod
     def from_persist_dir(
@@ -120,7 +135,8 @@ class TxtaiVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -150,7 +166,8 @@ class TxtaiVectorStore(BasePydanticVectorStore):
         persist_path: str = DEFAULT_PERSIST_PATH,
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
-        """Save to file.
+        """
+        Save to file.
 
         This method saves the vector store to disk.
 
@@ -200,7 +217,8 @@ class TxtaiVectorStore(BasePydanticVectorStore):
         query: VectorStoreQuery,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): query to search for in the index

@@ -4,10 +4,10 @@ from typing import Any, Optional
 from llama_index.cli.rag import RagCLI, default_ragcli_persist_dir
 from llama_index.cli.upgrade import upgrade_dir, upgrade_file
 from llama_index.core.ingestion import IngestionCache, IngestionPipeline
+from llama_index.core.download.module import LLAMA_HUB_URL
 from llama_index.core.llama_dataset.download import (
     LLAMA_DATASETS_LFS_URL,
     LLAMA_DATASETS_SOURCE_FILES_GITHUB_TREE_URL,
-    LLAMA_HUB_URL,
     download_llama_dataset,
 )
 from llama_index.core.llama_pack.download import (
@@ -58,7 +58,6 @@ def handle_download_llama_dataset(
     download_llama_dataset(
         llama_dataset_class=llama_dataset_class,
         download_dir=download_dir,
-        llama_hub_url=llama_hub_url,
         llama_datasets_lfs_url=llama_datasets_lfs_url,
         llama_datasets_source_files_tree_url=llama_datasets_source_files_tree_url,
         show_progress=True,
@@ -69,11 +68,19 @@ def handle_download_llama_dataset(
 
 
 def default_rag_cli() -> RagCLI:
-    import chromadb  # pants: no-infer-dep
     from llama_index.embeddings.openai import OpenAIEmbedding  # pants: no-infer-dep
-    from llama_index.vector_stores.chroma import (
-        ChromaVectorStore,
-    )  # pants: no-infer-dep
+
+    try:
+        import chromadb  # pants: no-infer-dep
+        from llama_index.vector_stores.chroma import (
+            ChromaVectorStore,
+        )  # pants: no-infer-dep
+    except ImportError:
+        raise ImportError(
+            "Default RAG pipeline uses chromadb. "
+            "Install with `pip install llama-index-vector-stores-chroma "
+            "or customize to use a different vector store."
+        )
 
     persist_dir = default_ragcli_persist_dir()
     chroma_client = chromadb.PersistentClient(path=persist_dir)

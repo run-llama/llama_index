@@ -1,5 +1,6 @@
-""" Knowledge Graph Query Engine."""
+"""Knowledge Graph Query Engine."""
 
+import deprecated
 import logging
 from typing import Any, Dict, List, Optional, Sequence
 
@@ -18,12 +19,7 @@ from llama_index.core.response_synthesizers import (
     get_response_synthesizer,
 )
 from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.utils import print_text
 
@@ -47,13 +43,20 @@ DEFAULT_KG_RESPONSE_ANSWER_PROMPT = PromptTemplate(
 )
 
 
+@deprecated.deprecated(
+    version="0.10.53",
+    reason=(
+        "KnowledgeGraphQueryEngine is deprecated. It is recommended to use "
+        "the PropertyGraphIndex and associated retrievers instead."
+    ),
+)
 class KnowledgeGraphQueryEngine(BaseQueryEngine):
-    """Knowledge graph query engine.
+    """
+    Knowledge graph query engine.
 
     Query engine to call a knowledge graph.
 
     Args:
-        service_context (Optional[ServiceContext]): A service context to use.
         storage_context (Optional[StorageContext]): A storage context to use.
         refresh_schema (bool): Whether to refresh the schema.
         verbose (bool): Whether to print intermediate results.
@@ -72,19 +75,17 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
         refresh_schema: bool = False,
         verbose: bool = False,
         response_synthesizer: Optional[BaseSynthesizer] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ):
         # Ensure that we have a graph store
         assert storage_context is not None, "Must provide a storage context."
-        assert (
-            storage_context.graph_store is not None
-        ), "Must provide a graph store in the storage context."
+        assert storage_context.graph_store is not None, (
+            "Must provide a graph store in the storage context."
+        )
         self._storage_context = storage_context
         self.graph_store = storage_context.graph_store
 
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
 
         # Get Graph schema
         self._graph_schema = self.graph_store.get_schema(refresh=refresh_schema)
@@ -96,13 +97,9 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
             graph_response_answer_prompt or DEFAULT_KG_RESPONSE_ANSWER_PROMPT
         )
         self._verbose = verbose
-        callback_manager = callback_manager_from_settings_or_context(
-            Settings, service_context
-        )
+        callback_manager = Settings.callback_manager
         self._response_synthesizer = response_synthesizer or get_response_synthesizer(
-            llm=self._llm,
-            callback_manager=callback_manager,
-            service_context=service_context,
+            llm=self._llm, callback_manager=callback_manager
         )
 
         super().__init__(callback_manager=callback_manager)
@@ -180,14 +177,14 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
         node = NodeWithScore(
             node=TextNode(
                 text=retrieved_graph_context,
-                score=1.0,
                 metadata={
                     "query_str": query_bundle.query_str,
                     "graph_store_query": graph_store_query,
                     "graph_store_response": graph_store_response,
                     "graph_schema": self._graph_schema,
                 },
-            )
+            ),
+            score=1.0,
         )
         return [node]
 
@@ -241,14 +238,14 @@ class KnowledgeGraphQueryEngine(BaseQueryEngine):
         node = NodeWithScore(
             node=TextNode(
                 text=retrieved_graph_context,
-                score=1.0,
                 metadata={
                     "query_str": query_bundle.query_str,
                     "graph_store_query": graph_store_query,
                     "graph_store_response": graph_store_response,
                     "graph_schema": self._graph_schema,
                 },
-            )
+            ),
+            score=1.0,
         )
         return [node]
 

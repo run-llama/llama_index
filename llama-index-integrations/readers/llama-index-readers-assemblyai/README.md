@@ -1,5 +1,9 @@
 # AssemblyAI Audio Transcript Loader
 
+```bash
+pip install llama-index-readers-assemblyai
+```
+
 The AssemblyAI Audio Transcript Loader allows to transcribe audio files with the [AssemblyAI API](https://www.assemblyai.com/) and loads the transcribed text into documents.
 
 To use it, you should have the `assemblyai` python package installed, and the environment variable `ASSEMBLYAI_API_KEY` set with your API key. Alternatively, the API key can also be passed as an argument.
@@ -10,40 +14,12 @@ More info about AssemblyAI:
 - [Get a Free API key](https://www.assemblyai.com/dashboard/signup)
 - [AssemblyAI API Docs](https://www.assemblyai.com/docs)
 
-## Installation
-
-First, you need to install the `assemblyai` python package.
-
-You can find more info about it inside the [assemblyai-python-sdk GitHub repo](https://github.com/AssemblyAI/assemblyai-python-sdk).
-
-```bash
-pip install assemblyai
-```
-
-Optionally: You can install the AssemblyAI integration yourself with:
-
-```bash
-pip install llama-index-readers-assemblyai
-```
-
-Then you can import it with:
-
-```python
-from llama_index.readers.assemblyai import AssemblyAIAudioTranscriptReader
-```
-
-As an alternative, you can also use the `download_loader()` to install and use this integration (see next section).
-
 ## Usage
 
 The `AssemblyAIAudioTranscriptReader` needs at least the `file_path` argument. Audio files can be specified as an URL or a local file path.
 
 ```python
-from llama_index.core import download_loader
-
-AssemblyAIAudioTranscriptReader = download_loader(
-    "AssemblyAIAudioTranscriptReader"
-)
+from llama_index.readers.assemblyai import AssemblyAIAudioTranscriptReader
 
 audio_file = "https://storage.googleapis.com/aai-docs-samples/nbc.mp3"
 # or a local file path: audio_file = "./nbc.mp3"

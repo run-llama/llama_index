@@ -23,7 +23,6 @@ from llama_index.core.query_engine.sql_join_query_engine import (
 )
 from llama_index.core.selectors.llm_selectors import LLMSingleSelector
 from llama_index.core.selectors.pydantic_selectors import PydanticSingleSelector
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.tools.query_engine import QueryEngineTool
 
 logger = logging.getLogger(__name__)
@@ -52,7 +51,8 @@ DEFAULT_SQL_VECTOR_SYNTHESIS_PROMPT = PromptTemplate(
 
 # NOTE: maintain for backwards compatibility
 class SQLAutoVectorQueryEngine(SQLJoinQueryEngine):
-    """SQL + Vector Index Auto Retriever Query Engine.
+    """
+    SQL + Vector Index Auto Retriever Query Engine.
 
     This query engine can query both a SQL database
     as well as a vector database. It will first decide
@@ -66,7 +66,6 @@ class SQLAutoVectorQueryEngine(SQLJoinQueryEngine):
         vector_query_tool (QueryEngineTool): Query engine tool for vector database.
         selector (Optional[Union[LLMSingleSelector, PydanticSingleSelector]]):
             Selector to use.
-        service_context (Optional[ServiceContext]): Service context to use.
         sql_vector_synthesis_prompt (Optional[BasePromptTemplate]):
             Prompt to use for SQL vector synthesis.
         sql_augment_query_transform (Optional[SQLAugmentQueryTransform]): Query
@@ -83,7 +82,6 @@ class SQLAutoVectorQueryEngine(SQLJoinQueryEngine):
         vector_query_tool: QueryEngineTool,
         selector: Optional[Union[LLMSingleSelector, PydanticSingleSelector]] = None,
         llm: Optional[LLM] = None,
-        service_context: Optional[ServiceContext] = None,
         sql_vector_synthesis_prompt: Optional[BasePromptTemplate] = None,
         sql_augment_query_transform: Optional[SQLAugmentQueryTransform] = None,
         use_sql_vector_synthesis: bool = True,
@@ -121,7 +119,6 @@ class SQLAutoVectorQueryEngine(SQLJoinQueryEngine):
             vector_query_tool,
             selector=selector,
             llm=llm,
-            service_context=service_context,
             sql_join_synthesis_prompt=sql_vector_synthesis_prompt,
             sql_augment_query_transform=sql_augment_query_transform,
             use_sql_join_synthesis=use_sql_vector_synthesis,
@@ -157,7 +154,8 @@ class SQLAutoVectorQueryEngine(SQLJoinQueryEngine):
         selector: Optional[Union[LLMSingleSelector, PydanticSingleSelector]] = None,
         **kwargs: Any,
     ) -> "SQLAutoVectorQueryEngine":
-        """From SQL and vector query engines.
+        """
+        From SQL and vector query engines.
 
         Args:
             sql_query_engine (BaseSQLTableQueryEngine): SQL query engine.

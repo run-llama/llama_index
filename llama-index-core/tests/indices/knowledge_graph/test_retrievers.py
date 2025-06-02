@@ -6,7 +6,6 @@ from llama_index.core.embeddings import BaseEmbedding
 from llama_index.core.indices.knowledge_graph.base import KnowledgeGraphIndex
 from llama_index.core.indices.knowledge_graph.retrievers import KGTableRetriever
 from llama_index.core.schema import Document, QueryBundle
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.storage.storage_context import StorageContext
 from tests.mock_utils.mock_prompts import MOCK_QUERY_KEYWORD_EXTRACT_PROMPT
 
@@ -69,16 +68,12 @@ def mock_extract_triplets(text: str) -> List[Tuple[str, str, str]]:
 @patch.object(
     KnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
-def test_as_retriever(
-    _patch_extract_triplets: Any,
-    documents: List[Document],
-    mock_service_context: ServiceContext,
-) -> None:
+def test_as_retriever(_patch_extract_triplets: Any, documents: List[Document]) -> None:
     """Test query."""
     graph_store = SimpleGraphStore()
     storage_context = StorageContext.from_defaults(graph_store=graph_store)
     index = KnowledgeGraphIndex.from_documents(
-        documents, service_context=mock_service_context, storage_context=storage_context
+        documents, storage_context=storage_context
     )
     retriever: KGTableRetriever = index.as_retriever()  # type: ignore
     nodes = retriever.retrieve(QueryBundle("foo"))
@@ -101,17 +96,13 @@ def test_as_retriever(
 @patch.object(
     KnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
-def test_retrievers(
-    _patch_extract_triplets: Any,
-    documents: List[Document],
-    mock_service_context: ServiceContext,
-) -> None:
+def test_retrievers(_patch_extract_triplets: Any, documents: List[Document]) -> None:
     # test specific retriever class
     graph_store = SimpleGraphStore()
     storage_context = StorageContext.from_defaults(graph_store=graph_store)
 
     index = KnowledgeGraphIndex.from_documents(
-        documents, service_context=mock_service_context, storage_context=storage_context
+        documents, storage_context=storage_context
     )
     retriever = KGTableRetriever(
         index,
@@ -134,16 +125,14 @@ def test_retrievers(
     KnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
 def test_retriever_no_text(
-    _patch_extract_triplets: Any,
-    documents: List[Document],
-    mock_service_context: ServiceContext,
+    _patch_extract_triplets: Any, documents: List[Document]
 ) -> None:
     # test specific retriever class
     graph_store = SimpleGraphStore()
     storage_context = StorageContext.from_defaults(graph_store=graph_store)
 
     index = KnowledgeGraphIndex.from_documents(
-        documents, service_context=mock_service_context, storage_context=storage_context
+        documents, storage_context=storage_context
     )
     retriever = KGTableRetriever(
         index,
@@ -167,20 +156,17 @@ def test_retriever_no_text(
     KnowledgeGraphIndex, "_extract_triplets", side_effect=mock_extract_triplets
 )
 def test_retrieve_similarity(
-    _patch_extract_triplets: Any,
-    documents: List[Document],
-    mock_service_context: ServiceContext,
+    _patch_extract_triplets: Any, documents: List[Document]
 ) -> None:
     """Test query."""
-    mock_service_context.embed_model = MockEmbedding()
     graph_store = SimpleGraphStore()
     storage_context = StorageContext.from_defaults(graph_store=graph_store)
 
     index = KnowledgeGraphIndex.from_documents(
         documents,
         include_embeddings=True,
-        service_context=mock_service_context,
         storage_context=storage_context,
+        embed_model=MockEmbedding(),
     )
     retriever = KGTableRetriever(index, similarity_top_k=2, graph_store=graph_store)
 

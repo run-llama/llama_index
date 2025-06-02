@@ -1,5 +1,9 @@
 # Linear Reader
 
+```bash
+pip install llama-index-readers-linear
+```
+
 The Linear loader returns issue based on the query.
 
 ## Usage
@@ -7,7 +11,7 @@ The Linear loader returns issue based on the query.
 Here's an example of how to use it
 
 ```python
-from llama_hub.linear import LinearReader
+from llama_index.readers.linear import LinearReader
 
 reader = LinearReader(api_key=api_key)
 query = """
@@ -38,9 +42,7 @@ documents = reader.load_data(query=query)
 Alternately, you can also use download_loader from llama_index
 
 ```python
-from llama_index import download_loader
-
-LinearReader = download_loader("LinearReader")
+from llama_index.readers.linear import LinearReader
 
 reader = LinearReader(api_key=api_key)
 query = """

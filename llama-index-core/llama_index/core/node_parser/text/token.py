@@ -1,4 +1,5 @@
 """Token splitter."""
+
 import logging
 from typing import Callable, List, Optional
 
@@ -29,13 +30,18 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
     chunk_overlap: int = Field(
         default=DEFAULT_CHUNK_OVERLAP,
         description="The token overlap of each chunk when splitting.",
-        gte=0,
+        ge=0,
     )
     separator: str = Field(
         default=" ", description="Default separator for splitting into words"
     )
     backup_separators: List = Field(
         default_factory=list, description="Additional separators for splitting."
+    )
+
+    keep_whitespaces: bool = Field(
+        default=False,
+        description="Whether to keep leading/trailing whitespaces in the chunk.",
     )
 
     _tokenizer: Callable = PrivateAttr()
@@ -49,6 +55,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
         callback_manager: Optional[CallbackManager] = None,
         separator: str = " ",
         backup_separators: Optional[List[str]] = ["\n"],
+        keep_whitespaces: bool = False,
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
         id_func: Optional[Callable[[int, Document], str]] = None,
@@ -61,21 +68,20 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
             )
         callback_manager = callback_manager or CallbackManager([])
         id_func = id_func or default_id_func
-        self._tokenizer = tokenizer or get_tokenizer()
-
-        all_seps = [separator] + (backup_separators or [])
-        self._split_fns = [split_by_sep(sep) for sep in all_seps] + [split_by_char()]
-
         super().__init__(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
             separator=separator,
             backup_separators=backup_separators,
+            keep_whitespaces=keep_whitespaces,
             callback_manager=callback_manager,
             include_metadata=include_metadata,
             include_prev_next_rel=include_prev_next_rel,
             id_func=id_func,
         )
+        self._tokenizer = tokenizer or get_tokenizer()
+        all_seps = [separator] + (backup_separators or [])
+        self._split_fns = [split_by_sep(sep) for sep in all_seps] + [split_by_char()]
 
     @classmethod
     def from_defaults(
@@ -85,6 +91,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
         separator: str = " ",
         backup_separators: Optional[List[str]] = ["\n"],
         callback_manager: Optional[CallbackManager] = None,
+        keep_whitespaces: bool = False,
         include_metadata: bool = True,
         include_prev_next_rel: bool = True,
         id_func: Optional[Callable[[int, Document], str]] = None,
@@ -96,6 +103,7 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
             chunk_overlap=chunk_overlap,
             separator=separator,
             backup_separators=backup_separators,
+            keep_whitespaces=keep_whitespaces,
             callback_manager=callback_manager,
             include_metadata=include_metadata,
             include_prev_next_rel=include_prev_next_rel,
@@ -149,7 +157,8 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
         return chunks
 
     def _split(self, text: str, chunk_size: int) -> List[str]:
-        """Break text into splits that are smaller than chunk size.
+        """
+        Break text into splits that are smaller than chunk size.
 
         The order of splitting is:
         1. split by separator
@@ -177,7 +186,8 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
         return new_splits
 
     def _merge(self, splits: List[str], chunk_size: int) -> List[str]:
-        """Merge splits into chunks.
+        """
+        Merge splits into chunks.
 
         The high-level idea is to keep adding splits to a chunk until we
         exceed the chunk size, then we start a new chunk with overlap.
@@ -201,7 +211,11 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
             # we need to end the current chunk and start a new one
             if cur_len + split_len > chunk_size:
                 # end the previous chunk
-                chunk = "".join(cur_chunk).strip()
+                chunk = (
+                    "".join(cur_chunk)
+                    if self.keep_whitespaces
+                    else "".join(cur_chunk).strip()
+                )
                 if chunk:
                     chunks.append(chunk)
 
@@ -218,7 +232,9 @@ class TokenTextSplitter(MetadataAwareTextSplitter):
             cur_len += split_len
 
         # handle the last chunk
-        chunk = "".join(cur_chunk).strip()
+        chunk = (
+            "".join(cur_chunk) if self.keep_whitespaces else "".join(cur_chunk).strip()
+        )
         if chunk:
             chunks.append(chunk)
 

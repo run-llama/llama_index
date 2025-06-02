@@ -1,0 +1,64 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+[dependency-groups]
+dev = [
+    "ipython==8.10.0",
+    "jupyter>=1.0.0,<2",
+    "mypy==0.991",
+    "pre-commit==3.2.0",
+    "pylint==2.15.10",
+    "pytest==7.2.1",
+    "pytest-mock==3.11.1",
+    "ruff==0.11.11",
+    "types-Deprecated>=0.1.0",
+    "types-PyYAML>=6.0.12.12,<7",
+    "types-protobuf>=4.24.0.4,<5",
+    "types-redis==4.5.5.0",
+    "types-requests==2.28.11.8",
+    "types-setuptools==67.1.0.0",
+    "black[jupyter]<=23.9.1,>=23.7.0",
+    "codespell[toml]>=v2.2.6",
+    "diff-cover>=9.2.0",
+    "pytest-cov>=6.1.1",
+]
+
+[project]
+authors = [{name = "Desearch", email = "support@desearch.com"}]
+dependencies = [
+    "desearch-py>=1.0.0",
+    "llama-index-core>=0.12.0,<0.13",
+    "openai",
+]
+description = "llama-index tools desearch integration"
+license = "MIT"
+maintainers = [{name = "Desearch", email = "support@desearch.com"}]
+name = "llama-index-tools-desearch"
+readme = "README.md"
+requires-python = ">=3.10,<4.0"
+version = "0.1.1"
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.tools.desearch"
+
+[tool.llamahub.class_authors]
+DesearchToolSpec = "Desearch"
+
+[tool.mypy]
+disallow_untyped_defs = true
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
+ignore_missing_imports = true
+python_version = "3.8"

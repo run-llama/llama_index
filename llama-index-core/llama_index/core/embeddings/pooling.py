@@ -15,13 +15,12 @@ class Pooling(str, Enum):
 
     def __call__(self, array: np.ndarray) -> np.ndarray:
         if self == self.CLS:
-            return self.cls_pooling(array)
-        return self.mean_pooling(array)
+            return Pooling.cls_pooling(array)
+        return Pooling.mean_pooling(array)
 
     @classmethod
     @overload
-    def cls_pooling(cls, array: np.ndarray) -> np.ndarray:
-        ...
+    def cls_pooling(cls, array: np.ndarray) -> np.ndarray: ...
 
     @classmethod
     @overload

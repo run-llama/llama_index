@@ -49,14 +49,43 @@ class ModelInfo:
 
 
 class Konko(LLM):
+    """
+    Konko LLM.
+
+    Examples:
+        `pip install llama-index-llms-konko`
+
+        ```python
+        import os
+        from llama_index.llms.konko import Konko
+        from llama_index.core.llms import ChatMessage
+
+        # Set up the Konko LLM with the desired model
+        llm = Konko(model="meta-llama/llama-2-13b-chat")
+
+        # Set the Konko API key
+        os.environ["KONKO_API_KEY"] = "<your-api-key>"
+
+        # Create a ChatMessage object
+        message = ChatMessage(role="user", content="Explain Big Bang Theory briefly")
+
+        # Call the chat method with the ChatMessage object
+        response = llm.chat([message])
+
+        # Print the response
+        print(response)
+        ```
+
+    """
+
     model: str = Field(
         default=DEFAULT_KONKO_MODEL, description="The konko model to use."
     )
     temperature: float = Field(
         default=DEFAULT_TEMPERATURE,
         description="The temperature to use during generation.",
-        gte=0.0,
-        lte=1.0,
+        ge=0.0,
+        le=1.0,
     )
     max_tokens: Optional[int] = Field(
         default=DEFAULT_NUM_OUTPUTS,
@@ -67,7 +96,7 @@ class Konko(LLM):
         default_factory=dict, description="Additional kwargs for the konko API."
     )
     max_retries: int = Field(
-        default=10, description="The maximum number of API retries.", gte=0
+        default=10, description="The maximum number of API retries.", ge=0
     )
 
     konko_api_key: str = Field(default=None, description="The konko API key.")
@@ -183,6 +212,7 @@ class Konko(LLM):
 
         Raises:
         - ValueError: If the model_id is not found in the list of models.
+
         """
         model_info = self._get_model_info()
         return model_info.is_chat_model

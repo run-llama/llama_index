@@ -1,4 +1,5 @@
 """SQL wrapper around SQLDatabase in langchain."""
+
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from sqlalchemy import MetaData, create_engine, insert, inspect, text
@@ -7,7 +8,8 @@ from sqlalchemy.exc import OperationalError, ProgrammingError
 
 
 class SQLDatabase:
-    """SQL Database.
+    """
+    SQL Database.
 
     This class provides a wrapper around the SQLAlchemy engine to interact with a SQL
     database.
@@ -150,16 +152,24 @@ class SQLDatabase:
     def get_single_table_info(self, table_name: str) -> str:
         """Get table info for a single table."""
         # same logic as table_info, but with specific table names
-        template = (
-            "Table '{table_name}' has columns: {columns}, "
-            "and foreign keys: {foreign_keys}."
-        )
+        template = "Table '{table_name}' has columns: {columns}, "
+        try:
+            # try to retrieve table comment
+            table_comment = self._inspector.get_table_comment(
+                table_name, schema=self._schema
+            )["text"]
+            if table_comment:
+                template += f"with comment: ({table_comment}) "
+        except NotImplementedError:
+            # get_table_comment raises NotImplementedError for a dialect that does not support comments.
+            pass
+
+        template += "{foreign_keys}."
         columns = []
         for column in self._inspector.get_columns(table_name, schema=self._schema):
             if column.get("comment"):
                 columns.append(
-                    f"{column['name']} ({column['type']!s}): "
-                    f"'{column.get('comment')}'"
+                    f"{column['name']} ({column['type']!s}): '{column.get('comment')}'"
                 )
             else:
                 columns.append(f"{column['name']} ({column['type']!s})")
@@ -173,7 +183,11 @@ class SQLDatabase:
                 f"{foreign_key['constrained_columns']} -> "
                 f"{foreign_key['referred_table']}.{foreign_key['referred_columns']}"
             )
-        foreign_key_str = ", ".join(foreign_keys)
+        foreign_key_str = (
+            foreign_keys
+            and " and foreign keys: {}".format(", ".join(foreign_keys))
+            or ""
+        )
         return template.format(
             table_name=table_name, columns=column_str, foreign_keys=foreign_key_str
         )
@@ -199,7 +213,8 @@ class SQLDatabase:
         return content[: length - len(suffix)].rsplit(" ", 1)[0] + suffix
 
     def run_sql(self, command: str) -> Tuple[str, Dict]:
-        """Execute a SQL statement and return a string representing the results.
+        """
+        Execute a SQL statement and return a string representing the results.
 
         If the statement returns rows, a string of the results is returned.
         If the statement returns no rows, an empty string is returned.
@@ -208,10 +223,11 @@ class SQLDatabase:
             try:
                 if self._schema:
                     command = command.replace("FROM ", f"FROM {self._schema}.")
+                    command = command.replace("JOIN ", f"JOIN {self._schema}.")
                 cursor = connection.execute(text(command))
             except (ProgrammingError, OperationalError) as exc:
                 raise NotImplementedError(
-                    f"Statement {command!r} is invalid SQL."
+                    f"Statement {command!r} is invalid SQL.\nError: {exc.orig}"
                 ) from exc
             if cursor.returns_rows:
                 result = cursor.fetchall()

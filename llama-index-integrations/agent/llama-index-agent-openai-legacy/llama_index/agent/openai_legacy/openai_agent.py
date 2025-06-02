@@ -2,7 +2,6 @@ import asyncio
 import json
 import logging
 from abc import abstractmethod
-from threading import Thread
 from typing import Any, Dict, List, Optional, Tuple, Type, Union, cast, get_args
 
 from llama_index.agent.openai_legacy.utils import get_function_by_name
@@ -25,6 +24,7 @@ from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.settings import Settings
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
+from llama_index.core.types import Thread
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import OpenAIToolCall
 
@@ -40,7 +40,8 @@ def call_tool_with_error_handling(
     error_message: Optional[str] = None,
     raise_error: bool = False,
 ) -> ToolOutput:
-    """Call tool with error handling.
+    """
+    Call tool with error handling.
 
     Input is a dictionary with args and kwargs
 
@@ -138,7 +139,8 @@ async def acall_function(
 
 
 def resolve_tool_choice(tool_choice: Union[str, dict] = "auto") -> Union[str, dict]:
-    """Resolve tool choice.
+    """
+    Resolve tool choice.
 
     If tool_choice is a function name string, return the appropriate dict.
     """
@@ -194,9 +196,8 @@ class BaseOpenAIAgent(BaseAgent):
     ) -> bool:
         if n_function_calls > self._max_function_calls:
             return False
-        if not tool_calls:
-            return False
-        return True
+
+        return tool_calls is not None
 
     def init_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
@@ -228,9 +229,9 @@ class BaseOpenAIAgent(BaseAgent):
         )
         thread.start()
         # Wait for the event to be set
-        chat_stream_response._is_function_not_none_thread_event.wait()
+        chat_stream_response.is_function_not_none_thread_event.wait()
         # If it is executing an openAI function, wait for the thread to finish
-        if chat_stream_response._is_function:
+        if chat_stream_response.is_function:
             thread.join()
 
         # if it's false, return the answer (to stream)
@@ -244,11 +245,13 @@ class BaseOpenAIAgent(BaseAgent):
             sources=self.sources,
         )
         # create task to write chat response to history
-        asyncio.create_task(
+        chat_stream_response.awrite_response_to_history_task = asyncio.create_task(
             chat_stream_response.awrite_response_to_history(self.memory)
         )
         # wait until openAI functions stop executing
-        await chat_stream_response._is_function_false_event.wait()
+        chat_stream_response._ensure_async_setup()
+        await chat_stream_response.is_function_false_event.wait()
+
         # return response stream
         return chat_stream_response
 
@@ -493,7 +496,8 @@ class BaseOpenAIAgent(BaseAgent):
 
 
 class OpenAIAgent(BaseOpenAIAgent):
-    """OpenAI (function calling) Agent.
+    """
+    OpenAI (function calling) Agent.
 
     Uses the OpenAI function API to reason about whether to
     use a tool, and returning the response to the user.
@@ -561,7 +565,8 @@ class OpenAIAgent(BaseOpenAIAgent):
         prefix_messages: Optional[List[ChatMessage]] = None,
         **kwargs: Any,
     ) -> "OpenAIAgent":
-        """Create an OpenAIAgent from a list of tools.
+        """
+        Create an OpenAIAgent from a list of tools.
 
         Similar to `from_defaults` in other classes, this method will
         infer defaults for a variety of parameters, including the LLM,

@@ -32,7 +32,8 @@ Should be blank if there are no sub-questions to be specified, in which case \
 
 
 class QueryNode(BaseModel):
-    """Query node.
+    """
+    Query node.
 
     A query node represents a query (query_str) that must be answered.
     It can either be answered by a tool (tool_name), or by a list of child nodes
@@ -54,7 +55,8 @@ class QueryNode(BaseModel):
 
 
 class QueryPlan(BaseModel):
-    """Query plan.
+    """
+    Query plan.
 
     Contains a list of QueryNode objects (which is a recursive object).
     Out of the list of QueryNode objects, one of them must be the root node.
@@ -80,7 +82,8 @@ The tool names and descriptions are as follows:
 
 
 class QueryPlanTool(BaseTool):
-    """Query plan tool.
+    """
+    Query plan tool.
 
     A tool that takes in a list of tools and executes a query plan.
 
@@ -98,6 +101,7 @@ class QueryPlanTool(BaseTool):
         self._response_synthesizer = response_synthesizer
         self._name = name
         self._description_prefix = description_prefix
+        self._custom_metadata: Optional[ToolMetadata] = None
 
     @classmethod
     def from_defaults(
@@ -122,6 +126,9 @@ class QueryPlanTool(BaseTool):
     @property
     def metadata(self) -> ToolMetadata:
         """Metadata."""
+        if self._custom_metadata is not None:
+            return self._custom_metadata
+
         tools_description = "\n\n".join(
             [
                 f"Tool Name: {tool.metadata.name}\n"
@@ -136,11 +143,15 @@ class QueryPlanTool(BaseTool):
         """
         return ToolMetadata(description, self._name, fn_schema=QueryPlan)
 
+    @metadata.setter
+    def metadata(self, value: ToolMetadata) -> None:
+        self._custom_metadata = value
+
     def _execute_node(
         self, node: QueryNode, nodes_dict: Dict[int, QueryNode]
     ) -> ToolOutput:
         """Execute node."""
-        print_text(f"Executing node {node.json()}\n", color="blue")
+        print_text(f"Executing node {node.model_dump_json()}\n", color="blue")
         if len(node.dependencies) > 0:
             print_text(
                 f"Executing {len(node.dependencies)} child nodes\n", color="pink"
@@ -178,6 +189,11 @@ class QueryPlanTool(BaseTool):
                 raw_output=response_obj,
             )
 
+            if node.tool_name in self._query_tools_dict:
+                tool = self._query_tools_dict[node.tool_name]
+                print_text(f"Selected Tool: {tool.metadata}\n", color="pink")
+                response = tool(node.query_str)
+
         else:
             # this is a leaf request, execute the query string using the specified tool
             tool = self._query_tools_dict[node.tool_name]
@@ -194,7 +210,7 @@ class QueryPlanTool(BaseTool):
     def _find_root_nodes(self, nodes_dict: Dict[int, QueryNode]) -> List[QueryNode]:
         """Find root node."""
         # the root node is the one that isn't a dependency of any other node
-        node_counts = {node_id: 0 for node_id in nodes_dict}
+        node_counts = dict.fromkeys(nodes_dict, 0)
         for node in nodes_dict.values():
             for dep in node.dependencies:
                 node_counts[dep] += 1

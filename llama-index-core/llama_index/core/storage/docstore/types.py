@@ -33,8 +33,7 @@ class BaseDocumentStore(ABC):
     # ===== Main interface =====
     @property
     @abstractmethod
-    def docs(self) -> Dict[str, BaseNode]:
-        ...
+    def docs(self) -> Dict[str, BaseNode]: ...
 
     @abstractmethod
     def add_documents(
@@ -43,8 +42,7 @@ class BaseDocumentStore(ABC):
         allow_update: bool = True,
         batch_size: int = DEFAULT_BATCH_SIZE,
         store_text: bool = True,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @abstractmethod
     async def async_add_documents(
@@ -53,18 +51,17 @@ class BaseDocumentStore(ABC):
         allow_update: bool = True,
         batch_size: int = DEFAULT_BATCH_SIZE,
         store_text: bool = True,
-    ) -> None:
-        ...
+    ) -> None: ...
 
     @abstractmethod
-    def get_document(self, doc_id: str, raise_error: bool = True) -> Optional[BaseNode]:
-        ...
+    def get_document(
+        self, doc_id: str, raise_error: bool = True
+    ) -> Optional[BaseNode]: ...
 
     @abstractmethod
     async def aget_document(
         self, doc_id: str, raise_error: bool = True
-    ) -> Optional[BaseNode]:
-        ...
+    ) -> Optional[BaseNode]: ...
 
     @abstractmethod
     def delete_document(self, doc_id: str, raise_error: bool = True) -> None:
@@ -77,45 +74,35 @@ class BaseDocumentStore(ABC):
         ...
 
     @abstractmethod
-    def document_exists(self, doc_id: str) -> bool:
-        ...
+    def document_exists(self, doc_id: str) -> bool: ...
 
     @abstractmethod
-    async def adocument_exists(self, doc_id: str) -> bool:
-        ...
+    async def adocument_exists(self, doc_id: str) -> bool: ...
 
     # ===== Hash =====
     @abstractmethod
-    def set_document_hash(self, doc_id: str, doc_hash: str) -> None:
-        ...
+    def set_document_hash(self, doc_id: str, doc_hash: str) -> None: ...
 
     @abstractmethod
-    async def aset_document_hash(self, doc_id: str, doc_hash: str) -> None:
-        ...
+    async def aset_document_hash(self, doc_id: str, doc_hash: str) -> None: ...
 
     @abstractmethod
-    def set_document_hashes(self, doc_hashes: Dict[str, str]) -> None:
-        ...
+    def set_document_hashes(self, doc_hashes: Dict[str, str]) -> None: ...
 
     @abstractmethod
-    async def aset_document_hashes(self, doc_hashes: Dict[str, str]) -> None:
-        ...
+    async def aset_document_hashes(self, doc_hashes: Dict[str, str]) -> None: ...
 
     @abstractmethod
-    def get_document_hash(self, doc_id: str) -> Optional[str]:
-        ...
+    def get_document_hash(self, doc_id: str) -> Optional[str]: ...
 
     @abstractmethod
-    async def aget_document_hash(self, doc_id: str) -> Optional[str]:
-        ...
+    async def aget_document_hash(self, doc_id: str) -> Optional[str]: ...
 
     @abstractmethod
-    def get_all_document_hashes(self) -> Dict[str, str]:
-        ...
+    def get_all_document_hashes(self) -> Dict[str, str]: ...
 
     @abstractmethod
-    async def aget_all_document_hashes(self) -> Dict[str, str]:
-        ...
+    async def aget_all_document_hashes(self) -> Dict[str, str]: ...
 
     # ==== Ref Docs =====
     @abstractmethod
@@ -146,7 +133,8 @@ class BaseDocumentStore(ABC):
     def get_nodes(
         self, node_ids: List[str], raise_error: bool = True
     ) -> List[BaseNode]:
-        """Get nodes from docstore.
+        """
+        Get nodes from docstore.
 
         Args:
             node_ids (List[str]): node ids
@@ -158,7 +146,8 @@ class BaseDocumentStore(ABC):
     async def aget_nodes(
         self, node_ids: List[str], raise_error: bool = True
     ) -> List[BaseNode]:
-        """Get nodes from docstore.
+        """
+        Get nodes from docstore.
 
         Args:
             node_ids (List[str]): node ids
@@ -171,7 +160,8 @@ class BaseDocumentStore(ABC):
         ]
 
     def get_node(self, node_id: str, raise_error: bool = True) -> BaseNode:
-        """Get node from docstore.
+        """
+        Get node from docstore.
 
         Args:
             node_id (str): node id
@@ -184,7 +174,8 @@ class BaseDocumentStore(ABC):
         return doc
 
     async def aget_node(self, node_id: str, raise_error: bool = True) -> BaseNode:
-        """Get node from docstore.
+        """
+        Get node from docstore.
 
         Args:
             node_id (str): node id
@@ -197,7 +188,8 @@ class BaseDocumentStore(ABC):
         return doc
 
     def get_node_dict(self, node_id_dict: Dict[int, str]) -> Dict[int, BaseNode]:
-        """Get node dict from docstore given a mapping of index to node ids.
+        """
+        Get node dict from docstore given a mapping of index to node ids.
 
         Args:
             node_id_dict (Dict[int, str]): mapping of index to node ids
@@ -208,7 +200,8 @@ class BaseDocumentStore(ABC):
         }
 
     async def aget_node_dict(self, node_id_dict: Dict[int, str]) -> Dict[int, BaseNode]:
-        """Get node dict from docstore given a mapping of index to node ids.
+        """
+        Get node dict from docstore given a mapping of index to node ids.
 
         Args:
             node_id_dict (Dict[int, str]): mapping of index to node ids

@@ -1,8 +1,10 @@
-"""Base Managed Service index.
+"""
+Base Managed Service index.
 
 An index that is built on top of a managed service.
 
 """
+
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Sequence, Type
 
@@ -11,13 +13,13 @@ from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.data_structs.data_structs import IndexDict
 from llama_index.core.indices.base import BaseIndex, IndexType
 from llama_index.core.schema import BaseNode, Document, TransformComponent
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.core.storage.storage_context import StorageContext
 
 
 class BaseManagedIndex(BaseIndex[IndexDict], ABC):
-    """Managed Index.
+    """
+    Managed Index.
     The managed service can index documents into a managed service.
     How documents are structured into nodes is a detail for the managed service,
     and not exposed in this interface (although could be controlled by
@@ -25,6 +27,7 @@ class BaseManagedIndex(BaseIndex[IndexDict], ABC):
 
     Args:
         show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
+
     """
 
     def __init__(
@@ -33,15 +36,12 @@ class BaseManagedIndex(BaseIndex[IndexDict], ABC):
         index_struct: Optional[IndexDict] = None,
         storage_context: Optional[StorageContext] = None,
         show_progress: bool = False,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(
             nodes=nodes,
             index_struct=index_struct,
-            service_context=service_context,
             storage_context=storage_context,
             show_progress=show_progress,
             **kwargs,
@@ -65,7 +65,9 @@ class BaseManagedIndex(BaseIndex[IndexDict], ABC):
     def as_retriever(self, **kwargs: Any) -> BaseRetriever:
         """Return a Retriever for this managed index."""
 
-    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> IndexDict:
+    def _build_index_from_nodes(
+        self, nodes: Sequence[BaseNode], **build_kwargs: Any
+    ) -> IndexDict:
         """Build the index from nodes."""
         raise NotImplementedError(
             "_build_index_from_nodes not implemented for BaseManagedIndex."
@@ -88,8 +90,6 @@ class BaseManagedIndex(BaseIndex[IndexDict], ABC):
         show_progress: bool = False,
         callback_manager: Optional[CallbackManager] = None,
         transformations: Optional[List[TransformComponent]] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> IndexType:
         """Build an index from a sequence of documents."""

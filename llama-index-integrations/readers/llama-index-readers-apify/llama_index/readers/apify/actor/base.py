@@ -8,11 +8,13 @@ from llama_index.readers.apify.dataset.base import ApifyDataset
 
 
 class ApifyActor(BaseReader):
-    """Apify Actor reader.
+    """
+    Apify Actor reader.
     Calls an Actor on the Apify platform and reads its resulting dataset when it finishes.
 
     Args:
         apify_api_token (str): Apify API token.
+
     """
 
     def __init__(self, apify_api_token: str) -> None:
@@ -20,7 +22,13 @@ class ApifyActor(BaseReader):
         from apify_client import ApifyClient
 
         self.apify_api_token = apify_api_token
-        self.apify_client = ApifyClient(apify_api_token)
+
+        client = ApifyClient(apify_api_token)
+        if hasattr(client.http_client, "httpx_client"):
+            client.http_client.httpx_client.headers["user-agent"] += (
+                "; Origin/llama_index"
+            )
+        self.apify_client = client
 
     def load_data(
         self,
@@ -32,7 +40,8 @@ class ApifyActor(BaseReader):
         memory_mbytes: Optional[int] = None,
         timeout_secs: Optional[int] = None,
     ) -> List[Document]:
-        """Call an Actor on the Apify platform, wait for it to finish, and return its resulting dataset.
+        """
+        Call an Actor on the Apify platform, wait for it to finish, and return its resulting dataset.
 
         Args:
             actor_id (str): The ID or name of the Actor.
@@ -45,6 +54,7 @@ class ApifyActor(BaseReader):
 
         Returns:
             List[Document]: List of documents.
+
         """
         actor_call = self.apify_client.actor(actor_id).call(
             run_input=run_input,

@@ -1,10 +1,10 @@
 """Experiment with different indices, models, and more."""
+
 from __future__ import annotations
 
 import time
 from typing import Any, Dict, List, Type
 
-import pandas as pd
 from llama_index.core.callbacks import CallbackManager, TokenCountingHandler
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.indices.list.base import ListRetrieverMode, SummaryIndex
@@ -36,7 +36,8 @@ class Playground:
         indices: List[BaseIndex],
         retriever_modes: INDEX_SPECIFIC_QUERY_MODES_TYPE = DEFAULT_MODES,
     ):
-        """Initialize with indices to experiment with.
+        """
+        Initialize with indices to experiment with.
 
         Args:
             indices: A list of BaseIndex's to experiment with
@@ -44,6 +45,7 @@ class Playground:
                 chosen from the index when a query is made. A full list of
                 retriever_modes available to each index can be found here:
                 https://docs.llamaindex.ai/en/stable/module_guides/querying/retriever/retriever_modes.html
+
         """
         self._validate_indices(indices)
         self._indices = indices
@@ -61,10 +63,12 @@ class Playground:
         retriever_modes: INDEX_SPECIFIC_QUERY_MODES_TYPE = DEFAULT_MODES,
         **kwargs: Any,
     ) -> Playground:
-        """Initialize with Documents using the default list of indices.
+        """
+        Initialize with Documents using the default list of indices.
 
         Args:
             documents: A List of Documents to experiment with.
+
         """
         if len(documents) == 0:
             raise ValueError(
@@ -120,8 +124,9 @@ class Playground:
 
     def compare(
         self, query_text: str, to_pandas: bool | None = True
-    ) -> pd.DataFrame | List[Dict[str, Any]]:
-        """Compare index outputs on an input query.
+    ) -> Any | List[Dict[str, Any]]:
+        """
+        Compare index outputs on an input query.
 
         Args:
             query_text (str): Query to run all indices on.
@@ -131,6 +136,7 @@ class Playground:
         Returns:
             The output of each index along with other data, such as the time it took to
             compute. Results are stored in a Pandas Dataframe or a list of Dicts.
+
         """
         print(f"\033[1mQuery:\033[0m\n{query_text}\n")
         result = []
@@ -145,17 +151,11 @@ class Playground:
                 )
 
                 # insert token counter into service context
-                service_context = index.service_context
                 token_counter = TokenCountingHandler()
                 callback_manager = CallbackManager([token_counter])
-                if service_context is not None:
-                    service_context.llm.callback_manager = callback_manager
-                    service_context.embed_model.callback_manager = callback_manager
 
                 try:
-                    query_engine = index.as_query_engine(
-                        retriever_mode=retriever_mode, service_context=service_context
-                    )
+                    query_engine = index.as_query_engine(retriever_mode=retriever_mode)
                 except ValueError:
                     continue
 
@@ -178,6 +178,13 @@ class Playground:
         print(f"\nRan {len(result)} combinations in total.")
 
         if to_pandas:
+            try:
+                import pandas as pd
+            except ImportError:
+                raise ImportError(
+                    "pandas is required for this function. Please install it with `pip install pandas`."
+                )
+
             return pd.DataFrame(result)
         else:
             return result

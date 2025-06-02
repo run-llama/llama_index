@@ -13,13 +13,13 @@ To begin, you need to obtain an API key on the [Metaphor developer dashboard](ht
 
 ## Usage
 
-This tool has more a extensive example usage documented in a Jupyter notebook [here](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/tools/notebooks/metaphor.ipynb)
+This tool has more a extensive example usage documented in a Jupyter notebook [here](https://github.com/run-llama/llama_index/blob/main/llama-index-integrations/tools/llama-index-tools-metaphor/examples/metaphor.ipynb)
 
 Here's an example usage of the MetaphorToolSpec.
 
 ```python
 from llama_index.tools.metaphor import MetaphorToolSpec
-from llama_index.agent import OpenAIAgent
+from llama_index.agent.openai import OpenAIAgent
 
 metaphor_tool = MetaphorToolSpec(
     api_key="your-key",
@@ -37,4 +37,4 @@ agent.chat(
 `find_similar`: Find similar documents to a given URL.
 `current_date`: Utility for the Agent to get todays date
 
-This loader is designed to be used as a way to load data as a Tool in a Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data as a Tool in a Agent.

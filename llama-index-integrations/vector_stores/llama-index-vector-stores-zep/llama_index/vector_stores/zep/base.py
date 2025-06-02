@@ -2,10 +2,11 @@ import logging
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import zep_python
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
-    VectorStore,
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -20,8 +21,9 @@ from zep_python.document import DocumentCollection
 logger = logging.getLogger(__name__)
 
 
-class ZepVectorStore(VectorStore):
-    """Zep Vector Store for storing and retrieving embeddings.
+class ZepVectorStore(BasePydanticVectorStore):
+    """
+    Zep Vector Store for storing and retrieving embeddings.
 
     Zep supports both normalized and non-normalized embeddings. Cosine similarity is
     used to compute distance and the returned score is normalized to be between 0 and 1.
@@ -38,10 +40,28 @@ class ZepVectorStore(VectorStore):
             Defaults to None.
         is_auto_embedded (bool, optional): Whether the embeddings are auto-embedded.
             Defaults to False.
+
+    Examples:
+        `pip install llama-index-vector-stores-zep`
+
+        ```python
+        from llama_index.vector_stores.zep import ZepVectorStore
+
+        vector_store = ZepVectorStore(
+            api_url="<api_url>",
+            api_key="<api_key>",
+            collection_name="<unique_collection_name>",  # Can either be an existing collection or a new one
+            embedding_dimensions=1536,  # Optional, required if creating a new collection
+        )
+        ```
+
     """
 
-    stores_text = True
-    flat_metadata = False
+    stores_text: bool = True
+    flat_metadata: bool = False
+
+    _client: ZepClient = PrivateAttr()
+    _collection: DocumentCollection = PrivateAttr()
 
     def __init__(
         self,
@@ -55,13 +75,13 @@ class ZepVectorStore(VectorStore):
         **kwargs: Any,
     ) -> None:
         """Init params."""
+        super().__init__()
+
         self._client = ZepClient(base_url=api_url, api_key=api_key)
-        self._collection: Union[DocumentCollection, None] = None
+        collection: Union[DocumentCollection, None] = None
 
         try:
-            self._collection = self._client.document.get_collection(
-                name=collection_name
-            )
+            collection = self._client.document.get_collection(name=collection_name)
         except zep_python.NotFoundError:
             if embedding_dimensions is None:
                 raise ValueError(
@@ -73,13 +93,20 @@ class ZepVectorStore(VectorStore):
                 f"will try creating one with dimensions={embedding_dimensions}"
             )
 
-            self._collection = self._client.document.add_collection(
+            collection = self._client.document.add_collection(
                 name=collection_name,
                 embedding_dimensions=embedding_dimensions,
                 is_auto_embedded=is_auto_embedded,
                 description=collection_description,
                 metadata=collection_metadata,
             )
+
+        assert collection is not None
+        self._collection = collection
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "ZepVectorStore"
 
     @property
     def client(self) -> Any:
@@ -113,13 +140,15 @@ class ZepVectorStore(VectorStore):
         return docs, ids
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add nodes to the collection.
+        """
+        Add nodes to the collection.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings.
 
         Returns:
             List[str]: List of IDs of the added documents.
+
         """
         if not isinstance(self._collection, DocumentCollection):
             raise ValueError("Collection not initialized")
@@ -138,13 +167,15 @@ class ZepVectorStore(VectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Asynchronously add nodes to the collection.
+        """
+        Asynchronously add nodes to the collection.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings.
 
         Returns:
             List[str]: List of IDs of the added documents.
+
         """
         if not isinstance(self._collection, DocumentCollection):
             raise ValueError("Collection not initialized")
@@ -158,15 +189,15 @@ class ZepVectorStore(VectorStore):
 
         return ids
 
-    def delete(
-        self, ref_doc_id: Optional[str] = None, **delete_kwargs: Any
-    ) -> None:  # type: ignore
-        """Delete a document from the collection.
+    def delete(self, ref_doc_id: Optional[str] = None, **delete_kwargs: Any) -> None:  # type: ignore
+        """
+        Delete a document from the collection.
 
         Args:
             ref_doc_id (Optional[str]): ID of the document to delete.
                 Not currently supported.
             delete_kwargs: Must contain "uuid" key with UUID of the document to delete.
+
         """
         if not isinstance(self._collection, DocumentCollection):
             raise ValueError("Collection not initialized")
@@ -184,12 +215,14 @@ class ZepVectorStore(VectorStore):
     async def adelete(
         self, ref_doc_id: Optional[str] = None, **delete_kwargs: Any
     ) -> None:  # type: ignore
-        """Asynchronously delete a document from the collection.
+        """
+        Asynchronously delete a document from the collection.
 
         Args:
             ref_doc_id (Optional[str]): ID of the document to delete.
                 Not currently supported.
             delete_kwargs: Must contain "uuid" key with UUID of the document to delete.
+
         """
         if not isinstance(self._collection, DocumentCollection):
             raise ValueError("Collection not initialized")
@@ -241,7 +274,8 @@ class ZepVectorStore(VectorStore):
         query: VectorStoreQuery,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """Query the index for the top k most similar nodes to the given query.
+        """
+        Query the index for the top k most similar nodes to the given query.
 
         Args:
             query (VectorStoreQuery): Query object containing either a query string
@@ -250,6 +284,7 @@ class ZepVectorStore(VectorStore):
         Returns:
             VectorStoreQueryResult: Result of the query, containing the most similar
                 nodes, their similarities, and their IDs.
+
         """
         if not isinstance(self._collection, DocumentCollection):
             raise ValueError("Collection not initialized")
@@ -280,7 +315,8 @@ class ZepVectorStore(VectorStore):
         query: VectorStoreQuery,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """Asynchronously query the index for the top k most similar nodes to the
+        """
+        Asynchronously query the index for the top k most similar nodes to the
             given query.
 
         Args:
@@ -290,6 +326,7 @@ class ZepVectorStore(VectorStore):
         Returns:
             VectorStoreQueryResult: Result of the query, containing the most similar
                 nodes, their similarities, and their IDs.
+
         """
         if not isinstance(self._collection, DocumentCollection):
             raise ValueError("Collection not initialized")

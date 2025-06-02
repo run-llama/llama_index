@@ -1,4 +1,5 @@
-"""Empty index.
+"""
+Empty index.
 
 An index that doesn't contain any documents. Can only be used for
 pure LLM calls.
@@ -13,12 +14,12 @@ from llama_index.core.data_structs.data_structs import EmptyIndexStruct
 from llama_index.core.indices.base import BaseIndex
 from llama_index.core.llms.utils import LLMType
 from llama_index.core.schema import BaseNode
-from llama_index.core.service_context import ServiceContext
 from llama_index.core.storage.docstore.types import RefDocInfo
 
 
 class EmptyIndex(BaseIndex[EmptyIndexStruct]):
-    """Empty Index.
+    """
+    Empty Index.
 
     An index that doesn't contain any documents. Used for
     pure LLM calls.
@@ -33,15 +34,12 @@ class EmptyIndex(BaseIndex[EmptyIndexStruct]):
     def __init__(
         self,
         index_struct: Optional[EmptyIndexStruct] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize params."""
         super().__init__(
             nodes=None,
             index_struct=index_struct or EmptyIndexStruct(),
-            service_context=service_context,
             **kwargs,
         )
 
@@ -62,14 +60,18 @@ class EmptyIndex(BaseIndex[EmptyIndexStruct]):
 
         return super().as_query_engine(llm=llm, **kwargs)
 
-    def _build_index_from_nodes(self, nodes: Sequence[BaseNode]) -> EmptyIndexStruct:
-        """Build the index from documents.
+    def _build_index_from_nodes(
+        self, nodes: Sequence[BaseNode], **build_kwargs: Any
+    ) -> EmptyIndexStruct:
+        """
+        Build the index from documents.
 
         Args:
             documents (List[BaseDocument]): A list of documents.
 
         Returns:
             IndexList: The created summary index.
+
         """
         del nodes  # Unused
         return EmptyIndexStruct()

@@ -1,4 +1,4 @@
-"""Exa (formerly Metaphor) tool spec."""
+"""Exa tool spec."""
 
 import datetime
 from typing import List, Optional
@@ -41,8 +41,11 @@ class ExaToolSpec(BaseToolSpec):
         exclude_domains: Optional[List[str]] = None,
         start_published_date: Optional[str] = None,
         end_published_date: Optional[str] = None,
+        use_autoprompt: bool = True,
+        type: str = "magic",
     ) -> List:
-        """Exa allows you to use a natural language query to search the internet.
+        """
+        Exa allows you to use a natural language query to search the internet.
 
         Args:
             query (str): A natural language query phrased as an answer for what the link provides, ie: "This is the latest news about space:"
@@ -51,6 +54,7 @@ class ExaToolSpec(BaseToolSpec):
             exclude_domains (Optional[List(str)]): Top level domains to exclude.
             start_published_date (Optional[str]): A date string like "2020-06-15". Get the date from `current_date`
             end_published_date (Optional[str]): End date string
+
         """
         response = self.client.search(
             query,
@@ -59,7 +63,8 @@ class ExaToolSpec(BaseToolSpec):
             exclude_domains=exclude_domains,
             start_published_date=start_published_date,
             end_published_date=end_published_date,
-            use_autoprompt=True,
+            use_autoprompt=use_autoprompt,
+            type=type,
         )
         if self._verbose:
             print(f"[Exa Tool] Autoprompt: {response.autoprompt_string}")
@@ -69,10 +74,12 @@ class ExaToolSpec(BaseToolSpec):
         ]
 
     def retrieve_documents(self, ids: List[str]) -> List[Document]:
-        """Retrieve a list of document texts returned by `exa_search`, using the ID field.
+        """
+        Retrieve a list of document texts returned by `exa_search`, using the ID field.
 
         Args:
             ids (List(str)): the ids of the documents to retrieve
+
         """
         response = self.client.get_contents(ids)
         return [Document(text=result.text) for result in response.results]
@@ -84,13 +91,15 @@ class ExaToolSpec(BaseToolSpec):
         start_published_date: Optional[str] = None,
         end_published_date: Optional[str] = None,
     ) -> List:
-        """Retrieve a list of similar documents to a given url.
+        """
+        Retrieve a list of similar documents to a given url.
 
         Args:
             url (str): The web page to find similar results of
             num_results (Optional[int]): Number of results to return. Default 3.
             start_published_date (Optional[str]): A date string like "2020-06-15"
             end_published_date (Optional[str]): End date string
+
         """
         response = self.client.find_similar(
             url,
@@ -111,8 +120,11 @@ class ExaToolSpec(BaseToolSpec):
         exclude_domains: Optional[List[str]] = None,
         start_published_date: Optional[str] = None,
         end_published_date: Optional[str] = None,
+        use_autoprompt: bool = True,
+        type: str = "magic",
     ) -> List[Document]:
-        """Combines the functionality of `search` and `retrieve_documents`.
+        """
+        Combines the functionality of `search` and `retrieve_documents`.
 
         Args:
             query (str): the natural language query
@@ -121,6 +133,7 @@ class ExaToolSpec(BaseToolSpec):
             exclude_domains (Optional[List(str)]): Top level domains to exclude.
             start_published_date (Optional[str]): A date string like "2020-06-15".
             end_published_date (Optional[str]): End date string
+
         """
         response = self.client.search_and_contents(
             query,
@@ -129,8 +142,9 @@ class ExaToolSpec(BaseToolSpec):
             exclude_domains=exclude_domains,
             start_published_date=start_published_date,
             end_published_date=end_published_date,
-            use_autoprompt=True,
+            use_autoprompt=use_autoprompt,
             text={"max_characters": self._max_characters},
+            type=type,
         )
         if self._verbose:
             print(f"[Exa Tool] Autoprompt: {response.autoprompt_string}")
@@ -144,8 +158,11 @@ class ExaToolSpec(BaseToolSpec):
         exclude_domains: Optional[List[str]] = None,
         start_published_date: Optional[str] = None,
         end_published_date: Optional[str] = None,
+        use_autoprompt: bool = True,
+        type: str = "magic",
     ) -> List[Document]:
-        """Searches and retrieves highlights (intelligent snippets from the document).
+        """
+        Searches and retrieves highlights (intelligent snippets from the document).
 
         Args:
             query (str): the natural language query
@@ -154,6 +171,7 @@ class ExaToolSpec(BaseToolSpec):
             exclude_domains (Optional[List(str)]): Top level domains to exclude.
             start_published_date (Optional[str]): A date string like "2020-06-15".
             end_published_date (Optional[str]): End date string
+
         """
         response = self.client.search_and_contents(
             query,
@@ -162,15 +180,17 @@ class ExaToolSpec(BaseToolSpec):
             exclude_domains=exclude_domains,
             start_published_date=start_published_date,
             end_published_date=end_published_date,
-            use_autoprompt=True,
+            use_autoprompt=use_autoprompt,
             highlights=True,
+            type=type,
         )
         if self._verbose:
             print(f"[Exa Tool] Autoprompt: {response.autoprompt_string}")
         return [Document(text=document.highlights[0]) for document in response.results]
 
     def current_date(self):
-        """A function to return todays date.
+        """
+        A function to return todays date.
 
         Call this before any other functions that take timestamps as an argument
         """

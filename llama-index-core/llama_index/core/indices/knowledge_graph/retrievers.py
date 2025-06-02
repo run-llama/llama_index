@@ -1,5 +1,6 @@
 """KG Retrievers."""
 
+import deprecated
 import logging
 from collections import defaultdict
 from enum import Enum
@@ -25,13 +26,7 @@ from llama_index.core.schema import (
     QueryBundle,
     TextNode,
 )
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    embed_model_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.storage.storage_context import StorageContext
 from llama_index.core.utils import print_text, truncate_text
 
@@ -44,7 +39,8 @@ logger = logging.getLogger(__name__)
 
 
 class KGRetrieverMode(str, Enum):
-    """Query mode enum for Knowledge Graphs.
+    """
+    Query mode enum for Knowledge Graphs.
 
     Can be passed as the enum struct, or as the underlying string.
 
@@ -54,6 +50,7 @@ class KGRetrieverMode(str, Enum):
             similar triplets.
         HYBRID ("hybrid"): Hybrid mode, combining both keywords and embeddings
             to find relevant triplets.
+
     """
 
     KEYWORD = "keyword"
@@ -61,8 +58,16 @@ class KGRetrieverMode(str, Enum):
     HYBRID = "hybrid"
 
 
+@deprecated.deprecated(
+    version="0.10.53",
+    reason=(
+        "KGTableRetriever is deprecated, it is recommended to use "
+        "PropertyGraphIndex and associated retrievers instead."
+    ),
+)
 class KGTableRetriever(BaseRetriever):
-    """KG Table Retriever.
+    """
+    KG Table Retriever.
 
     Arguments are shared among subclasses.
 
@@ -89,6 +94,7 @@ class KGTableRetriever(BaseRetriever):
             While it's more expensive, thus to be turned off by default.
         max_knowledge_sequence (int): The maximum number of knowledge sequence to
             include in the response. By default, it's 30.
+
     """
 
     def __init__(
@@ -127,11 +133,8 @@ class KGTableRetriever(BaseRetriever):
             else KGRetrieverMode.KEYWORD
         )
 
-        self._llm = llm or llm_from_settings_or_context(Settings, index.service_context)
-        self._embed_model = embed_model or embed_model_from_settings_or_context(
-            Settings, index.service_context
-        )
-
+        self._llm = llm or Settings.llm
+        self._embed_model = embed_model or Settings.embed_model
         self._graph_store = index.graph_store
         self.graph_store_query_depth = graph_store_query_depth
         self.use_global_node_triplets = use_global_node_triplets
@@ -146,10 +149,7 @@ class KGTableRetriever(BaseRetriever):
             logger.warning(f"Failed to get graph schema: {e}")
             self._graph_schema = ""
         super().__init__(
-            callback_manager=callback_manager
-            or callback_manager_from_settings_or_context(
-                Settings, index.service_context
-            ),
+            callback_manager=callback_manager or Settings.callback_manager,
             object_map=object_map,
             verbose=verbose,
         )
@@ -169,12 +169,20 @@ class KGTableRetriever(BaseRetriever):
     def _extract_rel_text_keywords(self, rel_texts: List[str]) -> List[str]:
         """Find the keywords for given rel text triplets."""
         keywords = []
+
         for rel_text in rel_texts:
-            keyword = rel_text.split(",")[0]
+            splited_texts = rel_text.split(",")
+
+            if len(splited_texts) <= 0:
+                continue
+            keyword = splited_texts[0]
             if keyword:
                 keywords.append(keyword.strip("(\"'"))
+
             # Return the Object as well
-            keyword = rel_text.split(",")[2]
+            if len(splited_texts) <= 2:
+                continue
+            keyword = splited_texts[2]
             if keyword:
                 keywords.append(keyword.strip(" ()\"'"))
         return keywords
@@ -222,6 +230,7 @@ class KGTableRetriever(BaseRetriever):
                 rel_map = self._graph_store.get_rel_map(
                     list(subjs), self.graph_store_query_depth
                 )
+
                 logger.debug(f"rel_map: {rel_map}")
 
                 if not rel_map:
@@ -398,6 +407,13 @@ DEFAULT_SYNONYM_EXPAND_PROMPT = PromptTemplate(
 )
 
 
+@deprecated.deprecated(
+    version="0.10.53",
+    reason=(
+        "KnowledgeGraphRAGRetriever is deprecated, it is recommended to use "
+        "PropertyGraphIndex and associated retrievers instead."
+    ),
+)
 class KnowledgeGraphRAGRetriever(BaseRetriever):
     """
     Knowledge Graph RAG retriever.
@@ -405,7 +421,6 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
     Retriever that perform SubGraph RAG towards knowledge graph.
 
     Args:
-        service_context (Optional[ServiceContext]): A service context to use.
         storage_context (Optional[StorageContext]): A storage context to use.
         entity_extract_fn (Optional[Callable]): A function to extract entities.
         entity_extract_template Optional[BasePromptTemplate]): A Query Key Entity
@@ -433,6 +448,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         max_knowledge_sequence (int): The maximum number of knowledge sequence to
             include in the response. By default, it's 30.
         verbose (bool): Whether to print out debug info.
+
     """
 
     def __init__(
@@ -453,20 +469,18 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         max_knowledge_sequence: int = REL_TEXT_LIMIT,
         verbose: bool = False,
         callback_manager: Optional[CallbackManager] = None,
-        # deprecated
-        service_context: Optional[ServiceContext] = None,
         **kwargs: Any,
     ) -> None:
         """Initialize the retriever."""
         # Ensure that we have a graph store
         assert storage_context is not None, "Must provide a storage context."
-        assert (
-            storage_context.graph_store is not None
-        ), "Must provide a graph store in the storage context."
+        assert storage_context.graph_store is not None, (
+            "Must provide a graph store in the storage context."
+        )
         self._storage_context = storage_context
         self._graph_store = storage_context.graph_store
 
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
 
         self._entity_extract_fn = entity_extract_fn
         self._entity_extract_template = (
@@ -489,22 +503,16 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
                 KnowledgeGraphQueryEngine,
             )
 
-            graph_query_synthesis_prompt = kwargs.get(
-                "graph_query_synthesis_prompt",
-                None,
-            )
+            graph_query_synthesis_prompt = kwargs.get("graph_query_synthesis_prompt")
             if graph_query_synthesis_prompt is not None:
                 del kwargs["graph_query_synthesis_prompt"]
 
-            graph_response_answer_prompt = kwargs.get(
-                "graph_response_answer_prompt",
-                None,
-            )
+            graph_response_answer_prompt = kwargs.get("graph_response_answer_prompt")
             if graph_response_answer_prompt is not None:
                 del kwargs["graph_response_answer_prompt"]
 
             refresh_schema = kwargs.get("refresh_schema", False)
-            response_synthesizer = kwargs.get("response_synthesizer", None)
+            response_synthesizer = kwargs.get("response_synthesizer")
             self._kg_query_engine = KnowledgeGraphQueryEngine(
                 llm=self._llm,
                 storage_context=self._storage_context,
@@ -513,7 +521,6 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
                 refresh_schema=refresh_schema,
                 verbose=verbose,
                 response_synthesizer=response_synthesizer,
-                service_context=service_context,
                 **kwargs,
             )
 
@@ -529,10 +536,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
             logger.warning(f"Failed to get graph schema: {e}")
             self._graph_schema = ""
 
-        super().__init__(
-            callback_manager=callback_manager
-            or callback_manager_from_settings_or_context(Settings, service_context)
-        )
+        super().__init__(callback_manager=callback_manager or Settings.callback_manager)
 
     def _process_entities(
         self,

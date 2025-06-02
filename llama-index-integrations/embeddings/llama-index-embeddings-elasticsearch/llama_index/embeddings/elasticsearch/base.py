@@ -1,3 +1,4 @@
+import asyncio
 from typing import Any, List
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
@@ -8,7 +9,8 @@ from elasticsearch.client import MlClient
 
 
 class ElasticsearchEmbedding(BaseEmbedding):
-    """Elasticsearch embedding models.
+    """
+    Elasticsearch embedding models.
 
     This class provides an interface to generate embeddings using a model deployed
     in an Elasticsearch cluster. It requires an Elasticsearch connection object
@@ -35,8 +37,8 @@ class ElasticsearchEmbedding(BaseEmbedding):
         input_field: str = "text_field",
         **kwargs: Any,
     ):
-        self._client = client
         super().__init__(model_id=model_id, input_field=input_field, **kwargs)
+        self._client = client
 
     @classmethod
     def from_es_connection(
@@ -84,6 +86,7 @@ class ElasticsearchEmbedding(BaseEmbedding):
                     es_connection,
                     input_field=input_field,
                 )
+
         """
         client = MlClient(es_connection)
         return cls(client, model_id, input_field=input_field)
@@ -97,7 +100,8 @@ class ElasticsearchEmbedding(BaseEmbedding):
         es_password: str,
         input_field: str = "text_field",
     ) -> BaseEmbedding:
-        """Instantiate embeddings from Elasticsearch credentials.
+        """
+        Instantiate embeddings from Elasticsearch credentials.
 
         Args:
             model_id (str): The model_id of the model deployed in the Elasticsearch
@@ -125,6 +129,7 @@ class ElasticsearchEmbedding(BaseEmbedding):
                     es_username="bar",
                     es_password="baz",
                 )
+
         """
         es_connection = Elasticsearch(
             hosts=[es_url],
@@ -143,6 +148,7 @@ class ElasticsearchEmbedding(BaseEmbedding):
 
         Returns:
             List[float]: The embedding for the input query text.
+
         """
         response = self._client.infer_trained_model(
             model_id=self.model_id,
@@ -157,8 +163,11 @@ class ElasticsearchEmbedding(BaseEmbedding):
     def _get_query_embedding(self, query: str) -> List[float]:
         return self._get_embedding(query)
 
+    async def _aget_text_embedding(self, text: str) -> List[float]:
+        return await asyncio.to_thread(self._get_text_embedding, text)
+
     async def _aget_query_embedding(self, query: str) -> List[float]:
-        return self._get_query_embedding(query)
+        return await asyncio.to_thread(self._get_query_embedding, query)
 
 
 ElasticsearchEmbeddings = ElasticsearchEmbedding

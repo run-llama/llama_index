@@ -1,4 +1,5 @@
-"""Remote file reader.
+"""
+Remote file reader.
 
 A loader that fetches an arbitrary remote page or file by URL and parses its contents.
 
@@ -41,17 +42,31 @@ class RemoteReader(BaseReader):
         match = re.match(youtube_pattern, url)
 
         # If there's a match, it's a YouTube video URL
-        if match:
-            return True
-
-        # Otherwise, it's not a YouTube video URL
-        return False
+        return match is not None
 
     def load_data(self, url: str) -> List[Document]:
         """Parse whatever is at the URL."""
         import tempfile
         from urllib.parse import urlparse
         from urllib.request import Request, urlopen
+
+        # check the URL
+        parsed_url = urlparse(url)
+
+        # Check if the scheme is http or https
+        if parsed_url.scheme not in (
+            "http",
+            "https",
+            "ftp",
+            "ws",
+            "wss",
+            "sftp",
+            "ftps",
+            "s3",
+        ):
+            raise ValueError(
+                "Invalid URL scheme. Only http, https, ftp, ftps, sftp, ws, wss, and s3 are allowed."
+            )
 
         extra_info = {"Source": url}
 

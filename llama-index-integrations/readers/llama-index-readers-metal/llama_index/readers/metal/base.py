@@ -5,12 +5,14 @@ from llama_index.core.schema import Document
 
 
 class MetalReader(BaseReader):
-    """Metal reader.
+    """
+    Metal reader.
 
     Args:
         api_key (str): Metal API key.
         client_id (str): Metal client ID.
         index_id (str): Metal index ID.
+
     """
 
     def __init__(self, api_key: str, client_id: str, index_id: str):
@@ -35,9 +37,10 @@ class MetalReader(BaseReader):
         query_embedding: Optional[List[float]] = None,
         filters: Optional[Dict[str, Any]] = None,
         separate_documents: bool = True,
-        **query_kwargs: Any
+        **query_kwargs: Any,
     ) -> List[Document]:
-        """Load data from Metal.
+        """
+        Load data from Metal.
 
         Args:
             query_embedding (Optional[List[float]]): Query embedding for search.
@@ -49,6 +52,7 @@ class MetalReader(BaseReader):
 
         Returns:
             List[Document]: A list of documents.
+
         """
         payload = {
             "embedding": query_embedding,

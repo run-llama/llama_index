@@ -1,5 +1,9 @@
 # Microsoft OneDrive Loader
 
+```bash
+pip install llama-index-readers-microsoft-onedrive
+```
+
 This loader reads files from:
 
 - Microsoft OneDrive Personal [(https://onedrive.live.com/)](https://onedrive.live.com/) and
@@ -61,9 +65,7 @@ For example, the file_id of `https://onedrive.live.com/?cid=0B5AF52BE769DFDE4&id
 #### OneDrive Personal Example Usage:
 
 ```python
-from llama_index import download_loader
-
-OneDriveReader = download_loader("OneDriveReader")
+from llama_index.readers.microsoft_onedrive import OneDriveReader
 
 # User Authentication flow: Replace client id with your own id
 loader = OneDriveReader(client_id="82ee706e-2439-47fa-877a-95048ead9318")
@@ -108,9 +110,7 @@ For example, the path of file "demo_doc.docx" within test subfolder from previou
 #### OneDrive For Business Example Usage:
 
 ```python
-from llama_index import download_loader
-
-OneDriveReader = download_loader("OneDriveReader")
+from llama_index.readers.microsoft_onedrive import OneDriveReader
 
 loader = OneDriveReader(
     client_id="82ee706e-2439-47fa-877a-95048ead9318",
@@ -147,4 +147,4 @@ documents = loader.load_data(
 
 [Godwin Paul Vincent](https://github.com/godwin3737)
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).

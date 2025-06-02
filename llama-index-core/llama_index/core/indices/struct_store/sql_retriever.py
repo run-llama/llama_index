@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union, cast
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.callbacks.base import CallbackManager
+from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.llms.llm import LLM
 from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.objects.table_node_mapping import SQLTableSchema
@@ -21,13 +22,7 @@ from llama_index.core.prompts.mixin import (
     PromptMixinType,
 )
 from llama_index.core.schema import NodeWithScore, QueryBundle, QueryType, TextNode
-from llama_index.core.service_context import ServiceContext
-from llama_index.core.settings import (
-    Settings,
-    callback_manager_from_settings_or_context,
-    embed_model_from_settings_or_context,
-    llm_from_settings_or_context,
-)
+from llama_index.core.settings import Settings
 from llama_index.core.utilities.sql_wrapper import SQLDatabase
 from sqlalchemy import Table
 
@@ -35,7 +30,8 @@ logger = logging.getLogger(__name__)
 
 
 class SQLRetriever(BaseRetriever):
-    """SQL Retriever.
+    """
+    SQL Retriever.
 
     Retrieves via raw SQL statements.
 
@@ -84,7 +80,24 @@ class SQLRetriever(BaseRetriever):
             query_bundle = str_or_query_bundle
         raw_response_str, metadata = self._sql_database.run_sql(query_bundle.query_str)
         if self._return_raw:
-            return [NodeWithScore(node=TextNode(text=raw_response_str))], metadata
+            return [
+                NodeWithScore(
+                    node=TextNode(
+                        text=raw_response_str,
+                        metadata={
+                            "sql_query": query_bundle.query_str,
+                            "result": metadata["result"],
+                            "col_keys": metadata["col_keys"],
+                        },
+                        excluded_embed_metadata_keys=[
+                            "sql_query",
+                            "result",
+                            "col_keys",
+                        ],
+                        excluded_llm_metadata_keys=["sql_query", "result", "col_keys"],
+                    )
+                )
+            ], metadata
         else:
             # return formatted
             results = metadata["result"]
@@ -109,7 +122,7 @@ class SQLParserMode(str, Enum):
     PGVECTOR = "pgvector"
 
 
-class BaseSQLParser(ABC):
+class BaseSQLParser(DispatcherSpanMixin, ABC):
     """Base SQL Parser."""
 
     @abstractmethod
@@ -131,7 +144,7 @@ class DefaultSQLParser(BaseSQLParser):
         sql_result_start = response.find("SQLResult:")
         if sql_result_start != -1:
             response = response[:sql_result_start]
-        return response.strip().strip("```").strip()
+        return response.replace("```sql", "").replace("```", "").strip()
 
 
 class PGVectorSQLParser(BaseSQLParser):
@@ -157,14 +170,15 @@ class PGVectorSQLParser(BaseSQLParser):
             response = response[:sql_result_start]
 
         # this gets you the sql string with [query_vector] placeholders
-        raw_sql_str = response.strip().strip("```").strip()
+        raw_sql_str = response.strip().strip("```sql").strip("```").strip()
         query_embedding = self._embed_model.get_query_embedding(query_bundle.query_str)
         query_embedding_str = str(query_embedding)
         return raw_sql_str.replace("[query_vector]", query_embedding_str)
 
 
 class NLSQLRetriever(BaseRetriever, PromptMixin):
-    """Text-to-SQL Retriever.
+    """
+    Text-to-SQL Retriever.
 
     Retrieves via text.
 
@@ -177,8 +191,9 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         tables (Union[List[str], List[Table]]): List of table names or Table objects.
         table_retriever (ObjectRetriever[SQLTableSchema]): Object retriever for
             SQLTableSchema objects. Defaults to None.
+        rows_retriever (Dict[str, VectorIndexRetriever]): a mapping between table name and
+            a vector index retriever of its rows. Defaults to None.
         context_str_prefix (str): Prefix for context string. Defaults to None.
-        service_context (ServiceContext): Service context. Defaults to None.
         return_raw (bool): Whether to return plain-text dump of SQL results, or parsed into Nodes.
         handle_sql_errors (bool): Whether to handle SQL errors. Defaults to True.
         sql_only (bool) : Whether to get only sql and not the sql query result.
@@ -194,11 +209,12 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         context_query_kwargs: Optional[dict] = None,
         tables: Optional[Union[List[str], List[Table]]] = None,
         table_retriever: Optional[ObjectRetriever[SQLTableSchema]] = None,
+        rows_retrievers: Optional[dict[str, BaseRetriever]] = None,
+        cols_retrievers: Optional[dict[str, dict[str, BaseRetriever]]] = None,
         context_str_prefix: Optional[str] = None,
         sql_parser_mode: SQLParserMode = SQLParserMode.DEFAULT,
         llm: Optional[LLM] = None,
         embed_model: Optional[BaseEmbedding] = None,
-        service_context: Optional[ServiceContext] = None,
         return_raw: bool = True,
         handle_sql_errors: bool = True,
         sql_only: bool = False,
@@ -213,20 +229,22 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
             sql_database, tables, context_query_kwargs, table_retriever
         )
         self._context_str_prefix = context_str_prefix
-        self._llm = llm or llm_from_settings_or_context(Settings, service_context)
+        self._llm = llm or Settings.llm
         self._text_to_sql_prompt = text_to_sql_prompt or DEFAULT_TEXT_TO_SQL_PROMPT
         self._sql_parser_mode = sql_parser_mode
 
-        embed_model = embed_model or embed_model_from_settings_or_context(
-            Settings, service_context
-        )
+        embed_model = embed_model or Settings.embed_model
         self._sql_parser = self._load_sql_parser(sql_parser_mode, embed_model)
         self._handle_sql_errors = handle_sql_errors
         self._sql_only = sql_only
         self._verbose = verbose
+
+        # To retrieve relevant rows or cols from each retrieved table
+        self._rows_retrievers = rows_retrievers
+        self._cols_retrievers = cols_retrievers
         super().__init__(
-            callback_manager=callback_manager
-            or callback_manager_from_settings_or_context(Settings, service_context)
+            callback_manager=callback_manager or Settings.callback_manager,
+            verbose=verbose,
         )
 
     def _get_prompts(self) -> Dict[str, Any]:
@@ -383,26 +401,56 @@ class NLSQLRetriever(BaseRetriever, PromptMixin):
         return retrieved_nodes
 
     def _get_table_context(self, query_bundle: QueryBundle) -> str:
-        """Get table context.
-
-        Get tables schema + optional context as a single string.
-
-        """
+        """Get table context string."""
         table_schema_objs = self._get_tables(query_bundle.query_str)
         context_strs = []
-        if self._context_str_prefix is not None:
-            context_strs = [self._context_str_prefix]
 
         for table_schema_obj in table_schema_objs:
+            # first append table info + additional context
             table_info = self._sql_database.get_single_table_info(
                 table_schema_obj.table_name
             )
-
             if table_schema_obj.context_str:
                 table_opt_context = " The table description is: "
                 table_opt_context += table_schema_obj.context_str
                 table_info += table_opt_context
 
+            # also lookup vector index to return relevant table rows
+            # if rows_retrievers was not passed, no rows will be returned
+            if self._rows_retrievers is not None:
+                rows_retriever = self._rows_retrievers[table_schema_obj.table_name]
+                relevant_nodes = rows_retriever.retrieve(query_bundle.query_str)
+                if len(relevant_nodes) > 0:
+                    table_row_context = "\nHere are some relevant example rows (values in the same order as columns above)\n"
+                    for node in relevant_nodes:
+                        table_row_context += str(node.get_content()) + "\n"
+                    table_info += table_row_context
+
+            # lookup column index to return relevant column values
+            if self._cols_retrievers is not None:
+                cols_retrievers = self._cols_retrievers[table_schema_obj.table_name]
+
+                col_values_context = (
+                    "\nHere are some relevant values of text columns:\n"
+                )
+                has_col_values = False
+                for col_name, retriever in cols_retrievers.items():
+                    relevant_nodes = retriever.retrieve(query_bundle.query_str)
+                    if len(relevant_nodes) > 0:
+                        col_values_context += (
+                            f"{col_name}: "
+                            + ", ".join(
+                                [str(node.get_content()) for node in relevant_nodes]
+                            )
+                            + "\n"
+                        )
+                        has_col_values = True
+
+                if has_col_values:
+                    table_info += col_values_context
+
+            if self._verbose:
+                print(f"> Table Info: {table_info}")
             context_strs.append(table_info)
 
         return "\n\n".join(context_strs)

@@ -1,5 +1,9 @@
 # WordLift Reader
 
+```bash
+pip install llama-index-readers-wordlift
+```
+
 The WordLift GraphQL Reader is a connector to fetch and transform data from a WordLift Knowledge Graph using your the WordLift Key. The connector provides a convenient way to load data from WordLift using a GraphQL query and transform it into a list of documents for further processing.
 
 ## Usage
@@ -15,10 +19,10 @@ Here's an example of how to use the WordLift GraphQL Reader:
 
 ```python
 import json
-from llama_index import VectorStoreIndex
-from llama_index.readers.schema import Document
+from llama_index.core import VectorStoreIndex
+from llama_index.core import Document
 from langchain.llms import OpenAI
-from llama_hub.wordlift import WordLiftLoader
+from llama_index.readers.wordlift import WordLiftLoader
 
 # Set up the necessary configuration options
 endpoint = "https://api.wordlift.io/graphql"
@@ -65,5 +69,3 @@ result = query_engine.query("<YOUR_QUERY>")
 # Process the result as needed
 logging.info("Result: %s", result)
 ```
-
-This loader is designed to be used as a way to load data from WordLift KGs into [LlamaIndex](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/apify/actor#:~:text=load%20data%20into-,LlamaIndex,-and/or%20subsequently) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent.

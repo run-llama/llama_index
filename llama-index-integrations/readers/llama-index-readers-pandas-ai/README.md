@@ -1,5 +1,9 @@
 # Pandas AI Loader
 
+```bash
+pip install llama-index-readers-pandas-ai
+```
+
 This loader is a light wrapper around the `PandasAI` Python package.
 
 See here: https://github.com/gventuri/pandas-ai.
@@ -10,7 +14,6 @@ you can choose to load in `Document` objects via `load_data`.
 ## Usage
 
 ```python
-from llama_index import download_loader
 from pandasai.llm.openai import OpenAI
 import pandas as pd
 
@@ -47,7 +50,7 @@ df = pd.DataFrame(
 
 llm = OpenAI()
 
-PandasAIReader = download_loader("PandasAIReader")
+from llama_index.readers.pandas_ai import PandasAIReader
 
 # use run_pandas_ai directly
 # set is_conversational_answer=False to get parsed output
@@ -70,4 +73,4 @@ docs = reader.load_data(
 )
 ```
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).

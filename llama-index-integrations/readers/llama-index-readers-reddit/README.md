@@ -1,5 +1,9 @@
 # Reddit Reader
 
+```bash
+pip install llama-index-readers-reddit
+```
+
 For any subreddit(s) you're interested in, search for relevant posts using keyword(s) and load the resulting text in the post and and top-level comments into LLMs/ LangChains.
 
 ## Get your Reddit credentials ready
@@ -15,9 +19,9 @@ For any subreddit(s) you're interested in, search for relevant posts using keywo
 ### LlamaIndex
 
 ```python
-from llama_index import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex, download_loader
 
-RedditReader = download_loader("RedditReader")
+from llama_index.readers.reddit import RedditReader
 
 subreddits = ["MachineLearning"]
 search_keys = ["PyTorch", "deploy"]
@@ -35,13 +39,13 @@ index.query("What are the pain points of PyTorch users?")
 ### LangChain
 
 ```python
-from llama_index import VectorStoreIndex, download_loader
+from llama_index.core import VectorStoreIndex, download_loader
 
 from langchain.agents import initialize_agent, Tool
 from langchain.llms import OpenAI
 from langchain.chains.conversation.memory import ConversationBufferMemory
 
-RedditReader = download_loader("RedditReader")
+from llama_index.readers.reddit import RedditReader
 
 subreddits = ["MachineLearning"]
 search_keys = ["PyTorch", "deploy"]
@@ -70,4 +74,4 @@ output = agent_chain.run(input="What are the pain points of PyTorch users?")
 print(output)
 ```
 
-This loader is designed to be used as a way to load data into [GPT Index](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data into [GPT Index](https://github.com/run-llama/llama_index/).

@@ -133,7 +133,8 @@ DEFAULT_WEBSITE_EXTRACTOR: Dict[
 
 
 class BeautifulSoupWebReader(BasePydanticReader):
-    """BeautifulSoup web page reader.
+    """
+    BeautifulSoup web page reader.
 
     Reads pages from the web.
     Requires the `bs4` and `urllib` packages.
@@ -142,14 +143,15 @@ class BeautifulSoupWebReader(BasePydanticReader):
         website_extractor (Optional[Dict[str, Callable]]): A mapping of website
             hostname (e.g. google.com) to a function that specifies how to
             extract text from the BeautifulSoup obj. See DEFAULT_WEBSITE_EXTRACTOR.
+
     """
 
     is_remote: bool = True
     _website_extractor: Dict[str, Callable] = PrivateAttr()
 
     def __init__(self, website_extractor: Optional[Dict[str, Callable]] = None) -> None:
-        self._website_extractor = website_extractor or DEFAULT_WEBSITE_EXTRACTOR
         super().__init__()
+        self._website_extractor = website_extractor or DEFAULT_WEBSITE_EXTRACTOR
 
     @classmethod
     def class_name(cls) -> str:
@@ -162,7 +164,8 @@ class BeautifulSoupWebReader(BasePydanticReader):
         custom_hostname: Optional[str] = None,
         include_url_in_text: Optional[bool] = True,
     ) -> List[Document]:
-        """Load data from the urls.
+        """
+        Load data from the urls.
 
         Args:
             urls (List[str]): List of URLs to scrape.

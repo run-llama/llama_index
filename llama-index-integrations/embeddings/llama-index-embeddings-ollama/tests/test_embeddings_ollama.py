@@ -3,5 +3,7 @@ from llama_index.embeddings.ollama import OllamaEmbedding
 
 
 def test_embedding_class():
-    emb = OllamaEmbedding(model_name="")
+    emb = OllamaEmbedding(
+        model_name="", client_kwargs={"headers": {"Authorization": "Bearer token"}}
+    )
     assert isinstance(emb, BaseEmbedding)

@@ -1,5 +1,9 @@
 # Guru Loader
 
+```bash
+pip install llama-index-readers-guru
+```
+
 This loader loads documents from [Guru](https://www.getguru.com/). The user specifies a username and api key to initialize the GuruReader.
 
 Note this is not your password. You need to create a new api key in the admin tab of the portal.
@@ -9,9 +13,7 @@ Note this is not your password. You need to create a new api key in the admin ta
 Here's an example usage of the GuruReader.
 
 ```python
-from llama_index import download_loader
-
-GuruReader = download_loader("GuruReader")
+from llama_index.readers.guru import GuruReader
 
 reader = GuruReader(username="<GURU_USERNAME>", api_key="<GURU_API_KEY>")
 
@@ -24,4 +26,4 @@ documents = reader.load_data(
 documents = reader.load_data(card_ids=["<CARD_ID_1>", "<CARD_ID_2>"])
 ```
 
-This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/tree/main/llama_index) and/or subsequently used as a Tool in a [LangChain](https://github.com/hwchase17/langchain) Agent. See [here](https://github.com/emptycrown/llama-hub/tree/main) for examples.
+This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).
