@@ -28,7 +28,7 @@ Chat LlamaIndex is another full-stack, open-source application that has a variet
 
 ## LlamaBot: Slack and Discord apps
 
-LlamaBot is another open-source application, this time for building a Slack bot that listens to messages within your organization and answers questions about what's going on. You can check out the [full tutorial and code on GitHub]https://github.com/run-llama/llamabot). If you prefer Discord, there is a [Discord version contributed by the community](https://twitter.com/clusteredbytes/status/1754220009885163957).
+LlamaBot is another open-source application, this time for building a Slack bot that listens to messages within your organization and answers questions about what's going on. You can check out the [full tutorial and code on GitHub](https://github.com/run-llama/llamabot). If you prefer Discord, there is a [Discord version contributed by the community](https://twitter.com/clusteredbytes/status/1754220009885163957).
 
 ![LlamaBot](llamabot.png)
 

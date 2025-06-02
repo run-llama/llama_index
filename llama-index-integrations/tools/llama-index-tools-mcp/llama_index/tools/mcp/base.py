@@ -1,12 +1,13 @@
+import asyncio
+import logging
 from typing import Any, Callable, Dict, List, Optional, Type
 
-from pydantic import BaseModel, Field, create_model
 from mcp.client.session import ClientSession
+from mcp.types import Resource
+from pydantic import BaseModel, Field, create_model
 
-import asyncio
-
-from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.core.tools.function_tool import FunctionTool
+from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.core.tools.types import ToolMetadata
 
 # Map JSON Schema types to Python types
@@ -63,7 +64,10 @@ class McpToolSpec(BaseToolSpec):
         client: An MCP client instance implementing ClientSession, and it should support the following methods in ClientSession:
             - list_tools: List all tools.
             - call_tool: Call a tool.
+            - list_resources: List all resources.
+            - read_resource: Read a resource.
         allowed_tools: If set, only return tools with the specified names.
+        include_resources: Whether to include resources in the tool list.
 
     """
 
@@ -71,9 +75,11 @@ class McpToolSpec(BaseToolSpec):
         self,
         client: ClientSession,
         allowed_tools: Optional[List[str]] = None,
+        include_resources: bool = False,
     ) -> None:
         self.client = client
-        self.allowed_tools = allowed_tools if allowed_tools is not None else []
+        self.allowed_tools = allowed_tools
+        self.include_resources = include_resources
 
     async def fetch_tools(self) -> List[Any]:
         """
@@ -85,9 +91,39 @@ class McpToolSpec(BaseToolSpec):
         """
         response = await self.client.list_tools()
         tools = response.tools if hasattr(response, "tools") else []
-        if self.allowed_tools:
-            tools = [tool for tool in tools if tool.name in self.allowed_tools]
-        return tools
+
+        if self.allowed_tools is None:
+            # get all tools by default
+            return tools
+
+        if any(self.allowed_tools):
+            return [tool for tool in tools if tool.name in self.allowed_tools]
+
+        logging.warning(
+            "Returning an empty tool list due to the empty `allowed_tools` list. Please ensure `allowed_tools` is set appropriately."
+        )
+        return []
+
+    async def fetch_resources(self) -> List[Resource]:
+        """
+        An asynchronous method to get the resources list from MCP Client.
+        """
+        response = await self.client.list_resources()
+        resources = response.resources if hasattr(response, "resources") else []
+        if self.allowed_tools is None:
+            return resources
+
+        if any(self.allowed_tools):
+            return [
+                resource
+                for resource in resources
+                if resource.name in self.allowed_tools
+            ]
+
+        logging.warning(
+            "Returning an empty resource list due to the empty `allowed_tools` list. Please ensure `allowed_tools` is set appropriately."
+        )
+        return []
 
     def _create_tool_fn(self, tool_name: str) -> Callable:
         """
@@ -98,6 +134,16 @@ class McpToolSpec(BaseToolSpec):
             return await self.client.call_tool(tool_name, kwargs)
 
         return async_tool_fn
+
+    def _create_resource_fn(self, resource_uri: str) -> Callable:
+        """
+        Create a resource call function for a specified MCP resource name. The function internally wraps the read_resource call to the MCP Client.
+        """
+
+        async def async_resource_fn():
+            return await self.client.read_resource(resource_uri)
+
+        return async_resource_fn
 
     async def to_tool_list_async(self) -> List[FunctionTool]:
         """
@@ -120,8 +166,23 @@ class McpToolSpec(BaseToolSpec):
                 description=tool.description,
                 fn_schema=model_schema,
             )
-            function_tool = FunctionTool.from_defaults(fn=fn, tool_metadata=metadata)
+            function_tool = FunctionTool.from_defaults(
+                async_fn=fn, tool_metadata=metadata
+            )
             function_tool_list.append(function_tool)
+
+        if self.include_resources:
+            resources_list = await self.fetch_resources()
+            for resource in resources_list:
+                fn = self._create_resource_fn(resource.name)
+                function_tool_list.append(
+                    FunctionTool.from_defaults(
+                        async_fn=fn,
+                        name=resource.name.replace("/", "_"),
+                        description=resource.description,
+                    )
+                )
+
         return function_tool_list
 
     def to_tool_list(self) -> List[FunctionTool]:

@@ -11,7 +11,7 @@ dev = [
     "pylint==2.15.10",
     "pytest==7.2.1",
     "pytest-mock==3.11.1",
-    "ruff==0.0.292",
+    "ruff==0.11.11",
     "tree-sitter-languages>=1.8.0,<2",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
@@ -25,7 +25,7 @@ dev = [
 
 [project]
 name = "llama-index-packs-resume-screener"
-version = "0.7.0"
+version = "0.7.1"
 description = "llama-index packs resume_screener integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -41,7 +41,7 @@ keywords = [
 dependencies = [
     "pypdf>=5.1.0,<6",
     "llama-index-readers-file>=0.4.0,<0.5",
-    "llama-index-llms-openai>=0.3.0,<0.4",
+    "llama-index-llms-openai>=0.4.0,<0.5",
 ]
 
 [tool.codespell]

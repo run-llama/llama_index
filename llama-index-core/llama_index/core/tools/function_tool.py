@@ -79,11 +79,15 @@ class FunctionTool(AsyncBaseTool):
         self.requires_context = any(
             param.annotation == Context for param in sig.parameters.values()
         )
-        self.ctx_param_name = next(
-            param.name
-            for param in sig.parameters.values()
-            if param.annotation == Context
-        ) if self.requires_context else None
+        self.ctx_param_name = (
+            next(
+                param.name
+                for param in sig.parameters.values()
+                if param.annotation == Context
+            )
+            if self.requires_context
+            else None
+        )
 
         if metadata is None:
             raise ValueError("metadata must be provided")
@@ -169,7 +173,9 @@ class FunctionTool(AsyncBaseTool):
                     has_self = True
                     fn_sig = fn_sig.replace(
                         parameters=[
-                            param for param in fn_sig.parameters.values() if param.name != "self"
+                            param
+                            for param in fn_sig.parameters.values()
+                            if param.name != "self"
                         ]
                     )
                     break
@@ -242,9 +248,7 @@ class FunctionTool(AsyncBaseTool):
         all_kwargs = {**self.partial_params, **kwargs}
         return self.call(*args, **all_kwargs)
 
-    def call(
-        self, *args: Any, **kwargs: Any
-    ) -> ToolOutput:
+    def call(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Sync Call."""
         all_kwargs = {**self.partial_params, **kwargs}
         if self.requires_context and self.ctx_param_name is not None:
@@ -252,11 +256,17 @@ class FunctionTool(AsyncBaseTool):
                 raise ValueError("Context is required for this tool")
 
         raw_output = self._fn(*args, **all_kwargs)
+
+        # Exclude the Context param from the tool output so that the Context can be serialized
+        tool_output_kwargs = {
+            k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
+        }
+
         # Default ToolOutput based on the raw output
         default_output = ToolOutput(
             content=str(raw_output),
             tool_name=self.metadata.name,
-            raw_input={"args": args, "kwargs": all_kwargs},
+            raw_input={"args": args, "kwargs": tool_output_kwargs},
             raw_output=raw_output,
         )
         # Check for a sync callback override
@@ -269,14 +279,12 @@ class FunctionTool(AsyncBaseTool):
                 return ToolOutput(
                     content=str(callback_result),
                     tool_name=self.metadata.name,
-                    raw_input={"args": args, "kwargs": all_kwargs},
+                    raw_input={"args": args, "kwargs": tool_output_kwargs},
                     raw_output=raw_output,
                 )
         return default_output
 
-    async def acall(
-        self, *args: Any, **kwargs: Any
-    ) -> ToolOutput:
+    async def acall(self, *args: Any, **kwargs: Any) -> ToolOutput:
         """Async Call."""
         all_kwargs = {**self.partial_params, **kwargs}
         if self.requires_context and self.ctx_param_name is not None:
@@ -284,11 +292,17 @@ class FunctionTool(AsyncBaseTool):
                 raise ValueError("Context is required for this tool")
 
         raw_output = await self._async_fn(*args, **all_kwargs)
+
+        # Exclude the Context param from the tool output so that the Context can be serialized
+        tool_output_kwargs = {
+            k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
+        }
+
         # Default ToolOutput based on the raw output
         default_output = ToolOutput(
             content=str(raw_output),
             tool_name=self.metadata.name,
-            raw_input={"args": args, "kwargs": all_kwargs},
+            raw_input={"args": args, "kwargs": tool_output_kwargs},
             raw_output=raw_output,
         )
         # Check for an async callback override
@@ -301,7 +315,7 @@ class FunctionTool(AsyncBaseTool):
                 return ToolOutput(
                     content=str(callback_result),
                     tool_name=self.metadata.name,
-                    raw_input={"args": args, "kwargs": all_kwargs},
+                    raw_input={"args": args, "kwargs": tool_output_kwargs},
                     raw_output=raw_output,
                 )
         return default_output

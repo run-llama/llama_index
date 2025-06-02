@@ -52,7 +52,12 @@ def multiply(a: float, b: float) -> float:
 # Create an agent workflow with our calculator tool
 agent = FunctionAgent(
     tools=[multiply],
-    llm=Ollama(model="llama3.1", request_timeout=360.0),
+    llm=Ollama(
+        model="llama3.1",
+        request_timeout=360.0,
+        # Manually set the context window to limit memory usage
+        context_window=8000,
+    ),
     system_prompt="You are a helpful assistant that can multiply two numbers.",
 )
 
@@ -128,7 +133,12 @@ import os
 
 # Settings control global defaults
 Settings.embed_model = HuggingFaceEmbedding(model_name="BAAI/bge-base-en-v1.5")
-Settings.llm = Ollama(model="llama3.1", request_timeout=360.0)
+Settings.llm = Ollama(
+    model="llama3.1",
+    request_timeout=360.0,
+    # Manually set the context window to limit memory usage
+    context_window=8000,
+)
 
 # Create a RAG tool using LlamaIndex
 documents = SimpleDirectoryReader("data").load_data()

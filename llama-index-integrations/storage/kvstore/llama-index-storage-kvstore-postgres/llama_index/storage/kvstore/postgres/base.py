@@ -7,9 +7,7 @@ try:
     import sqlalchemy
     import sqlalchemy.ext.asyncio  # noqa
 except ImportError:
-    raise ImportError(
-        "`sqlalchemy[asyncio]` package should be pre installed"
-    )
+    raise ImportError("`sqlalchemy[asyncio]` package should be pre installed")
 
 from llama_index.core.storage.kvstore.types import (
     DEFAULT_BATCH_SIZE,
@@ -85,7 +83,6 @@ class PostgresKVStore(BaseKVStore):
     _engine: Optional[sqlalchemy.engine.Engine] = PrivateAttr()
     _async_engine: Optional[sqlalchemy.ext.asyncio.AsyncEngine] = PrivateAttr()
 
-
     def __init__(
         self,
         table_name: str,
@@ -103,8 +100,7 @@ class PostgresKVStore(BaseKVStore):
             import psycopg2  # noqa
         except ImportError:
             raise ImportError(
-                "`psycopg2-binary` and `asyncpg` "
-                "packages should be pre installed"
+                "`psycopg2-binary` and `asyncpg` packages should be pre installed"
             )
 
         table_name = table_name.lower()
@@ -121,11 +117,21 @@ class PostgresKVStore(BaseKVStore):
         self._is_initialized = False
 
         if not self._async_engine and not self.async_connection_string:
-            raise ValueError("You should provide an asynchronous connection string, if you do not provide an asynchronous SqlAlchemy engine")
+            raise ValueError(
+                "You should provide an asynchronous connection string, if you do not provide an asynchronous SqlAlchemy engine"
+            )
         elif not self._engine and not self.connection_string:
-            raise ValueError("You should provide a synchronous connection string, if you do not provide a synchronous SqlAlchemy engine")
-        elif not self._engine and not self._async_engine and (not self.connection_string or not self.connection_string):
-            raise ValueError("If a SqlAlchemy engine is not provided, you should provide a synchronous and an asynchronous connection string")
+            raise ValueError(
+                "You should provide a synchronous connection string, if you do not provide a synchronous SqlAlchemy engine"
+            )
+        elif (
+            not self._engine
+            and not self._async_engine
+            and (not self.connection_string or not self.connection_string)
+        ):
+            raise ValueError(
+                "If a SqlAlchemy engine is not provided, you should provide a synchronous and an asynchronous connection string"
+            )
 
         from sqlalchemy.orm import declarative_base
 
@@ -198,10 +204,14 @@ class PostgresKVStore(BaseKVStore):
         from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
         from sqlalchemy.orm import sessionmaker
 
-        self._engine = self._engine or create_engine(self.connection_string, echo=self.debug)
+        self._engine = self._engine or create_engine(
+            self.connection_string, echo=self.debug
+        )
         self._session = sessionmaker(self._engine)
 
-        self._async_engine = self._async_engine or create_async_engine(self.async_connection_string)
+        self._async_engine = self._async_engine or create_async_engine(
+            self.async_connection_string
+        )
         self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)
 
     def _create_schema_if_not_exists(self) -> None:

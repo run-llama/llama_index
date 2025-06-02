@@ -222,7 +222,7 @@ class TypesenseVectorStore(BasePydanticVectorStore):
                         {
                             "collection": self._collection_name,
                             "q": "*",
-                            "vector_query": f'vec:([{",".join(embedded_query)}],'
+                            "vector_query": f"vec:([{','.join(embedded_query)}],"
                             + f"k:{query.similarity_top_k})",
                             "filter_by": typesense_filter,
                         }

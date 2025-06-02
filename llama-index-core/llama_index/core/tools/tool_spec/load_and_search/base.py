@@ -143,9 +143,7 @@ class LoadAndSearchToolSpec(BaseToolSpec):
                 self._index.insert(doc, **self._index_kwargs)
         else:
             self._index = self._index_cls.from_documents(docs, **self._index_kwargs)
-        return (
-            f"Content loaded! You can now search the information using read_{self._metadata.name}"
-        )
+        return f"Content loaded! You can now search the information using read_{self._metadata.name}"
 
     def read(self, query: str) -> Any:
         # Query the index for the result

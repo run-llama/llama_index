@@ -32,6 +32,25 @@ def test_sync_embedding():
 @pytest.mark.skipif(
     os.environ.get("CO_API_KEY") is None, reason="Cohere API key required"
 )
+def test_batch_size_validation():
+    """Test that batch size validation works correctly."""
+    # Test batch size exceeding the limit
+    with pytest.raises(ValueError) as exc_info:
+        CohereEmbedding(api_key=os.environ["CO_API_KEY"], embed_batch_size=97)
+    assert "exceeds the maximum allowed value of 96" in str(exc_info.value)
+
+    # Test batch size at the limit (should not raise)
+    emb = CohereEmbedding(api_key=os.environ["CO_API_KEY"], embed_batch_size=96)
+    assert emb.embed_batch_size == 96
+
+    # Test batch size below the limit (should not raise)
+    emb = CohereEmbedding(api_key=os.environ["CO_API_KEY"], embed_batch_size=50)
+    assert emb.embed_batch_size == 50
+
+
+@pytest.mark.skipif(
+    os.environ.get("CO_API_KEY") is None, reason="Cohere API key required"
+)
 @pytest.mark.asyncio
 async def test_async_embedding():
     emb = CohereEmbedding(
@@ -43,6 +62,7 @@ async def test_async_embedding():
     )
 
     await emb.aget_query_embedding("I love Cohere!")
+
 
 @pytest.mark.skipif(
     os.environ.get("CO_API_KEY") is None, reason="Cohere API key required"
@@ -71,10 +91,13 @@ async def test_embed_batch():
         model_name="embed-v4.0",
     )
 
-    embeddings = await emb.aget_text_embedding_batch(["I love Cohere!", "I love Cohere!"])
+    embeddings = await emb.aget_text_embedding_batch(
+        ["I love Cohere!", "I love Cohere!"]
+    )
     assert len(embeddings) == 2
     assert len(embeddings[0]) > 0
     assert len(embeddings[1]) > 0
+
 
 @pytest.mark.skipif(
     os.environ.get("CO_API_KEY") is None, reason="Cohere API key required"
@@ -95,6 +118,7 @@ async def test_embed_image():
 
     assert len(embedding) > 0
     assert len(embedding2) > 0
+
 
 @pytest.mark.skipif(
     os.environ.get("CO_API_KEY") is None, reason="Cohere API key required"

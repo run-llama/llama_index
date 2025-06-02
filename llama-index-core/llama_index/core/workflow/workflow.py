@@ -31,6 +31,7 @@ from .events import (
 )
 from .handler import WorkflowHandler
 from .service import ServiceManager
+from .resource import ResourceManager
 from .utils import (
     ServiceDefinition,
     get_steps_from_class,
@@ -68,6 +69,7 @@ class Workflow(metaclass=WorkflowMeta):
         disable_validation: bool = False,
         verbose: bool = False,
         service_manager: Optional[ServiceManager] = None,
+        resource_manager: Optional[ResourceManager] = None,
         num_concurrent_runs: Optional[int] = None,
     ) -> None:
         """
@@ -106,6 +108,8 @@ class Workflow(metaclass=WorkflowMeta):
         self._stepwise_context: Optional[Context] = None
         # Services management
         self._service_manager = service_manager or ServiceManager()
+        # Resource management
+        self._resource_manager = resource_manager or ResourceManager()
 
     def _ensure_start_event_class(self) -> type[StartEvent]:
         """
@@ -274,6 +278,7 @@ class Workflow(metaclass=WorkflowMeta):
                     checkpoint_callback=checkpoint_callback,
                     run_id=run_id,
                     service_manager=self._service_manager,
+                    resource_manager=self._resource_manager,
                     dispatcher=dispatcher,
                 )
 
@@ -485,10 +490,20 @@ class Workflow(metaclass=WorkflowMeta):
         consumed_events: Set[type] = set()
         requested_services: Set[ServiceDefinition] = set()
 
-        for step_func in self._get_steps().values():
+        # Collect steps that incorrectly accept StopEvent
+        steps_accepting_stop_event: list[str] = []
+
+        for name, step_func in self._get_steps().items():
             step_config: Optional[StepConfig] = getattr(step_func, "__step_config")
             # At this point we know step config is not None, let's make the checker happy
             assert step_config is not None
+
+            # Check that no user-defined step accepts StopEvent (only _done step should)
+            if name != "_done":
+                for event_type in step_config.accepted_events:
+                    if issubclass(event_type, StopEvent):
+                        steps_accepting_stop_event.append(name)
+                        break
 
             for event_type in step_config.accepted_events:
                 consumed_events.add(event_type)
@@ -501,6 +516,13 @@ class Workflow(metaclass=WorkflowMeta):
                 produced_events.add(event_type)
 
             requested_services.update(step_config.requested_services)
+
+        # Raise error if any steps incorrectly accept StopEvent
+        if steps_accepting_stop_event:
+            step_names = "', '".join(steps_accepting_stop_event)
+            plural = "" if len(steps_accepting_stop_event) == 1 else "s"
+            msg = f"Step{plural} '{step_names}' cannot accept StopEvent. StopEvent signals the end of the workflow. Use a different Event type instead."
+            raise WorkflowValidationError(msg)
 
         # Check if no StopEvent is produced
         stop_ok = False

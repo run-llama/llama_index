@@ -1,4 +1,5 @@
 """Firecrawl Web Reader."""
+
 from typing import Any, List, Optional, Dict, Callable
 from pydantic import Field
 

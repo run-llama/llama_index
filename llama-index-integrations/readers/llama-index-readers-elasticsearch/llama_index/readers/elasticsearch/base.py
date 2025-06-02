@@ -5,7 +5,6 @@ This only uses the basic search api, so it will work with Elasticsearch and Open
 
 """
 
-
 from typing import Any, List, Optional
 
 from llama_index.core.bridge.pydantic import PrivateAttr

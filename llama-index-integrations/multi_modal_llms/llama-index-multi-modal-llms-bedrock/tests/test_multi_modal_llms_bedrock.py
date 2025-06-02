@@ -1,4 +1,5 @@
 """Test Bedrock multi-modal LLM."""
+
 import json
 from io import BytesIO
 import pytest

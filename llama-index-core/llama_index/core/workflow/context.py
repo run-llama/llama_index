@@ -31,6 +31,7 @@ from .errors import (
 )
 from .events import Event, InputRequiredEvent
 from .service import ServiceManager
+from .resource import ResourceManager
 from .types import RunResultT
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -39,9 +40,11 @@ if TYPE_CHECKING:  # pragma: no cover
 T = TypeVar("T", bound=Event)
 EventBuffer = Dict[str, List[Event]]
 
+
 # Only warn once about unserializable keys
 class UnserializableKeyWarning(Warning):
     pass
+
 
 warnings.simplefilter("once", UnserializableKeyWarning)
 
@@ -60,7 +63,7 @@ class Context:
 
     # These keys are set by pre-built workflows and
     # are known to be unserializable in some cases.
-    known_unserializable_keys = ("memory", )
+    known_unserializable_keys = ("memory",)
 
     def __init__(
         self,
@@ -545,6 +548,7 @@ class Context:
         checkpoint_callback: Optional[CheckpointCallback],
         run_id: str,
         service_manager: ServiceManager,
+        resource_manager: ResourceManager,
         dispatcher: Dispatcher,
     ) -> None:
         self._tasks.add(
@@ -558,6 +562,7 @@ class Context:
                     checkpoint_callback=checkpoint_callback,
                     run_id=run_id,
                     service_manager=service_manager,
+                    resource_manager=resource_manager,
                     dispatcher=dispatcher,
                 ),
                 name=name,
@@ -574,6 +579,7 @@ class Context:
         checkpoint_callback: Optional[CheckpointCallback],
         run_id: str,
         service_manager: ServiceManager,
+        resource_manager: ResourceManager,
         dispatcher: Dispatcher,
     ) -> None:
         while True:
@@ -601,6 +607,10 @@ class Context:
                     service_definition.name, service_definition.default_value
                 )
                 kwargs[service_definition.name] = service
+            for resource in config.resources:
+                kwargs[resource.name] = await resource_manager.get(
+                    resource=resource.resource
+                )
             kwargs[config.event_name] = ev
 
             # wrap the step with instrumentation

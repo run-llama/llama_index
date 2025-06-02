@@ -1,4 +1,5 @@
 """Simple Reader that reads abstract of primary citation for a given PDB id."""
+
 from typing import List
 
 from llama_index.core.readers.base import BaseReader

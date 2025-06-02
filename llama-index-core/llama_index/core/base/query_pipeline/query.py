@@ -352,8 +352,7 @@ class ComponentIntermediates:
 
     def __repr__(self) -> str:
         return (
-            f"ComponentIntermediates(inputs={self.inputs!s}, "
-            f"outputs={self.outputs!s})"
+            f"ComponentIntermediates(inputs={self.inputs!s}, outputs={self.outputs!s})"
         )
 
     def __str__(self) -> str:

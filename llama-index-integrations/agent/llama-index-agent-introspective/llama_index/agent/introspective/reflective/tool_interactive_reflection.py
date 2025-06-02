@@ -64,8 +64,7 @@ class Correction(BaseModel):
 
 @runtime_checkable
 class StoppingCallable(Protocol):
-    def __call__(self, critique_str: str) -> bool:
-        ...
+    def __call__(self, critique_str: str) -> bool: ...
 
 
 class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):

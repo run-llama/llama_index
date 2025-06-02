@@ -70,9 +70,7 @@ class ConfigurableComponent(Enum):
             )
         elif isinstance(component, BasePydanticReader):
             reader_config = ReaderConfig(reader=component)
-            return ConfiguredDataSource[ReaderConfig](
-                component=reader_config
-            )  # type: ignore
+            return ConfiguredDataSource[ReaderConfig](component=reader_config)  # type: ignore
 
         if isinstance(component, DocumentGroup) and name is None:
             # if the component is a DocumentGroup, we want to use the

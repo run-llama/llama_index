@@ -679,11 +679,9 @@ def test_context_nesting():
             with lock:
                 spans[id_] = span
 
-        def prepare_to_drop_span(self, *args: Any, **kwargs: Any) -> None:
-            ...
+        def prepare_to_drop_span(self, *args: Any, **kwargs: Any) -> None: ...
 
-        def prepare_to_exit_span(self, *args: Any, **kwargs: Any) -> None:
-            ...
+        def prepare_to_exit_span(self, *args: Any, **kwargs: Any) -> None: ...
 
     class EventHandler(BaseEventHandler):
         def handle(self, event: Event, **kwargs) -> None:

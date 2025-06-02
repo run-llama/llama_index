@@ -206,9 +206,9 @@ class DocumentContextExtractor(BaseExtractor):
                     messages, max_tokens=self.max_output_tokens, extra_headers=headers
                 )
 
-                first_block: Union[
-                    TextBlock, ImageBlock, AudioBlock, DocumentBlock
-                ] = response.message.blocks[0]
+                first_block: Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock] = (
+                    response.message.blocks[0]
+                )
                 if isinstance(first_block, TextBlock):
                     metadata[key] = first_block.text
                 else:

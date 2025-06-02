@@ -331,6 +331,7 @@ nav:
           - ./examples/llm/deepinfra.ipynb
           - ./examples/llm/deepseek.ipynb
           - ./examples/llm/everlyai.ipynb
+          - ./examples/llm/featherlessai.ipynb
           - ./examples/llm/fireworks.ipynb
           - ./examples/llm/fireworks_cookbook.ipynb
           - ./examples/llm/friendli.ipynb
@@ -719,7 +720,6 @@ nav:
       - Workflow:
           - ./examples/workflow/JSONalyze_query_engine.ipynb
           - ./examples/workflow/advanced_text_to_sql.ipynb
-          - ./examples/workflow/auto_retrieval.ipynb
           - ./examples/workflow/checkpointing_workflows.ipynb
           - ./examples/workflow/citation_query_engine.ipynb
           - ./examples/workflow/corrective_rag_pack.ipynb
@@ -997,7 +997,6 @@ nav:
           - ./api_reference/instrumentation/span_handlers.md
           - ./api_reference/instrumentation/span_types.md
       - LLMs:
-          - ./api_reference/llms/OptimumIntelLLM.md
           - ./api_reference/llms/ai21.md
           - ./api_reference/llms/alephalpha.md
           - ./api_reference/llms/alibabacloud_aisearch.md
@@ -1020,6 +1019,7 @@ nav:
           - ./api_reference/llms/deepinfra.md
           - ./api_reference/llms/deepseek.md
           - ./api_reference/llms/everlyai.md
+          - ./api_reference/llms/featherlessai.md
           - ./api_reference/llms/fireworks.md
           - ./api_reference/llms/friendli.md
           - ./api_reference/llms/gaudi.md
@@ -1082,6 +1082,7 @@ nav:
           - ./api_reference/llms/rungpt.md
           - ./api_reference/llms/sagemaker_endpoint.md
           - ./api_reference/llms/sambanovasystems.md
+          - ./api_reference/llms/servam.md
           - ./api_reference/llms/siliconflow.md
           - ./api_reference/llms/solar.md
           - ./api_reference/llms/stepfun.md
@@ -1170,10 +1171,7 @@ nav:
           - ./api_reference/llama_deploy/control_plane.md
           - ./api_reference/llama_deploy/deploy.md
           - ./api_reference/llama_deploy/deployment.md
-          - ./api_reference/llama_deploy/message_consumers.md
-          - ./api_reference/llama_deploy/message_publishers.md
           - ./api_reference/llama_deploy/messages.md
-          - ./api_reference/llama_deploy/orchestrators.md
           - ./api_reference/llama_deploy/python_sdk.md
           - ./api_reference/llama_deploy/services.md
           - ./api_reference/llama_deploy/types.md
@@ -1190,7 +1188,6 @@ nav:
           - ./api_reference/llama_deploy/message_queues/rabbitmq.md
           - ./api_reference/llama_deploy/message_queues/redis.md
           - ./api_reference/llama_deploy/message_queues/simple.md
-          - ./api_reference/llama_deploy/message_queues/solace.md
       - Metadata Extractors:
           - ./api_reference/extractors/documentcontext.md
           - ./api_reference/extractors/entity.md
@@ -1280,6 +1277,8 @@ nav:
           - ./api_reference/postprocessor/xinference_rerank.md
       - Object Stores:
           - ./api_reference/objects/index.md
+      - Observability:
+          - ./api_reference/observability/otel.md
       - Output Parsers:
           - ./api_reference/output_parsers/guardrails.md
           - ./api_reference/output_parsers/index.md
@@ -2456,6 +2455,9 @@ plugins:
             - ../llama-index-integrations/retrievers/llama-index-retrievers-vectorize
             - ../llama-index-integrations/tools/llama-index-tools-brightdata
             - ../llama-index-integrations/tools/llama-index-tools-desearch
+            - ../llama-index-integrations/observability/llama-index-observability-otel
+            - ../llama-index-integrations/llms/llama-index-llms-featherlessai
+            - ../llama-index-integrations/llms/llama-index-llms-sarvam
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

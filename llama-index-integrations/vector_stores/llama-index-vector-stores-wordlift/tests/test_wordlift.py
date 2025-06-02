@@ -907,8 +907,7 @@ def node_embeddings() -> List[TextNode]:
 def configuration(wiremock_server, random_port: int) -> Configuration:
     configuration = Configuration(
         # host=wiremock_server.get_url(""),
-        host="http://localhost:"
-        + str(random_port)
+        host="http://localhost:" + str(random_port)
     )
 
     configuration.api_key["ApiKey"] = KEY

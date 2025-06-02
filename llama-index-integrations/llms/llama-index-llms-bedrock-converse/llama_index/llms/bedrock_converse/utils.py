@@ -45,6 +45,8 @@ BEDROCK_MODELS = {
     "anthropic.claude-3-5-sonnet-20241022-v2:0": 200000,
     "anthropic.claude-3-5-haiku-20241022-v1:0": 200000,
     "anthropic.claude-3-7-sonnet-20250219-v1:0": 200000,
+    "anthropic.claude-opus-4-20250514-v1:0": 200000,
+    "anthropic.claude-sonnet-4-20250514-v1:0": 200000,
     "ai21.j2-mid-v1": 8192,
     "ai21.j2-ultra-v1": 8192,
     "cohere.command-text-v14": 4096,
@@ -83,6 +85,8 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "anthropic.claude-3-5-sonnet-20241022-v2:0",
     "anthropic.claude-3-5-haiku-20241022-v1:0",
     "anthropic.claude-3-7-sonnet-20250219-v1:0",
+    "anthropic.claude-opus-4-20250514-v1:0",
+    "anthropic.claude-sonnet-4-20250514-v1:0",
     "cohere.command-r-v1:0",
     "cohere.command-r-plus-v1:0",
     "mistral.mistral-large-2402-v1:0",
@@ -107,6 +111,8 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "anthropic.claude-3-5-sonnet-20241022-v2:0",
     "anthropic.claude-3-5-haiku-20241022-v1:0",
     "anthropic.claude-3-7-sonnet-20250219-v1:0",
+    "anthropic.claude-opus-4-20250514-v1:0",
+    "anthropic.claude-sonnet-4-20250514-v1:0",
     "meta.llama3-1-8b-instruct-v1:0",
     "meta.llama3-1-70b-instruct-v1:0",
     "meta.llama3-2-1b-instruct-v1:0",
@@ -190,9 +196,7 @@ def _content_block_to_bedrock_format(
         title = block.title
         # NOTE: At the time of writing, "txt" format works for all file types
         # The API then infers the format from the file type based on the bytes
-        return {
-            "document": {"format": "txt", "name": title, "source": {"bytes": data}}
-        }
+        return {"document": {"format": "txt", "name": title, "source": {"bytes": data}}}
     elif isinstance(block, ImageBlock):
         if role != MessageRole.USER:
             logger.warning(
@@ -321,7 +325,11 @@ def messages_to_converse_messages(
     return __merge_common_role_msgs(converse_messages), system_prompt.strip()
 
 
-def tools_to_converse_tools(tools: List["BaseTool"]) -> Dict[str, Any]:
+def tools_to_converse_tools(
+    tools: List["BaseTool"],
+    tool_choice: Optional[dict] = None,
+    tool_required: bool = False,
+) -> Dict[str, Any]:
     """
     Converts a list of tools to AWS Bedrock Converse tools.
 
@@ -345,7 +353,12 @@ def tools_to_converse_tools(tools: List["BaseTool"]) -> Dict[str, Any]:
             "inputSchema": {"json": tool.metadata.get_parameters_dict()},
         }
         converse_tools.append({"toolSpec": tool_dict})
-    return {"tools": converse_tools}
+    return {
+        "tools": converse_tools,
+        # https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolChoice.html
+        # e.g. { "auto": {} }
+        "toolChoice": tool_choice or ({"any": {}} if tool_required else {"auto": {}}),
+    }
 
 
 def force_single_tool_call(response: ChatResponse) -> None:

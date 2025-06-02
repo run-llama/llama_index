@@ -20,6 +20,8 @@ class SimpleKVStore(BaseInMemoryKVStore):
 
     Args:
         data (Optional[DATA_TYPE]): data to initialize the store with
+        maximum_data_points (Optional[int]): maximum number of data points that can be stored within a collection in the KVStore
+        size_strict (Optional[bool]): whether to throw an error or not when the maximum size is exceeded
 
     """
 

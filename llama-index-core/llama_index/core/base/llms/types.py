@@ -118,12 +118,21 @@ class ImageBlock(BaseModel):
             as_base64 (bool): whether the resolved image should be returned as base64-encoded bytes
 
         """
-        return resolve_binary(
+        data_buffer = resolve_binary(
             raw_bytes=self.image,
             path=self.path,
             url=str(self.url) if self.url else None,
             as_base64=as_base64,
         )
+
+        # Check size by seeking to end and getting position
+        data_buffer.seek(0, 2)  # Seek to end
+        size = data_buffer.tell()
+        data_buffer.seek(0)  # Reset to beginning
+
+        if size == 0:
+            raise ValueError("resolve_image returned zero bytes")
+        return data_buffer
 
 
 class AudioBlock(BaseModel):
@@ -178,12 +187,21 @@ class AudioBlock(BaseModel):
             as_base64 (bool): whether the resolved audio should be returned as base64-encoded bytes
 
         """
-        return resolve_binary(
+        data_buffer = resolve_binary(
             raw_bytes=self.audio,
             path=self.path,
             url=str(self.url) if self.url else None,
             as_base64=as_base64,
         )
+        # Check size by seeking to end and getting position
+        data_buffer.seek(0, 2)  # Seek to end
+        size = data_buffer.tell()
+        data_buffer.seek(0)  # Reset to beginning
+
+        if size == 0:
+            raise ValueError("resolve_image returned zero bytes")
+        return data_buffer
+
 
 class DocumentBlock(BaseModel):
     block_type: Literal["document"] = "document"
@@ -215,12 +233,20 @@ class DocumentBlock(BaseModel):
         """
         Resolve a document such that it is represented by a BufferIO object.
         """
-        return resolve_binary(
+        data_buffer = resolve_binary(
             raw_bytes=self.data,
             path=self.path,
             url=str(self.url) if self.url else None,
             as_base64=False,
         )
+        # Check size by seeking to end and getting position
+        data_buffer.seek(0, 2)  # Seek to end
+        size = data_buffer.tell()
+        data_buffer.seek(0)  # Reset to beginning
+
+        if size == 0:
+            raise ValueError("resolve_image returned zero bytes")
+        return data_buffer
 
     def _get_b64_string(self, data_buffer: BytesIO) -> str:
         """
@@ -255,9 +281,12 @@ class DocumentBlock(BaseModel):
         guess = filetype.get_type(ext=suffix)
         return str(guess.mime) if guess else None
 
+
 ContentBlock = Annotated[
-    Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock], Field(discriminator="block_type")
+    Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock],
+    Field(discriminator="block_type"),
 ]
+
 
 class ChatMessage(BaseModel):
     """Chat message."""

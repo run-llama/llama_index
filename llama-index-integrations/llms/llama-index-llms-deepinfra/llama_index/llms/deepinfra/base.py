@@ -399,6 +399,7 @@ class DeepInfraLLM(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,  # unsupported by deepinfra https://deepinfra.com/docs/advanced/function_calling - tool_choice only takes "auto" or "none", (not "required", so sadly can't require it)
         tool_choice: Union[str, dict] = "auto",
         **kwargs: Any,
     ) -> Dict[str, Any]:
