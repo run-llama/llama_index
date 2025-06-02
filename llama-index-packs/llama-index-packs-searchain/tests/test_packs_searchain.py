@@ -1,9 +1,8 @@
 from llama_index.core.llama_pack import BaseLlamaPack
-from llama_index.packs.searchain import SearChainPack
 from llama_index.packs.searchain.base import _normalize_answer, _match_or_not
 from llama_index.packs.searchain.base import _have_seen_or_not
 from unittest.mock import patch, MagicMock
-from llama_index.packs.searchain.base import SearChainPack
+from llama_index.packs.searchain.base import SearChainPack, ChatMessage
 
 
 def test_class():
@@ -46,6 +45,28 @@ def test_have_seen_or_not_all_below_threshold():
         mock_model, "new query", ["seen one"], query_type="Normal Query"
     )
     assert result is False
+
+
+def test_extract_with_final_content():
+    pack = SearChainPack.__new__(SearChainPack)
+    messages = [
+        ChatMessage(role="user", content="question"),
+        ChatMessage(
+            role="assistant", content="Final Content: This is the answer.\nOther line."
+        ),
+    ]
+    result = pack._extract(messages)
+    assert "Final Content" in result
+
+
+def test_extract_without_final_content():
+    pack = SearChainPack.__new__(SearChainPack)
+    messages = [
+        ChatMessage(role="user", content="question"),
+        ChatMessage(role="assistant", content="No useful output."),
+    ]
+    result = pack._extract(messages)
+    assert result == "Sorry, I still cannot solve this question!"
 
 
 @patch("llama_index.packs.searchain.base.VectorStoreIndex.from_documents")
