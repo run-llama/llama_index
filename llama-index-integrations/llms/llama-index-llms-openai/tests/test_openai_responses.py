@@ -408,7 +408,8 @@ def test_stream_chat_with_api():
 
     assert len(responses) > 0
     assert all(r.message.role == MessageRole.ASSISTANT for r in responses)
-    assert responses[-1].message.content is not None
+    accumulated_content = "".join([r.delta for r in responses if r.delta is not None])
+    assert len(accumulated_content) > 0, "Accumulated content should not be empty"
 
 
 @pytest.mark.skipif(SKIP_OPENAI_TESTS, reason="OpenAI API key not available")
@@ -458,7 +459,8 @@ async def test_astream_chat_with_api():
 
     assert len(responses) > 0
     assert all(r.message.role == MessageRole.ASSISTANT for r in responses)
-    assert responses[-1].message.content is not None
+    accumulated_content = "".join([r.delta for r in responses if r.delta is not None])
+    assert len(accumulated_content) > 0, "Accumulated content should not be empty"
 
 
 @pytest.mark.skipif(SKIP_OPENAI_TESTS, reason="OpenAI API key not available")
