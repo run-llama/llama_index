@@ -1,5 +1,6 @@
 from typing import Any, Optional, Tuple, Union, Dict
 import urllib.parse
+import uuid
 from httpx import Request
 
 from llama_index.core.async_utils import run_jobs
@@ -36,7 +37,15 @@ def resolve_retriever(
     project: Project,
     retriever_name: Optional[str] = None,
     retriever_id: Optional[str] = None,
+    persisted: bool = True,
 ) -> Optional[Retriever]:
+    if not persisted:
+        return Retriever(
+            id=str(uuid.uuid4()),
+            project_id=project.id,
+            name=retriever_name,
+            pipelines=[],
+        )
     if retriever_id:
         return client.retrievers.get_retriever(
             retriever_id=retriever_id, project_id=project.id
