@@ -73,7 +73,11 @@ class JsonPickleSerializer(JsonSerializer):
             return base64.b64encode(pickle.dumps(value)).decode("utf-8")
 
     def deserialize(self, value: str) -> Any:
-        """Deserialize while prioritizing Pickle, falling back to JSON."""
+        """
+        Deserialize while prioritizing Pickle, falling back to JSON.
+        To avoid malicious exploits of the deserialization, deserialize objects
+        only when you deem it safe to do so.
+        """
         try:
             return pickle.loads(base64.b64decode(value))
         except Exception:
