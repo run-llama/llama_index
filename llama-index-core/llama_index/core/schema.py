@@ -32,6 +32,7 @@ import requests
 from dataclasses_json import DataClassJsonMixin
 from deprecated import deprecated
 from typing_extensions import Self
+from PIL import Image
 
 from llama_index.core.bridge.pydantic import (
     AnyUrl,
@@ -1220,6 +1221,27 @@ class Document(Node):
         )
 
 
+def is_image_pil(file_path: str) -> bool:
+    try:
+        with Image.open(file_path) as img:
+            img.verify()  # Verify it's a valid image
+        return True
+    except (IOError, SyntaxError):
+        return False
+
+
+def is_image_url_pil(url: str) -> bool:
+    try:
+        response = requests.get(url, stream=True)
+        response.raise_for_status()  # Raise an exception for bad status codes
+        # Open image from the response content
+        img = Image.open(BytesIO(response.content))
+        img.verify()
+        return True
+    except (requests.RequestException, IOError, SyntaxError):
+        return False
+
+
 class ImageDocument(Document):
     """Backward compatible wrapper around Document containing an image."""
 
@@ -1235,10 +1257,14 @@ class ImageDocument(Document):
                 data=image, mimetype=image_mimetype
             )
         elif image_path:
+            if not is_image_pil(image_path):
+                raise ValueError("The specified file path is not an accessible image")
             kwargs["image_resource"] = MediaResource(
                 path=image_path, mimetype=image_mimetype
             )
         elif image_url:
+            if not is_image_url_pil(image_url):
+                raise ValueError("The specified URL is not an accessible image")
             kwargs["image_resource"] = MediaResource(
                 url=image_url, mimetype=image_mimetype
             )
