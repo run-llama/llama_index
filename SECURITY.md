@@ -4,27 +4,35 @@ Before reporting a vulnerability, please review In-Scope Targets and Out-of-Scop
 
 ## In-Scope Targets
 
-The following packages and repositories are eligible for bug bounties:
+Only the main umbrella package `llama-index` is eligible for bug bounties through the
+[Huntr platform](https://huntr.com/repos/run-llama/llama_index), along with its first-degree dependencies part of this
+Github repository:
 
+- llama-index-agent-openai
+- llama-index-cli
 - llama-index-core
-- llama-index-integrations (see exceptions)
-- llama-index-networks
+- llama-index-embeddings-openai
+- llama-index-indices-managed-llama-cloud
+- llama-index-llms-openai
+- llama-index-multi-modal-llms-openai
+- llama-index-program-openai
+- llama-index-question-gen-openai
+- llama-index-readers-file
+- llama-index-readers-llama-parse
 
 ## Out of Scope Targets
 
 All out of scope targets defined by huntr as well as:
 
-- **llama-index-experimental**: This repository is for experimental code and is not
-  eligible for bug bounties, bug reports to it will be marked as interesting or waste of
-  time and published with no bounty attached.
-- **llama-index-integrations/tools**: Community contributed tools are not eligible for bug
-  bounties. Generally tools interact with the real world. Developers are expected to
-  understand the security implications of their code and are responsible for the security
-  of their tools.
 - Code documented with security notices. This will be decided done on a case by
   case basis, but likely will not be eligible for a bounty as the code is already
   documented with guidelines for developers that should be followed for making their
   application secure.
+- Any integration hosted in this GitHub repository that's not a first-degree dependency
+  of the `llama-index` package.
+
+Out of scope targets can still be responsibly disclosed to the team through the
+["Report a vulnerability"](https://github.com/run-llama/llama_index/security/advisories/new) button on GitHub.
 
 ## Reporting LlamaCloud Vulnerabilities
 
