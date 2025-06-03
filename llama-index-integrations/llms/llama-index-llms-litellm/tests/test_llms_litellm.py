@@ -13,6 +13,7 @@ from llama_index.core.base.llms.types import (
     ChatResponse,
     TextBlock,
     ImageBlock,
+    DocumentBlock,
 )
 import json
 
@@ -476,6 +477,73 @@ def test_image_block_chat(respx_mock: respx.MockRouter, llm: LiteLLM):
     )
     assert text_content is not None
     assert text_content["text"] == "What's in this image?"
+
+
+def test_document_block_chat(respx_mock: respx.MockRouter, llm: LiteLLM):
+    """Test sending document blocks to OpenAI via LiteLLM."""
+    # Mock the API response for a request with document blocks
+    respx_mock.post("https://api.openai.com/v1/chat/completions").mock(
+        return_value=httpx.Response(
+            status_code=200,
+            json={
+                "choices": [
+                    {
+                        "message": {
+                            "content": "I can see this is a PDF document with text content."
+                        }
+                    }
+                ]
+            },
+        )
+    )
+
+    # Create a mock PDF document
+    mock_pdf_data = b"fake_pdf_data_for_testing"
+    document_block = DocumentBlock(
+        data=mock_pdf_data,
+        document_mimetype="application/pdf",
+        title="test_document.pdf",
+    )
+    text_block = TextBlock(text="Please analyze this document.")
+
+    message = ChatMessage(role=MessageRole.USER, content=[document_block, text_block])
+
+    # Send the message
+    chat_response = llm.chat([message])
+
+    # Check the response content
+    assert (
+        chat_response.message.blocks[0].text
+        == "I can see this is a PDF document with text content."
+    )
+
+    # Verify the request was sent correctly (check the last request)
+    request = respx_mock.calls.last.request
+    request_json = json.loads(request.content)
+
+    # Verify document block was correctly formatted in the request
+    assert len(request_json["messages"]) == 1
+    assert isinstance(request_json["messages"][0]["content"], list)
+
+    # Check for both document and text blocks in the request
+    content_blocks = request_json["messages"][0]["content"]
+    assert len(content_blocks) == 2
+
+    # Verify document block
+    document_content = next(
+        (item for item in content_blocks if item["type"] == "document"), None
+    )
+    assert document_content is not None
+    assert document_content["filename"] == "test_document.pdf"
+    assert "file_data" in document_content
+    assert document_content["file_data"].startswith("data:application/pdf;base64,")
+
+    # Verify text block
+    text_content = next(
+        (item for item in content_blocks if item["type"] == "text"), None
+    )
+    assert text_content is not None
+    assert text_content["text"] == "Please analyze this document."
 
 
 def test_prepare_chat_with_tools_tool_required():
