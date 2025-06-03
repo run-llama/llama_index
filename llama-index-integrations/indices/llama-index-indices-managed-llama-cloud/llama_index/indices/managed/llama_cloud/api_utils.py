@@ -44,7 +44,7 @@ def resolve_retriever(
             id=str(uuid.uuid4()),
             project_id=project.id,
             name=retriever_name,
-            pipelines=[]
+            pipelines=[],
         )
     if retriever_id:
         return client.retrievers.get_retriever(
@@ -60,6 +60,7 @@ def resolve_retriever(
         )
     else:
         return None
+
 
 def resolve_project(
     client: LlamaCloud,
