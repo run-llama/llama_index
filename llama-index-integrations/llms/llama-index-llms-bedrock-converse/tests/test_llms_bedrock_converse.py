@@ -585,3 +585,91 @@ def test_bedrock_converse_integration_chat_with_empty_user_message(
     assert response.message.role == MessageRole.ASSISTANT
     assert isinstance(response.message.content, str)
     assert len(response.message.content) > 0
+
+
+# Define a tool function that returns no value
+def log_activity(activity: str) -> None:
+    """
+    Log user activity to system log, but returns no value.
+
+    Args:
+        activity: The activity description to log
+
+    """
+    print(f"[LOG] User activity: {activity}")
+    # This function intentionally returns no value
+
+
+@needs_aws_creds
+@pytest.mark.asyncio
+async def test_bedrock_converse_agent_with_void_tool_and_continued_conversation(
+    bedrock_converse_integration,
+):
+    """
+    Test that Agent can call a tool that returns no value and continue Q&A conversation.
+
+    This test case verifies:
+    1. Agent can properly call tools that return no value (void functions)
+    2. After calling void tools, the Agent can still answer user questions
+    3. No errors occur due to tools not returning values
+
+    This test is important for validating BedrockConverse's handling of tool calls without return values
+    """
+    # Create a logging tool that returns no value
+    log_activity_tool = FunctionTool.from_defaults(
+        name="log_activity",
+        description="Log user activity to system log for tracking and analysis",
+        fn=log_activity,
+    )
+
+    # Create a tool with return value for comparison
+    get_temperature_tool = FunctionTool.from_defaults(
+        name="get_temperature",
+        description="Get the temperature of a specified location",
+        fn=get_temperature,
+    )
+
+    # Create agent using both tools
+    agent = FunctionAgent(
+        name="assistant_with_logging",
+        tools=[log_activity_tool, get_temperature_tool],
+        llm=bedrock_converse_integration,
+        system_prompt=(
+            "You are a helpful assistant that logs important user activities. "
+            "Before answering weather-related questions, please log the user's query activity."
+        ),
+    )
+    workflow = AgentWorkflow(agents=[agent])
+
+    # First conversation: Request weather information
+    # Agent should call log_activity (void tool) first, then call get_temperature
+    response1 = await workflow.run(
+        user_msg="What's the weather like in San Francisco today? What's the temperature?"
+    )
+
+    # Verify first conversation has normal response
+    assert response1 is not None
+    assert hasattr(response1, "response")
+    response1_text = str(response1.response)
+    assert len(response1_text) > 0
+
+    # Second conversation: Continue asking other questions
+    # Ensure agent can still handle subsequent conversations after calling void tool
+    response2 = await workflow.run(
+        user_msg="Will the weather be better tomorrow? Any suggestions?"
+    )
+
+    # Verify second conversation also has normal response
+    assert response2 is not None
+    assert hasattr(response2, "response")
+    response2_text = str(response2.response)
+    assert len(response2_text) > 0
+
+    # Third conversation: General question not involving tools
+    response3 = await workflow.run(user_msg="Thank you for your help!")
+
+    # Verify third conversation response
+    assert response3 is not None
+    assert hasattr(response3, "response")
+    response3_text = str(response3.response)
+    assert len(response3_text) > 0

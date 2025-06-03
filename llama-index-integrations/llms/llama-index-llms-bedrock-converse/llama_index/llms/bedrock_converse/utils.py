@@ -261,11 +261,7 @@ def messages_to_converse_messages(
             content = {
                 "toolResult": {
                     "toolUseId": message.additional_kwargs["tool_call_id"],
-                    "content": [
-                        {
-                            "text": message.content or "-",
-                        },
-                    ],
+                    "content": [{"text": message.content}] if message.content else [],
                 }
             }
             if status := message.additional_kwargs.get("status"):
