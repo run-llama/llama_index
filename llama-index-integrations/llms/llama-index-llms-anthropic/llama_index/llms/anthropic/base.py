@@ -190,6 +190,8 @@ class Anthropic(FunctionCallingLLM):
         region: Optional[str] = None,
         project_id: Optional[str] = None,
         aws_region: Optional[str] = None,
+        aws_access_key_id: Optional[str] = None,
+        aws_secret_access_key: Optional[str] = None,
         cache_idx: Optional[int] = None,
         thinking_dict: Optional[Dict[str, Any]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
@@ -235,12 +237,15 @@ class Anthropic(FunctionCallingLLM):
                 default_headers=default_headers,
             )
         elif aws_region:
-            # Note: this assumes you have AWS credentials configured.
             self._client = anthropic.AnthropicBedrock(
                 aws_region=aws_region,
+                aws_access_key_id=aws_access_key_id,
+                aws_secret_access_key=aws_secret_access_key,
             )
             self._aclient = anthropic.AsyncAnthropicBedrock(
                 aws_region=aws_region,
+                aws_access_key_id=aws_access_key_id,
+                aws_secret_access_key=aws_secret_access_key,
             )
         else:
             self._client = anthropic.Anthropic(
@@ -681,12 +686,21 @@ class Anthropic(FunctionCallingLLM):
             ):
                 tool_dicts[-1]["cache_control"] = {"type": "ephemeral"}
 
+        # anthropic doesn't like you specifying a tool choice if you don't have any tools
+        tool_choice_dict = (
+            {}
+            if not tools and not tool_required
+            else {
+                "tool_choice": self._map_tool_choice_to_anthropic(
+                    tool_required, allow_parallel_tool_calls
+                )
+            }
+        )
+
         return {
             "messages": chat_history,
             "tools": tool_dicts,
-            "tool_choice": self._map_tool_choice_to_anthropic(
-                tool_required, allow_parallel_tool_calls
-            ),
+            **tool_choice_dict,
             **kwargs,
         }
 

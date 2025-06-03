@@ -36,7 +36,6 @@ from typing import (
     Dict,
     Generator,
     List,
-    Literal,
     Optional,
     Protocol,
     Sequence,
@@ -143,6 +142,9 @@ class OpenAIResponses(FunctionCallingLLM):
         model: name of the OpenAI model to use.
         temperature: a float from 0 to 1 controlling randomness in generation; higher will lead to more creative, less deterministic responses.
         max_output_tokens: the maximum number of tokens to generate.
+        reasoning_options: Optional dictionary to configure reasoning for O1 models.
+                    Corresponds to the 'reasoning' parameter in the OpenAI API.
+                    Example: {"effort": "low", "summary": "concise"}
         include: Additional output data to include in the model response.
         instructions: Instructions for the model to follow.
         track_previous_responses: Whether to track previous responses. If true, the LLM class will statefully track previous responses.
@@ -192,6 +194,10 @@ class OpenAIResponses(FunctionCallingLLM):
     max_output_tokens: Optional[int] = Field(
         description="The maximum number of tokens to generate.",
         gt=0,
+    )
+    reasoning_options: Optional[Dict[str, Any]] = Field(
+        default=None,
+        description="Optional dictionary to configure reasoning for O1 models. Example: {'effort': 'low', 'summary': 'concise'}",
     )
     include: Optional[List[str]] = Field(
         default=None,
@@ -249,10 +255,6 @@ class OpenAIResponses(FunctionCallingLLM):
     api_key: str = Field(default=None, description="The OpenAI API key.")
     api_base: str = Field(description="The base URL for OpenAI API.")
     api_version: str = Field(description="The API version for OpenAI API.")
-    reasoning_effort: Optional[Literal["low", "medium", "high"]] = Field(
-        default=None,
-        description="The effort to use for reasoning models.",
-    )
     context_window: Optional[int] = Field(
         default=None,
         description="The context window override for the model.",
@@ -269,7 +271,7 @@ class OpenAIResponses(FunctionCallingLLM):
         model: str = DEFAULT_OPENAI_MODEL,
         temperature: float = DEFAULT_TEMPERATURE,
         max_output_tokens: Optional[int] = None,
-        reasoning_effort: Optional[Literal["low", "medium", "high"]] = None,
+        reasoning_options: Optional[Dict[str, Any]] = None,
         include: Optional[List[str]] = None,
         instructions: Optional[str] = None,
         track_previous_responses: bool = False,
@@ -310,7 +312,7 @@ class OpenAIResponses(FunctionCallingLLM):
             model=model,
             temperature=temperature,
             max_output_tokens=max_output_tokens,
-            reasoning_effort=reasoning_effort,
+            reasoning_options=reasoning_options,
             include=include,
             instructions=instructions,
             track_previous_responses=track_previous_responses,
@@ -409,9 +411,8 @@ class OpenAIResponses(FunctionCallingLLM):
             "user": self.user,
         }
 
-        if self.model in O1_MODELS and self.reasoning_effort is not None:
-            # O1 models support reasoning_effort of low, medium, high
-            model_kwargs["reasoning_effort"] = {"effort": self.reasoning_effort}
+        if self.model in O1_MODELS and self.reasoning_options is not None:
+            model_kwargs["reasoning"] = self.reasoning_options
 
         # priority is class args > additional_kwargs > runtime args
         model_kwargs.update(self.additional_kwargs)

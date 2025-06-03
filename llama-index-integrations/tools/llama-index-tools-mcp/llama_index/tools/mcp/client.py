@@ -1,7 +1,17 @@
 import warnings
 from contextlib import asynccontextmanager
 from datetime import timedelta
-from typing import Optional, List, Dict, Tuple, Callable, AsyncIterator, Awaitable, Dict
+from typing import (
+    Optional,
+    List,
+    Dict,
+    Tuple,
+    Callable,
+    AsyncIterator,
+    Awaitable,
+    Dict,
+    Any,
+)
 from urllib.parse import urlparse, parse_qs
 from mcp.client.session import ClientSession, ProgressFnT
 from mcp.client.sse import sse_client
@@ -73,6 +83,7 @@ class BasicMCPClient(ClientSession):
         timeout: The timeout for the command in seconds.
         auth: Optional OAuth client provider for authentication.
         sampling_callback: Optional callback for handling sampling messages.
+        headers: Optional headers to pass by sse client or streamable http client
 
     """
 
@@ -88,6 +99,7 @@ class BasicMCPClient(ClientSession):
                 [types.CreateMessageRequestParams], Awaitable[types.CreateMessageResult]
             ]
         ] = None,
+        headers: Optional[Dict[str, Any]] = None,
     ):
         self.command_or_url = command_or_url
         self.args = args or []
@@ -95,6 +107,7 @@ class BasicMCPClient(ClientSession):
         self.timeout = timeout
         self.auth = auth
         self.sampling_callback = sampling_callback
+        self.headers = headers
 
     @classmethod
     def with_oauth(
@@ -161,7 +174,9 @@ class BasicMCPClient(ClientSession):
             # Check if this is a streamable HTTP endpoint (default) or SSE
             if enable_sse(self.command_or_url):
                 # SSE transport
-                async with sse_client(self.command_or_url, auth=self.auth) as streams:
+                async with sse_client(
+                    self.command_or_url, auth=self.auth, headers=self.headers
+                ) as streams:
                     async with ClientSession(
                         *streams,
                         read_timeout_seconds=timedelta(seconds=self.timeout),
@@ -172,7 +187,7 @@ class BasicMCPClient(ClientSession):
             else:
                 # Streamable HTTP transport (recommended)
                 async with streamablehttp_client(
-                    self.command_or_url, auth=self.auth
+                    self.command_or_url, auth=self.auth, headers=self.headers
                 ) as (read, write, _):
                     async with ClientSession(
                         read,
