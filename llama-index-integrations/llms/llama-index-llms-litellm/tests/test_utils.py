@@ -212,13 +212,15 @@ def test_document_block_conversion():
     assert len(openai_message["content"]) == 1
 
     document_content = openai_message["content"][0]
-    assert document_content["type"] == "input_file"
-    assert document_content["filename"] == "test_document.pdf"
-    assert "file_data" in document_content
-    assert document_content["file_data"].startswith("data:application/pdf;base64,")
+    assert document_content["type"] == "file"
+    assert "file" in document_content
+    assert "file_data" in document_content["file"]
+    assert document_content["file"]["file_data"].startswith(
+        "data:application/pdf;base64,"
+    )
 
     # Verify the base64 encoded data
-    file_data = document_content["file_data"]
+    file_data = document_content["file"]["file_data"]
     header, encoded_data = file_data.split(",", 1)
     assert header == "data:application/pdf;base64"
 
