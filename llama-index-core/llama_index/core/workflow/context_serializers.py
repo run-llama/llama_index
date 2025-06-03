@@ -64,7 +64,7 @@ class JsonSerializer(BaseSerializer):
         return self._deserialize_value(data)
 
 
-class JsonPickleSerializer(JsonSerializer):
+class PickleSerializer(JsonSerializer):
     def serialize(self, value: Any) -> str:
         """Serialize while prioritizing JSON, falling back to Pickle."""
         try:
@@ -82,3 +82,6 @@ class JsonPickleSerializer(JsonSerializer):
             return pickle.loads(base64.b64decode(value))
         except Exception:
             return super().deserialize(value)
+
+
+JsonPickleSerializer = PickleSerializer

@@ -8,7 +8,7 @@ from unittest import mock
 import pytest
 from llama_index.core import MockEmbedding
 from llama_index.core.llms.mock import MockLLM
-from llama_index.core.workflow.context_serializers import JsonPickleSerializer
+from llama_index.core.workflow.context_serializers import PickleSerializer
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import (
     Event,
@@ -534,9 +534,9 @@ async def test_workflow_pickle():
         state_dict = handler.ctx.to_dict()
 
     # if we allow pickle, then we can pickle the LLM/embedding object
-    state_dict = handler.ctx.to_dict(serializer=JsonPickleSerializer())
+    state_dict = handler.ctx.to_dict(serializer=PickleSerializer())
     new_handler = WorkflowHandler(
-        ctx=Context.from_dict(wf, state_dict, serializer=JsonPickleSerializer())
+        ctx=Context.from_dict(wf, state_dict, serializer=PickleSerializer())
     )
     assert new_handler.ctx
 
