@@ -87,18 +87,18 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         async_http_client: Optional[httpx.AsyncClient] = None,
         **kwargs: Any,
     ):
-        azure_endpoint = get_from_param_or_env(
-            "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", None
-        )
+        # OpenAI base_url (api_base) and azure_endpoint are mutually exclusive
+        if api_base:
+            azure_endpoint = None
+        else:
+            azure_endpoint = get_from_param_or_env(
+                "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", None
+            )
 
         if not use_azure_ad:
             api_key = get_from_param_or_env(
                 "api_key", api_key, "AZURE_OPENAI_API_KEY", None
             )
-
-        # OpenAI base_url and azure_endpoint are mutually exclusive
-        if api_base:
-            azure_endpoint = None
 
         azure_deployment = resolve_from_aliases(
             azure_deployment,
