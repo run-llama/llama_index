@@ -101,7 +101,9 @@ def resolve_llm(
 
     assert isinstance(llm, LLM)
 
-    llm.callback_manager = callback_manager or Settings.callback_manager
+    llm.callback_manager = (
+        callback_manager or llm.callback_manager or Settings.callback_manager
+    )
 
     return llm
 
