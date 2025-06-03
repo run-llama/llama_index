@@ -531,12 +531,14 @@ def test_document_block_chat(respx_mock: respx.MockRouter, llm: LiteLLM):
 
     # Verify document block
     document_content = next(
-        (item for item in content_blocks if item["type"] == "document"), None
+        (item for item in content_blocks if item["type"] == "file"), None
     )
     assert document_content is not None
-    assert document_content["filename"] == "test_document.pdf"
-    assert "file_data" in document_content
-    assert document_content["file_data"].startswith("data:application/pdf;base64,")
+    assert "file" in document_content
+    assert "file_data" in document_content["file"]
+    assert document_content["file"]["file_data"].startswith(
+        "data:application/pdf;base64,"
+    )
 
     # Verify text block
     text_content = next(

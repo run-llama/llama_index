@@ -200,14 +200,16 @@ def to_openailike_message_dict(message: ChatMessage) -> dict:
             if not block.data:
                 file_buffer = block.resolve_document()
                 b64_string = block._get_b64_string(file_buffer)
-                mimetype = block._guess_mimetype()
+                mimetype = block.document_mimetype or block._guess_mimetype()
             else:
                 b64_string = block.data.decode("utf-8")
+                mimetype = block.document_mimetype or block._guess_mimetype()
             content.append(
                 {
-                    "type": "input_file",
-                    "filename": block.title,
-                    "file_data": f"data:{mimetype};base64,{b64_string}",
+                    "type": "file",
+                    "file": {
+                        "file_data": f"data:{mimetype};base64,{b64_string}",
+                    },
                 }
             )
         else:
