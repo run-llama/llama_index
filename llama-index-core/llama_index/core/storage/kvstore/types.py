@@ -106,13 +106,13 @@ class MutableMappingKVStore(Generic[MutableMappingT], BaseKVStore):
         self._collections_mappings: Dict[str, MutableMappingT] = {}
         self._mapping_factory = mapping_factory
 
-    def __getstate__(self):
+    def __getstate__(self) -> dict:
         state = self.__dict__.copy()
         state["factory_fn"] = {"fn": self._mapping_factory}
         del state["_mapping_factory"]
         return state
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: dict) -> None:
         self._collections_mappings = state["_collections_mappings"]
         self._mapping_factory = state["factory_fn"]["fn"]
 
