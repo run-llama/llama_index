@@ -97,7 +97,8 @@ class BasicMCPClient(ClientSession):
         timeout: The timeout for the command in seconds.
         auth: Optional OAuth client provider for authentication.
         sampling_callback: Optional callback for handling sampling messages.
-        register_tool_calls_logs: Register the logs deriving from tool calls in the content of CallToolResult. Defaults to True.
+        headers: Optional headers to pass by sse client or streamable http client
+        tool_call_logs_callback: FFunction to store the logs deriving from an MCP tool call: logs are provided as a list of strings, representing log messages. Defaults to None.
 
     """
 
@@ -113,7 +114,8 @@ class BasicMCPClient(ClientSession):
                 [types.CreateMessageRequestParams], Awaitable[types.CreateMessageResult]
             ]
         ] = None,
-        register_tool_calls_logs: bool = True,
+        headers: Optional[Dict[str, Any]] = None,
+        tool_call_logs_callback: Optional[Callable] = None,
     ):
         self.command_or_url = command_or_url
         self.args = args or []
@@ -121,7 +123,8 @@ class BasicMCPClient(ClientSession):
         self.timeout = timeout
         self.auth = auth
         self.sampling_callback = sampling_callback
-        self.register_tool_calls_logs = register_tool_calls_logs
+        self.headers = headers
+        self.tool_call_logs_callback = tool_call_logs_callback
 
     @classmethod
     def with_oauth(
@@ -135,7 +138,7 @@ class BasicMCPClient(ClientSession):
         env: Optional[Dict[str, str]] = None,
         timeout: int = 30,
         token_storage: Optional[TokenStorage] = None,
-        register_tool_calls_logs: bool = True,
+        tool_call_logs_callback: Optional[Callable] = None,
     ) -> "BasicMCPClient":
         """
         Create a client with OAuth authentication.
@@ -151,8 +154,7 @@ class BasicMCPClient(ClientSession):
             args: The arguments to pass to StdioServerParameters.
             env: The environment variables to set for StdioServerParameters.
             timeout: The timeout for the command in seconds.
-            register_tool_calls_logs: Register the logs deriving from tool calls in the content of CallToolResult. Defaults to True.
-
+            tool_call_logs_callback: Function to store the logs deriving from an MCP tool call: logs are provided as a list of strings, representing log messages. Defaults to None.
 
         Returns:
             An authenticated MCP client
@@ -185,7 +187,7 @@ class BasicMCPClient(ClientSession):
             args=args,
             env=env,
             timeout=timeout,
-            register_tool_calls_logs=register_tool_calls_logs,
+            tool_call_logs_callback=tool_call_logs_callback,
         )
 
     @asynccontextmanager
@@ -198,7 +200,9 @@ class BasicMCPClient(ClientSession):
             # Check if this is a streamable HTTP endpoint (default) or SSE
             if enable_sse(self.command_or_url):
                 # SSE transport
-                async with sse_client(self.command_or_url, auth=self.auth) as streams:
+                async with sse_client(
+                    self.command_or_url, auth=self.auth, headers=self.headers
+                ) as streams:
                     async with ClientSession(
                         *streams,
                         read_timeout_seconds=timedelta(seconds=self.timeout),
@@ -209,7 +213,7 @@ class BasicMCPClient(ClientSession):
             else:
                 # Streamable HTTP transport (recommended)
                 async with streamablehttp_client(
-                    self.command_or_url, auth=self.auth
+                    self.command_or_url, auth=self.auth, headers=self.headers
                 ) as (read, write, _):
                     async with ClientSession(
                         read,
@@ -241,7 +245,7 @@ class BasicMCPClient(ClientSession):
         progress_callback: Optional[ProgressFnT] = None,
     ) -> types.CallToolResult:
         """Call a tool on the MCP server."""
-        if self.register_tool_calls_logs:
+        if self.tool_call_logs_callback is not None:
             # we use a string stream so that we can recover all logs at the end of the session
             handler = io.StringIO()
             stream_handler = logging.StreamHandler(handler)
@@ -265,10 +269,8 @@ class BasicMCPClient(ClientSession):
                 )
                 # get all logs by dividing the string with \n, since the format of the log has an \n at the end of the log message
                 extra_values = handler.getvalue().split("\n")
-                # append logs as TextContent in CallToolResult.content
-                for log in extra_values:
-                    if log:
-                        result.content.append(types.TextContent(type="text", text=log))
+                # pipe the logs list into tool_call_logs_callback
+                self.tool_call_logs_callback(extra_values)
                 return result
         else:
             async with self._run_session() as session:
