@@ -395,7 +395,7 @@ class GoogleGenAI(FunctionCallingLLM):
     ) -> Dict[str, Any]:
         """Predict and call the tool."""
         if tool_choice is None:
-            tool_choice = "any" if tool_required else "none"
+            tool_choice = "any" if tool_required else "auto"
 
         if tool_choice == "auto":
             tool_mode = types.FunctionCallingConfigMode.AUTO

@@ -1718,6 +1718,7 @@ nav:
           - ./api_reference/tools/linkup_research.md
           - ./api_reference/tools/load_and_search.md
           - ./api_reference/tools/mcp.md
+          - ./api_reference/tools/measurespace.md
           - ./api_reference/tools/metaphor.md
           - ./api_reference/tools/multion.md
           - ./api_reference/tools/neo4j.md
@@ -2458,6 +2459,7 @@ plugins:
             - ../llama-index-integrations/observability/llama-index-observability-otel
             - ../llama-index-integrations/llms/llama-index-llms-featherlessai
             - ../llama-index-integrations/llms/llama-index-llms-sarvam
+            - ../llama-index-integrations/tools/llama-index-tools-measurespace
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

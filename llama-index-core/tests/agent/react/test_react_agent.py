@@ -1,4 +1,5 @@
 import re
+import time
 from typing import Any, List, Sequence
 
 import pytest
@@ -206,6 +207,9 @@ def test_stream_chat_basic(
         continue
     expected_answer = MOCK_STREAM_FINAL_RESPONSE.split("Answer: ")[-1].strip()
     assert response.response == expected_answer
+
+    # there is a very small race condition here that the chat history is not updated
+    time.sleep(0.01)
 
     assert agent.chat_history == [
         ChatMessage(

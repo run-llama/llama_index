@@ -1,5 +1,38 @@
 # ChangeLog
 
+## [2025-06-02]
+
+### `llama-index-core` [0.12.40]
+
+- feat: Add StopEvent step validation so only one workflow step can handle StopEvent (#18932)
+- fix: Add compatibility check before providing `tool_required` to LLM args (#18922)
+
+### `llama-index-embeddings-cohere` [0.5.1]
+
+- fix: add batch size validation with 96 limit for Cohere API (#18915)
+
+### `llama-index-llms-anthropic` [0.7.2]
+
+- feat: Support passing static AWS credentials to Anthropic Bedrock (#18935)
+- fix: Handle untested no tools scenario for anthropic tool config (#18923)
+
+### `llama-index-llms-google-genai` [0.2.1]
+
+- fix: use proper auto mode for google-genai function calling (#18933)
+
+### `llama-index-llms-openai` [0.4.2]
+
+- fix: clear up some field typing issues of OpenAI LLM API (#18918)
+- fix: migrate broken `reasoning_effort` kwarg to `reasoning_options` dict in OpenAIResponses class (#18920)
+
+### `llama-index-tools-measurespace` [0.1.0]
+
+- feat: Add weather, climate, air quality and geocoding tool from Measure Space (#18909)
+
+### `llama-index-tools-mcp` [0.2.3]
+
+- feat: Add headers handling to BasicMCPClient (#18919)
+
 ## [2025-05-30]
 
 ### `llama-index-core` [0.12.39]

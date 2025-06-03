@@ -455,7 +455,7 @@ def test_prepare_chat_with_tools_tool_not_required(
 
     assert (
         result["tool_config"].function_calling_config.mode
-        == types.FunctionCallingConfigMode.NONE
+        == types.FunctionCallingConfigMode.AUTO
     )
     assert len(result["tools"]) == 1
     assert result["tools"][0].function_declarations[0].name == "search_tool"
@@ -470,7 +470,7 @@ def test_prepare_chat_with_tools_default_behavior(
 
     assert (
         result["tool_config"].function_calling_config.mode
-        == types.FunctionCallingConfigMode.NONE
+        == types.FunctionCallingConfigMode.AUTO
     )
     assert len(result["tools"]) == 1
     assert result["tools"][0].function_declarations[0].name == "search_tool"
