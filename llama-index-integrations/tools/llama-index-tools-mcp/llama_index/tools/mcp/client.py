@@ -108,7 +108,7 @@ class BasicMCPClient(ClientSession):
         auth: Optional OAuth client provider for authentication.
         sampling_callback: Optional callback for handling sampling messages.
         headers: Optional headers to pass by sse client or streamable http client
-        tool_call_logs_callback: FFunction to store the logs deriving from an MCP tool call: logs are provided as a list of strings, representing log messages. Defaults to None.
+        tool_call_logs_callback: Async function to store the logs deriving from an MCP tool call: logs are provided as a list of strings, representing log messages. Defaults to None.
 
     """
 
@@ -125,7 +125,7 @@ class BasicMCPClient(ClientSession):
             ]
         ] = None,
         headers: Optional[Dict[str, Any]] = None,
-        tool_call_logs_callback: Optional[Callable] = None,
+        tool_call_logs_callback: Optional[Awaitable[Callable]] = None,
     ):
         self.command_or_url = command_or_url
         self.args = args or []
@@ -148,7 +148,7 @@ class BasicMCPClient(ClientSession):
         env: Optional[Dict[str, str]] = None,
         timeout: int = 30,
         token_storage: Optional[TokenStorage] = None,
-        tool_call_logs_callback: Optional[Callable] = None,
+        tool_call_logs_callback: Optional[Awaitable[Callable]] = None,
     ) -> "BasicMCPClient":
         """
         Create a client with OAuth authentication.
@@ -164,7 +164,7 @@ class BasicMCPClient(ClientSession):
             args: The arguments to pass to StdioServerParameters.
             env: The environment variables to set for StdioServerParameters.
             timeout: The timeout for the command in seconds.
-            tool_call_logs_callback: Function to store the logs deriving from an MCP tool call: logs are provided as a list of strings, representing log messages. Defaults to None.
+            tool_call_logs_callback: Async function to store the logs deriving from an MCP tool call: logs are provided as a list of strings, representing log messages. Defaults to None.
 
         Returns:
             An authenticated MCP client
@@ -247,6 +247,28 @@ class BasicMCPClient(ClientSession):
                     await session.initialize()
                     yield session
 
+    def _configure_tool_call_logs_callback(self) -> io.StringIO:
+        handler = io.StringIO()
+        stream_handler = logging.StreamHandler(handler)
+
+        # Configure logging to capture all events
+        logging.basicConfig(
+            level=logging.DEBUG,  # Capture all log levels
+            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s\n",
+            handlers=[
+                stream_handler,
+            ],
+        )
+        # Also enable logging for specific FastMCP components
+        fastmcp_logger = logging.getLogger("fastmcp")
+        fastmcp_logger.setLevel(logging.DEBUG)
+
+        # Enable HTTP transport logging to see network details
+        http_logger = logging.getLogger("httpx")
+        http_logger.setLevel(logging.DEBUG)
+
+        return handler
+
     # Tool methods
     async def call_tool(
         self,
@@ -257,30 +279,19 @@ class BasicMCPClient(ClientSession):
         """Call a tool on the MCP server."""
         if self.tool_call_logs_callback is not None:
             # we use a string stream so that we can recover all logs at the end of the session
-            handler = io.StringIO()
-            stream_handler = logging.StreamHandler(handler)
-            # Configure logging to capture all events
-            logging.basicConfig(
-                level=logging.DEBUG,  # Capture all log levels
-                format="%(asctime)s - %(name)s - %(levelname)s - %(message)s\n",
-                handlers=[
-                    stream_handler,
-                ],
-            )
-            # Also enable logging for specific FastMCP components
-            fastmcp_logger = logging.getLogger("fastmcp")
-            fastmcp_logger.setLevel(logging.DEBUG)
-            # Enable HTTP transport logging to see network details
-            http_logger = logging.getLogger("httpx")
-            http_logger.setLevel(logging.DEBUG)
+            handler = self._configure_tool_call_logs_callback()
+
             async with self._run_session() as session:
                 result = await session.call_tool(
                     tool_name, arguments=arguments, progress_callback=progress_callback
                 )
+
                 # get all logs by dividing the string with \n, since the format of the log has an \n at the end of the log message
                 extra_values = handler.getvalue().split("\n")
+
                 # pipe the logs list into tool_call_logs_callback
-                self.tool_call_logs_callback(extra_values)
+                await self.tool_call_logs_callback(extra_values)
+
                 return result
         else:
             async with self._run_session() as session:
