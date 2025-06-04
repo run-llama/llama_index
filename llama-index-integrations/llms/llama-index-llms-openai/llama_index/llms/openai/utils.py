@@ -180,6 +180,32 @@ DISCONTINUED_MODELS = {
     "code-cushman-001": 2048,
 }
 
+JSON_SCHEMA_MODELS = [
+    "o4-mini",
+    "o1",
+    "o1-pro",
+    "o3",
+    "o3-mini",
+    "gpt-4.1",
+    "gpt-4o",
+    "gpt-4.1",
+]
+
+
+def is_json_schema_supported(model: str) -> bool:
+    try:
+        from openai.resources.beta.chat import completions
+
+        if not hasattr(completions, "_type_to_response_format"):
+            return False
+
+        return not model.startswith("o1-mini") and any(
+            model.startswith(m) for m in JSON_SCHEMA_MODELS
+        )
+    except ImportError:
+        return False
+
+
 MISSING_API_KEY_ERROR_MESSAGE = """No API key found for OpenAI.
 Please set either the OPENAI_API_KEY environment variable or \
 openai.api_key prior to initialization.
