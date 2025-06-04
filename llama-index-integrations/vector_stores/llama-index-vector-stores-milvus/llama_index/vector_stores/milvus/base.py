@@ -137,7 +137,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             stored. Defaults to "llamalection".
         overwrite (bool, optional): Whether to overwrite existing collection with same
             name. Defaults to False.
-        upsert_mode (bool, optional): Whether to upsert documents into existing collection. Defaults to False.
+        upsert_mode (bool, optional): Whether to upsert documents into existing collection with same node id. Defaults to False.
         doc_id_field (str, optional): The name of the doc_id field for the collection,
             defaults to DEFAULT_DOC_ID_KEY.
         text_key (str, optional): What key text is stored in in the passed collection.
