@@ -1,5 +1,5 @@
 import datetime
-import json
+import re
 import uuid
 from ag_ui.core import (
     Message,
@@ -11,46 +11,59 @@ from ag_ui.core import (
     ToolCall,
     FunctionCall,
 )
-from typing import List
+from ag_ui.encoder import EventEncoder
 
-from llama_index.core.agent.workflow import ToolCall as LlamaIndexToolCall
 from llama_index.core.llms import ChatMessage
 from llama_index.core.workflow import Event
 
 
 def llama_index_message_to_ag_ui_message(
-    message: ChatMessage, current_tool_calls: List[LlamaIndexToolCall]
+    message: ChatMessage,
 ) -> Message:
     msg_id = message.additional_kwargs.get("id", str(uuid.uuid4()))
-    if message.role == "system":
+    if message.role.value == "system":
         return SystemMessage(id=msg_id, content=message.content, role="system")
-    elif message.role == "user":
+    elif (
+        message.role.value == "user" and "tool_call_id" not in message.additional_kwargs
+    ):
         return UserMessage(id=msg_id, content=message.content, role="user")
-    elif message.role == "assistant":
-        ag_ui_tool_calls = [
-            ToolCall(
-                id=tool_call.tool_id,
-                function=FunctionCall(
-                    name=tool_call.tool_name,
-                    arguments=json.dumps(
-                        tool_call.tool_kwargs, sort_keys=True, separators=(",", ":")
+    elif message.role.value == "assistant":
+        # Remove tool calls from the message
+        if message.content:
+            message.content = re.sub(
+                r"<tool_call>.*?</tool_call>", "", message.content
+            ).strip()
+
+        # Fetch tool calls from the message
+        if message.additional_kwargs.get("ag_ui_tool_calls", None):
+            tool_calls = [
+                ToolCall(
+                    type="function",
+                    id=tool_call["id"],
+                    function=FunctionCall(
+                        name=tool_call["name"],
+                        arguments=tool_call["arguments"],
                     ),
-                ),
-            )
-            for tool_call in current_tool_calls
-        ]
+                )
+                for tool_call in message.additional_kwargs["ag_ui_tool_calls"]
+            ]
+        else:
+            tool_calls = None
+
         return AssistantMessage(
             id=msg_id,
             content=message.content,
             role="assistant",
-            tool_calls=ag_ui_tool_calls,
+            tool_calls=tool_calls,
         )
-    elif message.role == "tool":
+    elif message.role.value == "tool" or "tool_call_id" in message.additional_kwargs:
         return ToolMessage(
             id=msg_id,
-            content=message.content,
+            content=message.content or "",
             role="tool",
-            tool_call_id=message.additional_kwargs.get("tool_call_id"),
+            tool_call_id=message.additional_kwargs.get(
+                "tool_call_id", str(uuid.uuid4())
+            ),
         )
     else:
         raise ValueError(f"Unknown message role: {message.role}")
@@ -79,16 +92,33 @@ def ag_ui_message_to_llama_index_message(message: Message) -> ChatMessage:
                 ]
             )
             content = f"{content}\n\n{tool_calls_str}".strip()
+            ag_ui_tool_calls = [
+                {
+                    "id": tool_call.id,
+                    "name": tool_call.function.name,
+                    "arguments": tool_call.function.arguments,
+                }
+                for tool_call in tool_calls
+            ]
+        else:
+            ag_ui_tool_calls = None
 
         return ChatMessage(
-            role="assistant", content=content, additional_kwargs={"id": message.id}
+            role="assistant",
+            content=content,
+            additional_kwargs={
+                "id": message.id,
+                "ag_ui_tool_calls": ag_ui_tool_calls,
+            },
         )
     elif isinstance(message, ToolMessage):
         # TODO: llama-index-core needs to support tool calls on messages in a more official way
         # tool call results into a user message
         # This is a bit of an opinionated hack for now to support the ag-ui tool calls
         return ChatMessage(
-            role="user", content=message.content, additional_kwargs={"id": message.id}
+            role="user",
+            content=message.content,
+            additional_kwargs={"id": message.id, "tool_call_id": message.tool_call_id},
         )
     elif isinstance(message, DeveloperMessage):
         return ChatMessage(
@@ -99,57 +129,11 @@ def ag_ui_message_to_llama_index_message(message: Message) -> ChatMessage:
 
 
 def workflow_event_to_sse(event: Event) -> str:
-    event_dict = event.model_dump()
+    event_str = EventEncoder().encode(event)
 
-    # TODO: ag-ui SDK does not have the proper field names
-    # Need to convert snake_case to camelCase
-    proper_dict = {}
-    for key, value in event_dict.items():
-        key_parts = key.split("_")
-        new_key = key_parts[0] + "".join(word.capitalize() for word in key_parts[1:])
-        proper_dict[new_key] = value
-
-    print(f"data: {json.dumps(proper_dict, ensure_ascii=False)}\n\n", flush=True)
-    return f"data: {json.dumps(proper_dict, ensure_ascii=False)}\n\n"
+    print(event_str, flush=True)
+    return event_str
 
 
 def timestamp() -> int:
     return int(datetime.datetime.now().timestamp())
-
-
-def get_kwargs_delta(new_json: str, old_json: str) -> str:
-    """
-    Convert complete JSON to incremental fragments by finding the minimal
-    string that needs to be appended to old_json to get new_json.
-    """
-    # Handle the first call - send everything except closing brace
-    if not old_json:
-        if new_json.endswith("}"):
-            return new_json[:-1]
-        return new_json
-
-    # If nothing changed, return empty
-    if new_json == old_json:
-        return ""
-
-    # Remove closing braces/quotes for comparison
-    old_working = old_json.rstrip('"}')
-    new_working = new_json.rstrip('"}')
-
-    # If the new content starts with what we had before, we can append
-    if new_working.startswith(old_working):
-        return new_working[len(old_working) :]
-
-    # If there's a mismatch (like null values being replaced),
-    # we need to find the longest common prefix and send the difference
-    common_length = 0
-    min_length = min(len(old_working), len(new_working))
-
-    for i in range(min_length):
-        if new_working[i] == old_working[i]:
-            common_length += 1
-        else:
-            break
-
-    # Return what needs to be added after the common part
-    return new_working[common_length:]
