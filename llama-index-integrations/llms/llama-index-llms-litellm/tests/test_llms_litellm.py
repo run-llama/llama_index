@@ -3,6 +3,7 @@ import httpx
 from llama_index.core.base.llms.base import BaseLLM
 import pytest
 import respx
+import os
 from unittest.mock import patch
 from llama_index.llms.litellm import LiteLLM
 from llama_index.core.llms import ChatMessage
@@ -16,6 +17,8 @@ from llama_index.core.base.llms.types import (
     DocumentBlock,
 )
 import json
+
+os.environ["OPENAI_API_KEY"] = "fake-api-key"
 
 
 def test_embedding_class():
@@ -31,6 +34,10 @@ def test_chat(respx_mock: respx.MockRouter, llm: LiteLLM):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(
+    condition=os.getenv("OPENAI_API_KEY", "fake-api-key") == "fake-api-key",
+    reason="OPENAI_API_KEY not set or invalid",
+)
 async def test_achat(respx_mock: respx.MockRouter, llm: LiteLLM):
     mock_chat_response(respx_mock)
     message = ChatMessage(role="user", content="Hey! how's it going async?")
@@ -46,6 +53,10 @@ def test_completion(respx_mock: respx.MockRouter, llm: LiteLLM):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(
+    condition=os.getenv("OPENAI_API_KEY", "fake-api-key") == "fake-api-key",
+    reason="OPENAI_API_KEY not set or invalid",
+)
 async def test_acompletion(respx_mock: respx.MockRouter, llm: LiteLLM):
     mock_completion_response(respx_mock)
     response = await llm.acomplete("What is the capital of France?")
@@ -173,6 +184,10 @@ def test_get_tool_calls_from_response_returns_arguments_with_dict_json_input(
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(
+    condition=os.getenv("OPENAI_API_KEY", "fake-api-key") == "fake-api-key",
+    reason="OPENAI_API_KEY not set or invalid",
+)
 async def test_achat_tool_calling(respx_mock: respx.MockRouter, llm: LiteLLM):
     mock_tool_response(respx_mock)
     message = "what's 1+1?"
@@ -283,14 +298,6 @@ def mock_tool_response(
     )
 
 
-@pytest.fixture(autouse=True)
-def setup_openai_api_key(monkeypatch):
-    """Fixture to set up and tear down OPENAI_API_KEY for all tests."""
-    monkeypatch.setenv("OPENAI_API_KEY", "fake-api-key")
-    yield
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-
-
 @pytest.fixture()
 def llm():
     return LiteLLM(model="openai/gpt-fake-model")
@@ -357,6 +364,10 @@ def test_stream_tool_calls(respx_mock: respx.MockRouter, llm: LiteLLM):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(
+    condition=os.getenv("OPENAI_API_KEY", "fake-api-key") == "fake-api-key",
+    reason="OPENAI_API_KEY not set or invalid",
+)
 async def test_astream_tool_calls(respx_mock: respx.MockRouter, llm: LiteLLM):
     """Test async streaming with tool calls being built up incrementally."""
     # Create the weather tool
