@@ -125,7 +125,7 @@ class BasicMCPClient(ClientSession):
             ]
         ] = None,
         headers: Optional[Dict[str, Any]] = None,
-        tool_call_logs_callback: Optional[Awaitable[Callable]] = None,
+        tool_call_logs_callback: Optional[Callable[[List[str]], Awaitable[Any]]] = None,
     ):
         self.command_or_url = command_or_url
         self.args = args or []
@@ -148,7 +148,7 @@ class BasicMCPClient(ClientSession):
         env: Optional[Dict[str, str]] = None,
         timeout: int = 30,
         token_storage: Optional[TokenStorage] = None,
-        tool_call_logs_callback: Optional[Awaitable[Callable]] = None,
+        tool_call_logs_callback: Optional[Callable[[List[str]], Awaitable[Any]]] = None,
     ) -> "BasicMCPClient":
         """
         Create a client with OAuth authentication.
