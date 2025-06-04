@@ -4,6 +4,7 @@ from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.llms.openai import OpenAI
 from llama_index.protocols.ag_ui.server import get_ag_ui_agent_router
 from fastapi import FastAPI
+from typing import Annotated
 
 
 def multiply(a: float, b: float) -> float:
@@ -26,8 +27,15 @@ def divide(a: float, b: float) -> float:
     return a / b
 
 
+def change_background(
+    background: Annotated[str, "The background. Prefer gradients."],
+) -> str:
+    """ "Change the background color of the chat. Can be anything that the CSS background attribute accepts. Regular colors, linear of radial gradients etc."""
+    return f"Changing background to {background}"
+
+
 agent = FunctionAgent(
-    tools=[multiply, add, subtract, divide],
+    tools=[change_background],
     llm=OpenAI(model="gpt-4.1"),
 )
 
