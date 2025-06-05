@@ -62,12 +62,12 @@ class ThirdEvent(Event):
 
 class WorkflowWithMemory(Workflow):
     @step
-    def first_step(
+    async def first_step(
         self,
         ev: CustomStartEvent,
         memory: Annotated[Memory, Resource(get_memory)],
     ) -> SecondEvent:
-        memory.put(
+        await memory.aput(
             ChatMessage.from_str(
                 role="user", content="First step: " + ev.message
             )
@@ -75,30 +75,26 @@ class WorkflowWithMemory(Workflow):
         return SecondEvent(message=RANDOM_MESSAGES[random.randint(0, 2)])
 
     @step
-    def second_step(
+    async def second_step(
         self, ev: SecondEvent, memory: Annotated[Memory, Resource(get_memory)]
     ) -> Union[ThirdEvent, StopEvent]:
-        memory.put(
-            ChatMessage.from_str(
-                role="assistant", content="Second step: " + ev.message
-            )
+        await memory.aput(
+            ChatMessage(role="assistant", content="Second step: " + ev.message)
         )
         if random.randint(0, 1) == 0:
             return ThirdEvent(message=RANDOM_MESSAGES[random.randint(0, 2)])
         else:
-            messages = memory.get_all()
+            messages = await memory.aget_all()
             return StopEvent(result=messages)
 
     @step
-    def third_step(
+    async def third_step(
         self, ev: ThirdEvent, memory: Annotated[Memory, Resource(get_memory)]
     ) -> StopEvent:
-        memory.put(
-            ChatMessage.from_str(
-                role="user", content="Third step: " + ev.message
-            )
+        await memory.aput(
+            ChatMessage(role="user", content="Third step: " + ev.message)
         )
-        messages = memory.get_all()
+        messages = await memory.aget_all()
         return StopEvent(result=messages)
 ```
 
@@ -182,7 +178,7 @@ from pydantic import BaseModel, Field
 class Counter(BaseModel):
     counter: int = Field(description="A simple counter", default=0)
 
-    def increment(self) -> None:
+    async def increment(self) -> None:
         self.counter += 1
 
 
@@ -196,22 +192,22 @@ class SecondEvent(Event):
 
 class WorkflowWithCounter(Workflow):
     @step
-    def first_step(
+    async def first_step(
         self,
         ev: StartEvent,
         counter: Annotated[Counter, Resource(get_counter, cache=False)],
     ) -> SecondEvent:
-        counter.increment()
+        await counter.increment()
         return SecondEvent(count=counter.counter)
 
     @step
-    def second_step(
+    async def second_step(
         self,
         ev: SecondEvent,
         counter: Annotated[Counter, Resource(get_counter, cache=False)],
     ) -> StopEvent:
         print("Counter at first step: ", ev.count)
-        counter.increment()
+        await counter.increment()
         print("Counter at second step: ", counter.counter)
         return StopEvent(result="End of Workflow")
 ```

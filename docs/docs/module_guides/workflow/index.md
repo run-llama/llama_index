@@ -653,24 +653,24 @@ class SecondEvent(Event):
 
 class WorkflowWithResource(Workflow):
     @step
-    def first_step(
+    async def first_step(
         self,
         ev: StartEvent,
         memory: Annotated[Memory, Resource(get_memory)],
     ) -> SecondEvent:
         print("Memory before step 1", memory)
-        memory.put(
-            ChatMessage.from_str(role="user", content="This is the first step")
+        await memory.aput(
+            ChatMessage(role="user", content="This is the first step")
         )
         print("Memory after step 1", memory)
         return SecondEvent(msg="This is an input for step 2")
 
     @step
-    def second_step(
+    async def second_step(
         self, ev: SecondEvent, memory: Annotated[Memory, Resource(get_memory)]
     ) -> StopEvent:
         print("Memory before step 2", memory)
-        memory.put(ChatMessage.from_str(role="user", content=ev.msg))
+        await memory.aput(ChatMessage(role="user", content=ev.msg))
         print("Memory after step 2", memory)
         return StopEvent(result="Messages put into memory")
 ```
