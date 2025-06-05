@@ -88,9 +88,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         **kwargs: Any,
     ):
         # OpenAI base_url (api_base) and azure_endpoint are mutually exclusive
-        if api_base:
-            azure_endpoint = None
-        else:
+        if api_base is None:
             azure_endpoint = get_from_param_or_env(
                 "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", None
             )
@@ -167,8 +165,13 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
 
     def _get_credential_kwargs(self, is_async: bool = False) -> Dict[str, Any]:
         if self.use_azure_ad:
-            self._azure_ad_token = refresh_openai_azuread_token(self._azure_ad_token)
-            self.api_key = self._azure_ad_token.token
+            if self.azure_ad_token_provider:
+                self.api_key = self.azure_ad_token_provider()
+            else:
+                self._azure_ad_token = refresh_openai_azuread_token(
+                    self._azure_ad_token
+                )
+                self.api_key = self._azure_ad_token.token
         else:
             self.api_key = get_from_param_or_env(
                 "api_key", self.api_key, "AZURE_OPENAI_API_KEY"
