@@ -11,6 +11,7 @@ from llama_cloud import (
     ProjectCreate,
     CompositeRetrievalMode,
     LlamaParseParameters,
+    ReRankConfig,
 )
 from llama_cloud.client import LlamaCloud
 from llama_index.core.bridge.pydantic import BaseModel
@@ -349,6 +350,9 @@ def test_composite_retriever(index_name: str):
         create_if_not_exists=True,
         mode=CompositeRetrievalMode.FULL,
         rerank_top_n=5,
+        rerank_config=ReRankConfig(
+            top_n=5,
+        ),
     )
 
     # Attach indices to the composite retriever

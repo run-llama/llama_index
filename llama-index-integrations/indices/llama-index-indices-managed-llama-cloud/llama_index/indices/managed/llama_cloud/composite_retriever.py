@@ -8,6 +8,7 @@ from llama_cloud import (
     Retriever,
     RetrieverPipeline,
     PresetRetrievalParams,
+    ReRankConfig,
 )
 from llama_cloud.resources.pipelines.client import OMIT
 
@@ -45,6 +46,7 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         # composite retrieval params
         mode: Optional[CompositeRetrievalMode] = None,
         rerank_top_n: Optional[int] = None,
+        rerank_config: Optional[ReRankConfig] = None,
         persisted: Optional[bool] = True,
         **kwargs: Any,
     ) -> None:
@@ -81,6 +83,7 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         # composite retrieval params
         self._mode = mode if mode is not None else OMIT
         self._rerank_top_n = rerank_top_n if rerank_top_n is not None else OMIT
+        self._rerank_config = rerank_config if rerank_config is not None else OMIT
 
         super().__init__(
             callback_manager=kwargs.get("callback_manager"),
@@ -210,14 +213,21 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         query_bundle: QueryBundle,
         mode: Optional[CompositeRetrievalMode] = None,
         rerank_top_n: Optional[int] = None,
+        rerank_config: Optional[ReRankConfig] = None,
     ) -> List[NodeWithScore]:
         mode = mode if mode is not None else self._mode
+
         rerank_top_n = rerank_top_n if rerank_top_n is not None else self._rerank_top_n
+        rerank_config = (
+            rerank_config if rerank_config is not None else self._rerank_config
+        )
+
         if self._persisted:
             result = self._client.retrievers.retrieve(
                 self.retriever.id,
                 mode=mode,
                 rerank_top_n=rerank_top_n,
+                rerank_config=rerank_config,
                 query=query_bundle.query_str,
             )
         else:
@@ -225,6 +235,7 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
                 project_id=self.project.id,
                 mode=mode,
                 rerank_top_n=rerank_top_n,
+                rerank_config=rerank_config,
                 query=query_bundle.query_str,
                 pipelines=self.retriever.pipelines,
             )
@@ -245,11 +256,17 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         rerank_top_n: Optional[int] = None,
     ) -> List[NodeWithScore]:
         mode = mode if mode is not None else self._mode
+
         rerank_top_n = rerank_top_n if rerank_top_n is not None else self._rerank_top_n
+        rerank_config = (
+            rerank_config if rerank_config is not None else self._rerank_config
+        )
+
         if self._persisted:
             result = await self._aclient.retrievers.retrieve(
                 self.retriever.id,
                 mode=mode,
+                rerank_config=rerank_config,
                 rerank_top_n=rerank_top_n,
                 query=query_bundle.query_str,
             )
@@ -258,6 +275,7 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
                 project_id=self.project.id,
                 mode=mode,
                 rerank_top_n=rerank_top_n,
+                rerank_config=rerank_config,
                 query=query_bundle.query_str,
                 pipelines=self.retriever.pipelines,
             )
