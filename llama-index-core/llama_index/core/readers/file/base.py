@@ -14,6 +14,7 @@ from functools import reduce
 from itertools import repeat
 from pathlib import Path, PurePosixPath
 from typing import (
+    Optional,
     Any,
     Callable,
     Generator,
@@ -247,19 +248,19 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
     def __init__(
         self,
-        input_dir: Path | str | None = None,
-        input_files: list | None = None,
-        exclude: list | None = None,
+        input_dir: Optional[Union[Path, str]] = None,
+        input_files: Optional[list] = None,
+        exclude: Optional[list] = None,
         exclude_hidden: bool = True,
         exclude_empty: bool = False,
         errors: str = "ignore",
         recursive: bool = False,
         encoding: str = "utf-8",
         filename_as_id: bool = False,
-        required_exts: list[str] | None = None,
-        file_extractor: dict[str, BaseReader] | None = None,
-        num_files_limit: int | None = None,
-        file_metadata: Callable[[str], dict] | None = None,
+        required_exts: Optional[list[str]] = None,
+        file_extractor: Optional[dict[str, BaseReader]] = None,
+        num_files_limit: Optional[int] = None,
+        file_metadata: Optional[Callable[[str], dict]] = None,
         raise_on_error: bool = False,
         fs: fsspec.AbstractFileSystem | None = None,
     ) -> None:
@@ -338,6 +339,12 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         else:
             file_refs = cast(list[str], self.fs.glob(str(input_dir) + "/*"))
 
+        limit = (
+            self.num_files_limit
+            if self.num_files_limit is not None and self.num_files_limit > 0
+            else None
+        )
+        c = 0
         for _ref in file_refs:
             # Manually check if file is hidden or directory instead of
             # in glob for backwards compatibility.
@@ -374,15 +381,16 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             ):
                 continue
             else:
+                if limit:
+                    c += 1
+                    if c > limit:
+                        break
                 all_files.add(ref)
 
         new_input_files = sorted(all_files)
 
         if len(new_input_files) == 0:
             raise ValueError(f"No files found in {input_dir}.")
-
-        if self.num_files_limit is not None and self.num_files_limit > 0:
-            new_input_files = new_input_files[0 : self.num_files_limit]
 
         # print total number of files added
         logger.debug(
