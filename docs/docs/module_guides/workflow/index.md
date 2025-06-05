@@ -634,21 +634,17 @@ result = await handler
 ```
 ## Resources
 
-Resources are external dependencies that you can equip the steps of your workflows with.
+Resources are external dependencies you can inject into the steps of a workflow.
 
 A simple example can be:
 
 ```python
-from llama_index.core.workflows.resource import Resource
+from llama_index.core.workflow.resource import Resource
 from llama_index.core.memory import Memory
 
 
 def get_memory(*args, **kwargs):
     return Memory.from_defaults("user_id_123", token_limit=60000)
-
-
-class CustomStartEvent(StartEvent):
-    msg: str
 
 
 class SecondEvent(Event):
@@ -659,11 +655,13 @@ class WorkflowWithResource(Workflow):
     @step
     def first_step(
         self,
-        ev: CustomStartEvent,
+        ev: StartEvent,
         memory: Annotated[Memory, Resource(get_memory)],
     ) -> SecondEvent:
         print("Memory before step 1", memory)
-        memory.put(ChatMessage.from_str(role="user", content=ev.msg))
+        memory.put(
+            ChatMessage.from_str(role="user", content="This is the first step")
+        )
         print("Memory after step 1", memory)
         return SecondEvent(msg="This is an input for step 2")
 
@@ -677,9 +675,9 @@ class WorkflowWithResource(Workflow):
         return StopEvent(result="Messages put into memory")
 ```
 
-`Resource` here acts like an executor for the function: once you run the steps, if they have resources declared with them, the factory function declared within `Resource` gets executed and turned into the component that it is supposed to represent as specified in the type annotation (in the example above, a Memory object).
+The `Resource` wrapper acts as both a type declaration and an executor. At definition time, it specifies the expected type using `Annotated` - for example, a `Memory` object. At runtime, it invokes the associated factory function, such as `get_memory`, to produce the actual instance. The return type of this function must match the declared type, ensuring consistency between what’s expected and what’s provided during execution.
 
-If you run the workflow, you will also notice that the resource is shared among steps: this behavior can be changed by passing `Resource(..., cache=False)`.
+Resources are shared among steps of a workflow, and `Resource` will invoke the factory function only once. In case this is not the desired behavior, passing `cache=False` to `Resource` will inject different resource objects in different steps, invoking the factory function as many times.
 
 ## Checkpointing Workflows
 
