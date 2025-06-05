@@ -8,7 +8,7 @@ from llama_cloud import (
     Retriever,
     RetrieverPipeline,
     PresetRetrievalParams,
-    ReRankConfig
+    ReRankConfig,
 )
 from llama_cloud.resources.pipelines.client import OMIT
 
@@ -216,8 +216,11 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         rerank_config: Optional[ReRankConfig] = None,
     ) -> List[NodeWithScore]:
         mode = mode if mode is not None else self._mode
+
         rerank_top_n = rerank_top_n if rerank_top_n is not None else self._rerank_top_n
-        rerank_config = rerank_config if rerank_config is not None else self._rerank_config
+        rerank_config = (
+            rerank_config if rerank_config is not None else self._rerank_config
+        )
 
         if self._persisted:
             result = self._client.retrievers.retrieve(
@@ -253,8 +256,12 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         rerank_top_n: Optional[int] = None,
     ) -> List[NodeWithScore]:
         mode = mode if mode is not None else self._mode
+
         rerank_top_n = rerank_top_n if rerank_top_n is not None else self._rerank_top_n
-        rerank_config = rerank_config if rerank_config is not None else self._rerank_config
+        rerank_config = (
+            rerank_config if rerank_config is not None else self._rerank_config
+        )
+
         if self._persisted:
             result = await self._aclient.retrievers.retrieve(
                 self.retriever.id,
