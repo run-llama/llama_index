@@ -632,6 +632,54 @@ result = await handler
 handler = w.run(ctx=handler.ctx)
 result = await handler
 ```
+## Resources
+
+Resources are external dependencies that you can equip the steps of your workflows with.
+
+A simple example can be:
+
+```python
+from llama_index.core.workflows.resource import Resource
+from llama_index.core.memory import Memory
+
+
+def get_memory(*args, **kwargs):
+    return Memory.from_defaults("user_id_123", token_limit=60000)
+
+
+class CustomStartEvent(StartEvent):
+    msg: str
+
+
+class SecondEvent(Event):
+    msg: str
+
+
+class WorkflowWithResource(Workflow):
+    @step
+    def first_step(
+        self,
+        ev: CustomStartEvent,
+        memory: Annotated[Memory, Resource(get_memory)],
+    ) -> SecondEvent:
+        print("Memory before step 1", memory)
+        memory.put(ChatMessage.from_str(role="user", content=ev.msg))
+        print("Memory after step 1", memory)
+        return SecondEvent(msg="This is an input for step 2")
+
+    @step
+    def second_step(
+        self, ev: SecondEvent, memory: Annotated[Memory, Resource(get_memory)]
+    ) -> StopEvent:
+        print("Memory before step 2", memory)
+        memory.put(ChatMessage.from_str(role="user", content=ev.msg))
+        print("Memory after step 2", memory)
+        return StopEvent(result="Messages put into memory")
+```
+
+`Resource` here acts like an executor for the function: once you run the steps, if they have resources declared with them, the factory function declared within `Resource` gets executed and turned into the component that it is supposed to represent as specified in the type annotation (in the example above, a Memory object).
+
+If you run the workflow, you will also notice that the resource is shared among steps: this behavior can be changed by passing `Resource(..., cache=False)`.
 
 ## Checkpointing Workflows
 
