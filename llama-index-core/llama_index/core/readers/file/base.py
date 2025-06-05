@@ -340,22 +340,15 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             else None
         )
         c = 0
-        if self.recursive:
-            for root, _, files in self.fs.walk(str(input_dir), topdown=True):
-                for file in files:
-                    c += 1
-                    if limit and c > limit:
-                        break
-                    file_refs.append(os.path.join(root, file))
-        else:
-            for root, _, files in self.fs.walk(
-                str(input_dir), maxdepth=1, topdown=True
-            ):
-                for file in files:
-                    c += 1
-                    if limit and c > limit:
-                        break
-                    file_refs.append(os.path.join(root, file))
+        depth = 1000 if self.recursive else 1
+        for root, _, files in self.fs.walk(
+            str(input_dir), topdown=True, maxdepth=depth
+        ):
+            for file in files:
+                c += 1
+                if limit and c > limit:
+                    break
+                file_refs.append(os.path.join(root, file))
 
         for _ref in file_refs:
             # Manually check if file is hidden or directory instead of
