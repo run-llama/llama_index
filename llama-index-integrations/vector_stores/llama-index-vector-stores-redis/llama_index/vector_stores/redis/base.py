@@ -183,11 +183,6 @@ class RedisVectorStore(BasePydanticVectorStore):
         )
         self._redis_client_async = redis_client_async
         if redis_client or redis_url:
-            if redis_url and not redis_client:
-                redis_client = Redis(
-                    host=redis_url.split("://")[1].split(":")[0],
-                    port=int(redis_url.split("://")[1].split(":")[1]),
-                )
             self._redis_client = redis_client
             self.create_index()
             if not self._redis_client_async:
