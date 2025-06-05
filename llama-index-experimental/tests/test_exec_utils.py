@@ -1,4 +1,4 @@
-from llama_index.core.exec_utils import _contains_protected_access
+from llama_index.experimental.exec_utils import _contains_protected_access
 
 
 def test_contains_protected_access() -> None:
