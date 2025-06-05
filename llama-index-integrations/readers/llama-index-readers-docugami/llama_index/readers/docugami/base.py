@@ -160,8 +160,9 @@ class DocugamiReader(BaseReader):
             )
 
         def _build_framework_chunk(dg_chunk: Chunk) -> Document:
-            # Stable IDs for chunks with the same text.
-            _hashed_id = hashlib.md5(dg_chunk.text.encode()).hexdigest()
+            # Adding dg_chunk.text + dg_chunk.xpath should prevent hash collision between two chunks that have the same text but a different xpath
+            text = dg_chunk.xpath + "\n" + dg_chunk.text
+            _hashed_id = hashlib.md5(text.encode()).hexdigest()
             metadata = {
                 XPATH_KEY: dg_chunk.xpath,
                 ID_KEY: _hashed_id,
