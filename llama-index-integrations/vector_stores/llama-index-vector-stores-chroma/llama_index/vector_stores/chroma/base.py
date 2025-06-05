@@ -145,7 +145,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
 
     collection_name: Optional[str]
     host: Optional[str]
-    port: Optional[Union[str,int]]
+    port: Optional[Union[str, int]]
     ssl: bool
     headers: Optional[Dict[str, str]]
     persist_dir: Optional[str]
@@ -158,7 +158,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         chroma_collection: Optional[Any] = None,
         collection_name: Optional[str] = None,
         host: Optional[str] = None,
-        port: Optional[Union[str,int]] = None,
+        port: Optional[Union[str, int]] = None,
         ssl: bool = False,
         headers: Optional[Dict[str, str]] = None,
         persist_dir: Optional[str] = None,
@@ -202,7 +202,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         cls,
         collection_name: str,
         host: Optional[str] = None,
-        port: Optional[Union[str,int]] = None,
+        port: Optional[Union[str, int]] = None,
         ssl: bool = False,
         headers: Optional[Dict[str, str]] = None,
         persist_dir: Optional[str] = None,
