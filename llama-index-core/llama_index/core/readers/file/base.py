@@ -334,17 +334,29 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                         rejected_files.add(_Path(str(file)))
 
         file_refs: list[str] = []
-        if self.recursive:
-            file_refs = cast(list[str], self.fs.glob(str(input_dir) + "/**/*"))
-        else:
-            file_refs = cast(list[str], self.fs.glob(str(input_dir) + "/*"))
-
         limit = (
             self.num_files_limit
             if self.num_files_limit is not None and self.num_files_limit > 0
             else None
         )
         c = 0
+        if self.recursive:
+            for root, _, files in self.fs.walk(str(input_dir), topdown=True):
+                for file in files:
+                    c += 1
+                    if limit and c > limit:
+                        break
+                    file_refs.append(os.path.join(root, file))
+        else:
+            for root, _, files in self.fs.walk(
+                str(input_dir), maxdepth=1, topdown=True
+            ):
+                for file in files:
+                    c += 1
+                    if limit and c > limit:
+                        break
+                    file_refs.append(os.path.join(root, file))
+
         for _ref in file_refs:
             # Manually check if file is hidden or directory instead of
             # in glob for backwards compatibility.
@@ -381,10 +393,6 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             ):
                 continue
             else:
-                if limit:
-                    c += 1
-                    if c > limit:
-                        break
                 all_files.add(ref)
 
         new_input_files = sorted(all_files)
