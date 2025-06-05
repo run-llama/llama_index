@@ -471,3 +471,261 @@ def test_search_filters_inference_schema(index_name: str):
     assert len(nodes) > 0
     assert all(n.node.ref_doc_id == "1" for n in nodes)
     assert all(n.node.metadata["source"] == "test" for n in nodes)
+
+
+@pytest.mark.skipif(
+    not base_url or not api_key, reason="No platform base url or api key set"
+)
+@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
+def test_composite_retriever_with_rerank_config(index_name: str):
+    """Test the LlamaCloudCompositeRetriever with rerank_config parameter."""
+    # Create first index with documents
+    documents1 = [
+        Document(
+            text="Hello world from index 1.", doc_id="1", metadata={"source": "index1"}
+        ),
+    ]
+    index1 = LlamaCloudIndex.from_documents(
+        documents=documents1,
+        name=index_name,
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+        organization_id=organization_id,
+        verbose=True,
+    )
+
+    # Create a composite retriever with rerank_config
+    rerank_config = ReRankConfig(top_n=3)
+    retriever = LlamaCloudCompositeRetriever(
+        name="composite_retriever_rerank_test",
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+        create_if_not_exists=True,
+        mode=CompositeRetrievalMode.FULL,
+        rerank_top_n=5,
+        rerank_config=rerank_config,
+    )
+
+    # Attach index to the composite retriever
+    retriever.add_index(index1, description="Information from index 1.")
+
+    # Retrieve nodes using the composite retriever
+    nodes = retriever.retrieve("Hello world.")
+
+    # Assertions to verify the retrieval
+    assert len(nodes) > 0
+    assert any(n.node.metadata["pipeline_id"] == index1.id for n in nodes)
+
+
+@pytest.mark.skipif(
+    not base_url or not api_key, reason="No platform base url or api key set"
+)
+@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
+@pytest.mark.asyncio
+async def test_composite_retriever_remove_nonexistent_index(index_name: str):
+    """Test removing a non-existent index from composite retriever (should return False)."""
+    # Create first index with documents
+    documents1 = [
+        Document(
+            text="Hello world from index 1.", doc_id="1", metadata={"source": "index1"}
+        ),
+    ]
+    index1 = LlamaCloudIndex.from_documents(
+        documents=documents1,
+        name=index_name,
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+        organization_id=organization_id,
+        verbose=True,
+    )
+
+    # Create a composite retriever
+    retriever = LlamaCloudCompositeRetriever(
+        name="composite_retriever_remove_test",
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+        create_if_not_exists=True,
+        mode=CompositeRetrievalMode.FULL,
+    )
+
+    # Attach index to the composite retriever
+    retriever.add_index(index1, description="Information from index 1.")
+
+    # Try to remove a non-existent index - this should return False and cover line 221
+    result = await retriever.aremove_index("nonexistent_index")
+    assert result is False
+
+
+@pytest.mark.skipif(
+    not base_url or not api_key, reason="No platform base url or api key set"
+)
+@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
+@pytest.mark.asyncio
+async def test_non_persisted_composite_retriever(index_name: str):
+    """Test non-persisted composite retriever functionality."""
+    # Create first index with documents
+    documents1 = [
+        Document(
+            text="Hello world from index 1.", doc_id="1", metadata={"source": "index1"}
+        ),
+    ]
+    index1 = LlamaCloudIndex.from_documents(
+        documents=documents1,
+        name=index_name,
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+        organization_id=organization_id,
+        verbose=True,
+    )
+
+    # Create a non-persisted composite retriever
+    retriever = LlamaCloudCompositeRetriever(
+        name="non_persisted_retriever_test",
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+        create_if_not_exists=True,
+        mode=CompositeRetrievalMode.FULL,
+        persisted=False,
+    )
+
+    # Attach index to the composite retriever
+    retriever.add_index(index1, description="Information from index 1.")
+
+    # Retrieve nodes using the non-persisted composite retriever - this covers line 261
+    nodes = await retriever.aretrieve("Hello world.")
+
+    # Assertions to verify the retrieval
+    assert len(nodes) > 0
+    assert any(n.node.metadata["pipeline_id"] == index1.id for n in nodes)
+
+
+@pytest.mark.skipif(
+    not base_url or not api_key, reason="No platform base url or api key set"
+)
+@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
+def test_composite_retriever_remove_nonexistent_index_sync(index_name: str):
+    """Test removing a non-existent index from composite retriever synchronously (should return False)."""
+    # Create first index with documents
+    documents1 = [
+        Document(
+            text="Hello world from index 1.", doc_id="1", metadata={"source": "index1"}
+        ),
+    ]
+    index1 = LlamaCloudIndex.from_documents(
+        documents=documents1,
+        name=index_name,
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+        organization_id=organization_id,
+        verbose=True,
+    )
+
+    # Create a composite retriever
+    retriever = LlamaCloudCompositeRetriever(
+        name="composite_retriever_remove_sync_test",
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+        create_if_not_exists=True,
+        mode=CompositeRetrievalMode.FULL,
+    )
+
+    # Attach index to the composite retriever
+    retriever.add_index(index1, description="Information from index 1.")
+
+    # Try to remove a non-existent index - this should return False and cover line 143
+    result = retriever.remove_index("nonexistent_index")
+    assert result is False
+
+
+@pytest.mark.skipif(
+    not base_url or not api_key, reason="No platform base url or api key set"
+)
+@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
+def test_non_persisted_composite_retriever_sync(index_name: str):
+    """Test non-persisted composite retriever functionality synchronously."""
+    # Create first index with documents
+    documents1 = [
+        Document(
+            text="Hello world from index 1.", doc_id="1", metadata={"source": "index1"}
+        ),
+    ]
+    index1 = LlamaCloudIndex.from_documents(
+        documents=documents1,
+        name=index_name,
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+        organization_id=organization_id,
+        verbose=True,
+    )
+
+    # Create a non-persisted composite retriever
+    retriever = LlamaCloudCompositeRetriever(
+        name="non_persisted_retriever_sync_test",
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+        create_if_not_exists=True,
+        mode=CompositeRetrievalMode.FULL,
+        persisted=False,  # This creates a non-persisted retriever
+    )
+
+    # Attach index to the composite retriever
+    retriever.add_index(index1, description="Information from index 1.")
+
+    # Retrieve nodes using the non-persisted composite retriever - this covers the else branch in _retrieve
+    nodes = retriever.retrieve("Hello world.")
+
+    # Assertions to verify the retrieval
+    assert len(nodes) > 0
+    assert any(n.node.metadata["pipeline_id"] == index1.id for n in nodes)
+
+
+@pytest.mark.skipif(
+    not base_url or not api_key, reason="No platform base url or api key set"
+)
+@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
+def test_non_persisted_update_retriever_pipelines(index_name: str):
+    """Test updating retriever pipelines for non-persisted retrievers."""
+    # Create first index with documents
+    documents1 = [
+        Document(
+            text="Hello world from index 1.", doc_id="1", metadata={"source": "index1"}
+        ),
+    ]
+    index1 = LlamaCloudIndex.from_documents(
+        documents=documents1,
+        name=index_name,
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+        organization_id=organization_id,
+        verbose=True,
+    )
+
+    # Create a non-persisted composite retriever
+    retriever = LlamaCloudCompositeRetriever(
+        name="non_persisted_update_test",
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+        create_if_not_exists=True,
+        mode=CompositeRetrievalMode.FULL,
+        persisted=False,  # This creates a non-persisted retriever
+    )
+
+    # Add index to trigger the update_retriever_pipelines with persisted=False
+    # This will test the copy() method usage in line 105 and 156
+    retriever.add_index(index1, description="Information from index 1.")
+
+    # Verify the index was added successfully
+    assert len(retriever.retriever_pipelines) == 1
+    assert retriever.retriever_pipelines[0].pipeline_id == index1.id
