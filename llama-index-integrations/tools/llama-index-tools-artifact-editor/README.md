@@ -106,4 +106,18 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
+When running this, you might initially ask the agent:
+
+```
+User: Create a ficticous report about the history of the internet
+```
+
+And you will get a report with a list of blocks. Try asking it to modify the report!
+
+```
+User: Move the image to the top of the report
+```
+
+And you will get a report with the image moved to the top.
+
 Check out the documentation for more example on [agents](https://docs.llamaindex.ai/en/stable/understanding/agent/), [memory](https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/memory/), and [tools](https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/tools/).
