@@ -1655,7 +1655,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-voice-elevenlabs"
-version = "0.1.0"
+version = "0.1.0b0"
 source = { editable = "." }
 dependencies = [
     { name = "elevenlabs", extra = ["pyaudio"] },

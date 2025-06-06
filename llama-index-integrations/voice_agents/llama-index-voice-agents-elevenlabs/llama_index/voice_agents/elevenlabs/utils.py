@@ -20,15 +20,24 @@ def callback_user_message(
                 ChatMessage(role=MessageRole.USER, blocks=[AudioBlock(audio=audio)])
             )
     else:
-        last_agent_message = [
+        last_user_messages = [
             message
             for message in messages[message_id]
             if message.role == MessageRole.USER
-        ][-1]
-        if text:
-            last_agent_message.blocks.append(TextBlock(text=text))
+        ]
+        if len(last_user_messages) > 0:
+            last_user_message = last_user_messages[-1]
         else:
-            last_agent_message.blocks.append(AudioBlock(audio=audio))
+            messages[message_id].append(ChatMessage(role=MessageRole.USER, blocks=[]))
+            last_user_message = [
+                message
+                for message in messages[message_id]
+                if message.role == MessageRole.USER
+            ][-1]
+        if text:
+            last_user_message.blocks.append(TextBlock(text=text))
+        else:
+            last_user_message.blocks.append(AudioBlock(audio=audio))
 
 
 def callback_agent_message(
@@ -51,11 +60,22 @@ def callback_agent_message(
                 )
             )
     else:
-        last_agent_message = [
+        last_agent_messages = [
             message
             for message in messages[message_id]
             if message.role == MessageRole.ASSISTANT
-        ][-1]
+        ]
+        if len(last_agent_messages) > 0:
+            last_agent_message = last_agent_messages[-1]
+        else:
+            messages[message_id].append(
+                ChatMessage(role=MessageRole.ASSISTANT, blocks=[])
+            )
+            last_agent_message = [
+                message
+                for message in messages[message_id]
+                if message.role == MessageRole.ASSISTANT
+            ][-1]
         if text:
             last_agent_message.blocks.append(TextBlock(text=text))
         else:

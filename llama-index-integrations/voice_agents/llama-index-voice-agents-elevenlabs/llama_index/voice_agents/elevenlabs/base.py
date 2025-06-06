@@ -5,7 +5,7 @@ import warnings
 
 from statistics import mean
 from websockets.sync.client import Connection
-from typing import Optional, Callable, Dict, List
+from typing import Optional, Callable, Dict, List, Any, Union
 from llama_index.core.llms import ChatMessage
 from elevenlabs.conversational_ai.conversation import (
     Conversation,
@@ -66,7 +66,7 @@ class ElevenLabsConversation(Conversation):
         audio_interface: AudioInterface,
         config: Optional[ConversationInitiationData] = None,
         client_tools: Optional[ClientTools] = None,
-    ):
+    ) -> None:
         self.client = client
         self.agent_id = agent_id
         self.requires_auth = requires_auth
@@ -90,7 +90,7 @@ class ElevenLabsConversation(Conversation):
         self._conversation_id = None
         self._last_interrupt_id = 0
 
-    def _handle_message(self, message, ws):
+    def _handle_message(self, message: Dict, ws: Any) -> None:
         if message["type"] == "conversation_initiation_metadata":
             event = message["conversation_initiation_metadata_event"]
             assert self._conversation_id is None
@@ -173,7 +173,7 @@ class ElevenLabsConversation(Conversation):
         self,
         limit: Optional[int] = None,
         filter: Optional[Callable[[List[ChatMessage]], List[ChatMessage]]] = None,
-    ):
+    ) -> List[ChatMessage]:
         """
         Get the list of messages produced by the user and the agent in a LlamaIndex-compatible format.
 
@@ -182,22 +182,28 @@ class ElevenLabsConversation(Conversation):
             filter (Optional[Callable[[List[ChatMessage]], List[ChatMessage]]]): a function that filters the list of messages to return only the ones that respect certain conditions.
 
         """
-        vals = list(self._all_chat.values())
-        messages = [message for messages in vals for message in messages]
-        if limit:
-            if limit > len(messages):
-                warnings.warn(
-                    message="The provided limit exceeds the length of the  current chat history",
-                    category=UserWarning,
-                )
-                return messages
-            else:
-                return messages[:limit]
-        elif filter:
-            return filter(messages)
+        if len(self._all_chat) > 0:
+            vals = list(self._all_chat.values())
+            messages = [message for messages in vals for message in messages]
+            if limit:
+                if limit > len(messages):
+                    warnings.warn(
+                        message="The provided limit exceeds the length of the  current chat history",
+                        category=UserWarning,
+                    )
+                    return messages
+                else:
+                    return messages[:limit]
+            elif filter:
+                return filter(messages)
+        else:
+            warnings.warn(
+                message="There are no recorded messages for now", category=UserWarning
+            )
+            messages = []
         return messages
 
-    def get_average_latency(self):
+    def get_average_latency(self) -> Union[int, float]:
         """
         Get the average latency of your conversational agent.
         """

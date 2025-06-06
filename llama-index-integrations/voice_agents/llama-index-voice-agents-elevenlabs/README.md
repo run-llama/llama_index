@@ -12,7 +12,6 @@ And, if you want to run it, you can refer to the simple example down here (in th
 
 ```python
 import os
-import signal
 
 from base import ElevenLabsConversation
 from dotenv import load_dotenv
@@ -26,7 +25,8 @@ load_dotenv()
 AGENT_ID = os.environ.get("AGENT_ID")
 API_KEY = os.environ.get("ELEVENLABS_API_KEY")
 
-if __name__ == "__main__":
+
+def main():
     client = ElevenLabs(api_key=API_KEY)
     conversation = ElevenLabsConversation(
         client,
@@ -36,14 +36,21 @@ if __name__ == "__main__":
     )
     conversation.start_session()
 
-    # RUN UNTIL CTRL+C IS HIT
-    signal.signal(signal.SIGINT, lambda sig, frame: conversation.end_session())
-    # GET MESSAGES IN llama-index ChatMessage FORMAT
-    messages = conversation.get_messages()
-    # GET AVERAGE LATENCY
-    latency = conversation.get_average_latency()
-    conversation_id = conversation.wait_for_session_end()
-    print(f"Messages: {messages}")
-    print(f"Latency: {latency}")
-    print(f"Conversation ID: {conversation_id}")
+    while True:
+        try:
+            # GET MESSAGES IN llama-index ChatMessage FORMAT
+            messages = conversation.get_messages()
+            # GET AVERAGE LATENCY
+            latency = conversation.get_average_latency()
+        except KeyboardInterrupt:
+            conversation.end_session()
+            conversation_id = conversation.wait_for_session_end()
+            print(f"Messages: {messages}")
+            print(f"Latency: {latency}")
+            print(f"Conversation ID: {conversation_id}")
+            break
+
+
+if __name__ == "__main__":
+    main()
 ```

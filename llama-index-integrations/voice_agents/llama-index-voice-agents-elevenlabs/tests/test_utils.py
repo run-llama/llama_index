@@ -2,7 +2,7 @@ import pytest
 
 from typing import Dict, List
 from llama_index.core.llms import ChatMessage, MessageRole, TextBlock, AudioBlock
-from llama_index.voice.elevenlabs.utils import (
+from llama_index.voice_agents.elevenlabs.utils import (
     callback_agent_message,
     callback_agent_message_correction,
     callback_latency_measurement,

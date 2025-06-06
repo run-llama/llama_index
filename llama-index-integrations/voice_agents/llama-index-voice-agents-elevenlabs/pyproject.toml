@@ -26,15 +26,15 @@ dev = [
 
 [project]
 name = "llama-index-voice-elevenlabs"
-version = "0.1.0"
+version = "0.1.0-beta"
 description = "LlamaIndex x ElevenLabs integration"
 authors = [{name = "Clelia Astra Bertelli", email = "clelia@runllama.ai"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
-maintainers = [{name = "ajhofmann"}]
+maintainers = [{name = "AstraBert"}]
 dependencies = [
-    "llama-index-core>=0.12.39,<0.13",
+    "llama-index-core>=0.12.40,<0.13",
     "elevenlabs[pyaudio]>=2.1.0,<3",
 ]
 
@@ -53,10 +53,10 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.tools.zapier"
+import_path = "llama_index.voice_agents.elevenlabs"
 
 [tool.llamahub.class_authors]
-ZapierToolSpec = "ajhofmann"
+ElevenLabsConversation = "AstraBert"
 
 [tool.mypy]
 disallow_untyped_defs = true
