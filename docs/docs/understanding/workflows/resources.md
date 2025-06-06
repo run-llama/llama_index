@@ -1,12 +1,16 @@
 # Resources
 
-Resources are a component of workflows that allow us to equip our steps with external dependencies such as memory, LLMs, query engines or chat history.
+Resources are external dependencies such as memory, LLMs, query engines or chat history instances that will be injected
+into workflow steps at runtime.
 
-Resources are a powerful way of binding components to our steps that we otherwise would need to specify by hand every time and, most importantly, resources are **stateful**, meaning that they maintain their state across different steps, unless otherwise specified.
+Resources are a powerful way of binding workflow steps to Python objects that we otherwise would need to create by hand
+every time. For performance reasons, by default resources are cached for a workflow, meaning the same resource instance
+is passed to every step where it's injected. It's important to master this concept because cached and non-cached
+resources can lead to unexpected behaviour, let's see it in detail.
 
-## Using Stateful Resources
+## Resources are cached by default
 
-In order to use them within our code, we need to import them from the `resource` submodule:
+First of all, to use resources within our code, we need to import `Resource` from the `resource` submodule:
 
 ```python
 from llama_index.core.workflow.resource import Resource
@@ -19,7 +23,8 @@ from llama_index.core.workflow import (
 )
 ```
 
-The `Resource` function works as a wrapper for another function that, when executed, returns an object of a specified type. This is the usage pattern:
+`Resource` wraps a function or callable that must return an object of the same type as the one in the resource
+definition, let's see an example:
 
 ```python
 from typing import Annotated
@@ -33,7 +38,9 @@ def get_memory(*args, **kwargs) -> Memory:
 resource = Annotated[Memory, Resource(get_memory)]
 ```
 
-When a step of our workflow will be equipped with this resource, the variable in the step to which the resource is assigned would behave as a memory component:
+In the example above, `Annotated[Memory, Resource(get_memory)` defines a resource of type `Memory` that will be provided
+at runtime by the `get_memory()` function. A resource defined like this can be injected into a step by passing it as
+a method parameter:
 
 ```python
 import random
@@ -98,7 +105,9 @@ class WorkflowWithMemory(Workflow):
         return StopEvent(result=messages)
 ```
 
-As you can see, each step has access to memory and writes to it - the memory is shared among them and we can see it by running the workflow:
+As you can see, each step has access to the `memory` resource and can write to it. It's important to note that
+`get_memory()` will be called only once, and the same memory instance will be injected into the different steps. We can
+see this is the case by running the workflow:
 
 ```python
 wf = WorkflowWithMemory(disable_validation=True)
@@ -128,7 +137,9 @@ Third step: Hello World!
 
 This shows that each step added its message to a global memory, which is exactly what we were expecting!
 
-It is important to note, though, the resources are preserved across steps of the same workflow instance, but not across different workflows. If we were to run two `WorkflowWithMemory` instances, their memories would be separate and independent:
+Note that resources are preserved across steps of the same workflow instance, but not across different workflows. If we
+were to run two `WorkflowWithMemory` instances, `get_memory` would be called one time for each workflow and as a result
+their memories would be separate and independent:
 
 ```python
 wf1 = WorkflowWithMemory(disable_validation=True)
@@ -165,11 +176,11 @@ First step: Happy New Year!
 Second step: Python is awesome!
 ```
 
-## Using Steteless Resources
+## Disable resource caching
 
-Resources can also be stateless, meaning that we can configure them *not* to be preserved across steps in the same run.
-
-In order to do so, we just need to specify `cache=False` when instantiating `Resource` - let's see this in a simple example, using a custom `Counter` class:
+If we pass `cache=False` to `Resource` when defining a resource, the wrapped function is called every time the resource
+is injected into a step. This behaviour can be desirable at times, let's see a simple example using a custom
+`Counter` class:
 
 ```python
 from pydantic import BaseModel, Field
@@ -218,5 +229,23 @@ If we now run this workflow, we will get out:
 Counter at first step:  1
 Counter at second step:  1
 ```
+
+## A note about stateful and stateless resources
+
+As we have seen, cached resources are expected to be **stateful**, meaning that they can maintain their state across
+different workflow runs and different steps, unless otherwise specified. But this doesn't mean we can consider a
+resource **stateless** only because we disable caching. Let's see an example:
+
+```python
+global_mem = Memory.from_defaults("global_id", token_limit=60000)
+
+
+def get_memory(*args, **kwargs) -> Memory:
+    return global_mem
+```
+
+If we disable caching with `Annotated[Memory, Resource(get_memory, cache=False)]`, the function `get_memory` is going
+to be called multiple times but the resource instance will be always the same. Such a resource should be considered
+stateful not regarding its caching behaviour.
 
 Now that we've mastered resources, let's take a look at [observability and debugging](./observability.md) in workflows.
