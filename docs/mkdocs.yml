@@ -49,7 +49,7 @@ nav:
           - Streaming events: ./understanding/workflows/stream.md
           - Concurrent execution: ./understanding/workflows/concurrent_execution.md
           - Subclassing workflows: ./understanding/workflows/subclass.md
-          - Nested workflows: ./understanding/workflows/nested.md
+          - Workflow Resources: ./understanding/workflows/resources.md
           - Observability: ./understanding/workflows/observability.md
           - Unbound syntax: ./understanding/workflows/unbound_functions.md
       - Building a RAG pipeline:
