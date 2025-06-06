@@ -331,6 +331,7 @@ class Ollama(FunctionCallingLLM):
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)
+        think = kwargs.pop("think", None)
         format = kwargs.pop("format", "json" if self.json_mode else None)
 
         response = self.client.chat(
@@ -339,6 +340,7 @@ class Ollama(FunctionCallingLLM):
             stream=False,
             format=format,
             tools=tools,
+            think=think,
             options=self._model_kwargs,
             keep_alive=self.keep_alive,
         )
@@ -346,6 +348,7 @@ class Ollama(FunctionCallingLLM):
         response = dict(response)
 
         tool_calls = response["message"].get("tool_calls", [])
+        thinking = response["message"].get("thinking", None)
         token_counts = self._get_response_token_counts(response)
         if token_counts:
             response["usage"] = token_counts
@@ -354,7 +357,7 @@ class Ollama(FunctionCallingLLM):
             message=ChatMessage(
                 content=response["message"]["content"],
                 role=response["message"]["role"],
-                additional_kwargs={"tool_calls": tool_calls},
+                additional_kwargs={"tool_calls": tool_calls, "thinking": thinking},
             ),
             raw=response,
         )
@@ -366,6 +369,7 @@ class Ollama(FunctionCallingLLM):
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)
+        think = kwargs.pop("think", None)
         format = kwargs.pop("format", "json" if self.json_mode else None)
 
         def gen() -> ChatResponseGen:
@@ -375,6 +379,7 @@ class Ollama(FunctionCallingLLM):
                 stream=True,
                 format=format,
                 tools=tools,
+                think=think,
                 options=self._model_kwargs,
                 keep_alive=self.keep_alive,
             )
@@ -408,11 +413,16 @@ class Ollama(FunctionCallingLLM):
                 if token_counts:
                     r["usage"] = token_counts
 
+                thinking = r["message"].get("thinking", None)
+
                 yield ChatResponse(
                     message=ChatMessage(
                         content=response_txt,
                         role=r["message"]["role"],
-                        additional_kwargs={"tool_calls": list(set(all_tool_calls))},
+                        additional_kwargs={
+                            "tool_calls": list(set(all_tool_calls)),
+                            "thinking": thinking,
+                        },
                     ),
                     delta=r["message"]["content"],
                     raw=r,
@@ -427,6 +437,7 @@ class Ollama(FunctionCallingLLM):
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)
+        think = kwargs.pop("think", None)
         format = kwargs.pop("format", "json" if self.json_mode else None)
 
         async def gen() -> ChatResponseAsyncGen:
@@ -436,6 +447,7 @@ class Ollama(FunctionCallingLLM):
                 stream=True,
                 format=format,
                 tools=tools,
+                think=think,
                 options=self._model_kwargs,
                 keep_alive=self.keep_alive,
             )
@@ -470,11 +482,16 @@ class Ollama(FunctionCallingLLM):
                 if token_counts:
                     r["usage"] = token_counts
 
+                thinking = r["message"].get("thinking", None)
+
                 yield ChatResponse(
                     message=ChatMessage(
                         content=response_txt,
                         role=r["message"]["role"],
-                        additional_kwargs={"tool_calls": all_tool_calls},
+                        additional_kwargs={
+                            "tool_calls": all_tool_calls,
+                            "thinking": thinking,
+                        },
                     ),
                     delta=r["message"]["content"],
                     raw=r,
@@ -489,6 +506,7 @@ class Ollama(FunctionCallingLLM):
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)
+        think = kwargs.pop("think", None)
         format = kwargs.pop("format", "json" if self.json_mode else None)
 
         response = await self.async_client.chat(
@@ -497,6 +515,7 @@ class Ollama(FunctionCallingLLM):
             stream=False,
             format=format,
             tools=tools,
+            think=think,
             options=self._model_kwargs,
             keep_alive=self.keep_alive,
         )
@@ -504,6 +523,7 @@ class Ollama(FunctionCallingLLM):
         response = dict(response)
 
         tool_calls = response["message"].get("tool_calls", [])
+        thinking = response["message"].get("thinking", None)
         token_counts = self._get_response_token_counts(response)
         if token_counts:
             response["usage"] = token_counts
@@ -512,7 +532,7 @@ class Ollama(FunctionCallingLLM):
             message=ChatMessage(
                 content=response["message"]["content"],
                 role=response["message"]["role"],
-                additional_kwargs={"tool_calls": tool_calls},
+                additional_kwargs={"tool_calls": tool_calls, "thinking": thinking},
             ),
             raw=response,
         )
