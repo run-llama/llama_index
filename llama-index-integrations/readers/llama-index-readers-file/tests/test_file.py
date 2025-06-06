@@ -179,7 +179,7 @@ def test_num_files_limit(tmp_dir_type: Type[Union[Path, str]]) -> None:
                     assert len(reader.input_files) == 2
                     assert set(input_file_names) == {
                         "test1.txt",
-                        "test2.txt",
+                        "test3.txt",
                     }
 
                     reader = SimpleDirectoryReader(
