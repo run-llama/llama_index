@@ -1,5 +1,101 @@
 # ChangeLog
 
+## [2025-06-07]
+
+### `llama-index-core` [0.12.41]
+
+- feat: Add MutableMappingKVStore for easier caching (#18893)
+- fix: async functions in tool specs (#19000)
+- fix: properly apply file limit to SimpleDirectoryReader (#18983)
+- fix: overwriting of LLM callback manager from Settings (#18951)
+- fix: Adding warning in the docstring of JsonPickleSerializer for the user to deserialize only safe things, rename to PickleSerializer (#18943)
+- fix: ImageDocument path and url checking to ensure that the input is really an image (#18947)
+- chore: remove some unused utils from core (#18985)
+
+### `llama-index-embeddings-azure-openai` [0.3.8]
+
+- fix: Azure api-key and azure-endpoint resolution fixes (#18975)
+- fix: api_base vs azure_endpoint resolution fixes (#19002)
+
+### `llama-index-graph-stores-ApertureDB` [0.1.0]
+
+- feat: Aperturedb propertygraph (#18749)
+
+### `llama-index-indices-managed-llama-cloud` [0.7.4]
+
+- fix: resolve retriever llamacloud index (#18949)
+- chore: composite retrieval add ReRankConfig (#18973)
+
+### `llama-index-llms-azure-openai` [0.3.4]
+
+- fix: api_base vs azure_endpoint resolution fixes (#19002)
+
+### `llama-index-llms-bedrock-converse` [0.7.1]
+
+- fix: handle empty message content to prevent ValidationError (#18914)
+
+### `llama-index-llms-litellm` [0.5.1]
+
+- feat: Add DocumentBlock support to LiteLLM integration (#18955)
+
+### `llama-index-llms-ollama` [0.6.2]
+
+- feat: Add support for the new think feature in ollama (#18993)
+
+### `llama-index-llms-openai` [0.4.4]
+
+- feat: add OpenAI JSON Schema structured output support (#18897)
+- fix: skip tool description length check in openai response api (#18956)
+
+### `llama-index-packs-searchain` [0.1.0]
+
+- feat: Add searchain package (#18929)
+
+### `llama-index-readers-docugami` [0.3.1]
+
+- fix: Avoid hash collision in XML parsing (#18986)
+
+### `llama-index-readers-file` [0.4.9]
+
+- fix: pin llama-index-readers-file pandas for now (#18976)
+
+### `llama-index-readers-gcs` [0.4.1]
+
+- feat: Allow newer versions of gcsfs (#18987)
+
+### `llama-index-readers-obsidian` [0.5.2]
+
+- fix: Obsidian reader checks and skips hardlinks (#18950)
+
+### `llama-index-readers-web` [0.4.2]
+
+- fix: Use httpx instead of urllib in llama-index-readers-web (#18945)
+
+### `llama-index-storage-kvstore-postgres` [0.3.5]
+
+- fix: Remove unnecessary psycopg2 from llama-index-storage-kvstore-postgres dependencies (#18964)
+
+### `llama-index-tools-mcp` [0.2.5]
+
+- fix: actually format the workflow args into a start event instance (#19001)
+- feat: Adding support for log recording during MCP tool calls (#18927)
+
+### `llama-index-vector-stores-chroma` [0.4.2]
+
+- fix: Update ChromaVectorStore port field and argument types (#18977)
+
+### `llama-index-vector-stores-milvus` [0.8.4]
+
+- feat: Upsert Entities supported in Milvus (#18962)
+
+### `llama-index-vector-stores-redis` [0.5.2]
+
+- fix: Correcting Redis URL/Client handling (#18982)
+
+### `llama-index-voice-agents-elevenlabs` [0.1.0-beta]
+
+- feat: ElevenLabs beta integration (#18967)
+
 ## [2025-06-02]
 
 ### `llama-index-core` [0.12.40]

@@ -25,7 +25,7 @@ dev = [
 ]
 
 [project]
-name = "llama-index-voice-elevenlabs"
+name = "llama-index-voice-agents-elevenlabs"
 version = "0.1.0-beta"
 description = "LlamaIndex x ElevenLabs integration"
 authors = [{name = "Clelia Astra Bertelli", email = "clelia@runllama.ai"}]
