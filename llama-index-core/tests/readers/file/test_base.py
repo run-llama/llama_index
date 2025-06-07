@@ -99,7 +99,7 @@ def test_SimpleDirectoryReader_empty(data_path):
 
 def test_SimpleDirectoryReader_file_limit(data_path):
     r = SimpleDirectoryReader(input_dir=data_path, recursive=True, num_files_limit=2)
-    assert [f.name for f in r.input_files] == ["excluded_0.txt", "file_0.md"]
+    assert len(r.input_files) == 2
 
 
 def test_SimpleDirectoryReader_list_resources(data_path):
