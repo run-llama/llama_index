@@ -15,7 +15,7 @@
 ### `llama-index-embeddings-azure-openai` [0.3.8]
 
 - fix: Azure api-key and azure-endpoint resolution fixes (#18975)
-- fix: api_base vs azure_endpoint resolution fixes
+- fix: api_base vs azure_endpoint resolution fixes (#19002)
 
 ### `llama-index-graph-stores-ApertureDB` [0.1.0]
 
@@ -28,7 +28,7 @@
 
 ### `llama-index-llms-azure-openai` [0.3.4]
 
-- fix: api_base vs azure_endpoint resolution fixes
+- fix: api_base vs azure_endpoint resolution fixes (#19002)
 
 ### `llama-index-llms-bedrock-converse` [0.7.1]
 
