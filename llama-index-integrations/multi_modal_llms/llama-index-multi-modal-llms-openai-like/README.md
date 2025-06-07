@@ -15,7 +15,7 @@ pip install llama-index-multi-modal-llms-openai-like
 ### Initialization
 
 ```python
-from llama_index.multi_modal_llms.openai-like import OpenAILikeMultiModal
+from llama_index.multi_modal_llms.openai_like import OpenAILikeMultiModal
 
 llm = OpenAILikeMultiModal(model="Qwen/Qwen2-VL-72B-Instruct-base", api_base="http://localhost:1234/v1",)
 ```
@@ -23,7 +23,7 @@ llm = OpenAILikeMultiModal(model="Qwen/Qwen2-VL-72B-Instruct-base", api_base="ht
 #### Without environmental variables
 
 ```python
-from llama_index.multi_modal_llms.openai-like import OpenAILikeMultiModal
+from llama_index.multi_modal_llms.openai_like import OpenAILikeMultiModal
 
 llm = OpenAILikeMultiModal(
     api_key="your_api_key", model="Qwen/Qwen2-VL-72B-Instruct-base", api_base="http://localhost:1234/v1",
