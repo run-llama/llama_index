@@ -401,8 +401,8 @@ class Ollama(FunctionCallingLLM):
 
                 r = dict(r)
 
-                response_txt += r["message"]["content"] or ""
-                thinking_txt += r["message"]["thinking"] or ""
+                response_txt += r["message"].get("content", "") or ""
+                thinking_txt += r["message"].get("thinking", "") or ""
 
                 new_tool_calls = [dict(t) for t in r["message"].get("tool_calls") or []]
                 for tool_call in new_tool_calls:
@@ -473,8 +473,8 @@ class Ollama(FunctionCallingLLM):
 
                 r = dict(r)
 
-                response_txt += r["message"]["content"] or ""
-                thinking_txt += r["message"]["thinking"] or ""
+                response_txt += r["message"].get("content", "") or ""
+                thinking_txt += r["message"].get("thinking", "") or ""
 
                 new_tool_calls = [dict(t) for t in r["message"].get("tool_calls") or []]
                 for tool_call in new_tool_calls:
