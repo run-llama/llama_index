@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-hive"
-version = "0.3.0"
+version = "0.3.1"
 description = "llama-index readers hive integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -41,6 +41,7 @@ keywords = [
 dependencies = [
     "pyhive>=0.7.0,<0.8",
     "thrift-sasl>=0.4.3,<0.5",
+    "sqlglot>=26.25.3,<27",
     "llama-index-core>=0.12.0,<0.13",
 ]
 
