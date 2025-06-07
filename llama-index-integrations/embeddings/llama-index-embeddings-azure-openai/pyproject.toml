@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-azure-openai"
-version = "0.3.7"
+version = "0.3.8"
 description = "llama-index embeddings azure openai integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
