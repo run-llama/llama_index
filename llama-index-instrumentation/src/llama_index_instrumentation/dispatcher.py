@@ -281,7 +281,7 @@ class Dispatcher(BaseModel):
                 instance: Any,
                 context: Context,
             ) -> None:
-                from llama_index.core.workflow.errors import WorkflowCancelledByUser
+                # from llama_index.core.workflow.errors import WorkflowCancelledByUser
 
                 try:
                     exception = future.exception()
@@ -296,14 +296,14 @@ class Dispatcher(BaseModel):
                         result=result,
                     )
                     return result
-                except WorkflowCancelledByUser:
-                    self.span_exit(
-                        id_=span_id,
-                        bound_args=bound_args,
-                        instance=instance,
-                        result=None,
-                    )
-                    return None
+                # except WorkflowCancelledByUser:
+                #     self.span_exit(
+                #         id_=span_id,
+                #         bound_args=bound_args,
+                #         instance=instance,
+                #         result=None,
+                #     )
+                #     return None
                 except BaseException as e:
                     self.event(SpanDropEvent(span_id=span_id, err_str=str(e)))
                     self.span_drop(

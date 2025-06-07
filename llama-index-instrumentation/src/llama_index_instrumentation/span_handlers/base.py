@@ -1,13 +1,46 @@
 import inspect
 import threading
 from abc import abstractmethod
-from typing import Any, Dict, Generic, List, Optional, TypeVar
+from contextvars import copy_context
+from functools import partial
+from typing import Any, Callable, Dict, Generic, List, Optional, Tuple, TypeVar
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from llama_index_instrumentation.span.base import BaseSpan
 
 T = TypeVar("T", bound=BaseSpan)
+
+
+class Thread(threading.Thread):
+    """
+    A wrapper for threading.Thread that copies the current context and uses the copy to run the target.
+    """
+
+    def __init__(
+        self,
+        group: Optional[Any] = None,
+        target: Optional[Callable[..., Any]] = None,
+        name: Optional[str] = None,
+        args: Tuple[Any, ...] = (),
+        kwargs: Optional[Dict[str, Any]] = None,
+        *,
+        daemon: Optional[bool] = None,
+    ) -> None:
+        if target is not None:
+            args = (
+                partial(target, *args, **(kwargs if isinstance(kwargs, dict) else {})),
+            )
+        else:
+            args = ()
+
+        super().__init__(
+            group=group,
+            target=copy_context().run,
+            name=name,
+            args=args,
+            daemon=daemon,
+        )
 
 
 class BaseSpanHandler(BaseModel, Generic[T]):
@@ -41,6 +74,7 @@ class BaseSpanHandler(BaseModel, Generic[T]):
         )
         self._lock = None
 
+    @classmethod
     def class_name(cls) -> str:
         """Class name."""
         return "BaseSpanHandler"
