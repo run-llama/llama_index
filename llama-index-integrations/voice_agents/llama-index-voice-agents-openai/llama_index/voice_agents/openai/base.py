@@ -2,7 +2,7 @@ import base64
 import os
 import threading
 
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Callable
 from .types import (
     ConversationStartEvent,
     ConversationInputEvent,
@@ -153,19 +153,68 @@ class OpenAIConversation:
         if self.audio_thread:
             self.audio_thread.join()
 
-    def export_all_events(
-        self, as_dict: bool = False
+    def export_events(
+        self,
+        as_dict: bool = False,
+        limit: Optional[int] = None,
+        filter: Optional[
+            Callable[
+                [Union[List[ConversationBaseEvent], List[dict]]],
+                Union[List[ConversationBaseEvent], List[dict]],
+            ]
+        ] = None,
     ) -> Union[List[ConversationBaseEvent], List[dict]]:
         """
         Export all events occurred during the conversation.
 
         Args:
             as_dict (bool): Export all the events not as Pydantic BaseModels, but as their serialized, dictionary representation. Defaults to False.
+            limit (Optional[int]): Maximum number of events to export.
+            filter (Optional[Callable[[Union[List[ConversationBaseEvent], List[dict]]], Union[List[ConversationBaseEvent], List[dict]]]]): Function to return a custom list of events based on specified features.
 
         """
         if as_dict:
-            return [event.model_dump(by_alias=True) for event in self._all_events]
-        return self._all_events
+            all_events: List[dict] = [
+                event.model_dump(by_alias=True) for event in self._all_events
+            ]
+            if limit:
+                if limit > len(all_events):
+                    return all_events
+                else:
+                    all_events = all_events[:limit]
+            if filter:
+                return filter(all_events)
+            return all_events
+        else:
+            events = self._all_events
+            if limit:
+                if limit > len(events):
+                    return events
+                else:
+                    events = events[:limit]
+            if filter:
+                return filter(events)
+            return events
 
-    def export_all_messages(self) -> List[ChatMessage]:
-        return self._all_messages
+    def export_messages(
+        self,
+        limit: Optional[int] = None,
+        filter: Optional[Callable[[List[ChatMessage]], List[ChatMessage]]] = None,
+    ) -> List[ChatMessage]:
+        """
+        Export all messages recorded during the conversation.
+
+        Args:
+            limit (Optional[int]): Maximum number of messages to export. Defaults to None.
+            filter (Optional[Callable[[List[ChatMessage]], List[ChatMessage]]]): Function to return a custom list of messages based on specified features.
+
+        """
+        messages = self._all_messages
+        if limit:
+            if limit > len(messages):
+                pass
+            else:
+                messages = messages[:limit]
+        if filter:
+            return filter(messages)
+        return messages

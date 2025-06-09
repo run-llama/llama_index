@@ -61,9 +61,9 @@ def main():
     finally:
         logging.info("Exiting main.")
         print("Messages:")
-        print(conversation.export_all_messages())
+        print(conversation.export_messages())
         print("Events:")
-        print(conversation.export_all_events())
+        print(conversation.export_events())
         conversation.stop()  # Ensures cleanup if any error occurs
 
 
