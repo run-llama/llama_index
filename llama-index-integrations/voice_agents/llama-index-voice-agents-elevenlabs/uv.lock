@@ -1654,8 +1654,8 @@ wheels = [
 ]
 
 [[package]]
-name = "llama-index-voice-elevenlabs"
-version = "0.1.0b0"
+name = "llama-index-voice-agents-elevenlabs"
+version = "0.1.1b0"
 source = { editable = "." }
 dependencies = [
     { name = "elevenlabs", extra = ["pyaudio"] },
@@ -1687,7 +1687,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "elevenlabs", extras = ["pyaudio"], specifier = ">=2.1.0,<3" },
-    { name = "llama-index-core", specifier = ">=0.12.39,<0.13" },
+    { name = "llama-index-core", specifier = ">=0.12.40,<0.13" },
 ]
 
 [package.metadata.requires-dev]
