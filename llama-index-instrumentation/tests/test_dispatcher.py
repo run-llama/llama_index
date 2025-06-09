@@ -22,9 +22,9 @@ import llama_index_instrumentation as instrument
 import pytest
 import wrapt
 from llama_index_instrumentation import DispatcherSpanMixin
+from llama_index_instrumentation.base import BaseEvent
 from llama_index_instrumentation.dispatcher import Dispatcher, instrument_tags
 from llama_index_instrumentation.event_handlers import BaseEventHandler
-from llama_index_instrumentation.events import BaseEvent
 from llama_index_instrumentation.span import BaseSpan
 from llama_index_instrumentation.span_handlers import BaseSpanHandler
 from llama_index_instrumentation.span_handlers.base import Thread

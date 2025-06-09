@@ -1,6 +1,6 @@
 from typing import Any
 
-from llama_index_instrumentation.events.base import BaseEvent
+from llama_index_instrumentation.base import BaseEvent
 
 from .base import BaseEventHandler
 

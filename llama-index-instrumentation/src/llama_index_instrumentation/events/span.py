@@ -1,4 +1,4 @@
-from .base import BaseEvent
+from llama_index_instrumentation.base import BaseEvent
 
 
 class SpanDropEvent(BaseEvent):

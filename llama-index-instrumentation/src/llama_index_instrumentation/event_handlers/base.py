@@ -3,7 +3,7 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict
 
-from llama_index_instrumentation.events.base import BaseEvent
+from llama_index_instrumentation.base import BaseEvent
 
 
 class BaseEventHandler(BaseModel):

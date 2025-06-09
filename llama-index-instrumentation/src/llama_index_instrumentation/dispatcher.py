@@ -11,8 +11,8 @@ import wrapt
 from deprecated import deprecated
 from pydantic import BaseModel, ConfigDict, Field
 
+from .base import BaseEvent
 from .event_handlers import BaseEventHandler
-from .events.base import BaseEvent
 from .events.span import SpanDropEvent
 from .span import active_span_id
 from .span_handlers import (
