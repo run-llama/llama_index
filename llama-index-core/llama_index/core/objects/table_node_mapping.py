@@ -1,7 +1,8 @@
 """Table node mapping."""
 
-from typing import Any, Dict, Optional, Sequence
+import uuid
 
+from typing import Any, Dict, Optional, Sequence
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.objects.base_node_mapping import (
     DEFAULT_PERSIST_DIR,
@@ -57,10 +58,8 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
             table_text += obj.context_str
             metadata["context"] = obj.context_str
 
-        table_identity = f"{obj.table_name}{obj.context_str}"
-
         return TextNode(
-            id_=str(hash(table_identity)),
+            id_=str(uuid.uuid4()),
             text=table_text,
             metadata=metadata,
             excluded_embed_metadata_keys=["name", "context"],
