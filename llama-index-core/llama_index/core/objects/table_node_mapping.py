@@ -58,8 +58,10 @@ class SQLTableNodeMapping(BaseObjectNodeMapping[SQLTableSchema]):
             table_text += obj.context_str
             metadata["context"] = obj.context_str
 
+        table_identity = f"{obj.table_name}{obj.context_str}"
+
         return TextNode(
-            id_=str(uuid.uuid4()),
+            id_=str(uuid.uuid5(namespace=uuid.NAMESPACE_DNS, name=table_identity)),
             text=table_text,
             metadata=metadata,
             excluded_embed_metadata_keys=["name", "context"],
