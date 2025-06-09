@@ -80,8 +80,12 @@ class Perplexity(LLM):
         default_factory=dict, description="Headers for API requests."
     )
     enable_search_classifier: bool = Field(
-        default=True,
+        default=False,
         description="Whether to enable the search classifier. Default is False.",
+    )
+    is_chat_model: bool = Field(
+        default=True,
+        description="Whether this is a chat model or not. Default is True.",
     )
 
     def __init__(
@@ -142,7 +146,7 @@ class Perplexity(LLM):
                 else self._get_context_window()
             ),
             num_output=self.max_tokens or -1,
-            is_chat_model=self._is_chat_model(),
+            is_chat_model=self.is_chat_model,
             model_name=self.model,
         )
 
