@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llama-index-tools-cambai"
+version = "0.1.0"
+description = "llama-index tools cambai integration"
+authors = [{name = "Your Name", email = "you@example.com"}]
+requires-python = ">=3.8,<4.0"
+readme = "README.md"
+license = {file = "LICENSE"}
+dependencies = [
+    "llama-index-core>=0.12.0,<0.13",
+    "cambai>=1.0.0"
+]
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.tools.cambai"
+
+[tool.llamahub.class_authors]
+CambAIToolSpec = "saranshshankar"
+
+[tool.mypy]
+disallow_untyped_defs = true
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
+ignore_missing_imports = true
+python_version = "3.8"
