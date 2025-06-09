@@ -153,6 +153,25 @@ def _build_get_page_screenshot_request(
     )
 
 
+def _build_get_page_figure_request(
+    client: Union[LlamaCloud, AsyncLlamaCloud],
+    file_id: str,
+    page_index: int,
+    figure_name: str,
+    project_id: str,
+) -> Request:
+    return client._client_wrapper.httpx_client.build_request(
+        "GET",
+        urllib.parse.urljoin(
+            f"{client._client_wrapper.get_base_url()}/",
+            f"api/v1/files/{file_id}/page-figures/{page_index}/{figure_name}",
+        ),
+        params=remove_none_from_dict({"project_id": project_id}),
+        headers=client._client_wrapper.get_headers(),
+        timeout=60,
+    )
+
+
 def get_page_screenshot(
     client: LlamaCloud, file_id: str, page_index: int, project_id: str
 ) -> str:
@@ -160,6 +179,19 @@ def get_page_screenshot(
     # TODO: this currently uses requests, should be replaced with the client
     request = _build_get_page_screenshot_request(
         client, file_id, page_index, project_id
+    )
+    _response = client._client_wrapper.httpx_client.send(request)
+    if 200 <= _response.status_code < 300:
+        return _response.content
+    else:
+        raise ApiError(status_code=_response.status_code, body=_response.text)
+
+
+def get_page_figure(
+    client: LlamaCloud, file_id: str, page_index: int, figure_name: str, project_id: str
+) -> str:
+    request = _build_get_page_figure_request(
+        client, file_id, page_index, figure_name, project_id
     )
     _response = client._client_wrapper.httpx_client.send(request)
     if 200 <= _response.status_code < 300:
@@ -182,14 +214,31 @@ async def aget_page_screenshot(
         raise ApiError(status_code=_response.status_code, body=_response.text)
 
 
+async def aget_page_figure(
+    client: AsyncLlamaCloud,
+    file_id: str,
+    page_index: int,
+    figure_name: str,
+    project_id: str,
+) -> str:
+    request = _build_get_page_figure_request(
+        client, file_id, page_index, figure_name, project_id
+    )
+    _response = await client._client_wrapper.httpx_client.send(request)
+    if 200 <= _response.status_code < 300:
+        return _response.content
+    else:
+        raise ApiError(status_code=_response.status_code, body=_response.text)
+
+
 from typing import List
 import base64
-from llama_cloud import PageScreenshotNodeWithScore
+from llama_cloud import PageScreenshotNodeWithScore, PageFigureNodeWithScore
 from llama_index.core.schema import NodeWithScore, ImageNode
 from llama_cloud.client import LlamaCloud, AsyncLlamaCloud
 
 
-def image_nodes_to_node_with_score(
+def page_screenshot_nodes_to_node_with_score(
     client: LlamaCloud,
     raw_image_nodes: List[PageScreenshotNodeWithScore],
     project_id: str,
@@ -216,7 +265,36 @@ def image_nodes_to_node_with_score(
     return image_nodes
 
 
-async def aimage_nodes_to_node_with_score(
+def page_figure_nodes_to_node_with_score(
+    client: LlamaCloud,
+    raw_figure_nodes: List[PageFigureNodeWithScore],
+    project_id: str,
+) -> List[NodeWithScore]:
+    figure_nodes = []
+    for raw_figure_node in raw_figure_nodes:
+        figure_bytes = get_page_figure(
+            client=client,
+            file_id=raw_figure_node.node.file_id,
+            page_index=raw_figure_node.node.page_index,
+            figure_name=raw_figure_node.node.figure_name,
+            project_id=project_id,
+        )
+        figure_base64 = base64.b64encode(figure_bytes).decode("utf-8")
+        figure_node_metadata: Dict[str, Any] = {
+            **(raw_figure_node.node.metadata or {}),
+            "file_id": raw_figure_node.node.file_id,
+            "page_index": raw_figure_node.node.page_index,
+            "figure_name": raw_figure_node.node.figure_name,
+        }
+        figure_node_with_score = NodeWithScore(
+            node=ImageNode(image=figure_base64, metadata=figure_node_metadata),
+            score=raw_figure_node.score,
+        )
+        figure_nodes.append(figure_node_with_score)
+    return figure_nodes
+
+
+async def apage_screenshot_nodes_to_node_with_score(
     client: AsyncLlamaCloud,
     raw_image_nodes: List[PageScreenshotNodeWithScore],
     project_id: str,
@@ -246,3 +324,37 @@ async def aimage_nodes_to_node_with_score(
         )
         image_nodes.append(image_node_with_score)
     return image_nodes
+
+
+async def apage_figure_nodes_to_node_with_score(
+    client: AsyncLlamaCloud,
+    raw_figure_nodes: List[PageFigureNodeWithScore],
+    project_id: str,
+) -> List[NodeWithScore]:
+    figure_nodes = []
+    tasks = [
+        aget_page_figure(
+            client=client,
+            file_id=raw_figure_node.node.file_id,
+            page_index=raw_figure_node.node.page_index,
+            figure_name=raw_figure_node.node.figure_name,
+            project_id=project_id,
+        )
+        for raw_figure_node in raw_figure_nodes
+    ]
+
+    figure_bytes_list = await run_jobs(tasks)
+    for figure_bytes, raw_figure_node in zip(figure_bytes_list, raw_figure_nodes):
+        figure_base64 = base64.b64encode(figure_bytes).decode("utf-8")
+        figure_node_metadata: Dict[str, Any] = {
+            **(raw_figure_node.node.metadata or {}),
+            "file_id": raw_figure_node.node.file_id,
+            "page_index": raw_figure_node.node.page_index,
+            "figure_name": raw_figure_node.node.figure_name,
+        }
+        figure_node_with_score = NodeWithScore(
+            node=ImageNode(image=figure_base64, metadata=figure_node_metadata),
+            score=raw_figure_node.score,
+        )
+        figure_nodes.append(figure_node_with_score)
+    return figure_nodes
