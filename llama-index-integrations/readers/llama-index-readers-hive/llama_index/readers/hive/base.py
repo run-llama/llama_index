@@ -9,7 +9,7 @@ try:
 except ImportError:
     raise ImportError("`sqlglot` package not found, please run `pip install sqlglot`")
 
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -19,12 +19,13 @@ class InvalidSqlError(Exception):
     """Raise when invalid SQL is passed."""
 
 
-def _validate_sql_query(statements: List[str]):
+def _validate_sql_query(statements: List[str]) -> None:
     if len(statements) > 1:
         raise InvalidSqlError("You cannot pass multiple statements into the query")
+    if not statements[0].lower().startswith("select"):
+        raise InvalidSqlError("You must provide a SELECT query")
     if "or" in statements[0].lower():
         raise InvalidSqlError("The use of OR is not allowed to prevent SQL Injections")
-    return statements[0]
 
 
 class HiveReader(BaseReader):
@@ -62,27 +63,30 @@ class HiveReader(BaseReader):
             password=password,
         )
 
-    def load_data(self, table: str, conditions: Optional[str] = None) -> List[Document]:
+    def load_data(
+        self, query: str, params: Optional[Tuple[str, ...]] = None
+    ) -> List[Document]:
         """
         Read data from the Hive.
 
         Args:
-            table (str): table from where to perform the selection
-            conditions (Optional[str]): conditions for the selection
+            query (str): Query with which to extract data from Hive. Parametrized values must be represented as '%s'.
+            params (Optional[Tuple[str, ...]): Parametrized values.
+
         Returns:
             List[Document]: A list of documents.
 
         """
         try:
-            if not conditions:
-                query = f"SELECT * FROM {table}"
+            if params:
+                filled_query = query % tuple(repr(p) for p in params)
             else:
-                query = f"SELECT * FROM {table} {conditions}"
-            parsed_query = sqlglot.parse(query)
+                filled_query = query
+            parsed_query = sqlglot.parse(filled_query)
             statements = [statement.sql() for statement in parsed_query]
-            query_to_exec = _validate_sql_query(statements)
+            _validate_sql_query(statements=statements)
             cursor = self.con.cursor()
-            cursor.execute(query_to_exec)
+            cursor.execute(operation=query, parameters=params)
             rows = cursor.fetchall()
         except Exception:
             raise Exception(
