@@ -17,5 +17,18 @@ def test_validation():
         sql_query = _validate_sql_query(
             ["SELECT * FROM users WHERE name = 'Bob' OR '1'='1'"]
         )
+    with pytest.raises(InvalidSqlError):
+        sql_query = _validate_sql_query(
+            [
+                """
+                CREATE TABLE IF NOT EXISTS users (
+                    id INT,
+                    name STRING,
+                    email STRING
+                )
+                STORED AS TEXTFILE
+                """
+            ]
+        )
     sql_query = _validate_sql_query(["SELECT * FROM users WHERE name = 'Bob'"])
-    assert sql_query == "SELECT * FROM users WHERE name = 'Bob'"
+    assert sql_query is None
