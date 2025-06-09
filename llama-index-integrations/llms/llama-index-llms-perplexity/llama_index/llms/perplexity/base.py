@@ -1,7 +1,7 @@
 import json
 from typing import Any, Callable, Dict, Optional, Sequence
 
-import httpx
+from httpx import AsyncClient
 import requests
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -80,8 +80,12 @@ class Perplexity(LLM):
         default_factory=dict, description="Headers for API requests."
     )
     enable_search_classifier: bool = Field(
-        default=True,
+        default=False,
         description="Whether to enable the search classifier. Default is False.",
+    )
+    is_chat_model: bool = Field(
+        default=True,
+        description="Whether this is a chat model or not. Default is True.",
     )
 
     def __init__(
@@ -142,7 +146,7 @@ class Perplexity(LLM):
                 else self._get_context_window()
             ),
             num_output=self.max_tokens or -1,
-            is_chat_model=self._is_chat_model(),
+            is_chat_model=self.is_chat_model,
             model_name=self.model,
         )
 
@@ -213,7 +217,6 @@ class Perplexity(LLM):
         return self._chat(messages, **kwargs)
 
     async def _acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        url = f"{self.api_base}/chat/completions"
         messages = [{"role": "user", "content": prompt}]
         if self.system_prompt:
             messages.insert(0, {"role": "system", "content": self.system_prompt})
@@ -222,13 +225,13 @@ class Perplexity(LLM):
             "messages": messages,
             **self._get_all_kwargs(**kwargs),
         }
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=payload, headers=self.headers)
-        response.raise_for_status()
-        data = response.json()
-        return CompletionResponse(
-            text=data["choices"][0]["message"]["content"], raw=data
-        )
+        async with AsyncClient(headers=self.headers, base_url=self.api_base) as client:
+            response = await client.post("/chat/completions", json=payload)
+            response.raise_for_status()
+            data = response.json()
+            return CompletionResponse(
+                text=data["choices"][0]["message"]["content"], raw=data
+            )
 
     @llm_completion_callback()
     async def acomplete(
@@ -239,21 +242,20 @@ class Perplexity(LLM):
     async def _achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        url = f"{self.api_base}/chat/completions"
         message_dicts = to_openai_message_dicts(messages)
         payload = {
             "model": self.model,
             "messages": message_dicts,
             **self._get_all_kwargs(**kwargs),
         }
-        async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=payload, headers=self.headers)
-        response.raise_for_status()
-        data = response.json()
-        message = ChatMessage(
-            role="assistant", content=data["choices"][0]["message"]["content"]
-        )
-        return ChatResponse(message=message, raw=data)
+        async with AsyncClient(headers=self.headers, base_url=self.api_base) as client:
+            response = await client.post("/chat/completions", json=payload)
+            response.raise_for_status()
+            data = response.json()
+            message = ChatMessage(
+                role="assistant", content=data["choices"][0]["message"]["content"]
+            )
+            return ChatResponse(message=message, raw=data)
 
     @llm_chat_callback()
     async def achat(
