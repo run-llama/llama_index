@@ -281,14 +281,16 @@ class Dispatcher(BaseModel):
                 instance: Any,
                 context: Context,
             ) -> None:
-                # from llama_index.core.workflow.errors import WorkflowCancelledByUser
-
                 try:
                     exception = future.exception()
                     if exception is not None:
-                        raise exception
+                        if exception.__class__.__name__ == "WorkflowCancelledByUser":
+                            result = None
+                        else:
+                            raise exception
+                    else:
+                        result = future.result()
 
-                    result = future.result()
                     self.span_exit(
                         id_=span_id,
                         bound_args=bound_args,
@@ -296,14 +298,6 @@ class Dispatcher(BaseModel):
                         result=result,
                     )
                     return result
-                # except WorkflowCancelledByUser:
-                #     self.span_exit(
-                #         id_=span_id,
-                #         bound_args=bound_args,
-                #         instance=instance,
-                #         result=None,
-                #     )
-                #     return None
                 except BaseException as e:
                     self.event(SpanDropEvent(span_id=span_id, err_str=str(e)))
                     self.span_drop(
@@ -383,9 +377,9 @@ class Dispatcher(BaseModel):
                 active_span_id.reset(token)
 
         if inspect.iscoroutinefunction(func):
-            return async_wrapper(func)
+            return async_wrapper(func)  # type: ignore
         else:
-            return wrapper(func)
+            return wrapper(func)  # type: ignore
 
     @property
     def log_name(self) -> str:

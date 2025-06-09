@@ -54,7 +54,7 @@ class _TestEventHandler(BaseEventHandler):
     def class_name(cls):
         return "_TestEventHandler"
 
-    def handle(self, e: BaseEvent):
+    def handle(self, e: BaseEvent):  # type:ignore
         self.events.append(e)
 
 
@@ -219,9 +219,8 @@ def test_dispatcher_span_drop_args(
     # arrange
     mock_uuid.uuid4.return_value = "mock"
 
+    instance = _TestObject()
     with pytest.raises(ValueError):
-        # act
-        instance = _TestObject()
         _ = instance.func_exc(a=3, b=5, c=2, d=5)
 
     # assert
@@ -375,9 +374,8 @@ async def test_dispatcher_async_span_drop_args_with_instance(
     # arrange
     mock_uuid.uuid4.return_value = "mock"
 
+    instance = _TestObject()
     with pytest.raises(CancelledError):
-        # act
-        instance = _TestObject()
         _ = await instance.async_func_exc(a=3, b=5, c=2, d=5)
 
     # assert
@@ -460,13 +458,13 @@ async def test_dispatcher_async_fire_event(
     assert set(id_counts.values()) == {2}
 
     # span_enter
-    mock_span_enter.call_count == 3
+    assert mock_span_enter.call_count == 3
 
     # span
     mock_span_drop.assert_not_called()
 
     # span_exit
-    mock_span_exit.call_count == 3
+    assert mock_span_exit.call_count == 3
 
 
 @pytest.mark.asyncio
@@ -585,13 +583,13 @@ async def test_dispatcher_async_fire_event_with_instance(
     assert set(id_counts.values()) == {2}
 
     # span_enter
-    mock_span_enter.call_count == 2
+    assert mock_span_enter.call_count == 4
 
     # span
     mock_span_drop.assert_not_called()
 
     # span_exit
-    mock_span_exit.call_count == 2
+    assert mock_span_exit.call_count == 4
 
 
 def test_context_nesting():
@@ -645,7 +643,7 @@ def test_context_nesting():
         def prepare_to_exit_span(self, *args: Any, **kwargs: Any) -> None: ...
 
     class EventHandler(BaseEventHandler):
-        def handle(self, event: Event, **kwargs) -> None:
+        def handle(self, event: Event, **kwargs) -> None:  # type: ignore
             with lock:
                 events.append(event)
 
@@ -666,9 +664,11 @@ def test_context_nesting():
         else:
             t0 = Thread(target=bar, args=(r, n * 2))
             t1 = Thread(target=bar, args=(r, n * 2 + 1))
-            t0.start(), t1.start()
+            t0.start()
+            t1.start()
             time.sleep(0.01)
-            t0.join(), t1.join()
+            t0.join()
+            t1.join()
         callback()
 
     @dispatcher.span
@@ -688,7 +688,7 @@ def test_context_nesting():
         await gather(foo(r, n * 2), foo(r, n * 2 + 1), sleep(0.01))
 
     def _callback(q: Queue, loop: AbstractEventLoop) -> Callable[[], None]:
-        return lambda: loop.call_soon_threadsafe(q.put_nowait(1))
+        return lambda: loop.call_soon_threadsafe(q.put_nowait(1))  # type: ignore
 
     # act
     # Use regular thread to ensure that `Token.MISSING` is being handled.
@@ -712,8 +712,8 @@ def test_context_nesting():
         if span.n > 1:
             if not span.parent_id:
                 print(span)
-            assert span.r == spans[span.parent_id].r  # same tree
-            assert span.n // 2 == spans[span.parent_id].n
+            assert span.r == spans[span.parent_id].r  # same tree  #type:ignore
+            assert span.n // 2 == spans[span.parent_id].n  # type:ignore
 
     # # event-span associations should be correct
     # assert sorted(event.n for event in events) == sorted(list(range(1, s + 1)) * runs)
@@ -807,7 +807,7 @@ def test_mixin_decorates_abstract_method(mock_span_enter):
     C = type("C", (B,), {"f": lambda _: x + 1})
     D = type("D", (C, B), {"f": lambda _: x + 2})
     for i, T in enumerate((B, C, D)):
-        assert T().f() - i == pytest.approx(x)
+        assert T().f() - i == pytest.approx(x)  # type:ignore
         assert mock_span_enter.call_count - i == 1
 
 
@@ -819,5 +819,5 @@ def test_mixin_decorates_overridden_method(mock_span_enter):
     C = type("C", (B,), {"f": lambda _: x + 2})
     D = type("D", (C, B), {"f": lambda _: x + 3})
     for i, T in enumerate((A, B, C, D)):
-        assert T().f() - i == pytest.approx(x)
+        assert T().f() - i == pytest.approx(x)  # type:ignore
         assert mock_span_enter.call_count - i == 1
