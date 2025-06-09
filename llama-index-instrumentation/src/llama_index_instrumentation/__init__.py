@@ -66,7 +66,7 @@ class DispatcherSpanMixin(ABC):
                     continue
                 if (
                     hasattr(method, "__isabstractmethod__")
-                    and method.__isabstractmethod__
+                    and method.__isabstractmethod__  # type: ignore
                 ):
                     abstract_methods.append(attr)
                 elif hasattr(method, DISPATCHER_SPAN_DECORATED_ATTR):
@@ -76,7 +76,7 @@ class DispatcherSpanMixin(ABC):
             if (
                 not callable(method)
                 or hasattr(method, "__isabstractmethod__")
-                and method.__isabstractmethod__
+                and method.__isabstractmethod__  # type: ignore
             ):
                 continue
             if attr in abstract_methods or attr in decorated_methods:
