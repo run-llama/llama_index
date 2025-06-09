@@ -1,5 +1,28 @@
-from typing import Any, Dict, Optional, List
+from pydantic import BaseModel
+from inspect import Signature, Parameter
+
+from typing import Any, Dict, Optional, List, Callable
 from llama_index.core.llms import ChatMessage, AudioBlock, TextBlock, MessageRole
+from llama_index.core.tools import BaseTool
+
+
+def make_function_from_tool_model(
+    model_cls: type[BaseModel], tool: BaseTool
+) -> Callable:
+    fields = model_cls.model_fields
+    parameters = [
+        Parameter(name, Parameter.POSITIONAL_OR_KEYWORD, annotation=field.annotation)
+        for name, field in fields.items()
+    ]
+    sig = Signature(parameters)
+
+    def func_template(*args, **kwargs):
+        bound = func_template.__signature__.bind(*args, **kwargs)
+        bound.apply_defaults()
+        return tool(**bound.arguments).raw_output
+
+    func_template.__signature__ = sig
+    return func_template
 
 
 def callback_user_message(

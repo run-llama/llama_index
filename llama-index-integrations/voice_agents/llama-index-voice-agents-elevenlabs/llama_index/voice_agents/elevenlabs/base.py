@@ -7,6 +7,7 @@ from statistics import mean
 from websockets.sync.client import Connection
 from typing import Optional, Callable, Dict, List, Any, Union
 from llama_index.core.llms import ChatMessage
+from llama_index.core.tools import BaseTool
 from elevenlabs.conversational_ai.conversation import (
     Conversation,
     ClientTools,
@@ -19,6 +20,7 @@ from .utils import (
     callback_agent_message_correction,
     callback_latency_measurement,
     callback_user_message,
+    make_function_from_tool_model,
 )
 
 
@@ -43,7 +45,7 @@ class ElevenLabsConversation(Conversation):
     requires_auth: bool
     config: ConversationInitiationData
     audio_interface: AudioInterface
-    client_tools: Optional[ClientTools]
+    tools: Optional[List[BaseTool]]
 
     _last_message_id: int
     _callback_agent_response: Callable
@@ -65,7 +67,7 @@ class ElevenLabsConversation(Conversation):
         requires_auth: bool,
         audio_interface: AudioInterface,
         config: Optional[ConversationInitiationData] = None,
-        client_tools: Optional[ClientTools] = None,
+        tools: Optional[List[BaseTool]] = None,
     ) -> None:
         self.client = client
         self.agent_id = agent_id
@@ -73,8 +75,22 @@ class ElevenLabsConversation(Conversation):
         self.audio_interface = audio_interface
 
         self.config = config or ConversationInitiationData()
-        self.client_tools = client_tools or ClientTools()
+        client_tools = ClientTools()
+        if tools:
+            for tool in tools:
+                if tool.metadata.fn_schema is not None:
+                    fn = make_function_from_tool_model(
+                        model_cls=tool.metadata.fn_schema, tool=tool
+                    )
+                    client_tools.register(
+                        tool_name=tool.metadata.get_name(), handler=fn
+                    )
+                else:
+                    warnings.warn(
+                        f"Tool {tool.metadata.get_name()} could not added, since its function schema seems to be unavailable"
+                    )
 
+        self.client_tools = client_tools or ClientTools()
         self.client_tools.start()
 
         self._callback_agent_response = callback_agent_message

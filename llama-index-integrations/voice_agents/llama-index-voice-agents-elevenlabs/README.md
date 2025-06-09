@@ -5,7 +5,7 @@ This package is an integration for ElevenLabs realtime conversation with agents.
 To install the package, run:
 
 ```bash
-python3 -m pip install llama-index-voice-elevenlabs
+python3 -m pip install llama-index-voice-agents-elevenlabs
 ```
 
 And, if you want to run it, you can refer to the simple example down here (in this case, the audio input/output are the same as the local device you are running the script on):
@@ -13,7 +13,7 @@ And, if you want to run it, you can refer to the simple example down here (in th
 ```python
 import os
 
-from base import ElevenLabsConversation
+from llama_index.voice_agents.elevenlabs import ElevenLabsConversation
 from dotenv import load_dotenv
 from elevenlabs.client import ElevenLabs
 from elevenlabs.conversational_ai.default_audio_interface import (
