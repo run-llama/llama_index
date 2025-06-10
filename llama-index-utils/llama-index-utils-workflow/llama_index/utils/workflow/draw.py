@@ -14,6 +14,11 @@ from llama_index.core.workflow.utils import (
 from llama_index.core.workflow.workflow import Workflow
 
 
+def _truncate_label(label: str, max_length: int) -> str:
+    """Helper to truncate long labels."""
+    return label if len(label) <= max_length else f"{label[: max_length - 1]}*"
+
+
 def draw_all_possible_flows(
     workflow: Workflow,
     filename: str = "workflow_all_flows.html",
@@ -31,10 +36,6 @@ def draw_all_possible_flows(
 
     """
     from pyvis.network import Network
-
-    def _truncate_label(label: str, max_length: int) -> str:
-        """Helper to truncate long labels."""
-        return label if len(label) <= max_length else f"{label[: max_length - 1]}*"
 
     net = Network(directed=True, height="750px", width="100%")
 
@@ -182,8 +183,18 @@ def draw_most_recent_execution(
     workflow: Workflow,
     filename: str = "workflow_recent_execution.html",
     notebook: bool = False,
+    max_label_length: Optional[int] = None,
 ) -> None:
-    """Draws the most recent execution of the workflow."""
+    """
+    Draws the most recent execution of the workflow.
+
+    Args:
+        workflow: The workflow to visualize
+        filename: Output HTML filename
+        notebook: Whether running in notebook environment
+        max_label_length: Maximum label length before truncation (None = no limit)
+
+    """
     from pyvis.network import Network
 
     net = Network(directed=True, height="750px", width="100%")
@@ -196,11 +207,19 @@ def draw_most_recent_execution(
     for i, (step, event) in enumerate(existing_context._accepted_events):
         event_node = f"{event}_{i}"
         step_node = f"{step}_{i}"
+
+        if max_label_length is not None:
+            event_label = _truncate_label(event, max_label_length)
+            step_label = _truncate_label(step, max_label_length)
+        else:
+            event_label = event
+            step_label = step
+
         net.add_node(
-            event_node, label=event, color="#90EE90", shape="ellipse"
+            event_node, label=event_label, color="#90EE90", shape="ellipse"
         )  # Light green for events
         net.add_node(
-            step_node, label=step, color="#ADD8E6", shape="box"
+            step_node, label=step_label, color="#ADD8E6", shape="box"
         )  # Light blue for steps
         net.add_edge(event_node, step_node)
 
