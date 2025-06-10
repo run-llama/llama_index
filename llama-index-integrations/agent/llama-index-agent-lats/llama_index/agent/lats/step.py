@@ -107,7 +107,7 @@ class LATSAgentWorker(CustomSimpleAgentWorker):
         # format react prompt
         formatted_prompt = self.chat_formatter.format(
             self.tools,
-            chat_history=task.memory.get(),
+            chat_history=await task.memory.aget(),
             current_reasoning=node.current_reasoning,
         )
         # run LLM
