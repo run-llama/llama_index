@@ -1,8 +1,14 @@
-from typing import Any, Optional, Tuple, Union, Dict
+from typing import Any, Optional, Tuple, Union, Dict, Callable
 import urllib.parse
 import uuid
-from httpx import Request
+from httpx import Request, HTTPStatusError
 
+from tenacity import (
+    retry,
+    wait_exponential_jitter,
+    stop_after_attempt,
+    retry_if_exception,
+)
 from llama_index.core.async_utils import run_jobs
 from llama_cloud import (
     AutoTransformConfig,
@@ -17,6 +23,26 @@ from llama_cloud import (
 from llama_cloud.core import remove_none_from_dict
 from llama_cloud.client import LlamaCloud, AsyncLlamaCloud
 from llama_cloud.core.api_error import ApiError
+
+
+def is_retryable_http_error(exception):
+    # Retry for ApiError with 5xx status codes
+    if isinstance(exception, ApiError):
+        return 500 <= exception.status_code < 600
+    # Also retry for HTTPError with 5xx status codes
+    elif isinstance(exception, HTTPStatusError):
+        return 500 <= exception.response.status_code < 600
+    return False
+
+
+def retry_on_failure(func: Callable) -> Callable:
+    """Decorator to apply tenacity retry with exponential backoff and jitter for 5xx errors."""
+    return retry(
+        wait=wait_exponential_jitter(exp_base=2, max=10),
+        stop=stop_after_attempt(5),
+        retry=retry_if_exception(is_retryable_http_error),
+        reraise=True,
+    )(func)
 
 
 def default_embedding_config() -> PipelineCreateEmbeddingConfig:
@@ -172,6 +198,7 @@ def _build_get_page_figure_request(
     )
 
 
+@retry_on_failure
 def get_page_screenshot(
     client: LlamaCloud, file_id: str, page_index: int, project_id: str
 ) -> str:
@@ -187,6 +214,7 @@ def get_page_screenshot(
         raise ApiError(status_code=_response.status_code, body=_response.text)
 
 
+@retry_on_failure
 def get_page_figure(
     client: LlamaCloud, file_id: str, page_index: int, figure_name: str, project_id: str
 ) -> str:
@@ -200,6 +228,7 @@ def get_page_figure(
         raise ApiError(status_code=_response.status_code, body=_response.text)
 
 
+@retry_on_failure
 async def aget_page_screenshot(
     client: AsyncLlamaCloud, file_id: str, page_index: int, project_id: str
 ) -> str:
@@ -214,6 +243,7 @@ async def aget_page_screenshot(
         raise ApiError(status_code=_response.status_code, body=_response.text)
 
 
+@retry_on_failure
 async def aget_page_figure(
     client: AsyncLlamaCloud,
     file_id: str,
@@ -263,6 +293,19 @@ def page_screenshot_nodes_to_node_with_score(
         )
         image_nodes.append(image_node_with_score)
     return image_nodes
+
+
+def image_nodes_to_node_with_score(
+    client: LlamaCloud,
+    raw_image_nodes: List[PageScreenshotNodeWithScore],
+    project_id: str,
+) -> List[NodeWithScore]:
+    """
+    Legacy method to alias page_screenshot_nodes_to_node_with_score.
+    """
+    return page_screenshot_nodes_to_node_with_score(
+        client=client, raw_image_nodes=raw_image_nodes, project_id=project_id
+    )
 
 
 def page_figure_nodes_to_node_with_score(
@@ -324,6 +367,19 @@ async def apage_screenshot_nodes_to_node_with_score(
         )
         image_nodes.append(image_node_with_score)
     return image_nodes
+
+
+async def aimage_nodes_to_node_with_score(
+    client: AsyncLlamaCloud,
+    raw_image_nodes: List[PageScreenshotNodeWithScore],
+    project_id: str,
+) -> List[NodeWithScore]:
+    """
+    Legacy method to alias apage_screenshot_nodes_to_node_with_score.
+    """
+    return await apage_screenshot_nodes_to_node_with_score(
+        client=client, raw_image_nodes=raw_image_nodes, project_id=project_id
+    )
 
 
 async def apage_figure_nodes_to_node_with_score(
