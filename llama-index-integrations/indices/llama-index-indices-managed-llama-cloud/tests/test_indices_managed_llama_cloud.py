@@ -307,7 +307,7 @@ def test_page_screenshot_retrieval(index_name: str, local_file: str):
     assert all(n.metadata["page_index"] >= 0 for n in image_nodes)
     # ensure metadata is added from the image node
     # local_figures_file has the full absolute path, so just check the file name is in that absolute path
-    assert all(n.metadata["file_name"] in local_file for n in image_nodes)
+    assert all(local_file.endswith(n.metadata["file_name"]) for n in image_nodes)
 
 
 @pytest.mark.skipif(
