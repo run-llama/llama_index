@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llama-index-tools-hive"
+version = "0.1.0"
+description = "LlamaIndex Tool for Hive Intelligence"
+authors = [
+    { name = "Your Name", email = "your.email@example.com" },
+]
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "llama-index-core>=0.9.0",
+    "hive-intelligence>=0.1.0",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/run-llama/llama_index"
+"Bug Tracker" = "https://github.com/run-llama/llama_index/issues"
+
+[tool.setuptools.packages.find]
+where = ["llama_index"]
+include = ["llama_index.tools.hive*"]
+
+[tool.setuptools.package-dir]
+"" = "."
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=6.0",
+    "black>=23.0.0",
+    "isort>=5.0.0",
+    "mypy>=1.0.0",
+    "pytest-cov>=3.0.0",
+]
+
+test = [
+    "pytest>=6.0",
+    "pytest-cov>=3.0.0",
+]
