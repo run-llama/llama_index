@@ -20,7 +20,7 @@ from llama_index.indices.managed.llama_cloud.base import LlamaCloudIndex
 from llama_index.indices.managed.llama_cloud.api_utils import (
     resolve_project,
     resolve_retriever,
-    image_nodes_to_node_with_score,
+    page_screenshot_nodes_to_node_with_score,
 )
 
 
@@ -242,7 +242,7 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         node_w_scores = [
             self._result_nodes_to_node_with_score(node) for node in result.nodes
         ]
-        image_nodes_w_scores = image_nodes_to_node_with_score(
+        image_nodes_w_scores = page_screenshot_nodes_to_node_with_score(
             self._client, result.image_nodes, self.retriever.project_id
         )
         return sorted(
@@ -282,7 +282,7 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         node_w_scores = [
             self._result_nodes_to_node_with_score(node) for node in result.nodes
         ]
-        image_nodes_w_scores = image_nodes_to_node_with_score(
+        image_nodes_w_scores = page_screenshot_nodes_to_node_with_score(
             self._aclient, result.image_nodes, self.retriever.project_id
         )
         return sorted(
