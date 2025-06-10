@@ -1,9 +1,11 @@
 import json
 from typing import Any, Callable, Dict, Optional, Sequence
 
-import httpx
 import requests
+from aiohttp import ClientSession
+from httpx import AsyncClient
 from tenacity import retry, stop_after_attempt, wait_fixed
+
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -88,7 +90,7 @@ class Perplexity(LLM):
         default=True,
         description="Whether this is a chat model or not. Default is True.",
     )
-    timeout: int = Field(default=10, description="HTTP Timeout")
+    timeout: float = Field(default=10.0, description="HTTP Timeout")
 
     def __init__(
         self,
@@ -188,7 +190,9 @@ class Perplexity(LLM):
             "messages": messages,
             **self._get_all_kwargs(**kwargs),
         }
-        response = requests.post(url, json=payload, headers=self.headers)
+        response = requests.post(
+            url, json=payload, headers=self.headers, timeout=self.timeout
+        )
         response.raise_for_status()
         data = response.json()
         return CompletionResponse(
@@ -210,7 +214,9 @@ class Perplexity(LLM):
             "messages": message_dicts,
             **self._get_all_kwargs(**kwargs),
         }
-        response = requests.post(url, json=payload, headers=self.headers)
+        response = requests.post(
+            url, json=payload, headers=self.headers, timeout=self.timeout
+        )
         response.raise_for_status()
         data = response.json()
         message = ChatMessage(
@@ -224,6 +230,7 @@ class Perplexity(LLM):
 
     @retry(stop=stop_after_attempt(max_retries), wait=wait_fixed(1))
     async def _acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
+        url = f"{self.api_base}/chat/completions"
         messages = [{"role": "user", "content": prompt}]
         if self.system_prompt:
             messages.insert(0, {"role": "system", "content": self.system_prompt})
@@ -233,10 +240,7 @@ class Perplexity(LLM):
             **self._get_all_kwargs(**kwargs),
         }
 
-        url = f"{self.api_base}/chat/completions"
-        timeout = httpx.Timeout(self.timeout)
-
-        async with httpx.AsyncClient(timeout=timeout) as client:
+        async with AsyncClient(timeout=self.timeout) as client:
             response = await client.post(url, json=payload, headers=self.headers)
             response.raise_for_status()
             data = response.json()
@@ -262,9 +266,8 @@ class Perplexity(LLM):
         }
 
         url = f"{self.api_base}/chat/completions"
-        timeout = httpx.Timeout(self.timeout)
 
-        async with httpx.AsyncClient(timeout=timeout) as client:
+        async with AsyncClient(timeout=self.timeout) as client:
             response = await client.post(url, json=payload, headers=self.headers)
             response.raise_for_status()
             data = response.json()
@@ -320,7 +323,6 @@ class Perplexity(LLM):
     async def _astream_complete(
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        import aiohttp
 
         url = f"{self.api_base}/chat/completions"
         messages = [{"role": "user", "content": prompt}]
@@ -334,9 +336,9 @@ class Perplexity(LLM):
         }
 
         async def gen() -> CompletionResponseAsyncGen:
-            async with aiohttp.ClientSession() as session:
+            async with ClientSession() as session:
                 async with session.post(
-                    url, json=payload, headers=self.headers
+                    url, json=payload, headers=self.headers, timeout=self.timeout
                 ) as response:
                     response.raise_for_status()
                     text = ""
@@ -398,8 +400,6 @@ class Perplexity(LLM):
     async def _astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        import aiohttp
-
         url = f"{self.api_base}/chat/completions"
         message_dicts = to_openai_message_dicts(messages)
         payload = {
@@ -410,9 +410,9 @@ class Perplexity(LLM):
         }
 
         async def gen() -> ChatResponseAsyncGen:
-            async with aiohttp.ClientSession() as session:
+            async with ClientSession() as session:
                 async with session.post(
-                    url, json=payload, headers=self.headers
+                    url, json=payload, headers=self.headers, timeout=self.timeout
                 ) as response:
                     response.raise_for_status()
                     content = ""
