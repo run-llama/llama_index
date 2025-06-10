@@ -30,6 +30,10 @@ include = ["llama_index.tools.hive*"]
 [tool.setuptools.package-dir]
 "" = "."
 
+[tool.llamahub]
+contains_example = true
+import_path = "llama_index.tools.hive"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=6.0",
