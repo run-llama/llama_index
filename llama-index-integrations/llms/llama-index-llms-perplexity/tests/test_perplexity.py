@@ -1,18 +1,18 @@
 import inspect
-from typing import AsyncIterator
-import pytest
 import os
-
+from collections.abc import AsyncIterator
 from unittest import mock
-from unittest.mock import AsyncMock, patch, Mock
+from unittest.mock import AsyncMock, Mock, patch
 
-from llama_index.llms.perplexity import Perplexity
+import pytest
+
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     CompletionResponse,
     MessageRole,
 )
+from llama_index.llms.perplexity import Perplexity
 
 
 @pytest.fixture()
