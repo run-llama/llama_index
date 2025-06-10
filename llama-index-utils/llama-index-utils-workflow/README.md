@@ -24,5 +24,6 @@ draw_all_possible_flows(my_workflow, "workflow.html")
 draw_all_possible_flows(my_workflow, "workflow.html", max_label_length=15)
 
 # Latest execution visualization
+result = await my_workflow.run()
 draw_most_recent_execution(my_workflow, "workflow.html")
 ```
