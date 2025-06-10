@@ -232,7 +232,7 @@ def test_stream_complete_mock(mock_perplexity_llm):
 
 
 @pytest.mark.asyncio
-async def test_astream_complete(mock_perplexity_llm):
+async def test_astream_complete_mock(mock_perplexity_llm):
     prompt = "Test prompt"
     mock_astream_complete = AsyncMock(
         return_value=[
@@ -250,7 +250,7 @@ async def test_astream_complete(mock_perplexity_llm):
         mock_astream_complete.assert_called_once_with(prompt)
 
 
-def test_stream_chat(mock_perplexity_llm):
+def test_stream_chat_mock(mock_perplexity_llm):
     messages = [
         ChatMessage(role=MessageRole.USER, content="Test message 1"),
         ChatMessage(role=MessageRole.USER, content="Test message 2"),
@@ -291,7 +291,7 @@ def test_stream_chat(mock_perplexity_llm):
 
 
 @pytest.mark.asyncio
-async def test_astream_chat(mock_perplexity_llm):
+async def test_astream_chat_mock(mock_perplexity_llm):
     messages = [
         ChatMessage(role=MessageRole.USER, content="Test message 1"),
         ChatMessage(role=MessageRole.USER, content="Test message 2"),
