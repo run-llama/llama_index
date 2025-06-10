@@ -6,9 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "llama-index-tools-hive"
 version = "0.1.0"
 description = "LlamaIndex Tool for Hive Intelligence"
-authors = [
-    { name = "Your Name", email = "your.email@example.com" },
-]
+
 readme = "README.md"
 requires-python = ">=3.9"
 classifiers = [
