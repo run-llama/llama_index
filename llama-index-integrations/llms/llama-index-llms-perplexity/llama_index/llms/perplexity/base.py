@@ -1,8 +1,9 @@
 import json
 from typing import Any, Callable, Dict, Optional, Sequence
 
-from httpx import AsyncClient
+import httpx
 import requests
+from tenacity import retry, stop_after_attempt, wait_fixed
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -87,6 +88,7 @@ class Perplexity(LLM):
         default=True,
         description="Whether this is a chat model or not. Default is True.",
     )
+    timeout: int = Field(default=10, description="HTTP Timeout")
 
     def __init__(
         self,
@@ -105,6 +107,7 @@ class Perplexity(LLM):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
         enable_search_classifier: bool = False,
+        timeout: int = 10,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -130,6 +133,7 @@ class Perplexity(LLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
             enable_search_classifier=enable_search_classifier,
+            timeout=timeout,
             **kwargs,
         )
 
@@ -173,6 +177,7 @@ class Perplexity(LLM):
             base_kwargs["max_tokens"] = self.max_tokens
         return {**base_kwargs, **self.additional_kwargs, **kwargs}
 
+    @retry(stop=stop_after_attempt(max_retries), wait=wait_fixed(1))
     def _complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         url = f"{self.api_base}/chat/completions"
         messages = [{"role": "user", "content": prompt}]
@@ -196,6 +201,7 @@ class Perplexity(LLM):
     ) -> CompletionResponse:
         return self._complete(prompt, **kwargs)
 
+    @retry(stop=stop_after_attempt(max_retries), wait=wait_fixed(1))
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         url = f"{self.api_base}/chat/completions"
         message_dicts = to_openai_message_dicts(messages)
@@ -216,6 +222,7 @@ class Perplexity(LLM):
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         return self._chat(messages, **kwargs)
 
+    @retry(stop=stop_after_attempt(max_retries), wait=wait_fixed(1))
     async def _acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         messages = [{"role": "user", "content": prompt}]
         if self.system_prompt:
@@ -225,8 +232,12 @@ class Perplexity(LLM):
             "messages": messages,
             **self._get_all_kwargs(**kwargs),
         }
-        async with AsyncClient(headers=self.headers, base_url=self.api_base) as client:
-            response = await client.post("/chat/completions", json=payload)
+
+        url = f"{self.api_base}/chat/completions"
+        timeout = httpx.Timeout(self.timeout)
+
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            response = await client.post(url, json=payload, headers=self.headers)
             response.raise_for_status()
             data = response.json()
             return CompletionResponse(
@@ -239,6 +250,7 @@ class Perplexity(LLM):
     ) -> CompletionResponse:
         return await self._acomplete(prompt, **kwargs)
 
+    @retry(stop=stop_after_attempt(max_retries), wait=wait_fixed(1))
     async def _achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
@@ -248,8 +260,12 @@ class Perplexity(LLM):
             "messages": message_dicts,
             **self._get_all_kwargs(**kwargs),
         }
-        async with AsyncClient(headers=self.headers, base_url=self.api_base) as client:
-            response = await client.post("/chat/completions", json=payload)
+
+        url = f"{self.api_base}/chat/completions"
+        timeout = httpx.Timeout(self.timeout)
+
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            response = await client.post(url, json=payload, headers=self.headers)
             response.raise_for_status()
             data = response.json()
             message = ChatMessage(
@@ -263,6 +279,7 @@ class Perplexity(LLM):
     ) -> ChatResponse:
         return await self._achat(messages, **kwargs)
 
+    @retry(stop=stop_after_attempt(max_retries), wait=wait_fixed(1))
     def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         url = f"{self.api_base}/chat/completions"
         messages = [{"role": "user", "content": prompt}]
@@ -299,6 +316,7 @@ class Perplexity(LLM):
         stream_complete_fn = self._stream_complete
         return stream_complete_fn(prompt, **kwargs)
 
+    @retry(stop=stop_after_attempt(max_retries), wait=wait_fixed(1))
     async def _astream_complete(
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
@@ -338,6 +356,7 @@ class Perplexity(LLM):
     ) -> CompletionResponseAsyncGen:
         return await self._astream_complete(prompt, **kwargs)
 
+    @retry(stop=stop_after_attempt(max_retries), wait=wait_fixed(1))
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
@@ -375,6 +394,7 @@ class Perplexity(LLM):
     ) -> ChatResponseGen:
         return self._stream_chat(messages, **kwargs)
 
+    @retry(stop=stop_after_attempt(max_retries), wait=wait_fixed(1))
     async def _astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
