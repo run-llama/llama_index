@@ -4,14 +4,14 @@
 
 ```python
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
-from llama_index.postprocessor.bedrock_rerank import AWSBedrockRerank
+from llama_index.postprocessor.bedrock_rerank import BedrockRerank
 
 
 documents = SimpleDirectoryReader("./data/paul_graham/").load_data()
 index = VectorStoreIndex.from_documents(documents=documents)
-reranker = AWSBedrockRerank(
+reranker = BedrockRerank(
     top_n=3,
-    model_id="cohere.rerank-v3-5:0",
+    rerank_model_name="cohere.rerank-v3-5:0",
     region_name="us-west-2",
 )
 query_engine = index.as_query_engine(

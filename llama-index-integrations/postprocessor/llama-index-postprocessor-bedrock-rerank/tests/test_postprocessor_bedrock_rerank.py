@@ -8,12 +8,12 @@ from llama_index.core.postprocessor.types import (
 )
 from llama_index.core.schema import TextNode
 
-from llama_index.postprocessor.bedrock_rerank import AWSBedrockRerank
+from llama_index.postprocessor.bedrock_rerank import BedrockRerank
 
 
-class TestAWSBedrockRerank(TestCase):
+class TestBedrockRerank(TestCase):
     def test_class(self):
-        names_of_base_classes = [b.__name__ for b in AWSBedrockRerank.__mro__]
+        names_of_base_classes = [b.__name__ for b in BedrockRerank.__mro__]
         self.assertIn(BaseNodePostprocessor.__name__, names_of_base_classes)
 
     def test_bedrock_rerank(self):
@@ -43,7 +43,7 @@ class TestAWSBedrockRerank(TestCase):
         ]
 
         bedrock_client = boto3.client("bedrock-agent-runtime", region_name="us-west-2")
-        reranker = AWSBedrockRerank(client=bedrock_client, num_results=2)
+        reranker = BedrockRerank(client=bedrock_client, num_results=2)
 
         with mock.patch.object(
             bedrock_client, "rerank", return_value=exp_rerank_response
