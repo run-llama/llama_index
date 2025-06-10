@@ -18,9 +18,23 @@ def draw_all_possible_flows(
     workflow: Workflow,
     filename: str = "workflow_all_flows.html",
     notebook: bool = False,
+    max_label_length: Optional[int] = None,
 ) -> None:
-    """Draws all possible flows of the workflow."""
+    """
+    Draws all possible flows of the workflow.
+
+    Args:
+        workflow: The workflow to visualize
+        filename: Output HTML filename
+        notebook: Whether running in notebook environment
+        max_label_length: Maximum label length before truncation (None = no limit)
+
+    """
     from pyvis.network import Network
+
+    def _truncate_label(label: str, max_length: int) -> str:
+        """Helper to truncate long labels."""
+        return label if len(label) <= max_length else f"{label[: max_length - 1]}*"
 
     net = Network(directed=True, height="750px", width="100%")
 
@@ -53,17 +67,38 @@ def draw_all_possible_flows(
         if step_config is None:
             continue
 
+        # Handle label truncation for steps
+        if max_label_length is not None:
+            step_label = _truncate_label(step_name, max_label_length)
+            step_title = step_name if len(step_name) > max_label_length else None
+        else:
+            step_label = step_name
+            step_title = None
+
         net.add_node(
-            step_name, label=step_name, color="#ADD8E6", shape="box"
+            step_name, label=step_label, title=step_title, color="#ADD8E6", shape="box"
         )  # Light blue for steps
 
         for event_type in step_config.accepted_events:
             if event_type == StopEvent and event_type != current_stop_event:
                 continue
 
+            # Handle label truncation for events
+            if max_label_length is not None:
+                event_label = _truncate_label(event_type.__name__, max_label_length)
+                event_title = (
+                    event_type.__name__
+                    if len(event_type.__name__) > max_label_length
+                    else None
+                )
+            else:
+                event_label = event_type.__name__
+                event_title = None
+
             net.add_node(
                 event_type.__name__,
-                label=event_type.__name__,
+                label=event_label,
+                title=event_title,
                 color=determine_event_color(event_type),
                 shape="ellipse",
             )
@@ -72,9 +107,22 @@ def draw_all_possible_flows(
             if return_type is type(None):
                 continue
 
+            # Handle label truncation for return type events
+            if max_label_length is not None:
+                return_label = _truncate_label(return_type.__name__, max_label_length)
+                return_title = (
+                    return_type.__name__
+                    if len(return_type.__name__) > max_label_length
+                    else None
+                )
+            else:
+                return_label = return_type.__name__
+                return_title = None
+
             net.add_node(
                 return_type.__name__,
-                label=return_type.__name__,
+                label=return_label,
+                title=return_title,
                 color=determine_event_color(return_type),
                 shape="ellipse",
             )

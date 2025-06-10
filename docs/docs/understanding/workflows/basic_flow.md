@@ -98,6 +98,21 @@ This will create a file called `basic_workflow.html` in the current directory. O
 
 ![Basic workflow](./basic_flow.png)
 
+### Controlling label length for better readability
+
+If your workflow has long event names that make the visualization cluttered, you can use the `max_label_length` parameter to truncate labels:
+
+```python
+# Truncate labels to 8 characters for better readability
+draw_all_possible_flows(
+    MyWorkflow, filename="basic_workflow_truncated.html", max_label_length=10
+)
+```
+
+This will show shortened labels like `SecondEve*` instead of `SecondEvent`, with the full names available as tooltips when you hover over the nodes. This is especially useful for workflows with descriptive event names.
+
+![Basic workflow with Truncated Label](./basic_flow_with_truncated_label.png)
+
 Of course, a flow with a single step is not very useful! Let's define a multi-step workflow.
 
 ## Custom Events
