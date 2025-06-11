@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-agent-openai"
-version = "0.4.9"
+version = "0.4.10"
 description = "llama-index agent openai integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -36,7 +36,7 @@ license = "MIT"
 dependencies = [
     "openai>=1.14.0",
     "llama-index-llms-openai>=0.4.0,<0.5",
-    "llama-index-core>=0.12.18,<0.13",
+    "llama-index-core>=0.12.41,<0.13",
 ]
 
 [tool.codespell]
