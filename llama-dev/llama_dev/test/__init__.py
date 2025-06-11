@@ -209,7 +209,7 @@ def _uv_sync(
 def _uv_install_local(
     package_path: Path, env: dict[str, str], install_local: set[Path]
 ) -> subprocess.CompletedProcess:  # pragma: no cover
-    """Run 'uv pip install -U <packge_path1>, <package_path2>, ...' for locally changed packages."""
+    """Run 'uv pip install -U <package_path1>, <package_path2>, ...' for locally changed packages."""
     return subprocess.run(
         ["uv", "pip", "install", "-U", *install_local],
         cwd=package_path,
