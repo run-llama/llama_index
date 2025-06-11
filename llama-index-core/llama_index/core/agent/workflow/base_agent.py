@@ -1,6 +1,7 @@
-from abc import ABC, ABCMeta, abstractmethod
+from abc import abstractmethod
 from typing import Any, Callable, Dict, List, Sequence, Optional, Union, cast
 
+from pydantic._internal._model_construction import ModelMetaclass
 from llama_index.core.agent.workflow.prompts import DEFAULT_STATE_PROMPT
 from llama_index.core.agent.workflow.workflow_events import (
     AgentOutput,
@@ -56,12 +57,12 @@ def get_default_llm() -> LLM:
     return Settings.llm
 
 
-class BaseWorkflowAgentMeta(WorkflowMeta, type(BaseModel), ABCMeta):
+class BaseWorkflowAgentMeta(WorkflowMeta, ModelMetaclass):
     """Metaclass for BaseWorkflowAgent that properly combines WorkflowMeta, BaseModel's metaclass, and ABCMeta."""
 
 
 class BaseWorkflowAgent(
-    Workflow, BaseModel, PromptMixin, ABC, metaclass=BaseWorkflowAgentMeta
+    Workflow, BaseModel, PromptMixin, metaclass=BaseWorkflowAgentMeta
 ):
     """Base class for all agents, combining config and logic."""
 
