@@ -33,6 +33,7 @@ class SingleAgentRunnerMixin(ABC):
         ctx: Optional[Context] = None,
         stepwise: bool = False,
         checkpoint_callback: Optional[CheckpointCallback] = None,
+        max_iterations: Optional[int] = None,
         **workflow_kwargs: Any,
     ) -> WorkflowHandler:
         """Run the agent."""
@@ -46,4 +47,5 @@ class SingleAgentRunnerMixin(ABC):
             ctx=ctx,
             stepwise=stepwise,
             checkpoint_callback=checkpoint_callback,
+            max_iterations=max_iterations,
         )
