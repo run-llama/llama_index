@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Optional
 from urllib.parse import urlparse
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
@@ -6,14 +6,16 @@ from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store.base import BaseChatStore
 from sqlalchemy import (
     JSON,
+    Column,
     Integer,
     String,
+    Table,
     create_engine,
     delete,
     insert,
     select,
 )
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import (
     DeclarativeBase,
     Mapped,
@@ -23,10 +25,18 @@ from sqlalchemy.orm import (
 )
 
 
+class TableProtocol(Table):
+    """A table protocol class for typing."""
+
+    id: Column
+    key: Column  # type: ignore
+    value: Column
+
+
 def get_data_model(
-    base: type[DeclarativeBase],
+    base: DeclarativeBase,
     index_name: str,
-) -> Any:
+) -> TableProtocol:
     """
     This part create a dynamic sqlalchemy model with a new table.
     """
@@ -53,7 +63,7 @@ def get_data_model(
         class_name,
         (AbstractData,),
         {},
-    )
+    )  # type: ignore
 
 
 class SQLiteChatStore(BaseChatStore):
@@ -61,14 +71,14 @@ class SQLiteChatStore(BaseChatStore):
         default="chatstore", description="SQLite table name."
     )
 
-    _table_class: Optional[Any] = PrivateAttr()
-    _session: Optional[sessionmaker] = PrivateAttr()
-    _async_session: Optional[sessionmaker] = PrivateAttr()
+    _table_class: TableProtocol = PrivateAttr()  # type: ignore
+    _session: sessionmaker = PrivateAttr()  # type: ignore
+    _async_session: async_sessionmaker = PrivateAttr()  # type: ignore
 
     def __init__(
         self,
         session: sessionmaker,
-        async_session: sessionmaker,
+        async_session: async_sessionmaker,
         table_name: str,
     ):
         super().__init__(
@@ -122,12 +132,12 @@ class SQLiteChatStore(BaseChatStore):
     @classmethod
     def _connect(
         cls, connection_string: str, async_connection_string: str, debug: bool
-    ) -> tuple[sessionmaker, sessionmaker]:
+    ) -> tuple[sessionmaker, async_sessionmaker]:
         _engine = create_engine(connection_string, echo=debug)
         session = sessionmaker(_engine)
 
         _async_engine = create_async_engine(async_connection_string)
-        async_session = sessionmaker(_async_engine, class_=AsyncSession)
+        async_session = async_sessionmaker(_async_engine, class_=AsyncSession)
         return session, async_session
 
     def _create_tables_if_not_exists(self, base) -> None:
