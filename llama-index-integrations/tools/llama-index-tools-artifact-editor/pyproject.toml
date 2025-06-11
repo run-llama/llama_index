@@ -65,7 +65,7 @@ contains_example = false
 import_path = "llama_index.tools.artifact_editor"
 
 [tool.llamahub.class_authors]
-ArtifactEditorToolSpec = "psiace"
+ArtifactEditorToolSpec = "logan-markewich"
 
 [tool.mypy]
 disallow_untyped_defs = true
