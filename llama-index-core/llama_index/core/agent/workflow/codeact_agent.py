@@ -4,7 +4,6 @@ import uuid
 from typing import Awaitable, Callable, List, Sequence, Union, Optional
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
-from llama_index.core.agent.workflow.single_agent_workflow import SingleAgentRunnerMixin
 from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
     AgentOutput,
@@ -60,7 +59,7 @@ Reminder: Always place your Python code between <execute>...</execute> tags when
 EXECUTE_TOOL_NAME = "execute"
 
 
-class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
+class CodeActAgent(BaseWorkflowAgent):
     """
     A workflow agent that can execute code.
     """
