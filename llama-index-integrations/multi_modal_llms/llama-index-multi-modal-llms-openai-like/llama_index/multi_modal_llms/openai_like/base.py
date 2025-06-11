@@ -105,6 +105,7 @@ class OpenAILikeMultiModal(OpenAILike):
         response = llm.complete("Describe this image", image_documents=image_nodes)
         print(str(response))
         ```
+
     """
 
     context_window: int = Field(
@@ -174,7 +175,7 @@ class OpenAILikeMultiModal(OpenAILike):
         prompt: str,
         image_documents: Optional[Sequence[ImageNode]] = None,
         formatted: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> CompletionResponse:
         """Complete the prompt with optional image documents."""
         if image_documents:
@@ -195,7 +196,7 @@ class OpenAILikeMultiModal(OpenAILike):
         prompt: str,
         image_documents: Optional[Sequence[ImageNode]] = None,
         formatted: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> CompletionResponseGen:
         """Stream complete the prompt with optional image documents."""
         if image_documents:
@@ -218,7 +219,7 @@ class OpenAILikeMultiModal(OpenAILike):
         prompt: str,
         image_documents: Optional[Sequence[ImageNode]] = None,
         formatted: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> CompletionResponse:
         """Async complete the prompt with optional image documents."""
         if image_documents:
@@ -239,7 +240,7 @@ class OpenAILikeMultiModal(OpenAILike):
         prompt: str,
         image_documents: Optional[Sequence[ImageNode]] = None,
         formatted: bool = False,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> CompletionResponseAsyncGen:
         """Async stream complete the prompt with optional image documents."""
         if image_documents:
@@ -261,7 +262,7 @@ class OpenAILikeMultiModal(OpenAILike):
         self,
         messages: Sequence[ChatMessage],
         image_documents: Optional[Sequence[ImageNode]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ChatResponse:
         """Chat with multi-modal support."""
         if image_documents and messages:
@@ -274,8 +275,7 @@ class OpenAILikeMultiModal(OpenAILike):
                     image_documents=image_documents,
                 )
                 # Replace the last message with the enhanced one
-                enhanced_messages = list(messages[:-1]) + [enhanced_message]
-                return self.chat(enhanced_messages, **kwargs)
+                return self.chat([*list(messages[:-1]), enhanced_message], **kwargs)
 
         # Fall back to regular chat
         return self.chat(messages, **kwargs)
@@ -284,7 +284,7 @@ class OpenAILikeMultiModal(OpenAILike):
         self,
         messages: Sequence[ChatMessage],
         image_documents: Optional[Sequence[ImageNode]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ChatResponseGen:
         """Stream chat with multi-modal support."""
         if image_documents and messages:
@@ -297,8 +297,9 @@ class OpenAILikeMultiModal(OpenAILike):
                     image_documents=image_documents,
                 )
                 # Replace the last message with the enhanced one
-                enhanced_messages = list(messages[:-1]) + [enhanced_message]
-                return self.stream_chat(enhanced_messages, **kwargs)
+                return self.stream_chat(
+                    [*list(messages[:-1]), enhanced_message], **kwargs
+                )
 
         # Fall back to regular stream chat
         return self.stream_chat(messages, **kwargs)
@@ -307,7 +308,7 @@ class OpenAILikeMultiModal(OpenAILike):
         self,
         messages: Sequence[ChatMessage],
         image_documents: Optional[Sequence[ImageNode]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ChatResponse:
         """Async chat with multi-modal support."""
         if image_documents and messages:
@@ -320,8 +321,9 @@ class OpenAILikeMultiModal(OpenAILike):
                     image_documents=image_documents,
                 )
                 # Replace the last message with the enhanced one
-                enhanced_messages = list(messages[:-1]) + [enhanced_message]
-                return await self.achat(enhanced_messages, **kwargs)
+                return await self.achat(
+                    [*list(messages[:-1]), enhanced_message], **kwargs
+                )
 
         # Fall back to regular async chat
         return await self.achat(messages, **kwargs)
@@ -330,7 +332,7 @@ class OpenAILikeMultiModal(OpenAILike):
         self,
         messages: Sequence[ChatMessage],
         image_documents: Optional[Sequence[ImageNode]] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> ChatResponseAsyncGen:
         """Async stream chat with multi-modal support."""
         if image_documents and messages:
@@ -343,8 +345,9 @@ class OpenAILikeMultiModal(OpenAILike):
                     image_documents=image_documents,
                 )
                 # Replace the last message with the enhanced one
-                enhanced_messages = list(messages[:-1]) + [enhanced_message]
-                return await self.astream_chat(enhanced_messages, **kwargs)
+                return await self.astream_chat(
+                    [*list(messages[:-1]), enhanced_message], **kwargs
+                )
 
         # Fall back to regular async stream chat
         return await self.astream_chat(messages, **kwargs)

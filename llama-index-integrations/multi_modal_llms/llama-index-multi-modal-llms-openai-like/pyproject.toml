@@ -28,7 +28,7 @@ dev = [
 name = "llama-index-multi-modal-llms-openai-like"
 version = "0.1.0"
 description = "llama-index multi-modal-llms openai-like integration"
-authors = [{ name = "Tushar Adhatrao", email = "tusharadhatrao@gmail.com" }]
+authors = [{name = "Tushar Adhatrao", email = "tusharadhatrao@gmail.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
@@ -54,6 +54,7 @@ exclude = ["**/BUILD"]
 [tool.llamahub]
 contains_example = false
 import_path = "llama_index.multi_modal_llms.openai_like"
+
 [tool.llamahub.class_authors]
 OpenAILikeMultiModal = "llama-index"
 
