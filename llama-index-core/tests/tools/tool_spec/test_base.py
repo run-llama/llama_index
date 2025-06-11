@@ -28,6 +28,7 @@ class TestToolSpec(BaseToolSpec):
         "bar",
         "abc",
         "abc_with_ctx",
+        "async_only_fn",
     ]
 
     def foo(self, arg1: str, arg2: int) -> str:
@@ -46,6 +47,10 @@ class TestToolSpec(BaseToolSpec):
         """Abar."""
         return self.bar(arg1=arg1)
 
+    async def async_only_fn(self) -> str:
+        """Async only fn."""
+        return "async only fn"
+
     def abc(self, arg1: str) -> str:
         # NOTE: no docstring
         return f"bar {arg1}"
@@ -62,7 +67,7 @@ def test_tool_spec() -> None:
     tool_spec = TestToolSpec()
     # first is foo, second is bar
     tools = tool_spec.to_tool_list()
-    assert len(tools) == 4
+    assert len(tools) == 5
     assert tools[0].metadata.name == "foo"
     assert tools[0].metadata.description == "foo(arg1: str, arg2: int) -> str\nFoo."
     assert tools[0].fn("hello", 1) == "foo hello 1"
@@ -101,7 +106,7 @@ def test_tool_spec() -> None:
             ),
         }
     )
-    assert len(tools) == 4
+    assert len(tools) == 5
     assert tools[0].metadata.name == "foo_name"
     assert tools[0].metadata.description == "foo_description"
     assert tools[0].metadata.fn_schema is not None
@@ -121,18 +126,27 @@ async def test_tool_spec_async() -> None:
     """Test async_fn of tool spec."""
     tool_spec = TestToolSpec()
     tools = tool_spec.to_tool_list()
-    assert len(tools) == 4
+    assert len(tools) == 5
+
     assert await tools[0].async_fn("hello", 1) == "foo hello 1"
     assert str(await tools[1].acall(True)) == "bar True"
+
+    assert tools[0].fn("hello", 1) == "foo hello 1"
+    assert str(tools[1](True)) == "bar True"
 
 
 def test_async_patching() -> None:
     # test sync patching of async function
     tool_spec = TestToolSpec()
-    tool_spec.spec_functions = ["afoo"]
+    tool_spec.spec_functions = ["afoo", "async_only_fn"]
     tools = tool_spec.to_tool_list()
-    assert len(tools) == 1
+    assert len(tools) == 2
     assert tools[0].fn("hello", 1) == "foo hello 1"
+
+    assert tools[0].metadata.name == "afoo"
+    assert tools[0].metadata.description == "afoo(arg1: str, arg2: int) -> str\nAfoo."
+    assert tools[1].metadata.name == "async_only_fn"
+    assert tools[1].metadata.description == "async_only_fn() -> str\nAsync only fn."
 
 
 def test_tool_spec_subset() -> None:

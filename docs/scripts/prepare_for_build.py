@@ -107,6 +107,7 @@ INTEGRATION_FOLDER_TO_LABEL = {
     "workflow": "Workflow",
     "llama_deploy": "LlamaDeploy",
     "message_queues": "Message Queues",
+    "voice_agents": "Voice Agents",
 }
 API_REF_TEMPLATE = """::: {import_path}
     options:

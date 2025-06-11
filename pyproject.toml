@@ -41,7 +41,7 @@ classifiers = [
 dependencies = [
     "llama-index-agent-openai>=0.4.0,<0.5",
     "llama-index-cli>=0.4.2,<0.5",
-    "llama-index-core>=0.12.40,<0.13",
+    "llama-index-core>=0.12.41,<0.13",
     "llama-index-embeddings-openai>=0.3.0,<0.4",
     "llama-index-indices-managed-llama-cloud>=0.4.0",
     "llama-index-llms-openai>=0.4.0,<0.5",
@@ -74,7 +74,7 @@ maintainers = [
 name = "llama-index"
 readme = "README.md"
 requires-python = ">=3.9,<4.0"
-version = "0.12.40"
+version = "0.12.41"
 
 [project.scripts]
 llamaindex-cli = "llama_index.cli.command_line:main"

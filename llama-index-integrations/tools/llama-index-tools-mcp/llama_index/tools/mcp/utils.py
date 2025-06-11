@@ -103,11 +103,14 @@ def workflow_as_mcp(
     async def _workflow_tool(run_args: StartEventCLS, context: Context) -> Any:
         # Handle edge cases where the start event is an Event or a BaseModel
         # If the workflow does not have a custom StartEvent class, then we need to handle the event differently
-        context.session
+
         if isinstance(run_args, Event) and workflow._start_event_class != StartEvent:
             handler = workflow.run(start_event=run_args)
         elif isinstance(run_args, BaseModel):
             handler = workflow.run(**run_args.model_dump())
+        elif isinstance(run_args, dict):
+            start_event = StartEventCLS.model_validate(run_args)
+            handler = workflow.run(start_event=start_event)
         else:
             raise ValueError(f"Invalid start event type: {type(run_args)}")
 

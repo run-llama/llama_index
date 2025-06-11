@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-opensearch"
-version = "0.5.5"
+version = "0.5.6"
 description = "llama-index vector_stores opensearch integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"

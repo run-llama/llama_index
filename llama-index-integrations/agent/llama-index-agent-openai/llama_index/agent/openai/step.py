@@ -519,7 +519,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         sources.append(tool_output)
-        memory.put(function_message)
+        await memory.aput(function_message)
 
         return (
             tool.metadata.return_direct and not tool_output.is_error

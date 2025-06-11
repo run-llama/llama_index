@@ -94,14 +94,6 @@ class BaseToolSpec:
                     "spec_functions must be of type: List[Union[str, Tuple[str, str]]]"
                 )
 
-            if func_sync is None:
-                if func_async is not None:
-                    func_sync = patch_sync(func_async)
-                else:
-                    raise ValueError(
-                        f"Could not retrieve a function for spec: {func_spec}"
-                    )
-
             tool = FunctionTool.from_defaults(
                 fn=func_sync,
                 async_fn=func_async,
@@ -109,17 +101,3 @@ class BaseToolSpec:
             )
             tool_list.append(tool)
         return tool_list
-
-
-def patch_sync(func_async: AsyncCallable) -> Callable:
-    """Patch sync function from async function."""
-
-    def patched_sync(*args: Any, **kwargs: Any) -> Any:
-        try:
-            loop = asyncio.get_event_loop()
-        except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        return loop.run_until_complete(func_async(*args, **kwargs))
-
-    return patched_sync

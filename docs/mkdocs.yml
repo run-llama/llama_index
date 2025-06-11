@@ -1149,6 +1149,7 @@ nav:
           - ./api_reference/packs/recursive_retriever.md
           - ./api_reference/packs/resume_screener.md
           - ./api_reference/packs/retry_engine_weaviate.md
+          - ./api_reference/packs/searchain.md
           - ./api_reference/packs/secgpt.md
           - ./api_reference/packs/self_discover.md
           - ./api_reference/packs/self_rag.md
@@ -1573,6 +1574,7 @@ nav:
               - ./api_reference/storage/docstore/simple.md
               - ./api_reference/storage/docstore/tablestore.md
           - Graph Stores:
+              - ./api_reference/storage/graph_stores/ApertureDB.md
               - ./api_reference/storage/graph_stores/falkordb.md
               - ./api_reference/storage/graph_stores/index.md
               - ./api_reference/storage/graph_stores/kuzu.md
@@ -1751,6 +1753,8 @@ nav:
           - ./api_reference/tools/yahoo_finance.md
           - ./api_reference/tools/yelp.md
           - ./api_reference/tools/zapier.md
+      - Voice Agents:
+          - ./api_reference/voice_agents/elevenlabs.md
       - Workflow:
           - ./api_reference/workflow/decorators.md
           - ./api_reference/workflow/context.md
@@ -2462,6 +2466,9 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-featherlessai
             - ../llama-index-integrations/llms/llama-index-llms-sarvam
             - ../llama-index-integrations/tools/llama-index-tools-measurespace
+            - ../llama-index-packs/llama-index-packs-searchain
+            - ../llama-index-integrations/graph_stores/llama-index-graph-stores-ApertureDB
+            - ../llama-index-integrations/voice_agents/llama-index-voice-agents-elevenlabs
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

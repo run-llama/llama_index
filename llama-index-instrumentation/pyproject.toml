@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.0",
+    "pytest-asyncio>=1.0.0",
+    "pytest-cov>=6.1.1",
+]
+
+[project]
+name = "llama-index-instrumentation"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    {name = "Massimiliano Pippi", email = "mpippi@gmail.com"},
+]
+requires-python = ">=3.9, <4.0"
+dependencies = [
+    "deprecated>=1.2.18",
+    "pydantic>=2.11.5",
+]
+
+[project.scripts]
+llama-index-instrumentation = "llama_index_instrumentation:main"

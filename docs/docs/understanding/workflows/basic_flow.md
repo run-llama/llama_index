@@ -91,7 +91,13 @@ A great feature of workflows is the built-in visualizer, which we already instal
 ```python
 from llama_index.utils.workflow import draw_all_possible_flows
 
-draw_all_possible_flows(MyWorkflow, filename="basic_workflow.html")
+draw_all_possible_flows(
+    MyWorkflow,
+    filename="basic_workflow.html",
+    # Optional, can limit long event names in your workflow
+    # Can help with readability
+    # max_label_length=10,
+)
 ```
 
 This will create a file called `basic_workflow.html` in the current directory. Open it in your browser to see an interactive, visual representation of the workflow. It will look something like this:
