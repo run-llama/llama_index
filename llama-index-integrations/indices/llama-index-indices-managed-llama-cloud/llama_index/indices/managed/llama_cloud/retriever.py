@@ -14,9 +14,15 @@ from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.core.vector_stores.types import MetadataFilters
 from llama_index.indices.managed.llama_cloud.api_utils import (
     resolve_project_and_pipeline,
-    image_nodes_to_node_with_score,
-    aimage_nodes_to_node_with_score,
+    page_screenshot_nodes_to_node_with_score,
+    page_figure_nodes_to_node_with_score,
+    apage_screenshot_nodes_to_node_with_score,
+    apage_figure_nodes_to_node_with_score,
 )
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 class LlamaCloudRetriever(BaseRetriever):
@@ -48,6 +54,8 @@ class LlamaCloudRetriever(BaseRetriever):
         retrieval_mode: Optional[str] = None,
         files_top_k: Optional[int] = None,
         retrieve_image_nodes: Optional[bool] = None,
+        retrieve_page_screenshot_nodes: Optional[bool] = None,
+        retrieve_page_figure_nodes: Optional[bool] = None,
         search_filters_inference_schema: Optional[BaseModel] = None,
         **kwargs: Any,
     ) -> None:
@@ -87,8 +95,31 @@ class LlamaCloudRetriever(BaseRetriever):
         self._filters = filters if filters is not None else OMIT
         self._retrieval_mode = retrieval_mode if retrieval_mode is not None else OMIT
         self._files_top_k = files_top_k if files_top_k is not None else OMIT
-        self._retrieve_image_nodes = (
-            retrieve_image_nodes if retrieve_image_nodes is not None else OMIT
+        if retrieve_image_nodes is not None:
+            logger.warning(
+                "The `retrieve_image_nodes` parameter is deprecated. "
+                "Use `retrieve_page_screenshot_nodes` and `retrieve_page_figure_nodes` instead."
+            )
+        if retrieve_image_nodes:
+            if (
+                retrieve_page_screenshot_nodes is False
+                or retrieve_page_figure_nodes is False
+            ):
+                raise ValueError(
+                    "If `retrieve_image_nodes` is set to True, "
+                    "both `retrieve_page_screenshot_nodes` and `retrieve_page_figure_nodes` must also be set to True or omitted."
+                )
+            retrieve_page_screenshot_nodes = True
+            retrieve_page_figure_nodes = True
+        self._retrieve_page_screenshot_nodes = (
+            retrieve_page_screenshot_nodes
+            if retrieve_page_screenshot_nodes is not None
+            else OMIT
+        )
+        self._retrieve_page_figure_nodes = (
+            retrieve_page_figure_nodes
+            if retrieve_page_figure_nodes is not None
+            else OMIT
         )
         self._search_filters_inference_schema = search_filters_inference_schema
 
@@ -125,15 +156,22 @@ class LlamaCloudRetriever(BaseRetriever):
             search_filters=self._filters,
             files_top_k=self._files_top_k,
             retrieval_mode=self._retrieval_mode,
-            retrieve_image_nodes=self._retrieve_image_nodes,
+            retrieve_page_screenshot_nodes=self._retrieve_page_screenshot_nodes,
+            retrieve_page_figure_nodes=self._retrieve_page_figure_nodes,
             search_filters_inference_schema=search_filters_inference_schema,
         )
 
         result_nodes = self._result_nodes_to_node_with_score(results.retrieval_nodes)
-        if self._retrieve_image_nodes:
+        if self._retrieve_page_screenshot_nodes:
             result_nodes.extend(
-                image_nodes_to_node_with_score(
+                page_screenshot_nodes_to_node_with_score(
                     self._client, results.image_nodes, self.project.id
+                )
+            )
+        if self._retrieve_page_figure_nodes:
+            result_nodes.extend(
+                page_figure_nodes_to_node_with_score(
+                    self._client, results.page_figure_nodes, self.project.id
                 )
             )
 
@@ -157,15 +195,23 @@ class LlamaCloudRetriever(BaseRetriever):
             search_filters=self._filters,
             files_top_k=self._files_top_k,
             retrieval_mode=self._retrieval_mode,
-            retrieve_image_nodes=self._retrieve_image_nodes,
+            retrieve_page_screenshot_nodes=self._retrieve_page_screenshot_nodes,
+            retrieve_page_figure_nodes=self._retrieve_page_figure_nodes,
             search_filters_inference_schema=search_filters_inference_schema,
         )
 
         result_nodes = self._result_nodes_to_node_with_score(results.retrieval_nodes)
-        if self._retrieve_image_nodes:
+        if self._retrieve_page_screenshot_nodes:
             result_nodes.extend(
-                await aimage_nodes_to_node_with_score(
+                await apage_screenshot_nodes_to_node_with_score(
                     self._aclient, results.image_nodes, self.project.id
                 )
             )
+        if self._retrieve_page_figure_nodes:
+            result_nodes.extend(
+                await apage_figure_nodes_to_node_with_score(
+                    self._aclient, results.image_nodes, self.project.id
+                )
+            )
+
         return result_nodes
