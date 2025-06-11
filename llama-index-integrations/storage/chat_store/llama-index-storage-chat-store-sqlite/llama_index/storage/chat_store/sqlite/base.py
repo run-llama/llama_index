@@ -1,28 +1,49 @@
 from typing import Optional
 from urllib.parse import urlparse
 
+import sqlalchemy
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store.base import BaseChatStore
-from sqlalchemy import (
-    JSON,
-    Column,
-    Integer,
-    String,
-    Table,
-    create_engine,
-    delete,
-    insert,
-    select,
-)
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import (
-    DeclarativeBase,
-    Mapped,
-    declarative_base,
-    mapped_column,
-    sessionmaker,
-)
+from packaging import version
+
+SQLALCHEMY_VERSION = version.parse(sqlalchemy.__version__).release
+SQLALCHEMY_1_4_0_PLUS = (1, 4, 0) <= SQLALCHEMY_VERSION < (2, 0, 0)
+SQLALCHEMY_2_0_0_PLUS = SQLALCHEMY_VERSION >= (2, 0, 0)
+
+if SQLALCHEMY_1_4_0_PLUS:
+    from sqlalchemy.engine.create import create_engine
+    from sqlalchemy.ext.asyncio.engine import create_async_engine
+    from sqlalchemy.ext.asyncio.session import AsyncSession
+    from sqlalchemy.orm import DeclarativeMeta as DeclarativeBase
+    from sqlalchemy.orm import declarative_base
+    from sqlalchemy.orm.session import sessionmaker
+    from sqlalchemy.orm.session import sessionmaker as async_sessionmaker
+    from sqlalchemy.sql.expression import delete, insert, select
+    from sqlalchemy.sql.schema import Column, Table
+    from sqlalchemy.types import JSON, Integer, String
+
+elif SQLALCHEMY_2_0_0_PLUS:
+    from sqlalchemy import (
+        JSON,
+        Column,
+        Integer,
+        String,
+        Table,
+        create_engine,
+        delete,
+        insert,
+        select,
+    )
+    from sqlalchemy.ext.asyncio import (
+        AsyncSession,
+        async_sessionmaker,
+        create_async_engine,
+    )
+    from sqlalchemy.orm import DeclarativeBase, declarative_base, sessionmaker
+
+else:
+    raise ImportError(f"Unsupported version of sqlalchemy: {SQLALCHEMY_VERSION}")
 
 
 class TableProtocol(Table):
@@ -33,37 +54,75 @@ class TableProtocol(Table):
     value: Column
 
 
-def get_data_model(
-    base: DeclarativeBase,
-    index_name: str,
-) -> TableProtocol:
-    """
-    This part create a dynamic sqlalchemy model with a new table.
-    """
-    class_name = f"Data{index_name}"  # dynamic class name
+if SQLALCHEMY_1_4_0_PLUS:
 
-    class AbstractData(base):  # type: ignore
-        __tablename__ = f"data_{index_name}"  # dynamic table name
-        __abstract__ = True  # this line is necessary
+    def get_data_model(
+        base: DeclarativeBase,
+        index_name: str,
+    ) -> TableProtocol:
+        """
+        This part create a dynamic sqlalchemy model with a new table.
+        """
+        class_name = f"Data{index_name}"  # dynamic class name
 
-        id: Mapped[int] = mapped_column(
-            Integer(),
-            primary_key=True,
-            autoincrement=True,
-            index=True,
-        )  # Add primary key
-        key: Mapped[str] = mapped_column(
-            String(),
-            nullable=False,
-            index=True,
-        )
-        value: Mapped[str] = mapped_column(JSON())
+        class AbstractData(base):  # type: ignore
+            __tablename__ = f"data_{index_name}"  # dynamic table name
+            __abstract__ = True  # this line is necessary
 
-    return type(
-        class_name,
-        (AbstractData,),
-        {},
-    )  # type: ignore
+            id = Column(
+                Integer(),
+                primary_key=True,
+                autoincrement=True,
+                index=True,
+            )  # Add primary key
+            key = Column(
+                String(),
+                nullable=False,
+                index=True,
+            )
+            value = Column(JSON())
+
+        return type(
+            class_name,
+            (AbstractData,),
+            {},
+        )  # type: ignore
+
+
+elif SQLALCHEMY_2_0_0_PLUS:
+    from sqlalchemy.orm import Mapped, mapped_column
+
+    def get_data_model(
+        base: DeclarativeBase,
+        index_name: str,
+    ) -> TableProtocol:
+        """
+        This part create a dynamic sqlalchemy model with a new table.
+        """
+        class_name = f"Data{index_name}"  # dynamic class name
+
+        class AbstractData(base):  # type: ignore
+            __tablename__ = f"data_{index_name}"  # dynamic table name
+            __abstract__ = True  # this line is necessary
+
+            id: Mapped[int] = mapped_column(
+                Integer(),
+                primary_key=True,
+                autoincrement=True,
+                index=True,
+            )  # Add primary key
+            key: Mapped[str] = mapped_column(
+                String(),
+                nullable=False,
+                index=True,
+            )
+            value: Mapped[str] = mapped_column(JSON())
+
+        return type(
+            class_name,
+            (AbstractData,),
+            {},
+        )  # type: ignore
 
 
 class SQLiteChatStore(BaseChatStore):
