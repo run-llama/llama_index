@@ -127,8 +127,8 @@ class AGUIChatWorkflow(Workflow):
                 # Run tools with ctx if indicated
                 if isinstance(tool, FunctionTool) and tool.ctx_param_name:
                     tool_kwargs = {**tool_call.tool_kwargs, tool.ctx_param_name: ctx}
-                    _ = await tool.arun(**tool_kwargs)
+                    _ = await tool.acall(**tool_kwargs)
                 else:
-                    _ = await tool.arun(**tool_call.tool_kwargs)
+                    _ = await tool.acall(**tool_call.tool_kwargs)
 
         return StopEvent()

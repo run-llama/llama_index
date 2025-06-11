@@ -93,18 +93,21 @@ class AGUIWorkflowRouter:
         return StreamingResponse(stream_response(), media_type="text/event-stream")
 
 
-async def default_workflow_factory(
+async def get_default_workflow_factory(
     llm: Optional[FunctionCallingLLM] = None,
     tools: Optional[List[Union[BaseTool, Callable]]] = None,
     initial_state: Optional[Dict[str, Any]] = None,
     timeout: Optional[float] = 120,
 ) -> Callable[[], Workflow]:
-    return AGUIChatWorkflow(
-        llm=llm,
-        tools=tools,
-        initial_state=initial_state,
-        timeout=timeout,
-    )
+    async def workflow_factory():
+        return AGUIChatWorkflow(
+            llm=llm,
+            tools=tools,
+            initial_state=initial_state,
+            timeout=timeout,
+        )
+
+    return workflow_factory
 
 
 def get_ag_ui_workflow_router(
@@ -114,7 +117,7 @@ def get_ag_ui_workflow_router(
     initial_state: Optional[Dict[str, Any]] = None,
     timeout: Optional[float] = 120,
 ) -> APIRouter:
-    workflow_factory = workflow_factory or default_workflow_factory(
+    workflow_factory = workflow_factory or get_default_workflow_factory(
         llm, tools, initial_state, timeout
     )
     return AGUIWorkflowRouter(workflow_factory).router
