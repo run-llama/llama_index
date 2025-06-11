@@ -56,7 +56,6 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 .ruff_cache
-storage/
 
 # Translations
 *.mo
