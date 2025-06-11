@@ -5,7 +5,7 @@ help:	## Show all Makefile targets.
 
 format:	## Run code autoformatters (black).
     pre-commit install
-    git ls-files | xargs pre-commit run black --files
+    git ls-files | xargs pre-commit run black --files || true
 
 lint:	## Run linters: pre-commit (black, ruff, codespell) and mypy
     pre-commit install && git ls-files | xargs pre-commit run --show-diff-on-failure --files
@@ -15,3 +15,4 @@ test:	## Run tests via pytest.
 
 watch-docs:	## Build and watch documentation.
     sphinx-autobuild docs/ docs/_build/html --open-browser --watch $(GIT_ROOT)/llama_index/
+clear

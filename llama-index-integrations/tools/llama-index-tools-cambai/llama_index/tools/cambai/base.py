@@ -22,7 +22,7 @@ class CambAIToolSpec(BaseToolSpec):
         """
         self.api_key = api_key
         self.base_url = base_url
-    
+
     def get_voices(self) -> List[dict]:
         """
         Get list of available voices from CambAI.
@@ -32,10 +32,11 @@ class CambAIToolSpec(BaseToolSpec):
 
         """
         from cambai import CambAI
+
         client = CambAI(api_key=self.api_key)
         voices = client.list_voices()
         return [voice.model_dump() for voice in voices]
-    
+
     def text_to_speech(
         self,
         text: str,
@@ -56,14 +57,15 @@ class CambAIToolSpec(BaseToolSpec):
         """
         from cambai import CambAI
         from cambai.models.output_type import OutputType
-        if output_path == None:
+
+        if output_path is None:
             output_path = f"cambai_speech.wav"
         client = CambAI(api_key=self.api_key)
         client.text_to_speech(
-            text, 
-            voice_id=voice_id, 
-            output_type=OutputType.RAW_BYTES, 
+            text,
+            voice_id=voice_id,
+            output_type=OutputType.RAW_BYTES,
             save_to_file=output_path,
-            verbose=True
+            verbose=True,
         )
         return output_path

@@ -637,7 +637,7 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-gitbook
             - ../llama-index-integrations/llms/llama-index-llms-siliconflow
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-nvidia
-            - ../llama-index-integrations/tools/llama-index-tools-cambai            
+            - ../llama-index-integrations/tools/llama-index-tools-cambai
             - ../llama-index-integrations/tools/llama-index-tools-elevenlabs
             - ../llama-index-integrations/llms/llama-index-llms-nebius
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-bedrock-rerank

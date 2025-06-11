@@ -24,7 +24,7 @@ print(voices)
 output_path = tool.text_to_speech(
     text="Hello, this is a test of the CambAI text to speech API.",
     output_path="output.wav",
-    voice_id=20303  # Optional: specify a voice ID
+    voice_id=20303,  # Optional: specify a voice ID
 )
 print(f"Audio saved to: {output_path}")
 ```

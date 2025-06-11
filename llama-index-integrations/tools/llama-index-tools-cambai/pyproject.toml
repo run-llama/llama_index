@@ -12,7 +12,7 @@ readme = "README.md"
 license = {file = "LICENSE"}
 dependencies = [
     "llama-index-core>=0.12.0,<0.13",
-    "cambai>=1.0.0"
+    "cambai>=1.0.0",
 ]
 
 [tool.codespell]
