@@ -40,7 +40,7 @@ class CambAIToolSpec(BaseToolSpec):
         self,
         text: str,
         output_path: str,
-        voice_id: Optional[int] = 20303,
+        voice_id: int = 20303,
     ) -> str:
         """
         Convert text to speech using CambAI API.
@@ -48,7 +48,7 @@ class CambAIToolSpec(BaseToolSpec):
         Args:
             text (str): The text to convert to speech
             output_path (str): Path to save the audio file. If None, generates one
-            voice_id (Optional[int]): Override the default voice ID
+            voice_id (int): Override the default voice ID
 
         Returns:
             str: Path to the generated audio file
