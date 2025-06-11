@@ -297,12 +297,14 @@ def page_screenshot_nodes_to_node_with_score(
 
 def image_nodes_to_node_with_score(
     client: LlamaCloud,
-    raw_image_nodes: List[PageScreenshotNodeWithScore],
+    raw_image_nodes: Optional[List[PageScreenshotNodeWithScore]],
     project_id: str,
 ) -> List[NodeWithScore]:
     """
     Legacy method to alias page_screenshot_nodes_to_node_with_score.
     """
+    if not raw_image_nodes:  # None o list
+        return []
     return page_screenshot_nodes_to_node_with_score(
         client=client, raw_image_nodes=raw_image_nodes, project_id=project_id
     )
@@ -310,9 +312,12 @@ def image_nodes_to_node_with_score(
 
 def page_figure_nodes_to_node_with_score(
     client: LlamaCloud,
-    raw_figure_nodes: List[PageFigureNodeWithScore],
+    raw_figure_nodes: Optional[List[PageFigureNodeWithScore]],
     project_id: str,
 ) -> List[NodeWithScore]:
+    if not raw_figure_nodes:  # None o list
+        return []
+
     figure_nodes = []
     for raw_figure_node in raw_figure_nodes:
         figure_bytes = get_page_figure(
