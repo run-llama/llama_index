@@ -37,5 +37,5 @@ class HiveToolSpec(BaseToolSpec):
         except HiveSearchAPIError as e:
             raise RuntimeError(f"{e}") from e
 
-        # Wrap each returned result into Llama‑Index Document
+        # Return the Hive search response
         return response
