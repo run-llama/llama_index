@@ -1,8 +1,6 @@
 """Database Reader."""
 
 import logging
-import asyncio
-import functools
 from typing import (
     Any,
     List,

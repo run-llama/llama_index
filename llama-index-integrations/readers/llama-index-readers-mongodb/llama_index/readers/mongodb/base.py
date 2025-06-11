@@ -93,6 +93,7 @@ class SimpleMongoReader(BaseReader):
 
         Raises:
             ValueError: if a field is not found in a document.
+
         """
         db = self.client[db_name]
         cursor = db[collection_name].find(
@@ -156,11 +157,13 @@ class SimpleMongoReader(BaseReader):
 
         Raises:
             ValueError: If the async_client is not initialized or if a specified field is not found in a document.
-        """
 
+        """
         if self.async_client is None:
-            raise ValueError("You can't invoke `alazy_load_data` without `async_methods=True`")
-        
+            raise ValueError(
+                "You can't invoke `alazy_load_data` without `async_methods=True`"
+            )
+
         db = self.async_client[db_name]
         cursor = db[collection_name].find(
             filter=query_dict or {},
