@@ -6,5 +6,5 @@ from typing import Callable, Any
 
 def step(*args: Any, **kwargs: Any) -> Callable:
     # Remove old, unused parameter
-    kwargs.pop("pass_context")
+    kwargs.pop("pass_context", None)
     return upstream_step(*args, **kwargs)
