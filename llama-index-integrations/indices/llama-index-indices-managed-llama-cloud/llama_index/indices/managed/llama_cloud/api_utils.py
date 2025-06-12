@@ -1,17 +1,21 @@
-from typing import Any, Optional, Tuple, Union, Dict, Callable
+import base64
 import urllib.parse
 import uuid
 from httpx import Request, HTTPStatusError
-
 from tenacity import (
     retry,
     wait_exponential_jitter,
     stop_after_attempt,
     retry_if_exception,
 )
+from typing import Any, Optional, Tuple, List, Union, Dict, Callable
+
 from llama_index.core.async_utils import run_jobs
+from llama_index.core.schema import NodeWithScore, ImageNode
 from llama_cloud import (
     AutoTransformConfig,
+    PageFigureNodeWithScore,
+    PageScreenshotNodeWithScore,
     Pipeline,
     PipelineCreateEmbeddingConfig,
     PipelineCreateEmbeddingConfig_OpenaiEmbedding,
@@ -261,18 +265,14 @@ async def aget_page_figure(
         raise ApiError(status_code=_response.status_code, body=_response.text)
 
 
-from typing import List
-import base64
-from llama_cloud import PageScreenshotNodeWithScore, PageFigureNodeWithScore
-from llama_index.core.schema import NodeWithScore, ImageNode
-from llama_cloud.client import LlamaCloud, AsyncLlamaCloud
-
-
 def page_screenshot_nodes_to_node_with_score(
     client: LlamaCloud,
-    raw_image_nodes: List[PageScreenshotNodeWithScore],
+    raw_image_nodes: Optional[List[PageScreenshotNodeWithScore]],
     project_id: str,
 ) -> List[NodeWithScore]:
+    if not raw_image_nodes:
+        return []
+
     image_nodes = []
     for raw_image_node in raw_image_nodes:
         image_bytes = get_page_screenshot(
@@ -292,17 +292,21 @@ def page_screenshot_nodes_to_node_with_score(
             score=raw_image_node.score,
         )
         image_nodes.append(image_node_with_score)
+
     return image_nodes
 
 
 def image_nodes_to_node_with_score(
     client: LlamaCloud,
-    raw_image_nodes: List[PageScreenshotNodeWithScore],
+    raw_image_nodes: Optional[List[PageScreenshotNodeWithScore]],
     project_id: str,
 ) -> List[NodeWithScore]:
     """
     Legacy method to alias page_screenshot_nodes_to_node_with_score.
     """
+    if not raw_image_nodes:
+        return []
+
     return page_screenshot_nodes_to_node_with_score(
         client=client, raw_image_nodes=raw_image_nodes, project_id=project_id
     )
@@ -310,9 +314,12 @@ def image_nodes_to_node_with_score(
 
 def page_figure_nodes_to_node_with_score(
     client: LlamaCloud,
-    raw_figure_nodes: List[PageFigureNodeWithScore],
+    raw_figure_nodes: Optional[List[PageFigureNodeWithScore]],
     project_id: str,
 ) -> List[NodeWithScore]:
+    if not raw_figure_nodes:
+        return []
+
     figure_nodes = []
     for raw_figure_node in raw_figure_nodes:
         figure_bytes = get_page_figure(
@@ -339,9 +346,12 @@ def page_figure_nodes_to_node_with_score(
 
 async def apage_screenshot_nodes_to_node_with_score(
     client: AsyncLlamaCloud,
-    raw_image_nodes: List[PageScreenshotNodeWithScore],
+    raw_image_nodes: Optional[List[PageScreenshotNodeWithScore]],
     project_id: str,
 ) -> List[NodeWithScore]:
+    if not raw_image_nodes:
+        return []
+
     image_nodes = []
     tasks = [
         aget_page_screenshot(
@@ -371,12 +381,15 @@ async def apage_screenshot_nodes_to_node_with_score(
 
 async def aimage_nodes_to_node_with_score(
     client: AsyncLlamaCloud,
-    raw_image_nodes: List[PageScreenshotNodeWithScore],
+    raw_image_nodes: Optional[List[PageScreenshotNodeWithScore]],
     project_id: str,
 ) -> List[NodeWithScore]:
     """
     Legacy method to alias apage_screenshot_nodes_to_node_with_score.
     """
+    if not raw_image_nodes:
+        return []
+
     return await apage_screenshot_nodes_to_node_with_score(
         client=client, raw_image_nodes=raw_image_nodes, project_id=project_id
     )
@@ -384,9 +397,12 @@ async def aimage_nodes_to_node_with_score(
 
 async def apage_figure_nodes_to_node_with_score(
     client: AsyncLlamaCloud,
-    raw_figure_nodes: List[PageFigureNodeWithScore],
+    raw_figure_nodes: Optional[List[PageFigureNodeWithScore]],
     project_id: str,
 ) -> List[NodeWithScore]:
+    if not raw_figure_nodes:
+        return []
+
     figure_nodes = []
     tasks = [
         aget_page_figure(
@@ -413,4 +429,5 @@ async def apage_figure_nodes_to_node_with_score(
             score=raw_figure_node.score,
         )
         figure_nodes.append(figure_node_with_score)
+
     return figure_nodes

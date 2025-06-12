@@ -1,5 +1,15 @@
 import json
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union, TYPE_CHECKING
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    TYPE_CHECKING,
+)
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -36,6 +46,9 @@ from llama_index.llms.mistralai.utils import (
     is_mistralai_function_calling_model,
     is_mistralai_code_model,
     mistralai_modelname_to_contextsize,
+    MISTRAL_AI_REASONING_MODELS,
+    THINKING_REGEX,
+    THINKING_START_REGEX,
 )
 
 from mistralai import Mistral
@@ -175,6 +188,10 @@ class MistralAI(FunctionCallingLLM):
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the MistralAI API."
     )
+    show_thinking: bool = Field(
+        default=False,
+        description="Whether to show thinking in the final response. Only available for reasoning models.",
+    )
 
     _client: Mistral = PrivateAttr()
 
@@ -196,6 +213,7 @@ class MistralAI(FunctionCallingLLM):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
         endpoint: Optional[str] = None,
+        show_thinking: bool = False,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
@@ -228,6 +246,7 @@ class MistralAI(FunctionCallingLLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+            show_thinking=show_thinking,
         )
 
         self._client = Mistral(
@@ -271,6 +290,18 @@ class MistralAI(FunctionCallingLLM):
             **kwargs,
         }
 
+    def _separate_thinking(self, response: str) -> Tuple[str, str]:
+        """Separate the thinking from the response."""
+        match = THINKING_REGEX.search(response)
+        if match:
+            return match.group(1), response.replace(match.group(0), "")
+
+        match = THINKING_START_REGEX.search(response)
+        if match:
+            return match.group(0), ""
+
+        return "", response
+
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         # convert messages to mistral ChatMessage
@@ -279,15 +310,31 @@ class MistralAI(FunctionCallingLLM):
         all_kwargs = self._get_all_kwargs(**kwargs)
         response = self._client.chat.complete(messages=messages, **all_kwargs)
 
+        additional_kwargs = {}
+        if self.model in MISTRAL_AI_REASONING_MODELS:
+            thinking_txt, response_txt = self._separate_thinking(
+                response.choices[0].message.content
+            )
+            if thinking_txt:
+                additional_kwargs["thinking"] = thinking_txt
+
+            response_txt = (
+                response_txt
+                if not self.show_thinking
+                else response.choices[0].message.content
+            )
+        else:
+            response_txt = response.choices[0].message.content
+
         tool_calls = response.choices[0].message.tool_calls
+        if tool_calls is not None:
+            additional_kwargs["tool_calls"] = tool_calls
 
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
-                content=response.choices[0].message.content,
-                additional_kwargs=(
-                    {"tool_calls": tool_calls} if tool_calls is not None else {}
-                ),
+                content=response_txt,
+                additional_kwargs=additional_kwargs,
             ),
             raw=dict(response),
         )
@@ -315,6 +362,7 @@ class MistralAI(FunctionCallingLLM):
             for chunk in response:
                 delta = chunk.data.choices[0].delta
                 role = delta.role or MessageRole.ASSISTANT
+
                 # NOTE: Unlike openAI, we are directly injecting the tool calls
                 additional_kwargs = {}
                 if delta.tool_calls:
@@ -322,6 +370,20 @@ class MistralAI(FunctionCallingLLM):
 
                 content_delta = delta.content or ""
                 content += content_delta
+
+                # decide whether to include thinking in deltas/responses
+                if self.model in MISTRAL_AI_REASONING_MODELS:
+                    thinking_txt, response_txt = self._separate_thinking(content)
+
+                    if thinking_txt:
+                        additional_kwargs["thinking"] = thinking_txt
+
+                    content = response_txt if not self.show_thinking else content
+
+                    # If thinking hasn't ended, don't include it in the delta
+                    if thinking_txt is None and not self.show_thinking:
+                        content_delta = ""
+
                 yield ChatResponse(
                     message=ChatMessage(
                         role=role,
@@ -352,14 +414,32 @@ class MistralAI(FunctionCallingLLM):
         response = await self._client.chat.complete_async(
             messages=messages, **all_kwargs
         )
+
+        additional_kwargs = {}
+        if self.model in MISTRAL_AI_REASONING_MODELS:
+            thinking_txt, response_txt = self._separate_thinking(
+                response.choices[0].message.content
+            )
+            if thinking_txt:
+                additional_kwargs["thinking"] = thinking_txt
+
+            response_txt = (
+                response_txt
+                if not self.show_thinking
+                else response.choices[0].message.content
+            )
+        else:
+            response_txt = response.choices[0].message.content
+
         tool_calls = response.choices[0].message.tool_calls
+        if tool_calls is not None:
+            additional_kwargs["tool_calls"] = tool_calls
+
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
-                content=response.choices[0].message.content,
-                additional_kwargs=(
-                    {"tool_calls": tool_calls} if tool_calls is not None else {}
-                ),
+                content=response_txt,
+                additional_kwargs=additional_kwargs,
             ),
             raw=dict(response),
         )
@@ -394,6 +474,19 @@ class MistralAI(FunctionCallingLLM):
 
                 content_delta = delta.content or ""
                 content += content_delta
+
+                # decide whether to include thinking in deltas/responses
+                if self.model in MISTRAL_AI_REASONING_MODELS:
+                    thinking_txt, response_txt = self._separate_thinking(content)
+                    if thinking_txt:
+                        additional_kwargs["thinking"] = thinking_txt
+
+                    content = response_txt if not self.show_thinking else content
+
+                    # If thinking hasn't ended, don't include it in the delta
+                    if thinking_txt is None and not self.show_thinking:
+                        content_delta = ""
+
                 yield ChatResponse(
                     message=ChatMessage(
                         role=role,

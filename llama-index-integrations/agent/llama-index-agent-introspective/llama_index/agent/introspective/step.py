@@ -97,7 +97,7 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
         reflective_memory = ChatMemoryBuffer.from_defaults()
 
         # put current history in new memory
-        messages = task.memory.get()
+        messages = task.memory.get(input=task.input)
         for message in messages:
             main_memory.put(message)
 
@@ -119,7 +119,7 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
 
     def get_all_messages(self, task: Task) -> List[ChatMessage]:
         return (
-            +task.memory.get()
+            +task.memory.get(input=task.input)
             + task.extra_state["main"]["memory"].get_all()
             + task.extra_state["reflection"]["memory"].get_all()
         )

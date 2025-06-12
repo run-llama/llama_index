@@ -383,9 +383,9 @@ class ReActAgent(BaseAgent):
         tools = self.get_tools(message)
 
         if chat_history is not None:
-            self._memory.set(chat_history)
+            await self._memory.aset(chat_history)
 
-        self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
+        await self._memory.aput(ChatMessage(content=message, role=MessageRole.USER))
 
         current_reasoning: List[BaseReasoningStep] = []
         # start loop
@@ -393,7 +393,7 @@ class ReActAgent(BaseAgent):
             # prepare inputs
             input_chat = self._react_chat_formatter.format(
                 tools,
-                chat_history=self._memory.get(),
+                chat_history=await self._memory.aget(),
                 current_reasoning=current_reasoning,
             )
             # send prompt
@@ -407,7 +407,7 @@ class ReActAgent(BaseAgent):
                 break
 
         response = self._get_response(current_reasoning)
-        self._memory.put(
+        await self._memory.aput(
             ChatMessage(content=response.response, role=MessageRole.ASSISTANT)
         )
         return response
@@ -482,9 +482,9 @@ class ReActAgent(BaseAgent):
         tools = self.get_tools(message)
 
         if chat_history is not None:
-            self._memory.set(chat_history)
+            await self._memory.aset(chat_history)
 
-        self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
+        await self._memory.aput(ChatMessage(content=message, role=MessageRole.USER))
 
         current_reasoning: List[BaseReasoningStep] = []
         # start loop
@@ -495,7 +495,7 @@ class ReActAgent(BaseAgent):
             # prepare inputs
             input_chat = self._react_chat_formatter.format(
                 tools,
-                chat_history=self._memory.get(),
+                chat_history=await self._memory.aget(),
                 current_reasoning=current_reasoning,
             )
             # send prompt
