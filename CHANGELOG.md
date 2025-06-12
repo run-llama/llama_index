@@ -1,5 +1,63 @@
 # ChangeLog
 
+## [2025-06-11]
+
+### `llama-index-core` [0.12.42]
+
+- fix: pass input message to memory get (#19054)
+- fix: use async memory operations within async functions (#19032)
+- fix: Using uuid instead of hashing for broader compatibility in SQLTableNodeMapping (#19011)
+
+### `llama-index-embeddings-bedrock` [0.5.1]
+
+- feat: Update aioboto3 dependency (#19015)
+
+### `llama-index-indices-managed-llama-cloud` [0.7.7]
+
+- feat: figure retrieval SDK integration (#19017)
+- fix: Return empty list when argument `raw_figure_nodes` is None type in `page_figure_nodes_to_node_with_score` (#19053)
+
+### `llama-index-llms-mistralai` [0.6.0]
+
+- feat: Add reasoning support to mistralai LLM + magistral (#19048)
+
+### `llama-index-llms-openai` [0.4.5]
+
+- feat: O3 pro day 0 support (#19030)
+- fix: skip tool description length check in openai response api (#18956)
+
+### `llama-index-llms-perplexity` [0.3.5]
+
+- fix: perplexity llm integration bug fix (#19007)
+
+### `llama-index-multi-modal-llms-openai-like` [0.1.0]
+
+- feat: add openai like multi-modal LLM (#18997)
+
+### `llama-index-postprocessor-bedrock-rerank` [0.3.3]
+
+- feat: Prefer 'BedrockRerank' over 'AWSBedrockRerank' (#19016)
+
+### `llama-index-readers-papers` [0.3.1]
+
+- fix: make filename hashing more robust (#18318)
+
+### `llama-index-tools-artifact-editor` [0.1.0]
+
+- feat: Create ArtifactEditorToolSpec for editing pydantic objects (#18989)
+
+### `llama-index-utils-workflow` [0.3.3]
+
+- feat: Add label truncation to workflow visualization (#19027)
+
+### `llama-index-vector-stores-opensearch` [0.5.6]
+
+- feat: Add ability to exclude source fields from query response (#19018)
+
+### `llama-index-voice-agents-elevenlabs` [0.2.0-beta]
+
+- fix: Docs corrections + integrating tools for ElevenLabs integration (#19014)
+
 ## [2025-06-07]
 
 ### `llama-index-core` [0.12.41]
