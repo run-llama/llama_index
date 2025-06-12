@@ -2,7 +2,7 @@
 
 import os
 import logging
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 import warnings
 
 import lancedb.rerankers
@@ -34,6 +34,11 @@ from pandas import DataFrame
 
 import lancedb
 import lancedb.remote.table  # type: ignore
+
+try:
+    import pyarrow as pa
+except ImportError:
+    pass
 
 _logger = logging.getLogger(__name__)
 
@@ -157,6 +162,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
     overfetch_factor: Optional[int]
 
     _table_name: Optional[str] = PrivateAttr()
+    _table_schema: Optional[Union[pa.Schema, lancedb.table.LanceModel]] = PrivateAttr()
     _connection: lancedb.DBConnection = PrivateAttr()
     _table: Any = PrivateAttr()
     _metadata_keys: Any = PrivateAttr()
@@ -167,6 +173,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         self,
         uri: Optional[str] = "/tmp/lancedb",
         table_name: Optional[str] = "vectors",
+        table_schema: Optional[Union[pa.Schema, lancedb.table.LanceModel]] = None,
         vector_column_name: str = "vector",
         nprobes: int = 20,
         refine_factor: Optional[int] = None,
@@ -200,6 +207,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         )
 
         self._table_name = table_name
+        self._table_schema = table_schema
         self._metadata_keys = None
         self._fts_index = None
 
@@ -248,12 +256,22 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                     "`table` has to be a lancedb.db.LanceTable or lancedb.remote.table.RemoteTable object."
                 )
         else:
-            try:
-                if self._table_exists() and self.mode != "overwrite":
-                    self._table = self._connection.open_table(table_name)
-                else:
-                    self._table = None
-            except ValueError:
+            if self._table_exists():
+                self._table = self._connection.open_table(table_name)
+            elif (
+                self.mode in ["create", "overwrite"] and self._table_schema is not None
+            ):
+                self._table = self._connection.create_table(
+                    table_name, mode=mode, schema=self._table_schema
+                )
+            elif self.mode not in ["create", "overwrite"]:
+                raise ValueError(
+                    f"Table {self._table_name} doesn't exists, mode must be either 'create' or 'overwrite' to create it dynamically"
+                )
+            elif self._table_schema is None:
+                _logger.warning(
+                    "Cannot create table without schema. Table will be set to None"
+                )
                 self._table = None
 
     @property
@@ -269,7 +287,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
                 table, (lancedb.db.LanceTable, lancedb.remote.table.RemoteTable)
             ):
                 raise Exception("argument is not lancedb table instance")
-            return cls(table=table)
+            return cls(table=table, connection=table._conn)
         except Exception as e:
             print("ldb version", lancedb.__version__)
             raise
@@ -293,6 +311,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         num_sub_vectors: Optional[int] = 96,
         index_cache_size: Optional[int] = None,
         metric: Optional[str] = "L2",
+        **kwargs: Any,
     ) -> None:
         """
         Create a scalar(for non-vector cols) or a vector index on a table.
@@ -306,17 +325,19 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             index_cache_size: The size of the index cache. Defaults to None
             metric: Provide the metric to use for vector index. Defaults to 'L2'
                     choice of metrics: 'L2', 'dot', 'cosine'
+            **kwargs: Additional keyword arguments. See lancedb.db.LanceTable.create_index docs
         Returns:
             None
 
         """
-        if scalar is None:
+        if not scalar:
             self._table.create_index(
                 metric=metric,
                 vector_column_name=self.vector_column_name,
                 num_partitions=num_partitions,
                 num_sub_vectors=num_sub_vectors,
                 index_cache_size=index_cache_size,
+                **kwargs,
             )
         else:
             if col_name is None:
