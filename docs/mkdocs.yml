@@ -425,7 +425,11 @@ nav:
           - ./examples/managed/manage_retrieval_benchmark.ipynb
           - ./examples/managed/vectaraDemo.ipynb
       - Memory:
+          - ./examples/memory/ChatSummaryMemoryBuffer.ipynb
           - ./examples/memory/Mem0Memory.ipynb
+          - ./examples/memory/custom_memory.ipynb
+          - ./examples/memory/custom_multi_turn_memory.ipynb
+          - ./examples/memory/memory.ipynb
       - Metadata Extractors:
           - ./examples/metadata_extraction/DocumentContextExtractor.ipynb
           - ./examples/metadata_extraction/EntityExtractionClimate.ipynb
@@ -610,6 +614,7 @@ nav:
           - ./examples/tools/eval_query_engine_tool.ipynb
           - ./examples/tools/function_tool_callback.ipynb
           - ./examples/tools/mcp.ipynb
+          - ./examples/tools/order_completion_agent_with_artifact_editor.ipynb
       - Transforms:
           - ./examples/transforms/TransformsEval.ipynb
       - Use Cases:
@@ -1214,6 +1219,7 @@ nav:
           - ./api_reference/multi_modal_llms/nvidia.md
           - ./api_reference/multi_modal_llms/ollama.md
           - ./api_reference/multi_modal_llms/openai.md
+          - ./api_reference/multi_modal_llms/openai_like.md
           - ./api_reference/multi_modal_llms/openvino.md
           - ./api_reference/multi_modal_llms/reka.md
           - ./api_reference/multi_modal_llms/replicate.md
@@ -1689,6 +1695,7 @@ nav:
               - ./api_reference/storage/vector_store/zep.md
       - Tools:
           - ./api_reference/tools/agentql.md
+          - ./api_reference/tools/artifact_editor.md
           - ./api_reference/tools/arxiv.md
           - ./api_reference/tools/azure_code_interpreter.md
           - ./api_reference/tools/azure_cv.md
@@ -2467,6 +2474,8 @@ plugins:
             - ../llama-index-packs/llama-index-packs-searchain
             - ../llama-index-integrations/graph_stores/llama-index-graph-stores-ApertureDB
             - ../llama-index-integrations/voice_agents/llama-index-voice-agents-elevenlabs
+            - ../llama-index-integrations/tools/llama-index-tools-artifact-editor
+            - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-openai-like
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

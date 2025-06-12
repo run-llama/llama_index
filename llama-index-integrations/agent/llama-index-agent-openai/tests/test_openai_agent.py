@@ -477,7 +477,7 @@ async def test_async_add_step(
     async for _ in step_output.output.async_response_gen():
         pass
 
-    chat_history = task.memory.get_all()
+    chat_history = await task.memory.aget_all()
     assert "tmp" in [m.content for m in chat_history]
 
 
