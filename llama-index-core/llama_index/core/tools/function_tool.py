@@ -16,7 +16,7 @@ AsyncCallable = Callable[..., Awaitable[Any]]
 # Callback Types
 CallbackReturn = Optional[Union[ToolOutput, str]]
 CallbackFunction = Callable[[ToolOutput], CallbackReturn]
-AsyncCallbackFunction = Awaitable[CallbackFunction]
+AsyncCallbackFunction = Callable[[ToolOutput], Awaitable[CallbackReturn]]
 
 
 def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
