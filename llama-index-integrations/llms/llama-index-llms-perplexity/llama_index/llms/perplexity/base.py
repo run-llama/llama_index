@@ -313,19 +313,19 @@ class Perplexity(LLM):
             **self._get_all_kwargs(**kwargs),
         }
 
-        def gen() -> CompletionResponseGen:
-            @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
-            def make_request():
-                response = requests.post(
-                    url,
-                    json=payload,
-                    headers=self.headers,
-                    stream=True,
-                    timeout=self.timeout,
-                )
-                response.raise_for_status()
-                return response
+        @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
+        def make_request():
+            response = requests.post(
+                url,
+                json=payload,
+                headers=self.headers,
+                stream=True,
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return response
 
+        def gen() -> CompletionResponseGen:
             response = make_request()
             text = ""
 
@@ -368,16 +368,16 @@ class Perplexity(LLM):
             **self._get_all_kwargs(**kwargs),
         }
 
-        async def gen() -> CompletionResponseAsyncGen:
-            @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
-            async def make_request():
-                async with aiohttp.ClientSession() as session:
-                    response = await session.post(
-                        url, json=payload, headers=self.headers, timeout=self.timeout
-                    )
-                    response.raise_for_status()
-                    return response
+        @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
+        async def make_request():
+            async with aiohttp.ClientSession() as session:
+                response = await session.post(
+                    url, json=payload, headers=self.headers, timeout=self.timeout
+                )
+                response.raise_for_status()
+                return response
 
+        async def gen() -> CompletionResponseAsyncGen:
             response = await make_request()
             text = ""
 
@@ -419,19 +419,19 @@ class Perplexity(LLM):
             **self._get_all_kwargs(**kwargs),
         }
 
-        def gen() -> ChatResponseGen:
-            @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
-            def make_request():
-                response = requests.post(
-                    url,
-                    json=payload,
-                    headers=self.headers,
-                    stream=True,
-                    timeout=self.timeout,
-                )
-                response.raise_for_status()
-                return response
+        @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
+        def make_request():
+            response = requests.post(
+                url,
+                json=payload,
+                headers=self.headers,
+                stream=True,
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return response
 
+        def gen() -> ChatResponseGen:
             response = make_request()
             text = ""
 
@@ -446,8 +446,10 @@ class Perplexity(LLM):
                             delta = data["choices"][0]["delta"].get("content", "")
                             if delta:
                                 text += delta
-                                yield CompletionResponse(
-                                    delta=delta, text=text, raw=data
+                                yield ChatResponse(
+                                    message=ChatMessage(role="assistant", content=text),
+                                    delta=delta,
+                                    raw=data,
                                 )
                     except json.JSONDecodeError:
                         continue  # Skip malformed JSON
@@ -472,16 +474,16 @@ class Perplexity(LLM):
             **self._get_all_kwargs(**kwargs),
         }
 
-        async def gen() -> ChatResponseAsyncGen:
-            @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
-            async def make_request():
-                async with aiohttp.ClientSession() as session:
-                    response = await session.post(
-                        url, json=payload, headers=self.headers, timeout=self.timeout
-                    )
-                    response.raise_for_status()
-                    return response
+        @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
+        async def make_request():
+            async with aiohttp.ClientSession() as session:
+                response = await session.post(
+                    url, json=payload, headers=self.headers, timeout=self.timeout
+                )
+                response.raise_for_status()
+                return response
 
+        async def gen():
             response = await make_request()
             text = ""
 
@@ -497,8 +499,10 @@ class Perplexity(LLM):
                             delta = data["choices"][0]["delta"].get("content", "")
                             if delta:
                                 text += delta
-                                yield CompletionResponse(
-                                    delta=delta, text=text, raw=data
+                                yield ChatResponse(
+                                    message=ChatMessage(role="assistant", content=text),
+                                    delta=delta,
+                                    raw=data,
                                 )
                     except json.JSONDecodeError:
                         continue  # Skip malformed JSON
