@@ -301,7 +301,7 @@ class BaseOpenAIAgent(BaseAgent):
             )
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         self.sources.append(tool_output)
-        self.memory.put(function_message)
+        await self.memory.aput(function_message)
 
     def _get_llm_chat_kwargs(
         self, openai_tools: List[dict], tool_choice: Union[str, dict] = "auto"
