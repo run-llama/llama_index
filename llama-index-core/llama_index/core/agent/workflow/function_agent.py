@@ -1,7 +1,6 @@
 from typing import List, Sequence
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
-from llama_index.core.agent.workflow.single_agent_workflow import SingleAgentRunnerMixin
 from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
     AgentOutput,
@@ -16,7 +15,7 @@ from llama_index.core.tools import AsyncBaseTool
 from llama_index.core.workflow import Context
 
 
-class FunctionAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
+class FunctionAgent(BaseWorkflowAgent):
     """Function calling agent implementation."""
 
     scratchpad_key: str = "scratchpad"
