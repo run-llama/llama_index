@@ -69,10 +69,7 @@ Below are hypothetical findings that would qualify for a security bounty because
 3. **Insecure Temporary File Handling**
    Intermediate artifacts are written to a world-readable path in `/tmp` with predictable filenames, enabling local attackers to replace or read sensitive data.
 
-4. **Credential Leakage in Logs**
-   The library logs the raw value of `OPENAI_API_KEY` (or similar secrets) at INFO level, exposing credentials in shared logging backends.
-
-5. **Disabled TLS Verification in Outbound Requests**
+4. **Disabled TLS Verification in Outbound Requests**
    A helper that fetches external resources sets `verify=False` for the `requests` call, allowing man-in-the-middle attacks against every user of the helper.
 
 These examples are illustrative, not exhaustive. If you discover a different issue that compromises confidentiality, integrity, or availability _within the library_, please report it.
