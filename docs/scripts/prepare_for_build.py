@@ -35,6 +35,7 @@ FOLDER_NAME_TO_LABEL = {
     "./examples/llm": "LLMs",
     "./examples/low_level": "Low Level",
     "./examples/managed": "Managed Indexes",
+    "./examples/memory": "Memory",
     "./examples/metadata_extraction": "Metadata Extractors",
     "./examples/multi_modal": "Multi-Modal",
     "./examples/multi_tenancy": "Multi-Tenancy",
