@@ -36,7 +36,7 @@ Out of scope targets can still be responsibly disclosed to the team through the
 
 ## Threat Model
 
-`llama-index` is a Python library intended to be used inside a trusted execution environment (e.g., server-side backend code, scheduled jobs, local scripts). The library itself does **not** open network sockets or expose an HTTP interface. When you embed `llama-index` in a network-facing service (FastAPI, Flask, Django, etc.) you are creating a new attack surface that is **outside of the scope** of this project.
+`llama-index` is a Python library intended to be used inside a trusted execution environment (e.g., server-side backend code, scheduled jobs, local scripts). When you embed `llama-index` in a network-facing service (FastAPI, Flask, Django, etc.) you are creating a new attack surface that is **outside of the scope** of this project.
 
 Specifically:
 
@@ -55,6 +55,27 @@ The following classes of issues will **not** be accepted as security vulnerabili
 - Any **OWASP Top-10** style vulnerability (e.g., XSS, SQLi, CSRF) that occurs in the developer-provided HTTP handler code rather than inside `llama-index` itself.
 
 If you are uncertain whether a finding is in scope please open a discussion before submitting a report.
+
+## Examples of In-Scope Vulnerability Reports
+
+Below are hypothetical findings that would qualify for a security bounty because they exploit a weakness **inside `llama-index` itself** and can be reproduced with a minimal Python script (no web framework required):
+
+1. **Race Condition in Temporary File Handling**
+   A predictable filename in `/tmp` is opened using `open(..., 'w')` without `O_EXCL`, enabling an attacker to pre-create a symlink to another file and cause data corruption or privilege escalation.
+
+2. **Sensitive Data Exposure via Debug Logging**
+   Enabling the library's built-in debug mode causes full request/response bodies—including secrets such as `OPENAI_API_KEY`—to be written to world-readable log files by default.
+
+3. **Insecure Temporary File Handling**
+   Intermediate artifacts are written to a world-readable path in `/tmp` with predictable filenames, enabling local attackers to replace or read sensitive data.
+
+4. **Credential Leakage in Logs**
+   The library logs the raw value of `OPENAI_API_KEY` (or similar secrets) at INFO level, exposing credentials in shared logging backends.
+
+5. **Disabled TLS Verification in Outbound Requests**
+   A helper that fetches external resources sets `verify=False` for the `requests` call, allowing man-in-the-middle attacks against every user of the helper.
+
+These examples are illustrative, not exhaustive. If you discover a different issue that compromises confidentiality, integrity, or availability _within the library_, please report it.
 
 ## Reporting LlamaCloud Vulnerabilities
 
