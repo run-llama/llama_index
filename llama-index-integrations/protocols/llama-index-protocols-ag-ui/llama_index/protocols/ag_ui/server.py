@@ -18,10 +18,12 @@ from llama_index.protocols.ag_ui.events import (
     ToolCallChunkWorkflowEvent,
     ToolCallEndWorkflowEvent,
     StateSnapshotWorkflowEvent,
+    StateDeltaWorkflowEvent,
     MessagesSnapshotWorkflowEvent,
     RunStartedWorkflowEvent,
     RunFinishedWorkflowEvent,
     RunErrorWorkflowEvent,
+    CustomWorkflowEvent,
 )
 from llama_index.protocols.ag_ui.utils import (
     timestamp,
@@ -36,9 +38,11 @@ AG_UI_EVENTS = (
     ToolCallArgsWorkflowEvent,
     ToolCallEndWorkflowEvent,
     StateSnapshotWorkflowEvent,
+    StateDeltaWorkflowEvent,
     MessagesSnapshotWorkflowEvent,
     TextMessageChunkWorkflowEvent,
     ToolCallChunkWorkflowEvent,
+    CustomWorkflowEvent,
 )
 
 
@@ -68,6 +72,8 @@ class AGUIWorkflowRouter:
                 async for ev in handler.stream_events():
                     if isinstance(ev, AG_UI_EVENTS):
                         yield workflow_event_to_sse(ev)
+                    else:
+                        print(f"Unhandled event: {type(ev)}")
 
                 # Finish the run
                 _ = await handler
@@ -93,10 +99,11 @@ class AGUIWorkflowRouter:
         return StreamingResponse(stream_response(), media_type="text/event-stream")
 
 
-async def get_default_workflow_factory(
+def get_default_workflow_factory(
     llm: Optional[FunctionCallingLLM] = None,
     tools: Optional[List[Union[BaseTool, Callable]]] = None,
     initial_state: Optional[Dict[str, Any]] = None,
+    system_prompt: Optional[str] = None,
     timeout: Optional[float] = 120,
 ) -> Callable[[], Workflow]:
     async def workflow_factory():
@@ -104,6 +111,7 @@ async def get_default_workflow_factory(
             llm=llm,
             tools=tools,
             initial_state=initial_state,
+            system_prompt=system_prompt,
             timeout=timeout,
         )
 
@@ -115,9 +123,10 @@ def get_ag_ui_workflow_router(
     llm: Optional[FunctionCallingLLM] = None,
     tools: Optional[List[Union[BaseTool, Callable]]] = None,
     initial_state: Optional[Dict[str, Any]] = None,
+    system_prompt: Optional[str] = None,
     timeout: Optional[float] = 120,
 ) -> APIRouter:
     workflow_factory = workflow_factory or get_default_workflow_factory(
-        llm, tools, initial_state, timeout
+        llm, tools, initial_state, system_prompt, timeout
     )
     return AGUIWorkflowRouter(workflow_factory).router

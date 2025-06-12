@@ -35,6 +35,7 @@ class AGUIChatWorkflow(Workflow):
         self,
         llm: Optional[FunctionCallingLLM] = None,
         tools: Optional[List[Union[BaseTool, Callable]]] = None,
+        system_prompt: Optional[str] = None,
         initial_state: Optional[Dict[str, Any]] = None,
         **workflow_kwargs: Any,
     ):
@@ -58,6 +59,7 @@ class AGUIChatWorkflow(Workflow):
 
         self.tools = validated_tools
         self.initial_state = initial_state or {}
+        self.system_prompt = system_prompt
 
     @step
     async def chat(self, ctx: Context, ev: InputEvent) -> StopEvent:
@@ -67,6 +69,14 @@ class AGUIChatWorkflow(Workflow):
         ]
         chat_history = llama_index_messages[:-1]
         user_input = llama_index_messages[-1].content
+
+        if self.system_prompt:
+            if chat_history[0].role.value == "system":
+                chat_history[0].content += "\n\n" + self.system_prompt
+            else:
+                chat_history.insert(
+                    0, ChatMessage(role="system", content=self.system_prompt)
+                )
 
         # State sometimes has unused messages, so we need to remove them
         state = ev.input_data.state
