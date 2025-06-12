@@ -15,7 +15,12 @@ from llama_index.core.llms import (
 )
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.tools import FunctionTool, ToolSelection
-from llama_index.core.workflow import Context, WorkflowRuntimeError
+from llama_index.core.workflow import (
+    Context,
+    WorkflowRuntimeError,
+    HumanResponseEvent,
+    InputRequiredEvent,
+)
 
 
 class MockLLM(MockLLM):
@@ -325,10 +330,10 @@ async def test_invalid_handoff():
 async def test_workflow_with_state():
     """Test workflow with state management."""
 
-    async def modify_state(ctx: Context):
-        state = await ctx.get("state")
+    async def modify_state(random_arg: str, ctx_val: Context):
+        state = await ctx_val.get("state")
         state["counter"] += 1
-        await ctx.set("state", state)
+        await ctx_val.set("state", state)
         return f"State updated to {state}"
 
     agent = FunctionAgent(
@@ -345,7 +350,7 @@ async def test_workflow_with_state():
                             ToolSelection(
                                 tool_id="one",
                                 tool_name="modify_state",
-                                tool_kwargs={},
+                                tool_kwargs={"random_arg": "hello"},
                             )
                         ]
                     },
@@ -373,3 +378,64 @@ async def test_workflow_with_state():
 
     response = await handler
     assert response is not None
+
+    state = await handler.ctx.get("state")
+    assert state["counter"] == 1
+
+
+@pytest.mark.asyncio
+async def test_agent_with_hitl():
+    """Test agent with hitl."""
+
+    async def hitl(ctx: Context):
+        resp = await ctx.wait_for_event(
+            HumanResponseEvent,
+            waiter_event=InputRequiredEvent(prefix="What is your name?"),
+        )
+        return f"Your name is {resp.response}"
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[hitl],
+        llm=MockLLM(
+            responses=[
+                ChatMessage(
+                    role=MessageRole.ASSISTANT,
+                    content="handing off",
+                    additional_kwargs={
+                        "tool_calls": [
+                            ToolSelection(
+                                tool_id="one",
+                                tool_name="hitl",
+                                tool_kwargs={},
+                            )
+                        ]
+                    },
+                ),
+                ChatMessage(role=MessageRole.ASSISTANT, content="HITL successful"),
+            ],
+        ),
+    )
+
+    workflow = AgentWorkflow(
+        agents=[agent],
+        root_agent="agent",
+    )
+
+    handler = workflow.run(user_msg="test")
+    ctx_dict = None
+    async for ev in handler.stream_events():
+        if isinstance(ev, InputRequiredEvent):
+            ctx_dict = handler.ctx.to_dict()
+            await handler.cancel_run()
+            break
+
+    new_ctx = Context.from_dict(workflow, ctx_dict)
+    handler = workflow.run(user_msg="test", ctx=new_ctx)
+    handler.ctx.send_event(HumanResponseEvent(response="John Doe"))
+
+    response = await handler
+
+    assert response is not None
+    assert "HITL successful" in str(response)

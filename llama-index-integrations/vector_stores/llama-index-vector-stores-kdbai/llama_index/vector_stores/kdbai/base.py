@@ -213,7 +213,7 @@ class KDBAIVectorStore(BasePydanticVectorStore):
                     )
         else:
             raise ValueError(
-                "Could not run the search. " "Please provide KDBAI index name."
+                "Could not run the search. Please provide KDBAI index name."
             )
 
         if self.hybrid_search:

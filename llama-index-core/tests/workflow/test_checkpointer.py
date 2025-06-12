@@ -88,9 +88,9 @@ async def test_filter_checkpoints(workflow_checkpointer: WorkflowCheckpointer):
             checkpoints_by_input_event = workflow_checkpointer.filter_checkpoints(
                 input_event_type=evt_type
             )
-            assert (
-                len(checkpoints_by_input_event) == num_runs
-            ), f"fails on {evt_type.__name__}"
+            assert len(checkpoints_by_input_event) == num_runs, (
+                f"fails on {evt_type.__name__}"
+            )
 
         # by output_event_type
         if evt_type != StartEvent:

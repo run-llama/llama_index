@@ -652,7 +652,7 @@ class AgentRunner(BaseAgentRunner):
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Chat with step executor."""
         if chat_history is not None:
-            self.memory.set(chat_history)
+            await self.memory.aset(chat_history)
         task = self.create_task(message)
 
         result_output = None
@@ -880,7 +880,7 @@ class BasePlanningAgentRunner(AgentRunner):
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Chat with step executor."""
         if chat_history is not None:
-            self.memory.set(chat_history)
+            await self.memory.aset(chat_history)
 
         # create initial set of tasks
         plan_id = self.create_plan(message)

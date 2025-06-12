@@ -10,6 +10,8 @@ from llama_index.core.tools import FunctionTool
 from llama_index.llms.ollama import Ollama
 
 test_model = os.environ.get("OLLAMA_TEST_MODEL", "llama3.1:latest")
+thinking_test_model = os.environ.get("OLLAMA_THINKING_TEST_MODEL", "qwen3:0.6b")
+
 try:
     client = Client()
     models = client.list()
@@ -167,3 +169,31 @@ async def test_async_chat_with_tools() -> None:
     tool_result = tool(**tool_calls[0].tool_kwargs)
     assert tool_result.raw_output is not None
     assert isinstance(tool_result.raw_output, Song)
+
+
+@pytest.mark.skipif(
+    client is None, reason="Ollama client is not available or test model is missing"
+)
+def test_chat_with_think() -> None:
+    llm = Ollama(model=thinking_test_model)
+    response = llm.chat([ChatMessage(role="user", content="Hello!")], think=False)
+    assert response is not None
+    assert str(response).strip() != ""
+    think = response.message.additional_kwargs.get("think", None)
+    assert think is not None
+    assert str(think).strip() != ""
+
+
+@pytest.mark.skipif(
+    client is None, reason="Ollama client is not available or test model is missing"
+)
+async def test_async_chat_with_think() -> None:
+    llm = Ollama(model=thinking_test_model)
+    response = await llm.achat(
+        [ChatMessage(role="user", content="Hello!")], think=False
+    )
+    assert response is not None
+    assert str(response).strip() != ""
+    think = response.message.additional_kwargs.get("think", None)
+    assert think is not None
+    assert str(think).strip() != ""

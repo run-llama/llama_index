@@ -149,6 +149,7 @@ class Cohere(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Prepare the chat with tools."""
@@ -164,6 +165,8 @@ class Cohere(FunctionCallingLLM):
         return {
             "messages": chat_history,
             "tools": tools_cohere_format or [],
+            # switch to tool_choice on V2
+            **({"force_single_step": True} if tool_required else {}),
             **kwargs,
         }
 
@@ -226,10 +229,9 @@ class Cohere(FunctionCallingLLM):
 
         messages, documents = remove_documents_from_messages(messages)
 
-        tool_results: Optional[
-            List[Dict[str, Any]]
-        ] = _messages_to_cohere_tool_results_curr_chat_turn(messages) or kwargs.get(
-            "tool_results"
+        tool_results: Optional[List[Dict[str, Any]]] = (
+            _messages_to_cohere_tool_results_curr_chat_turn(messages)
+            or kwargs.get("tool_results")
         )
         if not tool_results:
             tool_results = None

@@ -205,7 +205,7 @@ class DocumentSummaryIndex(BaseIndex[IndexDocumentSummary]):
             )
             self.docstore.add_documents([summary_node_dict[doc_id]])
             logger.info(
-                f"> Generated summary for doc {doc_id}: " f"{summary_response.response}"
+                f"> Generated summary for doc {doc_id}: {summary_response.response}"
             )
 
         for doc_id, nodes in doc_id_to_nodes.items():

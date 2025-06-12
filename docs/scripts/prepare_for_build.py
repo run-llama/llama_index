@@ -35,6 +35,7 @@ FOLDER_NAME_TO_LABEL = {
     "./examples/llm": "LLMs",
     "./examples/low_level": "Low Level",
     "./examples/managed": "Managed Indexes",
+    "./examples/memory": "Memory",
     "./examples/metadata_extraction": "Metadata Extractors",
     "./examples/multi_modal": "Multi-Modal",
     "./examples/multi_tenancy": "Multi-Tenancy",
@@ -88,6 +89,7 @@ INTEGRATION_FOLDER_TO_LABEL = {
     "node_parsers": "Node Parsers & Text Splitters",
     "node_parser": "Node Parsers & Text Splitters",
     "objects": "Object Stores",
+    "observability": "Observability",
     "output_parsers": "Output Parsers",
     "postprocessor": "Node Postprocessors",
     "program": "Programs",
@@ -106,6 +108,7 @@ INTEGRATION_FOLDER_TO_LABEL = {
     "workflow": "Workflow",
     "llama_deploy": "LlamaDeploy",
     "message_queues": "Message Queues",
+    "voice_agents": "Voice Agents",
 }
 API_REF_TEMPLATE = """::: {import_path}
     options:

@@ -13,10 +13,16 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     DocumentBlock,
+    AudioBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.schema import ImageDocument
 from pydantic import AnyUrl
+
+
+@pytest.fixture()
+def empty_bytes() -> bytes:
+    return b""
 
 
 @pytest.fixture()
@@ -28,9 +34,11 @@ def png_1px_b64() -> bytes:
 def png_1px(png_1px_b64) -> bytes:
     return base64.b64decode(png_1px_b64)
 
+
 @pytest.fixture()
 def pdf_url() -> str:
     return "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+
 
 @pytest.fixture()
 def mock_pdf_bytes(pdf_url) -> bytes:
@@ -39,9 +47,11 @@ def mock_pdf_bytes(pdf_url) -> bytes:
     """
     return httpx.get(pdf_url).content
 
+
 @pytest.fixture()
 def pdf_base64(mock_pdf_bytes) -> bytes:
     return base64.b64encode(mock_pdf_bytes)
+
 
 def test_chat_message_from_str():
     m = ChatMessage.from_str(content="test content")
@@ -66,9 +76,9 @@ def test_chat_message_content_legacy_get():
     assert m.blocks[0].text == "test content"
 
     m = ChatMessage(
-        content=[TextBlock(text="test content 1 "), TextBlock(text="test content 2")]
+        content=[TextBlock(text="test content 1"), TextBlock(text="test content 2")]
     )
-    assert m.content == "test content 1 test content 2"
+    assert m.content == "test content 1\ntest content 2"
     assert len(m.blocks) == 2
     assert all(type(block) is TextBlock for block in m.blocks)
 
@@ -221,10 +231,12 @@ def test_document_block_from_bytes(mock_pdf_bytes: bytes, pdf_base64: bytes):
     assert document.document_mimetype == "application/pdf"
     assert pdf_base64 == document.data
 
+
 def test_document_block_from_b64(pdf_base64: bytes):
     document = DocumentBlock(data=pdf_base64)
     assert document.title == "input_document"
     assert pdf_base64 == document.data
+
 
 def test_document_block_from_path(tmp_path: Path, pdf_url: str):
     pdf_path = tmp_path / "test.pdf"
@@ -254,6 +266,7 @@ def test_document_block_from_path(tmp_path: Path, pdf_url: str):
     assert bytes_base64_encoded
     assert document.title == "input_document"
 
+
 def test_document_block_from_url(pdf_url: str):
     document = DocumentBlock(url=pdf_url, title="dummy_pdf")
     file_buffer = document.resolve_document()
@@ -278,3 +291,28 @@ def test_document_block_from_url(pdf_url: str):
         bytes_base64_encoded = False
     assert bytes_base64_encoded
     assert document.title == "dummy_pdf"
+
+
+def test_empty_bytes(empty_bytes: bytes, png_1px: bytes):
+    errors = []
+    try:
+        DocumentBlock(data=empty_bytes).resolve_document()
+        errors.append(0)
+    except ValueError:
+        errors.append(1)
+    try:
+        AudioBlock(audio=empty_bytes).resolve_audio()
+        errors.append(0)
+    except ValueError:
+        errors.append(1)
+    try:
+        ImageBlock(image=empty_bytes).resolve_image()
+        errors.append(0)
+    except ValueError:
+        errors.append(1)
+    try:
+        ImageBlock(image=png_1px).resolve_image()
+        errors.append(0)
+    except ValueError:
+        errors.append(1)
+    assert sum(errors) == 3

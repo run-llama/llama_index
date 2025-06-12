@@ -74,7 +74,7 @@ def test_stream_chat():
         # If streaming fails but regular chat works, we'll skip this test
         # This handles environment-specific issues while ensuring the
         # implementation is correct
-        pytest.skip("Streaming test skipped due to environment-specific issue: " f"{e}")
+        pytest.skip(f"Streaming test skipped due to environment-specific issue: {e}")
 
 
 @pytest.mark.skipif("ASI_API_KEY" not in os.environ, reason="No ASI API key")
@@ -113,5 +113,5 @@ async def test_astream_chat():
         # This handles environment-specific issues while ensuring the
         # implementation is correct
         pytest.skip(
-            "Async streaming test skipped due to environment-specific issue: " f"{e}"
+            f"Async streaming test skipped due to environment-specific issue: {e}"
         )

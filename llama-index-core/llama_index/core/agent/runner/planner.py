@@ -325,7 +325,7 @@ class StructuredPlannerAgent(BasePlanningAgentRunner):
         # gather completed sub-tasks and response pairs
         completed_outputs_str = ""
         for sub_task, task_output in completed_sub_task_pairs:
-            task_str = f"{sub_task.name}:\n" f"\t{task_output.output!s}\n"
+            task_str = f"{sub_task.name}:\n\t{task_output.output!s}\n"
             completed_outputs_str += task_str
 
         # get a string for the remaining sub-tasks

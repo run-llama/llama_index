@@ -1,3 +1,4 @@
+import re
 from typing import Dict
 
 MISTRALAI_MODELS: Dict[str, int] = {
@@ -18,6 +19,10 @@ MISTRALAI_MODELS: Dict[str, int] = {
     "ministral-3b-latest": 131000,
     "pixtral-large-latest": 131000,
     "pixtral-12b-2409": 131000,
+    "magistral-medium-2506": 40000,
+    "magistral-small-2506": 40000,
+    "magistral-medium-latest": 40000,
+    "magistral-small-latest": 40000,
 }
 
 MISTRALAI_FUNCTION_CALLING_MODELS = (
@@ -30,9 +35,23 @@ MISTRALAI_FUNCTION_CALLING_MODELS = (
     "open-mistral-nemo-latest",
     "pixtral-large-latest",
     "pixtral-12b-2409",
+    "magistral-medium-2506",
+    "magistral-small-2506",
+    "magistral-medium-latest",
+    "magistral-small-latest",
+)
+
+MISTRAL_AI_REASONING_MODELS = (
+    "magistral-medium-2506",
+    "magistral-small-2506",
+    "magistral-medium-latest",
+    "magistral-small-latest",
 )
 
 MISTRALAI_CODE_MODELS = "codestral-latest"
+
+THINKING_REGEX = re.compile(r"^<think>\n(.*?)\n</think>\n")
+THINKING_START_REGEX = re.compile(r"^<think>\n")
 
 
 def mistralai_modelname_to_contextsize(modelname: str) -> int:

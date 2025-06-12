@@ -71,7 +71,7 @@ class MixtureOfAgentWorkflow(Workflow):
     Responses from models:"""
 
         for i, reference in enumerate(references):
-            system += f"\n{i+1}. {reference}"
+            system += f"\n{i + 1}. {reference}"
 
         if messages[0].role == "system":
             messages[0].content += "\n\n" + system

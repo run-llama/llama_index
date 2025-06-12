@@ -1,4 +1,5 @@
 """Athena Reader."""
+
 import warnings
 from typing import Optional
 

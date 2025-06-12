@@ -123,6 +123,7 @@ def pg_hybrid(db: None) -> Any:
 
     asyncio.run(pg.close())
 
+
 @pytest.fixture()
 def pg_indexed_metadata(db: None) -> Any:
     pg = PGVectorStore.from_params(
@@ -567,16 +568,12 @@ async def test_add_to_db_and_query_with_metadata_filters_with_is_empty(
     filters = MetadataFilters(
         filters=[
             MetadataFilter(
-                key="nonexistent_key",
-                value=None,
-                operator=FilterOperator.IS_EMPTY
+                key="nonexistent_key", value=None, operator=FilterOperator.IS_EMPTY
             )
         ]
     )
     q = VectorStoreQuery(
-        query_embedding=_get_sample_vector(0.5),
-        similarity_top_k=10,
-        filters=filters
+        query_embedding=_get_sample_vector(0.5), similarity_top_k=10, filters=filters
     )
     if use_async:
         res = await pg_fixture.aquery(q)
@@ -1050,9 +1047,9 @@ async def test_hnsw_index_creation(
             )
             index_count = c.fetchone()[0]
 
-    assert (
-        index_count == 1
-    ), f"Expected exactly one '{data_test_index_name}' index, but found {index_count}."
+    assert index_count == 1, (
+        f"Expected exactly one '{data_test_index_name}' index, but found {index_count}."
+    )
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
@@ -1310,6 +1307,7 @@ async def test_indexed_metadata(
                 for row in indexes
             ), f"Index {index_name} not found or incorrect type cast in indexdef"
         from sqlalchemy import text
+
         result = await session.execute(
             text("""
                 EXPLAIN ANALYZE

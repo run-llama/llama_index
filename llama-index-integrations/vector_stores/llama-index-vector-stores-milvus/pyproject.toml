@@ -12,7 +12,7 @@ dev = [
     "pytest==7.2.1",
     "pytest-asyncio>=0.23.6,<0.24",
     "pytest-mock==3.11.1",
-    "ruff==0.0.292",
+    "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-protobuf>=4.24.0.4,<5",
@@ -27,14 +27,14 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-milvus"
-version = "0.8.2"
+version = "0.8.4"
 description = "llama-index vector_stores milvus integration"
 authors = []
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "pymilvus>=2.5.2,<3",
+    "pymilvus>=2.5.10,<3",
     "llama-index-core>=0.12.0,<0.13",
 ]
 

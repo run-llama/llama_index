@@ -80,7 +80,9 @@ class CleanlabTLM(CustomLLM):
 
         api_key = get_from_param_or_env("api_key", api_key, "CLEANLAB_API_KEY")
 
-        self._client = TLM(api_key=api_key, quality_preset=quality_preset, options=options)
+        self._client = TLM(
+            api_key=api_key, quality_preset=quality_preset, options=options
+        )
         self.model = self._client.get_model_name()
 
     @classmethod

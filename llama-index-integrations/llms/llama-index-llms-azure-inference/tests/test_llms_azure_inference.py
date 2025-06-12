@@ -10,6 +10,7 @@ import pytest
 from azure.ai.inference.models import (
     ChatChoice,
     ChatCompletions,
+    ChatCompletionsToolChoicePreset,
     ChatResponseMessage,
     ModelInfo,
 )
@@ -302,3 +303,61 @@ def test_get_metadata(test_llm: AzureAICompletionsModel, caplog):
         response.model_name != "unknown"
         or "does not support model metadata retrieval" in caplog.text
     )
+
+
+def test_to_azure_tool_choice():
+    """Test that tool_required is correctly mapped to Azure's tool_choice parameter."""
+    llm = AzureAICompletionsModel(
+        endpoint="https://my-endpoint.inference.ai.azure.com",
+        credential="my-api-key",
+    )
+
+    # Test with tool_required=True
+    tool_choice = llm._to_azure_tool_choice(tool_required=True)
+    assert tool_choice == ChatCompletionsToolChoicePreset.REQUIRED
+
+    # Test with tool_required=False
+    tool_choice = llm._to_azure_tool_choice(tool_required=False)
+    assert tool_choice == ChatCompletionsToolChoicePreset.AUTO
+
+
+def search(query: str) -> str:
+    """Search for information about a query."""
+    return f"Results for {query}"
+
+
+search_tool = FunctionTool.from_defaults(
+    fn=search, name="search_tool", description="A tool for searching information"
+)
+
+
+def test_prepare_chat_with_tools_tool_required():
+    """Test that tool_required is correctly passed to the API request when True."""
+    llm = AzureAICompletionsModel(
+        endpoint="https://my-endpoint.inference.ai.azure.com",
+        credential="my-api-key",
+    )
+
+    # Test with tool_required=True
+    result = llm._prepare_chat_with_tools(tools=[search_tool], tool_required=True)
+
+    assert result["tool_choice"] == ChatCompletionsToolChoicePreset.REQUIRED
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["function"]["name"] == "search_tool"
+
+
+def test_prepare_chat_with_tools_tool_not_required():
+    """Test that tool_required is correctly passed to the API request when False."""
+    llm = AzureAICompletionsModel(
+        endpoint="https://my-endpoint.inference.ai.azure.com",
+        credential="my-api-key",
+    )
+
+    # Test with tool_required=False (default)
+    result = llm._prepare_chat_with_tools(
+        tools=[search_tool],
+    )
+
+    assert result["tool_choice"] == ChatCompletionsToolChoicePreset.AUTO
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["function"]["name"] == "search_tool"

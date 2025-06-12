@@ -442,6 +442,25 @@ class LLM(BaseLLM):
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
 
+    def _structured_stream_call(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Generator[
+        Union[Model, List[Model], "FlexibleModel", List["FlexibleModel"]], None, None
+    ]:
+        from llama_index.core.program.utils import get_program_for_llm
+
+        program = get_program_for_llm(
+            output_cls,
+            prompt,
+            self,
+            pydantic_program_mode=self.pydantic_program_mode,
+        )
+        return program.stream_call(llm_kwargs=llm_kwargs, **prompt_args)
+
     @dispatcher.span
     def stream_structured_predict(
         self,
@@ -484,13 +503,33 @@ class LLM(BaseLLM):
             ```
 
         """
-        from llama_index.core.program.utils import get_program_for_llm
-
         dispatcher.event(
             LLMStructuredPredictStartEvent(
                 output_cls=output_cls, template=prompt, template_args=prompt_args
             )
         )
+
+        result = self._structured_stream_call(
+            output_cls, prompt, llm_kwargs, **prompt_args
+        )
+        for r in result:
+            dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
+            assert not isinstance(r, list)
+            yield r
+
+        dispatcher.event(LLMStructuredPredictEndEvent(output=r))
+
+    async def _structured_astream_call(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> AsyncGenerator[
+        Union[Model, List[Model], "FlexibleModel", List["FlexibleModel"]], None
+    ]:
+        from llama_index.core.program.utils import get_program_for_llm
+
         program = get_program_for_llm(
             output_cls,
             prompt,
@@ -498,13 +537,7 @@ class LLM(BaseLLM):
             pydantic_program_mode=self.pydantic_program_mode,
         )
 
-        result = program.stream_call(llm_kwargs=llm_kwargs, **prompt_args)
-        for r in result:
-            dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
-            assert not isinstance(r, list)
-            yield r
-
-        dispatcher.event(LLMStructuredPredictEndEvent(output=r))
+        return await program.astream_call(llm_kwargs=llm_kwargs, **prompt_args)
 
     @dispatcher.span
     async def astream_structured_predict(
@@ -550,23 +583,15 @@ class LLM(BaseLLM):
         """
 
         async def gen() -> AsyncGenerator[Union[Model, "FlexibleModel"], None]:
-            from llama_index.core.program.utils import (
-                get_program_for_llm,
-            )
-
             dispatcher.event(
                 LLMStructuredPredictStartEvent(
                     output_cls=output_cls, template=prompt, template_args=prompt_args
                 )
             )
-            program = get_program_for_llm(
-                output_cls,
-                prompt,
-                self,
-                pydantic_program_mode=self.pydantic_program_mode,
-            )
 
-            result = await program.astream_call(llm_kwargs=llm_kwargs, **prompt_args)
+            result = await self._structured_astream_call(
+                output_cls, prompt, llm_kwargs, **prompt_args
+            )
             async for r in result:
                 dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
                 assert not isinstance(r, list)

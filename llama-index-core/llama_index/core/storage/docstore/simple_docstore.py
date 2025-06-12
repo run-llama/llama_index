@@ -10,7 +10,7 @@ from llama_index.core.storage.docstore.types import (
     DEFAULT_PERSIST_PATH,
 )
 from llama_index.core.storage.kvstore.simple_kvstore import SimpleKVStore
-from llama_index.core.storage.kvstore.types import BaseInMemoryKVStore
+from llama_index.core.storage.kvstore.types import MutableMappingKVStore, BaseInMemoryKVStore
 from llama_index.core.utils import concat_dirs
 
 
@@ -71,7 +71,8 @@ class SimpleDocumentStore(KVDocumentStore):
         Args:
             persist_path (str): Path to persist the store
             namespace (Optional[str]): namespace for the docstore
-            fs (Optional[fsspec.AbstractFileSystem]): filesystem to use
+            fs (
+            Optional[fsspec.AbstractFileSystem]): filesystem to use
 
         """
         simple_kvstore = SimpleKVStore.from_persist_path(persist_path, fs=fs)
@@ -83,7 +84,7 @@ class SimpleDocumentStore(KVDocumentStore):
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> None:
         """Persist the store."""
-        if isinstance(self._kvstore, BaseInMemoryKVStore):
+        if isinstance(self._kvstore, (MutableMappingKVStore, BaseInMemoryKVStore)):
             self._kvstore.persist(persist_path, fs=fs)
 
     @classmethod

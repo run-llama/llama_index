@@ -1,4 +1,5 @@
 """Tools for interacting with an Apache Cassandra database."""
+
 from typing import List
 
 from llama_index.core.bridge.pydantic import Field

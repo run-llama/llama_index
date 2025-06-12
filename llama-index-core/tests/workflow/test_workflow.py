@@ -8,7 +8,7 @@ from unittest import mock
 import pytest
 from llama_index.core import MockEmbedding
 from llama_index.core.llms.mock import MockLLM
-from llama_index.core.workflow.context_serializers import JsonPickleSerializer
+from llama_index.core.workflow.context_serializers import PickleSerializer
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import (
     Event,
@@ -287,9 +287,9 @@ async def test_workflow_num_workers():
 
     # Check if the execution time is close to 1 second (with some tolerance)
     execution_time = end_time - start_time
-    assert (
-        1.0 <= execution_time < 1.1
-    ), f"Execution time was {execution_time:.2f} seconds"
+    assert 1.0 <= execution_time < 1.1, (
+        f"Execution time was {execution_time:.2f} seconds"
+    )
 
 
 @pytest.mark.asyncio
@@ -534,9 +534,9 @@ async def test_workflow_pickle():
         state_dict = handler.ctx.to_dict()
 
     # if we allow pickle, then we can pickle the LLM/embedding object
-    state_dict = handler.ctx.to_dict(serializer=JsonPickleSerializer())
+    state_dict = handler.ctx.to_dict(serializer=PickleSerializer())
     new_handler = WorkflowHandler(
-        ctx=Context.from_dict(wf, state_dict, serializer=JsonPickleSerializer())
+        ctx=Context.from_dict(wf, state_dict, serializer=PickleSerializer())
     )
     assert new_handler.ctx
 
@@ -952,3 +952,23 @@ def test__ensure_stop_event_class_multiple_types():
         match="Only one type of StopEvent is allowed per workflow, found 2",
     ):
         wf = DummyWorkflow()
+
+
+@pytest.mark.asyncio
+async def test_workflow_validation_steps_cannot_accept_stop_event():
+    # Test single step that incorrectly accepts StopEvent
+    class InvalidWorkflowSingleStep(Workflow):
+        @step
+        async def start_step(self, ev: StartEvent) -> StopEvent:
+            return StopEvent()
+
+        @step
+        async def bad_step(self, ev: StopEvent) -> StopEvent:
+            return StopEvent()
+
+    workflow = InvalidWorkflowSingleStep()
+    with pytest.raises(
+        WorkflowValidationError,
+        match="Step 'bad_step' cannot accept StopEvent. StopEvent signals the end of the workflow. Use a different Event type instead.",
+    ):
+        await workflow.run()

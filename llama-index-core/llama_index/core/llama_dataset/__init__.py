@@ -1,4 +1,4 @@
-""" Dataset Module."""
+"""Dataset Module."""
 
 from llama_index.core.llama_dataset.base import (
     BaseLlamaDataExample,

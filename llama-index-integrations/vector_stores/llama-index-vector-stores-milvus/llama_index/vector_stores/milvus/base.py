@@ -100,7 +100,7 @@ def _to_milvus_filter(
 
 
 def _get_index_metric_type(
-    func: Union[BaseSparseEmbeddingFunction, BaseMilvusBuiltInFunction]
+    func: Union[BaseSparseEmbeddingFunction, BaseMilvusBuiltInFunction],
 ):
     if isinstance(func, BM25BuiltInFunction):
         return "BM25"
@@ -137,6 +137,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             stored. Defaults to "llamalection".
         overwrite (bool, optional): Whether to overwrite existing collection with same
             name. Defaults to False.
+        upsert_mode (bool, optional): Whether to upsert documents into existing collection with same node id. Defaults to False.
         doc_id_field (str, optional): The name of the doc_id field for the collection,
             defaults to DEFAULT_DOC_ID_KEY.
         text_key (str, optional): What key text is stored in in the passed collection.
@@ -230,6 +231,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
     similarity_metric: str = "IP"
     consistency_level: str = "Session"
     overwrite: bool = False
+    upsert_mode: bool = False
     text_key: str = DEFAULT_TEXT_KEY
     output_fields: List[str] = Field(default_factory=list)
     index_config: Optional[dict]
@@ -259,6 +261,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         token: str = "",
         collection_name: str = "llamacollection",
         overwrite: bool = False,
+        upsert_mode: bool = False,
         collection_properties: Optional[dict] = None,
         doc_id_field: str = DEFAULT_DOC_ID_KEY,
         text_key: str = DEFAULT_TEXT_KEY,
@@ -291,6 +294,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             doc_id_field=doc_id_field,
             consistency_level=consistency_level,
             overwrite=overwrite,
+            upsert_mode=upsert_mode,
             text_key=text_key,
             output_fields=output_fields or [],
             index_config=index_config if index_config else {},
@@ -439,18 +443,23 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 if isinstance(
                     self.sparse_embedding_function, BaseSparseEmbeddingFunction
                 ):
-                    entry[
-                        self.sparse_embedding_field
-                    ] = self.sparse_embedding_function.encode_documents([node.text])[0]
+                    entry[self.sparse_embedding_field] = (
+                        self.sparse_embedding_function.encode_documents([node.text])[0]
+                    )
                 else:  # BaseMilvusBuiltInFunction
                     pass
 
             insert_ids.append(node.node_id)
             insert_list.append(entry)
 
-        # Insert the data into milvus
+        if self.upsert_mode:
+            executor_wrapper = self.client.upsert
+        else:
+            executor_wrapper = self.client.insert
+
+        # Insert or Upsert the data into milvus
         for insert_batch in iter_batch(insert_list, self.batch_size):
-            self.client.insert(self.collection_name, insert_batch)
+            executor_wrapper(self.collection_name, insert_batch)
         if add_kwargs.get("force_flush", False):
             self.client.flush(self.collection_name)
         logger.debug(
@@ -486,18 +495,23 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 if isinstance(
                     self.sparse_embedding_function, BaseSparseEmbeddingFunction
                 ):
-                    entry[
-                        self.sparse_embedding_field
-                    ] = self.sparse_embedding_function.encode_documents([node.text])[0]
+                    entry[self.sparse_embedding_field] = (
+                        self.sparse_embedding_function.encode_documents([node.text])[0]
+                    )
                 else:  # BaseMilvusBuiltInFunction
                     pass
 
             insert_ids.append(node.node_id)
             insert_list.append(entry)
 
-        # Insert the data into milvus
+        if self.upsert_mode:
+            executor_wrapper = self.aclient.upsert
+        else:
+            executor_wrapper = self.aclient.insert
+
+        # Insert or Upsert the data into milvus
         for insert_batch in iter_batch(insert_list, self.batch_size):
-            await self.aclient.insert(self.collection_name, insert_batch)
+            await executor_wrapper(self.collection_name, insert_batch)
         if add_kwargs.get("force_flush", False):
             raise NotImplementedError("force_flush is not supported in async mode.")
             # await self.aclient.flush(self.collection_name)

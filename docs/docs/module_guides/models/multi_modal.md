@@ -1,4 +1,4 @@
-# [Beta] Multi-modal models
+# Multi-modal models
 
 ## Concept
 
