@@ -673,3 +673,34 @@ async def test_bedrock_converse_agent_with_void_tool_and_continued_conversation(
     assert hasattr(response3, "response")
     response3_text = str(response3.response)
     assert len(response3_text) > 0
+
+
+@needs_aws_creds
+@pytest.mark.asyncio
+async def test_astream_chat_filters_empty_content_blocks(bedrock_converse_integration):
+    """Test that astream_chat handles empty content blocks correctly in integration setting."""
+    llm = bedrock_converse_integration
+    
+    # Create a conversation with empty and valid content blocks
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content=""),  # Empty system message
+        ChatMessage(role=MessageRole.USER, content="Hello"),
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                TextBlock(text=""),  # Empty block
+                TextBlock(text="Previous response"),
+            ]
+        ),
+        ChatMessage(role=MessageRole.USER, content="What is 2+2?")
+    ]
+
+    response_stream = await llm.astream_chat(messages)
+    chunks = []
+    async for response in response_stream:
+        chunks.append(response.delta)
+
+    # Verify we got a valid response
+    assert len(chunks) > 0
+    combined = "".join(chunks)
+    assert len(combined) > 0
