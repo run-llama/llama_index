@@ -1052,6 +1052,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "requests" },
+    { name = "setuptools" },
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "tenacity" },
     { name = "tiktoken" },
@@ -1114,6 +1115,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.8.0" },
     { name = "pyyaml", specifier = ">=6.0.1" },
     { name = "requests", specifier = ">=2.31.0" },
+    { name = "setuptools", specifier = ">=80.9.0" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=1.4.49" },
     { name = "tenacity", specifier = ">=8.2.0,!=8.4.0,<10.0.0" },
     { name = "tiktoken", specifier = ">=0.7.0" },
@@ -1149,7 +1151,6 @@ dev = [
     { name = "types-deprecated", specifier = ">=0.1.0" },
     { name = "types-pyyaml", specifier = ">=6.0.12.12,<7" },
     { name = "types-requests", specifier = ">=2.28.11.8" },
-    { name = "types-setuptools", specifier = ">=80.0.0.20250429" },
 ]
 
 [[package]]

@@ -28,7 +28,6 @@ dev = [
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-requests>=2.28.11.8",
-    "types-setuptools>=80.0.0.20250429",
 ]
 
 [project]
@@ -80,6 +79,7 @@ dependencies = [
     "banks>=2.0.0,<3",
     "aiosqlite",
     "llama-index-workflows>=0.2.1",
+    "setuptools>=80.9.0",
 ]
 
 [project.urls]
