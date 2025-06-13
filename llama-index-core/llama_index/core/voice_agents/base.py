@@ -37,7 +37,7 @@ class BaseVoiceAgent(ABC):
         self._events: List[BaseVoiceAgentEvent] = []
 
     @abstractmethod
-    async def start(self, *args, **kwargs) -> None:
+    async def start(self, *args: Any, **kwargs: Any) -> None:
         """
         Start the voice agent.
 
@@ -52,7 +52,7 @@ class BaseVoiceAgent(ABC):
         ...
 
     @abstractmethod
-    async def send(self, audio: Any, *args, **kwargs) -> None:
+    async def send(self, audio: Any, *args: Any, **kwargs: Any) -> None:
         """
         Send audio to the websocket underlying the voice agent.
 
@@ -68,7 +68,7 @@ class BaseVoiceAgent(ABC):
         ...
 
     @abstractmethod
-    async def handle_message(self, message: Any, *args, **kwargs) -> Any:
+    async def handle_message(self, message: Any, *args: Any, **kwargs: Any) -> Any:
         """
         Handle incoming message.
 

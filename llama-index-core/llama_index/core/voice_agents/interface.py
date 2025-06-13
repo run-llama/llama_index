@@ -8,12 +8,12 @@ class BaseVoiceAgentInterface(ABC):
     """
 
     @abstractmethod
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Please implement this method by initializing the class with arbitrary attributes."""
         ...
 
     @abstractmethod
-    def _speaker_callback(self, *args, **kwargs) -> Any:
+    def _speaker_callback(self, *args: Any, **kwargs: Any) -> Any:
         """
         Callback function for the audio output device.
 
@@ -28,7 +28,7 @@ class BaseVoiceAgentInterface(ABC):
         ...
 
     @abstractmethod
-    def _microphone_callback(self, *args, **kwargs) -> Any:
+    def _microphone_callback(self, *args: Any, **kwargs: Any) -> Any:
         """
         Callback function for the audio input device.
 
@@ -43,7 +43,7 @@ class BaseVoiceAgentInterface(ABC):
         ...
 
     @abstractmethod
-    def start(self, *args, **kwargs) -> None:
+    def start(self, *args: Any, **kwargs: Any) -> None:
         """
         Start the interface.
 
@@ -84,7 +84,7 @@ class BaseVoiceAgentInterface(ABC):
         ...
 
     @abstractmethod
-    def output(self, *args, **kwargs) -> Any:
+    def output(self, *args: Any, **kwargs: Any) -> Any:
         """
         Process and output the audio.
 
@@ -99,7 +99,7 @@ class BaseVoiceAgentInterface(ABC):
         ...
 
     @abstractmethod
-    def receive(self, data: Any, *args, **kwargs) -> Any:
+    def receive(self, data: Any, *args: Any, **kwargs: Any) -> Any:
         """
         Receive audio data.
 
