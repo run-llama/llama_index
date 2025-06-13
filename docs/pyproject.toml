@@ -51,6 +51,7 @@ jupyter-client = "8.6.1"
 jupyter-core = "5.7.2"
 jupyterlab-pygments = "0.3.0"
 jupytext = "1.16.1"
+llama-index-instrumentation = {path = "../llama-index-instrumentation"}
 markdown = "^3.5.2"
 markdown-it-py = "^3.0.0"
 markupsafe = "2.1.5"
