@@ -2,7 +2,7 @@
 
 import os
 import logging
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional
 import warnings
 
 import lancedb.rerankers
@@ -34,11 +34,6 @@ from pandas import DataFrame
 
 import lancedb
 import lancedb.remote.table  # type: ignore
-
-try:
-    import pyarrow as pa
-except ImportError:
-    pass
 
 _logger = logging.getLogger(__name__)
 
@@ -176,7 +171,6 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         self,
         uri: Optional[str] = "/tmp/lancedb",
         table_name: Optional[str] = "vectors",
-        table_schema: Optional[Union[pa.Schema, lancedb.table.LanceModel]] = None,
         vector_column_name: str = "vector",
         nprobes: int = 20,
         refine_factor: Optional[int] = None,
