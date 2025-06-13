@@ -1,5 +1,7 @@
 """Hive data reader."""
 
+import warnings
+
 try:
     from pyhive import hive
 except ImportError:
@@ -54,6 +56,10 @@ class HiveReader(BaseReader):
         auth: Optional[str] = None,
     ):
         """Initialize with parameters."""
+        warnings.warn(
+            "Starting from v0.3.1, llama-index-hive-reader package has been deprecated due to security concerns in its SQL query handling. Use this package with caution.",
+            DeprecationWarning,
+        )
         self.con = hive.Connection(
             host=host,
             port=port,
@@ -77,6 +83,10 @@ class HiveReader(BaseReader):
             List[Document]: A list of documents.
 
         """
+        warnings.warn(
+            "Starting from v0.3.1, llama-index-hive-reader package has been deprecated due to security concerns in its SQL query handling. Use this package with caution",
+            DeprecationWarning,
+        )
         try:
             if params:
                 filled_query = query % tuple(repr(p) for p in params)
