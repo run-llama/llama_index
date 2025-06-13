@@ -1,3 +1,4 @@
+import json
 from typing import (
     Any,
     Callable,
@@ -336,11 +337,14 @@ class BedrockConverse(FunctionCallingLLM):
             if text := content_block.get("text", None):
                 text_content += text
             if tool_usage := content_block.get("toolUse", None):
-                if "toolUseId" not in tool_usage:
-                    tool_usage["toolUseId"] = content_block["toolUseId"]
-                if "name" not in tool_usage:
-                    tool_usage["name"] = content_block["name"]
-                tool_calls.append(tool_usage)
+                if tool_usage.get("input"):
+                    input = tool_usage["input"]
+                    try:
+                        json.loads(input)
+                        tool_usage["input"] = json.loads(input)
+                        tool_calls.append(tool_usage)
+                    except json.JSONDecodeError:
+                        pass
             if tool_result := content_block.get("toolResult", None):
                 for tool_result_content in tool_result["content"]:
                     if text := tool_result_content.get("text", None):
@@ -557,7 +561,39 @@ class BedrockConverse(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         # convert Llama Index messages to AWS Bedrock Converse messages
-        converse_messages, system_prompt = messages_to_converse_messages(messages)
+        converse_messages, system_prompt = messages_to_converse_messages(
+            messages
+        )
+
+        # Filter out any message with empty content blocks to prevent validation errors
+        filtered_converse_messages = []
+        for msg in converse_messages:
+            if "content" in msg and isinstance(msg["content"], list):
+                # Ensure each content block has non-empty text field
+                valid_content = []
+                for content_block in msg["content"]:
+                    if (
+                        "text" in content_block
+                        and content_block["text"].strip()
+                    ):
+                        valid_content.append(content_block)
+                    elif (
+                        "text" not in content_block
+                    ):  # Keep non-text content blocks (e.g., images)
+                        valid_content.append(content_block)
+
+                if (
+                    valid_content
+                ):  # Only add message if it has valid content blocks
+                    msg["content"] = valid_content
+                    filtered_converse_messages.append(msg)
+            else:  # Keep messages without content list structure
+                filtered_converse_messages.append(msg)
+
+        converse_messages = filtered_converse_messages
+
+        if len(system_prompt) > 0 or self.system_prompt is None:
+            self.system_prompt = system_prompt
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         # invoke LLM in AWS Bedrock Converse with retry
@@ -565,55 +601,28 @@ class BedrockConverse(FunctionCallingLLM):
             session=self._asession,
             config=self._config,
             messages=converse_messages,
-            system_prompt=system_prompt,
+            system_prompt=self.system_prompt,
             max_retries=self.max_retries,
             stream=True,
             guardrail_identifier=self.guardrail_identifier,
             guardrail_version=self.guardrail_version,
             trace=self.trace,
-            boto_client_kwargs=self._boto_client_kwargs,
             **all_kwargs,
         )
 
         async def gen() -> ChatResponseAsyncGen:
             content = {}
-            tool_calls = []  # Track tool calls separately
-            current_tool_call = None  # Track the current tool call being built
             role = MessageRole.ASSISTANT
             async for chunk in response_gen:
                 if content_block_delta := chunk.get("contentBlockDelta"):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
-
-                    # If this delta contains tool call info, update current tool call
-                    if "toolUse" in content_delta:
-                        tool_use_delta = content_delta["toolUse"]
-
-                        if current_tool_call:
-                            # Handle the input field specially - concatenate partial JSON strings
-                            if "input" in tool_use_delta:
-                                if "input" in current_tool_call:
-                                    current_tool_call["input"] += tool_use_delta[
-                                        "input"
-                                    ]
-                                else:
-                                    current_tool_call["input"] = tool_use_delta["input"]
-
-                                # Remove input from the delta to prevent it from being processed again
-                                tool_use_without_input = {
-                                    k: v
-                                    for k, v in tool_use_delta.items()
-                                    if k != "input"
-                                }
-                                if tool_use_without_input:
-                                    current_tool_call = join_two_dicts(
-                                        current_tool_call, tool_use_without_input
-                                    )
-                            else:
-                                # For other fields, use the normal joining
-                                current_tool_call = join_two_dicts(
-                                    current_tool_call, tool_use_delta
-                                )
+                    (
+                        _,
+                        tool_calls,
+                        tool_call_ids,
+                        status,
+                    ) = self._get_content_and_tool_calls(content=content)
 
                     yield ChatResponse(
                         message=ChatMessage(
@@ -621,24 +630,22 @@ class BedrockConverse(FunctionCallingLLM):
                             content=content.get("text", ""),
                             additional_kwargs={
                                 "tool_calls": tool_calls,
-                                "tool_call_id": [
-                                    tc.get("toolUseId", "") for tc in tool_calls
-                                ],
-                                "status": [],  # Will be populated when tool results come in
+                                "tool_call_id": tool_call_ids,
+                                "status": status,
                             },
                         ),
                         delta=content_delta.get("text", ""),
                         raw=chunk,
-                        additional_kwargs=self._get_response_token_counts(dict(chunk)),
                     )
                 elif content_block_start := chunk.get("contentBlockStart"):
-                    # New tool call starting
-                    if "toolUse" in content_block_start["start"]:
-                        tool_use = content_block_start["start"]["toolUse"]
-                        # Start tracking a new tool call
-                        current_tool_call = tool_use
-                        # Add to our list of tool calls
-                        tool_calls.append(current_tool_call)
+                    tool_use = content_block_start["start"]
+                    content = join_two_dicts(content, tool_use)
+                    (
+                        _,
+                        tool_calls,
+                        tool_call_ids,
+                        status,
+                    ) = self._get_content_and_tool_calls(content=content)
 
                     yield ChatResponse(
                         message=ChatMessage(
@@ -646,10 +653,8 @@ class BedrockConverse(FunctionCallingLLM):
                             content=content.get("text", ""),
                             additional_kwargs={
                                 "tool_calls": tool_calls,
-                                "tool_call_id": [
-                                    tc.get("toolUseId", "") for tc in tool_calls
-                                ],
-                                "status": [],  # Will be populated when tool results come in
+                                "tool_call_id": tool_call_ids,
+                                "status": status,
                             },
                         ),
                         raw=chunk,
