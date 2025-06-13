@@ -24,22 +24,14 @@ class SimpleMongoReader(BaseReader):
         host: Optional[str] = None,
         port: Optional[int] = None,
         uri: Optional[str] = None,
-        async_methods: bool = False,
     ) -> None:
         """Initialize with parameters."""
         try:
-            if async_methods:
-                from motor.motor_asyncio import AsyncIOMotorClient
-                from pymongo import MongoClient
-            else:
-                from pymongo import MongoClient
+            from motor.motor_asyncio import AsyncIOMotorClient
+            from pymongo import MongoClient
         except ImportError as err:
-            if async_methods:
-                raise ImportError(
-                    "`motor / pymongo` package not found, please run `pip install motor`"
-                ) from err
             raise ImportError(
-                "`pymongo` package not found, please run `pip install pymongo`"
+                "`pymongo / motor` package not found, please run `pip install pymongo motor`"
             ) from err
 
         if uri:
@@ -50,11 +42,7 @@ class SimpleMongoReader(BaseReader):
             raise ValueError("Either `host` and `port` or `uri` must be provided.")
 
         self.client = MongoClient(*client_args)
-
-        if async_methods:
-            self.async_client = AsyncIOMotorClient(*client_args)
-        else:
-            self.async_client = None
+        self.async_client = AsyncIOMotorClient(*client_args)
 
     def lazy_load_data(
         self,
@@ -159,11 +147,6 @@ class SimpleMongoReader(BaseReader):
             ValueError: If the async_client is not initialized or if a specified field is not found in a document.
 
         """
-        if self.async_client is None:
-            raise ValueError(
-                "You can't invoke `alazy_load_data` without `async_methods=True`"
-            )
-
         db = self.async_client[db_name]
         cursor = db[collection_name].find(
             filter=query_dict or {},
