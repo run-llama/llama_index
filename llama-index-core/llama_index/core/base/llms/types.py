@@ -51,10 +51,7 @@ class MessageRole(str, Enum):
 
 class TextBlock(BaseModel):
     block_type: Literal["text"] = "text"
-    additional_kwargs: Optional[dict[str, Any]] = Field(
-        default={},
-        description="Additional kwargs for the text block.",
-    )
+    additional_kwargs: dict[str, Any] = Field(default_factory=dict)
     text: str
 
 
