@@ -181,13 +181,28 @@ def __merge_common_role_msgs(
 def _content_block_to_bedrock_format(
     block: ContentBlock, role: MessageRole
 ) -> Optional[Dict[str, Any]]:
-    """Convert content block to AWS Bedrock Converse API required format."""
+    """
+    Convert content block to AWS Bedrock Converse API required format,
+    with support for prompt caching at the text block level.
+    """
     if isinstance(block, TextBlock):
         if not block.text:
             return None
-        return {
+        # Support for prompt caching via additional_kwargs
+        text_block_dict = {
             "text": block.text,
         }
+        # Add cache_control if present in additional_kwargs
+        cache_control = getattr(block, "additional_kwargs", {}).get("cache_control")
+        if cache_control:
+            assert isinstance(cache_control, dict), (
+                f"cache_control must be a dict, got {type(cache_control)}"
+            )
+            assert "type" in cache_control, (
+                f"cache_control must have a type, got {cache_control}"
+            )
+            text_block_dict["cache_control"] = cache_control
+        return text_block_dict
     elif isinstance(block, DocumentBlock):
         if not block.data:
             file_buffer = block.resolve_document()
