@@ -193,7 +193,7 @@ def _content_block_to_bedrock_format(
             "text": block.text,
         }
         # Add cache_control if present in additional_kwargs
-        cache_control = getattr(block, "additional_kwargs", {}).get("cache_control")
+        cache_control = block.additional_kwargs.get("cache_control")
         if cache_control:
             assert isinstance(cache_control, dict), (
                 f"cache_control must be a dict, got {type(cache_control)}"
