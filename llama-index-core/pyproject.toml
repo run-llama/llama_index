@@ -47,15 +47,7 @@ maintainers = [
     {name = "Simon Suo", email = "simon@llamaindex.ai"},
     {name = "Sourabh Desai", email = "sourabh@llamaindex.ai"},
 ]
-keywords = [
-    "LLM",
-    "NLP",
-    "RAG",
-    "data",
-    "devtools",
-    "index",
-    "retrieval",
-]
+keywords = ["LLM", "NLP", "RAG", "data", "devtools", "index", "retrieval"]
 classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
@@ -87,6 +79,7 @@ dependencies = [
     "eval-type-backport>=0.2.0,<0.3 ; python_version < '3.10'",
     "banks>=2.0.0,<3",
     "aiosqlite",
+    "llama-index-instrumentation>=0.1.0",
 ]
 
 [project.urls]
@@ -101,6 +94,9 @@ ignore-words-list = "astroid,gallary,momento,narl,ot,rouge"
 # Feel free to un-skip examples, and experimental, you will just need to
 # work through many typos (--write-changes and --interactive will help)
 skip = "./llama_index/core/_static,./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.coverage.run]
+omit = ["llama_index/core/instrumentation/*", "tests/*"]
 
 [tool.hatch.build.targets.sdist]
 include = [
