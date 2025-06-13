@@ -171,3 +171,15 @@ def test_tools_to_converse_tools_with_custom_tool_choice():
     assert len(result["tools"]) == 1
     assert result["tools"][0]["toolSpec"]["name"] == "search_tool"
     assert result["toolChoice"] == custom_tool_choice
+
+
+def test_content_block_to_bedrock_format_text_with_cache_control():
+    """Test TextBlock conversion with cache_control for prompt caching."""
+    # Create a text block with cache_control in additional_kwargs
+    text_block = TextBlock(
+        text="Hello, world!", additional_kwargs={"cache_control": {"type": "ephemeral"}}
+    )
+
+    result = _content_block_to_bedrock_format(text_block, MessageRole.USER)
+
+    assert result == {"text": "Hello, world!", "cache_control": {"type": "ephemeral"}}
