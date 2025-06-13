@@ -61,7 +61,7 @@ class QueryPipelineQueryEngine(CustomQueryEngine):
     def custom_query(self, query_str: str) -> RESPONSE_TYPE:
         return self.query_pipeline.run(query_str=query_str)
 
-    async def accustom_query(self, query_str: str) -> RESPONSE_TYPE:
+    async def acustom_query(self, query_str: str) -> RESPONSE_TYPE:
         return await self.query_pipeline.arun(query_str=query_str)
 
 
