@@ -302,7 +302,11 @@ def messages_to_converse_messages(
             assert "name" in tool_call, f"`name` not found in {tool_call}"
             tool_input = tool_call["input"] if tool_call["input"] else {}
             if isinstance(tool_input, str):
-                tool_input = json.loads(tool_input)
+                try:
+                    tool_input = json.loads(tool_input or "{}")
+                except json.JSONDecodeError:
+                    tool_input = {}
+
             content.append(
                 {
                     "toolUse": {
