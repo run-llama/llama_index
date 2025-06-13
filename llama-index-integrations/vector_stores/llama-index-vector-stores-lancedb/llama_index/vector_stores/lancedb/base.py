@@ -45,6 +45,10 @@ _logger = logging.getLogger(__name__)
 from .util import sql_operator_mapper
 
 
+class TableNotFoundError(Exception):
+    """Raised when the specified table does not exist."""
+
+
 def _to_lance_filter(standard_filters: MetadataFilters, metadata_keys: list) -> Any:
     """Translate standard metadata filters to Lance specific spec."""
     filters = []
@@ -162,7 +166,6 @@ class LanceDBVectorStore(BasePydanticVectorStore):
     overfetch_factor: Optional[int]
 
     _table_name: Optional[str] = PrivateAttr()
-    _table_schema: Optional[Union[pa.Schema, lancedb.table.LanceModel]] = PrivateAttr()
     _connection: lancedb.DBConnection = PrivateAttr()
     _table: Any = PrivateAttr()
     _metadata_keys: Any = PrivateAttr()
@@ -207,7 +210,6 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         )
 
         self._table_name = table_name
-        self._table_schema = table_schema
         self._metadata_keys = None
         self._fts_index = None
 
@@ -258,26 +260,29 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         else:
             if self._table_exists():
                 self._table = self._connection.open_table(table_name)
-            elif (
-                self.mode in ["create", "overwrite"] and self._table_schema is not None
-            ):
-                self._table = self._connection.create_table(
-                    table_name, mode=mode, schema=self._table_schema
-                )
-            elif self.mode not in ["create", "overwrite"]:
-                raise ValueError(
-                    f"Table {self._table_name} doesn't exists, mode must be either 'create' or 'overwrite' to create it dynamically"
-                )
-            elif self._table_schema is None:
+            elif self.mode in ["create", "overwrite"]:
                 _logger.warning(
-                    "Cannot create table without schema. Table will be set to None"
+                    f"Table {table_name} doesn't exist yet. Please add some data to create it."
                 )
                 self._table = None
+            else:
+                raise TableNotFoundError(
+                    f"Table {self._table_name} doesn't exist, mode must be either 'create' or 'overwrite' to create it dynamically"
+                )
 
     @property
     def client(self) -> None:
         """Get client."""
         return self._connection
+
+    @property
+    def table(self) -> lancedb.db.LanceTable | lancedb.remote.table.RemoteTable | None:
+        """Get table."""
+        if self._table is None:
+            raise TableNotFoundError(
+                f"Table {self._table_name} is not initialized. Please create it or add some data first."
+            )
+        return self._table
 
     @classmethod
     def from_table(cls, table: Any) -> "LanceDBVectorStore":
@@ -331,7 +336,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
 
         """
         if not scalar:
-            self._table.create_index(
+            self.table.create_index(
                 metric=metric,
                 vector_column_name=self.vector_column_name,
                 num_partitions=num_partitions,
@@ -342,7 +347,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         else:
             if col_name is None:
                 raise ValueError("Column name is required for scalar index creation.")
-            self._table.create_scalar_index(col_name)
+            self.table.create_scalar_index(col_name)
 
     def add(
         self,
@@ -372,14 +377,12 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             ids.append(node.node_id)
 
         if self._table is None:
+            _logger.info(f"Create new table {self._table_name} adding data.")
             self._table = self._connection.create_table(
                 self._table_name, data, mode=self.mode
             )
         else:
-            if self.api_key is None:
-                self._table.add(data)
-            else:
-                self._table.add(data)
+            self._table.add(data)
 
         self._fts_index = None  # reset fts index
 
@@ -393,7 +396,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        self._table.delete(f'{self.doc_id_key} = "' + ref_doc_id + '"')
+        self.table.delete(f'{self.doc_id_key} = "' + ref_doc_id + '"')
 
     def delete_nodes(self, node_ids: List[str], **delete_kwargs: Any) -> None:
         """
@@ -403,7 +406,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
             node_ids (List[str]): The list of node_ids to delete.
 
         """
-        self._table.delete('id in ("' + '","'.join(node_ids) + '")')
+        self.table.delete('id in ("' + '","'.join(node_ids) + '")')
 
     def get_nodes(
         self,
@@ -414,7 +417,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         """
         Get nodes from the vector store.
         """
-        if isinstance(self._table, lancedb.remote.table.RemoteTable):
+        if isinstance(self.table, lancedb.remote.table.RemoteTable):
             raise ValueError("get_nodes is not supported for LanceDB cloud yet.")
 
         if filters is not None:
@@ -431,7 +434,7 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         if node_ids is not None:
             where = f'id in ("' + '","'.join(node_ids) + '")'
 
-        results = self._table.search().where(where).to_pandas()
+        results = self.table.search().where(where).to_pandas()
 
         nodes = []
 
@@ -491,13 +494,13 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         if query_type == "vector":
             _query = query.query_embedding
         else:
-            if not isinstance(self._table, lancedb.db.LanceTable):
+            if not isinstance(self.table, lancedb.db.LanceTable):
                 raise ValueError(
                     "creating FTS index is not supported for LanceDB Cloud yet. "
                     "Please use a local table for FTS/Hybrid search."
                 )
             if self._fts_index is None:
-                self._fts_index = self._table.create_fts_index(
+                self._fts_index = self.table.create_fts_index(
                     self.text_key, replace=True
                 )
 
@@ -510,14 +513,14 @@ class LanceDBVectorStore(BasePydanticVectorStore):
 
         if query_type == "hybrid":
             lance_query = (
-                self._table.search(
+                self.table.search(
                     vector_column_name=self.vector_column_name, query_type="hybrid"
                 )
                 .vector(query.query_embedding)
                 .text(query.query_str)
             )
         else:
-            lance_query = self._table.search(
+            lance_query = self.table.search(
                 query=_query,
                 vector_column_name=self.vector_column_name,
             )

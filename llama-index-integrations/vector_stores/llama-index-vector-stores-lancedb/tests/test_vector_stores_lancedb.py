@@ -1,7 +1,8 @@
-from typing import Type
+from typing import Any
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 from llama_index.vector_stores.lancedb import LanceDBVectorStore
 from llama_index.core import VectorStoreIndex
+from llama_index.vector_stores.lancedb.base import TableNotFoundError, VectorStoreQuery
 import pytest
 import pytest
 from llama_index.core import VectorStoreIndex
@@ -97,39 +98,35 @@ def test_class():
     reason="Need to install lancedb locally to run this test.",
 )
 @pytest.mark.parametrize("mode", ["overwrite", "create"])
-@pytest.mark.parametrize("table_schema", [None, TestModel])
-def test_vector_store_init_create_pass(
-    tmp_path: Path, mode: str, table_schema: Type[lancedb.table.LanceModel]
-) -> None:
+def test_vector_store_init_create_pass(tmp_path: Path, mode: str) -> None:
     # given
     # when
-    vector_store = LanceDBVectorStore(
-        uri=str(tmp_path / "test_lancedb"), mode=mode, table_schema=table_schema
-    )
+    vector_store = LanceDBVectorStore(uri=str(tmp_path / "test_lancedb"), mode=mode)
 
     # then
-    if table_schema:
-        assert isinstance(vector_store._table, lancedb.db.LanceTable)
-    else:
-        assert vector_store._table is None
+    assert vector_store._table is None
+    with pytest.raises(TableNotFoundError):
+        vector_store.table
 
 
 @pytest.mark.skipif(
     deps is None,
     reason="Need to install lancedb locally to run this test.",
 )
-def test_vector_store_init_append_pass(tmp_path: Path) -> None:
+@pytest.mark.parametrize("mode", ["overwrite", "create", "append"])
+def test_vector_store_init_table_exists(tmp_path: Path, mode: str) -> None:
     # given
     connection = lancedb.connect(str(tmp_path / "test_lancedb"))
     connection.create_table(name="test_table", schema=TestModel)
 
     # when
     vector_store = LanceDBVectorStore(
-        mode="append", table_name="test_table", connection=connection
+        mode=mode, table_name="test_table", connection=connection
     )
 
     # then
     assert isinstance(vector_store._table, lancedb.db.LanceTable)
+    assert isinstance(vector_store.table, lancedb.db.LanceTable)
 
 
 @pytest.mark.skipif(
@@ -141,7 +138,7 @@ def test_vector_store_init_append_error(tmp_path: Path) -> None:
     connection = lancedb.connect(str(tmp_path / "test_lancedb"))
 
     # when & then
-    with pytest.raises(ValueError):
+    with pytest.raises(TableNotFoundError):
         LanceDBVectorStore(
             mode="append", table_name="test_table", connection=connection
         )
@@ -187,7 +184,7 @@ def test_table_exists(tmp_path: Path) -> None:
     deps is None,
     reason="Need to install lancedb locally to run this test.",
 )
-def test_create_index(tmp_path: Path, text_node_list: list[TextNode]) -> None:
+def test_create_index_pass(tmp_path: Path, text_node_list: list[TextNode]) -> None:
     # given
     vector_store = LanceDBVectorStore(
         uri=str(tmp_path / "test_lancedb"), mode="overwrite"
@@ -285,7 +282,6 @@ def test_get_nodes(tmp_path: Path, text_node_list: list[TextNode]) -> None:
 def test_vector_query(
     tmp_path: Path, text_node_list: list[TextNode], embed_model
 ) -> None:
-    print(text_node_list)
     # given
     vector_store = LanceDBVectorStore(
         uri=str(tmp_path / "test_lancedb"), mode="overwrite"
@@ -346,3 +342,30 @@ def test_hybrid_query(
     # then
     assert len(response) == 3
     assert response[0].id_ == "11111111-1111-1111-1111-111111111111"
+
+
+@pytest.mark.skipif(
+    deps is None,
+    reason="Need to install lancedb locally to run this test.",
+)
+@pytest.mark.parametrize(
+    ("method", "kwargs"),
+    [
+        ("create_index", {}),
+        ("delete", {"ref_doc_id": "test-0"}),
+        ("delete_nodes", {"node_ids": []}),
+        ("get_nodes", {}),
+        ("query", {"query": VectorStoreQuery()}),
+    ],
+)
+def test_method_table_error(
+    tmp_path: Path, method: str, kwargs: dict[str, Any]
+) -> None:
+    # given
+    vector_store = LanceDBVectorStore(
+        uri=str(tmp_path / "test_lancedb"), mode="overwrite"
+    )
+
+    # when
+    with pytest.raises(TableNotFoundError):
+        getattr(vector_store, method)(**kwargs)
