@@ -26,10 +26,10 @@ dev = [
 
 [project]
 name = "llama-index-packs-raptor"
-version = "0.3.4"
+version = "0.3.5"
 description = "llama-index packs raptor integration"
 authors = [{name = "Logan Markewich", email = "logan@llamaindex.ai"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 keywords = [
@@ -42,7 +42,6 @@ dependencies = [
     "umap-learn>=0.5.5",
     "scikit-learn",
     "llama-index-core>=0.12.0,<0.13",
-    "numpy<=2.2",
 ]
 
 [tool.codespell]
