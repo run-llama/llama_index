@@ -587,6 +587,38 @@ def test_bedrock_converse_integration_chat_with_empty_user_message(
     assert len(response.message.content) > 0
 
 
+@needs_aws_creds
+@pytest.mark.asyncio
+async def test_bedrock_converse_integration_astream_chat_with_empty_assistant_message(
+    bedrock_converse_integration,
+):
+    """Test astream_chat integration with empty assistant message."""
+    llm = bedrock_converse_integration
+
+    # Create a conversation with various empty and valid content scenarios
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
+        ChatMessage(role=MessageRole.USER, content="Hello"),
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                TextBlock(text=""),
+                TextBlock(text="Previous response"),
+            ],
+        ),
+        ChatMessage(role=MessageRole.USER, content="What is 2+2?"),
+    ]
+
+    response_stream = await llm.astream_chat(messages)
+    chunks = []
+    async for response in response_stream:
+        chunks.append(response.delta)
+
+    assert len(chunks) > 0
+    combined = "".join(chunks)
+    assert len(combined) > 0
+
+
 # Define a tool function that returns no value
 def log_activity(activity: str) -> None:
     """
@@ -673,47 +705,3 @@ async def test_bedrock_converse_agent_with_void_tool_and_continued_conversation(
     assert hasattr(response3, "response")
     response3_text = str(response3.response)
     assert len(response3_text) > 0
-
-
-@needs_aws_creds
-@pytest.mark.asyncio
-async def test_astream_chat_filters_empty_content_blocks(bedrock_converse_integration):
-    """
-    Integration test to verify empty content block handling with actual Bedrock API.
-
-    Tests that:
-    1. Empty system messages are handled correctly
-    2. Empty content blocks are filtered before API call
-    3. The API still returns valid responses
-    4. The response streaming works correctly.
-    """
-    llm = bedrock_converse_integration
-
-    # Create a conversation with various empty and valid content scenarios
-    messages = [
-        # Empty system message - should be handled gracefully
-        ChatMessage(role=MessageRole.SYSTEM, content=""),
-        # Regular user message
-        ChatMessage(role=MessageRole.USER, content="Hello"),
-        # Assistant message with mixed content
-        ChatMessage(
-            role=MessageRole.ASSISTANT,
-            blocks=[
-                TextBlock(text=""),  # Empty block
-                TextBlock(text="Previous response"),  # Valid block
-            ],
-        ),
-        # User message that should get a predictable response
-        ChatMessage(role=MessageRole.USER, content="What is 2+2?"),
-    ]
-
-    # Get streaming response from actual API
-    response_stream = await llm.astream_chat(messages)
-    chunks = []
-    async for response in response_stream:
-        chunks.append(response.delta)
-
-    # Verify the response
-    assert len(chunks) > 0
-    combined = "".join(chunks)
-    assert len(combined) > 0

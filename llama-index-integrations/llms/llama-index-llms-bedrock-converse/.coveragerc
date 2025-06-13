@@ -1,0 +1,5 @@
+[run]
+omit =
+    */tests/*
+    */test/*
+    test_*
