@@ -2,76 +2,117 @@ import base64
 import os
 import threading
 
-from typing import List, Optional, Union, Callable
+from typing import List, Optional
 from .types import (
-    ConversationStartEvent,
     ConversationInputEvent,
     ConversationDeltaEvent,
     ConversationDoneEvent,
-    ConversationBaseEvent,
-    ConversationResponse,
+    ConversationSessionUpdate,
+    ConversationSession,
+    ConversationTool,
+    ToolParameters,
 )
-from .audio_interface import ConversationAudioInterface
-from .websocket import ConversationWebSocket
+from .audio_interface import OpenAIVoiceAgentInterface
+from .websocket import OpenAIVoiceAgentWebsocket
 from llama_index.core.llms import ChatMessage, MessageRole, AudioBlock, TextBlock
+from llama_index.core.tools import BaseTool
+from llama_index.core.voice_agents import (
+    BaseVoiceAgent,
+    BaseVoiceAgentEvent,
+    BaseVoiceAgentInterface,
+    BaseVoiceAgentWebsocket,
+)
+
+DEFAULT_WS_URL = "wss://api.openai.com/v1/realtime"
+DEFALT_MODEL = "gpt-4o-realtime-preview-2024-10-01"
 
 
-class OpenAIConversation:
+class OpenAIVoiceAgent(BaseVoiceAgent):
     """
     Interface for the OpenAI Realtime Conversation integration with LlamaIndex.
 
     Attributes:
-        api_key (Optional[str]): the OpenAI API key. Defaults to the environmental variable OPENAI_API_KEY if the value is None.
-        ws_url (str): the URL for the OpenAI Realtime Conversation websocket. Defaults to: 'wss://api.openai.com/v1/realtime'
-        model (str): the conversational model. Defaults to: 'gpt-4o-realtime-preview-2024-10-01'
+        ws (Optional[BAseVoiceAgentWebsocket]): A pre-defined websocket to use. Defaults to None. In case of doubt, it is advised to leave this argument as None and pass ws_url and model.
+        interface (Optional[BaseVoiceAgentInterface]): Audio I/O interface. Defaults to None. In case of doubt, it is advised to leave this argument as None.
+        api_key (Optional[str]): The OpenAI API key. Defaults to the environmental variable OPENAI_API_KEY if the value is None.
+        ws_url (str): The URL for the OpenAI Realtime Conversation websocket. Defaults to: 'wss://api.openai.com/v1/realtime'
+        model (str): The conversational model. Defaults to: 'gpt-4o-realtime-preview-2024-10-01'
+        tools (List[BaseTool]): Tools to equip the agent with.
 
     """
 
     def __init__(
         self,
+        ws: Optional[BaseVoiceAgentWebsocket] = None,
+        interface: Optional[BaseVoiceAgentInterface] = None,
         api_key: Optional[str] = None,
-        ws_url: str = "wss://api.openai.com/v1/realtime",
-        model: str = "gpt-4o-realtime-preview-2024-10-01",
+        ws_url: Optional[str] = None,
+        model: Optional[str] = None,
+        tools: Optional[List[BaseTool]] = None,
     ) -> None:
-        url = ws_url + "?model=" + model
-        openai_api_key = os.getenv("OPENAI_API_KEY", None) or api_key
-        self.socket = ConversationWebSocket(
-            openai_api_key, url, on_msg=self.handle_message
+        super().__init__(
+            ws=ws, interface=interface, ws_url=ws_url, api_key=api_key, tools=tools
         )
-        self.audio_io = ConversationAudioInterface(
-            on_audio_callback=self.send_audio_to_socket
-        )
+        if not self.ws:
+            if not model:
+                model = DEFALT_MODEL
+            if not self.ws_url:
+                self.ws_url = DEFAULT_WS_URL
+            url = self.ws_url + "?model=" + model
+            openai_api_key = os.getenv("OPENAI_API_KEY", None) or self.api_key
+            if not openai_api_key:
+                raise ValueError(
+                    "The OPENAI_API_KEY is neither passed from the function arguments nor from environmental variables"
+                )
+            self.ws: OpenAIVoiceAgentWebsocket = OpenAIVoiceAgentWebsocket(
+                uri=url, api_key=openai_api_key, on_msg=self.handle_message
+            )
+        if not self.interface:
+            self.interface: OpenAIVoiceAgentInterface = OpenAIVoiceAgentInterface(
+                on_audio_callback=self.send
+            )
         self.recv_thread: Optional[threading.Thread] = None
-        self._all_events: List[ConversationBaseEvent] = []
-        self._all_messages: List[ChatMessage] = []
 
-    def start(self, instructions: str = "Please assist the user.") -> None:
+    async def start(self, *args, **kwargs) -> None:
         """
         Start the conversation and all related processes.
 
         Args:
-            instructions (str): The system instructions for the assistant to start the conversation.
+            **kwargs (Any): You can pass all the keyword arguments related to initializing a session, except for `tools`, which is inferred from the `tools` attribute of the class. Find a reference for these arguments and their type [on OpenAI official documentation](https://platform.openai.com/docs/api-reference/realtime-client-events/session/update).
 
         """
-        self.socket.connect()
+        await self.ws.connect()
 
-        start_event = ConversationStartEvent(
-            type_t="response.create",
-            response=ConversationResponse(instructions=instructions),
+        session = ConversationSession.model_validate(kwargs)
+        if self.tools is not None:
+            openai_conv_tools: List[ConversationTool] = []
+            for tool in self.tools:
+                params_dict = tool.metadata.get_parameters_dict()
+                tool_params = ToolParameters.model_validate(params_dict)
+                conv_tool = ConversationTool(
+                    name=tool.metadata.get_name(),
+                    description=tool.metadata.description,
+                    parameters=tool_params,
+                )
+                openai_conv_tools.append(conv_tool)
+            session.tools = openai_conv_tools
+        update_session_event = ConversationSessionUpdate(
+            type_t="session.update",
+            session=session,
         )
-        self._all_events.append(start_event)
-        self._all_messages.append(ChatMessage(role="system", content=instructions))
+        self._events.append(update_session_event)
+        self._messages.append(ChatMessage(role="system", content=session.instructions))
         # Send initial request to start the conversation
-        self.socket.send(start_event.model_dump(by_alias=True))
+        await self.ws.send(update_session_event.model_dump(by_alias=True))
 
         # Start processing microphone audio
-        self.audio_thread = threading.Thread(target=self.audio_io.process_mic_audio)
+        self.audio_thread = threading.Thread(target=self.interface.output)
         self.audio_thread.start()
 
         # Start audio streams (mic and speaker)
-        self.audio_io.start_streams()
+        self.interface.start()
 
-    def send_audio_to_socket(self, mic_chunk: bytes) -> None:
+    async def send(self, audio: bytes, *args, **kwargs) -> None:
         """
         Callback function to send audio data to the OpenAI Conversation Websocket.
 
@@ -79,17 +120,17 @@ class OpenAIConversation:
             mic_chunk (bytes): the incoming audio stream from the user's input device.
 
         """
-        encoded_chunk = base64.b64encode(mic_chunk).decode("utf-8")
+        encoded_chunk = base64.b64encode(audio).decode("utf-8")
         audio_event = ConversationInputEvent(
             type_t="input_audio_buffer.append", audio=encoded_chunk
         )
-        self._all_events.append(audio_event)
-        self._all_messages.append(
-            ChatMessage(role=MessageRole.USER, blocks=[AudioBlock(audio=mic_chunk)])
+        self._events.append(audio_event)
+        self._messages.append(
+            ChatMessage(role=MessageRole.USER, blocks=[AudioBlock(audio=audio)])
         )
-        self.socket.send(audio_event.model_dump(by_alias=True))
+        await self.ws.send(audio_event.model_dump(by_alias=True))
 
-    def handle_message(self, message: dict) -> None:
+    async def handle_message(self, message: dict, *args, **kwargs) -> None:
         """
         Handle incoming message from OpenAI Conversation Websocket.
 
@@ -99,20 +140,18 @@ class OpenAIConversation:
         """
         message["type_t"] = message.pop("type")
         if message["type_t"] == "response.audio.delta":
-            event: ConversationBaseEvent = ConversationDeltaEvent.model_validate(
-                message
-            )
+            event: BaseVoiceAgentEvent = ConversationDeltaEvent.model_validate(message)
             audio_content = base64.b64decode(message["delta"])
-            self._all_messages.append(
+            self._messages.append(
                 ChatMessage(
                     role=MessageRole.ASSISTANT, blocks=[AudioBlock(audio=audio_content)]
                 )
             )
-            self.audio_io.receive_audio(audio_content)
+            self.interface.receive(audio_content)
 
         elif message["type_t"] == "response.text.delta":
             event = ConversationDeltaEvent.model_validate(message)
-            self._all_messages.append(
+            self._messages.append(
                 ChatMessage(
                     role=MessageRole.ASSISTANT, blocks=[TextBlock(text=event.delta)]
                 )
@@ -120,7 +159,7 @@ class OpenAIConversation:
 
         elif message["type_t"] == "response.audio_transcript.delta":
             event = ConversationDeltaEvent.model_validate(message)
-            self._all_messages.append(
+            self._messages.append(
                 ChatMessage(
                     role=MessageRole.ASSISTANT, blocks=[TextBlock(text=event.delta)]
                 )
@@ -136,85 +175,19 @@ class OpenAIConversation:
             event = ConversationDoneEvent.model_validate(message)
         else:
             return
-        self._all_events.append(event)
+        self._events.append(event)
 
-    def stop(self) -> None:
+    async def stop(self) -> None:
         """
         Stop the conversation and close all the related processes.
         """
         # Signal threads to stop
-        self.audio_io._stop_event.set()
-        self.socket.kill()
+        self.interface._stop_event.set()
+        await self.ws.close()
 
         # Stop audio streams
-        self.audio_io.stop_streams()
+        self.interface.stop()
 
         # Join threads to ensure they exit cleanly
         if self.audio_thread:
             self.audio_thread.join()
-
-    def export_events(
-        self,
-        as_dict: bool = False,
-        limit: Optional[int] = None,
-        filter: Optional[
-            Callable[
-                [Union[List[ConversationBaseEvent], List[dict]]],
-                Union[List[ConversationBaseEvent], List[dict]],
-            ]
-        ] = None,
-    ) -> Union[List[ConversationBaseEvent], List[dict]]:
-        """
-        Export all events occurred during the conversation.
-
-        Args:
-            as_dict (bool): Export all the events not as Pydantic BaseModels, but as their serialized, dictionary representation. Defaults to False.
-            limit (Optional[int]): Maximum number of events to export.
-            filter (Optional[Callable[[Union[List[ConversationBaseEvent], List[dict]]], Union[List[ConversationBaseEvent], List[dict]]]]): Function to return a custom list of events based on specified features.
-
-        """
-        if as_dict:
-            all_events: List[dict] = [
-                event.model_dump(by_alias=True) for event in self._all_events
-            ]
-            if limit:
-                if limit > len(all_events):
-                    return all_events
-                else:
-                    all_events = all_events[:limit]
-            if filter:
-                return filter(all_events)
-            return all_events
-        else:
-            events = self._all_events
-            if limit:
-                if limit > len(events):
-                    return events
-                else:
-                    events = events[:limit]
-            if filter:
-                return filter(events)
-            return events
-
-    def export_messages(
-        self,
-        limit: Optional[int] = None,
-        filter: Optional[Callable[[List[ChatMessage]], List[ChatMessage]]] = None,
-    ) -> List[ChatMessage]:
-        """
-        Export all messages recorded during the conversation.
-
-        Args:
-            limit (Optional[int]): Maximum number of messages to export. Defaults to None.
-            filter (Optional[Callable[[List[ChatMessage]], List[ChatMessage]]]): Function to return a custom list of messages based on specified features.
-
-        """
-        messages = self._all_messages
-        if limit:
-            if limit > len(messages):
-                pass
-            else:
-                messages = messages[:limit]
-        if filter:
-            return filter(messages)
-        return messages

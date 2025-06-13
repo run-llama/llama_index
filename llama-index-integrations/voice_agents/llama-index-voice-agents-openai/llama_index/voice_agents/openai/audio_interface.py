@@ -5,6 +5,7 @@ import logging
 import threading
 
 from typing import Callable, Optional, Any, Tuple, Union
+from llama_index.core.voice_agents import BaseVoiceAgentInterface
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
@@ -16,7 +17,7 @@ FORMAT = pyaudio.paInt16
 REENGAGE_DELAY_MS = 500
 
 
-class ConversationAudioInterface:
+class OpenAIVoiceAgentInterface(BaseVoiceAgentInterface):
     def __init__(
         self,
         chunk_size: int = CHUNK_SIZE,
@@ -35,7 +36,7 @@ class ConversationAudioInterface:
         self.p = pyaudio.PyAudio()
         self.on_audio_callback = on_audio_callback  # Callback for audio data
 
-    def _mic_callback(
+    def _microphone_callback(
         self, in_data: Any, frame_count: int, time_info: Any, status: Any
     ) -> Tuple[None, Any]:
         """Microphone callback that queues audio chunks."""
@@ -48,7 +49,7 @@ class ConversationAudioInterface:
                 self.mic_active = False
         return (None, pyaudio.paContinue)
 
-    def _spkr_callback(
+    def _speaker_callback(
         self, in_data: Any, frame_count: int, time_info: Any, status: Any
     ) -> Tuple[bytes, Any]:
         """Speaker callback that plays audio."""
@@ -67,14 +68,14 @@ class ConversationAudioInterface:
 
         return (audio_chunk, pyaudio.paContinue)
 
-    def start_streams(self) -> None:
+    def start(self) -> None:
         """Start microphone and speaker streams."""
         self.mic_stream = self.p.open(
             format=self.format,
             channels=1,
             rate=self.rate,
             input=True,
-            stream_callback=self._mic_callback,
+            stream_callback=self._microphone_callback,
             frames_per_buffer=self.chunk_size,
         )
         self.spkr_stream = self.p.open(
@@ -82,13 +83,13 @@ class ConversationAudioInterface:
             channels=1,
             rate=self.rate,
             output=True,
-            stream_callback=self._spkr_callback,
+            stream_callback=self._speaker_callback,
             frames_per_buffer=self.chunk_size,
         )
         self.mic_stream.start_stream()
         self.spkr_stream.start_stream()
 
-    def stop_streams(self) -> None:
+    def stop(self) -> None:
         """Stop and close audio streams."""
         self.mic_stream.stop_stream()
         self.mic_stream.close()
@@ -96,18 +97,23 @@ class ConversationAudioInterface:
         self.spkr_stream.close()
         self.p.terminate()
 
-    def process_mic_audio(self) -> None:
+    def interrupt(self) -> None:
+        """Interrupts active input/output audio streaming."""
+        if self.spkr_stream.is_active():
+            self.spkr_stream.stop_stream()
+        if self.mic_active:
+            self.mic_stream.stop_stream()
+
+    def output(self) -> None:
         """Process microphone audio and call back when new audio is ready."""
         while not self._stop_event.is_set():
             if not self.mic_queue.empty():
                 mic_chunk = self.mic_queue.get()
                 if self.on_audio_callback:
-                    self.on_audio_callback(
-                        mic_chunk
-                    )  # Pass the audio chunk to the callback
+                    self.on_audio_callback(mic_chunk)
             else:
-                time.sleep(0.05)  # Avoid tight loop when no audio is available
+                time.sleep(0.05)
 
-    def receive_audio(self, audio_chunk: bytes) -> None:
+    def receive(self, data: bytes, *args, **kwargs) -> None:
         """Appends audio data to the buffer for playback."""
-        self.audio_buffer.extend(audio_chunk)
+        self.audio_buffer.extend(data)

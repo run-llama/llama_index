@@ -1,5 +1,5 @@
-from llama_index.voice_agents.openai.base import OpenAIConversation
-from llama_index.voice_agents.openai.websocket import ConversationWebSocket
-from llama_index.voice_agents.openai.audio_interface import ConversationAudioInterface
+from llama_index.voice_agents.openai.base import OpenAIVoiceAgent
+from llama_index.voice_agents.openai.websocket import OpenAIVoiceAgentWebsocket
+from llama_index.voice_agents.openai.audio_interface import OpenAIVoiceAgentInterface
 
-__all__ = ["OpenAIConversation", "ConversationWebSocket", "ConversationAudioInterface"]
+__all__ = ["OpenAIVoiceAgent", "OpenAIVoiceAgentWebsocket", "OpenAIVoiceAgentInterface"]

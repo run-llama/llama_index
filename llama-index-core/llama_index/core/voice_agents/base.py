@@ -24,12 +24,14 @@ class BaseVoiceAgent(ABC):
 
     def __init__(
         self,
-        ws: BaseVoiceAgentWebsocket,
-        interface: BaseVoiceAgentInterface,
+        ws: Optional[BaseVoiceAgentWebsocket] = None,
+        interface: Optional[BaseVoiceAgentInterface] = None,
+        ws_url: Optional[str] = None,
         api_key: Optional[str] = None,
         tools: Optional[List[BaseTool]] = None,
     ):
         self.ws = ws
+        self.ws_url = ws_url
         self.interface = interface
         self.api_key = api_key
         self.tools = tools
@@ -79,6 +81,19 @@ class BaseVoiceAgent(ABC):
 
         Returns:
             out (Any): This function can return any output.
+
+        """
+        ...
+
+    @abstractmethod
+    async def interrupt(self) -> None:
+        """
+        Interrupt the input/output audio flow.
+
+        Args:
+            None
+        Returns:
+            out (None): This function does not return anything.
 
         """
         ...

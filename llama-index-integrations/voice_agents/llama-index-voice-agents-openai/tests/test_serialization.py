@@ -1,22 +1,46 @@
+import pytest
+
 from llama_index.voice_agents.openai.types import (
     ConversationDeltaEvent,
     ConversationDoneEvent,
-    ConversationResponse,
-    ConversationStartEvent,
+    ConversationSession,
+    ConversationSessionUpdate,
 )
 
 
-def test_serialization() -> None:
-    start_event = ConversationStartEvent(
-        type_t="response.create",
-        response=ConversationResponse(instructions="Some instructions"),
+@pytest.fixture()
+def session_json() -> dict:
+    return {
+        "modalities": ["text", "audio"],
+        "instructions": "You are a helpful assistant",
+        "voice": "sage",
+        "input_audio_format": "pcm16",
+        "output_audio_format": "pcm16",
+        "input_audio_transcription": {"model": "whisper-1"},
+        "turn_detection": {
+            "type": "server_vad",
+            "threshold": 0.5,
+            "prefix_padding_ms": 300,
+            "silence_duration_ms": 500,
+            "create_response": True,
+        },
+        "tools": [],
+        "tool_choice": "auto",
+        "temperature": 0.5,
+        "max_response_output_tokens": "inf",
+        "speed": 1.1,
+        "tracing": "auto",
+    }
+
+
+def test_serialization(session_json: dict) -> None:
+    start_event = ConversationSessionUpdate(
+        type_t="session.update",
+        session=ConversationSession(),
     )
     assert start_event.model_dump(by_alias=True) == {
-        "type": "response.create",
-        "response": {
-            "modalities": ["text", "audio"],
-            "instructions": "Some instructions",
-        },
+        "type": "session.update",
+        "session": session_json,
     }
 
 

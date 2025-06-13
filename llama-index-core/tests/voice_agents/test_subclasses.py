@@ -4,7 +4,7 @@ from llama_index.core.voice_agents import (
     BaseVoiceAgent,
     BaseVoiceAgentInterface,
     BaseVoiceAgentWebsocket,
-    ConversationBaseEvent,
+    BaseVoiceAgentEvent,
 )
 from llama_index.core.llms import ChatMessage
 
@@ -33,7 +33,7 @@ class MockVoiceAgentInterface(BaseVoiceAgentInterface):
     def _speaker_callback(self) -> None:
         self.name += "."
 
-    def _mic_callback(self) -> None:
+    def _microphone_callback(self) -> None:
         self.name += ","
 
     def start(self) -> None:
@@ -102,7 +102,7 @@ class MockVoiceAgentWebsocket(BaseVoiceAgentWebsocket):
     ) -> None:
         await self.ws.send(message=data)
 
-    async def kill(self) -> Any:
+    async def close(self) -> Any:
         await self.ws.close()
 
 
@@ -124,6 +124,9 @@ class MockVoiceAgent(BaseVoiceAgent):
 
     async def send(self, audio: Any, *args, **kwargs) -> None:
         self._sent.append(audio)
+
+    async def interrupt(self) -> None:
+        pass
 
     async def handle_message(self, message: dict) -> Any:
         self._handled.append(message)
@@ -158,7 +161,7 @@ def mock_agent() -> BaseVoiceAgent:
 def test_interface_subclassing(mock_interface: MockVoiceAgentInterface):
     mock_interface.start()
     mock_interface._speaker_callback()
-    mock_interface._mic_callback()
+    mock_interface._microphone_callback()
     mock_interface.receive(data=b"hello world!")
     mock_interface.interrupt()
     mock_interface.stop()
@@ -174,7 +177,7 @@ async def test_websocket_subclassing(mock_websocket: MockVoiceAgentWebsocket):
     await mock_websocket.send(data="hello world")
     await mock_websocket.send(data=b"this is a test")
     assert mock_websocket.ws._sent == ["hello world", b"this is a test"]
-    await mock_websocket.kill()
+    await mock_websocket.close()
     assert mock_websocket.ws._is_closed
 
 
@@ -188,25 +191,25 @@ async def test_agent_subclassing(mock_agent: MockVoiceAgent):
     await mock_agent.handle_message(message={"type": "text", "content": "content"})
     assert mock_agent._handled == [{"type": "text", "content": "content"}]
     mock_agent._events = [
-        ConversationBaseEvent(type_t="send"),
-        ConversationBaseEvent(type_t="text"),
+        BaseVoiceAgentEvent(type_t="send"),
+        BaseVoiceAgentEvent(type_t="text"),
     ]
     mock_agent._messages = [
         ChatMessage(role="user", content="Hello world"),
         ChatMessage(role="assistant", content="content"),
     ]
 
-    def filter_events(events: List[ConversationBaseEvent]):
+    def filter_events(events: List[BaseVoiceAgentEvent]):
         return [event for event in events if event.type_t == "send"]
 
     assert mock_agent.export_events() == [
-        ConversationBaseEvent(type_t="send"),
-        ConversationBaseEvent(type_t="text"),
+        BaseVoiceAgentEvent(type_t="send"),
+        BaseVoiceAgentEvent(type_t="text"),
     ]
     assert mock_agent.export_events(filter=filter_events) == [
-        ConversationBaseEvent(type_t="send")
+        BaseVoiceAgentEvent(type_t="send")
     ]
-    assert mock_agent.export_events(limit=1) == [ConversationBaseEvent(type_t="send")]
+    assert mock_agent.export_events(limit=1) == [BaseVoiceAgentEvent(type_t="send")]
 
     def filter_messages(messages: List[ChatMessage]):
         return [message for message in messages if message.role == "assistant"]
