@@ -43,6 +43,13 @@ class FireCrawlWebReader(BasePydanticReader):
         params: Optional[dict] = None,
     ) -> None:
         """Initialize with parameters."""
+        # Initialize params and always set integration to llamaindex
+        if params is None:
+            params = {}
+        if "integration" not in params:
+            params["integration"] = "llamaindex"
+
+        """Initialize with parameters."""
         super().__init__(api_key=api_key, api_url=api_url, mode=mode, params=params)
         try:
             from firecrawl import FirecrawlApp
@@ -89,7 +96,7 @@ class FireCrawlWebReader(BasePydanticReader):
             # [SCRAPE] params: https://docs.firecrawl.dev/api-reference/endpoint/scrape
             if url is None:
                 raise ValueError("URL must be provided for scrape mode.")
-            firecrawl_docs = self.firecrawl.scrape_url(url, **self.params)
+            firecrawl_docs = self.firecrawl.scrape_url(url, self.params)
             documents.append(
                 Document(
                     text=firecrawl_docs.get("markdown", ""),
@@ -120,7 +127,7 @@ class FireCrawlWebReader(BasePydanticReader):
                 del search_params["query"]
 
             # Get search results
-            search_response = self.firecrawl.search(query, **search_params)
+            search_response = self.firecrawl.search(query, search_params)
 
             # Handle the search response format
             if isinstance(search_response, dict):
@@ -196,11 +203,8 @@ class FireCrawlWebReader(BasePydanticReader):
             if "prompt" not in extract_params:
                 raise ValueError("A 'prompt' parameter is required for extract mode.")
 
-            # Prepare the payload according to the new API structure
-            payload = {"prompt": extract_params.pop("prompt")}
-
-            # Call the extract method with the urls and params
-            extract_response = self.firecrawl.extract(urls=urls, **payload)
+            # Call the extract method with urls and params
+            extract_response = self.firecrawl.extract(urls, extract_params)
 
             # Handle the extract response format
             if isinstance(extract_response, dict):
