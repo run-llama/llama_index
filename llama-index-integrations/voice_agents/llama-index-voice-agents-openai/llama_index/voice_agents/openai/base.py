@@ -191,3 +191,9 @@ class OpenAIVoiceAgent(BaseVoiceAgent):
         # Join threads to ensure they exit cleanly
         if self.audio_thread:
             self.audio_thread.join()
+
+    async def interrupt(self) -> None:
+        """
+        Interrupts the input/output audio streaming.
+        """
+        self.interface.interrupt()
