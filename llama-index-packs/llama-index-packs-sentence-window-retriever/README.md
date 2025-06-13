@@ -47,7 +47,7 @@ The `run()` function is a light wrapper around `query_engine.query()`.
 
 ```python
 response = sentence_window_retriever_pack.run(
-    "Tell me a bout a Music celebritiy."
+    "Tell me a bout a Music celebrity."
 )
 ```
 
