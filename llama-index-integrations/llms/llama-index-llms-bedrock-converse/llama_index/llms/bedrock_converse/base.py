@@ -340,10 +340,9 @@ class BedrockConverse(FunctionCallingLLM):
                 if tool_usage.get("input"):
                     input = tool_usage["input"]
                     try:
-                        json.loads(input)
                         tool_usage["input"] = json.loads(input)
                         tool_calls.append(tool_usage)
-                    except json.JSONDecodeError:
+                    except (json.JSONDecodeError, TypeError):
                         pass
             if tool_result := content_block.get("toolResult", None):
                 for tool_result_content in tool_result["content"]:
