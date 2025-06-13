@@ -320,7 +320,32 @@ def messages_to_converse_messages(
                 }
             )
 
-    return __merge_common_role_msgs(converse_messages), system_prompt.strip()
+    merged_messages = __merge_common_role_msgs(converse_messages)
+
+    # Filter out messages with empty content blocks to prevent Bedrock API validation errors
+    # This is necessary because Bedrock API rejects requests with empty text fields
+    filtered_converse_messages = []
+    for msg in merged_messages:
+        if "content" in msg and isinstance(msg["content"], list):
+            # Process each content block in the message
+            valid_content = []
+            for content_block in msg["content"]:
+                # Keep content blocks that have non-empty text
+                if "text" in content_block and content_block["text"].strip():
+                    valid_content.append(content_block)
+                # Preserve non-text content blocks (like images) regardless of text content
+                elif "text" not in content_block:
+                    valid_content.append(content_block)
+
+            # Only include messages that have at least one valid content block
+            if valid_content:
+                msg["content"] = valid_content
+                filtered_converse_messages.append(msg)
+        else:
+            # Keep messages without content list structure (e.g., simple text messages)
+            filtered_converse_messages.append(msg)
+
+    return filtered_converse_messages, system_prompt.strip()
 
 
 def tools_to_converse_tools(

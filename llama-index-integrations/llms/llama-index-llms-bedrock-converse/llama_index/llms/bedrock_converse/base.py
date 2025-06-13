@@ -563,33 +563,6 @@ class BedrockConverse(FunctionCallingLLM):
         # Convert Llama Index messages to AWS Bedrock Converse messages
         converse_messages, system_prompt = messages_to_converse_messages(messages)
 
-        # Filter out messages with empty content blocks to prevent Bedrock API validation errors
-        # This is necessary because Bedrock API rejects requests with empty text fields
-        filtered_converse_messages = []
-        for msg in converse_messages:
-            if "content" in msg and isinstance(msg["content"], list):
-                # Process each content block in the message
-                valid_content = []
-                for content_block in msg["content"]:
-                    # Keep content blocks that have non-empty text
-                    if "text" in content_block and content_block["text"].strip():
-                        valid_content.append(content_block)
-                    # Preserve non-text content blocks (like images) regardless of text content
-                    elif "text" not in content_block:
-                        valid_content.append(content_block)
-
-                # Only include messages that have at least one valid content block
-                if valid_content:
-                    msg["content"] = valid_content
-                    filtered_converse_messages.append(msg)
-            else:
-                # Keep messages without content list structure (e.g., simple text messages)
-                filtered_converse_messages.append(msg)
-
-        converse_messages = filtered_converse_messages
-
-        if len(system_prompt) > 0 or self.system_prompt is None:
-            self.system_prompt = system_prompt
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         # invoke LLM in AWS Bedrock Converse with retry
@@ -597,12 +570,13 @@ class BedrockConverse(FunctionCallingLLM):
             session=self._asession,
             config=self._config,
             messages=converse_messages,
-            system_prompt=self.system_prompt,
+            system_prompt=system_prompt,
             max_retries=self.max_retries,
             stream=True,
             guardrail_identifier=self.guardrail_identifier,
             guardrail_version=self.guardrail_version,
             trace=self.trace,
+            boto_client_kwargs=self._boto_client_kwargs,
             **all_kwargs,
         )
 
