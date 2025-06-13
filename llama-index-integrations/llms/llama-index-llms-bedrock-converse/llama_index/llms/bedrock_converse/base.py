@@ -560,34 +560,30 @@ class BedrockConverse(FunctionCallingLLM):
     async def astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        # convert Llama Index messages to AWS Bedrock Converse messages
-        converse_messages, system_prompt = messages_to_converse_messages(
-            messages
-        )
+        # Convert Llama Index messages to AWS Bedrock Converse messages
+        converse_messages, system_prompt = messages_to_converse_messages(messages)
 
-        # Filter out any message with empty content blocks to prevent validation errors
+        # Filter out messages with empty content blocks to prevent Bedrock API validation errors
+        # This is necessary because Bedrock API rejects requests with empty text fields
         filtered_converse_messages = []
         for msg in converse_messages:
             if "content" in msg and isinstance(msg["content"], list):
-                # Ensure each content block has non-empty text field
+                # Process each content block in the message
                 valid_content = []
                 for content_block in msg["content"]:
-                    if (
-                        "text" in content_block
-                        and content_block["text"].strip()
-                    ):
+                    # Keep content blocks that have non-empty text
+                    if "text" in content_block and content_block["text"].strip():
                         valid_content.append(content_block)
-                    elif (
-                        "text" not in content_block
-                    ):  # Keep non-text content blocks (e.g., images)
+                    # Preserve non-text content blocks (like images) regardless of text content
+                    elif "text" not in content_block:
                         valid_content.append(content_block)
 
-                if (
-                    valid_content
-                ):  # Only add message if it has valid content blocks
+                # Only include messages that have at least one valid content block
+                if valid_content:
                     msg["content"] = valid_content
                     filtered_converse_messages.append(msg)
-            else:  # Keep messages without content list structure
+            else:
+                # Keep messages without content list structure (e.g., simple text messages)
                 filtered_converse_messages.append(msg)
 
         converse_messages = filtered_converse_messages
