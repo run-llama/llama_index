@@ -567,7 +567,7 @@ def test_messages_to_openai_responses_messages():
     ]
     openai_messages = to_openai_message_dicts(messages, is_responses_api=True)
     assert len(openai_messages) == 2
-    assert openai_messages[0]["role"] == "system"
+    assert openai_messages[0]["role"] == "developer"
     assert openai_messages[0]["content"] == "You are a helpful assistant."
     assert openai_messages[1]["role"] == "user"
     assert openai_messages[1]["content"] == "What is the capital of France?"
