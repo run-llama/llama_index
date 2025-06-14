@@ -1,8 +1,6 @@
 """Database Reader."""
 
 import logging
-import asyncio
-import functools
 from typing import (
     Any,
     List,
@@ -245,88 +243,3 @@ class DatabaseReader(BaseReader):
                         )
 
                 yield Document(**params)
-
-    def load_data(
-        self,
-        query: str,
-        metadata_cols: Optional[Iterable[Union[str, Tuple[str, str]]]] = None,
-        excluded_text_cols: Optional[Iterable[str]] = None,
-        document_id: Optional[Callable[[Dict[str, Any]], str]] = None,
-        **load_kwargs: Any,
-    ) -> List[Document]:
-        """
-        Query and load data from the Database into a list of Documents.
-
-        Args:
-            query (str): SQL query to execute.
-            metadata_cols (Optional[Iterable[Union[str, Tuple[str, str]]]]):
-                Iterable of column names or (db_col, meta_key) tuples to include
-                in Document metadata. If str, the column name is used as key.
-                If tuple, uses first element as DB column and second as metadata key.
-                If two entries map to the same metadata key, the latter will silently
-                overwrite the former - **avoid duplicates**.
-            excluded_text_cols (Optional[Iterable[str]]): Iterable of column names to be
-                excluded from Document text. Useful for metadata-only columns.
-            document_id (Optional[Callable[[Dict[str, Any]], str]]): A function
-                that takes a row (as a dict) and returns a string to be used as the
-                Document's `id_`, this replaces the deprecated `doc_id` field.
-                **MUST** return a string, falling back to auto-generated UUID.
-            **load_kwargs: Additional arguments passed to lazy_load_data.
-
-        Returns:
-            List[Document]: A list of Document objects.
-
-        """
-        return list(
-            self.lazy_load_data(
-                query=query,
-                metadata_cols=metadata_cols,
-                excluded_text_cols=excluded_text_cols,
-                document_id=document_id,
-                **load_kwargs,
-            )
-        )
-
-    async def aload_data(
-        self,
-        query: str,
-        metadata_cols: Optional[Iterable[Union[str, Tuple[str, str]]]] = None,
-        excluded_text_cols: Optional[Iterable[str]] = None,
-        document_id: Optional[Callable[[Dict[str, Any]], str]] = None,
-        **load_kwargs: Any,
-    ) -> List[Document]:
-        """
-        Asynchronously query and load data from the Database into a list.
-
-        Note: Implementation uses `asyncio.to_thread`; database I/O still
-            runs in a worker thread, not an async driver.
-
-        Args:
-            query (str): SQL query to execute.
-            metadata_cols (Optional[Iterable[Union[str, Tuple[str, str]]]]):
-                Iterable of column names or (db_col, meta_key) tuples to include
-                in Document metadata. If str, the column name is used as key.
-                If tuple, uses first element as DB column and second as metadata key.
-                If two entries map to the same metadata key, the latter will silently
-                overwrite the former - **avoid duplicates**.
-            excluded_text_cols (Optional[Iterable[str]]): Iterable of column names to be
-                excluded from Document text. Useful for metadata-only columns.
-            document_id (Optional[Callable[[Dict[str, Any]], str]]): A function
-                that takes a row (as a dict) and returns a string to be used as the
-                Document's `id_`, this replaces the deprecated `doc_id` field.
-                **MUST** return a string, falling back to auto-generated UUID.
-            **load_kwargs: Additional arguments passed to underlying load methods.
-
-        Returns:
-            List[Document]: A list of Document objects.
-
-        """
-        func = functools.partial(
-            self.load_data,  # Target the sync load_data
-            query=query,
-            metadata_cols=metadata_cols,
-            excluded_text_cols=excluded_text_cols,
-            document_id=document_id,
-            **load_kwargs,
-        )
-        return await asyncio.to_thread(func)
