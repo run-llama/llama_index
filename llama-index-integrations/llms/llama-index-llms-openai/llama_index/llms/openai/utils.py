@@ -588,8 +588,11 @@ def to_openai_message_dicts(
             else:
                 final_message_dicts.append(message_dicts)
         # this follows the logic of having a string-only input from to_openai_responses_message_dict
-        if final_message_txt:
+        if final_message_txt and len(final_message_dicts) == 0:
             return final_message_txt
+        elif final_message_txt and len(final_message_dicts) > 0:
+            final_message_dicts.append({"role": "user", "content": final_message_txt})
+
         return final_message_dicts
     else:
         return [
