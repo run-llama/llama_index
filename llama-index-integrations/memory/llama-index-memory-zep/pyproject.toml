@@ -1,0 +1,27 @@
+[build-system]
+build-backend = "poetry.core.masonry.api"
+requires = ["poetry-core"]
+
+[tool.poetry]
+authors = ["younis yzbashir98@gmail.com"]
+description = "Zep memory integration for LlamaIndex"
+keywords = ["chat-memory", "llama-index", "memory", "zep"]
+name = "llama-index-memory-zep"
+packages = [{include = "llamaindex"}]
+readme = "README.md"
+version = "0.1.0"
+
+[tool.poetry.dependencies]
+python = ">=3.9,<4.0"  # consider downgrading from 3.12 to 3.8+ for wider compatibility
+zep-python = "^2.0.2"
+llama-index = "^0.12.30"
+pytest-asyncio = "^0.26.0"
+
+[tool.poetry.dev-dependencies]
+black = "^24.0"
+isort = "^5.12"
+mypy = "^1.0"
+pytest = "^8.0"
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^4.2.0"
