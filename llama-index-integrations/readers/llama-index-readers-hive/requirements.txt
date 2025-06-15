@@ -1,2 +1,0 @@
-pyhive
-thrift_sasl
