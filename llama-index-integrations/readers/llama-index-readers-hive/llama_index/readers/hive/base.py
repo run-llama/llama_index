@@ -1,8 +1,5 @@
 """Hive data reader."""
 
-import warnings
-import functools
-
 try:
     from pyhive import hive
 except ImportError:
@@ -12,27 +9,14 @@ try:
 except ImportError:
     raise ImportError("`sqlglot` package not found, please run `pip install sqlglot`")
 
-from typing import List, Optional, Tuple, Callable
-
+from typing import List, Optional, Tuple
+from deprecated import deprecated
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
 
 class InvalidSqlError(Exception):
     """Raise when invalid SQL is passed."""
-
-
-def deprecated(func) -> Callable:
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs) -> Callable:
-        warnings.warn(
-            "Starting from v0.3.1, the llama-index-readers-hive package has been deprecated due to security concerns in its SQL query handling. It will no longer be maintained. Use this package with caution.",
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
-        return func(*args, **kwargs)
-
-    return wrapper
 
 
 def _validate_sql_query(statements: List[str]) -> None:
@@ -44,7 +28,10 @@ def _validate_sql_query(statements: List[str]) -> None:
         raise InvalidSqlError("The use of OR is not allowed to prevent SQL Injections")
 
 
-@deprecated
+@deprecated(
+    reason="llama-index-readers-hive has been deprecated since v0.3.1 on the grounds of security concerns for SQL query handling, and will thus no longer be maintained. Use this package with caution.",
+    version="0.3.1",
+)
 class HiveReader(BaseReader):
     """
     Read documents from a Hive.

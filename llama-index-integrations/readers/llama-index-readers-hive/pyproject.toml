@@ -43,6 +43,7 @@ dependencies = [
     "thrift-sasl>=0.4.3,<0.5",
     "sqlglot>=26.25.3,<27",
     "llama-index-core>=0.12.0,<0.13",
+    "deprecated>=1.2.18,<2",
 ]
 
 [tool.codespell]
