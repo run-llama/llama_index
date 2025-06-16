@@ -10,9 +10,9 @@ dev = [
     "pre-commit==3.2.0",
     "pylint==2.15.10",
     "pytest==7.2.1",
-    "pytest-asyncio==0.21.0",
     "pytest-mock==3.11.1",
     "ruff==0.11.11",
+    "tree-sitter-languages>=1.8.0,<2",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-protobuf>=4.24.0.4,<5",
@@ -21,42 +21,49 @@ dev = [
     "types-setuptools==67.1.0.0",
     "black[jupyter]<=23.9.1,>=23.7.0",
     "codespell[toml]>=v2.2.6",
-    "diff-cover>=9.2.0",
     "pytest-cov>=6.1.1",
+    "diff-cover>=9.2.0",
+    "fastapi",
 ]
 
 [project]
-name = "llama-index-llms-perplexity"
-version = "0.3.6"
-description = "llama-index llms perplexity integration"
-authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<4.0"
+name = "llama-index-protocols-ag-ui"
+version = "0.1.2"
+description = "llama-index protocols AG-UI integration"
+authors = [
+    {name = "Logan Markewich", email = "logan@runllama.ai"},
+]
+requires-python = ">=3.9,<3.14"
 readme = "README.md"
 license = "MIT"
 dependencies = [
+    "ag-ui-protocol>=0.1.5",
     "llama-index-core>=0.12.0,<0.13",
-    "llama-index-llms-openai>=0.4.0,<0.5",
+]
+
+[project.optional-dependencies]
+fastapi = [
+    "fastapi",
 ]
 
 [tool.codespell]
 check-filenames = true
 check-hidden = true
+ignore-words-list = "Gere"
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.hatch.build.targets.sdist]
 include = ["llama_index/"]
-exclude = ["**/BUILD"]
 
 [tool.hatch.build.targets.wheel]
 include = ["llama_index/"]
-exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.perplexity"
+import_path = "llama_index.protocols.ag_ui"
 
 [tool.llamahub.class_authors]
-Perplexity = "llama-index"
+create_ag_ui_router = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true

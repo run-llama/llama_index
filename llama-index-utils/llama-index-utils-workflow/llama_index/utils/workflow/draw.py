@@ -1,7 +1,6 @@
-import uuid
-
 from dataclasses import dataclass
 from typing import List, Optional, Dict, Union, cast
+
 from llama_index.core.workflow.events import (
     StartEvent,
     StopEvent,
@@ -14,6 +13,7 @@ from llama_index.core.workflow.utils import (
     get_steps_from_instance,
 )
 from llama_index.core.workflow.workflow import Workflow
+
 from llama_index.core.agent.workflow import (
     AgentWorkflow,
     ReActAgent,
@@ -478,7 +478,6 @@ def draw_agent_with_tools(
 ) -> str:
     """
     > **NOTE**: *PyVis is needed for this function*.
-
     Draw an agent with its tool as a flowchart.
 
     Args:
@@ -534,7 +533,6 @@ def draw_agent_workflow(
 ) -> str:
     """
     > **NOTE**: *PyVis is needed for this function*.
-
     Draw an agent workflow as a flowchart.
 
     Args:
@@ -571,7 +569,7 @@ def draw_agent_workflow(
         handoff_possibilities = can_handoff_to[agent]
         if handoff_possibilities and len(handoff_possibilities) > 0:
             for handoff_possibility in handoff_possibilities:
-                node_id = str(uuid.uuid4())
+                node_id = f"handoff_from_{agent}_to_{handoff_possibility}"
                 d.add_node(
                     n_id=node_id,
                     label=handoff_possibility,
