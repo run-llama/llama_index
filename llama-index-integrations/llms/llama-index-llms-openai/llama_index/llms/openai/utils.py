@@ -525,6 +525,9 @@ def to_openai_responses_message_dict(
             for tool_call in message.additional_kwargs["tool_calls"]
         ]
 
+        if "reasoning" in message.additional_kwargs:  # and if it is reasoning model
+            message_dicts = [message.additional_kwargs["reasoning"]] + message_dicts
+
         return message_dicts
 
     # there are some cases (like image generation or MCP tool call) that only support the string input
