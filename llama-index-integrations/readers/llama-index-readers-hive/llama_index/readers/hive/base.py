@@ -1,6 +1,7 @@
 """Hive data reader."""
 
 import warnings
+import functools
 
 try:
     from pyhive import hive
@@ -11,7 +12,7 @@ try:
 except ImportError:
     raise ImportError("`sqlglot` package not found, please run `pip install sqlglot`")
 
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Callable
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
@@ -19,6 +20,19 @@ from llama_index.core.schema import Document
 
 class InvalidSqlError(Exception):
     """Raise when invalid SQL is passed."""
+
+
+def deprecated(func) -> Callable:
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs) -> Callable:
+        warnings.warn(
+            "Starting from v0.3.1, the llama-index-readers-hive package has been deprecated due to security concerns in its SQL query handling. It will no longer be maintained. Use this package with caution.",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return func(*args, **kwargs)
+
+    return wrapper
 
 
 def _validate_sql_query(statements: List[str]) -> None:
@@ -30,6 +44,7 @@ def _validate_sql_query(statements: List[str]) -> None:
         raise InvalidSqlError("The use of OR is not allowed to prevent SQL Injections")
 
 
+@deprecated
 class HiveReader(BaseReader):
     """
     Read documents from a Hive.
@@ -56,10 +71,6 @@ class HiveReader(BaseReader):
         auth: Optional[str] = None,
     ):
         """Initialize with parameters."""
-        warnings.warn(
-            "Starting from v0.3.1, llama-index-hive-reader package has been deprecated due to security concerns in its SQL query handling. Use this package with caution.",
-            DeprecationWarning,
-        )
         self.con = hive.Connection(
             host=host,
             port=port,
@@ -83,10 +94,6 @@ class HiveReader(BaseReader):
             List[Document]: A list of documents.
 
         """
-        warnings.warn(
-            "Starting from v0.3.1, llama-index-hive-reader package has been deprecated due to security concerns in its SQL query handling. Use this package with caution",
-            DeprecationWarning,
-        )
         try:
             if params:
                 filled_query = query % tuple(repr(p) for p in params)
