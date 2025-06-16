@@ -12,8 +12,10 @@ from ag_ui.core import (
     FunctionCall,
 )
 from ag_ui.encoder import EventEncoder
+from typing import Union, Callable
 
 from llama_index.core.llms import ChatMessage
+from llama_index.core.tools import BaseTool, FunctionTool
 from llama_index.core.workflow import Event
 
 
@@ -137,3 +139,12 @@ def workflow_event_to_sse(event: Event) -> str:
 
 def timestamp() -> int:
     return int(datetime.datetime.now().timestamp())
+
+
+def validate_tool(tool: Union[BaseTool, Callable]) -> BaseTool:
+    if isinstance(tool, BaseTool):
+        return tool
+    elif callable(tool):
+        return FunctionTool.from_defaults(tool)
+    else:
+        raise ValueError(f"Invalid tool type: {type(tool)}")
