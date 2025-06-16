@@ -5,7 +5,7 @@ from typing import Any, Callable, Dict, List, Optional, Union
 from ag_ui.core import RunAgentInput
 
 from llama_index.core import Settings
-from llama_index.core.llms import ChatMessage, ChatResponse
+from llama_index.core.llms import ChatMessage, ChatResponse, TextBlock
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.tools import BaseTool, FunctionTool, ToolOutput
 from llama_index.core.workflow import Context, Workflow, step
@@ -85,18 +85,41 @@ class AGUIChatWorkflow(Workflow):
         self.initial_state = initial_state or {}
         self.system_prompt = system_prompt
 
+    def _snapshot_messages(self, ctx: Context, chat_history: List[ChatMessage]) -> None:
+        # inject tool calls into the assistant message
+        for msg in chat_history:
+            if msg.role == "assistant":
+                tool_calls = self.llm.get_tool_calls_from_response(
+                    ChatResponse(message=msg), error_on_no_tool_call=False
+                )
+                if tool_calls:
+                    msg.additional_kwargs["ag_ui_tool_calls"] = [
+                        {
+                            "id": tool_call.tool_id,
+                            "name": tool_call.tool_name,
+                            "arguments": json.dumps(tool_call.tool_kwargs),
+                        }
+                        for tool_call in tool_calls
+                    ]
+
+        ag_ui_messages = [llama_index_message_to_ag_ui_message(m) for m in chat_history]
+
+        ctx.write_event_to_stream(
+            MessagesSnapshotWorkflowEvent(
+                timestamp=timestamp(),
+                messages=ag_ui_messages,
+            )
+        )
+
     @step
     async def chat(
         self, ctx: Context, ev: InputEvent | LoopEvent
     ) -> Optional[Union[StopEvent, ToolCallEvent]]:
         if isinstance(ev, InputEvent):
             ag_ui_messages = ev.input_data.messages
-            llama_index_messages = [
+            chat_history = [
                 ag_ui_message_to_llama_index_message(m) for m in ag_ui_messages
             ]
-
-            chat_history = llama_index_messages[:-1]
-            user_input = llama_index_messages[-1].content
 
             # State sometimes has unused messages, so we need to remove them
             state = ev.input_data.state
@@ -113,19 +136,21 @@ class AGUIChatWorkflow(Workflow):
             await ctx.set("state", state)
 
             if state:
-                user_input = DEFAULT_STATE_PROMPT.format(
-                    state=str(state), user_input=user_input
-                )
+                for msg in chat_history[::-1]:
+                    if msg.role.value == "user":
+                        msg.content = DEFAULT_STATE_PROMPT.format(
+                            state=str(state), user_input=msg.content
+                        )
+                        break
 
             if self.system_prompt:
                 if chat_history[0].role.value == "system":
-                    chat_history[0].content += "\n\n" + self.system_prompt
+                    chat_history[0].blocks.extend(TextBlock(text=self.system_prompt))
                 else:
                     chat_history.insert(
                         0, ChatMessage(role="system", content=self.system_prompt)
                     )
 
-            chat_history.append(ChatMessage(role="user", content=user_input))
             await ctx.set("chat_history", chat_history)
         else:
             chat_history = await ctx.get("chat_history")
@@ -154,6 +179,7 @@ class AGUIChatWorkflow(Workflow):
                 )
 
         chat_history.append(resp.message)
+        self._snapshot_messages(ctx, [*chat_history])
         await ctx.set("chat_history", chat_history)
 
         tool_calls = self.llm.get_tool_calls_from_response(
@@ -284,16 +310,8 @@ class AGUIChatWorkflow(Workflow):
         chat_history = await ctx.get("chat_history")
         if new_tool_messages:
             chat_history.extend(new_tool_messages)
+            self._snapshot_messages(ctx, [*chat_history])
             await ctx.set("chat_history", chat_history)
-
-            ctx.write_event_to_stream(
-                MessagesSnapshotWorkflowEvent(
-                    timestamp=timestamp(),
-                    messages=[
-                        llama_index_message_to_ag_ui_message(m) for m in chat_history
-                    ],
-                )
-            )
 
         if len(frontend_tool_calls) > 0:
             # Expect frontend tool calls to call back to the agent
