@@ -145,7 +145,7 @@ class AGUIChatWorkflow(Workflow):
 
             if self.system_prompt:
                 if chat_history[0].role.value == "system":
-                    chat_history[0].blocks.extend(TextBlock(text=self.system_prompt))
+                    chat_history[0].blocks.append(TextBlock(text=self.system_prompt))
                 else:
                     chat_history.insert(
                         0, ChatMessage(role="system", content=self.system_prompt)
