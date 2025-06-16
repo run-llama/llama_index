@@ -564,10 +564,16 @@ def test_messages_to_openai_responses_messages():
     messages = [
         ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
         ChatMessage(role=MessageRole.USER, content="What is the capital of France?"),
+        ChatMessage(role=MessageRole.ASSISTANT, content="Paris"),
+        ChatMessage(role=MessageRole.USER, content="What is the capital of Germany?"),
     ]
     openai_messages = to_openai_message_dicts(messages, is_responses_api=True)
-    assert len(openai_messages) == 2
+    assert len(openai_messages) == 4
     assert openai_messages[0]["role"] == "developer"
     assert openai_messages[0]["content"] == "You are a helpful assistant."
     assert openai_messages[1]["role"] == "user"
     assert openai_messages[1]["content"] == "What is the capital of France?"
+    assert openai_messages[2]["role"] == "assistant"
+    assert openai_messages[2]["content"] == "Paris"
+    assert openai_messages[3]["role"] == "user"
+    assert openai_messages[3]["content"] == "What is the capital of Germany?"
