@@ -91,8 +91,11 @@ class MockVoiceAgentWebsocket(BaseVoiceAgentWebsocket):
         super().__init__(uri=uri)
         self.api_key = api_key
 
-    async def connect(self) -> None:
+    async def aconnect(self) -> None:
         self.ws: ClientConnection = MockConnection()
+
+    def connect(self) -> None:
+        pass
 
     async def send(
         self,
@@ -172,7 +175,7 @@ def test_interface_subclassing(mock_interface: MockVoiceAgentInterface):
 @pytest.mark.asyncio
 @pytest.mark.skipif(not websockets_available, reason="websockets library not installed")
 async def test_websocket_subclassing(mock_websocket: MockVoiceAgentWebsocket):
-    await mock_websocket.connect()
+    await mock_websocket.aconnect()
     assert isinstance(mock_websocket.ws, MockConnection)
     await mock_websocket.send(data="hello world")
     await mock_websocket.send(data=b"this is a test")

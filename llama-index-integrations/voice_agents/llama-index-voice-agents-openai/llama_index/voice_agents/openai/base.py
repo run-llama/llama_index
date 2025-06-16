@@ -83,8 +83,7 @@ class OpenAIVoiceAgent(BaseVoiceAgent):
             **kwargs (Any): You can pass all the keyword arguments related to initializing a session, except for `tools`, which is inferred from the `tools` attribute of the class. Find a reference for these arguments and their type [on OpenAI official documentation](https://platform.openai.com/docs/api-reference/realtime-client-events/session/update).
 
         """
-        await self.ws.connect()
-
+        self.ws.connect()
         session = ConversationSession.model_validate(kwargs)
         if self.tools is not None:
             openai_conv_tools: List[ConversationTool] = []
@@ -113,6 +112,7 @@ class OpenAIVoiceAgent(BaseVoiceAgent):
 
         # Start audio streams (mic and speaker)
         self.interface.start()
+        print("The agent is ready to have a conversation")
 
     async def send(self, audio: bytes, *args, **kwargs) -> None:
         """

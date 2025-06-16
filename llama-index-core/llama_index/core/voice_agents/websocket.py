@@ -22,9 +22,20 @@ class BaseVoiceAgentWebsocket(ABC):
         self.uri = uri
         self.ws: Optional[ClientConnection] = None
 
-    async def connect(self) -> None:
+    def connect(self) -> None:
         """
         Connect to the websocket.
+
+        Args:
+            None
+        Returns:
+            out (None): This function does not return anything.
+
+        """
+
+    async def aconnect(self) -> None:
+        """
+        Asynchronously connect to the websocket.
 
         The implementation should be:
 

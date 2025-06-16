@@ -34,9 +34,9 @@ readme = "README.md"
 license = "MIT"
 maintainers = [{name = "AstraBert"}]
 dependencies = [
-    "llama-index-core>=0.12.41,<0.13",
     "websockets>=15.0.1,<16",
     "pyaudio>=0.2.14,<0.3",
+    "llama-index-core>=0.12.42,<0.13",
 ]
 
 [tool.codespell]
@@ -64,3 +64,6 @@ disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 python_version = "3.8"
+
+[tool.uv.sources]
+llama-index-core = {path = "../../../llama-index-core"}

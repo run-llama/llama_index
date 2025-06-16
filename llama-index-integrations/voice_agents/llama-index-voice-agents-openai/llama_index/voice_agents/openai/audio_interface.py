@@ -3,6 +3,7 @@ import queue
 import time
 import logging
 import threading
+import asyncio
 
 from typing import Callable, Optional, Any, Tuple, Union
 from llama_index.core.voice_agents import BaseVoiceAgentInterface
@@ -110,7 +111,7 @@ class OpenAIVoiceAgentInterface(BaseVoiceAgentInterface):
             if not self.mic_queue.empty():
                 mic_chunk = self.mic_queue.get()
                 if self.on_audio_callback:
-                    self.on_audio_callback(mic_chunk)
+                    asyncio.run(self.on_audio_callback(mic_chunk))
             else:
                 time.sleep(0.05)
 

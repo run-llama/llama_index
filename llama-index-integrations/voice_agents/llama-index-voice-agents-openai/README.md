@@ -18,6 +18,7 @@ import logging
 
 from dotenv import load_dotenv
 from llama_index.voice_agents.openai import OpenAIVoiceAgent
+from llama_index.core.tools import FunctionTool
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
@@ -37,12 +38,25 @@ def signal_handler(sig, frame, realtime_instance):
 
 
 async def main():
+    def multiply_two_numbers(i: int, j: int):
+        """
+        Useful to multiply two integers and returns the result.
+
+        Args:
+            i (int): The first integer.
+            j (int): The second integer.
+
+        Returns:
+            int: The product of the two integers.
+        """
+        return i * j
+
     api_key = os.getenv("OPENAI_API_KEY")
 
     if not api_key:
         return
-
-    conversation = OpenAIVoiceAgent(api_key=api_key)
+    tools = [FunctionTool.from_defaults(fn=multiply_two_numbers)]
+    conversation = OpenAIVoiceAgent(api_key=api_key, tools=tools)
 
     signal.signal(
         signal.SIGINT,
@@ -72,4 +86,5 @@ if __name__ == "__main__":
     import asyncio
 
     asyncio.run(main())
+    # remember that YOU have to start the conversation!
 ```

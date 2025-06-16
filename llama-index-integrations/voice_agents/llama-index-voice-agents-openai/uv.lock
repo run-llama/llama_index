@@ -1593,8 +1593,8 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.12.42"
-source = { registry = "https://pypi.org/simple" }
+version = "0.12.40"
+source = { directory = "../../../llama-index-core" }
 dependencies = [
     { name = "aiohttp" },
     { name = "aiosqlite" },
@@ -1626,9 +1626,63 @@ dependencies = [
     { name = "typing-inspect" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d8/67/ef1fc8c3b0676b524fd6b67a0e3e082996d768d227ed2b4b39f78119253b/llama_index_core-0.12.42.tar.gz", hash = "sha256:cff21fe15610826997c876a6b1d28d52727932c5f9c2af04b23e041a10f40a24", size = 7292833, upload-time = "2025-06-12T03:07:06.791Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/1f/92/dc47b702da141d0f617ee86d26b5bdb62ed9a52518d1a5f271e91337e4a7/llama_index_core-0.12.42-py3-none-any.whl", hash = "sha256:0534cd9a4f6113175aa406a47ae9a683b5a43fd55532e9dbbffa96838ff18e07", size = 7665930, upload-time = "2025-06-12T03:06:58.387Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "aiohttp", specifier = ">=3.8.6,<4" },
+    { name = "aiosqlite" },
+    { name = "banks", specifier = ">=2.0.0,<3" },
+    { name = "dataclasses-json" },
+    { name = "deprecated", specifier = ">=1.2.9.3" },
+    { name = "dirtyjson", specifier = ">=1.0.8,<2" },
+    { name = "eval-type-backport", marker = "python_full_version < '3.10'", specifier = ">=0.2.0,<0.3" },
+    { name = "filetype", specifier = ">=1.2.0,<2" },
+    { name = "fsspec", specifier = ">=2023.5.0" },
+    { name = "httpx" },
+    { name = "nest-asyncio", specifier = ">=1.5.8,<2" },
+    { name = "networkx", specifier = ">=3.0" },
+    { name = "nltk", specifier = ">3.8.1" },
+    { name = "numpy" },
+    { name = "pillow", specifier = ">=9.0.0" },
+    { name = "pydantic", specifier = ">=2.8.0" },
+    { name = "pyyaml", specifier = ">=6.0.1" },
+    { name = "requests", specifier = ">=2.31.0" },
+    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=1.4.49" },
+    { name = "tenacity", specifier = ">=8.2.0,!=8.4.0,<10.0.0" },
+    { name = "tiktoken", specifier = ">=0.7.0" },
+    { name = "tqdm", specifier = ">=4.66.1,<5" },
+    { name = "typing-extensions", specifier = ">=4.5.0" },
+    { name = "typing-inspect", specifier = ">=0.8.0" },
+    { name = "wrapt" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "black", specifier = ">=23.7.0,<=24.3.0" },
+    { name = "boto3", specifier = "==1.33.6" },
+    { name = "botocore", specifier = ">=1.33.13" },
+    { name = "codespell", extras = ["toml"], specifier = ">=2.2.6" },
+    { name = "diff-cover", specifier = ">=9.2.0" },
+    { name = "llama-cloud", specifier = ">=0.0.6" },
+    { name = "mypy", specifier = "==1.11.0" },
+    { name = "openai" },
+    { name = "pandas" },
+    { name = "platformdirs" },
+    { name = "pre-commit", specifier = "==3.2.0" },
+    { name = "pylint", specifier = "==2.15.10" },
+    { name = "pytest", specifier = "~=7.2" },
+    { name = "pytest-asyncio", specifier = "==0.21.0" },
+    { name = "pytest-cov", specifier = "~=5.0" },
+    { name = "pytest-dotenv", specifier = "==0.5.2" },
+    { name = "pytest-mock", specifier = "==3.11.1" },
+    { name = "rake-nltk", specifier = "==1.0.6" },
+    { name = "ruff", specifier = "==0.11.11" },
+    { name = "tree-sitter" },
+    { name = "tree-sitter-language-pack" },
+    { name = "types-deprecated", specifier = ">=0.1.0" },
+    { name = "types-pyyaml", specifier = ">=6.0.12.12,<7" },
+    { name = "types-requests", specifier = ">=2.28.11.8" },
+    { name = "types-setuptools", specifier = ">=80.0.0.20250429" },
 ]
 
 [[package]]
@@ -1665,7 +1719,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-core", specifier = ">=0.12.41,<0.13" },
+    { name = "llama-index-core", directory = "../../../llama-index-core" },
     { name = "pyaudio", specifier = ">=0.2.14,<0.3" },
     { name = "websockets", specifier = ">=15.0.1,<16" },
 ]
