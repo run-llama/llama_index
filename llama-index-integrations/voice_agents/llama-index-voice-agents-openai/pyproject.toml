@@ -34,8 +34,9 @@ readme = "README.md"
 license = "MIT"
 maintainers = [{name = "AstraBert"}]
 dependencies = [
-    "llama-index-core>=0.12.40,<0.13",
-    "elevenlabs[pyaudio]>=2.1.0,<3",
+    "llama-index-core>=0.12.41,<0.13",
+    "websockets>=15.0.1,<16",
+    "pyaudio>=0.2.14,<0.3",
 ]
 
 [tool.codespell]

@@ -17,7 +17,7 @@ import time
 import logging
 
 from dotenv import load_dotenv
-from llama_index.voice_agents.openai import OpenAIConversation
+from llama_index.voice_agents.openai import OpenAIVoiceAgent
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
@@ -36,13 +36,13 @@ def signal_handler(sig, frame, realtime_instance):
     quitFlag = True
 
 
-def main():
+async def main():
     api_key = os.getenv("OPENAI_API_KEY")
 
     if not api_key:
         return
 
-    conversation = OpenAIConversation(api_key=api_key)
+    conversation = OpenAIVoiceAgent(api_key=api_key)
 
     signal.signal(
         signal.SIGINT,
@@ -50,13 +50,14 @@ def main():
     )
 
     try:
-        conversation.start()
+        await conversation.start()
         while not quitFlag:
             time.sleep(0.1)
 
     except Exception as e:
         logging.error(f"Error in main loop: {e}")
-        conversation.stop()
+        await conversation.interrupt()
+        await conversation.stop()
 
     finally:
         logging.info("Exiting main.")
@@ -64,9 +65,11 @@ def main():
         print(conversation.export_messages())
         print("Events:")
         print(conversation.export_events())
-        conversation.stop()  # Ensures cleanup if any error occurs
+        await conversation.stop()  # Ensures cleanup if any error occurs
 
 
 if __name__ == "__main__":
-    main()
+    import asyncio
+
+    asyncio.run(main())
 ```

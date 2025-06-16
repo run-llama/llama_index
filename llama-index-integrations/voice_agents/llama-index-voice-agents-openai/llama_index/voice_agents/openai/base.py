@@ -29,14 +29,16 @@ DEFALT_MODEL = "gpt-4o-realtime-preview-2024-10-01"
 
 class OpenAIVoiceAgent(BaseVoiceAgent):
     """
+    >**NOTE**: *This API is a BETA, and thus might be subject to changes*.
+
     Interface for the OpenAI Realtime Conversation integration with LlamaIndex.
 
     Attributes:
         ws (Optional[BAseVoiceAgentWebsocket]): A pre-defined websocket to use. Defaults to None. In case of doubt, it is advised to leave this argument as None and pass ws_url and model.
         interface (Optional[BaseVoiceAgentInterface]): Audio I/O interface. Defaults to None. In case of doubt, it is advised to leave this argument as None.
         api_key (Optional[str]): The OpenAI API key. Defaults to the environmental variable OPENAI_API_KEY if the value is None.
-        ws_url (str): The URL for the OpenAI Realtime Conversation websocket. Defaults to: 'wss://api.openai.com/v1/realtime'
-        model (str): The conversational model. Defaults to: 'gpt-4o-realtime-preview-2024-10-01'
+        ws_url (str): The URL for the OpenAI Realtime Conversation websocket. Defaults to: 'wss://api.openai.com/v1/realtime'.
+        model (str): The conversational model. Defaults to: 'gpt-4o-realtime-preview-2024-10-01'.
         tools (List[BaseTool]): Tools to equip the agent with.
 
     """
