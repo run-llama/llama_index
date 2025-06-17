@@ -6,6 +6,12 @@ from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.core.vector_stores.types import VectorStoreQuery, FilterOperator
 from llama_index.vector_stores.duckdb import DuckDBVectorStore
 from llama_index.vector_stores.duckdb import DuckDBVectorStore
+from llama_index.core.vector_stores.types import (
+    MetadataFilter,
+    MetadataFilters,
+    FilterCondition,
+)
+from llama_index.vector_stores.duckdb.base import DuckDBTableNotInitializedError
 
 
 def test_duckdb_installed():
@@ -130,6 +136,7 @@ def test_duckdb_add_and_query(
     assert res.nodes[0].get_content() == "lorem ipsum"
     assert res.nodes[0].metadata.get("author") == "Stephen King"
     assert res.nodes[0].metadata.get("theme") == "Friendship"
+
     assert res.nodes[0].excluded_embed_metadata_keys == []
     assert res.nodes[0].excluded_llm_metadata_keys == []
     assert res.nodes[0].source_node is not None
@@ -183,18 +190,18 @@ def test_clear(vector_store: DuckDBVectorStore, text_node_list: List[TextNode]):
 def test_delete_by_ref_doc_id(
     vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
 ):
-    # Add a node with ref_doc_id in metadata
-    node = TextNode(
-        text="refdoc test",
-        id_="refdoc-node",
-        relationships={},
-        metadata={"ref_doc_id": "ref-123"},
-        embedding=[0.1, 0.2, 0.3],
-    )
-    vector_store.add([node])
-    assert vector_store.get_nodes(node_ids=["refdoc-node"])
-    vector_store.delete(ref_doc_id="ref-123")
-    assert not vector_store.get_nodes(node_ids=["refdoc-node"])
+    test_node = text_node_list[0]
+    test_node_id = test_node.node_id
+    assert test_node.source_node is not None
+
+    test_node_source_document = test_node.source_node
+    test_node_source_document_id = test_node_source_document.node_id
+
+    vector_store.add([test_node])
+    nodes = vector_store.get_nodes()
+    assert vector_store.get_nodes(node_ids=[test_node_id])
+    vector_store.delete(ref_doc_id=test_node_source_document_id)
+    assert not vector_store.get_nodes(node_ids=[test_node_id])
 
 
 def test_get_nodes_with_metadata_filters(
@@ -202,7 +209,6 @@ def test_get_nodes_with_metadata_filters(
 ):
     vector_store.clear()
     vector_store.add(text_node_list[:2])
-    from llama_index.core.vector_stores.types import MetadataFilter, MetadataFilters
 
     filters = MetadataFilters(
         filters=[
@@ -220,7 +226,234 @@ def test_error_on_uninitialized_table():
     store = DuckDBVectorStore(embed_dim=3)
     # Manually break table
     store._table = None
-    from llama_index.vector_stores.duckdb.base import DuckDBTableNotInitializedError
 
     with pytest.raises(DuckDBTableNotInitializedError):
         store.get_nodes(node_ids=["any"])
+
+
+def test_filter_operator_ne(
+    vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
+):
+    vector_store.clear()
+    vector_store.add(text_node_list)
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="author", value="Stephen King", operator=FilterOperator.NE
+            )
+        ]
+    )
+    nodes = vector_store.get_nodes(filters=filters)
+    assert len(nodes) == 5
+    # Only the second node has a different author
+    assert all(n.metadata.get("author") != "Stephen King" for n in nodes)
+
+
+def test_filter_operator_in(
+    vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
+):
+    vector_store.clear()
+    vector_store.add(text_node_list)
+
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="author",
+                value=["Marie Curie", "Stephen King"],
+                operator=FilterOperator.IN,
+            )
+        ]
+    )
+    nodes = vector_store.get_nodes(filters=filters)
+    assert len(nodes) == 2
+    assert any(n.metadata.get("author") == "Stephen King" for n in nodes)
+    assert any(n.metadata.get("author") == "Marie Curie" for n in nodes)
+
+
+def test_filter_operator_nin(
+    vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
+):
+    vector_store.clear()
+    vector_store.add(text_node_list)
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="author", value=["Stephen King"], operator=FilterOperator.NIN
+            )
+        ]
+    )
+    nodes = vector_store.get_nodes(filters=filters)
+    assert len(nodes) == 5
+    assert all(n.metadata.get("author") != "Stephen King" for n in nodes)
+
+
+def test_filter_text_match(
+    vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
+):
+    vector_store.clear()
+    vector_store.add(text_node_list)
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="theme", value="Friend", operator=FilterOperator.TEXT_MATCH
+            )
+        ]
+    )
+    nodes = vector_store.get_nodes(filters=filters)
+    assert len(nodes) == 1
+    assert any("Friend" in n.metadata.get("theme", "") for n in nodes)
+
+
+def test_filter_text_match_insensitive(
+    vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
+):
+    vector_store.clear()
+    vector_store.add(text_node_list)
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="theme",
+                value="friendship",
+                operator=FilterOperator.TEXT_MATCH_INSENSITIVE,
+            )
+        ]
+    )
+    nodes = vector_store.get_nodes(filters=filters)
+    assert len(nodes) == 1
+    assert any(n.metadata.get("theme", "").lower() == "friendship" for n in nodes)
+
+
+def test_filter_is_empty_on_none(
+    vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
+):
+    vector_store.clear()
+    # Add a node with an empty field
+    node = TextNode(
+        text="empty test",
+        id_="empty-node",
+        relationships={},
+        metadata={"empty_field": None},
+        embedding=[0.1, 0.2, 0.3],
+    )
+    vector_store.add([node])
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="empty_field", value=None, operator=FilterOperator.IS_EMPTY
+            )
+        ]
+    )
+    nodes = vector_store.get_nodes(filters=filters)
+    assert len(nodes) == 1
+    assert any(n.node_id == "empty-node" for n in nodes)
+
+
+def test_filter_is_empty_on_missing_key(
+    vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
+):
+    vector_store.clear()
+    # Add a node with an empty field
+    node = TextNode(
+        text="empty test",
+        id_="empty-node",
+        relationships={},
+        metadata={},
+        embedding=[0.1, 0.2, 0.3],
+    )
+    vector_store.add([node])
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="empty_field", value=None, operator=FilterOperator.IS_EMPTY
+            )
+        ]
+    )
+    nodes = vector_store.get_nodes(filters=filters)
+    assert len(nodes) == 1
+    assert any(n.node_id == "empty-node" for n in nodes)
+
+
+def test_filter_and_condition(
+    vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
+):
+    vector_store.clear()
+    vector_store.add(text_node_list)
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="author", value="Stephen King", operator=FilterOperator.EQ
+            ),
+            MetadataFilter(key="theme", value="Friendship", operator=FilterOperator.EQ),
+        ],
+        condition=FilterCondition.AND,
+    )
+    nodes = vector_store.get_nodes(filters=filters)
+    assert len(nodes) == 1
+    assert nodes[0].metadata.get("author") == "Stephen King"
+    assert nodes[0].metadata.get("theme") == "Friendship"
+
+
+def test_filter_or_condition(
+    vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
+):
+    vector_store.clear()
+    vector_store.add(text_node_list)
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="author", value="Stephen King", operator=FilterOperator.EQ
+            ),
+            MetadataFilter(key="theme", value="Mafia", operator=FilterOperator.EQ),
+        ],
+        condition=FilterCondition.OR,
+    )
+    nodes = vector_store.get_nodes(filters=filters)
+    assert len(nodes) == 2
+    # Should match either author or theme
+    assert any(n.metadata.get("author") == "Stephen King" for n in nodes)
+    assert any(n.metadata.get("theme") == "Mafia" for n in nodes)
+
+
+def test_filter_nested_and_or_condition(
+    vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
+):
+    vector_store.clear()
+    vector_store.add(text_node_list)
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="author", value="Stephen King", operator=FilterOperator.EQ
+            ),
+            MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key="theme", value="Mafia", operator=FilterOperator.EQ
+                    ),
+                    MetadataFilter(
+                        key="theme", value="Friendship", operator=FilterOperator.EQ
+                    ),
+                ],
+                condition=FilterCondition.OR,
+            ),
+        ],
+        condition=FilterCondition.AND,
+    )
+    nodes = vector_store.get_nodes(filters=filters)
+    assert len(nodes) == 1
+    # Should match either author or theme
+    assert any(n.metadata.get("author") == "Stephen King" for n in nodes)
+    assert any(n.metadata.get("theme") == "Friendship" for n in nodes)
+
+
+def test_filter_missing_key(
+    vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
+):
+    vector_store.clear()
+    vector_store.add(text_node_list)
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="not_a_key", value="foo", operator=FilterOperator.EQ)
+        ]
+    )
+    nodes = vector_store.get_nodes(filters=filters)
+    assert len(nodes) == 0
