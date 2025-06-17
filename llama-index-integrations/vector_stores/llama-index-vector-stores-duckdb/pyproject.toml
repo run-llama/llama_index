@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-duckdb"
-version = "0.3.1"
+version = "0.4.0"
 description = "llama-index vector_stores duckdb integration"
 authors = [{name = "Adithya Krishnan", email = "me@krishadi.com"}]
 requires-python = ">=3.9,<4.0"

@@ -1676,7 +1676,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-duckdb"
-version = "0.3.1"
+version = "0.4.0"
 source = { editable = "." }
 dependencies = [
     { name = "duckdb" },

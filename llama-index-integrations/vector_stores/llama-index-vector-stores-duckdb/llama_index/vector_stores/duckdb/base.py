@@ -14,9 +14,14 @@ from duckdb import (
     FunctionExpression,
     StarExpression,
 )
-from duckdb.typing import FLOAT, INTEGER, VARCHAR, DuckDBPyType
+from duckdb.typing import FLOAT, INTEGER, VARCHAR
 from fsspec.utils import Sequence
-from llama_index.core.bridge.pydantic import PrivateAttr, StrictInt, StrictFloat, StrictStr
+from llama_index.core.bridge.pydantic import (
+    PrivateAttr,
+    StrictInt,
+    StrictFloat,
+    StrictStr,
+)
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
@@ -152,14 +157,6 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
         self._connect()
         self._initialize()
-        # nodes = self.get_nodes(node_ids=["test"])
-        # print(nodes)
-        # self.delete(ref_doc_id="test")
-        # self.query(VectorStoreQuery(query_embedding=[1, 2, 3], similarity_top_k=10))
-        # self.add([TextNode(node_id="test", text="test", embedding=[1, 2, 3], metadata={"test": "test"})])
-        # self.get_nodes(node_ids=["test"])
-        # self.delete_nodes(node_ids=["test"])
-        # self.delete(ref_doc_id="test")
 
     @classmethod
     def from_local(
@@ -451,12 +448,16 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             operator = op_string_to_op[metadata_filter.operator]
 
             value_type = filter_value_type_to_duckdb_type[type(metadata_filter.value)]
- 
+
             column_name = f"metadata_.{metadata_filter.key}"
 
             new_relation = new_relation.filter(
                 operator(
-                    FunctionExpression("json_extract_string", ColumnExpression(column_name), ConstantExpression("$")),
+                    FunctionExpression(
+                        "json_extract_string",
+                        ColumnExpression(column_name),
+                        ConstantExpression("$"),
+                    ),
                     ConstantExpression(metadata_filter.value),
                 )
             )

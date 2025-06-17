@@ -206,7 +206,9 @@ def test_get_nodes_with_metadata_filters(
 
     filters = MetadataFilters(
         filters=[
-            MetadataFilter(key="author", value="Stephen King", operator=FilterOperator.EQ),
+            MetadataFilter(
+                key="author", value="Stephen King", operator=FilterOperator.EQ
+            ),
         ],
     )
     nodes = vector_store.get_nodes(filters=filters)
