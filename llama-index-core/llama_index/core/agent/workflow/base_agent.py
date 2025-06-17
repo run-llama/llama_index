@@ -32,15 +32,12 @@ from llama_index.core.tools import (
 from llama_index.core.workflow import Context
 from llama_index.core.objects import ObjectRetriever
 from llama_index.core.settings import Settings
-from llama_index.core.workflow.workflow import (
-    Context,
-    StopEvent,
-    Workflow,
-    WorkflowMeta,
-    step,
-)
 from llama_index.core.workflow.checkpointer import CheckpointCallback
+from llama_index.core.workflow.context import Context
+from llama_index.core.workflow.decorators import step
+from llama_index.core.workflow.events import StopEvent
 from llama_index.core.workflow.handler import WorkflowHandler
+from llama_index.core.workflow.workflow import Workflow, WorkflowMeta
 
 DEFAULT_AGENT_NAME = "Agent"
 DEFAULT_AGENT_DESCRIPTION = "An agent that can perform a task"
