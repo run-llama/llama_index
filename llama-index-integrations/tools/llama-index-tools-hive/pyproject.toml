@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "LlamaIndex Tool for Hive Intelligence"
 readme = "README.md"
 requires-python = ">=3.9"
-license = { text = "MIT" }
+license = {text = "MIT"}
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -32,10 +32,6 @@ test = [
     "pytest-cov>=3.0.0",
 ]
 
-[tool.llamahub]
-contains_example = true
-import_path = "llama_index.tools.hive"
-
 [tool.hatch.build.targets.sdist]
 include = ["llama_index/"]
 exclude = ["**/BUILD"]
@@ -43,3 +39,7 @@ exclude = ["**/BUILD"]
 [tool.hatch.build.targets.wheel]
 include = ["llama_index/"]
 exclude = ["**/BUILD"]
+
+[tool.llamahub]
+contains_example = true
+import_path = "llama_index.tools.hive"
