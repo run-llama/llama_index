@@ -340,6 +340,69 @@ root_dispatcher.add_event_handler(argilla_handler)
 
 ![Argilla integration with LlamaIndex](../../_static/integrations/argilla.png)
 
+### Agenta
+
+[Agenta](https://agenta.ai) is an **open-source** LLMOps platform that helps developers and product teams build robust AI applications powered by LLMs. It offers all the tools for **observability**, **prompt management and engineering**, and **LLM evaluation**.
+
+#### Usage Pattern
+
+Install the necessary dependencies for the integration:
+
+```python
+pip install agenta llama_index openinference-instrumentation-llama_index
+```
+
+Set up your API credentials and initialize Agenta:
+
+```python
+import os
+import agenta as ag
+from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
+
+# Set your Agenta credentials
+os.environ["AGENTA_API_KEY"] = "your_agenta_api_key"
+os.environ["AGENTA_HOST"] = "https://cloud.agenta.ai"  # Use your self-hosted URL if applicable
+
+# Initialize Agenta SDK
+ag.init()
+
+# Enable LlamaIndex instrumentation
+LlamaIndexInstrumentor().instrument()
+```
+
+Build your instrumented application:
+
+```python
+@ag.instrument()
+def document_search_app(user_query: str):
+    """
+    Document search application using LlamaIndex.
+    Loads documents, builds a searchable index, and answers user queries.
+    """
+    # Load documents from local directory
+    docs = SimpleDirectoryReader("data").load_data()
+    
+    # Build vector search index
+    search_index = VectorStoreIndex.from_documents(docs)
+    
+    # Initialize query processor
+    query_processor = search_index.as_query_engine()
+    
+    # Process user query
+    answer = query_processor.query(user_query)
+    
+    return answer
+```
+
+Once this is set up, Agenta will automatically capture all execution steps. You can then view the traces in Agenta to debug your application, link them to specific configurations and prompts, evaluate their performance, query the data, and monitor key metrics.
+
+![Agenta integration with LlamaIndex](../../_static/integrations/agenta.png)
+
+#### Example Guides
+
+- [Documentation Observability for LlamaIndex with Agenta](https://docs.agenta.ai/observability/integrations/llamaindex)
+- [Notebook Observability for LlamaIndex with Agenta](https://github.com/agenta-ai/agenta/blob/main/examples/jupyter/integrations/observability-openinference-llamaindex.ipynb)
+
 
 ## Other Partner `One-Click` Integrations (Legacy Modules)
 
