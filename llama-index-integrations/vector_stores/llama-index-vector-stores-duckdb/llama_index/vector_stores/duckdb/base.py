@@ -2,16 +2,27 @@
 
 import json
 import logging
-import os
-from typing import Any, List, Optional, cast
+import operator
+from pathlib import Path
+from typing import Any, cast
 
+import duckdb
+from duckdb import (
+    ColumnExpression,
+    ConstantExpression,
+    DuckDBPyRelation,
+    FunctionExpression,
+    StarExpression,
+)
+from duckdb.typing import FLOAT, INTEGER, VARCHAR, DuckDBPyType
 from fsspec.utils import Sequence
-from llama_index.core.bridge.pydantic import PrivateAttr
+from llama_index.core.bridge.pydantic import PrivateAttr, StrictInt, StrictFloat, StrictStr
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilter,
     MetadataFilters,
+    FilterOperator,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
@@ -20,39 +31,61 @@ from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
 
-import duckdb
-
 logger = logging.getLogger(__name__)
-import_err_msg = "`duckdb` package not found, please run `pip install duckdb`"
+
+DEFAULT_TEXT_SEARCH_CONFIG = {
+    "stemmer": "english",
+    "stopwords": "english",
+    "ignore": "(\\.|[^a-z])+",
+    "strip_accents": True,
+    "lower": True,
+    "overwrite": False,
+}
+
+op_string_to_op = {
+    FilterOperator.GT: operator.gt,
+    FilterOperator.GTE: operator.ge,
+    FilterOperator.LT: operator.lt,
+    FilterOperator.LTE: operator.le,
+    FilterOperator.EQ: operator.eq,
+    FilterOperator.NE: operator.ne,
+}
+
+filter_value_type_to_duckdb_type = {
+    StrictInt: INTEGER,
+    StrictFloat: FLOAT,
+    StrictStr: VARCHAR,
+    int: INTEGER,
+    float: FLOAT,
+    str: VARCHAR,
+}
 
 
-class DuckDBLocalContext:
-    def __init__(self, database_path: str):
-        self.database_path = database_path
-        self._conn = None
-        self._home_dir = os.path.expanduser("~")
+class DuckDBInvalidConfigurationError(Exception):
+    def __init__(self, database_name: str, persist_dir: str):
+        self.database_name = database_name
+        self.persist_dir = persist_dir
+        super().__init__(
+            f"Invalid configuration for DuckDBVectorStore. database_name: {database_name}, persist_dir: {persist_dir}"
+        )
 
-    def __enter__(self) -> "duckdb.DuckDBPyConnection":
-        if not os.path.exists(os.path.dirname(self.database_path)):
-            raise ValueError(
-                f"Directory {os.path.dirname(self.database_path)} does not exist."
-            )
 
-        # if not os.path.isfile(self.database_path):
-        #     raise ValueError(f"Database path {self.database_path} is not a valid file.")
+class DuckDBTableNotInitializedError(Exception):
+    def __init__(self, table_name: str):
+        self.table_name = table_name
+        super().__init__(f"Table {table_name} is not initialized.")
 
-        self._conn = duckdb.connect(self.database_path)
-        self._conn.execute(f"SET home_directory='{self._home_dir}';")
-        self._conn.install_extension("json")
-        self._conn.load_extension("json")
-        self._conn.install_extension("fts")
-        self._conn.load_extension("fts")
 
-        return self._conn
-
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        if self._conn:
-            self._conn.close()
+class DuckDBTableIncorrectColumnsError(Exception):
+    def __init__(
+        self, table_name: str, expected_columns: list[str], actual_columns: list[str]
+    ):
+        self.table_name = table_name
+        self.expected_columns = expected_columns
+        self.actual_columns = actual_columns
+        super().__init__(
+            f"Table {table_name} has incorrect columns. Expected {expected_columns}, got {actual_columns}."
+        )
 
 
 class DuckDBVectorStore(BasePydanticVectorStore):
@@ -82,62 +115,31 @@ class DuckDBVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
 
-    database_name: Optional[str]
+    database_name: str
     table_name: str
     # schema_name: Optional[str] # TODO: support schema name
-    embed_dim: Optional[int]
+    embed_dim: int | None
     # hybrid_search: Optional[bool] # TODO: support hybrid search
-    text_search_config: Optional[dict]
-    persist_dir: Optional[str]
+    text_search_config: dict | None
+    persist_dir: str
 
-    _conn: Any = PrivateAttr()
+    _conn: duckdb.DuckDBPyConnection = PrivateAttr()
+    _table: duckdb.DuckDBPyRelation | None = PrivateAttr(default=None)
+
     _is_initialized: bool = PrivateAttr(default=False)
-    _database_path: Optional[str] = PrivateAttr()
+    _database_path: str | None = PrivateAttr()
 
     def __init__(
         self,
         database_name: str = ":memory:",
         table_name: str = "documents",
-        embed_dim: Optional[int] = None,
+        embed_dim: int | None = None,
         # https://duckdb.org/docs/extensions/full_text_search
-        text_search_config: Optional[dict] = {
-            "stemmer": "english",
-            "stopwords": "english",
-            "ignore": "(\\.|[^a-z])+",
-            "strip_accents": True,
-            "lower": True,
-            "overwrite": False,
-        },
+        text_search_config: dict | None = None,
         persist_dir: str = "./storage",
-        **kwargs: Any,
+        **kwargs: Any,  # noqa: ARG002
     ) -> None:
         """Init params."""
-        try:
-            import duckdb
-        except ImportError:
-            raise ImportError(import_err_msg)
-
-        database_path = None
-        if database_name == ":memory:":
-            _home_dir = os.path.expanduser("~")
-            conn = duckdb.connect(database_name)
-            conn.execute(f"SET home_directory='{_home_dir}';")
-            conn.install_extension("json")
-            conn.load_extension("json")
-            conn.install_extension("fts")
-            conn.load_extension("fts")
-        else:
-            # check if persist dir exists
-            if not os.path.exists(persist_dir):
-                os.makedirs(persist_dir)
-
-            database_path = os.path.join(persist_dir, database_name)
-
-            with DuckDBLocalContext(database_path) as _conn:
-                pass
-
-            conn = None
-
         fields = {
             "database_name": database_name,
             "table_name": table_name,
@@ -145,10 +147,19 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             "text_search_config": text_search_config,
             "persist_dir": persist_dir,
         }
+
         super().__init__(stores_text=True, **fields)
-        self._is_initialized = False
-        self._conn = conn
-        self._database_path = database_path
+
+        self._connect()
+        self._initialize()
+        # nodes = self.get_nodes(node_ids=["test"])
+        # print(nodes)
+        # self.delete(ref_doc_id="test")
+        # self.query(VectorStoreQuery(query_embedding=[1, 2, 3], similarity_top_k=10))
+        # self.add([TextNode(node_id="test", text="test", embedding=[1, 2, 3], metadata={"test": "test"})])
+        # self.get_nodes(node_ids=["test"])
+        # self.delete_nodes(node_ids=["test"])
+        # self.delete(ref_doc_id="test")
 
     @classmethod
     def from_local(
@@ -156,44 +167,22 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         database_path: str,
         table_name: str = "documents",
         # schema_name: Optional[str] = "main",
-        embed_dim: Optional[int] = None,
+        embed_dim: int | None = None,
         # hybrid_search: Optional[bool] = False,
-        text_search_config: Optional[dict] = {
-            "stemmer": "english",
-            "stopwords": "english",
-            "ignore": "(\\.|[^a-z])+",
-            "strip_accents": True,
-            "lower": True,
-            "overwrite": False,
-        },
+        text_search_config: dict | None = DEFAULT_TEXT_SEARCH_CONFIG,
         **kwargs: Any,
     ) -> "DuckDBVectorStore":
         """Load a DuckDB vector store from a local file."""
-        with DuckDBLocalContext(database_path) as _conn:
-            try:
-                _table_info = _conn.execute(f"SHOW {table_name};").fetchall()
-            except Exception as e:
-                raise ValueError(f"Index table {table_name} not found in the database.")
+        db_path = Path(database_path)
 
-            # Not testing for the column type similarity only testing for the column names.
-            _std = {"text", "node_id", "embedding", "metadata_"}
-            _ti = {_i[0] for _i in _table_info}
-            if _std != _ti:
-                raise ValueError(
-                    f"Index table {table_name} does not have the correct schema."
-                )
-
-        _cls = cls(
-            database_name=os.path.basename(database_path),
+        return cls(
+            database_name=db_path.name,
             table_name=table_name,
             embed_dim=embed_dim,
             text_search_config=text_search_config,
-            persist_dir=os.path.dirname(database_path),
+            persist_dir=str(db_path.parent),
             **kwargs,
         )
-        _cls._is_initialized = True
-
-        return _cls
 
     @classmethod
     def from_params(
@@ -201,16 +190,9 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         database_name: str = ":memory:",
         table_name: str = "documents",
         # schema_name: Optional[str] = "main",
-        embed_dim: Optional[int] = None,
+        embed_dim: int | None = None,
         # hybrid_search: Optional[bool] = False,
-        text_search_config: Optional[dict] = {
-            "stemmer": "english",
-            "stopwords": "english",
-            "ignore": "(\\.|[^a-z])+",
-            "strip_accents": True,
-            "lower": True,
-            "overwrite": False,
-        },
+        text_search_config: dict | None = DEFAULT_TEXT_SEARCH_CONFIG,
         persist_dir: str = "./storage",
         **kwargs: Any,
     ) -> "DuckDBVectorStore":
@@ -234,37 +216,52 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         """Return client."""
         return self._conn
 
+    def _connect(self) -> None:
+        """Connect to the DuckDB database -- create the data persistence directory if it doesn't exist."""
+        database_connection = self.database_name
+
+        if self.database_name != ":memory:":
+            persist_path = Path(self.persist_dir)
+
+            if not persist_path.exists():
+                persist_path.mkdir(parents=True, exist_ok=True)
+
+            database_connection = str(persist_path / self.database_name)
+
+        self._conn = duckdb.connect(database_connection)
+
     def _initialize(self) -> None:
-        if not self._is_initialized:
-            # TODO: schema.table also.
-            # Check if table and type is present
-            # if not, create table
-            if self.embed_dim is None:
-                _query = f"""
-                    CREATE TABLE {self.table_name} (
-                        node_id VARCHAR,
-                        text TEXT,
-                        embedding FLOAT[],
-                        metadata_ JSON
-                        );
-                    """
-            else:
-                _query = f"""
-                    CREATE TABLE {self.table_name} (
-                        node_id VARCHAR,
-                        text TEXT,
-                        embedding FLOAT[{self.embed_dim}],
-                        metadata_ JSON
-                        );
-                    """
+        """Initialize the DuckDB Database, extensions, and documents table."""
+        home_dir = Path.home()
+        self._conn.execute(f"SET home_directory='{home_dir}';")
+        self._conn.install_extension("json")
+        self._conn.load_extension("json")
+        self._conn.install_extension("fts")
+        self._conn.load_extension("fts")
 
-            if self.database_name == ":memory:":
-                self._conn.execute(_query)
-            elif self._database_path is not None:
-                with DuckDBLocalContext(self._database_path) as _conn:
-                    _conn.execute(_query)
+        embedding_type = (
+            f"FLOAT[{self.embed_dim}]" if self.embed_dim is not None else "FLOAT[]"
+        )
 
-            self._is_initialized = True
+        self._conn.execute(f"""
+            CREATE TABLE IF NOT EXISTS {self.table_name}  (
+                node_id VARCHAR,
+                text TEXT,
+                embedding {embedding_type},
+                metadata_ JSON
+            );
+        """)
+
+        self._table = self._conn.table(self.table_name)
+
+        required_columns = ["node_id", "text", "embedding", "metadata_"]
+        table_columns = self._table.describe().columns
+
+        for column in required_columns:
+            if column not in table_columns:
+                raise DuckDBTableIncorrectColumnsError(
+                    self.table_name, required_columns, table_columns
+                )
 
     def _node_to_table_row(self, node: BaseNode) -> Any:
         return (
@@ -281,7 +278,64 @@ class DuckDBVectorStore(BasePydanticVectorStore):
     def _table_row_to_node(self, row: Any) -> BaseNode:
         return metadata_dict_to_node(json.loads(row[3]), row[1])
 
-    def add(self, nodes: Sequence[BaseNode], **add_kwargs: Any) -> List[str]:
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:  # noqa: ARG002
+        """
+        Query index for top k most similar nodes.
+        """
+        if self._table is None:
+            raise DuckDBTableNotInitializedError(self.table_name)
+
+        inner_query = self._table
+
+        if query.filters is not None:
+            inner_query = self._build_metadata_filter_relation(
+                inner_query, query.filters
+            )
+
+        inner_query = inner_query.select(
+            StarExpression(),
+            FunctionExpression(
+                "list_cosine_similarity",
+                ColumnExpression("embedding"),
+                ConstantExpression(query.query_embedding),
+            ).alias("score"),
+        )
+
+        outer_query = (
+            inner_query.select(
+                ColumnExpression("node_id"),
+                ColumnExpression("text"),
+                ColumnExpression("embedding"),
+                ColumnExpression("metadata_"),
+                ColumnExpression("score"),
+            )
+            .filter(
+                ColumnExpression("score").isnotnull(),
+            )
+            .sort(
+                ColumnExpression("score").desc(),
+            )
+            .limit(
+                query.similarity_top_k,
+            )
+        )
+
+        command = outer_query.sql_query()
+        rows = self._conn.execute(command).fetchall()
+
+        nodes = []
+        similarities = []
+        ids = []
+
+        for row in rows:
+            node = self._table_row_to_node(row)
+            nodes.append(node)
+            ids.append(row[0])
+            similarities.append(row[4])
+
+        return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
+
+    def add(self, nodes: Sequence[BaseNode], **add_kwargs: Any) -> list[str]:  # noqa: ARG002
         """
         Add nodes to index.
 
@@ -289,27 +343,85 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             nodes: List[BaseNode]: list of nodes with embeddings
 
         """
-        self._initialize()
+        if self._table is None:
+            raise DuckDBTableNotInitializedError(self.table_name)
 
-        ids = []
+        [self._table.insert(self._node_to_table_row(node)) for node in nodes]
 
-        if self.database_name == ":memory:":
-            _table = self._conn.table(self.table_name)
-            for node in nodes:
-                ids.append(node.node_id)
-                _row = self._node_to_table_row(node)
-                _table.insert(_row)
-        elif self._database_path is not None:
-            with DuckDBLocalContext(self._database_path) as _conn:
-                _table = _conn.table(self.table_name)
-                for node in nodes:
-                    ids.append(node.node_id)
-                    _row = self._node_to_table_row(node)
-                    _table.insert(_row)
+        return [node.node_id for node in nodes]
 
-        return ids
+    def get_nodes(
+        self,
+        node_ids: list[str] | None = None,
+        filters: MetadataFilters | None = None,
+        **get_kwargs: Any,
+    ) -> list[BaseNode]:  # noqa: ARG002
+        """
+        Get nodes using node_ids or filters.
+        """
+        if self._table is None:
+            raise DuckDBTableNotInitializedError(self.table_name)
 
-    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        rows_to_get = self._table
+
+        if node_ids is not None:
+            rows_to_get = rows_to_get.filter(
+                FunctionExpression(
+                    "list_contains",
+                    ConstantExpression(node_ids),
+                    ColumnExpression("node_id"),
+                )
+            )
+        if filters is not None:
+            rows_to_get = self._build_metadata_filter_relation(rows_to_get, filters)
+
+        command = rows_to_get.sql_query()
+
+        rows = self._conn.execute(command).fetchall()
+
+        return [self._table_row_to_node(row) for row in rows]
+
+    def delete_nodes(
+        self,
+        node_ids: list[str] | None = None,
+        filters: MetadataFilters | None = None,
+        **delete_kwargs: Any,
+    ) -> None:  # noqa: ARG002
+        """
+        Delete nodes using node_ids or filters.
+        """
+        if self._table is None:
+            raise DuckDBTableNotInitializedError(self.table_name)
+
+        rows_to_delete = self._table
+
+        if node_ids is not None:
+            rows_to_delete = rows_to_delete.filter(
+                FunctionExpression(
+                    "list_contains",
+                    ConstantExpression(node_ids),
+                    ColumnExpression("node_id"),
+                )
+            )
+        if filters is not None:
+            rows_to_delete = self._build_metadata_filter_relation(
+                rows_to_delete, filters
+            )
+
+        rows_to_delete = rows_to_delete.select(ColumnExpression("node_id"))
+
+        self._conn.execute(
+            f"DELETE FROM {self.table_name} WHERE node_id IN ({rows_to_delete.sql_query()})"
+        )
+
+    def clear(self, **clear_kwargs: Any) -> None:  # noqa: ARG002
+        """Clear the vector store."""
+        if self._table is None:
+            raise DuckDBTableNotInitializedError(self.table_name)
+
+        self._conn.execute(f"DELETE FROM {self.table_name}")  # noqa: S608
+
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:  # noqa: ARG002
         """
         Delete nodes using with ref_doc_id.
 
@@ -317,116 +429,36 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        _ddb_query = f"""
-            DELETE FROM {self.table_name}
-            WHERE json_extract_string(metadata_, '$.ref_doc_id') = ?;
-            """
-        if self.database_name == ":memory:":
-            self._conn.execute(_ddb_query, [ref_doc_id])
-        elif self._database_path is not None:
-            with DuckDBLocalContext(self._database_path) as _conn:
-                _conn.execute(_ddb_query, [ref_doc_id])
+        if self._table is None:
+            raise DuckDBTableNotInitializedError(self.table_name)
 
-    @staticmethod
-    def _build_metadata_filter_condition(
-        standard_filters: MetadataFilters,
-    ) -> str:
-        """Translate standard metadata filters to DuckDB SQL specification."""
-        filters_list = []
-        # condition = standard_filters.condition or "and"  ## and/or as strings.
-        condition = "AND"
-        _filters_condition_list = []
+        self._conn.execute(
+            f"DELETE FROM {self.table_name} WHERE metadata_.ref_doc_id::string = $doc_id",  # noqa: S608
+            parameters={"doc_id": ref_doc_id},
+        )
 
-        for filter in standard_filters.filters:
-            filter = cast(MetadataFilter, filter)
-            if filter.operator:
-                if filter.operator in [
-                    "<",
-                    ">",
-                    "<=",
-                    ">=",
-                    "<>",
-                    "!=",
-                ]:
-                    filters_list.append((filter.key, filter.operator, filter.value))
-                elif filter.operator in ["=="]:
-                    filters_list.append((filter.key, "=", filter.value))
-                else:
-                    raise ValueError(
-                        f"Filter operator {filter.operator} not supported."
-                    )
-            else:
-                filters_list.append((filter.key, "=", filter.value))
+    def _build_metadata_filter_relation(
+        self, relation: DuckDBPyRelation, standard_filters: MetadataFilters
+    ) -> DuckDBPyRelation:
+        if self._table is None:
+            raise DuckDBTableNotInitializedError(self.table_name)
 
-        for _fc in filters_list:
-            if isinstance(_fc[2], str):
-                _filters_condition_list.append(
-                    f"json_extract_string(metadata_, '$.{_fc[0]}') {_fc[1]} '{_fc[2]}'"
+        new_relation = relation
+
+        for metadata_filter in standard_filters.filters:
+            metadata_filter = cast("MetadataFilter", metadata_filter)
+
+            operator = op_string_to_op[metadata_filter.operator]
+
+            value_type = filter_value_type_to_duckdb_type[type(metadata_filter.value)]
+ 
+            column_name = f"metadata_.{metadata_filter.key}"
+
+            new_relation = new_relation.filter(
+                operator(
+                    FunctionExpression("json_extract_string", ColumnExpression(column_name), ConstantExpression("$")),
+                    ConstantExpression(metadata_filter.value),
                 )
-            else:
-                _filters_condition_list.append(
-                    f"json_extract(metadata_, '$.{_fc[0]}') {_fc[1]} {_fc[2]}"
-                )
+            )
 
-        return f" {condition} ".join(_filters_condition_list)
-
-    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """
-        Query index for top k most similar nodes.
-
-        Args:
-            query.query_embedding (List[float]): query embedding
-            query.similarity_top_k (int): top k most similar nodes
-
-        """
-        nodes = []
-        similarities = []
-        ids = []
-
-        if query.filters is not None:
-            # TODO: results from the metadata filter query
-            _filter_string = self._build_metadata_filter_condition(query.filters)
-            _ddb_query = f"""
-            SELECT node_id, text, embedding, metadata_, score
-            FROM (
-                SELECT *, list_cosine_similarity(embedding, ?) AS score
-                FROM {self.table_name}
-                WHERE ?
-            ) sq
-            WHERE score IS NOT NULL
-            ORDER BY score DESC LIMIT ?;
-            """
-            query_params = [
-                query.query_embedding,
-                _filter_string,
-                query.similarity_top_k,
-            ]
-        else:
-            _ddb_query = f"""
-            SELECT node_id, text, embedding, metadata_, score
-            FROM (
-                SELECT *, list_cosine_similarity(embedding, ?) AS score
-                FROM {self.table_name}
-            ) sq
-            WHERE score IS NOT NULL
-            ORDER BY score DESC LIMIT ?;
-            """
-            query_params = [
-                query.query_embedding,
-                query.similarity_top_k,
-            ]
-
-        _final_results = []
-        if self.database_name == ":memory:":
-            _final_results = self._conn.execute(_ddb_query, query_params).fetchall()
-        elif self._database_path is not None:
-            with DuckDBLocalContext(self._database_path) as _conn:
-                _final_results = _conn.execute(_ddb_query, query_params).fetchall()
-
-        for _row in _final_results:
-            node = self._table_row_to_node(_row)
-            nodes.append(node)
-            similarities.append(_row[4])
-            ids.append(_row[0])
-
-        return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
+        return new_relation

@@ -3,7 +3,7 @@ from typing import List
 import importlib.util
 
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
-from llama_index.core.vector_stores.types import VectorStoreQuery
+from llama_index.core.vector_stores.types import VectorStoreQuery, FilterOperator
 from llama_index.vector_stores.duckdb import DuckDBVectorStore
 from llama_index.vector_stores.duckdb import DuckDBVectorStore
 
@@ -119,6 +119,9 @@ def test_duckdb_add_and_query(
 ) -> None:
     vector_store.add(text_node_list)
 
+    nodes = vector_store.get_nodes(node_ids=["c330d77f-90bd-4c51-9ed2-57d8d693b3b0"])
+    assert len(nodes) == 1
+
     res = vector_store.query(
         VectorStoreQuery(query_embedding=[1.1, 0.0, 0.0], similarity_top_k=1)
     )
@@ -129,6 +132,7 @@ def test_duckdb_add_and_query(
     assert res.nodes[0].metadata.get("theme") == "Friendship"
     assert res.nodes[0].excluded_embed_metadata_keys == []
     assert res.nodes[0].excluded_llm_metadata_keys == []
+    assert res.nodes[0].source_node is not None
     assert res.nodes[0].source_node.node_id == "test-0"
 
     res = vector_store.query(
@@ -147,4 +151,74 @@ def test_duckdb_add_and_query(
         "metadata",
         "keys",
     ]
+    assert res.nodes[0].source_node is not None
     assert res.nodes[0].source_node.node_id == "test-7"
+
+
+def test_duckdb_from_local_and_params():
+    store1 = DuckDBVectorStore.from_local(database_path=":memory:", embed_dim=3)
+    assert isinstance(store1, DuckDBVectorStore)
+    store2 = DuckDBVectorStore.from_params(embed_dim=3)
+    assert isinstance(store2, DuckDBVectorStore)
+
+
+def test_delete_nodes(vector_store: DuckDBVectorStore, text_node_list: List[TextNode]):
+    vector_store.clear()
+    vector_store.add(text_node_list[:2])
+    node_ids = [n.node_id for n in text_node_list[:2]]
+    assert len(vector_store.get_nodes(node_ids=node_ids)) == 2
+    vector_store.delete_nodes(node_ids=[node_ids[0]])
+    nodes = vector_store.get_nodes(node_ids=node_ids)
+    assert len(nodes) == 1
+    assert nodes[0].node_id == node_ids[1]
+
+
+def test_clear(vector_store: DuckDBVectorStore, text_node_list: List[TextNode]):
+    vector_store.add(text_node_list[:2])
+    assert len(vector_store.get_nodes()) >= 2
+    vector_store.clear()
+    assert len(vector_store.get_nodes()) == 0
+
+
+def test_delete_by_ref_doc_id(
+    vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
+):
+    # Add a node with ref_doc_id in metadata
+    node = TextNode(
+        text="refdoc test",
+        id_="refdoc-node",
+        relationships={},
+        metadata={"ref_doc_id": "ref-123"},
+        embedding=[0.1, 0.2, 0.3],
+    )
+    vector_store.add([node])
+    assert vector_store.get_nodes(node_ids=["refdoc-node"])
+    vector_store.delete(ref_doc_id="ref-123")
+    assert not vector_store.get_nodes(node_ids=["refdoc-node"])
+
+
+def test_get_nodes_with_metadata_filters(
+    vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
+):
+    vector_store.clear()
+    vector_store.add(text_node_list[:2])
+    from llama_index.core.vector_stores.types import MetadataFilter, MetadataFilters
+
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="author", value="Stephen King", operator=FilterOperator.EQ),
+        ],
+    )
+    nodes = vector_store.get_nodes(filters=filters)
+    assert len(nodes) == 1
+    assert nodes[0].metadata.get("author") == "Stephen King"
+
+
+def test_error_on_uninitialized_table():
+    store = DuckDBVectorStore(embed_dim=3)
+    # Manually break table
+    store._table = None
+    from llama_index.vector_stores.duckdb.base import DuckDBTableNotInitializedError
+
+    with pytest.raises(DuckDBTableNotInitializedError):
+        store.get_nodes(node_ids=["any"])
