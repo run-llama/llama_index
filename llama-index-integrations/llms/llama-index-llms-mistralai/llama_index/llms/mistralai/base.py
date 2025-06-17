@@ -115,7 +115,6 @@ def to_mistral_chunks(content_blocks: Sequence[ContentBlock]) -> Sequence[Conten
                 )
         else:
             raise ValueError(f"Unsupported content block type {type(content_block)}")
-    print(content_chunks)
     return content_chunks
 
 
