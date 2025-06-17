@@ -10,8 +10,9 @@ dev = [
     "pre-commit==3.2.0",
     "pylint==2.15.10",
     "pytest==7.2.1",
+    "pytest-asyncio==0.21.0",
     "pytest-mock==3.11.1",
-    "ruff==0.11.11",
+    "ruff==0.0.292",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-protobuf>=4.24.0.4,<5",
@@ -25,18 +26,17 @@ dev = [
 ]
 
 [project]
-name = "llama-index-readers-mongodb"
-version = "0.3.2"
-description = "llama-index readers mongodb integration"
+name = "llama-index-vector-stores-opengauss"
+version = "0.1.0"
+description = "llama-index vector_stores openGauss integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.9,<3.13"
 readme = "README.md"
 license = "MIT"
-maintainers = [{name = "jerryjliu"}]
 dependencies = [
-    "pymongo>=4.6.1,<5",
-    "motor",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-vector-stores-postgres==0.5.3",
+    "opengauss_sqlalchemy>=2.4.0",
+    "llama-index-core>=0.12.6,<0.13",
 ]
 
 [tool.codespell]
@@ -54,13 +54,18 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.readers.mongodb"
+import_path = "llama_index.vector_stores.openGauss"
 
 [tool.llamahub.class_authors]
-SimpleMongoReader = "jerryjliu"
+OpenGaussStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 python_version = "3.8"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+filterwarnings = ["ignore::DeprecationWarning:"]
+markers = ["asyncio"]
