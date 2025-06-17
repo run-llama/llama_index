@@ -271,9 +271,9 @@ class GoogleDriveReader(
         """
         from googleapiclient.discovery import build
 
+        fileids_meta = []
         try:
             service = build("drive", "v3", credentials=self._creds)
-            fileids_meta = []
 
             if folder_id and not file_id:
                 try:
@@ -427,6 +427,7 @@ class GoogleDriveReader(
             logger.error(
                 f"An error occurred while getting fileids metadata: {e}", exc_info=True
             )
+            return fileids_meta
 
     def _download_file(self, fileid: str, filename: str) -> str:
         """
