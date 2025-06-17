@@ -2,7 +2,7 @@
 
 import os
 import logging
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 import warnings
 
 import lancedb.rerankers
@@ -270,7 +270,9 @@ class LanceDBVectorStore(BasePydanticVectorStore):
         return self._connection
 
     @property
-    def table(self) -> lancedb.db.LanceTable | lancedb.remote.table.RemoteTable | None:
+    def table(
+        self,
+    ) -> Optional[Union[lancedb.db.LanceTable, lancedb.remote.table.RemoteTable]]:
         """Get table."""
         if self._table is None:
             raise TableNotFoundError(
