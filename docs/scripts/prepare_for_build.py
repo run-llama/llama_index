@@ -97,6 +97,7 @@ INTEGRATION_FOLDER_TO_LABEL = {
     "query_engine": "Query Engines",
     "query_pipeline": "Query Pipeline",
     "question_gen": "Question Generators",
+    "protocols": "Protocols",
     "readers": "Readers",
     "response_synthesizers": "Response Synthesizers",
     "retrievers": "Retrievers",
