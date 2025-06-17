@@ -1,10 +1,11 @@
-from typing import Any, Dict, List, Optional, Type, cast
+from typing import Any, Dict, List, Optional, Type, cast, Union
 
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.multi_modal_llms import MultiModalLLM
 from llama_index.core.output_parsers.pydantic import PydanticOutputParser
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.schema import ImageNode
+from llama_index.core.llms import ImageBlock
 from llama_index.core.types import BasePydanticProgram
 from llama_index.core.utils import print_text
 
@@ -22,7 +23,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
         output_parser: PydanticOutputParser,
         prompt: BasePromptTemplate,
         multi_modal_llm: MultiModalLLM,
-        image_documents: List[ImageNode],
+        image_documents: List[Union[ImageNode, ImageBlock]],
         verbose: bool = False,
     ) -> None:
         self._output_parser = output_parser
@@ -41,7 +42,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
         prompt_template_str: Optional[str] = None,
         prompt: Optional[PromptTemplate] = None,
         multi_modal_llm: Optional[MultiModalLLM] = None,
-        image_documents: Optional[List[ImageNode]] = None,
+        image_documents: Optional[List[Union[ImageNode, ImageBlock]]] = None,
         verbose: bool = False,
         **kwargs: Any,
     ) -> "MultiModalLLMCompletionProgram":
@@ -94,7 +95,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
     def __call__(
         self,
         llm_kwargs: Optional[Dict[str, Any]] = None,
-        image_documents: Optional[List[ImageNode]] = None,
+        image_documents: Optional[List[Union[ImageNode, ImageBlock]]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
@@ -116,7 +117,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
     async def acall(
         self,
         llm_kwargs: Optional[Dict[str, Any]] = None,
-        image_documents: Optional[List[ImageNode]] = None,
+        image_documents: Optional[List[Union[ImageNode, ImageBlock]]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:

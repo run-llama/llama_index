@@ -7,8 +7,8 @@ from typing import Any, List, Optional, Sequence, Union
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.core.multi_modal_llms.base import MultiModalLLM
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
+from llama_index.core.llms import ImageBlock
 from llama_index.core.prompts.mixin import PromptDictType
-from llama_index.core.schema import ImageNode
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "Please tell if a given piece of information "
@@ -151,11 +151,9 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
         )
 
         if image_paths:
-            image_nodes = [
-                ImageNode(image_path=image_path) for image_path in image_paths
-            ]
+            image_nodes = [ImageBlock(path=image_path) for image_path in image_paths]
         if image_urls:
-            image_nodes = [ImageNode(image_url=image_url) for image_url in image_urls]
+            image_nodes = [ImageBlock(url=image_url) for image_url in image_urls]
 
         response_obj = self._multi_modal_llm.complete(
             prompt=fmt_prompt,
@@ -200,11 +198,9 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
         )
 
         if image_paths:
-            image_nodes = [
-                ImageNode(image_path=image_path) for image_path in image_paths
-            ]
+            image_nodes = [ImageBlock(path=image_path) for image_path in image_paths]
         if image_urls:
-            image_nodes = [ImageNode(image_url=image_url) for image_url in image_urls]
+            image_nodes = [ImageBlock(url=image_url) for image_url in image_urls]
 
         response_obj = await self._multi_modal_llm.acomplete(
             prompt=fmt_prompt,

@@ -32,7 +32,7 @@ from llama_index.core.bridge.pydantic import (
     model_validator,
 )
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.core.schema import ImageDocument
+from llama_index.core.schema import ImageDocument, ImageNode
 from llama_index.core.utils import resolve_binary
 
 
@@ -133,6 +133,43 @@ class ImageBlock(BaseModel):
         if size == 0:
             raise ValueError("resolve_image returned zero bytes")
         return data_buffer
+
+    @classmethod
+    def from_image_node(cls, image_node: ImageNode) -> ImageBlock:
+        """
+        Get an ImageBlock from an ImageNode.
+
+        Args:
+            image_node (ImageNode): ImageNode to convert.
+
+        Returns:
+            ImageBlock: block representation of the node.
+
+        Raises:
+            ValueError: when the image provided within the ImageNode is not correctly base64-encoded.
+
+        """
+        if isinstance(image_node.image, str):
+            try:
+                return cls(image=base64.b64decode(image_node.image, validate=True))
+            except BinasciiError:
+                raise ValueError("The provided image string is not base64-encoded")
+        elif image_node.image is None:
+            if image_node.image_path is not None:
+                image_path: Optional[Path] = Path(image_node.image_path)
+            elif "file_path" in image_node.metadata:
+                image_path = image_node.metadata["file_path"]
+            else:
+                image_path = image_node.image_path
+            return cls(
+                image=image_node.image,
+                url=image_node.image_url,
+                image_mimetype=image_node.image_mimetype,
+                path=image_path,
+            )
+
+        else:
+            raise ValueError("image_node.image is neither a string or None.")
 
 
 class AudioBlock(BaseModel):

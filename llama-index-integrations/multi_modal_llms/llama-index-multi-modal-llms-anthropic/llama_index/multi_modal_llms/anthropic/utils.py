@@ -1,12 +1,12 @@
 import base64
 import logging
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
 import filetype
 
 import httpx
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
-from llama_index.core.multi_modal_llms.generic_utils import encode_image
-from llama_index.core.schema import ImageDocument
+from llama_index.core.llms import ImageBlock
+from llama_index.core.schema import ImageDocument, ImageNode
 
 DEFAULT_ANTHROPIC_API_TYPE = "anthropic_ai"
 DEFAULT_ANTHROPIC_API_BASE = "https://api.anthropic.com"
@@ -79,27 +79,22 @@ def generate_anthropic_multi_modal_chat_message(
 
     # if image_documents is not empty, return text with images chat message
     completion_content = []
-    for image_document in image_documents:
+    if all(isinstance(doc, ImageNode) for doc in image_documents):
+        image_docs: List[ImageBlock] = [
+            ImageBlock.from_image_node(doc) for doc in image_documents
+        ]
+    else:
+        image_docs = cast(List[ImageBlock], image_documents)
+    for image_document in image_docs:
         image_content: Dict[str, Any] = {}
-        if image_document.image_path and image_document.image_path != "":
-            mimetype = infer_image_mimetype_from_file_path(image_document.image_path)
-            base64_image = encode_image(image_document.image_path)
-            image_content = {
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": mimetype,
-                    "data": base64_image,
-                },
-            }
-        elif (
-            "file_path" in image_document.metadata
-            and image_document.metadata["file_path"] != ""
-        ):
-            mimetype = infer_image_mimetype_from_file_path(
-                image_document.metadata["file_path"]
+        if image_document.path and image_document.path != "":
+            mimetype = (
+                image_document.image_mimetype
+                or infer_image_mimetype_from_file_path(image_document.path)
             )
-            base64_image = encode_image(image_document.metadata["file_path"])
+            base64_image = (
+                image_document.resolve_image(as_base64=True).read().decode("utf-8")
+            )
             image_content = {
                 "type": "image",
                 "source": {
@@ -108,21 +103,27 @@ def generate_anthropic_multi_modal_chat_message(
                     "data": base64_image,
                 },
             }
-        elif image_document.image_url and image_document.image_url != "":
-            mimetype = infer_image_mimetype_from_file_path(image_document.image_url)
+        elif image_document.url and str(image_document.url) != "":
+            mimetype = (
+                image_document.image_mimetype
+                or infer_image_mimetype_from_file_path(str(image_document.url))
+            )
             image_content = {
                 "type": "image",
                 "source": {
                     "type": "base64",
                     "media_type": mimetype,
                     "data": base64.b64encode(
-                        httpx.get(image_document.image_url).content
+                        httpx.get(image_document.url).content
                     ).decode("utf-8"),
                 },
             }
-        elif image_document.image != "":
+        elif image_document.image and image_document.image != "":
             base64_image = image_document.image
-            mimetype = infer_image_mimetype_from_base64(base64_image)
+            mimetype = (
+                image_document.image_mimetype
+                or infer_image_mimetype_from_base64(base64_image)
+            )
             image_content = {
                 "type": "image",
                 "source": {

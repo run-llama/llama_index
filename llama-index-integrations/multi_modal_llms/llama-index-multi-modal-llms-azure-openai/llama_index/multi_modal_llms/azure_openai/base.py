@@ -1,5 +1,5 @@
-from typing import Any, Optional, Sequence
-from pathlib import Path
+from typing import Any, Optional, Sequence, Union
+from deprecated import deprecated
 
 from llama_index.core.base.llms.generic_utils import (
     chat_response_to_completion_response,
@@ -18,6 +18,10 @@ from llama_index.core.schema import ImageNode
 from llama_index.llms.azure_openai import AzureOpenAI
 
 
+@deprecated(
+    reason="This class is deprecated and will be no longer maintained. Use AzureOpenAI from llama-index-llms-azure-openai instead.",
+    version="0.4.1",
+)
 class AzureOpenAIMultiModal(AzureOpenAI):
     @classmethod
     def class_name(cls) -> str:
@@ -27,7 +31,7 @@ class AzureOpenAIMultiModal(AzureOpenAI):
         self,
         prompt: str,
         role: str,
-        image_documents: Sequence[ImageNode],
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
         image_detail: Optional[str] = "low",
         **kwargs: Any,
     ) -> ChatMessage:
@@ -37,40 +41,17 @@ class AzureOpenAIMultiModal(AzureOpenAI):
             return chat_msg
 
         for image_document in image_documents:
-            # Create the appropriate ContentBlock depending on the document content
-            if image_document.image:
-                chat_msg.blocks.append(
-                    ImageBlock(
-                        image=bytes(image_document.image, encoding="utf-8"),
-                        detail=image_detail,
-                    )
-                )
-            elif image_document.image_url:
-                chat_msg.blocks.append(
-                    ImageBlock(url=image_document.image_url, detail=image_detail)
-                )
-            elif image_document.image_path:
-                chat_msg.blocks.append(
-                    ImageBlock(
-                        path=Path(image_document.image_path),
-                        detail=image_detail,
-                        image_mimetype=image_document.image_mimetype
-                        or image_document.metadata.get("file_type"),
-                    )
-                )
-            elif f_path := image_document.metadata.get("file_path"):
-                chat_msg.blocks.append(
-                    ImageBlock(
-                        path=Path(f_path),
-                        detail=image_detail,
-                        image_mimetype=image_document.metadata.get("file_type"),
-                    )
-                )
-
+            if isinstance(image_document, ImageNode):
+                chat_msg.blocks.append(ImageBlock.from_image_node(image_document))
+            else:
+                chat_msg.blocks.append(image_document)
         return chat_msg
 
     def complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponse:
         chat_message = self._get_multi_modal_chat_message(
             prompt=prompt,
@@ -81,7 +62,10 @@ class AzureOpenAIMultiModal(AzureOpenAI):
         return chat_response_to_completion_response(chat_response)
 
     def stream_complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponseGen:
         chat_message = self._get_multi_modal_chat_message(
             prompt=prompt,
@@ -94,7 +78,10 @@ class AzureOpenAIMultiModal(AzureOpenAI):
     # ===== Async Endpoints =====
 
     async def acomplete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponse:
         chat_message = self._get_multi_modal_chat_message(
             prompt=prompt,
@@ -105,7 +92,10 @@ class AzureOpenAIMultiModal(AzureOpenAI):
         return chat_response_to_completion_response(chat_response)
 
     async def astream_complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponseAsyncGen:
         chat_message = self._get_multi_modal_chat_message(
             prompt=prompt,

@@ -1,6 +1,6 @@
 import base64
 import logging
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence, cast, List
 import filetype
 from tenacity import (
     before_sleep_log,
@@ -11,8 +11,8 @@ from tenacity import (
 )
 
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
-from llama_index.core.multi_modal_llms.generic_utils import encode_image
-from llama_index.core.schema import ImageDocument
+from llama_index.core.schema import ImageDocument, ImageNode
+from llama_index.core.llms import ImageBlock
 
 DEFAULT_BEDROCK_REGION = "us-east-1"
 
@@ -68,22 +68,17 @@ def generate_bedrock_multi_modal_message(
     message_content = []
     # Add text content first
     message_content.append({"type": "text", "text": prompt})
-
+    if all(isinstance(doc, ImageNode) for doc in image_documents):
+        image_docs: List[ImageBlock] = [
+            ImageBlock.from_image_node(doc) for doc in image_documents
+        ]
+    else:
+        image_docs = cast(List[ImageBlock], image_documents)
     # Add image content
-    for image_document in image_documents:
+    for image_document in image_docs:
         image_content = {}
-        if image_document.image_path:
-            base64_image = encode_image(image_document.image_path)
-            image_content = {
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": "image/jpeg",  # Default to JPEG
-                    "data": base64_image,
-                },
-            }
-        elif "file_path" in image_document.metadata:
-            base64_image = encode_image(image_document.metadata["file_path"])
+        if image_document.path:
+            base64_image = image_document.resolve_image().read().decode("utf-8")
             image_content = {
                 "type": "image",
                 "source": {
