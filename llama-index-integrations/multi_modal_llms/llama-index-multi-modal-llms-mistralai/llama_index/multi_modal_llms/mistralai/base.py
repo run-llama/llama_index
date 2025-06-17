@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Sequence, Union
 
 from llama_index.core.base.llms.types import (
     CompletionResponse,
@@ -34,6 +34,7 @@ class MistralAIMultiModal(MistralAI):
 
     @classmethod
     def class_name(cls) -> str:
+        """Class name."""
         return "mistral_multi_modal_llm"
 
     def _get_credential_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
@@ -46,25 +47,46 @@ class MistralAIMultiModal(MistralAI):
         self,
         prompt: str,
         role: str,
-        image_documents: Sequence[ImageNode],
+        image_documents: Sequence[Union[ImageBlock, ImageNode]],
     ) -> List[ChatMessage]:
         blocks = []
-        for image_document in image_documents:
-            blocks.append(
-                ImageBlock(
-                    image=image_document.image,
-                    path=image_document.image_path,
-                    url=image_document.image_url,
-                    image_mimetype=image_document.image_mimetype,
+        if all(isinstance(doc, ImageNode) for doc in image_documents):
+            for image_document in image_documents:
+                blocks.append(
+                    ImageBlock(
+                        image=image_document.image,
+                        path=image_document.image_path,
+                        url=image_document.image_url,
+                        image_mimetype=image_document.image_mimetype,
+                    )
                 )
+        elif all(isinstance(doc, ImageBlock) for doc in image_documents):
+            blocks.extend(image_documents)
+        else:
+            raise ValueError(
+                "The input image_documents must be a list of either ImageBlock (preferred) or ImageNode objects"
             )
-
         blocks.append(TextBlock(text=prompt))
         return [ChatMessage(role=role, blocks=blocks)]
 
     def complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageBlock, ImageNode]],
+        **kwargs: Any,
     ) -> CompletionResponse:
+        """
+        Produce a completion response from the LLM.
+
+        Args:
+            prompt (str): The prompt for the image description.
+            image_documents (Sequence[Union[ImageNode, ImageBlock]]): The sequence of image documents (preferably as ImageBlock) to use as LLM input.
+            **kwargs (Any): Keyword arguments.
+
+        Returns:
+            CompletionResponse: Completion response from the LLM.
+
+        """
         messages = self._get_multi_modal_chat_messages(
             prompt=prompt, role=MessageRole.USER.value, image_documents=image_documents
         )
@@ -72,8 +94,23 @@ class MistralAIMultiModal(MistralAI):
         return chat_response_to_completion_response(chat_response)
 
     def stream_complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponseGen:
+        """
+        Stream a completion response from the LLM.
+
+        Args:
+            prompt (str): The prompt for the image description.
+            image_documents (Sequence[Union[ImageNode, ImageBlock]]): The sequence of image documents (preferably as ImageBlock) to use as LLM input.
+            **kwargs (Any): Keyword arguments.
+
+        Returns:
+            CompletionResponseGen: Generator for the completion response from the LLM.
+
+        """
         messages = self._get_multi_modal_chat_messages(
             prompt=prompt, role=MessageRole.USER.value, image_documents=image_documents
         )
@@ -81,8 +118,23 @@ class MistralAIMultiModal(MistralAI):
         return stream_chat_response_to_completion_response(chat_response)
 
     async def acomplete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponse:
+        """
+        Asynchronously produce a completion response from the LLM.
+
+        Args:
+            prompt (str): The prompt for the image description.
+            image_documents (Sequence[Union[ImageNode, ImageBlock]]): The sequence of image documents (preferably as ImageBlock) to use as LLM input.
+            **kwargs (Any): Keyword arguments.
+
+        Returns:
+            CompletionResponse: Completion response from the LLM.
+
+        """
         messages = self._get_multi_modal_chat_messages(
             prompt=prompt, role=MessageRole.USER.value, image_documents=image_documents
         )
@@ -90,8 +142,23 @@ class MistralAIMultiModal(MistralAI):
         return chat_response_to_completion_response(chat_response)
 
     async def astream_complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponseAsyncGen:
+        """
+        Asynchronously stream the completion response from the LLM.
+
+        Args:
+            prompt (str): The prompt for the image description.
+            image_documents (Sequence[Union[ImageNode, ImageBlock]]): The sequence of image documents (preferably as ImageBlock) to use as LLM input.
+            **kwargs (Any): Keyword arguments.
+
+        Returns:
+            CompletionResponseAsyncGen: An async generator for the completion response.
+
+        """
         messages = self._get_multi_modal_chat_messages(
             prompt=prompt, role=MessageRole.USER.value, image_documents=image_documents
         )
