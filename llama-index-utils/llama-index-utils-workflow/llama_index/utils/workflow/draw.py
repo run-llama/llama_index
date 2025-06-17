@@ -224,7 +224,25 @@ def _get_node_color(node: DrawWorkflowNode) -> str:
     elif node.node_type == "external":
         return "#BEDAE4"  # Light blue-gray for external
     elif node.node_type == "event" and node.event_type:
-        return determine_event_color(node.event_type)  # Uses original function
+        return _determine_event_color(node.event_type)  # Uses original function
+    elif node.node_type == "agent":
+        # Determine color based on agent type
+        if node.event_type and issubclass(node.event_type, ReActAgent):
+            return "#E27AFF"
+        elif node.event_type and issubclass(node.event_type, CodeActAgent):
+            return "#66ccff"
+        else:
+            return "#90EE90"
+    elif node.node_type == "tool":
+        return "#ff9966"  # Orange for tools
+    elif node.node_type == "workflow_base":
+        return "#90EE90"  # Light green for workflow base
+    elif node.node_type == "workflow_agent":
+        return "#66ccff"  # Light blue for workflow agents
+    elif node.node_type == "workflow_tool":
+        return "#ff9966"  # Orange for workflow tools
+    elif node.node_type == "workflow_handoff":
+        return "#E27AFF"  # Pink for handoff nodes
     else:
         return "#90EE90"  # Default light green
 
@@ -235,6 +253,18 @@ def _get_node_shape(node: DrawWorkflowNode) -> str:
         return "box"  # Steps and external_step use box
     elif node.node_type == "event":
         return "ellipse"  # Events use ellipse
+    elif node.node_type == "agent":
+        return "ellipse"  # Agents use ellipse
+    elif node.node_type == "tool":
+        return "ellipse"  # Tools use ellipse (matching original ellipsis behavior)
+    elif node.node_type == "workflow_base":
+        return "diamond"  # Workflow base uses diamond
+    elif node.node_type == "workflow_agent":
+        return "ellipse"  # Workflow agents use ellipse
+    elif node.node_type == "workflow_tool":
+        return "box"  # Workflow tools use box (matching original square behavior)
+    elif node.node_type == "workflow_handoff":
+        return "ellipse"  # Handoff nodes use ellipse
     else:
         return "box"  # Default shape
 
@@ -266,6 +296,27 @@ def _render_pyvis(
     net.show(filename, notebook=notebook)
 
 
+def _determine_event_color(event_type: type) -> str:
+    """Determine color for an event type."""
+    if issubclass(event_type, StartEvent):
+        # Pink for start events
+        event_color = "#E27AFF"
+    elif issubclass(event_type, StopEvent):
+        # Orange for stop events
+        event_color = "#FFA07A"
+    else:
+        # Light green for other events
+        event_color = "#90EE90"
+    return event_color
+
+
+def _get_agent_tool_names(agent: BaseWorkflowAgent) -> Union[List[str], None]:
+    tools = cast(Union[List[Union[BaseTool, AsyncBaseTool]], None], agent.tools)
+    if tools and len(tools) > 0:
+        return [tool.metadata.get_name() for tool in tools]
+    return None
+
+
 def _clean_id_for_mermaid(name: str) -> str:
     """Convert a name to a valid Mermaid ID."""
     return name.replace(" ", "_").replace("-", "_").replace(".", "_")
@@ -284,6 +335,24 @@ def _get_mermaid_css_class(node: DrawWorkflowNode) -> str:
             return "stopEventStyle"
         else:
             return "defaultEventStyle"
+    elif node.node_type == "agent":
+        # Determine class based on agent type
+        if node.event_type and issubclass(node.event_type, ReActAgent):
+            return "reactAgentStyle"
+        elif node.event_type and issubclass(node.event_type, CodeActAgent):
+            return "codeActAgentStyle"
+        else:
+            return "defaultAgentStyle"
+    elif node.node_type == "tool":
+        return "toolStyle"
+    elif node.node_type == "workflow_base":
+        return "workflowBaseStyle"
+    elif node.node_type == "workflow_agent":
+        return "workflowAgentStyle"
+    elif node.node_type == "workflow_tool":
+        return "workflowToolStyle"
+    elif node.node_type == "workflow_handoff":
+        return "workflowHandoffStyle"
     else:
         return "defaultEventStyle"
 
@@ -301,6 +370,15 @@ def _render_mermaid(graph: DrawWorkflowGraph, filename: str) -> str:
             clean_id = f"step_{_clean_id_for_mermaid(node.id)}"
         elif node.node_type == "external":
             clean_id = node.id  # external_step is already clean
+        elif node.node_type in [
+            "agent",
+            "tool",
+            "workflow_base",
+            "workflow_agent",
+            "workflow_tool",
+            "workflow_handoff",
+        ]:
+            clean_id = _clean_id_for_mermaid(node.id)
         else:  # event
             clean_id = f"event_{_clean_id_for_mermaid(node.id)}"
 
@@ -313,6 +391,8 @@ def _render_mermaid(graph: DrawWorkflowGraph, filename: str) -> str:
                 shape_start, shape_end = "[", "]"
             elif shape == "ellipse":
                 shape_start, shape_end = "([", "])"
+            elif shape == "diamond":
+                shape_start, shape_end = "{", "}"
             else:
                 shape_start, shape_end = "[", "]"
 
@@ -330,6 +410,15 @@ def _render_mermaid(graph: DrawWorkflowGraph, filename: str) -> str:
             source_id = f"step_{_clean_id_for_mermaid(edge.source)}"
         elif source_node.node_type == "external":
             source_id = edge.source
+        elif source_node.node_type in [
+            "agent",
+            "tool",
+            "workflow_base",
+            "workflow_agent",
+            "workflow_tool",
+            "workflow_handoff",
+        ]:
+            source_id = _clean_id_for_mermaid(edge.source)
         else:  # event
             source_id = f"event_{_clean_id_for_mermaid(edge.source)}"
 
@@ -337,6 +426,15 @@ def _render_mermaid(graph: DrawWorkflowGraph, filename: str) -> str:
             target_id = f"step_{_clean_id_for_mermaid(edge.target)}"
         elif target_node.node_type == "external":
             target_id = edge.target
+        elif target_node.node_type in [
+            "agent",
+            "tool",
+            "workflow_base",
+            "workflow_agent",
+            "workflow_tool",
+            "workflow_handoff",
+        ]:
+            target_id = _clean_id_for_mermaid(edge.target)
         else:  # event
             target_id = f"event_{_clean_id_for_mermaid(edge.target)}"
 
@@ -353,6 +451,14 @@ def _render_mermaid(graph: DrawWorkflowGraph, filename: str) -> str:
             "    classDef startEventStyle fill:#E27AFF,color:#000000",
             "    classDef stopEventStyle fill:#FFA07A,color:#000000",
             "    classDef defaultEventStyle fill:#90EE90,color:#000000",
+            "    classDef reactAgentStyle fill:#E27AFF,color:#000000",
+            "    classDef codeActAgentStyle fill:#66ccff,color:#000000",
+            "    classDef defaultAgentStyle fill:#90EE90,color:#000000",
+            "    classDef toolStyle fill:#ff9966,color:#000000",
+            "    classDef workflowBaseStyle fill:#90EE90,color:#000000",
+            "    classDef workflowAgentStyle fill:#66ccff,color:#000000",
+            "    classDef workflowToolStyle fill:#ff9966,color:#000000",
+            "    classDef workflowHandoffStyle fill:#E27AFF,color:#000000",
         ]
     )
 
@@ -363,6 +469,102 @@ def _render_mermaid(graph: DrawWorkflowGraph, filename: str) -> str:
             f.write(diagram_string)
 
     return diagram_string
+
+
+def _extract_single_agent_structure(agent: BaseWorkflowAgent) -> DrawWorkflowGraph:
+    """Extract the structure of a single agent."""
+    nodes = []
+    edges = []
+
+    # Determine agent node color based on type
+    if isinstance(agent, ReActAgent):
+        agent_color = "#E27AFF"
+    elif isinstance(agent, CodeActAgent):
+        agent_color = "#66ccff"
+    else:
+        agent_color = "#90EE90"
+
+    # Add agent node
+    agent_node = DrawWorkflowNode(
+        id="agent",
+        label=agent.name,
+        node_type="agent",
+        event_type=type(agent),  # Store agent type for color determination
+    )
+    nodes.append(agent_node)
+
+    # Add tool nodes and edges
+    tools = cast(Union[List[Union[BaseTool, AsyncBaseTool]], None], agent.tools)
+    if tools is not None and len(tools) > 0:
+        for i, tool in enumerate(tools):
+            tool_id = f"tool_{i}"
+            tool_node = DrawWorkflowNode(
+                id=tool_id,
+                label=f"Tool {i + 1}: {tool.metadata.get_name()}",
+                node_type="tool",
+            )
+            nodes.append(tool_node)
+
+            # Add edge from agent to tool
+            edges.append(DrawWorkflowEdge("agent", tool_id))
+
+    return DrawWorkflowGraph(nodes=nodes, edges=edges)
+
+
+def _extract_agent_workflow_structure(
+    agent_workflow: AgentWorkflow,
+) -> DrawWorkflowGraph:
+    """Extract the structure of an agent workflow."""
+    nodes = []
+    edges = []
+
+    # Add base workflow node
+    base_node = DrawWorkflowNode(
+        id="base", label="AgentWorkflow", node_type="workflow_base"
+    )
+    nodes.append(base_node)
+
+    agents = agent_workflow.agents
+    can_handoff_to: Dict[str, Union[List[str], None]] = {
+        agent: agents[agent].can_handoff_to for agent in agents
+    }
+
+    # Add agent nodes and edges
+    for agent_name in agents:
+        agent_node = DrawWorkflowNode(
+            id=agent_name, label=agent_name, node_type="workflow_agent"
+        )
+        nodes.append(agent_node)
+
+        # Add edge from base to agent
+        edges.append(DrawWorkflowEdge("base", agent_name))
+
+        # Add tool nodes and edges
+        tools = _get_agent_tool_names(agents[agent_name])
+        if tools:
+            for tool_name in tools:
+                tool_node = DrawWorkflowNode(
+                    id=tool_name, label=tool_name, node_type="workflow_tool"
+                )
+                nodes.append(tool_node)
+
+                # Add edge from agent to tool
+                edges.append(DrawWorkflowEdge(agent_name, tool_name))
+
+        # Add handoff nodes and edges
+        handoff_possibilities = can_handoff_to[agent_name]
+        if handoff_possibilities and len(handoff_possibilities) > 0:
+            for handoff_target in handoff_possibilities:
+                handoff_id = f"handoff_from_{agent_name}_to_{handoff_target}"
+                handoff_node = DrawWorkflowNode(
+                    id=handoff_id, label=handoff_target, node_type="workflow_handoff"
+                )
+                nodes.append(handoff_node)
+
+                # Add edge from agent to handoff
+                edges.append(DrawWorkflowEdge(agent_name, handoff_id))
+
+    return DrawWorkflowGraph(nodes=nodes, edges=edges)
 
 
 def draw_all_possible_flows(
@@ -436,20 +638,6 @@ def draw_most_recent_execution(
     net.show(filename, notebook=notebook)
 
 
-def determine_event_color(event_type):
-    """Determine color for an event type."""
-    if issubclass(event_type, StartEvent):
-        # Pink for start events
-        event_color = "#E27AFF"
-    elif issubclass(event_type, StopEvent):
-        # Orange for stop events
-        event_color = "#FFA07A"
-    else:
-        # Light green for other events
-        event_color = "#90EE90"
-    return event_color
-
-
 def draw_all_possible_flows_mermaid(
     workflow: Workflow,
     filename: str = "workflow_all_flows.mermaid",
@@ -489,41 +677,9 @@ def draw_agent_with_tools(
         str: the path to the file where the flowchart was saved.
 
     """
-    try:
-        from pyvis.network import Network
-    except ImportError:
-        raise ImportError(
-            "PyVis is not installed, please make sure to install it by running `pip install pyvis`"
-        )
-    d = Network(directed=True, height="750px", width="100%")
-    node_color = "#90EE90"
-    if isinstance(agent, ReActAgent):
-        node_color = "#E27AFF"
-    elif isinstance(agent, CodeActAgent):
-        node_color = "#66ccff"
-    d.add_node(n_id="A", label=agent.name, color=node_color, shape="ellipse")
-    tools = cast(Union[List[Union[BaseTool, AsyncBaseTool]], None], agent.tools)
-    node_names: List[str] = []
-    if tools is not None and len(tools) > 0:
-        for i in range(len(tools)):
-            node_names.append(f"B{i + 1}")
-            d.add_node(
-                n_id=f"B{i + 1}",
-                label=f"Tool {i + 1}: {tools[i].metadata.get_name()}",
-                color="#ff9966",
-                shape="ellipsis",
-            )
-    for n in node_names:
-        d.add_edge("A", n)
-    d.show(name=filename, notebook=notebook)
+    graph = _extract_single_agent_structure(agent)
+    _render_pyvis(graph, filename, notebook)
     return filename
-
-
-def _get_agent_tool_names(agent: BaseWorkflowAgent) -> Union[List[str], None]:
-    tools = cast(Union[List[Union[BaseTool, AsyncBaseTool]], None], agent.tools)
-    if tools and len(tools) > 0:
-        return [tool.metadata.get_name() for tool in tools]
-    return None
 
 
 def draw_agent_workflow(
@@ -544,38 +700,44 @@ def draw_agent_workflow(
         str: the path to the file where the flowchart was saved.
 
     """
-    try:
-        from pyvis.network import Network
-    except ImportError:
-        raise ImportError(
-            "PyVis is not installed, please make sure to install it by running `pip install pyvis`"
-        )
-    d = Network(directed=True, height="750px", width="100%")
-    d.add_node(n_id="base", label="AgentWorkflow", color="#90EE90", shape="diamond")
-    agents = agent_workflow.agents
-    can_handoff_to: Dict[str, Union[List[str], None]] = {
-        agent: agents[agent].can_handoff_to for agent in agents
-    }
-    for agent in agents:
-        d.add_node(n_id=agent, label=agent, color="#66ccff", shape="ellipsis")
-        d.add_edge("base", agent, title="Agent")
-        tools = _get_agent_tool_names(agents[agent])
-        if tools:
-            for toolname in tools:
-                d.add_node(
-                    n_id=toolname, label=toolname, color="#ff9966", shape="square"
-                )
-                d.add_edge(agent, toolname, title="Tool")
-        handoff_possibilities = can_handoff_to[agent]
-        if handoff_possibilities and len(handoff_possibilities) > 0:
-            for handoff_possibility in handoff_possibilities:
-                node_id = f"handoff_from_{agent}_to_{handoff_possibility}"
-                d.add_node(
-                    n_id=node_id,
-                    label=handoff_possibility,
-                    color="#E27AFF",
-                    shape="ellipsis",
-                )
-                d.add_edge(agent, node_id, title="Can hand off to")
-    d.show(name=filename, notebook=notebook)
+    graph = _extract_agent_workflow_structure(agent_workflow)
+    _render_pyvis(graph, filename, notebook)
     return filename
+
+
+def draw_agent_with_tools_mermaid(
+    agent: BaseWorkflowAgent,
+    filename: str = "agent_with_tools.mermaid",
+) -> str:
+    """
+    Draw an agent with its tools as a Mermaid diagram.
+
+    Args:
+        agent (BaseWorkflowAgent): agent workflow.
+        filename (str): name of the Mermaid file to save the diagram to. Defaults to 'agent_with_tools.mermaid'.
+
+    Returns:
+        str: the Mermaid diagram as a string.
+
+    """
+    graph = _extract_single_agent_structure(agent)
+    return _render_mermaid(graph, filename)
+
+
+def draw_agent_workflow_mermaid(
+    agent_workflow: AgentWorkflow,
+    filename: str = "agent_workflow.mermaid",
+) -> str:
+    """
+    Draw an agent workflow as a Mermaid diagram.
+
+    Args:
+        agent_workflow (AgentWorkflow): agent workflow.
+        filename (str): name of the Mermaid file to save the diagram to. Defaults to 'agent_workflow.mermaid'.
+
+    Returns:
+        str: the Mermaid diagram as a string.
+
+    """
+    graph = _extract_agent_workflow_structure(agent_workflow)
+    return _render_mermaid(graph, filename)
