@@ -1667,6 +1667,7 @@ nav:
               - ./api_reference/storage/vector_store/nile.md
               - ./api_reference/storage/vector_store/objectbox.md
               - ./api_reference/storage/vector_store/oceanbase.md
+              - ./api_reference/storage/vector_store/openGauss.md
               - ./api_reference/storage/vector_store/opensearch.md
               - ./api_reference/storage/vector_store/oracledb.md
               - ./api_reference/storage/vector_store/pgvecto_rs.md
@@ -1721,6 +1722,7 @@ nav:
           - ./api_reference/tools/function.md
           - ./api_reference/tools/google.md
           - ./api_reference/tools/graphql.md
+          - ./api_reference/tools/hive.md
           - ./api_reference/tools/index.md
           - ./api_reference/tools/ionic_shopping.md
           - ./api_reference/tools/jina.md
@@ -2478,6 +2480,8 @@ plugins:
             - ../llama-index-integrations/tools/llama-index-tools-artifact-editor
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-openai-like
             - ../llama-index-integrations/protocols/llama-index-protocols-ag-ui
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-openGauss
+            - ../llama-index-integrations/tools/llama-index-tools-hive
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
