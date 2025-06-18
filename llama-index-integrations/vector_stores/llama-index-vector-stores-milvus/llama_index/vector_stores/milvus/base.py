@@ -317,6 +317,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
             token=token,
             **kwargs,  # pass additional arguments such as server_pem_path
         )
+
+        # As of writing, milvus sets alias internally in the async client.
+        # This will cause an error if not removed.
+        kwargs.pop("alias", None)
+
         self._async_milvusclient = AsyncMilvusClient(
             uri=uri,
             token=token,
