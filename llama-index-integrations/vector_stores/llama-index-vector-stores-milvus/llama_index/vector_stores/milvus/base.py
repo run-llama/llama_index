@@ -317,6 +317,10 @@ class MilvusVectorStore(BasePydanticVectorStore):
             token=token,
             **kwargs,  # pass additional arguments such as server_pem_path
         )
+
+        # https://github.com/run-llama/llama_index/issues/19116
+        kwargs.pop("alias", None)
+
         self._async_milvusclient = AsyncMilvusClient(
             uri=uri,
             token=token,
