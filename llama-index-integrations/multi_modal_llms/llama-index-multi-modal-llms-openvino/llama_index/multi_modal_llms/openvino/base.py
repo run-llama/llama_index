@@ -1,4 +1,5 @@
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, Sequence, cast
+from deprecated import deprecated
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -6,7 +7,9 @@ from llama_index.core.base.llms.types import (
     CompletionResponse,
     CompletionResponseGen,
     CompletionResponseAsyncGen,
+    ImageBlock,
 )
+from llama_index.core.base.llms.generic_utils import image_node_to_image_block
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.core.multi_modal_llms import MultiModalLLM, MultiModalLLMMetadata
@@ -20,6 +23,10 @@ from optimum.intel.openvino import OVModelForVisualCausalLM
 DEFAULT_MULTIMODAL_MODEL = "llava-hf/llava-v1.6-mistral-7b-hf"
 
 
+@deprecated(
+    reason="This package has been deprecated and thus will no longer be maintained. Please use llama-index-llms-openvino instead.",
+    version="0.3.1",
+)
 class OpenVINOMultiModal(MultiModalLLM):
     """
     This class provides a base implementation for interacting with OpenVINO multi-modal models.
@@ -111,13 +118,19 @@ class OpenVINOMultiModal(MultiModalLLM):
         """
         Prepares the input messages and images.
         """
+        if all(isinstance(doc, ImageNode) for doc in image_documents):
+            image_docs: Sequence[ImageBlock] = [
+                image_node_to_image_block(doc) for doc in image_documents
+            ]
+        else:
+            image_docs = cast(Sequence[ImageBlock], image_documents)
         conversation = []
         images = []
         conversation.append(
             {"type": "text", "text": messages[0].content}
         )  # Add user text message
-        for img_doc in image_documents:
-            images.append(Image.open(img_doc.image_path))
+        for img_doc in image_docs:
+            images.append(Image.open(img_doc.path))
             conversation.append({"type": "image"})
         messages = [
             {"role": "user", "content": conversation}

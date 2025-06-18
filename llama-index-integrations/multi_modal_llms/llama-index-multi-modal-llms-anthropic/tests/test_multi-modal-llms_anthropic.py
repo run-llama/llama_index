@@ -1,7 +1,11 @@
+import pytest
+
 from unittest.mock import Mock, patch
 from llama_index.core.multi_modal_llms.base import MultiModalLLM
 from llama_index.multi_modal_llms.anthropic import AnthropicMultiModal
 from llama_index.core.base.llms.types import CompletionResponse
+
+pytest.skip(reason="This package has been deprecated", allow_module_level=True)
 
 
 def test_embedding_class():

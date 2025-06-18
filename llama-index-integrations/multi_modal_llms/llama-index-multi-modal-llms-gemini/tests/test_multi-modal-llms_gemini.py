@@ -7,6 +7,8 @@ from llama_index.core.llms import LLM
 from llama_index.core.schema import ImageNode
 from llama_index.multi_modal_llms.gemini import GeminiMultiModal
 
+pytest.skip(reason="This package has been deprecated", allow_module_level=True)
+
 
 def test_embedding_class():
     names_of_base_classes = [b.__name__ for b in GeminiMultiModal.__mro__]

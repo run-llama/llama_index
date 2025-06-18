@@ -9,6 +9,8 @@ from llama_index.core.multi_modal_llms.base import MultiModalLLM
 from llama_index.multi_modal_llms.bedrock import BedrockMultiModal
 from llama_index.core.schema import ImageDocument
 
+pytest.skip(reason="This package has been deprecated", allow_module_level=True)
+
 
 def test_class_name():
     """Test class name."""

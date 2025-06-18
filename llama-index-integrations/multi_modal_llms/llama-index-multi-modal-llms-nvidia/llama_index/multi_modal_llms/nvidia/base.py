@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Optional, Sequence, Union
 import requests
+from deprecated import deprecated
 
 from llama_index.core.base.llms.types import (
     CompletionResponse,
@@ -47,6 +48,10 @@ class Model(BaseModel):
     id: str
 
 
+@deprecated(
+    reason="The package has been deprecated and will no longer be maintained. Please use llama-index-llms-nvidia instead.",
+    version="0.",
+)
 class NVIDIAClient:
     def __init__(
         self,

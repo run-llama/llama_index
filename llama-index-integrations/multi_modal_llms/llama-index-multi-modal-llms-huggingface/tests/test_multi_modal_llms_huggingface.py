@@ -11,6 +11,8 @@ from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.multi_modal_llms.base import MultiModalLLM
 from llama_index.multi_modal_llms.huggingface import HuggingFaceMultiModal
 
+pytest.skip(reason="This package has been deprecated", allow_module_level=True)
+
 
 @pytest.fixture(scope="module")
 def mock_model():

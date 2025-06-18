@@ -8,6 +8,8 @@ from llama_index.multi_modal_llms.gemini.utils import (
     generate_gemini_multi_modal_chat_message,
 )
 
+pytest.skip(reason="This package has been deprecated", allow_module_level=True)
+
 
 @pytest.fixture()
 def image_url() -> str:
