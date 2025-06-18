@@ -318,7 +318,8 @@ class MilvusVectorStore(BasePydanticVectorStore):
             **kwargs,  # pass additional arguments such as server_pem_path
         )
 
-        # https://github.com/run-llama/llama_index/issues/19116
+        # As of writing, milvus sets alias internally in the async client.
+        # This will cause an error if not removed.
         kwargs.pop("alias", None)
 
         self._async_milvusclient = AsyncMilvusClient(
