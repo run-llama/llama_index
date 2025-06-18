@@ -1,7 +1,8 @@
 """DashScope llm api."""
 
+from deprecated import deprecated
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -13,6 +14,7 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
+    ImageBlock,
 )
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
@@ -65,6 +67,10 @@ def call_with_messages(
     )
 
 
+@deprecated(
+    reason="This package has been deprecated and will no longer be maintained. Please use the package llama-index-llms-dashscopre instead.",
+    version="0.3.1",
+)
 class DashScopeMultiModal(MultiModalLLM):
     """DashScope LLM."""
 
@@ -137,7 +143,10 @@ class DashScopeMultiModal(MultiModalLLM):
         return params
 
     def _get_input_parameters(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> Tuple[ChatMessage, Dict]:
         parameters = self._get_default_parameters()
         parameters.update(kwargs)
@@ -155,7 +164,10 @@ class DashScopeMultiModal(MultiModalLLM):
         return message, parameters
 
     def complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponse:
         message, parameters = self._get_input_parameters(
             prompt, image_documents, **kwargs
@@ -172,7 +184,10 @@ class DashScopeMultiModal(MultiModalLLM):
         return dashscope_response_to_completion_response(response)
 
     def stream_complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponseGen:
         message, parameters = self._get_input_parameters(
             prompt, image_documents, **kwargs
@@ -260,12 +275,18 @@ class DashScopeMultiModal(MultiModalLLM):
 
     # TODO: use proper async methods
     async def acomplete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponse:
         return self.complete(prompt, image_documents, **kwargs)
 
     async def astream_complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponseAsyncGen:
         raise Exception("Not supported")
 

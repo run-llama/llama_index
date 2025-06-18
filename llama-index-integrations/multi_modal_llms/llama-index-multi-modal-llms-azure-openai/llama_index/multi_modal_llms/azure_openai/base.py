@@ -42,7 +42,7 @@ class AzureOpenAIMultiModal(AzureOpenAI):
 
         for image_document in image_documents:
             if isinstance(image_document, ImageNode):
-                chat_msg.blocks.append(ImageBlock.from_image_node(image_document))
+                chat_msg.blocks.append(image_node_to_image_block(image_document))
             else:
                 chat_msg.blocks.append(image_document)
         return chat_msg

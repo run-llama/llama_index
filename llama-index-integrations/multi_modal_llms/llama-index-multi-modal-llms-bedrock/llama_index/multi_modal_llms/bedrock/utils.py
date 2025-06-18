@@ -70,7 +70,7 @@ def generate_bedrock_multi_modal_message(
     message_content.append({"type": "text", "text": prompt})
     if all(isinstance(doc, ImageNode) for doc in image_documents):
         image_docs: List[ImageBlock] = [
-            ImageBlock.from_image_node(doc) for doc in image_documents
+            image_node_to_image_block(doc) for doc in image_documents
         ]
     else:
         image_docs = cast(List[ImageBlock], image_documents)

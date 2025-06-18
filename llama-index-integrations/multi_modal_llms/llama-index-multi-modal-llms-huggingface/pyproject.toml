@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-multi-modal-llms-huggingface"
-version = "0.4.2"
+version = "0.4.3"
 description = "llama-index multi_modal_llms HuggingFace integration by [Cihan Yalçın](https://www.linkedin.com/in/chanyalcin/)"
 authors = [{name = "M.Cihan Yalçın", email = "mcihan.yalcin@outlook.com"}]
 requires-python = ">=3.10,<4.0"
@@ -39,6 +39,7 @@ dependencies = [
     "qwen-vl-utils>=0.0.8",
     "torchvision>=0.19.1",
     "Pillow>=10.0.0",
+    "deprecated>=1.2.8,<2",
 ]
 
 [tool.codespell]

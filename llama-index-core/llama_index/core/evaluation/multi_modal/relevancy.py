@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, List, Sequence, Union
 
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
@@ -9,6 +10,7 @@ from llama_index.core.multi_modal_llms.base import MultiModalLLM
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.llms import ImageBlock
+from llama_index.core.schema import ImageNode
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "Your task is to evaluate if the response for the query \
@@ -130,10 +132,14 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
             context_str=context_str, query_str=evaluation_query_str
         )
 
+        image_nodes: List[Union[ImageBlock, ImageNode]] = []
+
         if image_paths:
-            image_nodes = [ImageBlock(path=image_path) for image_path in image_paths]
+            image_nodes.extend(
+                [ImageBlock(path=Path(image_path)) for image_path in image_paths]
+            )
         if image_urls:
-            image_nodes = [ImageBlock(url=image_url) for image_url in image_urls]
+            image_nodes.extend([ImageBlock(url=image_url) for image_url in image_urls])
 
         response_obj = self._multi_modal_llm.complete(
             prompt=fmt_prompt,
@@ -178,10 +184,14 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
             context_str=context_str, query_str=evaluation_query_str
         )
 
+        image_nodes: List[Union[ImageBlock, ImageNode]] = []
+
         if image_paths:
-            image_nodes = [ImageBlock(path=image_path) for image_path in image_paths]
+            image_nodes.extend(
+                [ImageBlock(path=Path(image_path)) for image_path in image_paths]
+            )
         if image_urls:
-            image_nodes = [ImageBlock(url=image_url) for image_url in image_urls]
+            image_nodes.extend([ImageBlock(url=image_url) for image_url in image_urls])
 
         response_obj = await self._multi_modal_llm.acomplete(
             prompt=fmt_prompt,

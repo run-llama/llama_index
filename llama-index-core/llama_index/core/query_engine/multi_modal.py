@@ -6,7 +6,6 @@ from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.indices.query.base import BaseQueryEngine
 from llama_index.core.indices.query.schema import QueryBundle, QueryType
 from llama_index.core.multi_modal_llms.base import MultiModalLLM
-from llama_index.core.llms import ImageBlock
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
@@ -125,7 +124,7 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
         llm_response = self._multi_modal_llm.complete(
             prompt=fmt_prompt,
             image_documents=[
-                ImageBlock.from_image_node(image_node.node)
+                image_node_to_image_block(image_node.node)
                 for image_node in image_nodes
                 if isinstance(image_node.node, ImageNode)
             ],
@@ -150,7 +149,7 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
         llm_response = self._multi_modal_llm.complete(
             prompt=fmt_prompt,
             image_documents=[
-                ImageBlock.from_image_node(node.node)
+                image_node_to_image_block(node.node)
                 for node in image_nodes
                 if isinstance(node.node, ImageNode)
             ],

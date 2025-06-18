@@ -81,7 +81,7 @@ def generate_anthropic_multi_modal_chat_message(
     completion_content = []
     if all(isinstance(doc, ImageNode) for doc in image_documents):
         image_docs: List[ImageBlock] = [
-            ImageBlock.from_image_node(doc) for doc in image_documents
+            image_node_to_image_block(doc) for doc in image_documents
         ]
     else:
         image_docs = cast(List[ImageBlock], image_documents)

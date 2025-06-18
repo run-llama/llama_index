@@ -15,6 +15,7 @@ from llama_index.core.base.llms.types import (
     DocumentBlock,
     AudioBlock,
 )
+from llama_index.core.base.llms.generic_utils import image_node_to_image_block
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.schema import ImageDocument, ImageNode
 from pydantic import AnyUrl
@@ -149,22 +150,22 @@ def test_chat_message_legacy_roundtrip():
     }
 
 
-def test_image_block_from_image_node(tmp_path: Path, image_url: str) -> None:
+def test_image_node_to_image_block(tmp_path: Path, image_url: str) -> None:
     image_node_url = ImageNode(image_url=image_url, image_mimetype="image/png")
-    image_block_url = ImageBlock.from_image_node(image_node=image_node_url)
+    image_block_url = image_node_to_image_block(image_node=image_node_url)
     assert isinstance(image_block_url, ImageBlock)
     assert str(image_block_url.url) == image_node_url.image_url
     image_path = tmp_path / "test.png"
     content = httpx.get(image_url).content
     image_path.write_bytes(content)
     image_node_path = ImageNode(image_path=str(image_path), image_mimetype="image/png")
-    image_block_path = ImageBlock.from_image_node(image_node=image_node_path)
+    image_block_path = image_node_to_image_block(image_node=image_node_path)
     assert isinstance(image_block_path, ImageBlock)
     assert str(image_block_path.path) == str(image_node_path.image_path)
     image_node_metadata = ImageNode(
         metadata={"file_path": str(image_path)}, image_mimetype="image/png"
     )
-    image_block_metadata = ImageBlock.from_image_node(image_node_metadata)
+    image_block_metadata = image_node_to_image_block(image_node_metadata)
     assert isinstance(image_block_metadata, ImageBlock)
     assert str(image_block_metadata.path) == str(
         image_node_metadata.metadata["file_path"]
