@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-multi-modal-llms-reka"
-version = "0.2.0"
+version = "0.2.1"
 description = "llama-index multi_modal_llms reka integration"
 authors = [{name = "Alex Li", email = "alexli@reka.ai"}]
 requires-python = ">=3.9,<4.0"
