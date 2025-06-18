@@ -348,8 +348,8 @@ root_dispatcher.add_event_handler(argilla_handler)
 
 Install the necessary dependencies for the integration:
 
-```python
-pip install agenta llama_index openinference-instrumentation-llama_index
+```bash
+pip install agenta llama-index openinference-instrumentation-llama-index
 ```
 
 Set up your API credentials and initialize Agenta:
@@ -361,7 +361,9 @@ from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
 
 # Set your Agenta credentials
 os.environ["AGENTA_API_KEY"] = "your_agenta_api_key"
-os.environ["AGENTA_HOST"] = "https://cloud.agenta.ai"  # Use your self-hosted URL if applicable
+os.environ[
+    "AGENTA_HOST"
+] = "https://cloud.agenta.ai"  # Use your self-hosted URL if applicable
 
 # Initialize Agenta SDK
 ag.init()
@@ -381,16 +383,16 @@ def document_search_app(user_query: str):
     """
     # Load documents from local directory
     docs = SimpleDirectoryReader("data").load_data()
-    
+
     # Build vector search index
     search_index = VectorStoreIndex.from_documents(docs)
-    
+
     # Initialize query processor
     query_processor = search_index.as_query_engine()
-    
+
     # Process user query
     answer = query_processor.query(user_query)
-    
+
     return answer
 ```
 
