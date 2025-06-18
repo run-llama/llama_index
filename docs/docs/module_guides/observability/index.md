@@ -181,12 +181,12 @@ Next, set up your Langfuse API keys. You can get these keys by signing up for a 
 
 ```python
 import os
- 
+
 # Get keys for your project from the project settings page: https://cloud.langfuse.com
- 
-os.environ["LANGFUSE_PUBLIC_KEY"] = "pk-lf-..." 
-os.environ["LANGFUSE_SECRET_KEY"] = "sk-lf-..." 
-os.environ["LANGFUSE_HOST"] = "https://cloud.langfuse.com" # 🇪🇺 EU region
+
+os.environ["LANGFUSE_PUBLIC_KEY"] = "pk-lf-..."
+os.environ["LANGFUSE_SECRET_KEY"] = "sk-lf-..."
+os.environ["LANGFUSE_HOST"] = "https://cloud.langfuse.com"  # 🇪🇺 EU region
 # os.environ["LANGFUSE_HOST"] = "https://us.cloud.langfuse.com" # 🇺🇸 US region
 ```
 
@@ -194,9 +194,9 @@ With the environment variables set, we can now initialize the Langfuse client. `
 
 ```python
 from langfuse import get_client
- 
+
 langfuse = get_client()
- 
+
 # Verify connection
 if langfuse.auth_check():
     print("Langfuse client is authenticated and ready!")
@@ -208,7 +208,7 @@ Now, we initialize the [OpenInference LlamaIndex instrumentation](https://docs.a
 
 ```python
 from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
- 
+
 # Initialize LlamaIndex instrumentation
 LlamaIndexInstrumentor().instrument()
 ```
