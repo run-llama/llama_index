@@ -15,6 +15,7 @@ from llama_index.core.base.llms.types import (
     ImageBlock,
 )
 from llama_index.core.schema import ImageNode
+from llama_index.core.base.llms.generic_utils import image_node_to_image_block
 from llama_index.llms.azure_openai import AzureOpenAI
 
 

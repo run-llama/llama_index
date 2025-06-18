@@ -1,12 +1,16 @@
 import os
+from deprecated import deprecated
 from typing import Any, Optional
 
 from llama_index.multi_modal_llms.openai import OpenAIMultiModal
 
-
 DEFAULT_API_BASE = "https://api.studio.nebius.ai/v1"
 
 
+@deprecated(
+    reason="This class has been deprecated and will no longer be maintained. Please use llama-index-llms-nebius instead.",
+    version="0.4.1",
+)
 class NebiusMultiModal(OpenAIMultiModal):
     """
     Nebius AI Studio Multimodal class.

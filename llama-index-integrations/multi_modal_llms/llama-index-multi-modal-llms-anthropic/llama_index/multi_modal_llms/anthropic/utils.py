@@ -7,6 +7,7 @@ import httpx
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.core.llms import ImageBlock
 from llama_index.core.schema import ImageDocument, ImageNode
+from llama_index.core.base.llms.generic_utils import image_node_to_image_block
 
 DEFAULT_ANTHROPIC_API_TYPE = "anthropic_ai"
 DEFAULT_ANTHROPIC_API_BASE = "https://api.anthropic.com"

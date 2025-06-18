@@ -11,6 +11,7 @@ from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
 from llama_index.core.prompts.mixin import PromptMixinType
 from llama_index.core.schema import ImageNode, NodeWithScore, MetadataMode
+from llama_index.core.base.llms.generic_utils import image_node_to_image_block
 
 if TYPE_CHECKING:
     from llama_index.core.indices.multi_modal import MultiModalVectorIndexRetriever
