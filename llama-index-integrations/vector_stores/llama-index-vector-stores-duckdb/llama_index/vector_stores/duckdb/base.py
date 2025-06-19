@@ -132,7 +132,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
     text_search_config: Optional[dict]
     persist_dir: str
 
-    _conn: duckdb.DuckDBPyConnection = PrivateAttr()
+    _conn: Optional[duckdb.DuckDBPyConnection] = PrivateAttr(default=None)
     _table: Optional[duckdb.DuckDBPyRelation] = PrivateAttr(default=None)
 
     _is_initialized: bool = PrivateAttr(default=False)
@@ -161,9 +161,6 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         }
 
         super().__init__(stores_text=True, **fields)
-
-        self._connect()
-        self._initialize()
 
     @classmethod
     def from_local(
@@ -216,39 +213,56 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         return "DuckDBVectorStore"
 
     @property
-    def client(self) -> Any:
+    def client(self) -> duckdb.DuckDBPyConnection:
         """Return client."""
+        if self._conn is None:
+            self._conn = self._connect(self.database_name, self.persist_dir)
+
         return self._conn
 
-    def _connect(self) -> None:
+    @classmethod
+    def _connect(
+        cls, database_name: str, persist_dir: str
+    ) -> duckdb.DuckDBPyConnection:
         """Connect to the DuckDB database -- create the data persistence directory if it doesn't exist."""
-        database_connection = self.database_name
+        database_connection = database_name
 
-        if self.database_name != ":memory:":
-            persist_path = Path(self.persist_dir)
+        if database_name != ":memory:":
+            persist_path = Path(persist_dir)
 
             if not persist_path.exists():
                 persist_path.mkdir(parents=True, exist_ok=True)
 
-            database_connection = str(persist_path / self.database_name)
+            database_connection = str(persist_path / database_name)
 
-        self._conn = duckdb.connect(database_connection)
+        return duckdb.connect(database_connection)
 
-    def _initialize(self) -> None:
+    @property
+    def table(self) -> duckdb.DuckDBPyRelation:
+        """Return the table."""
+        if self._table is None:
+            self._table = self._initialize_table(
+                self.client, self.table_name, self.embed_dim
+            )
+
+        return self._table
+
+    @classmethod
+    def _initialize_table(
+        cls, conn: duckdb.DuckDBPyConnection, table_name: str, embed_dim: Optional[int]
+    ) -> duckdb.DuckDBPyRelation:
         """Initialize the DuckDB Database, extensions, and documents table."""
         home_dir = Path.home()
-        self._conn.execute(f"SET home_directory='{home_dir}';")
-        self._conn.install_extension("json")
-        self._conn.load_extension("json")
-        self._conn.install_extension("fts")
-        self._conn.load_extension("fts")
+        conn.execute(f"SET home_directory='{home_dir}';")
+        conn.install_extension("json")
+        conn.load_extension("json")
+        conn.install_extension("fts")
+        conn.load_extension("fts")
 
-        embedding_type = (
-            f"FLOAT[{self.embed_dim}]" if self.embed_dim is not None else "FLOAT[]"
-        )
+        embedding_type = f"FLOAT[{embed_dim}]" if embed_dim is not None else "FLOAT[]"
 
-        self._conn.execute(f"""
-            CREATE TABLE IF NOT EXISTS {self.table_name}  (
+        conn.execute(f"""
+            CREATE TABLE IF NOT EXISTS {table_name}  (
                 node_id VARCHAR,
                 text TEXT,
                 embedding {embedding_type},
@@ -256,16 +270,18 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             );
         """)
 
-        self._table = self._conn.table(self.table_name)
+        table = conn.table(table_name)
 
         required_columns = ["node_id", "text", "embedding", "metadata_"]
-        table_columns = self._table.describe().columns
+        table_columns = table.describe().columns
 
         for column in required_columns:
             if column not in table_columns:
                 raise DuckDBTableIncorrectColumnsError(
-                    self.table_name, required_columns, table_columns
+                    table_name, required_columns, table_columns
                 )
+
+        return table
 
     def _node_to_table_row(self, node: BaseNode) -> Any:
         return (
@@ -297,14 +313,11 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:  # noqa: ARG002
         """Query the vector store for top k most similar nodes."""
-        if self._table is None:
-            raise DuckDBTableNotInitializedError(self.table_name)
-
         filter_expression = self._build_metadata_filter_expressions(
             metadata_filters=query.filters
         )
 
-        inner_query = self._table.select(
+        inner_query = self.table.select(
             StarExpression(),
             FunctionExpression(
                 "list_cosine_similarity",
@@ -334,16 +347,13 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
         command = outer_query.sql_query()
 
-        rows = self._conn.execute(command).fetchall()
+        rows = self.client.execute(command).fetchall()
 
         return self._table_row_to_query_result(rows)
 
     def add(self, nodes: Sequence[BaseNode], **add_kwargs: Any) -> list[str]:  # noqa: ARG002
         """Add nodes to the vector store."""
-        if self._table is None:
-            raise DuckDBTableNotInitializedError(self.table_name)
-
-        [self._table.insert(self._node_to_table_row(node)) for node in nodes]
+        [self.table.insert(self._node_to_table_row(node)) for node in nodes]
 
         return [node.node_id for node in nodes]
 
@@ -354,17 +364,14 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         **get_kwargs: Any,
     ) -> list[BaseNode]:  # noqa: ARG002
         """Get nodes using node_ids and/or filters. If both are provided, both are considered."""
-        if self._table is None:
-            raise DuckDBTableNotInitializedError(self.table_name)
-
         filter_expression = self._build_node_id_metadata_filter_expression(
             node_ids=node_ids,
             filters=filters,
         )
 
-        command = self._table.filter(filter_expression).sql_query()
+        command = self.table.filter(filter_expression).sql_query()
 
-        rows = self._conn.execute(command).fetchall()
+        rows = self.client.execute(command).fetchall()
 
         return [self._table_row_to_node(row) for row in rows]
 
@@ -375,9 +382,6 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         **delete_kwargs: Any,
     ) -> None:  # noqa: ARG002
         """Delete nodes using node_ids and/or filters. If both are provided, both are considered."""
-        if self._table is None:
-            raise DuckDBTableNotInitializedError(self.table_name)
-
         filter_expression = self._build_node_id_metadata_filter_expression(
             node_ids=node_ids,
             filters=filters,
@@ -385,16 +389,13 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
         command = f"DELETE FROM {self.table_name} WHERE {filter_expression}"
 
-        self._conn.execute(command)
+        self.client.execute(command)
 
     def clear(self, **clear_kwargs: Any) -> None:  # noqa: ARG002
         """Clear the vector store."""
-        if self._table is None:
-            raise DuckDBTableNotInitializedError(self.table_name)
-
         command = f"DELETE FROM {self.table_name}"
 
-        self._conn.execute(command)
+        self.client.execute(command)
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:  # noqa: ARG002
         """
@@ -404,16 +405,13 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
-        if self._table is None:
-            raise DuckDBTableNotInitializedError(self.table_name)
-
         where_clause = self._build_metadata_filter_expression(
             "ref_doc_id", ref_doc_id, FilterOperator.EQ
         )
 
         command = f"DELETE FROM {self.table_name} WHERE {where_clause}"
 
-        self._conn.execute(command)
+        self.client.execute(command)
 
     def _build_node_id_metadata_filter_expression(
         self,

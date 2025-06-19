@@ -11,7 +11,6 @@ from llama_index.core.vector_stores.types import (
     MetadataFilters,
     FilterCondition,
 )
-from llama_index.vector_stores.duckdb.base import DuckDBTableNotInitializedError
 
 
 def test_duckdb_installed():
@@ -222,13 +221,11 @@ def test_get_nodes_with_metadata_filters(
     assert nodes[0].metadata.get("author") == "Stephen King"
 
 
-def test_error_on_uninitialized_table():
+def test_lazy_table_initialization():
     store = DuckDBVectorStore(embed_dim=3)
-    # Manually break table
-    store._table = None
 
-    with pytest.raises(DuckDBTableNotInitializedError):
-        store.get_nodes(node_ids=["any"])
+    nodes = store.get_nodes(node_ids=["any"])
+    assert len(nodes) == 0
 
 
 def test_filter_operator_ne(
