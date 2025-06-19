@@ -9,7 +9,6 @@ from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType
 from llama_index.core.llms import ImageBlock, LLM, TextBlock, ChatMessage
-from llama_index.core.schema import ImageNode
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "Your task is to evaluate if the response for the query \
@@ -131,7 +130,7 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
             context_str=context_str, query_str=evaluation_query_str
         )
 
-        image_nodes: List[Union[ImageBlock, ImageNode]] = []
+        image_nodes: List[Any] = []
 
         if image_paths:
             image_nodes.extend(
@@ -146,7 +145,7 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
             messages=[ChatMessage(role="user", blocks=image_nodes)],
         )
 
-        raw_response_txt = response_obj.message.content
+        raw_response_txt: str = response_obj.message.content or ""
 
         if "yes" in raw_response_txt.lower():
             passing = True
@@ -184,7 +183,7 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
             context_str=context_str, query_str=evaluation_query_str
         )
 
-        image_nodes: List[Union[ImageBlock, ImageNode]] = []
+        image_nodes: List[Any] = []
 
         if image_paths:
             image_nodes.extend(
@@ -199,7 +198,7 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
             messages=[ChatMessage(role="user", blocks=image_nodes)],
         )
 
-        raw_response_txt = response_obj.message.content
+        raw_response_txt: str = response_obj.message.content or ""
 
         if "yes" in raw_response_txt.lower():
             passing = True

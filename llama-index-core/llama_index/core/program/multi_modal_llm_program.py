@@ -1,11 +1,9 @@
-from typing import Any, Dict, List, Optional, Type, cast, Union
+from typing import Any, Dict, List, Optional, Type, cast
 
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.output_parsers.pydantic import PydanticOutputParser
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
-from llama_index.core.schema import ImageNode
 from llama_index.core.llms import ImageBlock, TextBlock, LLM, ChatMessage
-from llama_index.core.base.llms.types import ContentBlock
 from llama_index.core.types import BasePydanticProgram
 from llama_index.core.utils import print_text
 
@@ -42,7 +40,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
         prompt_template_str: Optional[str] = None,
         prompt: Optional[PromptTemplate] = None,
         multi_modal_llm: Optional[LLM] = None,
-        image_documents: Optional[List[Union[ImageNode, ImageBlock]]] = None,
+        image_documents: Optional[List[ImageBlock]] = None,
         verbose: bool = False,
         **kwargs: Any,
     ) -> "MultiModalLLMCompletionProgram":
@@ -100,7 +98,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
         llm_kwargs = llm_kwargs or {}
         formatted_prompt = self._prompt.format(llm=self._multi_modal_llm, **kwargs)  # type: ignore
 
-        image_docs: List[ContentBlock] = image_documents or self._image_documents or []
+        image_docs: List[Any] = image_documents or self._image_documents or []
 
         image_docs.append(TextBlock(text=formatted_prompt))
 
@@ -109,7 +107,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
             **llm_kwargs,
         )
 
-        raw_output = response.message.content
+        raw_output: str = response.message.content or ""
         if self._verbose:
             print_text(f"> Raw output: {raw_output}\n", color="llama_blue")
 
@@ -118,14 +116,14 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
     async def acall(
         self,
         llm_kwargs: Optional[Dict[str, Any]] = None,
-        image_documents: Optional[List[Union[ImageNode, ImageBlock]]] = None,
+        image_documents: Optional[List[ImageBlock]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
         llm_kwargs = llm_kwargs or {}
         formatted_prompt = self._prompt.format(llm=self._multi_modal_llm, **kwargs)  # type: ignore
 
-        image_docs: List[ContentBlock] = image_documents or self._image_documents or []
+        image_docs: List[Any] = image_documents or self._image_documents or []
 
         image_docs.append(TextBlock(text=formatted_prompt))
 
@@ -134,7 +132,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
             **llm_kwargs,
         )
 
-        raw_output = response.message.content
+        raw_output: str = response.message.content or ""
         if self._verbose:
             print_text(f"> Raw output: {raw_output}\n", color="llama_blue")
 

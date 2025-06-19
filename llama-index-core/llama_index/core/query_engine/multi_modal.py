@@ -122,13 +122,11 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
             context_str=context_str, query_str=query_bundle.query_str
         )
 
-        image_documents = (
-            [
-                image_node_to_image_block(image_node.node)
-                for image_node in image_nodes
-                if isinstance(image_node.node, ImageNode)
-            ],
-        )
+        image_documents: List[Any] = [
+            image_node_to_image_block(image_node.node)
+            for image_node in image_nodes
+            if isinstance(image_node.node, ImageNode)
+        ]
 
         image_documents.append(TextBlock(text=fmt_prompt))
 
@@ -152,13 +150,11 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
             query_str=prompt_str,
         )
 
-        image_documents = (
-            [
-                image_node_to_image_block(image_node.node)
-                for image_node in image_nodes
-                if isinstance(image_node.node, ImageNode)
-            ],
-        )
+        image_documents: List[Any] = [
+            image_node_to_image_block(image_node.node)
+            for image_node in image_nodes
+            if isinstance(image_node.node, ImageNode)
+        ]
 
         image_documents.append(TextBlock(text=fmt_prompt))
 
@@ -185,13 +181,11 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
             context_str=context_str, query_str=query_bundle.query_str
         )
 
-        image_documents = (
-            [
-                image_node_to_image_block(image_node.node)
-                for image_node in image_nodes
-                if isinstance(image_node.node, ImageNode)
-            ],
-        )
+        image_documents: List[Any] = [
+            image_node_to_image_block(image_node.node)
+            for image_node in image_nodes
+            if isinstance(image_node.node, ImageNode)
+        ]
 
         image_documents.append(TextBlock(text=fmt_prompt))
 

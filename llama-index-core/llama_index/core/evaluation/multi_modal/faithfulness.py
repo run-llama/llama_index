@@ -8,7 +8,6 @@ from typing import Any, List, Optional, Sequence, Union
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.llms import ImageBlock, LLM, TextBlock, ChatMessage
-from llama_index.core.schema import ImageNode
 from llama_index.core.prompts.mixin import PromptDictType
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
@@ -152,7 +151,7 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
         )
 
         if image_paths:
-            image_nodes: List[Union[ImageNode, ImageBlock]] = [
+            image_nodes: List[Any] = [
                 ImageBlock(path=Path(image_path)) for image_path in image_paths
             ]
         if image_urls:
@@ -164,7 +163,7 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
             messages=[ChatMessage(role="user", blocks=image_nodes)],
         )
 
-        raw_response_txt = response_obj.message.content
+        raw_response_txt: str = response_obj.message.content or ""
 
         if "yes" in raw_response_txt.lower():
             passing = True
@@ -201,7 +200,7 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
             context_str=context_str, query_str=response
         )
 
-        image_nodes: List[Union[ImageNode, ImageBlock]] = []
+        image_nodes: List[Any] = []
 
         if image_paths:
             image_nodes.extend(
@@ -216,7 +215,7 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
             messages=[ChatMessage(role="user", blocks=image_nodes)],
         )
 
-        raw_response_txt = response_obj.message.content
+        raw_response_txt: str = response_obj.message.content or ""
 
         if "yes" in raw_response_txt.lower():
             passing = True
