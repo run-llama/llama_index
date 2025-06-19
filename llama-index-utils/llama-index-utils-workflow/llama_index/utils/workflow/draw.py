@@ -511,6 +511,62 @@ def _extract_single_agent_structure(agent: BaseWorkflowAgent) -> DrawWorkflowGra
     return DrawWorkflowGraph(nodes=nodes, edges=edges)
 
 
+def _tools_and_handoffs(
+    agent: BaseWorkflowAgent,
+    processed_agents: List[str],
+    all_agents: Dict[str, BaseWorkflowAgent],
+    nodes: List[DrawWorkflowNode],
+    edges: List[DrawWorkflowEdge],
+    root_agent: str,
+) -> None:
+    if agent.name not in processed_agents:
+        nodes.append(
+            DrawWorkflowNode(
+                id=agent.name, label=agent.name, node_type="workflow_agent"
+            )
+        )
+        if agent.name == root_agent:
+            edges.append(DrawWorkflowEdge("user", root_agent))
+        for t in agent.tools:
+            node_id = f"{agent.name}_{t.metadata.get_name()}"
+            nodes.append(
+                DrawWorkflowNode(
+                    id=node_id,
+                    label=t.metadata.get_name(),
+                    node_type="workflow_tool",
+                )
+            )
+            edges.append(DrawWorkflowEdge(agent.name, node_id))
+        if agent.can_handoff_to:
+            for a in agent.can_handoff_to:
+                edges.append(
+                    DrawWorkflowEdge(
+                        agent.name,
+                        a,
+                    )
+                )
+        else:
+            edges.append(
+                DrawWorkflowEdge(
+                    agent.name,
+                    "output",
+                )
+            )
+        processed_agents.append(agent.name)
+    if agent.can_handoff_to:
+        for a in agent.can_handoff_to:
+            if a not in processed_agents:
+                _tools_and_handoffs(
+                    all_agents[a],
+                    processed_agents=processed_agents,
+                    all_agents=all_agents,
+                    nodes=nodes,
+                    edges=edges,
+                    root_agent=root_agent,
+                )
+    return nodes, edges, processed_agents
+
+
 def _extract_agent_workflow_structure(
     agent_workflow: AgentWorkflow,
 ) -> DrawWorkflowGraph:
@@ -519,51 +575,31 @@ def _extract_agent_workflow_structure(
     edges = []
 
     # Add base workflow node
-    base_node = DrawWorkflowNode(
-        id="base", label="AgentWorkflow", node_type="workflow_base"
+    user_node = DrawWorkflowNode(
+        id="user",
+        label="User",
+        node_type="workflow_base",
     )
-    nodes.append(base_node)
+    output_node = DrawWorkflowNode(
+        id="output", label="Output", node_type="workflow_base"
+    )
+    nodes.extend([user_node, output_node])
 
     agents = agent_workflow.agents
-    can_handoff_to: Dict[str, Union[List[str], None]] = {
-        agent: agents[agent].can_handoff_to for agent in agents
-    }
-
-    # Add agent nodes and edges
-    for agent_name in agents:
-        agent_node = DrawWorkflowNode(
-            id=agent_name, label=agent_name, node_type="workflow_agent"
+    processed_agents = []
+    for v in agents.values():
+        nodes, edges, processed_agents = _tools_and_handoffs(
+            agent=v,
+            processed_agents=processed_agents,
+            all_agents=agents,
+            nodes=nodes,
+            edges=edges,
+            root_agent=agent_workflow.root_agent,
         )
-        nodes.append(agent_node)
-
-        # Add edge from base to agent
-        edges.append(DrawWorkflowEdge("base", agent_name))
-
-        # Add tool nodes and edges
-        tools = _get_agent_tool_names(agents[agent_name])
-        if tools:
-            for tool_name in tools:
-                tool_node = DrawWorkflowNode(
-                    id=tool_name, label=tool_name, node_type="workflow_tool"
-                )
-                nodes.append(tool_node)
-
-                # Add edge from agent to tool
-                edges.append(DrawWorkflowEdge(agent_name, tool_name))
-
-        # Add handoff nodes and edges
-        handoff_possibilities = can_handoff_to[agent_name]
-        if handoff_possibilities and len(handoff_possibilities) > 0:
-            for handoff_target in handoff_possibilities:
-                handoff_id = f"handoff_from_{agent_name}_to_{handoff_target}"
-                handoff_node = DrawWorkflowNode(
-                    id=handoff_id, label=handoff_target, node_type="workflow_handoff"
-                )
-                nodes.append(handoff_node)
-
-                # Add edge from agent to handoff
-                edges.append(DrawWorkflowEdge(agent_name, handoff_id))
-
+    if all(edge.target != "output" for edge in edges):
+        agent_nodes = [n for n in nodes if n.node_type == "workflow_agent"]
+        edges.append(DrawWorkflowEdge(agent_nodes[-1].id, "output"))
+    edges.extend([DrawWorkflowEdge(source="output", target="user")])
     return DrawWorkflowGraph(nodes=nodes, edges=edges)
 
 
