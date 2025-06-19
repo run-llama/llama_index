@@ -1,5 +1,71 @@
 # ChangeLog
 
+## [2025-06-18]
+
+### `llama-index-core` [0.12.43]
+
+- feat: Make BaseWorkflowAgent a workflow itself (#19052)
+- fix: make the progress bar of title extractor unified (#19131)
+- fix: Use `get_tqdm_iterable` in SimpleDirectoryReader (#18722)
+- chore: move out Workflows code to `llama-index-workflows` and keeping backward compatibility (#19043)
+- chore: move instrumentation code out to its own package `llama-index-instrumentation` (#19062)
+
+### `llama-index-llms-bedrock-converse` [0.7.2]
+
+- fix: improve empty tool call handling in bedrock converse (#19084)
+
+### `llama-index-llms-openai` [0.4.7]
+
+- fix: fix building openai responses dicts (#19089, #19094)
+
+### `llama-index-llms-perplexity` [0.3.6]
+
+- feat: Perf/improve robustness of perplexity llm integration (#19022)
+
+### `llama-index-postprocessor-sbert-rerank` [0.3.1]
+
+- feat: Added cache dir to Sentence Transformers post processor (#19097)
+
+### `llama-index-protocols-ag-ui` [0.1.2]
+
+- feat: add `ag-ui` protocol support (#19104, #19103, #19102, #18898)
+
+### `llama-index-readers-google` [0.6.2]
+
+- fix: Fix error getting metadata file IDs in google drive reader (#19118)
+
+### `llama-index-readers-hive` [0.3.1]
+
+- chore: deprecate and remove hive reader (#18990)
+
+### `llama-index-readers-mongodb` [0.3.2]
+
+- feat: Added Async driver for `alazy_load_data` for mongodb reader (#19038)
+
+### `llama-index-storage-chat-store-sqlite` [0.1.1]
+
+- fix: sqlite chat store compatibility with sqlalchemy 1.4 (#19067)
+
+### `llama-index-tools-hive` [0.1.0]
+
+- feat: Add Hive Intelligence search tool (#19029)
+
+### `llama-index-utils-workflow` [0.3.4]
+
+- feat: support drawing mermaid diagrams of workflows (#19083)
+
+### `llama-index-vector-stores-lancedb` [0.3.3]
+
+- fix: create table with pre-defined schema (#19064)
+
+### `llama-index-vector-stores-milvus` [0.8.5]
+
+- fix: `Connections.connect()` got multiple values for argument `alias` (#19119)
+
+### `llama-index-vector-stores-opengauss` [0.1.0]
+
+- feat: add openGauss integration (#19024)
+
 ## [2025-06-11]
 
 ### `llama-index-core` [0.12.42]
