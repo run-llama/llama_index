@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, List, Sequence, Union
+from typing import Any, List, Sequence, Union, Optional
 
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
-from llama_index.core.multi_modal_llms.base import MultiModalLLM
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptDictType
-from llama_index.core.llms import ImageBlock
+from llama_index.core.llms import ImageBlock, LLM, TextBlock, ChatMessage
 from llama_index.core.schema import ImageNode
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
@@ -46,7 +45,7 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
     This evaluator considers the query string, retrieved contexts, and response string.
 
     Args:
-        multi_modal_llm(Optional[MultiModalLLM]):
+        multi_modal_llm(Optional[LLM]):
             The Multi-Modal LLM Judge to use for evaluations.
         raise_error(Optional[bool]):
             Whether to raise an error if the response is invalid.
@@ -60,7 +59,7 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
 
     def __init__(
         self,
-        multi_modal_llm: Union[MultiModalLLM, None] = None,
+        multi_modal_llm: Optional[LLM] = None,
         raise_error: bool = False,
         eval_template: Union[str, BasePromptTemplate, None] = None,
         refine_template: Union[str, BasePromptTemplate, None] = None,
@@ -68,8 +67,8 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
         """Init params."""
         if multi_modal_llm is None:
             try:
-                from llama_index.multi_modal_llms.openai import (
-                    OpenAIMultiModal,
+                from llama_index.llms.openai import (
+                    OpenAIResponses,
                 )  # pants: no-infer-dep
             except ImportError:
                 raise ImportError(
@@ -77,8 +76,8 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
                     "Please install it using `pip install llama-index-multi-modal-llms-openai`"
                 )
 
-            self._multi_modal_llm: MultiModalLLM = OpenAIMultiModal(
-                model="gpt-4-vision-preview", max_new_tokens=1000
+            self._multi_modal_llm: LLM = OpenAIResponses(
+                model="gpt-4.1", max_output_tokens=1000
             )
         else:
             self._multi_modal_llm = multi_modal_llm
@@ -141,12 +140,13 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
         if image_urls:
             image_nodes.extend([ImageBlock(url=image_url) for image_url in image_urls])
 
-        response_obj = self._multi_modal_llm.complete(
-            prompt=fmt_prompt,
-            image_documents=image_nodes,
+        image_nodes.append(TextBlock(text=fmt_prompt))
+
+        response_obj = self._multi_modal_llm.chat(
+            messages=[ChatMessage(role="user", blocks=image_nodes)],
         )
 
-        raw_response_txt = str(response_obj)
+        raw_response_txt = response_obj.message.content
 
         if "yes" in raw_response_txt.lower():
             passing = True
@@ -193,12 +193,13 @@ class MultiModalRelevancyEvaluator(BaseEvaluator):
         if image_urls:
             image_nodes.extend([ImageBlock(url=image_url) for image_url in image_urls])
 
-        response_obj = await self._multi_modal_llm.acomplete(
-            prompt=fmt_prompt,
-            image_documents=image_nodes,
+        image_nodes.append(TextBlock(text=fmt_prompt))
+
+        response_obj = self._multi_modal_llm.chat(
+            messages=[ChatMessage(role="user", blocks=image_nodes)],
         )
 
-        raw_response_txt = str(response_obj)
+        raw_response_txt = response_obj.message.content
 
         if "yes" in raw_response_txt.lower():
             passing = True
