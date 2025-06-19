@@ -5,7 +5,7 @@ import json
 import logging
 import operator as py_operator
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import duckdb
 from duckdb import (
@@ -127,28 +127,31 @@ class DuckDBVectorStore(BasePydanticVectorStore):
     database_name: str
     table_name: str
     # schema_name: Optional[str] # TODO: support schema name
-    embed_dim: int | None
+    embed_dim: Optional[int]
     # hybrid_search: Optional[bool] # TODO: support hybrid search
-    text_search_config: dict | None
+    text_search_config: Optional[dict]
     persist_dir: str
 
     _conn: duckdb.DuckDBPyConnection = PrivateAttr()
-    _table: duckdb.DuckDBPyRelation | None = PrivateAttr(default=None)
+    _table: Optional[duckdb.DuckDBPyRelation] = PrivateAttr(default=None)
 
     _is_initialized: bool = PrivateAttr(default=False)
-    _database_path: str | None = PrivateAttr()
+    _database_path: Optional[str] = PrivateAttr()
 
     def __init__(
         self,
         database_name: str = ":memory:",
         table_name: str = "documents",
-        embed_dim: int | None = None,
+        embed_dim: Optional[int] = None,
         # https://duckdb.org/docs/extensions/full_text_search
-        text_search_config: dict | None = None,
+        text_search_config: Optional[dict] = None,
         persist_dir: str = "./storage",
         **kwargs: Any,  # noqa: ARG002
     ) -> None:
         """Init params."""
+        if text_search_config is None:
+            text_search_config = DEFAULT_TEXT_SEARCH_CONFIG
+
         fields = {
             "database_name": database_name,
             "table_name": table_name,
@@ -168,9 +171,9 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         database_path: str,
         table_name: str = "documents",
         # schema_name: Optional[str] = "main",
-        embed_dim: int | None = None,
+        embed_dim: Optional[int] = None,
         # hybrid_search: Optional[bool] = False,
-        text_search_config: dict | None = DEFAULT_TEXT_SEARCH_CONFIG,
+        text_search_config: Optional[dict] = None,
         **kwargs: Any,
     ) -> "DuckDBVectorStore":
         """Load a DuckDB vector store from a local file."""
@@ -191,9 +194,9 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         database_name: str = ":memory:",
         table_name: str = "documents",
         # schema_name: Optional[str] = "main",
-        embed_dim: int | None = None,
+        embed_dim: Optional[int] = None,
         # hybrid_search: Optional[bool] = False,
-        text_search_config: dict | None = DEFAULT_TEXT_SEARCH_CONFIG,
+        text_search_config: Optional[dict] = None,
         persist_dir: str = "./storage",
         **kwargs: Any,
     ) -> "DuckDBVectorStore":
@@ -346,8 +349,8 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
     def get_nodes(
         self,
-        node_ids: list[str] | None = None,
-        filters: MetadataFilters | None = None,
+        node_ids: Optional[list[str]] = None,
+        filters: Optional[MetadataFilters] = None,
         **get_kwargs: Any,
     ) -> list[BaseNode]:  # noqa: ARG002
         """Get nodes using node_ids and/or filters. If both are provided, both are considered."""
@@ -367,8 +370,8 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
     def delete_nodes(
         self,
-        node_ids: list[str] | None = None,
-        filters: MetadataFilters | None = None,
+        node_ids: Optional[list[str]] = None,
+        filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:  # noqa: ARG002
         """Delete nodes using node_ids and/or filters. If both are provided, both are considered."""
@@ -414,8 +417,8 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
     def _build_node_id_metadata_filter_expression(
         self,
-        node_ids: list[str] | None = None,
-        filters: MetadataFilters | None = None,
+        node_ids: Optional[list[str]] = None,
+        filters: Optional[MetadataFilters] = None,
     ) -> Expression:
         filter_expression = Expression(True)
 
@@ -473,92 +476,101 @@ class DuckDBVectorStore(BasePydanticVectorStore):
     def _build_filter_expression(
         self, column: Expression, value: Expression, operator: FilterOperator
     ) -> Expression:
-        # If our operator is IN or NIN we need to use a function expression
-        match operator:
-            case operator_func if operator_func := li_filter_to_py_operator.get(
-                operator
-            ):
-                # We have a straightforward operator, so we can just use the Python operator
-                # i.e. FilterOperator.EQ -> `==` (operator.eq)
-                # i.e. FilterOperator.GTE -> `>=` (operator.ge)
-                # ...
-                return operator_func(column, value)
+        """
+        Build a filter expression for a given column and value.
 
-            # Less straightforward operators
-            case FilterOperator.IN:
-                # doclument value is in the filter list
-                return FunctionExpression(
-                    "list_contains",
-                    value,
-                    column,
-                )
-            case FilterOperator.NIN:
-                # document value is not in the filter list
-                return FunctionExpression(
-                    "list_contains",
-                    value,
-                    column,
-                ).__eq__(ConstantExpression(False))
+        Args:
+            column: The key in the document to use in the filter.
+            value: The value to use in the filter.
+            operator: The filter operator to use.
 
-            case FilterOperator.CONTAINS:
-                # filter_value is in the document value
-                # This will never be true so long as the DuckDB vector store
-                # requires flat metadata
-                return FunctionExpression(
-                    "list_contains",
-                    value,
+        """
+        if operator_func := li_filter_to_py_operator.get(operator):
+            # We have a straightforward operator, and DuckDB can handle just take the Python operator
+            # i.e. FilterOperator.EQ -> `==` (operator.eq)
+            # i.e. FilterOperator.GTE -> `>=` (operator.ge)
+            # ...
+            return operator_func(column, value)
+
+        if operator == FilterOperator.IN:
+            # Given a list of values, check to see if the document's value is in the list
+            return FunctionExpression(
+                "list_contains",  # list_contains(list_to_look_in, element_to_find)
+                value,
+                column,
+            )
+
+        if operator == FilterOperator.NIN:
+            # Given a list of values, check to see if the document's value is not in the list
+            return FunctionExpression(
+                "list_contains",  # list_contains(list_to_look_in, element_to_find)
+                value,
+                column,
+            ).__eq__(ConstantExpression(False))
+
+        if operator == FilterOperator.CONTAINS:
+            # filter_value is in the document value
+            # This will never be true so long as the DuckDB vector store
+            # requires flat metadata
+            return Expression(False)
+            # return FunctionExpression(
+            #     "list_contains", # list_contains(list_to_look_in, element_to_find)
+            #     value,
+            #     column,
+            # )
+        if operator == FilterOperator.ANY:
+            # Check if the intersection of the two lists has at least one element
+            return FunctionExpression(
+                "list_has_any",
+                column,
+                value,
+            )
+
+        if operator == FilterOperator.ALL:
+            # Check if all of the provided values are in the document's value
+            return FunctionExpression(
+                "list_has_all",  # list_has_all(list, sub-list)
+                column,
+                value,
+            )
+
+        if operator == FilterOperator.TEXT_MATCH:
+            return FunctionExpression(
+                "contains",
+                column,
+                value,
+            )
+
+        if operator == FilterOperator.TEXT_MATCH_INSENSITIVE:
+            return FunctionExpression(
+                "contains",
+                FunctionExpression(
+                    "lower",
                     column,
-                )
-            case FilterOperator.ANY:
-                # array of values has at least one element in common with the array of values in the column
-                return FunctionExpression(
-                    "list_has_any",
-                    column,
+                ),
+                FunctionExpression(
+                    "lower",
                     value,
-                )
-            case FilterOperator.ALL:
-                # array of values is the same as the array of values in the column
-                return FunctionExpression(
-                    "list_has_all",
-                    column,
-                    value,
-                )
-            case FilterOperator.TEXT_MATCH:
-                return FunctionExpression(
-                    "contains",
-                    column,
-                    value,
-                )
-            case FilterOperator.TEXT_MATCH_INSENSITIVE:
-                return FunctionExpression(
-                    "contains",
-                    FunctionExpression(
-                        "lower",
-                        column,
+                ),
+            )
+
+        if operator == FilterOperator.IS_EMPTY:
+            # column is null or the array is empty
+            return column.isnull().__or__(
+                CaseExpression(
+                    condition=FunctionExpression("typeof", column).__eq__(
+                        ConstantExpression("ARRAY")
                     ),
-                    FunctionExpression(
-                        "lower",
-                        value,
+                    value=FunctionExpression("length", column).__eq__(
+                        ConstantExpression(0)
                     ),
                 )
-            case FilterOperator.IS_EMPTY:
-                # column is null or the array is empty
-                return column.isnull().__or__(
-                    CaseExpression(
-                        condition=FunctionExpression("typeof", column).__eq__(
-                            ConstantExpression("ARRAY")
-                        ),
-                        value=FunctionExpression("length", column).__eq__(
-                            ConstantExpression(0)
-                        ),
-                    )
-                )
+            )
 
-            case _:
-                raise NotImplementedError(f"Unsupported operator: {operator}")
+        raise NotImplementedError(f"Unsupported operator: {operator}")
 
     def _build_metadata_filter_expressions(
-        self, metadata_filters: MetadataFilters | None = None
+        self, metadata_filters: Optional[MetadataFilters] = None
     ) -> Expression:
         expressions: list[Expression] = []
 
