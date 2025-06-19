@@ -2,7 +2,7 @@ import base64
 import os
 import threading
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from .types import (
     ConversationInputEvent,
     ConversationDeltaEvent,
@@ -24,7 +24,7 @@ from llama_index.core.voice_agents import (
 )
 
 DEFAULT_WS_URL = "wss://api.openai.com/v1/realtime"
-DEFALT_MODEL = "gpt-4o-realtime-preview-2024-10-01"
+DEFALT_MODEL = "gpt-4o-realtime-preview"
 
 
 class OpenAIVoiceAgent(BaseVoiceAgent):
@@ -34,11 +34,11 @@ class OpenAIVoiceAgent(BaseVoiceAgent):
     Interface for the OpenAI Realtime Conversation integration with LlamaIndex.
 
     Attributes:
-        ws (Optional[BAseVoiceAgentWebsocket]): A pre-defined websocket to use. Defaults to None. In case of doubt, it is advised to leave this argument as None and pass ws_url and model.
+        ws (Optional[BaseVoiceAgentWebsocket]): A pre-defined websocket to use. Defaults to None. In case of doubt, it is advised to leave this argument as None and pass ws_url and model.
         interface (Optional[BaseVoiceAgentInterface]): Audio I/O interface. Defaults to None. In case of doubt, it is advised to leave this argument as None.
         api_key (Optional[str]): The OpenAI API key. Defaults to the environmental variable OPENAI_API_KEY if the value is None.
         ws_url (str): The URL for the OpenAI Realtime Conversation websocket. Defaults to: 'wss://api.openai.com/v1/realtime'.
-        model (str): The conversational model. Defaults to: 'gpt-4o-realtime-preview-2024-10-01'.
+        model (str): The conversational model. Defaults to: 'gpt-4o-realtime-preview'.
         tools (List[BaseTool]): Tools to equip the agent with.
 
     """
@@ -75,7 +75,7 @@ class OpenAIVoiceAgent(BaseVoiceAgent):
             )
         self.recv_thread: Optional[threading.Thread] = None
 
-    async def start(self, *args, **kwargs) -> None:
+    async def start(self, *args: Any, **kwargs: Dict[str, Any]) -> None:
         """
         Start the conversation and all related processes.
 
@@ -114,7 +114,7 @@ class OpenAIVoiceAgent(BaseVoiceAgent):
         self.interface.start()
         print("The agent is ready to have a conversation")
 
-    async def send(self, audio: bytes, *args, **kwargs) -> None:
+    async def send(self, audio: bytes, *args: Any, **kwargs: Any) -> None:
         """
         Callback function to send audio data to the OpenAI Conversation Websocket.
 
@@ -132,7 +132,7 @@ class OpenAIVoiceAgent(BaseVoiceAgent):
         )
         await self.ws.send(audio_event.model_dump(by_alias=True))
 
-    async def handle_message(self, message: dict, *args, **kwargs) -> None:
+    async def handle_message(self, message: dict, *args: Any, **kwargs: Any) -> None:
         """
         Handle incoming message from OpenAI Conversation Websocket.
 

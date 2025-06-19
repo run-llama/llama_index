@@ -16,8 +16,11 @@ import signal
 import time
 import logging
 
+from typing import List
 from dotenv import load_dotenv
 from llama_index.voice_agents.openai import OpenAIVoiceAgent
+from llama_index.core.voice_agents import BaseVoiceAgentEvent
+from llama_index.core.llms import ChatMessage, TextBlock
 from llama_index.core.tools import FunctionTool
 
 logging.basicConfig(
@@ -30,43 +33,81 @@ load_dotenv()
 quitFlag = False
 
 
-def signal_handler(sig, frame, realtime_instance):
+# use filter functions to export messages and events without your terminal being swamped by base64-encoded audio bytes :)
+def filter_events(
+    events: List[BaseVoiceAgentEvent],
+) -> List[BaseVoiceAgentEvent]:
+    evs = []
+    for event in events:
+        if "audio" in event.type_t and "transcript" not in event.type_t:
+            if "delta" in event.type_t:
+                event.delta = ""
+                evs.append(event)
+        else:
+            evs.append(event)
+    return evs
+
+
+def filter_messages(messages: List[ChatMessage]) -> List[ChatMessage]:
+    msgs = []
+    for message in messages:
+        msg = ChatMessage(role=message.role, blocks=[])
+        for b in message.blocks:
+            if isinstance(b, TextBlock):
+                msg.blocks.append(b)
+        if len(msg.blocks) > 0:
+            msgs.append(msg)
+    return msgs
+
+
+def signal_handler(sig, frame):
     """Handle Ctrl+C and initiate graceful shutdown."""
-    realtime_instance.stop()
     global quitFlag
     quitFlag = True
 
 
 async def main():
-    def multiply_two_numbers(i: int, j: int):
+    # this is just a mock tool
+    def get_weather(location: str):
         """
-        Useful to multiply two integers and returns the result.
-
-        Args:
-            i (int): The first integer.
-            j (int): The second integer.
-
-        Returns:
-            int: The product of the two integers.
+        Get the weather for a location
         """
-        return i * j
+        return f"The weather in {location} is sunny, there are 32°C, wind is 3 km/h toward west, and humidity is at 34%."
 
     api_key = os.getenv("OPENAI_API_KEY")
 
     if not api_key:
         return
-    tools = [FunctionTool.from_defaults(fn=multiply_two_numbers)]
-    conversation = OpenAIVoiceAgent(api_key=api_key, tools=tools)
+    tools = [
+        FunctionTool.from_defaults(
+            fn=get_weather,
+            name="get_weather",
+            description="Get the current weather...",
+        )
+    ]
+    # use custom models and tools!
+    conversation = OpenAIVoiceAgent(
+        api_key=api_key,
+        tools=tools,
+        model="gpt-4o-mini-realtime-preview-2024-12-17",
+    )
 
     signal.signal(
         signal.SIGINT,
-        lambda sig, frame: signal_handler(sig, frame, conversation),
+        lambda sig, frame: signal_handler(sig, frame),
     )
 
     try:
-        await conversation.start()
+        # customize the model with instructions and other arguments you can find here: https://platform.openai.com/docs/api-reference/realtime-client-events/session/update
+        await conversation.start(
+            instructions="You are a very helpful assistant. You can use the 'get_weather' tool to get weather information about a location: you just have to input the location to the tool. Please execute the tool whenever you are asked about the weather of a location.",
+            temperature=0,
+        )
         while not quitFlag:
             time.sleep(0.1)
+        if quitFlag:
+            await conversation.interrupt()
+            await conversation.stop()
 
     except Exception as e:
         logging.error(f"Error in main loop: {e}")
@@ -76,9 +117,9 @@ async def main():
     finally:
         logging.info("Exiting main.")
         print("Messages:")
-        print(conversation.export_messages())
+        print(conversation.export_messages(filter=filter_messages))
         print("Events:")
-        print(conversation.export_events())
+        print(conversation.export_events(filter=filter_events))
         await conversation.stop()  # Ensures cleanup if any error occurs
 
 
