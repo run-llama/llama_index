@@ -1,4 +1,5 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
+from pathlib import Path
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CBEventType, EventPayload
@@ -35,6 +36,7 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         model: str = "cross-encoder/stsb-distilroberta-base",
         device: Optional[str] = None,
         keep_retrieval_score: Optional[bool] = False,
+        cache_dir: Optional[Union[str, Path]] = None,
     ):
         try:
             from sentence_transformers import CrossEncoder
@@ -52,7 +54,10 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         )
         device = infer_torch_device() if device is None else device
         self._model = CrossEncoder(
-            model, max_length=DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH, device=device
+            model,
+            max_length=DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH,
+            device=device,
+            cache_dir=cache_dir,
         )
 
     @classmethod

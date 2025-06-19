@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-agent-coa"
-version = "0.3.0"
+version = "0.3.1"
 description = "llama-index agent coa integration"
 authors = [{name = "Logan Markewich", email = "logan@runllama.ai"}]
 requires-python = ">=3.9,<4.0"

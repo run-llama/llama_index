@@ -609,6 +609,7 @@ nav:
       - Tools:
           - ./examples/tools/AgentQL_browser_agent.ipynb
           - ./examples/tools/OnDemandLoaderTool.ipynb
+          - ./examples/tools/Use_Klavis_with_LlamaIndex.ipynb
           - ./examples/tools/azure_code_interpreter.ipynb
           - ./examples/tools/cassandra.ipynb
           - ./examples/tools/eval_query_engine_tool.ipynb
@@ -1302,6 +1303,8 @@ nav:
           - ./api_reference/program/openai.md
       - Prompts:
           - ./api_reference/prompts/index.md
+      - Protocols:
+          - ./api_reference/protocols/ag_ui.md
       - Query Engines:
           - ./api_reference/query_engine/FLARE.md
           - ./api_reference/query_engine/JSONalayze.md
@@ -1410,7 +1413,6 @@ nav:
           - ./api_reference/readers/graphql.md
           - ./api_reference/readers/guru.md
           - ./api_reference/readers/hatena_blog.md
-          - ./api_reference/readers/hive.md
           - ./api_reference/readers/hubspot.md
           - ./api_reference/readers/huggingface_fs.md
           - ./api_reference/readers/hwp.md
@@ -1666,6 +1668,7 @@ nav:
               - ./api_reference/storage/vector_store/nile.md
               - ./api_reference/storage/vector_store/objectbox.md
               - ./api_reference/storage/vector_store/oceanbase.md
+              - ./api_reference/storage/vector_store/openGauss.md
               - ./api_reference/storage/vector_store/opensearch.md
               - ./api_reference/storage/vector_store/oracledb.md
               - ./api_reference/storage/vector_store/pgvecto_rs.md
@@ -1720,6 +1723,7 @@ nav:
           - ./api_reference/tools/function.md
           - ./api_reference/tools/google.md
           - ./api_reference/tools/graphql.md
+          - ./api_reference/tools/hive.md
           - ./api_reference/tools/index.md
           - ./api_reference/tools/ionic_shopping.md
           - ./api_reference/tools/jina.md
@@ -2066,7 +2070,6 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-database
             - ../llama-index-integrations/readers/llama-index-readers-remote
             - ../llama-index-integrations/readers/llama-index-readers-asana
-            - ../llama-index-integrations/readers/llama-index-readers-hive
             - ../llama-index-integrations/readers/llama-index-readers-docstring-walker
             - ../llama-index-integrations/readers/llama-index-readers-airbyte-salesforce
             - ../llama-index-integrations/readers/llama-index-readers-stripe-docs
@@ -2477,6 +2480,9 @@ plugins:
             - ../llama-index-integrations/voice_agents/llama-index-voice-agents-elevenlabs
             - ../llama-index-integrations/tools/llama-index-tools-artifact-editor
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-openai-like
+            - ../llama-index-integrations/protocols/llama-index-protocols-ag-ui
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-openGauss
+            - ../llama-index-integrations/tools/llama-index-tools-hive
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
