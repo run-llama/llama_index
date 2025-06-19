@@ -86,7 +86,7 @@ def to_mistral_chunks(content_blocks: Sequence[ContentBlock]) -> Sequence[Conten
                         content_block.url["url"], AnyUrl
                     ):
                         content_chunks.append(
-                            ImageURLChunk(image_url=str(content_block.url["url"]._url))
+                            ImageURLChunk(image_url=str(content_block.url["url"]))
                         )
                     elif content_block.url.get("url", None) and isinstance(
                         content_block.url["url"], str
@@ -96,7 +96,7 @@ def to_mistral_chunks(content_blocks: Sequence[ContentBlock]) -> Sequence[Conten
                         )
                 elif isinstance(content_block.url, AnyUrl):
                     content_chunks.append(
-                        ImageURLChunk(image_url=str(content_block.url._url))
+                        ImageURLChunk(image_url=str(content_block.url))
                     )
             else:
                 base_64_str = (
