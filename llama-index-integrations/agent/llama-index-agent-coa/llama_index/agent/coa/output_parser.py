@@ -2,11 +2,11 @@
 
 import asyncio
 import json
-import networkx as nx
 import re
 from collections import defaultdict
 from typing import Dict, Tuple
 
+import networkx as nx
 from llama_index.core.tools import AsyncBaseTool, ToolOutput
 from llama_index.core.types import BaseOutputParser
 
@@ -84,7 +84,6 @@ class ChainOfAbstractionParser(BaseOutputParser):
                 )
 
                 # loop up any inputs that depend on other functions
-                breakpoint()
                 input_values = [results.get(inp, inp) for inp in inputs]
                 if self._verbose:
                     print(
