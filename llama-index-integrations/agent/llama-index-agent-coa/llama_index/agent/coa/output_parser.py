@@ -84,6 +84,7 @@ class ChainOfAbstractionParser(BaseOutputParser):
                 )
 
                 # loop up any inputs that depend on other functions
+                breakpoint()
                 input_values = [results.get(inp, inp) for inp in inputs]
                 if self._verbose:
                     print(
@@ -93,18 +94,8 @@ class ChainOfAbstractionParser(BaseOutputParser):
 
                 # execute function and store result
                 try:
-                    raw_tool_output = await tools_by_name[func_name].acall(
-                        *input_values
-                    )
-                    tool_outputs.append(
-                        ToolOutput(
-                            content=str(raw_tool_output),
-                            tool_name=func_name,
-                            raw_output=raw_tool_output,
-                            raw_input={"args": input_values},
-                            is_error=False,
-                        )
-                    )
+                    tool_output = await tools_by_name[func_name].acall(*input_values)
+                    tool_outputs.append(tool_output)
                 except Exception as e:
                     tool_outputs.append(
                         ToolOutput(
@@ -119,7 +110,7 @@ class ChainOfAbstractionParser(BaseOutputParser):
                     # If an error occurs, stop execution
                     break
 
-                parallel_results[placeholder] = str(raw_tool_output)
+                parallel_results[placeholder] = tool_output.raw_output
             results.update(parallel_results)
 
         # Replace placeholders in the solution text
