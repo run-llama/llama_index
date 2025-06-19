@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "llama-index-tools-hive"
-version = "0.1.0"
+version = "0.1.1"
 description = "LlamaIndex Tool for Hive Intelligence"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -43,3 +43,6 @@ exclude = ["**/BUILD"]
 [tool.llamahub]
 contains_example = true
 import_path = "llama_index.tools.hive"
+
+[tool.llamahub.class_authors]
+HiveToolSpec = "Anirudha619"
