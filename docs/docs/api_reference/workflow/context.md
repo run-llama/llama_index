@@ -1,4 +1,4 @@
-::: llama_index.core.workflow.context
+::: workflows.context
     options:
       members:
         - Context
