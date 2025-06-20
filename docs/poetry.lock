@@ -1646,6 +1646,22 @@ type = "directory"
 url = "../llama-index-instrumentation"
 
 [[package]]
+name = "llama-index-workflows"
+version = "0.2.2"
+description = "An event-driven, async-first, step-based way to control the execution flow of AI applications like Agents."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "llama_index_workflows-0.2.2-py3-none-any.whl", hash = "sha256:2b7a47c631f02d3b25f03006d40ebaed67a959da1c6fc35d0a6057b2d944bfcd"},
+    {file = "llama_index_workflows-0.2.2.tar.gz", hash = "sha256:916ae77b22f2589b515a10b49f2fa519dd41c224d85710f99c54797d71b3c494"},
+]
+
+[package.dependencies]
+llama-index-instrumentation = ">=0.1.0"
+pydantic = ">=2.11.5"
+
+[[package]]
 name = "markdown"
 version = "3.7"
 description = "Python implementation of John Gruber's Markdown."
@@ -4640,4 +4656,4 @@ propcache = ">=0.2.0"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "552ea5490323f37766af283d320813198747a01d734230c1a4f1d2654ab0c14c"
+content-hash = "96e6bd5f61d6a50bec6b69ba3b872856cf67055bf432ab7894b4359ec851e34d"
