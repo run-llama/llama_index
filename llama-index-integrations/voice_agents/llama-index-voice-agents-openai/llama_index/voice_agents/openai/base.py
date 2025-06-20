@@ -1,4 +1,5 @@
 import base64
+import logging
 import os
 import threading
 
@@ -22,6 +23,11 @@ from llama_index.core.voice_agents import (
     BaseVoiceAgentInterface,
     BaseVoiceAgentWebsocket,
 )
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 DEFAULT_WS_URL = "wss://api.openai.com/v1/realtime"
 DEFALT_MODEL = "gpt-4o-realtime-preview"
@@ -84,9 +90,13 @@ class OpenAIVoiceAgent(BaseVoiceAgent):
 
         """
         self.ws.connect()
+        breakpoint()
         session = ConversationSession.model_validate(kwargs)
+        logger.info(f"Session: {session}")
+
         if self.tools is not None:
             openai_conv_tools: List[ConversationTool] = []
+
             for tool in self.tools:
                 params_dict = tool.metadata.get_parameters_dict()
                 tool_params = ToolParameters.model_validate(params_dict)
@@ -96,7 +106,9 @@ class OpenAIVoiceAgent(BaseVoiceAgent):
                     parameters=tool_params,
                 )
                 openai_conv_tools.append(conv_tool)
+
             session.tools = openai_conv_tools
+
         update_session_event = ConversationSessionUpdate(
             type_t="session.update",
             session=session,
@@ -175,6 +187,8 @@ class OpenAIVoiceAgent(BaseVoiceAgent):
 
         elif message["type_t"] == "response.audio.done":
             event = ConversationDoneEvent.model_validate(message)
+        elif message["type_t"] == "error":
+            logging.error(f"Error: {message['error']}")
         else:
             return
         self._events.append(event)
