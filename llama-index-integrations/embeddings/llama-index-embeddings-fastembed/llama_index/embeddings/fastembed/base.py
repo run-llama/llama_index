@@ -3,7 +3,7 @@ from typing import Any, List, Literal, Optional
 import numpy as np
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
-
+import asyncio
 from fastembed import TextEmbedding
 
 
@@ -93,7 +93,7 @@ class FastEmbedEmbedding(BaseEmbedding):
         return self._get_text_embeddings([text])[0]
 
     async def _aget_text_embedding(self, text: str) -> List[float]:
-        return self._get_text_embedding(text)
+        return await asyncio.to_thread(self._get_text_embedding, text)
 
     def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         embeddings: List[np.ndarray]
@@ -104,11 +104,11 @@ class FastEmbedEmbedding(BaseEmbedding):
         return [embedding.tolist() for embedding in embeddings]
 
     async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
-        return self._get_text_embeddings(texts)
+        return await asyncio.to_thread(self._get_text_embeddings, texts)
 
     def _get_query_embedding(self, query: str) -> List[float]:
         query_embeddings: list[np.ndarray] = list(self._model.query_embed(query))
         return query_embeddings[0].tolist()
 
     async def _aget_query_embedding(self, query: str) -> List[float]:
-        return self._get_query_embedding(query)
+        return await asyncio.to_thread(self._get_query_embedding, query)
