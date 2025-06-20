@@ -310,13 +310,6 @@ def _determine_event_color(event_type: type) -> str:
     return event_color
 
 
-def _get_agent_tool_names(agent: BaseWorkflowAgent) -> Union[List[str], None]:
-    tools = cast(Union[List[Union[BaseTool, AsyncBaseTool]], None], agent.tools)
-    if tools and len(tools) > 0:
-        return [tool.metadata.get_name() for tool in tools]
-    return None
-
-
 def _clean_id_for_mermaid(name: str) -> str:
     """Convert a name to a valid Mermaid ID."""
     return name.replace(" ", "_").replace("-", "_").replace(".", "_")
@@ -476,14 +469,6 @@ def _extract_single_agent_structure(agent: BaseWorkflowAgent) -> DrawWorkflowGra
     nodes = []
     edges = []
 
-    # Determine agent node color based on type
-    if isinstance(agent, ReActAgent):
-        agent_color = "#E27AFF"
-    elif isinstance(agent, CodeActAgent):
-        agent_color = "#66ccff"
-    else:
-        agent_color = "#90EE90"
-
     # Add agent node
     agent_node = DrawWorkflowNode(
         id="agent",
@@ -511,7 +496,7 @@ def _extract_single_agent_structure(agent: BaseWorkflowAgent) -> DrawWorkflowGra
     return DrawWorkflowGraph(nodes=nodes, edges=edges)
 
 
-def _tools_and_handoffs(
+def _process_tools_and_handoffs(
     agent: BaseWorkflowAgent,
     processed_agents: List[str],
     all_agents: Dict[str, BaseWorkflowAgent],
@@ -553,10 +538,11 @@ def _tools_and_handoffs(
                 )
             )
         processed_agents.append(agent.name)
+
     if agent.can_handoff_to:
         for a in agent.can_handoff_to:
             if a not in processed_agents:
-                _tools_and_handoffs(
+                _process_tools_and_handoffs(
                     all_agents[a],
                     processed_agents=processed_agents,
                     all_agents=all_agents,
@@ -564,6 +550,7 @@ def _tools_and_handoffs(
                     edges=edges,
                     root_agent=root_agent,
                 )
+
     return nodes, edges, processed_agents
 
 
@@ -588,7 +575,7 @@ def _extract_agent_workflow_structure(
     agents = agent_workflow.agents
     processed_agents = []
     for v in agents.values():
-        nodes, edges, processed_agents = _tools_and_handoffs(
+        nodes, edges, processed_agents = _process_tools_and_handoffs(
             agent=v,
             processed_agents=processed_agents,
             all_agents=agents,
@@ -599,7 +586,7 @@ def _extract_agent_workflow_structure(
     if all(edge.target != "output" for edge in edges):
         agent_nodes = [n for n in nodes if n.node_type == "workflow_agent"]
         edges.append(DrawWorkflowEdge(agent_nodes[-1].id, "output"))
-    edges.extend([DrawWorkflowEdge(source="output", target="user")])
+
     return DrawWorkflowGraph(nodes=nodes, edges=edges)
 
 
