@@ -1,13 +1,17 @@
 import os
+import httpx
+import base64
+from pathlib import Path
 from unittest.mock import patch
 
-from mistralai import ToolCall
+from mistralai import ToolCall, ImageURLChunk, TextChunk
 import pytest
 
 from llama_index.core.base.llms.base import BaseLLM
-from llama_index.core.llms import ChatMessage
+from llama_index.core.llms import ChatMessage, ImageBlock, TextBlock
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.mistralai import MistralAI
+from llama_index.llms.mistralai.base import to_mistral_chunks
 
 
 def test_llm_class():
@@ -150,3 +154,35 @@ def test_thinking_not_shown():
     if "thinking" in resp.additional_kwargs:
         assert resp.additional_kwargs["thinking"] is None
         assert "<think>" not in resp.text
+
+
+@pytest.fixture()
+def image_url() -> str:
+    return "https://astrabert.github.io/hophop-science/images/whale_doing_science.png"
+
+
+def test_to_mistral_chunks(tmp_path: Path, image_url: str) -> None:
+    blocks_with_url = [
+        TextBlock(text="Provide an alternative text for this image"),
+        ImageBlock(url=image_url),
+    ]
+    content = httpx.get(image_url).content
+    expected_b64 = base64.b64encode(content).decode("utf-8")
+    image_path = tmp_path / "test_image.png"
+    image_path.write_bytes(content)
+    blocks_with_path = [
+        TextBlock(text="Provide an alternative text for this image"),
+        ImageBlock(path=image_path, image_mimetype="image/png"),
+    ]
+    chunks_with_url = to_mistral_chunks(blocks_with_url)
+    assert isinstance(chunks_with_url[0], TextChunk)
+    assert chunks_with_url[0].text == blocks_with_url[0].text
+    assert isinstance(chunks_with_url[1], ImageURLChunk)
+    assert isinstance(chunks_with_url[1].image_url, str)
+    assert chunks_with_url[1].image_url == str(blocks_with_url[1].url._url)
+    chunks_with_path = to_mistral_chunks(blocks_with_path)
+    assert isinstance(chunks_with_path[0], TextChunk)
+    assert chunks_with_path[0].text == blocks_with_path[0].text
+    assert isinstance(chunks_with_path[1], ImageURLChunk)
+    assert isinstance(chunks_with_path[1].image_url, str)
+    assert chunks_with_path[1].image_url == f"data:image/png;base64,{expected_b64}"
