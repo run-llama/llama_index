@@ -34,11 +34,11 @@ class ConversationTool(BaseModel):
 
 class ConversationSession(BaseModel):
     modalities: List[str] = Field(default=["text", "audio"])
-    instructions: str = Field(default="You are a helpful assistant")
+    instructions: str = Field(default="You are a helpful assistant.")
     voice: str = Field(default="sage")
     input_audio_format: str = Field(default="pcm16")
     output_audio_format: str = Field(default="pcm16")
-    input_audio_transcription: Dict[str, str] = Field(
+    input_audio_transcription: Dict[Literal["model"], str] = Field(
         max_length=1, default={"model": "whisper-1"}
     )
     turn_detection: ConversationVAD = Field(default_factory=ConversationVAD)
@@ -46,7 +46,7 @@ class ConversationSession(BaseModel):
         default_factory=list,
     )
     tool_choice: Literal["auto", "none", "required"] = Field(default="auto")
-    temperature: float = Field(default=0.5)
+    temperature: float = Field(default=0.8, ge=0.6)
     max_response_output_tokens: Union[Literal["inf"], int] = Field(
         default="inf",
         ge=1,
