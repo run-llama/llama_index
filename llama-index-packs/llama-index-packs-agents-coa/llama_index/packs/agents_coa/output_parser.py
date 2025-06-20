@@ -44,10 +44,22 @@ class ChainOfAbstractionParser(BaseOutputParser):
         # Create a dependency graph
         graph = nx.DiGraph()
         for func_name, inputs, output in func_calls:
-            inputs = json.loads("[" + inputs + "]")
-            graph.add_node(output, func_name=func_name, inputs=inputs)
-            for inp in inputs:
-                graph.add_edge(inp, output)
+            parsed_inputs = []
+            if inputs.strip():  # Ensure inputs string is not empty
+                input_parts = [part.strip() for part in inputs.split(",")]
+                for part in input_parts:
+                    try:
+                        # Try to parse as a JSON literal (e.g., number, bool)
+                        parsed_inputs.append(json.loads(part))
+                    except json.JSONDecodeError:
+                        # If it fails, treat it as a bare string/placeholder
+                        parsed_inputs.append(part)
+
+            graph.add_node(output, func_name=func_name, inputs=parsed_inputs)
+            for inp in parsed_inputs:
+                # Add an edge only if the input is a placeholder from a previous step
+                if isinstance(inp, str) and inp in placeholders:
+                    graph.add_edge(inp, output)
 
         # Find the execution levels
         execution_levels = defaultdict(list)
