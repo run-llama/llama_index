@@ -90,7 +90,7 @@ class OpenAIVoiceAgent(BaseVoiceAgent):
 
         """
         self.ws.connect()
-        breakpoint()
+
         session = ConversationSession.model_validate(kwargs)
         logger.info(f"Session: {session}")
 
