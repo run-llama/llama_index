@@ -33,7 +33,7 @@ requires-python = ">=3.9,<3.13"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "pinecone>=4.0.0,<8.0.0",
+    "pinecone>=7.0.0,<8.0.0",
     "llama-index-core>=0.12.0,<0.13",
 ]
 
