@@ -1,4 +1,5 @@
 from typing import Any, Callable, Dict, Optional, Sequence
+from deprecated import deprecated
 
 import boto3
 import aioboto3
@@ -30,6 +31,10 @@ from llama_index.multi_modal_llms.bedrock.utils import (
 )
 
 
+@deprecated(
+    reason="This class has been deprecated and will no longer be maintained. Please use BedrockConverse from llama-index-llms-bedrock-converse instead.",
+    version="0.1.1",
+)
 class BedrockMultiModal(MultiModalLLM):
     """Bedrock Multi-Modal LLM implementation."""
 
