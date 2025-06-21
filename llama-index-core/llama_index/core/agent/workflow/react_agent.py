@@ -77,7 +77,12 @@ class ReActAgent(BaseWorkflowAgent):
 
         output_parser = self.output_parser
         react_chat_formatter = self.formatter
-        react_chat_formatter.context = system_prompt
+
+        existing_context = react_chat_formatter.context
+        if existing_context and system_prompt:
+            react_chat_formatter.context = system_prompt + "\n\n" + existing_context
+        elif system_prompt:
+            react_chat_formatter.context = system_prompt
 
         # Format initial chat input
         current_reasoning: list[BaseReasoningStep] = await ctx.get(
