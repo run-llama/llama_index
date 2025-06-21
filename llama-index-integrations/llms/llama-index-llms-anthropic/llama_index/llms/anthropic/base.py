@@ -239,13 +239,19 @@ class Anthropic(FunctionCallingLLM):
         elif aws_region:
             self._client = anthropic.AnthropicBedrock(
                 aws_region=aws_region,
-                aws_access_key_id=aws_access_key_id,
-                aws_secret_access_key=aws_secret_access_key,
+                aws_access_key=aws_access_key_id,
+                aws_secret_key=aws_secret_access_key,
+                max_retries=max_retries,
+                default_headers=default_headers,
+                timeout=timeout,
             )
             self._aclient = anthropic.AsyncAnthropicBedrock(
                 aws_region=aws_region,
-                aws_access_key_id=aws_access_key_id,
-                aws_secret_access_key=aws_secret_access_key,
+                aws_access_key=aws_access_key_id,
+                aws_secret_key=aws_secret_access_key,
+                max_retries=max_retries,
+                default_headers=default_headers,
+                timeout=timeout,
             )
         else:
             self._client = anthropic.Anthropic(
