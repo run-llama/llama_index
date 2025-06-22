@@ -411,6 +411,49 @@ def test_filter_or_condition(
     assert any(n.metadata.get("theme") == "Mafia" for n in nodes)
 
 
+def test_filter_not_condition_excludes_null(
+    vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
+):
+    vector_store.clear()
+    vector_store.add(text_node_list)
+    # Based on our list, this doesn't exclude any values except where author is null
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="author", value="Stephen King", operator=FilterOperator.EQ
+            ),
+            MetadataFilter(key="theme", value="Mafia", operator=FilterOperator.EQ),
+        ],
+        condition=FilterCondition.NOT,
+    )
+    nodes = vector_store.get_nodes(filters=filters)
+
+    assert len(nodes) == 6
+
+    assert any(n.metadata.get("author") == "Stephen King" for n in nodes)
+    assert all(n.metadata.get("director") is None for n in nodes)
+
+
+def test_filter_not_condition(
+    vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
+):
+    vector_store.clear()
+    vector_store.add(text_node_list)
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="author", value="Stephen King", operator=FilterOperator.EQ
+            ),
+            MetadataFilter(key="theme", value="Friendship", operator=FilterOperator.EQ),
+        ],
+        condition=FilterCondition.NOT,
+    )
+    nodes = vector_store.get_nodes(filters=filters)
+    assert len(nodes) == 6
+
+    assert all(n.metadata.get("theme") != "Friendship" for n in nodes)
+
+
 def test_filter_nested_and_or_condition(
     vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
 ):

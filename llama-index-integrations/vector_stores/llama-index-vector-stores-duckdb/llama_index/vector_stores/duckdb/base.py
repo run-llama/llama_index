@@ -38,6 +38,7 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+import pyarrow
 
 logger = logging.getLogger(__name__)
 
@@ -68,21 +69,6 @@ filter_value_type_to_duckdb_type = {
     str: VARCHAR,
     None: SQLNULL,
 }
-
-
-class DuckDBInvalidConfigurationError(Exception):
-    def __init__(self, database_name: str, persist_dir: str):
-        self.database_name = database_name
-        self.persist_dir = persist_dir
-        super().__init__(
-            f"Invalid configuration for DuckDBVectorStore. database_name: {database_name}, persist_dir: {persist_dir}"
-        )
-
-
-class DuckDBTableNotInitializedError(Exception):
-    def __init__(self, table_name: str):
-        self.table_name = table_name
-        super().__init__(f"Table {table_name} is not initialized.")
 
 
 class DuckDBTableIncorrectColumnsError(Exception):
@@ -283,31 +269,31 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
         return table
 
-    def _node_to_table_row(self, node: BaseNode) -> Any:
-        return (
-            node.node_id,
-            node.get_content(metadata_mode=MetadataMode.NONE),
-            node.get_embedding(),
-            node_to_metadata_dict(
-                node,
-                remove_text=True,
-                flat_metadata=self.flat_metadata,
+    def _node_to_arrow_row(self, node: BaseNode) -> dict:
+        return {
+            "node_id": node.node_id,
+            "text": node.get_content(metadata_mode=MetadataMode.NONE),
+            "embedding": node.get_embedding(),
+            "metadata_": node_to_metadata_dict(
+                node, remove_text=True, flat_metadata=self.flat_metadata
             ),
+        }
+
+    def _arrow_row_to_node(self, row_dict: dict) -> BaseNode:
+        return metadata_dict_to_node(
+            metadata=json.loads(row_dict["metadata_"]), text=row_dict["text"]
         )
 
-    def _table_row_to_node(self, row: Any) -> BaseNode:
-        return metadata_dict_to_node(json.loads(row[3]), row[1])
-
-    def _table_row_to_query_result(self, rows: list[Any]) -> VectorStoreQueryResult:
+    def _arrow_row_to_query_result(self, rows: list[dict]) -> VectorStoreQueryResult:
         nodes = []
         similarities = []
         ids = []
 
         for row in rows:
-            node = self._table_row_to_node(row)
+            node = self._arrow_row_to_node(row)
             nodes.append(node)
-            ids.append(row[0])
-            similarities.append(row[4])
+            ids.append(row["node_id"])
+            similarities.append(row["score"])
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
@@ -347,13 +333,17 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
         command = outer_query.sql_query()
 
-        rows = self.client.execute(command).fetchall()
+        rows = self.client.execute(command).arrow().to_pylist()
 
-        return self._table_row_to_query_result(rows)
+        return self._arrow_row_to_query_result(rows)
 
     def add(self, nodes: Sequence[BaseNode], **add_kwargs: Any) -> list[str]:  # noqa: ARG002
         """Add nodes to the vector store."""
-        [self.table.insert(self._node_to_table_row(node)) for node in nodes]
+        rows: list[dict[str, Any]] = [self._node_to_arrow_row(node) for node in nodes]
+
+        arrow_table = pyarrow.Table.from_pylist(rows)
+
+        self.client.from_arrow(arrow_table).insert_into(self.table.alias)
 
         return [node.node_id for node in nodes]
 
@@ -371,9 +361,9 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
         command = self.table.filter(filter_expression).sql_query()
 
-        rows = self.client.execute(command).fetchall()
+        rows = self.client.execute(command).arrow().to_pylist()
 
-        return [self._table_row_to_node(row) for row in rows]
+        return [self._arrow_row_to_node(row) for row in rows]
 
     def delete_nodes(
         self,
@@ -387,13 +377,13 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             filters=filters,
         )
 
-        command = f"DELETE FROM {self.table_name} WHERE {filter_expression}"
+        command = f"DELETE FROM {self.table.alias} WHERE {filter_expression}"
 
         self.client.execute(command)
 
     def clear(self, **clear_kwargs: Any) -> None:  # noqa: ARG002
         """Clear the vector store."""
-        command = f"DELETE FROM {self.table_name}"
+        command = f"DELETE FROM {self.table.alias}"
 
         self.client.execute(command)
 
@@ -409,7 +399,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             "ref_doc_id", ref_doc_id, FilterOperator.EQ
         )
 
-        command = f"DELETE FROM {self.table_name} WHERE {where_clause}"
+        command = f"DELETE FROM {self.table.alias} WHERE {where_clause}"
 
         self.client.execute(command)
 
@@ -596,7 +586,8 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         final_expression: Expression = expressions[0]
 
         for expression in expressions[1:]:
-            if metadata_filters.condition == FilterCondition.AND:
+            # We will do an implicit AND for NOT conditions
+            if metadata_filters.condition in [FilterCondition.AND, FilterCondition.NOT]:
                 final_expression = final_expression.__and__(expression)
                 continue
 
@@ -604,14 +595,11 @@ class DuckDBVectorStore(BasePydanticVectorStore):
                 final_expression = final_expression.__or__(expression)
                 continue
 
-            # I dont know what NOT means in this context
-            # https://github.com/run-llama/llama_index/discussions/19112
-            # if metadata_filters.condition == FilterCondition.NOT:
-            #     final_expression = Expression(py_operator.not_(expressions))
-            #     continue
-            else:
-                raise NotImplementedError(
-                    f"Unsupported condition: {metadata_filters.condition}"
-                )
+            raise NotImplementedError(
+                f"Unsupported condition: {metadata_filters.condition}"
+            )
+
+        if metadata_filters.condition == FilterCondition.NOT:
+            final_expression = final_expression.__invert__()
 
         return final_expression
