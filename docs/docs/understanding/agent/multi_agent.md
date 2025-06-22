@@ -1,100 +1,45 @@
-# Multi-agent systems with AgentWorkflow
+# Multi-agent patterns in LlamaIndex
 
-So far you've been using `AgentWorkflow` to create single agents. But `AgentWorkflow` is also designed to support multi-agent systems, where multiple agents collaborate to complete your task, handing off control to each other as needed.
+When more than one specialist is required to solve a task you have several options in LlamaIndex, each trading off convenience for flexibility.  This page walks through the three most common patterns, when to choose each one, and provides a minimal code sketch for every approach.
 
-In this example, our system will have three agents:
+1. **AgentWorkflow (built-in)** – declare a set of agents and let `AgentWorkflow` manage the hand-offs.
+2. **Orchestrator pattern (built-in)** – an "orchestrator" agent chooses which sub-agent to call next; those sub-agents are exposed to it as **tools**.
+3. **Custom planner (DIY)** – you write the LLM prompt (often XML / JSON) that plans the sequence yourself and imperatively invoke the agents in code.
 
-* A `ResearchAgent` that will search the web for information on the given topic.
-* A `WriteAgent` that will write the report using the information found by the ResearchAgent.
-* A `ReviewAgent` that will review the report and provide feedback.
+---
 
-We will use  `AgentWorkflow` to create a multi-agent system that will execute these agents in order.
+## Pattern 1 – AgentWorkflow (i.e. linear "swarm" pattern)
 
-There are a lot of ways we could go about building a system to perform this task. In this example, we will use a few tools to help with the research and writing processes.
+**When to use** – you want multi-agent behaviour out-of-the-box with almost no extra code, and you are happy with the default hand-off heuristics that ship with `AgentWorkflow`.
 
-* A `web_search` tool to search the web for information on the given topic (we'll use Tavily, as we did in previous examples)
-* A `record_notes` tool which will save research found on the web to the state so that the other tools can use it (see [state management](./state.md) to remind yourself how this works)
-* A `write_report` tool to write the report using the information found by the `ResearchAgent`
-* A `review_report` tool to review the report and provide feedback.
+`AgentWorkflow` is itself a [Workflow](../workflows/index.md) pre-configured to understand agents, state and tool-calling.  You supply an *array* of one or more agents, tell it which one should start, and it will:
 
-Utilizing the Context class, we can pass state between agents, and each agent will have access to the current state of the system.
+1. Give the *root* agent the user message.
+2. Execute whatever tools that agent selects.
+3. Allow the agent to "handoff" control to another agent when it decides.
+4. Repeat until an agent returns a final answer.
 
-We'll define our `web_search` tool simply by using the one we get from the `TavilyToolSpec`:
+**NOTE:** At any point, the current active agent can choose to return control back to the user.
 
-```python
-tavily_tool = TavilyToolSpec(api_key=os.getenv("TAVILY_API_KEY"))
-search_web = tavily_tool.to_tool_list()[0]
-```
-
-Our `record_notes` tool will access the current state, add the notes to the state, and then return a message indicating that the notes have been recorded.
+Below is the condensed version of the [multi-agent report generation example](../../examples/agent/agent_workflow_multi.ipynb).  Three agents collaborate to research, write and review a report.  (`…` indicates code omitted for brevity.)
 
 ```python
-async def record_notes(ctx: Context, notes: str, notes_title: str) -> str:
-    """Useful for recording notes on a given topic."""
-    current_state = await ctx.get("state")
-    if "research_notes" not in current_state:
-        current_state["research_notes"] = {}
-    current_state["research_notes"][notes_title] = notes
-    await ctx.set("state", current_state)
-    return "Notes recorded."
-```
+from llama_index.core.agent.workflow import AgentWorkflow, FunctionAgent
 
-`write_report` and `review_report` will similarly be tools that access the state:
-
-```python
-async def write_report(ctx: Context, report_content: str) -> str:
-    """Useful for writing a report on a given topic."""
-    current_state = await ctx.get("state")
-    current_state["report_content"] = report_content
-    await ctx.set("state", current_state)
-    return "Report written."
-
-
-async def review_report(ctx: Context, review: str) -> str:
-    """Useful for reviewing a report and providing feedback."""
-    current_state = await ctx.get("state")
-    current_state["review"] = review
-    await ctx.set("state", current_state)
-    return "Report reviewed."
-```
-
-Now we're going to bring in a new class to create a stand-alone function-calling agent, the `FunctionAgent` (we also support a `ReactAgent` and `CodeActAgent`):
-
-```python
-from llama_index.core.agent.workflow import FunctionAgent
-```
-
-Using it, we'll create the first of our agents, the `ResearchAgent` which will search the web for information using the `search_web` tool and use the `record_notes` tool to save those notes to the state for other agents to use. The key syntactical elements to note here are:
-* The `name`, which is used to identify the agent to other agents, as we'll see shortly
-* The `description`, which is used by other agents to decide who to hand off control to next
-* The `system_prompt`, which defines the behavior of the agent
-* `can_handoff_to` is an optional list of agent names that the agent can hand control to. By default, it will be able to hand control to any other agent.
-
-```python
+# --- create our specialist agents ------------------------------------------------
 research_agent = FunctionAgent(
     name="ResearchAgent",
-    description="Useful for searching the web for information on a given topic and recording notes on the topic.",
-    system_prompt=(
-        "You are the ResearchAgent that can search the web for information on a given topic and record notes on the topic. "
-        "Once notes are recorded and you are satisfied, you should hand off control to the WriteAgent to write a report on the topic."
-    ),
+    description="Search the web and record notes.",
+    system_prompt="You are a researcher… hand off to WriteAgent when ready.",
     llm=llm,
     tools=[search_web, record_notes],
     can_handoff_to=["WriteAgent"],
 )
-```
 
-Our other two agents are defined similarly, with different tools and system prompts:
-
-```python
 write_agent = FunctionAgent(
     name="WriteAgent",
-    description="Useful for writing a report on a given topic.",
-    system_prompt=(
-        "You are the WriteAgent that can write a report on a given topic. "
-        "Your report should be in a markdown format. The content should be grounded in the research notes. "
-        "Once the report is written, you should get feedback at least once from the ReviewAgent."
-    ),
+    description="Writes a markdown report from the notes.",
+    system_prompt="You are a writer… ask ReviewAgent for feedback when done.",
     llm=llm,
     tools=[write_report],
     can_handoff_to=["ReviewAgent", "ResearchAgent"],
@@ -102,20 +47,14 @@ write_agent = FunctionAgent(
 
 review_agent = FunctionAgent(
     name="ReviewAgent",
-    description="Useful for reviewing a report and providing feedback.",
-    system_prompt=(
-        "You are the ReviewAgent that can review a report and provide feedback. "
-        "Your feedback should either approve the current report or request changes for the WriteAgent to implement."
-    ),
+    description="Reviews a report and gives feedback.",
+    system_prompt="You are a reviewer…",  # etc.
     llm=llm,
     tools=[review_report],
     can_handoff_to=["WriteAgent"],
 )
-```
 
-With our agents defined, we can now instantiate our `AgentWorkflow` directly to create a multi-agent system. We give it an array of our agents, and define which one should initially have control using `root_agent`. We can also define the initial value of the `state` variable, which as we've [seen previously](./state.md), is a dictionary that can be accessed by all agents.
-
-```python
+# --- wire them together ----------------------------------------------------------
 agent_workflow = AgentWorkflow(
     agents=[research_agent, write_agent, review_agent],
     root_agent=research_agent.name,
@@ -125,122 +64,191 @@ agent_workflow = AgentWorkflow(
         "review": "Review required.",
     },
 )
+
+resp = await agent_workflow.run(
+    user_msg="Write me a report on the history of the web …"
+)
+print(resp)
 ```
 
-Now we're ready to run our multi-agent system. We've added some event-handling [using streaming events](./streaming.md) to make it clearer what's happening under the hood:
+`AgentWorkflow` does all the orchestration, streaming events as it goes so you can keep users informed of progress.
+
+---
+
+## Pattern 2 – Orchestrator agent (sub-agents as tools)
+
+**When to use** – you want a single place that decides *every* step so you can inject custom logic, but you still prefer the declarative *agent as tool* experience over writing your own planner.
+
+In this pattern you still build specialist agents (`ResearchAgent`, `WriteAgent`, `ReviewAgent`), **but** you do **not** ask them to hand off to one another.  Instead you expose each agent's `run` method as a tool and give those tools to a new top-level agent – the *Orchestrator*.
 
 ```python
-handler = agent_workflow.run(
-    user_msg="""
-    Write me a report on the history of the web. Briefly describe the history
-    of the world wide web, including the development of the internet and the
-    development of the web, including 21st century developments.
-"""
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.core.tools import FunctionTool
+
+# assume research_agent / write_agent / review_agent defined as before
+
+# Wrap each agent's `run` coroutine so it looks like a regular tool
+research_tool = FunctionTool.from_defaults(
+    fn=lambda msg: research_agent.run(user_msg=msg),
+    name="call_research_agent",
+    description="Use ResearchAgent to search the web and record notes.",
 )
 
-current_agent = None
-current_tool_calls = ""
-async for event in handler.stream_events():
-    if (
-        hasattr(event, "current_agent_name")
-        and event.current_agent_name != current_agent
-    ):
-        current_agent = event.current_agent_name
-        print(f"\n{'='*50}")
-        print(f"🤖 Agent: {current_agent}")
-        print(f"{'='*50}\n")
-    elif isinstance(event, AgentOutput):
-        if event.response.content:
-            print("📤 Output:", event.response.content)
-        if event.tool_calls:
-            print(
-                "🛠️  Planning to use tools:",
-                [call.tool_name for call in event.tool_calls],
-            )
-    elif isinstance(event, ToolCallResult):
-        print(f"🔧 Tool Result ({event.tool_name}):")
-        print(f"  Arguments: {event.tool_kwargs}")
-        print(f"  Output: {event.tool_output}")
-    elif isinstance(event, ToolCall):
-        print(f"🔨 Calling Tool: {event.tool_name}")
-        print(f"  With arguments: {event.tool_kwargs}")
+
+async def call_research_agent(ctx: Context, prompt: str) -> str:
+    """Useful for recording research notes based on a specific prompt."""
+    state = await ctx.get("state")
+    if "research_notes" in state:
+        return "Research notes already exist."
+
+    result = await research_agent.run(
+        user_msg=f"Write some notes about: {query}"
+    )
+    state["research_notes"] = str(result)
+    await ctx.set("state", state)
+    return str(result)
+
+
+async def call_write_agent(ctx: Context) -> str:
+    """Useful for writing a report based on the research notes."""
+    state = await ctx.get("state")
+    notes = state.get("research_notes")
+    if not notes:
+        return "No research notes to write from."
+
+    result = await write_agent.run(
+        user_msg=f"Write a report from the following notes: {notes}"
+    )
+    state["report_content"] = str(result)
+    await ctx.set("state", state)
+    return str(result)
+
+
+async def call_review_agent(ctx: Context) -> str:
+    """Useful for reviewing the report and providing feedback."""
+    state = await ctx.get("state")
+    report = state.get("report_content")
+    if not report:
+        return "No report content to review."
+
+    result = await review_agent.run(
+        user_msg=f"Review the following report: {report}"
+    )
+    state["review"] = result
+    await ctx.set("state", state)
+    return result
+
+
+orchestrator = FunctionAgent(
+    name="OrchestratorAgent",
+    description="Decides which specialist to invoke next in order to fulfil the user's request.",
+    system_prompt=(
+        "You control three subordinate agents available as tools.  At each step, decide which one to call."
+    ),
+    llm=llm,
+    tools=[research_tool, write_tool, review_tool],
+)
+
+response = await orchestrator.run(
+    user_msg="Write me a report on the history of the web …"
+)
+print(response)
 ```
 
-This gives us some very verbose output, which we've truncated here for brevity:
+Because the orchestrator is just another `FunctionAgent` you get streaming, tool-calling, and state management for free – yet you keep full control over how agents are called and the overall control flow (tools always return back to the orchestrator).
 
+---
+
+## Pattern 3 – Custom planner (DIY prompting + parsing)
+
+**When to use** – ultimate flexibility.  You need to impose a very specific plan format, integrate with external schedulers, or gather additional metadata that the previous patterns cannot provide out-of-the-box.
+
+Here, the idea is that you write a prompt that instructs the LLM to output a structured plan (XML / JSON / YAML).  Your own Python code parses that plan and imperatively executes it.  The subordinate agents can be anything – `FunctionAgent`s, RAG pipelines, or other services.
+
+Below is a *minimal* sketch that uses XML. Error-handling, retries and safety checks are left to you.
+
+```python
+import re
+import xml.etree.ElementTree as ET
+from llama_index.core.llms import ChatMessage, TextBlock
+
+PLANNER_PROMPT = """
+You are a planner. Given a user request and the current state, break the solution into ordered <step> blocks.  Each step must specify the agent to call and the message to send, e.g.
+<plan>
+  <step agent=\"ResearchAgent\">search for …</step>
+  <step agent=\"WriteAgent\">draft a report …</step>
+</plan>
+Return ONLY valid XML.
+"""
+
+user_request = "Write me a report on the history of the web …"
+
+state = {
+    "research_notes": {},
+    "report_content": "Not written yet.",
+    "review": "Review required.",
+}
+
+chat_history = [
+    ChatMessage(role="system", content=PLANNER_PROMPT),
+    ChatMessage(
+        role="user",
+        blocks=[
+            TextBlock(text=f"<state>\n{state}\n</state>\n"),
+            TextBlock(text=user_request),
+        ],
+    ),
+]
+
+while True:
+    planner_resp = await llm.achat(chat_history)
+    chat_history.append(planner_resp.message)
+
+    xml_str = re.search(
+        r"<plan>(.*)</plan>", planner_resp.message.content, re.DOTALL
+    ).group(1)
+
+    if not xml_str:
+        break
+
+    root = ET.fromstring(xml_str)
+    for step in root.findall("step"):
+        agent_name = step.attrib["agent"]
+        msg = step.text.strip()
+        if agent_name == "ResearchAgent":
+            result = await research_agent.run(user_msg=msg)
+            state["research_notes"] = str(result)
+        elif agent_name == "WriteAgent":
+            result = await write_agent.run(user_msg=msg)
+            state["report_content"] = str(result)
+        elif agent_name == "ReviewAgent":
+            result = await review_agent.run(user_msg=msg)
+            state["review"] = str(result)
+
+    # Update the chat history with the new state and prompt the LLM to plan again.
+    chat_history.append(
+        ChatMessage(
+            role="user",
+            blocks=[
+                TextBlock(text=f"<state>\n{state}\n</state>\n"),
+                TextBlock(text=user_request),
+            ],
+        )
+    )
+
+print(state)
 ```
-==================================================
-🤖 Agent: ResearchAgent
-==================================================
 
-🛠️  Planning to use tools: ['search']
-🔨 Calling Tool: search
-  With arguments: {'query': 'history of the world wide web and internet development', 'max_results': 6}
-🔧 Tool Result (search):
-  Arguments: {'query': 'history of the world wide web and internet development', 'max_results': 6}
-  Output: [Document(id_='2e977310-2994-4ea9-ade2-8da4533983e8', embedding=None, metadata={'url': 'https://www.scienceandmediamuseum.org.uk/objects-and-stories/short-history-internet'}, excluded_embed_metadata_keys=[], ...
-🛠️  Planning to use tools: ['record_notes', 'record_notes']
-🔨 Calling Tool: record_notes
-  With arguments: {'notes': 'The World Wide Web (WWW) was created by Tim Berners-Lee...','notes_title': 'History of the World Wide Web and Internet Development'}
-🔧 Tool Result (record_notes):
-  Arguments: {'notes': 'The World Wide Web (WWW) was created by Tim Berners-Lee...', 'notes_title': 'History of the World Wide Web and Internet Development'}
-  Output: Notes recorded.
-🔨 Calling Tool: record_notes
-  With arguments: {'notes': "The internet's origins trace back to the 1950s....", 'notes_title': '21st Century Developments in Web Technology'}
-🔧 Tool Result (record_notes):
-  Arguments: {'notes': "The internet's origins trace back to the 1950s... .", 'notes_title': '21st Century Developments in Web Technology'}
-  Output: Notes recorded.
-🛠️  Planning to use tools: ['handoff']
-🔨 Calling Tool: handoff
-  With arguments: {'to_agent': 'WriteAgent', 'reason': 'I have recorded the necessary notes on the history of the web and its developments.'}
-🔧 Tool Result (handoff):
-  Arguments: {'to_agent': 'WriteAgent', 'reason': 'I have recorded the necessary notes on the history of the web and its developments.'}
-  Output: Agent WriteAgent is now handling the request due to the following reason: I have recorded the necessary notes on the history of the web and its developments..
-Please continue with the current request.
-```
+This approach means *you* own the orchestration loop, so you can insert whatever custom logic, caching or human-in-the-loop checks you require.
 
-You can see that `ResearchAgent` has found some notes and handed control to `WriteAgent`, which generates `report_content`:
+---
 
-```
-==================================================
-🤖 Agent: WriteAgent
-==================================================
+## Choosing a pattern
 
-🛠️  Planning to use tools: ['write_report']
-🔨 Calling Tool: write_report
-  With arguments: {'report_content': '# History of the World Wide Web...'}
-🔧 Tool Result (write_report):
-  Arguments: {'report_content': '# History of the World Wide Web...'}
-  Output: Report written.
-🛠️  Planning to use tools: ['handoff']
-🔨 Calling Tool: handoff
-  With arguments: {'to_agent': 'ReviewAgent', 'reason': 'The report on the history of the web has been completed and requires review.'}
-🔧 Tool Result (handoff):
-  Arguments: {'to_agent': 'ReviewAgent', 'reason': 'The report on the history of the web has been completed and requires review.'}
-  Output: Agent ReviewAgent is now handling the request due to the following reason: The report on the history of the web has been completed and requires review..
-Please continue with the current request.
-```
+| Pattern | Lines of code | Flexibility | Built-in streaming / events |
+|---------|--------------|-------------|-----------------------------|
+| AgentWorkflow | ⭐ – fewest | ★★ | Yes |
+| Orchestrator agent | ⭐⭐ | ★★★ | Yes (via orchestrator) |
+| Custom planner | ⭐⭐⭐ | ★★★★★ | Yes (via sub-agents). Top-level is up to you. |
 
-And finally control is passed to the `ReviewAgent` to review the report:
-
-```
-==================================================
-🤖 Agent: ReviewAgent
-==================================================
-
-🛠️  Planning to use tools: ['review_report']
-🔨 Calling Tool: review_report
-  With arguments: {'review': 'The report on the history of the web is well-structured ... Approval is granted.'}
-🔧 Tool Result (review_report):
-  Arguments: {'review': 'The report on the history of the web is well-structured ... Approval is granted.'}
-  Output: Report reviewed.
-📤 Output: The report on the history of the web has been reviewed and approved. It effectively covers the key developments from the inception of the internet to the 21st century, including significant contributions and advancements. If you need any further assistance or additional reports, feel free to ask!
-```
-
-You can see the [full code of this example](https://github.com/run-llama/python-agents-tutorial/blob/main/6_multi_agent.py).
-
-As an extension of this example, you could create a system that takes the feedback from the `ReviewAgent` and passes it back to the `WriteAgent` to update the report.
-
-## Congratulations!
-
-You've covered all there is to know about building agents with `AgentWorkflow`. In the [Workflows tutorial](../workflows/index.md), you'll take many of the concepts you've learned here and apply them to building more precise, lower-level agentic systems.
+If you are prototyping quickly, start with `AgentWorkflow`.  Move to an *Orchestrator agent* when you need more control over the sequence.  Reach for a *Custom planner* only when the first two patterns cannot express the flow you need.
