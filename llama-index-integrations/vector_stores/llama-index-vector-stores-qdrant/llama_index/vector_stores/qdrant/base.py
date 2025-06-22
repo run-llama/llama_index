@@ -1185,7 +1185,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 # match any of the values
                 # https://qdrant.tech/documentation/concepts/filtering/#match-any
                 if isinstance(subfilter.value, List):
-                    values = [str(val) for val in subfilter.value]
+                    values = subfilter.value
                 else:
                     values = str(subfilter.value).split(",")
 
@@ -1199,7 +1199,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 # match none of the values
                 # https://qdrant.tech/documentation/concepts/filtering/#match-except
                 if isinstance(subfilter.value, List):
-                    values = [str(val) for val in subfilter.value]
+                    values = subfilter.value
                 else:
                     values = str(subfilter.value).split(",")
                 conditions.append(
