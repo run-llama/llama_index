@@ -1223,7 +1223,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                     odata_filter,
                     self._search_client,
                     self._async_search_client,
-                    **kwargs
+                    **kwargs,
                 )
             )
         if query.mode == VectorStoreQueryMode.SPARSE:
@@ -1233,7 +1233,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
-                **kwargs
+                **kwargs,
             )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             azure_query_result_search = AzureQueryResultSearchHybrid(
@@ -1242,7 +1242,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
-                **kwargs
+                **kwargs,
             )
         elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
             azure_query_result_search = AzureQueryResultSearchSemanticHybrid(
@@ -1252,7 +1252,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 self._search_client,
                 self._async_search_client,
                 self._semantic_configuration_name or "mySemanticConfig",
-                **kwargs
+                **kwargs,
             )
         return azure_query_result_search.search()
 
@@ -1276,7 +1276,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
-                **kwargs
+                **kwargs,
             )
         )
         if query.mode == VectorStoreQueryMode.SPARSE:
@@ -1286,7 +1286,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
-                **kwargs
+                **kwargs,
             )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             azure_query_result_search = AzureQueryResultSearchHybrid(
@@ -1295,7 +1295,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
-                **kwargs
+                **kwargs,
             )
         elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
             azure_query_result_search = AzureQueryResultSearchSemanticHybrid(
@@ -1305,7 +1305,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 self._search_client,
                 self._async_search_client,
                 self._semantic_configuration_name or "mySemanticConfig",
-                **kwargs
+                **kwargs,
             )
         return await azure_query_result_search.asearch()
 
@@ -1475,7 +1475,6 @@ class AzureQueryResultSearchBase:
     def _create_query_result(
         self, search_query: str, vectors: Optional[List[Any]]
     ) -> VectorStoreQueryResult:
-        
         params = {
             "search_text": search_query,
             "vector_queries": vectors,
@@ -1484,12 +1483,10 @@ class AzureQueryResultSearchBase:
             "filter": self._odata_filter,
             "semantic_configuration_name": self._semantic_configuration_name,
         }
-        
+
         params.update(self._search_kwargs)
-        
-        results = self._search_client.search(
-            **params
-        )
+
+        results = self._search_client.search(**params)
 
         id_result = []
         node_result = []
@@ -1536,7 +1533,6 @@ class AzureQueryResultSearchBase:
     async def _acreate_query_result(
         self, search_query: str, vectors: Optional[List[Any]]
     ) -> VectorStoreQueryResult:
-        
         params = {
             "search_text": search_query,
             "vector_queries": vectors,
@@ -1545,12 +1541,10 @@ class AzureQueryResultSearchBase:
             "filter": self._odata_filter,
             "semantic_configuration_name": self._semantic_configuration_name,
         }
-        
+
         params.update(self._search_kwargs)
-        
-        results = await self._async_search_client.search(
-            **params
-        )
+
+        results = await self._async_search_client.search(**params)
 
         id_result = []
         node_result = []
@@ -1667,7 +1661,6 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
     def _create_query_result(
         self, search_query: str, vectors: Optional[List[Any]]
     ) -> VectorStoreQueryResult:
-        
         params = {
             "search_text": search_query,
             "vector_queries": vectors,
@@ -1677,12 +1670,10 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
             "semantic_configuration_name": self._semantic_configuration_name,
             "query_type": "semantic",
         }
-        
+
         params.update(self._search_kwargs)
-        
-        results = self._search_client.search(
-            **params
-        )
+
+        results = self._search_client.search(**params)
 
         id_result = []
         node_result = []
@@ -1730,7 +1721,6 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
     async def _acreate_query_result(
         self, search_query: str, vectors: Optional[List[Any]]
     ) -> VectorStoreQueryResult:
-        
         params = {
             "search_text": search_query,
             "vector_queries": vectors,
@@ -1740,12 +1730,10 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
             "semantic_configuration_name": self._semantic_configuration_name,
             "query_type": "semantic",
         }
-        
+
         params.update(self._search_kwargs)
-        
-        results = await self._async_search_client.search(
-            **params
-        )
+
+        results = await self._async_search_client.search(**params)
         id_result = []
         node_result = []
         score_result = []
