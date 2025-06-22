@@ -1,5 +1,6 @@
 import os
 from typing import List, Optional
+from unittest.mock import MagicMock, patch
 
 import pytest
 from google.genai import types
@@ -16,14 +17,16 @@ from llama_index.core.tools import FunctionTool
 from pydantic import BaseModel, Field
 from google.genai.types import GenerateContentConfig, ThinkingConfig
 from llama_index.llms.google_genai import GoogleGenAI
-from llama_index.llms.google_genai.utils import convert_schema_to_function_declaration, prepare_chat_params
+from llama_index.llms.google_genai.utils import (
+    convert_schema_to_function_declaration,
+    prepare_chat_params,
+)
 
 
 SKIP_GEMINI = (
     os.environ.get("GOOGLE_API_KEY") is None
     or os.environ.get("GOOGLE_GENAI_USE_VERTEXAI", "false") == "true"
 )
-
 
 
 class Poem(BaseModel):
@@ -54,14 +57,21 @@ class Schema(BaseModel):
 
 
 # Define the models to test against
-GEMINI_MODELS_TO_TEST = [
-    {"model": "models/gemini-2.0-flash-001", "config": {}},
-    {"model": "models/gemini-2.5-flash-preview-04-17", "config": {
-         "generation_config": GenerateContentConfig(
-            thinking_config=ThinkingConfig(thinking_budget=0)
-        )
-    }},
-] if not SKIP_GEMINI else []
+GEMINI_MODELS_TO_TEST = (
+    [
+        {"model": "models/gemini-2.0-flash-001", "config": {}},
+        {
+            "model": "models/gemini-2.5-flash-preview-04-17",
+            "config": {
+                "generation_config": GenerateContentConfig(
+                    thinking_config=ThinkingConfig(thinking_budget=0)
+                )
+            },
+        },
+    ]
+    if not SKIP_GEMINI
+    else []
+)
 
 
 @pytest.fixture(params=GEMINI_MODELS_TO_TEST)
@@ -72,7 +82,6 @@ def llm(request) -> GoogleGenAI:
         api_key=os.environ["GOOGLE_API_KEY"],
         **request.param.get("config", {}),
     )
-
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
@@ -145,6 +154,7 @@ async def test_astream_chat(llm: GoogleGenAI) -> None:
         chunks.append(chunk)
     assert len(chunks) > 0
     assert all(isinstance(chunk.message.content, str) for chunk in chunks)
+
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_stream_complete(llm: GoogleGenAI) -> None:
@@ -267,6 +277,7 @@ def test_anyof_optional_structured_predict(llm: GoogleGenAI) -> None:
     assert isinstance(response.last_name, str)
     assert isinstance(response.first_name, None | str)
 
+
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_as_structured_llm_native_genai(llm: GoogleGenAI) -> None:
     schema_response = llm._client.models.generate_content(
@@ -280,6 +291,7 @@ def test_as_structured_llm_native_genai(llm: GoogleGenAI) -> None:
     assert isinstance(schema_response, Schema)
     assert len(schema_response.schema_name) > 0
     assert len(schema_response.tables) > 0
+
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_as_structured_llm(llm: GoogleGenAI) -> None:
@@ -308,16 +320,16 @@ async def test_as_structured_llm_async(llm: GoogleGenAI) -> None:
     prompt = PromptTemplate("Generate content")
 
     # Test with simple schema
-    poem_response = await llm.as_structured_llm(output_cls=Poem, prompt=prompt).acomplete(
-        "Write a poem about a magic backpack"
-    )
+    poem_response = await llm.as_structured_llm(
+        output_cls=Poem, prompt=prompt
+    ).acomplete("Write a poem about a magic backpack")
     assert isinstance(poem_response.raw, Poem)
     assert len(poem_response.raw.content) > 0
 
     # Test with complex schema
-    schema_response = await llm.as_structured_llm(output_cls=Schema, prompt=prompt).acomplete(
-        "Generate a simple database structure"
-    )
+    schema_response = await llm.as_structured_llm(
+        output_cls=Schema, prompt=prompt
+    ).acomplete("Generate a simple database structure")
     assert isinstance(schema_response.raw, Schema)
     assert len(schema_response.raw.schema_name) > 0
     assert len(schema_response.raw.tables) > 0
@@ -380,7 +392,6 @@ def test_get_tool_calls_from_response(llm: GoogleGenAI) -> None:
         """Add two integers and returns the result integer."""
         return a + b
 
-
     add_tool = FunctionTool.from_defaults(fn=add)
     msg = ChatMessage("What is the result of adding 2 and 3?")
     response = llm.chat_with_tools(
@@ -394,8 +405,134 @@ def test_get_tool_calls_from_response(llm: GoogleGenAI) -> None:
     assert tool_calls[0].tool_kwargs == {"a": 2, "b": 3}
 
 
+def search(query: str) -> str:
+    """Search for information about a query."""
+    return f"Results for {query}"
+
+
+search_tool = FunctionTool.from_defaults(
+    fn=search, name="search_tool", description="A tool for searching information"
+)
+
+
+@pytest.fixture
+def mock_google_genai() -> GoogleGenAI:
+    """Fixture to create a mocked GoogleGenAI instance for unit testing."""
+    with patch("google.genai.Client") as mock_client_class:
+        # Mock the client and its methods
+        mock_client = MagicMock()
+        mock_client.models.get.return_value = MagicMock(
+            input_token_limit=200000, output_token_limit=8192
+        )
+        mock_client_class.return_value = mock_client
+
+        return GoogleGenAI(model="models/gemini-2.0-flash-001", api_key="test-key")
+
+
+def test_prepare_chat_with_tools_tool_required(mock_google_genai: GoogleGenAI) -> None:
+    """Test that tool_required is correctly passed to the API request when True."""
+    # Test with tool_required=True
+    result = mock_google_genai._prepare_chat_with_tools(
+        tools=[search_tool], tool_required=True
+    )
+
+    assert (
+        result["tool_config"].function_calling_config.mode
+        == types.FunctionCallingConfigMode.ANY
+    )
+    assert len(result["tools"]) == 1
+    assert result["tools"][0].function_declarations[0].name == "search_tool"
+
+
+def test_prepare_chat_with_tools_tool_not_required(
+    mock_google_genai: GoogleGenAI,
+) -> None:
+    """Test that tool_required is correctly passed to the API request when False."""
+    # Test with tool_required=False (default)
+    result = mock_google_genai._prepare_chat_with_tools(
+        tools=[search_tool], tool_required=False
+    )
+
+    assert (
+        result["tool_config"].function_calling_config.mode
+        == types.FunctionCallingConfigMode.AUTO
+    )
+    assert len(result["tools"]) == 1
+    assert result["tools"][0].function_declarations[0].name == "search_tool"
+
+
+def test_prepare_chat_with_tools_default_behavior(
+    mock_google_genai: GoogleGenAI,
+) -> None:
+    """Test that tool_required defaults to False."""
+    # Test default behavior (should be equivalent to tool_required=False)
+    result = mock_google_genai._prepare_chat_with_tools(tools=[search_tool])
+
+    assert (
+        result["tool_config"].function_calling_config.mode
+        == types.FunctionCallingConfigMode.AUTO
+    )
+    assert len(result["tools"]) == 1
+    assert result["tools"][0].function_declarations[0].name == "search_tool"
+
+
+def test_prepare_chat_with_tools_explicit_tool_choice_overrides_tool_required(
+    mock_google_genai: GoogleGenAI,
+) -> None:
+    """Test that explicit tool_choice overrides tool_required parameter."""
+    # Test with tool_required=True but explicit tool_choice="auto"
+    result = mock_google_genai._prepare_chat_with_tools(
+        tools=[search_tool], tool_required=True, tool_choice="auto"
+    )
+
+    assert (
+        result["tool_config"].function_calling_config.mode
+        == types.FunctionCallingConfigMode.AUTO
+    )
+    assert len(result["tools"]) == 1
+    assert result["tools"][0].function_declarations[0].name == "search_tool"
+
+    # Test with tool_required=False but explicit tool_choice="any"
+    result = mock_google_genai._prepare_chat_with_tools(
+        tools=[search_tool], tool_required=False, tool_choice="any"
+    )
+
+    assert (
+        result["tool_config"].function_calling_config.mode
+        == types.FunctionCallingConfigMode.ANY
+    )
+    assert len(result["tools"]) == 1
+    assert result["tools"][0].function_declarations[0].name == "search_tool"
+
+
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-def test_convert_llama_index_schema_to_gemini_function_declaration(llm: GoogleGenAI) -> None:
+def test_tool_required_integration(llm: GoogleGenAI) -> None:
+    """Test tool_required parameter in actual chat_with_tools calls."""
+    # Test with tool_required=True
+    response = llm.chat_with_tools(
+        user_msg="What is the weather in Paris?",
+        tools=[search_tool],
+        tool_required=True,
+    )
+    assert response.message.additional_kwargs.get("tool_calls") is not None
+    assert len(response.message.additional_kwargs["tool_calls"]) > 0
+
+    # Test with tool_required=False
+    response = llm.chat_with_tools(
+        user_msg="Say hello!",
+        tools=[search_tool],
+        tool_required=False,
+    )
+    # Should not use tools for a simple greeting when tool_required=False
+    # Note: This might still use tools depending on the model's behavior,
+    # but the important thing is that the tool_config is set correctly
+    assert response is not None
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_convert_llama_index_schema_to_gemini_function_declaration(
+    llm: GoogleGenAI,
+) -> None:
     """Test conversion of a llama_index schema to a gemini function declaration."""
     function_tool = get_function_tool(Poem)
     # this is our baseline, which is not working because:
@@ -419,9 +556,9 @@ def test_convert_llama_index_schema_to_gemini_function_declaration(llm: GoogleGe
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-def test_convert_llama_index_schema_to_gemini_function_declaration_nested_case(llm: GoogleGenAI) -> (
-    None
-):
+def test_convert_llama_index_schema_to_gemini_function_declaration_nested_case(
+    llm: GoogleGenAI,
+) -> None:
     """Test conversion of a llama_index fn_schema to a gemini function declaration."""
     function_tool = get_function_tool(Schema)
 
@@ -442,6 +579,7 @@ def test_convert_llama_index_schema_to_gemini_function_declaration_nested_case(l
     ]
 
     assert converted.parameters.required == ["schema_name", "tables"]
+
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_optional_value_gemini(llm: GoogleGenAI) -> None:
@@ -526,15 +664,38 @@ def test_optional_lists_nested_gemini(llm: GoogleGenAI) -> None:
     assert isinstance(blogpost, BlogPost)
     assert len(blogpost.contents) >= 3
 
+
 def test_prepare_chat_params_more_than_2_tool_calls():
     expected_generation_config = types.GenerateContentConfig()
     expected_model_name = "models/gemini-foo"
     test_messages = [
         ChatMessage(content="Find me a puppy.", role=MessageRole.USER),
-        ChatMessage(content="Let me search for puppies.", role=MessageRole.ASSISTANT, additional_kwargs={"tool_calls": [{"name": "tool_1"}, {"name": "tool_2"}, {"name": "tool_3"}]}),
-        ChatMessage(content="Tool 1 Response", role=MessageRole.TOOL, additional_kwargs={"tool_call_id": "tool_1"}),
-        ChatMessage(content="Tool 2 Response", role=MessageRole.TOOL, additional_kwargs={"tool_call_id": "tool_2"}),
-        ChatMessage(content="Tool 3 Response", role=MessageRole.TOOL, additional_kwargs={"tool_call_id": "tool_3"}),
+        ChatMessage(
+            content="Let me search for puppies.",
+            role=MessageRole.ASSISTANT,
+            additional_kwargs={
+                "tool_calls": [
+                    {"name": "tool_1"},
+                    {"name": "tool_2"},
+                    {"name": "tool_3"},
+                ]
+            },
+        ),
+        ChatMessage(
+            content="Tool 1 Response",
+            role=MessageRole.TOOL,
+            additional_kwargs={"tool_call_id": "tool_1"},
+        ),
+        ChatMessage(
+            content="Tool 2 Response",
+            role=MessageRole.TOOL,
+            additional_kwargs={"tool_call_id": "tool_2"},
+        ),
+        ChatMessage(
+            content="Tool 3 Response",
+            role=MessageRole.TOOL,
+            additional_kwargs={"tool_call_id": "tool_3"},
+        ),
         ChatMessage(content="Here is a list of puppies.", role=MessageRole.ASSISTANT),
     ]
 
@@ -542,14 +703,34 @@ def test_prepare_chat_params_more_than_2_tool_calls():
 
     assert chat_kwargs["model"] == expected_model_name
     assert chat_kwargs["config"] == expected_generation_config
-    assert next_msg == types.Content(parts=[types.Part(text="Here is a list of puppies.")], role=MessageRole.MODEL)
+    assert next_msg == types.Content(
+        parts=[types.Part(text="Here is a list of puppies.")], role=MessageRole.MODEL
+    )
     assert chat_kwargs["history"] == [
-        types.Content(parts=[types.Part(text="Find me a puppy.")], role=MessageRole.USER),
-        types.Content(parts=[types.Part(text="Let me search for puppies."),
-                             types.Part.from_function_call(name="tool_1", args=None),
-                             types.Part.from_function_call(name="tool_2", args=None),
-                             types.Part.from_function_call(name="tool_3", args=None)], role=MessageRole.MODEL),
-        types.Content(parts=[types.Part.from_function_response(name="tool_1", response={"result": "Tool 1 Response"}),
-                             types.Part.from_function_response(name="tool_2", response={"result": "Tool 2 Response"}),
-                             types.Part.from_function_response(name="tool_3", response={"result": "Tool 3 Response"})], role=MessageRole.USER),
+        types.Content(
+            parts=[types.Part(text="Find me a puppy.")], role=MessageRole.USER
+        ),
+        types.Content(
+            parts=[
+                types.Part(text="Let me search for puppies."),
+                types.Part.from_function_call(name="tool_1", args=None),
+                types.Part.from_function_call(name="tool_2", args=None),
+                types.Part.from_function_call(name="tool_3", args=None),
+            ],
+            role=MessageRole.MODEL,
+        ),
+        types.Content(
+            parts=[
+                types.Part.from_function_response(
+                    name="tool_1", response={"result": "Tool 1 Response"}
+                ),
+                types.Part.from_function_response(
+                    name="tool_2", response={"result": "Tool 2 Response"}
+                ),
+                types.Part.from_function_response(
+                    name="tool_3", response={"result": "Tool 3 Response"}
+                ),
+            ],
+            role=MessageRole.USER,
+        ),
     ]

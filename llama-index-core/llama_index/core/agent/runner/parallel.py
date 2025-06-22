@@ -397,7 +397,7 @@ class ParallelAgentRunner(BaseAgentRunner):
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Chat with step executor."""
         if chat_history is not None:
-            self.memory.set(chat_history)
+            await self.memory.aset(chat_history)
         task = self.create_task(message)
 
         result_output = None

@@ -9,18 +9,19 @@ dev = [
     "diff-cover>=9.2.0",
     "pytest>=8.3.5",
     "pytest-cov>=6.1.1",
+    "ruff==0.11.11",
 ]
 
 [project]
 name = "llama-index-llms-contextual"
-version = "0.0.2"
+version = "0.0.3"
 description = "llama-index contextual integration"
 authors = [{name = "Sean Smith", email = "sean.smith@contextual.ai"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-llms-openai-like>=0.3.3,<0.4",
+    "llama-index-llms-openai-like>=0.4.0,<0.5",
     "contextual-client>=0.4.0,<0.5",
 ]
 

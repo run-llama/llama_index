@@ -24,7 +24,7 @@ from llama_index.core.vector_stores.types import VectorStoreQuery
 
 DEFAULT_PERSIST_DIR = "./storage"
 DEFAULT_PERSIST_FNAME = "graph_store.json"
-DEFUALT_PG_PERSIST_FNAME = "property_graph_store.json"
+DEFAULT_PG_PERSIST_FNAME = "property_graph_store.json"
 
 TRIPLET_SOURCE_KEY = "triplet_source_id"
 VECTOR_SOURCE_KEY = "vector_source_id"

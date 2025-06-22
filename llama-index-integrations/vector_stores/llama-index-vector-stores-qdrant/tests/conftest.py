@@ -15,18 +15,21 @@ async def vector_store() -> QdrantVectorStore:
             text="test1",
             id_="11111111-1111-1111-1111-111111111111",
             embedding=[1.0, 0.0],
+            metadata={"some_key": 1},
             relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")},
         ),
         TextNode(
             text="test2",
             id_="22222222-2222-2222-2222-222222222222",
             embedding=[0.0, 1.0],
+            metadata={"some_key": 2},
             relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-0")},
         ),
         TextNode(
             text="test3",
             id_="33333333-3333-3333-3333-333333333333",
             embedding=[1.0, 1.0],
+            metadata={"some_key": "3"},
         ),
     ]
 

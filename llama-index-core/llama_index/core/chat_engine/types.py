@@ -279,6 +279,7 @@ class StreamingAgentChatResponse:
 
     @property
     def response_gen(self) -> Generator[str, None, None]:
+        yielded_once = False
         if self.is_writing_to_memory:
             while not self.is_done or not self.queue.empty():
                 if self.exception is not None:
@@ -288,6 +289,7 @@ class StreamingAgentChatResponse:
                     delta = self.queue.get(block=False)
                     self.unformatted_response += delta
                     yield delta
+                    yielded_once = True
                 except Empty:
                     # Queue is empty, but we're not done yet. Sleep for 0 secs to release the GIL and allow other threads to run.
                     time.sleep(0)
@@ -298,10 +300,17 @@ class StreamingAgentChatResponse:
             for chat_response in self.chat_stream:
                 self.unformatted_response += chat_response.delta or ""
                 yield chat_response.delta or ""
+                yielded_once = True
+
         self.response = self.unformatted_response.strip()
+
+        # edge case where the stream was exhausted before yielding anything
+        if not yielded_once:
+            yield self.response
 
     async def async_response_gen(self) -> AsyncGenerator[str, None]:
         try:
+            yielded_once = False
             self._ensure_async_setup()
             assert self.aqueue is not None
 
@@ -322,6 +331,7 @@ class StreamingAgentChatResponse:
                         if delta is not None:
                             self.unformatted_response += delta
                             yield delta
+                            yielded_once = True
                     else:
                         break
             else:
@@ -331,7 +341,12 @@ class StreamingAgentChatResponse:
                 async for chat_response in self.achat_stream:
                     self.unformatted_response += chat_response.delta or ""
                     yield chat_response.delta or ""
+                    yielded_once = True
             self.response = self.unformatted_response.strip()
+
+            # edge case where the stream was exhausted before yielding anything
+            if not yielded_once:
+                yield self.response
         finally:
             if self.awrite_response_to_history_task:
                 # Make sure that the background task ran to completion, retrieve any exceptions

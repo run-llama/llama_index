@@ -1,5 +1,5 @@
-from typing import Any, List, Optional
-from llama_index.core.bridge.pydantic import SerializeAsAny, ConfigDict
+from typing import Any, Dict, List, Optional
+from llama_index.core.bridge.pydantic import BaseModel, SerializeAsAny, ConfigDict
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -142,6 +142,12 @@ class LLMCompletionInProgressEvent(BaseEvent):
         """Class name."""
         return "LLMCompletionInProgressEvent"
 
+    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+        if isinstance(self.response.raw, BaseModel):
+            self.response.raw = self.response.raw.model_dump()
+
+        return super().model_dump(**kwargs)
+
 
 class LLMCompletionEndEvent(BaseEvent):
     """
@@ -160,6 +166,12 @@ class LLMCompletionEndEvent(BaseEvent):
     def class_name(cls) -> str:
         """Class name."""
         return "LLMCompletionEndEvent"
+
+    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+        if isinstance(self.response.raw, BaseModel):
+            self.response.raw = self.response.raw.model_dump()
+
+        return super().model_dump(**kwargs)
 
 
 class LLMChatStartEvent(BaseEvent):
@@ -202,6 +214,12 @@ class LLMChatInProgressEvent(BaseEvent):
         """Class name."""
         return "LLMChatInProgressEvent"
 
+    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+        if isinstance(self.response.raw, BaseModel):
+            self.response.raw = self.response.raw.model_dump()
+
+        return super().model_dump(**kwargs)
+
 
 class LLMChatEndEvent(BaseEvent):
     """
@@ -220,3 +238,9 @@ class LLMChatEndEvent(BaseEvent):
     def class_name(cls) -> str:
         """Class name."""
         return "LLMChatEndEvent"
+
+    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+        if self.response is not None and isinstance(self.response.raw, BaseModel):
+            self.response.raw = self.response.raw.model_dump()
+
+        return super().model_dump(**kwargs)

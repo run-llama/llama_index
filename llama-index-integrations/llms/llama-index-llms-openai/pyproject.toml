@@ -12,7 +12,7 @@ dev = [
     "pytest==7.2.1",
     "pytest-asyncio==0.21.0",
     "pytest-mock==3.11.1",
-    "ruff==0.0.292",
+    "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-protobuf>=4.24.0.4,<5",
@@ -27,16 +27,13 @@ dev = [
 
 [project]
 name = "llama-index-llms-openai"
-version = "0.3.38"
+version = "0.4.7"
 description = "llama-index llms openai integration"
 authors = [{name = "llama-index"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
-dependencies = [
-    "openai>=1.66.3,<2",
-    "llama-index-core>=0.12.17,<0.13",
-]
+dependencies = ["openai>=1.81.0,<2", "llama-index-core>=0.12.41,<0.13"]
 
 [tool.codespell]
 check-filenames = true

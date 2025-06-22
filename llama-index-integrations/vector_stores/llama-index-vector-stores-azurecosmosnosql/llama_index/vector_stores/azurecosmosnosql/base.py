@@ -4,6 +4,7 @@ Azure CosmosDB NoSQL vCore Vector store index.
 An index that is built on top of an existing vector store.
 
 """
+
 import logging
 from typing import Any, Optional, Dict, cast, List
 
@@ -107,7 +108,7 @@ class AzureCosmosDBNoSqlVectorSearch(BasePydanticVectorStore):
                 or cosmos_container_properties["partition_key"] is None
             ):
                 raise ValueError(
-                    "partition_key cannot be null " "or empty for a container."
+                    "partition_key cannot be null or empty for a container."
                 )
 
         self._database_name = database_name

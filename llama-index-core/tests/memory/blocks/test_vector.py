@@ -55,7 +55,7 @@ class MockVectorStore(BasePydanticVectorStore):
         # For simplicity, return all nodes
         nodes = list(self._nodes.values())
         if query.similarity_top_k and len(nodes) > query.similarity_top_k:
-            nodes = nodes[:query.similarity_top_k]
+            nodes = nodes[: query.similarity_top_k]
 
         # Simulate similarity scores
         similarities = [0.9 - 0.1 * i for i in range(len(nodes))]
@@ -63,7 +63,9 @@ class MockVectorStore(BasePydanticVectorStore):
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
-    async def aquery(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+    async def aquery(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:
         """Async query vector store."""
         return self.query(query, **kwargs)
 
@@ -71,7 +73,9 @@ class MockVectorStore(BasePydanticVectorStore):
 class MockNodePostprocessor(BaseNodePostprocessor):
     """Mock node postprocessor for testing."""
 
-    def _postprocess_nodes(self, nodes: List[NodeWithScore], query: Any = None) -> List[NodeWithScore]:
+    def _postprocess_nodes(
+        self, nodes: List[NodeWithScore], query: Any = None
+    ) -> List[NodeWithScore]:
         """Add a prefix to each node's text."""
         for node in nodes:
             if isinstance(node.node, TextNode):
@@ -92,7 +96,9 @@ def mock_vector_store():
 
 
 @pytest.fixture
-def vector_memory_block(mock_vector_store, mock_embedding):
+def vector_memory_block(
+    mock_vector_store: MockVectorStore, mock_embedding: MockEmbedding
+):
     """Create a vector memory block."""
     return VectorMemoryBlock(
         vector_store=mock_vector_store,
@@ -102,7 +108,7 @@ def vector_memory_block(mock_vector_store, mock_embedding):
 
 
 @pytest.mark.asyncio
-async def test_vector_memory_block_put(vector_memory_block):
+async def test_vector_memory_block_put(vector_memory_block: VectorMemoryBlock):
     """Test putting messages in the vector memory block."""
     # Create messages
     messages = [
@@ -118,12 +124,15 @@ async def test_vector_memory_block_put(vector_memory_block):
 
     # Check node content contains both messages
     node = next(iter(vector_memory_block.vector_store.nodes.values()))
-    assert "user: Hello, how are you?" in node.text
-    assert "assistant: I'm doing well, thank you for asking!" in node.text
+    assert "<message role='user'>Hello, how are you?</message>" in node.text
+    assert (
+        "<message role='assistant'>I'm doing well, thank you for asking!</message>"
+        in node.text
+    )
 
 
 @pytest.mark.asyncio
-async def test_vector_memory_block_get(vector_memory_block):
+async def test_vector_memory_block_get(vector_memory_block: VectorMemoryBlock):
     """Test getting messages from the vector memory block."""
     # Create and store some messages
     history_messages = [
@@ -147,7 +156,7 @@ async def test_vector_memory_block_get(vector_memory_block):
 
 
 @pytest.mark.asyncio
-async def test_empty_messages(vector_memory_block):
+async def test_empty_messages(vector_memory_block: VectorMemoryBlock):
     """Test with empty messages."""
     # Test empty get
     result = await vector_memory_block.aget(messages=[])
@@ -159,7 +168,7 @@ async def test_empty_messages(vector_memory_block):
 
 
 @pytest.mark.asyncio
-async def test_message_without_text(vector_memory_block):
+async def test_message_without_text(vector_memory_block: VectorMemoryBlock):
     """Test with a message that has no text blocks."""
     # Create a message with no text blocks
     message = ChatMessage(role="user", content=None, blocks=[])
@@ -172,7 +181,9 @@ async def test_message_without_text(vector_memory_block):
 
 
 @pytest.mark.asyncio
-async def test_retrieval_context_window(mock_vector_store, mock_embedding):
+async def test_retrieval_context_window(
+    mock_vector_store: MockVectorStore, mock_embedding: MockEmbedding
+):
     """Test the retrieval_context_window parameter."""
     # Create a memory block with a specific context window
     memory_block = VectorMemoryBlock(
@@ -209,7 +220,9 @@ async def test_retrieval_context_window(mock_vector_store, mock_embedding):
 
 
 @pytest.mark.asyncio
-async def test_node_postprocessors(mock_vector_store, mock_embedding):
+async def test_node_postprocessors(
+    mock_vector_store: MockVectorStore, mock_embedding: MockEmbedding
+):
     """Test node postprocessors."""
     # Create a postprocessor
     postprocessor = MockNodePostprocessor()
@@ -241,7 +254,9 @@ async def test_node_postprocessors(mock_vector_store, mock_embedding):
 
 
 @pytest.mark.asyncio
-async def test_format_template(mock_vector_store, mock_embedding):
+async def test_format_template(
+    mock_vector_store: MockVectorStore, mock_embedding: MockEmbedding
+):
     """Test custom format template."""
     # Create a memory block with a custom format template
     custom_template = RichPromptTemplate("Relevant context: {{ text }}")

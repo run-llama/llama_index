@@ -215,7 +215,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
     def get_all_messages(self, task: Task) -> List[ChatMessage]:
         return (
             self.prefix_messages
-            + task.memory.get()
+            + task.memory.get(input=task.input)
             + task.extra_state["new_memory"].get_all()
         )
 
@@ -519,7 +519,7 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         sources.append(tool_output)
-        memory.put(function_message)
+        await memory.aput(function_message)
 
         return (
             tool.metadata.return_direct and not tool_output.is_error
@@ -554,7 +554,6 @@ class OpenAIAgentWorker(BaseAgentWorker):
 
         return tool_calls is not None and len(tool_calls) > 0
 
-
     def get_tools(self, input: str) -> List[BaseTool]:
         """Get tools."""
         return self._get_tools(input)
@@ -573,7 +572,9 @@ class OpenAIAgentWorker(BaseAgentWorker):
             )
         # TODO: see if we want to do step-based inputs
         tools = self.get_tools(task.input)
-        openai_tools = [tool.metadata.to_openai_tool() for tool in tools]
+        openai_tools = [
+            tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
+        ]
 
         llm_chat_kwargs = self._get_llm_chat_kwargs(task, openai_tools, tool_choice)
         agent_chat_response = self._get_agent_response(
@@ -665,7 +666,9 @@ class OpenAIAgentWorker(BaseAgentWorker):
             )
 
         tools = self.get_tools(task.input)
-        openai_tools = [tool.metadata.to_openai_tool() for tool in tools]
+        openai_tools = [
+            tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
+        ]
 
         llm_chat_kwargs = self._get_llm_chat_kwargs(task, openai_tools, tool_choice)
         agent_chat_response = await self._get_async_agent_response(

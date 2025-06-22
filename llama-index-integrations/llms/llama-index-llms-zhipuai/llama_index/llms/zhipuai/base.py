@@ -181,6 +181,7 @@ class ZhipuAI(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,  # unsupported, docs say for tool_choice, "currently only supports auto."
         **kwargs: Any,
     ) -> Dict[str, Any]:
         tool_specs = [

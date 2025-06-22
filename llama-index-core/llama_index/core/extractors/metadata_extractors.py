@@ -137,27 +137,38 @@ class TitleExtractor(BaseExtractor):
         return separated_items
 
     async def extract_titles(self, nodes_by_doc_id: Dict) -> Dict:
-        titles_by_doc_id = {}
-        for key, nodes in nodes_by_doc_id.items():
+        jobs = []
+        final_dict = {}
+
+        async def get_titles_by_doc(nodes: List[BaseNode], key: str) -> Dict:
+            titles_by_doc_id = {}
             title_candidates = await self.get_title_candidates(nodes)
             combined_titles = ", ".join(title_candidates)
             titles_by_doc_id[key] = await self.llm.apredict(
                 PromptTemplate(template=self.combine_template),
                 context_str=combined_titles,
             )
-        return titles_by_doc_id
+            return titles_by_doc_id
+
+        for key, nodes in nodes_by_doc_id.items():
+            jobs.append(get_titles_by_doc(nodes, key))
+        list_dict_titles: List[Dict] = await run_jobs(
+            jobs=jobs,
+            show_progress=self.show_progress,
+        )
+        for d in list_dict_titles:
+            for key, value in d.items():
+                final_dict.update({key: value})
+        return final_dict
 
     async def get_title_candidates(self, nodes: List[BaseNode]) -> List[str]:
-        title_jobs = [
-            self.llm.apredict(
+        return [
+            await self.llm.apredict(
                 PromptTemplate(template=self.node_template),
                 context_str=cast(TextNode, node).text,
             )
             for node in nodes
         ]
-        return await run_jobs(
-            title_jobs, show_progress=self.show_progress, workers=self.num_workers
-        )
 
 
 DEFAULT_KEYWORD_EXTRACT_TEMPLATE = """\

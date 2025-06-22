@@ -22,18 +22,17 @@ dev = [
     "pytest-dotenv==0.5.2",
     "pytest-mock==3.11.1",
     "rake-nltk==1.0.6",
-    "ruff==0.0.292",
+    "ruff==0.11.11",
     "tree-sitter",
     "tree-sitter-language-pack",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-requests>=2.28.11.8",
-    "types-setuptools>=80.0.0.20250429",
 ]
 
 [project]
 name = "llama-index-core"
-version = "0.12.34.post1"
+version = "0.12.43"
 description = "Interface between LLMs and your data"
 authors = [{name = "Jerry Liu", email = "jerry@llamaindex.ai"}]
 requires-python = ">=3.9,<4.0"
@@ -47,15 +46,7 @@ maintainers = [
     {name = "Simon Suo", email = "simon@llamaindex.ai"},
     {name = "Sourabh Desai", email = "sourabh@llamaindex.ai"},
 ]
-keywords = [
-    "LLM",
-    "NLP",
-    "RAG",
-    "data",
-    "devtools",
-    "index",
-    "retrieval",
-]
+keywords = ["LLM", "NLP", "RAG", "data", "devtools", "index", "retrieval"]
 classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
@@ -87,6 +78,8 @@ dependencies = [
     "eval-type-backport>=0.2.0,<0.3 ; python_version < '3.10'",
     "banks>=2.0.0,<3",
     "aiosqlite",
+    "llama-index-workflows>=0.2.1",
+    "setuptools>=80.9.0",
 ]
 
 [project.urls]
@@ -101,6 +94,9 @@ ignore-words-list = "astroid,gallary,momento,narl,ot,rouge"
 # Feel free to un-skip examples, and experimental, you will just need to
 # work through many typos (--write-changes and --interactive will help)
 skip = "./llama_index/core/_static,./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.coverage.run]
+omit = ["llama_index/core/instrumentation/*", "llama_index/core/workflow/*", "tests/*"]
 
 [tool.hatch.build.targets.sdist]
 include = [

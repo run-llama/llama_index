@@ -1,4 +1,5 @@
-""" Dashscope Agent for Alibaba cloud bailian. """
+"""Dashscope Agent for Alibaba cloud bailian."""
+
 from http import HTTPStatus
 from typing import (
     List,

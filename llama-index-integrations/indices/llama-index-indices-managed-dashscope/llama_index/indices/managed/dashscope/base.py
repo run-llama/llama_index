@@ -5,6 +5,7 @@ A managed Index - where the index is accessible via some API that
 interfaces a managed service.
 
 """
+
 import os
 from typing import Any, List, Optional, Type, Union
 from enum import Enum

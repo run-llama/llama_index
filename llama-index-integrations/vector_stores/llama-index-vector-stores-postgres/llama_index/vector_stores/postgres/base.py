@@ -1,6 +1,18 @@
 import logging
 import re
-from typing import Any, Dict, List, NamedTuple, Optional, Type, Union, TYPE_CHECKING, Set, Tuple, Literal
+from typing import (
+    Any,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Type,
+    Union,
+    TYPE_CHECKING,
+    Set,
+    Tuple,
+    Literal,
+)
 
 import asyncpg  # noqa
 import pgvector  # noqa
@@ -69,7 +81,15 @@ def get_data_model(
     """
     from pgvector.sqlalchemy import Vector
     from sqlalchemy import Column, Computed
-    from sqlalchemy.dialects.postgresql import BIGINT, JSON, JSONB, TSVECTOR, VARCHAR, UUID, DOUBLE_PRECISION
+    from sqlalchemy.dialects.postgresql import (
+        BIGINT,
+        JSON,
+        JSONB,
+        TSVECTOR,
+        VARCHAR,
+        UUID,
+        DOUBLE_PRECISION,
+    )
     from sqlalchemy import cast, column
     from sqlalchemy import String, Integer, Numeric, Float, Boolean, Date, DateTime
     from sqlalchemy.schema import Index
@@ -115,11 +135,8 @@ def get_data_model(
     metadata_indices = [
         Index(
             f"{indexname}_{key}_{pg_type.replace(' ', '_')}",
-            cast(
-                column("metadata_").op("->>")(key),
-                pg_type_map[pg_type]
-            ),
-            postgresql_using="btree"
+            cast(column("metadata_").op("->>")(key), pg_type_map[pg_type]),
+            postgresql_using="btree",
         )
         for key, pg_type in indexed_metadata_keys
     ]
@@ -143,7 +160,10 @@ def get_data_model(
         model = type(
             class_name,
             (HybridAbstractData,),
-            {"__tablename__": tablename, "__table_args__": (*metadata_indices, {"schema": schema_name})},
+            {
+                "__tablename__": tablename,
+                "__table_args__": (*metadata_indices, {"schema": schema_name}),
+            },
         )
 
         Index(
@@ -169,7 +189,10 @@ def get_data_model(
         model = type(
             class_name,
             (AbstractData,),
-            {"__tablename__": tablename, "__table_args__": (*metadata_indices, {"schema": schema_name})},
+            {
+                "__tablename__": tablename,
+                "__table_args__": (*metadata_indices, {"schema": schema_name}),
+            },
         )
 
         Index(
@@ -619,6 +642,8 @@ class PGVectorStore(BasePydanticVectorStore):
             return "LIKE"
         elif operator == FilterOperator.TEXT_MATCH_INSENSITIVE:
             return "ILIKE"
+        elif operator == FilterOperator.IS_EMPTY:
+            return "IS NULL"
         else:
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
             return "="
@@ -654,6 +679,12 @@ class PGVectorStore(BasePydanticVectorStore):
                 f"metadata_->>'{filter_.key}' "
                 f"{self._to_postgres_operator(filter_.operator)} "
                 f"'%{filter_.value}%'"
+            )
+        elif filter_.operator == FilterOperator.IS_EMPTY:
+            # Where the operator is is_empty, we need to check if the metadata is null
+            return text(
+                f"metadata_->>'{filter_.key}' "
+                f"{self._to_postgres_operator(filter_.operator)}"
             )
         else:
             # Check if value is a number. If so, cast the metadata value to a float
@@ -1133,9 +1164,9 @@ class PGVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
     ) -> List[BaseNode]:
         """Get nodes from vector store."""
-        assert (
-            node_ids is not None or filters is not None
-        ), "Either node_ids or filters must be provided"
+        assert node_ids is not None or filters is not None, (
+            "Either node_ids or filters must be provided"
+        )
 
         self._initialize()
         from sqlalchemy import select
@@ -1185,9 +1216,9 @@ class PGVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
     ) -> List[BaseNode]:
         """Get nodes asynchronously from vector store."""
-        assert (
-            node_ids is not None or filters is not None
-        ), "Either node_ids or filters must be provided"
+        assert node_ids is not None or filters is not None, (
+            "Either node_ids or filters must be provided"
+        )
 
         self._initialize()
         from sqlalchemy import select

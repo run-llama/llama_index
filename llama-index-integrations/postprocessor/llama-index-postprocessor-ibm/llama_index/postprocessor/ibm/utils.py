@@ -19,7 +19,7 @@ def resolve_watsonx_credentials(
     token: Optional[str] = None,
     username: Optional[str] = None,
     password: Optional[str] = None,
-    instance_id: Optional[str] = None
+    instance_id: Optional[str] = None,
 ) -> Dict[str, SecretStr]:
     """
     Resolve watsonx.ai credentials. If the value of given param is None

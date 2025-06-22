@@ -12,7 +12,7 @@ from llama_index.core.graph_stores.types import (
     LabelledPropertyGraph,
     Relation,
     DEFAULT_PERSIST_DIR,
-    DEFUALT_PG_PERSIST_FNAME,
+    DEFAULT_PG_PERSIST_FNAME,
 )
 from llama_index.core.vector_stores.types import VectorStoreQuery
 
@@ -192,7 +192,7 @@ class SimplePropertyGraphStore(PropertyGraphStore):
         fs: Optional[fsspec.AbstractFileSystem] = None,
     ) -> "SimplePropertyGraphStore":
         """Load from persist dir."""
-        persist_path = os.path.join(persist_dir, DEFUALT_PG_PERSIST_FNAME)
+        persist_path = os.path.join(persist_dir, DEFAULT_PG_PERSIST_FNAME)
         return cls.from_persist_path(persist_path, fs=fs)
 
     @classmethod

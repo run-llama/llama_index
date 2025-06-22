@@ -149,7 +149,7 @@ class RouterComponent(QueryComponent):
         if len(sel_output.selections) != 1:
             raise ValueError("Expected one selection")
         component = self.components[sel_output.ind]
-        log_str = f"Selecting component {sel_output.ind}: " f"{sel_output.reason}."
+        log_str = f"Selecting component {sel_output.ind}: {sel_output.reason}."
         if self.verbose:
             print_text(log_str + "\n", color="pink")
         # run component
@@ -166,7 +166,7 @@ class RouterComponent(QueryComponent):
         if len(sel_output.selections) != 1:
             raise ValueError("Expected one selection")
         component = self.components[sel_output.ind]
-        log_str = f"Selecting component {sel_output.ind}: " f"{sel_output.reason}."
+        log_str = f"Selecting component {sel_output.ind}: {sel_output.reason}."
         if self.verbose:
             print_text(log_str + "\n", color="pink")
         # run component

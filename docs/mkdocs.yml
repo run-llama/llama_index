@@ -49,7 +49,7 @@ nav:
           - Streaming events: ./understanding/workflows/stream.md
           - Concurrent execution: ./understanding/workflows/concurrent_execution.md
           - Subclassing workflows: ./understanding/workflows/subclass.md
-          - Nested workflows: ./understanding/workflows/nested.md
+          - Workflow Resources: ./understanding/workflows/resources.md
           - Observability: ./understanding/workflows/observability.md
           - Unbound syntax: ./understanding/workflows/unbound_functions.md
       - Building a RAG pipeline:
@@ -104,6 +104,7 @@ nav:
           - ./examples/agent/memory/summary_memory_buffer.ipynb
           - ./examples/agent/memory/vector_memory.ipynb
           - ./examples/agent/mistral_agent.ipynb
+          - ./examples/agent/multi_agent_workflow_with_weaviate_queryagent.ipynb
           - ./examples/agent/multi_document_agents-v1.ipynb
           - ./examples/agent/nvidia_agent.ipynb
           - ./examples/agent/nvidia_document_research_assistant_for_blog_creation.ipynb
@@ -198,6 +199,7 @@ nav:
           - ./examples/data_connectors/ZyteSerpDemo.ipynb
           - ./examples/data_connectors/deplot/DeplotReader.ipynb
           - ./examples/data_connectors/html_tag_reader.ipynb
+          - ./examples/data_connectors/legacy_office_reader.ipynb
           - ./examples/data_connectors/oracleai.ipynb
           - ./examples/data_connectors/simple_directory_reader.ipynb
           - ./examples/data_connectors/simple_directory_reader_parallel.ipynb
@@ -267,6 +269,7 @@ nav:
       - Evaluation:
           - ./examples/evaluation/AIMon.ipynb
           - ./examples/evaluation/BeirEvaluation.ipynb
+          - ./examples/evaluation/Cleanlab.ipynb
           - ./examples/evaluation/Deepeval.ipynb
           - ./examples/evaluation/HotpotQADistractor.ipynb
           - ./examples/evaluation/QuestionGeneration.ipynb
@@ -328,6 +331,7 @@ nav:
           - ./examples/llm/deepinfra.ipynb
           - ./examples/llm/deepseek.ipynb
           - ./examples/llm/everlyai.ipynb
+          - ./examples/llm/featherlessai.ipynb
           - ./examples/llm/fireworks.ipynb
           - ./examples/llm/fireworks_cookbook.ipynb
           - ./examples/llm/friendli.ipynb
@@ -421,7 +425,11 @@ nav:
           - ./examples/managed/manage_retrieval_benchmark.ipynb
           - ./examples/managed/vectaraDemo.ipynb
       - Memory:
+          - ./examples/memory/ChatSummaryMemoryBuffer.ipynb
           - ./examples/memory/Mem0Memory.ipynb
+          - ./examples/memory/custom_memory.ipynb
+          - ./examples/memory/custom_multi_turn_memory.ipynb
+          - ./examples/memory/memory.ipynb
       - Metadata Extractors:
           - ./examples/metadata_extraction/DocumentContextExtractor.ipynb
           - ./examples/metadata_extraction/EntityExtractionClimate.ipynb
@@ -440,6 +448,7 @@ nav:
           - ./examples/multi_modal/gpt4v_experiments_cot.ipynb
           - ./examples/multi_modal/gpt4v_multi_modal_retrieval.ipynb
           - ./examples/multi_modal/image_to_image_retrieval.ipynb
+          - ./examples/multi_modal/llamaindex_mongodb_voyageai_multimodal.ipynb
           - ./examples/multi_modal/llava_demo.ipynb
           - ./examples/multi_modal/llava_multi_modal_tesla_10q.ipynb
           - ./examples/multi_modal/mistral_multi_modal.ipynb
@@ -461,6 +470,7 @@ nav:
       - Node Parsers & Text Splitters:
           - ./examples/node_parsers/semantic_chunking.ipynb
           - ./examples/node_parsers/semantic_double_merging_chunking.ipynb
+          - ./examples/node_parsers/slide_parser.ipynb
           - ./examples/node_parsers/topic_parser.ipynb
       - Node Postprocessors:
           - ./examples/node_postprocessor/AIMonRerank.ipynb
@@ -599,10 +609,13 @@ nav:
       - Tools:
           - ./examples/tools/AgentQL_browser_agent.ipynb
           - ./examples/tools/OnDemandLoaderTool.ipynb
+          - ./examples/tools/Use_Klavis_with_LlamaIndex.ipynb
           - ./examples/tools/azure_code_interpreter.ipynb
           - ./examples/tools/cassandra.ipynb
           - ./examples/tools/eval_query_engine_tool.ipynb
           - ./examples/tools/function_tool_callback.ipynb
+          - ./examples/tools/mcp.ipynb
+          - ./examples/tools/order_completion_agent_with_artifact_editor.ipynb
       - Transforms:
           - ./examples/transforms/TransformsEval.ipynb
       - Use Cases:
@@ -713,7 +726,6 @@ nav:
       - Workflow:
           - ./examples/workflow/JSONalyze_query_engine.ipynb
           - ./examples/workflow/advanced_text_to_sql.ipynb
-          - ./examples/workflow/auto_retrieval.ipynb
           - ./examples/workflow/checkpointing_workflows.ipynb
           - ./examples/workflow/citation_query_engine.ipynb
           - ./examples/workflow/corrective_rag_pack.ipynb
@@ -722,7 +734,6 @@ nav:
           - ./examples/workflow/long_rag_pack.ipynb
           - ./examples/workflow/multi_step_query_engine.ipynb
           - ./examples/workflow/multi_strategy_workflow.ipynb
-          - ./examples/workflow/multimodal_query_engine.ipynb
           - ./examples/workflow/parallel_execution.ipynb
           - ./examples/workflow/planning_workflow.ipynb
           - ./examples/workflow/rag.ipynb
@@ -992,7 +1003,6 @@ nav:
           - ./api_reference/instrumentation/span_handlers.md
           - ./api_reference/instrumentation/span_types.md
       - LLMs:
-          - ./api_reference/llms/OptimumIntelLLM.md
           - ./api_reference/llms/ai21.md
           - ./api_reference/llms/alephalpha.md
           - ./api_reference/llms/alibabacloud_aisearch.md
@@ -1015,6 +1025,7 @@ nav:
           - ./api_reference/llms/deepinfra.md
           - ./api_reference/llms/deepseek.md
           - ./api_reference/llms/everlyai.md
+          - ./api_reference/llms/featherlessai.md
           - ./api_reference/llms/fireworks.md
           - ./api_reference/llms/friendli.md
           - ./api_reference/llms/gaudi.md
@@ -1077,6 +1088,7 @@ nav:
           - ./api_reference/llms/rungpt.md
           - ./api_reference/llms/sagemaker_endpoint.md
           - ./api_reference/llms/sambanovasystems.md
+          - ./api_reference/llms/servam.md
           - ./api_reference/llms/siliconflow.md
           - ./api_reference/llms/solar.md
           - ./api_reference/llms/stepfun.md
@@ -1143,6 +1155,7 @@ nav:
           - ./api_reference/packs/recursive_retriever.md
           - ./api_reference/packs/resume_screener.md
           - ./api_reference/packs/retry_engine_weaviate.md
+          - ./api_reference/packs/searchain.md
           - ./api_reference/packs/secgpt.md
           - ./api_reference/packs/self_discover.md
           - ./api_reference/packs/self_rag.md
@@ -1165,10 +1178,7 @@ nav:
           - ./api_reference/llama_deploy/control_plane.md
           - ./api_reference/llama_deploy/deploy.md
           - ./api_reference/llama_deploy/deployment.md
-          - ./api_reference/llama_deploy/message_consumers.md
-          - ./api_reference/llama_deploy/message_publishers.md
           - ./api_reference/llama_deploy/messages.md
-          - ./api_reference/llama_deploy/orchestrators.md
           - ./api_reference/llama_deploy/python_sdk.md
           - ./api_reference/llama_deploy/services.md
           - ./api_reference/llama_deploy/types.md
@@ -1176,6 +1186,7 @@ nav:
           - ./api_reference/memory/chat_memory_buffer.md
           - ./api_reference/memory/index.md
           - ./api_reference/memory/mem0.md
+          - ./api_reference/memory/memory.md
           - ./api_reference/memory/simple_composable_memory.md
           - ./api_reference/memory/vector_memory.md
       - Message Queues:
@@ -1184,7 +1195,6 @@ nav:
           - ./api_reference/llama_deploy/message_queues/rabbitmq.md
           - ./api_reference/llama_deploy/message_queues/redis.md
           - ./api_reference/llama_deploy/message_queues/simple.md
-          - ./api_reference/llama_deploy/message_queues/solace.md
       - Metadata Extractors:
           - ./api_reference/extractors/documentcontext.md
           - ./api_reference/extractors/entity.md
@@ -1210,6 +1220,7 @@ nav:
           - ./api_reference/multi_modal_llms/nvidia.md
           - ./api_reference/multi_modal_llms/ollama.md
           - ./api_reference/multi_modal_llms/openai.md
+          - ./api_reference/multi_modal_llms/openai_like.md
           - ./api_reference/multi_modal_llms/openvino.md
           - ./api_reference/multi_modal_llms/reka.md
           - ./api_reference/multi_modal_llms/replicate.md
@@ -1218,6 +1229,7 @@ nav:
           - ./api_reference/node_parser/alibabacloud_aisearch.md
           - ./api_reference/node_parser/dashscope.md
           - ./api_reference/node_parser/docling.md
+          - ./api_reference/node_parser/slide.md
           - ./api_reference/node_parser/topic.md
           - ./api_reference/node_parsers/code.md
           - ./api_reference/node_parsers/hierarchical.md
@@ -1273,6 +1285,8 @@ nav:
           - ./api_reference/postprocessor/xinference_rerank.md
       - Object Stores:
           - ./api_reference/objects/index.md
+      - Observability:
+          - ./api_reference/observability/otel.md
       - Output Parsers:
           - ./api_reference/output_parsers/guardrails.md
           - ./api_reference/output_parsers/index.md
@@ -1289,6 +1303,8 @@ nav:
           - ./api_reference/program/openai.md
       - Prompts:
           - ./api_reference/prompts/index.md
+      - Protocols:
+          - ./api_reference/protocols/ag_ui.md
       - Query Engines:
           - ./api_reference/query_engine/FLARE.md
           - ./api_reference/query_engine/JSONalayze.md
@@ -1397,7 +1413,6 @@ nav:
           - ./api_reference/readers/graphql.md
           - ./api_reference/readers/guru.md
           - ./api_reference/readers/hatena_blog.md
-          - ./api_reference/readers/hive.md
           - ./api_reference/readers/hubspot.md
           - ./api_reference/readers/huggingface_fs.md
           - ./api_reference/readers/hwp.md
@@ -1411,6 +1426,7 @@ nav:
           - ./api_reference/readers/json.md
           - ./api_reference/readers/kaltura_esearch.md
           - ./api_reference/readers/kibela.md
+          - ./api_reference/readers/legacy_office.md
           - ./api_reference/readers/lilac.md
           - ./api_reference/readers/linear.md
           - ./api_reference/readers/llama_parse.md
@@ -1525,6 +1541,7 @@ nav:
           - ./api_reference/retrievers/transform.md
           - ./api_reference/retrievers/tree.md
           - ./api_reference/retrievers/vector.md
+          - ./api_reference/retrievers/vectorize.md
           - ./api_reference/retrievers/vertexai_search.md
           - ./api_reference/retrievers/videodb.md
           - ./api_reference/retrievers/you.md
@@ -1536,6 +1553,7 @@ nav:
           - ./api_reference/sparse_embeddings/fastembed.md
       - Storage:
           - Chat Store:
+              - ./api_reference/storage/chat_store/async_sql.md
               - ./api_reference/storage/chat_store/azure.md
               - ./api_reference/storage/chat_store/azurecosmosmongovcore.md
               - ./api_reference/storage/chat_store/azurecosmosnosql.md
@@ -1564,6 +1582,7 @@ nav:
               - ./api_reference/storage/docstore/simple.md
               - ./api_reference/storage/docstore/tablestore.md
           - Graph Stores:
+              - ./api_reference/storage/graph_stores/ApertureDB.md
               - ./api_reference/storage/graph_stores/falkordb.md
               - ./api_reference/storage/graph_stores/index.md
               - ./api_reference/storage/graph_stores/kuzu.md
@@ -1649,6 +1668,7 @@ nav:
               - ./api_reference/storage/vector_store/nile.md
               - ./api_reference/storage/vector_store/objectbox.md
               - ./api_reference/storage/vector_store/oceanbase.md
+              - ./api_reference/storage/vector_store/openGauss.md
               - ./api_reference/storage/vector_store/opensearch.md
               - ./api_reference/storage/vector_store/oracledb.md
               - ./api_reference/storage/vector_store/pgvecto_rs.md
@@ -1678,6 +1698,7 @@ nav:
               - ./api_reference/storage/vector_store/zep.md
       - Tools:
           - ./api_reference/tools/agentql.md
+          - ./api_reference/tools/artifact_editor.md
           - ./api_reference/tools/arxiv.md
           - ./api_reference/tools/azure_code_interpreter.md
           - ./api_reference/tools/azure_cv.md
@@ -1686,12 +1707,14 @@ nav:
           - ./api_reference/tools/bing_search.md
           - ./api_reference/tools/box.md
           - ./api_reference/tools/brave_search.md
+          - ./api_reference/tools/brightdata.md
           - ./api_reference/tools/cassandra.md
           - ./api_reference/tools/chatgpt_plugin.md
           - ./api_reference/tools/code_interpreter.md
           - ./api_reference/tools/cogniswitch.md
           - ./api_reference/tools/dappier.md
           - ./api_reference/tools/database.md
+          - ./api_reference/tools/desearch.md
           - ./api_reference/tools/docker_code.md
           - ./api_reference/tools/duckduckgo.md
           - ./api_reference/tools/elevenlabs.md
@@ -1700,6 +1723,7 @@ nav:
           - ./api_reference/tools/function.md
           - ./api_reference/tools/google.md
           - ./api_reference/tools/graphql.md
+          - ./api_reference/tools/hive.md
           - ./api_reference/tools/index.md
           - ./api_reference/tools/ionic_shopping.md
           - ./api_reference/tools/jina.md
@@ -1707,6 +1731,7 @@ nav:
           - ./api_reference/tools/linkup_research.md
           - ./api_reference/tools/load_and_search.md
           - ./api_reference/tools/mcp.md
+          - ./api_reference/tools/measurespace.md
           - ./api_reference/tools/metaphor.md
           - ./api_reference/tools/multion.md
           - ./api_reference/tools/neo4j.md
@@ -1719,7 +1744,6 @@ nav:
           - ./api_reference/tools/playwright.md
           - ./api_reference/tools/python_file.md
           - ./api_reference/tools/query_engine.md
-          - ./api_reference/tools/query_plan.md
           - ./api_reference/tools/requests.md
           - ./api_reference/tools/retriever.md
           - ./api_reference/tools/salesforce.md
@@ -1739,6 +1763,8 @@ nav:
           - ./api_reference/tools/yahoo_finance.md
           - ./api_reference/tools/yelp.md
           - ./api_reference/tools/zapier.md
+      - Voice Agents:
+          - ./api_reference/voice_agents/elevenlabs.md
       - Workflow:
           - ./api_reference/workflow/decorators.md
           - ./api_reference/workflow/context.md
@@ -1788,6 +1814,7 @@ plugins:
             signature_crossrefs: true
           paths:
             - ../llama-index-core
+            - ../llama-index-instrumentation
             - ../llama-index-experimental
             - ../llama-index-packs/llama-index-packs-retry-engine-weaviate
             - ../llama-index-packs/llama-index-packs-llava-completion
@@ -2043,7 +2070,6 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-database
             - ../llama-index-integrations/readers/llama-index-readers-remote
             - ../llama-index-integrations/readers/llama-index-readers-asana
-            - ../llama-index-integrations/readers/llama-index-readers-hive
             - ../llama-index-integrations/readers/llama-index-readers-docstring-walker
             - ../llama-index-integrations/readers/llama-index-readers-airbyte-salesforce
             - ../llama-index-integrations/readers/llama-index-readers-stripe-docs
@@ -2440,6 +2466,23 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-markitdown
             - ../llama-index-integrations/llms/llama-index-llms-meta
             - ../llama-index-integrations/readers/llama-index-readers-oxylabs
+            - ../llama-index-integrations/node_parser/llama-index-node-parser-slide
+            - ../llama-index-integrations/readers/llama-index-readers-legacy-office
+            - ../llama-index-integrations/retrievers/llama-index-retrievers-vectorize
+            - ../llama-index-integrations/tools/llama-index-tools-brightdata
+            - ../llama-index-integrations/tools/llama-index-tools-desearch
+            - ../llama-index-integrations/observability/llama-index-observability-otel
+            - ../llama-index-integrations/llms/llama-index-llms-featherlessai
+            - ../llama-index-integrations/llms/llama-index-llms-sarvam
+            - ../llama-index-integrations/tools/llama-index-tools-measurespace
+            - ../llama-index-packs/llama-index-packs-searchain
+            - ../llama-index-integrations/graph_stores/llama-index-graph-stores-ApertureDB
+            - ../llama-index-integrations/voice_agents/llama-index-voice-agents-elevenlabs
+            - ../llama-index-integrations/tools/llama-index-tools-artifact-editor
+            - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-openai-like
+            - ../llama-index-integrations/protocols/llama-index-protocols-ag-ui
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-openGauss
+            - ../llama-index-integrations/tools/llama-index-tools-hive
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
@@ -3130,6 +3173,7 @@ theme:
   favicon: _static/assets/LlamaLogoBrowserTab.png
   features:
     - navigation.instant
+    - navigation.prune
     - navigation.tabs
     - navigation.indexes
     - navigation.top

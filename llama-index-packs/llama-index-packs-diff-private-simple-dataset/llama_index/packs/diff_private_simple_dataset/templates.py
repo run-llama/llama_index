@@ -1,7 +1,7 @@
 from llama_index.core import PromptTemplate
 
 ZERO_SHOT_COMPLETION_TEMPLATE = (
-    "{instruction}\n" "{label_heading}: {label}\n{text_heading}: {synthetic_text}"
+    "{instruction}\n{label_heading}: {label}\n{text_heading}: {synthetic_text}"
 )
 zero_shot_completion_template = PromptTemplate(ZERO_SHOT_COMPLETION_TEMPLATE)
 

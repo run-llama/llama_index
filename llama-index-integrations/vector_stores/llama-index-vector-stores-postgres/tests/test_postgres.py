@@ -123,6 +123,7 @@ def pg_hybrid(db: None) -> Any:
 
     asyncio.run(pg.close())
 
+
 @pytest.fixture()
 def pg_indexed_metadata(db: None) -> Any:
     pg = PGVectorStore.from_params(
@@ -549,6 +550,38 @@ async def test_add_to_db_and_query_with_metadata_filters_with_contains_operator(
     assert res.nodes
     assert len(res.nodes) == 1
     assert res.nodes[0].node_id == "ccc"
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_add_to_db_and_query_with_metadata_filters_with_is_empty(
+    pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+) -> None:
+    if use_async:
+        await pg_fixture.async_add(node_embeddings)
+    else:
+        pg_fixture.add(node_embeddings)
+    assert isinstance(pg_fixture, PGVectorStore)
+    assert hasattr(pg_fixture, "_engine")
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="nonexistent_key", value=None, operator=FilterOperator.IS_EMPTY
+            )
+        ]
+    )
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.5), similarity_top_k=10, filters=filters
+    )
+    if use_async:
+        res = await pg_fixture.aquery(q)
+    else:
+        res = pg_fixture.query(q)
+    assert res.nodes
+    # All nodes should match since none have the nonexistent_key
+    assert len(res.nodes) == len(node_embeddings)
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
@@ -1014,9 +1047,9 @@ async def test_hnsw_index_creation(
             )
             index_count = c.fetchone()[0]
 
-    assert (
-        index_count == 1
-    ), f"Expected exactly one '{data_test_index_name}' index, but found {index_count}."
+    assert index_count == 1, (
+        f"Expected exactly one '{data_test_index_name}' index, but found {index_count}."
+    )
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
@@ -1274,6 +1307,7 @@ async def test_indexed_metadata(
                 for row in indexes
             ), f"Index {index_name} not found or incorrect type cast in indexdef"
         from sqlalchemy import text
+
         result = await session.execute(
             text("""
                 EXPLAIN ANALYZE

@@ -1,4 +1,6 @@
-# Building Retrieval Augmented Generation (RAG) Applications with LlamaIndex: From Basic Components to Advanced RAG Systems
+# Building Retrieval Augmented Generation (RAG) Applications with LlamaIndex
+
+## From Basic Components to Advanced RAG Systems
 
 Here are the notebooks we demonstrated for the course. Below is the course outline:
 

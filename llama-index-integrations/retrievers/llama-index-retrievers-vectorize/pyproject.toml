@@ -1,0 +1,88 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "mypy>=1.15.0",
+    "pytest>=8.3.5",
+    "ruff==0.11.11",
+    "codespell[toml]>=v2.4.1",
+    "pytest-cov>=6.1.1",
+]
+
+[project]
+name = "llama-index-retrievers-vectorize"
+version = "0.1.0"
+description = "llama-index retrievers Vectorize.io integration"
+readme = "README.md"
+keywords = ["llama-index", "vectorize", "retrieval", "search"]
+authors = [
+    {name = "Vectorize", email = "contact@vectorize.io"},
+]
+requires-python = ">=3.9"
+dependencies = [
+    "llama-index-core>=0.12.0,<0.13",
+    "vectorize-client>=0.1.3",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Build Tools",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+license = "MIT"
+
+[project.urls]
+Repository = "https://github.com/run-llama/llama_index.git"
+Issues = "https://github.com/run-llama/llama_index/issues"
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.retrievers.vectorize"
+
+[tool.llamahub.class_authors]
+VectorizeRetriever = "llama-index"
+
+[tool.mypy]
+strict = true
+warn_unreachable = true
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "CPY",  # Missing copyright
+    "COM812",  # Messes with the formatter
+    "ISC001",  # Messes with the formatter
+    "PERF203",  # Rarely useful
+    "PLR09",  # Too many something (arg, statements, etc)
+]
+flake8-annotations.allow-star-arg-any = true
+flake8-annotations.mypy-init-return = true
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "D1",
+    "PLR2004",
+    "S101",
+    "SLF",
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

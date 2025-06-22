@@ -17,9 +17,8 @@ from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
     create_async_engine,
-    async_sessionmaker,
 )
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 from llama_index.core.async_utils import asyncio_run
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, model_serializer
@@ -51,7 +50,7 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
     )
 
     _async_engine: Optional[AsyncEngine] = PrivateAttr(default=None)
-    _async_session_factory: Optional[async_sessionmaker] = PrivateAttr(default=None)
+    _async_session_factory: Optional[sessionmaker] = PrivateAttr(default=None)
     _metadata: MetaData = PrivateAttr(default_factory=MetaData)
     _table: Optional[Table] = PrivateAttr(default=None)
     _db_data: Optional[List[Dict[str, Any]]] = PrivateAttr(default=None)
@@ -77,7 +76,7 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         # Handles both :memory: and empty path which also means in-memory for sqlite
         return uri == "sqlite+aiosqlite:///:memory:" or uri == "sqlite+aiosqlite://"
 
-    async def _initialize(self) -> Tuple[async_sessionmaker[AsyncSession], Table]:
+    async def _initialize(self) -> Tuple[sessionmaker, Table]:
         """Initialize the chat store. Used to avoid HTTP connections in constructor."""
         if self._async_session_factory is not None and self._table is not None:
             return self._async_session_factory, self._table
@@ -98,7 +97,7 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
 
     async def _setup_connections(
         self,
-    ) -> Tuple[AsyncEngine, async_sessionmaker[AsyncSession]]:
+    ) -> Tuple[AsyncEngine, sessionmaker]:
         """Set up database connections and session factories."""
         # Create async engine and session factory if async URI is provided
         if self._async_session_factory is not None and self._async_engine is not None:
@@ -110,11 +109,11 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
             if self.async_database_uri is None:
                 self.async_database_uri = self._async_engine.url
 
-            self._async_session_factory = async_sessionmaker(
-                bind=self._async_engine, class_=AsyncSession
+            self._async_session_factory = sessionmaker(  # type: ignore
+                bind=self._async_engine, expire_on_commit=False, class_=AsyncSession
             )
 
-            return self._async_engine, self._async_session_factory
+            return self._async_engine, self._async_session_factory  # type: ignore
         else:
             raise ValueError(
                 "No async database URI or engine provided, cannot initialize DB sessionmaker"

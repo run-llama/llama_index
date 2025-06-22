@@ -2,7 +2,7 @@ version: "3"
 
 services:
   opensearch:
-    image: opensearchproject/opensearch:latest
+    image: opensearchproject/opensearch:2.19.0
     environment:
       - discovery.type=single-node
       - plugins.security.disabled=true

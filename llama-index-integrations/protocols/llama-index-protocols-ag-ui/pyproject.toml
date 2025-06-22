@@ -1,0 +1,72 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "ipython==8.10.0",
+    "jupyter>=1.0.0,<2",
+    "mypy==0.991",
+    "pre-commit==3.2.0",
+    "pylint==2.15.10",
+    "pytest==7.2.1",
+    "pytest-mock==3.11.1",
+    "ruff==0.11.11",
+    "tree-sitter-languages>=1.8.0,<2",
+    "types-Deprecated>=0.1.0",
+    "types-PyYAML>=6.0.12.12,<7",
+    "types-protobuf>=4.24.0.4,<5",
+    "types-redis==4.5.5.0",
+    "types-requests==2.28.11.8",
+    "types-setuptools==67.1.0.0",
+    "black[jupyter]<=23.9.1,>=23.7.0",
+    "codespell[toml]>=v2.2.6",
+    "pytest-cov>=6.1.1",
+    "diff-cover>=9.2.0",
+    "fastapi",
+]
+
+[project]
+name = "llama-index-protocols-ag-ui"
+version = "0.1.2"
+description = "llama-index protocols AG-UI integration"
+authors = [
+    {name = "Logan Markewich", email = "logan@runllama.ai"},
+]
+requires-python = ">=3.9,<3.14"
+readme = "README.md"
+license = "MIT"
+dependencies = [
+    "ag-ui-protocol>=0.1.5",
+    "llama-index-core>=0.12.0,<0.13",
+]
+
+[project.optional-dependencies]
+fastapi = [
+    "fastapi",
+]
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+ignore-words-list = "Gere"
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.protocols.ag_ui"
+
+[tool.llamahub.class_authors]
+create_ag_ui_router = "llama-index"
+
+[tool.mypy]
+disallow_untyped_defs = true
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
+ignore_missing_imports = true
+python_version = "3.8"

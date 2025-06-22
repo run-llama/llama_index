@@ -3,11 +3,34 @@ import uuid
 from abc import abstractmethod
 from enum import Enum
 from sqlalchemy.ext.asyncio import AsyncEngine
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, TypeVar, Generic, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Union,
+    TypeVar,
+    Generic,
+    cast,
+)
 
 from llama_index.core.async_utils import asyncio_run
-from llama_index.core.base.llms.types import ChatMessage, ContentBlock, TextBlock, AudioBlock, ImageBlock
-from llama_index.core.bridge.pydantic import BaseModel, Field, model_validator, ConfigDict
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ContentBlock,
+    TextBlock,
+    AudioBlock,
+    ImageBlock,
+    DocumentBlock,
+)
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    model_validator,
+    ConfigDict,
+)
 from llama_index.core.memory.types import BaseMemory
 from llama_index.core.prompts import RichPromptTemplate
 from llama_index.core.storage.chat_store.sql import SQLAlchemyChatStore, MessageStatus
@@ -17,26 +40,26 @@ from llama_index.core.utils import get_tokenizer
 T = TypeVar("T", str, List[ContentBlock], List[ChatMessage])
 
 DEFAULT_TOKEN_LIMIT = 30000
-DEFAULT_FLUSH_SIZE = int(DEFAULT_TOKEN_LIMIT * 0.7)
+DEFAULT_FLUSH_SIZE = int(DEFAULT_TOKEN_LIMIT * 0.1)
 DEFAULT_MEMORY_BLOCKS_TEMPLATE = RichPromptTemplate(
-"""
+    """
 <memory>
 {% for (block_name, block_content) in memory_blocks %}
 <{{ block_name }}>
   {% for block in block_content %}
     {% if block.block_type == "text" %}
-      {{ block.text }}
+{{ block.text }}
     {% elif block.block_type == "image" %}
       {% if block.url %}
-        {{ block.url | image }}
+        {{ (block.url | string) | image }}
       {% elif block.path %}
-        {{ block.path | image }}
+        {{ (block.path | string) | image }}
       {% endif %}
     {% elif block.block_type == "audio" %}
       {% if block.url %}
-        {{ block.url | audio }}
+        {{ (block.url | string) | audio }}
       {% elif block.path %}
-        {{ block.path | audio }}
+        {{ (block.path | string) | audio }}
       {% endif %}
     {% endif %}
   {% endfor %}
@@ -45,6 +68,7 @@ DEFAULT_MEMORY_BLOCKS_TEMPLATE = RichPromptTemplate(
 </memory>
 """
 )
+
 
 class InsertMethod(Enum):
     SYSTEM = "system"
@@ -72,15 +96,27 @@ class BaseMemoryBlock(BaseModel, Generic[T]):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str = Field(description="The name/identifier of the memory block.")
-    description: Optional[str] = Field(default=None, description="A description of the memory block.")
-    priority: int = Field(default=0, description="Priority of this memory block (0 = never truncate, 1 = highest priority, etc.).")
-    accept_short_term_memory: bool = Field(default=True, description="Whether to accept puts from messages ejected from the short-term memory.")
+    description: Optional[str] = Field(
+        default=None, description="A description of the memory block."
+    )
+    priority: int = Field(
+        default=0,
+        description="Priority of this memory block (0 = never truncate, 1 = highest priority, etc.).",
+    )
+    accept_short_term_memory: bool = Field(
+        default=True,
+        description="Whether to accept puts from messages ejected from the short-term memory.",
+    )
 
     @abstractmethod
-    async def _aget(self, messages: Optional[List[ChatMessage]] = None, **block_kwargs: Any) -> T:
+    async def _aget(
+        self, messages: Optional[List[ChatMessage]] = None, **block_kwargs: Any
+    ) -> T:
         """Pull the memory block (async)."""
 
-    async def aget(self, messages: Optional[List[ChatMessage]] = None, **block_kwargs: Any) -> T:
+    async def aget(
+        self, messages: Optional[List[ChatMessage]] = None, **block_kwargs: Any
+    ) -> T:
         """
         Pull the memory block (async).
 
@@ -97,10 +133,19 @@ class BaseMemoryBlock(BaseModel, Generic[T]):
     async def _aput(self, messages: List[ChatMessage]) -> None:
         """Push to the memory block (async)."""
 
-    async def aput(self, messages: List[ChatMessage], from_short_term_memory: bool = False) -> None:
+    async def aput(
+        self,
+        messages: List[ChatMessage],
+        from_short_term_memory: bool = False,
+        session_id: Optional[str] = None,
+    ) -> None:
         """Push to the memory block (async)."""
         if from_short_term_memory and not self.accept_short_term_memory:
             return
+
+        if session_id is not None:
+            for message in messages:
+                message.additional_kwargs["session_id"] = session_id
 
         await self._aput(messages)
 
@@ -150,7 +195,7 @@ class Memory(BaseMemory):
         default=DEFAULT_FLUSH_SIZE,
         description="The token size to use for flushing the FIFO queue.",
     )
-    chat_history_min_token_ratio: float = Field(
+    chat_history_token_ratio: float = Field(
         default=0.7,
         description="Minimum percentage ratio of total token limit reserved for chat history.",
     )
@@ -184,7 +229,7 @@ class Memory(BaseMemory):
         exclude=True,
         description="The chat store to use for storing messages.",
     )
-    user_id: str = Field(
+    session_id: str = Field(
         default_factory=generate_chat_store_key,
         description="The key to use for storing messages in the chat store.",
     )
@@ -206,9 +251,9 @@ class Memory(BaseMemory):
             values["tokenizer_fn"] = get_tokenizer()
 
         if values.get("token_flush_size", -1) < 1:
-            values["token_flush_size"] = int(token_limit * 0.7)
+            values["token_flush_size"] = int(token_limit * 0.1)
         elif values.get("token_flush_size", -1) > token_limit:
-            values["token_flush_size"] = int(token_limit * 0.7)
+            values["token_flush_size"] = int(token_limit * 0.1)
 
         # validate all blocks have unique names
         block_names = [block.name for block in values.get("memory_blocks", [])]
@@ -220,12 +265,12 @@ class Memory(BaseMemory):
     @classmethod
     def from_defaults(  # type: ignore[override]
         cls,
-        user_id: str,
+        session_id: Optional[str] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         token_limit: int = DEFAULT_TOKEN_LIMIT,
         memory_blocks: Optional[List[BaseMemoryBlock[Any]]] = None,
         tokenizer_fn: Optional[Callable[[str], List]] = None,
-        chat_history_min_token_ratio: float = 0.7,
+        chat_history_token_ratio: float = 0.7,
         token_flush_size: int = DEFAULT_FLUSH_SIZE,
         memory_blocks_template: RichPromptTemplate = DEFAULT_MEMORY_BLOCKS_TEMPLATE,
         insert_method: InsertMethod = InsertMethod.SYSTEM,
@@ -237,6 +282,8 @@ class Memory(BaseMemory):
         async_engine: Optional[AsyncEngine] = None,
     ) -> "Memory":
         """Initialize Memory."""
+        session_id = session_id or generate_chat_store_key()
+
         # If not using the SQLAlchemyChatStore, provide an error
         sql_store = SQLAlchemyChatStore(
             table_name=table_name,
@@ -245,7 +292,7 @@ class Memory(BaseMemory):
         )
 
         if chat_history is not None:
-            asyncio_run(sql_store.set_messages(user_id, chat_history))
+            asyncio_run(sql_store.set_messages(session_id, chat_history))
 
         if token_flush_size > token_limit:
             token_flush_size = int(token_limit * 0.7)
@@ -254,9 +301,9 @@ class Memory(BaseMemory):
             token_limit=token_limit,
             tokenizer_fn=tokenizer_fn or get_tokenizer(),
             sql_store=sql_store,
-            user_id=user_id,
+            session_id=session_id,
             memory_blocks=memory_blocks or [],
-            chat_history_min_token_ratio=chat_history_min_token_ratio,
+            chat_history_token_ratio=chat_history_token_ratio,
             token_flush_size=token_flush_size,
             memory_blocks_template=memory_blocks_template,
             insert_method=insert_method,
@@ -264,7 +311,12 @@ class Memory(BaseMemory):
             audio_token_size_estimate=audio_token_size_estimate,
         )
 
-    def _estimate_token_count(self, message_or_blocks: Union[str, ChatMessage, List[ChatMessage], List[ContentBlock]]) -> int:
+    def _estimate_token_count(
+        self,
+        message_or_blocks: Union[
+            str, ChatMessage, List[ChatMessage], List[ContentBlock]
+        ],
+    ) -> int:
         """Estimate token count for a message."""
         token_count = 0
 
@@ -274,11 +326,15 @@ class Memory(BaseMemory):
 
             # Estimate the token count for the additional kwargs
             if message_or_blocks.additional_kwargs:
-                token_count += len(self.tokenizer_fn(str(message_or_blocks.additional_kwargs)))
+                token_count += len(
+                    self.tokenizer_fn(str(message_or_blocks.additional_kwargs))
+                )
         elif isinstance(message_or_blocks, List):
             # Type narrow the list
             messages: List[ChatMessage] = []
-            content_blocks: List[Union[TextBlock, ImageBlock, AudioBlock]] = []
+            content_blocks: List[
+                Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock]
+            ] = []
 
             if all(isinstance(item, ChatMessage) for item in message_or_blocks):
                 messages = cast(List[ChatMessage], message_or_blocks)
@@ -288,9 +344,19 @@ class Memory(BaseMemory):
                     blocks.extend(msg.blocks)
 
                 # Estimate the token count for the additional kwargs
-                token_count += sum(len(self.tokenizer_fn(str(msg.additional_kwargs))) for msg in messages if msg.additional_kwargs)
-            elif all(isinstance(item, (TextBlock, ImageBlock, AudioBlock)) for item in message_or_blocks):
-                content_blocks = cast(List[Union[TextBlock, ImageBlock, AudioBlock]], message_or_blocks)
+                token_count += sum(
+                    len(self.tokenizer_fn(str(msg.additional_kwargs)))
+                    for msg in messages
+                    if msg.additional_kwargs
+                )
+            elif all(
+                isinstance(item, (TextBlock, ImageBlock, AudioBlock, DocumentBlock))
+                for item in message_or_blocks
+            ):
+                content_blocks = cast(
+                    List[Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock]],
+                    message_or_blocks,
+                )
                 blocks = content_blocks
             else:
                 raise ValueError(f"Invalid message type: {type(message_or_blocks)}")
@@ -310,13 +376,24 @@ class Memory(BaseMemory):
 
         return token_count
 
-    async def _get_memory_blocks_content(self, chat_history: List[ChatMessage], **block_kwargs: Any) -> Dict[str, Any]:
+    async def _get_memory_blocks_content(
+        self,
+        chat_history: List[ChatMessage],
+        input: Optional[Union[str, ChatMessage]] = None,
+        **block_kwargs: Any,
+    ) -> Dict[str, Any]:
         """Get content from memory blocks in priority order."""
         content_per_memory_block: Dict[str, Any] = {}
 
+        block_input = chat_history
+        if isinstance(input, str):
+            block_input = [*chat_history, ChatMessage(role="user", content=input)]
+
         # Process memory blocks in priority order
         for memory_block in sorted(self.memory_blocks, key=lambda x: -x.priority):
-            content = await memory_block.aget(chat_history, **block_kwargs)
+            content = await memory_block.aget(
+                block_input, session_id=self.session_id, **block_kwargs
+            )
 
             # Handle different return types from memory blocks
             if content and isinstance(content, list):
@@ -328,7 +405,9 @@ class Memory(BaseMemory):
             elif not content:
                 continue
             else:
-                raise ValueError(f"Invalid content type received from memory block {memory_block.name}: {type(content)}")
+                raise ValueError(
+                    f"Invalid content type received from memory block {memory_block.name}: {type(content)}"
+                )
 
         return content_per_memory_block
 
@@ -336,17 +415,21 @@ class Memory(BaseMemory):
         self,
         content_per_memory_block: Dict[str, Any],
         memory_blocks_tokens: int,
-        chat_history_tokens: int
+        chat_history_tokens: int,
     ) -> Dict[str, Any]:
         """Truncate memory blocks if total token count exceeds limit."""
         if memory_blocks_tokens + chat_history_tokens <= self.token_limit:
             return content_per_memory_block
 
-        tokens_to_truncate = memory_blocks_tokens + chat_history_tokens - self.token_limit
+        tokens_to_truncate = (
+            memory_blocks_tokens + chat_history_tokens - self.token_limit
+        )
         truncated_content = content_per_memory_block.copy()
 
         # Truncate memory blocks based on priority
-        for memory_block in sorted(self.memory_blocks, key=lambda x: x.priority):  # Lower priority first
+        for memory_block in sorted(
+            self.memory_blocks, key=lambda x: x.priority
+        ):  # Lower priority first
             # Skip memory blocks with priority 0, they should never be truncated
             if memory_block.priority == 0:
                 continue
@@ -357,7 +440,9 @@ class Memory(BaseMemory):
             # Truncate content and measure tokens saved
             content = truncated_content.get(memory_block.name, [])
 
-            truncated_block_content = await memory_block.atruncate(content, tokens_to_truncate)
+            truncated_block_content = await memory_block.atruncate(
+                content, tokens_to_truncate
+            )
 
             # Calculate tokens saved
             original_tokens = self._estimate_token_count(content)
@@ -392,8 +477,7 @@ class Memory(BaseMemory):
         return truncated_content
 
     async def _format_memory_blocks(
-        self,
-        content_per_memory_block: Dict[str, Any]
+        self, content_per_memory_block: Dict[str, Any]
     ) -> Tuple[List[Tuple[str, List[ContentBlock]]], List[ChatMessage]]:
         """Format memory blocks content into template data and chat messages."""
         memory_blocks_data: List[Tuple[str, List[ContentBlock]]] = []
@@ -407,7 +491,11 @@ class Memory(BaseMemory):
                 if not content:
                     continue
 
-                if isinstance(content, list) and content and isinstance(content[0], ChatMessage):
+                if (
+                    isinstance(content, list)
+                    and content
+                    and isinstance(content[0], ChatMessage)
+                ):
                     chat_message_data.extend(content)
                 elif isinstance(content, str):
                     memory_blocks_data.append((block.name, [TextBlock(text=content)]))
@@ -420,7 +508,7 @@ class Memory(BaseMemory):
         self,
         chat_history: List[ChatMessage],
         memory_content: List[ContentBlock],
-        chat_message_data: List[ChatMessage]
+        chat_message_data: List[ChatMessage],
     ) -> List[ChatMessage]:
         """Insert memory content into chat history based on insert method."""
         result = chat_history.copy()
@@ -433,58 +521,86 @@ class Memory(BaseMemory):
         if memory_content:
             if self.insert_method == InsertMethod.SYSTEM:
                 # Find system message or create a new one
-                system_idx = next((i for i, msg in enumerate(result) if msg.role == "system"), None)
+                system_idx = next(
+                    (i for i, msg in enumerate(result) if msg.role == "system"), None
+                )
 
                 if system_idx is not None:
                     # Update existing system message
-                    result[system_idx].blocks = [*memory_content, *result[system_idx].blocks]
+                    result[system_idx].blocks = [
+                        *memory_content,
+                        *result[system_idx].blocks,
+                    ]
                 else:
                     # Create new system message at the beginning
                     result.insert(0, ChatMessage(role="system", blocks=memory_content))
             elif self.insert_method == InsertMethod.USER:
                 # Find the latest user message
-                user_idx = next((i for i, msg in enumerate(reversed(result)) if msg.role == "user"), None)
+                session_idx = next(
+                    (i for i, msg in enumerate(reversed(result)) if msg.role == "user"),
+                    None,
+                )
 
-                if user_idx is not None:
+                if session_idx is not None:
                     # Get actual index (since we enumerated in reverse)
-                    actual_idx = len(result) - 1 - user_idx
+                    actual_idx = len(result) - 1 - session_idx
                     # Update existing user message
-                    result[actual_idx].blocks = [*result[actual_idx].blocks, *memory_content]
+                    result[actual_idx].blocks = [
+                        *memory_content,
+                        *result[actual_idx].blocks,
+                    ]
                 else:
-                    raise ValueError("No user message found in chat history!")
+                    result.append(ChatMessage(role="user", blocks=memory_content))
 
         return result
 
-    async def aget(self, **block_kwargs: Any) -> List[ChatMessage]:  # type: ignore[override]
+    async def aget(
+        self, input: Optional[Union[str, ChatMessage]] = None, **block_kwargs: Any
+    ) -> List[ChatMessage]:  # type: ignore[override]
         """Get messages with memory blocks included (async)."""
         # Get chat history efficiently
-        chat_history = await self.sql_store.get_messages(self.user_id, status=MessageStatus.ACTIVE)
-        chat_history_tokens = sum(self._estimate_token_count(message) for message in chat_history)
+        chat_history = await self.sql_store.get_messages(
+            self.session_id, status=MessageStatus.ACTIVE
+        )
+        chat_history_tokens = sum(
+            self._estimate_token_count(message) for message in chat_history
+        )
 
         # Get memory blocks content
-        content_per_memory_block = await self._get_memory_blocks_content(chat_history, **block_kwargs)
+        content_per_memory_block = await self._get_memory_blocks_content(
+            chat_history, input=input, **block_kwargs
+        )
 
         # Calculate memory blocks tokens
-        memory_blocks_tokens = sum(self._estimate_token_count(content) for content in content_per_memory_block.values())
+        memory_blocks_tokens = sum(
+            self._estimate_token_count(content)
+            for content in content_per_memory_block.values()
+        )
 
         # Handle truncation if needed
         truncated_content = await self._truncate_memory_blocks(
-            content_per_memory_block,
-            memory_blocks_tokens,
-            chat_history_tokens
+            content_per_memory_block, memory_blocks_tokens, chat_history_tokens
         )
 
         # Format template-based memory blocks
-        memory_blocks_data, chat_message_data = await self._format_memory_blocks(truncated_content)
+        memory_blocks_data, chat_message_data = await self._format_memory_blocks(
+            truncated_content
+        )
 
         # Create messages from template content
         memory_content = []
         if memory_blocks_data:
-            memory_block_messages = self.memory_blocks_template.format_messages(memory_blocks=memory_blocks_data)
-            memory_content = memory_block_messages[0].blocks if memory_block_messages else []
+            memory_block_messages = self.memory_blocks_template.format_messages(
+                memory_blocks=memory_blocks_data
+            )
+            memory_content = (
+                memory_block_messages[0].blocks if memory_block_messages else []
+            )
 
         # Insert memory content into chat history
-        return self._insert_memory_content(chat_history, memory_content, chat_message_data)
+        return self._insert_memory_content(
+            chat_history, memory_content, chat_message_data
+        )
 
     async def _manage_queue(self) -> None:
         """
@@ -497,11 +613,20 @@ class Memory(BaseMemory):
         4. It maintains at least one complete conversation turn
         """
         # Calculate if we need to waterfall
-        current_queue = await self.sql_store.get_messages(self.user_id, status=MessageStatus.ACTIVE)
-        tokens_in_current_queue = sum(self._estimate_token_count(message) for message in current_queue)
+        current_queue = await self.sql_store.get_messages(
+            self.session_id, status=MessageStatus.ACTIVE
+        )
+
+        # If current queue is empty, return
+        if not current_queue:
+            return
+
+        tokens_in_current_queue = sum(
+            self._estimate_token_count(message) for message in current_queue
+        )
 
         # If we're over the token limit, initiate waterfall
-        token_limit = self.token_limit * self.chat_history_min_token_ratio
+        token_limit = self.token_limit * self.chat_history_token_ratio
         if tokens_in_current_queue > token_limit:
             # Process from oldest to newest, but efficiently with pop() operations
             reversed_queue = current_queue[::-1]  # newest first, oldest last
@@ -510,12 +635,20 @@ class Memory(BaseMemory):
             tokens_to_remove = tokens_in_current_queue - token_limit
 
             while tokens_to_remove > 0:
+                # If only one message left, keep it regardless of token count
+                if len(reversed_queue) <= 1:
+                    break
+
                 # Collect messages to flush (up to flush size)
                 messages_to_flush = []
                 flushed_tokens = 0
 
                 # Remove oldest messages (from end of reversed list) until reaching flush size
-                while flushed_tokens < self.token_flush_size and reversed_queue:
+                while (
+                    flushed_tokens < self.token_flush_size
+                    and reversed_queue
+                    and len(reversed_queue) > 1
+                ):
                     message = reversed_queue.pop()
                     messages_to_flush.append(message)
                     flushed_tokens += self._estimate_token_count(message)
@@ -534,7 +667,11 @@ class Memory(BaseMemory):
                 if chronological_view:
                     # Keep removing messages until first remaining message is from user
                     # This ensures we start with a user message
-                    while chronological_view and chronological_view[0].role != "user":
+                    while (
+                        chronological_view
+                        and chronological_view[0].role != "user"
+                        and len(reversed_queue) > 1
+                    ):
                         if reversed_queue:
                             messages_to_flush.append(reversed_queue.pop())
                             chronological_view = reversed_queue[::-1]
@@ -568,14 +705,28 @@ class Memory(BaseMemory):
 
                 # Archive the flushed messages
                 if messages_to_flush:
-                    await self.sql_store.archive_oldest_messages(self.user_id, n=len(messages_to_flush))
+                    await self.sql_store.archive_oldest_messages(
+                        self.session_id, n=len(messages_to_flush)
+                    )
 
                     # Waterfall the flushed messages to memory blocks
-                    await asyncio.gather(*[block.aput(messages_to_flush, from_short_term_memory=True) for block in self.memory_blocks])
+                    await asyncio.gather(
+                        *[
+                            block.aput(
+                                messages_to_flush,
+                                from_short_term_memory=True,
+                                session_id=self.session_id,
+                            )
+                            for block in self.memory_blocks
+                        ]
+                    )
 
                 # Recalculate remaining tokens
                 chronological_view = reversed_queue[::-1]
-                tokens_in_current_queue = sum(self._estimate_token_count(message) for message in chronological_view)
+                tokens_in_current_queue = sum(
+                    self._estimate_token_count(message)
+                    for message in chronological_view
+                )
                 tokens_to_remove = tokens_in_current_queue - token_limit
 
                 # Exit if we've flushed everything possible but still over limit
@@ -585,7 +736,9 @@ class Memory(BaseMemory):
     async def aput(self, message: ChatMessage) -> None:
         """Add a message to the chat store and process waterfall logic if needed."""
         # Add the message to the chat store
-        await self.sql_store.add_message(self.user_id, message, status=MessageStatus.ACTIVE)
+        await self.sql_store.add_message(
+            self.session_id, message, status=MessageStatus.ACTIVE
+        )
 
         # Ensure the active queue is managed
         await self._manage_queue()
@@ -593,28 +746,36 @@ class Memory(BaseMemory):
     async def aput_messages(self, messages: List[ChatMessage]) -> None:
         """Add a list of messages to the chat store and process waterfall logic if needed."""
         # Add the messages to the chat store
-        await self.sql_store.add_messages(self.user_id, messages, status=MessageStatus.ACTIVE)
+        await self.sql_store.add_messages(
+            self.session_id, messages, status=MessageStatus.ACTIVE
+        )
 
         # Ensure the active queue is managed
         await self._manage_queue()
 
     async def aset(self, messages: List[ChatMessage]) -> None:
         """Set the chat history."""
-        await self.sql_store.set_messages(self.user_id, messages, status=MessageStatus.ACTIVE)
+        await self.sql_store.set_messages(
+            self.session_id, messages, status=MessageStatus.ACTIVE
+        )
 
-    async def aget_all(self, status: Optional[MessageStatus] = None) -> List[ChatMessage]:
+    async def aget_all(
+        self, status: Optional[MessageStatus] = None
+    ) -> List[ChatMessage]:
         """Get all messages."""
-        return await self.sql_store.get_messages(self.user_id, status=status)
+        return await self.sql_store.get_messages(self.session_id, status=status)
 
     async def areset(self, status: Optional[MessageStatus] = None) -> None:
         """Reset the memory."""
-        await self.sql_store.delete_messages(self.user_id, status=status)
+        await self.sql_store.delete_messages(self.session_id, status=status)
 
     # ---- Sync method wrappers ----
 
-    def get(self, **block_kwargs: Any) -> List[ChatMessage]:  # type: ignore[override]
+    def get(
+        self, input: Optional[Union[str, ChatMessage]] = None, **block_kwargs: Any
+    ) -> List[ChatMessage]:  # type: ignore[override]
         """Get messages with memory blocks included."""
-        return asyncio_run(self.aget(**block_kwargs))
+        return asyncio_run(self.aget(input=input, **block_kwargs))
 
     def get_all(self, status: Optional[MessageStatus] = None) -> List[ChatMessage]:
         """Get all messages."""

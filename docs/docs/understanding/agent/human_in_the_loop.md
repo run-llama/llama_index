@@ -2,7 +2,7 @@
 
 Tools can also be defined that get a human in the loop. This is useful for tasks that require human input, such as confirming a tool call or providing feedback.
 
-As we'll see in the our [Workflows tutorial](../workflows/index.md), the way Workflows work under the hood of AgentWorkflow is by running steps which both emit and receive events. Here's a diagram of the steps (in blue) that makes up an AgentWorkflow and the events (in green) that pass data between them. You'll recognize these events, they're the same ones we were handling in the output stream earlier.
+As we'll see in our [Workflows tutorial](../workflows/index.md), the way Workflows work under the hood of AgentWorkflow is by running steps which both emit and receive events. Here's a diagram of the steps (in blue) that make up an AgentWorkflow and the events (in green) that pass data between them. You'll recognize these events, they're the same ones we were handling in the output stream earlier.
 
 ![Workflows diagram](./agentworkflow.jpg)
 
@@ -25,6 +25,9 @@ Next we'll create a tool that performs a hypothetical dangerous task. There are 
 * The `requirements` argument is used to specify that we want to wait for a HumanResponseEvent with a specific `user_name`.
 
 ```python
+from llama_index.core.workflow import Context
+
+
 async def dangerous_task(ctx: Context) -> str:
     """A dangerous task that requires human confirmation."""
 

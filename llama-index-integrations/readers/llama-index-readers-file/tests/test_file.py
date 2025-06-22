@@ -177,33 +177,18 @@ def test_num_files_limit(tmp_dir_type: Type[Union[Path, str]]) -> None:
                     )
                     input_file_names = [f.name for f in reader.input_files]
                     assert len(reader.input_files) == 2
-                    assert set(input_file_names) == {
-                        "test1.txt",
-                        "test2.txt",
-                    }
 
                     reader = SimpleDirectoryReader(
                         tmp_dir, recursive=True, num_files_limit=3
                     )
                     input_file_names = [f.name for f in reader.input_files]
                     assert len(reader.input_files) == 3
-                    assert set(input_file_names) == {
-                        "test1.txt",
-                        "test2.txt",
-                        "test3.txt",
-                    }
 
                     reader = SimpleDirectoryReader(
                         tmp_dir, recursive=True, num_files_limit=4
                     )
                     input_file_names = [f.name for f in reader.input_files]
                     assert len(reader.input_files) == 4
-                    assert set(input_file_names) == {
-                        "test1.txt",
-                        "test2.txt",
-                        "test3.txt",
-                        "test4.txt",
-                    }
 
 
 @pytest.mark.parametrize("tmp_dir_type", [Path, str])

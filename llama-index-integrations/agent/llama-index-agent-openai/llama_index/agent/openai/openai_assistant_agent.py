@@ -464,7 +464,7 @@ class OpenAIAssistantAgent(BaseAgent):
             time.sleep(self._run_retrieve_sleep_time)
         if run.status == "failed":
             raise ValueError(
-                f"Run failed with status {run.status}.\n" f"Error: {run.last_error}"
+                f"Run failed with status {run.status}.\nError: {run.last_error}"
             )
         return run, {"sources": sources}
 
@@ -495,7 +495,7 @@ class OpenAIAssistantAgent(BaseAgent):
             await asyncio.sleep(self._run_retrieve_sleep_time)
         if run.status == "failed":
             raise ValueError(
-                f"Run failed with status {run.status}.\n" f"Error: {run.last_error}"
+                f"Run failed with status {run.status}.\nError: {run.last_error}"
             )
         return run, {"sources": sources}
 
