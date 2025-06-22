@@ -329,3 +329,34 @@ def test_azureaisearch_semantic_query() -> None:
     assert len(result.nodes) == 2
     assert len(result.ids) == 2
     assert len(result.similarities) == 2
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
+def test_azureaisearch_query_forwards_extra_kwargs() -> None:
+    """Ensure any extra kwargs (e.g. scoring_profile, order_by) get forwarded."""
+    search_client = mock_client_with_user_agent("search")
+
+    search_client.search.return_value = []
+    vector_store = create_mock_vector_store(search_client)
+
+    query = VectorStoreQuery(
+        query_embedding=[0.1, 0.2],
+        similarity_top_k=1,
+        mode=VectorStoreQueryMode.DEFAULT,
+    )
+
+    # Pass two arbitrary params supported by Azure AI Search
+    vector_store.query(
+        query,
+        scoring_profile="myCustomProfile",
+        order_by=["title asc"],
+    )
+
+    called_kwargs = search_client.search.call_args[1]
+    # existing defaults still there
+    assert called_kwargs["search_text"] == "*"
+    # plus our extras
+    assert called_kwargs["scoring_profile"] == "myCustomProfile"
+    assert called_kwargs["order_by"] == ["title asc"]
