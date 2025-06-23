@@ -47,12 +47,12 @@ A data loader ingests data of any format from anywhere into `Document` objects, 
 
 **Examples**:
 
-- [Google Sheets Loader](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/google_sheets)
-- [Gmail Loader](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/gmail)
-- [Github Repository Loader](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/github_repo)
+- [Google Sheets Loader](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers/llama-index-readers-google/llama_index/readers/google/sheets)
+- [Gmail Loader](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers/llama-index-readers-google/llama_index/readers/google/gmail)
+- [Github Repository Loader](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers/llama-index-readers-github)
 
 Contributing a data loader is easy and super impactful for the community.
-The preferred way to contribute is by making a PR at [LlamaHub Github](https://github.com/emptycrown/llama-hub).
+The preferred way to contribute is by making a PR at [Readers](https://github.com/run-llama/llama_index/tree/main/llama-index-integrations/readers).
 
 **Ideas**
 
