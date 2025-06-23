@@ -49,6 +49,32 @@ class FastEmbedEmbedding(BaseEmbedding):
     _model: TextEmbedding = PrivateAttr()
     """The FastEmbed model instance."""
 
+    def __init__(
+        self,
+        model_name: str = "BAAI/bge-small-en-v1.5",
+        cache_dir: Optional[str] = None,
+        threads: Optional[int] = None,
+        doc_embed_type: Literal["default", "passage"] = "default",
+        providers: Optional[List[str]] = None,
+        **kwargs: Any,
+    ):
+        super().__init__(
+            model_name=model_name,
+            threads=threads,  # type: ignore
+            doc_embed_type=doc_embed_type,  # type: ignore
+            providers=providers,  # type: ignore
+            cache_dir=cache_dir,  # type: ignore
+            **kwargs,
+        )
+
+        self._model = TextEmbedding(
+            model_name=model_name,
+            cache_dir=cache_dir,
+            threads=threads,
+            providers=providers,
+            **kwargs,
+        )
+
     @classmethod
     def class_name(cls) -> str:
         return "FastEmbedEmbedding"
