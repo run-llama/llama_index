@@ -1206,7 +1206,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         semantic_configuration_name = None
 
         # NOTE: users can provide odata_filters directly to the query and any other search parameters like scoring_profile etc .
-        odata_filters = kwargs.get("odata_filters")
+        odata_filters = kwargs.get("odata_filters") or kwargs.get("odata_filter")
         if odata_filters is not None:
             odata_filter = odata_filters
         elif query.filters is not None:
@@ -1484,9 +1484,9 @@ class AzureQueryResultSearchBase:
             "semantic_configuration_name": self._semantic_configuration_name,
         }
 
-        params.update(self._search_kwargs)
+        search_params = {**self._search_kwargs, **params}
 
-        results = self._search_client.search(**params)
+        results = self._search_client.search(**search_params)
 
         id_result = []
         node_result = []
@@ -1542,9 +1542,9 @@ class AzureQueryResultSearchBase:
             "semantic_configuration_name": self._semantic_configuration_name,
         }
 
-        params.update(self._search_kwargs)
+        search_params = {**self._search_kwargs, **params}
 
-        results = await self._async_search_client.search(**params)
+        results = await self._async_search_client.search(**search_params)
 
         id_result = []
         node_result = []
@@ -1671,9 +1671,9 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
             "query_type": "semantic",
         }
 
-        params.update(self._search_kwargs)
+        search_params = {**self._search_kwargs, **params}
 
-        results = self._search_client.search(**params)
+        results = self._search_client.search(**search_params)
 
         id_result = []
         node_result = []
@@ -1731,9 +1731,9 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
             "query_type": "semantic",
         }
 
-        params.update(self._search_kwargs)
+        search_params = {**self._search_kwargs, **params}
 
-        results = await self._async_search_client.search(**params)
+        results = await self._async_search_client.search(**search_params)
         id_result = []
         node_result = []
         score_result = []
