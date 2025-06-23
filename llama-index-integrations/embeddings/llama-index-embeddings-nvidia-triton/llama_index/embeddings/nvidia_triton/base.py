@@ -1,0 +1,102 @@
+from typing import Any, Dict, List, Optional 
+
+from llama_index.core.base.embeddings.base import BaseEmbedding
+from llama_index.core.constants import DEFAULT_EMBED_BATCH_SIZE
+from llama_index.core.callbacks.base import CallbackManager
+from llama_index.core.bridge.pydantic import PrivateAttr
+
+import random
+import numpy as np
+from tritonclient.http import (
+    InferenceServerClient,
+    InferInput,
+    InferRequestedOutput,
+)
+
+DEFAULT_INPUT_TENSOR_NAME = "INPUT_TEXT"
+DEFAULT_OUTPUT_TENSOR_NAME = "OUTPUT_EMBEDDINGS"
+
+class NvidiaTritonEmbedding(BaseEmbedding):
+
+    _client: InferenceServerClient = PrivateAttr()
+    _input_tensor_name: str = PrivateAttr()
+    _output_tensor_name: str = PrivateAttr()
+
+    def __init__(
+        self,
+        model_name: str,
+        server_url: str = "localhost:8000",
+        embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
+        input_tensor_name: str = DEFAULT_INPUT_TENSOR_NAME,
+        output_tensor_name: str = DEFAULT_OUTPUT_TENSOR_NAME,
+        callback_manager: Optional[CallbackManager] = None,
+        client_kwargs: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(
+            model_name=model_name,
+            embed_batch_size=embed_batch_size,
+            callback_manager=callback_manager, # type: ignore
+            **kwargs,
+        )
+
+        self._client = InferenceServerClient(
+            url=server_url,
+            **client_kwargs or {},
+        )
+        self._input_tensor_name = input_tensor_name
+        self._output_tensor_name = output_tensor_name
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "NvidiaTritonEmbedding"
+
+    def _get_query_embedding(self, query: str) -> List[float]:
+        """Get query embedding."""
+        return self.get_general_text_embeddings([query])[0]
+
+    async def _aget_query_embedding(self, query: str) -> List[float]:
+        """The asynchronous version of _get_query_embedding."""
+        embs = await self.aget_general_text_embeddings([query])
+        return embs[0]
+
+    def _get_text_embedding(self, text: str) -> List[float]:
+        """Get text embedding."""
+        return self.get_general_text_embeddings([text])[0]
+
+    async def _aget_text_embedding(self, text: str) -> List[float]:
+        """Asynchronously get text embedding."""
+        embs = await self.aget_general_text_embeddings([text])
+        return embs[0]
+
+    def _get_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """Get text embeddings."""
+        return self.get_general_text_embeddings(texts)
+
+    async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """Asynchronously get text embeddings."""
+        return await self.aget_general_text_embeddings(texts)
+
+    def get_general_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """Get Triton embedding."""
+
+        input_data = InferInput(self._input_tensor_name, [len(texts)], "BYTES")
+        input_data.set_data_from_numpy(np.array(texts, dtype=np.object_))
+        output_data = InferRequestedOutput(self._output_tensor_name)
+        request_id = str(random.randint(1, 9999999))  # nosec
+
+        response = self._client.infer(
+            model_name=self.model_name,
+            inputs=[input_data],
+            outputs=[output_data],
+            request_id=request_id,
+        )
+
+        embeddings = response.as_numpy(self._output_tensor_name)
+        if embeddings is None:
+            raise ValueError("No embeddings returned from Triton server.")
+        return [e.tolist() for e in embeddings]
+
+    async def aget_general_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """Asynchronously get Triton embedding."""
+        return self.get_general_text_embeddings(texts)
