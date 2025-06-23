@@ -13,17 +13,15 @@ from llama_index.core.types import BaseOutputParser
 
 
 def extract_tool_use(input_text: str) -> Tuple[str, str, str]:
-    pattern = (
-        r"\s*Thought: (.*?)\n+Action: ([^\n\(\) ]+).*?\n+Action Input: .*?(\{.*\})"
-    )
+    pattern = r"(?:\s*Thought: (.*?)|(.+))\n+Action: ([^\n\(\) ]+).*?\n+Action Input: .*?(\{.*\})"
 
     match = re.search(pattern, input_text, re.DOTALL)
     if not match:
         raise ValueError(f"Could not extract tool use from input text: {input_text}")
 
-    thought = match.group(1).strip()
-    action = match.group(2).strip()
-    action_input = match.group(3).strip()
+    thought = (match.group(1) or match.group(2)).strip()
+    action = match.group(3).strip()
+    action_input = match.group(4).strip()
     return thought, action, action_input
 
 
@@ -88,7 +86,7 @@ class ReActOutputParser(BaseOutputParser):
             Answer: <answer>
             ```
         """
-        if "Thought:" not in output:
+        if "Thought:" not in output and "Action:" not in output:
             # NOTE: handle the case where the agent directly outputs the answer
             # instead of following the thought-answer format
             return ResponseReasoningStep(
