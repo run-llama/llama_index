@@ -25,7 +25,7 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     ImageBlock,
 )
-from llama_index.core.bridge.pydantic import Field, PrivateAttr, AnyUrl
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_TEMPERATURE
 from llama_index.core.llms.callbacks import (
@@ -79,25 +79,7 @@ def to_mistral_chunks(content_blocks: Sequence[ContentBlock]) -> Sequence[Conten
             content_chunks.append(TextChunk(text=content_block.text))
         elif isinstance(content_block, ImageBlock):
             if content_block.url:
-                if isinstance(content_block.url, str):
-                    content_chunks.append(ImageURLChunk(image_url=content_block.url))
-                elif isinstance(content_block.url, dict):
-                    if content_block.url.get("url", None) and isinstance(
-                        content_block.url["url"], AnyUrl
-                    ):
-                        content_chunks.append(
-                            ImageURLChunk(image_url=str(content_block.url["url"]))
-                        )
-                    elif content_block.url.get("url", None) and isinstance(
-                        content_block.url["url"], str
-                    ):
-                        content_chunks.append(
-                            ImageURLChunk(image_url=content_block.url["url"])
-                        )
-                elif isinstance(content_block.url, AnyUrl):
-                    content_chunks.append(
-                        ImageURLChunk(image_url=str(content_block.url))
-                    )
+                content_chunks.append(ImageURLChunk(image_url=str(content_block.url)))
             else:
                 base_64_str = (
                     content_block.resolve_image(as_base64=True).read().decode("utf-8")
