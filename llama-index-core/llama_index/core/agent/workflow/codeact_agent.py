@@ -100,6 +100,9 @@ class CodeActAgent(BaseWorkflowAgent):
         if isinstance(code_act_system_prompt, str):
             code_act_system_prompt = PromptTemplate(code_act_system_prompt)
 
+        if system_prompt and code_act_system_prompt:
+            code_act_system_prompt += "\n\n" + system_prompt
+
         super().__init__(
             name=name,
             description=description,
