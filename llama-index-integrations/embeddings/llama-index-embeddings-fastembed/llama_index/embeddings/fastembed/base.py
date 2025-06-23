@@ -1,9 +1,9 @@
+import asyncio
+import numpy as np
 from typing import Any, List, Literal, Optional
 
-import numpy as np
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.bridge.pydantic import Field, PrivateAttr, ConfigDict
-import asyncio
 from fastembed import TextEmbedding
 
 
@@ -29,25 +29,35 @@ class FastEmbedEmbedding(BaseEmbedding):
         use_attribute_docstrings=True,
     )
 
-    model_name: str = Field(default="BAAI/bge-small-en-v1.5")
-    """Name of the FastEmbedding model to use.
-    Find the list of supported models at https://qdrant.github.io/fastembed/examples/Supported_Models/
-    """
+    model_name: str = Field(
+        default="BAAI/bge-small-en-v1.5",
+        description=(
+            "Name of the FastEmbedding model to use. "
+            "Find the list of supported models at "
+            "https://qdrant.github.io/fastembed/examples/Supported_Models/"
+        ),
+    )
 
-    cache_dir: Optional[str] = Field(default=None)
-    """The path to the cache directory. Defaults to fastembed_cache in the system's temp directory."""
+    cache_dir: Optional[str] = Field(
+        default=None,
+        description="The path to the cache directory. Defaults to fastembed_cache in the system's temp directory.",
+    )
 
-    threads: Optional[int] = Field(default=None)
-    """The number of threads single onnxruntime session can use. Defaults to None."""
+    threads: Optional[int] = Field(
+        default=None,
+        description="The number of threads single onnxruntime session can use. Defaults to None.",
+    )
 
-    doc_embed_type: Literal["default", "passage"] = Field(default="default")
-    """Type of embedding method to use for documents. Available options are 'default' and 'passage'."""
+    doc_embed_type: Literal["default", "passage"] = Field(
+        default="default",
+        description="Type of embedding method to use for documents. Available options are 'default' and 'passage'.",
+    )
 
-    providers: Optional[List[str]] = Field(default=None)
-    """The ONNX providers to use for the embedding model."""
+    providers: Optional[List[str]] = Field(
+        default=None, description="The ONNX providers to use for the embedding model."
+    )
 
     _model: TextEmbedding = PrivateAttr()
-    """The FastEmbed model instance."""
 
     def __init__(
         self,
@@ -60,10 +70,10 @@ class FastEmbedEmbedding(BaseEmbedding):
     ):
         super().__init__(
             model_name=model_name,
-            threads=threads,  # type: ignore
-            doc_embed_type=doc_embed_type,  # type: ignore
-            providers=providers,  # type: ignore
-            cache_dir=cache_dir,  # type: ignore
+            threads=threads,
+            doc_embed_type=doc_embed_type,
+            providers=providers,
+            cache_dir=cache_dir,
             **kwargs,
         )
 
@@ -78,14 +88,6 @@ class FastEmbedEmbedding(BaseEmbedding):
     @classmethod
     def class_name(cls) -> str:
         return "FastEmbedEmbedding"
-
-    def model_post_init(self, __context: Any) -> None:
-        self._model = TextEmbedding(
-            model_name=self.model_name,
-            cache_dir=self.cache_dir,
-            threads=self.threads,
-            providers=self.providers,
-        )
 
     def _get_text_embedding(self, text: str) -> List[float]:
         return self._get_text_embeddings([text])[0]
