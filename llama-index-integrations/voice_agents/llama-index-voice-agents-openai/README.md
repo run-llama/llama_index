@@ -101,7 +101,6 @@ async def main():
         # customize the model with instructions and other arguments you can find here: https://platform.openai.com/docs/api-reference/realtime-client-events/session/update
         await conversation.start(
             instructions="You are a very helpful assistant. You can use the 'get_weather' tool to get weather information about a location: you just have to input the location to the tool. Please execute the tool whenever you are asked about the weather of a location.",
-            temperature=0.9,
         )
         while not quitFlag:
             time.sleep(0.1)

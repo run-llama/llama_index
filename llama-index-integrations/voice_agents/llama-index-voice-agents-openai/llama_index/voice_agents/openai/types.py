@@ -1,7 +1,8 @@
 import base64
 import binascii
+import json
 
-from typing import Union, List, Dict, Literal, Optional
+from typing import Union, List, Dict, Literal, Optional, Any
 from typing_extensions import Self
 from llama_index.core.voice_agents import BaseVoiceAgentEvent
 from llama_index.core.bridge.pydantic import BaseModel, Field, model_validator
@@ -25,11 +26,20 @@ class ToolParameters(BaseModel):
     required: List[str]
 
 
+class FunctionResultItem(BaseVoiceAgentEvent):
+    call_id: str
+    output: str
+
+
 class ConversationTool(BaseModel):
     type: Literal["function"] = Field(default="function")
     name: str
     description: str
     parameters: ToolParameters
+
+
+class SendFunctionItemEvent(BaseVoiceAgentEvent):
+    item: FunctionResultItem
 
 
 class ConversationSession(BaseModel):
@@ -70,6 +80,21 @@ class ConversationInputEvent(BaseVoiceAgentEvent):
         except binascii.Error:
             if isinstance(self.audio, bytes):
                 self.audio = base64.b64encode(self.audio).decode("utf-8")
+        return self
+
+
+class FunctionCallDoneEvent(BaseVoiceAgentEvent):
+    call_id: str
+    name: Optional[str] = Field(default=None)
+    arguments: Union[str, Dict[str, Any]]
+    item_id: str
+
+    @model_validator(mode="after")
+    def validate_arguments(self) -> Self:
+        try:
+            self.arguments = json.loads(self.arguments)
+        except json.JSONDecodeError:
+            raise ValueError("arguments are non-serializable")
         return self
 
 

@@ -11,6 +11,9 @@ from .types import (
     ConversationSession,
     ConversationTool,
     ToolParameters,
+    FunctionCallDoneEvent,
+    FunctionResultItem,
+    SendFunctionItemEvent,
 )
 from .audio_interface import OpenAIVoiceAgentInterface
 from .websocket import OpenAIVoiceAgentWebsocket
@@ -22,6 +25,7 @@ from llama_index.core.voice_agents import (
     BaseVoiceAgentInterface,
     BaseVoiceAgentWebsocket,
 )
+from .utils import get_tool_by_name
 
 DEFAULT_WS_URL = "wss://api.openai.com/v1/realtime"
 DEFALT_MODEL = "gpt-4o-realtime-preview"
@@ -141,6 +145,7 @@ class OpenAIVoiceAgent(BaseVoiceAgent):
 
         """
         message["type_t"] = message.pop("type")
+        func_res_ev: Optional[SendFunctionItemEvent] = None
         if message["type_t"] == "response.audio.delta":
             event: BaseVoiceAgentEvent = ConversationDeltaEvent.model_validate(message)
             audio_content = base64.b64decode(message["delta"])
@@ -175,9 +180,88 @@ class OpenAIVoiceAgent(BaseVoiceAgent):
 
         elif message["type_t"] == "response.audio.done":
             event = ConversationDoneEvent.model_validate(message)
+
+        elif message["type_t"] == "response.function_call_arguments.done":
+            event = FunctionCallDoneEvent.model_validate(message)
+            if not event.name:
+                if self.tools and len(self.tools) == 1:
+                    tool_output = self.tools[0](**event.arguments)
+                    output = tool_output.raw_output
+                    func_res_it = FunctionResultItem(
+                        type_t="function_call_output",
+                        call_id=event.call_id,
+                        output=str(output),
+                    )
+                    func_res_ev = SendFunctionItemEvent(
+                        type_t="conversation.item.create", item=func_res_it
+                    )
+                    await self.ws.send(data=func_res_ev.model_dump(by_alias=True))
+                elif self.tools and len(self.tools) > 1:
+                    if "tool_name" not in event.arguments:
+                        func_res_it = FunctionResultItem(
+                            type_t="function_call_output",
+                            call_id=event.call_id,
+                            output="There are multiple tools and there is not tool name specified. Please pass 'tool_name' as an argument.",
+                        )
+                        func_res_ev = SendFunctionItemEvent(
+                            type_t="conversation.item.create", item=func_res_it
+                        )
+                        await self.ws.send(data=func_res_ev.model_dump(by_alias=True))
+                    else:
+                        tool = get_tool_by_name(
+                            self.tools, name=event.arguments["tool_name"]
+                        )
+                        tool_output = tool(**event.arguments)
+                        output = tool_output.raw_output
+                        func_res_it = FunctionResultItem(
+                            type_t="function_call_output",
+                            call_id=event.call_id,
+                            output=str(output),
+                        )
+                        func_res_ev = SendFunctionItemEvent(
+                            type_t="conversation.item.create", item=func_res_it
+                        )
+                        await self.ws.send(data=func_res_ev.model_dump(by_alias=True))
+                else:
+                    func_res_it = FunctionResultItem(
+                        type_t="function_call_output",
+                        call_id=event.call_id,
+                        output="Seems like there are no tools available at this time.",
+                    )
+                    func_res_ev = SendFunctionItemEvent(
+                        type_t="conversation.item.create", item=func_res_it
+                    )
+                    await self.ws.send(data=func_res_ev.model_dump(by_alias=True))
+            else:
+                if self.tools:
+                    tool = get_tool_by_name(self.tools, name=event.name)
+                    tool_output = tool(**event.arguments)
+                    output = tool_output.raw_output
+                    func_res_it = FunctionResultItem(
+                        type_t="function_call_output",
+                        call_id=event.call_id,
+                        output=str(output),
+                    )
+                    func_res_ev = SendFunctionItemEvent(
+                        type_t="conversation.item.create", item=func_res_it
+                    )
+                    await self.ws.send(data=func_res_ev.model_dump(by_alias=True))
+                else:
+                    func_res_it = FunctionResultItem(
+                        type_t="function_call_output",
+                        call_id=event.call_id,
+                        output="Seems like there are no tools available at this time.",
+                    )
+                    func_res_ev = SendFunctionItemEvent(
+                        type_t="conversation.item.create", item=func_res_it
+                    )
+                    await self.ws.send(data=func_res_ev.model_dump(by_alias=True))
+
         else:
             return
         self._events.append(event)
+        if func_res_ev:
+            self._events.append(func_res_ev)
 
     async def stop(self) -> None:
         """
