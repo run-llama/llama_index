@@ -283,15 +283,16 @@ class DocumentBlock(BaseModel):
 
 
 class CacheControl(BaseModel):
-    type: str
+    type: Literal["ephemeral"] = Field(default="ephemeral")
 
 
 class CachePoint(BaseModel):
+    block_type: Literal["cache"] = Field(default="cache")
     cache_control: CacheControl
 
 
 ContentBlock = Annotated[
-    Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock],
+    Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock, CachePoint],
     Field(discriminator="block_type"),
 ]
 

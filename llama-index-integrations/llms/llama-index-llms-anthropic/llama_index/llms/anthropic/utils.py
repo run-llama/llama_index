@@ -11,6 +11,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     DocumentBlock,
+    CachePoint,
 )
 
 from anthropic.types import (
@@ -217,6 +218,12 @@ def messages_to_anthropic_messages(
                             block=block, kwargs=message.additional_kwargs
                         )
                     )
+                elif isinstance(block, CachePoint):
+                    cp = CacheControlEphemeralParam(
+                        **block.model_dump(exclude="block_type")
+                    )
+                    content[-1].update(cache_control=cp)
+
             tool_calls = message.additional_kwargs.get("tool_calls", [])
             for tool_call in tool_calls:
                 assert "id" in tool_call
