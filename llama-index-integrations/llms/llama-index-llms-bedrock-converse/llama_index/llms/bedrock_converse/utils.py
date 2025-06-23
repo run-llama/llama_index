@@ -15,11 +15,12 @@ from llama_index.core.base.llms.types import (
     ChatResponse,
     MessageRole,
     ImageBlock,
-    TextBlock,
     ContentBlock,
     AudioBlock,
     DocumentBlock,
+    TextBlock,
 )
+from llama_index.llms.bedrock_converse.types import BedrockConverseTextBlock
 
 
 logger = logging.getLogger(__name__)
@@ -185,7 +186,7 @@ def _content_block_to_bedrock_format(
     Convert content block to AWS Bedrock Converse API required format,
     with support for prompt caching at the text block level.
     """
-    if isinstance(block, TextBlock):
+    if isinstance(block, BedrockConverseTextBlock):
         if not block.text:
             return None
         # Support for prompt caching via additional_kwargs
@@ -203,6 +204,12 @@ def _content_block_to_bedrock_format(
             )
             text_block_dict["cache_control"] = cache_control
         return text_block_dict
+    elif isinstance(block, TextBlock):
+        if not block.text:
+            return None
+        return {
+            "text": block.text,
+        }
     elif isinstance(block, DocumentBlock):
         if not block.data:
             file_buffer = block.resolve_document()

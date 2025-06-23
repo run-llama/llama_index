@@ -17,6 +17,7 @@ from llama_index.llms.bedrock_converse.utils import (
     __get_img_format_from_image_mimetype,
     _content_block_to_bedrock_format,
 )
+from llama_index.llms.bedrock_converse.types import BedrockConverseTextBlock
 
 
 def test_get_model_name_translates_us():
@@ -176,7 +177,7 @@ def test_tools_to_converse_tools_with_custom_tool_choice():
 def test_content_block_to_bedrock_format_text_with_cache_control():
     """Test TextBlock conversion with cache_control for prompt caching."""
     # Create a text block with cache_control in additional_kwargs
-    text_block = TextBlock(
+    text_block = BedrockConverseTextBlock(
         text="Hello, world!", additional_kwargs={"cache_control": {"type": "ephemeral"}}
     )
 
