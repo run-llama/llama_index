@@ -17,7 +17,6 @@ from typing import (
     Type,
     TypeVar,
     cast,
-    ClassVar,
 )
 
 from llama_index.core.schema import (
@@ -53,8 +52,8 @@ class DistanceStrategy(Enum):
     COSINE = 1
     DOT_PRODUCT = 2
     EUCLIDEAN_DISTANCE = 3
-    MANHATTAN_DISTANCE = 4 
-    HAMMING_DISTANCE = 5 
+    MANHATTAN_DISTANCE = 4
+    HAMMING_DISTANCE = 5
     EUCLIDEAN_SQUARED = 6
 
 
@@ -193,7 +192,8 @@ def drop_table(connection: Connection, table_name: str) -> None:
 
 
 class DB2LlamaVS(BasePydanticVectorStore):
-    """`DB2LlamaVS` vector store.
+    """
+    `DB2LlamaVS` vector store.
 
     To use, you should have both:
     - the ``ibm_db`` python package installed
@@ -277,7 +277,7 @@ class DB2LlamaVS(BasePydanticVectorStore):
             where_str += " AND " + filter_str
         return where_str
 
-    def _build_insert(self, values: List[BaseNode]) -> (List[tuple]):
+    def _build_insert(self, values: List[BaseNode]) -> List[tuple]:
         _data = []
         for item in values:
             item_values = tuple(
@@ -329,7 +329,7 @@ class DB2LlamaVS(BasePydanticVectorStore):
         return [node.node_id for node in nodes]
 
     @_handle_exceptions
-    def delete(self, ref_doc_id: str, **kwargs: Any) -> None:   
+    def delete(self, ref_doc_id: str, **kwargs: Any) -> None:
         ddl = f"DELETE FROM {self.table_name} WHERE doc_id = '{ref_doc_id}'"
         cursor = self._client.cursor()
         try:
@@ -337,7 +337,6 @@ class DB2LlamaVS(BasePydanticVectorStore):
             cursor.execute("COMMIT")
         finally:
             cursor.close()
-
 
     @_handle_exceptions
     def drop(self) -> None:
@@ -375,12 +374,8 @@ class DB2LlamaVS(BasePydanticVectorStore):
         for result in results:
             doc_id = result[1]
             text = result[2] if result[2] is not None else ""
-            node_info = (
-                json.loads(result[3] if result[3] is not None else "{}")
-            )
-            metadata = (
-                json.loads(result[4] if result[4] is not None else "{}")
-            )
+            node_info = json.loads(result[3] if result[3] is not None else "{}")
+            metadata = json.loads(result[4] if result[4] is not None else "{}")
 
             if query.node_ids:
                 if result[0] not in query.node_ids:
@@ -409,9 +404,7 @@ class DB2LlamaVS(BasePydanticVectorStore):
             nodes.append(node)
             similarities.append(1.0 - math.exp(-result[5]))
             ids.append(result[0])
-        return VectorStoreQueryResult(
-            nodes=nodes, similarities=similarities, ids=ids
-        )
+        return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
     @classmethod
     @_handle_exceptions
@@ -435,7 +428,7 @@ class DB2LlamaVS(BasePydanticVectorStore):
             table_name=table_name,
             params=params,
             distance_strategy=distance_strategy,
-            embed_dim=embed_dim
+            embed_dim=embed_dim,
         )
         vss.add(nodes=docs)
         return vss

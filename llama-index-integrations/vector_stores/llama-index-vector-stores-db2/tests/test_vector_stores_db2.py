@@ -1,5 +1,5 @@
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
-from llama_index.vector_stores.oracledb import DB2LlamaVS
+from llama_index.vector_stores.db2 import DB2LlamaVS
 
 
 def test_class():
