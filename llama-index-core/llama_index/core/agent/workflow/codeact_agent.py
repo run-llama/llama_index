@@ -1,7 +1,7 @@
 import inspect
 import re
 import uuid
-from typing import Awaitable, Callable, List, Sequence, Union, Optional
+from typing import Awaitable, Callable, List, Sequence, Union, Optional, cast
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 from llama_index.core.agent.workflow.workflow_events import (
@@ -101,7 +101,10 @@ class CodeActAgent(BaseWorkflowAgent):
             code_act_system_prompt = PromptTemplate(code_act_system_prompt)
 
         if system_prompt and code_act_system_prompt:
-            code_act_system_prompt += "\n\n" + system_prompt
+            if isinstance(code_act_system_prompt, str):
+                code_act_system_prompt += "\n\n" + system_prompt
+            else:
+                cast(str, code_act_system_prompt.template) + "\n\n" + system_prompt
 
         super().__init__(
             name=name,
