@@ -935,6 +935,7 @@ nav:
           - ./api_reference/embeddings/netmind.md
           - ./api_reference/embeddings/nomic.md
           - ./api_reference/embeddings/nvidia.md
+          - ./api_reference/embeddings/nvidia_triton.md
           - ./api_reference/embeddings/oci_data_science.md
           - ./api_reference/embeddings/oci_genai.md
           - ./api_reference/embeddings/octoai.md
@@ -2483,6 +2484,7 @@ plugins:
             - ../llama-index-integrations/protocols/llama-index-protocols-ag-ui
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-openGauss
             - ../llama-index-integrations/tools/llama-index-tools-hive
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-nvidia-triton
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

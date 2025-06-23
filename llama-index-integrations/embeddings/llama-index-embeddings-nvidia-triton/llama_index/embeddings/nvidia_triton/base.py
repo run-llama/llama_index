@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional 
+from typing import Any, Dict, List, Optional
 
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.constants import DEFAULT_EMBED_BATCH_SIZE
@@ -16,7 +16,38 @@ from tritonclient.http import (
 DEFAULT_INPUT_TENSOR_NAME = "INPUT_TEXT"
 DEFAULT_OUTPUT_TENSOR_NAME = "OUTPUT_EMBEDDINGS"
 
+
 class NvidiaTritonEmbedding(BaseEmbedding):
+    """
+    Nvidia Triton Embedding.
+
+    This connector allows for llama_index to interact with embedding models hosted on a Triton
+    inference server over HTTP.
+
+    [Triton Inference Server Github](https://github.com/triton-inference-server/server)
+
+    Examples:
+        `pip install llama-index-embeddings-nvidia-triton`
+
+        ```python
+        from llama_index.embeddings.nvidia_triton import NvidiaTritonEmbedding
+
+        # Ensure a Triton server instance is running and provide the correct HTTP URL for your Triton server instance
+        triton_url = "localhost:8000"
+
+        # Instantiate the NvidiaTritonEmbedding class
+        emb_client = NvidiaTritonEmbedding(
+            server_url=triton_url,
+            model_name="text_embeddings",
+        )
+
+        # Get a text embedding
+        embedding = emb_client.get_text_embedding("hello world")
+        print(f"Embedding for 'hello world': {embedding}")
+        print(f"Embedding length: {len(embedding)}")
+        ```
+
+    """
 
     _client: InferenceServerClient = PrivateAttr()
     _input_tensor_name: str = PrivateAttr()
@@ -36,7 +67,7 @@ class NvidiaTritonEmbedding(BaseEmbedding):
         super().__init__(
             model_name=model_name,
             embed_batch_size=embed_batch_size,
-            callback_manager=callback_manager, # type: ignore
+            callback_manager=callback_manager,  # type: ignore
             **kwargs,
         )
 
@@ -79,7 +110,6 @@ class NvidiaTritonEmbedding(BaseEmbedding):
 
     def get_general_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get Triton embedding."""
-
         input_data = InferInput(self._input_tensor_name, [len(texts)], "BYTES")
         input_data.set_data_from_numpy(np.array(texts, dtype=np.object_))
         output_data = InferRequestedOutput(self._output_tensor_name)
