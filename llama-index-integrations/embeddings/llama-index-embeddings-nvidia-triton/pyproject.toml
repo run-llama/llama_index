@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-nvidia-triton"
-version = "0.6.0"
+version = "0.1.0"
 description = "llama-index embeddings nvidia triton integration"
 authors = [{name = "Victor Perez Cano", email = "perezcanovictor@gmail.com"}]
 requires-python = ">=3.9,<4.0"
