@@ -11,6 +11,7 @@ from llama_index.core.voice_agents import BaseVoiceAgentWebsocket
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
 )
+logger = logging.getLogger(__name__)
 
 
 class OpenAIVoiceAgentWebsocket(BaseVoiceAgentWebsocket):
@@ -51,38 +52,59 @@ class OpenAIVoiceAgentWebsocket(BaseVoiceAgentWebsocket):
         try:
             async with websockets.connect(self.uri, additional_headers=headers) as ws:
                 self.ws = ws  # Safe: now created inside this thread + loop
-                while not self._stop_event.is_set():
-                    try:
-                        # Receive
-                        recv_task = asyncio.create_task(ws.recv())
-                        send_task = asyncio.create_task(self.send_queue.get())
-                        done, pending = await asyncio.wait(
-                            [recv_task, send_task],
-                            return_when=asyncio.FIRST_COMPLETED,
-                            timeout=0.1,
-                        )
 
-                        if recv_task in done:
-                            message = recv_task.result()
-                            if message and self.on_msg:
-                                await self.on_msg(json.loads(message))
+                # Create separate tasks for sending and receiving
+                recv_task = asyncio.create_task(self._recv_loop(ws))
+                send_task = asyncio.create_task(self._send_loop(ws))
 
-                        if send_task in done:
-                            message = send_task.result()
-                            await ws.send(json.dumps(message))
-
-                        for task in pending:
-                            task.cancel()
-
-                    except ConnectionClosedError:
-                        logging.error("WebSocket connection closed.")
-                        break
-                    except Exception as e:
-                        logging.error(f"Error in socket loop: {e}")
-                        break
+                try:
+                    # Run both tasks concurrently until one completes or fails
+                    await asyncio.gather(recv_task, send_task)
+                except Exception as e:
+                    logging.error(f"Error in socket tasks: {e}")
+                finally:
+                    # Clean up any remaining tasks
+                    recv_task.cancel()
+                    send_task.cancel()
+                    await asyncio.gather(recv_task, send_task, return_exceptions=True)
 
         except Exception as e:
             logging.error(f"Failed to connect to WebSocket: {e}")
+
+    async def _recv_loop(self, ws) -> None:
+        """Handle incoming messages."""
+        try:
+            while not self._stop_event.is_set():
+                try:
+                    message = await ws.recv()
+                    logging.info(f"Received message: {message}")
+                    if message and self.on_msg:
+                        await self.on_msg(json.loads(message))
+                except ConnectionClosedError:
+                    logging.error("WebSocket connection closed.")
+                    break
+        except Exception as e:
+            logging.error(f"Error in receive loop: {e}")
+
+    async def _send_loop(self, ws) -> None:
+        """Handle outgoing messages."""
+        try:
+            while not self._stop_event.is_set():
+                try:
+                    # Wait for a message to send with a timeout to check stop_event
+                    try:
+                        message = await asyncio.wait_for(
+                            self.send_queue.get(), timeout=0.1
+                        )
+                        await ws.send(json.dumps(message))
+                    except asyncio.TimeoutError:
+                        # Timeout is expected - just continue to check stop_event
+                        continue
+                except ConnectionClosedError:
+                    logging.error("WebSocket connection closed.")
+                    break
+        except Exception as e:
+            logging.error(f"Error in send loop: {e}")
 
     async def send(self, data: Any) -> None:
         """Enqueue a message for sending."""
