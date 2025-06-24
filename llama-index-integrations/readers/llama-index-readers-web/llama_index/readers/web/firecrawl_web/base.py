@@ -96,7 +96,7 @@ class FireCrawlWebReader(BasePydanticReader):
             # [SCRAPE] params: https://docs.firecrawl.dev/api-reference/endpoint/scrape
             if url is None:
                 raise ValueError("URL must be provided for scrape mode.")
-            firecrawl_docs = self.firecrawl.scrape_url(url, self.params)
+            firecrawl_docs = self.firecrawl.scrape_url(url, params=self.params)
             documents.append(
                 Document(
                     text=firecrawl_docs.get("markdown", ""),
@@ -107,8 +107,13 @@ class FireCrawlWebReader(BasePydanticReader):
             # [CRAWL] params: https://docs.firecrawl.dev/api-reference/endpoint/crawl-post
             if url is None:
                 raise ValueError("URL must be provided for crawl mode.")
-            firecrawl_docs = self.firecrawl.crawl_url(url, **self.params)
-            firecrawl_docs = firecrawl_docs.data
+            firecrawl_docs = self.firecrawl.crawl_url(url, params=self.params)
+            # Handle both dictionary and object responses
+            if isinstance(firecrawl_docs, dict):
+                firecrawl_docs = firecrawl_docs.get("data", [])
+            else:
+                # If it's an object with a data attribute
+                firecrawl_docs = getattr(firecrawl_docs, "data", [])
             for doc in firecrawl_docs:
                 documents.append(
                     Document(
