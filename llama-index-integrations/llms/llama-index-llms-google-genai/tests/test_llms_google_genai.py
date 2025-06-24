@@ -736,7 +736,6 @@ def test_prepare_chat_params_more_than_2_tool_calls():
     ]
 
 
-# New test for system message forwarding
 def test_prepare_chat_params_with_system_message():
     # Setup a conversation starting with a SYSTEM message
     model_name = "models/gemini-test"
@@ -759,7 +758,7 @@ def test_prepare_chat_params_with_system_message():
     assert isinstance(cfg, GenerateContentConfig)
     assert cfg.system_instruction == system_prompt
 
-    # Verify history only contains the system instruction block
+    # Verify history only contains the user messages and the assistant message
     assert chat_kwargs["history"] == [
         types.Content(
             parts=[types.Part(text=user_message_1)],
