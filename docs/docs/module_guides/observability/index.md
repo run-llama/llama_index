@@ -35,7 +35,7 @@ Note that all `kwargs` to `set_global_handler` are passed to the underlying call
 
 And that's it! Executions will get seamlessly piped to downstream service and you'll be able to access features such as viewing execution traces of your application.
 
-## Native `One-Click` Integrations
+## Integrations
 
 ### OpenTelemetry
 
@@ -62,22 +62,25 @@ from llama_index.core import Settings
 instrumentor = LlamaIndexOpenTelemetry()
 
 if __name__ == "__main__":
-    embed_model = OpenAIEmbedding()
-    llm = OpenAI()
-    Settings.embed_model = embed_model
+    embed_model = OpenAIEmbedding(model_name="text-embedding-3-small")
+    llm = OpenAI(model="gpt-4.1-mini")
+
     # start listening!
     instrumentor.start_registering()
+
     # register events
     documents = SimpleDirectoryReader(
         input_dir="./data/paul_graham/"
     ).load_data()
-    index = VectorStoreIndex.from_documents(documents)
+
+    index = VectorStoreIndex.from_documents(documents, embed_model=embed_model)
     query_engine = index.as_query_engine(llm=llm)
-    query_result = query_engine.query("Who is Paul?")
-    query_result_one = query_engine.query("What did Paul do?")
+
+    query_result_one = query_engine.query("Who is Paul?")
+    query_result_two = query_engine.query("What did Paul do?")
 ```
 
-Or you can use a more complex and customized set-up, such as in the following example with a structured LLM:
+Or you can use a more complex and customized set-up, such as in the following example:
 
 ```python
 import json
@@ -88,8 +91,6 @@ from llama_index.observability.otel import LlamaIndexOpenTelemetry
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
     OTLPSpanExporter,
 )
-from llama_index.llms.openai import OpenAI
-from llama_index.core.llms import ChatMessage
 
 # define a custom span exporter
 span_exporter = OTLPSpanExporter("http://0.0.0.0:4318/v1/traces")
@@ -102,35 +103,12 @@ instrumentor = LlamaIndexOpenTelemetry(
 )
 
 
-class RedFruits(BaseModel):
-    red_fruit_names: List[str] = Field(
-        description="Names of the RED fruits mentioned in a sentence. Names must be reported in capital letters. Leave empty if no fruit in the sentence is red.",
-        examples=["STRAWBERRY", "WATERMELON"],
-        default_factory=list,
-    )
-
-
 if __name__ == "__main__":
-    llm = OpenAI()
-    llm_fruits = llm.as_structured_llm(RedFruits)
     instrumentor.start_registering()
-    print(
-        "Welcome to the chat! If you want to terminate it, please type '/quit'."
-    )
-    while True:
-        user_input = input("You: ")
-        if user_input != "/quit":
-            response = llm_fruits.chat(
-                [ChatMessage(role="user", content=user_input)]
-            )
-            print(json.loads(response.message.content)["red_fruit_names"])
-        else:
-            break
+    # ... your code here
 ```
 
 We also have a [demo repository](https://github.com/run-llama/agents-observability-demo) where we show how to trace agentic workflows and pipe the registered traces into a Postgres database.
-
-## Partner `One-Click` Integrations
 
 ### LlamaTrace (Hosted Arize Phoenix)
 
