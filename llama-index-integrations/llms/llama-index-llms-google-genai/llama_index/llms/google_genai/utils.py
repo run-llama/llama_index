@@ -291,6 +291,16 @@ def prepare_chat_params(
         - chat_kwargs: processed keyword arguments for chat creation
 
     """
+
+    # Get the system message from the messages
+    system_message = None
+    # If first message is a system message, take it as a system instruction message for genai
+    for i, message in enumerate(messages):
+        if i == 0 and message.role == MessageRole.SYSTEM:
+            system_message = message.content
+            break
+
+    # Merge messages with the same role
     merged_messages = merge_neighboring_same_role_messages(messages)
     initial_history = list(map(chat_message_to_gemini, merged_messages))
 
@@ -338,6 +348,10 @@ def prepare_chat_params(
     )
     if not isinstance(config, dict):
         config = config.model_dump()
+
+    # Add system message as system_instruction if present
+    if system_message:
+        config["system_instruction"] = system_message
 
     chat_kwargs: ChatParams = {"model": model, "history": history}
 
