@@ -91,6 +91,8 @@ workflow = FunctionAgent(
 
 GPT-4o-mini is actually smart enough to not need tools to do such simple math, which is why we specified that it should use tools in the prompt.
 
+Beyond `FunctionAgent`, there are other agents available in LlamaIndex, such as [`ReActAgent`](../../examples/agent/react_agent.ipynb) and [`CodeActAgent`](../../examples/agent/code_act_agent.ipynb), which use different prompting strategies to execute tools.
+
 ## Ask a question
 
 Now we can ask the agent to do some math:
