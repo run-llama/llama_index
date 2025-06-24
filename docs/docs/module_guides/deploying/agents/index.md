@@ -116,7 +116,7 @@ multi_agent = AgentWorkflow(agents=[FunctionAgent(...), FunctionAgent(...)])
 resp = await agent.run("query")
 ```
 
-Read on to learn more about [multi-agent systems](../../../understanding/agent/multi_agent.md).
+This is only one way to build multi-agent systems. Read on to learn more about [multi-agent systems](../../../understanding/agent/multi_agent.md).
 
 ## Manual Agents
 
