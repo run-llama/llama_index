@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-db2"
-version = "0.0.1"
+version = "0.1.0"
 description = "llama-index vector_stores db2 database integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<3.13"

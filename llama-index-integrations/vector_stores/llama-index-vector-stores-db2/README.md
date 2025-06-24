@@ -22,7 +22,6 @@ Create connection to Db2 database instance
 The following sample code will show how to connect to Db2 Database. Besides the dependencies above, you will need a Db2 database instance (with version v12.1.2+, which has the vector datatype support) running.
 """
 
-import ibm_db
 import ibm_db_dbi
 
 database = ""

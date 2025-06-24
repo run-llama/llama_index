@@ -1,8 +1,8 @@
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 from llama_index.vector_stores.db2 import (
     DB2LlamaVS,
-    _create_table,
-    _table_exists,
+    create_table,
+    table_exists,
     drop_table,
     DistanceStrategy,
 )
@@ -37,53 +37,53 @@ def test_table_exists() -> None:
         return
 
     # 1. Create a Table
-    _create_table(connection, "TB1", 8148)
+    create_table(connection, "TB1", 8148)
 
     # 2. Existing Table
     # expectation:true
-    assert _table_exists(connection, "TB1")
+    assert table_exists(connection, "TB1")
 
     # 3. Non-Existing Table
     # expectation:false
-    assert not _table_exists(connection, "TableNonExist")
+    assert not table_exists(connection, "TableNonExist")
 
     # 4. Invalid Table Name
     # Expectation: SQL0104N
     try:
-        _table_exists(connection, "123")
+        table_exists(connection, "123")
     except Exception:
         pass
 
     # 5. Empty String
     # Expectation: SQL0104N
     try:
-        _table_exists(connection, "")
+        table_exists(connection, "")
     except Exception:
         pass
 
     # 6. Special Character
     # Expectation: SQL0007N
     try:
-        _table_exists(connection, "!!4")
+        table_exists(connection, "!!4")
     except Exception:
         pass
 
     # 7. Table name length > 128
     # Expectation: SQL0107N The name is too long.  The maximum length is "128".
     try:
-        _table_exists(connection, "x" * 129)
+        table_exists(connection, "x" * 129)
     except Exception:
         pass
 
     # 8. Toggle Upper/Lower Case (like TaBlE)
     # Expectation:True
-    assert _table_exists(connection, "Tb1")
+    assert table_exists(connection, "Tb1")
     drop_table(connection, "TB1")
 
     # 9. Table_Name→ "表格"
     # Expectation:True
-    _create_table(connection, '"表格"', 545)
-    assert _table_exists(connection, '"表格"')
+    create_table(connection, '"表格"', 545)
+    assert table_exists(connection, '"表格"')
     drop_table(connection, '"表格"')
 
     connection.commit()
@@ -103,19 +103,19 @@ def test_create_table() -> None:
     # 1. New table - HELLO
     #    Dimension - 100
     # Expectation: table is created
-    _create_table(connection, "HELLO", 100)
+    create_table(connection, "HELLO", 100)
 
     # 2. Existing table name - HELLO
     #    Dimension - 110
     # Expectation: Log message table already exists
-    _create_table(connection, "HELLO", 110)
+    create_table(connection, "HELLO", 110)
     drop_table(connection, "HELLO")
 
     # 3. New Table - 123
     #    Dimension - 100
     # Expectation: SQL0104N  invalid table name
     try:
-        _create_table(connection, "123", 100)
+        create_table(connection, "123", 100)
         drop_table(connection, "123")
     except Exception:
         pass
@@ -123,7 +123,7 @@ def test_create_table() -> None:
     # 4. New Table - Hello123
     #    Dimension - 8148
     # Expectation: table is created
-    _create_table(connection, "Hello123", 8148)
+    create_table(connection, "Hello123", 8148)
     drop_table(connection, "Hello123")
 
     # 5. New Table - T1
@@ -131,7 +131,7 @@ def test_create_table() -> None:
     # Expectation: SQL0604N  VECTOR column exceed the supported
     # dimension length.
     try:
-        _create_table(connection, "T1", 65536)
+        create_table(connection, "T1", 65536)
         drop_table(connection, "T1")
     except Exception:
         pass
@@ -140,7 +140,7 @@ def test_create_table() -> None:
     #    Dimension - 0
     # Expectation: SQL0604N  VECTOR column unsupported dimension length 0.
     try:
-        _create_table(connection, "T1", 0)
+        create_table(connection, "T1", 0)
         drop_table(connection, "T1")
     except Exception:
         pass
@@ -149,7 +149,7 @@ def test_create_table() -> None:
     #    Dimension - -1
     # Expectation: SQL0104N  An unexpected token "-" was found
     try:
-        _create_table(connection, "T1", -1)
+        create_table(connection, "T1", -1)
         drop_table(connection, "T1")
     except Exception:
         pass
@@ -157,14 +157,14 @@ def test_create_table() -> None:
     # 8. New Table - T2
     #     Dimension - '1000'
     # Expectation: table is created
-    _create_table(connection, "T2", int("1000"))
+    create_table(connection, "T2", int("1000"))
     drop_table(connection, "T2")
 
     # 9. New Table - T3
     #     Dimension - 100 passed as a variable
     # Expectation: table is created
     val = 100
-    _create_table(connection, "T3", val)
+    create_table(connection, "T3", val)
     drop_table(connection, "T3")
 
     # 10.
@@ -172,7 +172,7 @@ def test_create_table() -> None:
     val2 = """H
     ello"""
     try:
-        _create_table(connection, val2, 545)
+        create_table(connection, val2, 545)
         drop_table(connection, val2)
     except Exception:
         pass
@@ -180,30 +180,30 @@ def test_create_table() -> None:
     # 11. New Table - 表格
     #     Dimension - 545
     # Expectation: table is created
-    _create_table(connection, '"表格"', 545)
+    create_table(connection, '"表格"', 545)
     drop_table(connection, '"表格"')
 
     # 12. <schema_name.table_name>
     # Expectation: table with schema is created
-    _create_table(connection, "U1.TB4", 128)
+    create_table(connection, "U1.TB4", 128)
     drop_table(connection, "U1.TB4")
 
     # 13.
     # Expectation: table is created
-    _create_table(connection, '"T5"', 128)
+    create_table(connection, '"T5"', 128)
     drop_table(connection, '"T5"')
 
     # 14. Toggle Case
     # Expectation: table is created
-    _create_table(connection, "TaBlE", 128)
+    create_table(connection, "TaBlE", 128)
     drop_table(connection, "TaBlE")
 
     # 15. table_name as empty_string
     # Expectation: SQL0104N  An unexpected token
     try:
-        _create_table(connection, "", 128)
+        create_table(connection, "", 128)
         drop_table(connection, "")
-        _create_table(connection, '""', 128)
+        create_table(connection, '""', 128)
         drop_table(connection, '""')
     except Exception:
         pass
@@ -211,12 +211,12 @@ def test_create_table() -> None:
     # 16. Arithmetic Operations in dimension parameter
     # Expectation: table is created
     n = 1
-    _create_table(connection, "T10", n + 500)
+    create_table(connection, "T10", n + 500)
     drop_table(connection, "T10")
 
     # 17. String Operations in table_name parameter
     # Expectation: table is created
-    _create_table(connection, "YaSh".replace("aS", "ok"), 500)
+    create_table(connection, "YaSh".replace("aS", "ok"), 500)
     drop_table(connection, "YaSh".replace("aS", "ok"))
 
     connection.commit()

@@ -118,7 +118,7 @@ def _stringify_list(lst: List) -> str:
     return "(" + ",".join(f"'{item}'" for item in lst) + ")"
 
 
-def _table_exists(connection: Connection, table_name: str) -> bool:
+def table_exists(connection: Connection, table_name: str) -> bool:
     try:
         cursor = connection.cursor()
         cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
@@ -151,7 +151,7 @@ def _get_distance_function(distance_strategy: DistanceStrategy) -> str:
 
 
 @_handle_exceptions
-def _create_table(client: Connection, table_name: str, embedding_dim: int) -> None:
+def create_table(client: Connection, table_name: str, embedding_dim: int) -> None:
     cols_dict = {
         "id": "VARCHAR(64) PRIMARY KEY NOT NULL",
         "doc_id": "VARCHAR(64)",
@@ -161,7 +161,7 @@ def _create_table(client: Connection, table_name: str, embedding_dim: int) -> No
         "text": "CLOB",
     }
 
-    if not _table_exists(client, table_name):
+    if not table_exists(client, table_name):
         cursor = client.cursor()
         ddl_body = ", ".join(
             f"{col_name} {col_type}" for col_name, col_type in cols_dict.items()
@@ -179,7 +179,7 @@ def _create_table(client: Connection, table_name: str, embedding_dim: int) -> No
 
 @_handle_exceptions
 def drop_table(connection: Connection, table_name: str) -> None:
-    if _table_exists(connection, table_name):
+    if table_exists(connection, table_name):
         cursor = connection.cursor()
         try:
             ddl = f"DROP TABLE {table_name}"
@@ -237,7 +237,7 @@ class DB2LlamaVS(BasePydanticVectorStore):
             )
             # Assign _client to PrivateAttr after the Pydantic initialization
             object.__setattr__(self, "_client", _client)
-            _create_table(_client, table_name, embed_dim)
+            create_table(_client, table_name, embed_dim)
 
         except ibm_db_dbi.DatabaseError as db_err:
             logger.exception(f"Database error occurred while create table: {db_err}")
@@ -358,7 +358,6 @@ class DB2LlamaVS(BasePydanticVectorStore):
         query_sql = self._build_query(
             distance_function, query.similarity_top_k, where_str
         )
-        print(query_sql)
 
         embedding = f"{query.query_embedding}"
         cursor = self._client.cursor()
@@ -410,7 +409,7 @@ class DB2LlamaVS(BasePydanticVectorStore):
     @_handle_exceptions
     def from_documents(
         cls: Type[DB2LlamaVS],
-        docs: List[TextNode],
+        docs: List[BaseNode],
         table_name: str = "llama_index",
         **kwargs: Any,
     ) -> DB2LlamaVS:
