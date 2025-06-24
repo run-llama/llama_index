@@ -3,7 +3,6 @@ from llama_index.vector_stores.db2.base import (
     _create_table,
     _table_exists,
     drop_table,
-    DB2LlamaVS,
     DistanceStrategy,
 )
 

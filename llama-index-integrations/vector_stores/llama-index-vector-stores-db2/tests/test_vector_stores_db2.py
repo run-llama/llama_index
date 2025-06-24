@@ -4,7 +4,6 @@ from llama_index.vector_stores.db2 import (
     _create_table,
     _table_exists,
     drop_table,
-    DB2LlamaVS,
     DistanceStrategy,
 )
 
@@ -21,9 +20,9 @@ def test_class():
     assert BasePydanticVectorStore.__name__ in names_of_base_classes
 
 
-database = "test"
-username = "ywh"
-password = "v=fv4@d59Hc%9v1"
+database = ""
+username = ""
+password = ""
 
 
 def test_table_exists_test() -> None:
