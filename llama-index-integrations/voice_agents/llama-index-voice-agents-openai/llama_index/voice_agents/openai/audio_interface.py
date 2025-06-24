@@ -44,10 +44,12 @@ class OpenAIVoiceAgentInterface(BaseVoiceAgentInterface):
         if time.time() > self.mic_on_at:
             if not self.mic_active:
                 self.mic_active = True
+
             self.mic_queue.put(in_data)
         else:
             if self.mic_active:
                 self.mic_active = False
+
         return (None, pyaudio.paContinue)
 
     def _speaker_callback(
@@ -94,14 +96,17 @@ class OpenAIVoiceAgentInterface(BaseVoiceAgentInterface):
         """Stop and close audio streams."""
         self.mic_stream.stop_stream()
         self.mic_stream.close()
+
         self.spkr_stream.stop_stream()
         self.spkr_stream.close()
+
         self.p.terminate()
 
     def interrupt(self) -> None:
         """Interrupts active input/output audio streaming."""
         if self.spkr_stream.is_active():
             self.spkr_stream.stop_stream()
+
         if self.mic_active:
             self.mic_stream.stop_stream()
 
