@@ -218,7 +218,9 @@ def _content_block_to_bedrock_format(
                 "The only allowed caching strategy for Bedrock Converse is 'default', falling back to that..."
             )
             block.cache_control.type = "default"
-        cache_block = block.model_dump(exclude="block_type")
+        cache_block = block.model_dump(
+            exclude={"block_type": ..., "cache_control": {"ttl"}}
+        )
         cache_block["cachePoint"] = cache_block.pop("cache_control")
         return cache_block
     elif isinstance(block, AudioBlock):

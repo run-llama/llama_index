@@ -382,3 +382,6 @@ def test_cache_point_to_cache_control() -> None:
         ant_messages[0]["content"][-1]["cache_control"]["cache_control"]["type"]
         == "ephemeral"
     )
+    assert (
+        ant_messages[0]["content"][-1]["cache_control"]["cache_control"]["ttl"] == "5m"
+    )

@@ -284,6 +284,7 @@ class DocumentBlock(BaseModel):
 
 class CacheControl(BaseModel):
     type: str
+    ttl: str = Field(default="5m")
 
 
 class CachePoint(BaseModel):

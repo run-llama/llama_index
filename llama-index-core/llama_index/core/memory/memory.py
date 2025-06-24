@@ -323,7 +323,11 @@ class Memory(BaseMemory):
 
         # Normalize the input to a list of ContentBlocks
         if isinstance(message_or_blocks, ChatMessage):
-            blocks = message_or_blocks.blocks
+            blocks: List[Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock]] = []
+
+            for block in message_or_blocks.blocks:
+                if not isinstance(block, CachePoint):
+                    blocks.append(block)
 
             # Estimate the token count for the additional kwargs
             if message_or_blocks.additional_kwargs:
@@ -340,9 +344,7 @@ class Memory(BaseMemory):
             if all(isinstance(item, ChatMessage) for item in message_or_blocks):
                 messages = cast(List[ChatMessage], message_or_blocks)
 
-                blocks: List[
-                    Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock]
-                ] = []
+                blocks = []
                 for msg in messages:
                     for block in msg.blocks:
                         if not isinstance(block, CachePoint):
@@ -360,9 +362,7 @@ class Memory(BaseMemory):
                 )
                 for item in message_or_blocks
             ):
-                blocks: List[
-                    Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock]
-                ] = []
+                blocks = []
                 for item in message_or_blocks:
                     if not isinstance(item, CachePoint):
                         blocks.append(item)
