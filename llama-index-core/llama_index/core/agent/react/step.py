@@ -697,7 +697,7 @@ class ReActAgentWorker(BaseAgentWorker):
             if start_idx != -1 and latest_chunk.message.content:
                 latest_chunk.message.content = latest_chunk.message.content[
                     start_idx + len("Answer:") :
-                ].strip()
+                ].lstrip()
 
                 # set delta to the content, minus the "Answer: "
                 latest_chunk.delta = latest_chunk.message.content
