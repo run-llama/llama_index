@@ -283,11 +283,11 @@ class DocumentBlock(BaseModel):
 
 
 class CacheControl(BaseModel):
-    type: Literal["ephemeral"] = Field(default="ephemeral")
+    type: str
 
 
 class CachePoint(BaseModel):
-    block_type: Literal["cache"] = Field(default="cache")
+    block_type: Literal["cache"] = "cache"
     cache_control: CacheControl
 
 

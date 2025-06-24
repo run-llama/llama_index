@@ -326,4 +326,4 @@ def test_cache_control() -> None:
     assert isinstance(cp.model_dump()["cache_control"], dict)
     assert cp.model_dump()["cache_control"]["type"] == "ephemeral"
     with pytest.raises(ValidationError):
-        CachePoint.model_validate({"cache_control": {"type": "persistent"}})
+        CachePoint.model_validate({"cache_control": "default"})
