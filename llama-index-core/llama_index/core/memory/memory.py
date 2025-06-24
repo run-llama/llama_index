@@ -337,9 +337,6 @@ class Memory(BaseMemory):
         elif isinstance(message_or_blocks, List):
             # Type narrow the list
             messages: List[ChatMessage] = []
-            content_blocks: List[
-                Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock]
-            ] = []
 
             if all(isinstance(item, ChatMessage) for item in message_or_blocks):
                 messages = cast(List[ChatMessage], message_or_blocks)
@@ -365,7 +362,12 @@ class Memory(BaseMemory):
                 blocks = []
                 for item in message_or_blocks:
                     if not isinstance(item, CachePoint):
-                        blocks.append(item)
+                        blocks.append(
+                            cast(
+                                Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock],
+                                item,
+                            )
+                        )
             else:
                 raise ValueError(f"Invalid message type: {type(message_or_blocks)}")
         elif isinstance(message_or_blocks, str):
