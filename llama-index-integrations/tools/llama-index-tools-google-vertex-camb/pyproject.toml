@@ -1,0 +1,136 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "black>=23.7.0,<=24.3.0",
+    "codespell[toml]>=v2.2.6",
+    "mypy==1.11.0",
+    "pre-commit==3.2.0",
+    "pytest>=8.2.1",
+    "pytest-asyncio>=0.23.7",
+    "pytest-mock>=3.14.0",
+    "ruff==0.11.11",
+    "types-requests>=2.28.11.8",
+]
+
+[project]
+name = "llama-index-tools-google-vertex-camb"
+version = "0.2.0"
+description = "LlamaIndex integration for Google Vertex AI CAMB.AI MARS7 text-to-speech model"
+authors = [
+    {name = "LlamaIndex", email = "oss@llamaindex.ai"},
+]
+keywords = ["LLM", "NLP", "RAG", "data", "devtools", "index", "retrieval", "text-to-speech", "tts", "camb", "mars7", "vertex-ai"]
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9,<4.0"
+dependencies = [
+    "llama-index-core>=0.12.0,<0.13",
+    "google-cloud-aiplatform>=1.98.0",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+Homepage = "https://llamaindex.ai"
+Repository = "https://github.com/run-llama/llama_index"
+Documentation = "https://docs.llamaindex.ai/en/stable/"
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+ignore-words-list = "astroid,gallary,momento,narl,ot,rouge"
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.hatch.build.targets.wheel]
+packages = ["llama_index"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.tools.google_vertex_camb"
+
+[tool.llamahub.class_authors]
+GoogleVertexCambToolSpec = "run-llama"
+
+[tool.mypy]
+disallow_untyped_defs = true
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
+ignore_missing_imports = true
+python_version = "3.9"
+
+[tool.ruff]
+target-version = "py39"
+
+[tool.ruff.lint]
+ignore = [
+    "COM812",  # Too aggressive
+    "D212",  # Using D213
+    "D417",  # Too aggressive
+    "E501",  # Use best judgement for line-length
+    "E402",  # Annoying, use best judgement
+    "UP",  # Remove when we drop Python 3.9
+]
+select = [
+    "ANN204",
+    "B009",
+    "B010",
+    "B011",
+    "B013",
+    "B014",
+    "C4",
+    "D201",
+    "D202",
+    "D204",
+    "D207",
+    "D208",
+    "D209",
+    "D211",
+    "D213",
+    "D214",
+    "D215",
+    "D3",
+    "D4",
+    "E",
+    "F401",
+    "F504",
+    "F632",
+    "PLC0414",
+    "PLE2510",
+    "PLE2512",
+    "PLE2513",
+    "PLE2514",
+    "PLE2515",
+    "PLR1711",
+    "Q",
+    "RET501",
+    "RET502",
+    "RET503",
+    "RET504",
+    "RUF005",
+    "RUF010",
+    "RUF015",
+    "SIM101",
+    "SIM103",
+    "SIM109",
+    "SIM118",
+    "SIM2",
+    "SIM300",
+    "SIM9",
+    "W",
+]
+
+[tool.uv]
+default-groups = ["dev"]
