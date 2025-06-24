@@ -291,7 +291,6 @@ def prepare_chat_params(
         - chat_kwargs: processed keyword arguments for chat creation
 
     """
-
     # Extract system message if present
     system_message: str | None = None
     if messages and messages[0].role == MessageRole.SYSTEM:

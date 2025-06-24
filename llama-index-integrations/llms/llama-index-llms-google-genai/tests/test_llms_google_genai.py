@@ -735,6 +735,7 @@ def test_prepare_chat_params_more_than_2_tool_calls():
         ),
     ]
 
+
 # New test for system message forwarding
 def test_prepare_chat_params_with_system_message():
     # Setup a conversation starting with a SYSTEM message
@@ -767,7 +768,7 @@ def test_prepare_chat_params_with_system_message():
         types.Content(
             parts=[types.Part(text=assistant_message_1)],
             role=MessageRole.MODEL,
-        )
+        ),
     ]
 
     # Verify next_msg is the user message
