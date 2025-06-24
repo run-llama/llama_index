@@ -292,13 +292,12 @@ def prepare_chat_params(
 
     """
 
-    # Get the system message from the messages
-    system_message = None
-    # If first message is a system message, take it as a system instruction message for genai
-    for i, message in enumerate(messages):
-        if i == 0 and message.role == MessageRole.SYSTEM:
-            system_message = message.content
-            break
+    # Extract system message if present
+    system_message: str | None = None
+    if messages and messages[0].role == MessageRole.SYSTEM:
+        sys_msg = messages.pop(0)
+        system_message = sys_msg.content
+    # Now messages contains the rest of the chat history
 
     # Merge messages with the same role
     merged_messages = merge_neighboring_same_role_messages(messages)
