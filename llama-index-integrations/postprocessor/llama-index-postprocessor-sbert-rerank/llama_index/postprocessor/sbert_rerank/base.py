@@ -28,6 +28,11 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         default=False,
         description="Whether to keep the retrieval score in metadata.",
     )
+    cross_encoder_kwargs: dict = Field(
+        default_factory=dict,
+        description="Additional keyword arguments for CrossEncoder initialization. "
+        "device and model should not be included here.",
+    )
     _model: Any = PrivateAttr()
 
     def __init__(
@@ -37,6 +42,7 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         device: Optional[str] = None,
         keep_retrieval_score: Optional[bool] = False,
         cache_dir: Optional[Union[str, Path]] = None,
+        cross_encoder_kwargs: Optional[dict] = None,
     ):
         try:
             from sentence_transformers import CrossEncoder
@@ -51,13 +57,29 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
             model=model,
             device=device,
             keep_retrieval_score=keep_retrieval_score,
+            cross_encoder_kwargs=cross_encoder_kwargs or {},
         )
-        device = infer_torch_device() if device is None else device
+
+        init_kwargs = self.cross_encoder_kwargs.copy()
+        if "device" in init_kwargs or "model" in init_kwargs:
+            raise ValueError(
+                "'device' and 'model' should not be specified in 'cross_encoder_kwargs'. "
+                "Use the top-level 'device' and 'model' parameters instead."
+            )
+
+        # Set default max_length if not provided by the user in kwargs.
+        if "max_length" not in init_kwargs:
+            init_kwargs["max_length"] = DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH
+
+        # Explicit arguments from the constructor take precedence over kwargs
+        resolved_device = infer_torch_device() if device is None else device
+        init_kwargs["device"] = resolved_device
+        if cache_dir:
+            init_kwargs["cache_dir"] = cache_dir
+
         self._model = CrossEncoder(
-            model,
-            max_length=DEFAULT_SENTENCE_TRANSFORMER_MAX_LENGTH,
-            device=device,
-            cache_dir=cache_dir,
+            model_name=model,
+            **init_kwargs,
         )
 
     @classmethod

@@ -1,6 +1,6 @@
 from typing import Any
 
-from llama_index.core.bridge.pydantic import model_serializer
+from llama_index.core.bridge.pydantic import Field, model_serializer
 from llama_index.core.tools import ToolSelection, ToolOutput
 from llama_index.core.llms import ChatMessage
 from llama_index.core.workflow import Event, StartEvent
@@ -27,7 +27,7 @@ class AgentStream(Event):
     response: str
     current_agent_name: str
     tool_calls: list[ToolSelection]
-    raw: Any
+    raw: Any = Field(exclude=True)
 
 
 class AgentOutput(Event):
