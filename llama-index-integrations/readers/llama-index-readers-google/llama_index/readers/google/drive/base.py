@@ -436,7 +436,7 @@ class GoogleDriveReader(
             fileid: file id of the file in google drive
             filename: filename with which it will be downloaded
         Returns:
-            The downloaded filename, which which may have a new extension.
+            The downloaded filename, which may have a new extension.
         """
         from io import BytesIO
 
