@@ -2,9 +2,9 @@
 
 When more than one specialist is required to solve a task you have several options in LlamaIndex, each trading off convenience for flexibility.  This page walks through the three most common patterns, when to choose each one, and provides a minimal code sketch for every approach.
 
-1. **AgentWorkflow (built-in)** – declare a set of agents and let `AgentWorkflow` manage the hand-offs.
-2. **Orchestrator pattern (built-in)** – an "orchestrator" agent chooses which sub-agent to call next; those sub-agents are exposed to it as **tools**.
-3. **Custom planner (DIY)** – you write the LLM prompt (often XML / JSON) that plans the sequence yourself and imperatively invoke the agents in code.
+1. **AgentWorkflow (built-in)** – declare a set of agents and let `AgentWorkflow` manage the hand-offs. [Section](#pattern-1--agentworkflow-ie-linear-swarm-pattern) [Full Notebook](../../examples/agent/agent_workflow_multi.ipynb)
+2. **Orchestrator pattern (built-in)** – an "orchestrator" agent chooses which sub-agent to call next; those sub-agents are exposed to it as **tools**. [Section](#pattern-2--orchestrator-agent-sub-agents-as-tools) [Full Notebook](../../examples/agent/agents_as_tools.ipynb)
+3. **Custom planner (DIY)** – you write the LLM prompt (often XML / JSON) that plans the sequence yourself and imperatively invoke the agents in code. [Section](#pattern-3--custom-planner-diy-prompting--parsing) [Full Notebook](../../examples/agent/custom_multi_agent.ipynb)
 
 ---
 
@@ -81,53 +81,63 @@ print(resp)
 
 In this pattern you still build specialist agents (`ResearchAgent`, `WriteAgent`, `ReviewAgent`), **but** you do **not** ask them to hand off to one another.  Instead you expose each agent's `run` method as a tool and give those tools to a new top-level agent – the *Orchestrator*.
 
+You can see the full example in the [agents_as_tools notebook](../../examples/agent/agents_as_tools.ipynb).
+
 ```python
+import re
 from llama_index.core.agent.workflow import FunctionAgent
-from llama_index.core.tools import FunctionTool
+from llama_index.core.workflow import Context
 
 # assume research_agent / write_agent / review_agent defined as before
-
-# Wrap each agent's `run` coroutine so it looks like a regular tool
-research_tool = FunctionTool.from_defaults(
-    fn=lambda msg: research_agent.run(user_msg=msg),
-    name="call_research_agent",
-    description="Use ResearchAgent to search the web and record notes.",
-)
+# except we really only need the `search_web` tool at a minimum
 
 
 async def call_research_agent(ctx: Context, prompt: str) -> str:
     """Useful for recording research notes based on a specific prompt."""
-    state = await ctx.get("state")
-    if "research_notes" in state:
-        return "Research notes already exist."
-
     result = await research_agent.run(
-        user_msg=f"Write some notes about: {query}"
+        user_msg=f"Write some notes about the following: {prompt}"
     )
-    state["research_notes"] = str(result)
+
+    state = await ctx.get("state")
+    state["research_notes"].append(str(result))
     await ctx.set("state", state)
+
     return str(result)
 
 
 async def call_write_agent(ctx: Context) -> str:
-    """Useful for writing a report based on the research notes."""
+    """Useful for writing a report based on the research notes or revising the report based on feedback."""
     state = await ctx.get("state")
-    notes = state.get("research_notes")
+    notes = state.get("research_notes", None)
     if not notes:
         return "No research notes to write from."
 
-    result = await write_agent.run(
-        user_msg=f"Write a report from the following notes: {notes}"
+    user_msg = f"Write a markdown report from the following notes. Be sure to output the report in the following format: <report>...</report>:\n\n"
+
+    # Add the feedback to the user message if it exists
+    feedback = state.get("review", None)
+    if feedback:
+        user_msg += f"<feedback>{feedback}</feedback>\n\n"
+
+    # Add the research notes to the user message
+    notes = "\n\n".join(notes)
+    user_msg += f"<research_notes>{notes}</research_notes>\n\n"
+
+    # Run the write agent
+    result = await write_agent.run(user_msg=user_msg)
+    report = re.search(r"<report>(.*)</report>", str(result), re.DOTALL).group(
+        1
     )
-    state["report_content"] = str(result)
+    state["report_content"] = str(report)
     await ctx.set("state", state)
-    return str(result)
+
+    return str(report)
 
 
 async def call_review_agent(ctx: Context) -> str:
     """Useful for reviewing the report and providing feedback."""
     state = await ctx.get("state")
-    report = state.get("report_content")
+    report = state.get("report_content", None)
     if not report:
         return "No report content to review."
 
@@ -136,17 +146,28 @@ async def call_review_agent(ctx: Context) -> str:
     )
     state["review"] = result
     await ctx.set("state", state)
+
     return result
 
 
 orchestrator = FunctionAgent(
-    name="OrchestratorAgent",
-    description="Decides which specialist to invoke next in order to fulfil the user's request.",
     system_prompt=(
-        "You control three subordinate agents available as tools.  At each step, decide which one to call."
+        "You are an expert in the field of report writing. "
+        "You are given a user request and a list of tools that can help with the request. "
+        "You are to orchestrate the tools to research, write, and review a report on the given topic. "
+        "Once the review is positive, you should notify the user that the report is ready to be accessed."
     ),
-    llm=llm,
-    tools=[research_tool, write_tool, review_tool],
+    llm=orchestrator_llm,
+    tools=[
+        call_research_agent,
+        call_write_agent,
+        call_review_agent,
+    ],
+    initial_state={
+        "research_notes": [],
+        "report_content": None,
+        "review": None,
+    },
 )
 
 response = await orchestrator.run(
@@ -165,78 +186,207 @@ Because the orchestrator is just another `FunctionAgent` you get streaming, tool
 
 Here, the idea is that you write a prompt that instructs the LLM to output a structured plan (XML / JSON / YAML).  Your own Python code parses that plan and imperatively executes it.  The subordinate agents can be anything – `FunctionAgent`s, RAG pipelines, or other services.
 
-Below is a *minimal* sketch that uses XML. Error-handling, retries and safety checks are left to you.
+Below is a *minimal* sketch of a workflow that can plan, execute a plan, and see if any further steps are needed. You can see the full example in the [custom_multi_agent notebook](../../examples/agent/custom_multi_agent.ipynb).
 
 ```python
 import re
 import xml.etree.ElementTree as ET
-from llama_index.core.llms import ChatMessage, TextBlock
+from pydantic import BaseModel, Field
+from typing import Any, Optional
 
-PLANNER_PROMPT = """
-You are a planner. Given a user request and the current state, break the solution into ordered <step> blocks.  Each step must specify the agent to call and the message to send, e.g.
+from llama_index.core.llms import ChatMessage
+from llama_index.core.workflow import (
+    Context,
+    Event,
+    StartEvent,
+    StopEvent,
+    Workflow,
+    step,
+)
+
+# Assume we created helper functions to call the agents
+
+PLANNER_PROMPT = """You are a planner chatbot.
+
+Given a user request and the current state, break the solution into ordered <step> blocks.  Each step must specify the agent to call and the message to send, e.g.
 <plan>
   <step agent=\"ResearchAgent\">search for …</step>
   <step agent=\"WriteAgent\">draft a report …</step>
+  ...
 </plan>
-Return ONLY valid XML.
+
+<state>
+{state}
+</state>
+
+<available_agents>
+{available_agents}
+</available_agents>
+
+The general flow should be:
+- Record research notes
+- Write a report
+- Review the report
+- Write the report again if the review is not positive enough
+
+If the user request does not require any steps, you can skip the <plan> block and respond directly.
 """
 
-user_request = "Write me a report on the history of the web …"
 
-state = {
-    "research_notes": {},
-    "report_content": "Not written yet.",
-    "review": "Review required.",
-}
+class InputEvent(StartEvent):
+    user_msg: Optional[str] = Field(default=None)
+    chat_history: list[ChatMessage]
+    state: Optional[dict[str, Any]] = Field(default=None)
 
-chat_history = [
-    ChatMessage(role="system", content=PLANNER_PROMPT),
-    ChatMessage(
-        role="user",
-        blocks=[
-            TextBlock(text=f"<state>\n{state}\n</state>\n"),
-            TextBlock(text=user_request),
-        ],
-    ),
-]
 
-while True:
-    planner_resp = await llm.achat(chat_history)
-    chat_history.append(planner_resp.message)
+class OutputEvent(StopEvent):
+    response: str
+    chat_history: list[ChatMessage]
+    state: dict[str, Any]
 
-    xml_str = re.search(
-        r"<plan>(.*)</plan>", planner_resp.message.content, re.DOTALL
-    ).group(1)
 
-    if not xml_str:
-        break
+class StreamEvent(Event):
+    delta: str
 
-    root = ET.fromstring(xml_str)
-    for step in root.findall("step"):
-        agent_name = step.attrib["agent"]
-        msg = step.text.strip()
-        if agent_name == "ResearchAgent":
-            result = await research_agent.run(user_msg=msg)
-            state["research_notes"] = str(result)
-        elif agent_name == "WriteAgent":
-            result = await write_agent.run(user_msg=msg)
-            state["report_content"] = str(result)
-        elif agent_name == "ReviewAgent":
-            result = await review_agent.run(user_msg=msg)
-            state["review"] = str(result)
 
-    # Update the chat history with the new state and prompt the LLM to plan again.
-    chat_history.append(
-        ChatMessage(
-            role="user",
-            blocks=[
-                TextBlock(text=f"<state>\n{state}\n</state>\n"),
-                TextBlock(text=user_request),
-            ],
-        )
+class PlanEvent(Event):
+    step_info: str
+
+
+# Modelling the plan
+class PlanStep(BaseModel):
+    agent_name: str
+    agent_input: str
+
+
+class Plan(BaseModel):
+    steps: list[PlanStep]
+
+
+class ExecuteEvent(Event):
+    plan: Plan
+    chat_history: list[ChatMessage]
+
+
+class PlannerWorkflow(Workflow):
+    llm: OpenAI = OpenAI(
+        model="o3-mini",
+        api_key="sk-proj-...",
     )
+    agents: dict[str, FunctionAgent] = {
+        "ResearchAgent": research_agent,
+        "WriteAgent": write_agent,
+        "ReviewAgent": review_agent,
+    }
 
-print(state)
+    @step
+    async def plan(
+        self, ctx: Context, ev: InputEvent
+    ) -> ExecuteEvent | OutputEvent:
+        # Set initial state if it exists
+        if ev.state:
+            await ctx.set("state", ev.state)
+
+        chat_history = ev.chat_history
+
+        if ev.user_msg:
+            user_msg = ChatMessage(
+                role="user",
+                content=ev.user_msg,
+            )
+            chat_history.append(user_msg)
+
+        # Inject the system prompt with state and available agents
+        state = await ctx.get("state")
+        available_agents_str = "\n".join(
+            [
+                f'<agent name="{agent.name}">{agent.description}</agent>'
+                for agent in self.agents.values()
+            ]
+        )
+        system_prompt = ChatMessage(
+            role="system",
+            content=PLANNER_PROMPT.format(
+                state=str(state),
+                available_agents=available_agents_str,
+            ),
+        )
+
+        # Stream the response from the llm
+        response = await self.llm.astream_chat(
+            messages=[system_prompt] + chat_history,
+        )
+        full_response = ""
+        async for chunk in response:
+            full_response += chunk.delta or ""
+            if chunk.delta:
+                ctx.write_event_to_stream(
+                    StreamEvent(delta=chunk.delta),
+                )
+
+        # Parse the response into a plan and decide whether to execute or output
+        xml_match = re.search(r"(<plan>.*</plan>)", full_response, re.DOTALL)
+
+        if not xml_match:
+            chat_history.append(
+                ChatMessage(
+                    role="assistant",
+                    content=full_response,
+                )
+            )
+            return OutputEvent(
+                response=full_response,
+                chat_history=chat_history,
+                state=state,
+            )
+        else:
+            xml_str = xml_match.group(1)
+            root = ET.fromstring(xml_str)
+            plan = Plan(steps=[])
+            for step in root.findall("step"):
+                plan.steps.append(
+                    PlanStep(
+                        agent_name=step.attrib["agent"],
+                        agent_input=step.text.strip() if step.text else "",
+                    )
+                )
+
+            return ExecuteEvent(plan=plan, chat_history=chat_history)
+
+    @step
+    async def execute(self, ctx: Context, ev: ExecuteEvent) -> InputEvent:
+        chat_history = ev.chat_history
+        plan = ev.plan
+
+        for step in plan.steps:
+            agent = self.agents[step.agent_name]
+            agent_input = step.agent_input
+            ctx.write_event_to_stream(
+                PlanEvent(
+                    step_info=f'<step agent="{step.agent_name}">{step.agent_input}</step>'
+                ),
+            )
+
+            if step.agent_name == "ResearchAgent":
+                await call_research_agent(ctx, agent_input)
+            elif step.agent_name == "WriteAgent":
+                # Note: we aren't passing the input from the plan since
+                # we're using the state to drive the write agent
+                await call_write_agent(ctx)
+            elif step.agent_name == "ReviewAgent":
+                await call_review_agent(ctx)
+
+        state = await ctx.get("state")
+        chat_history.append(
+            ChatMessage(
+                role="user",
+                content=f"I've completed the previous steps, here's the updated state:\n\n<state>\n{state}\n</state>\n\nDo you need to continue and plan more steps?, If not, write a final response.",
+            )
+        )
+
+        return InputEvent(
+            chat_history=chat_history,
+        )
 ```
 
 This approach means *you* own the orchestration loop, so you can insert whatever custom logic, caching or human-in-the-loop checks you require.
