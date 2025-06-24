@@ -50,10 +50,11 @@ def test_anthropic_through_vertex_ai():
     reason="AWS region not available to test Bedrock integration",
 )
 def test_anthropic_through_bedrock():
-    # Note: this assumes you have AWS credentials configured.
     anthropic_llm = Anthropic(
         aws_region=os.getenv("ANTHROPIC_AWS_REGION", "us-east-1"),
         model=os.getenv("ANTHROPIC_MODEL", "anthropic.claude-3-5-sonnet-20240620-v1:0"),
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
     )
 
     completion_response = anthropic_llm.complete("Give me a recipe for banana bread")
@@ -127,6 +128,8 @@ async def test_anthropic_through_bedrock_async():
     anthropic_llm = Anthropic(
         aws_region=os.getenv("ANTHROPIC_AWS_REGION", "us-east-1"),
         model=os.getenv("ANTHROPIC_MODEL", "anthropic.claude-3-5-sonnet-20240620-v1:0"),
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
     )
 
     # Test standard async completion
@@ -256,6 +259,15 @@ def test_tool_required():
     # Should not use tools for a simple greeting
     assert not response.message.additional_kwargs.get("tool_calls")
 
+    # should not blow up with no tools (regression test)
+    response = llm.chat_with_tools(
+        user_msg="Say hello!",
+        tools=[],
+        tool_required=False,
+    )
+    assert isinstance(response, AnthropicChatResponse)
+    assert not response.message.additional_kwargs.get("tool_calls")
+
 
 @pytest.mark.skipif(
     os.getenv("ANTHROPIC_API_KEY") is None,
@@ -338,3 +350,13 @@ def test_prepare_chat_with_tools_tool_not_required():
     assert result["tool_choice"]["type"] == "auto"
     assert len(result["tools"]) == 1
     assert result["tools"][0]["name"] == "search_tool"
+
+
+def test_prepare_chat_with_no_tools_tool_not_required():
+    """Test that tool_required is correctly passed to the API request when False."""
+    llm = Anthropic()
+
+    result = llm._prepare_chat_with_tools(tools=[])
+
+    assert "tool_choice" not in result
+    assert len(result["tools"]) == 0

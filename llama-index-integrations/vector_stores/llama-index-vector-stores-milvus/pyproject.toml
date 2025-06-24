@@ -27,14 +27,14 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-milvus"
-version = "0.8.2"
+version = "0.8.5"
 description = "llama-index vector_stores milvus integration"
 authors = []
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "pymilvus>=2.5.2,<3",
+    "pymilvus>=2.5.10,<3",
     "llama-index-core>=0.12.0,<0.13",
 ]
 

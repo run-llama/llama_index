@@ -1,6 +1,6 @@
 # LlamaIndex Azure Foundry Agent Integration
 
-This package provides an Azure Foundry Agent integration for LlamaIndex. It allows you to leverage [Azure AI Agent Service](https://learn.microsoft.com/en-us/azure/ai-services/agents/overview) capabilities within your LlamaIndex applications. The provided `AzureFoundryAgent` inherits from `SingleAgentRunnerMixin` and `BaseWorkflowAgent` from LlamaIndex, making it compatible with workflow-based multi-agent orchestration.
+This package provides an Azure Foundry Agent integration for LlamaIndex. It allows you to leverage [Azure AI Agent Service](https://learn.microsoft.com/en-us/azure/ai-services/agents/overview) capabilities within your LlamaIndex applications. The provided `AzureFoundryAgent` inherits `BaseWorkflowAgent` from LlamaIndex, making it compatible with workflow-based multi-agent orchestration.
 
 > **About Azure AI Agent Service**
 >

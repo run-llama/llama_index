@@ -1,15 +1,20 @@
 import os
+import httpx
+import base64
+from pathlib import Path
 from unittest.mock import patch
 
-from mistralai import ToolCall
+from mistralai import ToolCall, ImageURLChunk, TextChunk
 import pytest
 
 from llama_index.core.base.llms.base import BaseLLM
+from llama_index.core.llms import ChatMessage, ImageBlock, TextBlock
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.mistralai import MistralAI
+from llama_index.llms.mistralai.base import to_mistral_chunks
 
 
-def test_embedding_class():
+def test_llm_class():
     names_of_base_classes = [b.__name__ for b in MistralAI.__mro__]
     assert BaseLLM.__name__ in names_of_base_classes
 
@@ -80,3 +85,104 @@ def test_prepare_chat_with_tools_tool_not_required(mock_mistral_client):
         assert len(result["tools"]) == 1
         assert result["tools"][0]["type"] == "function"
         assert result["tools"][0]["function"]["name"] == "search_tool"
+
+
+@pytest.mark.skipif(
+    os.environ.get("MISTRAL_API_KEY") is None, reason="MISTRAL_API_KEY not set"
+)
+def test_thinking():
+    llm = MistralAI(model="magistral-small-latest", show_thinking=True)
+
+    # It will sometimes not think, so we need to guard
+    result = llm.complete("What is the capital of France?")
+    if "thinking" in result.additional_kwargs:
+        assert result.additional_kwargs["thinking"] is not None
+        assert result.additional_kwargs["thinking"] != ""
+        assert "<think>" in result.text
+
+    result = llm.chat(
+        [ChatMessage(role="user", content="What is the capital of France?")]
+    )
+    if "thinking" in result.message.additional_kwargs:
+        assert result.message.additional_kwargs["thinking"] is not None
+        assert result.message.additional_kwargs["thinking"] != ""
+        assert "<think>" in result.message.content
+
+    result = llm.stream_complete("What is the capital of France?")
+    resp = None
+    for resp in result:
+        pass
+
+    assert resp is not None
+    if "thinking" in resp.additional_kwargs:
+        assert resp.additional_kwargs["thinking"] is not None
+        assert resp.additional_kwargs["thinking"] != ""
+        assert "<think>" in resp.text
+
+    result = llm.stream_chat(
+        [ChatMessage(role="user", content="What is the capital of France?")]
+    )
+    resp = None
+    for resp in result:
+        pass
+
+    assert resp is not None
+    if "thinking" in resp.message.additional_kwargs:
+        assert resp.message.additional_kwargs["thinking"] is not None
+        assert resp.message.additional_kwargs["thinking"] != ""
+        assert "<think>" in resp.message.content
+
+
+@pytest.mark.skipif(
+    os.environ.get("MISTRAL_API_KEY") is None, reason="MISTRAL_API_KEY not set"
+)
+def test_thinking_not_shown():
+    llm = MistralAI(model="magistral-small-latest", show_thinking=False)
+
+    result = llm.complete("What is the capital of France?")
+
+    if "thinking" in result.additional_kwargs:
+        assert result.additional_kwargs["thinking"] is None
+        assert result.additional_kwargs["thinking"] is None
+        assert "<think>" not in result.text
+
+    response_gen = llm.stream_complete("What is the capital of France?")
+    resp = None
+    for resp in response_gen:
+        assert "<think>" not in resp.text
+
+    if "thinking" in resp.additional_kwargs:
+        assert resp.additional_kwargs["thinking"] is None
+        assert "<think>" not in resp.text
+
+
+@pytest.fixture()
+def image_url() -> str:
+    return "https://astrabert.github.io/hophop-science/images/whale_doing_science.png"
+
+
+def test_to_mistral_chunks(tmp_path: Path, image_url: str) -> None:
+    blocks_with_url = [
+        TextBlock(text="Provide an alternative text for this image"),
+        ImageBlock(url=image_url),
+    ]
+    content = httpx.get(image_url).content
+    expected_b64 = base64.b64encode(content).decode("utf-8")
+    image_path = tmp_path / "test_image.png"
+    image_path.write_bytes(content)
+    blocks_with_path = [
+        TextBlock(text="Provide an alternative text for this image"),
+        ImageBlock(path=image_path, image_mimetype="image/png"),
+    ]
+    chunks_with_url = to_mistral_chunks(blocks_with_url)
+    assert isinstance(chunks_with_url[0], TextChunk)
+    assert chunks_with_url[0].text == blocks_with_url[0].text
+    assert isinstance(chunks_with_url[1], ImageURLChunk)
+    assert isinstance(chunks_with_url[1].image_url, str)
+    assert chunks_with_url[1].image_url == str(blocks_with_url[1].url._url)
+    chunks_with_path = to_mistral_chunks(blocks_with_path)
+    assert isinstance(chunks_with_path[0], TextChunk)
+    assert chunks_with_path[0].text == blocks_with_path[0].text
+    assert isinstance(chunks_with_path[1], ImageURLChunk)
+    assert isinstance(chunks_with_path[1].image_url, str)
+    assert chunks_with_path[1].image_url == f"data:image/png;base64,{expected_b64}"

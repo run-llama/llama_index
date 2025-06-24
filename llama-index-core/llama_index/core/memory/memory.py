@@ -377,15 +377,22 @@ class Memory(BaseMemory):
         return token_count
 
     async def _get_memory_blocks_content(
-        self, chat_history: List[ChatMessage], **block_kwargs: Any
+        self,
+        chat_history: List[ChatMessage],
+        input: Optional[Union[str, ChatMessage]] = None,
+        **block_kwargs: Any,
     ) -> Dict[str, Any]:
         """Get content from memory blocks in priority order."""
         content_per_memory_block: Dict[str, Any] = {}
 
+        block_input = chat_history
+        if isinstance(input, str):
+            block_input = [*chat_history, ChatMessage(role="user", content=input)]
+
         # Process memory blocks in priority order
         for memory_block in sorted(self.memory_blocks, key=lambda x: -x.priority):
             content = await memory_block.aget(
-                chat_history, session_id=self.session_id, **block_kwargs
+                block_input, session_id=self.session_id, **block_kwargs
             )
 
             # Handle different return types from memory blocks
@@ -547,7 +554,9 @@ class Memory(BaseMemory):
 
         return result
 
-    async def aget(self, **block_kwargs: Any) -> List[ChatMessage]:  # type: ignore[override]
+    async def aget(
+        self, input: Optional[Union[str, ChatMessage]] = None, **block_kwargs: Any
+    ) -> List[ChatMessage]:  # type: ignore[override]
         """Get messages with memory blocks included (async)."""
         # Get chat history efficiently
         chat_history = await self.sql_store.get_messages(
@@ -559,7 +568,7 @@ class Memory(BaseMemory):
 
         # Get memory blocks content
         content_per_memory_block = await self._get_memory_blocks_content(
-            chat_history, **block_kwargs
+            chat_history, input=input, **block_kwargs
         )
 
         # Calculate memory blocks tokens
@@ -762,9 +771,11 @@ class Memory(BaseMemory):
 
     # ---- Sync method wrappers ----
 
-    def get(self, **block_kwargs: Any) -> List[ChatMessage]:  # type: ignore[override]
+    def get(
+        self, input: Optional[Union[str, ChatMessage]] = None, **block_kwargs: Any
+    ) -> List[ChatMessage]:  # type: ignore[override]
         """Get messages with memory blocks included."""
-        return asyncio_run(self.aget(**block_kwargs))
+        return asyncio_run(self.aget(input=input, **block_kwargs))
 
     def get_all(self, status: Optional[MessageStatus] = None) -> List[ChatMessage]:
         """Get all messages."""

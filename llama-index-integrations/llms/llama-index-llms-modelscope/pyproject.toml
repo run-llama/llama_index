@@ -39,6 +39,7 @@ dependencies = [
     "sentencepiece",
     "ms-swift",
     "transformers[torch]>=4.37.0,<5",
+    "pip",
 ]
 
 [tool.codespell]

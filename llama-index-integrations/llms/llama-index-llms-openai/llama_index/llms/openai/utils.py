@@ -49,6 +49,8 @@ O1_MODELS: Dict[str, int] = {
     "o3-mini-2025-01-31": 200000,
     "o3": 200000,
     "o3-2025-04-16": 200000,
+    "o3-pro": 200000,
+    "o3-pro-2025-06-10": 200000,
     "o4-mini": 200000,
     "o4-mini-2025-04-16": 200000,
 }
@@ -179,6 +181,32 @@ DISCONTINUED_MODELS = {
     "code-cushman-002": 2048,
     "code-cushman-001": 2048,
 }
+
+JSON_SCHEMA_MODELS = [
+    "o4-mini",
+    "o1",
+    "o1-pro",
+    "o3",
+    "o3-mini",
+    "gpt-4.1",
+    "gpt-4o",
+    "gpt-4.1",
+]
+
+
+def is_json_schema_supported(model: str) -> bool:
+    try:
+        from openai.resources.beta.chat import completions
+
+        if not hasattr(completions, "_type_to_response_format"):
+            return False
+
+        return not model.startswith("o1-mini") and any(
+            model.startswith(m) for m in JSON_SCHEMA_MODELS
+        )
+    except ImportError:
+        return False
+
 
 MISSING_API_KEY_ERROR_MESSAGE = """No API key found for OpenAI.
 Please set either the OPENAI_API_KEY environment variable or \
@@ -497,6 +525,9 @@ def to_openai_responses_message_dict(
             for tool_call in message.additional_kwargs["tool_calls"]
         ]
 
+        if "reasoning" in message.additional_kwargs:  # and if it is reasoning model
+            message_dicts = [message.additional_kwargs["reasoning"]] + message_dicts
+
         return message_dicts
 
     # there are some cases (like image generation or MCP tool call) that only support the string input
@@ -546,7 +577,6 @@ def to_openai_message_dicts(
     """Convert generic messages to OpenAI message dicts."""
     if is_responses_api:
         final_message_dicts = []
-        final_message_txt = ""
         for message in messages:
             message_dicts = to_openai_responses_message_dict(
                 message,
@@ -556,12 +586,18 @@ def to_openai_message_dicts(
             if isinstance(message_dicts, list):
                 final_message_dicts.extend(message_dicts)
             elif isinstance(message_dicts, str):
-                final_message_txt += message_dicts
+                final_message_dicts.append({"role": "user", "content": message_dicts})
             else:
                 final_message_dicts.append(message_dicts)
-        # this follows the logic of having a string-only input from to_openai_responses_message_dict
-        if final_message_txt:
-            return final_message_txt
+
+        # If there is only one message, and it is a user message, return the content string directly
+        if (
+            len(final_message_dicts) == 1
+            and final_message_dicts[0]["role"] == "user"
+            and isinstance(final_message_dicts[0]["content"], str)
+        ):
+            return final_message_dicts[0]["content"]
+
         return final_message_dicts
     else:
         return [

@@ -22,9 +22,6 @@ def test_class():
 
 
 @pytest.fixture()
-@pytest.mark.skipif(
-    no_packages, reason="aiosqlite, sqlite3 and sqlalchemy not installed"
-)
 def sqlite_chat_store(tmp_path: Path) -> Generator[SQLiteChatStore, None, None]:
     chat_store = None
     try:

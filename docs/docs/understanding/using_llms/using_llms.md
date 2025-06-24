@@ -127,7 +127,12 @@ LlamaIndex doesn't just support hosted LLM APIs; you can also run a local model 
 ```python
 from llama_index.llms.ollama import Ollama
 
-llm = Ollama(model="llama3.3", request_timeout=60.0)
+llm = Ollama(
+    model="llama3.3",
+    request_timeout=60.0,
+    # Manually set the context window to limit memory usage
+    context_window=8000,
+)
 ```
 
 See the [custom LLM's How-To](../../module_guides/models/llms/usage_custom.md) for more details on using and configuring LLM models.

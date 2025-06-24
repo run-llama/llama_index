@@ -455,7 +455,7 @@ def test_prepare_chat_with_tools_tool_not_required(
 
     assert (
         result["tool_config"].function_calling_config.mode
-        == types.FunctionCallingConfigMode.NONE
+        == types.FunctionCallingConfigMode.AUTO
     )
     assert len(result["tools"]) == 1
     assert result["tools"][0].function_declarations[0].name == "search_tool"
@@ -470,7 +470,7 @@ def test_prepare_chat_with_tools_default_behavior(
 
     assert (
         result["tool_config"].function_calling_config.mode
-        == types.FunctionCallingConfigMode.NONE
+        == types.FunctionCallingConfigMode.AUTO
     )
     assert len(result["tools"]) == 1
     assert result["tools"][0].function_declarations[0].name == "search_tool"
@@ -734,3 +734,44 @@ def test_prepare_chat_params_more_than_2_tool_calls():
             role=MessageRole.USER,
         ),
     ]
+
+
+def test_prepare_chat_params_with_system_message():
+    # Setup a conversation starting with a SYSTEM message
+    model_name = "models/gemini-test"
+    system_prompt = "You are a test system."
+    user_message_1 = "Hello from user 1."
+    assistant_message_1 = "Hello from assistant 1."
+    user_message_2 = "Hello from user 2."
+    messages = [
+        ChatMessage(content=system_prompt, role=MessageRole.SYSTEM),
+        ChatMessage(content=user_message_1, role=MessageRole.USER),
+        ChatMessage(content=assistant_message_1, role=MessageRole.ASSISTANT),
+        ChatMessage(content=user_message_2, role=MessageRole.USER),
+    ]
+
+    # Execute prepare_chat_params
+    next_msg, chat_kwargs = prepare_chat_params(model_name, messages)
+
+    # Verify system_prompt is forwarded to system_instruction
+    cfg = chat_kwargs["config"]
+    assert isinstance(cfg, GenerateContentConfig)
+    assert cfg.system_instruction == system_prompt
+
+    # Verify history only contains the user messages and the assistant message
+    assert chat_kwargs["history"] == [
+        types.Content(
+            parts=[types.Part(text=user_message_1)],
+            role=MessageRole.USER,
+        ),
+        types.Content(
+            parts=[types.Part(text=assistant_message_1)],
+            role=MessageRole.MODEL,
+        ),
+    ]
+
+    # Verify next_msg is the user message
+    assert next_msg == types.Content(
+        parts=[types.Part(text=user_message_2)],
+        role=MessageRole.USER,
+    )

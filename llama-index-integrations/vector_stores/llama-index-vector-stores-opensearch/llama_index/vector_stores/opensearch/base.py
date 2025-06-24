@@ -58,6 +58,7 @@ class OpensearchVectorClient:
         space_type (Optional[str]): space type for distance metric calculation. Defaults to: l2
         os_client (Optional[OSClient]): Custom synchronous client (see OpenSearch from opensearch-py)
         os_async_client (Optional[OSClient]): Custom asynchronous client (see AsyncOpenSearch from opensearch-py)
+        excluded_source_fields (Optional[List[str]]): Optional list of document "source" fields to exclude from OpenSearch responses.
         **kwargs: Optional arguments passed to the OpenSearch client from opensearch-py.
 
     """
@@ -77,6 +78,7 @@ class OpensearchVectorClient:
         search_pipeline: Optional[str] = None,
         os_client: Optional[OSClient] = None,
         os_async_client: Optional[OSClient] = None,
+        excluded_source_fields: Optional[List[str]] = None,
         **kwargs: Any,
     ):
         """Init params."""
@@ -99,6 +101,7 @@ class OpensearchVectorClient:
         self._index = index
         self._text_field = text_field
         self._max_chunk_bytes = max_chunk_bytes
+        self._excluded_source_fields = excluded_source_fields
 
         self._search_pipeline = search_pipeline
         http_auth = kwargs.get("http_auth")
@@ -328,6 +331,7 @@ class OpensearchVectorClient:
         k: int = 4,
         filters: Optional[Union[Dict, List]] = None,
         vector_field: str = "embedding",
+        excluded_source_fields: Optional[List[str]] = None,
     ) -> Dict:
         """For Approximate k-NN Search, this is the default query."""
         query = {
@@ -345,6 +349,8 @@ class OpensearchVectorClient:
         if filters:
             # filter key must be added only when filtering to avoid "filter doesn't support values of type: START_ARRAY" exception
             query["query"]["knn"][vector_field]["filter"] = filters
+        if excluded_source_fields:
+            query["_source"] = {"exclude": excluded_source_fields}
         return query
 
     def _is_text_field(self, value: Any) -> bool:
@@ -447,6 +453,7 @@ class OpensearchVectorClient:
         k: int,
         filters: Optional[MetadataFilters] = None,
         search_method="approximate",
+        excluded_source_fields: Optional[List[str]] = None,
     ) -> Dict:
         """
         Perform a k-Nearest Neighbors (kNN) search.
@@ -465,6 +472,7 @@ class OpensearchVectorClient:
             filters (Optional[MetadataFilters]): Optional filters to apply for the search.
                 Supports filter-context queries documented at
                 https://opensearch.org/docs/latest/query-dsl/query-filter-context/
+            excluded_source_fields: Optional list of document "source" fields to exclude from the response.
 
         Returns:
             Dict: Up to k documents closest to query_embedding.
@@ -477,6 +485,7 @@ class OpensearchVectorClient:
                 query_embedding,
                 k,
                 vector_field=embedding_field,
+                excluded_source_fields=excluded_source_fields,
             )
         elif (
             search_method == "approximate"
@@ -493,6 +502,7 @@ class OpensearchVectorClient:
                 k,
                 filters={"bool": {"filter": filters}},
                 vector_field=embedding_field,
+                excluded_source_fields=excluded_source_fields,
             )
         else:
             if self.is_aoss:
@@ -504,6 +514,7 @@ class OpensearchVectorClient:
                     space_type=self.space_type,
                     pre_filter={"bool": {"filter": filters}},
                     vector_field=embedding_field,
+                    excluded_source_fields=excluded_source_fields,
                 )
             else:
                 # https://opensearch.org/docs/latest/search-plugins/knn/painless-functions/
@@ -513,6 +524,7 @@ class OpensearchVectorClient:
                     space_type="l2Squared",
                     pre_filter={"bool": {"filter": filters}},
                     vector_field=embedding_field,
+                    excluded_source_fields=excluded_source_fields,
                 )
         return search_query
 
@@ -524,16 +536,20 @@ class OpensearchVectorClient:
         query_embedding: List[float],
         k: int,
         filters: Optional[MetadataFilters] = None,
+        excluded_source_fields: Optional[List[str]] = None,
     ) -> Dict:
         knn_query = self._knn_search_query(embedding_field, query_embedding, k, filters)
         lexical_query = self._lexical_search_query(text_field, query_str, k, filters)
 
-        return {
+        query = {
             "size": k,
             "query": {
                 "hybrid": {"queries": [lexical_query["query"], knn_query["query"]]}
             },
         }
+        if excluded_source_fields:
+            query["_source"] = {"exclude": excluded_source_fields}
+        return query
 
     def _lexical_search_query(
         self,
@@ -541,6 +557,7 @@ class OpensearchVectorClient:
         query_str: str,
         k: int,
         filters: Optional[MetadataFilters] = None,
+        excluded_source_fields: Optional[List[str]] = None,
     ) -> Dict:
         lexical_query = {
             "bool": {"must": {"match": {text_field: {"query": query_str}}}}
@@ -550,10 +567,13 @@ class OpensearchVectorClient:
         if len(parsed_filters) > 0:
             lexical_query["bool"]["filter"] = parsed_filters
 
-        return {
+        query = {
             "size": k,
             "query": lexical_query,
         }
+        if excluded_source_fields:
+            query["_source"] = {"exclude": excluded_source_fields}
+        return query
 
     def __get_painless_scripting_source(
         self, space_type: str, vector_field: str = "embedding"
@@ -599,6 +619,7 @@ class OpensearchVectorClient:
         space_type: str = "l2Squared",
         pre_filter: Optional[Union[Dict, List]] = None,
         vector_field: str = "embedding",
+        excluded_source_fields: Optional[List[str]] = None,
     ) -> Dict:
         """
         For Scoring Script Search, this is the default query. Has to account for Opensearch Service
@@ -620,7 +641,7 @@ class OpensearchVectorClient:
             script = self._get_painless_scoring_script(
                 space_type, vector_field, query_vector
             )
-        return {
+        query = {
             "size": k,
             "query": {
                 "script_score": {
@@ -629,6 +650,9 @@ class OpensearchVectorClient:
                 }
             },
         }
+        if excluded_source_fields:
+            query["_source"] = {"exclude": excluded_source_fields}
+        return query
 
     def _is_aoss_enabled(self, http_auth: Any) -> bool:
         """Check if the service is http_auth is set as `aoss`."""
@@ -817,18 +841,27 @@ class OpensearchVectorClient:
                 query_embedding,
                 k,
                 filters=filters,
+                excluded_source_fields=self._excluded_source_fields,
             )
             params = {
                 "search_pipeline": self._search_pipeline,
             }
         elif query_mode == VectorStoreQueryMode.TEXT_SEARCH:
             search_query = self._lexical_search_query(
-                self._text_field, query_str, k, filters=filters
+                self._text_field,
+                query_str,
+                k,
+                filters=filters,
+                excluded_source_fields=self._excluded_source_fields,
             )
             params = None
         else:
             search_query = self._knn_search_query(
-                self._embedding_field, query_embedding, k, filters=filters
+                self._embedding_field,
+                query_embedding,
+                k,
+                filters=filters,
+                excluded_source_fields=self._excluded_source_fields,
             )
             params = None
 
@@ -856,18 +889,27 @@ class OpensearchVectorClient:
                 query_embedding,
                 k,
                 filters=filters,
+                excluded_source_fields=self._excluded_source_fields,
             )
             params = {
                 "search_pipeline": self._search_pipeline,
             }
         elif query_mode == VectorStoreQueryMode.TEXT_SEARCH:
             search_query = self._lexical_search_query(
-                self._text_field, query_str, k, filters=filters
+                self._text_field,
+                query_str,
+                k,
+                filters=filters,
+                excluded_source_fields=self._excluded_source_fields,
             )
             params = None
         else:
             search_query = self._knn_search_query(
-                self._embedding_field, query_embedding, k, filters=filters
+                self._embedding_field,
+                query_embedding,
+                k,
+                filters=filters,
+                excluded_source_fields=self._excluded_source_fields,
             )
             params = None
 
