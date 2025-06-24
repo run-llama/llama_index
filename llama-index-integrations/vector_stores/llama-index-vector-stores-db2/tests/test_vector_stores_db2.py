@@ -25,7 +25,7 @@ username = ""
 password = ""
 
 
-def test_table_exists_test() -> None:
+def test_table_exists() -> None:
     try:
         import ibm_db_dbi  # type: ignore
     except ImportError:
@@ -89,7 +89,7 @@ def test_table_exists_test() -> None:
     connection.commit()
 
 
-def test_create_table_test() -> None:
+def test_create_table() -> None:
     try:
         import ibm_db_dbi
     except ImportError:
@@ -299,7 +299,7 @@ for text_json in text_json_list:
 vector_store_list = []
 
 
-def test_add_texts_test() -> None:
+def test_vs_creation() -> None:
     try:
         import ibm_db_dbi
     except ImportError:
