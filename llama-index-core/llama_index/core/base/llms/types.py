@@ -282,8 +282,18 @@ class DocumentBlock(BaseModel):
         return str(guess.mime) if guess else None
 
 
+class CacheControl(BaseModel):
+    type: str
+    ttl: str = Field(default="5m")
+
+
+class CachePoint(BaseModel):
+    block_type: Literal["cache"] = "cache"
+    cache_control: CacheControl
+
+
 ContentBlock = Annotated[
-    Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock],
+    Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock, CachePoint],
     Field(discriminator="block_type"),
 ]
 
