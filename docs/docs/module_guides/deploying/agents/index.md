@@ -44,6 +44,8 @@ Calling this agent kicks off a specific loop of actions:
     - The tool call results are added to the chat history
     - The Agent is invoked again with updated history, and either responds directly or selects more calls
 
+The `FunctionAgent` is a type of agent that uses an LLM provider's function/tool calling capabilities to execute tools. Other types of agents, such as [`ReActAgent`](../../../examples/agent/react_agent.ipynb) and [`CodeActAgent`](../../../examples/agent/code_act_agent.ipynb), use different prompting strategies to execute tools.
+
 ## Tools
 
 Tools can be defined simply as python functions, or further customized using classes like `FunctionTool` and `QueryEngineTool`. LlamaIndex also provides sets of pre-defined tools for common APIs using something called `Tool Specs`.

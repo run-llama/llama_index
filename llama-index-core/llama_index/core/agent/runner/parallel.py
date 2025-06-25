@@ -1,6 +1,7 @@
 """Agent executor."""
 
 import asyncio
+import deprecated
 from collections import deque
 from typing import Any, Deque, Dict, List, Optional, Union, cast
 
@@ -69,8 +70,20 @@ class DAGAgentState(BaseModel):
         return self.task_dict[task_id].step_queue
 
 
+@deprecated.deprecated(
+    reason=(
+        "ParallelAgentRunner has been deprecated and is not maintained.\n\n"
+        "This implementation will be removed in a v0.13.0.\n\n"
+        "See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+    action="once",
+)
 class ParallelAgentRunner(BaseAgentRunner):
     """
+    DEPRECATED: ParallelAgentRunner has been deprecated and is not maintained.
+    This implementation will be removed in a v0.13.0.
+    See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/
+
     Parallel agent runner.
 
     Executes steps in queue in parallel. Requires async support.
