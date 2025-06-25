@@ -1,19 +1,18 @@
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union
 from deprecated import deprecated
 
 import httpx
-from anthropic.types import ContentBlockDeltaEvent
 from llama_index.core.base.llms.types import (
     CompletionResponse,
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     ImageBlock,
     MessageRole,
+    ChatMessage,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import (
-    DEFAULT_CONTEXT_WINDOW,
     DEFAULT_NUM_OUTPUTS,
     DEFAULT_TEMPERATURE,
 )
@@ -21,7 +20,6 @@ from llama_index.core.base.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
 from llama_index.core.multi_modal_llms import (
-    MultiModalLLM,
     MultiModalLLMMetadata,
 )
 from llama_index.core.schema import ImageNode
@@ -31,14 +29,14 @@ from llama_index.multi_modal_llms.anthropic.utils import (
     resolve_anthropic_credentials,
 )
 
-from anthropic import Anthropic, AsyncAnthropic
+from llama_index.llms.anthropic import Anthropic
 
 
 @deprecated(
     reason="This class is deprecated and will be no longer maintained, use Anthropic from llama-index-llms-anthropic instead.",
     version="0.3.2",
 )
-class AnthropicMultiModal(MultiModalLLM):
+class AnthropicMultiModal(Anthropic):
     model: str = Field(description="The Multi-Modal model to use from Anthropic.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: Optional[int] = Field(
@@ -74,8 +72,6 @@ class AnthropicMultiModal(MultiModalLLM):
 
     _messages_to_prompt: Callable = PrivateAttr()
     _completion_to_prompt: Callable = PrivateAttr()
-    _client: Anthropic = PrivateAttr()
-    _aclient: AsyncAnthropic = PrivateAttr()
     _http_client: Optional[httpx.Client] = PrivateAttr()
 
     def __init__(
@@ -84,7 +80,6 @@ class AnthropicMultiModal(MultiModalLLM):
         temperature: float = DEFAULT_TEMPERATURE,
         max_tokens: Optional[int] = 300,
         additional_kwargs: Optional[Dict[str, Any]] = None,
-        context_window: Optional[int] = DEFAULT_CONTEXT_WINDOW,
         max_retries: int = 3,
         timeout: float = 60.0,
         api_key: Optional[str] = None,
@@ -103,18 +98,15 @@ class AnthropicMultiModal(MultiModalLLM):
             api_base=api_base,
             api_version=api_version,
         )
-
         super().__init__(
             model=model,
             temperature=temperature,
             max_tokens=max_tokens,
             additional_kwargs=additional_kwargs or {},
-            context_window=context_window,
             max_retries=max_retries,
             timeout=timeout,
             api_key=api_key,
-            api_base=api_base,
-            api_version=api_version,
+            base_url=api_base,
             callback_manager=callback_manager,
             default_headers=default_headers,
             system_promt=system_prompt,
@@ -123,12 +115,6 @@ class AnthropicMultiModal(MultiModalLLM):
         self._messages_to_prompt = messages_to_prompt or generic_messages_to_prompt
         self._completion_to_prompt = completion_to_prompt or (lambda x: x)
         self._http_client = http_client
-        self._client, self._aclient = self._get_clients(**kwargs)
-
-    def _get_clients(self, **kwargs: Any) -> Tuple[Anthropic, AsyncAnthropic]:
-        client = Anthropic(**self._get_credential_kwargs())
-        aclient = AsyncAnthropic(**self._get_credential_kwargs())
-        return client, aclient
 
     @classmethod
     def class_name(cls) -> str:
@@ -162,7 +148,7 @@ class AnthropicMultiModal(MultiModalLLM):
         role: str,
         image_documents: Sequence[Union[ImageNode, ImageBlock]],
         **kwargs: Any,
-    ) -> List[Dict]:
+    ) -> List[ChatMessage]:
         return generate_anthropic_multi_modal_chat_message(
             prompt=prompt,
             role=role,
@@ -209,7 +195,7 @@ class AnthropicMultiModal(MultiModalLLM):
             prompt=prompt, role=MessageRole.USER, image_documents=image_documents
         )
 
-        response = self._client.messages.create(
+        response = super().chat(
             messages=message_dict,
             system=self.system_prompt,
             stream=False,
@@ -217,18 +203,12 @@ class AnthropicMultiModal(MultiModalLLM):
         )
 
         # Handle both tool and text responses
-        content = response.content[0]
-        if hasattr(content, "input"):
-            # Tool response - convert to string for compatibility
-            text = str(content.input)
-        else:
-            # Standard text response
-            text = content.text
+        content = response.message.content or ""
 
         return CompletionResponse(
-            text=text,
-            raw=response,
-            additional_kwargs=self._get_response_token_counts(response),
+            text=content,
+            raw=response.raw,
+            additional_kwargs=self._get_response_token_counts(response.raw),
         )
 
     def _stream_complete(
@@ -241,27 +221,30 @@ class AnthropicMultiModal(MultiModalLLM):
         message_dict = self._get_multi_modal_chat_messages(
             prompt=prompt, role=MessageRole.USER, image_documents=image_documents
         )
+        message_dict.insert(
+            0,
+            self._get_multi_modal_chat_messages(
+                prompt=self.system_prompt,
+                role=MessageRole.SYSTEM,
+            )[0],
+        )
 
         def gen() -> CompletionResponseGen:
             text = ""
 
-            for response in self._client.messages.create(
+            for response in super().stream_chat(
                 messages=message_dict,
-                stream=True,
-                system=self.system_prompt,
                 **all_kwargs,
             ):
-                if isinstance(response, ContentBlockDeltaEvent):
-                    # update using deltas
-                    content_delta = response.delta.text or ""
-                    text += content_delta
+                content_delta = response.delta or ""
+                text += content_delta
 
-                    yield CompletionResponse(
-                        delta=content_delta,
-                        text=text,
-                        raw=response,
-                        additional_kwargs=self._get_response_token_counts(response),
-                    )
+                yield CompletionResponse(
+                    delta=content_delta,
+                    text=text,
+                    raw=response.raw,
+                    additional_kwargs=self._get_response_token_counts(response.raw),
+                )
 
         return gen()
 
@@ -281,18 +264,6 @@ class AnthropicMultiModal(MultiModalLLM):
     ) -> CompletionResponseGen:
         return self._stream_complete(prompt, image_documents, **kwargs)
 
-    def chat(
-        self,
-        **kwargs: Any,
-    ) -> Any:
-        raise NotImplementedError("This function is not yet implemented.")
-
-    def stream_chat(
-        self,
-        **kwargs: Any,
-    ) -> Any:
-        raise NotImplementedError("This function is not yet implemented.")
-
     # ===== Async Endpoints =====
 
     async def _acomplete(
@@ -305,17 +276,22 @@ class AnthropicMultiModal(MultiModalLLM):
         message_dict = self._get_multi_modal_chat_messages(
             prompt=prompt, role=MessageRole.USER, image_documents=image_documents
         )
-        response = await self._aclient.messages.create(
+        message_dict.insert(
+            0,
+            self._get_multi_modal_chat_messages(
+                prompt=self.system_prompt,
+                role=MessageRole.SYSTEM,
+            )[0],
+        )
+        response = await super().achat(
             messages=message_dict,
-            stream=False,
-            system=self.system_prompt,
             **all_kwargs,
         )
 
         return CompletionResponse(
-            text=response.content[0].text,
-            raw=response,
-            additional_kwargs=self._get_response_token_counts(response),
+            text=response.message.content or "",
+            raw=response.raw,
+            additional_kwargs=self._get_response_token_counts(response.raw),
         )
 
     async def acomplete(
@@ -336,27 +312,30 @@ class AnthropicMultiModal(MultiModalLLM):
         message_dict = self._get_multi_modal_chat_messages(
             prompt=prompt, role=MessageRole.USER, image_documents=image_documents
         )
+        message_dict.insert(
+            0,
+            self._get_multi_modal_chat_messages(
+                prompt=self.system_prompt,
+                role=MessageRole.SYSTEM,
+            )[0],
+        )
 
         async def gen() -> CompletionResponseAsyncGen:
             text = ""
 
-            async for response in await self._aclient.messages.create(
+            async for response in await super().astream_chat(
                 messages=message_dict,
-                stream=True,
-                system=self.system_prompt,
                 **all_kwargs,
             ):
-                if isinstance(response, ContentBlockDeltaEvent):
-                    # update using deltas
-                    content_delta = response.delta.text or ""
-                    text += content_delta
+                content_delta = response.delta or ""
+                text += content_delta
 
-                    yield CompletionResponse(
-                        delta=content_delta,
-                        text=text,
-                        raw=response,
-                        additional_kwargs=self._get_response_token_counts(response),
-                    )
+                yield CompletionResponse(
+                    delta=content_delta,
+                    text=text,
+                    raw=response.raw,
+                    additional_kwargs=self._get_response_token_counts(response.raw),
+                )
 
         return gen()
 
@@ -367,9 +346,3 @@ class AnthropicMultiModal(MultiModalLLM):
         **kwargs: Any,
     ) -> CompletionResponseAsyncGen:
         return await self._astream_complete(prompt, image_documents, **kwargs)
-
-    async def achat(self, **kwargs: Any) -> Any:
-        raise NotImplementedError("This function is not yet implemented.")
-
-    async def astream_chat(self, **kwargs: Any) -> Any:
-        raise NotImplementedError("This function is not yet implemented.")

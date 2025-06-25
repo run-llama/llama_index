@@ -13,7 +13,7 @@ from tenacity import (
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.core.schema import ImageDocument, ImageNode
 from llama_index.core.base.llms.generic_utils import image_node_to_image_block
-from llama_index.core.llms import ImageBlock
+from llama_index.core.llms import ImageBlock, ChatMessage, TextBlock
 
 DEFAULT_BEDROCK_REGION = "us-east-1"
 
@@ -61,14 +61,14 @@ def infer_image_mimetype_from_file_path(image_file_path: str) -> str:
 def generate_bedrock_multi_modal_message(
     prompt: str,
     image_documents: Optional[Sequence[ImageDocument]] = None,
-) -> Dict[str, Any]:
+) -> List[ChatMessage]:
     """Generate message for Bedrock multi-modal API."""
     if image_documents is None:
-        return {"role": "user", "content": [{"type": "text", "text": prompt}]}
+        return [ChatMessage(role="user", content=prompt)]
 
     message_content = []
     # Add text content first
-    message_content.append({"type": "text", "text": prompt})
+    message_content.append(TextBlock(text=prompt))
     if all(isinstance(doc, ImageNode) for doc in image_documents):
         image_docs: List[ImageBlock] = [
             image_node_to_image_block(doc) for doc in image_documents
@@ -76,32 +76,9 @@ def generate_bedrock_multi_modal_message(
     else:
         image_docs = cast(List[ImageBlock], image_documents)
     # Add image content
-    for image_document in image_docs:
-        image_content = {}
-        if image_document.path:
-            base64_image = image_document.resolve_image().read().decode("utf-8")
-            image_content = {
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": "image/jpeg",  # Default to JPEG
-                    "data": base64_image,
-                },
-            }
-        elif image_document.image:
-            image_content = {
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": "image/jpeg",  # Default to JPEG
-                    "data": image_document.image,
-                },
-            }
+    message_content.extend(image_docs)
 
-        if image_content:
-            message_content.append(image_content)
-
-    return {"role": "user", "content": message_content}
+    return [ChatMessage(role="user", blocks=message_content)]
 
 
 def resolve_bedrock_credentials(

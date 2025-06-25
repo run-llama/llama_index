@@ -1,11 +1,10 @@
 import base64
 import logging
-from typing import Any, Dict, List, Optional, Sequence, Tuple, cast
+from typing import List, Optional, Sequence, Tuple, cast
 import filetype
 
-import httpx
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
-from llama_index.core.llms import ImageBlock
+from llama_index.core.llms import ImageBlock, ChatMessage, TextBlock
 from llama_index.core.schema import ImageDocument, ImageNode
 from llama_index.core.base.llms.generic_utils import image_node_to_image_block
 
@@ -73,10 +72,10 @@ def generate_anthropic_multi_modal_chat_message(
     prompt: str,
     role: str,
     image_documents: Optional[Sequence[ImageDocument]] = None,
-) -> List[Dict[str, Any]]:
+) -> List[ChatMessage]:
     # if image_documents is empty, return text only chat message
     if image_documents is None:
-        return [{"role": role, "content": prompt}]
+        return [ChatMessage.model_validate({"role": role, "content": prompt})]
 
     # if image_documents is not empty, return text with images chat message
     completion_content = []
@@ -86,58 +85,8 @@ def generate_anthropic_multi_modal_chat_message(
         ]
     else:
         image_docs = cast(List[ImageBlock], image_documents)
-    for image_document in image_docs:
-        image_content: Dict[str, Any] = {}
-        if image_document.path and image_document.path != "":
-            mimetype = (
-                image_document.image_mimetype
-                or infer_image_mimetype_from_file_path(image_document.path)
-            )
-            base64_image = (
-                image_document.resolve_image(as_base64=True).read().decode("utf-8")
-            )
-            image_content = {
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": mimetype,
-                    "data": base64_image,
-                },
-            }
-        elif image_document.url and str(image_document.url) != "":
-            mimetype = (
-                image_document.image_mimetype
-                or infer_image_mimetype_from_file_path(str(image_document.url))
-            )
-            image_content = {
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": mimetype,
-                    "data": base64.b64encode(
-                        httpx.get(image_document.url).content
-                    ).decode("utf-8"),
-                },
-            }
-        elif image_document.image and image_document.image != "":
-            base64_image = image_document.image
-            mimetype = (
-                image_document.image_mimetype
-                or infer_image_mimetype_from_base64(base64_image)
-            )
-            image_content = {
-                "type": "image",
-                "source": {
-                    "type": "base64",
-                    "media_type": mimetype,
-                    "data": base64_image,
-                },
-            }
-        completion_content.append(image_content)
-
-    completion_content.append({"type": "text", "text": prompt})
-
-    return [{"role": role, "content": completion_content}]
+    blocks = image_docs.extend([TextBlock(text=prompt)])
+    return [ChatMessage(role=role, blocks=blocks)]
 
 
 def resolve_anthropic_credentials(

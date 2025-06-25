@@ -37,6 +37,7 @@ dependencies = [
     "boto3>=1.34.0",
     "aioboto3>=12.3.0",
     "llama-index-core>=0.12.5,<0.13",
+    "llama-index-llms-bedrock-converse>=0.7.2,<0.8",
     "deprecated>=1.2.18,<2",
 ]
 
