@@ -102,7 +102,6 @@ class Perplexity(LLM):
         temperature: float = 0.2,
         max_tokens: Optional[int] = None,
         api_key: Optional[str] = getenv("PPLX_API_KEY"),
-        headers: Optional[dict[str, str]] = None,
         api_base: Optional[str] = "https://api.perplexity.ai",
         additional_kwargs: Optional[dict[str, Any]] = None,
         max_retries: int = 10,
