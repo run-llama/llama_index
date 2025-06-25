@@ -218,11 +218,7 @@ def _content_block_to_bedrock_format(
                 "The only allowed caching strategy for Bedrock Converse is 'default', falling back to that..."
             )
             block.cache_control.type = "default"
-        cache_block = block.model_dump(
-            exclude={"block_type": ..., "cache_control": {"ttl"}}
-        )
-        cache_block["cachePoint"] = cache_block.pop("cache_control")
-        return cache_block
+        return {"cachePoint": {"type": block.cache_control.type}}
     elif isinstance(block, AudioBlock):
         logger.warning("Audio blocks are not supported in Bedrock Converse API.")
         return None
