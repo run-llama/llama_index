@@ -1,6 +1,7 @@
 import json
 from collections.abc import Callable, Sequence
 from typing import Any, Optional
+from os import getenv
 
 import aiohttp
 import httpx
@@ -68,7 +69,9 @@ class Perplexity(LLM):
         description="The context window to use during generation.",
     )
     api_key: str = Field(
-        default=None, description="The Perplexity API key.", exclude=True
+        default=getenv("PPLX_API_KEY"),
+        description="The Perplexity API key.",
+        exclude=True,
     )
     api_base: str = Field(
         default="https://api.perplexity.ai",
@@ -98,7 +101,8 @@ class Perplexity(LLM):
         model: str = "sonar-pro",
         temperature: float = 0.2,
         max_tokens: Optional[int] = None,
-        api_key: Optional[str] = None,
+        api_key: Optional[str] = getenv("PPLX_API_KEY"),
+        headers: Optional[dict[str, str]] = None,
         api_base: Optional[str] = "https://api.perplexity.ai",
         additional_kwargs: Optional[dict[str, Any]] = None,
         max_retries: int = 10,
