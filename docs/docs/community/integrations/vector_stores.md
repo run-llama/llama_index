@@ -244,12 +244,13 @@ vector_store = AzureAISearchVectorStore(
 
 ```python
 import pymongo
+import os
 from llama_index.vector_stores.azurecosmosmongo import (
     AzureCosmosDBMongoDBVectorSearch,
 )
 
 # Set up the connection string with your Azure CosmosDB MongoDB URI
-connection_string = "YOUR_AZURE_COSMOSDB_MONGODB_URI"
+connection_string = os.getenv("YOUR_AZURE_COSMOSDB_MONGODB_URI")
 mongodb_client = pymongo.MongoClient(connection_string)
 
 # Create an instance of AzureCosmosDBMongoDBVectorSearch
@@ -264,12 +265,13 @@ vector_store = AzureCosmosDBMongoDBVectorSearch(
 
 ```python
 from azure.cosmos import CosmosClient, PartitionKey
+import os
 from llama_index.vector_stores.azurecosmosnosql import (
     AzureCosmosDBNoSqlVectorSearch,
 )
 
-URL = "AZURE_COSMOSDB_URI"
-KEY = "AZURE_COSMOSDB_KEY"
+URL = os.getenv("AZURE_COSMOSDB_URI")
+KEY = os.getenv("AZURE_COSMOSDB_KEY")
 database_name = "test_database"
 container_name = "test_container"
 test_client = CosmosClient(URL, credential=KEY)
