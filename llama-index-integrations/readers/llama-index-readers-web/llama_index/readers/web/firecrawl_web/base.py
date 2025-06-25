@@ -1,6 +1,6 @@
 """Firecrawl Web Reader."""
 
-from typing import Any, List, Optional, Dict, Callable
+from typing import Any, List, Optional, Dict, Callable, Union, Literal
 from pydantic import Field
 
 from llama_index.core.bridge.pydantic import PrivateAttr
@@ -10,61 +10,105 @@ from llama_index.core.schema import Document
 
 class FireCrawlWebReader(BasePydanticReader):
     """
-    turn a url to llm accessible markdown with `Firecrawl.dev`.
+    FireCrawl Web Reader for converting URLs to LLM-accessible markdown using Firecrawl.dev.
+
+    This reader supports four modes:
+    - "scrape": Extract content from a single URL
+    - "crawl": Crawl an entire website and extract content from all accessible pages
+    - "search": Search for content across the web
+    - "extract": Extract structured data from URLs using a prompt
 
     Args:
-    api_key: The Firecrawl API key.
-    api_url: url to be passed to FirecrawlApp for local deployment
-    url: The url to be crawled (or)
-    mode: The mode to run the loader in. Default is "crawl".
-    Options include "scrape" (single url),
-    "crawl" (all accessible sub pages),
-    "search" (search for content), and
-    "extract" (extract structured data from URLs using a prompt).
-    params: The parameters to pass to the Firecrawl API.
-    Examples include crawlerOptions.
-    For more details, visit: https://docs.firecrawl.dev/sdks/python
+        api_key (str): The Firecrawl API key required for authentication.
+        api_url (Optional[str]): Custom API URL for local deployment. Defaults to None.
+        mode (str): The operation mode. Options: "scrape", "crawl", "search", "extract". Defaults to "crawl".
+        params (Optional[Dict]): Parameters to pass to the Firecrawl API methods.
 
+    Example:
+        ```python
+        from llama_index.readers.web import FireCrawlWebReader
+
+        # Scrape a single page
+        reader = FireCrawlWebReader(
+            api_key="your_api_key",
+            mode="scrape",
+            params={"timeout": 30}
+        )
+        documents = reader.load_data(url="https://example.com")
+
+        # Crawl a website
+        reader = FireCrawlWebReader(
+            api_key="your_api_key",
+            mode="crawl",
+            params={"max_depth": 2, "limit": 10}
+        )
+        documents = reader.load_data(url="https://example.com")
+
+        # Search for content
+        reader = FireCrawlWebReader(
+            api_key="your_api_key",
+            mode="search",
+            params={"limit": 5}
+        )
+        documents = reader.load_data(query="Who is the president of the United States?")
+
+        # Extract structured data
+        reader = FireCrawlWebReader(
+            api_key="your_api_key",
+            mode="extract",
+            params={"prompt": "Extract the main topics"}
+        )
+        documents = reader.load_data(urls=["https://example.com"])
+        ```
     """
 
-    firecrawl: Optional[Any] = Field(None)
-    api_key: str
-    api_url: Optional[str]
-    mode: Optional[str]
-    params: Optional[dict]
+    api_key: str = Field(description="The Firecrawl API key")
+    api_url: Optional[str] = Field(None, description="Custom API URL for local deployment")
+    mode: str = Field("crawl", description="Operation mode: scrape, crawl, search, or extract")
+    params: Optional[Dict[str, Any]] = Field(None, description="Parameters to pass to the Firecrawl API")
 
+    _firecrawl: Any = PrivateAttr()
     _metadata_fn: Optional[Callable[[str], Dict]] = PrivateAttr()
 
     def __init__(
         self,
         api_key: str,
         api_url: Optional[str] = None,
-        mode: Optional[str] = "crawl",
-        params: Optional[dict] = None,
+        mode: str = "crawl",
+        params: Optional[Dict[str, Any]] = None,
     ) -> None:
-        """Initialize with parameters."""
-        # Initialize params and always set integration to llamaindex
-        if params is None:
-            params = {}
-        if "integration" not in params:
-            params["integration"] = "llamaindex"
+        """Initialize the FireCrawlWebReader with the specified configuration."""
+        # Validate mode
+        valid_modes = ["scrape", "crawl", "search", "extract"]
+        if mode not in valid_modes:
+            raise ValueError(f"Invalid mode '{mode}'. Must be one of: {valid_modes}")
 
-        """Initialize with parameters."""
-        super().__init__(api_key=api_key, api_url=api_url, mode=mode, params=params)
+        # Initialize the parent class
+        super().__init__(
+            api_key=api_key,
+            api_url=api_url,
+            mode=mode,
+            params=params,
+        )
+
+        # Import and initialize FirecrawlApp
         try:
             from firecrawl import FirecrawlApp
         except ImportError:
             raise ImportError(
                 "`firecrawl` package not found, please run `pip install firecrawl-py`"
             )
+
+        # Initialize FirecrawlApp
         if api_url:
-            self.firecrawl = FirecrawlApp(api_key=api_key, api_url=api_url)
+            self._firecrawl = FirecrawlApp(api_key=api_key, api_url=api_url)
         else:
-            self.firecrawl = FirecrawlApp(api_key=api_key)
+            self._firecrawl = FirecrawlApp(api_key=api_key)
 
     @classmethod
     def class_name(cls) -> str:
-        return "Firecrawl_reader"
+        """Return the class name."""
+        return "FireCrawlWebReader"
 
     def load_data(
         self,
@@ -73,217 +117,284 @@ class FireCrawlWebReader(BasePydanticReader):
         urls: Optional[List[str]] = None,
     ) -> List[Document]:
         """
-        Load data from the input directory.
+        Load data from Firecrawl based on the specified mode.
 
         Args:
-            url (Optional[str]): URL to scrape or crawl.
-            query (Optional[str]): Query to search for.
-            urls (Optional[List[str]]): List of URLs for extract mode.
+            url (Optional[str]): URL to scrape or crawl. Required for scrape and crawl modes.
+            query (Optional[str]): Query to search for. Required for search mode.
+            urls (Optional[List[str]]): List of URLs for extract mode. Required for extract mode.
 
         Returns:
-            List[Document]: List of documents.
+            List[Document]: List of documents with extracted content and metadata.
 
         Raises:
-            ValueError: If invalid combination of parameters is provided.
-
+            ValueError: If invalid combination of parameters is provided or required parameters are missing.
         """
-        if sum(x is not None for x in [url, query, urls]) != 1:
-            raise ValueError("Exactly one of url, query, or urls must be provided.")
+        # Validate input parameters
+        if self.mode in ["scrape", "crawl"] and url is None:
+            raise ValueError(f"URL must be provided for {self.mode} mode.")
+        elif self.mode == "search" and query is None:
+            raise ValueError("Query must be provided for search mode.")
+        elif self.mode == "extract" and urls is None:
+            raise ValueError("URLs must be provided for extract mode.")
 
         documents = []
 
         if self.mode == "scrape":
-            # [SCRAPE] params: https://docs.firecrawl.dev/api-reference/endpoint/scrape
-            if url is None:
-                raise ValueError("URL must be provided for scrape mode.")
-            firecrawl_docs = self.firecrawl.scrape_url(url, params=self.params)
-            documents.append(
-                Document(
-                    text=firecrawl_docs.get("markdown", ""),
-                    metadata=firecrawl_docs.get("metadata", {}),
-                )
-            )
+            documents = self._scrape_url(url)
         elif self.mode == "crawl":
-            # [CRAWL] params: https://docs.firecrawl.dev/api-reference/endpoint/crawl-post
-            if url is None:
-                raise ValueError("URL must be provided for crawl mode.")
-            firecrawl_docs = self.firecrawl.crawl_url(url, params=self.params)
-            # Handle both dictionary and object responses
-            if isinstance(firecrawl_docs, dict):
-                firecrawl_docs = firecrawl_docs.get("data", [])
-            else:
-                # If it's an object with a data attribute
-                firecrawl_docs = getattr(firecrawl_docs, "data", [])
-            for doc in firecrawl_docs:
-                documents.append(
-                    Document(
-                        text=doc.get("markdown", ""),
-                        metadata=doc.get("metadata", {}),
-                    )
-                )
+            documents = self._crawl_url(url)
         elif self.mode == "search":
-            # [SEARCH] params: https://docs.firecrawl.dev/api-reference/endpoint/search
-            if query is None:
-                raise ValueError("Query must be provided for search mode.")
+            documents = self._search_content(query)
+        elif self.mode == "extract":
+            documents = self._extract_data(urls)
 
-            # Remove query from params if it exists to avoid duplicate
-            search_params = self.params.copy() if self.params else {}
-            if "query" in search_params:
-                del search_params["query"]
+        return documents
 
-            # Get search results
-            search_response = self.firecrawl.search(query, search_params)
-
-            # Handle the search response format
-            if isinstance(search_response, dict):
-                # Check for success
-                if search_response.get("success", False):
-                    # Get the data array
-                    search_results = search_response.get("data", [])
-
-                    # Process each search result
-                    for result in search_results:
-                        # Extract text content (prefer markdown if available)
-                        text = result.get("markdown", "")
-                        if not text:
-                            # Fall back to description if markdown is not available
-                            text = result.get("description", "")
-
-                        # Extract metadata
-                        metadata = {
-                            "title": result.get("title", ""),
-                            "url": result.get("url", ""),
-                            "description": result.get("description", ""),
-                            "source": "search",
-                            "query": query,
+    def _scrape_url(self, url: str) -> List[Document]:
+        """Scrape content from a single URL."""
+        try:
+            # Extract scrape options and pass as keyword arguments
+            scrape_kwargs = self.params or {}
+            scrape_kwargs["integration"] = "llamaindex"
+            
+            # Call the scrape method with keyword arguments
+            response = self._firecrawl.scrape_url(url, **scrape_kwargs)
+            
+            # Handle response
+            if isinstance(response, dict):
+                return [
+                    Document(
+                        text=response.get("markdown", ""),
+                        metadata={
+                            "url": url,
+                            "source": "scrape",
+                            **response.get("metadata", {})
                         }
+                    )
+                ]
+            else:
+                # Handle object response
+                return [
+                    Document(
+                        text=getattr(response, "markdown", ""),
+                        metadata={
+                            "url": url,
+                            "source": "scrape",
+                            **getattr(response, "metadata", {})
+                        }
+                    )
+                ]
+        except Exception as e:
+            return [
+                Document(
+                    text=f"Error scraping {url}: {str(e)}",
+                    metadata={"url": url, "source": "scrape", "error": str(e)}
+                )
+            ]
 
-                        # Add additional metadata if available
-                        if "metadata" in result and isinstance(
-                            result["metadata"], dict
-                        ):
-                            metadata.update(result["metadata"])
+    def _crawl_url(self, url: str) -> List[Document]:
+        """Crawl an entire website starting from the given URL."""
+        try:
+            # Extract crawl options and pass as keyword arguments
+            crawl_kwargs = self.params or {}
+            crawl_kwargs["integration"] = "llamaindex"
+            
+            # Call the crawl method with keyword arguments
+            response = self._firecrawl.crawl_url(url, **crawl_kwargs)
+            
+            documents = []
+            
+            # Handle response
+            if isinstance(response, dict):
+                data = response.get("data", [])
+                for doc in data:
+                    documents.append(
+                        Document(
+                            text=doc.get("markdown", ""),
+                            metadata={
+                                "url": doc.get("url", url),
+                                "source": "crawl",
+                                **doc.get("metadata", {})
+                            }
+                        )
+                    )
+            else:
+                # Handle object response - FirecrawlDocument objects
+                data = getattr(response, "data", [])
+                for doc in data:
+                    documents.append(
+                        Document(
+                            text=getattr(doc, "markdown", ""),
+                            metadata={
+                                "url": getattr(doc, "url", url),
+                                "source": "crawl",
+                                **getattr(doc, "metadata", {})
+                            }
+                        )
+                    )
+            
+            return documents
+        except Exception as e:
+            return [
+                Document(
+                    text=f"Error crawling {url}: {str(e)}",
+                    metadata={"url": url, "source": "crawl", "error": str(e)}
+                )
+            ]
 
-                        # Create document
+    def _search_content(self, query: str) -> List[Document]:
+        """Search for content across the web."""
+        try:
+            # Extract search options and pass as keyword arguments
+            search_kwargs = self.params or {}
+            search_kwargs["integration"] = "llamaindex"
+            
+            # Call the search method with keyword arguments
+            response = self._firecrawl.search(query, **search_kwargs)
+            
+            documents = []
+            
+            # Handle response
+            if isinstance(response, dict):
+                if response.get("success", False):
+                    data = response.get("data", [])
+                    for result in data:
+                        # Search results have title, description, url but no markdown
+                        text = result.get("description", "")
                         documents.append(
                             Document(
                                 text=text,
-                                metadata=metadata,
+                                metadata={
+                                    "title": result.get("title", ""),
+                                    "url": result.get("url", ""),
+                                    "description": result.get("description", ""),
+                                    "source": "search",
+                                    "query": query,
+                                    **result.get("metadata", {})
+                                }
                             )
                         )
                 else:
-                    # Handle unsuccessful response
-                    warning = search_response.get("warning", "Unknown error")
-                    print(f"Search was unsuccessful: {warning}")
+                    warning = response.get("warning", "Unknown error")
                     documents.append(
                         Document(
                             text=f"Search for '{query}' was unsuccessful: {warning}",
-                            metadata={
-                                "source": "search",
-                                "query": query,
-                                "error": warning,
-                            },
+                            metadata={"source": "search", "query": query, "error": warning}
                         )
                     )
             else:
-                # Handle unexpected response format
-                print(f"Unexpected search response format: {type(search_response)}")
-                documents.append(
-                    Document(
-                        text=str(search_response),
-                        metadata={"source": "search", "query": query},
-                    )
-                )
-        elif self.mode == "extract":
-            # [EXTRACT] params: https://docs.firecrawl.dev/api-reference/endpoint/extract
-            if urls is None:
-                # For backward compatibility, convert single URL to list if provided
-                if url is not None:
-                    urls = [url]
-                else:
-                    raise ValueError("URLs must be provided for extract mode.")
-
-            # Ensure we have a prompt in params
-            extract_params = self.params.copy() if self.params else {}
-            if "prompt" not in extract_params:
-                raise ValueError("A 'prompt' parameter is required for extract mode.")
-
-            # Call the extract method with urls and params
-            extract_response = self.firecrawl.extract(urls, extract_params)
-
-            # Handle the extract response format
-            if isinstance(extract_response, dict):
-                # Check for success
-                if extract_response.get("success", False):
-                    # Get the data from the response
-                    extract_data = extract_response.get("data", {})
-
-                    # Get the sources if available
-                    sources = extract_response.get("sources", {})
-
-                    # Convert the extracted data to text
-                    if extract_data:
-                        # Convert the data to a formatted string
-                        text_parts = []
-                        for key, value in extract_data.items():
-                            text_parts.append(f"{key}: {value}")
-
-                        text = "\n".join(text_parts)
-
-                        # Create metadata
-                        metadata = {
-                            "urls": urls,
-                            "source": "extract",
-                            "status": extract_response.get("status"),
-                            "expires_at": extract_response.get("expiresAt"),
-                        }
-
-                        # Add sources to metadata if available
-                        if sources:
-                            metadata["sources"] = sources
-
-                        # Create document
+                # Handle object response
+                if hasattr(response, "success") and response.success:
+                    data = getattr(response, "data", [])
+                    for result in data:
+                        # Search results have title, description, url but no markdown
+                        text = getattr(result, "description", "")
                         documents.append(
                             Document(
                                 text=text,
-                                metadata=metadata,
+                                metadata={
+                                    "title": result.get("title") or "",
+                                    "url": result.get("url") or "",
+                                    "description": result.get("description") or "",
+                                    "source": "search",
+                                    "query": query
+                                }
+                            )
+                        )
+            
+            return documents
+        except Exception as e:
+            return [
+                Document(
+                    text=f"Error searching for '{query}': {str(e)}",
+                    metadata={"source": "search", "query": query, "error": str(e)}
+                )
+            ]
+
+    def _extract_data(self, urls: List[str]) -> List[Document]:
+        """Extract structured data from URLs using a prompt."""
+        try:
+            # Extract extract options and pass as keyword arguments
+            extract_kwargs = self.params or {}
+            extract_kwargs["integration"] = "llamaindex"
+            
+            # Ensure prompt is provided
+            if "prompt" not in extract_kwargs:
+                raise ValueError("A 'prompt' parameter is required for extract mode.")
+            
+            # Call the extract method with keyword arguments
+            response = self._firecrawl.extract(urls, **extract_kwargs)
+            
+            documents = []
+            
+            # Handle response
+            if isinstance(response, dict):
+                if response.get("success", False):
+                    data = response.get("data", {})
+                    sources = response.get("sources", {})
+                    
+                    if data:
+                        # Convert extracted data to text
+                        text_parts = []
+                        for key, value in data.items():
+                            text_parts.append(f"{key}: {value}")
+                        
+                        text = "\n".join(text_parts)
+                        
+                        documents.append(
+                            Document(
+                                text=text,
+                                metadata={
+                                    "urls": urls,
+                                    "source": "extract",
+                                    "status": response.get("status"),
+                                    "expires_at": response.get("expiresAt"),
+                                    "sources": sources
+                                }
                             )
                         )
                     else:
-                        # Handle empty data in successful response
-                        print("Extract response successful but no data returned")
                         documents.append(
                             Document(
                                 text="Extraction was successful but no data was returned",
-                                metadata={"urls": urls, "source": "extract"},
+                                metadata={"urls": urls, "source": "extract"}
                             )
                         )
                 else:
-                    # Handle unsuccessful response
-                    warning = extract_response.get("warning", "Unknown error")
-                    print(f"Extraction was unsuccessful: {warning}")
+                    warning = response.get("warning", "Unknown error")
                     documents.append(
                         Document(
                             text=f"Extraction was unsuccessful: {warning}",
-                            metadata={
-                                "urls": urls,
-                                "source": "extract",
-                                "error": warning,
-                            },
+                            metadata={"urls": urls, "source": "extract", "error": warning}
                         )
                     )
             else:
-                # Handle unexpected response format
-                print(f"Unexpected extract response format: {type(extract_response)}")
-                documents.append(
-                    Document(
-                        text=str(extract_response),
-                        metadata={"urls": urls, "source": "extract"},
-                    )
+                # Handle object response
+                if hasattr(response, "success") and response.success:
+                    data = getattr(response, "data", {})
+                    if data:
+                        text_parts = []
+                        for key, value in data.items():
+                            text_parts.append(f"{key}: {value}")
+                        
+                        text = "\n".join(text_parts)
+                        
+                        documents.append(
+                            Document(
+                                text=text,
+                                metadata={
+                                    "urls": urls,
+                                    "source": "extract"
+                                }
+                            )
+                        )
+            
+            return documents
+        except Exception as e:
+            return [
+                Document(
+                    text=f"Error extracting data from {urls}: {str(e)}",
+                    metadata={"urls": urls, "source": "extract", "error": str(e)}
                 )
-        else:
-            raise ValueError(
-                "Invalid mode. Please choose 'scrape', 'crawl', 'search', or 'extract'."
-            )
-
-        return documents
+            ]

@@ -1,4 +1,4 @@
-"""Test script for FireCrawlWebReader with integration parameter."""
+"""Test script for FireCrawlWebReader with the updated API."""
 
 import os
 from llama_index.readers.web.firecrawl_web.base import FireCrawlWebReader
@@ -15,7 +15,7 @@ def test_firecrawl_reader():
         api_key=api_key,
         mode="scrape",
         params={
-            "timeout": 5555
+            "timeout": 40000
         }
     )
     scrape_docs = scrape_reader.load_data(url="https://www.paulgraham.com/worked.html?v=123")
@@ -27,19 +27,23 @@ def test_firecrawl_reader():
         api_key=api_key,
         mode="crawl",
         params={
-            "delay": 2
+            "delay": 2,
+            "limit": 5
         }
     )
     crawl_docs = crawl_reader.load_data(url="https://mairistumpf.com")
-    print(f"Scrape mode documents: {len(crawl_docs)}")
+    print(f"Crawl mode documents: {len(crawl_docs)}")
     print(f"First document metadata: {crawl_docs[0].metadata}")
 
     print("\nTesting search mode...")
     search_reader = FireCrawlWebReader(
         api_key=api_key,
         mode="search",
+        params={
+            "limit": 3
+        }
     )
-    search_docs = search_reader.load_data(query="Paul Graham essays")
+    search_docs = search_reader.load_data(query="Who is the president of the United States?")
     print(f"Search mode documents: {len(search_docs)}")
     print(f"First document metadata: {search_docs[0].metadata}")
 
