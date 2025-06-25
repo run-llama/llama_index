@@ -234,7 +234,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             to text. If not specified, use default from DEFAULT_FILE_READER_CLS.
         num_files_limit (Optional[int]): Maximum number of files to read.
             Default is None.
-        file_metadata (Optional[Callable[str, Dict]]): A function that takes
+        file_metadata (Optional[Callable[[str], Dict]]): A function that takes
             in a filename and returns a Dict of metadata for the Document.
             Default is None.
         raise_on_error (bool): Whether to raise an error if a file cannot be read.
