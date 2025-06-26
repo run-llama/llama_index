@@ -78,7 +78,7 @@ dependencies = [
     "eval-type-backport>=0.2.0,<0.3 ; python_version < '3.10'",
     "banks>=2.0.0,<3",
     "aiosqlite",
-    "llama-index-workflows>=1.0,<2",
+    "llama-index-workflows>=1.0.1,<2",
     "setuptools>=80.9.0",
 ]
 
