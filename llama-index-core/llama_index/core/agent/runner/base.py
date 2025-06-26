@@ -1,3 +1,4 @@
+import deprecated
 import os
 from abc import abstractmethod
 from collections import deque
@@ -206,8 +207,20 @@ class AgentState(BaseModel):
         self.task_dict = {}
 
 
+@deprecated.deprecated(
+    reason=(
+        "AgentRunner has been deprecated and is not maintained.\n\n"
+        "This implementation will be removed in a v0.13.0.\n\n"
+        "See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+    action="once",
+)
 class AgentRunner(BaseAgentRunner):
     """
+    DEPRECATED: AgentRunner has been deprecated and is not maintained.
+    This implementation will be removed in a v0.13.0.
+    See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/
+
     Agent runner.
 
     Top-level agent orchestrator that can create tasks, run each step in a task,

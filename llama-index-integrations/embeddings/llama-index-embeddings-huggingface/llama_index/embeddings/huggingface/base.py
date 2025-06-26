@@ -332,6 +332,12 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
         """
         return self._embed(texts, prompt_name="text")
 
+    async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """
+        Generates Embeddings for text asynchronously.
+        """
+        return await asyncio.to_thread(self._get_text_embeddings, texts)
+
     def _get_image_embedding(self, img_file_path: ImageType) -> List[float]:
         """Generate embedding for an image."""
         return self._embed([img_file_path])[0]

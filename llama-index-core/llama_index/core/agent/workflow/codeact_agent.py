@@ -98,7 +98,14 @@ class CodeActAgent(BaseWorkflowAgent):
             FunctionTool.from_defaults(code_execute_fn, name=EXECUTE_TOOL_NAME)  # type: ignore
         )
         if isinstance(code_act_system_prompt, str):
+            if system_prompt:
+                code_act_system_prompt += "\n" + system_prompt
             code_act_system_prompt = PromptTemplate(code_act_system_prompt)
+        elif isinstance(code_act_system_prompt, BasePromptTemplate):
+            if system_prompt:
+                code_act_system_str = code_act_system_prompt.get_template()
+                code_act_system_str += "\n" + system_prompt
+            code_act_system_prompt = PromptTemplate(code_act_system_str)
 
         super().__init__(
             name=name,

@@ -29,15 +29,15 @@ This tutorial has three main parts: **Building a RAG pipeline**, **Building an a
 
     - **[Building a simple workflow](./workflows/index.md)**: a simple workflow that shows you how to use the `Workflow` class to build a basic agentic application.
 
-    - **[Visualizing workflows](./workflows/visualizing_workflows.md)**: workflows can be visualized as a graph to help you understand the flow of control through your application.
-
-    - **[Looping and branching](./workflows/looping_and_branching.md)**: these core control flow patterns are the building blocks of more complex workflows.
+    - **[Looping and branching](./workflows/branches_and_loops.md)**: these core control flow patterns are the building blocks of more complex workflows.
 
     - **[Concurrent execution](./workflows/concurrent_execution.md)**: you can run steps in parallel to split up work efficiently.
 
-    - **[Streaming events](./workflows/streaming_events.md)**: your agents can emit user-facing events just like the agents you built above.
+    - **[Streaming events](./workflows/stream.md)**: your agents can emit user-facing events just like the agents you built above.
 
-    - **[Multi-agent systems from scratch](./workflows/multi_agent_system.md)**: you can build multi-agent systems from scratch using the techniques you've learned above.
+    - **[Stateful workflows](./workflows/state.md)**: workflows can maintain state, which is important for building more complex applications.
+
+    - **[Observability](./workflows/observability.md)**: workflows can be traced and debugged using various integrations like Arize Pheonix, OpenTelemetry, and more.
 
 - **[Adding RAG to your agents](./rag/index.md)**: Retrieval-Augmented Generation (RAG) is a key technique for getting your data to an LLM, and a component of more sophisticated agentic systems. We'll show you how to enhance your agents with a full-featured RAG pipeline that can answer questions about your data. This includes:
 

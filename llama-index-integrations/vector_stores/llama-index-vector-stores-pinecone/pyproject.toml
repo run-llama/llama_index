@@ -26,10 +26,10 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-pinecone"
-version = "0.5.0"
+version = "0.6.0"
 description = "llama-index vector_stores pinecone integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<3.13"
+requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
