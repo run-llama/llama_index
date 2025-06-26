@@ -95,9 +95,11 @@ nav:
           - ./examples/agent/agent_workflow_basic.ipynb
           - ./examples/agent/agent_workflow_multi.ipynb
           - ./examples/agent/agent_workflow_research_assistant.ipynb
+          - ./examples/agent/agents_as_tools.ipynb
           - ./examples/agent/anthropic_agent.ipynb
           - ./examples/agent/bedrock_converse_agent.ipynb
           - ./examples/agent/code_act_agent.ipynb
+          - ./examples/agent/custom_multi_agent.ipynb
           - ./examples/agent/from_scratch_code_act_agent.ipynb
           - ./examples/agent/memory/chat_memory_buffer.ipynb
           - ./examples/agent/memory/composable_memory.ipynb
@@ -712,6 +714,7 @@ nav:
           - ./examples/vector_stores/ZepIndexDemo.ipynb
           - ./examples/vector_stores/chroma_auto_retriever.ipynb
           - ./examples/vector_stores/chroma_metadata_filter.ipynb
+          - ./examples/vector_stores/db2llamavs.ipynb
           - ./examples/vector_stores/elasticsearch_auto_retriever.ipynb
           - ./examples/vector_stores/existing_data/pinecone_existing_data.ipynb
           - ./examples/vector_stores/existing_data/weaviate_existing_data.ipynb
@@ -1642,6 +1645,7 @@ nav:
               - ./api_reference/storage/vector_store/couchbase.md
               - ./api_reference/storage/vector_store/dashvector.md
               - ./api_reference/storage/vector_store/databricks.md
+              - ./api_reference/storage/vector_store/db2.md
               - ./api_reference/storage/vector_store/deeplake.md
               - ./api_reference/storage/vector_store/docarray.md
               - ./api_reference/storage/vector_store/duckdb.md
@@ -1765,6 +1769,7 @@ nav:
           - ./api_reference/tools/zapier.md
       - Voice Agents:
           - ./api_reference/voice_agents/elevenlabs.md
+          - ./api_reference/voice_agents/openai.md
       - Workflow:
           - ./api_reference/workflow/decorators.md
           - ./api_reference/workflow/context.md
@@ -2483,6 +2488,8 @@ plugins:
             - ../llama-index-integrations/protocols/llama-index-protocols-ag-ui
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-openGauss
             - ../llama-index-integrations/tools/llama-index-tools-hive
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-db2
+            - ../llama-index-integrations/voice_agents/llama-index-voice-agents-openai
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
