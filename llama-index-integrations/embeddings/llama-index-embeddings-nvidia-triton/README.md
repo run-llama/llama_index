@@ -1,6 +1,6 @@
 # LlamaIndex Embeddings Integration: Nvidia Triton
 
-This integration allows LlamaIndex to use embedding models hosted on a [Triton Inference Server Github](https://github.com/triton-inference-server/server).
+This integration allows LlamaIndex to use embedding models hosted on a [Triton Inference Server](https://github.com/triton-inference-server/server).
 
 ## Usage:
 
