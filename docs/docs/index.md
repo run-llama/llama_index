@@ -18,9 +18,9 @@ LlamaIndex is the leading framework for building LLM-powered agents over your da
 
     Get started in Python or TypeScript in just 5 lines of code!
 
--   <span style="font-size: 200%">[LlamaCloud](#llamacloud)</span>
+-   <span style="font-size: 200%">[LlamaCloud](https://docs.cloud.llamaindex.ai/)</span>
 
-    Managed services for LlamaIndex including [LlamaParse](https://docs.cloud.llamaindex.ai/llamaparse/getting_started), the world's best document parser.
+    Managed services for LlamaIndex including [LlamaParse](https://docs.cloud.llamaindex.ai/llamaparse/overview), the world's best document parser.
 
 -   <span style="font-size: 200%">[Community](#community)</span>
 
@@ -116,9 +116,11 @@ If any part of this trips you up, don't worry! Check out our more comprehensive 
 
 If you're an enterprise developer, check out [**LlamaCloud**](https://llamaindex.ai/enterprise). It is an end-to-end managed service for data parsing, ingestion, indexing, and retrieval, allowing you to get production-quality data for your production LLM application. It's available both hosted on our servers or as a self-hosted solution.
 
+You can also check out the [LlamaCloud documentation](https://docs.cloud.llamaindex.ai/) for more details.
+
 ### LlamaParse
 
-LlamaParse is our state-of-the-art document parsing solution. It's available as part of LlamaCloud and also available as a self-serve API. You can [sign up](https://cloud.llamaindex.ai/) and parse up to 1000 pages/day for free, or enter a credit card for unlimited parsing. [Learn more](https://llamaindex.ai/enterprise).
+LlamaParse is our state-of-the-art document parsing solution. It's available as part of LlamaCloud and also available as a self-serve API. You can [sign up](https://cloud.llamaindex.ai/) and get 10,000 free credits per month, or enter a credit card for unlimited parsing. [Learn more](https://www.llamaindex.ai/llamaparse) or check out the [LlamaCloud documentation](https://docs.cloud.llamaindex.ai/llamaparse/overview).
 
 ## Community
 
