@@ -1897,7 +1897,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-nvidia-triton"
-version = "0.6.0"
+version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
