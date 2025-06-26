@@ -1,6 +1,6 @@
 from typing import Dict, List, Optional, Union, Any
-from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.core.memory.types import BaseMemory
+from llama_index.core.memory import Memory as LlamaIndexMemory
 from llama_index.memory.mem0.utils import (
     convert_memory_to_system_message,
     convert_chat_history_to_dict,
@@ -14,6 +14,7 @@ from llama_index.core.bridge.pydantic import (
     model_validator,
     SerializeAsAny,
     PrivateAttr,
+    ConfigDict,
 )
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
@@ -65,7 +66,8 @@ class Mem0Context(BaseModel):
 
 
 class Mem0Memory(BaseMem0):
-    primary_memory: SerializeAsAny[BaseMemory] = Field(
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    primary_memory: SerializeAsAny[LlamaIndexMemory] = Field(
         description="Primary memory source for chat agent."
     )
     context: Optional[Mem0Context] = None
@@ -99,7 +101,7 @@ class Mem0Memory(BaseMem0):
         search_msg_limit: int = 5,
         **kwargs: Any,
     ):
-        primary_memory = ChatMemoryBuffer.from_defaults()
+        primary_memory = LlamaIndexMemory.from_defaults()
 
         try:
             context = Mem0Context(**context)
@@ -124,7 +126,7 @@ class Mem0Memory(BaseMem0):
         search_msg_limit: int = 5,
         **kwargs: Any,
     ):
-        primary_memory = ChatMemoryBuffer.from_defaults()
+        primary_memory = LlamaIndexMemory.from_defaults()
 
         try:
             context = Mem0Context(**context)
