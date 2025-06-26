@@ -1,13 +1,8 @@
 from unittest import TestCase, mock
 
 import boto3
-from llama_index.core.postprocessor.types import (
-    BaseNodePostprocessor,
-    NodeWithScore,
-    QueryBundle,
-)
-from llama_index.core.schema import TextNode
-
+from llama_index.core.postprocessor.types import BaseNodePostprocessor
+from llama_index.core.schema import NodeWithScore, QueryBundle, TextNode
 from llama_index.postprocessor.bedrock_rerank import BedrockRerank
 
 
@@ -43,7 +38,7 @@ class TestBedrockRerank(TestCase):
         ]
 
         bedrock_client = boto3.client("bedrock-agent-runtime", region_name="us-west-2")
-        reranker = BedrockRerank(client=bedrock_client, num_results=2)
+        reranker = BedrockRerank(client=bedrock_client, top_n=2)
 
         with mock.patch.object(
             bedrock_client, "rerank", return_value=exp_rerank_response
@@ -65,3 +60,19 @@ class TestBedrockRerank(TestCase):
                 self.assertAlmostEqual(
                     actual_node_with_score.score, expected_node_with_score.score
                 )
+
+    def test_bedrock_rerank_consistent_top_n(self):
+        input_nodes = [NodeWithScore(node=TextNode(id_="4", text="last 1"))]
+
+        bedrock_client = boto3.client("bedrock-agent-runtime", region_name="us-west-2")
+        reranker = BedrockRerank(client=bedrock_client, top_n=4)
+        self.assertEqual(reranker.top_n, 4)
+
+        with mock.patch.object(bedrock_client, "rerank") as patched_rerank:
+            reranker.postprocess_nodes(input_nodes, query_str="last")
+            self.assertTrue(patched_rerank.called)
+            num_results = patched_rerank.call_args.kwargs["rerankingConfiguration"][
+                "bedrockRerankingConfiguration"
+            ]["numberOfResults"]
+            self.assertEqual(num_results, len(input_nodes))
+            self.assertEqual(reranker.top_n, 4)
