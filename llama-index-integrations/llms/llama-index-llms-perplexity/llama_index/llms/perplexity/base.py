@@ -68,8 +68,7 @@ class Perplexity(LLM):
         default=None,
         description="The context window to use during generation.",
     )
-    api_key: str = Field(
-        default=getenv("PPLX_API_KEY"),
+    api_key: Optional[str] = Field(
         description="The Perplexity API key.",
         exclude=True,
     )
@@ -101,7 +100,7 @@ class Perplexity(LLM):
         model: str = "sonar-pro",
         temperature: float = 0.2,
         max_tokens: Optional[int] = None,
-        api_key: Optional[str] = getenv("PPLX_API_KEY"),
+        api_key: Optional[str] = None,
         api_base: Optional[str] = "https://api.perplexity.ai",
         additional_kwargs: Optional[dict[str, Any]] = None,
         max_retries: int = 10,
@@ -116,6 +115,7 @@ class Perplexity(LLM):
         timeout: float = 30.0,
         **kwargs: Any,
     ) -> None:
+        api_key = api_key or getenv("PPLX_API_KEY")
         additional_kwargs = additional_kwargs or {}
         headers = {
             "accept": "application/json",
