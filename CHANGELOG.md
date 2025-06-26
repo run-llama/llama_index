@@ -1,5 +1,79 @@
 # ChangeLog
 
+## [2025-06-25]
+
+### `llama-index-core` [0.12.44]
+
+- feat: Adding a `CachePoint` content block for caching chat messages (#19193)
+- fix: fix react system header formatting in workflow agent (#19158)
+- fix: fix ReActOutputParser when no "Thought:" prefix is produced by the LLM (#19190)
+- fix: Fixed string striping in react output parser (#19192)
+- fix: properly handle system prompt for CodeAct agent (#19191)
+- fix: Exclude raw field in AgentStream event to fix potential serialization issue (#19150)
+- chore: Mark older agent architectures in core as deprecated (#19205)
+- chore: deprecate query pipelines in code (#19206)
+
+### `llama-index-embeddings-fastembed` [0.3.5]
+
+- feat: Add Batch Support for FastEmbed (#19147)
+
+### `llama-index-embeddings-huggingface` [0.5.5]
+
+- feat: Add async batching for huggingface using `asyncio.to_thread` (#19207)
+
+### `llama-index-llms-anthropic` [0.7.4]
+
+- fix: update kwargs for anthropic bedrock (#19169)
+
+### `llama-index-llms-google-genai` [0.2.2]
+
+- fix: Setting up System instruction properly for google genai client (#19196)
+
+### `llama-index-llms-mistralai` [0.6.1]
+
+- fix: Fix image url handling in Mistral AI (#19139)
+
+### `llama-index-llms-perplexity` [0.3.7]
+
+- fix: make api_key use `PPLX_API_KEY` in perplexity llm integration (#19217)
+
+### `llama-index-postprocessor-bedrock-rerank` [0.4.0]
+
+- fix: Avoid changing 'top_n' self attribute at runtime (#19221)
+
+### `llama-index-postprocessor-sbert-rerank` [0.3.2]
+
+- feat: add `cross_encoder_kwargs` parameter for advanced configuration (#19148)
+
+### `llama-index-utils-workflow` [0.3.5]
+
+- feat: Adding visualization functions for single/multi agent workflows (#19101)
+
+### `llama-index-vector-stores-azureaisearch` [0.3.8]
+
+- feat: Enable forwarding of arbitrary Azure Search SDK parameters in AzureAISearchVectorStore for document retrieval (#19173)
+
+### `llama-index-vector-stores-db2` [0.1.0]
+
+- feat: add IBM Db2 vector store (#19195)
+
+### `llama-index-vector-stores-duckdb` [0.4.0]
+
+- feat: refactor DuckDB VectorStore (#19106)
+
+### `llama-index-vector-stores-pinecone` [0.6.0]
+
+- feat: support pinecone v7 (#19163)
+- fix: support python version `>=3.9,<4.0` for `llama-index-vector-stores-pinecone` (#19186)
+
+### `llama-index-vector-stores-qdrant` [0.6.1]
+
+- fix: fix types with IN/NIN filters in qdrant (#19159)
+
+### `llama-index-voice-agents-openai` [0.1.1-beta]
+
+- feat: Adding beta OpenAI Realtime Conversation integration (#19010)
+
 ## [2025-06-18]
 
 ### `llama-index-core` [0.12.43]
