@@ -1048,7 +1048,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.12.43"
+version = "0.12.44"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -1126,7 +1126,7 @@ requires-dist = [
     { name = "filetype", specifier = ">=1.2.0,<2" },
     { name = "fsspec", specifier = ">=2023.5.0" },
     { name = "httpx" },
-    { name = "llama-index-workflows", specifier = ">=0.2.1" },
+    { name = "llama-index-workflows", specifier = ">=1.0,<2" },
     { name = "nest-asyncio", specifier = ">=1.5.8,<2" },
     { name = "networkx", specifier = ">=3.0" },
     { name = "nltk", specifier = ">3.8.1" },
@@ -1188,16 +1188,16 @@ wheels = [
 
 [[package]]
 name = "llama-index-workflows"
-version = "0.2.1"
+version = "1.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "eval-type-backport", marker = "python_full_version < '3.10'" },
     { name = "llama-index-instrumentation" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/68/6b/db3e3ee62256e9357f15d3228383d0309228808ed96b3986a7ef05a23245/llama_index_workflows-0.2.1.tar.gz", hash = "sha256:209fe7ffbf2f8ffab15c97e4dbf08c0562be24ca04a52aea8bca465cf63e900d", size = 76379, upload-time = "2025-06-11T13:42:57.315Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/df/2e/5159dd8d613ceff3412b3945d05f8bec551281186c1f0ab98c026cddde85/llama_index_workflows-1.0.0.tar.gz", hash = "sha256:f902491544001904eaa0ce74e52789c1d5acd2ecc0819ab3717952bf8a322ebf", size = 85558, upload-time = "2025-06-25T20:46:19.174Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f6/87/bbbaf421ff39652c6cfb0127611891fdc1253912c4fa759abe7c3fe60534/llama_index_workflows-0.2.1-py3-none-any.whl", hash = "sha256:a0bc5e90addeafcc4d2070aa877fed00f070f89580a057e9014996b797b7608c", size = 29125, upload-time = "2025-06-11T13:42:56.197Z" },
+    { url = "https://files.pythonhosted.org/packages/4c/fc/d962f482afdb0483cd1a6d0f54ef811c4c25edca3cbebea7794e82ec0472/llama_index_workflows-1.0.0-py3-none-any.whl", hash = "sha256:14689e954f797fee3c330b11c4f291afcc554caabd960cb3251275a30ab5a14b", size = 36965, upload-time = "2025-06-25T20:46:18.439Z" },
 ]
 
 [[package]]
