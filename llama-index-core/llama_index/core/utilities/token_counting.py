@@ -30,7 +30,7 @@ class TokenCounter:
             int: The token count.
 
         """
-        return len(self.tokenizer(string))
+        return len(self.tokenizer(string.replace("\n", " ")))
 
     def estimate_tokens_in_messages(self, messages: List[ChatMessage]) -> int:
         """
