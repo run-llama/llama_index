@@ -1,6 +1,5 @@
 from typing import Dict, List, Optional, Union, Any
-from llama_index.core.memory.types import BaseMemory
-from llama_index.core.memory import Memory as LlamaIndexMemory
+from llama_index.core.memory import BaseMemory, Memory as LlamaIndexMemory
 from llama_index.memory.mem0.utils import (
     convert_memory_to_system_message,
     convert_chat_history_to_dict,
@@ -15,6 +14,7 @@ from llama_index.core.bridge.pydantic import (
     SerializeAsAny,
     PrivateAttr,
     ConfigDict,
+    model_serializer,
 )
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
@@ -80,6 +80,20 @@ class Mem0Memory(BaseMem0):
         super().__init__(**kwargs)
         if context is not None:
             self.context = context
+
+    @model_serializer
+    def serialize_memory(self) -> Dict[str, Any]:
+        # leaving out the two keys since they are causing serialization/deserialization problems
+        return {
+            "primary_memory": self.primary_memory.model_dump(
+                exclude={
+                    "memory_blocks_template",
+                    "insert_method",
+                }
+            ),
+            "search_msg_limit": self.search_msg_limit,
+            "context": self.context.model_dump(),
+        }
 
     @classmethod
     def class_name(cls) -> str:
