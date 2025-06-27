@@ -1,5 +1,6 @@
 """Retriever OpenAI agent."""
 
+import deprecated
 from typing import Any, cast
 
 from llama_index.agent.openai_legacy.openai_agent import (
@@ -9,6 +10,13 @@ from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.tools.types import BaseTool
 
 
+@deprecated.deprecated(
+    reason=(
+        "FnRetrieverOpenAIAgent has been deprecated and is not maintained.\n\n"
+        "`FunctionAgent` is the recommended replacement.\n\n"
+        "See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+)
 class FnRetrieverOpenAIAgent(OpenAIAgent):
     """
     Function Retriever OpenAI Agent.
