@@ -273,9 +273,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
 
         Subclasses can implement this method if batch queries are supported.
         """
-        return await asyncio.gather(
-            *[self._aget_text_embedding(text) for text in texts]
-        )
+        return await asyncio.to_thread(self._get_text_embeddings, texts)
 
     @dispatcher.span
     def get_text_embedding(self, text: str) -> Embedding:
