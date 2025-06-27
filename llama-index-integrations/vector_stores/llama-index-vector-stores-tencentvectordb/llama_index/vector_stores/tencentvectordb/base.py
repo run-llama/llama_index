@@ -188,6 +188,7 @@ class TencentVectorDB(BasePydanticVectorStore):
     _database: Any = PrivateAttr()
     _collection: Any = PrivateAttr()
     _filter_fields: List[FilterField] = PrivateAttr()
+    _metadata_is_json_field: bool = False
 
     def __init__(
         self,
@@ -211,9 +212,15 @@ class TencentVectorDB(BasePydanticVectorStore):
         fields = vars(self._collection).get("indexes", [])
         for field in fields:
             if field["fieldName"] not in [FIELD_ID, DEFAULT_DOC_ID_KEY, FIELD_VECTOR]:
-                self._filter_fields.append(
+                self.filter_fields.append(
                     FilterField(name=field["fieldName"], data_type=field["fieldType"])
                 )
+
+    def _check_metadata_type(self):
+        fields = vars(self._collection).get("indexes", [])
+        for field in fields:
+            if field["fieldName"] == FIELD_METADATA:
+                self._metadata_is_json_field = field.get("fieldType") == "json"
 
     @classmethod
     def class_name(cls) -> str:
@@ -295,6 +302,7 @@ class TencentVectorDB(BasePydanticVectorStore):
                 self._create_collection_in_db(
                     collection_name, collection_description, collection_params
                 )
+            self._check_metadata_type()
         except tcvectordb.exceptions.VectorDBException:
             self._create_collection_in_db(
                 collection_name, collection_description, collection_params
@@ -342,7 +350,7 @@ class TencentVectorDB(BasePydanticVectorStore):
                 params=index_param,
             ),
         )
-        for field in collection_params.filter_fields:
+        for field in collection_params._filter_fields:
             index.add(field.to_vdb_filter())
 
         self._collection = self._database.create_collection(
@@ -447,8 +455,12 @@ class TencentVectorDB(BasePydanticVectorStore):
             if node.ref_doc_id is not None:
                 document.__dict__[DEFAULT_DOC_ID_KEY] = node.ref_doc_id
             if node.metadata is not None:
-                document.__dict__[FIELD_METADATA] = json.dumps(node.metadata)
-                for field in self._filter_fields:
+                document.__dict__[FIELD_METADATA] = (
+                    node.metadata
+                    if self._metadata_is_json_field
+                    else json.dumps(node.metadata)
+                )
+                for field in self.filter_fields:
                     v = node.metadata.get(field.name)
                     if field.match_value(v):
                         document.__dict__[field.name] = v
@@ -535,9 +547,8 @@ class TencentVectorDB(BasePydanticVectorStore):
         for doc in results[0]:
             ids.append(doc.get(FIELD_ID))
             similarities.append(doc.get("score"))
-
-            meta_str = doc.get(FIELD_METADATA)
-            meta = {} if meta_str is None else json.loads(meta_str)
+            meta_str = doc.get(FIELD_METADATA, {})
+            meta = meta_str if self._metadata_is_json_field else json.loads(meta_str)
             doc_id = doc.get(DEFAULT_DOC_ID_KEY)
 
             node = TextNode(
