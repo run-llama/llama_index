@@ -1,5 +1,6 @@
 """Google Search tool spec."""
 
+import json
 import urllib.parse
 from typing import Optional
 
@@ -45,4 +46,17 @@ class GoogleSearchToolSpec(BaseToolSpec):
             url += f"&num={self.num}"
 
         response = requests.get(url)
-        return [Document(text=response.text)]
+        results = json.loads(response.text).get("items", [])
+
+        documents = []
+        if len(results) == 0:
+            return "No search results available"
+        for result in results:
+            if "snippet" in result:
+                documents.append(
+                    Document(
+                        text=result["snippet"],
+                        metadata={"title": result["title"], "link": result["link"]},
+                    )
+                )
+        return documents
