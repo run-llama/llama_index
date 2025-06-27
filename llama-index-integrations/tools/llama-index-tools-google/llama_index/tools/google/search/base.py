@@ -15,7 +15,7 @@ QUERY_URL_TMPL = (
 class GoogleSearchToolSpec(BaseToolSpec):
     """Google Search tool spec."""
 
-    spec_functions = ["google_search"]
+    spec_functions = [("google_search", "agoogle_search")]
 
     def __init__(self, key: str, engine: str, num: Optional[int] = None) -> None:
         """Initialize with parameters."""
