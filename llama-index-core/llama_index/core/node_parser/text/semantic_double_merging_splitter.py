@@ -281,8 +281,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
                     self.language_config.nlp(self._clean_text_advanced(sentence))
                 )
                 > self.appending_threshold
-                and len(last_sentences) + len(sentence) + 1 <= self.max_chunk_size
-                # and not len(chunk) > self.max_chunk_size
+                and len(chunk) + len(sentence) + 1 <= self.max_chunk_size
             ):
                 # elif nlp(last_sentences).similarity(nlp(sentence)) > self.threshold:
                 chunk_sentences.append(sentence)
