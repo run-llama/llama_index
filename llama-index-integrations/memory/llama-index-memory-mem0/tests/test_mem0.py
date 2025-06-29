@@ -1,6 +1,9 @@
 from unittest.mock import patch, MagicMock
+import json
 
+from typing import Optional
 from llama_index.memory.mem0.base import Mem0Memory, Mem0Context
+from workflows.context.serializers import JsonSerializer
 from llama_index.core.memory.chat_memory_buffer import ChatMessage, MessageRole
 from llama_index.memory.mem0.utils import (
     convert_chat_history_to_dict,
@@ -51,6 +54,61 @@ def test_mem0_memory_from_client():
 
         # Assert that the search_msg_limit was set correctly
         assert mem0_memory.search_msg_limit == search_msg_limit  # Add this line
+
+
+def test_ser_deser_memory():
+    # Mock context
+    context = {"user_id": "test_user"}
+
+    # Mock arguments for MemoryClient
+    api_key = "test_api_key"
+    host = "test_host"
+    org_id = "test_org"
+    project_id = "test_project"
+    search_msg_limit = 10  # Add this line
+
+    # Patch MemoryClient
+    with patch("llama_index.memory.mem0.base.MemoryClient") as MockMemoryClient:
+        mock_client = MagicMock()
+        MockMemoryClient.return_value = mock_client
+
+        # Call from_client method
+        mem0_memory = Mem0Memory.from_client(
+            context=context,
+            api_key=api_key,
+            host=host,
+            org_id=org_id,
+            project_id=project_id,
+            search_msg_limit=search_msg_limit,  # Add this line
+        )
+
+        # Assert that MemoryClient was called with the correct arguments
+        MockMemoryClient.assert_called_once_with(
+            api_key=api_key, host=host, org_id=org_id, project_id=project_id
+        )
+        element = mem0_memory.model_dump()
+        assert "primary_memory" in element
+        assert "insert_method" not in element["primary_memory"]
+        assert "memory_blocks_template" not in element["primary_memory"]
+        assert "search_msg_limit" in element
+        assert "context" in element
+        try:
+            k = JsonSerializer().serialize(mem0_memory)
+        except Exception:
+            k = None
+        assert k is not None
+        eld = {
+            "__is_component": True,
+            "value": element,
+            "qualified_name": "llama_index.memory.mem0.base.Mem0Memory",
+        }
+        eld["value"]["class_name"] = "Mem0Memory"
+        assert k == json.dumps(eld)
+        try:
+            v: Optional[Mem0Memory] = JsonSerializer().deserialize(k)
+        except Exception:
+            v = None
+        assert isinstance(v, Mem0Memory)
 
 
 def test_mem0_memory_from_config():
