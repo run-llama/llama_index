@@ -1,11 +1,29 @@
 import asyncio
 import inspect
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Dict, Optional, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    Union,
+)
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import StructuredTool, Tool
 
 from llama_index.core.async_utils import asyncio_run
+from llama_index.core.base.llms.types import (
+    TextBlock,
+    ImageBlock,
+    AudioBlock,
+    CitableBlock,
+    CitationBlock,
+    ContentBlock,
+)
 from llama_index.core.bridge.pydantic import BaseModel, FieldInfo
 from llama_index.core.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
 from llama_index.core.tools.utils import create_schema_from_function
@@ -244,6 +262,22 @@ class FunctionTool(AsyncBaseTool):
 
         return self._real_fn
 
+    def _parse_tool_output(self, raw_output: Any) -> List[ContentBlock]:
+        """Parse tool output into content blocks."""
+        if isinstance(
+            raw_output, (TextBlock, ImageBlock, AudioBlock, CitableBlock, CitationBlock)
+        ):
+            return [raw_output]
+        elif isinstance(raw_output, list) and all(
+            isinstance(
+                item, (TextBlock, ImageBlock, AudioBlock, CitableBlock, CitationBlock)
+            )
+            for item in raw_output
+        ):
+            return raw_output
+        else:
+            return [TextBlock(text=str(raw_output))]
+
     def __call__(self, *args: Any, **kwargs: Any) -> ToolOutput:
         all_kwargs = {**self.partial_params, **kwargs}
         return self.call(*args, **all_kwargs)
@@ -262,9 +296,12 @@ class FunctionTool(AsyncBaseTool):
             k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
         }
 
+        # Parse tool output into content blocks
+        output_blocks = self._parse_tool_output(raw_output)
+
         # Default ToolOutput based on the raw output
         default_output = ToolOutput(
-            content=str(raw_output),
+            blocks=output_blocks,
             tool_name=self.metadata.name,
             raw_input={"args": args, "kwargs": tool_output_kwargs},
             raw_output=raw_output,
@@ -298,9 +335,12 @@ class FunctionTool(AsyncBaseTool):
             k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
         }
 
+        # Parse tool output into content blocks
+        output_blocks = self._parse_tool_output(raw_output)
+
         # Default ToolOutput based on the raw output
         default_output = ToolOutput(
-            content=str(raw_output),
+            blocks=output_blocks,
             tool_name=self.metadata.name,
             raw_input={"args": args, "kwargs": tool_output_kwargs},
             raw_output=raw_output,

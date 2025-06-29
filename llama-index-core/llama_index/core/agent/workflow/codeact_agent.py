@@ -335,7 +335,7 @@ class CodeActAgent(BaseWorkflowAgent):
                 scratchpad.append(
                     ChatMessage(
                         role="tool",
-                        content=str(tool_call_result.tool_output.content),
+                        blocks=tool_call_result.tool_output.blocks,
                         additional_kwargs={"tool_call_id": tool_call_result.tool_id},
                     )
                 )
