@@ -1,6 +1,7 @@
 from unittest.mock import patch, MagicMock
 import json
 
+from typing import Optional
 from llama_index.memory.mem0.base import Mem0Memory, Mem0Context
 from workflows.context.serializers import JsonSerializer
 from llama_index.core.memory.chat_memory_buffer import ChatMessage, MessageRole
@@ -92,17 +93,22 @@ def test_ser_deser_memory():
         assert "search_msg_limit" in element
         assert "context" in element
         try:
-            k = JsonSerializer().serialize(element)
+            k = JsonSerializer().serialize(mem0_memory)
         except Exception:
             k = None
         assert k is not None
-        assert k == json.dumps(element)
+        eld = {
+            "__is_component": True,
+            "value": element,
+            "qualified_name": "llama_index.memory.mem0.base.Mem0Memory",
+        }
+        eld["value"]["class_name"] = "Mem0Memory"
+        assert k == json.dumps(eld)
         try:
-            v = JsonSerializer().deserialize(k)
+            v: Optional[Mem0Memory] = JsonSerializer().deserialize(k)
         except Exception:
             v = None
-        assert k is not None
-        assert element == v
+        assert isinstance(v, Mem0Memory)
 
 
 def test_mem0_memory_from_config():
