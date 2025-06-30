@@ -95,7 +95,7 @@ class ReActAgent(BaseWorkflowAgent):
         react_chat_formatter = self.formatter
 
         # Format initial chat input
-        current_reasoning: list[BaseReasoningStep] = await ctx.get(
+        current_reasoning: list[BaseReasoningStep] = await ctx.store.get(
             self.reasoning_key, default=[]
         )
         input_chat = react_chat_formatter.format(
@@ -154,7 +154,7 @@ class ReActAgent(BaseWorkflowAgent):
 
         # add to reasoning if not a handoff
         current_reasoning.append(reasoning_step)
-        await ctx.set(self.reasoning_key, current_reasoning)
+        await ctx.store.set(self.reasoning_key, current_reasoning)
 
         # If response step, we're done
         raw = (
@@ -194,7 +194,7 @@ class ReActAgent(BaseWorkflowAgent):
         self, ctx: Context, results: List[ToolCallResult], memory: BaseMemory
     ) -> None:
         """Handle tool call results for React agent."""
-        current_reasoning: list[BaseReasoningStep] = await ctx.get(
+        current_reasoning: list[BaseReasoningStep] = await ctx.store.get(
             self.reasoning_key, default=[]
         )
         for tool_call_result in results:
@@ -217,13 +217,13 @@ class ReActAgent(BaseWorkflowAgent):
                 )
                 break
 
-        await ctx.set(self.reasoning_key, current_reasoning)
+        await ctx.store.set(self.reasoning_key, current_reasoning)
 
     async def finalize(
         self, ctx: Context, output: AgentOutput, memory: BaseMemory
     ) -> AgentOutput:
         """Finalize the React agent."""
-        current_reasoning: list[BaseReasoningStep] = await ctx.get(
+        current_reasoning: list[BaseReasoningStep] = await ctx.store.get(
             self.reasoning_key, default=[]
         )
 
@@ -235,7 +235,7 @@ class ReActAgent(BaseWorkflowAgent):
             if reasoning_str:
                 reasoning_msg = ChatMessage(role="assistant", content=reasoning_str)
                 await memory.aput(reasoning_msg)
-                await ctx.set(self.reasoning_key, [])
+                await ctx.store.set(self.reasoning_key, [])
 
             # remove "Answer:" from the response
             if output.response.content and "Answer:" in output.response.content:
@@ -246,6 +246,6 @@ class ReActAgent(BaseWorkflowAgent):
                     ].strip()
 
             # clear scratchpad
-            await ctx.set(self.reasoning_key, [])
+            await ctx.store.set(self.reasoning_key, [])
 
         return output

@@ -98,16 +98,16 @@ async def call_research_agent(ctx: Context, prompt: str) -> str:
         user_msg=f"Write some notes about the following: {prompt}"
     )
 
-    state = await ctx.get("state")
+    state = await ctx.store.get("state")
     state["research_notes"].append(str(result))
-    await ctx.set("state", state)
+    await ctx.store.set("state", state)
 
     return str(result)
 
 
 async def call_write_agent(ctx: Context) -> str:
     """Useful for writing a report based on the research notes or revising the report based on feedback."""
-    state = await ctx.get("state")
+    state = await ctx.store.get("state")
     notes = state.get("research_notes", None)
     if not notes:
         return "No research notes to write from."
@@ -129,14 +129,14 @@ async def call_write_agent(ctx: Context) -> str:
         1
     )
     state["report_content"] = str(report)
-    await ctx.set("state", state)
+    await ctx.store.set("state", state)
 
     return str(report)
 
 
 async def call_review_agent(ctx: Context) -> str:
     """Useful for reviewing the report and providing feedback."""
-    state = await ctx.get("state")
+    state = await ctx.store.get("state")
     report = state.get("report_content", None)
     if not report:
         return "No report content to review."
@@ -145,7 +145,7 @@ async def call_review_agent(ctx: Context) -> str:
         user_msg=f"Review the following report: {report}"
     )
     state["review"] = result
-    await ctx.set("state", state)
+    await ctx.store.set("state", state)
 
     return result
 
@@ -285,7 +285,7 @@ class PlannerWorkflow(Workflow):
     ) -> ExecuteEvent | OutputEvent:
         # Set initial state if it exists
         if ev.state:
-            await ctx.set("state", ev.state)
+            await ctx.store.set("state", ev.state)
 
         chat_history = ev.chat_history
 
@@ -297,7 +297,7 @@ class PlannerWorkflow(Workflow):
             chat_history.append(user_msg)
 
         # Inject the system prompt with state and available agents
-        state = await ctx.get("state")
+        state = await ctx.store.get("state")
         available_agents_str = "\n".join(
             [
                 f'<agent name="{agent.name}">{agent.description}</agent>'
@@ -376,7 +376,7 @@ class PlannerWorkflow(Workflow):
             elif step.agent_name == "ReviewAgent":
                 await call_review_agent(ctx)
 
-        state = await ctx.get("state")
+        state = await ctx.store.get("state")
         chat_history.append(
             ChatMessage(
                 role="user",

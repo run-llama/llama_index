@@ -314,14 +314,14 @@ from llama_index.core.workflow import Context
 @step
 async def query(self, ctx: Context, ev: MyEvent) -> StopEvent:
     # retrieve from context
-    query = await ctx.get("query")
+    query = await ctx.store.get("query")
 
     # do something with context and event
     val = ...
     result = ...
 
     # store in context
-    await ctx.set("key", val)
+    await ctx.store.set("key", val)
 
     return StopEvent(result=result)
 ```

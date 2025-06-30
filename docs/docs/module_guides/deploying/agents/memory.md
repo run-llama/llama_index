@@ -68,7 +68,7 @@ ctx = Context(agent)
 response = await ctx.run("<question that invokes tool>", ctx=ctx)
 
 # get the memory
-memory = await ctx.get("memory")
+memory = await ctx.store.get("memory")
 chat_history = memory.get()
 ```
 
