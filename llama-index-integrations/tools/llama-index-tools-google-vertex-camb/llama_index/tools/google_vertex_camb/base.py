@@ -2,12 +2,26 @@
 
 import json
 import os
-from typing import Optional
+from typing import Optional, Literal
 
 import base64
 from google.cloud import aiplatform
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
+
+# Mars7 supported languages constant
+Mars7Language = Literal[
+    "de-de",
+    "en-gb",
+    "en-us",
+    "es-us",
+    "es-es",
+    "fr-ca",
+    "fr-fr",
+    "ja-jp",
+    "ko-kr",
+    "zh-cn",
+]
 
 
 class GoogleVertexCambToolSpec(BaseToolSpec):
@@ -51,9 +65,9 @@ class GoogleVertexCambToolSpec(BaseToolSpec):
     def text_to_speech(
         self,
         text: str,
-        reference_audio_path: Optional[str] = None,
+        reference_audio_path: str,
         reference_text: Optional[str] = None,
-        language: str = "en-us",
+        language: Mars7Language = "en-us",
         output_path: Optional[str] = None,
     ) -> str:
         """
@@ -61,9 +75,9 @@ class GoogleVertexCambToolSpec(BaseToolSpec):
 
         Args:
             text (str): The text to convert to speech
-            reference_audio_path (Optional[str]): Path to reference audio file for voice cloning
+            reference_audio_path (str): Path to reference audio file for voice cloning
             reference_text (Optional[str]): Transcription of the reference audio
-            language (str): Target language code (e.g., 'en-us', 'es-es')
+            language (Mars7Language): Target language code (e.g., 'en-us', 'es-es')
             output_path (Optional[str]): Path to save the audio file. If None, generates 'cambai_speech.flac'
 
         Returns:
@@ -114,9 +128,6 @@ class GoogleVertexCambToolSpec(BaseToolSpec):
             with open(output_path, "wb") as f:
                 audio_bytes = base64.b64decode(predictions[0])
                 f.write(audio_bytes)
-
-        except json.JSONDecodeError as e:
-            raise RuntimeError(f"Invalid JSON response from model: {e}")
         except Exception as e:
             raise RuntimeError(f"Error during text-to-speech synthesis: {e}")
 
