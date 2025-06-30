@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 maintainers = [{name = "AstraBert"}]
 dependencies = [
-    "llama-index-core>=0.12.40,<0.13",
+    "llama-index-core>=0.12.44,<0.13",
     "elevenlabs[pyaudio]>=2.1.0,<3",
 ]
 
