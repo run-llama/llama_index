@@ -1,4 +1,5 @@
 import asyncio
+import deprecated
 import json
 import logging
 from abc import abstractmethod
@@ -150,6 +151,13 @@ def resolve_tool_choice(tool_choice: Union[str, dict] = "auto") -> Union[str, di
     return tool_choice
 
 
+@deprecated.deprecated(
+    reason=(
+        "BaseOpenAIAgent has been deprecated and is not maintained.\n\n"
+        "`FunctionAgent` is the recommended replacement.\n\n"
+        "See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+)
 class BaseOpenAIAgent(BaseAgent):
     def __init__(
         self,

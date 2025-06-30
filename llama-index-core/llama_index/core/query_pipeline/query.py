@@ -1,5 +1,6 @@
 """Query Pipeline."""
 
+import deprecated
 import json
 import uuid
 from typing import (
@@ -199,12 +200,25 @@ def get_and_update_stateful_components(
 CHAIN_COMPONENT_TYPE = Union[QUERY_COMPONENT_TYPE, str]
 
 
+@deprecated.deprecated(
+    reason=(
+        "QueryPipeline has been deprecated and is not maintained.\n\n"
+        "This implementation will be removed in a v0.13.0.\n\n"
+        "It is recommended to switch to the Workflows API for a more flexible and powerful experience.\n\n"
+        "See the docs for more information workflows: https://docs.llamaindex.ai/en/stable/understanding/workflows/"
+    ),
+    action="once",
+)
 class QueryPipeline(QueryComponent):
     """
     A query pipeline that can allow arbitrary chaining of different modules.
 
     A pipeline itself is a query component, and can be used as a module in another pipeline.
 
+    DEPRECATED: QueryPipeline has been deprecated and is not maintained.
+    This implementation will be removed in a v0.13.0.
+    It is recommended to switch to the Workflows API for a more flexible and powerful experience.
+    See the docs for more information workflows: https://docs.llamaindex.ai/en/stable/understanding/workflows/
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)

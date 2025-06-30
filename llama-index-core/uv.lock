@@ -1048,7 +1048,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.12.43"
+version = "0.12.44"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -1126,7 +1126,7 @@ requires-dist = [
     { name = "filetype", specifier = ">=1.2.0,<2" },
     { name = "fsspec", specifier = ">=2023.5.0" },
     { name = "httpx" },
-    { name = "llama-index-workflows", specifier = ">=0.2.1" },
+    { name = "llama-index-workflows", specifier = ">=1.0.1,<2" },
     { name = "nest-asyncio", specifier = ">=1.5.8,<2" },
     { name = "networkx", specifier = ">=3.0" },
     { name = "nltk", specifier = ">3.8.1" },
@@ -1188,16 +1188,16 @@ wheels = [
 
 [[package]]
 name = "llama-index-workflows"
-version = "0.2.1"
+version = "1.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "eval-type-backport", marker = "python_full_version < '3.10'" },
     { name = "llama-index-instrumentation" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/68/6b/db3e3ee62256e9357f15d3228383d0309228808ed96b3986a7ef05a23245/llama_index_workflows-0.2.1.tar.gz", hash = "sha256:209fe7ffbf2f8ffab15c97e4dbf08c0562be24ca04a52aea8bca465cf63e900d", size = 76379, upload-time = "2025-06-11T13:42:57.315Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/08/4f/64e0f6a2721240a9318926bfe691193f1ae7836e6ae145e0bbcd95b1d9f1/llama_index_workflows-1.0.1.tar.gz", hash = "sha256:07a68cf58040d469af8d05f56217418ae6404557f0254bff22a7481987818e3f", size = 85599, upload-time = "2025-06-26T04:20:05.003Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f6/87/bbbaf421ff39652c6cfb0127611891fdc1253912c4fa759abe7c3fe60534/llama_index_workflows-0.2.1-py3-none-any.whl", hash = "sha256:a0bc5e90addeafcc4d2070aa877fed00f070f89580a057e9014996b797b7608c", size = 29125, upload-time = "2025-06-11T13:42:56.197Z" },
+    { url = "https://files.pythonhosted.org/packages/57/cf/2980bcdbb58c24afd5798ef0cc9403e092beae528c6002bfd4fc03a62674/llama_index_workflows-1.0.1-py3-none-any.whl", hash = "sha256:765844e143fac7fa1f25749be2479a9f75bf553d779a2fbec4f2caeeaa4ff1dd", size = 36943, upload-time = "2025-06-26T04:20:03.858Z" },
 ]
 
 [[package]]

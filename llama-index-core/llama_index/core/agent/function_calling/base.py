@@ -1,5 +1,6 @@
 """Function calling agent."""
 
+import deprecated
 from typing import Any, List, Optional
 
 from llama_index.core.agent.runner.base import AgentRunner, AgentState
@@ -16,8 +17,20 @@ from llama_index.core.settings import Settings
 from llama_index.core.tools.types import BaseTool
 
 
+@deprecated.deprecated(
+    reason=(
+        "FunctionCallingAgent has been rewritten and replaced by newer agents based on llama_index.core.agent.workflow.FunctionAgent.\n\n"
+        "This implementation will be removed in a v0.13.0.\n\n"
+        "See the docs for more information on updated usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+    action="once",
+)
 class FunctionCallingAgent(AgentRunner):
     """
+    DEPRECATED: FunctionCallingAgent has been deprecated and is not maintained.
+    This implementation will be removed in a v0.13.0.
+    See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/
+
     Function calling agent.
 
     Light wrapper around AgentRunner.

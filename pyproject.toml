@@ -41,7 +41,7 @@ classifiers = [
 dependencies = [
     "llama-index-agent-openai>=0.4.0,<0.5",
     "llama-index-cli>=0.4.2,<0.5",
-    "llama-index-core>=0.12.43,<0.13",
+    "llama-index-core>=0.12.44,<0.13",
     "llama-index-embeddings-openai>=0.3.0,<0.4",
     "llama-index-indices-managed-llama-cloud>=0.4.0",
     "llama-index-llms-openai>=0.4.0,<0.5",
@@ -74,7 +74,7 @@ maintainers = [
 name = "llama-index"
 readme = "README.md"
 requires-python = ">=3.9,<4.0"
-version = "0.12.43"
+version = "0.12.44"
 
 [project.scripts]
 llamaindex-cli = "llama_index.cli.command_line:main"
@@ -123,6 +123,8 @@ target-version = "py312"
 lint.ignore = [
     "COM812",  # Too aggressive
     "D212",  # Using D213
+    "D400",  # Too annoying/buggy
+    "D415",  # Too annoying/buggy
     "D417",  # Too aggressive
     "F541",  # Messes with prompts.py
     "RUF100",  # Allow blanket noqa

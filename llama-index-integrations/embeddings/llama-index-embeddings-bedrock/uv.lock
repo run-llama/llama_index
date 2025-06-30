@@ -1706,7 +1706,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-bedrock"
-version = "0.5.0"
+version = "0.5.2"
 source = { editable = "." }
 dependencies = [
     { name = "aioboto3" },
@@ -1740,7 +1740,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aioboto3", specifier = ">=13.1.1,<14" },
+    { name = "aioboto3", specifier = ">=13.1.1,<16" },
     { name = "boto3", specifier = ">=1.34.23,<2" },
     { name = "llama-index-core", specifier = ">=0.12.0,<0.13" },
 ]

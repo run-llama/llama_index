@@ -86,4 +86,4 @@ As usual, you can see the [full code of this example](https://github.com/run-lla
 
 You can do anything you want to capture the input; you could use a GUI, or audio input, or even get another, separate agent involved. If your input is going to take a while, or happen in another process, you might want to [serialize the context](./state.md) and save it to a database or file so that you can resume the workflow later.
 
-Speaking of getting other agents involved brings us to our next section, [multi-agent systems](./multi_agent.md).
+Speaking of getting other agents involved brings us to our next section, detailing several ways to build [multi-agent systems](./multi_agent.md).

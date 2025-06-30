@@ -13,6 +13,7 @@ from typing import (
     Sequence,
     Set,
     Union,
+    cast,
 )
 from typing_extensions import TypeGuard
 
@@ -207,7 +208,10 @@ class DocumentContextExtractor(BaseExtractor):
                 )
 
                 first_block: Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock] = (
-                    response.message.blocks[0]
+                    cast(
+                        Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock],
+                        response.message.blocks[0],
+                    )
                 )
                 if isinstance(first_block, TextBlock):
                     metadata[key] = first_block.text

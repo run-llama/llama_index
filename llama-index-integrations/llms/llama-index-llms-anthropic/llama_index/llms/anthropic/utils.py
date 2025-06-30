@@ -11,6 +11,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     DocumentBlock,
+    CachePoint,
 )
 
 from anthropic.types import (
@@ -37,6 +38,8 @@ BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS: Dict[str, int] = {
     "anthropic.claude-3-5-sonnet-20241022-v2:0": 200000,
     "anthropic.claude-3-5-haiku-20241022-v1:0": 200000,
     "anthropic.claude-3-7-sonnet-20250219-v1:0": 200000,
+    "anthropic.claude-opus-4-20250514-v1:0": 200000,
+    "anthropic.claude-sonnet-4-20250514-v1:0": 200000,
 }
 BEDROCK_CLAUDE_MODELS: Dict[str, int] = {
     "anthropic.claude-instant-v1": 100000,
@@ -217,6 +220,12 @@ def messages_to_anthropic_messages(
                             block=block, kwargs=message.additional_kwargs
                         )
                     )
+                elif isinstance(block, CachePoint):
+                    cp = CacheControlEphemeralParam(
+                        **block.model_dump(exclude="block_type")
+                    )
+                    content[-1].update(cache_control=cp)
+
             tool_calls = message.additional_kwargs.get("tool_calls", [])
             for tool_call in tool_calls:
                 assert "id" in tool_call

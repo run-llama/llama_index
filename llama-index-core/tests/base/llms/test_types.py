@@ -14,8 +14,11 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     DocumentBlock,
     AudioBlock,
+    CachePoint,
+    CacheControl,
 )
 from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import ValidationError
 from llama_index.core.schema import ImageDocument
 from pydantic import AnyUrl
 
@@ -316,3 +319,11 @@ def test_empty_bytes(empty_bytes: bytes, png_1px: bytes):
     except ValueError:
         errors.append(1)
     assert sum(errors) == 3
+
+
+def test_cache_control() -> None:
+    cp = CachePoint(cache_control=CacheControl(type="ephemeral"))
+    assert isinstance(cp.model_dump()["cache_control"], dict)
+    assert cp.model_dump()["cache_control"]["type"] == "ephemeral"
+    with pytest.raises(ValidationError):
+        CachePoint.model_validate({"cache_control": "default"})

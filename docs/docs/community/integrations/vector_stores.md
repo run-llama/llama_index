@@ -16,6 +16,8 @@ as the storage backend for `VectorStoreIndex`.
 - Astra DB (`AstraDBVectorStore`). [Quickstart](https://docs.datastax.com/en/astra/home/astra.html).
 - AWS Document DB (`AWSDocDbVectorStore`). [Quickstart](https://docs.aws.amazon.com/documentdb/latest/developerguide/get-started-guide.html).
 - Azure AI Search (`AzureAISearchVectorStore`). [Quickstart](https://learn.microsoft.com/en-us/azure/search/search-get-started-vector)
+- Azure Cosmos DB Mongo vCore(`AzureCosmosDBMongoDBVectorSearch`). [Quickstart](https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/vcore/vector-search?tabs=diskann)
+- Azure Cosmos DB NoSql (`AzureCosmosDBNoSqlVectorSearch`). [Quickstart](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/vector-search)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
 - ClickHouse (`ClickHouseVectorStore`) [Installation](https://clickhouse.com/docs/en/install)
 - Couchbase (`CouchbaseSearchVectorStore`) [Installation](https://www.couchbase.com/products/capella/)
@@ -235,6 +237,75 @@ vector_store = AzureAISearchVectorStore(
     search_or_index_client=client,
     index_name=index_name,
     embedding_dimensionality=1536,
+)
+```
+
+**Azure CosmosDB Mongo vCore**
+
+```python
+import pymongo
+import os
+from llama_index.vector_stores.azurecosmosmongo import (
+    AzureCosmosDBMongoDBVectorSearch,
+)
+
+# Set up the connection string with your Azure CosmosDB MongoDB URI
+connection_string = os.getenv("YOUR_AZURE_COSMOSDB_MONGODB_URI")
+mongodb_client = pymongo.MongoClient(connection_string)
+
+# Create an instance of AzureCosmosDBMongoDBVectorSearch
+vector_store = AzureCosmosDBMongoDBVectorSearch(
+    mongodb_client=mongodb_client,
+    db_name="demo_vectordb",
+    collection_name="paul_graham_essay",
+)
+```
+
+**Azure CosmosDB NoSql**
+
+```python
+from azure.cosmos import CosmosClient, PartitionKey
+import os
+from llama_index.vector_stores.azurecosmosnosql import (
+    AzureCosmosDBNoSqlVectorSearch,
+)
+
+URL = os.getenv("AZURE_COSMOSDB_URI")
+KEY = os.getenv("AZURE_COSMOSDB_KEY")
+database_name = "test_database"
+container_name = "test_container"
+test_client = CosmosClient(URL, credential=KEY)
+
+indexing_policy = {
+    "indexingMode": "consistent",
+    "includedPaths": [{"path": "/*"}],
+    "excludedPaths": [{"path": '/"_etag"/?'}],
+    "vectorIndexes": [{"path": "/embedding", "type": "quantizedFlat"}],
+}
+
+vector_embedding_policy = {
+    "vectorEmbeddings": [
+        {
+            "path": "/embedding",
+            "dataType": "float32",
+            "distanceFunction": "cosine",
+            "dimensions": 1536,
+        }
+    ]
+}
+
+partition_key = PartitionKey(path="/id")
+cosmos_container_properties_test = {"partition_key": partition_key}
+cosmos_database_properties_test = {}
+
+vector_store = AzureCosmosDBNoSqlVectorSearch(
+    cosmos_client=test_client,
+    vector_embedding_policy=vector_embedding_policy,
+    indexing_policy=indexing_policy,
+    database_name=database_name,
+    container_name=container_name,
+    cosmos_database_properties=cosmos_database_properties_test,
+    cosmos_container_properties=cosmos_container_properties_test,
 )
 ```
 

@@ -17,7 +17,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     ToolCallResult,
 )
 from llama_index.core.base.llms.types import ChatResponse
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, model_validator
 from llama_index.core.llms import ChatMessage
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.memory import BaseMemory
@@ -44,6 +44,22 @@ class ReActAgent(BaseWorkflowAgent):
         default_factory=default_formatter,
         description="The react chat formatter to format the reasoning steps and chat history into an llm input.",
     )
+
+    @model_validator(mode="after")
+    def validate_formatter(self) -> "ReActAgent":
+        """Validate the formatter."""
+        if (
+            self.formatter.context
+            and self.system_prompt
+            and self.system_prompt not in self.formatter.context
+        ):
+            self.formatter.context = (
+                self.system_prompt + "\n\n" + self.formatter.context.strip()
+            )
+        elif not self.formatter.context and self.system_prompt:
+            self.formatter.context = self.system_prompt
+
+        return self
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
@@ -77,7 +93,6 @@ class ReActAgent(BaseWorkflowAgent):
 
         output_parser = self.output_parser
         react_chat_formatter = self.formatter
-        react_chat_formatter.context = system_prompt
 
         # Format initial chat input
         current_reasoning: list[BaseReasoningStep] = await ctx.get(

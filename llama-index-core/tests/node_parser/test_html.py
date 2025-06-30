@@ -8,7 +8,7 @@ from llama_index.core.schema import Document
 @pytest.mark.xfail(
     raises=ImportError,
     reason="Requires beautifulsoup4.",
-    condition=importlib.util.find_spec("beautifulsoup4") is None,
+    condition=importlib.util.find_spec("bs4") is None,
 )
 def test_no_splits() -> None:
     html_parser = HTMLNodeParser(tags=["h2"])
@@ -38,7 +38,7 @@ def test_no_splits() -> None:
 @pytest.mark.xfail(
     raises=ImportError,
     reason="Requires beautifulsoup4.",
-    condition=importlib.util.find_spec("beautifulsoup4") is None,
+    condition=importlib.util.find_spec("bs4") is None,
 )
 def test_single_splits() -> None:
     html_parser = HTMLNodeParser(tags=["h1"])
@@ -69,7 +69,7 @@ def test_single_splits() -> None:
 @pytest.mark.xfail(
     raises=ImportError,
     reason="Requires beautifulsoup4.",
-    condition=importlib.util.find_spec("beautifulsoup4") is None,
+    condition=importlib.util.find_spec("bs4") is None,
 )
 def test_multiple_tags_splits() -> None:
     html_parser = HTMLNodeParser(tags=["h2", "p"])
@@ -108,7 +108,7 @@ def test_multiple_tags_splits() -> None:
 @pytest.mark.xfail(
     raises=ImportError,
     reason="Requires beautifulsoup4.",
-    condition=importlib.util.find_spec("beautifulsoup4") is None,
+    condition=importlib.util.find_spec("bs4") is None,
 )
 def test_nesting_tags_splits() -> None:
     html_parser = HTMLNodeParser(tags=["h2", "b"])
@@ -145,7 +145,7 @@ def test_nesting_tags_splits() -> None:
 @pytest.mark.xfail(
     raises=ImportError,
     reason="Requires beautifulsoup4.",
-    condition=importlib.util.find_spec("beautifulsoup4") is None,
+    condition=importlib.util.find_spec("bs4") is None,
 )
 def test_neighbor_tags_splits() -> None:
     html_parser = HTMLNodeParser(tags=["p"])
