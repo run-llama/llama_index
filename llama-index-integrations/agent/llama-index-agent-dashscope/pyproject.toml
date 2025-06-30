@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-agent-dashscope"
-version = "0.3.0"
+version = "0.3.1"
 description = "llama-index agent dashscope integration"
 authors = [{name = "Tianbing Ye", email = "tianbing.ytb@alibaba-inc.com"}]
 requires-python = ">=3.9,<4.0"

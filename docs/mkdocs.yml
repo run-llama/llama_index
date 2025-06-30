@@ -1787,9 +1787,7 @@ nav:
       - Changelog: ./CHANGELOG.md
       - Presentations: ./presentations/past_presentations.md
       - Deprecated Terms: ./changes/deprecated_terms.md
-  - LlamaCloud:
-      - LlamaCloud: ./llama_cloud/index.md
-      - LlamaParse: ./llama_cloud/llama_parse.md
+  - LlamaCloud: https://docs.cloud.llamaindex.ai/
 plugins:
   - search
   - include_dir_to_nav

@@ -1,5 +1,6 @@
 """Context retriever agent."""
 
+import deprecated
 from typing import List, Optional, Type, Union
 
 from llama_index.agent.openai_legacy.openai_agent import (
@@ -33,6 +34,14 @@ DEFAULT_QA_PROMPT_TMPL = (
 DEFAULT_QA_PROMPT = PromptTemplate(DEFAULT_QA_PROMPT_TMPL)
 
 
+@deprecated.deprecated(
+    reason=(
+        "ContextRetrieverOpenAIAgent has been deprecated and is not maintained.\n\n"
+        "`FunctionAgent` is the recommended replacement.\n\n"
+        "See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+    action="once",
+)
 class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
     """
     ContextRetriever OpenAI Agent.

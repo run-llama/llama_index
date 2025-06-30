@@ -1,5 +1,6 @@
 """Dashscope Agent for Alibaba cloud bailian."""
 
+import deprecated
 from http import HTTPStatus
 from typing import (
     List,
@@ -18,6 +19,14 @@ from llama_index.core.chat_engine.types import (
 )
 
 
+@deprecated.deprecated(
+    reason=(
+        "DashScopeAgent has been deprecated and is not maintained.\n\n"
+        "Contributions are welcome to migrate this class to the new agent architecture.\n\n"
+        "See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+    action="once",
+)
 class DashScopeAgent(BaseAgent):
     """
     DashScope agent simple wrapper for Alibaba cloud bailian high-level agent api.
