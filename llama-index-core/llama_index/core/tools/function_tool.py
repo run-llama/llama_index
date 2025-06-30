@@ -302,7 +302,7 @@ class FunctionTool(AsyncBaseTool):
         # Default ToolOutput based on the raw output
         default_output = ToolOutput(
             blocks=output_blocks,
-            tool_name=self.metadata.name,
+            tool_name=self.metadata.get_name(),
             raw_input={"args": args, "kwargs": tool_output_kwargs},
             raw_output=raw_output,
         )
@@ -315,7 +315,7 @@ class FunctionTool(AsyncBaseTool):
                 # Assume callback_result is a string to override the content.
                 return ToolOutput(
                     content=str(callback_result),
-                    tool_name=self.metadata.name,
+                    tool_name=self.metadata.get_name(),
                     raw_input={"args": args, "kwargs": tool_output_kwargs},
                     raw_output=raw_output,
                 )
@@ -341,7 +341,7 @@ class FunctionTool(AsyncBaseTool):
         # Default ToolOutput based on the raw output
         default_output = ToolOutput(
             blocks=output_blocks,
-            tool_name=self.metadata.name,
+            tool_name=self.metadata.get_name(),
             raw_input={"args": args, "kwargs": tool_output_kwargs},
             raw_output=raw_output,
         )
@@ -354,7 +354,7 @@ class FunctionTool(AsyncBaseTool):
                 # Assume callback_result is a string to override the content.
                 return ToolOutput(
                     content=str(callback_result),
-                    tool_name=self.metadata.name,
+                    tool_name=self.metadata.get_name(),
                     raw_input={"args": args, "kwargs": tool_output_kwargs},
                     raw_output=raw_output,
                 )

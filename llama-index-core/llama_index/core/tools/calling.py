@@ -25,7 +25,7 @@ def call_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
     except Exception as e:
         return ToolOutput(
             content="Encountered error: " + str(e),
-            tool_name=tool.metadata.name,
+            tool_name=tool.metadata.get_name(),
             raw_input=arguments,
             raw_output=str(e),
             is_error=True,
@@ -51,7 +51,7 @@ async def acall_tool(tool: BaseTool, arguments: dict) -> ToolOutput:
     except Exception as e:
         return ToolOutput(
             content="Encountered error: " + str(e),
-            tool_name=tool.metadata.name,
+            tool_name=tool.metadata.get_name(),
             raw_input=arguments,
             raw_output=str(e),
             is_error=True,

@@ -251,7 +251,7 @@ class BaseWorkflowAgent(
         except Exception as e:
             tool_output = ToolOutput(
                 content=str(e),
-                tool_name=tool.metadata.name,
+                tool_name=tool.metadata.get_name(),
                 raw_input=tool_input,
                 raw_output=str(e),
                 is_error=True,
