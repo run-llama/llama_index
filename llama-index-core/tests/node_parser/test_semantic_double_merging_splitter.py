@@ -20,7 +20,8 @@ doc = Document(
 )
 
 doc_same = Document(
-    text="Krakow is one of the oldest and largest cities in Poland, located in the southern part of the country on the Vistula River. " * 20
+    text="Krakow is one of the oldest and largest cities in Poland, located in the southern part of the country on the Vistula River. "
+    * 20
 )
 
 try:
@@ -97,6 +98,7 @@ def test_chunk_size_2() -> None:
     nodes = splitter.get_nodes_from_documents([doc])
     for node in nodes:
         assert len(node.get_content()) < 200
+
 
 @pytest.mark.skipif(not spacy_available, reason="Spacy model not available")
 def test_chunk_size_3() -> None:
