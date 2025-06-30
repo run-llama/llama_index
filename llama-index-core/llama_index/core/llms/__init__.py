@@ -14,6 +14,8 @@ from llama_index.core.base.llms.types import (
     DocumentBlock,
     CachePoint,
     CacheControl,
+    CitableBlock,
+    CitationBlock,
 )
 from llama_index.core.llms.custom import CustomLLM
 from llama_index.core.llms.llm import LLM
@@ -38,4 +40,6 @@ __all__ = [
     "DocumentBlock",
     "CachePoint",
     "CacheControl",
+    "CitableBlock",
+    "CitationBlock",
 ]

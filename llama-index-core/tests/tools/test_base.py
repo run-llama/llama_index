@@ -5,6 +5,7 @@ from typing import List, Optional
 
 import pytest
 from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.llms import TextBlock, ImageBlock
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.workflow import Context
 
@@ -265,3 +266,42 @@ def test_function_tool_self_param() -> None:
     assert "self" not in actual_schema["properties"]
     assert "ctx" not in actual_schema["properties"]
     assert "x" in actual_schema["properties"]
+
+
+@pytest.mark.asyncio
+async def test_function_tool_output_blocks() -> None:
+    def test_function() -> str:
+        return [
+            TextBlock(text="Hello"),
+            ImageBlock(url="https://example.com/image.png"),
+        ]
+
+    tool = FunctionTool.from_defaults(test_function)
+
+    tool_output = tool.call()
+
+    assert len(tool_output.blocks) == 2
+    assert tool_output.content == "Hello"
+
+    tool_output = await tool.acall()
+
+    assert len(tool_output.blocks) == 2
+    assert tool_output.content == "Hello"
+
+
+@pytest.mark.asyncio
+async def test_function_tool_output_single_block() -> None:
+    def test_function() -> str:
+        return TextBlock(text="Hello")
+
+    tool = FunctionTool.from_defaults(test_function)
+
+    tool_output = tool.call()
+
+    assert len(tool_output.blocks) == 1
+    assert tool_output.content == "Hello"
+
+    tool_output = await tool.acall()
+
+    assert len(tool_output.blocks) == 1
+    assert tool_output.content == "Hello"
