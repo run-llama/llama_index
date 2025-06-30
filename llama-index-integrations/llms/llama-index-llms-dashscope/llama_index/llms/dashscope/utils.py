@@ -48,9 +48,22 @@ def chat_message_to_dashscope_messages(
     for msg in chat_messages:
         additional_kwargs = msg.additional_kwargs
         if msg.role == "assistant":
-            messages.append({"role": msg.role.value, "content": msg.content, "tool_calls": additional_kwargs.get("tool_calls", [])})
+            messages.append(
+                {
+                    "role": msg.role.value,
+                    "content": msg.content,
+                    "tool_calls": additional_kwargs.get("tool_calls", []),
+                }
+            )
         elif msg.role == "tool":
-            messages.append({"role": msg.role.value, "content": msg.content, "tool_call_id": additional_kwargs.get("tool_call_id", ""), "name": additional_kwargs.get("name", "")})
+            messages.append(
+                {
+                    "role": msg.role.value,
+                    "content": msg.content,
+                    "tool_call_id": additional_kwargs.get("tool_call_id", ""),
+                    "name": additional_kwargs.get("name", ""),
+                }
+            )
         else:
             messages.append({"role": msg.role.value, "content": msg.content})
     return messages
