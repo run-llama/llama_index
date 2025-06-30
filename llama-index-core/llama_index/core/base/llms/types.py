@@ -312,7 +312,10 @@ class CitableBlock(BaseModel):
     # TODO: We could maybe expand the types here,
     # limiting for now to known use cases
     content: List[
-        Annotated[Union[TextBlock, ImageBlock], Field(discriminator="block_type")]
+        Annotated[
+            Union[TextBlock, ImageBlock, DocumentBlock],
+            Field(discriminator="block_type"),
+        ]
     ]
 
     @field_validator("content", mode="before")
@@ -333,7 +336,18 @@ class CitationBlock(BaseModel):
     ]
     source: str
     title: str
-    location: Dict[str, int]
+    cited_block_index: int
+    inner_start_block_index: int
+    inner_end_block_index: int
+    additional_location_info: Dict[str, int]
+
+    @field_validator("cited_content", mode="before")
+    @classmethod
+    def validate_cited_content(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            return TextBlock(text=v)
+
+        return v
 
 
 ContentBlock = Annotated[
