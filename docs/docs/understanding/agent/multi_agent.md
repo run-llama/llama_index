@@ -8,6 +8,7 @@ When more than one specialist is required to solve a task you have several optio
 
 ---
 
+<div id="pattern-1--agentworkflow-ie-linear-swarm-pattern"></div>
 ## Pattern 1 – AgentWorkflow (i.e. linear "swarm" pattern)
 
 **When to use** – you want multi-agent behaviour out-of-the-box with almost no extra code, and you are happy with the default hand-off heuristics that ship with `AgentWorkflow`.
@@ -75,6 +76,7 @@ print(resp)
 
 ---
 
+<div id="pattern-2--orchestrator-agent-sub-agents-as-tools"></div>
 ## Pattern 2 – Orchestrator agent (sub-agents as tools)
 
 **When to use** – you want a single place that decides *every* step so you can inject custom logic, but you still prefer the declarative *agent as tool* experience over writing your own planner.
@@ -180,6 +182,7 @@ Because the orchestrator is just another `FunctionAgent` you get streaming, tool
 
 ---
 
+<div id="pattern-3--custom-planner-diy-prompting--parsing"></div>
 ## Pattern 3 – Custom planner (DIY prompting + parsing)
 
 **When to use** – ultimate flexibility.  You need to impose a very specific plan format, integrate with external schedulers, or gather additional metadata that the previous patterns cannot provide out-of-the-box.
