@@ -93,9 +93,7 @@ def get_lancedb_text_embedding_model(
         EmbeddingFunction: a LanceDB embedding function.
 
     """
-    return LanceDBTextModel(
-        embedding_model=embedding_model, kwargs=kwargs
-    ).embedding_model
+    return LanceDBTextModel(embedding_model=embedding_model, kwargs=kwargs)
 
 
 def get_lancedb_multimodal_embedding_model(
@@ -112,6 +110,4 @@ def get_lancedb_multimodal_embedding_model(
         EmbeddingFunction: a LanceDB embedding function.
 
     """
-    return LanceDBMultiModalModel(
-        embedding_model=embedding_model, kwargs=kwargs
-    ).embedding_model
+    return LanceDBMultiModalModel(embedding_model=embedding_model, kwargs=kwargs)
