@@ -39,6 +39,8 @@ dependencies = [
     "pylance>=0.30.0,<1",
     "tantivy>=0.24.0,<1",
     "llama-index-core>=0.12.44,<0.13",
+    "open-clip-torch>=2.32.0,<3",
+    "sentence-transformers>=5.0.0,<6",
 ]
 
 [tool.codespell]
