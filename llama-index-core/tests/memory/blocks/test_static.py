@@ -1,7 +1,10 @@
 import pytest
-from typing import List
 
-from llama_index.core.base.llms.types import ChatMessage, MessageRole, TextBlock, ContentBlock
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    MessageRole,
+    TextBlock,
+)
 from llama_index.core.memory.memory_blocks.static import StaticMemoryBlock
 
 
@@ -10,7 +13,9 @@ def sample_messages():
     """Create sample chat messages."""
     return [
         ChatMessage(role=MessageRole.USER, content="Hello, how are you?"),
-        ChatMessage(role=MessageRole.ASSISTANT, content="I'm doing well, thanks for asking!"),
+        ChatMessage(
+            role=MessageRole.ASSISTANT, content="I'm doing well, thanks for asking!"
+        ),
         ChatMessage(role=MessageRole.USER, content="What's the weather like today?"),
     ]
 
@@ -30,10 +35,7 @@ async def test_initialization_with_string():
 @pytest.mark.asyncio
 async def test_initialization_with_content_blocks():
     """Test initialization of StaticMemoryBlock with a list of ContentBlock."""
-    content_blocks = [
-        TextBlock(text="First block"),
-        TextBlock(text="Second block")
-    ]
+    content_blocks = [TextBlock(text="First block"), TextBlock(text="Second block")]
     memory_block = StaticMemoryBlock(static_content=content_blocks, name="CustomName")
 
     assert memory_block.name == "CustomName"
