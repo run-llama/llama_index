@@ -126,6 +126,7 @@ class NVIDIAEmbedding(BaseEmbedding):
             if api_key == "NO_API_KEY_PROVIDED":
                 raise ValueError("An API key is required for hosted NIM.")
 
+        # Create clients first
         self._client = OpenAI(
             api_key=api_key,
             base_url=self.base_url,
@@ -191,6 +192,9 @@ class NVIDIAEmbedding(BaseEmbedding):
                 warnings.warn(f"Unable to determine validity of {model_name}")
             if model and model.endpoint:
                 self.base_url = model.endpoint
+                # Update client base_url for custom endpoints
+                self._client.base_url = self.base_url
+                self._aclient.base_url = self.base_url
         # TODO: handle locally hosted models
 
     @property
