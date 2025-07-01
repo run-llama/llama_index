@@ -16,7 +16,8 @@ from llama_index.core.callbacks import CallbackManager
 from llama_index.core.schema import NodeWithScore, ImageDocument
 from llama_index.core.llms import ImageBlock
 from llama_index.core.base.response.schema import RESPONSE_TYPE
-from typing import Optional, List, override, Union
+from typing import Optional, List, Union
+from typing_extensions import override
 from .retriever import LanceDBRetriever, ExtendedQueryBundle
 
 import llama_index.core.instrumentation as instrument

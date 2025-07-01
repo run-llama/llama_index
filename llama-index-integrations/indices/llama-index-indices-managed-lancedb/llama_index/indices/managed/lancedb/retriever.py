@@ -8,7 +8,8 @@ from llama_index.core.llms import ImageBlock
 from llama_index.core.schema import ImageDocument
 from llama_index.core.retrievers import BaseRetriever
 from llama_index.core.schema import QueryBundle, NodeWithScore
-from typing import Union, Optional, List, override, Any
+from typing import Union, Optional, List, Any
+from typing_extensions import override
 
 
 @dataclass
