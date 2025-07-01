@@ -3,7 +3,7 @@
 import asyncio
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from llama_index.core.schema import BaseNode, Node
+from llama_index.core.schema import BaseNode
 from llama_index.core.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.core.storage.docstore.utils import doc_to_json, json_to_doc
 from llama_index.core.storage.kvstore.types import DEFAULT_BATCH_SIZE, BaseKVStore
@@ -178,7 +178,7 @@ class KVDocumentStore(BaseDocumentStore):
                     "Set allow_update to True to overwrite."
                 )
             ref_doc_info = None
-            if isinstance(node, Node) and node.source_node is not None:
+            if node.source_node is not None:
                 ref_doc_info = self.get_ref_doc_info(node.source_node.node_id) or RefDocInfo()
 
             (
@@ -279,7 +279,7 @@ class KVDocumentStore(BaseDocumentStore):
                     "Set allow_update to True to overwrite."
                 )
             ref_doc_info = None
-            if isinstance(node, Node) and node.source_node is not None:
+            if node.source_node is not None:
                 ref_doc_info = (
                     await self.aget_ref_doc_info(node.source_node.node_id) or RefDocInfo()
                 )
