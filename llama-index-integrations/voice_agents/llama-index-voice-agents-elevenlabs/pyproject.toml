@@ -36,6 +36,7 @@ maintainers = [{name = "AstraBert"}]
 dependencies = [
     "llama-index-core>=0.12.44,<0.13",
     "elevenlabs[pyaudio]>=2.1.0,<3",
+    "websockets>=15,<16",
 ]
 
 [tool.codespell]

@@ -18,6 +18,7 @@ from elevenlabs.conversational_ai.conversation import (
     ClientTools,
     ConversationInitiationData,
 )
+from websockets import connect, ConnectionClosedOK
 from elevenlabs.base_client import BaseElevenLabs
 from .interface import ElevenLabsVoiceAgentInterface
 from .utils import (
@@ -136,10 +137,54 @@ class ElevenLabsVoiceAgent(Conversation, BaseVoiceAgent):
     def interrupt(self) -> None:
         self.interface.interrupt()
 
-    def handle_message(self, message: Any, *args: Any, **kwargs: Any):
-        pass
+    def _run(self, ws_url: str):
+        with connect(ws_url, max_size=16 * 1024 * 1024) as ws:
+            self._ws = ws
+            ws.send(
+                json.dumps(
+                    {
+                        "type": "conversation_initiation_client_data",
+                        "custom_llm_extra_body": self.config.extra_body,
+                        "conversation_config_override": self.config.conversation_config_override,
+                        "dynamic_variables": self.config.dynamic_variables,
+                    }
+                )
+            )
+            self._ws = ws
 
-    def _handle_message(self, message: Dict, ws: Any) -> None:
+            def input_callback(audio):
+                try:
+                    ws.send(
+                        json.dumps(
+                            {
+                                "user_audio_chunk": base64.b64encode(audio).decode(),
+                            }
+                        )
+                    )
+                except ConnectionClosedOK:
+                    self.end_session()
+                except Exception as e:
+                    print(f"Error sending user audio chunk: {e}")
+                    self.end_session()
+
+            self.audio_interface.start(input_callback)
+            while not self._should_stop.is_set():
+                try:
+                    message = json.loads(ws.recv(timeout=0.5))
+                    if self._should_stop.is_set():
+                        return
+                    self.handle_message(message, ws)
+                except ConnectionClosedOK as e:
+                    self.end_session()
+                except TimeoutError:
+                    pass
+                except Exception as e:
+                    print(f"Error receiving message: {e}")
+                    self.end_session()
+
+            self._ws = None
+
+    def handle_message(self, message: Dict, ws: Any) -> None:
         if message["type"] == "conversation_initiation_metadata":
             event = message["conversation_initiation_metadata_event"]
             self._events.append(
