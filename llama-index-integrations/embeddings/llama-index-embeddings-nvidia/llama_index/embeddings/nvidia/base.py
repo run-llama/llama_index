@@ -126,7 +126,6 @@ class NVIDIAEmbedding(BaseEmbedding):
             if api_key == "NO_API_KEY_PROVIDED":
                 raise ValueError("An API key is required for hosted NIM.")
 
-        # Create clients first
         self._client = OpenAI(
             api_key=api_key,
             base_url=self.base_url,
