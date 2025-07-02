@@ -1,7 +1,6 @@
 """Bright Data tool spec for LlamaIndex."""
 
 from typing import Dict, Optional
-from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 
@@ -67,7 +66,7 @@ class BrightDataToolSpec(BaseToolSpec):
 
         return response.text
 
-    def scrape_as_markdown(self, url: str, zone: Optional[str] = None) -> Document:
+    def scrape_as_markdown(self, url: str, zone: Optional[str] = None) -> Dict:
         """
         Scrape a webpage and return content in Markdown format.
 
@@ -76,7 +75,7 @@ class BrightDataToolSpec(BaseToolSpec):
             zone (Optional[str]): Override default zone
 
         Returns:
-            Document: Scraped content as Markdown
+            Dict: Scraped content as Markdown
 
         """
         payload = {
@@ -87,7 +86,7 @@ class BrightDataToolSpec(BaseToolSpec):
         }
 
         content = self._make_request(payload)
-        return Document(text=content, metadata={"url": url})
+        return {"content": content, "url": url}
 
     def get_screenshot(
         self, url: str, output_path: str, zone: Optional[str] = None
@@ -143,7 +142,7 @@ class BrightDataToolSpec(BaseToolSpec):
         return_json: bool = False,  # parse results as JSON
         hotel_dates: Optional[str] = None,  # check-in and check-out dates
         hotel_occupancy: Optional[int] = None,  # number of guests
-    ) -> Document:
+    ) -> Dict:
         """
         Search using Google, Bing, or Yandex with advanced parameters and return results in Markdown.
 
@@ -167,7 +166,7 @@ class BrightDataToolSpec(BaseToolSpec):
             hotel_occupancy (Optional[int]): Number of guests (1-4)
 
         Returns:
-            Document: Search results as Markdown or JSON
+            Dict: Search results as Markdown or JSON
 
         """
         encoded_query = self._encode_query(query)
@@ -245,9 +244,7 @@ class BrightDataToolSpec(BaseToolSpec):
         }
 
         content = self._make_request(payload)
-        return Document(
-            text=content, metadata={"query": query, "engine": engine, "url": search_url}
-        )
+        return {"content": content, "query": query, "engine": engine, "url": search_url}
 
     def web_data_feed(
         self,
