@@ -11,9 +11,6 @@ migration_scripts/
 
 # Local development
 venv/
-.ruff_cache/
-.pytest_cache/
-
 .venv/
 .ipynb_checkpoints
 .__pycache__
@@ -23,7 +20,6 @@ dev_notebooks/
 # Other
 llamaindex_registry.txt
 packages_to_bump_deduped.txt
-llama-index-integrations/tools/llama-index-tools-mcp/.venv
 .env
 credentials.json
 token.json
