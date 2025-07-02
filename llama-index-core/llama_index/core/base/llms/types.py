@@ -415,7 +415,10 @@ class ChatMessage(BaseModel):
             if isinstance(block, TextBlock):
                 content_strs.append(block.text)
 
-        return "\n".join(content_strs) or None
+        ct = "\n".join(content_strs) or None
+        if ct is None and len(content_strs) == 1:
+            return ""
+        return ct
 
     @content.setter
     def content(self, content: str) -> None:
