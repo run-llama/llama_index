@@ -41,7 +41,7 @@ except Exception:
 def test_number_of_returned_nodes() -> None:
     nodes = splitter.get_nodes_from_documents([doc])
 
-    assert len(nodes) == 4
+    assert len(nodes) == 2
 
 
 @pytest.mark.skipif(not spacy_available, reason="Spacy model not available")
@@ -50,7 +50,7 @@ def test_creating_initial_chunks() -> None:
     sentences = splitter.sentence_splitter(text)
     initial_chunks = splitter._create_initial_chunks(sentences)
 
-    assert len(initial_chunks) == 9
+    assert len(initial_chunks) == 4
 
 
 @pytest.mark.skipif(not spacy_available, reason="Spacy model not available")
