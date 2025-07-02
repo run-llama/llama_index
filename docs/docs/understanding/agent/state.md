@@ -82,9 +82,9 @@ To access the Context, the Context parameter should be the first parameter of th
 
 ```python
 async def set_name(ctx: Context, name: str) -> str:
-    state = await ctx.get("state")
+    state = await ctx.store.get("state")
     state["name"] = name
-    await ctx.set("state", state)
+    await ctx.store.set("state", state)
     return f"Name set to {name}"
 ```
 
@@ -129,7 +129,7 @@ Your name has been updated to "Laurie."
 We could now ask the agent the name again, or we can access the value of the state directly:
 
 ```python
-state = await ctx.get("state")
+state = await ctx.store.get("state")
 print("Name as stored in state: ", state["name"])
 ```
 

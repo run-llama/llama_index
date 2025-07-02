@@ -7,6 +7,7 @@ https://github.com/SqueezeAILab/LLMCompiler
 """
 
 import asyncio
+import deprecated
 import uuid
 from typing import (
     Any,
@@ -138,6 +139,13 @@ def generate_llm_compiler_prompt(
     return prefix
 
 
+@deprecated.deprecated(
+    reason=(
+        "LLMCompilerAgentWorker has been deprecated and is not maintained.\n\n"
+        "Contributions are welcome to migrate this class to the new agent architecture.\n\n"
+        "See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+)
 class LLMCompilerAgentWorker(BaseAgentWorker):
     """
     LLMCompiler Agent Worker.

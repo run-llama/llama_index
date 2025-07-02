@@ -12,7 +12,7 @@ from llama_index.voice_agents.openai.types import (
 def session_json() -> dict:
     return {
         "modalities": ["text", "audio"],
-        "instructions": "You are a helpful assistant",
+        "instructions": "You are a helpful assistant.",
         "voice": "sage",
         "input_audio_format": "pcm16",
         "output_audio_format": "pcm16",
@@ -26,7 +26,7 @@ def session_json() -> dict:
         },
         "tools": [],
         "tool_choice": "auto",
-        "temperature": 0.5,
+        "temperature": 0.8,
         "max_response_output_tokens": "inf",
         "speed": 1.1,
         "tracing": "auto",

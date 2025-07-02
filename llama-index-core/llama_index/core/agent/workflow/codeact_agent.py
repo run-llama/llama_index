@@ -205,7 +205,9 @@ class CodeActAgent(BaseWorkflowAgent):
             raise ValueError("code_execute_fn must be provided for CodeActAgent")
 
         # Get current scratchpad
-        scratchpad: List[ChatMessage] = await ctx.get(self.scratchpad_key, default=[])
+        scratchpad: List[ChatMessage] = await ctx.store.get(
+            self.scratchpad_key, default=[]
+        )
         current_llm_input = [*llm_input, *scratchpad]
 
         # Create a system message with tool descriptions
@@ -298,7 +300,7 @@ class CodeActAgent(BaseWorkflowAgent):
         # Add the response to the scratchpad
         message = ChatMessage(role="assistant", content=full_response_text)
         scratchpad.append(message)
-        await ctx.set(self.scratchpad_key, scratchpad)
+        await ctx.store.set(self.scratchpad_key, scratchpad)
 
         # Create the raw object for the output
         raw = (
@@ -318,7 +320,9 @@ class CodeActAgent(BaseWorkflowAgent):
         self, ctx: Context, results: List[ToolCallResult], memory: BaseMemory
     ) -> None:
         """Handle tool call results for code act agent."""
-        scratchpad: List[ChatMessage] = await ctx.get(self.scratchpad_key, default=[])
+        scratchpad: List[ChatMessage] = await ctx.store.get(
+            self.scratchpad_key, default=[]
+        )
 
         # handle code execution and handoff
         for tool_call_result in results:
@@ -335,14 +339,14 @@ class CodeActAgent(BaseWorkflowAgent):
                 scratchpad.append(
                     ChatMessage(
                         role="tool",
-                        content=str(tool_call_result.tool_output.content),
+                        blocks=tool_call_result.tool_output.blocks,
                         additional_kwargs={"tool_call_id": tool_call_result.tool_id},
                     )
                 )
             else:
                 raise ValueError(f"Unknown tool name: {tool_call_result.tool_name}")
 
-        await ctx.set(self.scratchpad_key, scratchpad)
+        await ctx.store.set(self.scratchpad_key, scratchpad)
 
     async def finalize(
         self, ctx: Context, output: AgentOutput, memory: BaseMemory
@@ -352,10 +356,12 @@ class CodeActAgent(BaseWorkflowAgent):
 
         Adds all in-progress messages to memory.
         """
-        scratchpad: List[ChatMessage] = await ctx.get(self.scratchpad_key, default=[])
+        scratchpad: List[ChatMessage] = await ctx.store.get(
+            self.scratchpad_key, default=[]
+        )
         await memory.aput_messages(scratchpad)
 
         # reset scratchpad
-        await ctx.set(self.scratchpad_key, [])
+        await ctx.store.set(self.scratchpad_key, [])
 
         return output

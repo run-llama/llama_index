@@ -1,4 +1,5 @@
 import asyncio
+import deprecated
 from typing import List, Any, Dict, Tuple, Optional, cast
 
 from llama_index.core.agent import (
@@ -30,6 +31,14 @@ from llama_index.agent.lats.types import (
 )
 
 
+@deprecated.deprecated(
+    reason=(
+        "LATSAgentWorker has been deprecated and is not maintained.\n\n"
+        "Contributions are welcome to migrate this class to the new agent architecture.\n\n"
+        "See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+    action="once",
+)
 class LATSAgentWorker(CustomSimpleAgentWorker):
     """
     Agent worker that performs a step of Language Agent Tree Search.
