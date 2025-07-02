@@ -13,12 +13,13 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     ImageBlock,
 )
+from llama_index.llms.reka import RekaLLM
 from llama_index.core.base.llms.generic_utils import image_node_to_image_block
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_TEMPERATURE
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
-from llama_index.core.multi_modal_llms import MultiModalLLM, MultiModalLLMMetadata
+from llama_index.core.multi_modal_llms import MultiModalLLMMetadata
 from llama_index.core.schema import ImageDocument
 
 try:
@@ -59,10 +60,10 @@ def process_messages_for_reka(messages: Sequence[ChatMessage]) -> List[Dict[str,
 
 
 @deprecated(
-    reason="This class has been deprecated and will no longer be maintained. Please use llama-index-llms-reka instead.",
+    reason="This class has been deprecated and will no longer be maintained. Please feel free to contribute to multi-modal support in llama-index-llms-reka instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
     version="0.2.1",
 )
-class RekaMultiModalLLM(MultiModalLLM):
+class RekaMultiModalLLM(RekaLLM):
     """Reka Multi-Modal LLM integration for LlamaIndex."""
 
     model: str = Field(default=DEFAULT_REKA_MODEL, description="The Reka model to use.")

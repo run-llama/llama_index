@@ -13,6 +13,7 @@ from llama_index.core.base.llms.types import (
     ChatResponseAsyncGen,
     ImageBlock,
 )
+from llama_index.llms.nvidia import NVIDIA
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import (
@@ -20,7 +21,6 @@ from llama_index.core.constants import (
     DEFAULT_TEMPERATURE,
 )
 from llama_index.core.multi_modal_llms import (
-    MultiModalLLM,
     MultiModalLLMMetadata,
 )
 from llama_index.core.schema import ImageNode
@@ -48,10 +48,6 @@ class Model(BaseModel):
     id: str
 
 
-@deprecated(
-    reason="The package has been deprecated and will no longer be maintained. Please use llama-index-llms-nvidia instead.",
-    version="0.",
-)
 class NVIDIAClient:
     def __init__(
         self,
@@ -143,7 +139,11 @@ class NVIDIAClient:
                 return await response.json()
 
 
-class NVIDIAMultiModal(MultiModalLLM):
+@deprecated(
+    reason="The package has been deprecated and will no longer be maintained. Please feel free to contribute to multi-modal support in llama-index-llms-nvidia instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
+    version="0.3.1",
+)
+class NVIDIAMultiModal(NVIDIA):
     model: str = Field(description="The Multi-Modal model to use from NVIDIA.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: Optional[int] = Field(
@@ -191,7 +191,7 @@ class NVIDIAMultiModal(MultiModalLLM):
             temperature=temperature,
             max_tokens=max_tokens,
             api_key=api_key,
-            api_base=base_url,
+            base_url=base_url,
             callback_manager=callback_manager,
             **kwargs,
         )

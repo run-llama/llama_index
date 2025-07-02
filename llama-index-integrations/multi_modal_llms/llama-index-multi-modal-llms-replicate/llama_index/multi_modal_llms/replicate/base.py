@@ -12,6 +12,7 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     ImageBlock,
 )
+from llama_index.llms.replicate import Replicate
 from llama_index.core.base.llms.generic_utils import image_node_to_image_block
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
@@ -20,7 +21,6 @@ from llama_index.core.base.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
 from llama_index.core.multi_modal_llms import (
-    MultiModalLLM,
     MultiModalLLMMetadata,
 )
 from llama_index.core.schema import ImageNode
@@ -36,10 +36,10 @@ REPLICATE_MULTI_MODAL_LLM_MODELS = {
 
 
 @deprecated(
-    reason="This package has been deprecated and will no longer be maintained. Please use llama-index-llms-replicate instead.",
+    reason="This package has been deprecated and will no longer be maintained. Please feel free to contribute to multi modal support in llama-index-llms-replicate instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
     version="0.3.2",
 )
-class ReplicateMultiModal(MultiModalLLM):
+class ReplicateMultiModal(Replicate):
     model: str = Field(description="The Multi-Modal model to use from Replicate.")
     temperature: float = Field(
         description="The temperature to use for sampling. Adjusts randomness of outputs, greater than 1 is random and 0 is deterministic."

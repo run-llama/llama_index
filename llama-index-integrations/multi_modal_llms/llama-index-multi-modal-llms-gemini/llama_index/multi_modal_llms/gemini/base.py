@@ -17,7 +17,7 @@ from .utils import generate_gemini_multi_modal_chat_message
 
 
 @deprecated(
-    reason="This package has been deprecated and will no longer be maintained. Please use llama-index-llms-google-genai instead.",
+    reason="This package has been deprecated and will no longer be maintained. Please use llama-index-llms-google-genai instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms.",
     version="0.5.1",
 )
 class GeminiMultiModal(Gemini):

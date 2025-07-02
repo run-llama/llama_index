@@ -20,7 +20,7 @@ from llama_index.llms.azure_openai import AzureOpenAI
 
 
 @deprecated(
-    reason="This class is deprecated and will be no longer maintained. Use AzureOpenAI from llama-index-llms-azure-openai instead.",
+    reason="This class is deprecated and will be no longer maintained. Use AzureOpenAI from llama-index-llms-azure-openai instead.  See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
     version="0.4.1",
 )
 class AzureOpenAIMultiModal(AzureOpenAI):

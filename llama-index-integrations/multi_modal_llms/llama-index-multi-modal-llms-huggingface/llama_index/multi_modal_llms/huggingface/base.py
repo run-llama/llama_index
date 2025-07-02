@@ -9,10 +9,11 @@ from llama_index.core.base.llms.types import (
     CompletionResponseAsyncGen,
     ImageBlock,
 )
+from llama_index.llms.huggingface import HuggingFaceLLM
 from llama_index.core.base.llms.generic_utils import image_node_to_image_block
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.core.multi_modal_llms import MultiModalLLM, MultiModalLLMMetadata
+from llama_index.core.multi_modal_llms import MultiModalLLMMetadata
 from llama_index.core.schema import ImageDocument, ImageNode
 import torch
 from PIL import Image
@@ -40,10 +41,10 @@ SUPPORTED_VLMS = [
 
 
 @deprecated(
-    reason="This package has been deprecated and will no longer be maintained. Please use llama-index-llms-huggingface instead.",
+    reason="This package has been deprecated and will no longer be maintained. Please feel free to contribute to multi-modal support in llama-index-llms-huggingface instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
     version="0.4.3",
 )
-class HuggingFaceMultiModal(MultiModalLLM):
+class HuggingFaceMultiModal(HuggingFaceLLM):
     """
     This class provides a base implementation for interacting with HuggingFace multi-modal models.
     It handles model initialization, input preparation, and text/image-based interaction.
@@ -264,7 +265,7 @@ class HuggingFaceMultiModal(MultiModalLLM):
 
 
 @deprecated(
-    reason="This package has been deprecated and will no longer be maintained. Please use llama-index-llms-huggingface instead.",
+    reason="This package has been deprecated and will no longer be maintained. Please feel free to contribute to multi-modal support in llama-index-llms-huggingface instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
     version="0.4.3",
 )
 class Qwen2VisionMultiModal(HuggingFaceMultiModal):
@@ -334,7 +335,7 @@ class Qwen2VisionMultiModal(HuggingFaceMultiModal):
 
 
 @deprecated(
-    reason="This package has been deprecated and will no longer be maintained. Please use llama-index-llms-huggingface instead.",
+    reason="This package has been deprecated and will no longer be maintained. Please feel free to contribute to multi-modal support in llama-index-llms-huggingface instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
     version="0.4.3",
 )
 class Florence2MultiModal(HuggingFaceMultiModal):
@@ -441,7 +442,7 @@ class Florence2MultiModal(HuggingFaceMultiModal):
 
 
 @deprecated(
-    reason="This package has been deprecated and will no longer be maintained. Please use llama-index-llms-huggingface instead.",
+    reason="This package has been deprecated and will no longer be maintained. Please feel free to contribute to multi-modal support in llama-index-llms-huggingface instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
     version="0.4.3",
 )
 class Phi35VisionMultiModal(HuggingFaceMultiModal):
@@ -499,7 +500,7 @@ class Phi35VisionMultiModal(HuggingFaceMultiModal):
 
 
 @deprecated(
-    reason="This package has been deprecated and will no longer be maintained. Please use llama-index-llms-huggingface instead.",
+    reason="This package has been deprecated and will no longer be maintained. Please feel free to contribute to multi-modal support in llama-index-llms-huggingface instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
     version="0.4.3",
 )
 class PaliGemmaMultiModal(HuggingFaceMultiModal):
@@ -581,7 +582,7 @@ class PaliGemmaMultiModal(HuggingFaceMultiModal):
 
 
 @deprecated(
-    reason="This package has been deprecated and will no longer be maintained. Please use llama-index-llms-huggingface instead.",
+    reason="This package has been deprecated and will no longer be maintained. Please feel free to contribute to multi-modal support in llama-index-llms-huggingface instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
     version="0.4.3",
 )
 class LlamaMultiModal(HuggingFaceMultiModal):

@@ -33,7 +33,7 @@ from llama_index.llms.anthropic import Anthropic
 
 
 @deprecated(
-    reason="This class is deprecated and will be no longer maintained, use Anthropic from llama-index-llms-anthropic instead.",
+    reason="This class is deprecated and will be no longer maintained, use Anthropic from llama-index-llms-anthropic instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
     version="0.3.2",
 )
 class AnthropicMultiModal(Anthropic):

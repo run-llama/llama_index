@@ -2,8 +2,9 @@
 
 from deprecated import deprecated
 from http import HTTPStatus
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
 
+from llama_index.core.base.llms.generic_utils import image_node_to_image_block
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -66,7 +67,7 @@ def call_with_messages(
 
 
 @deprecated(
-    reason="This package has been deprecated and will no longer be maintained. Please use the package llama-index-llms-dashscopre instead.",
+    reason="This package has been deprecated and will no longer be maintained. Please use the package llama-index-llms-dashscopre instead.  See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
     version="0.3.1",
 )
 class DashScopeMultiModal(DashScope):
@@ -154,9 +155,16 @@ class DashScopeMultiModal(DashScope):
                 role=MessageRole.USER.value, content=[{"text": prompt}]
             )
         else:
+            if all(isinstance(doc, ImageNode) for doc in image_documents):
+                image_docs = cast(
+                    List[ImageBlock],
+                    [image_node_to_image_block(node) for node in image_documents],
+                )
+            else:
+                image_docs = cast(List[ImageBlock], image_documents)
             content = []
-            for image_document in image_documents:
-                content.append({"image": image_document.image_url})
+            for image_document in image_docs:
+                content.append({"image": image_document.url})
             content.append({"text": prompt})
             message = ChatMessage(role=MessageRole.USER.value, content=content)
         return message, parameters

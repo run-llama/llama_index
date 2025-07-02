@@ -28,7 +28,7 @@ from llama_index.llms.openai_like.base import OpenAILike
 
 
 @deprecated(
-    reason="This package has been deprecated and will no longer be maintained. Please use llama-index-llms-openai-like instead.",
+    reason="This package has been deprecated and will no longer be maintained. Please use llama-index-llms-openai-like instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
     version="0.1.1",
 )
 class OpenAILikeMultiModal(OpenAILike):

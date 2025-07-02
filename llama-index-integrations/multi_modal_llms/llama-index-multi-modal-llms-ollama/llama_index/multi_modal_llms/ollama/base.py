@@ -49,7 +49,7 @@ def _messages_to_dicts(messages: Sequence[ChatMessage]) -> Sequence[Dict[str, An
 
 
 @deprecated(
-    reason="This package has been deprecated and will no longer be maintained. Please use llama-index-llms-ollama instead.",
+    reason="This package has been deprecated and will no longer be maintained. Please use llama-index-llms-ollama instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
     version="0.5.1",
 )
 class OllamaMultiModal(Ollama):

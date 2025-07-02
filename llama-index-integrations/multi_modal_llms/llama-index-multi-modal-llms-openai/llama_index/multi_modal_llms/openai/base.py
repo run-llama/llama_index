@@ -21,7 +21,7 @@ from llama_index.core.base.llms.generic_utils import image_node_to_image_block
 
 
 @deprecated(
-    reason="The package has been deprecated and will no longer be maintained. Please use llama-index-llms-openai (preferably the Responses API) instead.",
+    reason="The package has been deprecated and will no longer be maintained. Please use llama-index-llms-openai (preferably the Responses API) instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
     version="0.5.2",
 )
 class OpenAIMultiModal(OpenAI):

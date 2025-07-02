@@ -29,7 +29,7 @@ from llama_index.llms.bedrock_converse import BedrockConverse
 
 
 @deprecated(
-    reason="This class has been deprecated and will no longer be maintained. Please use BedrockConverse from llama-index-llms-bedrock-converse instead.",
+    reason="This class has been deprecated and will no longer be maintained. Please use BedrockConverse from llama-index-llms-bedrock-converse instead.  See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
     version="0.1.1",
 )
 class BedrockMultiModal(BedrockConverse):

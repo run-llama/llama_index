@@ -39,6 +39,7 @@ dependencies = [
     "llama-index-core>=0.10.0,<0.11",
     "filetype>=1.2.0,<2",
     "deprecated>=1.2.18,<2",
+    "llama-index-llms-nvidia>=0.3.4,<1",
 ]
 
 [tool.codespell]
