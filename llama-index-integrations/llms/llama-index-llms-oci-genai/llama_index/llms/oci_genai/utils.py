@@ -554,7 +554,7 @@ class MetaProvider(Provider):
                 "Could not import oci python package. "
                 "Please make sure you have the oci package installed."
             ) from ex
-        
+
         self.oci_completion_request = models.LlamaLlmInferenceRequest
 
         # Chat request and message models
@@ -570,9 +570,9 @@ class MetaProvider(Provider):
         self.oci_chat_message_text_content = models.TextContent
         self.oci_chat_message_image_content = models.ImageContent
         self.oci_chat_message_image_url = models.ImageUrl
-        
+
         self.chat_api_format = models.BaseChatRequest.API_FORMAT_GENERIC
-    
+
     def completion_response_to_text(self, response: Any) -> str:
         return response.data.inference_response.choices[0].text
 
@@ -605,7 +605,8 @@ class MetaProvider(Provider):
         }
 
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
-        """Convert LlamaIndex messages to OCI chat parameters.
+        """
+        Convert LlamaIndex messages to OCI chat parameters.
 
         Args:
             messages: List of LlamaIndex ChatMessage objects
@@ -615,8 +616,8 @@ class MetaProvider(Provider):
 
         Raises:
             ValueError: If message content is invalid
-        """
 
+        """
         """Map a LlamaIndex message to Meta's role representation."""
         role_map = {
             "user": "USER",
@@ -629,8 +630,8 @@ class MetaProvider(Provider):
         for msg in messages:
             # Use blocks if available, otherwise fall back to legacy msg.content
             content = getattr(msg, "blocks", None) or msg.content or ""
-            content=self._process_message_content(content)
-            oci_message=self.oci_chat_message[role_map[msg.role]](content=content)
+            content = self._process_message_content(content)
+            oci_message = self.oci_chat_message[role_map[msg.role]](content=content)
             oci_messages.append(oci_message)
 
         return {
@@ -642,7 +643,8 @@ class MetaProvider(Provider):
     def _process_message_content(
         self, content: Union[str, List[Union[TextBlock, ImageBlock]]]
     ) -> List[Any]:
-        """Process message content into OCI chat content format.
+        """
+        Process message content into OCI chat content format.
 
         Args:
             content: Message content as string or blocks
@@ -652,13 +654,14 @@ class MetaProvider(Provider):
 
         Raises:
             ValueError: If content format is invalid
+
         """
         if isinstance(content, str):
             return [self.oci_chat_message_text_content(text=content)]
 
         if not isinstance(content, list):
             raise ValueError("Message content must be a string or blocks.")
-            
+
         processed_content = []
         for item in content:
             if isinstance(item, TextBlock):
