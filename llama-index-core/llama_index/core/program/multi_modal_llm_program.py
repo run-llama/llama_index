@@ -1,9 +1,11 @@
-from typing import Any, Dict, List, Optional, Type, cast
+from typing import Any, Dict, List, Optional, Type, Union, cast
 
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.output_parsers.pydantic import PydanticOutputParser
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.llms import ImageBlock, TextBlock, LLM, ChatMessage
+from llama_index.core.base.llms.generic_utils import image_node_to_image_block
+from llama_index.core.schema import ImageNode
 from llama_index.core.types import BasePydanticProgram
 from llama_index.core.utils import print_text
 
@@ -21,13 +23,22 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
         output_parser: PydanticOutputParser,
         prompt: BasePromptTemplate,
         multi_modal_llm: LLM,
-        image_documents: List[ImageBlock],
+        image_documents: Optional[List[Union[ImageBlock, ImageNode]]] = None,
         verbose: bool = False,
     ) -> None:
         self._output_parser = output_parser
         self._multi_modal_llm = multi_modal_llm
         self._prompt = prompt
-        self._image_documents = image_documents
+        if image_documents and all(
+            isinstance(doc, ImageNode) for doc in image_documents
+        ):
+            image_docs: Optional[List[ImageBlock]] = [
+                image_node_to_image_block(cast(ImageNode, doc))
+                for doc in image_documents
+            ]
+        else:
+            image_docs = cast(Optional[List[ImageBlock]], image_documents)
+        self._image_documents = image_docs
         self._verbose = verbose
 
         self._prompt.output_parser = output_parser
@@ -40,7 +51,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
         prompt_template_str: Optional[str] = None,
         prompt: Optional[PromptTemplate] = None,
         multi_modal_llm: Optional[LLM] = None,
-        image_documents: Optional[List[ImageBlock]] = None,
+        image_documents: Optional[List[Union[ImageBlock, ImageNode]]] = None,
         verbose: bool = False,
         **kwargs: Any,
     ) -> "MultiModalLLMCompletionProgram":
@@ -91,19 +102,33 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
     def __call__(
         self,
         llm_kwargs: Optional[Dict[str, Any]] = None,
-        image_documents: Optional[List[ImageBlock]] = None,
+        image_documents: Optional[List[Union[ImageBlock, ImageNode]]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
         llm_kwargs = llm_kwargs or {}
         formatted_prompt = self._prompt.format(llm=self._multi_modal_llm, **kwargs)  # type: ignore
 
-        image_docs: List[Any] = image_documents or self._image_documents or []
+        if image_documents and all(
+            isinstance(doc, ImageNode) for doc in image_documents
+        ):
+            image_docs: Optional[List[ImageBlock]] = [
+                image_node_to_image_block(cast(ImageNode, doc))
+                for doc in image_documents
+            ]
+        else:
+            image_docs = cast(Optional[List[ImageBlock]], image_documents)
 
-        image_docs.append(TextBlock(text=formatted_prompt))
+        blocks: List[Union[ImageBlock, TextBlock]] = (
+            cast(Optional[List[Union[ImageBlock, TextBlock]]], image_docs)
+            or cast(Optional[List[Union[ImageBlock, TextBlock]]], self._image_documents)
+            or []
+        )
+
+        blocks.append(TextBlock(text=formatted_prompt))
 
         response = self._multi_modal_llm.chat(
-            messages=[ChatMessage(role="user", blocks=image_docs)],
+            messages=[ChatMessage(role="user", blocks=blocks)],
             **llm_kwargs,
         )
 
@@ -116,16 +141,30 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
     async def acall(
         self,
         llm_kwargs: Optional[Dict[str, Any]] = None,
-        image_documents: Optional[List[ImageBlock]] = None,
+        image_documents: Optional[List[Union[ImageBlock, ImageNode]]] = None,
         *args: Any,
         **kwargs: Any,
     ) -> BaseModel:
         llm_kwargs = llm_kwargs or {}
         formatted_prompt = self._prompt.format(llm=self._multi_modal_llm, **kwargs)  # type: ignore
 
-        image_docs: List[Any] = image_documents or self._image_documents or []
+        if image_documents and all(
+            isinstance(doc, ImageNode) for doc in image_documents
+        ):
+            image_docs: Optional[List[ImageBlock]] = [
+                image_node_to_image_block(cast(ImageNode, doc))
+                for doc in image_documents
+            ]
+        else:
+            image_docs = cast(Optional[List[ImageBlock]], image_documents)
 
-        image_docs.append(TextBlock(text=formatted_prompt))
+        blocks: List[Union[ImageBlock, TextBlock]] = (
+            cast(Optional[List[Union[ImageBlock, TextBlock]]], image_docs)
+            or cast(Optional[List[Union[ImageBlock, TextBlock]]], self._image_documents)
+            or []
+        )
+
+        blocks.append(TextBlock(text=formatted_prompt))
 
         response = await self._multi_modal_llm.achat(
             messages=[ChatMessage(role="user", blocks=image_docs)],

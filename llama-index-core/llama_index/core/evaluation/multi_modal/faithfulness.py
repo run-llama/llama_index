@@ -200,19 +200,19 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
             context_str=context_str, query_str=response
         )
 
-        image_nodes: List[Any] = []
+        blocks: List[Union[ImageBlock, TextBlock]] = []
 
         if image_paths:
-            image_nodes.extend(
+            blocks.extend(
                 [ImageBlock(path=Path(image_path)) for image_path in image_paths]
             )
         if image_urls:
-            image_nodes.extend([ImageBlock(url=image_url) for image_url in image_urls])
+            blocks.extend([ImageBlock(url=image_url) for image_url in image_urls])
 
-        image_nodes.append(TextBlock(text=fmt_prompt))
+        blocks.append(TextBlock(text=fmt_prompt))
 
         response_obj = await self._multi_modal_llm.achat(
-            messages=[ChatMessage(role="user", blocks=image_nodes)],
+            messages=[ChatMessage(role="user", blocks=blocks)],
         )
 
         raw_response_txt: str = response_obj.message.content or ""

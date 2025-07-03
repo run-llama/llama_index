@@ -1,11 +1,11 @@
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Tuple, Union
 
 from llama_index.core.base.response.schema import RESPONSE_TYPE, Response
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.indices.query.base import BaseQueryEngine
 from llama_index.core.indices.query.schema import QueryBundle, QueryType
-from llama_index.core.llms import LLM, TextBlock, ChatMessage
+from llama_index.core.llms import LLM, TextBlock, ChatMessage, ImageBlock
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.prompts import BasePromptTemplate
 from llama_index.core.prompts.default_prompts import DEFAULT_TEXT_QA_PROMPT
@@ -122,16 +122,16 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
             context_str=context_str, query_str=query_bundle.query_str
         )
 
-        image_documents: List[Any] = [
+        blocks: List[Union[ImageBlock, TextBlock]] = [
             image_node_to_image_block(image_node.node)
             for image_node in image_nodes
             if isinstance(image_node.node, ImageNode)
         ]
 
-        image_documents.append(TextBlock(text=fmt_prompt))
+        blocks.append(TextBlock(text=fmt_prompt))
 
         llm_response = self._multi_modal_llm.chat(
-            [ChatMessage(role="user", blocks=image_documents)]
+            [ChatMessage(role="user", blocks=blocks)]
         )
         return Response(
             response=llm_response.message.content,
@@ -150,16 +150,16 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
             query_str=prompt_str,
         )
 
-        image_documents: List[Any] = [
+        blocks: List[Union[ImageBlock, TextBlock]] = [
             image_node_to_image_block(image_node.node)
             for image_node in image_nodes
             if isinstance(image_node.node, ImageNode)
         ]
 
-        image_documents.append(TextBlock(text=fmt_prompt))
+        blocks.append(TextBlock(text=fmt_prompt))
 
         llm_response = self._multi_modal_llm.chat(
-            [ChatMessage(role="user", blocks=image_documents)]
+            [ChatMessage(role="user", blocks=blocks)]
         )
         return Response(
             response=llm_response.message.content,
@@ -181,16 +181,16 @@ class SimpleMultiModalQueryEngine(BaseQueryEngine):
             context_str=context_str, query_str=query_bundle.query_str
         )
 
-        image_documents: List[Any] = [
+        blocks: List[Union[ImageBlock, TextBlock]] = [
             image_node_to_image_block(image_node.node)
             for image_node in image_nodes
             if isinstance(image_node.node, ImageNode)
         ]
 
-        image_documents.append(TextBlock(text=fmt_prompt))
+        blocks.append(TextBlock(text=fmt_prompt))
 
         llm_response = await self._multi_modal_llm.achat(
-            [ChatMessage(role="user", blocks=image_documents)]
+            [ChatMessage(role="user", blocks=blocks)]
         )
         return Response(
             response=llm_response.message.content,
