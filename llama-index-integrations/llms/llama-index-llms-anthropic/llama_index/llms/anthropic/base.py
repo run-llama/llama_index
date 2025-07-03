@@ -59,7 +59,7 @@ from anthropic.types import (
     SignatureDelta,
 )
 from anthropic.types.beta import (
-    BetaSearchResultLocationCitation,
+    BetaCitationSearchResultLocation,
     BetaTextBlock,
     BetaThinkingBlock,
     BetaToolUseBlock,
@@ -361,7 +361,7 @@ class Anthropic(FunctionCallingLLM):
                 if hasattr(content_block, "citations") and content_block.citations:
                     for citation in content_block.citations:
                         if (
-                            isinstance(citation, BetaSearchResultLocationCitation)
+                            isinstance(citation, BetaCitationSearchResultLocation)
                             and str(citation) not in tracked_citations
                         ):
                             tracked_citations.add(str(citation))

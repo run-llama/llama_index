@@ -34,7 +34,7 @@ requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "anthropic[bedrock, vertex]>=0.57.0",
+    "anthropic[bedrock, vertex]>=0.57.1",
     "llama-index-core>=0.12.46,<0.13",
 ]
 
