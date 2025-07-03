@@ -10,6 +10,11 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     ChatMessage,
 )
+from llama_index.core.base.llms.generic_utils import (
+    chat_response_to_completion_response,
+    stream_chat_response_to_completion_response,
+    astream_chat_response_to_completion_response,
+)
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import (
@@ -202,14 +207,7 @@ class AnthropicMultiModal(Anthropic):
             **all_kwargs,
         )
 
-        # Handle both tool and text responses
-        content = response.message.content or ""
-
-        return CompletionResponse(
-            text=content,
-            raw=response.raw,
-            additional_kwargs=self._get_response_token_counts(response.raw),
-        )
+        return chat_response_to_completion_response(chat_response=response)
 
     def _stream_complete(
         self,
@@ -229,24 +227,9 @@ class AnthropicMultiModal(Anthropic):
             )[0],
         )
 
-        def gen() -> CompletionResponseGen:
-            text = ""
+        gen = super().stream_chat(messages=message_dict)
 
-            for response in super().stream_chat(
-                messages=message_dict,
-                **all_kwargs,
-            ):
-                content_delta = response.delta or ""
-                text += content_delta
-
-                yield CompletionResponse(
-                    delta=content_delta,
-                    text=text,
-                    raw=response.raw,
-                    additional_kwargs=self._get_response_token_counts(response.raw),
-                )
-
-        return gen()
+        return stream_chat_response_to_completion_response(chat_response_gen=gen)
 
     def complete(
         self,
@@ -288,11 +271,7 @@ class AnthropicMultiModal(Anthropic):
             **all_kwargs,
         )
 
-        return CompletionResponse(
-            text=response.message.content or "",
-            raw=response.raw,
-            additional_kwargs=self._get_response_token_counts(response.raw),
-        )
+        return chat_response_to_completion_response(response)
 
     async def acomplete(
         self,
@@ -320,24 +299,12 @@ class AnthropicMultiModal(Anthropic):
             )[0],
         )
 
-        async def gen() -> CompletionResponseAsyncGen:
-            text = ""
+        gen = await super().astream_chat(
+            messages=message_dict,
+            **all_kwargs,
+        )
 
-            async for response in await super().astream_chat(
-                messages=message_dict,
-                **all_kwargs,
-            ):
-                content_delta = response.delta or ""
-                text += content_delta
-
-                yield CompletionResponse(
-                    delta=content_delta,
-                    text=text,
-                    raw=response.raw,
-                    additional_kwargs=self._get_response_token_counts(response.raw),
-                )
-
-        return gen()
+        return astream_chat_response_to_completion_response(gen)
 
     async def astream_complete(
         self,
