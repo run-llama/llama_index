@@ -336,9 +336,6 @@ class CitationBlock(BaseModel):
     ]
     source: str
     title: str
-    cited_block_index: int
-    inner_start_block_index: int
-    inner_end_block_index: int
     additional_location_info: Dict[str, int]
 
     @field_validator("cited_content", mode="before")

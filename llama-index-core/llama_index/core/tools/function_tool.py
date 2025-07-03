@@ -10,7 +10,9 @@ from typing import (
     Optional,
     Type,
     Union,
+    get_origin,
 )
+
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import StructuredTool, Tool
@@ -30,6 +32,11 @@ from llama_index.core.tools.utils import create_schema_from_function
 from llama_index.core.workflow.context import Context
 
 AsyncCallable = Callable[..., Awaitable[Any]]
+
+
+def _is_context_param(param_annotation: Any) -> bool:
+    """Check if a parameter annotation is Context or Context[SomeType]."""
+    return param_annotation == Context or (get_origin(param_annotation) is Context)
 
 
 def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
@@ -95,13 +102,13 @@ class FunctionTool(AsyncBaseTool):
         assert fn_to_inspect is not None
         sig = inspect.signature(fn_to_inspect)
         self.requires_context = any(
-            param.annotation == Context for param in sig.parameters.values()
+            _is_context_param(param.annotation) for param in sig.parameters.values()
         )
         self.ctx_param_name = (
             next(
                 param.name
                 for param in sig.parameters.values()
-                if param.annotation == Context
+                if _is_context_param(param.annotation)
             )
             if self.requires_context
             else None
@@ -174,13 +181,13 @@ class FunctionTool(AsyncBaseTool):
             # Remove ctx parameter from schema if present
             ctx_param_name = None
             for param in fn_sig.parameters.values():
-                if param.annotation == Context:
+                if _is_context_param(param.annotation):
                     ctx_param_name = param.name
                     fn_sig = fn_sig.replace(
                         parameters=[
                             param
                             for param in fn_sig.parameters.values()
-                            if param.annotation != Context
+                            if not _is_context_param(param.annotation)
                         ]
                     )
 
