@@ -1883,7 +1883,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "anthropic", extras = ["bedrock", "vertex"], specifier = ">=0.57.0" },
-    { name = "llama-index-core", specifier = ">=0.12.44,<0.13" },
+    { name = "llama-index-core", specifier = ">=0.12.46,<0.13" },
 ]
 
 [package.metadata.requires-dev]
