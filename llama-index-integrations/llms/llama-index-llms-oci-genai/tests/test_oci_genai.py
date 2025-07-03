@@ -387,7 +387,7 @@ def test_llm_multimodal_chat_with_image(
 
     monkeypatch.setattr(llm._client, "chat", mocked_response)
 
-    image_url = "https://www.oracle.com/a/ocom/img/cb88-oci-logo.png"
+    image_url = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII="
     messages = [
         ChatMessage(
             role="user",
