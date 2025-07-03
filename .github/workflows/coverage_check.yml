@@ -6,6 +6,8 @@ on:
 env:
   # How many concurrent processes running pytest in a single CI job
   NUM_WORKERS: 8
+  # Tests will fail if coverage percentage is below this number
+  COV_FAIL_UNDER: 50
 
 jobs:
   test:
@@ -13,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.12"]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,7 +32,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           enable-cache: true
 
-      - name: Run tests
+      - name: Run tests with coverage
         shell: bash
         working-directory: llama-dev
         run: |
@@ -38,4 +40,6 @@ jobs:
           uv run -- llama-dev \
             --repo-root ".." ${{ runner.debug && '--debug' || '' }} test \
             --workers ${{ env.NUM_WORKERS }} \
-            --base-ref ${{ github.event.pull_request.base.ref }}
+            --base-ref=${{ github.event.pull_request.base.ref }} \
+            --cov \
+            --cov-fail-under=${{ env.COV_FAIL_UNDER }}

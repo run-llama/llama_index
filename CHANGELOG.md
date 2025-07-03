@@ -1,5 +1,80 @@
 # ChangeLog
 
+## [2025-07-02]
+
+### `llama-index-core` [0.12.46]
+
+- feat: Add async delete and insert to vector store index (#19281)
+- fix: Fixing ChatMessage to str handling of empty inputs (#19302)
+- fix: fix function tool context detection with typed context (#19309)
+- fix: inconsistent ref node handling (#19286)
+- chore: simplify citation block schema (#19308)
+
+### `llama-index-embeddings-google-genai` [0.2.1]
+
+- chore: bump min google-genai version (#19304)
+
+### `llama-index-embeddings-nvidia` [0.3.4]
+
+- fix: embedding model with custom endpoints 404 error (#19295)
+
+### `llama-index-llms-google-genai` [0.2.3]
+
+- chore: bump min google-genai version (#19304)
+
+### `llama-index-tools-mcp` [0.2.6]
+
+- fix: configuring resources from the mcp server correctly (#19307)
+
+### `llama-index-voice-agents-elevenlabs` [0.3.0-beta]
+
+- fix: Migrating Elevenlabs to adjust it to framework standard (#19273)
+
+## [2025-06-30]
+
+### `llama-index-core` [0.12.45]
+
+- feat: allow tools to output content blocks (#19265)
+- feat: Add chat UI events and models to core package (#19242)
+- fix: Support loading `Node` from ingestion cache (#19279)
+- fix: Fix SemanticDoubleMergingSplitterNodeParser not respecting max_chunk_size (#19235)
+- fix: replace `get_doc_id()` with `id_` in base index (#19266)
+- chore: remove usage and references to deprecated Context get/set API (#19275)
+- chore: deprecate older agent packages (#19249)
+
+### `llama-index-llms-anthropic` [0.7.5]
+
+- feat: Adding new AWS Claude models available on Bedrock (#19233)
+
+### `llama-index-embeddings-azure-openai` [0.3.9]
+
+- feat: Add dimensions parameter to AzureOpenAIEmbedding (#19239)
+
+### `llama-index-embeddings-bedrock` [0.5.2]
+
+- feat: Update aioboto3 dependency (#19237)
+
+### `llama-index-llms-bedrock-converse` [0.7.4]
+
+- feat: Update aioboto3 dependency (#19237)
+
+### `llama-index-llms-dashscope` [0.4.1]
+
+- fix: Fix dashscope qwen assistant api Error response problem, extract `tool_calls` info from ChatMessage kwargs to top level (#19224)
+
+### `llama-index-memory-mem0` [0.3.2]
+
+- feat: Adapting Mem0 to new framework memory standard (#19234)
+
+### `llama-index-tools-google` [0.5.0]
+
+- feat: Add proper async google search to tool spec (#19250)
+- fix: Clean up results in GoogleSearchToolSpec (#19246)
+
+### `llama-index-vector-stores-postgres` [0.5.4]
+
+- fix: Fix pg vector store sparse query (#19241)
+
 ## [2025-06-25]
 
 ### `llama-index-core` [0.12.44]
