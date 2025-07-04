@@ -617,6 +617,7 @@ nav:
           - ./examples/tools/eval_query_engine_tool.ipynb
           - ./examples/tools/function_tool_callback.ipynb
           - ./examples/tools/mcp.ipynb
+          - ./examples/tools/mcp_agent_tools.ipynb
           - ./examples/tools/order_completion_agent_with_artifact_editor.ipynb
       - Transforms:
           - ./examples/transforms/TransformsEval.ipynb
@@ -652,6 +653,7 @@ nav:
           - ./examples/vector_stores/DeepLakeIndexDemo.ipynb
           - ./examples/vector_stores/DocArrayHnswIndexDemo.ipynb
           - ./examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb
+          - ./examples/vector_stores/DragonflyIndexDemo.ipynb
           - ./examples/vector_stores/DuckDBDemo.ipynb
           - ./examples/vector_stores/ElasticsearchIndexDemo.ipynb
           - ./examples/vector_stores/Elasticsearch_demo.ipynb

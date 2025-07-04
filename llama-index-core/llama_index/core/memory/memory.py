@@ -25,6 +25,8 @@ from llama_index.core.base.llms.types import (
     ImageBlock,
     DocumentBlock,
     CachePoint,
+    CitableBlock,
+    CitationBlock,
 )
 from llama_index.core.bridge.pydantic import (
     BaseModel,
@@ -323,7 +325,16 @@ class Memory(BaseMemory):
 
         # Normalize the input to a list of ContentBlocks
         if isinstance(message_or_blocks, ChatMessage):
-            blocks: List[Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock]] = []
+            blocks: List[
+                Union[
+                    TextBlock,
+                    ImageBlock,
+                    AudioBlock,
+                    DocumentBlock,
+                    CitableBlock,
+                    CitationBlock,
+                ]
+            ] = []
 
             for block in message_or_blocks.blocks:
                 if not isinstance(block, CachePoint):

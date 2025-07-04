@@ -303,7 +303,7 @@ class ReActAgentWorker(BaseAgentWorker):
                     except Exception as e:
                         tool_output = ToolOutput(
                             content=f"Error: {e!s}",
-                            tool_name=tool.metadata.name,
+                            tool_name=tool.metadata.get_name(),
                             raw_input={"kwargs": reasoning_step.action_input},
                             raw_output=e,
                             is_error=True,
@@ -375,7 +375,7 @@ class ReActAgentWorker(BaseAgentWorker):
                     except Exception as e:
                         tool_output = ToolOutput(
                             content=f"Error: {e!s}",
-                            tool_name=tool.metadata.name,
+                            tool_name=tool.metadata.get_name(),
                             raw_input={"kwargs": reasoning_step.action_input},
                             raw_output=e,
                             is_error=True,

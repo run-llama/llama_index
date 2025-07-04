@@ -94,7 +94,12 @@ def test(
         changed_packages = get_changed_packages(changed_files, all_packages)
 
     # Find the dependants of the changed packages
-    dependants = get_dependants_packages(changed_packages, all_packages)
+    # Skip dependants if we're checking coverage
+    if cov:
+        dependants = set()
+    else:
+        dependants = get_dependants_packages(changed_packages, all_packages)
+
     # Test the packages directly affected and their dependants
     packages_to_test = changed_packages | dependants
 
