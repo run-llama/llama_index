@@ -113,22 +113,19 @@ class GoogleVertexCambToolSpec(BaseToolSpec):
         if output_path is None:
             output_path = "cambai_speech.flac"
 
-        try:
-            response = self.endpoint.raw_predict(
-                body=json.dumps(data).encode("utf-8"),
-                headers={"Content-Type": "application/json"},
-            )
+        response = self.endpoint.raw_predict(
+            body=json.dumps(data).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
 
-            response_data = json.loads(response.content)
-            predictions = response_data.get("predictions", [])
+        response_data = json.loads(response.content)
+        predictions = response_data.get("predictions", [])
 
-            if not predictions or len(predictions) == 0:
-                raise RuntimeError("No audio predictions returned from the model")
+        if not predictions or len(predictions) == 0:
+            raise RuntimeError("No audio predictions returned from the model")
 
-            with open(output_path, "wb") as f:
-                audio_bytes = base64.b64decode(predictions[0])
-                f.write(audio_bytes)
-        except Exception as e:
-            raise RuntimeError(f"Error during text-to-speech synthesis: {e}")
+        with open(output_path, "wb") as f:
+            audio_bytes = base64.b64decode(predictions[0])
+            f.write(audio_bytes)
 
         return output_path
