@@ -1,15 +1,17 @@
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, Sequence, cast
+from deprecated import deprecated
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
-    ChatResponseAsyncGen,
     CompletionResponse,
     CompletionResponseGen,
-    CompletionResponseAsyncGen,
+    ImageBlock,
 )
+from llama_index.llms.openvino import OpenVINOLLM
+from llama_index.core.base.llms.generic_utils import image_node_to_image_block
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.core.multi_modal_llms import MultiModalLLM, MultiModalLLMMetadata
+from llama_index.core.multi_modal_llms import MultiModalLLMMetadata
 from llama_index.core.schema import ImageDocument, ImageNode
 from llama_index.core.types import Thread
 from PIL import Image
@@ -20,7 +22,11 @@ from optimum.intel.openvino import OVModelForVisualCausalLM
 DEFAULT_MULTIMODAL_MODEL = "llava-hf/llava-v1.6-mistral-7b-hf"
 
 
-class OpenVINOMultiModal(MultiModalLLM):
+@deprecated(
+    reason="This package has been deprecated and thus will no longer be maintained. Please feel free to contribute to multi modal support in llama-index-llms-openvino instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
+    version="0.3.1",
+)
+class OpenVINOMultiModal(OpenVINOLLM):
     """
     This class provides a base implementation for interacting with OpenVINO multi-modal models.
     It handles model initialization, input preparation, and text/image-based interaction.
@@ -111,13 +117,19 @@ class OpenVINOMultiModal(MultiModalLLM):
         """
         Prepares the input messages and images.
         """
+        if all(isinstance(doc, ImageNode) for doc in image_documents):
+            image_docs: Sequence[ImageBlock] = [
+                image_node_to_image_block(doc) for doc in image_documents
+            ]
+        else:
+            image_docs = cast(Sequence[ImageBlock], image_documents)
         conversation = []
         images = []
         conversation.append(
             {"type": "text", "text": messages[0].content}
         )  # Add user text message
-        for img_doc in image_documents:
-            images.append(Image.open(img_doc.image_path))
+        for img_doc in image_docs:
+            images.append(Image.open(img_doc.path))
             conversation.append({"type": "image"})
         messages = [
             {"role": "user", "content": conversation}
@@ -213,37 +225,4 @@ class OpenVINOMultiModal(MultiModalLLM):
         return ChatResponse(
             message=ChatMessage(role="assistant", content=generated_text),
             raw={"model_output": generated_text},
-        )
-
-    async def astream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseAsyncGen:
-        raise NotImplementedError(
-            "OpenVINOMultiModal does not support async streaming chat yet."
-        )
-
-    async def astream_complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
-    ) -> CompletionResponseAsyncGen:
-        raise NotImplementedError(
-            "HuggingFaceMultiModal does not support async streaming completion yet."
-        )
-
-    async def acomplete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
-    ) -> CompletionResponse:
-        raise NotImplementedError(
-            "OpenVINOMultiModal does not support async completion yet."
-        )
-
-    async def achat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponse:
-        raise NotImplementedError("OpenVINOMultiModal does not support async chat yet.")
-
-    async def stream_chat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponse:
-        raise NotImplementedError(
-            "OpenVINOMultiModal does not support async streaming chat yet."
         )

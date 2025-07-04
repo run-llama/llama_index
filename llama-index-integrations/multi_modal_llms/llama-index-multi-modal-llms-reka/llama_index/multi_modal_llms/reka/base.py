@@ -1,8 +1,6 @@
 import os
-from typing import Any, Dict, List, Optional, Sequence
-from PIL import Image
-import base64
-import io
+from typing import Any, Dict, List, Optional, Sequence, Union, cast
+from deprecated import deprecated
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -13,12 +11,15 @@ from llama_index.core.base.llms.types import (
     CompletionResponseAsyncGen,
     CompletionResponseGen,
     MessageRole,
+    ImageBlock,
 )
+from llama_index.llms.reka import RekaLLM
+from llama_index.core.base.llms.generic_utils import image_node_to_image_block
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_TEMPERATURE
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
-from llama_index.core.multi_modal_llms import MultiModalLLM, MultiModalLLMMetadata
+from llama_index.core.multi_modal_llms import MultiModalLLMMetadata
 from llama_index.core.schema import ImageDocument
 
 try:
@@ -58,7 +59,11 @@ def process_messages_for_reka(messages: Sequence[ChatMessage]) -> List[Dict[str,
     return reka_messages
 
 
-class RekaMultiModalLLM(MultiModalLLM):
+@deprecated(
+    reason="This class has been deprecated and will no longer be maintained. Please feel free to contribute to multi-modal support in llama-index-llms-reka instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
+    version="0.2.1",
+)
+class RekaMultiModalLLM(RekaLLM):
     """Reka Multi-Modal LLM integration for LlamaIndex."""
 
     model: str = Field(default=DEFAULT_REKA_MODEL, description="The Reka model to use.")
@@ -136,45 +141,38 @@ class RekaMultiModalLLM(MultiModalLLM):
         return {**self._model_kwargs, **kwargs}
 
     def _process_images(
-        self, image_documents: Sequence[ImageDocument]
+        self, image_documents: Sequence[Union[ImageDocument, ImageBlock]]
     ) -> List[Dict[str, Any]]:
+        if all(isinstance(doc, ImageDocument) for doc in image_documents):
+            image_docs: Sequence[ImageBlock] = [
+                image_node_to_image_block(doc) for doc in image_documents
+            ]
+        else:
+            image_docs = cast(Sequence[ImageBlock], image_documents)
         image_contents = []
-        for doc in image_documents:
+        for doc in image_docs:
             try:
-                image_data = doc.resolve_image()
-                if isinstance(image_data, str):
-                    # It's a file path or URL
-                    if image_data.startswith(("http://", "https://")):
-                        image_contents.append(
-                            {"type": "image_url", "image_url": image_data}
-                        )
-                    else:
-                        # It's a local file path
-                        with open(image_data, "rb") as image_file:
-                            img = Image.open(image_file)
-                            buffered = io.BytesIO()
-                            img.save(buffered, format="PNG")
-                            img_str = base64.b64encode(buffered.getvalue()).decode()
-                            image_contents.append(
-                                {
-                                    "type": "image_url",
-                                    "image_url": f"data:image/png;base64,{img_str}",
-                                }
-                            )
-                elif isinstance(image_data, io.BytesIO):
-                    # It's binary data
-                    img = Image.open(image_data)
-                    buffered = io.BytesIO()
-                    img.save(buffered, format="PNG")
-                    img_str = base64.b64encode(buffered.getvalue()).decode()
+                if doc.image:
                     image_contents.append(
                         {
                             "type": "image_url",
-                            "image_url": f"data:image/png;base64,{img_str}",
+                            "image_url": f"data:image/png;base64,{doc.image.decode('utf-8')}",
                         }
                     )
+                elif doc.path:
+                    image_data = (
+                        doc.resolve_image(as_base64=True).read().decode("utf-8")
+                    )
+                    image_contents.append(
+                        {
+                            "type": "image_url",
+                            "image_url": f"data:image/png;base64,{image_data}",
+                        }
+                    )
+                elif doc.url:
+                    image_contents.append({"type": "image_url", "image_url": doc.url})
                 else:
-                    raise ValueError("Unsupported image data type")
+                    raise ValueError("Unsupported image input.")
             except Exception as e:
                 raise ValueError(f"Failed to process image: {e!s}")
 
@@ -184,7 +182,7 @@ class RekaMultiModalLLM(MultiModalLLM):
     def chat(
         self,
         messages: Sequence[ChatMessage],
-        image_documents: Optional[Sequence[ImageDocument]] = None,
+        image_documents: Optional[Sequence[Union[ImageDocument, ImageBlock]]] = None,
         **kwargs: Any,
     ) -> ChatResponse:
         all_kwargs = self._get_all_kwargs(**kwargs)
@@ -213,7 +211,7 @@ class RekaMultiModalLLM(MultiModalLLM):
     def complete(
         self,
         prompt: str,
-        image_documents: Optional[Sequence[ImageDocument]] = None,
+        image_documents: Optional[Sequence[Union[ImageDocument, ImageBlock]]] = None,
         **kwargs: Any,
     ) -> CompletionResponse:
         all_kwargs = self._get_all_kwargs(**kwargs)
@@ -239,7 +237,7 @@ class RekaMultiModalLLM(MultiModalLLM):
     def stream_chat(
         self,
         messages: Sequence[ChatMessage],
-        image_documents: Optional[Sequence[ImageDocument]] = None,
+        image_documents: Optional[Sequence[Union[ImageDocument, ImageBlock]]] = None,
         **kwargs: Any,
     ) -> ChatResponseGen:
         all_kwargs = self._get_all_kwargs(**kwargs)
@@ -280,7 +278,7 @@ class RekaMultiModalLLM(MultiModalLLM):
     def stream_complete(
         self,
         prompt: str,
-        image_documents: Optional[Sequence[ImageDocument]] = None,
+        image_documents: Optional[Sequence[Union[ImageDocument, ImageBlock]]] = None,
         **kwargs: Any,
     ) -> CompletionResponseGen:
         all_kwargs = self._get_all_kwargs(**kwargs)
@@ -316,7 +314,7 @@ class RekaMultiModalLLM(MultiModalLLM):
     async def achat(
         self,
         messages: Sequence[ChatMessage],
-        image_documents: Optional[Sequence[ImageDocument]] = None,
+        image_documents: Optional[Sequence[Union[ImageDocument, ImageBlock]]] = None,
         **kwargs: Any,
     ) -> ChatResponse:
         all_kwargs = self._get_all_kwargs(**kwargs)
@@ -347,7 +345,7 @@ class RekaMultiModalLLM(MultiModalLLM):
     async def acomplete(
         self,
         prompt: str,
-        image_documents: Optional[Sequence[ImageDocument]] = None,
+        image_documents: Optional[Sequence[Union[ImageDocument, ImageBlock]]] = None,
         **kwargs: Any,
     ) -> CompletionResponse:
         all_kwargs = self._get_all_kwargs(**kwargs)
@@ -373,7 +371,7 @@ class RekaMultiModalLLM(MultiModalLLM):
     async def astream_chat(
         self,
         messages: Sequence[ChatMessage],
-        image_documents: Optional[Sequence[ImageDocument]] = None,
+        image_documents: Optional[Sequence[Union[ImageDocument, ImageBlock]]] = None,
         **kwargs: Any,
     ) -> ChatResponseAsyncGen:
         all_kwargs = self._get_all_kwargs(**kwargs)
@@ -414,7 +412,7 @@ class RekaMultiModalLLM(MultiModalLLM):
     async def astream_complete(
         self,
         prompt: str,
-        image_documents: Optional[Sequence[ImageDocument]] = None,
+        image_documents: Optional[Sequence[Union[ImageDocument, ImageBlock]]] = None,
         **kwargs: Any,
     ) -> CompletionResponseAsyncGen:
         all_kwargs = self._get_all_kwargs(**kwargs)

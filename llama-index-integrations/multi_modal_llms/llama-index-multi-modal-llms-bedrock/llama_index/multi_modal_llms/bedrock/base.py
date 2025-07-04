@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, Optional, Sequence
+from deprecated import deprecated
 
-import boto3
 import aioboto3
 from botocore.config import Config
 from llama_index.core.base.llms.types import (
@@ -17,7 +17,6 @@ from llama_index.core.base.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
 )
 from llama_index.core.multi_modal_llms import (
-    MultiModalLLM,
     MultiModalLLMMetadata,
 )
 from llama_index.core.schema import ImageNode
@@ -25,12 +24,15 @@ from llama_index.multi_modal_llms.bedrock.utils import (
     BEDROCK_MULTI_MODAL_MODELS,
     generate_bedrock_multi_modal_message,
     resolve_bedrock_credentials,
-    invoke_model_with_retry,
-    invoke_model_with_retry_async,
 )
+from llama_index.llms.bedrock_converse import BedrockConverse
 
 
-class BedrockMultiModal(MultiModalLLM):
+@deprecated(
+    reason="This class has been deprecated and will no longer be maintained. Please use BedrockConverse from llama-index-llms-bedrock-converse instead.  See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
+    version="0.1.1",
+)
+class BedrockMultiModal(BedrockConverse):
     """Bedrock Multi-Modal LLM implementation."""
 
     model: str = Field(description="The Multi-Modal model to use from Bedrock.")
@@ -137,15 +139,6 @@ class BedrockMultiModal(MultiModalLLM):
             region_name=self.region_name,
         )
 
-    def _get_client(self) -> Any:
-        """Get Bedrock client."""
-        session = boto3.Session(
-            aws_access_key_id=self.aws_access_key_id,
-            aws_secret_access_key=self.aws_secret_access_key,
-            region_name=self.region_name,
-        )
-        return session.client("bedrock-runtime", config=self._config)
-
     @classmethod
     def class_name(cls) -> str:
         """Get class name."""
@@ -192,50 +185,14 @@ class BedrockMultiModal(MultiModalLLM):
 
         # Get model kwargs and prepare the request body
         model_kwargs = self._get_model_kwargs(**kwargs)
-        if "body" in model_kwargs:
-            model_kwargs["body"]["messages"] = [message]
-        else:
-            model_kwargs["body"] = {"messages": [message]}
 
-        # Convert body to JSON string
-        if isinstance(model_kwargs.get("body"), dict):
-            import json
-
-            body_str = json.dumps(model_kwargs["body"])
-            del model_kwargs["body"]
-        else:
-            body_str = model_kwargs["body"]
-            del model_kwargs["body"]
-
-        response = invoke_model_with_retry(
-            client=self._client,
-            model=self.model,
-            messages=body_str,
-            max_retries=self.max_retries,
-            **model_kwargs,
+        response = super().chat(
+            messages=message**model_kwargs,
         )
 
-        # Parse the streaming response body
-        response_body = json.loads(response["body"].read())
-
-        # Parse response based on model
-        if self.model.startswith("anthropic.claude"):
-            completion = response_body["content"][0]["text"]
-        else:
-            # Add support for other models as needed
-            completion = response_body.get("completion", "")
-
         return CompletionResponse(
-            text=completion,
-            raw=response_body,
-            additional_kwargs={
-                "input_tokens": response["ResponseMetadata"]["HTTPHeaders"].get(
-                    "x-amzn-bedrock-input-token-count"
-                ),
-                "output_tokens": response["ResponseMetadata"]["HTTPHeaders"].get(
-                    "x-amzn-bedrock-output-token-count"
-                ),
-            },
+            text=response.message.content or "",
+            raw=response.raw,
         )
 
     def complete(
@@ -255,81 +212,12 @@ class BedrockMultiModal(MultiModalLLM):
 
         # Get model kwargs and prepare the request body
         model_kwargs = self._get_model_kwargs(**kwargs)
-        if "body" in model_kwargs:
-            model_kwargs["body"]["messages"] = [message]
-        else:
-            model_kwargs["body"] = {"messages": [message]}
 
-        # Convert body to JSON string
-        if isinstance(model_kwargs.get("body"), dict):
-            import json
-
-            body_str = json.dumps(model_kwargs["body"])
-            del model_kwargs["body"]
-        else:
-            body_str = model_kwargs["body"]
-            del model_kwargs["body"]
-
-        response = await invoke_model_with_retry_async(
-            session=self._asession,
-            config=self._config,
-            model=self.model,
-            messages=body_str,
-            max_retries=self.max_retries,
-            **model_kwargs,
+        response = await super().achat(
+            messages=message**model_kwargs,
         )
-
-        # Parse the streaming response body
-        response_body = json.loads(await response["body"].read())
-
-        # Parse response based on model
-        if self.model.startswith("anthropic.claude"):
-            completion = response_body["content"][0]["text"]
-        else:
-            # Add support for other models as needed
-            completion = response_body.get("completion", "")
 
         return CompletionResponse(
-            text=completion,
-            raw=response_body,
-            additional_kwargs={
-                "input_tokens": response["ResponseMetadata"]["HTTPHeaders"].get(
-                    "x-amzn-bedrock-input-token-count"
-                ),
-                "output_tokens": response["ResponseMetadata"]["HTTPHeaders"].get(
-                    "x-amzn-bedrock-output-token-count"
-                ),
-            },
-        )
-
-    def chat(self, messages: Sequence[Any], **kwargs: Any) -> Any:
-        """Chat with the model."""
-        raise NotImplementedError("Chat is not supported for this model.")
-
-    def stream_chat(self, messages: Sequence[Any], **kwargs: Any) -> Any:
-        """Stream chat with the model."""
-        raise NotImplementedError("Stream chat is not supported for this model.")
-
-    async def achat(self, messages: Sequence[Any], **kwargs: Any) -> Any:
-        """Chat with the model asynchronously."""
-        raise NotImplementedError("Async chat is not supported for this model.")
-
-    async def astream_chat(self, messages: Sequence[Any], **kwargs: Any) -> Any:
-        """Stream chat with the model asynchronously."""
-        raise NotImplementedError("Async stream chat is not supported for this model.")
-
-    def stream_complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
-    ) -> Any:
-        """Complete the prompt with image support in a streaming fashion."""
-        raise NotImplementedError(
-            "Streaming completion is not supported for this model."
-        )
-
-    async def astream_complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
-    ) -> Any:
-        """Complete the prompt with image support in a streaming fashion asynchronously."""
-        raise NotImplementedError(
-            "Async streaming completion is not supported for this model."
+            text=response.message.content or "",
+            raw=response.raw,
         )

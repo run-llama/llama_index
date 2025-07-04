@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Sequence, get_args
+from typing import Any, Dict, List, Optional, Sequence, get_args, Union
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -9,6 +9,7 @@ from llama_index.core.base.llms.types import (
     CompletionResponse,
     CompletionResponseAsyncGen,
     CompletionResponseGen,
+    ImageBlock,
 )
 from llama_index.core.base.query_pipeline.query import (
     ChainableMixin,
@@ -97,13 +98,19 @@ class MultiModalLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
 
     @abstractmethod
     def complete(
-        self, prompt: str, image_documents: List[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: List[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponse:
         """Completion endpoint for Multi-Modal LLM."""
 
     @abstractmethod
     def stream_complete(
-        self, prompt: str, image_documents: List[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: List[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponseGen:
         """Streaming completion endpoint for Multi-Modal LLM."""
 
@@ -127,13 +134,19 @@ class MultiModalLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
 
     @abstractmethod
     async def acomplete(
-        self, prompt: str, image_documents: List[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: List[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponse:
         """Async completion endpoint for Multi-Modal LLM."""
 
     @abstractmethod
     async def astream_complete(
-        self, prompt: str, image_documents: List[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: List[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponseAsyncGen:
         """Async streaming completion endpoint for Multi-Modal LLM."""
 
@@ -217,9 +230,9 @@ class MultiModalCompleteComponent(BaseMultiModalComponent):
             if not isinstance(input["image_documents"], list):
                 raise ValueError("image_documents must be a list.")
             for doc in input["image_documents"]:
-                if not isinstance(doc, (ImageDocument, ImageNode)):
+                if not isinstance(doc, (ImageDocument, ImageBlock, ImageNode)):
                     raise ValueError(
-                        "image_documents must be a list of ImageNode objects."
+                        "image_documents must be a list of Union[ImageNode, ImageBlock] objects."
                     )
 
         return input

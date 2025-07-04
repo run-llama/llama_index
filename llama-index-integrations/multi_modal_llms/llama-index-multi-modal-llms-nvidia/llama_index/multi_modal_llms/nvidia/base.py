@@ -1,5 +1,6 @@
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Union
 import requests
+from deprecated import deprecated
 
 from llama_index.core.base.llms.types import (
     CompletionResponse,
@@ -10,7 +11,9 @@ from llama_index.core.base.llms.types import (
     ChatResponse,
     ChatResponseGen,
     ChatResponseAsyncGen,
+    ImageBlock,
 )
+from llama_index.llms.nvidia import NVIDIA
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import (
@@ -18,7 +21,6 @@ from llama_index.core.constants import (
     DEFAULT_TEMPERATURE,
 )
 from llama_index.core.multi_modal_llms import (
-    MultiModalLLM,
     MultiModalLLMMetadata,
 )
 from llama_index.core.schema import ImageNode
@@ -137,7 +139,11 @@ class NVIDIAClient:
                 return await response.json()
 
 
-class NVIDIAMultiModal(MultiModalLLM):
+@deprecated(
+    reason="The package has been deprecated and will no longer be maintained. Please feel free to contribute to multi-modal support in llama-index-llms-nvidia instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
+    version="0.3.1",
+)
+class NVIDIAMultiModal(NVIDIA):
     model: str = Field(description="The Multi-Modal model to use from NVIDIA.")
     temperature: float = Field(description="The temperature to use for sampling.")
     max_tokens: Optional[int] = Field(
@@ -185,7 +191,7 @@ class NVIDIAMultiModal(MultiModalLLM):
             temperature=temperature,
             max_tokens=max_tokens,
             api_key=api_key,
-            api_base=base_url,
+            base_url=base_url,
             callback_manager=callback_manager,
             **kwargs,
         )
@@ -242,7 +248,10 @@ class NVIDIAMultiModal(MultiModalLLM):
         }
 
     def _complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponse:
         all_kwargs = self._get_model_kwargs(**kwargs)
         content, extra_headers = generate_nvidia_multi_modal_chat_message(
@@ -266,7 +275,10 @@ class NVIDIAMultiModal(MultiModalLLM):
         )
 
     def _stream_complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponseGen:
         all_kwargs = self._get_model_kwargs(**kwargs)
         content, extra_headers = generate_nvidia_multi_modal_chat_message(
@@ -300,12 +312,18 @@ class NVIDIAMultiModal(MultiModalLLM):
         return gen()
 
     def complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponse:
         return self._complete(prompt, image_documents, **kwargs)
 
     def stream_complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponseGen:
         return self._stream_complete(prompt, image_documents, **kwargs)
 
@@ -388,7 +406,10 @@ class NVIDIAMultiModal(MultiModalLLM):
     # ===== Async Endpoints =====
 
     async def _acomplete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponse:
         all_kwargs = self._get_model_kwargs(**kwargs)
         content, extra_headers = generate_nvidia_multi_modal_chat_message(
@@ -411,12 +432,18 @@ class NVIDIAMultiModal(MultiModalLLM):
         )
 
     async def acomplete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponse:
         return await self._acomplete(prompt, image_documents, **kwargs)
 
     async def astream_complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponseAsyncGen:
         all_kwargs = self._get_model_kwargs(**kwargs)
         content, extra_headers = generate_nvidia_multi_modal_chat_message(

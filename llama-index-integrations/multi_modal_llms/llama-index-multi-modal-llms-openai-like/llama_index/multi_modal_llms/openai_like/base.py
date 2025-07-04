@@ -1,5 +1,5 @@
-from typing import Any, Optional, Sequence
-from pathlib import Path
+from typing import Any, Optional, Sequence, Union
+from deprecated import deprecated
 
 from llama_index.core.base.llms.generic_utils import (
     chat_response_to_completion_response,
@@ -17,14 +17,20 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
     ImageBlock,
+    TextBlock,
 )
 from llama_index.core.schema import ImageNode
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW
 from llama_index.core.base.llms.types import LLMMetadata
+from llama_index.core.base.llms.generic_utils import image_node_to_image_block
 from llama_index.llms.openai_like.base import OpenAILike
 
 
+@deprecated(
+    reason="This package has been deprecated and will no longer be maintained. Please use llama-index-llms-openai-like instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
+    version="0.1.1",
+)
 class OpenAILikeMultiModal(OpenAILike):
     """
     OpenAI-like Multi-Modal LLM.
@@ -129,51 +135,28 @@ class OpenAILikeMultiModal(OpenAILike):
         self,
         prompt: str,
         role: str,
-        image_documents: Sequence[ImageNode],
-        image_detail: Optional[str] = "low",
+        image_documents: Sequence[Union[ImageBlock, ImageNode]],
     ) -> ChatMessage:
-        """Create a multi-modal chat message with text and images."""
         chat_msg = ChatMessage(role=role, content=prompt)
         if not image_documents:
             # if image_documents is empty, return text only chat message
             return chat_msg
 
-        for image_document in image_documents:
-            # Create the appropriate ContentBlock depending on the document content
-            if image_document.image:
-                chat_msg.blocks.append(
-                    ImageBlock(
-                        image=bytes(image_document.image, encoding="utf-8"),
-                        detail=image_detail,
-                    )
-                )
-            elif image_document.image_url:
-                chat_msg.blocks.append(
-                    ImageBlock(url=image_document.image_url, detail=image_detail)
-                )
-            elif image_document.image_path:
-                chat_msg.blocks.append(
-                    ImageBlock(
-                        path=Path(image_document.image_path),
-                        detail=image_detail,
-                        image_mimetype=image_document.image_mimetype
-                        or image_document.metadata.get("file_type"),
-                    )
-                )
-            elif f_path := image_document.metadata.get("file_path"):
-                chat_msg.blocks.append(
-                    ImageBlock(
-                        path=Path(f_path),
-                        detail=image_detail,
-                        image_mimetype=image_document.metadata.get("file_type"),
-                    )
-                )
+        chat_msg.blocks.append(TextBlock(text=prompt))
+
+        if all(isinstance(doc, ImageNode) for doc in image_documents):
+            chat_msg.blocks.extend(
+                [image_node_to_image_block(doc) for doc in image_documents]
+            )
+        else:
+            chat_msg.blocks.extend(image_documents)
+
         return chat_msg
 
     def complete(
         self,
         prompt: str,
-        image_documents: Optional[Sequence[ImageNode]] = None,
+        image_documents: Optional[Sequence[Union[ImageNode, ImageBlock]]] = None,
         formatted: bool = False,
         **kwargs: Any,
     ) -> CompletionResponse:
@@ -194,7 +177,7 @@ class OpenAILikeMultiModal(OpenAILike):
     def stream_complete(
         self,
         prompt: str,
-        image_documents: Optional[Sequence[ImageNode]] = None,
+        image_documents: Optional[Sequence[Union[ImageNode, ImageBlock]]] = None,
         formatted: bool = False,
         **kwargs: Any,
     ) -> CompletionResponseGen:
@@ -217,7 +200,7 @@ class OpenAILikeMultiModal(OpenAILike):
     async def acomplete(
         self,
         prompt: str,
-        image_documents: Optional[Sequence[ImageNode]] = None,
+        image_documents: Optional[Sequence[Union[ImageNode, ImageBlock]]] = None,
         formatted: bool = False,
         **kwargs: Any,
     ) -> CompletionResponse:
@@ -238,7 +221,7 @@ class OpenAILikeMultiModal(OpenAILike):
     async def astream_complete(
         self,
         prompt: str,
-        image_documents: Optional[Sequence[ImageNode]] = None,
+        image_documents: Optional[Sequence[Union[ImageNode, ImageBlock]]] = None,
         formatted: bool = False,
         **kwargs: Any,
     ) -> CompletionResponseAsyncGen:
@@ -261,7 +244,7 @@ class OpenAILikeMultiModal(OpenAILike):
     def multi_modal_chat(
         self,
         messages: Sequence[ChatMessage],
-        image_documents: Optional[Sequence[ImageNode]] = None,
+        image_documents: Optional[Sequence[Union[ImageNode, ImageBlock]]] = None,
         **kwargs: Any,
     ) -> ChatResponse:
         """Chat with multi-modal support."""
@@ -283,7 +266,7 @@ class OpenAILikeMultiModal(OpenAILike):
     def multi_modal_stream_chat(
         self,
         messages: Sequence[ChatMessage],
-        image_documents: Optional[Sequence[ImageNode]] = None,
+        image_documents: Optional[Sequence[Union[ImageNode, ImageBlock]]] = None,
         **kwargs: Any,
     ) -> ChatResponseGen:
         """Stream chat with multi-modal support."""
@@ -307,7 +290,7 @@ class OpenAILikeMultiModal(OpenAILike):
     async def amulti_modal_chat(
         self,
         messages: Sequence[ChatMessage],
-        image_documents: Optional[Sequence[ImageNode]] = None,
+        image_documents: Optional[Sequence[Union[ImageNode, ImageBlock]]] = None,
         **kwargs: Any,
     ) -> ChatResponse:
         """Async chat with multi-modal support."""
@@ -331,7 +314,7 @@ class OpenAILikeMultiModal(OpenAILike):
     async def amulti_modal_stream_chat(
         self,
         messages: Sequence[ChatMessage],
-        image_documents: Optional[Sequence[ImageNode]] = None,
+        image_documents: Optional[Sequence[Union[ImageNode, ImageBlock]]] = None,
         **kwargs: Any,
     ) -> ChatResponseAsyncGen:
         """Async stream chat with multi-modal support."""
