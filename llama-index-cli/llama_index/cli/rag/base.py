@@ -198,7 +198,12 @@ class RagCLI(BaseModel):
                 if response.strip().lower() != "y":
                     print("Aborted.")
                     return
-                os.system(f"rm -rf {self.persist_dir}")
+                # Security fix: Use shutil.rmtree instead of os.system to prevent command injection
+                try:
+                    shutil.rmtree(self.persist_dir)
+                except Exception as e:
+                    print(f"Error clearing {self.persist_dir}: {e}")
+                    return
             print(f"Successfully cleared {self.persist_dir}")
 
         self.verbose = verbose
