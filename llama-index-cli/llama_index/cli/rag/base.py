@@ -198,7 +198,6 @@ class RagCLI(BaseModel):
                 if response.strip().lower() != "y":
                     print("Aborted.")
                     return
-                # Security fix: Use shutil.rmtree instead of os.system to prevent command injection
                 try:
                     shutil.rmtree(self.persist_dir)
                 except Exception as e:
