@@ -70,7 +70,7 @@ data = pd.DataFrame(
     {
         "text": ["## Hello world", "This is a test"],
         "id": ["1", "2"],
-        "metadata": [{"type": "text/markdown"}, {"type": "text/plain"}],
+        "metadata": ['{"type": "text/markdown"}', '{"type": "text/plain"}'],
         "vector": [
             np.random.random(384).to_list(),
             np.random.random(384).to_list(),
@@ -96,7 +96,7 @@ We should notice three things here:
 ```python
 class TextSchema(LanceModel):
     id: str
-    metadata: dict
+    metadata: str  # deserializable
     text: str
     vector: List[List[float]]
 ```
@@ -125,7 +125,10 @@ local_index.insert_data(
         {
             "text": ["Hello world", "How are you?"],
             "id": ["1", "2"],
-            "metadata": [{"type": "text/markdown"}, {"type": "text/plain"}],
+            "metadata": [
+                '{"type": "text/markdown"}',
+                '{"type": "text/plain"}',
+            ],
         }
     ),
 )
@@ -194,7 +197,11 @@ ids = [
     "3",
 ]
 metadata = (
-    [{"type": "image/jpeg"}, {"type": "image/jpeg"}, {"type": "image/jpeg"}],
+    [
+        '{"mimetype": "image/jpeg"}',
+        '{"mimetype": "image/jpeg"}',
+        '{"mimetype": "image/jpeg"}',
+    ],
 )
 image_bytes = [requests.get(uri).content for uri in uris]
 
@@ -221,7 +228,7 @@ As for before, you can choose your multi-modal embedding model and the index str
 ```python
 class MultiModalSchema(LanceModel):
     id: str
-    metadata: dict
+    metadata: str  # deserializable
     label: str
     image_uri: str  # image uri as the source
     image_bytes: bytes  # image bytes as the source
