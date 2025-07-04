@@ -4,7 +4,7 @@ import json
 from typing import List, Optional
 
 import pytest
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import TextBlock, ImageBlock
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.workflow import Context
@@ -248,6 +248,24 @@ def test_function_tool_ctx_param() -> None:
 
     actual_schema = tool.metadata.fn_schema.model_json_schema()
     assert "ctx" not in actual_schema["properties"]
+    assert len(actual_schema["properties"]) == 1
+    assert actual_schema["properties"]["x"]["type"] == "integer"
+
+
+def test_function_tool_ctx_generic_param() -> None:
+    class MyState(BaseModel):
+        name: str = Field(default="Logan")
+
+    async def test_function(x: int, ctx_arg: Context[MyState]) -> str:
+        return f"x: {x}, ctx: {ctx_arg}"
+
+    tool = FunctionTool.from_defaults(test_function)
+    assert tool.metadata.fn_schema is not None
+    assert tool.ctx_param_name == "ctx_arg"
+    assert tool.requires_context
+
+    actual_schema = tool.metadata.fn_schema.model_json_schema()
+    assert "ctx_arg" not in actual_schema["properties"]
     assert len(actual_schema["properties"]) == 1
     assert actual_schema["properties"]["x"]["type"] == "integer"
 
