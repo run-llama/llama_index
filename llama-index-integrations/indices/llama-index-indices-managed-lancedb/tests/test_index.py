@@ -48,9 +48,23 @@ def data() -> pd.DataFrame:
         "6",
     ]
     image_bytes = [requests.get(uri).content for uri in uris]
+    metadata = [
+        {"mimetype": "image/jpeg"},
+        {"mimetype": "image/jpeg"},
+        {"mimetype": "image/jpeg"},
+        {"mimetype": "image/jpeg"},
+        {"mimetype": "image/jpeg"},
+        {"mimetype": "image/jpeg"},
+    ]
 
     return pd.DataFrame(
-        {"id": ids, "label": labels, "image_uri": uris, "image_bytes": image_bytes}
+        {
+            "id": ids,
+            "label": labels,
+            "image_uri": uris,
+            "image_bytes": image_bytes,
+            "metadata": metadata,
+        }
     )
 
 

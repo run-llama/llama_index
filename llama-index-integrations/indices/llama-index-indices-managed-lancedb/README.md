@@ -36,10 +36,9 @@ remote_index = LanceDBMUltiModalIndex(
     table_name="remote_documents",
 )
 
+
 # You always have to connect the index once you instantiated it with the primary constructor (__init__):
 ## 1. If you set use_async = True:
-
-
 async def connect_lancedb_index():
     await documents_index.acreate_index()
 
@@ -69,8 +68,9 @@ import numpy as np
 
 data = pd.DataFrame(
     {
-        "text": ["Hello world", "This is a test"],
+        "text": ["## Hello world", "This is a test"],
         "id": ["1", "2"],
+        "metadata": [{"type": "text/markdown"}, {"type": "text/plain"}],
         "vector": [
             np.random.random(384).to_list(),
             np.random.random(384).to_list(),
@@ -96,6 +96,7 @@ We should notice three things here:
 ```python
 class TextSchema(LanceModel):
     id: str
+    metadata: dict
     text: str
     vector: List[List[float]]
 ```
@@ -121,7 +122,11 @@ local_index.insert_nodes(
 # add from data
 local_index.insert_data(
     data=pd.DataFrame(
-        {"text": ["Hello world", "How are you?"], "id": ["1", "2"]}
+        {
+            "text": ["Hello world", "How are you?"],
+            "id": ["1", "2"],
+            "metadata": [{"type": "text/markdown"}, {"type": "text/plain"}],
+        }
     ),
 )
 
@@ -188,10 +193,19 @@ ids = [
     "2",
     "3",
 ]
+metadata = (
+    [{"type": "image/jpeg"}, {"type": "image/jpeg"}, {"type": "image/jpeg"}],
+)
 image_bytes = [requests.get(uri).content for uri in uris]
 
 data = pd.DataFrame(
-    {"id": ids, "label": labels, "image_uri": uris, "image_bytes": image_bytes}
+    {
+        "id": ids,
+        "label": labels,
+        "image_uri": uris,
+        "image_bytes": image_bytes,
+        "metadata": metadata,
+    }
 )
 
 images_index = await LanceDBMultiModalIndex.from_data(
@@ -207,6 +221,7 @@ As for before, you can choose your multi-modal embedding model and the index str
 ```python
 class MultiModalSchema(LanceModel):
     id: str
+    metadata: dict
     label: str
     image_uri: str  # image uri as the source
     image_bytes: bytes  # image bytes as the source
