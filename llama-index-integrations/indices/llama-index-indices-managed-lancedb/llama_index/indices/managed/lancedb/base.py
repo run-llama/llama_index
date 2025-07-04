@@ -1,4 +1,5 @@
 import lancedb
+import json
 import polars as pl
 import pandas as pd
 import pyarrow as pa
@@ -162,8 +163,8 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
 
             class TextSchema(LanceModel):
                 id: str
-                metadata: dict = Field(default_factory=dict)
-                text: str = self._embedding_model.embedding_model.SourceField()
+                metadata: str = Field(default=json.dumps({}))
+                text: str = self._embedding_model.embedding_modxel.SourceField()
                 vector: Vector(self._embedding_model.embedding_model.ndims()) = (
                     self._embedding_model.embedding_model.VectorField()
                 )
@@ -177,7 +178,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
 
             class MultiModalSchema(LanceModel):
                 id: str
-                metadata: dict = Field(default_factory=dict)
+                metadata: str = Field(default=json.dumps({}))
                 label: str = Field(
                     default_factory=str,
                 )
@@ -235,7 +236,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
 
             class TextSchema(LanceModel):
                 id: str
-                metadata: dict = Field(default_factory=dict)
+                metadata: str = Field(default=json.dumps({}))
                 text: str = self._embedding_model.embedding_model.SourceField()
                 vector: Vector(self._embedding_model.embedding_model.ndims()) = (
                     self._embedding_model.embedding_model.VectorField()
@@ -251,7 +252,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
 
             class MultiModalSchema(LanceModel):
                 id: str
-                metadata: dict = Field(default_factory=dict)
+                metadata: str = Field(default=json.dumps({}))
                 label: str = Field(
                     default_factory=str,
                 )
@@ -367,7 +368,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
                         {
                             "id": document.id_,
                             "text": document.text,
-                            "metadata": document.metadata,
+                            "metadata": json.dumps(document.metadata),
                         }
                     )
                 else:
@@ -378,7 +379,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
         else:
             assert all(isinstance(document, ImageDocument) for document in documents)
             for document in documents:
-                label = document.metadata.get("image_label", None) or ""
+                label = json.dumps(document.metadata).get("image_label", None) or ""
                 if document.image:
                     data.append(
                         {
@@ -386,7 +387,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
                             "image_bytes": document.image,
                             "image_uri": document.image_url or "",
                             "label": label,
-                            "metadata": document.metadata,
+                            "metadata": json.dumps(document.metadata),
                         }
                     )
                 elif document.image_url:
@@ -397,7 +398,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
                             "image_bytes": image_bytes,
                             "image_uri": document.image_url,
                             "label": label,
-                            "metadata": document.metadata,
+                            "metadata": json.dumps(document.metadata),
                         }
                     )
                 elif document.image_path:
@@ -408,7 +409,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
                             "image_bytes": image_bytes,
                             "image_uri": document.image_url or "",
                             "label": label,
-                            "metadata": document.metadata,
+                            "metadata": json.dumps(document.metadata),
                         }
                     )
                 else:
@@ -526,7 +527,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
                         {
                             "id": document.id_,
                             "text": document.text,
-                            "metadata": document.metadata,
+                            "metadata": json.dumps(document.metadata),
                         }
                     )
                 else:
@@ -537,7 +538,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
         else:
             assert all(isinstance(document, ImageDocument) for document in documents)
             for document in documents:
-                label = document.metadata.get("image_label", None) or ""
+                label = json.dumps(document.metadata).get("image_label", None) or ""
                 if document.image:
                     data.append(
                         {
@@ -545,7 +546,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
                             "image_bytes": document.image,
                             "image_uri": document.image_url or "",
                             "label": label,
-                            "metadata": document.metadata,
+                            "metadata": json.dumps(document.metadata),
                         }
                     )
                 elif document.image_url:
@@ -556,7 +557,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
                             "image_bytes": image_bytes,
                             "image_uri": document.image_url,
                             "label": label,
-                            "metadata": document.metadata,
+                            "metadata": json.dumps(document.metadata),
                         }
                     )
                 elif document.image_path:
@@ -567,7 +568,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
                             "image_bytes": image_bytes,
                             "image_uri": document.image_url or "",
                             "label": label,
-                            "metadata": document.metadata,
+                            "metadata": json.dumps(document.metadata),
                         }
                     )
                 else:
@@ -596,7 +597,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
                         {
                             "id": document.id_,
                             "text": document.text,
-                            "metadata": document.metadata,
+                            "metadata": json.dumps(document.metadata),
                         }
                     )
                 else:
@@ -607,7 +608,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
         else:
             assert all(isinstance(document, ImageDocument) for document in documents)
             for document in documents:
-                label = document.metadata.get("image_label", None) or ""
+                label = json.dumps(document.metadata).get("image_label", None) or ""
                 if document.image:
                     data.append(
                         {
@@ -615,7 +616,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
                             "image_bytes": document.image,
                             "image_uri": document.image_url or "",
                             "label": label,
-                            "metadata": document.metadata,
+                            "metadata": json.dumps(document.metadata),
                         }
                     )
                 elif document.image_url:
@@ -626,7 +627,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
                             "image_bytes": image_bytes,
                             "image_uri": document.image_url,
                             "label": label,
-                            "metadata": document.metadata,
+                            "metadata": json.dumps(document.metadata),
                         }
                     )
                 elif document.image_path:
@@ -637,7 +638,7 @@ class LanceDBMultiModalIndex(BaseManagedIndex):
                             "image_bytes": image_bytes,
                             "image_uri": document.image_url or "",
                             "label": label,
-                            "metadata": document.metadata,
+                            "metadata": json.dumps(document.metadata),
                         }
                     )
                 else:

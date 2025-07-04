@@ -49,12 +49,12 @@ def data() -> pd.DataFrame:
     ]
     image_bytes = [requests.get(uri).content for uri in uris]
     metadata = [
-        {"mimetype": "image/jpeg"},
-        {"mimetype": "image/jpeg"},
-        {"mimetype": "image/jpeg"},
-        {"mimetype": "image/jpeg"},
-        {"mimetype": "image/jpeg"},
-        {"mimetype": "image/jpeg"},
+        '{"mimetype": "image/jpeg"}',
+        '{"mimetype": "image/jpeg"}',
+        '{"mimetype": "image/jpeg"}',
+        '{"mimetype": "image/jpeg"}',
+        '{"mimetype": "image/jpeg"}',
+        '{"mimetype": "image/jpeg"}',
     ]
 
     return pd.DataFrame(
