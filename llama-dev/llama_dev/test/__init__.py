@@ -94,7 +94,12 @@ def test(
         changed_packages = get_changed_packages(changed_files, all_packages)
 
     # Find the dependants of the changed packages
-    dependants = get_dependants_packages(changed_packages, all_packages)
+    # Skip dependants if we're checking coverage
+    if cov:
+        dependants = set()
+    else:
+        dependants = get_dependants_packages(changed_packages, all_packages)
+
     # Test the packages directly affected and their dependants
     packages_to_test = changed_packages | dependants
 
@@ -209,7 +214,7 @@ def _uv_sync(
 def _uv_install_local(
     package_path: Path, env: dict[str, str], install_local: set[Path]
 ) -> subprocess.CompletedProcess:  # pragma: no cover
-    """Run 'uv pip install -U <packge_path1>, <package_path2>, ...' for locally changed packages."""
+    """Run 'uv pip install -U <package_path1>, <package_path2>, ...' for locally changed packages."""
     return subprocess.run(
         ["uv", "pip", "install", "-U", *install_local],
         cwd=package_path,

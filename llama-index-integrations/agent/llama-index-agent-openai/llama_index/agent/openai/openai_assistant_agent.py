@@ -1,6 +1,7 @@
 """OpenAI Assistant Agent."""
 
 import asyncio
+import deprecated
 import json
 import logging
 import time
@@ -171,6 +172,14 @@ def format_attachments(
     return [{"file_id": file_id, "tools": tools} for file_id in file_ids]
 
 
+@deprecated.deprecated(
+    reason=(
+        "OpenAIAssistantAgent has been deprecated and is not maintained.\n\n"
+        "OpenAI will be discontinuing this API in the future.\n\n"
+        "See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+    action="once",
+)
 class OpenAIAssistantAgent(BaseAgent):
     """
     OpenAIAssistant agent.

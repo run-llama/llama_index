@@ -661,8 +661,8 @@ class LlamaCloudIndex(BaseManagedIndex):
         )
 
         doc_ids = [doc.id for doc in upserted_documents]
-        index._wait_for_documents_ingestion(
-            doc_ids, verbose=verbose, raise_on_error=raise_on_error
+        index.wait_for_completion(
+            doc_ids=doc_ids, verbose=verbose, raise_on_error=raise_on_error
         )
 
         print(

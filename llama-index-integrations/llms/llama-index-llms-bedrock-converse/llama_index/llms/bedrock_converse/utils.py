@@ -19,6 +19,7 @@ from llama_index.core.base.llms.types import (
     ContentBlock,
     AudioBlock,
     DocumentBlock,
+    CachePoint,
 )
 
 
@@ -211,6 +212,13 @@ def _content_block_to_bedrock_format(
         img_format = __get_img_format_from_image_mimetype(block.image_mimetype)
         raw_image_bytes = block.resolve_image(as_base64=False).read()
         return {"image": {"format": img_format, "source": {"bytes": raw_image_bytes}}}
+    elif isinstance(block, CachePoint):
+        if block.cache_control.type != "default":
+            logger.warning(
+                "The only allowed caching strategy for Bedrock Converse is 'default', falling back to that..."
+            )
+            block.cache_control.type = "default"
+        return {"cachePoint": {"type": block.cache_control.type}}
     elif isinstance(block, AudioBlock):
         logger.warning("Audio blocks are not supported in Bedrock Converse API.")
         return None
@@ -302,7 +310,11 @@ def messages_to_converse_messages(
             assert "name" in tool_call, f"`name` not found in {tool_call}"
             tool_input = tool_call["input"] if tool_call["input"] else {}
             if isinstance(tool_input, str):
-                tool_input = json.loads(tool_input)
+                try:
+                    tool_input = json.loads(tool_input or "{}")
+                except json.JSONDecodeError:
+                    tool_input = {}
+
             content.append(
                 {
                     "toolUse": {

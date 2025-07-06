@@ -1,3 +1,4 @@
+import asyncio
 import json
 from typing import Any, Callable, Dict, List, Optional
 
@@ -148,6 +149,14 @@ class ChatMemoryBuffer(BaseChatStoreMemory):
             return []
 
         return chat_history[-message_count:]
+
+    async def aget(
+        self, input: Optional[str] = None, initial_token_count: int = 0, **kwargs: Any
+    ) -> List[ChatMessage]:
+        """Get chat history."""
+        return await asyncio.to_thread(
+            self.get, input=input, initial_token_count=initial_token_count, **kwargs
+        )
 
     def _token_count_for_messages(self, messages: List[ChatMessage]) -> int:
         if len(messages) <= 0:

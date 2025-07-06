@@ -159,7 +159,7 @@ async def test_code_act_agent_tool_handling(
     await agent.handle_tool_call_results(ctx, tool_results, mock_memory)
 
     # Verify scratchpad was updated
-    scratchpad = await ctx.get("scratchpad")
+    scratchpad = await ctx.store.get("scratchpad")
     assert len(scratchpad) == 2  # User message and assistant response
     assert "4" in scratchpad[1].content  # Verify the result was added to scratchpad
 

@@ -12,6 +12,7 @@ from llama_index.core.base.llms.types import (
     ChatResponse,
 )
 from llama_index.llms.openai.responses import OpenAIResponses, ResponseFunctionToolCall
+from llama_index.llms.openai.utils import to_openai_message_dicts
 from llama_index.core.tools import FunctionTool
 from llama_index.core.prompts import PromptTemplate
 from openai.types.responses import (
@@ -557,3 +558,22 @@ def test_tool_required():
         tool_required=True,
     )
     assert len(response.message.additional_kwargs["tool_calls"]) == 1
+
+
+def test_messages_to_openai_responses_messages():
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
+        ChatMessage(role=MessageRole.USER, content="What is the capital of France?"),
+        ChatMessage(role=MessageRole.ASSISTANT, content="Paris"),
+        ChatMessage(role=MessageRole.USER, content="What is the capital of Germany?"),
+    ]
+    openai_messages = to_openai_message_dicts(messages, is_responses_api=True)
+    assert len(openai_messages) == 4
+    assert openai_messages[0]["role"] == "developer"
+    assert openai_messages[0]["content"] == "You are a helpful assistant."
+    assert openai_messages[1]["role"] == "user"
+    assert openai_messages[1]["content"] == "What is the capital of France?"
+    assert openai_messages[2]["role"] == "assistant"
+    assert openai_messages[2]["content"] == "Paris"
+    assert openai_messages[3]["role"] == "user"
+    assert openai_messages[3]["content"] == "What is the capital of Germany?"

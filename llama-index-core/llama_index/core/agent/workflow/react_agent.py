@@ -10,7 +10,6 @@ from llama_index.core.agent.react.types import (
     ResponseReasoningStep,
 )
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
-from llama_index.core.agent.workflow.single_agent_workflow import SingleAgentRunnerMixin
 from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
     AgentOutput,
@@ -18,7 +17,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     ToolCallResult,
 )
 from llama_index.core.base.llms.types import ChatResponse
-from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.bridge.pydantic import BaseModel, Field, model_validator
 from llama_index.core.llms import ChatMessage
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.memory import BaseMemory
@@ -34,7 +33,7 @@ def default_formatter(fields: Optional[dict] = None) -> ReActChatFormatter:
     return ReActChatFormatter.from_defaults(context=fields.get("system_prompt", None))
 
 
-class ReActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
+class ReActAgent(BaseWorkflowAgent):
     """React agent implementation."""
 
     reasoning_key: str = "current_reasoning"
@@ -45,6 +44,22 @@ class ReActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
         default_factory=default_formatter,
         description="The react chat formatter to format the reasoning steps and chat history into an llm input.",
     )
+
+    @model_validator(mode="after")
+    def validate_formatter(self) -> "ReActAgent":
+        """Validate the formatter."""
+        if (
+            self.formatter.context
+            and self.system_prompt
+            and self.system_prompt not in self.formatter.context
+        ):
+            self.formatter.context = (
+                self.system_prompt + "\n\n" + self.formatter.context.strip()
+            )
+        elif not self.formatter.context and self.system_prompt:
+            self.formatter.context = self.system_prompt
+
+        return self
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
@@ -78,10 +93,9 @@ class ReActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
 
         output_parser = self.output_parser
         react_chat_formatter = self.formatter
-        react_chat_formatter.context = system_prompt
 
         # Format initial chat input
-        current_reasoning: list[BaseReasoningStep] = await ctx.get(
+        current_reasoning: list[BaseReasoningStep] = await ctx.store.get(
             self.reasoning_key, default=[]
         )
         input_chat = react_chat_formatter.format(
@@ -140,7 +154,7 @@ class ReActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
 
         # add to reasoning if not a handoff
         current_reasoning.append(reasoning_step)
-        await ctx.set(self.reasoning_key, current_reasoning)
+        await ctx.store.set(self.reasoning_key, current_reasoning)
 
         # If response step, we're done
         raw = (
@@ -180,7 +194,7 @@ class ReActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
         self, ctx: Context, results: List[ToolCallResult], memory: BaseMemory
     ) -> None:
         """Handle tool call results for React agent."""
-        current_reasoning: list[BaseReasoningStep] = await ctx.get(
+        current_reasoning: list[BaseReasoningStep] = await ctx.store.get(
             self.reasoning_key, default=[]
         )
         for tool_call_result in results:
@@ -203,13 +217,13 @@ class ReActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
                 )
                 break
 
-        await ctx.set(self.reasoning_key, current_reasoning)
+        await ctx.store.set(self.reasoning_key, current_reasoning)
 
     async def finalize(
         self, ctx: Context, output: AgentOutput, memory: BaseMemory
     ) -> AgentOutput:
         """Finalize the React agent."""
-        current_reasoning: list[BaseReasoningStep] = await ctx.get(
+        current_reasoning: list[BaseReasoningStep] = await ctx.store.get(
             self.reasoning_key, default=[]
         )
 
@@ -221,7 +235,7 @@ class ReActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
             if reasoning_str:
                 reasoning_msg = ChatMessage(role="assistant", content=reasoning_str)
                 await memory.aput(reasoning_msg)
-                await ctx.set(self.reasoning_key, [])
+                await ctx.store.set(self.reasoning_key, [])
 
             # remove "Answer:" from the response
             if output.response.content and "Answer:" in output.response.content:
@@ -232,6 +246,6 @@ class ReActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
                     ].strip()
 
             # clear scratchpad
-            await ctx.set(self.reasoning_key, [])
+            await ctx.store.set(self.reasoning_key, [])
 
         return output
