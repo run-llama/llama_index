@@ -27,7 +27,7 @@ class AgentStream(Event):
     response: str
     current_agent_name: str
     tool_calls: list[ToolSelection]
-    raw: Any = Field(exclude=True)
+    raw: Any = Field(default=None, exclude=True)
 
 
 class AgentOutput(Event):
