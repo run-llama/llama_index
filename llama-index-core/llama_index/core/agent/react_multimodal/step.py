@@ -35,7 +35,7 @@ from llama_index.core.chat_engine.types import (
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse
 from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.core.memory.types import BaseMemory
-from llama_index.core.multi_modal_llms.base import MultiModalLLM
+from llama_index.core.llms import LLM
 from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.schema import ImageDocument
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
@@ -110,7 +110,7 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
     def __init__(
         self,
         tools: Sequence[BaseTool],
-        multi_modal_llm: MultiModalLLM,
+        multi_modal_llm: LLM,
         max_iterations: int = 10,
         react_chat_formatter: Optional[ReActChatFormatter] = None,
         output_parser: Optional[ReActOutputParser] = None,
@@ -164,7 +164,7 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         cls,
         tools: Optional[Sequence[BaseTool]] = None,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
-        multi_modal_llm: Optional[MultiModalLLM] = None,
+        multi_modal_llm: Optional[LLM] = None,
         max_iterations: int = 10,
         react_chat_formatter: Optional[ReActChatFormatter] = None,
         output_parser: Optional[ReActOutputParser] = None,
@@ -186,17 +186,17 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         """
         if multi_modal_llm is None:
             try:
-                from llama_index.multi_modal_llms.openai import (
-                    OpenAIMultiModal,
+                from llama_index.llms.openai import (
+                    OpenAIResponses,
                 )  # pants: no-infer-dep
 
-                multi_modal_llm = multi_modal_llm or OpenAIMultiModal(
-                    model="gpt-4-vision-preview", max_new_tokens=1000
+                multi_modal_llm = multi_modal_llm or OpenAIResponses(
+                    model="gpt-4.1", max_output_tokens=1000
                 )
             except ImportError:
                 raise ImportError(
-                    "`llama-index-multi-modal-llms-openai` package cannot be found. "
-                    "Please install it by using `pip install `llama-index-multi-modal-llms-openai`"
+                    "`llama-index-llms-openai` package cannot be found. "
+                    "Please install it by using `pip install `llama-index-llms-openai`"
                 )
         return cls(
             tools=tools or [],

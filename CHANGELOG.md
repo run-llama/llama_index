@@ -1,5 +1,38 @@
 # ChangeLog
 
+## [2025-07-06]
+
+### `llama-index-core` [0.12.47]
+
+- feat: add default `max_iterations` arg to `.run()` of 20 for agents (#19035)
+- feat: set `tool_required` to `True` for `FunctionCallingProgram` and structured LLMs where supported (#19326)
+- fix: fix missing raw in agent workflow events (#19325)
+- fix: fixed parsing of empty list in parsing json output (#19318)
+- chore: Deprecate Multi Modal LLMs (#19115)
+  - All existing multi-modal llms are now extensions of their base `LLM` counterpart
+  - Base `LLM` classes support multi-modal features in `llama-index-core`
+  - Base `LLM` classes use `ImageBlock` internally to support multi-modal features
+
+### `llama-index-cli` [0.4.4]
+
+- fix: prevent command injection vulnerability in RAG CLI --clear flag (#19322)
+
+### `llama-index-indices-managed-lancedb` [0.1.0]
+
+- feat: Adding an integration for LanceDB MultiModal AI LakeHouse (#19232)
+
+### `llama-index-llms-anthropic` [0.7.6]
+
+- feat: anthropic citations support (#19316)
+
+### `llama-index-llms-oci-genai` [0.5.1]
+
+- feat: Add support of Image prompt for OCI generative AI Llama models (#19306)
+
+### `llama-index-readers-web` [0.4.3]
+
+- chore: Add firecrawl integration source (#19203)
+
 ## [2025-07-02]
 
 ### `llama-index-core` [0.12.46]

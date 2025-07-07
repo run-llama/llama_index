@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-cli"
-version = "0.4.3"
+version = "0.4.4"
 description = "llama-index cli"
 authors = [{name = "llamaindex"}]
 requires-python = ">=3.9,<4.0"

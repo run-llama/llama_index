@@ -990,6 +990,7 @@ nav:
           - ./api_reference/indices/index.md
           - ./api_reference/indices/keyword.md
           - ./api_reference/indices/knowledge_graph.md
+          - ./api_reference/indices/lancedb.md
           - ./api_reference/indices/llama_cloud.md
           - ./api_reference/indices/postgresml.md
           - ./api_reference/indices/property_graph.md
@@ -2492,6 +2493,7 @@ plugins:
             - ../llama-index-integrations/tools/llama-index-tools-hive
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-db2
             - ../llama-index-integrations/voice_agents/llama-index-voice-agents-openai
+            - ../llama-index-integrations/indices/llama-index-indices-managed-lancedb
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
