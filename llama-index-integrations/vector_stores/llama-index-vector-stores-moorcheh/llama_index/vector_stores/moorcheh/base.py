@@ -1,7 +1,7 @@
 # Importing required libraries and modules
 from llama_index.llms.openai import OpenAI
 import logging
-from typing import Any, Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, cast, Callable, ClassVar
 import uuid
 import os
 
@@ -26,7 +26,6 @@ from llama_index.core.vector_stores.utils import (
 # Moorcheh SDK for backend vector storage
 from moorcheh_sdk import MoorchehClient, MoorchehError
 from moorcheh_sdk import MoorchehClient
-from typing import ClassVar
 from pydantic import Field, PrivateAttr, model_validator
 
 ID_KEY = "id"
