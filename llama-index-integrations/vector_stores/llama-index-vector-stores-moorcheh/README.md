@@ -10,7 +10,7 @@ To see the integration in action, refer to the demonstration notebook:  [Google 
 Getting started
 ---
 
-Install dependencies 
+To begin using the Moorcheh vector store, make sure to install the necessary packages:
 
 ```
 pip install llama_index
@@ -19,6 +19,9 @@ pip install moorcheh_sdk
 
 Example Usage
 --- 
+
+Here is a simple example demonstrating how to use the Moorcheh integration with LlamaIndex:
+
 ```
 from llama_index.core import VectorStoreIndex
 from llama_index.llama_index_integrations.vector_stores.llama_index_vector_stores_moorcheh.llama_index.vector_stores-moorcheh import base, init, utils
