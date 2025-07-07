@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-multi-modal-llms-openai-like"
-version = "0.1.0"
+version = "0.1.1"
 description = "llama-index multi-modal-llms openai-like integration"
 authors = [{name = "Tushar Adhatrao", email = "tusharadhatrao@gmail.com"}]
 requires-python = ">=3.9,<4.0"
