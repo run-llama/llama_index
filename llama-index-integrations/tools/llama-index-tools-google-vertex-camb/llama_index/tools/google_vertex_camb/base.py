@@ -27,7 +27,7 @@ Mars7Language = Literal[
 class GoogleVertexCambToolSpec(BaseToolSpec):
     """Google Vertex AI CAMB.AI MARS7 tool spec for text-to-speech synthesis."""
 
-    spec_functions = ["text_to_speech"]
+    spec_functions = ["text_to_speech", "async_text_to_speech"]
 
     def __init__(
         self,
@@ -120,6 +120,68 @@ class GoogleVertexCambToolSpec(BaseToolSpec):
 
         response_data = json.loads(response.content)
         predictions = response_data.get("predictions", [])
+
+        if not predictions or len(predictions) == 0:
+            raise RuntimeError("No audio predictions returned from the model")
+
+        with open(output_path, "wb") as f:
+            audio_bytes = base64.b64decode(predictions[0])
+            f.write(audio_bytes)
+
+        return output_path
+
+    async def async_text_to_speech(
+        self,
+        text: str,
+        reference_audio_path: str,
+        reference_text: Optional[str] = None,
+        language: Mars7Language = "en-us",
+        output_path: Optional[str] = None,
+    ) -> str:
+        """
+        Convert text to speech asynchronously using Google Vertex AI CAMB.AI MARS7 model.
+
+        Args:
+            text (str): The text to convert to speech
+            reference_audio_path (str): Path to reference audio file for voice cloning
+            reference_text (Optional[str]): Transcription of the reference audio
+            language (Mars7Language): Target language code (e.g., 'en-us', 'es-es')
+            output_path (Optional[str]): Path to save the audio file. If None, generates 'cambai_speech.flac'
+
+        Returns:
+            str: Path to the generated audio file
+
+        """
+        if reference_audio_path is not None:
+            try:
+                with open(reference_audio_path, "rb") as f:
+                    audio_ref = base64.b64encode(f.read()).decode("utf-8")
+            except FileNotFoundError:
+                raise ValueError(
+                    f"Reference audio file not found: {reference_audio_path}"
+                )
+            except Exception as e:
+                raise ValueError(f"Error reading reference audio file: {e}")
+        else:
+            audio_ref = None
+
+        instances = {
+            "text": text,
+            "language": language,
+        }
+
+        if audio_ref is not None:
+            instances["audio_ref"] = audio_ref
+
+        if reference_text is not None:
+            instances["ref_text"] = reference_text
+
+        if output_path is None:
+            output_path = "cambai_speech.flac"
+
+        response = await self.endpoint.predict_async(instances=[instances])
+
+        predictions = response.predictions
 
         if not predictions or len(predictions) == 0:
             raise RuntimeError("No audio predictions returned from the model")
