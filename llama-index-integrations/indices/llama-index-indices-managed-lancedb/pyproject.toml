@@ -27,7 +27,7 @@ dev = [
 ]
 
 [project]
-name = "llama-index-vector-stores-lancedb-multimodal"
+name = "llama-index-indices-managed-lancedb"
 version = "0.1.0"
 description = "LlamaIndex x LanceDB MultiModal AI Lakehouse"
 authors = [{name = "Clelia Astra Bertelli", email = "clelia@runllama.ai"}]
@@ -60,10 +60,10 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.vector_stores.lancedb_multimodal"
+import_path = "llama_index.indices.managed.lancedb"
 
 [tool.llamahub.class_authors]
-LanceDBVectorStore = "llama-index"
+LanceDBMultiModalIndex = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
