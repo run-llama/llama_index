@@ -9,6 +9,7 @@ import os
 from llama_index.core.base.embeddings.base import DEFAULT_EMBED_BATCH_SIZE
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
+from llama_index.core.base.embeddings.base_sparse import BaseSparseEmbedding
 from llama_index.core.vector_stores.types import(
     BasePydanticVectorStore,
     MetadataFilters,
