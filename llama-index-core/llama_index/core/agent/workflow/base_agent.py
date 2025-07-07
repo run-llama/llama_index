@@ -1,5 +1,7 @@
 from abc import abstractmethod
 import warnings
+import inspect
+import json
 from typing import Any, Callable, Dict, List, Sequence, Optional, Union, Type, cast
 
 from pydantic._internal._model_construction import ModelMetaclass
@@ -18,7 +20,8 @@ from llama_index.core.bridge.pydantic import (
     ConfigDict,
     field_validator,
 )
-from llama_index.core.llms import ChatMessage, LLM, TextBlock, MessageRole
+from llama_index.core.prompts import PromptTemplate
+from llama_index.core.llms import ChatMessage, LLM, TextBlock
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptMixin, PromptMixinType, PromptDictType
@@ -99,7 +102,13 @@ class BaseWorkflowAgent(
         validate_default=True,
     )
     output_cls: Optional[Type[BaseModel]] = Field(
-        description="Output class for the structured LLM.", default=None, exclude=True
+        description="Output class for the agent. If you set this field to a non-null value, `structured_output_fn` will be ignored.",
+        default=None,
+        exclude=True,
+    )
+    structured_output_fn: Optional[Callable[[List[ChatMessage]], BaseModel]] = Field(
+        description="Custom function to generate structured output from the agent's run. It has to take a list of ChatMessage instances (derived from the memory) and output a BaseModel subclass instance. If you set `output_cls` to a non-null value, this field will be ignored.",
+        default=None,
     )
 
     def __init__(
@@ -114,6 +123,7 @@ class BaseWorkflowAgent(
         initial_state: Optional[Dict[str, Any]] = None,
         state_prompt: Optional[Union[str, BasePromptTemplate]] = None,
         output_cls: Optional[Type[BaseModel]] = None,
+        structured_output_fn: Optional[Callable[[List[ChatMessage]], BaseModel]] = None,
         timeout: Optional[float] = None,
         verbose: bool = False,
         **kwargs: Any,
@@ -128,6 +138,9 @@ class BaseWorkflowAgent(
         elif state_prompt is None:
             state_prompt = DEFAULT_STATE_PROMPT
 
+        if output_cls is not None and structured_output_fn is not None:
+            structured_output_fn = None
+
         BaseModel.__init__(
             self,
             name=name,
@@ -140,6 +153,7 @@ class BaseWorkflowAgent(
             initial_state=initial_state or {},
             state_prompt=state_prompt,
             output_cls=output_cls,
+            structured_output_fn=structured_output_fn,
             **model_kwargs,
         )
 
@@ -387,20 +401,40 @@ class BaseWorkflowAgent(
 
         if not ev.tool_calls:
             memory: BaseMemory = await ctx.store.get("memory")
+            messages = await memory.aget()
             output = await self.finalize(ctx, ev, memory)
-
             cur_tool_calls: List[ToolCallResult] = await ctx.store.get(
                 "current_tool_calls", default=[]
             )
             output.tool_calls.extend(cur_tool_calls)  # type: ignore
+            if self.structured_output_fn is not None:
+                try:
+                    if inspect.iscoroutinefunction(self.structured_output_fn):
+                        output.structured_response = await self.structured_output_fn(
+                            messages
+                        )
+                    else:
+                        output.structured_response = self.structured_output_fn(messages)
+                except Exception as e:
+                    warnings.warn(
+                        message=f"An error occurred while producing the structured output from your agent: {e}."
+                    )
             if self.output_cls is not None:
                 try:
-                    original_role = output.response.role
-                    output.response.role = MessageRole.USER
+                    conversation = "Starting from this conversation:\n\n'''\n"
+                    for message in messages:
+                        if message.content:
+                            conversation += (
+                                str(message.role) + ": " + message.content + "\n"
+                            )
+                    conversation += (
+                        "\n'''\n\nCan you please represent the result of the conversation following this JSON schema?\n\n```json\n"
+                        + json.dumps(self.output_cls.model_json_schema(), indent=4)
+                        + "\n```"
+                    )
                     structured_response = await self.llm.as_structured_llm(
                         self.output_cls
-                    ).achat(messages=[output.response])
-                    output.response.role = original_role
+                    ).achat(messages=[ChatMessage(role="user", content=conversation)])
                     output.structured_response = self.output_cls.model_validate_json(
                         structured_response.message.content
                     )

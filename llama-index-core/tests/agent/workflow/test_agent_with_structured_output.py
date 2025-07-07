@@ -119,7 +119,7 @@ class Structure(BaseModel):
 
 
 @pytest.fixture()
-def function_agent():
+def function_agent_output_cls():
     return FunctionAgent(
         name="retriever",
         description="Manages data retrieval",
@@ -134,13 +134,77 @@ def function_agent():
     )
 
 
+def structured_function_fn(*args, **kwargs) -> Structure:
+    return Structure(hello="bonjour", world=2)
+
+
+async def astructured_function_fn(*args, **kwargs) -> Structure:
+    return Structure(hello="guten tag", world=3)
+
+
+@pytest.fixture()
+def function_agent_struct_fn():
+    return FunctionAgent(
+        name="retriever",
+        description="Manages data retrieval",
+        system_prompt="You are a retrieval assistant.",
+        llm=TestLLM(
+            responses=[
+                ChatMessage(role="assistant", content="Success with the FunctionAgent")
+            ],
+            structured_response='{"hello":"hello","world":1}',
+        ),
+        structured_output_fn=structured_function_fn,
+    )
+
+
+@pytest.fixture()
+def function_agent_astruct_fn():
+    return FunctionAgent(
+        name="retriever",
+        description="Manages data retrieval",
+        system_prompt="You are a retrieval assistant.",
+        llm=TestLLM(
+            responses=[
+                ChatMessage(role="assistant", content="Success with the FunctionAgent")
+            ],
+            structured_response='{"hello":"hello","world":1}',
+        ),
+        structured_output_fn=astructured_function_fn,
+    )
+
+
 @pytest.mark.asyncio
-async def test_single_function_agent(function_agent):
+async def test_output_cls_agent(function_agent_output_cls: FunctionAgent):
     """Test single agent with state management."""
-    handler = function_agent.run(user_msg="test")
+    handler = function_agent_output_cls.run(user_msg="test")
     async for _ in handler.stream_events():
         pass
 
     response = await handler
     assert "Success with the FunctionAgent" in str(response.response)
     assert response.structured_response == Structure(hello="hello", world=1)
+
+
+@pytest.mark.asyncio
+async def test_structured_fn_agent(function_agent_struct_fn: FunctionAgent):
+    """Test single agent with state management."""
+    handler = function_agent_struct_fn.run(user_msg="test")
+    async for _ in handler.stream_events():
+        pass
+
+    response = await handler
+    assert "Success with the FunctionAgent" in str(response.response)
+    assert response.structured_response == Structure(hello="bonjour", world=2)
+
+
+@pytest.mark.asyncio
+async def test_astructured_fn_agent(function_agent_astruct_fn: FunctionAgent):
+    """Test single agent with state management."""
+    handler = function_agent_astruct_fn.run(user_msg="test")
+    async for _ in handler.stream_events():
+        pass
+
+    response = await handler
+    assert "Success with the FunctionAgent" in str(response.response)
+    assert response.structured_response == Structure(hello="guten tag", world=3)
