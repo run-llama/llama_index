@@ -5,6 +5,7 @@ from llama_index.core.agent.workflow.base_agent import (
     BaseWorkflowAgent,
     DEFAULT_AGENT_NAME,
     DEFAULT_AGENT_DESCRIPTION,
+    DEFAULT_MAX_ITERATIONS,
 )
 from llama_index.core.agent.workflow.function_agent import FunctionAgent
 from llama_index.core.agent.workflow.prompts import (
@@ -40,6 +41,7 @@ from llama_index.core.workflow import (
     StopEvent,
     Workflow,
     step,
+    WorkflowRuntimeError,
 )
 from llama_index.core.workflow.checkpointer import CheckpointCallback
 from llama_index.core.workflow.handler import WorkflowHandler
@@ -258,6 +260,14 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             await ctx.store.set(
                 "handoff_output_prompt", self.handoff_output_prompt.get_template()
             )
+        if not await ctx.get("max_iterations", default=None):
+            max_iterations = (
+                ev.get("max_iterations", default=None) or DEFAULT_MAX_ITERATIONS
+            )
+            await ctx.set("max_iterations", max_iterations)
+
+        # Reset the number of iterations
+        await ctx.set("num_iterations", 0)
 
         # always set to false initially
         await ctx.store.set("formatted_input_with_state", False)
@@ -393,6 +403,17 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
     async def parse_agent_output(
         self, ctx: Context, ev: AgentOutput
     ) -> Union[StopEvent, ToolCall, None]:
+        max_iterations = await ctx.get("max_iterations", default=DEFAULT_MAX_ITERATIONS)
+        num_iterations = await ctx.get("num_iterations", default=0)
+        num_iterations += 1
+        await ctx.set("num_iterations", num_iterations)
+
+        if num_iterations >= max_iterations:
+            raise WorkflowRuntimeError(
+                f"Max iterations of {max_iterations} reached! Either something went wrong, or you can "
+                "increase the max iterations with `.run(.., max_iterations=...)`"
+            )
+
         if not ev.tool_calls:
             agent = self.agents[ev.current_agent_name]
             memory: BaseMemory = await ctx.store.get("memory")
@@ -543,6 +564,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         ctx: Optional[Context] = None,
         stepwise: bool = False,
         checkpoint_callback: Optional[CheckpointCallback] = None,
+        max_iterations: Optional[int] = None,
         **kwargs: Any,
     ) -> WorkflowHandler:
         # Detect if hitl is needed
@@ -559,6 +581,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                     user_msg=user_msg,
                     chat_history=chat_history,
                     memory=memory,
+                    max_iterations=max_iterations,
                     **kwargs,
                 ),
                 ctx=ctx,

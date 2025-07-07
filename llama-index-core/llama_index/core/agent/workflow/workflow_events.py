@@ -67,4 +67,5 @@ class AgentWorkflowStartEvent(StartEvent):
         return {
             "user_msg": self.user_msg,
             "chat_history": self.chat_history,
+            "max_iterations": self.max_iterations,
         }
