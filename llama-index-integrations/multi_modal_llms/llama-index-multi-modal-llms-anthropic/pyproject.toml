@@ -37,7 +37,6 @@ dependencies = [
     "llama-index-core>=0.12.47,<0.13",
     "llama-index-llms-anthropic>=0.7.2,<0.8",
     "filetype>=1.2.0,<2",
-    "deprecated>=1.12.18,<2",
 ]
 
 [tool.codespell]
