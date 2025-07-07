@@ -1,5 +1,4 @@
 # Importing required libraries and modules
-from llama_index.core.llms import OpenAI
 import logging
 from typing import Any, Dict, List, Optional, cast, Callable, ClassVar
 import uuid
