@@ -39,7 +39,6 @@ dependencies = [
     "qwen-vl-utils>=0.0.8",
     "torchvision>=0.19.1",
     "Pillow>=10.0.0",
-    "deprecated>=1.2.8,<2",
     "llama-index-llms-huggingface>=0.5.0,<1",
 ]
 
