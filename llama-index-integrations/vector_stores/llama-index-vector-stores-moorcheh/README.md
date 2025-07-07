@@ -17,3 +17,9 @@ First, please install the following packages
 pip install llama_index
 pip install moorcheh_sdk
 ```
+
+Next, run the following code
+```
+from llama_index.core import VectorStoreIndex
+from llama_index.llama_index_integrations.vector_stores.llama_index_vector_stores_moorcheh.llama_index.vector_stores-moorcheh import base, init, utils
+```
