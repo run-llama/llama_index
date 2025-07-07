@@ -16,7 +16,10 @@ class TestGoogleVertexCambToolSpec:
 
     def test_spec_functions(self):
         """Test that spec_functions is properly defined."""
-        assert GoogleVertexCambToolSpec.spec_functions == ["text_to_speech"]
+        assert GoogleVertexCambToolSpec.spec_functions == [
+            "text_to_speech",
+            "async_text_to_speech",
+        ]
 
     @patch("llama_index.tools.google_vertex_camb.base.aiplatform")
     @patch("os.environ")
