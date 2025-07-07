@@ -9,3 +9,11 @@ Moorcheh provides fast and intelligent document retrieval using hybrid scoring a
 To see a demonstration of the integration in action, view the example in the demo section or our Google Colab notebook here:  
 <https://colab.research.google.com/drive/1iUoMpNYcJxmu1xTySMNJZBPbOQIkUEEs?usp=sharing>. 
 
+Please see below for a short demo of the Moorcheh Vector Store
+
+First, please install the following packages
+
+```
+pip install llama_index
+pip install moorcheh_sdk
+```
