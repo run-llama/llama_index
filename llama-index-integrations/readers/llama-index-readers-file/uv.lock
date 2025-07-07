@@ -1674,7 +1674,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-file"
-version = "0.4.10"
+version = "0.4.11"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
