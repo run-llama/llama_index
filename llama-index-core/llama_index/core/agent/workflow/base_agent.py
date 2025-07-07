@@ -1,5 +1,6 @@
 from abc import abstractmethod
-from typing import Any, Callable, Dict, List, Sequence, Optional, Union, cast
+import warnings
+from typing import Any, Callable, Dict, List, Sequence, Optional, Union, Type, cast
 
 from pydantic._internal._model_construction import ModelMetaclass
 from llama_index.core.agent.workflow.prompts import DEFAULT_STATE_PROMPT
@@ -17,7 +18,7 @@ from llama_index.core.bridge.pydantic import (
     ConfigDict,
     field_validator,
 )
-from llama_index.core.llms import ChatMessage, LLM, TextBlock
+from llama_index.core.llms import ChatMessage, LLM, TextBlock, MessageRole
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptMixin, PromptMixinType, PromptDictType
@@ -97,6 +98,9 @@ class BaseWorkflowAgent(
         description="The prompt to use to update the state of the agent",
         validate_default=True,
     )
+    output_cls: Optional[Type[BaseModel]] = Field(
+        description="Output class for the structured LLM.", default=None, exclude=True
+    )
 
     def __init__(
         self,
@@ -109,6 +113,7 @@ class BaseWorkflowAgent(
         llm: Optional[LLM] = None,
         initial_state: Optional[Dict[str, Any]] = None,
         state_prompt: Optional[Union[str, BasePromptTemplate]] = None,
+        output_cls: Optional[Type[BaseModel]] = None,
         timeout: Optional[float] = None,
         verbose: bool = False,
         **kwargs: Any,
@@ -134,6 +139,7 @@ class BaseWorkflowAgent(
             llm=llm or get_default_llm(),
             initial_state=initial_state or {},
             state_prompt=state_prompt,
+            output_cls=output_cls,
             **model_kwargs,
         )
 
@@ -387,6 +393,22 @@ class BaseWorkflowAgent(
                 "current_tool_calls", default=[]
             )
             output.tool_calls.extend(cur_tool_calls)  # type: ignore
+            if self.output_cls is not None:
+                try:
+                    original_role = output.response.role
+                    output.response.role = MessageRole.USER
+                    structured_response = await self.llm.as_structured_llm(
+                        self.output_cls
+                    ).achat(messages=[output.response])
+                    output.response.role = original_role
+                    output.structured_response = self.output_cls.model_validate_json(
+                        structured_response.message.content
+                    )
+                except Exception as e:
+                    warnings.warn(
+                        message=f"An error occurred while producing the structured output from your agent: {e}."
+                    )
+
             await ctx.store.set("current_tool_calls", [])
 
             return StopEvent(result=output)

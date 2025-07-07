@@ -1,6 +1,6 @@
-from typing import Any, Optional
+from typing import Any, Optional, Type
 
-from llama_index.core.bridge.pydantic import Field, model_serializer
+from llama_index.core.bridge.pydantic import BaseModel, Field, model_serializer
 from llama_index.core.tools import ToolSelection, ToolOutput
 from llama_index.core.llms import ChatMessage
 from llama_index.core.workflow import Event, StartEvent
@@ -34,6 +34,7 @@ class AgentOutput(Event):
     """LLM output."""
 
     response: ChatMessage
+    structured_response: Optional[Type[BaseModel]] = Field(default=None)
     tool_calls: list[ToolSelection]
     raw: Optional[Any] = Field(default=None, exclude=True)
     current_agent_name: str
