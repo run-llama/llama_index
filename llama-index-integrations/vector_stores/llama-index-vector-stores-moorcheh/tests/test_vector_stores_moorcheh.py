@@ -18,7 +18,7 @@ from llama_index.core.vector_stores.types import (
 )
 
 # Import your custom vector store class
-from moorcheh_vector_store import MoorchehVectorStore
+from llama_index.vector_stores.moorcheh import MoorchehVectorStore
 
 MAX_WAIT_TIME = 60
 EMBED_DIM = 1536
