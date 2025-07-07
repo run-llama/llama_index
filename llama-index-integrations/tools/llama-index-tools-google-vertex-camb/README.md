@@ -47,10 +47,24 @@ audio_file = tool.text_to_speech(
 - `language` (str): Language code (default: "en-us")
 - `output_path` (str, optional): Output file path (default: "cambai_speech.flac")
 
+Sure! Here's your expanded section:
+
+---
+
 ## Supported Languages
 
-- `en-us`: English (US)
+- `de-de`: German (Germany)
+- `en-gb`: English (United Kingdom)
+- `en-us`: English (United States)
+- `es-us`: Spanish (United States)
 - `es-es`: Spanish (Spain)
+- `fr-ca`: French (Canada)
+- `fr-fr`: French (France)
+- `ja-jp`: Japanese (Japan)
+- `ko-kr`: Korean (South Korea)
+- `zh-cn`: Chinese (Simplified, China)
+
+---
 
 ## License
 

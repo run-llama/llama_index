@@ -17,7 +17,7 @@ dev = [
 
 [project]
 name = "llama-index-tools-google-vertex-camb"
-version = "0.2.0"
+version = "0.1.0"
 description = "LlamaIndex integration for Google Vertex AI CAMB.AI MARS7 text-to-speech model"
 authors = [
     {name = "LlamaIndex", email = "oss@llamaindex.ai"},
