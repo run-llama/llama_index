@@ -29,14 +29,14 @@ dev = [
 
 [project]
 name = "llama-index-multi-modal-llms-nvidia"
-version = "0.3.1"
+version = "0.4.0"
 description = "llama-index multi_modal nvidia integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.10.0,<0.11",
+    "llama-index-core>=0.12.47,<0.13",
     "filetype>=1.2.0,<2",
     "deprecated>=1.2.18,<2",
     "llama-index-llms-nvidia>=0.3.4,<1",
