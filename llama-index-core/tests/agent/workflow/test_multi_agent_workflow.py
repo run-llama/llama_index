@@ -472,9 +472,13 @@ async def test_max_iterations():
         ),
     )
 
+    workflow = AgentWorkflow(
+        agents=[agent],
+    )
+
     # Default max iterations is 20
     with pytest.raises(WorkflowRuntimeError, match="Either something went wrong"):
-        _ = await agent.run(user_msg="test")
+        _ = await workflow.run(user_msg="test")
 
     # Set max iterations to 101 to avoid error
-    _ = agent.run(user_msg="test", max_iterations=101)
+    _ = workflow.run(user_msg="test", max_iterations=101)
