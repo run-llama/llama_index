@@ -43,7 +43,9 @@ class ConcurrentFlow(Workflow):
         return StepThreeEvent(result=ev.query)
 
     @step
-    async def step_three(self, ctx: Context, ev: StepThreeEvent) -> StopEvent | None:
+    async def step_three(
+        self, ctx: Context, ev: StepThreeEvent
+    ) -> StopEvent | None:
         # wait until we receive 3 events
         result = ctx.collect_events(ev, [StepThreeEvent] * 3)
         if result is None:
@@ -93,7 +95,7 @@ class ConcurrentFlow(Workflow):
     async def step_three(
         self,
         ctx: Context,
-        ev: StepACompleteEvent | StepBCompleteEvent | StepCCompleteEvent | None,
+        ev: StepACompleteEvent | StepBCompleteEvent | StepCCompleteEvent,
     ) -> StopEvent:
         print("Received event ", ev.result)
 
