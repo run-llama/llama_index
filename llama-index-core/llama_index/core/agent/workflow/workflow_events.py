@@ -1,4 +1,4 @@
-from typing import Any, Optional, Type
+from typing import Any, Optional
 
 from llama_index.core.bridge.pydantic import BaseModel, Field, model_serializer
 from llama_index.core.tools import ToolSelection, ToolOutput
@@ -34,7 +34,7 @@ class AgentOutput(Event):
     """LLM output."""
 
     response: ChatMessage
-    structured_response: Optional[Type[BaseModel]] = Field(default=None)
+    structured_response: Optional[BaseModel] = Field(default=None)
     tool_calls: list[ToolSelection]
     raw: Optional[Any] = Field(default=None, exclude=True)
     current_agent_name: str
