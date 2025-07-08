@@ -1,4 +1,4 @@
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 
 import pytest
 from llama_index.readers.file.xml import XMLReader

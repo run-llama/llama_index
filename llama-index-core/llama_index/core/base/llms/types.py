@@ -336,9 +336,6 @@ class CitationBlock(BaseModel):
     ]
     source: str
     title: str
-    cited_block_index: int
-    inner_start_block_index: int
-    inner_end_block_index: int
     additional_location_info: Dict[str, int]
 
     @field_validator("cited_content", mode="before")
@@ -415,7 +412,10 @@ class ChatMessage(BaseModel):
             if isinstance(block, TextBlock):
                 content_strs.append(block.text)
 
-        return "\n".join(content_strs) or None
+        ct = "\n".join(content_strs) or None
+        if ct is None and len(content_strs) == 1:
+            return ""
+        return ct
 
     @content.setter
     def content(self, content: str) -> None:
