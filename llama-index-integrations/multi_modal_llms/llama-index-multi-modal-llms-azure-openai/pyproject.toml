@@ -35,7 +35,6 @@ license = "MIT"
 dependencies = [
     "llama-index-llms-azure-openai>=0.3.0,<0.4",
     "llama-index-core>=0.12.47,<0.13",
-    "deprecated>=1.2.18,<2",
 ]
 
 [tool.codespell]

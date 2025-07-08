@@ -67,10 +67,8 @@ class VectorStoreIndex(BaseIndex[IndexDict]):
         """Initialize params."""
         self._use_async = use_async
         self._store_nodes_override = store_nodes_override
-        self._embed_model = (
-            resolve_embed_model(embed_model, callback_manager=callback_manager)
-            if embed_model
-            else Settings.embed_model
+        self._embed_model = resolve_embed_model(
+            embed_model or Settings.embed_model, callback_manager=callback_manager
         )
 
         self._insert_batch_size = insert_batch_size
