@@ -36,9 +36,11 @@ from llama_index.core.workflow.checkpointer import CheckpointCallback
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import StopEvent
+from llama_index.core.workflow.errors import WorkflowRuntimeError
 from llama_index.core.workflow.handler import WorkflowHandler
 from llama_index.core.workflow.workflow import Workflow, WorkflowMeta
 
+DEFAULT_MAX_ITERATIONS = 20
 DEFAULT_AGENT_NAME = "Agent"
 DEFAULT_AGENT_DESCRIPTION = "An agent that can perform a task"
 WORKFLOW_KWARGS = (
@@ -227,6 +229,15 @@ class BaseWorkflowAgent(
         if not await ctx.store.get("state", default=None):
             await ctx.store.set("state", self.initial_state.copy())
 
+        if not await ctx.get("max_iterations", default=None):
+            max_iterations = (
+                ev.get("max_iterations", default=None) or DEFAULT_MAX_ITERATIONS
+            )
+            await ctx.set("max_iterations", max_iterations)
+
+        # Reset the number of iterations
+        await ctx.set("num_iterations", 0)
+
         # always set to false initially
         await ctx.store.set("formatted_input_with_state", False)
 
@@ -357,6 +368,17 @@ class BaseWorkflowAgent(
     async def parse_agent_output(
         self, ctx: Context, ev: AgentOutput
     ) -> Union[StopEvent, ToolCall, None]:
+        max_iterations = await ctx.get("max_iterations", default=DEFAULT_MAX_ITERATIONS)
+        num_iterations = await ctx.get("num_iterations", default=0)
+        num_iterations += 1
+        await ctx.set("num_iterations", num_iterations)
+
+        if num_iterations >= max_iterations:
+            raise WorkflowRuntimeError(
+                f"Max iterations of {max_iterations} reached! Either something went wrong, or you can "
+                "increase the max iterations with `.run(.., max_iterations=...)`"
+            )
+
         if not ev.tool_calls:
             memory: BaseMemory = await ctx.store.get("memory")
             output = await self.finalize(ctx, ev, memory)
@@ -487,6 +509,7 @@ class BaseWorkflowAgent(
         ctx: Optional[Context] = None,
         stepwise: bool = False,
         checkpoint_callback: Optional[CheckpointCallback] = None,
+        max_iterations: Optional[int] = None,
         **kwargs: Any,
     ) -> WorkflowHandler:
         # Detect if hitl is needed
@@ -503,6 +526,7 @@ class BaseWorkflowAgent(
                     user_msg=user_msg,
                     chat_history=chat_history,
                     memory=memory,
+                    max_iterations=max_iterations,
                     **kwargs,
                 ),
                 ctx=ctx,
