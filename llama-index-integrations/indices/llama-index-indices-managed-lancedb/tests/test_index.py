@@ -2,15 +2,16 @@ import pytest
 import shutil
 import os
 import requests
+import uuid
 from lancedb import AsyncConnection, DBConnection
 from lancedb.table import AsyncTable, Table
+from typing import Generator
 import pandas as pd
 
 from llama_index.indices.managed.lancedb.retriever import LanceDBRetriever
 from llama_index.indices.managed.lancedb.query_engine import LanceDBRetrieverQueryEngine
 from llama_index.indices.managed.lancedb import LanceDBMultiModalIndex
 from llama_index.indices.managed.lancedb.utils import (
-    LocalConnectionConfig,
     TableConfig,
     EmbeddingConfig,
     IndexingConfig,
@@ -32,12 +33,12 @@ def document_data() -> List[Document]:
 def data() -> pd.DataFrame:
     labels = ["cat", "cat", "dog", "dog", "horse", "horse"]
     uris = [
-        "http://farm1.staticflickr.com/53/167798175_7c7845bbbd_z.jpg",
-        "http://farm1.staticflickr.com/134/332220238_da527d8140_z.jpg",
-        "http://farm9.staticflickr.com/8387/8602747737_2e5c2a45d4_z.jpg",
-        "http://farm5.staticflickr.com/4092/5017326486_1f46057f5f_z.jpg",
-        "http://farm9.staticflickr.com/8216/8434969557_d37882c42d_z.jpg",
-        "http://farm6.staticflickr.com/5142/5835678453_4f3a4edb45_z.jpg",
+        "https://picsum.photos/200/200?random=1",
+        "https://picsum.photos/200/200?random=2",
+        "https://picsum.photos/200/200?random=3",
+        "https://picsum.photos/200/200?random=4",
+        "https://picsum.photos/200/200?random=5",
+        "https://picsum.photos/200/200?random=6",
     ]
     ids = [
         "1",
@@ -47,7 +48,12 @@ def data() -> pd.DataFrame:
         "5",
         "6",
     ]
-    image_bytes = [requests.get(uri).content for uri in uris]
+    image_bytes = []
+    for uri in uris:
+        response = requests.get(uri)
+        response.raise_for_status()
+        image_bytes.append(response.content)
+
     metadata = [
         '{"mimetype": "image/jpeg"}',
         '{"mimetype": "image/jpeg"}',
@@ -68,20 +74,25 @@ def data() -> pd.DataFrame:
     )
 
 
-@pytest.mark.asyncio
-async def test_init(document_data: List[Document], data: List[dict]) -> None:
-    if os.path.exists("lancedb"):
-        shutil.rmtree("lancedb")
+@pytest.fixture()
+def uri() -> Generator[str, None, None]:
+    uri = f"lancedb/{uuid.uuid4()}"
+    yield uri
+    if os.path.exists(uri):
+        shutil.rmtree(uri)
 
+
+@pytest.mark.asyncio
+async def test_init(document_data: List[Document], data: List[dict], uri: str) -> None:
     first = LanceDBMultiModalIndex(
-        uri="lancedb/data",
+        uri=uri,
         text_embedding_model="sentence-transformers",
         embedding_model_kwargs={"name": "all-MiniLM-L6-v2"},
         table_name="test_table",
     )
-    assert first.connection_config == LocalConnectionConfig(
-        uri="lancedb/data", use_async=False
-    )
+    assert first.connection_config.uri == uri
+    assert first.connection_config.use_async is False
+
     assert first.table_config == TableConfig(
         table_name="test_table", table_exists=False
     )
@@ -95,7 +106,7 @@ async def test_init(document_data: List[Document], data: List[dict]) -> None:
     )
     second = await LanceDBMultiModalIndex.from_documents(
         documents=document_data,
-        uri="lancedb/documents",
+        uri=f"{uri}/documents",
         text_embedding_model="sentence-transformers",
         embedding_model_kwargs={"name": "all-MiniLM-L6-v2"},
         table_name="test_table",
@@ -107,7 +118,7 @@ async def test_init(document_data: List[Document], data: List[dict]) -> None:
     assert isinstance(second._embedding_model, LanceDBTextModel)
     third = await LanceDBMultiModalIndex.from_data(
         data=data,
-        uri="lancedb/from-data",
+        uri=f"{uri}/from-data",
         multimodal_embedding_model="open-clip",
         indexing="NO_INDEXING",
         use_async=False,
@@ -115,15 +126,14 @@ async def test_init(document_data: List[Document], data: List[dict]) -> None:
     assert isinstance(third._connection, DBConnection)
     assert isinstance(third._table, Table)
     assert isinstance(third._embedding_model, LanceDBMultiModalModel)
-    shutil.rmtree("lancedb")
 
 
 @pytest.mark.asyncio
-async def test_retriever_qe(document_data: List[Document]) -> None:
+async def test_retriever_qe(uri: str, document_data: List[Document]) -> None:
     Settings.llm = MockLLM()
     second = await LanceDBMultiModalIndex.from_documents(
         documents=document_data,
-        uri="lancedb/documents",
+        uri=f"{uri}/documents",
         text_embedding_model="sentence-transformers",
         embedding_model_kwargs={"name": "all-MiniLM-L6-v2"},
         table_name="test_table",
@@ -140,4 +150,3 @@ async def test_retriever_qe(document_data: List[Document]) -> None:
     assert isinstance(qe, LanceDBRetrieverQueryEngine)
     response = await qe.aquery(query_str="Hello")
     assert isinstance(response.response, str)
-    shutil.rmtree("lancedb")
