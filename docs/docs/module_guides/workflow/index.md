@@ -352,6 +352,7 @@ class MyRandomObject:
 # This is our state model
 # NOTE: all fields must have defaults
 class MyState(BaseModel):
+    model_config = {"arbitrary_types_allowed": True}
     my_obj: MyRandomObject = Field(default_factory=MyRandomObject)
     some_key: str = Field(default="some_value")
 
