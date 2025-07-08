@@ -36,7 +36,6 @@ dependencies = [
     "dashscope>=1.14.1,<2",
     "llama-index-core>=0.12.47,<0.13",
     "llama-index-llms-dashscope>=0.4.0,<2",
-    "deprecated>=1.2.18,<2",
 ]
 
 [tool.codespell]
