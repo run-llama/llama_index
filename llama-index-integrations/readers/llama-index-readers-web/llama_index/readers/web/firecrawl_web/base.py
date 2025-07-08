@@ -1,7 +1,6 @@
 """Firecrawl Web Reader."""
 
 from typing import Any, List, Optional, Dict, Callable
-from pydantic import Field
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.readers.base import BasePydanticReader
@@ -13,21 +12,22 @@ class FireCrawlWebReader(BasePydanticReader):
     turn a url to llm accessible markdown with `Firecrawl.dev`.
 
     Args:
-    api_key: The Firecrawl API key.
-    api_url: url to be passed to FirecrawlApp for local deployment
-    url: The url to be crawled (or)
-    mode: The mode to run the loader in. Default is "crawl".
-    Options include "scrape" (single url),
-    "crawl" (all accessible sub pages),
-    "search" (search for content), and
-    "extract" (extract structured data from URLs using a prompt).
-    params: The parameters to pass to the Firecrawl API.
+        api_key (str): The Firecrawl API key.
+        api_url (Optional[str]): url to be passed to FirecrawlApp for local deployment
+        mode (Optional[str]):
+            The mode to run the loader in. Default is "crawl".
+            Options include "scrape" (single url),
+            "crawl" (all accessible sub pages),
+            "search" (search for content), and
+            "extract" (extract structured data from URLs using a prompt).
+        params (Optional[dict]): The parameters to pass to the Firecrawl API.
+
     Examples include crawlerOptions.
     For more details, visit: https://docs.firecrawl.dev/sdks/python
 
     """
 
-    firecrawl: Optional[Any] = Field(None)
+    firecrawl: Any
     api_key: str
     api_url: Optional[str]
     mode: Optional[str]
@@ -43,17 +43,32 @@ class FireCrawlWebReader(BasePydanticReader):
         params: Optional[dict] = None,
     ) -> None:
         """Initialize with parameters."""
-        super().__init__(api_key=api_key, api_url=api_url, mode=mode, params=params)
+        # Ensure firecrawl-py version is 2.0 or higher
         try:
-            from firecrawl import FirecrawlApp
+            import firecrawl
+
+            error_msg = "firecrawl-py version must be >=2.0 and <3.0"
+            if firecrawl.__version__ < "2.0.0":
+                raise ImportError(error_msg)
+            if firecrawl.__version__ >= "3.0.0":
+                raise ImportError(error_msg)
         except ImportError:
             raise ImportError(
-                "`firecrawl` package not found, please run `pip install firecrawl-py`"
+                "firecrawl-py not found, please run `pip install firecrawl-py`"
             )
-        if api_url:
-            self.firecrawl = FirecrawlApp(api_key=api_key, api_url=api_url)
-        else:
-            self.firecrawl = FirecrawlApp(api_key=api_key)
+
+        firecrawl = firecrawl.FirecrawlApp(api_key=api_key, api_url=api_url)
+
+        params = params or {}
+        params["integration"] = "llamaindex"
+
+        super().__init__(
+            firecrawl=firecrawl,
+            api_key=api_key,
+            api_url=api_url,
+            mode=mode,
+            params=params,
+        )
 
     @classmethod
     def class_name(cls) -> str:
