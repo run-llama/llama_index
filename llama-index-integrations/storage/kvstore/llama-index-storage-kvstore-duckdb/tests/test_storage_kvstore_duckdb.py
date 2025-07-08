@@ -44,6 +44,21 @@ def test_put(kv_store: DuckDBKVStore):
     _ = kv_store.put(key, value)
 
 
+def test_put_all(kv_store: DuckDBKVStore):
+    kv_pairs = [
+        ("id_1", {"name": "John Doe", "text": "Hello, world!"}),
+        ("id_2", {"name": "Jane Doe", "text": "Hello, world!"}),
+    ]
+
+    _ = kv_store.put_all(kv_pairs)
+
+
+def test_put_all_empty(kv_store: DuckDBKVStore):
+    kv_pairs = []
+
+    _ = kv_store.put_all(kv_pairs)
+
+
 def test_put_twice(kv_store: DuckDBKVStore):
     key = "id_1"
     value = {"name": "John Doe", "text": "Hello, world!"}

@@ -225,6 +225,9 @@ class DuckDBKVStore(BaseKVStore):
             collection (str): collection name
 
         """
+        if len(kv_pairs) == 0:
+            return
+
         rows = [
             {"key": key, "collection": collection, "value": json.dumps(value)}
             for key, value in kv_pairs
