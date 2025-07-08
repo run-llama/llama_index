@@ -368,7 +368,9 @@ class BaseWorkflowAgent(
     async def parse_agent_output(
         self, ctx: Context, ev: AgentOutput
     ) -> Union[StopEvent, ToolCall, None]:
-        max_iterations = await ctx.store.get("max_iterations", default=DEFAULT_MAX_ITERATIONS)
+        max_iterations = await ctx.store.get(
+            "max_iterations", default=DEFAULT_MAX_ITERATIONS
+        )
         num_iterations = await ctx.store.get("num_iterations", default=0)
         num_iterations += 1
         await ctx.store.set("num_iterations", num_iterations)
