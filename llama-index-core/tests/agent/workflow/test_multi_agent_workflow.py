@@ -379,7 +379,7 @@ async def test_workflow_with_state():
     response = await handler
     assert response is not None
 
-    state = await handler.ctx.get("state")
+    state = await handler.ctx.store.get("state")
     assert state["counter"] == 1
 
 
