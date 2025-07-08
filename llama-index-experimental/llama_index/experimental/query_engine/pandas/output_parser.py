@@ -70,15 +70,15 @@ def default_output_processor(
             raise
     except Exception as e:
         err_string = (
-            "There was an error running the output as Python code. "
-            f"Error message: {e}"
+            f"There was an error running the output as Python code. Error message: {e}"
         )
         traceback.print_exc()
         return err_string
 
 
 class PandasInstructionParser(ChainableOutputParser):
-    """Pandas instruction parser.
+    """
+    Pandas instruction parser.
 
     This 'output parser' takes in pandas instructions (in Python code) and
     executes them to return an output.

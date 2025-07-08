@@ -1,4 +1,5 @@
 import asyncio
+import deprecated
 from itertools import chain
 from typing import (
     Any,
@@ -45,8 +46,22 @@ from llama_index.core.types import Thread
 from llama_index.core.utils import print_text, unit_generator
 
 
+@deprecated.deprecated(
+    reason=(
+        "ReActAgent has been rewritten and replaced by llama_index.core.agent.workflow.ReActAgent.\n\n"
+        "This implementation will be removed in a v0.13.0 and the new implementation will be "
+        "promoted to the `from llama_index.core.agent import ReActAgent` path.\n\n"
+        "See the docs for more information: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+    action="once",
+)
 class ReActAgent(BaseAgent):
-    """ReAct agent.
+    """
+    DEPRECATED: ReActAgent has been deprecated and is not maintained.
+    This implementation will be removed in a v0.13.0.
+    See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/
+
+    ReAct agent.
 
     Uses a ReAct prompt that can be used in both chat and text
     completion endpoints.
@@ -101,7 +116,8 @@ class ReActAgent(BaseAgent):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "ReActAgent":
-        """Convenience constructor method from set of BaseTools (Optional).
+        """
+        Convenience constructor method from set of BaseTools (Optional).
 
         NOTE: kwargs should have been exhausted by this point. In other words
         the various upstream components such as BaseSynthesizer (response synthesizer)
@@ -110,6 +126,7 @@ class ReActAgent(BaseAgent):
 
         Returns:
             ReActAgent
+
         """
         llm = llm or Settings.llm
         if callback_manager is not None:
@@ -258,7 +275,8 @@ class ReActAgent(BaseAgent):
         return AgentChatResponse(response=response_step.response, sources=self.sources)
 
     def _infer_stream_chunk_is_final(self, chunk: ChatResponse) -> bool:
-        """Infers if a chunk from a live stream is the start of the final
+        """
+        Infers if a chunk from a live stream is the start of the final
         reasoning step. (i.e., and should eventually become
         ResponseReasoningStep — not part of this function's logic tho.).
 
@@ -267,6 +285,7 @@ class ReActAgent(BaseAgent):
 
         Returns:
             bool: Boolean on whether the chunk is the start of the final response
+
         """
         latest_content = chunk.message.content
 
@@ -283,7 +302,8 @@ class ReActAgent(BaseAgent):
     def _add_back_chunk_to_stream(
         self, chunk: ChatResponse, chat_stream: Generator[ChatResponse, None, None]
     ) -> Generator[ChatResponse, None, None]:
-        """Helper method for adding back initial chunk stream of final response
+        """
+        Helper method for adding back initial chunk stream of final response
         back to the rest of the chat_stream.
 
         Args:
@@ -292,6 +312,7 @@ class ReActAgent(BaseAgent):
 
         Return:
             Generator[ChatResponse, None, None]: the updated chat_stream
+
         """
         updated_stream = chain.from_iterable(  # need to add back partial response chunk
             [
@@ -308,7 +329,8 @@ class ReActAgent(BaseAgent):
     async def _async_add_back_chunk_to_stream(
         self, chunk: ChatResponse, chat_stream: AsyncGenerator[ChatResponse, None]
     ) -> AsyncGenerator[ChatResponse, None]:
-        """Helper method for adding back initial chunk stream of final response
+        """
+        Helper method for adding back initial chunk stream of final response
         back to the rest of the chat_stream.
 
         NOTE: this itself is not an async function.
@@ -319,6 +341,7 @@ class ReActAgent(BaseAgent):
 
         Return:
             AsyncGenerator[ChatResponse, None]: the updated async chat_stream
+
         """
         yield chunk
         async for item in chat_stream:
@@ -374,9 +397,9 @@ class ReActAgent(BaseAgent):
         tools = self.get_tools(message)
 
         if chat_history is not None:
-            self._memory.set(chat_history)
+            await self._memory.aset(chat_history)
 
-        self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
+        await self._memory.aput(ChatMessage(content=message, role=MessageRole.USER))
 
         current_reasoning: List[BaseReasoningStep] = []
         # start loop
@@ -384,7 +407,7 @@ class ReActAgent(BaseAgent):
             # prepare inputs
             input_chat = self._react_chat_formatter.format(
                 tools,
-                chat_history=self._memory.get(),
+                chat_history=await self._memory.aget(),
                 current_reasoning=current_reasoning,
             )
             # send prompt
@@ -398,7 +421,7 @@ class ReActAgent(BaseAgent):
                 break
 
         response = self._get_response(current_reasoning)
-        self._memory.put(
+        await self._memory.aput(
             ChatMessage(content=response.response, role=MessageRole.ASSISTANT)
         )
         return response
@@ -473,9 +496,9 @@ class ReActAgent(BaseAgent):
         tools = self.get_tools(message)
 
         if chat_history is not None:
-            self._memory.set(chat_history)
+            await self._memory.aset(chat_history)
 
-        self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
+        await self._memory.aput(ChatMessage(content=message, role=MessageRole.USER))
 
         current_reasoning: List[BaseReasoningStep] = []
         # start loop
@@ -486,7 +509,7 @@ class ReActAgent(BaseAgent):
             # prepare inputs
             input_chat = self._react_chat_formatter.format(
                 tools,
-                chat_history=self._memory.get(),
+                chat_history=await self._memory.aget(),
                 current_reasoning=current_reasoning,
             )
             # send prompt

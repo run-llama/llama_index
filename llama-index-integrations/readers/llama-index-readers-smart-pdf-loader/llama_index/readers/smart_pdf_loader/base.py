@@ -1,4 +1,5 @@
 """Smart PDF Loader."""
+
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.readers.base import BaseReader
@@ -6,10 +7,12 @@ from llama_index.core.schema import Document
 
 
 class SmartPDFLoader(BaseReader):
-    """SmartPDFLoader uses nested layout information such as sections, paragraphs, lists and tables to smartly chunk PDFs for optimal usage of LLM context window.
+    """
+    SmartPDFLoader uses nested layout information such as sections, paragraphs, lists and tables to smartly chunk PDFs for optimal usage of LLM context window.
 
     Args:
         llmsherpa_api_url (str): Address of the service hosting llmsherpa PDF parser
+
     """
 
     def __init__(
@@ -23,13 +26,15 @@ class SmartPDFLoader(BaseReader):
     def load_data(
         self, pdf_path_or_url: str, extra_info: Optional[Dict] = None
     ) -> List[Document]:
-        """Load data and extract table from PDF file.
+        """
+        Load data and extract table from PDF file.
 
         Args:
             pdf_path_or_url (str): A url or file path pointing to the PDF
 
         Returns:
             List[Document]: List of documents.
+
         """
         results = []
         doc = self.pdf_reader.read_pdf(str(pdf_path_or_url))

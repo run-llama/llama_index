@@ -1,4 +1,5 @@
-"""OpenAI Agent.
+"""
+OpenAI Agent.
 
 Simple wrapper around AgentRunner + OpenAIAgentWorker.
 
@@ -8,6 +9,7 @@ from llama_index.agent.legacy.openai.base import OpenAIAgent
 ```
 """
 
+import deprecated
 from typing import (
     Any,
     Dict,
@@ -33,8 +35,17 @@ from llama_index.llms.openai.utils import OpenAIToolCall
 DEFAULT_MAX_FUNCTION_CALLS = 5
 
 
+@deprecated.deprecated(
+    reason=(
+        "OpenAIAgent has been deprecated and is not maintained.\n\n"
+        "`FunctionAgent` is the recommended replacement.\n\n"
+        "See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+    action="once",
+)
 class OpenAIAgent(AgentRunner):
-    """OpenAI agent.
+    """
+    OpenAI agent.
 
     Subclasses AgentRunner with a OpenAIAgentWorker.
 
@@ -96,7 +107,8 @@ class OpenAIAgent(AgentRunner):
         tool_call_parser: Optional[Callable[[OpenAIToolCall], Dict]] = None,
         **kwargs: Any,
     ) -> "OpenAIAgent":
-        """Create an OpenAIAgent from a list of tools.
+        """
+        Create an OpenAIAgent from a list of tools.
 
         Similar to `from_defaults` in other classes, this method will
         infer defaults for a variety of parameters, including the LLM,

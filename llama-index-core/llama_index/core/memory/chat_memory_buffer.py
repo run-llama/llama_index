@@ -1,3 +1,4 @@
+import asyncio
 import json
 from typing import Any, Callable, Dict, List, Optional
 
@@ -16,7 +17,11 @@ DEFAULT_TOKEN_LIMIT = 3000
 
 
 class ChatMemoryBuffer(BaseChatStoreMemory):
-    """Simple buffer for storing chat history."""
+    """
+    Deprecated: Please use `llama_index.core.memory.Memory` instead.
+
+    Simple buffer for storing chat history.
+    """
 
     token_limit: int
     tokenizer_fn: Callable[[str], List] = Field(
@@ -38,7 +43,7 @@ class ChatMemoryBuffer(BaseChatStoreMemory):
             raise ValueError("Token limit must be set and greater than 0.")
 
         # Validate tokenizer -- this avoids errors when loading from json/dict
-        tokenizer_fn = values.get("tokenizer_fn", None)
+        tokenizer_fn = values.get("tokenizer_fn")
         if tokenizer_fn is None:
             values["tokenizer_fn"] = get_tokenizer()
 
@@ -144,6 +149,14 @@ class ChatMemoryBuffer(BaseChatStoreMemory):
             return []
 
         return chat_history[-message_count:]
+
+    async def aget(
+        self, input: Optional[str] = None, initial_token_count: int = 0, **kwargs: Any
+    ) -> List[ChatMessage]:
+        """Get chat history."""
+        return await asyncio.to_thread(
+            self.get, input=input, initial_token_count=initial_token_count, **kwargs
+        )
 
     def _token_count_for_messages(self, messages: List[ChatMessage]) -> int:
         if len(messages) <= 0:

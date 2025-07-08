@@ -1,4 +1,5 @@
-"""Chain of Abstraction Agent Worker.
+"""
+Chain of Abstraction Agent Worker.
 
 A lot of this code was adapted from the source code of the LLM Compiler repo:
 https://github.com/SqueezeAILab/LLMCompiler
@@ -6,6 +7,7 @@ https://github.com/SqueezeAILab/LLMCompiler
 """
 
 import asyncio
+import deprecated
 import uuid
 from typing import (
     Any,
@@ -44,6 +46,14 @@ from .prompts import REASONING_PROMPT_TEMPALTE, REFINE_REASONING_PROMPT_TEMPALTE
 from .utils import json_schema_to_python
 
 
+@deprecated.deprecated(
+    reason=(
+        "CoAAgentWorker has been deprecated and is not maintained.\n\n"
+        "Contributions are welcome to migrate this class to the new agent architecture.\n\n"
+        "See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+    action="once",
+)
 class CoAAgentWorker(BaseAgentWorker):
     """Chain-of-abstraction Agent Worker."""
 
@@ -84,7 +94,8 @@ class CoAAgentWorker(BaseAgentWorker):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "CoAAgentWorker":
-        """Convenience constructor method from set of BaseTools (Optional).
+        """
+        Convenience constructor method from set of BaseTools (Optional).
 
         Returns:
             LLMCompilerAgentWorker: the LLMCompilerAgentWorker instance

@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 class RouterRetriever(BaseRetriever):
-    """Router retriever.
+    """
+    Router retriever.
 
     Selects one (or multiple) out of several candidate retrievers to execute a query.
 
@@ -85,7 +86,7 @@ class RouterRetriever(BaseRetriever):
                 retrieved_results = {}
                 for i, engine_ind in enumerate(result.inds):
                     logger.info(
-                        f"Selecting retriever {engine_ind}: " f"{result.reasons[i]}."
+                        f"Selecting retriever {engine_ind}: {result.reasons[i]}."
                     )
                     selected_retriever = self._retrievers[engine_ind]
                     cur_results = selected_retriever.retrieve(query_bundle)
@@ -116,7 +117,7 @@ class RouterRetriever(BaseRetriever):
                 tasks = []
                 for i, engine_ind in enumerate(result.inds):
                     logger.info(
-                        f"Selecting retriever {engine_ind}: " f"{result.reasons[i]}."
+                        f"Selecting retriever {engine_ind}: {result.reasons[i]}."
                     )
                     selected_retriever = self._retrievers[engine_ind]
                     tasks.append(selected_retriever.aretrieve(query_bundle))

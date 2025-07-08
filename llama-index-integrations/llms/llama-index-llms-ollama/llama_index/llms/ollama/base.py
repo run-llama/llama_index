@@ -33,14 +33,14 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
-from llama_index.core.program.utils import process_streaming_objects
+from llama_index.core.llms.llm import ToolSelection, Model
+from llama_index.core.program.utils import process_streaming_objects, FlexibleModel
 from llama_index.core.prompts import PromptTemplate
-from llama_index.core.tools import ToolSelection
 from llama_index.core.types import PydanticProgramMode
 
 if TYPE_CHECKING:
@@ -63,7 +63,8 @@ def force_single_tool_call(response: ChatResponse) -> None:
 
 
 class Ollama(FunctionCallingLLM):
-    """Ollama LLM.
+    """
+    Ollama LLM.
 
     Visit https://ollama.com/ to download and install Ollama.
 
@@ -82,6 +83,7 @@ class Ollama(FunctionCallingLLM):
         response = llm.complete("What is the capital of France?")
         print(response)
         ```
+
     """
 
     base_url: str = Field(
@@ -89,16 +91,13 @@ class Ollama(FunctionCallingLLM):
         description="Base url the model is hosted under.",
     )
     model: str = Field(description="The Ollama model to use.")
-    temperature: float = Field(
-        default=0.75,
+    temperature: Optional[float] = Field(
+        default=None,
         description="The temperature to use for sampling.",
-        ge=0.0,
-        le=1.0,
     )
     context_window: int = Field(
-        default=DEFAULT_CONTEXT_WINDOW,
+        default=-1,
         description="The maximum number of context tokens for the model.",
-        gt=0,
     )
     request_timeout: float = Field(
         default=DEFAULT_REQUEST_TIMEOUT,
@@ -123,6 +122,10 @@ class Ollama(FunctionCallingLLM):
         default="5m",
         description="controls how long the model will stay loaded into memory following the request(default: 5m)",
     )
+    thinking: Optional[bool] = Field(
+        default=None,
+        description="Whether to enable or disable thinking in the model.",
+    )
 
     _client: Optional[Client] = PrivateAttr()
     _async_client: Optional[AsyncClient] = PrivateAttr()
@@ -131,16 +134,17 @@ class Ollama(FunctionCallingLLM):
         self,
         model: str,
         base_url: str = "http://localhost:11434",
-        temperature: float = 0.75,
-        context_window: int = DEFAULT_CONTEXT_WINDOW,
+        temperature: Optional[float] = None,
+        context_window: int = -1,
         request_timeout: Optional[float] = DEFAULT_REQUEST_TIMEOUT,
         prompt_key: str = "prompt",
         json_mode: bool = False,
-        additional_kwargs: Dict[str, Any] = {},
+        additional_kwargs: Optional[Dict[str, Any]] = None,
         client: Optional[Client] = None,
         async_client: Optional[AsyncClient] = None,
         is_function_calling_model: bool = True,
         keep_alive: Optional[Union[float, str]] = None,
+        thinking: Optional[bool] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -151,9 +155,10 @@ class Ollama(FunctionCallingLLM):
             request_timeout=request_timeout,
             prompt_key=prompt_key,
             json_mode=json_mode,
-            additional_kwargs=additional_kwargs,
+            additional_kwargs=additional_kwargs or {},
             is_function_calling_model=is_function_calling_model,
             keep_alive=keep_alive,
+            thinking=thinking,
             **kwargs,
         )
 
@@ -168,7 +173,7 @@ class Ollama(FunctionCallingLLM):
     def metadata(self) -> LLMMetadata:
         """LLM metadata."""
         return LLMMetadata(
-            context_window=self.context_window,
+            context_window=self.get_context_window(),
             num_output=DEFAULT_NUM_OUTPUTS,
             model_name=self.model,
             is_chat_model=True,  # Ollama supports chat API for all models
@@ -194,12 +199,26 @@ class Ollama(FunctionCallingLLM):
     def _model_kwargs(self) -> Dict[str, Any]:
         base_kwargs = {
             "temperature": self.temperature,
-            "num_ctx": self.context_window,
+            "num_ctx": self.get_context_window(),
         }
         return {
             **base_kwargs,
             **self.additional_kwargs,
         }
+
+    def get_context_window(self) -> int:
+        if self.context_window == -1:
+            # Try to get the context window from the model info if not set
+            info = self.client.show(self.model).modelinfo
+            for key, value in info.items():
+                if "context_length" in key:
+                    self.context_window = int(value)
+                    break
+
+        # If the context window is still -1, use the default context window
+        return (
+            self.context_window if self.context_window != -1 else DEFAULT_CONTEXT_WINDOW
+        )
 
     def _convert_to_ollama_messages(self, messages: Sequence[ChatMessage]) -> Dict:
         ollama_messages = []
@@ -251,7 +270,8 @@ class Ollama(FunctionCallingLLM):
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
-        allow_parallel_tool_calls: bool = False,
+        allow_parallel_tool_calls: bool = False,  # doesn't appear to be supported by Ollama
+        tool_required: bool = False,  # not yet supported https://github.com/ollama/ollama/blob/main/docs/openai.md#supported-request-fields
         **kwargs: Any,
     ) -> Dict[str, Any]:
         tool_specs = [
@@ -317,6 +337,7 @@ class Ollama(FunctionCallingLLM):
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)
+        think = kwargs.pop("think", None) or self.thinking
         format = kwargs.pop("format", "json" if self.json_mode else None)
 
         response = self.client.chat(
@@ -325,6 +346,7 @@ class Ollama(FunctionCallingLLM):
             stream=False,
             format=format,
             tools=tools,
+            think=think,
             options=self._model_kwargs,
             keep_alive=self.keep_alive,
         )
@@ -332,6 +354,7 @@ class Ollama(FunctionCallingLLM):
         response = dict(response)
 
         tool_calls = response["message"].get("tool_calls", [])
+        thinking = response["message"].get("thinking", None)
         token_counts = self._get_response_token_counts(response)
         if token_counts:
             response["usage"] = token_counts
@@ -340,7 +363,7 @@ class Ollama(FunctionCallingLLM):
             message=ChatMessage(
                 content=response["message"]["content"],
                 role=response["message"]["role"],
-                additional_kwargs={"tool_calls": tool_calls},
+                additional_kwargs={"tool_calls": tool_calls, "thinking": thinking},
             ),
             raw=response,
         )
@@ -352,6 +375,7 @@ class Ollama(FunctionCallingLLM):
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)
+        think = kwargs.pop("think", None) or self.thinking
         format = kwargs.pop("format", "json" if self.json_mode else None)
 
         def gen() -> ChatResponseGen:
@@ -361,11 +385,13 @@ class Ollama(FunctionCallingLLM):
                 stream=True,
                 format=format,
                 tools=tools,
+                think=think,
                 options=self._model_kwargs,
                 keep_alive=self.keep_alive,
             )
 
             response_txt = ""
+            thinking_txt = ""
             seen_tool_calls = set()
             all_tool_calls = []
 
@@ -375,9 +401,10 @@ class Ollama(FunctionCallingLLM):
 
                 r = dict(r)
 
-                response_txt += r["message"]["content"]
+                response_txt += r["message"].get("content", "") or ""
+                thinking_txt += r["message"].get("thinking", "") or ""
 
-                new_tool_calls = [dict(t) for t in r["message"].get("tool_calls", [])]
+                new_tool_calls = [dict(t) for t in r["message"].get("tool_calls") or []]
                 for tool_call in new_tool_calls:
                     if (
                         str(tool_call["function"]["name"]),
@@ -399,10 +426,16 @@ class Ollama(FunctionCallingLLM):
                     message=ChatMessage(
                         content=response_txt,
                         role=r["message"]["role"],
-                        additional_kwargs={"tool_calls": list(set(all_tool_calls))},
+                        additional_kwargs={
+                            "tool_calls": list(set(all_tool_calls)),
+                            "thinking": thinking_txt,
+                        },
                     ),
                     delta=r["message"]["content"],
                     raw=r,
+                    additional_kwargs={
+                        "thinking_delta": r["message"].get("thinking", None),
+                    },
                 )
 
         return gen()
@@ -414,6 +447,7 @@ class Ollama(FunctionCallingLLM):
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)
+        think = kwargs.pop("think", None) or self.thinking
         format = kwargs.pop("format", "json" if self.json_mode else None)
 
         async def gen() -> ChatResponseAsyncGen:
@@ -423,11 +457,13 @@ class Ollama(FunctionCallingLLM):
                 stream=True,
                 format=format,
                 tools=tools,
+                think=think,
                 options=self._model_kwargs,
                 keep_alive=self.keep_alive,
             )
 
             response_txt = ""
+            thinking_txt = ""
             seen_tool_calls = set()
             all_tool_calls = []
 
@@ -437,9 +473,10 @@ class Ollama(FunctionCallingLLM):
 
                 r = dict(r)
 
-                response_txt += r["message"]["content"]
+                response_txt += r["message"].get("content", "") or ""
+                thinking_txt += r["message"].get("thinking", "") or ""
 
-                new_tool_calls = [dict(t) for t in r["message"].get("tool_calls", [])]
+                new_tool_calls = [dict(t) for t in r["message"].get("tool_calls") or []]
                 for tool_call in new_tool_calls:
                     if (
                         str(tool_call["function"]["name"]),
@@ -461,10 +498,16 @@ class Ollama(FunctionCallingLLM):
                     message=ChatMessage(
                         content=response_txt,
                         role=r["message"]["role"],
-                        additional_kwargs={"tool_calls": all_tool_calls},
+                        additional_kwargs={
+                            "tool_calls": all_tool_calls,
+                            "thinking": thinking_txt,
+                        },
                     ),
                     delta=r["message"]["content"],
                     raw=r,
+                    additional_kwargs={
+                        "thinking_delta": r["message"].get("thinking", None),
+                    },
                 )
 
         return gen()
@@ -476,6 +519,7 @@ class Ollama(FunctionCallingLLM):
         ollama_messages = self._convert_to_ollama_messages(messages)
 
         tools = kwargs.pop("tools", None)
+        think = kwargs.pop("think", None) or self.thinking
         format = kwargs.pop("format", "json" if self.json_mode else None)
 
         response = await self.async_client.chat(
@@ -484,6 +528,7 @@ class Ollama(FunctionCallingLLM):
             stream=False,
             format=format,
             tools=tools,
+            think=think,
             options=self._model_kwargs,
             keep_alive=self.keep_alive,
         )
@@ -491,6 +536,7 @@ class Ollama(FunctionCallingLLM):
         response = dict(response)
 
         tool_calls = response["message"].get("tool_calls", [])
+        thinking = response["message"].get("thinking", None)
         token_counts = self._get_response_token_counts(response)
         if token_counts:
             response["usage"] = token_counts
@@ -499,7 +545,7 @@ class Ollama(FunctionCallingLLM):
             message=ChatMessage(
                 content=response["message"]["content"],
                 role=response["message"]["role"],
-                additional_kwargs={"tool_calls": tool_calls},
+                additional_kwargs={"tool_calls": tool_calls, "thinking": thinking},
             ),
             raw=response,
         )
@@ -533,11 +579,11 @@ class Ollama(FunctionCallingLLM):
     @dispatcher.span
     def structured_predict(
         self,
-        output_cls: Type[BaseModel],
+        output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> BaseModel:
+    ) -> Model:
         if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
             llm_kwargs = llm_kwargs or {}
             llm_kwargs["format"] = output_cls.model_json_schema()
@@ -554,11 +600,11 @@ class Ollama(FunctionCallingLLM):
     @dispatcher.span
     async def astructured_predict(
         self,
-        output_cls: Type[BaseModel],
+        output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> BaseModel:
+    ) -> Model:
         if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
             llm_kwargs = llm_kwargs or {}
             llm_kwargs["format"] = output_cls.model_json_schema()
@@ -575,12 +621,13 @@ class Ollama(FunctionCallingLLM):
     @dispatcher.span
     def stream_structured_predict(
         self,
-        output_cls: Type[BaseModel],
+        output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> Generator[Union[BaseModel, List[BaseModel]], None, None]:
-        """Stream structured predictions as they are generated.
+    ) -> Generator[Union[Model, FlexibleModel], None, None]:
+        """
+        Stream structured predictions as they are generated.
 
         Args:
             output_cls: The Pydantic class to parse responses into
@@ -590,15 +637,16 @@ class Ollama(FunctionCallingLLM):
 
         Returns:
             Generator yielding partial objects as they are generated
+
         """
         if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
 
             def gen(
-                output_cls: Type[BaseModel],
+                output_cls: Type[Model],
                 prompt: PromptTemplate,
                 llm_kwargs: Dict[str, Any],
                 prompt_args: Dict[str, Any],
-            ) -> Generator[Union[BaseModel, List[BaseModel]], None, None]:
+            ) -> Generator[Union[Model, FlexibleModel], None, None]:
                 llm_kwargs = llm_kwargs or {}
                 llm_kwargs["format"] = output_cls.model_json_schema()
 
@@ -631,20 +679,20 @@ class Ollama(FunctionCallingLLM):
     @dispatcher.span
     async def astream_structured_predict(
         self,
-        output_cls: Type[BaseModel],
+        output_cls: Type[Model],
         prompt: PromptTemplate,
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
-    ) -> AsyncGenerator[Union[BaseModel, List[BaseModel]], None]:
+    ) -> AsyncGenerator[Union[Model, FlexibleModel], None]:
         """Async version of stream_structured_predict."""
         if self.pydantic_program_mode == PydanticProgramMode.DEFAULT:
 
             async def gen(
-                output_cls: Type[BaseModel],
+                output_cls: Type[Model],
                 prompt: PromptTemplate,
                 llm_kwargs: Dict[str, Any],
                 prompt_args: Dict[str, Any],
-            ) -> AsyncGenerator[Union[BaseModel, List[BaseModel]], None]:
+            ) -> AsyncGenerator[Union[Model, FlexibleModel], None]:
                 llm_kwargs = llm_kwargs or {}
                 llm_kwargs["format"] = output_cls.model_json_schema()
 

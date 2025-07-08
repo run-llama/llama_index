@@ -17,11 +17,14 @@ def get_list_from_literal(literal: _LiteralGenericAlias) -> List[str]:
     """
     Get a list of strings from a Literal type.
 
-    Parameters:
+    Parameters
+    ----------
     literal (_LiteralGenericAlias): The Literal type from which to extract the strings.
 
-    Returns:
+    Returns
+    -------
     List[str]: A list of strings extracted from the Literal type.
+
     """
     if not isinstance(literal, _LiteralGenericAlias):
         raise TypeError(
@@ -34,11 +37,14 @@ def remove_empty_values(input_dict):
     """
     Remove entries with empty values from the dictionary.
 
-    Parameters:
+    Parameters
+    ----------
     input_dict (dict): The dictionary from which empty values need to be removed.
 
-    Returns:
+    Returns
+    -------
     dict: A new dictionary with all empty values removed.
+
     """
     # Create a new dictionary excluding empty values and remove the `e.` prefix from the keys
     return {key.replace("e.", ""): value for key, value in input_dict.items() if value}
@@ -127,7 +133,7 @@ def create_relation_tables(
     for src, rel_label, dst in relationship_schema:
         create_entity_relationship_table(connection, rel_label, src, dst)
 
-    ddl = "CREATE REL TABLE GROUP IF NOT EXISTS MENTIONS ("
+    ddl = "CREATE REL TABLE IF NOT EXISTS MENTIONS ("
     table_names = []
     for entity in entities:
         table_names.append(f"FROM Chunk TO {entity}")

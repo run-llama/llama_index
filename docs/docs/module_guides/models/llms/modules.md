@@ -1,19 +1,23 @@
 # Available LLM integrations
 
-We support integrations with OpenAI, Anthropic, Hugging Face, PaLM, and more.
+We support integrations with OpenAI, Anthropic, Google, Hugging Face, and more.
 
 - [AI21](../../../examples/llm/ai21.ipynb)
 - [Anthropic](../../../examples/llm/anthropic.ipynb)
 - [AnyScale](../../../examples/llm/anyscale.ipynb)
+- [ASI](../../../examples/llm/asi1.ipynb)
 - [Azure OpenAI](../../../examples/llm/azure_openai.ipynb)
 - [Bedrock](../../../examples/llm/bedrock.ipynb)
 - [Clarifai](../../../examples/llm/clarifai.ipynb)
+- [Cleanlab](../../../examples/llm/cleanlab.ipynb)
 - [Cohere](../../../examples/llm/cohere.ipynb)
 - [Dashscope](../../../examples/llm/dashscope.ipynb)
 - [Dashscope Multi-Modal](../../../examples/multi_modal/dashscope_multi_modal.ipynb)
 - [EverlyAI](../../../examples/llm/everlyai.ipynb)
+- [Featherless AI](../../../examples/llm/featherlessai.ipynb)
 - [Fireworks](../../../examples/llm/fireworks.ipynb)
 - [Friendli](../../../examples/llm/friendli.ipynb)
+- [Google Gen AI](../../../examples/llm/google_genai.ipynb)
 - [Gradient](../../../examples/llm/gradient_base_model.ipynb)
 - [Gradient Model Adapter](../../../examples/llm/gradient_model_adapter.ipynb)
 - [Groq](../../../examples/llm/groq.ipynb)
@@ -39,7 +43,6 @@ We support integrations with OpenAI, Anthropic, Hugging Face, PaLM, and more.
 - [OpenAI](../../../examples/llm/openai.ipynb)
 - [OpenLLM](../../../examples/llm/openllm.ipynb)
 - [OpenRouter](../../../examples/llm/openrouter.ipynb)
-- [PaLM](../../../examples/llm/palm.ipynb)
 - [Perplexity](../../../examples/llm/perplexity.ipynb)
 - [Pipeshift](../../../examples/llm/pipeshift.ipynb)
 - [PremAI](../../../examples/llm/premai.ipynb)
@@ -54,7 +57,6 @@ We support integrations with OpenAI, Anthropic, Hugging Face, PaLM, and more.
 - [Together.ai](../../../examples/llm/together.ipynb)
 - [Unify AI](../../../examples/llm/unify.ipynb)
 - [Upstage](../../../examples/llm/upstage.ipynb)
-- [Vertex](../../../examples/llm/vertex.ipynb)
 - [vLLM](../../../examples/llm/vllm.ipynb)
 - [Xorbits Inference](../../../examples/llm/xinference_local_deployment.ipynb)
 - [Yi](../../../examples/llm/yi.ipynb)

@@ -14,6 +14,7 @@ from llama_index.core.llms import MockLLM
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.core.tools import FunctionTool
+from llama_index.core.workflow.errors import WorkflowRuntimeError
 
 
 class MockLLM(MockLLM):
@@ -119,7 +120,7 @@ def calculator_agent():
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_single_function_agent(function_agent):
     """Test single agent with state management."""
     handler = function_agent.run(user_msg="test")
@@ -130,7 +131,7 @@ async def test_single_function_agent(function_agent):
     assert "Success with the FunctionAgent" in str(response.response)
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_single_react_agent(calculator_agent):
     """Verify execution of basic ReAct single agent."""
     memory = ChatMemoryBuffer.from_defaults()
@@ -143,3 +144,42 @@ async def test_single_react_agent(calculator_agent):
     response = await handler
 
     assert "8" in str(response.response)
+
+
+@pytest.mark.asyncio
+async def test_max_iterations():
+    """Test max iterations."""
+
+    def random_tool() -> str:
+        return "random"
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[random_tool],
+        llm=MockLLM(
+            responses=[
+                ChatMessage(
+                    role=MessageRole.ASSISTANT,
+                    content="handing off",
+                    additional_kwargs={
+                        "tool_calls": [
+                            ToolSelection(
+                                tool_id="one",
+                                tool_name="random_tool",
+                                tool_kwargs={},
+                            )
+                        ]
+                    },
+                ),
+            ]
+            * 100
+        ),
+    )
+
+    # Default max iterations is 20
+    with pytest.raises(WorkflowRuntimeError, match="Either something went wrong"):
+        _ = await agent.run(user_msg="test")
+
+    # Set max iterations to 101 to avoid error
+    _ = agent.run(user_msg="test", max_iterations=101)

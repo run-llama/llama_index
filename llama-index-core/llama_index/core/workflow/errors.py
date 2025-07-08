@@ -1,26 +1,10 @@
-class WorkflowValidationError(Exception):
-    pass
-
-
-class WorkflowTimeoutError(Exception):
-    pass
-
-
-class WorkflowRuntimeError(Exception):
-    pass
-
-
-class WorkflowDone(Exception):
-    pass
-
-
-class WorkflowCancelledByUser(Exception):
-    pass
-
-
-class WorkflowStepDoesNotExistError(Exception):
-    pass
-
-
-class WorkflowConfigurationError(Exception):
-    pass
+from workflows.errors import (
+    ContextSerdeError,  # noqa
+    WorkflowCancelledByUser,  # noqa
+    WorkflowConfigurationError,  # noqa
+    WorkflowDone,  # noqa
+    WorkflowRuntimeError,  # noqa
+    WorkflowStepDoesNotExistError,  # noqa
+    WorkflowTimeoutError,  # noqa
+    WorkflowValidationError,  # noqa
+)

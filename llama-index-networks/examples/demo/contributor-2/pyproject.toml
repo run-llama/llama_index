@@ -1,15 +1,15 @@
 [build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core"]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = ""
+[project]
 name = "contributor-2"
-version = "0.2.0"
-
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-llama-index = "^0.12.0"
-llama-index-networks = "^0.5.1"
-llama-index-llms-openai = "^0.3.14"
+version = "0.2.1"
+description = ""
+authors = [{name = "Your Name", email = "you@example.com"}]
+requires-python = ">=3.9,<4.0"
+dependencies = [
+    "llama-index>=0.12.0,<0.13",
+    "llama-index-networks>=0.5.1,<0.6",
+    "llama-index-llms-openai>=0.4.0,<0.5",
+]

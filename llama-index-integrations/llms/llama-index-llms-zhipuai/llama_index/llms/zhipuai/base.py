@@ -46,7 +46,7 @@ GLM_CHAT_MODELS = {
 
 
 def glm_model_to_context_size(model: str) -> Union[int, None]:
-    token_limit = GLM_CHAT_MODELS.get(model, None)
+    token_limit = GLM_CHAT_MODELS.get(model)
 
     if token_limit is None:
         raise ValueError(f"Model name {model} not found in {GLM_CHAT_MODELS.keys()}")
@@ -72,7 +72,8 @@ def async_llm_generate(item):
 
 
 class ZhipuAI(FunctionCallingLLM):
-    """ZhipuAI LLM.
+    """
+    ZhipuAI LLM.
 
     Visit https://open.bigmodel.cn to get more information about ZhipuAI.
 
@@ -87,6 +88,7 @@ class ZhipuAI(FunctionCallingLLM):
         response = llm.complete("who are you?")
         print(response)
         ```
+
     """
 
     model: str = Field(description="The ZhipuAI model to use.")
@@ -179,6 +181,7 @@ class ZhipuAI(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,  # unsupported, docs say for tool_choice, "currently only supports auto."
         **kwargs: Any,
     ) -> Dict[str, Any]:
         tool_specs = [
@@ -243,9 +246,9 @@ class ZhipuAI(FunctionCallingLLM):
             model=self.model,
             messages=messages_dict,
             stream=False,
-            tools=kwargs.get("tools", None),
-            tool_choice=kwargs.get("tool_choice", None),
-            stop=kwargs.get("stop", None),
+            tools=kwargs.get("tools"),
+            tool_choice=kwargs.get("tool_choice"),
+            stop=kwargs.get("stop"),
             timeout=self.timeout,
             extra_body=self.model_kwargs,
         )
@@ -267,9 +270,9 @@ class ZhipuAI(FunctionCallingLLM):
         raw_response = self._client.chat.asyncCompletions.create(
             model=self.model,
             messages=messages_dict,
-            tools=kwargs.get("tools", None),
-            tool_choice=kwargs.get("tool_choice", None),
-            stop=kwargs.get("stop", None),
+            tools=kwargs.get("tools"),
+            tool_choice=kwargs.get("tool_choice"),
+            stop=kwargs.get("stop"),
             timeout=self.timeout,
             extra_body=self.model_kwargs,
         )
@@ -305,9 +308,9 @@ class ZhipuAI(FunctionCallingLLM):
                 model=self.model,
                 messages=messages_dict,
                 stream=True,
-                tools=kwargs.get("tools", None),
-                tool_choice=kwargs.get("tool_choice", None),
-                stop=kwargs.get("stop", None),
+                tools=kwargs.get("tools"),
+                tool_choice=kwargs.get("tool_choice"),
+                stop=kwargs.get("stop"),
                 timeout=self.timeout,
                 extra_body=self.model_kwargs,
             )
@@ -342,9 +345,9 @@ class ZhipuAI(FunctionCallingLLM):
                 model=self.model,
                 messages=messages_dict,
                 stream=True,
-                tools=kwargs.get("tools", None),
-                tool_choice=kwargs.get("tool_choice", None),
-                stop=kwargs.get("stop", None),
+                tools=kwargs.get("tools"),
+                tool_choice=kwargs.get("tool_choice"),
+                stop=kwargs.get("stop"),
                 timeout=self.timeout,
                 extra_body=self.model_kwargs,
             )

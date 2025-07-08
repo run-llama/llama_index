@@ -1,4 +1,5 @@
 """Product extraction pack."""
+
 import asyncio
 from typing import Any, Dict
 
@@ -44,7 +45,8 @@ Can you extract the following fields from this product, in JSON format?
 
 
 class AmazonProductExtractionPack(BaseLlamaPack):
-    """Product extraction pack.
+    """
+    Product extraction pack.
 
     Given a website url of a product (e.g. Amazon page), screenshot it,
     and use GPT-4V to extract structured outputs.

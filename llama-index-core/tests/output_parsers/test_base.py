@@ -1,6 +1,5 @@
 """Test Output parsers."""
 
-
 import pytest
 from llama_index.core.output_parsers.langchain import LangchainOutputParser
 
@@ -21,7 +20,8 @@ def test_lc_output_parser() -> None:
     """Test langchain output parser."""
 
     class MockOutputParser(LCOutputParser):
-        """Mock output parser.
+        """
+        Mock output parser.
 
         Similar to langchain's StructuredOutputParser, but better for testing.
 
@@ -50,10 +50,10 @@ def test_lc_output_parser() -> None:
     query_str = "Hello world."
     output_instructions = output_parser.format(query_str)
     assert output_instructions == (
-        "Hello world.\n\n" "{ Education, education experience }"
+        "Hello world.\n\n{ Education, education experience }"
     )
     query_str = "foo {bar}."
     output_instructions = output_parser.format(query_str)
     assert output_instructions == (
-        "foo {bar}.\n\n" "{{ Education, education experience }}"
+        "foo {bar}.\n\n{{ Education, education experience }}"
     )

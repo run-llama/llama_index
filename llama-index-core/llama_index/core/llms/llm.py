@@ -186,6 +186,7 @@ class LLM(BaseLLM):
             Output parser to parse, validate, and correct errors programmatically.
         pydantic_program_mode (PydanticProgramMode):
             Pydantic program mode to use for structured prediction.
+
     """
 
     system_prompt: Optional[str] = Field(
@@ -328,7 +329,8 @@ class LLM(BaseLLM):
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
     ) -> Model:
-        r"""Structured predict.
+        r"""
+        Structured predict.
 
         Args:
             output_cls (BaseModel):
@@ -357,6 +359,7 @@ class LLM(BaseLLM):
             output = llm.structured_predict(Test, prompt, topic="cats")
             print(output.name)
             ```
+
         """
         from llama_index.core.program.utils import get_program_for_llm
 
@@ -386,7 +389,8 @@ class LLM(BaseLLM):
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
     ) -> Model:
-        r"""Async Structured predict.
+        r"""
+        Async Structured predict.
 
         Args:
             output_cls (BaseModel):
@@ -415,6 +419,7 @@ class LLM(BaseLLM):
             output = await llm.astructured_predict(Test, prompt, topic="cats")
             print(output.name)
             ```
+
         """
         from llama_index.core.program.utils import get_program_for_llm
 
@@ -437,6 +442,25 @@ class LLM(BaseLLM):
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
 
+    def _structured_stream_call(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Generator[
+        Union[Model, List[Model], "FlexibleModel", List["FlexibleModel"]], None, None
+    ]:
+        from llama_index.core.program.utils import get_program_for_llm
+
+        program = get_program_for_llm(
+            output_cls,
+            prompt,
+            self,
+            pydantic_program_mode=self.pydantic_program_mode,
+        )
+        return program.stream_call(llm_kwargs=llm_kwargs, **prompt_args)
+
     @dispatcher.span
     def stream_structured_predict(
         self,
@@ -445,7 +469,8 @@ class LLM(BaseLLM):
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
     ) -> Generator[Union[Model, "FlexibleModel"], None, None]:
-        r"""Stream Structured predict.
+        r"""
+        Stream Structured predict.
 
         Args:
             output_cls (BaseModel):
@@ -476,14 +501,35 @@ class LLM(BaseLLM):
                 # stream partial outputs until completion
                 print(partial_output.name)
             ```
-        """
-        from llama_index.core.program.utils import get_program_for_llm
 
+        """
         dispatcher.event(
             LLMStructuredPredictStartEvent(
                 output_cls=output_cls, template=prompt, template_args=prompt_args
             )
         )
+
+        result = self._structured_stream_call(
+            output_cls, prompt, llm_kwargs, **prompt_args
+        )
+        for r in result:
+            dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
+            assert not isinstance(r, list)
+            yield r
+
+        dispatcher.event(LLMStructuredPredictEndEvent(output=r))
+
+    async def _structured_astream_call(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> AsyncGenerator[
+        Union[Model, List[Model], "FlexibleModel", List["FlexibleModel"]], None
+    ]:
+        from llama_index.core.program.utils import get_program_for_llm
+
         program = get_program_for_llm(
             output_cls,
             prompt,
@@ -491,13 +537,7 @@ class LLM(BaseLLM):
             pydantic_program_mode=self.pydantic_program_mode,
         )
 
-        result = program.stream_call(llm_kwargs=llm_kwargs, **prompt_args)
-        for r in result:
-            dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
-            assert not isinstance(r, list)
-            yield r
-
-        dispatcher.event(LLMStructuredPredictEndEvent(output=r))
+        return await program.astream_call(llm_kwargs=llm_kwargs, **prompt_args)
 
     @dispatcher.span
     async def astream_structured_predict(
@@ -507,7 +547,8 @@ class LLM(BaseLLM):
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **prompt_args: Any,
     ) -> AsyncGenerator[Union[Model, "FlexibleModel"], None]:
-        r"""Async Stream Structured predict.
+        r"""
+        Async Stream Structured predict.
 
         Args:
             output_cls (BaseModel):
@@ -538,26 +579,19 @@ class LLM(BaseLLM):
                 # stream partial outputs until completion
                 print(partial_output.name)
             ```
+
         """
 
         async def gen() -> AsyncGenerator[Union[Model, "FlexibleModel"], None]:
-            from llama_index.core.program.utils import (
-                get_program_for_llm,
-            )
-
             dispatcher.event(
                 LLMStructuredPredictStartEvent(
                     output_cls=output_cls, template=prompt, template_args=prompt_args
                 )
             )
-            program = get_program_for_llm(
-                output_cls,
-                prompt,
-                self,
-                pydantic_program_mode=self.pydantic_program_mode,
-            )
 
-            result = await program.astream_call(llm_kwargs=llm_kwargs, **prompt_args)
+            result = await self._structured_astream_call(
+                output_cls, prompt, llm_kwargs, **prompt_args
+            )
             async for r in result:
                 dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
                 assert not isinstance(r, list)
@@ -575,7 +609,8 @@ class LLM(BaseLLM):
         prompt: BasePromptTemplate,
         **prompt_args: Any,
     ) -> str:
-        """Predict for a given prompt.
+        """
+        Predict for a given prompt.
 
         Args:
             prompt (BasePromptTemplate):
@@ -594,6 +629,7 @@ class LLM(BaseLLM):
             output = llm.predict(prompt, topic="cats")
             print(output)
             ```
+
         """
         dispatcher.event(
             LLMPredictStartEvent(template=prompt, template_args=prompt_args)
@@ -618,7 +654,8 @@ class LLM(BaseLLM):
         prompt: BasePromptTemplate,
         **prompt_args: Any,
     ) -> TokenGen:
-        """Stream predict for a given prompt.
+        """
+        Stream predict for a given prompt.
 
         Args:
             prompt (BasePromptTemplate):
@@ -638,6 +675,7 @@ class LLM(BaseLLM):
             for token in gen:
                 print(token, end="", flush=True)
             ```
+
         """
         self._log_template_data(prompt, **prompt_args)
 
@@ -664,7 +702,8 @@ class LLM(BaseLLM):
         prompt: BasePromptTemplate,
         **prompt_args: Any,
     ) -> str:
-        """Async Predict for a given prompt.
+        """
+        Async Predict for a given prompt.
 
         Args:
             prompt (BasePromptTemplate):
@@ -683,6 +722,7 @@ class LLM(BaseLLM):
             output = await llm.apredict(prompt, topic="cats")
             print(output)
             ```
+
         """
         dispatcher.event(
             LLMPredictStartEvent(template=prompt, template_args=prompt_args)
@@ -708,7 +748,8 @@ class LLM(BaseLLM):
         prompt: BasePromptTemplate,
         **prompt_args: Any,
     ) -> TokenAsyncGen:
-        """Async stream predict for a given prompt.
+        """
+        Async stream predict for a given prompt.
 
         Args:
         prompt (BasePromptTemplate):
@@ -728,6 +769,7 @@ class LLM(BaseLLM):
             async for token in gen:
                 print(token, end="", flush=True)
             ```
+
         """
         self._log_template_data(prompt, **prompt_args)
 
@@ -759,7 +801,8 @@ class LLM(BaseLLM):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "AgentChatResponse":
-        """Predict and call the tool.
+        """
+        Predict and call the tool.
 
         By default uses a ReAct agent to do tool calling (through text prompting),
         but function calling LLMs will implement this differently.
@@ -776,10 +819,10 @@ class LLM(BaseLLM):
             callback_manager=self.callback_manager,
             verbose=verbose,
             max_iterations=kwargs.get("max_iterations", 10),
-            react_chat_formatter=kwargs.get("react_chat_formatter", None),
-            output_parser=kwargs.get("output_parser", None),
-            tool_retriever=kwargs.get("tool_retriever", None),
-            handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn", None),
+            react_chat_formatter=kwargs.get("react_chat_formatter"),
+            output_parser=kwargs.get("output_parser"),
+            tool_retriever=kwargs.get("tool_retriever"),
+            handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn"),
         )
 
         if isinstance(user_msg, ChatMessage) and isinstance(user_msg.content, str):
@@ -839,10 +882,10 @@ class LLM(BaseLLM):
             callback_manager=self.callback_manager,
             verbose=verbose,
             max_iterations=kwargs.get("max_iterations", 10),
-            react_chat_formatter=kwargs.get("react_chat_formatter", None),
-            output_parser=kwargs.get("output_parser", None),
-            tool_retriever=kwargs.get("tool_retriever", None),
-            handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn", None),
+            react_chat_formatter=kwargs.get("react_chat_formatter"),
+            output_parser=kwargs.get("output_parser"),
+            tool_retriever=kwargs.get("tool_retriever"),
+            handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn"),
         )
 
         if isinstance(user_msg, ChatMessage) and isinstance(user_msg.content, str):

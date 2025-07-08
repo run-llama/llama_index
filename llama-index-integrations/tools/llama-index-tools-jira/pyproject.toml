@@ -1,6 +1,35 @@
 [build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core"]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3.4,<9",
+    "black[jupyter]<=23.9.1,>=23.7.0",
+    "diff-cover>=9.2.0",
+    "pytest-cov>=6.1.1",
+    "ruff==0.11.11",
+]
+
+[project]
+name = "llama-index-tools-jira"
+version = "0.1.0"
+description = ""
+authors = [{name = "Malik Naik", email = "maliknaik16@gmail.com"}]
+requires-python = ">=3.9,<4.0"
+readme = "README.md"
+dependencies = [
+    "jira>=3.8.0",
+    "llama-index-core>=0.12.0",
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
@@ -8,26 +37,3 @@ import_path = "llama_index.tools.jira"
 
 [tool.llamahub.class_authors]
 JiraToolSpec = "maliknaik16"
-
-[tool.poetry]
-authors = ["Malik Naik <maliknaik16@gmail.com>"]
-description = ""
-exclude = ["**/BUILD"]
-name = "llama-index-tools-jira"
-readme = "README.md"
-version = "0.1.0"
-
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-jira = ">=3.8.0"
-llama-index-core = ">=0.12.0"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.3.4"
-
-[tool.poetry.group.dev.dependencies.black]
-extras = ["jupyter"]
-version = "<=23.9.1,>=23.7.0"
-
-[[tool.poetry.packages]]
-include = "llama_index/"

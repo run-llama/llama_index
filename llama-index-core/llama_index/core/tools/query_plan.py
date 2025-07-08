@@ -32,7 +32,8 @@ Should be blank if there are no sub-questions to be specified, in which case \
 
 
 class QueryNode(BaseModel):
-    """Query node.
+    """
+    Query node.
 
     A query node represents a query (query_str) that must be answered.
     It can either be answered by a tool (tool_name), or by a list of child nodes
@@ -54,7 +55,8 @@ class QueryNode(BaseModel):
 
 
 class QueryPlan(BaseModel):
-    """Query plan.
+    """
+    Query plan.
 
     Contains a list of QueryNode objects (which is a recursive object).
     Out of the list of QueryNode objects, one of them must be the root node.
@@ -80,7 +82,8 @@ The tool names and descriptions are as follows:
 
 
 class QueryPlanTool(BaseTool):
-    """Query plan tool.
+    """
+    Query plan tool.
 
     A tool that takes in a list of tools and executes a query plan.
 
@@ -207,7 +210,7 @@ class QueryPlanTool(BaseTool):
     def _find_root_nodes(self, nodes_dict: Dict[int, QueryNode]) -> List[QueryNode]:
         """Find root node."""
         # the root node is the one that isn't a dependency of any other node
-        node_counts = {node_id: 0 for node_id in nodes_dict}
+        node_counts = dict.fromkeys(nodes_dict, 0)
         for node in nodes_dict.values():
             for dep in node.dependencies:
                 node_counts[dep] += 1

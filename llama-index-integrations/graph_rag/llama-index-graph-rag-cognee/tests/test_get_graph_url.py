@@ -1,9 +1,13 @@
-import asyncio
+import sys
+
 import pytest
 from llama_index.graph_rag.cognee import CogneeGraphRAG
 
 
-@pytest.mark.asyncio()
+@pytest.mark.skipif(
+    sys.version_info < (3, 10), reason="mock strategy requires python3.10 or higher"
+)
+@pytest.mark.asyncio
 async def test_get_graph_url(monkeypatch):
     # Instantiate cognee GraphRAG
     cogneeRAG = CogneeGraphRAG(
@@ -36,13 +40,9 @@ async def test_get_graph_url(monkeypatch):
 
     from cognee.base_config import get_base_config
 
-    assert (
-        get_base_config().graphistry_password == "password"
-    ), "Password was not set properly"
-    assert (
-        get_base_config().graphistry_username == "username"
-    ), "Username was not set properly"
-
-
-if __name__ == "__main__":
-    asyncio.run(test_get_graph_url())
+    assert get_base_config().graphistry_password == "password", (
+        "Password was not set properly"
+    )
+    assert get_base_config().graphistry_username == "username", (
+        "Username was not set properly"
+    )

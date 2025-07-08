@@ -17,13 +17,18 @@ from llama_index.core.schema import ImageType
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_VOYAGE_2_BATCH_SIZE = 72
+DEFAULT_VOYAGE_3_LITE_BATCH_SIZE = 30
+DEFAULT_VOYAGE_3_BATCH_SIZE = 10
+DEFAULT_BATCH_SIZE = 7
 MULTIMODAL_MODELS = ["voyage-multimodal-3"]
 
 SUPPORTED_IMAGE_FORMATS = {"png", "jpeg", "jpg", "webp", "gif"}
 
 
 class VoyageEmbedding(MultiModalEmbedding):
-    """Class for Voyage embeddings.
+    """
+    Class for Voyage embeddings.
 
     Args:
         model_name (str): Model for embedding.
@@ -31,6 +36,7 @@ class VoyageEmbedding(MultiModalEmbedding):
 
         voyage_api_key (Optional[str]): Voyage API key. Defaults to None.
             You can either specify the key here or store it as an environment variable.
+
     """
 
     _client: voyageai.Client = PrivateAttr(None)
@@ -57,6 +63,11 @@ class VoyageEmbedding(MultiModalEmbedding):
             "voyage-02",
             "voyage-2",
             "voyage-lite-02-instruct",
+            "voyage-large-2",
+            "voyage-large-2-instruct",
+            "voyage-multilingual-2",
+            "voyage-3",
+            "voyage-3-lite",
         ]:
             logger.warning(
                 f"{model_name} is not the latest model by Voyage AI. Please note that `model_name` "
@@ -65,7 +76,19 @@ class VoyageEmbedding(MultiModalEmbedding):
             )
 
         if embed_batch_size is None:
-            embed_batch_size = 72 if model_name in ["voyage-2", "voyage-02"] else 7
+            embed_batch_size = (
+                DEFAULT_VOYAGE_2_BATCH_SIZE
+                if model_name in ["voyage-2", "voyage-02"]
+                else (
+                    DEFAULT_VOYAGE_3_LITE_BATCH_SIZE
+                    if model_name in ["voyage-3-lite", "voyage-3.5-lite"]
+                    else (
+                        DEFAULT_VOYAGE_3_BATCH_SIZE
+                        if model_name in ["voyage-3", "voyage-3.5"]
+                        else DEFAULT_BATCH_SIZE
+                    )
+                )
+            )
 
         super().__init__(
             model_name=model_name,

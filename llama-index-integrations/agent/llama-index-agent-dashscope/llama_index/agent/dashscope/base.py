@@ -1,4 +1,6 @@
-""" Dashscope Agent for Alibaba cloud bailian. """
+"""Dashscope Agent for Alibaba cloud bailian."""
+
+import deprecated
 from http import HTTPStatus
 from typing import (
     List,
@@ -17,6 +19,14 @@ from llama_index.core.chat_engine.types import (
 )
 
 
+@deprecated.deprecated(
+    reason=(
+        "DashScopeAgent has been deprecated and is not maintained.\n\n"
+        "Contributions are welcome to migrate this class to the new agent architecture.\n\n"
+        "See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+    action="once",
+)
 class DashScopeAgent(BaseAgent):
     """
     DashScope agent simple wrapper for Alibaba cloud bailian high-level agent api.
@@ -30,7 +40,8 @@ class DashScopeAgent(BaseAgent):
         api_key: str = None,
         verbose: bool = False,
     ) -> None:
-        """Init params.
+        """
+        Init params.
 
         Args:
             app_id (str): id of Alibaba cloud bailian application
@@ -39,6 +50,7 @@ class DashScopeAgent(BaseAgent):
             api_key (str, optional): The api api_key, can be None,
                 if None, will get from ENV DASHSCOPE_API_KEY.
             verbose: Output verbose info or not.
+
         """
         self.app_id = app_id
         self.chat_session = chat_session
@@ -87,7 +99,8 @@ class DashScopeAgent(BaseAgent):
         chat_history: Optional[List[ChatMessage]] = None,
         **kwargs,
     ) -> Union[AgentChatResponse, StreamingAgentChatResponse]:
-        """Call app completion service.
+        """
+        Call app completion service.
 
         Args:
             message (str): Message for chatting with LLM.
@@ -102,6 +115,7 @@ class DashScopeAgent(BaseAgent):
 
         Returns:
             Union[AgentChatResponse, StreamingAgentChatResponse]
+
         """
         if stream:
             kwargs["stream"] = True

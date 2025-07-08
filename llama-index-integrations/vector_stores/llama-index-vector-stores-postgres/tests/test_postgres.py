@@ -125,6 +125,23 @@ def pg_hybrid(db: None) -> Any:
 
 
 @pytest.fixture()
+def pg_indexed_metadata(db: None) -> Any:
+    pg = PGVectorStore.from_params(
+        **PARAMS,  # type: ignore
+        database=TEST_DB,
+        table_name=TEST_TABLE_NAME,
+        schema_name=TEST_SCHEMA_NAME,
+        hybrid_search=True,
+        embed_dim=TEST_EMBED_DIM,
+        indexed_metadata_keys=[("test_text", "text"), ("test_int", "int")],
+    )
+
+    yield pg
+
+    asyncio.run(pg.close())
+
+
+@pytest.fixture()
 def pg_hnsw(db_hnsw: None) -> Any:
     pg = PGVectorStore.from_params(
         **PARAMS,  # type: ignore
@@ -334,7 +351,7 @@ def pg_hnsw_hybrid_halfvec(db_hnsw: None) -> Any:
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_instance_creation(db: None) -> None:
     pg = PGVectorStore.from_params(
         **PARAMS,  # type: ignore
@@ -343,7 +360,7 @@ async def test_instance_creation(db: None) -> None:
         schema_name=TEST_SCHEMA_NAME,
     )
     assert isinstance(pg, PGVectorStore)
-    assert not hasattr(pg, "_engine")
+
     assert pg.client is None
     await pg.close()
 
@@ -359,7 +376,7 @@ def pg_fixture(request):
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query(
@@ -382,7 +399,7 @@ async def test_add_to_db_and_query(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_query_hnsw(
     pg_hnsw: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
@@ -406,7 +423,7 @@ async def test_query_hnsw(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters(
@@ -434,7 +451,7 @@ async def test_add_to_db_and_query_with_metadata_filters(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters_with_in_operator(
@@ -468,7 +485,7 @@ async def test_add_to_db_and_query_with_metadata_filters_with_in_operator(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters_with_in_operator_and_single_element(
@@ -502,7 +519,7 @@ async def test_add_to_db_and_query_with_metadata_filters_with_in_operator_and_si
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters_with_contains_operator(
@@ -536,7 +553,39 @@ async def test_add_to_db_and_query_with_metadata_filters_with_contains_operator(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_add_to_db_and_query_with_metadata_filters_with_is_empty(
+    pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+) -> None:
+    if use_async:
+        await pg_fixture.async_add(node_embeddings)
+    else:
+        pg_fixture.add(node_embeddings)
+    assert isinstance(pg_fixture, PGVectorStore)
+    assert hasattr(pg_fixture, "_engine")
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="nonexistent_key", value=None, operator=FilterOperator.IS_EMPTY
+            )
+        ]
+    )
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.5), similarity_top_k=10, filters=filters
+    )
+    if use_async:
+        res = await pg_fixture.aquery(q)
+    else:
+        res = pg_fixture.query(q)
+    assert res.nodes
+    # All nodes should match since none have the nonexistent_key
+    assert len(res.nodes) == len(node_embeddings)
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_query_and_delete(
@@ -561,7 +610,7 @@ async def test_add_to_db_query_and_delete(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_sparse_query(
     pg_hybrid: PGVectorStore,
@@ -594,7 +643,7 @@ async def test_sparse_query(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_hybrid_query(
     pg_hybrid: PGVectorStore,
@@ -666,7 +715,7 @@ async def test_hybrid_query(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_hybrid_query(
     pg_hnsw_hybrid: PGVectorStore,
@@ -738,7 +787,7 @@ async def test_hybrid_query(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_hybrid_query_with_metadata_filters(
     pg_hybrid: PGVectorStore,
@@ -788,7 +837,7 @@ def test_hybrid_query_fails_if_no_query_str_provided(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_index_nodes(
@@ -815,7 +864,7 @@ async def test_add_to_db_and_query_index_nodes(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_delete_nodes(
@@ -867,7 +916,7 @@ async def test_delete_nodes(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_delete_nodes_metadata(
@@ -969,7 +1018,7 @@ async def test_delete_nodes_metadata(
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_hnsw_index_creation(
     pg_hnsw_multiple: List[PGVectorStore],
@@ -998,13 +1047,13 @@ async def test_hnsw_index_creation(
             )
             index_count = c.fetchone()[0]
 
-    assert (
-        index_count == 1
-    ), f"Expected exactly one '{data_test_index_name}' index, but found {index_count}."
+    assert index_count == 1, (
+        f"Expected exactly one '{data_test_index_name}' index, but found {index_count}."
+    )
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_clear(
@@ -1111,3 +1160,161 @@ def test_get_nodes_parametrized(
     retrieved_ids = [node.node_id for node in nodes]
     assert set(retrieved_ids) == set(expected_node_ids)
     assert len(retrieved_ids) == len(expected_node_ids)
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+async def test_custom_engines(db: None, node_embeddings: List[TextNode]) -> None:
+    """Test that PGVectorStore works correctly with custom engines."""
+    from sqlalchemy import create_engine
+    from sqlalchemy.ext.asyncio import create_async_engine
+
+    # Create custom engines
+    engine = create_engine(
+        f"postgresql+psycopg2://{PARAMS['user']}:{PARAMS['password']}@{PARAMS['host']}:{PARAMS['port']}/{TEST_DB}",
+        echo=False,
+    )
+
+    async_engine = create_async_engine(
+        f"postgresql+asyncpg://{PARAMS['user']}:{PARAMS['password']}@{PARAMS['host']}:{PARAMS['port']}/{TEST_DB}",
+    )
+
+    # Create PGVectorStore with custom engines
+    pg = PGVectorStore(
+        embed_dim=TEST_EMBED_DIM,
+        engine=engine,
+        async_engine=async_engine,
+    )
+
+    # Test sync add
+    pg.add(node_embeddings[:2])
+
+    # Test async add
+    await pg.async_add(node_embeddings[2:])
+
+    # Query to verify nodes were added correctly
+    q = VectorStoreQuery(query_embedding=_get_sample_vector(0.5), similarity_top_k=10)
+
+    # Test sync query
+    res = pg.query(q)
+    assert len(res.nodes) == 4
+    assert set(res.ids) == {"aaa", "bbb", "ccc", "ddd"}
+
+    # Test async query
+    res = await pg.aquery(q)
+    assert len(res.nodes) == 4
+    assert set(res.ids) == {"aaa", "bbb", "ccc", "ddd"}
+
+    # Clean up
+    await pg.aclear()
+    await pg.close()
+    await async_engine.dispose()
+    engine.dispose()
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+def test_custom_sync_engine_only(db: None, node_embeddings: List[TextNode]) -> None:
+    """Test that PGVectorStore works correctly with only a custom sync engine."""
+    from sqlalchemy import create_engine
+
+    # Create custom sync engine only
+    engine = create_engine(
+        f"postgresql+psycopg2://{PARAMS['user']}:{PARAMS['password']}@{PARAMS['host']}:{PARAMS['port']}/{TEST_DB}",
+        echo=False,
+    )
+
+    # Create PGVectorStore with custom sync engine only
+    with pytest.raises(ValueError):
+        _ = PGVectorStore(
+            embed_dim=TEST_EMBED_DIM,
+            engine=engine,
+        )
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+async def test_custom_async_engine_only(
+    db: None, node_embeddings: List[TextNode]
+) -> None:
+    """Test that PGVectorStore works correctly with only a custom async engine."""
+    from sqlalchemy.ext.asyncio import create_async_engine
+
+    # Create custom async engine only
+    async_engine = create_async_engine(
+        f"postgresql+asyncpg://{PARAMS['user']}:{PARAMS['password']}@{PARAMS['host']}:{PARAMS['port']}/{TEST_DB}",
+    )
+
+    # Create PGVectorStore with custom async engine only
+    with pytest.raises(ValueError):
+        _ = PGVectorStore(
+            embed_dim=TEST_EMBED_DIM,
+            async_engine=async_engine,
+        )
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+async def test_indexed_metadata(
+    pg_indexed_metadata: PGVectorStore,
+    hybrid_node_embeddings: List[TextNode],
+) -> None:
+    from sqlalchemy import text
+
+    if pg_indexed_metadata is None:
+        pytest.skip("Postgres not available")
+
+    # add metadata keys to nodes
+    for idx, node in enumerate(hybrid_node_embeddings):
+        node.metadata["test_text"] = str(idx)
+        node.metadata["test_int"] = idx
+
+    await pg_indexed_metadata.async_add(hybrid_node_embeddings)
+
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.1),
+        query_str="fox",
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.HYBRID,
+        sparse_top_k=1,
+    )
+
+    res = await pg_indexed_metadata.aquery(q)
+    assert res.nodes
+    assert len(res.nodes) == 3
+    assert res.nodes[0].node_id == "aaa"
+    assert res.nodes[1].node_id == "bbb"
+    assert res.nodes[2].node_id == "ccc"
+
+    # TODO: Use async_session to query that the indexes were created
+    async with pg_indexed_metadata._async_session() as session:
+        # Replace with your actual table name
+        result = await session.execute(
+            text(
+                "SELECT indexname, indexdef FROM pg_indexes WHERE tablename = :table_name"
+            ),
+            {"table_name": f"data_{TEST_TABLE_NAME}"},
+        )
+        indexes = result.fetchall()
+        # Now check that your expected index names are present
+        index_names = [row.indexname for row in indexes]
+        assert f"{TEST_TABLE_NAME}_idx" in index_names
+        assert f"data_{TEST_TABLE_NAME}_pkey" in index_names
+        # Optionally, check the indexdef for the correct type cast
+        for key, pg_type in pg_indexed_metadata.indexed_metadata_keys:
+            index_name = f"{TEST_TABLE_NAME}_idx_{key}_{pg_type}"
+            assert any(
+                index_name == row.indexname and f"metadata_ ->> '{key}'" in row.indexdef
+                for row in indexes
+            ), f"Index {index_name} not found or incorrect type cast in indexdef"
+        from sqlalchemy import text
+
+        result = await session.execute(
+            text("""
+                EXPLAIN ANALYZE
+                SELECT * FROM test.data_lorem_ipsum
+                WHERE (metadata_ ->> 'test_int')::int = 42
+            """)
+        )
+        explain_output = result.fetchall()
+        for row in explain_output:
+            print(row[0])

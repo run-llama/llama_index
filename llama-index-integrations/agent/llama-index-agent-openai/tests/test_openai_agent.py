@@ -233,7 +233,7 @@ def test_chat_basic(MockSyncOpenAI: MagicMock, add_tool: FunctionTool) -> None:
 
 
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_achat_basic(MockAsyncOpenAI: MagicMock, add_tool: FunctionTool) -> None:
     mock_instance = MockAsyncOpenAI.return_value
     mock_instance.chat.completions.create.return_value = mock_achat_completion()
@@ -274,7 +274,7 @@ def test_stream_chat_basic(MockSyncOpenAI: MagicMock, add_tool: FunctionTool) ->
 
 
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.skip(reason="currently failing when working on an independent project.")
 async def test_astream_chat_basic(
     MockAsyncOpenAI: MagicMock, add_tool: FunctionTool
@@ -435,7 +435,7 @@ def test_add_step(
 
 
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_add_step(
     MockAsyncOpenAI: MagicMock,
     add_tool: FunctionTool,
@@ -477,7 +477,7 @@ async def test_async_add_step(
     async for _ in step_output.output.async_response_gen():
         pass
 
-    chat_history = task.memory.get_all()
+    chat_history = await task.memory.aget_all()
     assert "tmp" in [m.content for m in chat_history]
 
 
@@ -508,7 +508,7 @@ def test_run_step_returns_message_if_tool_not_found(
 
 
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_arun_step_returns_message_if_tool_not_found(
     MockAsyncOpenAI: MagicMock,
     echo_function: Function,
@@ -535,7 +535,7 @@ async def test_arun_step_returns_message_if_tool_not_found(
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("method", ["run_step", "arun_step"])
 @patch("llama_index.llms.openai.base.SyncOpenAI")
 @patch("llama_index.llms.openai.base.AsyncOpenAI")

@@ -1,4 +1,15 @@
-from typing import Any, Awaitable, Callable, Dict, Optional, Sequence
+import json
+from json import JSONDecodeError
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Optional,
+    Sequence,
+    List,
+    Union,
+)
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -11,10 +22,11 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.core.bridge.pydantic import Field
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_TEMPERATURE
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
+from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.base.llms.generic_utils import (
     achat_to_completion_decorator,
     acompletion_to_chat_decorator,
@@ -25,8 +37,9 @@ from llama_index.core.base.llms.generic_utils import (
     stream_chat_to_completion_decorator,
     stream_completion_to_chat_decorator,
 )
-from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
+from llama_index.core.tools import ToolSelection
+from llama_index.core.tools.types import BaseTool
 from llama_index.llms.litellm.utils import (
     acompletion_with_retry,
     completion_with_retry,
@@ -35,13 +48,22 @@ from llama_index.llms.litellm.utils import (
     openai_modelname_to_contextsize,
     to_openai_message_dicts,
     validate_litellm_api_key,
+    update_tool_calls,
 )
+
 
 DEFAULT_LITELLM_MODEL = "gpt-3.5-turbo"
 
 
-class LiteLLM(LLM):
-    """LiteLLM.
+def force_single_tool_call(response: ChatResponse) -> None:
+    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    if len(tool_calls) > 1:
+        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+
+
+class LiteLLM(FunctionCallingLLM):
+    """
+    LiteLLM.
 
     Examples:
         `pip install llama-index-llms-litellm`
@@ -67,6 +89,7 @@ class LiteLLM(LLM):
         # Print the response
         print(chat_response)
         ```
+
     """
 
     model: str = Field(
@@ -94,6 +117,8 @@ class LiteLLM(LLM):
     max_retries: int = Field(
         default=10, description="The maximum number of API retries."
     )
+
+    _custom_llm_provider: Optional[str] = PrivateAttr(default=None)
 
     def __init__(
         self,
@@ -145,6 +170,8 @@ class LiteLLM(LLM):
             **kwargs,
         )
 
+        self._custom_llm_provider = kwargs.get("custom_llm_provider")
+
     def _get_model_name(self) -> str:
         model_name = self.model
         if "ft-" in model_name:  # legacy fine-tuning
@@ -164,9 +191,88 @@ class LiteLLM(LLM):
             context_window=openai_modelname_to_contextsize(self._get_model_name()),
             num_output=self.max_tokens or -1,
             is_chat_model=True,
-            is_function_calling_model=is_function_calling_model(self._get_model_name()),
+            is_function_calling_model=is_function_calling_model(
+                self._get_model_name(), self._custom_llm_provider
+            ),
             model_name=self.model,
         )
+
+    def _prepare_chat_with_tools(
+        self,
+        tools: List[BaseTool],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        tool_specs = [
+            tool.metadata.to_openai_tool(skip_length_check=True) for tool in tools
+        ]
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+
+        messages = chat_history or []
+        if user_msg:
+            messages.append(user_msg)
+        return {
+            "messages": messages,
+            "tools": tool_specs or None,
+            "parallel_tool_calls": allow_parallel_tool_calls,
+            "tool_choice": "required" if tool_required else "auto",
+            **kwargs,
+        }
+
+    def _validate_chat_with_tools_response(
+        self,
+        response: ChatResponse,
+        tools: List[BaseTool],
+        allow_parallel_tool_calls: bool = False,
+        **kwargs: Any,
+    ) -> ChatResponse:
+        """Validate the response from chat_with_tools."""
+        if not allow_parallel_tool_calls:
+            force_single_tool_call(response)
+        return response
+
+    def get_tool_calls_from_response(
+        self,
+        response: "ChatResponse",
+        error_on_no_tool_call: bool = True,
+    ) -> List[ToolSelection]:
+        """Predict and call the tool."""
+        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+        if len(tool_calls) < 1:
+            if error_on_no_tool_call:
+                raise ValueError(
+                    f"Expected at least one tool call, but got {len(tool_calls)} tool calls."
+                )
+            else:
+                return []
+
+        tool_selections = []
+        for tool_call in tool_calls:
+            if tool_call["type"] != "function" or "function" not in tool_call:
+                raise ValueError(f"Invalid tool call of type {tool_call['type']}")
+            function = tool_call["function"]
+
+            # this should handle both complete and partial jsons
+            try:
+                argument_dict = json.loads(function["arguments"])
+            except (ValueError, TypeError, JSONDecodeError):
+                argument_dict = {}
+
+            tool_selections.append(
+                ToolSelection(
+                    tool_id=tool_call["id"],
+                    tool_name=function["name"],
+                    tool_kwargs=argument_dict,
+                )
+            )
+
+        return tool_selections
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -273,7 +379,7 @@ class LiteLLM(LLM):
 
         def gen() -> ChatResponseGen:
             content = ""
-            function_call: Optional[dict] = None
+            tool_calls: List[dict] = []
             for response in completion_with_retry(
                 is_chat_model=self._is_chat_model,
                 max_retries=self.max_retries,
@@ -286,20 +392,15 @@ class LiteLLM(LLM):
                 content_delta = delta.get("content", "") or ""
                 content += content_delta
 
-                function_call_delta = delta.get("function_call", None)
-                if function_call_delta is not None:
-                    if function_call is None:
-                        function_call = function_call_delta
-
-                        ## ensure we do not add a blank function call
-                        if function_call.get("function_name", "") is None:
-                            del function_call["function_name"]
-                    else:
-                        function_call["arguments"] += function_call_delta["arguments"]
+                # Handle tool_calls delta
+                tool_call_delta = delta.get("tool_calls", None)
+                if tool_call_delta is not None and len(tool_call_delta) > 0:
+                    # Pass the entire list of tool call deltas
+                    tool_calls = update_tool_calls(tool_calls, tool_call_delta)
 
                 additional_kwargs = {}
-                if function_call is not None:
-                    additional_kwargs["function_call"] = function_call
+                if tool_calls:
+                    additional_kwargs["tool_calls"] = tool_calls
 
                 yield ChatResponse(
                     message=ChatMessage(
@@ -441,7 +542,7 @@ class LiteLLM(LLM):
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
-            function_call: Optional[dict] = None
+            tool_calls: List[dict] = []
             async for response in await acompletion_with_retry(
                 is_chat_model=self._is_chat_model,
                 max_retries=self.max_retries,
@@ -454,20 +555,15 @@ class LiteLLM(LLM):
                 content_delta = delta.get("content", "") or ""
                 content += content_delta
 
-                function_call_delta = delta.get("function_call", None)
-                if function_call_delta is not None:
-                    if function_call is None:
-                        function_call = function_call_delta
-
-                        ## ensure we do not add a blank function call
-                        if function_call.get("function_name", "") is None:
-                            del function_call["function_name"]
-                    else:
-                        function_call["arguments"] += function_call_delta["arguments"]
+                # Handle tool_calls delta
+                tool_call_delta = delta.get("tool_calls", None)
+                if tool_call_delta is not None and len(tool_call_delta) > 0:
+                    # Pass the entire list of tool call deltas
+                    tool_calls = update_tool_calls(tool_calls, tool_call_delta)
 
                 additional_kwargs = {}
-                if function_call is not None:
-                    additional_kwargs["function_call"] = function_call
+                if tool_calls:
+                    additional_kwargs["tool_calls"] = tool_calls
 
                 yield ChatResponse(
                     message=ChatMessage(

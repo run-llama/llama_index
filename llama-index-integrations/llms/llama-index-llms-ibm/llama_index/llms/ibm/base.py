@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Sequence, Union, Tuple, List
+from typing import Any, Dict, Optional, Sequence, Union, Tuple, List, TYPE_CHECKING
 
 from ibm_watsonx_ai import Credentials, APIClient
 from ibm_watsonx_ai.foundation_models import ModelInference
@@ -47,6 +47,9 @@ from llama_index.llms.ibm.utils import (
     update_tool_calls,
 )
 
+if TYPE_CHECKING:
+    from llama_index.core.tools import BaseTool
+
 # default max tokens determined by service
 DEFAULT_MAX_TOKENS = 20
 
@@ -68,6 +71,7 @@ class WatsonxLLM(FunctionCallingLLM):
             project_id="*****",
         )
         ```
+
     """
 
     model_id: Optional[str] = Field(
@@ -148,6 +152,12 @@ class WatsonxLLM(FunctionCallingLLM):
         default=True, description="Model id validation", frozen=True
     )
 
+    # Enabled by default since IBM watsonx SDK 1.1.2 but it can cause problems
+    # in environments where long-running connections are not supported.
+    persistent_connection: bool = Field(
+        default=True, description="Use persistent connection"
+    )
+
     _model: ModelInference = PrivateAttr()
     _client: Optional[APIClient] = PrivateAttr()
     _model_info: Optional[Dict[str, Any]] = PrivateAttr()
@@ -174,6 +184,7 @@ class WatsonxLLM(FunctionCallingLLM):
         verify: Union[str, bool, None] = None,
         api_client: Optional[APIClient] = None,
         validate_model: bool = True,
+        persistent_connection: bool = True,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
@@ -214,6 +225,7 @@ class WatsonxLLM(FunctionCallingLLM):
             verify=verify,
             _client=api_client,
             validate_model=validate_model,
+            persistent_connection=persistent_connection,
             callback_manager=callback_manager,
             **kwargs,
         )
@@ -254,6 +266,7 @@ class WatsonxLLM(FunctionCallingLLM):
             space_id=self.space_id,
             api_client=api_client,
             validate=validate_model,
+            persistent_connection=persistent_connection,
         )
         self._model_info = None
         self._deployment_info = None
@@ -290,25 +303,26 @@ class WatsonxLLM(FunctionCallingLLM):
 
     @property
     def metadata(self) -> LLMMetadata:
-        if self.model_id:
+        if self.model_id and self._context_window is None:
             model_id = self.model_id
-            context_window = self.model_info.get("model_limits", {}).get(
+            self._context_window = self.model_info.get("model_limits", {}).get(
                 "max_sequence_length"
             )
-        else:
+        elif self._context_window is None:
             model_id = self.deployment_info.get("entity", {}).get("base_model_id")
-            context_window = (
+            self._context_window = (
                 self._model._client.foundation_models.get_model_specs(model_id=model_id)
                 .get("model_limits", {})
                 .get("max_sequence_length")
             )
 
         return LLMMetadata(
-            context_window=context_window
-            or self._context_window
-            or DEFAULT_CONTEXT_WINDOW,
+            context_window=self._context_window or DEFAULT_CONTEXT_WINDOW,
             num_output=self.max_new_tokens or DEFAULT_MAX_TOKENS,
-            model_name=model_id or self._model.deployment_id,
+            model_name=self.model_id
+            or self.deployment_info.get("entity", {}).get(
+                "base_model_id", self._model.deployment_id
+            ),
         )
 
     @property
@@ -572,6 +586,7 @@ class WatsonxLLM(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         tool_choice: Optional[str] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
@@ -591,6 +606,9 @@ class WatsonxLLM(FunctionCallingLLM):
             "tools": tool_specs or None,
             **kwargs,
         }
+        if tool_required and tool_choice is None:
+            # NOTE: watsonx can only require a single tool
+            tool_choice = tools[0].metadata.name if len(tools) > 0 else None
         if tool_choice is not None:
             chat_with_tools_payload.update(
                 {"tool_choice": {"type": "function", "function": {"name": tool_choice}}}

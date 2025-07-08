@@ -19,7 +19,8 @@ from llama_index.core.utils import (
 
 
 def test_tokenizer() -> None:
-    """Make sure tokenizer works.
+    """
+    Make sure tokenizer works.
 
     NOTE: we use a different tokenizer for python >= 3.9.
 
@@ -33,7 +34,7 @@ call_count = 0
 
 
 def fn_with_exception(
-    exception_cls: Optional[Union[Type[Exception], Exception]]
+    exception_cls: Optional[Union[Type[Exception], Exception]],
 ) -> bool:
     """Return true unless exception is specified."""
     global call_count
@@ -82,7 +83,7 @@ def test_retry_on_exceptions_with_backoff() -> None:
     assert call_count == 1
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_retry_on_exceptions_with_backoff_decorator() -> None:
     """Make sure retry decorator works for both sync and async functions."""
     global call_count

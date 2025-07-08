@@ -1,4 +1,5 @@
 """Default query for EmptyIndex."""
+
 from typing import Any, List, Optional
 
 from llama_index.core.base.base_retriever import BaseRetriever
@@ -10,7 +11,8 @@ from llama_index.core.schema import NodeWithScore, QueryBundle
 
 
 class EmptyIndexRetriever(BaseRetriever):
-    """EmptyIndex query.
+    """
+    EmptyIndex query.
 
     Passes the raw LLM call to the underlying LLM model.
 

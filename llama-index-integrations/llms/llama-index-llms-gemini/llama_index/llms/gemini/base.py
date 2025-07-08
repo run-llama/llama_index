@@ -7,18 +7,22 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
+    AsyncGenerator,
     Dict,
     Generator,
     List,
     Optional,
     Sequence,
+    Type,
     Union,
     cast,
 )
-
 import google.generativeai as genai
+from google.generativeai.types import generation_types, FunctionDeclaration, ToolDict
+from google.generativeai.types.content_types import FunctionCallingMode
+
 import llama_index.core.instrumentation as instrument
-from google.generativeai.types import generation_types
+
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -30,13 +34,14 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
 )
-from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
+from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
 from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.function_calling import FunctionCallingLLM
-from llama_index.core.llms.llm import ToolSelection
-from llama_index.core.types import Model
+from llama_index.core.llms.llm import ToolSelection, Model
+from llama_index.core.prompts import PromptTemplate
+from llama_index.core.program.utils import FlexibleModel
 from llama_index.core.utilities.gemini_utils import merge_neighboring_same_role_messages
 
 from .utils import (
@@ -84,6 +89,7 @@ class Gemini(FunctionCallingLLM):
         resp = llm.complete("Write a poem about a magic backpack")
         print(resp)
         ```
+
     """
 
     model: str = Field(default=GEMINI_MODELS[0], description="The Gemini model to use.")
@@ -233,11 +239,14 @@ class Gemini(FunctionCallingLLM):
         request_options = self._request_options or kwargs.pop("request_options", None)
 
         def gen():
+            text = ""
             it = self._model.generate_content(
                 prompt, stream=True, request_options=request_options, **kwargs
             )
             for r in it:
-                yield completion_from_gemini_response(r)
+                delta = r.text or ""
+                text += delta
+                yield completion_from_gemini_response(r, text=text, delta=delta)
 
         return gen()
 
@@ -248,11 +257,14 @@ class Gemini(FunctionCallingLLM):
         request_options = self._request_options or kwargs.pop("request_options", None)
 
         async def gen():
+            text = ""
             it = await self._model.generate_content_async(
                 prompt, stream=True, request_options=request_options, **kwargs
             )
             async for r in it:
-                yield completion_from_gemini_response(r)
+                delta = r.text or ""
+                text += delta
+                yield completion_from_gemini_response(r, text=text, delta=delta)
 
         return gen()
 
@@ -342,20 +354,12 @@ class Gemini(FunctionCallingLLM):
 
         return gen()
 
-    def _prepare_chat_with_tools(
-        self,
-        tools: Sequence["BaseTool"],
-        user_msg: Optional[Union[str, ChatMessage]] = None,
-        chat_history: Optional[List[ChatMessage]] = None,
-        verbose: bool = False,
-        allow_parallel_tool_calls: bool = False,
-        tool_choice: Union[str, dict] = "auto",
-        strict: Optional[bool] = None,
-        **kwargs: Any,
-    ) -> Dict[str, Any]:
-        """Predict and call the tool."""
-        from google.generativeai.types import FunctionDeclaration, ToolDict
-        from google.generativeai.types.content_types import FunctionCallingMode
+    def _to_function_calling_config(
+        self, tool_required: bool, tool_choice: Optional[str]
+    ) -> dict:
+        if tool_choice and not isinstance(tool_choice, str):
+            raise ValueError("Gemini only supports string tool_choices")
+        tool_choice = tool_choice or ("any" if tool_required else "auto")
 
         if tool_choice == "auto":
             tool_mode = FunctionCallingMode.AUTO
@@ -364,28 +368,36 @@ class Gemini(FunctionCallingLLM):
         else:
             tool_mode = FunctionCallingMode.ANY
 
-        tool_config = {
-            "function_calling_config": {
-                "mode": tool_mode,
-            }
+        allowed_function_names = None
+        if tool_choice not in ["auto", "none", "any"]:
+            allowed_function_names = [tool_choice]
+        return {
+            "mode": tool_mode,
+            **(
+                {"allowed_function_names": allowed_function_names}
+                if allowed_function_names
+                else {}
+            ),
         }
 
-        if tool_choice not in ["auto", "none"]:
-            if isinstance(tool_choice, dict):
-                raise ValueError("Gemini does not support tool_choice as a dict")
-
-            # assume that the user wants a tool call to be made
-            # if the tool choice is not in the list of tools, then we will make a tool call to all tools
-            # otherwise, we will make a tool call to the tool choice
-            tool_names = [tool.metadata.name for tool in tools]
-            if tool_choice not in tool_names:
-                tool_config["function_calling_config"][
-                    "allowed_function_names"
-                ] = tool_names
-            else:
-                tool_config["function_calling_config"]["allowed_function_names"] = [
-                    tool_choice
-                ]
+    def _prepare_chat_with_tools(
+        self,
+        tools: Sequence["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
+        tool_choice: Optional[Union[str, dict]] = None,
+        strict: Optional[bool] = None,
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Predict and call the tool."""
+        tool_config = {
+            "function_calling_config": self._to_function_calling_config(
+                tool_required, tool_choice
+            ),
+        }
 
         tool_declarations = []
         for tool in tools:
@@ -454,74 +466,76 @@ class Gemini(FunctionCallingLLM):
 
     @dispatcher.span
     def structured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> BaseModel:
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Model:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
         if self._is_function_call_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in all_kwargs
-                else all_kwargs["tool_choice"]
-            )
+            llm_kwargs["tool_required"] = True
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
-        return super().structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+        return super().structured_predict(
+            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+        )
 
     @dispatcher.span
     async def astructured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> BaseModel:
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Model:
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
         if self._is_function_call_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in all_kwargs
-                else all_kwargs["tool_choice"]
-            )
+            llm_kwargs["tool_required"] = True
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
-        return await super().astructured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+        return await super().astructured_predict(
+            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+        )
 
     @dispatcher.span
     def stream_structured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> Generator[Union[Model, List[Model]], None, None]:
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Generator[Union[Model, FlexibleModel], None, None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
         if self._is_function_call_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in all_kwargs
-                else all_kwargs["tool_choice"]
-            )
+            llm_kwargs["tool_required"] = True
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
-        return super().stream_structured_predict(*args, llm_kwargs=llm_kwargs, **kwargs)
+        return super().stream_structured_predict(
+            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
+        )
 
     @dispatcher.span
     async def astream_structured_predict(
-        self, *args: Any, llm_kwargs: Optional[Dict[str, Any]] = None, **kwargs: Any
-    ) -> Generator[Union[Model, List[Model]], None, None]:
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> AsyncGenerator[Union[Model, FlexibleModel], None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
-        all_kwargs = {**llm_kwargs, **kwargs}
 
         if self._is_function_call_model:
-            llm_kwargs["tool_choice"] = (
-                "required"
-                if "tool_choice" not in all_kwargs
-                else all_kwargs["tool_choice"]
-            )
+            llm_kwargs["tool_required"] = True
         # by default structured prediction uses function calling to extract structured outputs
         # here we force tool_choice to be required
         return await super().astream_structured_predict(
-            *args, llm_kwargs=llm_kwargs, **kwargs
+            output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
         )

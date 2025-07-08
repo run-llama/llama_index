@@ -159,7 +159,8 @@ class ReActAgentWorker(BaseAgentWorker):
         ] = None,
         **kwargs: Any,
     ) -> "ReActAgentWorker":
-        """Convenience constructor method from set of BaseTools (Optional).
+        """
+        Convenience constructor method from set of BaseTools (Optional).
 
         NOTE: kwargs should have been exhausted by this point. In other words
         the various upstream components such as BaseSynthesizer (response synthesizer)
@@ -168,6 +169,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         Returns:
             ReActAgentWorker
+
         """
         llm = llm or Settings.llm
         if callback_manager is not None:
@@ -301,7 +303,7 @@ class ReActAgentWorker(BaseAgentWorker):
                     except Exception as e:
                         tool_output = ToolOutput(
                             content=f"Error: {e!s}",
-                            tool_name=tool.metadata.name,
+                            tool_name=tool.metadata.get_name(),
                             raw_input={"kwargs": reasoning_step.action_input},
                             raw_output=e,
                             is_error=True,
@@ -373,7 +375,7 @@ class ReActAgentWorker(BaseAgentWorker):
                     except Exception as e:
                         tool_output = ToolOutput(
                             content=f"Error: {e!s}",
-                            tool_name=tool.metadata.name,
+                            tool_name=tool.metadata.get_name(),
                             raw_input={"kwargs": reasoning_step.action_input},
                             raw_output=e,
                             is_error=True,
@@ -433,7 +435,7 @@ class ReActAgentWorker(BaseAgentWorker):
         """Get response from reasoning steps."""
         if len(current_reasoning) == 0:
             raise ValueError("No reasoning steps were taken.")
-        elif len(current_reasoning) == self._max_iterations:
+        elif len(current_reasoning) >= self._max_iterations:
             raise ValueError("Reached max iterations.")
 
         if isinstance(current_reasoning[-1], ResponseReasoningStep):
@@ -475,7 +477,8 @@ class ReActAgentWorker(BaseAgentWorker):
     def _infer_stream_chunk_is_final(
         self, chunk: ChatResponse, missed_chunks_storage: list
     ) -> bool:
-        """Infers if a chunk from a live stream is the start of the final
+        """
+        Infers if a chunk from a live stream is the start of the final
         reasoning step. (i.e., and should eventually become
         ResponseReasoningStep — not part of this function's logic tho.).
 
@@ -485,6 +488,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         Returns:
             bool: Boolean on whether the chunk is the start of the final response
+
         """
         latest_content = (
             None if chunk.message.content is None else chunk.message.content.strip()
@@ -506,7 +510,8 @@ class ReActAgentWorker(BaseAgentWorker):
         chunks: List[ChatResponse],
         chat_stream: Generator[ChatResponse, None, None],
     ) -> Generator[ChatResponse, None, None]:
-        """Helper method for adding back initial chunk stream of final response
+        """
+        Helper method for adding back initial chunk stream of final response
         back to the rest of the chat_stream.
 
         Args:
@@ -515,6 +520,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         Return:
             Generator[ChatResponse, None, None]: the updated chat_stream
+
         """
 
         def gen() -> Generator[ChatResponse, None, None]:
@@ -528,7 +534,8 @@ class ReActAgentWorker(BaseAgentWorker):
         chunks: List[ChatResponse],
         chat_stream: AsyncGenerator[ChatResponse, None],
     ) -> AsyncGenerator[ChatResponse, None]:
-        """Helper method for adding back initial chunk stream of final response
+        """
+        Helper method for adding back initial chunk stream of final response
         back to the rest of the chat_stream.
 
         NOTE: this itself is not an async function.
@@ -539,6 +546,7 @@ class ReActAgentWorker(BaseAgentWorker):
 
         Return:
             AsyncGenerator[ChatResponse, None]: the updated async chat_stream
+
         """
         for chunk in chunks:
             yield chunk
@@ -689,7 +697,7 @@ class ReActAgentWorker(BaseAgentWorker):
             if start_idx != -1 and latest_chunk.message.content:
                 latest_chunk.message.content = latest_chunk.message.content[
                     start_idx + len("Answer:") :
-                ].strip()
+                ].lstrip()
 
                 # set delta to the content, minus the "Answer: "
                 latest_chunk.delta = latest_chunk.message.content

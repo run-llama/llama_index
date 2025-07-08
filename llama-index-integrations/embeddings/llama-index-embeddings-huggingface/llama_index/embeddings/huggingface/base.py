@@ -73,6 +73,8 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
             Defaults to None.
         num_workers (int, optional): The number of workers to use for async embedding calls.
             Defaults to None.
+        show_progress_bar (bool, optional): Whether to show a progress bar.
+            Defaults to False.
         **model_kwargs: Other model kwargs to use
         tokenizer_name (Optional[str], optional): "Deprecated"
         pooling (str, optional): "Deprecated"
@@ -110,7 +112,9 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
     cache_folder: Optional[str] = Field(
         description="Cache folder for Hugging Face files.", default=None
     )
-
+    show_progress_bar: bool = Field(
+        description="Whether to show a progress bar.", default=False
+    )
     _model: SentenceTransformer = PrivateAttr()
     _device: str = PrivateAttr()
     _parallel_process: bool = PrivateAttr()
@@ -134,6 +138,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
         callback_manager: Optional[CallbackManager] = None,
         parallel_process: bool = False,
         target_devices: Optional[List[str]] = None,
+        show_progress_bar: bool = False,
         **model_kwargs,
     ):
         device = device or infer_torch_device()
@@ -178,6 +183,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
             normalize=normalize,
             query_instruction=query_instruction,
             text_instruction=text_instruction,
+            show_progress_bar=show_progress_bar,
         )
         self._device = device
         self._model = model
@@ -210,6 +216,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
 
         Raises:
             Exception: If embedding fails after retries
+
         """
         try:
             if self._parallel_process:
@@ -222,6 +229,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
                     batch_size=self.embed_batch_size,
                     prompt_name=prompt_name,
                     normalize_embeddings=self.normalize,
+                    show_progress_bar=self.show_progress_bar,
                 )
                 self._model.stop_multi_process_pool(pool=pool)
             else:
@@ -230,6 +238,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
                     batch_size=self.embed_batch_size,
                     prompt_name=prompt_name,
                     normalize_embeddings=self.normalize,
+                    show_progress_bar=self.show_progress_bar,
                 )
             return emb.tolist()
         except Exception as e:
@@ -254,6 +263,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
         Raises:
             ValueError: If any input text is invalid
             Exception: If embedding fails after retries
+
         """
         return self._embed_with_retry(inputs, prompt_name)
 
@@ -266,6 +276,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
 
         Returns:
             List[float]: numpy array of embeddings
+
         """
         return self._embed([query], prompt_name="query")[0]
 
@@ -278,6 +289,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
 
         Returns:
             List[float]: numpy array of embeddings
+
         """
         return await asyncio.to_thread(self._get_query_embedding, query)
 
@@ -290,6 +302,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
 
         Returns:
             List[float]: numpy array of embeddings
+
         """
         return await asyncio.to_thread(self._get_text_embedding, text)
 
@@ -302,6 +315,7 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
 
         Returns:
             List[float]: numpy array of embeddings
+
         """
         return self._embed([text], prompt_name="text")[0]
 
@@ -314,8 +328,15 @@ class HuggingFaceEmbedding(MultiModalEmbedding):
 
         Returns:
             List[List[float]]: numpy array of embeddings
+
         """
         return self._embed(texts, prompt_name="text")
+
+    async def _aget_text_embeddings(self, texts: List[str]) -> List[List[float]]:
+        """
+        Generates Embeddings for text asynchronously.
+        """
+        return await asyncio.to_thread(self._get_text_embeddings, texts)
 
     def _get_image_embedding(self, img_file_path: ImageType) -> List[float]:
         """Generate embedding for an image."""
@@ -419,6 +440,7 @@ class HuggingFaceInferenceAPIEmbedding(BaseEmbedding):  # type: ignore[misc]
 
         Args:
             kwargs: See the class-level Fields.
+
         """
         if kwargs.get("model_name") is None:
             task = kwargs.get("task", "")
@@ -442,6 +464,7 @@ class HuggingFaceInferenceAPIEmbedding(BaseEmbedding):  # type: ignore[misc]
         Args:
             task: Hugging Face task to check within. A list of all tasks can be
                 found here: https://huggingface.co/tasks
+
         """
         all_models = self._sync_client.list_deployed_models(frameworks="all")
         try:

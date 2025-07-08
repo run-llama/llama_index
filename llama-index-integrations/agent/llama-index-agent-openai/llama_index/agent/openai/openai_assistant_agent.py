@@ -1,6 +1,7 @@
 """OpenAI Assistant Agent."""
 
 import asyncio
+import deprecated
 import json
 import logging
 import time
@@ -171,8 +172,17 @@ def format_attachments(
     return [{"file_id": file_id, "tools": tools} for file_id in file_ids]
 
 
+@deprecated.deprecated(
+    reason=(
+        "OpenAIAssistantAgent has been deprecated and is not maintained.\n\n"
+        "OpenAI will be discontinuing this API in the future.\n\n"
+        "See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+    action="once",
+)
 class OpenAIAssistantAgent(BaseAgent):
-    """OpenAIAssistant agent.
+    """
+    OpenAIAssistant agent.
 
     Wrapper around OpenAI assistant API: https://platform.openai.com/docs/assistants/overview
 
@@ -227,7 +237,8 @@ class OpenAIAssistantAgent(BaseAgent):
         top_p: Optional[float] = None,
         temperature: Optional[float] = None,
     ) -> "OpenAIAssistantAgent":
-        """From new assistant.
+        """
+        From new assistant.
 
         Args:
             name: name of assistant
@@ -299,7 +310,8 @@ class OpenAIAssistantAgent(BaseAgent):
         api_key: Optional[str] = None,
         verbose: bool = False,
     ) -> "OpenAIAssistantAgent":
-        """From existing assistant id.
+        """
+        From existing assistant id.
 
         Args:
             assistant_id: id of assistant
@@ -461,7 +473,7 @@ class OpenAIAssistantAgent(BaseAgent):
             time.sleep(self._run_retrieve_sleep_time)
         if run.status == "failed":
             raise ValueError(
-                f"Run failed with status {run.status}.\n" f"Error: {run.last_error}"
+                f"Run failed with status {run.status}.\nError: {run.last_error}"
             )
         return run, {"sources": sources}
 
@@ -492,7 +504,7 @@ class OpenAIAssistantAgent(BaseAgent):
             await asyncio.sleep(self._run_retrieve_sleep_time)
         if run.status == "failed":
             raise ValueError(
-                f"Run failed with status {run.status}.\n" f"Error: {run.last_error}"
+                f"Run failed with status {run.status}.\nError: {run.last_error}"
             )
         return run, {"sources": sources}
 

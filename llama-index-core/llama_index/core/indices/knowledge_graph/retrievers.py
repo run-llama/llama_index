@@ -39,7 +39,8 @@ logger = logging.getLogger(__name__)
 
 
 class KGRetrieverMode(str, Enum):
-    """Query mode enum for Knowledge Graphs.
+    """
+    Query mode enum for Knowledge Graphs.
 
     Can be passed as the enum struct, or as the underlying string.
 
@@ -49,6 +50,7 @@ class KGRetrieverMode(str, Enum):
             similar triplets.
         HYBRID ("hybrid"): Hybrid mode, combining both keywords and embeddings
             to find relevant triplets.
+
     """
 
     KEYWORD = "keyword"
@@ -64,7 +66,8 @@ class KGRetrieverMode(str, Enum):
     ),
 )
 class KGTableRetriever(BaseRetriever):
-    """KG Table Retriever.
+    """
+    KG Table Retriever.
 
     Arguments are shared among subclasses.
 
@@ -91,6 +94,7 @@ class KGTableRetriever(BaseRetriever):
             While it's more expensive, thus to be turned off by default.
         max_knowledge_sequence (int): The maximum number of knowledge sequence to
             include in the response. By default, it's 30.
+
     """
 
     def __init__(
@@ -444,6 +448,7 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         max_knowledge_sequence (int): The maximum number of knowledge sequence to
             include in the response. By default, it's 30.
         verbose (bool): Whether to print out debug info.
+
     """
 
     def __init__(
@@ -469,9 +474,9 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
         """Initialize the retriever."""
         # Ensure that we have a graph store
         assert storage_context is not None, "Must provide a storage context."
-        assert (
-            storage_context.graph_store is not None
-        ), "Must provide a graph store in the storage context."
+        assert storage_context.graph_store is not None, (
+            "Must provide a graph store in the storage context."
+        )
         self._storage_context = storage_context
         self._graph_store = storage_context.graph_store
 
@@ -498,22 +503,16 @@ class KnowledgeGraphRAGRetriever(BaseRetriever):
                 KnowledgeGraphQueryEngine,
             )
 
-            graph_query_synthesis_prompt = kwargs.get(
-                "graph_query_synthesis_prompt",
-                None,
-            )
+            graph_query_synthesis_prompt = kwargs.get("graph_query_synthesis_prompt")
             if graph_query_synthesis_prompt is not None:
                 del kwargs["graph_query_synthesis_prompt"]
 
-            graph_response_answer_prompt = kwargs.get(
-                "graph_response_answer_prompt",
-                None,
-            )
+            graph_response_answer_prompt = kwargs.get("graph_response_answer_prompt")
             if graph_response_answer_prompt is not None:
                 del kwargs["graph_response_answer_prompt"]
 
             refresh_schema = kwargs.get("refresh_schema", False)
-            response_synthesizer = kwargs.get("response_synthesizer", None)
+            response_synthesizer = kwargs.get("response_synthesizer")
             self._kg_query_engine = KnowledgeGraphQueryEngine(
                 llm=self._llm,
                 storage_context=self._storage_context,

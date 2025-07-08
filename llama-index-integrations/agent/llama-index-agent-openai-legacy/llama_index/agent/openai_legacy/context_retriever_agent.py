@@ -1,5 +1,6 @@
 """Context retriever agent."""
 
+import deprecated
 from typing import List, Optional, Type, Union
 
 from llama_index.agent.openai_legacy.openai_agent import (
@@ -33,8 +34,17 @@ DEFAULT_QA_PROMPT_TMPL = (
 DEFAULT_QA_PROMPT = PromptTemplate(DEFAULT_QA_PROMPT_TMPL)
 
 
+@deprecated.deprecated(
+    reason=(
+        "ContextRetrieverOpenAIAgent has been deprecated and is not maintained.\n\n"
+        "`FunctionAgent` is the recommended replacement.\n\n"
+        "See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+    action="once",
+)
 class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
-    """ContextRetriever OpenAI Agent.
+    """
+    ContextRetriever OpenAI Agent.
 
     This agent performs retrieval from BaseRetriever before
     calling the LLM. Allows it to augment user message with context.
@@ -98,7 +108,8 @@ class ContextRetrieverOpenAIAgent(BaseOpenAIAgent):
         system_prompt: Optional[str] = None,
         prefix_messages: Optional[List[ChatMessage]] = None,
     ) -> "ContextRetrieverOpenAIAgent":
-        """Create a ContextRetrieverOpenAIAgent from a retriever.
+        """
+        Create a ContextRetrieverOpenAIAgent from a retriever.
 
         Args:
             retriever (BaseRetriever): A retriever.

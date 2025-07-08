@@ -99,7 +99,8 @@ class Correction(BaseModel):
 
 
 class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
-    """Self Reflection Agent Worker.
+    """
+    Self Reflection Agent Worker.
 
     This agent performs a reflection without any tools on a given response
     and subsequently performs correction. It should be noted that this reflection
@@ -187,7 +188,7 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
         new_memory = ChatMemoryBuffer.from_defaults()
 
         # put current history in new memory
-        messages = task.memory.get()
+        messages = task.memory.get(input=task.input)
         for message in messages:
             new_memory.put(message)
         # inject new input into memory
@@ -465,7 +466,7 @@ class SelfReflectionAgentWorker(BaseModel, BaseAgentWorker):
     def get_all_messages(self, task: Task) -> List[ChatMessage]:
         return (
             self.prefix_messages
-            + task.memory.get()
+            + task.memory.get(input=task.input)
             + task.extra_state["new_memory"].get_all()
         )
 

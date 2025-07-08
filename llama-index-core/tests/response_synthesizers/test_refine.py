@@ -74,7 +74,7 @@ def test_constructor_args() -> None:
         )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_answer_filtering_one_answer() -> None:
     input_to_query_satisfied = OrderedDict(
         [
@@ -97,7 +97,7 @@ async def test_answer_filtering_one_answer() -> None:
     assert res == "input2"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_answer_filtering_no_answers() -> None:
     input_to_query_satisfied = OrderedDict(
         [

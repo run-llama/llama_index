@@ -13,11 +13,13 @@ from .step import CoAAgentWorker
 
 
 class CoAAgentPack(BaseLlamaPack):
-    """Chain-of-abstraction Agent Pack.
+    """
+    Chain-of-abstraction Agent Pack.
 
     Args:
         tools (List[BaseTool]): List of tools to use.
         llm (Optional[LLM]): LLM to use. Defaults to gpt-4.
+
     """
 
     def __init__(
@@ -36,12 +38,12 @@ class CoAAgentPack(BaseLlamaPack):
             llm=llm,
             verbose=True,
             callback_manager=self.callback_manager,
-            **(agent_worker_kwargs or {})
+            **(agent_worker_kwargs or {}),
         )
         self.agent = AgentRunner(
             self.agent_worker,
             callback_manager=self.callback_manager,
-            **(agent_runner_kwargs or {})
+            **(agent_runner_kwargs or {}),
         )
 
     def get_modules(self) -> Dict[str, Any]:

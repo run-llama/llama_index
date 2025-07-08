@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from typing import Any, List, Optional, Sequence
 
 from llama_index.core.schema import BaseNode, MetadataMode
@@ -20,7 +21,8 @@ logger = logging.getLogger(__name__)
 
 
 class SingleStoreVectorStore(BasePydanticVectorStore):
-    """SingleStore vector store.
+    """
+    SingleStore vector store.
 
     This vector store stores embeddings within a SingleStore database table.
 
@@ -117,6 +119,7 @@ class SingleStoreVectorStore(BasePydanticVectorStore):
                 max_overflow=max_overflow,
                 timeout=timeout,
             ),
+            stores_text=True,
         )
 
         self._create_table()
@@ -134,6 +137,26 @@ class SingleStoreVectorStore(BasePydanticVectorStore):
         return s2.connect(**self.connection_kwargs)
 
     def _create_table(self) -> None:
+        VALID_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_]+$")
+        if not VALID_NAME_PATTERN.match(self.table_name):
+            raise ValueError(
+                f"Invalid table name: {self.table_name}. Table names can only contain alphanumeric characters and underscores."
+            )
+
+        if not VALID_NAME_PATTERN.match(self.content_field):
+            raise ValueError(
+                f"Invalid content_field: {self.content_field}. Field names can only contain alphanumeric characters and underscores."
+            )
+
+        if not VALID_NAME_PATTERN.match(self.vector_field):
+            raise ValueError(
+                f"Invalid vector_field: {self.vector_field}. Field names can only contain alphanumeric characters and underscores."
+            )
+
+        if not VALID_NAME_PATTERN.match(self.metadata_field):
+            raise ValueError(
+                f"Invalid metadata_field: {self.metadata_field}. Field names can only contain alphanumeric characters and underscores."
+            )
         conn = self.connection_pool.connect()
         try:
             cur = conn.cursor()
@@ -149,33 +172,40 @@ class SingleStoreVectorStore(BasePydanticVectorStore):
             conn.close()
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
 
         """
+        insert_query = (
+            f"INSERT INTO {self.table_name} VALUES (%s, JSON_ARRAY_PACK(%s), %s)"
+        )
+
         conn = self.connection_pool.connect()
-        cursor = conn.cursor()
         try:
-            for node in nodes:
-                embedding = node.get_embedding()
-                metadata = node_to_metadata_dict(
-                    node, remove_text=True, flat_metadata=self.flat_metadata
-                )
-                cursor.execute(
-                    "INSERT INTO {} VALUES (%s, JSON_ARRAY_PACK(%s), %s)".format(
-                        self.table_name
-                    ),
-                    (
-                        node.get_content(metadata_mode=MetadataMode.NONE) or "",
-                        "[{}]".format(",".join(map(str, embedding))),
-                        json.dumps(metadata),
-                    ),
-                )
+            cursor = conn.cursor()
+            try:
+                for node in nodes:
+                    embedding = node.get_embedding()
+                    metadata = node_to_metadata_dict(
+                        node, remove_text=True, flat_metadata=self.flat_metadata
+                    )
+                    # Use parameterized query for all data values
+                    cursor.execute(
+                        insert_query,
+                        (
+                            node.get_content(metadata_mode=MetadataMode.NONE) or "",
+                            "[{}]".format(",".join(map(str, embedding))),
+                            json.dumps(metadata),
+                        ),
+                    )
+            finally:
+                cursor.close()
         finally:
-            cursor.close()
             conn.close()
+
         return [node.node_id for node in nodes]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
@@ -186,15 +216,15 @@ class SingleStoreVectorStore(BasePydanticVectorStore):
             ref_doc_id (str): The doc_id of the document to delete.
 
         """
+        delete_query = f"DELETE FROM {self.table_name} WHERE JSON_EXTRACT_JSON({self.metadata_field}, 'ref_doc_id') = %s"
         conn = self.connection_pool.connect()
-        cursor = conn.cursor()
         try:
-            cursor.execute(
-                f"DELETE FROM {self.table_name} WHERE JSON_EXTRACT_JSON(metadata, 'ref_doc_id') = %s",
-                ('"' + ref_doc_id + '"',),
-            )
+            cursor = conn.cursor()
+            try:
+                cursor.execute(delete_query, (json.dumps(ref_doc_id),))
+            finally:
+                cursor.close()
         finally:
-            cursor.close()
             conn.close()
 
     def query(
@@ -209,9 +239,14 @@ class SingleStoreVectorStore(BasePydanticVectorStore):
 
         Returns:
             VectorStoreQueryResult: Contains nodes, similarities, and ids attributes.
+
         """
         query_embedding = query.query_embedding
         similarity_top_k = query.similarity_top_k
+        if not isinstance(similarity_top_k, int) or similarity_top_k <= 0:
+            raise ValueError(
+                f"similarity_top_k must be a positive integer, got {similarity_top_k}"
+            )
         conn = self.connection_pool.connect()
         where_clause: str = ""
         where_clause_values: List[Any] = []
@@ -233,10 +268,7 @@ class SingleStoreVectorStore(BasePydanticVectorStore):
                         )
                     else:
                         arguments.append(
-                            "JSON_EXTRACT({}, {}) = %s".format(
-                                {self.metadata_field},
-                                ", ".join(["%s"] * (len(prefix_args) + 1)),
-                            )
+                            f"JSON_EXTRACT({self.metadata_field}, {', '.join(['%s'] * (len(prefix_args) + 1))}) = %s"
                         )
                         where_clause_values += [*prefix_args, key]
                         where_clause_values.append(json.dumps(sub_filter[key]))

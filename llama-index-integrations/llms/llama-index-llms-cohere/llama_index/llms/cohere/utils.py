@@ -36,10 +36,15 @@ from cohere.types import (
 
 
 COMMAND_MODELS = {
+    "command-a-03-2025": 256000,
+    "command-r7b-12-2024": 128000,
     "command-r": 128000,
+    "command-r-08-2024": 128000,
     "command-r-plus": 128000,
+    "command-r-plus-04-2024": 128000,
+    "command-r-plus-08-2024": 128000,
     "command": 4096,
-    "command-nightly": 4096,
+    "command-nightly": 128000,
     "command-light": 4096,
     "command-light-nightly": 4096,
     "c4ai-aya-expanse-32b": 128000,
@@ -51,11 +56,29 @@ GENERATION_MODELS = {"base": 2048, "base-light": 2048}
 REPRESENTATION_MODELS = {
     "embed-english-light-v2.0": 512,
     "embed-english-v2.0": 512,
+    "embed-english-v3.0": 512,
     "embed-multilingual-v2.0": 256,
+    "embed-english-light-v3.0": 512,
+    "embed-multilingual-v3.0": 512,
+    "embed-multilingual-light-v3.0": 512,
 }
 
-FUNCTION_CALLING_MODELS = {"command-r", "command-r-plus"}
-ALL_AVAILABLE_MODELS = {**COMMAND_MODELS, **GENERATION_MODELS, **REPRESENTATION_MODELS}
+FUNCTION_CALLING_MODELS = {
+    "command-a-03-2025",
+    "command-r7b-12-2024",
+    "command-r",
+    "command-r-08-2024",
+    "command-r-plus",
+    "command-r-plus-04-2024",
+    "command-r-plus-08-2024",
+}
+
+ALL_AVAILABLE_MODELS = {
+    **COMMAND_MODELS,
+    **GENERATION_MODELS,
+    **REPRESENTATION_MODELS,
+}
+
 CHAT_MODELS = {**COMMAND_MODELS}
 
 JSON_TO_PYTHON_TYPES = {
@@ -120,9 +143,7 @@ COHERE_REFINE_TEMPLATE = ChatPromptTemplate(
         DocumentMessage(content="{context_msg}"),
         ChatMessage(
             content=(
-                "Query: {query_str}\n"
-                "Original Answer: {existing_answer}\n"
-                "New Answer: "
+                "Query: {query_str}\nOriginal Answer: {existing_answer}\nNew Answer: "
             ),
             role=MessageRole.USER,
         ),
@@ -240,7 +261,7 @@ async def acompletion_with_retry(
 
 
 def cohere_modelname_to_contextsize(modelname: str) -> int:
-    context_size = ALL_AVAILABLE_MODELS.get(modelname, None)
+    context_size = ALL_AVAILABLE_MODELS.get(modelname)
     if context_size is None:
         raise ValueError(
             f"Unknown model: {modelname}. Please provide a valid Cohere model name."
@@ -474,7 +495,8 @@ def _message_to_cohere_tool_results(
 
 
 def get_role(message: ChatMessage) -> str:
-    """Get the role of the message.
+    """
+    Get the role of the message.
 
     Args:
         message: The message.
@@ -484,6 +506,7 @@ def get_role(message: ChatMessage) -> str:
 
     Raises:
         ValueError: If the message is of an unknown type.
+
     """
     if message.role == MessageRole.USER:
         return "User"
@@ -508,7 +531,8 @@ def _get_message_cohere_format(
         None,
     ],
 ]:
-    """Get the formatted message as required in cohere's api.
+    """
+    Get the formatted message as required in cohere's api.
 
     Args:
         message: The BaseMessage.
@@ -516,6 +540,7 @@ def _get_message_cohere_format(
 
     Returns:
         The formatted message as required in cohere's api.
+
     """
     if message.role == MessageRole.CHATBOT or message.role == MessageRole.ASSISTANT:
         return {

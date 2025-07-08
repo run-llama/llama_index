@@ -8,7 +8,6 @@ on:
   workflow_dispatch:
 
 env:
-  POETRY_VERSION: "1.8.3"
   PYTHON_VERSION: "3.9"
 
 jobs:
@@ -19,30 +18,26 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Install Poetry
-        run: pipx install poetry==${{ env.POETRY_VERSION }}
-      - name: Set up python ${{ env.PYTHON_VERSION }}
-        uses: actions/setup-python@v5
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-      - name: Clear python cache
-        shell: bash
-        run: poetry cache clear --all pypi
+
       - name: Install deps
         shell: bash
-        run: pip install -e .
-      - name: Cache tiktoken and nltk files
-        shell: bash
-        run: python -c "from llama_index.core import get_tokenizer; get_tokenizer()"
-      - name: Clean up zip files
-        shell: bash
-        run: rm -rf llama-index-core/llama_index/core/_static/nltk_cache/corpora/stopwords.zip llama-index-core/llama_index/core/_static/nltk_cache/tokenizers/punkt.zip
+        run: uv sync
+
       - name: Build and publish to pypi
-        uses: JRubics/poetry-publish@v2.1
+        run: uv build && uv publish --token ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}
+
+      - name: Generate Release Notes
+        uses: CSchoel/release-notes-from-changelog@v1
         with:
-          python_version: ${{ env.PYTHON_VERSION }}
-          pypi_token: ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}
-          ignore_dev_requirements: "yes"
+          version: "$(date +'%Y-%m-%d')"
+          begin-pattern: "/^## \\[$(date +'%Y-%m-%d')\\]/"
+          end-pattern: "/^## \\[/"
+          working-directory: "."
 
       - name: Create GitHub Release
         id: create_release
@@ -52,6 +47,7 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: ${{ github.ref }}
+          body_path: "RELEASE.md"
           draft: false
           prerelease: false
 
@@ -60,6 +56,7 @@ jobs:
           export PKG=$(ls dist/ | grep tar)
           set -- $PKG
           echo "name=$1" >> $GITHUB_ENV
+
       - name: Upload Release Asset (sdist) to GitHub
         id: upload-release-asset
         uses: actions/upload-release-asset@v1

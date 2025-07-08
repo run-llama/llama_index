@@ -2,7 +2,7 @@
 
 import logging
 import math
-from typing import Any, Dict, Generator, List, Optional, cast
+from typing import Any, Dict, Generator, List, Optional, Union, cast
 
 import chromadb
 from chromadb.api.models.Collection import Collection
@@ -95,7 +95,8 @@ MAX_CHUNK_SIZE = 41665  # One less than the max chunk size for ChromaDB
 def chunk_list(
     lst: List[BaseNode], max_chunk_size: int
 ) -> Generator[List[BaseNode], None, None]:
-    """Yield successive max_chunk_size-sized chunks from lst.
+    """
+    Yield successive max_chunk_size-sized chunks from lst.
 
     Args:
         lst (List[BaseNode]): list of nodes with embeddings
@@ -103,13 +104,15 @@ def chunk_list(
 
     Yields:
         Generator[List[BaseNode], None, None]: list of nodes with embeddings
+
     """
     for i in range(0, len(lst), max_chunk_size):
         yield lst[i : i + max_chunk_size]
 
 
 class ChromaVectorStore(BasePydanticVectorStore):
-    """Chroma vector store.
+    """
+    Chroma vector store.
 
     In this vector store, embeddings are stored within a ChromaDB collection.
 
@@ -142,7 +145,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
 
     collection_name: Optional[str]
     host: Optional[str]
-    port: Optional[str]
+    port: Optional[Union[str, int]]
     ssl: bool
     headers: Optional[Dict[str, str]]
     persist_dir: Optional[str]
@@ -155,7 +158,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         chroma_collection: Optional[Any] = None,
         collection_name: Optional[str] = None,
         host: Optional[str] = None,
-        port: Optional[str] = None,
+        port: Optional[Union[str, int]] = None,
         ssl: bool = False,
         headers: Optional[Dict[str, str]] = None,
         persist_dir: Optional[str] = None,
@@ -199,7 +202,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         cls,
         collection_name: str,
         host: Optional[str] = None,
-        port: Optional[str] = None,
+        port: Optional[Union[str, int]] = None,
         ssl: bool = False,
         headers: Optional[Dict[str, str]] = None,
         persist_dir: Optional[str] = None,
@@ -240,7 +243,8 @@ class ChromaVectorStore(BasePydanticVectorStore):
         node_ids: Optional[List[str]],
         filters: Optional[List[MetadataFilters]] = None,
     ) -> List[BaseNode]:
-        """Get nodes from index.
+        """
+        Get nodes from index.
 
         Args:
             node_ids (List[str]): list of node ids
@@ -262,7 +266,8 @@ class ChromaVectorStore(BasePydanticVectorStore):
         return result.nodes
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -317,7 +322,8 @@ class ChromaVectorStore(BasePydanticVectorStore):
         node_ids: Optional[List[str]] = None,
         filters: Optional[List[MetadataFilters]] = None,
     ) -> None:
-        """Delete nodes from index.
+        """
+        Delete nodes from index.
 
         Args:
             node_ids (List[str]): list of node ids
@@ -347,7 +353,8 @@ class ChromaVectorStore(BasePydanticVectorStore):
         return self._collection
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query_embedding (List[float]): query embedding

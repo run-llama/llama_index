@@ -97,12 +97,23 @@ print(response)
 from llama_index.core import Settings
 from llama_index.llms.ollama import Ollama
 
-Settings.llm = Ollama(model="mistral", request_timeout=60.0)
+Settings.llm = Ollama(
+    model="mistral",
+    request_timeout=60.0,
+    # Manually set the context window to limit memory usage
+    context_window=8000,
+)
 
 # Local settings
-index.as_query_engine(llm=Ollama(model="mistral", request_timeout=60.0))
+index.as_query_engine(
+    llm=Ollama(
+        model="mistral",
+        request_timeout=60.0,
+        # Manually set the context window to limit memory usage
+        context_window=8000,
+    )
+)
 ```
-
 You can learn more about [customizing LLMs](../module_guides/models/llms.md).
 
 ---

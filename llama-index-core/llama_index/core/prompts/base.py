@@ -86,7 +86,8 @@ class BasePromptTemplate(ChainableMixin, BaseModel, ABC):  # type: ignore[no-red
         return {template_var_mappings.get(k, k): v for k, v in kwargs.items()}
 
     def _map_function_vars(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        """For keys in function_mappings, compute values and combine w/ kwargs.
+        """
+        For keys in function_mappings, compute values and combine w/ kwargs.
 
         Users can pass in functions instead of fixed values as format variables.
         For each function, we call the function with the current kwargs,
@@ -112,7 +113,8 @@ class BasePromptTemplate(ChainableMixin, BaseModel, ABC):  # type: ignore[no-red
         return new_kwargs
 
     def _map_all_vars(self, kwargs: Dict[str, Any]) -> Dict[str, Any]:
-        """Map both template and function variables.
+        """
+        Map both template and function variables.
 
         We (1) first call function mappings to compute functions,
         and then (2) call the template_var_mappings.
@@ -124,22 +126,18 @@ class BasePromptTemplate(ChainableMixin, BaseModel, ABC):  # type: ignore[no-red
         return self._map_template_vars(new_kwargs)
 
     @abstractmethod
-    def partial_format(self, **kwargs: Any) -> "BasePromptTemplate":
-        ...
+    def partial_format(self, **kwargs: Any) -> "BasePromptTemplate": ...
 
     @abstractmethod
-    def format(self, llm: Optional[BaseLLM] = None, **kwargs: Any) -> str:
-        ...
+    def format(self, llm: Optional[BaseLLM] = None, **kwargs: Any) -> str: ...
 
     @abstractmethod
     def format_messages(
         self, llm: Optional[BaseLLM] = None, **kwargs: Any
-    ) -> List[ChatMessage]:
-        ...
+    ) -> List[ChatMessage]: ...
 
     @abstractmethod
-    def get_template(self, llm: Optional[BaseLLM] = None) -> str:
-        ...
+    def get_template(self, llm: Optional[BaseLLM] = None) -> str: ...
 
     def _as_query_component(
         self, llm: Optional[BaseLLM] = None, **kwargs: Any

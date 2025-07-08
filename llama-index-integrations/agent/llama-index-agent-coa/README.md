@@ -24,8 +24,6 @@ As an extension to the original paper, we also run the LLM a final time, to rewr
 
 **NOTE:** In the original paper, the authors fine-tuned an LLM specifically for this, and also for specific functions and datasets. As such, only capabale LLMs (OpenAI, Anthropic, etc.) will be (hopefully) reliable for this without finetuning.
 
-A full example notebook is [also provided](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/agent/coa_agent.ipynb).
-
 ## Code Usage
 
 `pip install llama-index-agent-coa`
@@ -33,33 +31,33 @@ A full example notebook is [also provided](https://github.com/run-llama/llama_in
 First, setup some tools (could be function tools, query engines, etc.)
 
 ```python
-from llama_index.core.tools import QueryEngineTool, FunctionTool
+from llama_index.core.tools import FunctionTool
 
 
-def add(a: int, b: int) -> int:
+def add(a: float, b: float) -> float:
     """Add two numbers together."""
     return a + b
 
 
-query_engine = index.as_query_engine(...)
+def multiply(a: float, b: float) -> float:
+    """Multiply two numbers together."""
+    return a * b
 
-function_tool = FunctionTool.from_defaults(fn=add)
-query_tool = QueryEngineTool.from_defaults(
-    query_engine=query_engine, name="...", description="..."
-)
+
+add_tool = FunctionTool.from_defaults(fn=add)
+multiply_tool = FunctionTool.from_defaults(fn=multiply)
 ```
 
 Next, create the pack with the tools, and run it!
 
 ```python
-from llama_index.packs.agent.coa import CoAAgentPack
+from llama_index.agent.coa import CoAAgentWorker
 from llama_index.llms.openai import OpenAI
 
-pack = CoAAgentPack(
-    tools=[function_tool, query_tool], llm=OpenAI(model="gpt-4")
-)
+agent = CoAAgentWorker(
+    llm=OpenAI(model="gpt-4.1-mini"),
+    tools=[add_tool, multiply_tool],
+).as_agent()
 
-print(pack.run("What is 1245 + 4321?"))
+resp = agent.chat("What is 123.123*101.101 and what is its product with 12345")
 ```
-
-See the example notebook for [more thorough details](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/agent/coa_agent.ipynb).

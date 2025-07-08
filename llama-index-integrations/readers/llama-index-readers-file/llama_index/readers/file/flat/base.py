@@ -1,4 +1,5 @@
 """Flat reader."""
+
 from fsspec import AbstractFileSystem
 from fsspec.implementations.local import LocalFileSystem
 from pathlib import Path
@@ -9,7 +10,8 @@ from llama_index.core.schema import Document
 
 
 class FlatReader(BaseReader):
-    """Flat reader.
+    """
+    Flat reader.
 
     Extract raw text from a file and save the file type in the metadata
     """

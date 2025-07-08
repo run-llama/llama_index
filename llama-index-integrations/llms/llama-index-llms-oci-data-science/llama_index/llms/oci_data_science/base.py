@@ -27,7 +27,6 @@ from llama_index.core.llms.utils import parse_partial_json
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.oci_data_science.client import AsyncClient, Client
 from llama_index.llms.oci_data_science.utils import (
-    DEFAULT_TOOL_CHOICE,
     _from_completion_logprobs_dict,
     _from_message_dict,
     _from_token_logprob_dicts,
@@ -301,6 +300,7 @@ class OCIDataScience(FunctionCallingLLM):
             output_parser (Optional[BaseOutputParser]): Output parser for the LLM.
             strict (bool): Whether to use strict mode for invoking tools/using schemas.
             **kwargs: Additional keyword arguments.
+
         """
         super().__init__(
             endpoint=endpoint,
@@ -345,6 +345,7 @@ class OCIDataScience(FunctionCallingLLM):
 
         Returns:
             Client: The synchronous client instance.
+
         """
         if self._client is None:
             self._client = Client(
@@ -362,6 +363,7 @@ class OCIDataScience(FunctionCallingLLM):
 
         Returns:
             AsyncClient: The asynchronous client instance.
+
         """
         if self._async_client is None:
             self._async_client = AsyncClient(
@@ -379,6 +381,7 @@ class OCIDataScience(FunctionCallingLLM):
 
         Returns:
             str: The name of the class.
+
         """
         return "OCIDataScience_LLM"
 
@@ -389,6 +392,7 @@ class OCIDataScience(FunctionCallingLLM):
 
         Returns:
             LLMMetadata: The metadata of the LLM.
+
         """
         return LLMMetadata(
             context_window=self.context_window,
@@ -407,6 +411,7 @@ class OCIDataScience(FunctionCallingLLM):
 
         Returns:
             Dict[str, Any]: The combined model parameters.
+
         """
         base_kwargs = {
             "model": self.model,
@@ -427,6 +432,7 @@ class OCIDataScience(FunctionCallingLLM):
 
         Returns:
             Dict[str, str]: The prepared headers.
+
         """
         return {**(self.default_headers or {}), **(headers or {})}
 
@@ -444,6 +450,7 @@ class OCIDataScience(FunctionCallingLLM):
 
         Returns:
             CompletionResponse: The response from the LLM.
+
         """
         logger.debug(f"Calling complete with prompt: {prompt}")
         response = self.client.generate(
@@ -482,6 +489,7 @@ class OCIDataScience(FunctionCallingLLM):
 
         Yields:
             CompletionResponse: The streamed response from the LLM.
+
         """
         logger.debug(f"Starting stream_complete with prompt: {prompt}")
         text = ""
@@ -518,6 +526,7 @@ class OCIDataScience(FunctionCallingLLM):
 
         Returns:
             ChatResponse: The chat response from the LLM.
+
         """
         logger.debug(f"Calling chat with messages: {messages}")
         response = self.client.chat(
@@ -558,6 +567,7 @@ class OCIDataScience(FunctionCallingLLM):
 
         Yields:
             ChatResponse: The streamed chat response from the LLM.
+
         """
         logger.debug(f"Starting stream_chat with messages: {messages}")
         content = ""
@@ -617,6 +627,7 @@ class OCIDataScience(FunctionCallingLLM):
 
         Returns:
             CompletionResponse: The response from the LLM.
+
         """
         logger.debug(f"Calling acomplete with prompt: {prompt}")
         response = await self.async_client.generate(
@@ -655,6 +666,7 @@ class OCIDataScience(FunctionCallingLLM):
 
         Yields:
             CompletionResponse: The streamed response from the LLM.
+
         """
 
         async def gen() -> CompletionResponseAsyncGen:
@@ -698,6 +710,7 @@ class OCIDataScience(FunctionCallingLLM):
 
         Returns:
             ChatResponse: The chat response from the LLM.
+
         """
         logger.debug(f"Calling achat with messages: {messages}")
         response = await self.async_client.chat(
@@ -738,6 +751,7 @@ class OCIDataScience(FunctionCallingLLM):
 
         Yields:
             ChatResponse: The streamed chat response from the LLM.
+
         """
 
         async def gen() -> ChatResponseAsyncGen:
@@ -794,7 +808,8 @@ class OCIDataScience(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
-        tool_choice: Union[str, dict] = DEFAULT_TOOL_CHOICE,
+        tool_required: bool = False,
+        tool_choice: Optional[Union[str, dict]] = None,
         strict: Optional[bool] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
@@ -807,12 +822,14 @@ class OCIDataScience(FunctionCallingLLM):
             chat_history (Optional[List[ChatMessage]]): The chat history.
             verbose (bool): Whether to output verbose logs.
             allow_parallel_tool_calls (bool): Whether to allow parallel tool calls.
+            tool_required (bool): Whether to require a tool call. tool_choice supersedes this if provided.
             tool_choice (Union[str, dict]): Tool choice strategy.
             strict (Optional[bool]): Whether to enforce strict mode.
             **kwargs: Additional keyword arguments.
 
         Returns:
             Dict[str, Any]: The prepared parameters for the chat request.
+
         """
         tool_specs = [tool.metadata.to_openai_tool() for tool in tools]
 
@@ -841,7 +858,9 @@ class OCIDataScience(FunctionCallingLLM):
         return {
             "messages": messages,
             "tools": tool_specs or None,
-            "tool_choice": (_resolve_tool_choice(tool_choice) if tool_specs else None),
+            "tool_choice": (
+                _resolve_tool_choice(tool_choice, tool_required) if tool_specs else None
+            ),
             **kwargs,
         }
 
@@ -863,6 +882,7 @@ class OCIDataScience(FunctionCallingLLM):
 
         Returns:
             ChatResponse: The validated chat response.
+
         """
         if not allow_parallel_tool_calls:
             # Ensures that the 'tool_calls' in the response contain only a single tool call.
@@ -894,6 +914,7 @@ class OCIDataScience(FunctionCallingLLM):
 
         Raises:
             ValueError: If no tool calls are found and error_on_no_tool_call is True.
+
         """
         tool_calls = response.message.additional_kwargs.get("tool_calls", [])
         logger.debug(f"Getting tool calls from response: {tool_calls}")
@@ -929,6 +950,6 @@ class OCIDataScience(FunctionCallingLLM):
             )
 
         logger.debug(
-            f"Extracted tool calls: { [tool_selection.model_dump() for tool_selection in tool_selections] }"
+            f"Extracted tool calls: {[tool_selection.model_dump() for tool_selection in tool_selections]}"
         )
         return tool_selections

@@ -1,6 +1,53 @@
 [build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core"]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "black[jupyter]<=23.9.1,>=23.7.0",
+    "codespell[toml]>=v2.2.6",
+    "ipython==8.10.0",
+    "jupyter>=1.0.0,<2",
+    "mypy==0.991",
+    "pre-commit==3.2.0",
+    "pylint==2.15.10",
+    "pytest==7.2.1",
+    "pytest-mock==3.11.1",
+    "ruff==0.0.292",
+    "tree-sitter-languages>=1.8.0,<2",
+    "types-Deprecated>=0.1.0",
+    "types-PyYAML>=6.0.12.12,<7",
+    "types-protobuf>=4.24.0.4,<5",
+    "types-redis==4.5.5.0",
+    "types-requests==2.28.11.8",
+    "types-setuptools==67.1.0.0",
+]
+
+[project]
+name = "llama-index-llms-ipex-llm"
+version = "0.3.1"
+description = "llama-index llms ipex-llm integration"
+authors = [{name = "Your Name", email = "you@example.com"}]
+requires-python = ">=3.10,<3.12"
+readme = "README.md"
+license = "MIT"
+dependencies = [
+    "llama-index-core>=0.10.41,<0.11",
+    "ipex-llm[llama-index]>=2.1.0b20240529",
+]
+
+[project.optional-dependencies]
+xpu = [
+    "bigdl-core-xe-21",
+    "bigdl-core-xe-addons-21",
+    "bigdl-core-xe-batch-21",
+    "dpcpp-cpp-rt==2024.0.2 ; platform_system == 'Windows'",
+    "intel_extension_for_pytorch==2.1.10+xpu",
+    "mkl-dpcpp==2024.0.0 ; platform_system == 'Windows'",
+    "onednn==2024.0.0 ; platform_system == 'Windows'",
+    "torch==2.1.0a0",
+    "torchvision==0.16.0a0",
+]
 
 [tool.codespell]
 check-filenames = true
@@ -8,6 +55,12 @@ check-hidden = true
 # Feel free to un-skip examples, and experimental, you will just need to
 # work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
 
 [tool.llamahub]
 contains_example = false
@@ -23,57 +76,11 @@ exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 python_version = "3.11"
 
-[tool.poetry]
-authors = ["Your Name <you@example.com>"]
-description = "llama-index llms ipex-llm integration"
-license = "MIT"
-name = "llama-index-llms-ipex-llm"
-packages = [{include = "llama_index/"}]
-readme = "README.md"
-version = "0.3.0"
-
-[tool.poetry.dependencies]
-python = ">=3.9,<3.12"
-llama-index-core = "^0.10.41"
-ipex-llm = {allow-prereleases = true, extras = ["llama-index"], version = ">=2.1.0b20240529"}
-torch = {optional = true, source = "ipex-xpu-src-us", version = "2.1.0a0"}
-torchvision = {optional = true, source = "ipex-xpu-src-us", version = "0.16.0a0"}
-intel_extension_for_pytorch = {optional = true, source = "ipex-xpu-src-us", version = "2.1.10+xpu"}
-bigdl-core-xe-21 = {optional = true, version = "*"}
-bigdl-core-xe-batch-21 = {optional = true, version = "*"}
-bigdl-core-xe-addons-21 = {optional = true, version = "*"}
-dpcpp-cpp-rt = {markers = "platform_system == 'Windows'", optional = true, version = "2024.0.2"}
-mkl-dpcpp = {markers = "platform_system == 'Windows'", optional = true, version = "2024.0.0"}
-onednn = {markers = "platform_system == 'Windows'", optional = true, version = "2024.0.0"}
-
-[tool.poetry.extras]
-xpu = ["bigdl-core-xe-21", "bigdl-core-xe-addons-21", "bigdl-core-xe-batch-21", "dpcpp-cpp-rt", "intel_extension_for_pytorch", "mkl-dpcpp", "onednn", "torch", "torchvision"]
-
-[tool.poetry.group.dev.dependencies]
-black = {extras = ["jupyter"], version = "<=23.9.1,>=23.7.0"}
-codespell = {extras = ["toml"], version = ">=v2.2.6"}
-ipython = "8.10.0"
-jupyter = "^1.0.0"
-mypy = "0.991"
-pre-commit = "3.2.0"
-pylint = "2.15.10"
-pytest = "7.2.1"
-pytest-mock = "3.11.1"
-ruff = "0.0.292"
-tree-sitter-languages = "^1.8.0"
-types-Deprecated = ">=0.1.0"
-types-PyYAML = "^6.0.12.12"
-types-protobuf = "^4.24.0.4"
-types-redis = "4.5.5.0"
-types-requests = "2.28.11.8"  # TODO: unpin when mypy>0.991
-types-setuptools = "67.1.0.0"
-
-[[tool.poetry.source]]
+[[tool.uv.index]]
 name = "ipex-xpu-src-us"
-priority = "explicit"
 url = "https://pytorch-extension.intel.com/release-whl/stable/xpu/us/"
+explicit = true
 
-[[tool.poetry.source]]
+[[tool.uv.index]]
 name = "ipex-xpu-src-cn"
-priority = "supplemental"
 url = "https://pytorch-extension.intel.com/release-whl/stable/xpu/cn/"

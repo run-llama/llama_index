@@ -3,11 +3,10 @@ import enum
 import json
 import logging
 import uuid
-from typing import Any, List
+from typing import Any, List, Tuple
 
 # Third-party imports
 import psycopg
-from psycopg import sql
 
 # Local application/library specific imports
 from llama_index.core.bridge.pydantic import PrivateAttr
@@ -15,9 +14,9 @@ from llama_index.core.constants import DEFAULT_EMBEDDING_DIM
 from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
-    MetadataFilters,
     FilterOperator,
     MetadataFilter,
+    MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
@@ -26,6 +25,7 @@ from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
+from psycopg import sql
 
 _logger = logging.getLogger(__name__)
 
@@ -38,7 +38,8 @@ class IndexType(enum.Enum):
 
 
 class NileVectorStore(BasePydanticVectorStore):
-    """Nile (Multi-tenant Postgres) Vector Store.
+    """
+    Nile (Multi-tenant Postgres) Vector Store.
 
     Examples:
         `pip install llama-index-vector-stores-nile`
@@ -54,6 +55,7 @@ class NileVectorStore(BasePydanticVectorStore):
             num_dimensions=1536
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -252,60 +254,86 @@ class NileVectorStore(BasePydanticVectorStore):
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
             return "="
 
-    def _create_where_clause(self, filters: MetadataFilters) -> None:
+    def _create_where_clause(self, filters: MetadataFilters) -> Tuple[sql.SQL, dict]:
         where_clauses = []
+        params = {}
+        param_counter = 0
+
         if filters is None:
-            return sql.SQL(""" """)
+            return sql.SQL(""), params
+
         _logger.debug(f"Filters: {filters}")
+
         for filter in filters.filters:
+            param_counter += 1
+            param_name = f"param_{param_counter}"
+
             if isinstance(filter, MetadataFilters):
                 raise ValueError("Nested MetadataFilters are not supported yet")
+
             if isinstance(filter, MetadataFilter):
-                # The string concat looks terrible, but is in fact safe from SQL injection since we use "="
-                # to replace any unknown operator. Unfortunately, we can't use psycopg's sql.Literal or sql.Identifier
-                # for the operator since we need to leave it unquoted.
+                key_param = f"key_{param_counter}"
+                params[key_param] = filter.key
+
                 if filter.operator in [FilterOperator.IN, FilterOperator.NIN]:
+                    params[param_name] = filter.value
                     where_clauses.append(
-                        sql.SQL(
-                            " metadata->>{} "
-                            + self._to_postgres_operator(filter.operator)
-                            + " ({})"
-                        ).format(
-                            sql.Literal(filter.key),
-                            self._to_postgres_operator(filter.operator),
-                            sql.Literal(filter.value),
+                        sql.SQL("metadata->>%({})s {} %({})s").format(
+                            sql.Identifier(key_param),
+                            sql.SQL(self._to_postgres_operator(filter.operator)),
+                            sql.Identifier(param_name),
                         )
                     )
                 elif filter.operator in [FilterOperator.CONTAINS]:
+                    params[param_name] = filter.value
                     where_clauses.append(
-                        sql.SQL(""" metadata->{} @> [{}]""").format(
-                            sql.Literal(filter.key), sql.Literal(filter.value)
+                        sql.SQL("metadata->%({})s @> %({})s::jsonb").format(
+                            sql.Identifier(key_param), sql.Identifier(param_name)
                         )
                     )
                 elif (
                     filter.operator == FilterOperator.TEXT_MATCH
                     or filter.operator == FilterOperator.TEXT_MATCH_INSENSITIVE
                 ):
-                    # Where the operator is text_match or ilike, we need to wrap the filter in '%' characters
+                    # Safely handle text match operations
+                    params[param_name] = (
+                        f"%{filter.value}%"  # Add wildcards in parameter, not in SQL
+                    )
                     where_clauses.append(
-                        f"metadata_->>'{filter.key}' "
-                        f"{self._to_postgres_operator(filter.operator)} "
-                        f"'%{filter.value}%'"
+                        sql.SQL("metadata->>%({})s {} %({})s").format(
+                            sql.Identifier(key_param),
+                            sql.SQL(self._to_postgres_operator(filter.operator)),
+                            sql.Identifier(param_name),
+                        )
                     )
                 else:
+                    params[param_name] = filter.value
                     where_clauses.append(
-                        sql.SQL(
-                            " metadata->>{} "
-                            + self._to_postgres_operator(filter.operator)
-                            + " {}"
-                        ).format(sql.Literal(filter.key), sql.Literal(filter.value))
+                        sql.SQL("metadata->>%({})s {} %({})s").format(
+                            sql.Identifier(key_param),
+                            sql.SQL(self._to_postgres_operator(filter.operator)),
+                            sql.Identifier(param_name),
+                        )
                     )
+
         _logger.debug(f"Where clauses: {where_clauses}")
+
         if len(where_clauses) == 0:
-            return sql.SQL(""" """)
+            return sql.SQL(""), params
         else:
-            return sql.SQL(""" WHERE {}""").format(
-                sql.SQL(filters.condition).join(where_clauses)
+            # Ensure the condition is either 'AND' or 'OR'
+            safe_condition = "AND"
+            if hasattr(filters, "condition") and filters.condition.upper() in [
+                "AND",
+                "OR",
+            ]:
+                safe_condition = filters.condition.upper()
+
+            return (
+                sql.SQL(" WHERE {}").format(
+                    sql.SQL(f" {safe_condition} ").join(where_clauses)
+                ),
+                params,
             )
 
     def _execute_query(
@@ -330,7 +358,12 @@ class NileVectorStore(BasePydanticVectorStore):
                     sql.Literal(hnsw_ef_search)
                 )
             )
-        where_clause = self._create_where_clause(query_embedding.filters)
+        where_clause, where_params = self._create_where_clause(query_embedding.filters)
+        query_params = {
+            "query_embedding": query_embedding.query_embedding,
+            **where_params,  # Merge the where clause parameters
+        }
+
         query = sql.SQL(
             """
             SELECT
@@ -346,7 +379,7 @@ class NileVectorStore(BasePydanticVectorStore):
             where_clause=where_clause,
             limit=sql.Literal(query_embedding.similarity_top_k),
         )
-        cursor.execute(query, {"query_embedding": query_embedding.query_embedding})
+        cursor.execute(query, query_params)
         return cursor.fetchall()
 
     def _process_query_results(self, results: List[Any]) -> VectorStoreQueryResult:
@@ -367,9 +400,9 @@ class NileVectorStore(BasePydanticVectorStore):
         self, query_embedding: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
         # get and validate tenant_id
-        tenant_id = kwargs.get("tenant_id", None)
-        ivfflat_probes = kwargs.get("ivfflat_probes", None)
-        hnsw_ef_search = kwargs.get("hnsw_ef_search", None)
+        tenant_id = kwargs.get("tenant_id")
+        ivfflat_probes = kwargs.get("ivfflat_probes")
+        hnsw_ef_search = kwargs.get("hnsw_ef_search")
         if self.tenant_aware and tenant_id is None:
             raise ValueError(
                 "tenant_id must be specified in kwargs if tenant_aware is True"
@@ -389,7 +422,7 @@ class NileVectorStore(BasePydanticVectorStore):
     async def aquery(
         self, query_embedding: VectorStoreQuery, **kwargs: Any
     ) -> VectorStoreQueryResult:
-        tenant_id = kwargs.get("tenant_id", None)
+        tenant_id = kwargs.get("tenant_id")
         if self.tenant_aware and tenant_id is None:
             raise ValueError(
                 "tenant_id must be specified in kwargs if tenant_aware is True"
@@ -403,11 +436,14 @@ class NileVectorStore(BasePydanticVectorStore):
         """
         Create a new tenant and return the tenant_id.
 
-        Parameters:
+        Parameters
+        ----------
             tenant_name (str): The name of the tenant to create.
 
-        Returns:
+        Returns
+        -------
             tenant_id (uuid.UUID): The id of the newly created tenant.
+
         """
         with self._sync_conn.cursor() as cursor:
             cursor.execute(
@@ -426,16 +462,18 @@ class NileVectorStore(BasePydanticVectorStore):
         We intentionally throw an error if the index already exists.
         Since you may want to try a different type or parameters, we recommend dropping the index first.
 
-        Parameters:
+        Parameters
+        ----------
             index_type (IndexType): The type of index to create.
             m (optional int): The number of neighbors to consider during construction for PGVECTOR_HSNW index.
             ef_construction (optional int): The construction parameter for PGVECTOR_HSNW index.
             nlists (optional int): The number of lists for PGVECTOR_IVFFLAT index.
+
         """
         _logger.info(f"Creating index of type {index_type} for {self.table_name}")
         if index_type == IndexType.PGVECTOR_HNSW:
-            m = kwargs.get("m", None)
-            ef_construction = kwargs.get("ef_construction", None)
+            m = kwargs.get("m")
+            ef_construction = kwargs.get("ef_construction")
             if m is None or ef_construction is None:
                 raise ValueError(
                     "m and ef_construction must be specified in kwargs for PGVECTOR_HSNW index"
@@ -460,7 +498,7 @@ class NileVectorStore(BasePydanticVectorStore):
                         f"Index {self.table_name}_embedding_idx already exists"
                     )
         elif index_type == IndexType.PGVECTOR_IVFFLAT:
-            nlists = kwargs.get("nlists", None)
+            nlists = kwargs.get("nlists")
             if nlists is None:
                 raise ValueError(
                     "nlist must be specified in kwargs for PGVECTOR_IVFFLAT index"
@@ -498,7 +536,7 @@ class NileVectorStore(BasePydanticVectorStore):
             self._sync_conn.commit()
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        tenant_id = delete_kwargs.get("tenant_id", None)
+        tenant_id = delete_kwargs.get("tenant_id")
         _logger.info(f"Deleting document {ref_doc_id} with tenant_id {tenant_id}")
         if self.tenant_aware and tenant_id is None:
             raise ValueError(
@@ -515,7 +553,7 @@ class NileVectorStore(BasePydanticVectorStore):
         self._sync_conn.commit()
 
     async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        tenant_id = delete_kwargs.get("tenant_id", None)
+        tenant_id = delete_kwargs.get("tenant_id")
         _logger.info(f"Deleting document {ref_doc_id} with tenant_id {tenant_id}")
         if self.tenant_aware and tenant_id is None:
             raise ValueError(

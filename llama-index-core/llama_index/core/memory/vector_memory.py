@@ -1,4 +1,5 @@
-"""Vector memory.
+"""
+Vector memory.
 
 Memory backed by a vector database.
 
@@ -27,7 +28,7 @@ def _stringify_obj(d: Any) -> Union[str, list, dict]:
 
 def _stringify_chat_message(msg: ChatMessage) -> Dict:
     """Utility function to convert chatmessage to serializable dict."""
-    msg_dict = msg.dict()
+    msg_dict = msg.model_dump()
     msg_dict["additional_kwargs"] = _stringify_obj(msg_dict["additional_kwargs"])
     msg_dict["content"] = msg.content
     return msg_dict
@@ -45,7 +46,10 @@ def _get_starter_node_for_new_batch() -> TextNode:
 
 
 class VectorMemory(BaseMemory):
-    """Memory backed by a vector index.
+    """
+    Deprecated: Please use `llama_index.core.memory.Memory` instead.
+
+    Memory backed by a vector index.
 
     NOTE: This class requires the `delete_nodes` method to be implemented
     by the vector store underlying the vector index. At time of writing (May 2024),
@@ -96,7 +100,8 @@ class VectorMemory(BaseMemory):
         retriever_kwargs: Optional[Dict] = None,
         **kwargs: Any,
     ) -> "VectorMemory":
-        """Create vector memory.
+        """
+        Create vector memory.
 
         Args:
             vector_store (Optional[BasePydanticVectorStore]): vector store (note: delete_nodes must

@@ -1,4 +1,5 @@
-::: llama_index.core.workflow.context
+::: workflows.context
     options:
       members:
         - Context
+      filters: ["!^_", "^__init__$", "^collect_events$"]

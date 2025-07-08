@@ -2,9 +2,6 @@ import re
 import string
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
-from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
-
 from llama_index.core.node_parser.interface import NodeParser
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.callbacks.base import CallbackManager
@@ -16,7 +13,7 @@ from llama_index.core.node_parser.node_utils import (
 )
 from llama_index.core.node_parser.text.utils import split_by_sentence_tokenizer
 from llama_index.core.schema import BaseNode, Document, NodeRelationship
-from llama_index.core.utils import get_tqdm_iterable
+from llama_index.core.utils import get_tqdm_iterable, globals_helper
 
 DEFAULT_OG_TEXT_METADATA_KEY = "original_text"
 
@@ -59,11 +56,12 @@ class LanguageConfig:
                 "Spacy is not installed, please install it with `pip install spacy`."
             )
         self.nlp = spacy.load(self.spacy_model)  # type: ignore
-        self.stopwords = set(stopwords.words(self.language))  # type: ignore
+        self.stopwords = set(globals_helper.stopwords)  # type: ignore
 
 
 class SemanticDoubleMergingSplitterNodeParser(NodeParser):
-    """Semantic double merging text splitter.
+    """
+    Semantic double merging text splitter.
 
     Splits a document into Nodes, with each node being a group of semantically related sentences.
 
@@ -76,6 +74,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
         merging_range (int): How many chunks 'ahead' beyond the nearest neighbor to be merged if similar (1 or 2 available)
         merging_separator (str): The separator to use when merging chunks. Defaults to a single space.
         sentence_splitter (Optional[Callable]): splits text into sentences
+
     """
 
     language_config: LanguageConfig = Field(
@@ -226,12 +225,12 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
             previous_node: Optional[BaseNode] = None
             for split_node in split_nodes:
                 if previous_node:
-                    split_node.relationships[
-                        NodeRelationship.PREVIOUS
-                    ] = previous_node.as_related_node_info()
-                    previous_node.relationships[
-                        NodeRelationship.NEXT
-                    ] = split_node.as_related_node_info()
+                    split_node.relationships[NodeRelationship.PREVIOUS] = (
+                        previous_node.as_related_node_info()
+                    )
+                    previous_node.relationships[NodeRelationship.NEXT] = (
+                        split_node.as_related_node_info()
+                    )
                 previous_node = split_node
             all_nodes.extend(split_nodes)
 
@@ -282,8 +281,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
                     self.language_config.nlp(self._clean_text_advanced(sentence))
                 )
                 > self.appending_threshold
-                and len(last_sentences) + len(sentence) + 1 <= self.max_chunk_size
-                # and not len(chunk) > self.max_chunk_size
+                and len(chunk) + len(sentence) + 1 <= self.max_chunk_size
             ):
                 # elif nlp(last_sentences).similarity(nlp(sentence)) > self.threshold:
                 chunk_sentences.append(sentence)
@@ -394,7 +392,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
         # Remove punctuations
         text = text.translate(str.maketrans("", "", string.punctuation))
         # Remove stopwords
-        tokens = word_tokenize(text)
+        tokens = globals_helper.punkt_tokenizer.tokenize(text)
         filtered_words = [w for w in tokens if w not in self.language_config.stopwords]
 
         return " ".join(filtered_words)

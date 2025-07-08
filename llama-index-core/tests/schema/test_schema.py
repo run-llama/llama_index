@@ -1,4 +1,5 @@
 import base64
+import httpx
 import logging
 from io import BytesIO
 from pathlib import Path
@@ -250,17 +251,27 @@ def test_image_document_image():
     assert doc.image == "MTIzNDU2Nzg5"
 
 
-def test_image_document_path():
-    mock_path = Path(__file__)
-    doc = ImageDocument(id_="test", image_path=mock_path)
-    assert doc.image_path == str(mock_path)
-    doc.image_path = str(mock_path.parent)
-    assert doc.image_path == str(mock_path.parent)
+def test_image_document_path(tmp_path: Path):
+    content = httpx.get(
+        "https://astrabert.github.io/hophop-science/images/whale_doing_science.png"
+    ).content
+    fl_path = tmp_path / "test_image.png"
+    fl_path.write_bytes(content)
+    doc = ImageDocument(id_="test", image_path=fl_path)
+    assert doc.image_path == str(fl_path)
+    doc.image_path = str(fl_path.parent)
+    assert doc.image_path == str(fl_path.parent)
 
 
 def test_image_document_url():
-    doc = ImageDocument(id_="test", image_url="https://example.com/")
-    assert doc.image_url == "https://example.com/"
+    doc = ImageDocument(
+        id_="test",
+        image_url="https://astrabert.github.io/hophop-science/images/whale_doing_science.png",
+    )
+    assert (
+        doc.image_url
+        == "https://astrabert.github.io/hophop-science/images/whale_doing_science.png"
+    )
     doc.image_url = "https://foo.org"
     assert doc.image_url == "https://foo.org/"
 
@@ -279,6 +290,19 @@ def test_image_document_embeddings():
     doc.text_embedding = [1.0, 2.0, 3.0]
     assert doc.text_embedding == [1.0, 2.0, 3.0]
     assert doc.text_resource.embeddings == {"dense": [1.0, 2.0, 3.0]}
+
+
+def test_image_document_path_serialization(tmp_path: Path):
+    content = httpx.get(
+        "https://astrabert.github.io/hophop-science/images/whale_doing_science.png"
+    ).content
+    fl_path = tmp_path / "test_image.png"
+    fl_path.write_bytes(content)
+    doc = ImageDocument(image_path=fl_path)
+    assert doc.model_dump()["image_resource"]["path"] == fl_path.__str__()
+
+    new_doc = ImageDocument(**doc.model_dump())
+    assert new_doc.image_resource.path == fl_path
 
 
 def test_image_block_resolve_image(png_1px: bytes, png_1px_b64: bytes):

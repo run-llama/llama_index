@@ -35,7 +35,7 @@ from llama_index.core.chat_engine.types import (
 from llama_index.core.base.llms.types import ChatMessage, ChatResponse
 from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
 from llama_index.core.memory.types import BaseMemory
-from llama_index.core.multi_modal_llms.base import MultiModalLLM
+from llama_index.core.llms import LLM
 from llama_index.core.objects.base import ObjectRetriever
 from llama_index.core.schema import ImageDocument
 from llama_index.core.tools import BaseTool, ToolOutput, adapt_to_async_tool
@@ -54,8 +54,7 @@ class ChatMessageCallable(Protocol):
         role: str,
         image_documents: Optional[Sequence[ImageDocument]],
         **kwargs: Any,
-    ) -> ChatMessage:
-        ...
+    ) -> ChatMessage: ...
 
 
 def add_user_step_to_reasoning(
@@ -65,7 +64,8 @@ def add_user_step_to_reasoning(
     current_reasoning: List[BaseReasoningStep],
     verbose: bool = False,
 ) -> None:
-    """Add user step to reasoning.
+    """
+    Add user step to reasoning.
 
     Adds both text input and image input to reasoning.
 
@@ -100,7 +100,8 @@ def add_user_step_to_reasoning(
 
 
 class MultimodalReActAgentWorker(BaseAgentWorker):
-    """Multimodal ReAct Agent worker.
+    """
+    Multimodal ReAct Agent worker.
 
     **NOTE**: This is a BETA feature.
 
@@ -109,7 +110,7 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
     def __init__(
         self,
         tools: Sequence[BaseTool],
-        multi_modal_llm: MultiModalLLM,
+        multi_modal_llm: LLM,
         max_iterations: int = 10,
         react_chat_formatter: Optional[ReActChatFormatter] = None,
         output_parser: Optional[ReActOutputParser] = None,
@@ -163,7 +164,7 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         cls,
         tools: Optional[Sequence[BaseTool]] = None,
         tool_retriever: Optional[ObjectRetriever[BaseTool]] = None,
-        multi_modal_llm: Optional[MultiModalLLM] = None,
+        multi_modal_llm: Optional[LLM] = None,
         max_iterations: int = 10,
         react_chat_formatter: Optional[ReActChatFormatter] = None,
         output_parser: Optional[ReActOutputParser] = None,
@@ -171,7 +172,8 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
         verbose: bool = False,
         **kwargs: Any,
     ) -> "MultimodalReActAgentWorker":
-        """Convenience constructor method from set of BaseTools (Optional).
+        """
+        Convenience constructor method from set of BaseTools (Optional).
 
         NOTE: kwargs should have been exhausted by this point. In other words
         the various upstream components such as BaseSynthesizer (response synthesizer)
@@ -180,20 +182,21 @@ class MultimodalReActAgentWorker(BaseAgentWorker):
 
         Returns:
             ReActAgent
+
         """
         if multi_modal_llm is None:
             try:
-                from llama_index.multi_modal_llms.openai import (
-                    OpenAIMultiModal,
+                from llama_index.llms.openai import (
+                    OpenAIResponses,
                 )  # pants: no-infer-dep
 
-                multi_modal_llm = multi_modal_llm or OpenAIMultiModal(
-                    model="gpt-4-vision-preview", max_new_tokens=1000
+                multi_modal_llm = multi_modal_llm or OpenAIResponses(
+                    model="gpt-4.1", max_output_tokens=1000
                 )
             except ImportError:
                 raise ImportError(
-                    "`llama-index-multi-modal-llms-openai` package cannot be found. "
-                    "Please install it by using `pip install `llama-index-multi-modal-llms-openai`"
+                    "`llama-index-llms-openai` package cannot be found. "
+                    "Please install it by using `pip install `llama-index-llms-openai`"
                 )
         return cls(
             tools=tools or [],

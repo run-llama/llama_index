@@ -17,7 +17,7 @@ from openai.types.completion import Completion, CompletionUsage
 from pytest_httpx import HTTPXMock
 from llama_index.llms.nvidia.utils import MODEL_TABLE
 
-NVIDIA_FUNTION_CALLING_MODELS = {
+NVIDIA_FUNCTION_CALLING_MODELS = {
     model.id if model.supports_tools else None for model in MODEL_TABLE.values()
 }
 COMPLETION_MODELS = {model.id if model else None for model in MODEL_TABLE.values()}
@@ -210,7 +210,7 @@ def test_chat_model_streaming(MockSyncOpenAI: MagicMock) -> None:
         assert chat_responses[-1].message.role == "assistant"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
 async def test_async_chat_model_basic(MockAsyncOpenAI: MagicMock) -> None:
     with CachedNVIDIApiKeys(set_fake_key=True):
@@ -230,7 +230,7 @@ async def test_async_chat_model_basic(MockAsyncOpenAI: MagicMock) -> None:
         assert chat_response.message.content == "Cool Test Message"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
 async def test_async_streaming_chat_model(MockAsyncOpenAI: MagicMock) -> None:
     with CachedNVIDIApiKeys(set_fake_key=True):
@@ -309,7 +309,7 @@ def test_model_compatible_client_default_model(MockSyncOpenAI: MagicMock) -> Non
 @pytest.mark.parametrize(
     "model",
     (
-        next(iter(NVIDIA_FUNTION_CALLING_MODELS)),
+        next(iter(NVIDIA_FUNCTION_CALLING_MODELS)),
         next(iter(MODEL_TABLE.keys())),
         next(iter(COMPLETION_MODELS)),
     ),
@@ -324,7 +324,7 @@ def test_model_compatible_client_model(MockSyncOpenAI: MagicMock, model: str) ->
 
 def test_model_incompatible_client_model() -> None:
     model_name = "x"
-    err_msg = f"Model {model_name} is unknown, " "check `available_models`"
+    err_msg = f"Model {model_name} is unknown, check `available_models`"
     with pytest.raises(ValueError) as msg:
         NVIDIA(model=model_name)
     assert err_msg == str(msg.value)

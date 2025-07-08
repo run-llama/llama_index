@@ -1,22 +1,23 @@
-"""DeepLake vector store index.
+"""
+DeepLake vector store index.
 
 An index that is built within DeepLake.
 
 """
 
 import logging
-from typing import Any, List, Optional, cast, Dict, Union, Iterable, Callable
-
 import uuid
+from typing import Any, Callable, Dict, Iterable, List, Optional, Union, cast
+
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
-    VectorStoreQuery,
-    VectorStoreQueryResult,
-    MetadataFilters,
     FilterCondition,
     FilterOperator,
+    MetadataFilters,
+    VectorStoreQuery,
+    VectorStoreQueryResult,
 )
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
@@ -180,12 +181,15 @@ try:
                 delete_all: Optional[bool] = None,
             ) -> None:
                 if ids is not None:
-                    print(
-                        f"SELECT * from (select *,ROW_NUMBER() as r_id) where id IN ({str(ids)[1:-1]})"
-                    )
-                    view = self.ds.query(
-                        f"SELECT * from (select *,ROW_NUMBER() as r_id) where id IN ({str(ids)[1:-1]})"
-                    )
+                    # Sanitize each ID in the list
+                    sanitized_ids = [self.__sanitize_value(id) for id in ids]
+                    # Join with commas for the IN clause
+                    ids_string = ", ".join(sanitized_ids)
+
+                    query = f"SELECT * from (select *,ROW_NUMBER() as r_id) where id IN ({ids_string})"
+                    print(query)
+                    view = self.ds.query(query)
+
                     dlist = view["r_id"][:].tolist()
                     dlist.reverse()
                     print(dlist)
@@ -219,16 +223,81 @@ try:
                         "['cos', 'cosine_similarity', 'l2', 'l2_norm']"
                     )
 
+            def __sanitize_identifier(self, identifier: str) -> str:
+                """
+                Sanitize SQL identifiers like table or column names.
+
+                Args:
+                    identifier: The identifier to sanitize
+
+                Returns:
+                    Sanitized identifier
+
+                """
+                # Remove any dangerous characters from the identifier
+                # Only allow alphanumeric characters and underscores
+                sanitized = "".join(c for c in identifier if c.isalnum() or c == "_")
+
+                # Ensure the identifier is not empty after sanitization
+                if not sanitized:
+                    raise ValueError(f"Invalid identifier: {identifier}")
+
+                return sanitized
+
+            def __sanitize_value(self, value: Any) -> str:
+                """
+                Sanitize a value for safe SQL inclusion.
+
+                Args:
+                    value: The value to sanitize
+
+                Returns:
+                    Properly formatted and sanitized value string
+
+                """
+                if value is None:
+                    return "NULL"
+                elif isinstance(value, (int, float)):
+                    # Numeric values don't need quotes
+                    return str(value)
+                elif isinstance(value, bool):
+                    # Convert boolean to integer
+                    return "1" if value else "0"
+                else:
+                    # For strings and other types, escape single quotes and wrap in quotes
+                    # Replace single quotes with two single quotes (SQL standard escaping)
+                    escaped_value = str(value).replace("'", "''")
+                    return f"'{escaped_value}'"
+
             def __generate_where_clause(self, filter: Dict[str, Any]) -> str:
                 if filter is None:
                     return ""
-                where_clause = "WHERE "
+
+                where_clauses = []
                 for key, value in filter.items():
+                    # Sanitize the column name (key)
+                    sanitized_key = self.__sanitize_identifier(key)
+
                     if isinstance(value, list):
-                        where_clause += f"{key} IN ({str(value)[1:-1]}) AND "
+                        # For lists, sanitize each value according to its type
+                        if not value:  # Handle empty list
+                            where_clauses.append(f"{sanitized_key} IN (NULL)")
+                        else:
+                            sanitized_values = []
+                            for item in value:
+                                sanitized_values.append(self.__sanitize_value(item))
+                            where_clauses.append(
+                                f"{sanitized_key} IN ({', '.join(sanitized_values)})"
+                            )
                     else:
-                        where_clause += f"{key} == {value} AND "
-                return where_clause[:-5]
+                        # For single values, sanitize the value
+                        sanitized_value = self.__sanitize_value(value)
+                        where_clauses.append(f"{sanitized_key} == {sanitized_value}")
+
+                if not where_clauses:
+                    return ""
+
+                return "WHERE " + " AND ".join(where_clauses)
 
             def __create_dataset(self, emb_size=None) -> None:
                 if emb_size is None:
@@ -252,7 +321,8 @@ logger = logging.getLogger(__name__)
 
 
 class DeepLakeVectorStore(BasePydanticVectorStore):
-    """The DeepLake Vector Store.
+    """
+    The DeepLake Vector Store.
 
     In this vector store we store the text, its embedding and
     a few pieces of its metadata in a deeplake dataset. This implementation
@@ -269,6 +339,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
         # Create an instance of DeepLakeVectorStore
         vector_store = DeepLakeVectorStore(dataset_path=dataset_path, overwrite=True)
         ```
+
     """
 
     stores_text: bool = True
@@ -322,6 +393,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
 
         Raises:
             ImportError: Unable to import `deeplake`.
+
         """
         super().__init__(
             dataset_path=dataset_path,
@@ -351,10 +423,12 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
 
     @property
     def client(self) -> Any:
-        """Get client.
+        """
+        Get client.
 
         Returns:
             Any: DeepLake vectorstore dataset.
+
         """
         return self.vectorstore.dataset
 
@@ -444,7 +518,8 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
             self.vectorstore.delete(filter=lambda x: True)
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add the embeddings and their nodes into DeepLake.
+        """
+        Add the embeddings and their nodes into DeepLake.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings
@@ -452,6 +527,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[str]: List of ids inserted.
+
         """
         embedding = []
         metadata = []
@@ -502,7 +578,8 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
         self.vectorstore.delete(filter={"metadata": {"doc_id": ref_doc_id}})
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): VectorStoreQuery class input, it has
@@ -513,6 +590,7 @@ class DeepLakeVectorStore(BasePydanticVectorStore):
 
         Returns:
             VectorStoreQueryResult
+
         """
         query_embedding = cast(List[float], query.query_embedding)
         exec_option = kwargs.get("exec_option")

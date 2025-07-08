@@ -21,6 +21,7 @@ class WikipediaToolSpec(BaseToolSpec):
         Args:
             page (str): Title of the page to read.
             lang (str): Language of Wikipedia to read. (default: English)
+
         """
         import wikipedia
 
@@ -38,6 +39,7 @@ class WikipediaToolSpec(BaseToolSpec):
 
         Args:
             query (str): the string to search for
+
         """
         import wikipedia
 

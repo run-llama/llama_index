@@ -106,7 +106,9 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
         # Close the Memgraph connection explicitly.
         graph_store.close()
         ```
+
     """
+
     supports_structured_queries: bool = True
     supports_vector_queries: bool = True
     text_to_cypher_template: PromptTemplate = DEFAULT_CYPHER_TEMPALTE
@@ -371,22 +373,21 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
         params = [r.dict() for r in relations]
         for index in range(0, len(params), CHUNK_SIZE):
             chunked_params = params[index : index + CHUNK_SIZE]
-            for param in chunked_params:
-                formatted_properties = ", ".join(
-                    [f"{key}: {value!r}" for key, value in param["properties"].items()]
-                )
-                self.structured_query(
-                    f"""
-                    MERGE (source: {BASE_NODE_LABEL} {{id: "{param["source_id"]}"}})
-                    ON CREATE SET source:Chunk
-                    MERGE (target: {BASE_NODE_LABEL} {{id: "{param["target_id"]}"}})
-                    ON CREATE SET target:Chunk
-                    WITH source, target
-                    MERGE (source)-[r:{param["label"]}]->(target)
-                    SET r += {{{formatted_properties}}}
-                    RETURN count(*)
-                    """
-                )
+
+            self.structured_query(
+                f"""
+                UNWIND $data AS row
+                MERGE (source: {BASE_NODE_LABEL} {{id: row.source_id}})
+                ON CREATE SET source:Chunk
+                MERGE (target: {BASE_NODE_LABEL} {{id: row.target_id}})
+                ON CREATE SET target:Chunk
+                WITH source, target, row
+                CREATE (source)-[r:row.label]->(target)
+                SET r += row.properties
+                RETURN count(*)
+                """,
+                param_map={"data": chunked_params},
+            )
 
     def get(
         self,
@@ -925,7 +926,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                             example = (
                                 (
                                     "Available options: "
-                                    f'{[clean_string_values(el) for el in prop["values"]]}'
+                                    f"{[clean_string_values(el) for el in prop['values']]}"
                                 )
                                 if prop["values"]
                                 else ""
@@ -941,7 +942,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                         "LocalDateTime",
                     ]:
                         if prop.get("min") is not None:
-                            example = f'Min: {prop["min"]}, Max: {prop["max"]}'
+                            example = f"Min: {prop['min']}, Max: {prop['max']}"
                         else:
                             example = (
                                 f'Example: "{prop["values"][0]}"'
@@ -952,7 +953,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                         # Skip embeddings
                         if not prop.get("min_size") or prop["min_size"] > LIST_LIMIT:
                             continue
-                        example = f'Min Size: {prop["min_size"]}, Max Size: {prop["max_size"]}'
+                        example = f"Min Size: {prop['min_size']}, Max Size: {prop['max_size']}"
                     formatted_node_props.append(
                         f"  - `{prop['property']}`: {prop['type']} {example}"
                     )
@@ -973,7 +974,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                             example = (
                                 (
                                     "Available options: "
-                                    f'{[clean_string_values(el) for el in prop["values"]]}'
+                                    f"{[clean_string_values(el) for el in prop['values']]}"
                                 )
                                 if prop.get("values")
                                 else ""
@@ -988,7 +989,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                         "LocalDateTime",
                     ]:
                         if prop.get("min"):  # If we have min/max
-                            example = f'Min: {prop["min"]}, Max:  {prop["max"]}'
+                            example = f"Min: {prop['min']}, Max:  {prop['max']}"
                         else:  # return a single value
                             example = (
                                 f'Example: "{prop["values"][0]}"'
@@ -999,7 +1000,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                         # Skip embeddings
                         if prop["min_size"] > LIST_LIMIT:
                             continue
-                        example = f'Min Size: {prop["min_size"]}, Max Size: {prop["max_size"]}'
+                        example = f"Min Size: {prop['min_size']}, Max Size: {prop['max_size']}"
                     formatted_rel_props.append(
                         f"  - `{prop['property']}: {prop['type']}` {example}"
                     )
@@ -1053,10 +1054,19 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
             # Check if vector index is configured
             try:
                 self.structured_query(
-                    """CALL vector_search.show_index_info() YIELD * RETURN *;"""
+                    f"""
+                    CREATE VECTOR INDEX {VECTOR_INDEX_NAME} ON :{BASE_ENTITY_LABEL}(embedding) WITH CONFIG {{"dimension": 1536, "capacity": 1000}};
+                    """
                 )
                 self._supports_vector_index = True
-                return
+                logger.info(
+                    "Vector index %s was created with a fixed embedding dimension of 1536. "
+                    "If your chosen LLM model uses a different dimension, manually create the vector index with the following query:\n"
+                    'CREATE VECTOR INDEX %s ON :%s(embedding) WITH CONFIG {"dimension": <INSERT_DIMENSION>, "capacity": 1000};',
+                    VECTOR_INDEX_NAME,
+                    VECTOR_INDEX_NAME,
+                    BASE_ENTITY_LABEL,
+                )
             except neo4j.exceptions.Neo4jError as decode_error:
                 self._supports_vector_index = False
                 if (
@@ -1065,10 +1075,8 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                     and "vector_search.show_index_info" in decode_error.message
                 ):
                     logger.info(
-                        """To use vector indices and vector search, start
-                        Memgraph with the experimental vector search feature
-                        flag and configure vector index. Falling back to
-                        alternative queries."""
+                        """Failed to create vector index entity:
+                        Given vector index already exists."""
                     )
         else:
             self._supports_vector_index = False

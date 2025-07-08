@@ -7,6 +7,7 @@ migration_scripts/
 .idea
 .vscode
 .zed
+*.code-workspace
 
 # Local development
 venv/
@@ -24,4 +25,6 @@ credentials.json
 token.json
 .python-version
 .DS_Store
-/storage/
+*.sqlite3
+*.db
+llama-index-core/llama_index/core/_static

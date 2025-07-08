@@ -125,7 +125,8 @@ class OutputKeys(BaseModel):
 
 
 class ChainableMixin(ABC):
-    """Chainable mixin.
+    """
+    Chainable mixin.
 
     A module that can produce a `QueryComponent` from a set of inputs through
     `as_query_component`.
@@ -149,7 +150,8 @@ class ChainableMixin(ABC):
 
 
 class QueryComponent(BaseModel):
-    """Query component.
+    """
+    Query component.
 
     Represents a component that can be run in a `QueryPipeline`.
 
@@ -230,7 +232,8 @@ class QueryComponent(BaseModel):
 
     @property
     def sub_query_components(self) -> List["QueryComponent"]:
-        """Get sub query components.
+        """
+        Get sub query components.
 
         Certain query components may have sub query components, e.g. a
         query pipeline will have sub query components, and so will
@@ -349,8 +352,7 @@ class ComponentIntermediates:
 
     def __repr__(self) -> str:
         return (
-            f"ComponentIntermediates(inputs={self.inputs!s}, "
-            f"outputs={self.outputs!s})"
+            f"ComponentIntermediates(inputs={self.inputs!s}, outputs={self.outputs!s})"
         )
 
     def __str__(self) -> str:

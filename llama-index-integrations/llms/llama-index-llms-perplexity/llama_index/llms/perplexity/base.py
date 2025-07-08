@@ -1,8 +1,13 @@
 import json
-from typing import Any, Callable, Dict, Optional, Sequence
+from collections.abc import Callable, Sequence
+from typing import Any, Optional
+from os import getenv
 
+import aiohttp
 import httpx
 import requests
+from tenacity import retry, stop_after_attempt, wait_fixed
+
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
@@ -35,7 +40,7 @@ class Perplexity(LLM):
         pplx_api_key = "your-perplexity-api-key"
 
         llm = Perplexity(
-            api_key=pplx_api_key, model="llama-3.1-sonar-small-128k-online", temperature=0.5
+            api_key=pplx_api_key, model="sonar-pro", temperature=0.5
         )
 
         messages_dict = [
@@ -47,9 +52,13 @@ class Perplexity(LLM):
         response = llm.chat(messages)
         print(str(response))
         ```
+
     """
 
-    model: str = Field(description="The Perplexity model to use.")
+    model: str = Field(
+        default="sonar-pro",
+        description="The Perplexity model to use.",
+    )
     temperature: float = Field(description="The temperature to use during generation.")
     max_tokens: Optional[int] = Field(
         default=None,
@@ -59,31 +68,41 @@ class Perplexity(LLM):
         default=None,
         description="The context window to use during generation.",
     )
-    api_key: str = Field(
-        default=None, description="The Perplexity API key.", exclude=True
+    api_key: Optional[str] = Field(
+        description="The Perplexity API key.",
+        exclude=True,
     )
     api_base: str = Field(
         default="https://api.perplexity.ai",
         description="The base URL for Perplexity API.",
     )
-    additional_kwargs: Dict[str, Any] = Field(
+    additional_kwargs: dict[str, Any] = Field(
         default_factory=dict, description="Additional kwargs for the Perplexity API."
     )
     max_retries: int = Field(
         default=10, description="The maximum number of API retries."
     )
-    headers: Dict[str, str] = Field(
+    headers: dict[str, str] = Field(
         default_factory=dict, description="Headers for API requests."
     )
+    enable_search_classifier: bool = Field(
+        default=False,
+        description="Whether to enable the search classifier. Default is False.",
+    )
+    is_chat_model: bool = Field(
+        default=True,
+        description="Whether this is a chat model or not. Default is True.",
+    )
+    timeout: float = Field(default=10.0, description="HTTP Timeout")
 
     def __init__(
         self,
-        model: str = "llama-3.1-sonar-small-128k-online",
-        temperature: float = 0.1,
+        model: str = "sonar-pro",
+        temperature: float = 0.2,
         max_tokens: Optional[int] = None,
         api_key: Optional[str] = None,
         api_base: Optional[str] = "https://api.perplexity.ai",
-        additional_kwargs: Optional[Dict[str, Any]] = None,
+        additional_kwargs: Optional[dict[str, Any]] = None,
         max_retries: int = 10,
         context_window: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
@@ -92,8 +111,11 @@ class Perplexity(LLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        enable_search_classifier: bool = False,
+        timeout: float = 30.0,
         **kwargs: Any,
     ) -> None:
+        api_key = api_key or getenv("PPLX_API_KEY")
         additional_kwargs = additional_kwargs or {}
         headers = {
             "accept": "application/json",
@@ -116,6 +138,8 @@ class Perplexity(LLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+            enable_search_classifier=enable_search_classifier,
+            timeout=timeout,
             **kwargs,
         )
 
@@ -131,28 +155,32 @@ class Perplexity(LLM):
                 if self.context_window is not None
                 else self._get_context_window()
             ),
-            num_output=self.max_tokens
-            or -1,  # You can replace this with the appropriate value
-            is_chat_model=self._is_chat_model(),
+            num_output=self.max_tokens or -1,
+            is_chat_model=self.is_chat_model,
             model_name=self.model,
         )
 
     def _get_context_window(self) -> int:
-        # Check https://docs.perplexity.ai/guides/model-cards for latest model information
+        """
+        For latest model information, check:
+        https://docs.perplexity.ai/guides/model-cards.
+        """
         model_context_windows = {
-            "llama-3.1-sonar-small-128k-online": 127072,
-            "llama-3.1-sonar-large-128k-online": 127072,
-            "llama-3.1-sonar-huge-128k-online": 127072,
+            "sonar-deep-research": 127072,
+            "sonar-reasoning-pro": 127072,
+            "sonar-reasoning": 127072,
+            "sonar": 127072,
+            "r1-1776": 127072,
+            "sonar-pro": 200000,
         }
-        return model_context_windows.get(
-            self.model, 127072
-        )  # Default to 127072 tokens if model is not found
+        return model_context_windows.get(self.model, 127072)
 
-    def _get_all_kwargs(self, **kwargs: Any) -> Dict[str, Any]:
+    def _get_all_kwargs(self, **kwargs: Any) -> dict[str, Any]:
         """Get all data for the request as a dictionary."""
         base_kwargs = {
             "model": self.model,
             "temperature": self.temperature,
+            "enable_search_classifier": self.enable_search_classifier,
         }
         if self.max_tokens is not None:
             base_kwargs["max_tokens"] = self.max_tokens
@@ -168,7 +196,9 @@ class Perplexity(LLM):
             "messages": messages,
             **self._get_all_kwargs(**kwargs),
         }
-        response = requests.post(url, json=payload, headers=self.headers)
+        response = requests.post(
+            url, json=payload, headers=self.headers, timeout=self.timeout
+        )
         response.raise_for_status()
         data = response.json()
         return CompletionResponse(
@@ -179,7 +209,11 @@ class Perplexity(LLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        return self._complete(prompt, **kwargs)
+        @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
+        def _complete_retry():
+            return self._complete(prompt, **kwargs)
+
+        return _complete_retry()
 
     def _chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         url = f"{self.api_base}/chat/completions"
@@ -189,7 +223,9 @@ class Perplexity(LLM):
             "messages": message_dicts,
             **self._get_all_kwargs(**kwargs),
         }
-        response = requests.post(url, json=payload, headers=self.headers)
+        response = requests.post(
+            url, json=payload, headers=self.headers, timeout=self.timeout
+        )
         response.raise_for_status()
         data = response.json()
         message = ChatMessage(
@@ -199,7 +235,11 @@ class Perplexity(LLM):
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
-        return self._chat(messages, **kwargs)
+        @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
+        def _chat_retry():
+            return self._chat(messages, **kwargs)
+
+        return _chat_retry()
 
     async def _acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         url = f"{self.api_base}/chat/completions"
@@ -211,44 +251,58 @@ class Perplexity(LLM):
             "messages": messages,
             **self._get_all_kwargs(**kwargs),
         }
+
         async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=payload, headers=self.headers)
-        response.raise_for_status()
-        data = response.json()
-        return CompletionResponse(
-            text=data["choices"][0]["message"]["content"], raw=data
-        )
+            response = await client.post(
+                url, json=payload, headers=self.headers, timeout=self.timeout
+            )
+            response.raise_for_status()
+            data = response.json()
+            return CompletionResponse(
+                text=data["choices"][0]["message"]["content"], raw=data
+            )
 
     @llm_completion_callback()
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        return await self._acomplete(prompt, **kwargs)
+        @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
+        async def _acomplete_retry(prompt, **kwargs):
+            return await self._acomplete(prompt, **kwargs)
+
+        return await _acomplete_retry(prompt, **kwargs)
 
     async def _achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        url = f"{self.api_base}/chat/completions"
         message_dicts = to_openai_message_dicts(messages)
         payload = {
             "model": self.model,
             "messages": message_dicts,
             **self._get_all_kwargs(**kwargs),
         }
+
+        url = f"{self.api_base}/chat/completions"
         async with httpx.AsyncClient() as client:
-            response = await client.post(url, json=payload, headers=self.headers)
-        response.raise_for_status()
-        data = response.json()
-        message = ChatMessage(
-            role="assistant", content=data["choices"][0]["message"]["content"]
-        )
-        return ChatResponse(message=message, raw=data)
+            response = await client.post(
+                url, json=payload, headers=self.headers, timeout=self.timeout
+            )
+            response.raise_for_status()
+            data = response.json()
+            message = ChatMessage(
+                role="assistant", content=data["choices"][0]["message"]["content"]
+            )
+            return ChatResponse(message=message, raw=data)
 
     @llm_chat_callback()
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
-        return await self._achat(messages, **kwargs)
+        @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
+        async def _achat_retry():
+            return await self._achat(messages, **kwargs)
+
+        return await _achat_retry()
 
     def _stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:
         url = f"{self.api_base}/chat/completions"
@@ -257,28 +311,43 @@ class Perplexity(LLM):
             messages.insert(0, {"role": "system", "content": self.system_prompt})
         payload = {
             "model": self.model,
-            # "prompt": prompt,
             "messages": messages,
             "stream": True,
             **self._get_all_kwargs(**kwargs),
         }
-        print(payload)
+
+        @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
+        def make_request():
+            response = requests.post(
+                url,
+                json=payload,
+                headers=self.headers,
+                stream=True,
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return response
 
         def gen() -> CompletionResponseGen:
-            with requests.Session() as session:
-                with session.post(
-                    url, json=payload, headers=self.headers, stream=True
-                ) as response:
-                    response.raise_for_status()
-                    text = ""
-                    for line in response.iter_lines(
-                        decode_unicode=True
-                    ):  # decode lines to Unicode
-                        if line.startswith("data:"):
-                            data = json.loads(line[5:])
-                            delta = data["choices"][0]["message"]["content"]
-                            text += delta
-                            yield CompletionResponse(delta=delta, text=text, raw=data)
+            response = make_request()
+            text = ""
+
+            for line in response.iter_lines(decode_unicode=True):
+                if line.startswith("data:"):
+                    line = line[5:]  # Remove "data: " prefix
+                    if line.strip() == "[DONE]":
+                        break
+                    try:
+                        data = json.loads(line)
+                        if "choices" in data and data["choices"]:
+                            delta = data["choices"][0]["delta"].get("content", "")
+                            if delta:
+                                text += delta
+                                yield CompletionResponse(
+                                    delta=delta, text=text, raw=data
+                                )
+                    except json.JSONDecodeError:
+                        continue  # Skip malformed JSON
 
         return gen()
 
@@ -286,14 +355,11 @@ class Perplexity(LLM):
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
-        stream_complete_fn = self._stream_complete
-        return stream_complete_fn(prompt, **kwargs)
+        return self._stream_complete(prompt, **kwargs)
 
     async def _astream_complete(
         self, prompt: str, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
-        import aiohttp
-
         url = f"{self.api_base}/chat/completions"
         messages = [{"role": "user", "content": prompt}]
         if self.system_prompt:
@@ -305,20 +371,36 @@ class Perplexity(LLM):
             **self._get_all_kwargs(**kwargs),
         }
 
-        async def gen() -> CompletionResponseAsyncGen:
+        @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
+        async def make_request():
             async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    url, json=payload, headers=self.headers
-                ) as response:
-                    response.raise_for_status()
-                    text = ""
-                    async for line in response.content:
-                        line_text = line.decode("utf-8").strip()
-                        if line_text.startswith("data:"):
-                            data = json.loads(line_text[5:])
-                            delta = data["choices"][0]["message"]["content"]
-                            text += delta
-                            yield CompletionResponse(delta=delta, text=text, raw=data)
+                response = await session.post(
+                    url, json=payload, headers=self.headers, timeout=self.timeout
+                )
+                response.raise_for_status()
+                return response
+
+        async def gen() -> CompletionResponseAsyncGen:
+            response = await make_request()
+            text = ""
+
+            async for line in response.content:
+                line_text = line.decode("utf-8").strip()
+                if line_text.startswith("data:"):
+                    line_text = line_text[5:]
+                    if line_text.strip() == "[DONE]":
+                        break
+                    try:
+                        data = json.loads(line_text)
+                        if "choices" in data and data["choices"]:
+                            delta = data["choices"][0]["delta"].get("content", "")
+                            if delta:
+                                text += delta
+                                yield CompletionResponse(
+                                    delta=delta, text=text, raw=data
+                                )
+                    except json.JSONDecodeError:
+                        continue  # Skip malformed JSON
 
         return gen()
 
@@ -340,24 +422,40 @@ class Perplexity(LLM):
             **self._get_all_kwargs(**kwargs),
         }
 
+        @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
+        def make_request():
+            response = requests.post(
+                url,
+                json=payload,
+                headers=self.headers,
+                stream=True,
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return response
+
         def gen() -> ChatResponseGen:
-            content = ""
-            with requests.Session() as session:
-                with session.post(
-                    url, json=payload, headers=self.headers, stream=True
-                ) as response:
-                    response.raise_for_status()
-                    for line in response.iter_lines(
-                        decode_unicode=True
-                    ):  # decode lines to Unicode
-                        if line.startswith("data:"):
-                            data = json.loads(line[5:])
-                            delta = data["choices"][0]["delta"]["content"]
-                            content += delta
-                            message = ChatMessage(
-                                role="assistant", content=content, raw=data
-                            )
-                            yield ChatResponse(message=message, delta=delta, raw=data)
+            response = make_request()
+            text = ""
+
+            for line in response.iter_lines(decode_unicode=True):
+                if line.startswith("data:"):
+                    line = line[5:]  # Remove "data: " prefix
+                    if line.strip() == "[DONE]":
+                        break
+                    try:
+                        data = json.loads(line)
+                        if "choices" in data and data["choices"]:
+                            delta = data["choices"][0]["delta"].get("content", "")
+                            if delta:
+                                text += delta
+                                yield ChatResponse(
+                                    message=ChatMessage(role="assistant", content=text),
+                                    delta=delta,
+                                    raw=data,
+                                )
+                    except json.JSONDecodeError:
+                        continue  # Skip malformed JSON
 
         return gen()
 
@@ -370,8 +468,6 @@ class Perplexity(LLM):
     async def _astream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
-        import aiohttp
-
         url = f"{self.api_base}/chat/completions"
         message_dicts = to_openai_message_dicts(messages)
         payload = {
@@ -381,23 +477,38 @@ class Perplexity(LLM):
             **self._get_all_kwargs(**kwargs),
         }
 
-        async def gen() -> ChatResponseAsyncGen:
+        @retry(stop=stop_after_attempt(self.max_retries), wait=wait_fixed(1))
+        async def make_request():
             async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    url, json=payload, headers=self.headers
-                ) as response:
-                    response.raise_for_status()
-                    content = ""
-                    async for line in response.content:
-                        line_text = line.decode("utf-8").strip()
-                        if line_text.startswith("data:"):
-                            data = json.loads(line_text[5:])
-                            delta = data["choices"][0]["delta"]["content"]
-                            content += delta
-                            message = ChatMessage(
-                                role="assistant", content=content, raw=data
-                            )
-                            yield ChatResponse(message=message, delta=delta, raw=data)
+                response = await session.post(
+                    url, json=payload, headers=self.headers, timeout=self.timeout
+                )
+                response.raise_for_status()
+                return response
+
+        async def gen():
+            response = await make_request()
+            text = ""
+
+            async for line in response.content:
+                line_text = line.decode("utf-8").strip()
+                if line_text.startswith("data:"):
+                    line_text = line_text[5:]
+                    if line_text.strip() == "[DONE]":
+                        break
+                    try:
+                        data = json.loads(line_text)
+                        if "choices" in data and data["choices"]:
+                            delta = data["choices"][0]["delta"].get("content", "")
+                            if delta:
+                                text += delta
+                                yield ChatResponse(
+                                    message=ChatMessage(role="assistant", content=text),
+                                    delta=delta,
+                                    raw=data,
+                                )
+                    except json.JSONDecodeError:
+                        continue  # Skip malformed JSON
 
         return gen()
 

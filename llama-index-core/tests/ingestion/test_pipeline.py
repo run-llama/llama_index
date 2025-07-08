@@ -158,7 +158,7 @@ def test_save_load_pipeline_without_docstore() -> None:
     assert pipeline.docstore is None
 
 
-def test_pipeline_update() -> None:
+def test_pipeline_update_text_content() -> None:
     document1 = Document.example()
     document1.id_ = "1"
 
@@ -184,6 +184,42 @@ def test_pipeline_update() -> None:
     assert pipeline.docstore is not None
     assert len(pipeline.docstore.docs) == 1
     assert next(iter(pipeline.docstore.docs.values())).text == "test"  # type: ignore
+
+
+def test_pipeline_update_metadata() -> None:
+    """Test that IngestionPipeline updates document metadata, if it changed."""
+    old_metadata = {"filename": "README.md", "category": "codebase"}
+    document1 = Document.example()
+    document1.metadata = old_metadata
+    document1.id_ = "1"
+
+    pipeline = IngestionPipeline(
+        transformations=[
+            SentenceSplitter(chunk_size=25, chunk_overlap=0),
+        ],
+        docstore=SimpleDocumentStore(),
+    )
+
+    nodes = pipeline.run(documents=[document1])
+    assert len(nodes) >= 1
+    assert pipeline.docstore is not None
+    assert len(pipeline.docstore.docs) == 1
+    for node in nodes:
+        assert node.metadata == old_metadata
+
+    # adjust document metadata
+    new_metadata = {"filename": "README.md", "category": "documentation"}
+    document1.metadata = new_metadata
+
+    # run pipeline again
+    nodes_new = pipeline.run(documents=[document1])
+
+    assert len(nodes_new) == len(nodes)
+    assert pipeline.docstore is not None
+    assert len(pipeline.docstore.docs) == 1
+    assert next(iter(pipeline.docstore.docs.values())).metadata == new_metadata  # type: ignore
+    for node in nodes_new:
+        assert node.metadata == new_metadata
 
 
 def test_pipeline_dedup_duplicates_only() -> None:

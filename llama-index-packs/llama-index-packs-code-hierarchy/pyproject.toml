@@ -1,11 +1,57 @@
 [build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core"]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "ipython==8.10.0",
+    "jupyter>=1.0.0,<2",
+    "pytest==7.2.1",
+    "black[jupyter]<=23.9.1,>=23.7.0",
+    "codespell[toml]>=v2.2.6",
+    "diff-cover>=9.2.0",
+    "pytest-cov>=6.1.1",
+    "ruff==0.11.11",
+]
+
+[project]
+name = "llama-index-packs-code-hierarchy"
+version = "0.5.1"
+description = "A node parser which can create a hierarchy of all code scopes in a directory."
+authors = [{name = "Ryan Peach", email = "rgpeach10@gmail.com"}]
+requires-python = ">=3.9,<3.13"
+readme = "README.md"
+license = "MIT"
+maintainers = [{name = "ryanpeach"}]
+keywords = [
+    "c",
+    "code",
+    "cpp",
+    "hierarchy",
+    "html",
+    "javascript",
+    "python",
+    "repo",
+    "typescript",
+]
+dependencies = [
+    "tree-sitter-language-pack",
+    "tree-sitter",
+    "llama-index-agent-openai>=0.4.0,<0.5",
+    "llama-index-readers-file>=0.4.0,<0.5",
+    "llama-index-core>=0.12.0,<0.13",
+]
 
 [tool.codespell]
 check-filenames = true
 check-hidden = true
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
 
 [tool.llamahub]
 contains_example = false
@@ -19,37 +65,3 @@ disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 python_version = "3.8"
-
-[tool.poetry]
-authors = ["Ryan Peach <rgpeach10@gmail.com>"]
-description = "A node parser which can create a hierarchy of all code scopes in a directory."
-keywords = ["c", "code", "cpp", "hierarchy", "html", "javascript", "python", "repo", "typescript"]
-license = "MIT"
-maintainers = ["ryanpeach"]
-name = "llama-index-packs-code-hierarchy"
-readme = "README.md"
-version = "0.4.1"
-
-[tool.poetry.dependencies]
-python = ">=3.9,<3.13"
-tree-sitter-languages = "^1.8.0"
-tree-sitter = "^0.20.2"
-llama-index-agent-openai = "^0.4.0"
-llama-index-readers-file = "^0.4.0"
-llama-index-core = "^0.12.0"
-
-[tool.poetry.group.dev.dependencies]
-ipython = "8.10.0"
-jupyter = "^1.0.0"
-pytest = "7.2.1"
-
-[tool.poetry.group.dev.dependencies.black]
-extras = ["jupyter"]
-version = "<=23.9.1,>=23.7.0"
-
-[tool.poetry.group.dev.dependencies.codespell]
-extras = ["toml"]
-version = ">=v2.2.6"
-
-[[tool.poetry.packages]]
-include = "llama_index/"

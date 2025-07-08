@@ -6,32 +6,18 @@ on:
       - main
   pull_request:
 
-env:
-  POETRY_VERSION: "1.8.3"
-
 jobs:
-  build:
+  lint:
     runs-on: ubuntu-latest
-    strategy:
-      # You can use PyPy versions in python-version.
-      # For example, pypy-2.7 and pypy-3.8
-      matrix:
-        python-version: ["3.9"]
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: ${{ github.event_name == 'pull_request' && 2 || 0 }}
-      - name: Install Poetry
-        run: pipx install poetry==${{ env.POETRY_VERSION }}
-      - name: Set up python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: "poetry"
-          cache-dependency-path: "**/poetry.lock"
-      - name: Install pre-commit
-        shell: bash
-        run: poetry run pip install pre-commit
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+
+      - name: Set up Python
+        run: uv python install 3.12
+
       - name: Run linter
         shell: bash
-        run: poetry run make lint
+        run: uv run -- pre-commit run -a

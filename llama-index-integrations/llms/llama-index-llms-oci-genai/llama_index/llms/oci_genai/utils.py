@@ -4,7 +4,13 @@ import uuid
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Sequence, Dict, Union, Type, Callable, Optional, List
-from llama_index.core.base.llms.types import ChatMessage, MessageRole, ChatResponse
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    MessageRole,
+    ChatResponse,
+    TextBlock,
+    ImageBlock,
+)
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.tools import BaseTool
 from oci.generative_ai_inference.models import CohereTool
@@ -85,7 +91,8 @@ def _format_oci_tool_calls(
 
 
 def create_client(auth_type, auth_profile, auth_file_location, service_endpoint):
-    """OCI Gen AI client.
+    """
+    OCI Gen AI client.
 
     Args:
         auth_type (Optional[str]): Authentication type, can be: API_KEY (default), SECURITY_TOKEN, INSTANCE_PRINCIPAL, RESOURCE_PRINCIPAL. If not specified, API_KEY will be used
@@ -95,6 +102,7 @@ def create_client(auth_type, auth_profile, auth_file_location, service_endpoint)
         auth_file_location (Optional[str]): Path to the config file. If not specified, ~/.oci/config will be used
 
         service_endpoint (str): service endpoint url, e.g., "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com"
+
     """
     try:
         import oci
@@ -129,9 +137,9 @@ def create_client(auth_type, auth_profile, auth_file_location, service_endpoint)
                 oci_config=client_kwargs["config"]
             )
         elif auth_type == OCIAuthType(3).name:
-            client_kwargs[
-                "signer"
-            ] = oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+            client_kwargs["signer"] = (
+                oci.auth.signers.InstancePrincipalsSecurityTokenSigner()
+            )
         elif auth_type == OCIAuthType(4).name:
             client_kwargs["signer"] = oci.auth.signers.get_resource_principals_signer()
         else:
@@ -201,39 +209,33 @@ def get_chat_generator() -> Any:
 
 class Provider(ABC):
     @abstractmethod
-    def completion_response_to_text(self, response: Any) -> str:
-        ...
+    def completion_response_to_text(self, response: Any) -> str: ...
 
     @abstractmethod
-    def completion_stream_to_text(self, response: Any) -> str:
-        ...
+    def completion_stream_to_text(self, response: Any) -> str: ...
 
     @abstractmethod
-    def chat_response_to_text(self, response: Any) -> str:
-        ...
+    def chat_response_to_text(self, response: Any) -> str: ...
 
     @abstractmethod
-    def chat_stream_to_text(self, event_data: Dict) -> str:
-        ...
+    def chat_stream_to_text(self, event_data: Dict) -> str: ...
 
     @abstractmethod
-    def chat_generation_info(self, response: Any) -> Dict[str, Any]:
-        ...
+    def chat_generation_info(self, response: Any) -> Dict[str, Any]: ...
 
     @abstractmethod
-    def chat_stream_generation_info(self, event_data: Dict) -> Dict[str, Any]:
-        ...
+    def chat_stream_generation_info(self, event_data: Dict) -> Dict[str, Any]: ...
 
     @abstractmethod
-    def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
-        ...
+    def messages_to_oci_params(
+        self, messages: Sequence[ChatMessage]
+    ) -> Dict[str, Any]: ...
 
     @abstractmethod
     def convert_to_oci_tool(
         self,
         tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
-    ) -> Dict[str, Any]:
-        ...
+    ) -> Dict[str, Any]: ...
 
 
 class CohereProvider(Provider):
@@ -420,11 +422,13 @@ class CohereProvider(Provider):
 
         Returns:
             A CohereTool representing the tool in the OCI API format.
+
         """
         if isinstance(tool, BaseTool):
             # Extract tool name and description for BaseTool
-            tool_name, tool_description = getattr(tool, "name", None), getattr(
-                tool, "description", None
+            tool_name, tool_description = (
+                getattr(tool, "name", None),
+                getattr(tool, "description", None),
             )
             if not tool_name or not tool_description:
                 tool_name = getattr(tool.metadata, "name", None)
@@ -552,13 +556,21 @@ class MetaProvider(Provider):
             ) from ex
 
         self.oci_completion_request = models.LlamaLlmInferenceRequest
+
+        # Chat request and message models
         self.oci_chat_request = models.GenericChatRequest
         self.oci_chat_message = {
             "USER": models.UserMessage,
             "SYSTEM": models.SystemMessage,
             "ASSISTANT": models.AssistantMessage,
         }
-        self.oci_chat_message_content = models.TextContent
+
+        # Content models
+        self.oci_chat_message_content = models.ChatContent
+        self.oci_chat_message_text_content = models.TextContent
+        self.oci_chat_message_image_content = models.ImageContent
+        self.oci_chat_message_image_url = models.ImageUrl
+
         self.chat_api_format = models.BaseChatRequest.API_FORMAT_GENERIC
 
     def completion_response_to_text(self, response: Any) -> str:
@@ -568,15 +580,20 @@ class MetaProvider(Provider):
         return event_data["text"]
 
     def chat_response_to_text(self, response: Any) -> str:
-        return response.data.chat_response.choices[0].message.content[0].text
+        """Extract text from Meta chat response."""
+        message = response.data.chat_response.choices[0].message
+        content = message.content[0] if message.content else None
+        return content.text if content else ""
 
     def chat_stream_to_text(self, event_data: Dict) -> str:
-        if "message" in event_data:
-            return event_data["message"]["content"][0]["text"]
-        else:
+        """Extract text from Meta chat stream event."""
+        content = event_data.get("message", {}).get("content", None)
+        if not content:
             return ""
+        return content[0]["text"]
 
     def chat_generation_info(self, response: Any) -> Dict[str, Any]:
+        """Extract generation metadata from Meta chat response."""
         return {
             "finish_reason": response.data.chat_response.choices[0].finish_reason,
             "time_created": str(response.data.chat_response.time_created),
@@ -588,6 +605,20 @@ class MetaProvider(Provider):
         }
 
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
+        """
+        Convert LlamaIndex messages to OCI chat parameters.
+
+        Args:
+            messages: List of LlamaIndex ChatMessage objects
+
+        Returns:
+            Dict containing OCI chat parameters
+
+        Raises:
+            ValueError: If message content is invalid
+
+        """
+        """Map a LlamaIndex message to Meta's role representation."""
         role_map = {
             "user": "USER",
             "system": "SYSTEM",
@@ -595,18 +626,60 @@ class MetaProvider(Provider):
             "assistant": "ASSISTANT",
         }
 
-        oci_messages = [
-            self.oci_chat_message[role_map[msg.role]](
-                content=[self.oci_chat_message_content(text=msg.content)],
-            )
-            for msg in messages
-        ]
+        oci_messages = []
+        for msg in messages:
+            # Use blocks if available, otherwise fall back to legacy msg.content
+            content = getattr(msg, "blocks", None) or msg.content or ""
+            content = self._process_message_content(content)
+            oci_message = self.oci_chat_message[role_map[msg.role]](content=content)
+            oci_messages.append(oci_message)
 
         return {
             "messages": oci_messages,
             "api_format": self.chat_api_format,
             "top_k": -1,
         }
+
+    def _process_message_content(
+        self, content: Union[str, List[Union[TextBlock, ImageBlock]]]
+    ) -> List[Any]:
+        """
+        Process message content into OCI chat content format.
+
+        Args:
+            content: Message content as string or blocks
+
+        Returns:
+            List of OCI chat content objects
+
+        Raises:
+            ValueError: If content format is invalid
+
+        """
+        if isinstance(content, str):
+            return [self.oci_chat_message_text_content(text=content)]
+
+        if not isinstance(content, list):
+            raise ValueError("Message content must be a string or blocks.")
+
+        processed_content = []
+        for item in content:
+            if isinstance(item, TextBlock):
+                processed_content.append(
+                    self.oci_chat_message_text_content(text=item.text)
+                )
+            elif isinstance(item, ImageBlock):
+                processed_content.append(
+                    self.oci_chat_message_image_content(
+                        image_url=self.oci_chat_message_image_url(url=str(item.url))
+                    )
+                )
+            else:
+                raise ValueError(
+                    f"Items in blocks must be TextBlock or ImageBlock, got: {type(item)}"
+                )
+
+        return processed_content
 
     def convert_to_oci_tool(
         self,

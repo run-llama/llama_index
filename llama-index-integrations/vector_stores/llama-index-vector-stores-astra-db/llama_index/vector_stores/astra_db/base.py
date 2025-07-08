@@ -410,8 +410,9 @@ class AstraDBVectorStore(BasePydanticVectorStore):
                 zipped_indices, zipped_embeddings = zip(
                     *enumerate(match["$vector"] for match in prefetch_matches)
                 )
-                pf_match_indices, pf_match_embeddings = list(zipped_indices), list(
-                    zipped_embeddings
+                pf_match_indices, pf_match_embeddings = (
+                    list(zipped_indices),
+                    list(zipped_embeddings),
                 )
             else:
                 pf_match_indices, pf_match_embeddings = [], []

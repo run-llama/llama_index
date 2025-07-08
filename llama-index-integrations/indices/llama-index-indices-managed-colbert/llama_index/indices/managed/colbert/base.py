@@ -25,8 +25,8 @@ class ColbertIndex(BaseIndex[IndexDict]):
     to it's use of token-level encodings (rather than sentence or
     chunk level)
 
-    Parameters:
-
+    Parameters
+    ----------
     index_path: directory containing PLAID index files.
     model_name: ColBERT hugging face model name.
         Default: "colbert-ir/colbertv2.0".
@@ -104,7 +104,8 @@ class ColbertIndex(BaseIndex[IndexDict]):
     def _build_index_from_nodes(
         self, nodes: Sequence[BaseNode], **kwargs: Any
     ) -> IndexDict:
-        """Generate a PLAID index from the ColBERT checkpoint via its hugging face
+        """
+        Generate a PLAID index from the ColBERT checkpoint via its hugging face
         model_name.
         """
         from colbert import Indexer, Searcher

@@ -19,11 +19,13 @@ class GuruReader(BaseReader):
     """Guru cards / collections reader."""
 
     def __init__(self, guru_username: str, api_token: str) -> None:
-        """Initialize GuruReader.
+        """
+        Initialize GuruReader.
 
         Args:
             guru_username: Guru username.
             api_token: Guru API token. This can be personal API keys or collection based API keys. Note this is not the same as your password.
+
         """
         self.guru_username = guru_username
         self.api_token = api_token
@@ -34,7 +36,8 @@ class GuruReader(BaseReader):
         collection_ids: Optional[List[str]] = None,
         card_ids: Optional[List[str]] = None,
     ) -> List[Document]:
-        """Load data from Guru.
+        """
+        Load data from Guru.
 
         Args:
             collection_ids: List of collection ids to load from. Only pass in card_ids or collection_ids, not both.
@@ -44,12 +47,12 @@ class GuruReader(BaseReader):
             List[Document]: List of documents.
 
         """
-        assert (collection_ids is None) or (
-            card_ids is None
-        ), "Only pass in card_ids or collection_ids, not both."
-        assert (collection_ids is not None) or (
-            card_ids is not None
-        ), "Pass in card_ids or collection_ids."
+        assert (collection_ids is None) or (card_ids is None), (
+            "Only pass in card_ids or collection_ids, not both."
+        )
+        assert (collection_ids is not None) or (card_ids is not None), (
+            "Pass in card_ids or collection_ids."
+        )
 
         if collection_ids is not None:
             card_ids = self._get_card_ids_from_collection_ids(collection_ids)
@@ -93,13 +96,15 @@ class GuruReader(BaseReader):
         return list(df["id"])
 
     def _get_card_info(self, card_id: str) -> Any:
-        """Get card info.
+        """
+        Get card info.
 
         Args:
             card_id: Card id.
 
         Returns:
             Document: Document.
+
         """
         url = f"https://api.getguru.com/api/v1/cards/{card_id}/extended"
         headers = {"accept": "application/json"}
@@ -141,7 +146,7 @@ class GuruReader(BaseReader):
 
     def _get_guru_link(self, card_id) -> str:
         """
-        takes a guru "ExternalId" from meta data and returns the link to the guru card.
+        Takes a guru "ExternalId" from meta data and returns the link to the guru card.
         """
         url = f"https://api.getguru.com/api/v1/cards/{card_id}/extended"
         headers = {

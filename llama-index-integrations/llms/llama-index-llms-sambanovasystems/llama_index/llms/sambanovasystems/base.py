@@ -35,12 +35,14 @@ load_dotenv()
 
 
 def _convert_message_to_dict(message: ChatMessage) -> Dict[str, Any]:
-    """Converts a ChatMessage to a dictionary with Role / content.
+    """
+    Converts a ChatMessage to a dictionary with Role / content.
 
     Args:
         message: ChatMessage
     Returns:
         messages_dict:  role / content dict
+
     """
     if isinstance(message, ChatMessage):
         message_dict = {"role": message.role, "content": message.content}
@@ -50,18 +52,21 @@ def _convert_message_to_dict(message: ChatMessage) -> Dict[str, Any]:
 
 
 def _create_message_dicts(messages: Sequence[ChatMessage]) -> List[Dict[str, Any]]:
-    """Converts a list of ChatMessages to a list of dictionaries with Role / content.
+    """
+    Converts a list of ChatMessages to a list of dictionaries with Role / content.
 
     Args:
         messages: list of ChatMessages
     Returns:
         messages_dicts:  list of role / content dicts
+
     """
     return [_convert_message_to_dict(m) for m in messages]
 
 
 class SambaNovaCloud(LLM):
-    """SambaNova Cloud models.
+    """
+    SambaNova Cloud models.
 
     Setup:
         To use, you should have the environment variables:
@@ -235,6 +240,7 @@ class SambaNovaCloud(LLM):
             stop: list of stop tokens
         Returns:
             A response dict.
+
         """
         data = {
             "messages": messages_dicts,
@@ -280,6 +286,7 @@ class SambaNovaCloud(LLM):
             stop: list of stop tokens
         Returns:
             A response dict.
+
         """
         data = {
             "messages": messages_dicts,
@@ -324,6 +331,7 @@ class SambaNovaCloud(LLM):
             stop: list of stop tokens
         Yields:
             An iterator of response dicts.
+
         """
         try:
             import sseclient
@@ -407,6 +415,7 @@ class SambaNovaCloud(LLM):
             stop: list of stop tokens
         Yields:
             An iterator of response dicts.
+
         """
         data = {
             "messages": messages_dicts,
@@ -450,7 +459,7 @@ class SambaNovaCloud(LLM):
                         data = json.loads(event)
                         if data.get("error"):
                             raise RuntimeError(
-                                f'Sambanova /complete call failed: {data["error"]}'
+                                f"Sambanova /complete call failed: {data['error']}"
                             )
                         yield data
                     except json.JSONDecodeError:
@@ -483,6 +492,7 @@ class SambaNovaCloud(LLM):
 
         Returns:
             ChatResponse with model generation
+
         """
         messages_dicts = _create_message_dicts(messages)
 
@@ -522,6 +532,7 @@ class SambaNovaCloud(LLM):
 
         Yields:
             ChatResponseGen with model partial generation
+
         """
         messages_dicts = _create_message_dicts(messages)
 
@@ -594,6 +605,7 @@ class SambaNovaCloud(LLM):
 
         Returns:
             ChatResponse with async model generation
+
         """
         messages_dicts = _create_message_dicts(messages)
         response = await self._handle_request_async(messages_dicts, stop)
@@ -639,7 +651,8 @@ class SambaNovaCloud(LLM):
 
 
 class SambaStudio(LLM):
-    """SambaStudio model.
+    """
+    SambaStudio model.
 
     Setup:
         To use, you should have the environment variables:
@@ -861,7 +874,8 @@ class SambaStudio(LLM):
         super().__init__(**kwargs)
 
     def _messages_to_string(self, messages: Sequence[ChatMessage]) -> str:
-        """Convert a sequence of ChatMessages to:
+        """
+        Convert a sequence of ChatMessages to:
         - dumped json string with Role / content dict structure when process_prompt is true,
         - string with special tokens if process_prompt is false for generic V1 and V2 endpoints.
 
@@ -869,6 +883,7 @@ class SambaStudio(LLM):
             messages: sequence of ChatMessages
         Returns:
             str: string to send as model input depending on process_prompt param
+
         """
         if self.process_prompt:
             messages_dict: Dict[str, Any] = {
@@ -896,13 +911,15 @@ class SambaStudio(LLM):
         return messages_string
 
     def _get_sambastudio_urls(self, url: str) -> Tuple[str, str]:
-        """Get streaming and non streaming URLs from the given URL.
+        """
+        Get streaming and non streaming URLs from the given URL.
 
         Args:
             url: string with sambastudio base or streaming endpoint url
         Returns:
             base_url: string with url to do non streaming calls
             streaming_url: string with url to do streaming calls
+
         """
         if "chat/completions" in url:
             base_url = url
@@ -925,7 +942,8 @@ class SambaStudio(LLM):
         stop: Optional[List[str]] = None,
         streaming: Optional[bool] = False,
     ) -> Response:
-        """Performs a post request to the LLM API.
+        """
+        Performs a post request to the LLM API.
 
         Args:
         messages_dicts: List of role / content dicts to use as input.
@@ -933,6 +951,7 @@ class SambaStudio(LLM):
         streaming: whether to do a streaming call
         Returns:
             A request Response object
+
         """
         # create request payload for openai compatible API
         if "chat/completions" in self.sambastudio_url:
@@ -1032,7 +1051,8 @@ class SambaStudio(LLM):
         stop: Optional[List[str]] = None,
         streaming: Optional[bool] = False,
     ) -> Response:
-        """Performs an async post request to the LLM API.
+        """
+        Performs an async post request to the LLM API.
 
         Args:
         messages_dicts: List of role / content dicts to use as input.
@@ -1040,6 +1060,7 @@ class SambaStudio(LLM):
         streaming: whether to do a streaming call
         Returns:
             A request Response object
+
         """
         # create request payload for openai compatible API
         if "chat/completions" in self.sambastudio_url:
@@ -1142,12 +1163,14 @@ class SambaStudio(LLM):
                 return response_dict
 
     def _process_response(self, response: Response) -> ChatMessage:
-        """Process a non streaming response from the api.
+        """
+        Process a non streaming response from the api.
 
         Args:
             response: A request Response object
         Returns:
             generation: a ChatMessage with model generation
+
         """
         # Extract json payload form response
         try:
@@ -1192,12 +1215,14 @@ class SambaStudio(LLM):
         )
 
     def _process_stream_response(self, response: Response) -> Iterator[ChatMessage]:
-        """Process a streaming response from the api.
+        """
+        Process a streaming response from the api.
 
         Args:
             response: An iterable request Response object
         Yields:
             generation: an Iterator[ChatMessage] with model partial generation
+
         """
         try:
             import sseclient
@@ -1398,12 +1423,14 @@ class SambaStudio(LLM):
     async def _process_response_async(
         self, response_dict: Dict[str, Any]
     ) -> ChatMessage:
-        """Process a non streaming response from the api.
+        """
+        Process a non streaming response from the api.
 
         Args:
             response: A request Response object
         Returns:
             generation: a ChatMessage with model generation
+
         """
         # process response payload for openai compatible API
         if "chat/completions" in self.sambastudio_url:
@@ -1445,7 +1472,8 @@ class SambaStudio(LLM):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> ChatResponse:
-        """Calls the chat implementation of the SambaStudio model.
+        """
+        Calls the chat implementation of the SambaStudio model.
 
         Args:
             messages: the prompt composed of a list of messages.
@@ -1458,6 +1486,7 @@ class SambaStudio(LLM):
 
         Returns:
             ChatResponse with model generation
+
         """
         # if self.streaming:
         #     stream_iter = self._stream(
@@ -1477,7 +1506,8 @@ class SambaStudio(LLM):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> ChatResponseGen:
-        """Stream the output of the SambaStudio model.
+        """
+        Stream the output of the SambaStudio model.
 
         Args:
             messages: the prompt composed of a list of messages.
@@ -1490,6 +1520,7 @@ class SambaStudio(LLM):
 
         Yields:
             chunk: ChatResponseGen with model partial generation
+
         """
         response = self._handle_request(messages, stop, streaming=True)
         for ai_message_chunk in self._process_stream_response(response):
@@ -1517,7 +1548,8 @@ class SambaStudio(LLM):
         stop: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> ChatResponse:
-        """Calls the chat implementation of the SambaStudio model.
+        """
+        Calls the chat implementation of the SambaStudio model.
 
         Args:
             messages: the prompt composed of a list of messages.
@@ -1530,6 +1562,7 @@ class SambaStudio(LLM):
 
         Returns:
             ChatResponse with model generation
+
         """
         response_dict = await self._handle_request_async(
             messages, stop, streaming=False

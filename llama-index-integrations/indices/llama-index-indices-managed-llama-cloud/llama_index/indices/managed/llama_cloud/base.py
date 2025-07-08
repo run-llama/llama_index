@@ -1,14 +1,16 @@
-"""Managed index.
+"""
+Managed index.
 
 A managed Index - where the index is accessible via some API that
 interfaces a managed service.
 
 """
 
+import asyncio
 import httpx
 import os
 import time
-from typing import Any, List, Optional, Sequence, Type
+from typing import Any, Awaitable, Callable, List, Optional, Sequence, Type
 from urllib.parse import quote_plus
 
 from llama_cloud import (
@@ -22,6 +24,7 @@ from llama_cloud import (
     CloudDocumentCreate,
     CloudDocument,
     PipelineFileCreate,
+    LlamaParseParameters,
 )
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
@@ -135,9 +138,19 @@ class LlamaCloudIndex(BaseManagedIndex):
         # initialize clients
         self._httpx_client = httpx_client
         self._async_httpx_client = async_httpx_client
-        self._client = get_client(api_key, base_url, app_url, timeout, httpx_client)
+        self._client = get_client(
+            api_key=api_key,
+            base_url=base_url,
+            app_url=app_url,
+            timeout=timeout,
+            httpx_client=httpx_client,
+        )
         self._aclient = get_aclient(
-            api_key, base_url, app_url, timeout, async_httpx_client
+            api_key=api_key,
+            base_url=base_url,
+            app_url=app_url,
+            timeout=timeout,
+            httpx_client=async_httpx_client,
         )
 
         self.organization_id = organization_id
@@ -154,7 +167,6 @@ class LlamaCloudIndex(BaseManagedIndex):
         self._app_url = app_url
         self._timeout = timeout
         self._show_progress = show_progress
-        self._service_context = None
         self._callback_manager = callback_manager or Settings.callback_manager
 
     @property
@@ -162,124 +174,439 @@ class LlamaCloudIndex(BaseManagedIndex):
         """Return the pipeline (aka index) ID."""
         return self.pipeline.id
 
-    def wait_for_completion(
+    def _wait_for_resources(
         self,
-        verbose: bool = False,
-        raise_on_partial_success: bool = False,
-        sleep_interval: float = 0.5,
-    ) -> Optional[ManagedIngestionStatusResponse]:
-        if sleep_interval < 0.5:
-            # minimum sleep interval at 0.5 seconds to prevent rate-limiting
-            sleep_interval = 0.5
-        if verbose:
-            print(f"Syncing pipeline {self.pipeline.id}: ", end="")
+        resource_ids: Sequence[str],
+        get_status_fn: Callable[[str], ManagedIngestionStatusResponse],
+        resource_name: str,
+        verbose: bool,
+        raise_on_error: bool,
+        sleep_interval: float,
+    ) -> None:
+        """
+        Poll `get_status_fn` until every id in `resource_ids` is finished.
 
-        is_done = False
-        status_response: Optional[ManagedIngestionStatusResponse] = None
-        while not is_done:
-            status_response = self._client.pipelines.get_pipeline_status(
-                pipeline_id=self.pipeline.id
+        Args:
+            resource_ids: Iterable of resource ids to watch.
+            get_status_fn: Callable that maps a resource id → ManagedIngestionStatus.
+            resource_name: Text used in log / error messages: "file", "document", ….
+            verbose: Print a progress bar.
+            raise_on_error: Whether to raise on ManagedIngestionStatus.ERROR.
+            sleep_interval: Seconds between polls (min 0.5 s to avoid rate-limits).
+
+        """
+        if not resource_ids:  # nothing to do
+            return
+
+        if verbose:
+            print(
+                f"Loading {resource_name}{'s' if len(resource_ids) > 1 else ''}",
             )
-            status = status_response.status
-            if status == ManagedIngestionStatus.ERROR or (
-                raise_on_partial_success
-                and status == ManagedIngestionStatus.PARTIAL_SUCCESS
-            ):
-                error_details = status_response.json()
-                raise ValueError(
-                    f"Pipeline ingestion failed for {self.pipeline.id}. Error details: {error_details}"
-                )
-            elif status in [
-                ManagedIngestionStatus.NOT_STARTED,
-                ManagedIngestionStatus.IN_PROGRESS,
-            ]:
-                if verbose:
-                    print(".", end="")
-                time.sleep(sleep_interval)
-            else:
-                is_done = True
-                if verbose:
-                    print("Done!")
-        return status_response
 
-    def _wait_for_file_ingestion(
-        self,
-        file_id: str,
-        verbose: bool = False,
-        raise_on_error: bool = False,
-    ) -> None:
-        if verbose:
-            print("Loading file: ", end="")
+        pending: set[str] = set(resource_ids)
+        while pending:
+            finished: set[str] = set()
+            for rid in pending:
+                try:
+                    status_response = get_status_fn(rid)
+                    status = status_response.status
+                    if status in (
+                        ManagedIngestionStatus.NOT_STARTED,
+                        ManagedIngestionStatus.IN_PROGRESS,
+                    ):
+                        continue  # still working
 
-        # wait until the file is loaded
-        is_done = False
-        while not is_done:
-            status = self._client.pipelines.get_pipeline_file_status(
-                pipeline_id=self.pipeline.id, file_id=file_id
-            ).status
-            if status == ManagedIngestionStatus.ERROR:
-                if verbose:
-                    print(f"File ingestion failed for {file_id}")
-                if raise_on_error:
-                    raise ValueError(f"File ingestion failed for {file_id}")
-            elif status in [
-                ManagedIngestionStatus.NOT_STARTED,
-                ManagedIngestionStatus.IN_PROGRESS,
-            ]:
-                if verbose:
-                    print(".", end="")
-                time.sleep(0.5)
-            else:
-                is_done = True
-                if verbose:
-                    print("Done!")
+                    if status == ManagedIngestionStatus.ERROR:
+                        if verbose:
+                            print(
+                                f"{resource_name.capitalize()} ingestion failed for {rid}"
+                            )
+                        if raise_on_error:
+                            raise ValueError(
+                                f"{resource_name.capitalize()} ingestion failed for {rid}"
+                            )
 
-    def _wait_for_documents_ingestion(
-        self,
-        doc_ids: List[str],
-        verbose: bool = False,
-        raise_on_error: bool = False,
-    ) -> None:
-        if verbose:
-            print("Loading data: ", end="")
-
-        # wait until all documents are loaded
-        pending_docs = set(doc_ids)
-        while pending_docs:
-            docs_to_remove = set()
-            for doc in pending_docs:
-                # we have to quote the doc id twice because it is used as a path parameter
-                status = self._client.pipelines.get_pipeline_document_status(
-                    pipeline_id=self.pipeline.id,
-                    document_id=quote_plus(quote_plus(doc)),
-                )
-                if status in [
-                    ManagedIngestionStatus.NOT_STARTED,
-                    ManagedIngestionStatus.IN_PROGRESS,
-                ]:
-                    continue
-
-                if status == ManagedIngestionStatus.ERROR:
+                    finished.add(rid)
                     if verbose:
-                        print(f"Document ingestion failed for {doc}")
-                    if raise_on_error:
-                        raise ValueError(f"Document ingestion failed for {doc}")
+                        print(
+                            f"{resource_name.capitalize()} ingestion finished for {rid}"
+                        )
 
-                docs_to_remove.add(doc)
+                except httpx.HTTPStatusError as e:
+                    if e.response.status_code in (429, 500, 502, 503, 504):
+                        pass
+                    else:
+                        raise
 
-            pending_docs -= docs_to_remove
+            pending -= finished
 
-            if pending_docs:
-                if verbose:
-                    print(".", end="")
-                time.sleep(0.5)
+            if pending:
+                time.sleep(sleep_interval)
 
         if verbose:
             print("Done!")
 
-        # we have to wait for pipeline ingestion because retrieval only works when
-        # the pipeline status is success
-        self.wait_for_completion(verbose, raise_on_error)
+    async def _await_for_resources(
+        self,
+        resource_ids: Sequence[str],
+        get_status_fn: Callable[[str], Awaitable[ManagedIngestionStatusResponse]],
+        resource_name: str,
+        verbose: bool,
+        raise_on_error: bool,
+        sleep_interval: float,
+    ) -> None:
+        """
+        Poll `get_status_fn` until every id in `resource_ids` is finished.
+
+        Args:
+            resource_ids: Iterable of resource ids to watch.
+            get_status_fn: Callable that maps a resource id → ManagedIngestionStatus.
+            resource_name: Text used in log / error messages: "file", "document", ….
+            verbose: Print a progress bar.
+            raise_on_error: Whether to raise on ManagedIngestionStatus.ERROR.
+            sleep_interval: Seconds between polls (min 0.5 s to avoid rate-limits).
+
+        """
+        if not resource_ids:  # nothing to do
+            return
+
+        if verbose:
+            print(
+                f"Loading {resource_name}{'s' if len(resource_ids) > 1 else ''}",
+            )
+
+        pending: set[str] = set(resource_ids)
+        while pending:
+            finished: set[str] = set()
+            for rid in pending:
+                try:
+                    status_response = await get_status_fn(rid)
+                    status = status_response.status
+                    if status in (
+                        ManagedIngestionStatus.NOT_STARTED,
+                        ManagedIngestionStatus.IN_PROGRESS,
+                    ):
+                        continue  # still working
+
+                    if status == ManagedIngestionStatus.ERROR:
+                        if verbose:
+                            print(
+                                f"{resource_name.capitalize()} ingestion failed for {rid}"
+                            )
+                        if raise_on_error:
+                            raise ValueError(
+                                f"{resource_name.capitalize()} ingestion failed for {rid}"
+                            )
+
+                    finished.add(rid)
+                    if verbose:
+                        print(
+                            f"{resource_name.capitalize()} ingestion finished for {rid}"
+                        )
+
+                except httpx.HTTPStatusError as e:
+                    if e.response.status_code in (429, 500, 502, 503, 504):
+                        pass
+                    else:
+                        raise
+
+            pending -= finished
+
+            if pending:
+                await asyncio.sleep(sleep_interval)
+
+        if verbose:
+            print("Done!")
+
+    def wait_for_completion(
+        self,
+        file_ids: Optional[Sequence[str]] = None,
+        doc_ids: Optional[Sequence[str]] = None,
+        verbose: bool = False,
+        raise_on_partial_success: bool = False,
+        raise_on_error: bool = False,
+        sleep_interval: float = 1.0,
+    ) -> Optional[ManagedIngestionStatusResponse]:
+        """
+        Block until the requested ingestion work is finished.
+
+        - If `file_ids` is given → wait for those files.
+        - If `doc_ids` is given → wait for those documents.
+        - If neither is given → wait for the pipeline itself last so that retrieval works.
+        - Always waits for the pipeline itself last so that retrieval works.
+
+        Returns the final PipelineStatus response (or None if only waiting on
+        files / documents).
+        """
+        # Batch of files (if any)
+        if file_ids:
+            self._wait_for_resources(
+                file_ids,
+                lambda fid: self._client.pipelines.get_pipeline_file_status(
+                    pipeline_id=self.pipeline.id, file_id=fid
+                ),
+                resource_name="file",
+                verbose=verbose,
+                raise_on_error=raise_on_error,
+                sleep_interval=sleep_interval,
+            )
+
+        # Batch of documents (if any)
+        if doc_ids:
+            self._wait_for_resources(
+                doc_ids,
+                lambda did: self._client.pipelines.get_pipeline_document_status(
+                    pipeline_id=self.pipeline.id,
+                    document_id=quote_plus(quote_plus(did)),
+                ),
+                resource_name="document",
+                verbose=verbose,
+                raise_on_error=raise_on_error,
+                sleep_interval=sleep_interval,
+            )
+
+        # Finally, wait for the pipeline
+        if verbose:
+            print(f"Syncing pipeline {self.pipeline.id}")
+
+        status_response: Optional[ManagedIngestionStatusResponse] = None
+        while True:
+            try:
+                status_response = self._client.pipelines.get_pipeline_status(
+                    pipeline_id=self.pipeline.id
+                )
+                status = status_response.status
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code in (429, 500, 502, 503, 504):
+                    time.sleep(sleep_interval)
+                    continue
+                else:
+                    raise
+
+            if status == ManagedIngestionStatus.ERROR or (
+                raise_on_partial_success
+                and status == ManagedIngestionStatus.PARTIAL_SUCCESS
+            ):
+                raise ValueError(
+                    f"Pipeline ingestion failed for {self.pipeline.id}. "
+                    f"Details: {status_response.json()}"
+                )
+
+            if status in (
+                ManagedIngestionStatus.NOT_STARTED,
+                ManagedIngestionStatus.IN_PROGRESS,
+            ):
+                if verbose:
+                    print(".", end="")
+                time.sleep(sleep_interval)
+            else:
+                if verbose:
+                    print("Done!")
+
+                return status_response
+
+    async def await_for_completion(
+        self,
+        file_ids: Optional[Sequence[str]] = None,
+        doc_ids: Optional[Sequence[str]] = None,
+        verbose: bool = False,
+        raise_on_partial_success: bool = False,
+        raise_on_error: bool = False,
+        sleep_interval: float = 1.0,
+    ) -> Optional[ManagedIngestionStatusResponse]:
+        """
+        Block until the requested ingestion work is finished.
+
+        - If `file_ids` is given → wait for those files.
+        - If `doc_ids` is given → wait for those documents.
+        - If neither is given → wait for the pipeline itself last so that retrieval works.
+        - Always waits for the pipeline itself last so that retrieval works.
+
+        Returns the final PipelineStatus response (or None if only waiting on
+        files / documents).
+        """
+        # Batch of files (if any)
+        if file_ids:
+            await self._await_for_resources(
+                file_ids,
+                lambda fid: self._aclient.pipelines.get_pipeline_file_status(
+                    pipeline_id=self.pipeline.id, file_id=fid
+                ),
+                resource_name="file",
+                verbose=verbose,
+                raise_on_error=raise_on_error,
+                sleep_interval=sleep_interval,
+            )
+
+        # Batch of documents (if any)
+        if doc_ids:
+            await self._await_for_resources(
+                doc_ids,
+                lambda did: self._aclient.pipelines.get_pipeline_document_status(
+                    pipeline_id=self.pipeline.id,
+                    document_id=quote_plus(quote_plus(did)),
+                ),
+                resource_name="document",
+                verbose=verbose,
+                raise_on_error=raise_on_error,
+                sleep_interval=sleep_interval,
+            )
+
+        # Finally, wait for the pipeline
+        if verbose:
+            print(f"Syncing pipeline {self.pipeline.id}")
+
+        status_response: Optional[ManagedIngestionStatusResponse] = None
+        while True:
+            try:
+                status_response = await self._aclient.pipelines.get_pipeline_status(
+                    pipeline_id=self.pipeline.id
+                )
+                status = status_response.status
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code in (429, 500, 502, 503, 504):
+                    await asyncio.sleep(sleep_interval)
+                    continue
+                else:
+                    raise
+
+            if status == ManagedIngestionStatus.ERROR or (
+                raise_on_partial_success
+                and status == ManagedIngestionStatus.PARTIAL_SUCCESS
+            ):
+                raise ValueError(
+                    f"Pipeline ingestion failed for {self.pipeline.id}. "
+                    f"Details: {status_response.json()}"
+                )
+
+            if status in (
+                ManagedIngestionStatus.NOT_STARTED,
+                ManagedIngestionStatus.IN_PROGRESS,
+            ):
+                if verbose:
+                    print(".", end="")
+                await asyncio.sleep(sleep_interval)
+            else:
+                if verbose:
+                    print("Done!")
+
+                return status_response
+
+    @classmethod
+    def create_index(
+        cls: Type["LlamaCloudIndex"],
+        name: str,
+        project_name: str = DEFAULT_PROJECT_NAME,
+        organization_id: Optional[str] = None,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        app_url: Optional[str] = None,
+        timeout: int = 60,
+        verbose: bool = False,
+        # ingestion configs
+        embedding_config: Optional[PipelineCreateEmbeddingConfig] = None,
+        transform_config: Optional[PipelineCreateTransformConfig] = None,
+        llama_parse_parameters: Optional[LlamaParseParameters] = None,
+        **kwargs: Any,
+    ) -> "LlamaCloudIndex":
+        """Create a new LlamaCloud managed index."""
+        app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", DEFAULT_APP_URL)
+        client = get_client(api_key, base_url, app_url, timeout)
+
+        # create project if it doesn't exist
+        project = client.projects.upsert_project(
+            organization_id=organization_id, request=ProjectCreate(name=project_name)
+        )
+        if project.id is None:
+            raise ValueError(f"Failed to create/get project {project_name}")
+
+        if verbose:
+            print(f"Created project {project.id} with name {project.name}")
+
+        # create pipeline
+        pipeline_create = PipelineCreate(
+            name=name,
+            pipeline_type=PipelineType.MANAGED,
+            embedding_config=embedding_config or default_embedding_config(),
+            transform_config=transform_config or default_transform_config(),
+            llama_parse_parameters=llama_parse_parameters or LlamaParseParameters(),
+        )
+        pipeline = client.pipelines.upsert_pipeline(
+            project_id=project.id, request=pipeline_create
+        )
+        if pipeline.id is None:
+            raise ValueError(f"Failed to create/get pipeline {name}")
+        if verbose:
+            print(f"Created pipeline {pipeline.id} with name {pipeline.name}")
+
+        return cls(
+            name,
+            project_name=project.name,
+            organization_id=project.organization_id,
+            api_key=api_key,
+            base_url=base_url,
+            app_url=app_url,
+            timeout=timeout,
+            **kwargs,
+        )
+
+    @classmethod
+    async def acreate_index(
+        cls: Type["LlamaCloudIndex"],
+        name: str,
+        project_name: str = DEFAULT_PROJECT_NAME,
+        organization_id: Optional[str] = None,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        app_url: Optional[str] = None,
+        timeout: int = 60,
+        verbose: bool = False,
+        # ingestion configs
+        embedding_config: Optional[PipelineCreateEmbeddingConfig] = None,
+        transform_config: Optional[PipelineCreateTransformConfig] = None,
+        llama_parse_parameters: Optional[LlamaParseParameters] = None,
+        **kwargs: Any,
+    ) -> "LlamaCloudIndex":
+        """Create a new LlamaCloud managed index."""
+        app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", DEFAULT_APP_URL)
+        aclient = get_aclient(api_key, base_url, app_url, timeout)
+
+        # create project if it doesn't exist
+        project = await aclient.projects.upsert_project(
+            organization_id=organization_id, request=ProjectCreate(name=project_name)
+        )
+        if project.id is None:
+            raise ValueError(f"Failed to create/get project {project_name}")
+
+        if verbose:
+            print(f"Created project {project.id} with name {project.name}")
+
+        # create pipeline
+        pipeline_create = PipelineCreate(
+            name=name,
+            pipeline_type=PipelineType.MANAGED,
+            embedding_config=embedding_config or default_embedding_config(),
+            transform_config=transform_config or default_transform_config(),
+            llama_parse_parameters=llama_parse_parameters or LlamaParseParameters(),
+        )
+        pipeline = await aclient.pipelines.upsert_pipeline(
+            project_id=project.id, request=pipeline_create
+        )
+        if pipeline.id is None:
+            raise ValueError(f"Failed to create/get pipeline {name}")
+        if verbose:
+            print(f"Created pipeline {pipeline.id} with name {pipeline.name}")
+
+        return cls(
+            name,
+            project_name=project.name,
+            organization_id=project.organization_id,
+            api_key=api_key,
+            base_url=base_url,
+            app_url=app_url,
+            timeout=timeout,
+            **kwargs,
+        )
 
     @classmethod
     def from_documents(  # type: ignore
@@ -302,54 +629,25 @@ class LlamaCloudIndex(BaseManagedIndex):
         **kwargs: Any,
     ) -> "LlamaCloudIndex":
         """Build a LlamaCloud managed index from a sequence of documents."""
-        app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", DEFAULT_APP_URL)
-        client = get_client(api_key, base_url, app_url, timeout)
-
-        if transformations is not None:
-            raise ValueError(
-                "Setting transformations is deprecated for LlamaCloudIndex"
-            )
-
-        # create project if it doesn't exist
-        project = client.projects.upsert_project(
-            organization_id=organization_id, request=ProjectCreate(name=project_name)
-        )
-        if project.id is None:
-            raise ValueError(f"Failed to create/get project {project_name}")
-        if verbose:
-            print(f"Created project {project.id} with name {project.name}")
-
-        # create pipeline
-        pipeline_create = PipelineCreate(
+        index = cls.create_index(
             name=name,
-            pipeline_type=PipelineType.MANAGED,
-            embedding_config=embedding_config or default_embedding_config(),
-            transform_config=transform_config or default_transform_config(),
-            # we are uploading document directly, so we don't need llama parse
-            llama_parse_enabled=False,
-        )
-        pipeline = client.pipelines.upsert_pipeline(
-            project_id=project.id, request=pipeline_create
-        )
-        if pipeline.id is None:
-            raise ValueError(f"Failed to create/get pipeline {name}")
-        if verbose:
-            print(f"Created pipeline {pipeline.id} with name {pipeline.name}")
-
-        index = cls(
-            name,
-            project_name=project.name,
-            organization_id=project.organization_id,
+            project_name=project_name,
+            organization_id=organization_id,
             api_key=api_key,
             base_url=base_url,
             app_url=app_url,
             timeout=timeout,
-            **kwargs,
+            verbose=verbose,
+            embedding_config=embedding_config,
+            transform_config=transform_config,
         )
+
+        app_url = app_url or os.environ.get("LLAMA_CLOUD_APP_URL", DEFAULT_APP_URL)
+        client = get_client(api_key, base_url, app_url, timeout)
 
         # this kicks off document ingestion
         upserted_documents = client.pipelines.upsert_batch_pipeline_documents(
-            pipeline_id=pipeline.id,
+            pipeline_id=index.pipeline.id,
             request=[
                 CloudDocumentCreate(
                     text=doc.text,
@@ -363,11 +661,13 @@ class LlamaCloudIndex(BaseManagedIndex):
         )
 
         doc_ids = [doc.id for doc in upserted_documents]
-        index._wait_for_documents_ingestion(
-            doc_ids, verbose=verbose, raise_on_error=raise_on_error
+        index.wait_for_completion(
+            doc_ids=doc_ids, verbose=verbose, raise_on_error=raise_on_error
         )
 
-        print(f"Find your index at {app_url}/project/{project.id}/deploy/{pipeline.id}")
+        print(
+            f"Find your index at {app_url}/project/{index.project.id}/deploy/{index.pipeline.id}"
+        )
 
         return index
 
@@ -444,8 +744,30 @@ class LlamaCloudIndex(BaseManagedIndex):
                 ],
             )
             upserted_document = upserted_documents[0]
-            self._wait_for_documents_ingestion(
-                [upserted_document.id], verbose=verbose, raise_on_error=True
+            self.wait_for_completion(
+                doc_ids=[upserted_document.id], verbose=verbose, raise_on_error=True
+            )
+
+    async def ainsert(
+        self, document: Document, verbose: bool = False, **insert_kwargs: Any
+    ) -> None:
+        """Insert a document."""
+        with self._callback_manager.as_trace("insert"):
+            upserted_documents = await self._aclient.pipelines.create_batch_pipeline_documents(
+                pipeline_id=self.pipeline.id,
+                request=[
+                    CloudDocumentCreate(
+                        text=document.text,
+                        metadata=document.metadata,
+                        excluded_embed_metadata_keys=document.excluded_embed_metadata_keys,
+                        excluded_llm_metadata_keys=document.excluded_llm_metadata_keys,
+                        id=document.id_,
+                    )
+                ],
+            )
+            upserted_document = upserted_documents[0]
+            await self.await_for_completion(
+                doc_ids=[upserted_document.id], verbose=verbose, raise_on_error=True
             )
 
     def update_ref_doc(
@@ -466,8 +788,30 @@ class LlamaCloudIndex(BaseManagedIndex):
                 ],
             )
             upserted_document = upserted_documents[0]
-            self._wait_for_documents_ingestion(
-                [upserted_document.id], verbose=verbose, raise_on_error=True
+            self.wait_for_completion(
+                doc_ids=[upserted_document.id], verbose=verbose, raise_on_error=True
+            )
+
+    async def aupdate_ref_doc(
+        self, document: Document, verbose: bool = False, **update_kwargs: Any
+    ) -> None:
+        """Upserts a document and its corresponding nodes."""
+        with self._callback_manager.as_trace("update"):
+            upserted_documents = await self._aclient.pipelines.upsert_batch_pipeline_documents(
+                pipeline_id=self.pipeline.id,
+                request=[
+                    CloudDocumentCreate(
+                        text=document.text,
+                        metadata=document.metadata,
+                        excluded_embed_metadata_keys=document.excluded_embed_metadata_keys,
+                        excluded_llm_metadata_keys=document.excluded_llm_metadata_keys,
+                        id=document.id_,
+                    )
+                ],
+            )
+            upserted_document = upserted_documents[0]
+            await self.await_for_completion(
+                doc_ids=[upserted_document.id], verbose=verbose, raise_on_error=True
             )
 
     def refresh_ref_docs(
@@ -489,8 +833,30 @@ class LlamaCloudIndex(BaseManagedIndex):
                 ],
             )
             doc_ids = [doc.id for doc in upserted_documents]
-            self._wait_for_documents_ingestion(
-                doc_ids, verbose=True, raise_on_error=True
+            self.wait_for_completion(doc_ids=doc_ids, verbose=True, raise_on_error=True)
+            return [True] * len(doc_ids)
+
+    async def arefresh_ref_docs(
+        self, documents: Sequence[Document], **update_kwargs: Any
+    ) -> List[bool]:
+        """Refresh an index with documents that have changed."""
+        with self._callback_manager.as_trace("refresh"):
+            upserted_documents = await self._aclient.pipelines.upsert_batch_pipeline_documents(
+                pipeline_id=self.pipeline.id,
+                request=[
+                    CloudDocumentCreate(
+                        text=doc.text,
+                        metadata=doc.metadata,
+                        excluded_embed_metadata_keys=doc.excluded_embed_metadata_keys,
+                        excluded_llm_metadata_keys=doc.excluded_llm_metadata_keys,
+                        id=doc.id_,
+                    )
+                    for doc in documents
+                ],
+            )
+            doc_ids = [doc.id for doc in upserted_documents]
+            await self.await_for_completion(
+                doc_ids=doc_ids, verbose=True, raise_on_error=True
             )
             return [True] * len(doc_ids)
 
@@ -518,10 +884,33 @@ class LlamaCloudIndex(BaseManagedIndex):
         # we have to wait for the pipeline instead of the document, because the document is already deleted
         self.wait_for_completion(verbose=verbose, raise_on_partial_success=False)
 
+    async def adelete_ref_doc(
+        self,
+        ref_doc_id: str,
+        delete_from_docstore: bool = False,
+        verbose: bool = False,
+        raise_if_not_found: bool = False,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Delete a document and its nodes by using ref_doc_id."""
+        try:
+            # we have to quote the ref_doc_id twice because it is used as a path parameter
+            await self._aclient.pipelines.delete_pipeline_document(
+                pipeline_id=self.pipeline.id,
+                document_id=quote_plus(quote_plus(ref_doc_id)),
+            )
+        except ApiError as e:
+            if e.status_code == 404 and not raise_if_not_found:
+                logger.warning(f"ref_doc_id {ref_doc_id} not found, nothing deleted.")
+            else:
+                raise
+
+        # we have to wait for the pipeline instead of the document, because the document is already deleted
+        await self.await_for_completion(verbose=verbose, raise_on_partial_success=False)
+
     def upload_file(
         self,
         file_path: str,
-        resource_info: Optional[Dict[str, Any]] = None,
         verbose: bool = False,
         wait_for_ingestion: bool = True,
         raise_on_error: bool = False,
@@ -533,18 +922,45 @@ class LlamaCloudIndex(BaseManagedIndex):
             )
             if verbose:
                 print(f"Uploaded file {file.id} with name {file.name}")
-        if resource_info:
-            self._client.files.update(file_id=file.id, request=resource_info)
+
         # Add file to pipeline
         pipeline_file_create = PipelineFileCreate(file_id=file.id)
-        self._client.pipelines.add_files_to_pipeline(
+        self._client.pipelines.add_files_to_pipeline_api(
             pipeline_id=self.pipeline.id, request=[pipeline_file_create]
         )
 
         if wait_for_ingestion:
-            self._wait_for_file_ingestion(
-                file.id, verbose=verbose, raise_on_error=raise_on_error
+            self.wait_for_completion(
+                file_ids=[file.id], verbose=verbose, raise_on_error=raise_on_error
             )
+        return file.id
+
+    async def aupload_file(
+        self,
+        file_path: str,
+        verbose: bool = False,
+        wait_for_ingestion: bool = True,
+        raise_on_error: bool = False,
+    ) -> str:
+        """Upload a file to the index."""
+        with open(file_path, "rb") as f:
+            file = await self._aclient.files.upload_file(
+                project_id=self.project.id, upload_file=f
+            )
+            if verbose:
+                print(f"Uploaded file {file.id} with name {file.name}")
+
+        # Add file to pipeline
+        pipeline_file_create = PipelineFileCreate(file_id=file.id)
+        await self._aclient.pipelines.add_files_to_pipeline_api(
+            pipeline_id=self.pipeline.id, request=[pipeline_file_create]
+        )
+
+        if wait_for_ingestion:
+            await self.await_for_completion(
+                file_ids=[file.id], verbose=verbose, raise_on_error=raise_on_error
+            )
+
         return file.id
 
     def upload_file_from_url(
@@ -574,14 +990,52 @@ class LlamaCloudIndex(BaseManagedIndex):
 
         # Add file to pipeline
         pipeline_file_create = PipelineFileCreate(file_id=file.id)
-        self._client.pipelines.add_files_to_pipeline(
+        self._client.pipelines.add_files_to_pipeline_api(
             pipeline_id=self.pipeline.id, request=[pipeline_file_create]
         )
 
         if wait_for_ingestion:
-            self._wait_for_file_ingestion(
-                file.id, verbose=verbose, raise_on_error=raise_on_error
+            self.wait_for_completion(
+                file_ids=[file.id], verbose=verbose, raise_on_error=raise_on_error
             )
+        return file.id
+
+    async def aupload_file_from_url(
+        self,
+        file_name: str,
+        url: str,
+        proxy_url: Optional[str] = None,
+        request_headers: Optional[Dict[str, str]] = None,
+        verify_ssl: bool = True,
+        follow_redirects: bool = True,
+        verbose: bool = False,
+        wait_for_ingestion: bool = True,
+        raise_on_error: bool = False,
+    ) -> str:
+        """Upload a file from a URL to the index."""
+        file = await self._aclient.files.upload_file_from_url(
+            project_id=self.project.id,
+            name=file_name,
+            url=url,
+            proxy_url=proxy_url,
+            request_headers=request_headers,
+            verify_ssl=verify_ssl,
+            follow_redirects=follow_redirects,
+        )
+        if verbose:
+            print(f"Uploaded file {file.id} with ID {file.id}")
+
+        # Add file to pipeline
+        pipeline_file_create = PipelineFileCreate(file_id=file.id)
+        await self._aclient.pipelines.add_files_to_pipeline_api(
+            pipeline_id=self.pipeline.id, request=[pipeline_file_create]
+        )
+
+        if wait_for_ingestion:
+            await self.await_for_completion(
+                file_ids=[file.id], verbose=verbose, raise_on_error=raise_on_error
+            )
+
         return file.id
 
     # Nodes related methods (not implemented for LlamaCloudIndex)

@@ -314,16 +314,91 @@ from llama_index.core.workflow import Context
 @step
 async def query(self, ctx: Context, ev: MyEvent) -> StopEvent:
     # retrieve from context
-    query = await ctx.get("query")
+    query = await ctx.store.get("query")
 
     # do something with context and event
     val = ...
     result = ...
 
     # store in context
-    await ctx.set("key", val)
+    await ctx.store.set("key", val)
 
     return StopEvent(result=result)
+```
+
+## Adding Typed State
+
+Often, you'll have some preset shape that you want to use as the state for your workflow. The best way to do this is to use a `Pydantic` model to define the state. This way, you:
+
+- Get type hints for your state
+- Get automatic validation of your state
+- (Optionally) Have full control over the serialization and deserialization of your state using [validators](https://docs.pydantic.dev/latest/concepts/validators/) and [serializers](https://docs.pydantic.dev/latest/concepts/serialization/#custom-serializers)
+
+**NOTE:** You should use a pydantic model that has defaults for all fields. This enables the `Context` object to automatically initialize the state with the defaults.
+
+Here's a quick example of how you can leverage workflows + pydantic to take advantage of all these features:
+
+```python
+from pydantic import BaseModel, Field, field_validator, field_serializer
+from typing import Union
+
+
+# This is a random object that we want to use in our state
+class MyRandomObject:
+    def __init__(self, name: str = "default"):
+        self.name = name
+
+
+# This is our state model
+# NOTE: all fields must have defaults
+class MyState(BaseModel):
+    my_obj: MyRandomObject = Field(default_factory=MyRandomObject)
+    some_key: str = Field(default="some_value")
+
+    # This is optional, but can be useful if you want to control the serialization of your state!
+
+    @field_serializer("my_obj", when_used="always")
+    def serialize_my_obj(self, my_obj: MyRandomObject) -> str:
+        return my_obj.name
+
+    @field_validator("my_obj", mode="before")
+    @classmethod
+    def deserialize_my_obj(
+        cls, v: Union[str, MyRandomObject]
+    ) -> MyRandomObject:
+        if isinstance(v, MyRandomObject):
+            return v
+        if isinstance(v, str):
+            return MyRandomObject(v)
+
+        raise ValueError(f"Invalid type for my_obj: {type(v)}")
+```
+
+Then, simply annotate your workflow state with the state model:
+
+```python
+from llama_index.core.workflow import (
+    Context,
+    StartEvent,
+    StopEvent,
+    Workflow,
+    step,
+)
+
+
+class MyWorkflow(Workflow):
+    @step
+    async def start(self, ctx: Context[MyState], ev: StartEvent) -> StopEvent:
+        # Returns MyState directly
+        state = await ctx.store.get_state()
+        state.my_obj.name = "new_name"
+        await ctx.store.set_state(state)
+
+        # Can also access fields directly if needed
+        name = await ctx.store.get("my_obj.name")
+        await ctx.store.set("my_obj.name", "newer_name")
+
+        return StopEvent(result="Done!")
 ```
 
 ## Waiting for Multiple Events
@@ -464,7 +539,7 @@ class MyWorkflow(Workflow):
         return StopEvent(result=result)
 ```
 
-You can see the [API docs](../../api_reference/workflow/retry_policy/) for a detailed description of the policies
+You can see the [API docs](../../api_reference/workflow/retry_policy.md) for a detailed description of the policies
 available in the framework. If you can't find a policy that's suitable for your use case, you can easily write a
 custom one. The only requirement for custom policies is to write a Python class that respects the `RetryPolicy`
 protocol. In other words, your custom policy class must have a method with the following signature:
@@ -633,6 +708,60 @@ handler = w.run(ctx=handler.ctx)
 result = await handler
 ```
 
+## Resources
+
+Resources are external dependencies you can inject into the steps of a workflow.
+
+As a simple example, look at `memory` in the following workflow:
+
+```python
+from llama_index.core.workflow.resource import Resource
+from llama_index.core.memory import Memory
+
+
+def get_memory(*args, **kwargs):
+    return Memory.from_defaults("user_id_123", token_limit=60000)
+
+
+class SecondEvent(Event):
+    msg: str
+
+
+class WorkflowWithResource(Workflow):
+    @step
+    async def first_step(
+        self,
+        ev: StartEvent,
+        memory: Annotated[Memory, Resource(get_memory)],
+    ) -> SecondEvent:
+        print("Memory before step 1", memory)
+        await memory.aput(
+            ChatMessage(role="user", content="This is the first step")
+        )
+        print("Memory after step 1", memory)
+        return SecondEvent(msg="This is an input for step 2")
+
+    @step
+    async def second_step(
+        self, ev: SecondEvent, memory: Annotated[Memory, Resource(get_memory)]
+    ) -> StopEvent:
+        print("Memory before step 2", memory)
+        await memory.aput(ChatMessage(role="user", content=ev.msg))
+        print("Memory after step 2", memory)
+        return StopEvent(result="Messages put into memory")
+```
+
+To inject a resource into a workflow step, you have to add a parameter to the step signature and define its type,
+using `Annotated` and invoke the `Resource()` wrapper passing a function or callable returning the actual Resource
+object. The return type of the wrapped function must match the declared type, ensuring consistency between what’s
+expected and what’s provided during execution. In the example above, `memory: Annotated[Memory, Resource(get_memory)`
+defines a resource of type `Memory` that will be provided by the `get_memory()` function and passed to the step in the
+`memory` parameter when the workflow runs.
+
+Resources are shared among steps of a workflow, and the `Resource()` wrapper will invoke the factory function only once.
+In case this is not the desired behavior, passing `cache=False` to `Resource()` will inject different resource objects
+in different steps, invoking the factory function as many times.
+
 ## Checkpointing Workflows
 
 Workflow runs can also be made to create and store checkpoints upon every step completion via the `WorfklowCheckpointer` object. These checkpoints can be then be used as the starting points for future runs, which can be a helpful feature during the development (and debugging) of your Workflow.
@@ -686,6 +815,7 @@ tools in a workflow.
 - [Function Calling Agent](../../examples/workflow/function_calling_agent.ipynb) is a great example of how to use the
 LlamaIndex framework primitives in a workflow, keeping it small and tidy even in complex scenarios like function
 calling.
+- [CodeAct Agent](../../examples/agent/from_scratch_code_act_agent.ipynb) is a great example of how to create a CodeAct Agent from scratch.
 - [Human In The Loop: Story Crafting](../../examples/workflow/human_in_the_loop_story_crafting.ipynb) is a powerful
 example showing how workflow runs can be interactive and stateful. In this case, to collect input from a human.
 - [Reliable Structured Generation](../../examples/workflow/reflection.ipynb) shows how to implement loops in a

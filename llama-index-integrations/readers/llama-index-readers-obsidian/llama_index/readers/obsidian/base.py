@@ -1,4 +1,5 @@
-"""Obsidian reader class.
+"""
+Obsidian reader class.
 
 Pass in the path to an Obsidian vault and it will parse all markdown
 files into a List of Documents. Documents are split by header in
@@ -25,8 +26,20 @@ if TYPE_CHECKING:
     from langchain.docstore.document import Document as LCDocument
 
 from llama_index.core.readers.base import BaseReader
-from llama_index.readers.file import MarkdownReader
 from llama_index.core.schema import Document
+from llama_index.readers.file import MarkdownReader
+
+
+def is_hardlink(filepath: Path) -> bool:
+    """
+    Check if a file is a hardlink by checking the number of links to/from it.
+
+    Args:
+        filepath (Path): path to the file.
+
+    """
+    stat_info = os.stat(filepath)
+    return stat_info.st_nlink > 1
 
 
 class ObsidianReader(BaseReader):
@@ -57,39 +70,60 @@ class ObsidianReader(BaseReader):
         docs: List[Document] = []
         # This map will hold: {target_note: [linking_note1, linking_note2, ...]}
         backlinks_map = {}
+        input_dir_abs = self.input_dir.resolve()
 
-        for dirpath, dirnames, filenames in os.walk(self.input_dir):
+        for dirpath, dirnames, filenames in os.walk(self.input_dir, followlinks=False):
             # Skip hidden directories.
             dirnames[:] = [d for d in dirnames if not d.startswith(".")]
             for filename in filenames:
                 if filename.endswith(".md"):
                     filepath = os.path.join(dirpath, filename)
-                    md_docs = MarkdownReader().load_data(Path(filepath))
-                    for i, doc in enumerate(md_docs):
-                        file_path_obj = Path(filepath)
-                        note_name = file_path_obj.stem
-                        doc.metadata["file_name"] = file_path_obj.name
-                        doc.metadata["folder_path"] = str(file_path_obj.parent)
-                        doc.metadata["folder_name"] = str(
-                            file_path_obj.parent.relative_to(self.input_dir)
-                        )
-                        doc.metadata["note_name"] = note_name
-                        wikilinks = self._extract_wikilinks(doc.text)
-                        doc.metadata["wikilinks"] = wikilinks
-                        # For each wikilink found in this document, record a backlink from this note.
-                        for link in wikilinks:
-                            # Each link is expected to match a note name (without .md)
-                            backlinks_map.setdefault(link, []).append(note_name)
-
-                        # Optionally, extract tasks from the text.
-                        if self.extract_tasks:
-                            tasks, cleaned_text = self._extract_tasks(doc.text)
-                            doc.metadata["tasks"] = tasks
-                            if self.remove_tasks_from_text:
-                                md_docs[i] = Document(
-                                    text=cleaned_text, metadata=doc.metadata
+                    file_path_obj = Path(filepath).resolve()
+                    try:
+                        if is_hardlink(filepath=file_path_obj):
+                            print(
+                                f"Warning: Skipping file because it is a hardlink (potential malicious exploit): {filepath}"
+                            )
+                            continue
+                        if not str(file_path_obj).startswith(str(input_dir_abs)):
+                            print(
+                                f"Warning: Skipping file outside input directory: {filepath}"
+                            )
+                            continue
+                        md_docs = MarkdownReader().load_data(Path(filepath))
+                        for i, doc in enumerate(md_docs):
+                            file_path_obj = Path(filepath)
+                            note_name = file_path_obj.stem
+                            doc.metadata["file_name"] = file_path_obj.name
+                            doc.metadata["folder_path"] = str(file_path_obj.parent)
+                            try:
+                                folder_name = str(
+                                    file_path_obj.parent.relative_to(input_dir_abs)
                                 )
-                    docs.extend(md_docs)
+                            except ValueError:
+                                # Fallback if relative_to fails (should not happen)
+                                folder_name = str(file_path_obj.parent)
+                            doc.metadata["folder_name"] = folder_name
+                            doc.metadata["note_name"] = note_name
+                            wikilinks = self._extract_wikilinks(doc.text)
+                            doc.metadata["wikilinks"] = wikilinks
+                            # For each wikilink found in this document, record a backlink from this note.
+                            for link in wikilinks:
+                                # Each link is expected to match a note name (without .md)
+                                backlinks_map.setdefault(link, []).append(note_name)
+
+                            # Optionally, extract tasks from the text.
+                            if self.extract_tasks:
+                                tasks, cleaned_text = self._extract_tasks(doc.text)
+                                doc.metadata["tasks"] = tasks
+                                if self.remove_tasks_from_text:
+                                    md_docs[i] = Document(
+                                        text=cleaned_text, metadata=doc.metadata
+                                    )
+                        docs.extend(md_docs)
+                    except Exception as e:
+                        print(f"Error processing file {filepath}: {e!s}")
+                        continue
 
         # Now that we have processed all files, assign backlinks metadata.
         for doc in docs:

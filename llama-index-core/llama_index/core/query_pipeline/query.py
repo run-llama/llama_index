@@ -1,5 +1,6 @@
 """Query Pipeline."""
 
+import deprecated
 import json
 import uuid
 from typing import (
@@ -185,7 +186,8 @@ def update_stateful_components(
 def get_and_update_stateful_components(
     query_component: QueryComponent, state: Dict[str, Any]
 ) -> List[BaseStatefulComponent]:
-    """Get and update stateful components.
+    """
+    Get and update stateful components.
 
     Assign all stateful components in the query component with the state.
 
@@ -198,11 +200,25 @@ def get_and_update_stateful_components(
 CHAIN_COMPONENT_TYPE = Union[QUERY_COMPONENT_TYPE, str]
 
 
+@deprecated.deprecated(
+    reason=(
+        "QueryPipeline has been deprecated and is not maintained.\n\n"
+        "This implementation will be removed in a v0.13.0.\n\n"
+        "It is recommended to switch to the Workflows API for a more flexible and powerful experience.\n\n"
+        "See the docs for more information workflows: https://docs.llamaindex.ai/en/stable/understanding/workflows/"
+    ),
+    action="once",
+)
 class QueryPipeline(QueryComponent):
-    """A query pipeline that can allow arbitrary chaining of different modules.
+    """
+    A query pipeline that can allow arbitrary chaining of different modules.
 
     A pipeline itself is a query component, and can be used as a module in another pipeline.
 
+    DEPRECATED: QueryPipeline has been deprecated and is not maintained.
+    This implementation will be removed in a v0.13.0.
+    It is recommended to switch to the Workflows API for a more flexible and powerful experience.
+    See the docs for more information workflows: https://docs.llamaindex.ai/en/stable/understanding/workflows/
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -283,7 +299,8 @@ class QueryPipeline(QueryComponent):
                     self.add_link(**link.model_dump())
 
     def add_chain(self, chain: Sequence[CHAIN_COMPONENT_TYPE]) -> None:
-        """Add a chain of modules to the pipeline.
+        """
+        Add a chain of modules to the pipeline.
 
         This is a special form of pipeline that is purely sequential/linear.
         This allows a more concise way of specifying a pipeline.
@@ -666,7 +683,8 @@ class QueryPipeline(QueryComponent):
     def _get_root_key_and_kwargs(
         self, *args: Any, **kwargs: Any
     ) -> Tuple[str, Dict[str, Any]]:
-        """Get root key and kwargs.
+        """
+        Get root key and kwargs.
 
         This is for `_run`.
 
@@ -709,7 +727,8 @@ class QueryPipeline(QueryComponent):
         result_outputs: Dict[str, Any],
         return_values_direct: bool,
     ) -> Any:
-        """Get result output from a single module.
+        """
+        Get result output from a single module.
 
         If output dict is a single key, return the value directly
         if return_values_direct is True.
@@ -740,7 +759,8 @@ class QueryPipeline(QueryComponent):
         batch: bool = False,
         **kwargs: Any,
     ) -> Tuple[Any, Dict[str, ComponentIntermediates]]:
-        """Run the pipeline.
+        """
+        Run the pipeline.
 
         Assume that there is a single root module and a single output module.
 
@@ -798,7 +818,8 @@ class QueryPipeline(QueryComponent):
         batch: bool = False,
         **kwargs: Any,
     ) -> Tuple[Any, Dict[str, ComponentIntermediates]]:
-        """Run the pipeline.
+        """
+        Run the pipeline.
 
         Assume that there is a single root module and a single output module.
 
@@ -964,7 +985,8 @@ class QueryPipeline(QueryComponent):
     async def _arun_multi(
         self, module_input_dict: Dict[str, Any], show_intermediates: bool = False
     ) -> Tuple[Dict[str, Any], Dict[str, ComponentIntermediates]]:
-        """Run the pipeline for multiple roots.
+        """
+        Run the pipeline for multiple roots.
 
         kwargs is in the form of module_dict -> input_dict
         input_dict is in the form of input_key -> input

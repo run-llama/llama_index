@@ -107,6 +107,7 @@ class VectaraRetriever(BaseRetriever):
         citations_text_pattern (str): The displayed text for citations.
             If not specified, numeric citations are displayed for text.
         save_history (bool): Whether to save the query in history. Defaults to False.
+
     """
 
     def __init__(
@@ -134,6 +135,7 @@ class VectaraRetriever(BaseRetriever):
         prompt_text: Optional[str] = None,
         max_response_chars: Optional[int] = None,
         max_tokens: Optional[int] = None,
+        llm_name: Optional[str] = None,
         temperature: Optional[float] = None,
         frequency_penalty: Optional[float] = None,
         presence_penalty: Optional[float] = None,
@@ -204,6 +206,7 @@ class VectaraRetriever(BaseRetriever):
             self._prompt_text = prompt_text
             self._max_response_chars = max_response_chars
             self._max_tokens = max_tokens
+            self._llm_name = llm_name
             self._temperature = temperature
             self._frequency_penalty = frequency_penalty
             self._presence_penalty = presence_penalty
@@ -240,6 +243,7 @@ class VectaraRetriever(BaseRetriever):
 
         Args:
             query_bundle: Query Bundle
+
         """
         return self._vectara_query(query_bundle, **kwargs)[0]  # return top_nodes only
 
@@ -310,7 +314,7 @@ class VectaraRetriever(BaseRetriever):
 
             if self._rerank_limit:
                 rerank_config["limit"] = self._rerank_limit
-            if self._rerank_cutoff:
+            if self._rerank_cutoff and self._reranker != VectaraReranker.CHAIN:
                 rerank_config["cutoff"] = self._rerank_cutoff
 
             data["search"]["reranker"] = rerank_config
@@ -336,6 +340,8 @@ class VectaraRetriever(BaseRetriever):
                 model_parameters["frequency_penalty"] = self._frequency_penalty
             if self._presence_penalty:
                 model_parameters["presence_penalty"] = self._presence_penalty
+            if self._llm_name:
+                model_parameters["llm_name"] = self._llm_name
 
             if len(model_parameters) > 0:
                 summary_config["model_parameters"] = model_parameters
@@ -380,6 +386,7 @@ class VectaraRetriever(BaseRetriever):
             query_bundle: Query Bundle
             chat: whether to use chat API in Vectara
             conv_id: conversation ID, if adding to existing chat
+
         """
         body = self._build_vectara_query_body(query_bundle.query_str)
         body["stream_response"] = True
@@ -418,13 +425,14 @@ class VectaraRetriever(BaseRetriever):
         if response.status_code != 200:
             result = response.json()
             if response.status_code == 400:
-                _logger.error(
-                    f"Query failed (code {response.status_code}), reason {result['field_errors']}"
-                )
-            else:
-                _logger.error(
-                    f"Query failed (code {response.status_code}), reason {result['messages'][0]}"
-                )
+                if "messages" in result:
+                    _logger.error(
+                        f"Query failed (code {response.status_code}), reason {result['messages'][0]}"
+                    )
+                else:
+                    _logger.error(
+                        f"Query failed (code {response.status_code}), err response {result}"
+                    )
             return None
 
         def process_chunks(response):
@@ -514,6 +522,7 @@ class VectaraRetriever(BaseRetriever):
             List[NodeWithScore]: list of nodes with scores
             Dict: summary
             str: conversation ID, if applicable
+
         """
         data = self._build_vectara_query_body(query_bundle.query_str)
 
@@ -547,13 +556,13 @@ class VectaraRetriever(BaseRetriever):
 
         result = response.json()
         if response.status_code != 200:
-            if response.status_code == 400:
+            if "messages" in result:
                 _logger.error(
-                    f"Query failed (code {response.status_code}), reason {result['field_errors']}"
+                    f"Query failed (code {response.status_code}), reason {result['messages'][0]}"
                 )
             else:
                 _logger.error(
-                    f"Query failed (code {response.status_code}), reason {result['messages'][0]}"
+                    f"Query failed (code {response.status_code}), err response {result}"
                 )
             return [], {"text": ""}, ""
 
@@ -614,6 +623,7 @@ class VectaraRetriever(BaseRetriever):
         Returns:
             List[NodeWithScore]: list of nodes with scores
             Dict: summary
+
         """
         return await self._vectara_query(query_bundle, chat, conv_id, verbose, **kwargs)
 
@@ -634,6 +644,7 @@ class VectaraAutoRetriever(VectorIndexAutoRetriever):
             description is used by an LLM to automatically set vector store query
             parameters.
         Other variables are the same as VectorStoreAutoRetriever or VectaraRetriever
+
     """
 
     def __init__(
@@ -642,7 +653,12 @@ class VectaraAutoRetriever(VectorIndexAutoRetriever):
         vector_store_info: VectorStoreInfo,
         **kwargs: Any,
     ) -> None:
-        super().__init__(index, vector_store_info, prompt_template_str=DEFAULT_VECTARA_QUERY_PROMPT_TMPL, **kwargs)  # type: ignore
+        super().__init__(
+            index,
+            vector_store_info,
+            prompt_template_str=DEFAULT_VECTARA_QUERY_PROMPT_TMPL,
+            **kwargs,
+        )  # type: ignore
         self._index = index  # type: ignore
         self._kwargs = kwargs
         self._verbose = self._kwargs.get("verbose", False)

@@ -20,7 +20,8 @@ from llama_index.core.callbacks.base import CallbackManager
     )
 )
 class GeminiEmbedding(BaseEmbedding):
-    """Google Gemini embeddings.
+    """
+    Google Gemini embeddings.
 
     Args:
         model_name (str): Model for embedding.
@@ -29,6 +30,7 @@ class GeminiEmbedding(BaseEmbedding):
         api_key (Optional[str]): API key to access the model. Defaults to None.
         api_base (Optional[str]): API base to access the model. Defaults to Official Base.
         transport (Optional[str]): Transport to access the model.
+
     """
 
     _model: gemini = PrivateAttr()

@@ -179,7 +179,7 @@ class TestWasonxLLMInference:
                 }
             },
             TEST_CONTEXT_WINDOW,
-            TEST_MAX_SEQUENCE_LENGTH,
+            TEST_CONTEXT_WINDOW,
             id="max_sequence_length_with_context_window",
         ),
         pytest.param(
@@ -332,7 +332,7 @@ class TestWasonxLLMInference:
         assert chat_responses[-1].additional_kwargs["completion_tokens"] == 6
         assert chat_responses[-1].additional_kwargs["total_tokens"] == 16
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     @patch("llama_index.llms.ibm.base.ModelInference")
     async def test_complete_async(self, MockModelInference: MagicMock) -> None:
         mock_instance = MockModelInference.return_value
@@ -355,7 +355,7 @@ class TestWasonxLLMInference:
         chat_response = await watsonxllm.achat([message])
         assert chat_response.message.content == "\n\nTEST"
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     @patch("llama_index.llms.ibm.base.ModelInference")
     async def test_stream_async(self, MockModelInference: MagicMock) -> None:
         mock_instance = MockModelInference.return_value

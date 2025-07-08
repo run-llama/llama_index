@@ -442,9 +442,9 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
                 )
 
         if properties:
-            assert isinstance(
-                properties, dict
-            ), "`properties` should be a key-value mapping."
+            assert isinstance(properties, dict), (
+                "`properties` should be a key-value mapping."
+            )
             cypher = "MATCH (e) WHERE "
             prop_list = []
             params = {}

@@ -1,3 +1,4 @@
+import deprecated
 import os
 from abc import abstractmethod
 from collections import deque
@@ -52,7 +53,8 @@ class BaseAgentRunner(BaseAgent):
         self,
         task_id: str,
     ) -> None:
-        """Delete task.
+        """
+        Delete task.
 
         NOTE: this will not delete any previous executions from memory.
 
@@ -205,8 +207,21 @@ class AgentState(BaseModel):
         self.task_dict = {}
 
 
+@deprecated.deprecated(
+    reason=(
+        "AgentRunner has been deprecated and is not maintained.\n\n"
+        "This implementation will be removed in a v0.13.0.\n\n"
+        "See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+    action="once",
+)
 class AgentRunner(BaseAgentRunner):
-    """Agent runner.
+    """
+    DEPRECATED: AgentRunner has been deprecated and is not maintained.
+    This implementation will be removed in a v0.13.0.
+    See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/
+
+    Agent runner.
 
     Top-level agent orchestrator that can create tasks, run each step in a task,
     or run a task e2e. Stores state and keeps track of tasks.
@@ -349,7 +364,8 @@ class AgentRunner(BaseAgentRunner):
         self,
         task_id: str,
     ) -> None:
-        """Delete task.
+        """
+        Delete task.
 
         NOTE: this will not delete any previous executions from memory.
 
@@ -649,7 +665,7 @@ class AgentRunner(BaseAgentRunner):
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Chat with step executor."""
         if chat_history is not None:
-            self.memory.set(chat_history)
+            await self.memory.aset(chat_history)
         task = self.create_task(message)
 
         result_output = None
@@ -877,7 +893,7 @@ class BasePlanningAgentRunner(AgentRunner):
     ) -> AGENT_CHAT_RESPONSE_TYPE:
         """Chat with step executor."""
         if chat_history is not None:
-            self.memory.set(chat_history)
+            await self.memory.aset(chat_history)
 
         # create initial set of tasks
         plan_id = self.create_plan(message)

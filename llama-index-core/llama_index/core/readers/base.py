@@ -1,5 +1,6 @@
 """Base reader class."""
 
+import asyncio
 from abc import ABC, abstractmethod
 from typing import (
     TYPE_CHECKING,
@@ -28,8 +29,8 @@ class BaseReader(ABC):  # pragma: no cover
         self, *args: Any, **load_kwargs: Any
     ) -> Iterable[Document]:
         """Load data from the input directory lazily."""
-        # Fake async - just calls the sync method. Override in subclasses for real async implementations.
-        return self.lazy_load_data(*args, **load_kwargs)
+        # Threaded async - just calls the sync method with to_thread. Override in subclasses for real async implementations.
+        return await asyncio.to_thread(self.lazy_load_data, *args, **load_kwargs)
 
     def load_data(self, *args: Any, **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory."""
@@ -37,7 +38,7 @@ class BaseReader(ABC):  # pragma: no cover
 
     async def aload_data(self, *args: Any, **load_kwargs: Any) -> List[Document]:
         """Load data from the input directory."""
-        return self.load_data(*args, **load_kwargs)
+        return await asyncio.to_thread(self.load_data, *args, **load_kwargs)
 
     def load_langchain_documents(self, **load_kwargs: Any) -> List["LCDocument"]:
         """Load data in LangChain document format."""
@@ -70,6 +71,7 @@ class ResourcesReaderMixin(ABC):  # pragma: no cover
 
         Returns:
             List[str]: List of identifiers for the specific type of resources available in the reader.
+
         """
 
     async def alist_resources(self, *args: Any, **kwargs: Any) -> List[str]:
@@ -79,8 +81,9 @@ class ResourcesReaderMixin(ABC):  # pragma: no cover
         Returns:
             List[str]: A list of resources based on the reader type, such as files for a filesystem reader,
             channel IDs for a Slack reader, or pages for a Notion reader.
+
         """
-        return self.list_resources(*args, **kwargs)
+        return await asyncio.to_thread(self.list_resources, *args, **kwargs)
 
     def get_permission_info(self, resource_id: str, *args: Any, **kwargs: Any) -> Dict:
         """
@@ -96,7 +99,9 @@ class ResourcesReaderMixin(ABC):  # pragma: no cover
         """
         Get a dictionary of information about the permissions of a specific resource asynchronously.
         """
-        return self.get_permission_info(resource_id, *args, **kwargs)
+        return await asyncio.to_thread(
+            self.get_permission_info, resource_id, *args, **kwargs
+        )
 
     @abstractmethod
     def get_resource_info(self, resource_id: str, *args: Any, **kwargs: Any) -> Dict:
@@ -108,6 +113,7 @@ class ResourcesReaderMixin(ABC):  # pragma: no cover
 
         Returns:
             Dict: A dictionary of information about the resource.
+
         """
 
     async def aget_resource_info(
@@ -121,8 +127,11 @@ class ResourcesReaderMixin(ABC):  # pragma: no cover
 
         Returns:
             Dict: A dictionary of information about the resource.
+
         """
-        return self.get_resource_info(resource_id, *args, **kwargs)
+        return await asyncio.to_thread(
+            self.get_resource_info, resource_id, *args, **kwargs
+        )
 
     def list_resources_with_info(self, *args: Any, **kwargs: Any) -> Dict[str, Dict]:
         """
@@ -130,6 +139,7 @@ class ResourcesReaderMixin(ABC):  # pragma: no cover
 
         Returns:
             Dict[str, Dict]: A dictionary of information about all resources.
+
         """
         return {
             resource: self.get_resource_info(resource, *args, **kwargs)
@@ -144,6 +154,7 @@ class ResourcesReaderMixin(ABC):  # pragma: no cover
 
         Returns:
             Dict[str, Dict]: A dictionary of information about all resources.
+
         """
         return {
             resource: await self.aget_resource_info(resource, *args, **kwargs)
@@ -162,13 +173,14 @@ class ResourcesReaderMixin(ABC):  # pragma: no cover
 
         Returns:
             List[Document]: A list of documents loaded from the resource.
+
         """
 
     async def aload_resource(
         self, resource_id: str, *args: Any, **kwargs: Any
     ) -> List[Document]:
         """Read file from filesystem and return documents asynchronously."""
-        return self.load_resource(resource_id, *args, **kwargs)
+        return await asyncio.to_thread(self.load_resource, resource_id, *args, **kwargs)
 
     def load_resources(
         self, resource_ids: List[str], *args: Any, **kwargs: Any
@@ -181,6 +193,7 @@ class ResourcesReaderMixin(ABC):  # pragma: no cover
 
         Returns:
             List[Document]: A list of documents loaded from the resources.
+
         """
         return [
             doc
@@ -199,6 +212,7 @@ class ResourcesReaderMixin(ABC):  # pragma: no cover
 
         Returns:
             Dict[str, List[Document]]: A dictionary of documents loaded from the resources.
+
         """
         return {
             resource: await self.aload_resource(resource, *args, **kwargs)

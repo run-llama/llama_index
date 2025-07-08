@@ -1,6 +1,5 @@
 from collections import Counter
-from packaging import version
-from typing import Any, Callable, List
+from typing import Callable, List
 
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.base.embeddings.base_sparse import (
@@ -74,30 +73,3 @@ class DefaultPineconeSparseEmbedding(BaseSparseEmbedding):
     async def _aget_text_embedding(self, text: str) -> SparseEmbedding:
         """Embed the input text asynchronously."""
         return self._get_query_embedding(text)
-
-
-def _import_pinecone() -> Any:
-    """
-    Try to import pinecone module. If it's not already installed, instruct user how to install.
-    """
-    try:
-        import pinecone
-    except ImportError as e:
-        raise ImportError(
-            "Could not import pinecone python package. "
-            "Please install it with `pip install pinecone-client`."
-        ) from e
-    return pinecone
-
-
-def _is_pinecone_v3() -> bool:
-    """
-    Check whether the pinecone client is >= 3.0.0.
-    """
-    pinecone = _import_pinecone()
-    pinecone_client_version = pinecone.__version__
-    if version.parse(pinecone_client_version) >= version.parse(
-        "3.0.0"
-    ):  # Will not work with .dev versions, e.g. "3.0.0.dev8"
-        return True
-    return False

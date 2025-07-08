@@ -1,6 +1,62 @@
 [build-system]
-build-backend = "poetry.core.masonry.api"
-requires = ["poetry-core"]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "black[jupyter]>=23.7.0,<=24.3.0",
+    "codespell[toml]>=v2.2.6",
+    "diff-cover>=9.2.0",
+    "ipython==8.10.0",
+    "jupyter>=1.0.0,<2",
+    "llama-index-embeddings-openai>=0.3.0,<0.4",
+    "llama-index-llms-openai>=0.4.0,<0.5",
+    "llama-index-readers-file>=0.4.0,<0.5",
+    "mypy==0.991",
+    "pre-commit==3.2.0",
+    "pylint==2.15.10",
+    "pytest==7.2.1",
+    "pytest-cov>=6.1.1",
+    "pytest-mock==3.11.1",
+    "ruff==0.11.11",
+    "types-Deprecated>=0.1.0",
+    "types-PyYAML>=6.0.12.12,<7",
+    "types-protobuf>=4.24.0.4,<5",
+    "types-redis==4.5.5.0",
+    "types-requests==2.28.11.8",
+    "types-setuptools==67.1.0.0",
+]
+
+[project]
+name = "llama-index-networks"
+version = "0.6.1"
+description = "llama-index networks  integration"
+authors = [
+    {name = "Andrei Fajardo", email = "andrei@llamaindex.ai"},
+    {name = "Jerry Liu", email = "jerry@llamaindex.ai"},
+]
+requires-python = ">=3.9,<4.0"
+readme = "README.md"
+license = "MIT"
+maintainers = [
+    {name = "Andrei Fajardo", email = "andrei@runllama.ai"},
+    {name = "Haotian Zhang", email = "ht@runllama.ai"},
+    {name = "Jerry Liu", email = "jerry@llamaindex.ai"},
+    {name = "Logan Markewich", email = "logan@llamaindex.ai"},
+    {name = "Simon Suo", email = "simon@llamaindex.ai"},
+    {name = "Sourabh Desai", email = "sourabh@llamaindex.ai"},
+]
+dependencies = [
+    "fastapi[all]>=0.115.6,<0.116",
+    "pyjwt[crypto]>=2.8.0,<3",
+    "python-jose>=3.4.0,<4",
+    "uvicorn[standard]>=0.27.1,<0.28",
+    "pydantic[dotenv]>=2.6.1,<3",
+    "python-dotenv>=1.0.1,<2",
+    "aiohttp>=3.9.3,<4",
+    "ecdsa>=0.19.0",
+    "llama-index-core>=0.12.0,<0.13",
+]
 
 [tool.codespell]
 check-filenames = true
@@ -9,61 +65,17 @@ check-hidden = true
 # work through many typos (--write-changes and --interactive will help)
 skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
 [tool.mypy]
 disallow_untyped_defs = true
 # Remove venv skip when integrated with pre-commit
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 python_version = "3.8"
-
-[tool.poetry]
-authors = ["Andrei Fajardo <andrei@llamaindex.ai>", "Jerry Liu <jerry@llamaindex.ai>"]
-description = "llama-index networks  integration"
-exclude = ["**/BUILD"]
-license = "MIT"
-maintainers = [
-    "Andrei Fajardo <andrei@runllama.ai>",
-    "Haotian Zhang <ht@runllama.ai>",
-    "Jerry Liu <jerry@llamaindex.ai>",
-    "Logan Markewich <logan@llamaindex.ai>",
-    "Simon Suo <simon@llamaindex.ai>",
-    "Sourabh Desai <sourabh@llamaindex.ai>",
-]
-name = "llama-index-networks"
-packages = [{include = "llama_index/"}]
-readme = "README.md"
-version = "0.6.0"
-
-[tool.poetry.dependencies]
-python = ">=3.9,<4.0"
-fastapi = {extras = ["all"], version = "^0.115.6"}
-pyjwt = {extras = ["crypto"], version = "^2.8.0"}
-python-jose = "^3.4.0"
-uvicorn = {extras = ["standard"], version = "^0.27.1"}
-pydantic = {extras = ["dotenv"], version = "^2.6.1"}
-python-dotenv = "^1.0.1"
-aiohttp = "^3.9.3"
-ecdsa = ">=0.19.0"
-llama-index-core = "^0.12.0"
-
-[tool.poetry.group.dev.dependencies]
-black = {extras = ["jupyter"], version = ">=23.7.0,<=24.3.0"}
-codespell = {extras = ["toml"], version = ">=v2.2.6"}
-ipython = "8.10.0"
-jupyter = "^1.0.0"
-llama-index-embeddings-openai = "^0.3.0"
-llama-index-llms-openai = "^0.3.0"
-llama-index-readers-file = "^0.4.0"
-mypy = "0.991"
-pre-commit = "3.2.0"
-pylint = "2.15.10"
-pytest = "7.2.1"
-pytest-mock = "3.11.1"
-ruff = "0.0.292"
-tree-sitter-languages = "^1.8.0"
-types-Deprecated = ">=0.1.0"
-types-PyYAML = "^6.0.12.12"
-types-protobuf = "^4.24.0.4"
-types-redis = "4.5.5.0"
-types-requests = "2.28.11.8"  # TODO: unpin when mypy>0.991
-types-setuptools = "67.1.0.0"

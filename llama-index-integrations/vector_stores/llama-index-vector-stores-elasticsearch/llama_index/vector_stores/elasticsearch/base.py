@@ -6,7 +6,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Union
 
 import nest_asyncio
 from llama_index.core.bridge.pydantic import PrivateAttr
-from llama_index.core.schema import BaseNode, MetadataMode, TextNode
+from llama_index.core.schema import BaseNode, MetadataMode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
@@ -15,7 +15,6 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryResult,
 )
 from llama_index.core.vector_stores.utils import (
-    metadata_dict_to_node,
     node_to_metadata_dict,
 )
 from elasticsearch.helpers.vectorstore import AsyncVectorStore
@@ -30,6 +29,7 @@ from elasticsearch.helpers.vectorstore import (
 from llama_index.vector_stores.elasticsearch.utils import (
     get_elasticsearch_client,
     get_user_agent,
+    convert_es_hit_to_node,
 )
 
 logger = getLogger(__name__)
@@ -52,6 +52,7 @@ def _to_elasticsearch_filter(
 
     Returns:
         Elasticsearch filter.
+
     """
     if len(standard_filters.legacy_filters()) == 1:
         filter = standard_filters.legacy_filters()[0]
@@ -307,6 +308,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
         Raises:
             ImportError: If elasticsearch['async'] python package is not installed.
             BulkIndexError: If AsyncElasticsearch async_bulk indexing fails.
+
         """
         return asyncio.get_event_loop().run_until_complete(
             self.async_add(
@@ -339,6 +341,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
         Raises:
             ImportError: If elasticsearch python package is not installed.
             BulkIndexError: If AsyncElasticsearch async_bulk indexing fails.
+
         """
         if len(nodes) == 0:
             return []
@@ -382,6 +385,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
 
         Raises:
             Exception: If Elasticsearch delete_by_query fails.
+
         """
         return asyncio.get_event_loop().run_until_complete(
             self.adelete(ref_doc_id, **delete_kwargs)
@@ -398,6 +402,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
 
         Raises:
             Exception: If AsyncElasticsearch delete_by_query fails.
+
         """
         await self._store.delete(
             query={"term": {"metadata.ref_doc_id": ref_doc_id}}, **delete_kwargs
@@ -416,6 +421,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
             node_ids: Optional list of node IDs to delete.
             filters: Optional metadata filters to select nodes to delete.
             delete_kwargs: Optional additional arguments to pass to delete operation.
+
         """
         return asyncio.get_event_loop().run_until_complete(
             self.adelete_nodes(node_ids, filters, **delete_kwargs)
@@ -434,6 +440,7 @@ class ElasticsearchStore(BasePydanticVectorStore):
             node_ids (Optional[List[str]], optional): List of node IDs. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
             delete_kwargs (Any, optional): Optional additional arguments to pass to delete operation.
+
         """
         if not node_ids and not filters:
             return
@@ -543,42 +550,95 @@ class ElasticsearchStore(BasePydanticVectorStore):
         top_k_scores = []
 
         for hit in hits:
-            source = hit["_source"]
-            metadata = source.get("metadata", {})
-            text = source.get(self.text_field, None)
-            node_id = hit["_id"]
-            score = hit["_score"]
-
-            try:
-                node = metadata_dict_to_node(metadata)
-                node.text = text
-            except Exception:
-                # Legacy support for old metadata format
-                logger.warning(
-                    f"Could not parse metadata from hit {hit['_source'].get('metadata')}"
-                )
-                node_info = source.get("node_info")
-                relationships = source.get("relationships", {})
-                start_char_idx = None
-                end_char_idx = None
-                if isinstance(node_info, dict):
-                    start_char_idx = node_info.get("start", None)
-                    end_char_idx = node_info.get("end", None)
-
-                node = TextNode(
-                    text=text,
-                    metadata=metadata,
-                    id_=node_id,
-                    start_char_idx=start_char_idx,
-                    end_char_idx=end_char_idx,
-                    relationships=relationships,
-                )
+            node = convert_es_hit_to_node(hit, self.text_field)
             top_k_nodes.append(node)
-            top_k_ids.append(node_id)
-            top_k_scores.append(score)
+            top_k_ids.append(hit["_id"])
+            top_k_scores.append(hit["_score"])
 
         return VectorStoreQueryResult(
             nodes=top_k_nodes,
             ids=top_k_ids,
             similarities=_to_llama_similarities(top_k_scores),
         )
+
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """
+        Get nodes from Elasticsearch index.
+
+        Args:
+            node_ids (Optional[List[str]]): List of node IDs to retrieve.
+            filters (Optional[MetadataFilters]): Metadata filters to apply.
+
+        Returns:
+            List[BaseNode]: List of nodes retrieved from the index.
+
+        """
+        return asyncio.get_event_loop().run_until_complete(
+            self.aget_nodes(node_ids, filters)
+        )
+
+    async def aget_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+    ) -> List[BaseNode]:
+        """
+        Asynchronously get nodes from Elasticsearch index.
+
+        Args:
+            node_ids (Optional[List[str]]): List of node IDs to retrieve.
+            filters (Optional[MetadataFilters]): Metadata filters to apply.
+
+        Returns:
+            List[BaseNode]: List of nodes retrieved from the index.
+
+        Raises:
+            ValueError: If neither node_ids nor filters is provided.
+
+        """
+        if not node_ids and not filters:
+            raise ValueError("Either node_ids or filters must be provided.")
+
+        query = {"bool": {"must": []}}
+
+        if node_ids is not None:
+            query["bool"]["must"].append({"terms": {"_id": node_ids}})
+
+        if filters:
+            es_filter = _to_elasticsearch_filter(filters)
+            if "bool" in es_filter and "must" in es_filter["bool"]:
+                query["bool"]["must"].extend(es_filter["bool"]["must"])
+            else:
+                query["bool"]["must"].append(es_filter)
+
+        response = await self._store.client.search(
+            index=self.index_name,
+            body={"query": query, "size": 10000},
+        )
+
+        hits = response.get("hits", {}).get("hits", [])
+        nodes = []
+
+        for hit in hits:
+            nodes.append(convert_es_hit_to_node(hit, self.text_field))
+
+        return nodes
+
+    def clear(self) -> None:
+        """
+        Clear all nodes from Elasticsearch index.
+        This method deletes and recreates the index.
+        """
+        return asyncio.get_event_loop().run_until_complete(self.aclear())
+
+    async def aclear(self) -> None:
+        """
+        Asynchronously clear all nodes from Elasticsearch index.
+        This method deletes and recreates the index.
+        """
+        if await self._store.client.indices.exists(index=self.index_name):
+            await self._store.client.indices.delete(index=self.index_name)

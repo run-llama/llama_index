@@ -13,7 +13,8 @@ from llama_index.core.schema import Document
 
 
 class WhisperReader(BaseReader):
-    """Whisper reader.
+    """
+    Whisper reader.
 
     Reads audio files and transcribes them using the OpenAI Whisper API.
 
@@ -24,6 +25,7 @@ class WhisperReader(BaseReader):
         async_client (Optional[AsyncOpenAI]): An existing AsyncOpenAI client to use.
         client_kwargs (Optional[dict]): Additional keyword arguments to pass to the OpenAI client.
         transcribe_kwargs (Optional[dict]): Additional keyword arguments to pass to the transcribe method.
+
     """
 
     def __init__(

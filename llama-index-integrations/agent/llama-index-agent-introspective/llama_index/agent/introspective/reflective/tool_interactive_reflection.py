@@ -64,12 +64,12 @@ class Correction(BaseModel):
 
 @runtime_checkable
 class StoppingCallable(Protocol):
-    def __call__(self, critique_str: str) -> bool:
-        ...
+    def __call__(self, critique_str: str) -> bool: ...
 
 
 class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
-    """Tool-Interactive Reflection Agent Worker.
+    """
+    Tool-Interactive Reflection Agent Worker.
 
     This agent worker implements the CRITIC reflection framework introduced
     by Gou, Zhibin, et al. (2024) ICLR. (source: https://arxiv.org/pdf/2305.11738)
@@ -102,6 +102,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
             responses against a critique or reflection. Defaults to None.
         callback_manager (Optional[CallbackManager], optional): Callback manager. Defaults to None.
         verbose (bool, optional): Whether execution should be verbose. Defaults to False.
+
     """
 
     callback_manager: CallbackManager = Field(default=CallbackManager([]))
@@ -180,7 +181,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
         new_memory = ChatMemoryBuffer.from_defaults()
 
         # put current history in new memory
-        messages = task.memory.get()
+        messages = task.memory.get(input=task.input)
         for message in messages:
             new_memory.put(message)
         # inject new input into memory
@@ -441,7 +442,7 @@ class ToolInteractiveReflectionAgentWorker(BaseModel, BaseAgentWorker):
     def get_all_messages(self, task: Task) -> List[ChatMessage]:
         return (
             self.prefix_messages
-            + task.memory.get()
+            + task.memory.get(input=task.input)
             + task.extra_state["new_memory"].get_all()
         )
 

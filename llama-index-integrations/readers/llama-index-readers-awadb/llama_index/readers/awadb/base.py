@@ -8,7 +8,8 @@ from llama_index.core.schema import Document
 
 
 class AwadbReader(BaseReader):
-    """Awadb reader.
+    """
+    Awadb reader.
 
     Retrieves documents through an existing awadb client.
     These documents can then be used in a downstream LlamaIndex data structure.
@@ -34,7 +35,8 @@ class AwadbReader(BaseReader):
         k: int = 4,
         separate_documents: bool = True,
     ) -> List[Document]:
-        """Load data from Faiss.
+        """
+        Load data from Faiss.
 
         Args:
             query (np.ndarray): A 2D numpy array of query vectors.

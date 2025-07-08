@@ -13,7 +13,8 @@ from llama_index.llms.openai import OpenAI
 
 
 class RecursiveRetrieverSmallToBigPack(BaseLlamaPack):
-    """Small-to-big retrieval (with recursive retriever).
+    """
+    Small-to-big retrieval (with recursive retriever).
 
     Given input documents, and an initial set of "parent" chunks,
     subdivide each chunk further into "child" chunks.

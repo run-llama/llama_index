@@ -1,3 +1,4 @@
+import deprecated
 import uuid
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -135,8 +136,20 @@ Overall Task: {task}
 """
 
 
+@deprecated.deprecated(
+    reason=(
+        "StructuredPlannerAgent has been deprecated and is not maintained.\n\n"
+        "This implementation will be removed in a v0.13.0.\n\n"
+        "See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+)
 class StructuredPlannerAgent(BasePlanningAgentRunner):
-    """Structured Planner Agent runner.
+    """
+    DEPRECATED: StructuredPlannerAgent has been deprecated and is not maintained.
+    This implementation will be removed in a v0.13.0.
+    See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/
+
+    Structured Planner Agent runner.
 
     Top-level agent orchestrator that can create tasks, run each step in a task,
     or run a task e2e. Stores state and keeps track of tasks.
@@ -324,7 +337,7 @@ class StructuredPlannerAgent(BasePlanningAgentRunner):
         # gather completed sub-tasks and response pairs
         completed_outputs_str = ""
         for sub_task, task_output in completed_sub_task_pairs:
-            task_str = f"{sub_task.name}:\n" f"\t{task_output.output!s}\n"
+            task_str = f"{sub_task.name}:\n\t{task_output.output!s}\n"
             completed_outputs_str += task_str
 
         # get a string for the remaining sub-tasks

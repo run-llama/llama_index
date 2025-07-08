@@ -1,4 +1,5 @@
 import asyncio
+import deprecated
 import json
 import logging
 from abc import abstractmethod
@@ -40,7 +41,8 @@ def call_tool_with_error_handling(
     error_message: Optional[str] = None,
     raise_error: bool = False,
 ) -> ToolOutput:
-    """Call tool with error handling.
+    """
+    Call tool with error handling.
 
     Input is a dictionary with args and kwargs
 
@@ -138,7 +140,8 @@ async def acall_function(
 
 
 def resolve_tool_choice(tool_choice: Union[str, dict] = "auto") -> Union[str, dict]:
-    """Resolve tool choice.
+    """
+    Resolve tool choice.
 
     If tool_choice is a function name string, return the appropriate dict.
     """
@@ -148,6 +151,13 @@ def resolve_tool_choice(tool_choice: Union[str, dict] = "auto") -> Union[str, di
     return tool_choice
 
 
+@deprecated.deprecated(
+    reason=(
+        "BaseOpenAIAgent has been deprecated and is not maintained.\n\n"
+        "`FunctionAgent` is the recommended replacement.\n\n"
+        "See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+)
 class BaseOpenAIAgent(BaseAgent):
     def __init__(
         self,
@@ -194,9 +204,8 @@ class BaseOpenAIAgent(BaseAgent):
     ) -> bool:
         if n_function_calls > self._max_function_calls:
             return False
-        if not tool_calls:
-            return False
-        return True
+
+        return tool_calls is not None
 
     def init_chat(
         self, message: str, chat_history: Optional[List[ChatMessage]] = None
@@ -300,7 +309,7 @@ class BaseOpenAIAgent(BaseAgent):
             )
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         self.sources.append(tool_output)
-        self.memory.put(function_message)
+        await self.memory.aput(function_message)
 
     def _get_llm_chat_kwargs(
         self, openai_tools: List[dict], tool_choice: Union[str, dict] = "auto"
@@ -495,7 +504,8 @@ class BaseOpenAIAgent(BaseAgent):
 
 
 class OpenAIAgent(BaseOpenAIAgent):
-    """OpenAI (function calling) Agent.
+    """
+    OpenAI (function calling) Agent.
 
     Uses the OpenAI function API to reason about whether to
     use a tool, and returning the response to the user.
@@ -563,7 +573,8 @@ class OpenAIAgent(BaseOpenAIAgent):
         prefix_messages: Optional[List[ChatMessage]] = None,
         **kwargs: Any,
     ) -> "OpenAIAgent":
-        """Create an OpenAIAgent from a list of tools.
+        """
+        Create an OpenAIAgent from a list of tools.
 
         Similar to `from_defaults` in other classes, this method will
         infer defaults for a variety of parameters, including the LLM,

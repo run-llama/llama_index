@@ -25,7 +25,8 @@ AnnotatedCallable = Annotated[
 
 
 def get_parameters(fn: Callable) -> Tuple[Set[str], Set[str]]:
-    """Get parameters from function.
+    """
+    Get parameters from function.
 
     Returns:
         Tuple[Set[str], Set[str]]: required and optional parameters
@@ -98,7 +99,7 @@ class FnComponent(QueryComponent):
         extra_params = set(input.keys()) - self._req_params - self._opt_params
         if extra_params:
             raise ValueError(
-                f"Extra parameters: {extra_params}. " f"Input keys: {input.keys()}"
+                f"Extra parameters: {extra_params}. Input keys: {input.keys()}"
             )
         return input
 
