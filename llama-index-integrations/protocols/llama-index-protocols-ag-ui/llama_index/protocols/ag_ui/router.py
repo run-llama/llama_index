@@ -78,7 +78,7 @@ class AGUIWorkflowRouter:
                 _ = await handler
 
                 # Update the state
-                state = await handler.ctx.get("state", default={})
+                state = await handler.ctx.store.get("state", default={})
                 yield workflow_event_to_sse(StateSnapshotWorkflowEvent(snapshot=state))
 
                 yield workflow_event_to_sse(
