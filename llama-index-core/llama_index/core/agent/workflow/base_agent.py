@@ -1,7 +1,6 @@
 from abc import abstractmethod
 import warnings
 import inspect
-import json
 from typing import Any, Callable, Dict, List, Sequence, Optional, Union, Type, cast
 
 from pydantic._internal._model_construction import ModelMetaclass
@@ -21,6 +20,7 @@ from llama_index.core.bridge.pydantic import (
     field_validator,
 )
 from llama_index.core.prompts import PromptTemplate
+from llama_index.core.agent.utils import messages_to_xml_format
 from llama_index.core.llms import ChatMessage, LLM, TextBlock
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
@@ -421,20 +421,10 @@ class BaseWorkflowAgent(
                     )
             if self.output_cls is not None:
                 try:
-                    conversation = "Starting from this conversation:\n\n'''\n"
-                    for message in messages:
-                        if message.content:
-                            conversation += (
-                                str(message.role) + ": " + message.content + "\n"
-                            )
-                    conversation += (
-                        "\n'''\n\nCan you please represent the result of the conversation following this JSON schema?\n\n```json\n"
-                        + json.dumps(self.output_cls.model_json_schema(), indent=4)
-                        + "\n```"
-                    )
+                    xml_message = messages_to_xml_format(messages)
                     structured_response = await self.llm.as_structured_llm(
                         self.output_cls
-                    ).achat(messages=[ChatMessage(role="user", content=conversation)])
+                    ).achat(messages=[xml_message])
                     output.structured_response = self.output_cls.model_validate_json(
                         structured_response.message.content
                     )

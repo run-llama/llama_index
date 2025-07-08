@@ -11,6 +11,7 @@ from llama_index.core.llms import (
     ChatResponseAsyncGen,
     LLM,
 )
+from llama_index.core.agent.workflow import AgentWorkflow
 from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.tools import ToolSelection
 from llama_index.core.agent.workflow import FunctionAgent
@@ -202,6 +203,60 @@ async def test_structured_fn_agent(function_agent_struct_fn: FunctionAgent):
 async def test_astructured_fn_agent(function_agent_astruct_fn: FunctionAgent):
     """Test single agent with state management."""
     handler = function_agent_astruct_fn.run(user_msg="test")
+    async for _ in handler.stream_events():
+        pass
+
+    response = await handler
+    assert "Success with the FunctionAgent" in str(response.response)
+    assert response.structured_response == Structure(hello="guten tag", world=3)
+
+
+@pytest.mark.asyncio
+async def test_structured_output_agentworkflow(
+    function_agent_output_cls: FunctionAgent,
+) -> None:
+    wf = AgentWorkflow(
+        agents=[function_agent_output_cls],
+        root_agent=function_agent_output_cls.name,
+        output_cls=Structure,
+    )
+    handler = wf.run(user_msg="test")
+    async for _ in handler.stream_events():
+        pass
+
+    response = await handler
+    assert "Success with the FunctionAgent" in str(response.response)
+    assert response.structured_response == Structure(hello="hello", world=1)
+
+
+@pytest.mark.asyncio
+async def test_structured_output_fn_agentworkflow(
+    function_agent_output_cls: FunctionAgent,
+) -> None:
+    wf = AgentWorkflow(
+        agents=[function_agent_output_cls],
+        root_agent=function_agent_output_cls.name,
+        structured_output_fn=structured_function_fn,
+    )
+    handler = wf.run(user_msg="test")
+    async for _ in handler.stream_events():
+        pass
+
+    response = await handler
+    assert "Success with the FunctionAgent" in str(response.response)
+    assert response.structured_response == Structure(hello="bonjour", world=2)
+
+
+@pytest.mark.asyncio
+async def test_astructured_output_fn_agentworkflow(
+    function_agent_output_cls: FunctionAgent,
+) -> None:
+    wf = AgentWorkflow(
+        agents=[function_agent_output_cls],
+        root_agent=function_agent_output_cls.name,
+        structured_output_fn=astructured_function_fn,
+    )
+    handler = wf.run(user_msg="test")
     async for _ in handler.stream_events():
         pass
 
