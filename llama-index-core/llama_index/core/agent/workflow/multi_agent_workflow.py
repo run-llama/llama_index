@@ -1,4 +1,5 @@
 from abc import ABCMeta
+import json
 import inspect
 import warnings
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Type, cast
@@ -92,7 +93,9 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         state_prompt: Optional[Union[str, BasePromptTemplate]] = None,
         timeout: Optional[float] = None,
         output_cls: Optional[Type[BaseModel]] = None,
-        structured_output_fn: Optional[Callable[[List[ChatMessage]], BaseModel]] = None,
+        structured_output_fn: Optional[
+            Callable[[List[ChatMessage]], Dict[str, Any]]
+        ] = None,
         **workflow_kwargs: Any,
     ):
         super().__init__(timeout=timeout, **workflow_kwargs)
@@ -455,7 +458,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                     structured_response = await agent.llm.as_structured_llm(
                         self.output_cls
                     ).achat(messages=[xml_message])
-                    output.structured_response = self.output_cls.model_validate_json(
+                    output.structured_response = json.loads(
                         structured_response.message.content
                     )
                 except Exception as e:

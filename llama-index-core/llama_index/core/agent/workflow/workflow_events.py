@@ -1,6 +1,11 @@
-from typing import Any, Optional
+from typing import Any, Optional, Dict, Type
 
-from llama_index.core.bridge.pydantic import BaseModel, Field, model_serializer
+from llama_index.core.bridge.pydantic import (
+    BaseModel,
+    Field,
+    model_serializer,
+    ValidationError,
+)
 from llama_index.core.tools import ToolSelection, ToolOutput
 from llama_index.core.llms import ChatMessage
 from llama_index.core.workflow import Event, StartEvent
@@ -34,10 +39,18 @@ class AgentOutput(Event):
     """LLM output."""
 
     response: ChatMessage
-    structured_response: Optional[BaseModel] = Field(default=None)
+    structured_response: Optional[Dict[str, Any]] = Field(default=None)
     tool_calls: list[ToolSelection]
     raw: Optional[Any] = Field(default=None, exclude=True)
     current_agent_name: str
+
+    def get_pydantic_model(self, model: Type[BaseModel]) -> Optional[BaseModel]:
+        if not self.structured_response:
+            return None
+        try:
+            return model.model_validate(self.structured_response)
+        except ValidationError:
+            return None
 
     def __str__(self) -> str:
         return self.response.content or ""

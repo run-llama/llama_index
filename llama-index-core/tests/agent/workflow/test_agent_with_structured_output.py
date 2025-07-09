@@ -184,7 +184,7 @@ async def test_output_cls_agent(function_agent_output_cls: FunctionAgent):
 
     response = await handler
     assert "Success with the FunctionAgent" in str(response.response)
-    assert response.structured_response == Structure(hello="hello", world=1)
+    assert response.get_pydantic_model(Structure) == Structure(hello="hello", world=1)
 
 
 @pytest.mark.asyncio
@@ -196,7 +196,7 @@ async def test_structured_fn_agent(function_agent_struct_fn: FunctionAgent):
 
     response = await handler
     assert "Success with the FunctionAgent" in str(response.response)
-    assert response.structured_response == Structure(hello="bonjour", world=2)
+    assert response.get_pydantic_model(Structure) == Structure(hello="bonjour", world=2)
 
 
 @pytest.mark.asyncio
@@ -208,7 +208,9 @@ async def test_astructured_fn_agent(function_agent_astruct_fn: FunctionAgent):
 
     response = await handler
     assert "Success with the FunctionAgent" in str(response.response)
-    assert response.structured_response == Structure(hello="guten tag", world=3)
+    assert response.get_pydantic_model(Structure) == Structure(
+        hello="guten tag", world=3
+    )
 
 
 @pytest.mark.asyncio
@@ -226,7 +228,7 @@ async def test_structured_output_agentworkflow(
 
     response = await handler
     assert "Success with the FunctionAgent" in str(response.response)
-    assert response.structured_response == Structure(hello="hello", world=1)
+    assert response.get_pydantic_model(Structure) == Structure(hello="hello", world=1)
 
 
 @pytest.mark.asyncio
@@ -244,7 +246,7 @@ async def test_structured_output_fn_agentworkflow(
 
     response = await handler
     assert "Success with the FunctionAgent" in str(response.response)
-    assert response.structured_response == Structure(hello="bonjour", world=2)
+    assert response.get_pydantic_model(Structure) == Structure(hello="bonjour", world=2)
 
 
 @pytest.mark.asyncio
@@ -262,4 +264,6 @@ async def test_astructured_output_fn_agentworkflow(
 
     response = await handler
     assert "Success with the FunctionAgent" in str(response.response)
-    assert response.structured_response == Structure(hello="guten tag", world=3)
+    assert response.get_pydantic_model(Structure) == Structure(
+        hello="guten tag", world=3
+    )

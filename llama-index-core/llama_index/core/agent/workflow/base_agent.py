@@ -1,4 +1,5 @@
 from abc import abstractmethod
+import json
 import warnings
 import inspect
 from typing import Any, Callable, Dict, List, Sequence, Optional, Union, Type, cast
@@ -106,9 +107,11 @@ class BaseWorkflowAgent(
         default=None,
         exclude=True,
     )
-    structured_output_fn: Optional[Callable[[List[ChatMessage]], BaseModel]] = Field(
-        description="Custom function to generate structured output from the agent's run. It has to take a list of ChatMessage instances (derived from the memory) and output a BaseModel subclass instance. If you set `output_cls` to a non-null value, this field will be ignored.",
-        default=None,
+    structured_output_fn: Optional[Callable[[List[ChatMessage]], Dict[str, Any]]] = (
+        Field(
+            description="Custom function to generate structured output from the agent's run. It has to take a list of ChatMessage instances (derived from the memory) and output a BaseModel subclass instance. If you set `output_cls` to a non-null value, this field will be ignored.",
+            default=None,
+        )
     )
 
     def __init__(
@@ -425,7 +428,7 @@ class BaseWorkflowAgent(
                     structured_response = await self.llm.as_structured_llm(
                         self.output_cls
                     ).achat(messages=[xml_message])
-                    output.structured_response = self.output_cls.model_validate_json(
+                    output.structured_response = json.loads(
                         structured_response.message.content
                     )
                 except Exception as e:
