@@ -98,14 +98,6 @@ class MoorchehVectorStore(BasePydanticVectorStore):
             ai_model=ai_model,
         )
 
-        # Initialize Moorcheh client
-        self._client = MoorchehClient(
-            api_key=self.api_key,
-            base_url="https://wnc4zvnuok.execute-api.us-east-1.amazonaws.com/v1",
-        )
-        self.is_embedding_query = False
-        self._sparse_embedding_model = sparse_embedding_model
-
         # Fallback to env var if API key not provided
         if not self.api_key:
             self.api_key = os.getenv("MOORCHEH_API_KEY")
@@ -113,11 +105,14 @@ class MoorchehVectorStore(BasePydanticVectorStore):
             raise ValueError("`api_key` is required for Moorcheh client initialization")
 
         if not self.namespace:
-            raise ValueError(
-                "`namespace` is required for Moorcheh client initialization"
-            )
+            raise ValueError("`namespace` is required for Moorcheh client initialization")
 
+        # Initialize Moorcheh client
         print("[DEBUG] Initializing MoorchehClient")
+        self._client = MoorchehClient(api_key=self.api_key)
+        self.is_embedding_query = False
+        self._sparse_embedding_model = sparse_embedding_model
+
 
         print("[DEBUG] Listing namespaces...")
         try:
