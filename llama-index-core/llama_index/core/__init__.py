@@ -6,12 +6,6 @@ import logging
 from logging import NullHandler
 from typing import Callable, Optional
 
-try:
-    # Force pants to install eval_type_backport on 3.9
-    import eval_type_backport  # noqa  # type: ignore
-except ImportError:
-    pass
-
 # response
 from llama_index.core.base.response.schema import Response
 
