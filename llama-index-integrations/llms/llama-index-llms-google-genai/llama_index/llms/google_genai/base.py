@@ -209,9 +209,8 @@ class GoogleGenAI(FunctionCallingLLM):
         # merge it later
         if generation_config:
             self._generation_config = generation_config.model_dump()
-            # Ensure cached_content is included if provided
             if cached_content:
-                self._generation_config["cached_content"] = cached_content
+                self._generation_config.setdefault("cached_content", cached_content)
         else:
             self._generation_config = types.GenerateContentConfig(
                 temperature=temperature,
