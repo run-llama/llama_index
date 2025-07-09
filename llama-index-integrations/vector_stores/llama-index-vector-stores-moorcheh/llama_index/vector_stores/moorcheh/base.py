@@ -6,7 +6,8 @@ import os
 
 # LlamaIndex internals for schema and vector store support
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
-from llama_index.core.llms.base import LLM
+from llama_index.core.llms import LLM
+from llama_index.llms.openai import OpenAI
 from llama_index.core.base.embeddings.base_sparse import BaseSparseEmbedding
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
@@ -55,7 +56,7 @@ class MoorchehVectorStore(BasePydanticVectorStore):
 
     api_key: Optional[str]
     namespace: Optional[str]
-    namespaceType = Optional[Literal["text", "vector"]]
+    namespace_type: Optional[Literal["text", "vector"]] = None
     vector_dimension: Optional[int]
     add_sparse_vector: Optional[bool]
     ai_model: Optional[str]
@@ -67,7 +68,7 @@ class MoorchehVectorStore(BasePydanticVectorStore):
         api_key: Optional[str] = None,
         namespace: Optional[str] = None,
         namespace_type: Optional[str] = "text",
-        vector_dimension: Optional[str] = None,
+        vector_dimension: Optional[int] = None,
         add_sparse_vector: Optional[bool] = False,
         tokenizer: Optional[Callable] = None,
         ai_model: Optional[str] = "anthropic.claude-3-7-sonnet-20250219-v1:0",
