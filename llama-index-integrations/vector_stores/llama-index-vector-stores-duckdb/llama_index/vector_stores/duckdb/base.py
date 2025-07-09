@@ -1,6 +1,5 @@
 """DuckDB vector store."""
 
-from ast import Expression
 import json
 import logging
 import operator as py_operator
@@ -13,11 +12,11 @@ from duckdb import (
     ConstantExpression,
     FunctionExpression,
     StarExpression,
-    Expression,
     CaseExpression,
+    Expression,
 )
 from duckdb.typing import FLOAT, INTEGER, VARCHAR, SQLNULL
-from fsspec.utils import Sequence
+from collections.abc import Sequence
 from llama_index.core.bridge.pydantic import (
     PrivateAttr,
     StrictInt,
@@ -280,9 +279,12 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         }
 
     def _arrow_row_to_node(self, row_dict: dict) -> BaseNode:
-        return metadata_dict_to_node(
+        node = metadata_dict_to_node(
             metadata=json.loads(row_dict["metadata_"]), text=row_dict["text"]
         )
+        node.embedding = row_dict["embedding"]
+
+        return node
 
     def _arrow_row_to_query_result(self, rows: list[dict]) -> VectorStoreQueryResult:
         nodes = []
