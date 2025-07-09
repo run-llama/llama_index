@@ -1,31 +1,22 @@
 # Importing required libraries and modules
 import logging
-from typing import Any, Dict, List, Optional, cast, Callable, ClassVar
+from typing import Any, List, Optional, Callable, ClassVar
 import uuid
 import os
 
 # LlamaIndex internals for schema and vector store support
-from llama_index.core.base.embeddings.base import DEFAULT_EMBED_BATCH_SIZE
-from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.base.embeddings.base_sparse import BaseSparseEmbedding
-from llama_index.core.vector_stores.types import(
+from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
-    MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
-)
-from llama_index.core.vector_stores.utils import (
-    legacy_metadata_dict_to_node,
-    metadata_dict_to_node,
-    node_to_metadata_dict,
 )
 
 # Moorcheh SDK for backend vector storage
 from moorcheh_sdk import MoorchehClient, MoorchehError
 from moorcheh_sdk import MoorchehClient
-from pydantic import Field, PrivateAttr, model_validator
 
 ID_KEY = "id"
 VECTOR_KEY = "values"
@@ -35,8 +26,10 @@ METADATA_KEY = "metadata"
 # Logger for debug/info/error output
 logger = logging.getLogger(__name__)
 
+
 class MoorchehVectorStore(BasePydanticVectorStore):
-    """Moorcheh Vector Store.
+    """
+    Moorcheh Vector Store.
 
     In this vector store, embeddings and docs are stored within a Moorcheh namespace.
     During query time, the index uses Moorcheh to query for the top k most similar nodes.
@@ -49,6 +42,7 @@ class MoorchehVectorStore(BasePydanticVectorStore):
         vector_dimension (Optional[int]): Vector dimension for vector namespace.
         batch_size (int): Batch size for adding nodes. Defaults to DEFAULT_EMBED_BATCH_SIZE.
         **kwargs: Additional arguments to pass to MoorchehClient.
+
     """
 
     # Default values and capabilities
@@ -58,7 +52,6 @@ class MoorchehVectorStore(BasePydanticVectorStore):
     stores_text: bool = True
     flat_metadata: bool = True
 
-
     api_key: Optional[str]
     namespace: Optional[str]
     namespace_type: Optional[str]
@@ -67,21 +60,20 @@ class MoorchehVectorStore(BasePydanticVectorStore):
     ai_model: Optional[str]
     batch_size: int
 
-
     sparse_embedding_model: Optional[BaseSparseEmbedding] = None
 
     def __init__(
-            self,
-            api_key: Optional[str] = None,
-            namespace: Optional[str] = None,
-            namespace_type: Optional[str] = None,
-            vector_dimension: Optional[str] = None,
-            add_sparse_vector: Optional[bool] = False,
-            tokenizer: Optional[Callable] = None,
-            ai_model: Optional[str] = "anthropic.claude-3-7-sonnet-20250219-v1:0",
-            batch_size: int = 64,
-            sparse_embedding_model: Optional[BaseSparseEmbedding] = None
-            ) -> None:
+        self,
+        api_key: Optional[str] = None,
+        namespace: Optional[str] = None,
+        namespace_type: Optional[str] = None,
+        vector_dimension: Optional[str] = None,
+        add_sparse_vector: Optional[bool] = False,
+        tokenizer: Optional[Callable] = None,
+        ai_model: Optional[str] = "anthropic.claude-3-7-sonnet-20250219-v1:0",
+        batch_size: int = 64,
+        sparse_embedding_model: Optional[BaseSparseEmbedding] = None,
+    ) -> None:
         # Initialize store attributes
         if add_sparse_vector:
             if sparse_embedding_model is not None:
@@ -103,22 +95,27 @@ class MoorchehVectorStore(BasePydanticVectorStore):
             add_sparse_vector=add_sparse_vector,
             batch_size=batch_size,
             sparse_embedding_model=sparse_embedding_model,
-            ai_model=ai_model
+            ai_model=ai_model,
         )
 
         # Initialize Moorcheh client
-        self._client = MoorchehClient(api_key=self.api_key, base_url="https://wnc4zvnuok.execute-api.us-east-1.amazonaws.com/v1")
-        self.is_embedding_query=False
+        self._client = MoorchehClient(
+            api_key=self.api_key,
+            base_url="https://wnc4zvnuok.execute-api.us-east-1.amazonaws.com/v1",
+        )
+        self.is_embedding_query = False
         self._sparse_embedding_model = sparse_embedding_model
 
-                # Fallback to env var if API key not provided
+        # Fallback to env var if API key not provided
         if not self.api_key:
             self.api_key = os.getenv("MOORCHEH_API_KEY")
         if not self.api_key:
             raise ValueError("`api_key` is required for Moorcheh client initialization")
 
         if not self.namespace:
-            raise ValueError("`namespace` is required for Moorcheh client initialization")
+            raise ValueError(
+                "`namespace` is required for Moorcheh client initialization"
+            )
 
         print("[DEBUG] Initializing MoorchehClient")
 
@@ -142,28 +139,19 @@ class MoorchehVectorStore(BasePydanticVectorStore):
                 print(f"[ERROR] Failed to create namespace: {e}")
                 raise
 
-
         print("[DEBUG] MoorchehVectorStore initialization complete.")
-
 
     # _client: MoorchehClient = PrivateAttr()
 
-
-
-
-
-
     @property
     def client(self) -> MoorchehClient:
-      """Return initialized Moorcheh client."""
-      return self._client
-
+        """Return initialized Moorcheh client."""
+        return self._client
 
     @classmethod
     def class_name(cls) -> str:
         """Return class name."""
         return "MoorchehVectorStore"
-
 
     @property
     def client(self) -> MoorchehClient:
@@ -210,8 +198,8 @@ class MoorchehVectorStore(BasePydanticVectorStore):
 
             if sparse_inputs:
                 sparse_vectors = self._sparse_embedding_model.get_text_embedding_batch(
-                sparse_inputs
-            )
+                    sparse_inputs
+                )
                 for i, sparse_vector in enumerate(sparse_vectors):
                     documents[i][SPARSE_VECTOR_KEY] = {
                         "indices": list(sparse_vector.keys()),
@@ -230,7 +218,9 @@ class MoorchehVectorStore(BasePydanticVectorStore):
                 logger.error(f"Error uploading documents batch: {e}")
                 raise
 
-        logger.info(f"Added {len(documents)} text documents to namespace {self.namespace}")
+        logger.info(
+            f"Added {len(documents)} text documents to namespace {self.namespace}"
+        )
         return ids
 
     def _add_vector_nodes(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
@@ -241,7 +231,9 @@ class MoorchehVectorStore(BasePydanticVectorStore):
 
         for node in nodes:
             if node.embedding is None:
-                raise ValueError(f"Node {node.node_id} has no embedding for vector namespace")
+                raise ValueError(
+                    f"Node {node.node_id} has no embedding for vector namespace"
+                )
 
             node_id = node.node_id or str(uuid.uuid4())
             ids.append(node_id)
@@ -253,7 +245,9 @@ class MoorchehVectorStore(BasePydanticVectorStore):
 
             # Add metadata, including text content
             metadata = dict(node.metadata) if node.metadata else {}
-            metadata["text"] = metadata.pop("text", node.get_content(metadata_mode=MetadataMode.NONE))
+            metadata["text"] = metadata.pop(
+                "text", node.get_content(metadata_mode=MetadataMode.NONE)
+            )
             vector["metadata"] = metadata
 
             if self.add_sparse_vector and self._sparse_embedding_model is not None:
@@ -261,11 +255,10 @@ class MoorchehVectorStore(BasePydanticVectorStore):
 
             vectors.append(vector)
 
-
             if sparse_inputs:
                 sparse_vectors = self._sparse_embedding_model.get_text_embedding_batch(
-                sparse_inputs
-            )
+                    sparse_inputs
+                )
                 for i, sparse_vector in enumerate(sparse_vectors):
                     documents[i][SPARSE_VECTOR_KEY] = {
                         "indices": list(sparse_vector.keys()),
@@ -287,7 +280,8 @@ class MoorchehVectorStore(BasePydanticVectorStore):
         return ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete nodes using with ref_doc_id.
+        """
+        Delete nodes using with ref_doc_id.
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
@@ -302,14 +296,16 @@ class MoorchehVectorStore(BasePydanticVectorStore):
                 result = self._client.delete_vectors(
                     namespace_name=self.namespace, ids=[ref_doc_id]
                 )
-            logger.info(f"Deleted document {ref_doc_id} from namespace {self.namespace}")
+            logger.info(
+                f"Deleted document {ref_doc_id} from namespace {self.namespace}"
+            )
         except MoorchehError as e:
             logger.error(f"Error deleting document {ref_doc_id}: {e}")
             raise
 
-
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query Moorcheh vector store.
+        """
+        Query Moorcheh vector store.
 
         Args:
             query (VectorStoreQuery): query object
@@ -340,13 +336,13 @@ class MoorchehVectorStore(BasePydanticVectorStore):
                     "indices": list(sparse_vector.keys()),
                     "values": list(sparse_vector.values()),
                 }
-        '''
+        """
         if query.mode != VectorStoreQueryMode.DEFAULT:
             logger.warning(
                 f"Moorcheh does not support query mode {query.mode}. "
                 "Using default mode instead."
             )
-        '''
+        """
 
         # Prepare search parameters
         search_kwargs = {
@@ -355,7 +351,7 @@ class MoorchehVectorStore(BasePydanticVectorStore):
         }
 
         # Add similarity threshold if provided
-        #if query.similarity_top_k is not None:
+        # if query.similarity_top_k is not None:
         #    search_kwargs["threshold"] = query.similarity_top_k
 
         # Handle query input
@@ -368,7 +364,9 @@ class MoorchehVectorStore(BasePydanticVectorStore):
 
         # TODO: Add metadata filter support when available in Moorcheh SDK
         if query.filters is not None:
-            logger.warning("Metadata filters are not yet supported by Moorcheh integration")
+            logger.warning(
+                "Metadata filters are not yet supported by Moorcheh integration"
+            )
 
         try:
             # Execute search
@@ -425,7 +423,8 @@ class MoorchehVectorStore(BasePydanticVectorStore):
         ai_model: str = "anthropic.claude-3-7-sonnet-20250219-v1:0",
         **kwargs: Any,
     ) -> str:
-        """Get a generative AI answer using Moorcheh's built-in RAG capability.
+        """
+        Get a generative AI answer using Moorcheh's built-in RAG capability.
 
         This method leverages Moorcheh's information-theoretic approach
         to provide context-aware answers directly from the API.
@@ -437,20 +436,20 @@ class MoorchehVectorStore(BasePydanticVectorStore):
 
         Returns:
             str: Generated answer string.
+
         """
         try:
             result = self._client.get_generative_answer(
                 namespace=self.namespace,
                 query=query,
                 top_k=top_k,
-                ai_model = ai_model,
+                ai_model=ai_model,
                 **kwargs,
             )
             return result.get("answer", "")
         except MoorchehError as e:
             logger.error(f"Error getting generative answer: {e}")
             raise
-
 
 
 if __name__ == "__main__":

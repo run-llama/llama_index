@@ -9,7 +9,6 @@ from llama_index.core.base.embeddings.base_sparse import (
 
 
 def get_default_tokenizer() -> Callable:
-
     from transformers import BertTokenizerFast
 
     orig_tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")

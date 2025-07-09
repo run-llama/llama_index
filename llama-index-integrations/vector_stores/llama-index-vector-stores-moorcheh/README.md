@@ -1,14 +1,13 @@
 # LlamaIndex Vector_Stores Integration: Moorcheh
+
 Welcome to the Moorcheh Vector Store that integrates Llama-Index.
 
-This module introduces support for [**Moorcheh**](https://github.com/mjfekri/moorcheh-python-sdk), a semantic vector database developed by **EdgeAI Innovations**. Moorcheh enables fast and intelligent document retrieval using hybrid scoring and generative answering capabilities. 
- The integration is implemented in accordance with the standard vector store interface defined by **LlamaIndex** and supports all core methods including `add`, `query`, `delete`, and `generate_answer`.
+This module introduces support for [**Moorcheh**](https://github.com/mjfekri/moorcheh-python-sdk), a semantic vector database developed by **EdgeAI Innovations**. Moorcheh enables fast and intelligent document retrieval using hybrid scoring and generative answering capabilities.
+The integration is implemented in accordance with the standard vector store interface defined by **LlamaIndex** and supports all core methods including `add`, `query`, `delete`, and `generate_answer`.
 
-To see the integration in action, refer to the demonstration notebook:  [Google Colab Demo](https://colab.research.google.com/drive/1iUoMpNYcJxmu1xTySMNJZBPbOQIkUEEs?usp=sharing). 
+To see the integration in action, refer to the demonstration notebook: [Google Colab Demo](https://colab.research.google.com/drive/1iUoMpNYcJxmu1xTySMNJZBPbOQIkUEEs?usp=sharing).
 
-
-Getting started
----
+## Getting started
 
 To begin using the Moorcheh vector store, make sure to install the necessary packages:
 
@@ -17,8 +16,7 @@ pip install llama_index
 pip install moorcheh_sdk
 ```
 
-Example Usage
---- 
+## Example Usage
 
 Here is a simple example demonstrating how to use the Moorcheh integration with LlamaIndex:
 
@@ -26,7 +24,7 @@ Here is a simple example demonstrating how to use the Moorcheh integration with 
 from llama_index.core import VectorStoreIndex
 from llama_index.llama_index_integrations.vector_stores.llama_index_vector_stores_moorcheh.llama_index.vector_stores-moorcheh import base, init, utils
 
-api_key = os.environ["MOORCHEH_API_KEY"] 
+api_key = os.environ["MOORCHEH_API_KEY"]
 
 documents = SimpleDirectoryReader("./your-directory").load_data()
 __all__ = ["MoorchehVectorStore"]
