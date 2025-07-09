@@ -6,6 +6,7 @@ import os
 
 # LlamaIndex internals for schema and vector store support
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
+from llama_index.core.llms.base import LLM
 from llama_index.core.base.embeddings.base_sparse import BaseSparseEmbedding
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
