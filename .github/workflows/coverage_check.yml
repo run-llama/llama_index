@@ -8,6 +8,10 @@ env:
   NUM_WORKERS: 8
   # Tests will fail if coverage percentage is below this number
   COV_FAIL_UNDER: 50
+  # 1st priority (CPU-only wheels)
+  # 2nd priority (PyPI for everything else)
+  UV_INDEX_URL: https://download.pytorch.org/whl/cpu
+  UV_EXTRA_INDEX_URL: https://pypi.org/simple
 
 jobs:
   test:

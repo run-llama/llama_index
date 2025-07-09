@@ -6,6 +6,10 @@ on:
 env:
   # How many concurrent processes running pytest in a single CI job
   NUM_WORKERS: 8
+  # 1st priority (CPU-only wheels)
+  # 2nd priority (PyPI for everything else)
+  UV_INDEX_URL: https://download.pytorch.org/whl/cpu
+  UV_EXTRA_INDEX_URL: https://pypi.org/simple
 
 jobs:
   test:
