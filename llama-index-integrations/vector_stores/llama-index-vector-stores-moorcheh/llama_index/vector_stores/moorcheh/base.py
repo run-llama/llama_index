@@ -59,7 +59,6 @@ class MoorchehVectorStore(BasePydanticVectorStore):
     add_sparse_vector: Optional[bool]
     ai_model: Optional[str]
     batch_size: int
-
     sparse_embedding_model: Optional[BaseSparseEmbedding] = None
 
     def __init__(
@@ -416,6 +415,7 @@ class MoorchehVectorStore(BasePydanticVectorStore):
         query: str,
         top_k: int = 5,
         ai_model: str = "anthropic.claude-3-7-sonnet-20250219-v1:0",
+        llm: Optional[LLM] = None,
         **kwargs: Any,
     ) -> str:
         """
@@ -434,14 +434,22 @@ class MoorchehVectorStore(BasePydanticVectorStore):
 
         """
         try:
-            result = self._client.get_generative_answer(
-                namespace=self.namespace,
-                query=query,
-                top_k=top_k,
-                ai_model=ai_model,
-                **kwargs,
-            )
-            return result.get("answer", "")
+            #incorporate llama_index llms
+            if llm:
+                vs_query = VectorStoreQuery(query_str=query, similarity_top_k=top_k)
+                result = self.query(vs_query)
+                context = "\n\n".join([node.text for node in result.nodes])
+                prompt = f"""Use the context below to answer the question. Context:  {context} Question: {query} Answer:"""
+                return llm.complete(prompt).text
+            else:
+                result = self._client.get_generative_answer(
+                    namespace=self.namespace,
+                    query=query,
+                    top_k=top_k,
+                    ai_model=ai_model,
+                    **kwargs,
+                )
+                return result.get("answer", "")
         except MoorchehError as e:
             logger.error(f"Error getting generative answer: {e}")
             raise
