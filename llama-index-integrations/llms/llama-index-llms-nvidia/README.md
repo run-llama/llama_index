@@ -77,13 +77,13 @@ llm.chat(messages)
 ```
 
 For models that are not included in the default model table (see [`llama_index/llms/nvidia/utils.py`](llama_index/llms/nvidia/utils.py)), you need to explicitly specify whether the model supports chat endpoints using the `is_chat_model` parameter:
+
 - `is_chat_model=False` (default): Uses the `/completions` endpoint
 - `is_chat_model=True`: Uses the `/chat/completions` endpoint
 
 ```python
 llm = NVIDIA(
-    model="nvidia/llama-3.3-nemotron-super-49b-v1",
-    is_chat_model=True  
+    model="nvidia/llama-3.3-nemotron-super-49b-v1", is_chat_model=True
 )
 ```
 

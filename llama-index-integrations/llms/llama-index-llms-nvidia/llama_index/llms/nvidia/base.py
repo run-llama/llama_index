@@ -106,7 +106,18 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
             self._validate_model(self.model)  ## validate model
 
         self.is_chat_model = self._is_chat_model() or self.is_chat_model
-        self.is_function_calling_model = self._is_function_calling_model() or self.is_function_calling_model
+        self.is_function_calling_model = (
+            self._is_function_calling_model() or self.is_function_calling_model
+        )
+
+        # Warn if unknown model is set to is_chat_model=False
+        if not self._is_chat_model() and not self.is_chat_model and self.model:
+            warnings.warn(
+                f"Unknown model '{self.model}' with is_chat_model=False. "
+                "This may cause 404 errors if the model only supports chat endpoints. "
+                "Set is_chat_model=True if this is a chat model.",
+                UserWarning,
+            )
 
     def __get_default_model(self):
         """Set default model."""
@@ -191,6 +202,11 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
             }
             models = [model for model in models if model.id not in exclude]
         return models
+
+    @property
+    def base_url(self) -> str:
+        """Get the base URL for backward compatibility."""
+        return self.api_base
 
     @classmethod
     def class_name(cls) -> str:

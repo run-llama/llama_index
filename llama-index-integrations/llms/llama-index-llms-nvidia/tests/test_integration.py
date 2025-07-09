@@ -91,12 +91,12 @@ def test_exclude_models(mode: dict, excluded: str) -> None:
 def test_unknown_model_functionality(mode: dict, is_chat_model) -> None:
     """Test that unknown chat model works correctly if using chat endpoint and not completion endpoint."""
     unknown_model = "nvidia/llama-3.3-nemotron-super-49b-v1"
-    
+
     kwargs = {"model": unknown_model, **mode}
     if is_chat_model is not None:
         kwargs["is_chat_model"] = is_chat_model
     llm = NVIDIA(**kwargs)
-    
+
     if is_chat_model is True:
         # the model should work for a chat or complete method
         message = ChatMessage(role="user", content="Hello")
@@ -106,5 +106,6 @@ def test_unknown_model_functionality(mode: dict, is_chat_model) -> None:
     else:
         # Completion mode should fail for a chat model (404 error) - both None and False default to False
         import openai
+
         with pytest.raises(openai.NotFoundError, match="404 page not found"):
             llm.complete("Hello")
