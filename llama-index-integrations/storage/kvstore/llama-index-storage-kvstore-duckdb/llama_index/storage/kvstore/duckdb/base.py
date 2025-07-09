@@ -256,16 +256,12 @@ class DuckDBKVStore(BaseKVStore):
             .__eq__(ConstantExpression(collection))
             .__and__(ColumnExpression("key").__eq__(ConstantExpression(key)))
         )
-        command = self.table.filter(expression).sql_query()
-
-        rows = self.client.execute(command).arrow().to_pylist()
-
-        row_result = next(iter(rows), None)
+        row_result = self.table.filter(filter_expr=expression).fetchone()
 
         if row_result is None:
             return None
 
-        return json.loads(row_result["value"])
+        return json.loads(row_result[2])
 
     async def aget(
         self, key: str, collection: str = DEFAULT_COLLECTION
