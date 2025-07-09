@@ -81,7 +81,7 @@ class AgentWorkflowStartEvent(StartEvent):
                             f"Failed to validate chat message at index {i}: {e}. "
                             f"Invalid message: {msg}"
                         )
-                        raise e
+                        raise
             data["chat_history"] = converted_history
         
         super().__init__(**data)
