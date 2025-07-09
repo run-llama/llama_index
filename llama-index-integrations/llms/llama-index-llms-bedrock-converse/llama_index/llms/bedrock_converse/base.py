@@ -420,6 +420,8 @@ class BedrockConverse(FunctionCallingLLM):
             tool_calls = []  # Track tool calls separately
             current_tool_call = None  # Track the current tool call being built
             role = MessageRole.ASSISTANT
+            final_usage = {}  # Track final usage from messageStop/metadata events
+
             for chunk in response["stream"]:
                 if content_block_delta := chunk.get("contentBlockDelta"):
                     content_delta = content_block_delta["delta"]
@@ -494,6 +496,31 @@ class BedrockConverse(FunctionCallingLLM):
                         ),
                         raw=chunk,
                     )
+                elif message_stop := chunk.get("messageStop"):
+                    # Handle messageStop event - this contains the stop reason
+                    # We don't yield here, just track the event
+                    pass
+                elif metadata := chunk.get("metadata"):
+                    # Handle metadata event - this contains the final token usage
+                    if usage := metadata.get("usage"):
+                        final_usage = usage
+                        # Yield a final response with correct token usage
+                        yield ChatResponse(
+                            message=ChatMessage(
+                                role=role,
+                                content=content.get("text", ""),
+                                additional_kwargs={
+                                    "tool_calls": tool_calls,
+                                    "tool_call_id": [
+                                        tc.get("toolUseId", "") for tc in tool_calls
+                                    ],
+                                    "status": [],
+                                },
+                            ),
+                            delta="",
+                            raw={"usage": final_usage},
+                            additional_kwargs=self._get_response_token_counts({"usage": final_usage}),
+                        )
 
         return gen()
 
@@ -580,6 +607,8 @@ class BedrockConverse(FunctionCallingLLM):
             tool_calls = []  # Track tool calls separately
             current_tool_call = None  # Track the current tool call being built
             role = MessageRole.ASSISTANT
+            final_usage = {}  # Track final usage from messageStop/metadata events
+
             async for chunk in response_gen:
                 if content_block_delta := chunk.get("contentBlockDelta"):
                     content_delta = content_block_delta["delta"]
@@ -654,6 +683,31 @@ class BedrockConverse(FunctionCallingLLM):
                         ),
                         raw=chunk,
                     )
+                elif chunk.get("messageStop"):
+                    # Handle messageStop event - this contains the stop reason
+                    # We don't yield here, just track the event
+                    pass
+                elif metadata := chunk.get("metadata"):
+                    # Handle metadata event - this contains the final token usage
+                    if usage := metadata.get("usage"):
+                        final_usage = usage
+                        # Yield a final response with correct token usage
+                        yield ChatResponse(
+                            message=ChatMessage(
+                                role=role,
+                                content=content.get("text", ""),
+                                additional_kwargs={
+                                    "tool_calls": tool_calls,
+                                    "tool_call_id": [
+                                        tc.get("toolUseId", "") for tc in tool_calls
+                                    ],
+                                    "status": [],
+                                },
+                            ),
+                            delta="",
+                            raw={"usage": final_usage},
+                            additional_kwargs=self._get_response_token_counts({"usage": final_usage}),
+                        )
 
         return gen()
 
