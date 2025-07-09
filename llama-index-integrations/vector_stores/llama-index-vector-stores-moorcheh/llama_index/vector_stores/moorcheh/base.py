@@ -1,6 +1,6 @@
 # Importing required libraries and modules
 import logging
-from typing import Any, List, Optional, Callable, ClassVar
+from typing import Any, List, Optional, Callable, ClassVar, Literal
 import uuid
 import os
 
@@ -54,7 +54,7 @@ class MoorchehVectorStore(BasePydanticVectorStore):
 
     api_key: Optional[str]
     namespace: Optional[str]
-    namespace_type: Optional[str]
+    namespaceType = Optional[Literal["text", "vector"]]
     vector_dimension: Optional[int]
     add_sparse_vector: Optional[bool]
     ai_model: Optional[str]
@@ -66,7 +66,7 @@ class MoorchehVectorStore(BasePydanticVectorStore):
         self,
         api_key: Optional[str] = None,
         namespace: Optional[str] = None,
-        namespace_type: Optional[str] = None,
+        namespace_type: Optional[str] = "text",
         vector_dimension: Optional[str] = None,
         add_sparse_vector: Optional[bool] = False,
         tokenizer: Optional[Callable] = None,
