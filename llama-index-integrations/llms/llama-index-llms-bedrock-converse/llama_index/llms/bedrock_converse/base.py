@@ -518,10 +518,8 @@ class BedrockConverse(FunctionCallingLLM):
                                 },
                             ),
                             delta="",
-                            raw={"usage": final_usage},
-                            additional_kwargs=self._get_response_token_counts(
-                                {"usage": final_usage}
-                            ),
+                            raw=chunk,
+                            additional_kwargs=self._get_response_token_counts(metadata),
                         )
 
         return gen()
@@ -707,10 +705,8 @@ class BedrockConverse(FunctionCallingLLM):
                                 },
                             ),
                             delta="",
-                            raw={"usage": final_usage},
-                            additional_kwargs=self._get_response_token_counts(
-                                {"usage": final_usage}
-                            ),
+                            raw=chunk,
+                            additional_kwargs=self._get_response_token_counts(metadata),
                         )
 
         return gen()
