@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional, Tuple
 from llama_index.core.schema import (
     BaseNode,
     ImageNode,
+    Node,
     IndexNode,
     NodeRelationship,
     RelatedNodeInfo,
@@ -11,6 +12,7 @@ from llama_index.core.schema import (
 )
 
 DEFAULT_TEXT_KEY = "text"
+DEFAULT_TEXT_RESOURCE_KEY = "text_resource"
 DEFAULT_EMBEDDING_KEY = "embedding"
 DEFAULT_DOC_ID_KEY = "doc_id"
 
@@ -33,6 +35,7 @@ def node_to_metadata_dict(
     node: BaseNode,
     remove_text: bool = False,
     text_field: str = DEFAULT_TEXT_KEY,
+    text_resource_field: str = DEFAULT_TEXT_RESOURCE_KEY,
     flat_metadata: bool = False,
 ) -> Dict[str, Any]:
     """Common logic for saving Node data into metadata dict."""
@@ -45,8 +48,10 @@ def node_to_metadata_dict(
         _validate_is_flat_dict(metadata)
 
     # store entire node as json string - some minor text duplication
-    if remove_text:
+    if remove_text and text_field in node_dict:
         node_dict[text_field] = ""
+    if remove_text and text_resource_field in node_dict:
+        node_dict[text_resource_field] = ""
 
     # remove embedding from node_dict
     node_dict["embedding"] = None
@@ -72,6 +77,8 @@ def metadata_dict_to_node(metadata: dict, text: Optional[str] = None) -> BaseNod
         raise ValueError("Node content not found in metadata dict.")
 
     node: BaseNode
+    if node_type == Node.class_name():
+        node = Node.from_json(node_json)
     if node_type == IndexNode.class_name():
         node = IndexNode.from_json(node_json)
     elif node_type == ImageNode.class_name():
