@@ -420,7 +420,6 @@ class BedrockConverse(FunctionCallingLLM):
             tool_calls = []  # Track tool calls separately
             current_tool_call = None  # Track the current tool call being built
             role = MessageRole.ASSISTANT
-            final_usage = {}  # Track final usage from messageStop/metadata events
 
             for chunk in response["stream"]:
                 if content_block_delta := chunk.get("contentBlockDelta"):
@@ -503,7 +502,6 @@ class BedrockConverse(FunctionCallingLLM):
                 elif metadata := chunk.get("metadata"):
                     # Handle metadata event - this contains the final token usage
                     if usage := metadata.get("usage"):
-                        final_usage = usage
                         # Yield a final response with correct token usage
                         yield ChatResponse(
                             message=ChatMessage(
@@ -607,7 +605,6 @@ class BedrockConverse(FunctionCallingLLM):
             tool_calls = []  # Track tool calls separately
             current_tool_call = None  # Track the current tool call being built
             role = MessageRole.ASSISTANT
-            final_usage = {}  # Track final usage from messageStop/metadata events
 
             async for chunk in response_gen:
                 if content_block_delta := chunk.get("contentBlockDelta"):
@@ -690,7 +687,6 @@ class BedrockConverse(FunctionCallingLLM):
                 elif metadata := chunk.get("metadata"):
                     # Handle metadata event - this contains the final token usage
                     if usage := metadata.get("usage"):
-                        final_usage = usage
                         # Yield a final response with correct token usage
                         yield ChatResponse(
                             message=ChatMessage(
