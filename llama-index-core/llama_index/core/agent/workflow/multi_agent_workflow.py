@@ -260,14 +260,14 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             await ctx.store.set(
                 "handoff_output_prompt", self.handoff_output_prompt.get_template()
             )
-        if not await ctx.get("max_iterations", default=None):
+        if not await ctx.store.get("max_iterations", default=None):
             max_iterations = (
                 ev.get("max_iterations", default=None) or DEFAULT_MAX_ITERATIONS
             )
-            await ctx.set("max_iterations", max_iterations)
+            await ctx.store.set("max_iterations", max_iterations)
 
         # Reset the number of iterations
-        await ctx.set("num_iterations", 0)
+        await ctx.store.set("num_iterations", 0)
 
         # always set to false initially
         await ctx.store.set("formatted_input_with_state", False)
@@ -403,10 +403,12 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
     async def parse_agent_output(
         self, ctx: Context, ev: AgentOutput
     ) -> Union[StopEvent, ToolCall, None]:
-        max_iterations = await ctx.get("max_iterations", default=DEFAULT_MAX_ITERATIONS)
-        num_iterations = await ctx.get("num_iterations", default=0)
+        max_iterations = await ctx.store.get(
+            "max_iterations", default=DEFAULT_MAX_ITERATIONS
+        )
+        num_iterations = await ctx.store.get("num_iterations", default=0)
         num_iterations += 1
-        await ctx.set("num_iterations", num_iterations)
+        await ctx.store.set("num_iterations", num_iterations)
 
         if num_iterations >= max_iterations:
             raise WorkflowRuntimeError(

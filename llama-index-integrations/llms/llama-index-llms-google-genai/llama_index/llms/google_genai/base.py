@@ -127,6 +127,10 @@ class GoogleGenAI(FunctionCallingLLM):
     is_function_calling_model: bool = Field(
         default=True, description="Whether the model is a function calling model."
     )
+    cached_content: Optional[str] = Field(
+        default=None,
+        description="Cached content to use for the model.",
+    )
 
     _max_tokens: int = PrivateAttr()
     _client: google.genai.Client = PrivateAttr()
@@ -147,6 +151,7 @@ class GoogleGenAI(FunctionCallingLLM):
         generation_config: Optional[types.GenerateContentConfig] = None,
         callback_manager: Optional[CallbackManager] = None,
         is_function_calling_model: bool = True,
+        cached_content: Optional[str] = None,
         **kwargs: Any,
     ):
         # API keys are optional. The API can be authorised via OAuth (detected
@@ -193,6 +198,7 @@ class GoogleGenAI(FunctionCallingLLM):
             callback_manager=callback_manager,
             is_function_calling_model=is_function_calling_model,
             max_retries=max_retries,
+            cached_content=cached_content,
             **kwargs,
         )
 
@@ -201,14 +207,16 @@ class GoogleGenAI(FunctionCallingLLM):
         self._model_meta = model_meta
         # store this as a dict and not as a pydantic model so we can more easily
         # merge it later
-        self._generation_config = (
-            generation_config.model_dump()
-            if generation_config
-            else types.GenerateContentConfig(
+        if generation_config:
+            self._generation_config = generation_config.model_dump()
+            if cached_content:
+                self._generation_config.setdefault("cached_content", cached_content)
+        else:
+            self._generation_config = types.GenerateContentConfig(
                 temperature=temperature,
                 max_output_tokens=max_tokens,
+                cached_content=cached_content,
             ).model_dump()
-        )
         self._max_tokens = (
             max_tokens or model_meta.output_token_limit or DEFAULT_NUM_OUTPUTS
         )
