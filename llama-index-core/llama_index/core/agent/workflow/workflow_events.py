@@ -61,6 +61,20 @@ class ToolCallResult(Event):
 
 
 class AgentWorkflowStartEvent(StartEvent):
+    def __init__(self, **data):
+        """Convert chat_history items to ChatMessage objects if they aren't already"""
+        if "chat_history" in data and data["chat_history"]:
+            converted_history = []
+            for msg in data["chat_history"]:
+                if isinstance(msg, ChatMessage):
+                    converted_history.append(msg)
+                else:
+                    # Convert dict or other formats to ChatMessage
+                    converted_history.append(ChatMessage(**msg))
+            data["chat_history"] = converted_history
+        
+        super().__init__(**data)
+
     @model_serializer()
     def serialize_start_event(self) -> dict:
         """Serialize the start event and exclude the memory."""
