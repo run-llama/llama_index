@@ -133,7 +133,7 @@ class AGUIChatWorkflow(Workflow):
                 state = self.initial_state.copy()
 
             # Save state to context for tools to use
-            await ctx.set("state", state)
+            await ctx.store.set("state", state)
 
             if state:
                 for msg in chat_history[::-1]:
@@ -151,9 +151,9 @@ class AGUIChatWorkflow(Workflow):
                         0, ChatMessage(role="system", content=self.system_prompt)
                     )
 
-            await ctx.set("chat_history", chat_history)
+            await ctx.store.set("chat_history", chat_history)
         else:
-            chat_history = await ctx.get("chat_history")
+            chat_history = await ctx.store.get("chat_history")
 
         tools = list(self.frontend_tools.values())
         tools.extend(list(self.backend_tools.values()))
@@ -180,13 +180,13 @@ class AGUIChatWorkflow(Workflow):
 
         chat_history.append(resp.message)
         self._snapshot_messages(ctx, [*chat_history])
-        await ctx.set("chat_history", chat_history)
+        await ctx.store.set("chat_history", chat_history)
 
         tool_calls = self.llm.get_tool_calls_from_response(
             resp, error_on_no_tool_call=False
         )
         if tool_calls:
-            await ctx.set("num_tool_calls", len(tool_calls))
+            await ctx.store.set("num_tool_calls", len(tool_calls))
             frontend_tool_calls = [
                 tool_call
                 for tool_call in tool_calls
@@ -274,7 +274,7 @@ class AGUIChatWorkflow(Workflow):
     async def aggregate_tool_calls(
         self, ctx: Context, ev: ToolCallResultEvent
     ) -> Optional[Union[StopEvent, LoopEvent]]:
-        num_tool_calls = await ctx.get("num_tool_calls")
+        num_tool_calls = await ctx.store.get("num_tool_calls")
         tool_call_results: List[ToolCallResultEvent] = ctx.collect_events(
             ev, [ToolCallResultEvent] * num_tool_calls
         )
@@ -307,11 +307,11 @@ class AGUIChatWorkflow(Workflow):
             )
 
         # emit a messages snapshot event if there are new messages
-        chat_history = await ctx.get("chat_history")
+        chat_history = await ctx.store.get("chat_history")
         if new_tool_messages:
             chat_history.extend(new_tool_messages)
             self._snapshot_messages(ctx, [*chat_history])
-            await ctx.set("chat_history", chat_history)
+            await ctx.store.set("chat_history", chat_history)
 
         if len(frontend_tool_calls) > 0:
             # Expect frontend tool calls to call back to the agent
