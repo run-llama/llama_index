@@ -83,7 +83,7 @@ class AgentWorkflowStartEvent(StartEvent):
                         )
                         raise
             data["chat_history"] = converted_history
-        
+
         super().__init__(**data)
 
     @model_serializer()
