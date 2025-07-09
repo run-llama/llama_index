@@ -93,7 +93,12 @@ class AsyncMockClient:
     async def converse_stream(self, *args, **kwargs):
         async def stream_generator():
             for element in EXP_STREAM_RESPONSE:
-                yield {"contentBlockDelta": {"delta": {"text": element}}}
+                yield {
+                    "contentBlockDelta": {
+                        "delta": {"text": element},
+                        "contentBlockIndex": 0
+                    }
+                }
             # Add messageStop and metadata events for token usage testing
             yield {"messageStop": {"stopReason": "end_turn"}}
             yield {
@@ -121,8 +126,13 @@ class MockClient:
 
     def converse_stream(self, *args, **kwargs):
         def stream_generator():
-            for element in EXP_STREAM_RESPONSE:
-                yield {"contentBlockDelta": {"delta": {"text": element}}}
+            for i, element in enumerate(EXP_STREAM_RESPONSE):
+                yield {
+                    "contentBlockDelta": {
+                        "delta": {"text": element},
+                        "contentBlockIndex": 0
+                    }
+                }
             # Add messageStop and metadata events for token usage testing
             yield {"messageStop": {"stopReason": "end_turn"}}
             yield {
