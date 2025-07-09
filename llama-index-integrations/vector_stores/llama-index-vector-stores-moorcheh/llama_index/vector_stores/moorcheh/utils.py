@@ -6,10 +6,13 @@ from llama_index.core.base.embeddings.base_sparse import (
     BaseSparseEmbedding,
     SparseEmbedding,
 )
-from transformers import BertTokenizerFast
+
 
 def get_default_tokenizer() -> Callable:
-    
+    try:
+        from transformers import BertTokenizerFast
+    except ImportError:
+        raise ImpotError("In order to run `llama-index-vector-stores-moorcheh` you need to have `transformers` installed. Please run `pip install transformers`")
 
     orig_tokenizer = BertTokenizerFast.from_pretrained("bert-base-uncased")
 
