@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Dict
 
 from llama_index.core.bridge.pydantic import Field, model_serializer, ValidationError
 from llama_index.core.tools import ToolSelection, ToolOutput
@@ -65,7 +65,7 @@ class ToolCallResult(Event):
 
 
 class AgentWorkflowStartEvent(StartEvent):
-    def __init__(self, **data) -> None:
+    def __init__(self, **data: Dict[str, Any]) -> None:
         """Convert chat_history items to ChatMessage objects if they aren't already"""
         if "chat_history" in data and data["chat_history"]:
             converted_history = []
