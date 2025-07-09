@@ -147,6 +147,9 @@ def chat_from_gemini_response(
     if response.usage_metadata:
         raw["usage_metadata"] = response.usage_metadata.model_dump()
 
+    if hasattr(response, "cached_content") and response.cached_content:
+        raw["cached_content"] = response.cached_content
+
     content_blocks = []
     if (
         len(response.candidates) > 0
