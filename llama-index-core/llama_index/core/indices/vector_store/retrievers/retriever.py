@@ -160,7 +160,7 @@ class VectorIndexRetriever(BaseRetriever):
 
     def _insert_fetched_nodes_into_query_result(
         self, query_result: VectorStoreQueryResult, fetched_nodes: List[BaseNode]
-    ):
+    ) -> Sequence[BaseNode]:
         """
         Insert the fetched nodes into the query result.
 
@@ -171,7 +171,7 @@ class VectorIndexRetriever(BaseRetriever):
             node.node_id: node for node in fetched_nodes
         }
 
-        new_nodes: Sequence[BaseNode] = []
+        new_nodes: List[BaseNode] = []
 
         if query_result.nodes:
             for node in list(query_result.nodes or []):
@@ -187,7 +187,7 @@ class VectorIndexRetriever(BaseRetriever):
                 "Vector store query result should return at least one of nodes or ids."
             )
 
-        query_result.nodes = new_nodes
+        return new_nodes
 
     def _convert_nodes_to_scored_nodes(
         self, query_result: VectorStoreQueryResult
@@ -215,7 +215,9 @@ class VectorIndexRetriever(BaseRetriever):
             node_ids=self._determine_nodes_to_fetch(query_result), raise_error=False
         )
 
-        self._insert_fetched_nodes_into_query_result(query_result, fetched_nodes)
+        query_result.nodes = self._insert_fetched_nodes_into_query_result(
+            query_result, fetched_nodes
+        )
 
         log_vector_store_query_result(query_result)
 
@@ -232,7 +234,9 @@ class VectorIndexRetriever(BaseRetriever):
             node_ids=self._determine_nodes_to_fetch(query_result), raise_error=False
         )
 
-        self._insert_fetched_nodes_into_query_result(query_result, fetched_nodes)
+        query_result.nodes = self._insert_fetched_nodes_into_query_result(
+            query_result, fetched_nodes
+        )
 
         log_vector_store_query_result(query_result)
 
