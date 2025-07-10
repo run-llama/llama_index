@@ -28,16 +28,30 @@ should_skip = not MOORCHEH_API_KEY
 
 # Test class inheritance
 def test_class():
-    assert BasePydanticVectorStore.__name__ in [b.__name__ for b in MoorchehVectorStore.__mro__]
+    assert BasePydanticVectorStore.__name__ in [
+        b.__name__ for b in MoorchehVectorStore.__mro__
+    ]
 
 
 # Fixtures
 @pytest.fixture
 def nodes():
     return [
-        TextNode(text="Hello, world 1!", metadata={"some_key": 1}, embedding=[0.3] * EMBED_DIM),
-        TextNode(text="Hello, world 2!", metadata={"some_key": 2}, embedding=[0.5] * EMBED_DIM),
-        TextNode(text="Hello, world 3!", metadata={"some_key": "3"}, embedding=[0.7] * EMBED_DIM),
+        TextNode(
+            text="Hello, world 1!",
+            metadata={"some_key": 1},
+            embedding=[0.3] * EMBED_DIM,
+        ),
+        TextNode(
+            text="Hello, world 2!",
+            metadata={"some_key": 2},
+            embedding=[0.5] * EMBED_DIM,
+        ),
+        TextNode(
+            text="Hello, world 3!",
+            metadata={"some_key": "3"},
+            embedding=[0.7] * EMBED_DIM,
+        ),
     ]
 
 
@@ -72,25 +86,34 @@ def test_basic_e2e(index_with_nodes: VectorStoreIndex):
 
 @pytest.mark.skipif(should_skip, reason="MOORCHEH_API_KEY not set")
 def test_retrieval_with_filters(index_with_nodes: VectorStoreIndex):
-    f1 = MetadataFilters(filters=[
-        MetadataFilter(key="some_key", value=1, operator=FilterOperator.EQ),
-        MetadataFilter(key="some_key", value=2, operator=FilterOperator.EQ),
-    ], condition=FilterCondition.OR)
+    f1 = MetadataFilters(
+        filters=[
+            MetadataFilter(key="some_key", value=1, operator=FilterOperator.EQ),
+            MetadataFilter(key="some_key", value=2, operator=FilterOperator.EQ),
+        ],
+        condition=FilterCondition.OR,
+    )
     assert len(index_with_nodes.as_retriever(filters=f1).retrieve("Hello")) == 2
 
-    f2 = MetadataFilters(filters=[
-        MetadataFilter(key="some_key", value=1, operator=FilterOperator.GT),
-    ])
+    f2 = MetadataFilters(
+        filters=[
+            MetadataFilter(key="some_key", value=1, operator=FilterOperator.GT),
+        ]
+    )
     assert len(index_with_nodes.as_retriever(filters=f2).retrieve("Hello")) == 1
 
-    f3 = MetadataFilters(filters=[
-        MetadataFilter(key="some_key", value=[1, 2], operator=FilterOperator.IN),
-    ])
+    f3 = MetadataFilters(
+        filters=[
+            MetadataFilter(key="some_key", value=[1, 2], operator=FilterOperator.IN),
+        ]
+    )
     assert len(index_with_nodes.as_retriever(filters=f3).retrieve("Hello")) == 2
 
-    f4 = MetadataFilters(filters=[
-        MetadataFilter(key="some_key", value="3", operator=FilterOperator.EQ),
-    ])
+    f4 = MetadataFilters(
+        filters=[
+            MetadataFilter(key="some_key", value="3", operator=FilterOperator.EQ),
+        ]
+    )
     assert len(index_with_nodes.as_retriever(filters=f4).retrieve("Hello")) == 1
 
 
@@ -108,11 +131,29 @@ def test_empty_retrieval(vector_store):
 @pytest.mark.skipif(should_skip, reason="MOORCHEH_API_KEY not set")
 def test_namespace_isolation(nodes):
     ns1, ns2 = f"ns1-{uuid.uuid4().hex[:6]}", f"ns2-{uuid.uuid4().hex[:6]}"
-    store1 = MoorchehVectorStore(api_key=MOORCHEH_API_KEY, namespace=ns1, namespace_type="vector", vector_dimension=EMBED_DIM)
-    store2 = MoorchehVectorStore(api_key=MOORCHEH_API_KEY, namespace=ns2, namespace_type="vector", vector_dimension=EMBED_DIM)
+    store1 = MoorchehVectorStore(
+        api_key=MOORCHEH_API_KEY,
+        namespace=ns1,
+        namespace_type="vector",
+        vector_dimension=EMBED_DIM,
+    )
+    store2 = MoorchehVectorStore(
+        api_key=MOORCHEH_API_KEY,
+        namespace=ns2,
+        namespace_type="vector",
+        vector_dimension=EMBED_DIM,
+    )
 
-    VectorStoreIndex(nodes=nodes[:1], storage_context=StorageContext.from_defaults(vector_store=store1), embed_model=MockEmbedding(embed_dim=EMBED_DIM))
-    VectorStoreIndex(nodes=nodes[1:], storage_context=StorageContext.from_defaults(vector_store=store2), embed_model=MockEmbedding(embed_dim=EMBED_DIM))
+    VectorStoreIndex(
+        nodes=nodes[:1],
+        storage_context=StorageContext.from_defaults(vector_store=store1),
+        embed_model=MockEmbedding(embed_dim=EMBED_DIM),
+    )
+    VectorStoreIndex(
+        nodes=nodes[1:],
+        storage_context=StorageContext.from_defaults(vector_store=store2),
+        embed_model=MockEmbedding(embed_dim=EMBED_DIM),
+    )
     time.sleep(2)
 
     r1 = store1.as_retriever().retrieve("Hello")
@@ -123,19 +164,35 @@ def test_namespace_isolation(nodes):
 
 @pytest.mark.skipif(should_skip, reason="MOORCHEH_API_KEY not set")
 def test_duplicate_upsert_behavior(vector_store):
-    node = TextNode(id_="fixed-id", text="Duplicate node", metadata={"key": "val"}, embedding=[0.1] * EMBED_DIM)
-    VectorStoreIndex([node], StorageContext.from_defaults(vector_store=vector_store), MockEmbedding(EMBED_DIM))
-    VectorStoreIndex([node], StorageContext.from_defaults(vector_store=vector_store), MockEmbedding(EMBED_DIM))
+    node = TextNode(
+        id_="fixed-id",
+        text="Duplicate node",
+        metadata={"key": "val"},
+        embedding=[0.1] * EMBED_DIM,
+    )
+    VectorStoreIndex(
+        [node],
+        StorageContext.from_defaults(vector_store=vector_store),
+        MockEmbedding(EMBED_DIM),
+    )
+    VectorStoreIndex(
+        [node],
+        StorageContext.from_defaults(vector_store=vector_store),
+        MockEmbedding(EMBED_DIM),
+    )
     time.sleep(2)
     assert len(vector_store.as_retriever().retrieve("Duplicate")) >= 1
 
 
 @pytest.mark.skipif(should_skip, reason="MOORCHEH_API_KEY not set")
 def test_conflicting_filters(index_with_nodes):
-    filters = MetadataFilters(filters=[
-        MetadataFilter(key="some_key", value=1, operator=FilterOperator.EQ),
-        MetadataFilter(key="some_key", value=2, operator=FilterOperator.EQ),
-    ], condition=FilterCondition.AND)
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(key="some_key", value=1, operator=FilterOperator.EQ),
+            MetadataFilter(key="some_key", value=2, operator=FilterOperator.EQ),
+        ],
+        condition=FilterCondition.AND,
+    )
     assert len(index_with_nodes.as_retriever(filters=filters).retrieve("Hello")) == 0
 
 
@@ -147,9 +204,13 @@ def test_similarity_vs_exact(index_with_nodes):
 
 @pytest.mark.skipif(should_skip, reason="MOORCHEH_API_KEY not set")
 def test_filter_missing_metadata_key(index_with_nodes):
-    filters = MetadataFilters(filters=[
-        MetadataFilter(key="nonexistent", value="missing", operator=FilterOperator.EQ)
-    ])
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="nonexistent", value="missing", operator=FilterOperator.EQ
+            )
+        ]
+    )
     assert len(index_with_nodes.as_retriever(filters=filters).retrieve("Hello")) == 0
 
 
@@ -165,14 +226,21 @@ def test_large_metadata_dict(vector_store):
         metadata={f"key{i}": f"value{i}" for i in range(100)},
         embedding=[0.4] * EMBED_DIM,
     )
-    VectorStoreIndex([node], StorageContext.from_defaults(vector_store=vector_store), MockEmbedding(EMBED_DIM))
+    VectorStoreIndex(
+        [node],
+        StorageContext.from_defaults(vector_store=vector_store),
+        MockEmbedding(EMBED_DIM),
+    )
     time.sleep(2)
     assert len(vector_store.as_retriever().retrieve("metadata")) >= 1
 
 
 @pytest.mark.skipif(should_skip, reason="MOORCHEH_API_KEY not set")
 def test_large_batch_insert():
-    nodes = [TextNode(text=f"Node {i}", embedding=[float(i / 100)] * EMBED_DIM) for i in range(200)]
+    nodes = [
+        TextNode(text=f"Node {i}", embedding=[float(i / 100)] * EMBED_DIM)
+        for i in range(200)
+    ]
     store = MoorchehVectorStore(
         api_key=MOORCHEH_API_KEY,
         namespace=f"batchtest-{uuid.uuid4().hex[:6]}",
@@ -180,6 +248,10 @@ def test_large_batch_insert():
         vector_dimension=EMBED_DIM,
         batch_size=50,
     )
-    VectorStoreIndex(nodes, StorageContext.from_defaults(vector_store=store), MockEmbedding(EMBED_DIM))
+    VectorStoreIndex(
+        nodes,
+        StorageContext.from_defaults(vector_store=store),
+        MockEmbedding(EMBED_DIM),
+    )
     time.sleep(5)
     assert len(store.as_retriever().retrieve("Node")) >= 10
