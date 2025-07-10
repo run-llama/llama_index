@@ -31,6 +31,7 @@ class FlashRankRerank(BaseNodePostprocessor):
     def class_name(cls) -> str:
         return "FlashRankRerank"
 
+    @dispatcher.span
     def _postprocess_nodes(
         self,
         nodes: list[NodeWithScore],
@@ -51,29 +52,21 @@ class FlashRankRerank(BaseNodePostprocessor):
                 for node in nodes
             ],
         )
+        ## you would need to define a custom event subclassing BaseEvent from llama_index_instrumentation
+        dispatcher.event(FlashRerankingQueryEvent(nodes=nodes, model_name=model_name, query_str = query_bundle.query_str, top_k = self.top_n))
+        scores = self._reranker.rerank(query_and_nodes)
+        scores_by_id = {score["id"]: score["score"] for score in scores}
 
-        with self.callback_manager.event(
-            CBEventType.RERANKING,
-            payload={
-                EventPayload.NODES: nodes,
-                EventPayload.MODEL_NAME: self.model,
-                EventPayload.QUERY_STR: query_bundle.query_str,
-                EventPayload.TOP_K: self.top_n,
-            },
-        ) as event:
-            scores = self._reranker.rerank(query_and_nodes)
-            scores_by_id = {score["id"]: score["score"] for score in scores}
+        if len(scores) != len(nodes):
+            msg = "Number of scores and nodes do not match."
+            raise ValueError(msg)
 
-            if len(scores) != len(nodes):
-                msg = "Number of scores and nodes do not match."
-                raise ValueError(msg)
+         for node in nodes:
+            node.score = scores_by_id[node.node.id_]
 
-            for node in nodes:
-                node.score = scores_by_id[node.node.id_]
-
-            new_nodes = sorted(nodes, key=lambda x: -x.score if x.score else 0)[
+         new_nodes = sorted(nodes, key=lambda x: -x.score if x.score else 0)[
                 : self.top_n
             ]
-            event.on_end(payload={EventPayload.NODES: new_nodes})
+         dispatch.event(FlashRerankEndEvent(nodes=new_nodes))
 
         return new_nodes
