@@ -250,9 +250,6 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         cls, conn: duckdb.DuckDBPyConnection, table_name: str, embed_dim: Optional[int]
     ) -> None:
         """Initialize the DuckDB Database, extensions, and documents table."""
-        if self._is_initialized:
-            return
-
         home_dir = Path.home()
         conn.execute(f"SET home_directory='{home_dir}';")
         conn.install_extension("json")
