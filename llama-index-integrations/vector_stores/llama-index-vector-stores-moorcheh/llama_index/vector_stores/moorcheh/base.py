@@ -225,10 +225,12 @@ class MoorchehVectorStore(BasePydanticVectorStore):
         ids = []
         sparse_inputs = []
 
+        if all(node.embedding is None for node in nodes):
+            raise ValueError("No embeddings could be found within your nodes")
         for node in nodes:
             if node.embedding is None:
-                raise ValueError(
-                    f"Node {node.node_id} has no embedding for vector namespace"
+                warnings.warn(
+                    f"Node {node.node_id} has no embedding for vector namespace", UserWarning
                 )
 
             node_id = node.node_id or str(uuid.uuid4())
