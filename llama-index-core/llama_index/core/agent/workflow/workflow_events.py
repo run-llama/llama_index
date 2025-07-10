@@ -1,9 +1,13 @@
+import logging
 from typing import Any, Optional
 
-from llama_index.core.bridge.pydantic import Field, model_serializer
+from llama_index.core.bridge.pydantic import Field, model_serializer, ValidationError
 from llama_index.core.tools import ToolSelection, ToolOutput
 from llama_index.core.llms import ChatMessage
 from llama_index.core.workflow import Event, StartEvent
+
+
+logger = logging.getLogger(__name__)
 
 
 class AgentInput(Event):
@@ -61,6 +65,27 @@ class ToolCallResult(Event):
 
 
 class AgentWorkflowStartEvent(StartEvent):
+    def __init__(self, **data: Any) -> None:
+        """Convert chat_history items to ChatMessage objects if they aren't already"""
+        if "chat_history" in data and data["chat_history"]:
+            converted_history = []
+            for i, msg in enumerate(data["chat_history"]):
+                if isinstance(msg, ChatMessage):
+                    converted_history.append(msg)
+                else:
+                    # Convert dict or other formats to ChatMessage with validation
+                    try:
+                        converted_history.append(ChatMessage.model_validate(msg))
+                    except ValidationError as e:
+                        logger.error(
+                            f"Failed to validate chat message at index {i}: {e}. "
+                            f"Invalid message: {msg}"
+                        )
+                        raise
+            data["chat_history"] = converted_history
+
+        super().__init__(**data)
+
     @model_serializer()
     def serialize_start_event(self) -> dict:
         """Serialize the start event and exclude the memory."""

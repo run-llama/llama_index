@@ -180,7 +180,7 @@ Store embeddings and retrieve them via similarity search with **vector stores**.
    ```bash
    git checkout -b your-feature-branch
    ```
-4. **Set up your environment** (follow the [Quick Start Guide](#quick-start-guide)).
+4. **Set up your environment** (follow the [Quick Start Guide](#-quick-start-guide)).
 5. **Work on your feature or bugfix**, ensuring you have unit tests covering your code.
 6. **Commit** your changes, then push them to your fork.
    ```bash
