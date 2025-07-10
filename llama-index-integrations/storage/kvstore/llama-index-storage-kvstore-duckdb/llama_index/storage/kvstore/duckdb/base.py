@@ -83,6 +83,8 @@ class DuckDBKVStore(BaseKVStore):
 
         self._thread_local = threading.local()
 
+        _ = self._initialize_table(self.client, self.table_name)
+
     @classmethod
     def from_vector_store(
         cls, duckdb_vector_store, table_name: str = "keyvalue"
@@ -136,10 +138,6 @@ class DuckDBKVStore(BaseKVStore):
     @property
     def table(self) -> duckdb.DuckDBPyRelation:
         """Return the table for the connection to the DuckDB database."""
-        if not self._is_initialized:
-            self._initialize_table(self.client, self.table_name)
-            self._is_initialized = True
-
         return self.client.table(self.table_name)
 
     @classmethod

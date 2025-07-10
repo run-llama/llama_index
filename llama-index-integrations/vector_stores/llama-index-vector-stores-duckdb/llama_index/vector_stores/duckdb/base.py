@@ -154,6 +154,8 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
         super().__init__(stores_text=True, **fields)
 
+        _ = self._initialize_table(self.client, self.table_name, self.embed_dim)
+
     @classmethod
     def from_local(
         cls,
@@ -235,10 +237,6 @@ class DuckDBVectorStore(BasePydanticVectorStore):
     @property
     def table(self) -> duckdb.DuckDBPyRelation:
         """Return the table for the connection to the DuckDB database."""
-        if not self._is_initialized:
-            self._initialize_table(self.client, self.table_name, self.embed_dim)
-            self._is_initialized = True
-
         return self.client.table(self.table_name)
 
     @classmethod
