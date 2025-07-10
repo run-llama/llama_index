@@ -16,6 +16,7 @@ from llama_index.core.vector_stores.types import (
 # Import your custom vector store class
 from llama_index.vector_stores.moorcheh import MoorchehVectorStore
 
+should_skip = not os.getenv("MOORCHEH_API_KEY")
 
 @pytest.mark.skipif(should_skip, reason="MOORCHEH_API_KEY not set")
 def test_empty_retrieval(vector_store):
