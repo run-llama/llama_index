@@ -13,7 +13,7 @@ pip install llama-index
 
 ## Usage
 
-### Basic Usage
+### Basic Usage (Dedicated Deployment)
 
 To use Baseten models with LlamaIndex, first initialize the LLM:
 
@@ -23,6 +23,7 @@ from llama_index.llms.baseten import Baseten
 llm = Baseten(
     model_id="your_model_id",  # e.g. "yqvr2lxw"
     api_key="your_api_key"
+    model_apis=False
 )
 ```
 
@@ -114,6 +115,6 @@ Note: For async operations, results are posted to your provided webhook endpoint
 
 ## Additional Resources
 
-For more examples and detailed usage, check out the [Baseten Integration Cookbook](https://docs.llamaindex.ai/en/stable/examples/llm/baseten/).
+For more examples and detailed usage, check out the [Baseten Cookbook](https://docs.llamaindex.ai/en/stable/examples/llm/baseten/).
 
 <a href="https://colab.research.google.com/github/run-llama/llama_index/blob/main/docs/docs/examples/llm/baseten.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
