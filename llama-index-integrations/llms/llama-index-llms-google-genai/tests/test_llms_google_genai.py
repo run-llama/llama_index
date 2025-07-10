@@ -20,6 +20,7 @@ from llama_index.llms.google_genai import GoogleGenAI
 from llama_index.llms.google_genai.utils import (
     convert_schema_to_function_declaration,
     prepare_chat_params,
+    chat_from_gemini_response,
 )
 
 
@@ -775,3 +776,117 @@ def test_prepare_chat_params_with_system_message():
         parts=[types.Part(text=user_message_2)],
         role=MessageRole.USER,
     )
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_cached_content_initialization() -> None:
+    """Test GoogleGenAI initialization with cached_content parameter."""
+    cached_content_value = "projects/test-project/locations/us-central1/cachedContents/cached-content-id-123"
+
+    llm = GoogleGenAI(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+        cached_content=cached_content_value,
+    )
+
+    # Verify cached_content is stored in the instance
+    assert llm.cached_content == cached_content_value
+
+    # Verify cached_content is stored in generation config
+    assert llm._generation_config["cached_content"] == cached_content_value
+
+
+def test_cached_content_in_response() -> None:
+    """Test that cached_content is extracted from Gemini responses."""
+    # Mock response with cached_content
+    mock_response = MagicMock()
+    mock_response.candidates = [MagicMock()]
+    mock_response.candidates[0].finish_reason = types.FinishReason.STOP
+    mock_response.candidates[0].content.role = "model"
+    mock_response.candidates[0].content.parts = [MagicMock()]
+    mock_response.candidates[0].content.parts[0].text = "Test response"
+    mock_response.candidates[0].content.parts[0].inline_data = None
+    mock_response.prompt_feedback = None
+    mock_response.usage_metadata = None
+    mock_response.function_calls = None
+    mock_response.cached_content = "projects/test-project/locations/us-central1/cachedContents/cached-content-id-123"
+
+    # Convert response
+    chat_response = chat_from_gemini_response(mock_response)
+
+    # Verify cached_content is in raw response
+    assert "cached_content" in chat_response.raw
+    assert (
+        chat_response.raw["cached_content"]
+        == "projects/test-project/locations/us-central1/cachedContents/cached-content-id-123"
+    )
+
+
+def test_cached_content_without_cached_content() -> None:
+    """Test response processing when cached_content is not present."""
+    # Mock response without cached_content
+    mock_response = MagicMock()
+    mock_response.candidates = [MagicMock()]
+    mock_response.candidates[0].finish_reason = types.FinishReason.STOP
+    mock_response.candidates[0].content.role = "model"
+    mock_response.candidates[0].content.parts = [MagicMock()]
+    mock_response.candidates[0].content.parts[0].text = "Test response"
+    mock_response.candidates[0].content.parts[0].inline_data = None
+    mock_response.prompt_feedback = None
+    mock_response.usage_metadata = None
+    mock_response.function_calls = None
+    # No cached_content attribute
+    del mock_response.cached_content
+
+    # Convert response
+    chat_response = chat_from_gemini_response(mock_response)
+
+    # Verify no cached_content key in raw response
+    assert "cached_content" not in chat_response.raw
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_cached_content_with_generation_config() -> None:
+    """Test that cached_content works with custom generation_config."""
+    cached_content_value = "projects/test-project/locations/us-central1/cachedContents/cached-content-id-456"
+
+    llm = GoogleGenAI(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+        generation_config=GenerateContentConfig(
+            temperature=0.5,
+            cached_content=cached_content_value,
+        ),
+    )
+
+    # Verify both cached_content and custom config are preserved
+    assert llm._generation_config["cached_content"] == cached_content_value
+    assert llm._generation_config["temperature"] == 0.5
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_cached_content_in_chat_params() -> None:
+    """Test that cached_content is properly included in generation config."""
+    cached_content_value = (
+        "projects/test-project/locations/us-central1/cachedContents/test-cache"
+    )
+
+    llm = GoogleGenAI(
+        model="models/gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+        cached_content=cached_content_value,
+    )
+
+    # Verify cached_content is in the generation config
+    assert llm._generation_config["cached_content"] == cached_content_value
+
+    # Test that prepare_chat_params preserves cached_content
+    messages = [ChatMessage(content="Test message", role=MessageRole.USER)]
+
+    # Prepare chat params with the LLM's generation config
+    next_msg, chat_kwargs = prepare_chat_params(
+        llm.model, messages, generation_config=llm._generation_config
+    )
+
+    # Verify cached_content is preserved in the config
+    assert chat_kwargs["config"].cached_content == cached_content_value
