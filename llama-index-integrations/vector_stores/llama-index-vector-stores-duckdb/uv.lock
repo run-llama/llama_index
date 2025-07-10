@@ -817,7 +817,7 @@ wheels = [
 
 [[package]]
 name = "diff-cover"
-version = "9.4.1"
+version = "9.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "chardet" },
@@ -825,9 +825,9 @@ dependencies = [
     { name = "pluggy" },
     { name = "pygments" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ed/11/a8fe05b5d974e889d2df2b11f9cb0fb86a35ce40e456c89328919e7c259a/diff_cover-9.4.1.tar.gz", hash = "sha256:7ded89e5fb3a61161be9b98d025f2ad4f5aa95de593c3fbeb65419ddb6667610", size = 98295, upload_time = "2025-06-23T23:14:52.351Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1f/8b/59525456c2607982a30f809f7ad02b26b0c18951aff95d5b14c37e61d346/diff_cover-9.5.0.tar.gz", hash = "sha256:70c49fae0476652a21b6ba0a90871ce7870a17866c36db7b2465be8b37dba81b", size = 98680, upload_time = "2025-07-10T02:25:10.751Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5e/51/e8cb085f0c0e5d272624129809ae971979173e2853a609d90beade7ea107/diff_cover-9.4.1-py3-none-any.whl", hash = "sha256:84d5bd402f566d04212126988a2c352b8ec801fa7e43b8856bd8dc146baec5a9", size = 54643, upload_time = "2025-06-23T23:14:50.859Z" },
+    { url = "https://files.pythonhosted.org/packages/f3/83/7a6e97b56f4a46b6bebd7015e920eaf739f827095338da53b638215f2742/diff_cover-9.5.0-py3-none-any.whl", hash = "sha256:9f0eb2cf916bb3f7b7945b3a6067cc33f74abdbe685d479f996a6cf8df408af4", size = 54943, upload_time = "2025-07-10T02:25:09.228Z" },
 ]
 
 [[package]]
@@ -1692,7 +1692,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-duckdb"
-version = "0.4.1"
+version = "0.4.2"
 source = { editable = "." }
 dependencies = [
     { name = "duckdb" },
@@ -1711,6 +1711,7 @@ dev = [
     { name = "pre-commit" },
     { name = "pylint" },
     { name = "pytest" },
+    { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "pytest-mock" },
     { name = "ruff" },
@@ -1740,6 +1741,7 @@ dev = [
     { name = "pre-commit", specifier = "==3.2.0" },
     { name = "pylint", specifier = "==2.15.10" },
     { name = "pytest", specifier = "==7.2.1" },
+    { name = "pytest-asyncio", specifier = ">=0.23.8" },
     { name = "pytest-cov", specifier = ">=6.1.1" },
     { name = "pytest-mock", specifier = "==3.11.1" },
     { name = "ruff", specifier = "==0.11.11" },
@@ -2989,6 +2991,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pytest-asyncio"
+version = "0.23.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/de/b4/0b378b7bf26a8ae161c3890c0b48a91a04106c5713ce81b4b080ea2f4f18/pytest_asyncio-0.23.8.tar.gz", hash = "sha256:759b10b33a6dc61cce40a8bd5205e302978bbbcc00e279a8b61d9a6a3c82e4d3", size = 46920, upload_time = "2024-07-17T17:39:34.617Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ee/82/62e2d63639ecb0fbe8a7ee59ef0bc69a4669ec50f6d3459f74ad4e4189a2/pytest_asyncio-0.23.8-py3-none-any.whl", hash = "sha256:50265d892689a5faefb84df80819d1ecef566eb3549cf915dfb33569359d1ce2", size = 17663, upload_time = "2024-07-17T17:39:32.478Z" },
+]
+
+[[package]]
 name = "pytest-cov"
 version = "6.2.1"
 source = { registry = "https://pypi.org/simple" }
@@ -3826,11 +3840,11 @@ wheels = [
 
 [[package]]
 name = "types-docutils"
-version = "0.21.0.20250708"
+version = "0.21.0.20250710"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/39/86/24394a71a04f416ca03df51863a3d3e2cd0542fdc40989188dca30ffb5bf/types_docutils-0.21.0.20250708.tar.gz", hash = "sha256:5625a82a9a2f26d8384545607c157e023a48ed60d940dfc738db125282864172", size = 42011, upload_time = "2025-07-08T03:14:24.214Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/85/fa/809a9001b6c83e10d76dffffca919ea36c876845c10c9c6dc3280c6fff13/types_docutils-0.21.0.20250710.tar.gz", hash = "sha256:9561d834b3a6b0c99ebd62f956eb5a2ea7d9b7401ba0d97df3194865126431c4", size = 42077, upload_time = "2025-07-10T03:15:47.225Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bd/17/8c1153fc1576a0dcffdd157c69a12863c3f9485054256f6791ea17d95aed/types_docutils-0.21.0.20250708-py3-none-any.whl", hash = "sha256:166630d1aec18b9ca02547873210e04bf7674ba8f8da9cd9e6a5e77dc99372c2", size = 67953, upload_time = "2025-07-08T03:14:23.057Z" },
+    { url = "https://files.pythonhosted.org/packages/54/f2/e4cb4b2e197eeebcc4eb440801c7d3504ed1c672e58a8ad425bb28440af9/types_docutils-0.21.0.20250710-py3-none-any.whl", hash = "sha256:922d96912c1ca51285e294ce77a2f03db48405c9fcc92d594c5746268905d84a", size = 67949, upload_time = "2025-07-10T03:15:46.071Z" },
 ]
 
 [[package]]
