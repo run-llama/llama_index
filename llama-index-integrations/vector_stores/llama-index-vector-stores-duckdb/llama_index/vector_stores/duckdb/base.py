@@ -1,10 +1,13 @@
 """DuckDB vector store."""
 
+import asyncio
 import json
 import logging
 import operator as py_operator
+import threading
 from pathlib import Path
 from typing import Any, Optional
+from typing_extensions import override
 
 import duckdb
 from duckdb import (
@@ -117,8 +120,8 @@ class DuckDBVectorStore(BasePydanticVectorStore):
     text_search_config: Optional[dict]
     persist_dir: str
 
-    _conn: Optional[duckdb.DuckDBPyConnection] = PrivateAttr(default=None)
-    _table: Optional[duckdb.DuckDBPyRelation] = PrivateAttr(default=None)
+    _shared_conn: Optional[duckdb.DuckDBPyConnection] = PrivateAttr(default=None)
+    _thread_local: threading.local = PrivateAttr(default_factory=threading.local)
 
     _is_initialized: bool = PrivateAttr(default=False)
     _database_path: Optional[str] = PrivateAttr()
@@ -131,6 +134,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         # https://duckdb.org/docs/extensions/full_text_search
         text_search_config: Optional[dict] = None,
         persist_dir: str = "./storage",
+        client: Optional[duckdb.DuckDBPyConnection] = None,
         **kwargs: Any,  # noqa: ARG002
     ) -> None:
         """Init params."""
@@ -144,6 +148,9 @@ class DuckDBVectorStore(BasePydanticVectorStore):
             "text_search_config": text_search_config,
             "persist_dir": persist_dir,
         }
+
+        if client is not None:
+            self._shared_conn = client
 
         super().__init__(stores_text=True, **fields)
 
@@ -200,10 +207,13 @@ class DuckDBVectorStore(BasePydanticVectorStore):
     @property
     def client(self) -> duckdb.DuckDBPyConnection:
         """Return client."""
-        if self._conn is None:
-            self._conn = self._connect(self.database_name, self.persist_dir)
+        if self._shared_conn is None:
+            self._shared_conn = self._connect(self.database_name, self.persist_dir)
 
-        return self._conn
+        if not hasattr(self._thread_local, "conn") or self._thread_local.conn is None:
+            self._thread_local.conn = self._shared_conn.cursor()
+
+        return self._thread_local.conn
 
     @classmethod
     def _connect(
@@ -224,18 +234,23 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
     @property
     def table(self) -> duckdb.DuckDBPyRelation:
-        """Return the table."""
-        if self._table is None:
+        """Return the table for the connection to the DuckDB database."""
+        if not self._is_initialized:
             self._table = self._initialize_table(
                 self.client, self.table_name, self.embed_dim
             )
+            self._is_initialized = True
 
-        return self._table
+        return self.client.table(self.table_name)
+
+    @classmethod
+    def _get_embedding_type(self, embed_dim: Optional[int]) -> str:
+        return f"FLOAT[{embed_dim}]" if embed_dim is not None else "FLOAT[]"
 
     @classmethod
     def _initialize_table(
         cls, conn: duckdb.DuckDBPyConnection, table_name: str, embed_dim: Optional[int]
-    ) -> duckdb.DuckDBPyRelation:
+    ) -> None:
         """Initialize the DuckDB Database, extensions, and documents table."""
         home_dir = Path.home()
         conn.execute(f"SET home_directory='{home_dir}';")
@@ -244,7 +259,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         conn.install_extension("fts")
         conn.load_extension("fts")
 
-        embedding_type = f"FLOAT[{embed_dim}]" if embed_dim is not None else "FLOAT[]"
+        embedding_type = cls._get_embedding_type(embed_dim)
 
         conn.execute(f"""
             CREATE TABLE IF NOT EXISTS {table_name}  (
@@ -265,8 +280,6 @@ class DuckDBVectorStore(BasePydanticVectorStore):
                 raise DuckDBTableIncorrectColumnsError(
                     table_name, required_columns, table_columns
                 )
-
-        return table
 
     def _node_to_arrow_row(self, node: BaseNode) -> dict:
         return {
@@ -299,6 +312,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
 
+    @override
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:  # noqa: ARG002
         """Query the vector store for top k most similar nodes."""
         filter_expression = self._build_metadata_filter_expressions(
@@ -308,9 +322,11 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         inner_query = self.table.select(
             StarExpression(),
             FunctionExpression(
-                "list_cosine_similarity",
+                "array_cosine_similarity",
                 ColumnExpression("embedding"),
-                ConstantExpression(query.query_embedding),
+                ConstantExpression(query.query_embedding).cast(
+                    self._get_embedding_type(self.embed_dim)
+                ),
             ).alias("score"),
         ).filter(filter_expression)
 
@@ -339,16 +355,30 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
         return self._arrow_row_to_query_result(rows)
 
+    @override
+    async def aquery(
+        self, query: VectorStoreQuery, **kwargs: Any
+    ) -> VectorStoreQueryResult:  # noqa: ARG002
+        """Query the vector store for top k most similar nodes."""
+        return await asyncio.to_thread(self.query, query, **kwargs)
+
+    @override
     def add(self, nodes: Sequence[BaseNode], **add_kwargs: Any) -> list[str]:  # noqa: ARG002
         """Add nodes to the vector store."""
         rows: list[dict[str, Any]] = [self._node_to_arrow_row(node) for node in nodes]
 
         arrow_table = pyarrow.Table.from_pylist(rows)
-
         self.client.from_arrow(arrow_table).insert_into(self.table.alias)
-
         return [node.node_id for node in nodes]
 
+    @override
+    async def async_add(
+        self, nodes: Sequence[BaseNode], **add_kwargs: Any
+    ) -> list[str]:  # noqa: ARG002
+        """Add nodes to the vector store."""
+        return await asyncio.to_thread(self.add, nodes, **add_kwargs)
+
+    @override
     def get_nodes(
         self,
         node_ids: Optional[list[str]] = None,
@@ -367,6 +397,17 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
         return [self._arrow_row_to_node(row) for row in rows]
 
+    @override
+    async def aget_nodes(
+        self,
+        node_ids: Optional[list[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **get_kwargs: Any,
+    ) -> list[BaseNode]:  # noqa: ARG002
+        """Get nodes using node_ids and/or filters. If both are provided, both are considered."""
+        return await asyncio.to_thread(self.get_nodes, node_ids, filters, **get_kwargs)
+
+    @override
     def delete_nodes(
         self,
         node_ids: Optional[list[str]] = None,
@@ -383,12 +424,31 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
         self.client.execute(command)
 
+    @override
+    async def adelete_nodes(
+        self,
+        node_ids: Optional[list[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:  # noqa: ARG002
+        """Delete nodes using node_ids and/or filters. If both are provided, both are considered."""
+        return await asyncio.to_thread(
+            self.delete_nodes, node_ids, filters, **delete_kwargs
+        )
+
+    @override
     def clear(self, **clear_kwargs: Any) -> None:  # noqa: ARG002
         """Clear the vector store."""
         command = f"DELETE FROM {self.table.alias}"
 
         self.client.execute(command)
 
+    @override
+    async def aclear(self, **clear_kwargs: Any) -> None:  # noqa: ARG002
+        """Clear the vector store."""
+        return await asyncio.to_thread(self.clear, **clear_kwargs)
+
+    @override
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:  # noqa: ARG002
         """
         Delete nodes using with ref_doc_id.
@@ -404,6 +464,14 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         command = f"DELETE FROM {self.table.alias} WHERE {where_clause}"
 
         self.client.execute(command)
+
+    @override
+    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:  # noqa: ARG002
+        """
+        Delete nodes using with ref_doc_id.
+
+        """
+        return await asyncio.to_thread(self.delete, ref_doc_id, **delete_kwargs)
 
     def _build_node_id_metadata_filter_expression(
         self,
