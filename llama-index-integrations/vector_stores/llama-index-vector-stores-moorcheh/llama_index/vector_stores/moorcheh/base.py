@@ -149,11 +149,6 @@ class MoorchehVectorStore(BasePydanticVectorStore):
         """Return class name."""
         return "MoorchehVectorStore"
 
-    @property
-    def client(self) -> MoorchehClient:
-        """Get client."""
-        return self._client
-
     def add(
         self,
         nodes: List[BaseNode],
