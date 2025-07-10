@@ -236,15 +236,13 @@ class DuckDBVectorStore(BasePydanticVectorStore):
     def table(self) -> duckdb.DuckDBPyRelation:
         """Return the table for the connection to the DuckDB database."""
         if not self._is_initialized:
-            self._table = self._initialize_table(
-                self.client, self.table_name, self.embed_dim
-            )
+            self._initialize_table(self.client, self.table_name, self.embed_dim)
             self._is_initialized = True
 
         return self.client.table(self.table_name)
 
     @classmethod
-    def _get_embedding_type(self, embed_dim: Optional[int]) -> str:
+    def _get_embedding_type(cls, embed_dim: Optional[int]) -> str:
         return f"FLOAT[{embed_dim}]" if embed_dim is not None else "FLOAT[]"
 
     @classmethod
@@ -252,6 +250,9 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         cls, conn: duckdb.DuckDBPyConnection, table_name: str, embed_dim: Optional[int]
     ) -> None:
         """Initialize the DuckDB Database, extensions, and documents table."""
+        if self._is_initialized:
+            return
+
         home_dir = Path.home()
         conn.execute(f"SET home_directory='{home_dir}';")
         conn.install_extension("json")
@@ -261,14 +262,14 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
         embedding_type = cls._get_embedding_type(embed_dim)
 
-        conn.execute(f"""
+        conn.begin().execute(f"""
             CREATE TABLE IF NOT EXISTS {table_name}  (
                 node_id VARCHAR,
                 text TEXT,
                 embedding {embedding_type},
                 metadata_ JSON
             );
-        """)
+        """).commit()
 
         table = conn.table(table_name)
 
@@ -322,7 +323,9 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         inner_query = self.table.select(
             StarExpression(),
             FunctionExpression(
-                "array_cosine_similarity",
+                "array_cosine_similarity"
+                if self.embed_dim is not None
+                else "list_cosine_similarity",
                 ColumnExpression("embedding"),
                 ConstantExpression(query.query_embedding).cast(
                     self._get_embedding_type(self.embed_dim)

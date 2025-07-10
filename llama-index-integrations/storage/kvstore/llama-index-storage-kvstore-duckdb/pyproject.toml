@@ -25,7 +25,7 @@ dev = [
 
 [project]
 name = "llama-index-storage-kvstore-duckdb"
-version = "0.1.0"
+version = "0.1.1"
 description = "llama-index kvstore duckdb integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
