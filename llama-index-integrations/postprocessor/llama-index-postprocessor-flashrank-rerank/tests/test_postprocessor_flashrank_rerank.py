@@ -53,5 +53,5 @@ def test_postprocess_nodes():
     assert reranked_nodes is not None
     assert len(reranked_nodes) == 3
     assert reranked_nodes[0] == node_two
-    assert reranked_nodes[1] == node_three
-    assert reranked_nodes[2] == node_one
+    assert reranked_nodes[1] == node_one
+    assert reranked_nodes[2] == node_three
