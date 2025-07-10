@@ -141,6 +141,7 @@ def test_retrieval_with_filters(index_with_nodes: VectorStoreIndex):
     nodes = index_with_nodes.as_retriever(filters=filters).retrieve("Hello, world 1!")
     assert len(nodes) == 1
 
+
 @pytest.mark.skipif(should_skip, reason="MOORCHEH_API_KEY not set")
 def test_empty_retrieval(vector_store):
     storage_context = StorageContext.from_defaults(vector_store=vector_store)
@@ -272,6 +273,8 @@ def test_large_batch_insert():
     time.sleep(5)
     res = index.as_retriever().retrieve("Node")
     assert len(res) >= 10  # fuzzy matching tolerance
+
+
 # Test class inheritance
 def test_class():
     assert BasePydanticVectorStore.__name__ in [
