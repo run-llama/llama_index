@@ -113,6 +113,11 @@ def vector_store() -> DuckDBVectorStore:
     return DuckDBVectorStore(embed_dim=3)
 
 
+@pytest.fixture(scope="module")
+def vector_store_async() -> DuckDBVectorStore:
+    return DuckDBVectorStore(embed_dim=3)
+
+
 def test_instance_creation_from_memory(
     vector_store: DuckDBVectorStore,
 ) -> None:
@@ -520,17 +525,19 @@ def test_filter_missing_key(
     assert len(nodes) == 0
 
 
-async def test_async(vector_store: DuckDBVectorStore, text_node_list: List[TextNode]):
-    await vector_store.async_add(text_node_list)
-    nodes = await vector_store.aget_nodes()
+async def test_async(
+    vector_store_async: DuckDBVectorStore, text_node_list: List[TextNode]
+):
+    await vector_store_async.async_add(text_node_list)
+    nodes = await vector_store_async.aget_nodes()
     assert len(nodes) == len(text_node_list)
 
-    await vector_store.adelete_nodes(node_ids=[nodes[0].node_id])
-    nodes = await vector_store.aget_nodes()
+    await vector_store_async.adelete_nodes(node_ids=[nodes[0].node_id])
+    nodes = await vector_store_async.aget_nodes()
     assert len(nodes) == len(text_node_list) - 1
 
-    await vector_store.aclear()
-    assert len(vector_store.get_nodes()) == 0
+    await vector_store_async.aclear()
+    assert len(vector_store_async.get_nodes()) == 0
 
     def generate_large_node_list(num_nodes: int) -> List[TextNode]:
         return [
@@ -542,12 +549,12 @@ async def test_async(vector_store: DuckDBVectorStore, text_node_list: List[TextN
 
     large_node_list = generate_large_node_list(100)
     tasks = [
-        vector_store.async_add(large_node_list),
-        vector_store.async_add(large_node_list),
-        vector_store.aget_nodes(),
-        vector_store.aget_nodes(),
-        vector_store.aclear(),
-        vector_store.aclear(),
+        vector_store_async.async_add(large_node_list),
+        vector_store_async.async_add(large_node_list),
+        vector_store_async.aget_nodes(),
+        vector_store_async.aget_nodes(),
+        vector_store_async.aclear(),
+        vector_store_async.aclear(),
     ]
     results = await asyncio.gather(*tasks, return_exceptions=True)
     assert not any(isinstance(result, Exception) for result in results)

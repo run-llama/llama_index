@@ -368,9 +368,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
         rows: list[dict[str, Any]] = [self._node_to_arrow_row(node) for node in nodes]
 
         arrow_table = pyarrow.Table.from_pylist(rows)
-
         self.client.from_arrow(arrow_table).insert_into(self.table.alias)
-
         return [node.node_id for node in nodes]
 
     @override
