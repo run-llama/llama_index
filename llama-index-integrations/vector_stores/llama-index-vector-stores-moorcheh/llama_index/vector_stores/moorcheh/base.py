@@ -7,7 +7,6 @@ import os
 # LlamaIndex internals for schema and vector store support
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.llms import LLM
-from llama_index.llms.openai import OpenAI
 from llama_index.core.base.embeddings.base_sparse import BaseSparseEmbedding
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
@@ -106,14 +105,15 @@ class MoorchehVectorStore(BasePydanticVectorStore):
             raise ValueError("`api_key` is required for Moorcheh client initialization")
 
         if not self.namespace:
-            raise ValueError("`namespace` is required for Moorcheh client initialization")
+            raise ValueError(
+                "`namespace` is required for Moorcheh client initialization"
+            )
 
         # Initialize Moorcheh client
         print("[DEBUG] Initializing MoorchehClient")
         self._client = MoorchehClient(api_key=self.api_key)
         self.is_embedding_query = False
         self._sparse_embedding_model = sparse_embedding_model
-
 
         print("[DEBUG] Listing namespaces...")
         try:
@@ -436,7 +436,7 @@ class MoorchehVectorStore(BasePydanticVectorStore):
 
         """
         try:
-            #incorporate llama_index llms
+            # incorporate llama_index llms
             if llm:
                 vs_query = VectorStoreQuery(query_str=query, similarity_top_k=top_k)
                 result = self.query(vs_query)

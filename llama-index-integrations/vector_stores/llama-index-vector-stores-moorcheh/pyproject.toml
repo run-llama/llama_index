@@ -35,8 +35,8 @@ license = "MIT"
 dependencies = [
     "moorcheh-sdk>=0.1.0,<2.1.0",
     "llama-index-core>=0.12.0,<0.13",
-    "llama-index-llms-openai>=0.1.0",  
-    "openai>=1.0.0"  
+    "llama-index-llms-openai>=0.1.0",
+    "openai>=1.0.0",
 ]
 
 [tool.codespell]

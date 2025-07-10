@@ -1,24 +1,21 @@
 # Test.py
 
-import os
 import pytest
 import time
 import uuid
-from typing import List
 
 from llama_index.core import StorageContext, VectorStoreIndex
 from llama_index.core.embeddings import MockEmbedding
 from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import (
-    BasePydanticVectorStore,
     MetadataFilter,
     MetadataFilters,
-    FilterCondition,
     FilterOperator,
 )
 
 # Import your custom vector store class
 from llama_index.vector_stores.moorcheh import MoorchehVectorStore
+
 
 @pytest.mark.skipif(should_skip, reason="MOORCHEH_API_KEY not set")
 def test_empty_retrieval(vector_store):
@@ -31,6 +28,7 @@ def test_empty_retrieval(vector_store):
 
     results = index.as_retriever().retrieve("Nonexistent")
     assert results == []
+
 
 @pytest.mark.skipif(should_skip, reason="MOORCHEH_API_KEY not set")
 def test_namespace_isolation(nodes):
@@ -69,10 +67,15 @@ def test_namespace_isolation(nodes):
     assert all("1" in n.text for n in res1)
     assert all("2" in n.text or "3" in n.text for n in res2)
 
+
 @pytest.mark.skipif(should_skip, reason="MOORCHEH_API_KEY not set")
 def test_missing_metadata_handling():
     nodes = [
-        TextNode(text="A node with metadata", metadata={"key": "val"}, embedding=[0.1] * EMBED_DIM),
+        TextNode(
+            text="A node with metadata",
+            metadata={"key": "val"},
+            embedding=[0.1] * EMBED_DIM,
+        ),
         TextNode(text="A node without metadata", embedding=[0.1] * EMBED_DIM),
     ]
     store = MoorchehVectorStore(
@@ -91,6 +94,7 @@ def test_missing_metadata_handling():
 
     results = index.as_retriever().retrieve("A node")
     assert len(results) == 2
+
 
 @pytest.mark.skipif(should_skip, reason="MOORCHEH_API_KEY not set")
 def test_negative_filter_ops(index_with_nodes: VectorStoreIndex):
@@ -120,6 +124,7 @@ def test_negative_filter_ops(index_with_nodes: VectorStoreIndex):
     texts = [n.text for n in nodes]
     assert "Hello, world 2!" not in texts
     assert "Hello, world 3!" not in texts
+
 
 @pytest.mark.skipif(should_skip, reason="MOORCHEH_API_KEY not set")
 def test_large_batch_insert():
