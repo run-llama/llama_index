@@ -203,6 +203,15 @@ def test_delete_by_ref_doc_id(
     assert not vector_store.get_nodes(node_ids=[test_node_id])
 
 
+def test_get_nodes(vector_store: DuckDBVectorStore, text_node_list: List[TextNode]):
+    vector_store.clear()
+    vector_store.add(text_node_list)
+    nodes = vector_store.get_nodes()
+    assert len(nodes) == len(text_node_list)
+    assert all(n.node_id in [n.node_id for n in text_node_list] for n in nodes)
+    assert all(n.embedding is not None for n in nodes)
+
+
 def test_get_nodes_with_metadata_filters(
     vector_store: DuckDBVectorStore, text_node_list: List[TextNode]
 ):
