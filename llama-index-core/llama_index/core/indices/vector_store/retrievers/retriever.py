@@ -174,7 +174,7 @@ class VectorIndexRetriever(BaseRetriever):
         new_nodes: List[BaseNode] = []
 
         if query_result.nodes:
-            for node in list(query_result.nodes or []):
+            for node in list(query_result.nodes):
                 if node.node_id in fetched_nodes_by_id:
                     new_nodes.append(fetched_nodes_by_id[node.node_id])
                     continue
