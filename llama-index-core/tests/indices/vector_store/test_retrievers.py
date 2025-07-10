@@ -7,6 +7,7 @@ from llama_index.core.schema import (
     QueryBundle,
     RelatedNodeInfo,
     TextNode,
+    ImageNode,
 )
 from llama_index.core.vector_stores.simple import SimpleVectorStore
 
@@ -89,3 +90,22 @@ def test_query(
     query_str = "What is?"
     retriever = index.as_retriever()
     _ = retriever.retrieve(QueryBundle(query_str))
+
+
+def test_query_image_node() -> None:
+    """Test embedding query."""
+    image_node = ImageNode(image="potato")
+
+    index = VectorStoreIndex.from_documents([])
+    index.insert_nodes([image_node])
+
+    # test embedding query
+    query_str = "What is?"
+    retriever = index.as_retriever()
+    results = retriever.retrieve(QueryBundle(query_str))
+
+    assert len(results) == 1
+
+    assert results[0].node.node_id == image_node.node_id
+    assert isinstance(results[0].node, ImageNode)
+    assert results[0].node.image == "potato"
