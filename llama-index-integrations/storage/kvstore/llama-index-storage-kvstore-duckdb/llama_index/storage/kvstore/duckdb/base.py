@@ -1,21 +1,22 @@
+import asyncio
 import json
-from typing import Any, Dict, List, Optional, Tuple
-
-from llama_index.core.storage.kvstore.types import (
-    DEFAULT_COLLECTION,
-    BaseKVStore,
-)
 import logging
+import threading
 from pathlib import Path
 from typing import Any, Optional
+from typing_extensions import override
 
 import duckdb
+import pyarrow
 from duckdb import (
     ColumnExpression,
     ConstantExpression,
     Expression,
 )
-import pyarrow
+from llama_index.core.storage.kvstore.types import (
+    DEFAULT_COLLECTION,
+    BaseKVStore,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -59,8 +60,9 @@ class DuckDBKVStore(BaseKVStore):
     table_name: str
     persist_dir: str
 
-    _conn: Optional[duckdb.DuckDBPyConnection] = None
-    _table: Optional[duckdb.DuckDBPyRelation] = None
+    _shared_conn: Optional[duckdb.DuckDBPyConnection] = None
+
+    _is_initialized: bool = False
 
     def __init__(
         self,
@@ -73,11 +75,13 @@ class DuckDBKVStore(BaseKVStore):
     ) -> None:
         """Init params."""
         if client is not None:
-            self._conn = client.cursor()
+            self._shared_conn = client.cursor()
 
         self.database_name = database_name
         self.table_name = table_name
         self.persist_dir = persist_dir
+
+        self._thread_local = threading.local()
 
     @classmethod
     def from_vector_store(
@@ -104,10 +108,13 @@ class DuckDBKVStore(BaseKVStore):
     @property
     def client(self) -> duckdb.DuckDBPyConnection:
         """Return client."""
-        if self._conn is None:
-            self._conn = self._connect(self.database_name, self.persist_dir)
+        if self._shared_conn is None:
+            self._shared_conn = self._connect(self.database_name, self.persist_dir)
 
-        return self._conn
+        if not hasattr(self._thread_local, "conn") or self._thread_local.conn is None:
+            self._thread_local.conn = self._shared_conn.cursor()
+
+        return self._thread_local.conn
 
     @classmethod
     def _connect(
@@ -128,11 +135,12 @@ class DuckDBKVStore(BaseKVStore):
 
     @property
     def table(self) -> duckdb.DuckDBPyRelation:
-        """Return the table."""
-        if self._table is None:
+        """Return the table for the connection to the DuckDB database."""
+        if not self._is_initialized:
             self._table = self._initialize_table(self.client, self.table_name)
+            self._is_initialized = True
 
-        return self._table
+        return self.client.table(self.table_name)
 
     @classmethod
     def _initialize_table(
@@ -152,7 +160,7 @@ class DuckDBKVStore(BaseKVStore):
                 PRIMARY KEY (key, collection)
             );
 
-            CREATE INDEX IF NOT EXISTS key_collection_idx ON {table_name} (key, collection);
+            CREATE INDEX IF NOT EXISTS collection_idx ON {table_name} (collection);
         """)
 
         table = conn.table(table_name)
@@ -168,6 +176,7 @@ class DuckDBKVStore(BaseKVStore):
 
         return table
 
+    @override
     def put(self, key: str, val: dict, collection: str = DEFAULT_COLLECTION) -> None:
         """
         Put a key-value pair into the store.
@@ -180,6 +189,7 @@ class DuckDBKVStore(BaseKVStore):
         """
         self.put_all([(key, val)], collection)
 
+    @override
     async def aput(
         self, key: str, val: dict, collection: str = DEFAULT_COLLECTION
     ) -> None:
@@ -192,28 +202,12 @@ class DuckDBKVStore(BaseKVStore):
             collection (str): collection name
 
         """
-        self.put(key, val, collection)
+        await asyncio.to_thread(self.put, key, val, collection)
 
-    async def aput_all(
-        self,
-        kv_pairs: List[Tuple[str, dict]],
-        collection: str = DEFAULT_COLLECTION,
-        batch_size: int = DEFAULT_BATCH_SIZE,
-    ) -> None:
-        """
-        Put a key-value pair into the store.
-
-        Args:
-            key (str): key
-            val (dict): value
-            collection (str): collection name
-
-        """
-        self.put_all(kv_pairs, collection, batch_size)
-
+    @override
     def put_all(
         self,
-        kv_pairs: List[Tuple[str, dict]],
+        kv_pairs: list[tuple[str, dict]],
         collection: str = DEFAULT_COLLECTION,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
@@ -242,6 +236,24 @@ class DuckDBKVStore(BaseKVStore):
             """,
         )
 
+    @override
+    async def aput_all(
+        self,
+        kv_pairs: list[tuple[str, dict]],
+        collection: str = DEFAULT_COLLECTION,
+        batch_size: int = DEFAULT_BATCH_SIZE,
+    ) -> None:
+        """
+        Put a dictionary of key-value pairs into the store.
+
+        Args:
+            kv_pairs (List[Tuple[str, dict]]): key-value pairs
+            collection (str): collection name
+
+        """
+        await asyncio.to_thread(self.put_all, kv_pairs, collection, batch_size)
+
+    @override
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
         """
         Get a value from the store.
@@ -263,6 +275,7 @@ class DuckDBKVStore(BaseKVStore):
 
         return json.loads(row_result[2])
 
+    @override
     async def aget(
         self, key: str, collection: str = DEFAULT_COLLECTION
     ) -> Optional[dict]:
@@ -274,9 +287,10 @@ class DuckDBKVStore(BaseKVStore):
             collection (str): collection name
 
         """
-        return self.get(key, collection)
+        return await asyncio.to_thread(self.get, key, collection)
 
-    def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
+    @override
+    def get_all(self, collection: str = DEFAULT_COLLECTION) -> dict[str, dict]:
         """Get all values from the store."""
         filter_expr: Expression = ColumnExpression("collection").__eq__(
             ConstantExpression(collection)
@@ -290,10 +304,12 @@ class DuckDBKVStore(BaseKVStore):
 
         return {row["key"]: json.loads(row["value"]) for row in as_list}
 
-    async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
+    @override
+    async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> dict[str, dict]:
         """Get all values from the store."""
         return self.get_all(collection)
 
+    @override
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
         """
         Delete a value from the store.
@@ -313,6 +329,7 @@ class DuckDBKVStore(BaseKVStore):
         _ = self.client.execute(command)
         return True
 
+    @override
     async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
         """
         Delete a value from the store.

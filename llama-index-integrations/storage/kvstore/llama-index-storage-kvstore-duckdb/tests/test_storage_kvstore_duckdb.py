@@ -129,3 +129,26 @@ def test_delete_collection(kv_store: DuckDBKVStore):
     _ = kv_store.delete(key, collection="collection_1")
 
     assert kv_store.get(key, collection="collection_1") is None
+
+
+@pytest.mark.asyncio
+async def test_async(kv_store: DuckDBKVStore):
+    key = "id_1"
+    value = {"name": "John Doe", "text": "Hello, world!"}
+
+    _ = await kv_store.aput(key, value)
+
+    assert await kv_store.aget(key) == value
+
+    new_key = "id_2"
+    new_value = {"name": "Jane Doe", "text": "Hello, world!"}
+
+    _ = await kv_store.aput_all([(new_key, new_value), (new_key, new_value)])
+
+    assert await kv_store.aget_all() == {key: value, new_key: new_value}
+
+    _ = await kv_store.adelete(key)
+
+    assert await kv_store.aget(key) is None
+
+    assert await kv_store.aget_all() == {new_key: new_value}
