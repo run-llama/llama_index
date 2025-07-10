@@ -79,7 +79,7 @@ def metadata_dict_to_node(metadata: dict, text: Optional[str] = None) -> BaseNod
     node: BaseNode
     if node_type == Node.class_name():
         node = Node.from_json(node_json)
-    if node_type == IndexNode.class_name():
+    elif node_type == IndexNode.class_name():
         node = IndexNode.from_json(node_json)
     elif node_type == ImageNode.class_name():
         node = ImageNode.from_json(node_json)
