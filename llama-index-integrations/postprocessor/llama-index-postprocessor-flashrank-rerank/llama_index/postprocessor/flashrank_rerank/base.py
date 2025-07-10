@@ -10,13 +10,14 @@ from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 
 class FlashRankRerank(BaseNodePostprocessor):
     model: str = Field(
-        description="FlashRank model name.", default="ms-marco-MiniLM-L-12-v2"
+        description="FlashRank model name.", default="ms-marco-TinyBERT-L-2-v2"
     )
     top_n: int = Field(
         description="Number of nodes to return sorted by score.", default=20
     )
     max_length: int = Field(
-        description="Maximum length of the query and nodes.", default=512
+        description="Maximum length of passage text passed to the reranker.",
+        default=512,
     )
 
     _reranker: Ranker = PrivateAttr()
