@@ -225,7 +225,8 @@ class MoorchehVectorStore(BasePydanticVectorStore):
         for node in nodes:
             if node.embedding is None:
                 warnings.warn(
-                    f"Node {node.node_id} has no embedding for vector namespace", UserWarning
+                    f"Node {node.node_id} has no embedding for vector namespace",
+                    UserWarning,
                 )
 
             node_id = node.node_id or str(uuid.uuid4())
