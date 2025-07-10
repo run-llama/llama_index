@@ -600,6 +600,7 @@ class MetaProvider(Provider):
         }
 
     def chat_stream_generation_info(self, event_data: Dict) -> Dict[str, Any]:
+        """Extract generation metadata from Meta chat stream event."""
         return {
             "finish_reason": event_data["finishReason"],
         }

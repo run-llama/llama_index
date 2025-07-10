@@ -39,8 +39,8 @@ def test_prepare_chat_with_tools_tool_required():
 
     assert result["tool_choice"] == "REQUIRED"
     assert len(result["tools"]) == 1
-    # CohereTool objects have a `name` attribute directly
-    assert result["tools"][0].name == "search_tool"
+    # FunctionTool objects don't have a name attribute directly
+    assert result["tools"][0].metadata.name == "search_tool"
 
 
 def test_prepare_chat_with_tools_tool_not_required():
@@ -64,5 +64,5 @@ def test_prepare_chat_with_tools_tool_not_required():
     # When tool_required is False, tool_choice should not be included
     assert "tool_choice" not in result
     assert len(result["tools"]) == 1
-    # CohereTool objects have a `name` attribute directly
-    assert result["tools"][0].name == "search_tool"
+    # FunctionTool objects don't have a name attribute directly
+    assert result["tools"][0].metadata.name == "search_tool"
