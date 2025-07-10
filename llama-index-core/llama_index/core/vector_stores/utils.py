@@ -51,7 +51,7 @@ def node_to_metadata_dict(
     if remove_text and text_field in node_dict:
         node_dict[text_field] = ""
     if remove_text and text_resource_field in node_dict:
-        node_dict[text_resource_field] = ""
+        del node_dict[text_resource_field]
 
     # remove embedding from node_dict
     node_dict["embedding"] = None
