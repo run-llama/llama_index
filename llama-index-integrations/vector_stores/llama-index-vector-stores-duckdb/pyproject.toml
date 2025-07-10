@@ -22,13 +22,17 @@ dev = [
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "pytest-cov>=6.1.1",
+    "pytest-asyncio>=0.23.8",
 ]
 
 [project]
 name = "llama-index-vector-stores-duckdb"
-version = "0.4.1"
+version = "0.4.2"
 description = "llama-index vector_stores duckdb integration"
-authors = [{name = "Adithya Krishnan", email = "me@krishadi.com"}]
+authors = [
+    {name = "Adithya Krishnan", email = "me@krishadi.com"},
+    {name = "Bill Easton", email = "williamseaston@gmail.com"},
+]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
@@ -64,3 +68,6 @@ disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 python_version = "3.9"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
