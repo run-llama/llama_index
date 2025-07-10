@@ -1,4 +1,5 @@
-from typing import Any, override
+from typing import Any
+from typing_extensions import override
 
 from flashrank import Ranker, RerankRequest
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
