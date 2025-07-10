@@ -101,6 +101,7 @@ nav:
           - ./examples/agent/code_act_agent.ipynb
           - ./examples/agent/custom_multi_agent.ipynb
           - ./examples/agent/from_scratch_code_act_agent.ipynb
+          - ./examples/agent/gemini_agent.ipynb
           - ./examples/agent/memory/chat_memory_buffer.ipynb
           - ./examples/agent/memory/composable_memory.ipynb
           - ./examples/agent/memory/summary_memory_buffer.ipynb
