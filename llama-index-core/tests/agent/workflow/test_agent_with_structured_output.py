@@ -1,7 +1,8 @@
 import pytest
+import os
 from typing import Any, List, Type, Optional, Dict
 from typing_extensions import override
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from llama_index.core.types import Model
 from llama_index.core.llms import (
@@ -11,10 +12,13 @@ from llama_index.core.llms import (
     ChatResponseAsyncGen,
     LLM,
 )
-from llama_index.core.agent.workflow import AgentWorkflow
+from llama_index.core.agent.workflow import AgentWorkflow, AgentOutput
 from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.tools import ToolSelection
 from llama_index.core.agent.workflow import FunctionAgent
+
+
+skip_condition = os.getenv("OPENAI_API_KEY", None) is None
 
 
 class TestLLM(LLM):
@@ -267,3 +271,55 @@ async def test_astructured_output_fn_agentworkflow(
     assert response.get_pydantic_model(Structure) == Structure(
         hello="guten tag", world=3
     )
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(condition=skip_condition, reason="OPENAI_API_KEY is not available.")
+async def test_multi_agent_openai() -> None:
+    from llama_index.llms.openai import OpenAI
+
+    class MathResult(BaseModel):
+        operation: str = Field(description="The operation performed")
+        result: int = Field(description="The result of the operation")
+
+    main_agent = FunctionAgent(
+        llm=OpenAI(model="gpt-4.1"),
+        name="MainAgent",
+        description="Useful for dispatching tasks.",
+        system_prompt="You are the MainAgent. Your task is to distribute tasks to other agents. You must always dispatch tasks to secondary agents. You must never perform tasks yourself.",
+        tools=[],
+        can_handoff_to=["CalculatorAgent"],
+    )
+
+    def multiply(x: int, j: int) -> int:
+        """
+        Multiply two numbers together.
+
+        Args:
+            x (int): first factor
+            j (int): second factor
+        Returns:
+            int: the result of the multiplication
+
+        """
+        return x * j
+
+    multiplication_agent = FunctionAgent(
+        llm=OpenAI(model="gpt-4.1"),
+        name="CalculatorAgent",
+        description="Useful for performing operations.",
+        system_prompt="You are the CalculatorAgent. Your task is to calculate the results of an operation, if needed using the `multiply`tool you are provided with.",
+        tools=[multiply],
+    )
+
+    workflow = AgentWorkflow(
+        agents=[main_agent, multiplication_agent],
+        root_agent=main_agent.name,
+        output_cls=MathResult,
+    )
+
+    result = await workflow.run(user_msg="What is 30 multiplied by 60?")
+    assert isinstance(result, AgentOutput)
+    assert isinstance(result.structured_response, dict)
+    assert isinstance(result.get_pydantic_model(MathResult), MathResult)
+    assert result.get_pydantic_model(MathResult).result == 1800
