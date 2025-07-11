@@ -17,7 +17,7 @@ def chat_messages() -> List[ChatMessage]:
 
 @pytest.fixture
 def xml_string() -> str:
-    return "<current_conversation>\n\t<user>\n\t\t<message>hello</message>\n\t</user>\n\t<assistant>\n\t\t<message>hello back</message>\n\t</assistant>\n\t<user>\n\t\t<message>how are you?</message>\n\t</user>\n\t<assistant>\n\t\t<message>I am good, thank you.</message>\n\t</assistant>\n</current_conversation>\nGiven the current conversation, can you please format your output?"
+    return "<current_conversation>\n\t<user>\n\t\t<message>hello</message>\n\t</user>\n\t<assistant>\n\t\t<message>hello back</message>\n\t</assistant>\n\t<user>\n\t\t<message>how are you?</message>\n\t</user>\n\t<assistant>\n\t\t<message>I am good, thank you.</message>\n\t</assistant>\n</current_conversation>\n\nGiven the conversation, format the output according to the provided schema."
 
 
 def test_messages_to_xml(chat_messages: List[ChatMessage], xml_string: str):

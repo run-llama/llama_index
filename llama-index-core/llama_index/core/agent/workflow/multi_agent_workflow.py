@@ -459,7 +459,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                     xml_message = messages_to_xml_format(messages)
                     structured_response = await agent.llm.as_structured_llm(
                         self.output_cls
-                    ).achat(messages=[xml_message])
+                    ).achat(messages=[xml_message], tool_required=True)
                     output.structured_response = json.loads(
                         structured_response.message.content
                     )

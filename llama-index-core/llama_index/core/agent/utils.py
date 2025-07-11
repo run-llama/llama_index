@@ -25,10 +25,10 @@ def messages_to_xml_format(messages: List[ChatMessage]) -> ChatMessage:
             if isinstance(block, TextBlock):
                 blocks.append(TextBlock(text=f"\t\t<message>{block.text}</message>\n"))
         blocks.append(TextBlock(text=f"\t</{message.role.value}>\n"))
-    blocks.append(TextBlock(text="</current_conversation>\n"))
+    blocks.append(TextBlock(text="</current_conversation>\n\n"))
     blocks.append(
         TextBlock(
-            text="Given the current conversation, can you please format your output?"
+            text="Given the conversation, format the output according to the provided schema."
         )
     )
     return ChatMessage(role="user", blocks=blocks)
