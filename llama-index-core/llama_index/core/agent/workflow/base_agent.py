@@ -1,5 +1,8 @@
 from abc import abstractmethod
-from typing import Any, Callable, Dict, List, Sequence, Optional, Union, cast
+import json
+import warnings
+import inspect
+from typing import Any, Callable, Dict, List, Sequence, Optional, Union, Type, cast
 
 from pydantic._internal._model_construction import ModelMetaclass
 from llama_index.core.agent.workflow.prompts import DEFAULT_STATE_PROMPT
@@ -17,6 +20,8 @@ from llama_index.core.bridge.pydantic import (
     ConfigDict,
     field_validator,
 )
+from llama_index.core.prompts import PromptTemplate
+from llama_index.core.agent.utils import messages_to_xml_format
 from llama_index.core.llms import ChatMessage, LLM, TextBlock
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
@@ -97,6 +102,17 @@ class BaseWorkflowAgent(
         description="The prompt to use to update the state of the agent",
         validate_default=True,
     )
+    output_cls: Optional[Type[BaseModel]] = Field(
+        description="Output class for the agent. If you set this field to a non-null value, `structured_output_fn` will be ignored.",
+        default=None,
+        exclude=True,
+    )
+    structured_output_fn: Optional[Callable[[List[ChatMessage]], Dict[str, Any]]] = (
+        Field(
+            description="Custom function to generate structured output from the agent's run. It has to take a list of ChatMessage instances (derived from the memory) and output a BaseModel subclass instance. If you set `output_cls` to a non-null value, this field will be ignored.",
+            default=None,
+        )
+    )
 
     def __init__(
         self,
@@ -109,6 +125,8 @@ class BaseWorkflowAgent(
         llm: Optional[LLM] = None,
         initial_state: Optional[Dict[str, Any]] = None,
         state_prompt: Optional[Union[str, BasePromptTemplate]] = None,
+        output_cls: Optional[Type[BaseModel]] = None,
+        structured_output_fn: Optional[Callable[[List[ChatMessage]], BaseModel]] = None,
         timeout: Optional[float] = None,
         verbose: bool = False,
         **kwargs: Any,
@@ -123,6 +141,9 @@ class BaseWorkflowAgent(
         elif state_prompt is None:
             state_prompt = DEFAULT_STATE_PROMPT
 
+        if output_cls is not None and structured_output_fn is not None:
+            structured_output_fn = None
+
         BaseModel.__init__(
             self,
             name=name,
@@ -134,6 +155,8 @@ class BaseWorkflowAgent(
             llm=llm or get_default_llm(),
             initial_state=initial_state or {},
             state_prompt=state_prompt,
+            output_cls=output_cls,
+            structured_output_fn=structured_output_fn,
             **model_kwargs,
         )
 
@@ -383,12 +406,38 @@ class BaseWorkflowAgent(
 
         if not ev.tool_calls:
             memory: BaseMemory = await ctx.store.get("memory")
+            messages = await memory.aget()
             output = await self.finalize(ctx, ev, memory)
-
             cur_tool_calls: List[ToolCallResult] = await ctx.store.get(
                 "current_tool_calls", default=[]
             )
             output.tool_calls.extend(cur_tool_calls)  # type: ignore
+            if self.structured_output_fn is not None:
+                try:
+                    if inspect.iscoroutinefunction(self.structured_output_fn):
+                        output.structured_response = await self.structured_output_fn(
+                            messages
+                        )
+                    else:
+                        output.structured_response = self.structured_output_fn(messages)
+                except Exception as e:
+                    warnings.warn(
+                        message=f"An error occurred while producing the structured output from your agent: {e}."
+                    )
+            if self.output_cls is not None:
+                try:
+                    xml_message = messages_to_xml_format(messages)
+                    structured_response = await self.llm.as_structured_llm(
+                        self.output_cls
+                    ).achat(messages=[xml_message], tool_required=True)
+                    output.structured_response = json.loads(
+                        structured_response.message.content
+                    )
+                except Exception as e:
+                    warnings.warn(
+                        message=f"An error occurred while producing the structured output from your agent: {e}."
+                    )
+
             await ctx.store.set("current_tool_calls", [])
 
             return StopEvent(result=output)
