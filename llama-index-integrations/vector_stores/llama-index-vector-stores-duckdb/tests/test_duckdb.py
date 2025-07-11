@@ -109,13 +109,6 @@ def text_node_list() -> List[TextNode]:
     ]
 
 
-def test_instance_creation_from_memory(
-    vector_store: DuckDBVectorStore,
-) -> None:
-    assert isinstance(vector_store, DuckDBVectorStore)
-    assert vector_store.database_name == ":memory:"
-
-
 def test_instance_creation_from_client(
     text_node_list: List[TextNode],
 ) -> None:

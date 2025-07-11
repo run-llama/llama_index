@@ -34,22 +34,20 @@ def test_from_vector_store():
 
 
 def memory_store():
-    return DuckDBVectorStore(embed_dim=3)
+    return DuckDBKVStore()
 
 
 def disk_store():
     if os.path.exists("./storage/persisted.duckdb"):
         os.remove("./storage/persisted.duckdb")
 
-    return DuckDBVectorStore(
-        database_name="persisted.duckdb", embed_dim=3, persist_dir="./storage"
-    )
+    return DuckDBKVStore(database_name="persisted.duckdb", persist_dir="./storage")
 
 
 @pytest.mark.parametrize("persistent", ["memory", "disk"])
 class TestStore:
     @pytest.fixture
-    def kv_store(self, persistent: str) -> DuckDBVectorStore:
+    def kv_store(self, persistent: str) -> DuckDBKVStore:
         if persistent == "memory":
             return memory_store()
 
