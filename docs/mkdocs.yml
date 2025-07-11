@@ -92,7 +92,7 @@ nav:
       - Agents:
           - ./examples/agent/Chatbot_SEC.ipynb
           - ./examples/agent/agent_builder.ipynb
-          - ./examples/agents/agent_with_structured_output.ipynb
+          - ./examples/agent/agent_with_structured_output.ipynb
           - ./examples/agent/agent_workflow_basic.ipynb
           - ./examples/agent/agent_workflow_multi.ipynb
           - ./examples/agent/agent_workflow_research_assistant.ipynb
@@ -341,7 +341,7 @@ nav:
           - ./examples/llm/friendli.ipynb
           - ./examples/llm/gemini.ipynb
           - ./examples/llm/google_genai.ipynb
-          - ./examples/ll/grok.ipynb
+          - ./examples/llm/grok.ipynb
           - ./examples/llm/groq.ipynb
           - ./examples/llm/huggingface.ipynb
           - ./examples/llm/ibm_watsonx.ipynb
