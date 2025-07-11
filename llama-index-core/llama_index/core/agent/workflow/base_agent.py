@@ -421,7 +421,7 @@ class BaseWorkflowAgent(
             )
 
         if not ev.tool_calls:
-            memory: BaseMemory = await ctx.store.get("memory")
+            memory = await ctx.store.get("memory")
             messages = await memory.aget()
             output = await self.finalize(ctx, ev, memory)
             cur_tool_calls: List[ToolCallResult] = await ctx.store.get(

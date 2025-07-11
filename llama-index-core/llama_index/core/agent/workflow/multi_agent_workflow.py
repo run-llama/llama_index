@@ -449,7 +449,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
 
         if not ev.tool_calls:
             agent = self.agents[ev.current_agent_name]
-            memory: BaseMemory = await ctx.store.get("memory")
+            memory = await ctx.store.get("memory")
             messages = await memory.aget()
             output = await agent.finalize(ctx, ev, memory)
 
