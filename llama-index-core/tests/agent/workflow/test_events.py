@@ -1,6 +1,39 @@
+import pytest
+
 from llama_index.core.llms import ChatMessage
-from llama_index.core.agent.workflow.workflow_events import AgentWorkflowStartEvent
+from llama_index.core.tools import ToolSelection
+from llama_index.core.bridge.pydantic import BaseModel, ValidationError
+from llama_index.core.agent.workflow.workflow_events import (
+    AgentWorkflowStartEvent,
+    AgentOutput,
+    PydanticConversionWarning,
+)
 from llama_index.core.memory import Memory
+
+
+@pytest.fixture()
+def example_agent_output() -> dict:
+    return {
+        "response": ChatMessage(role="user", content="30 times 2 is 60."),
+        "tool_calls": [
+            ToolSelection(
+                tool_id="1", tool_name="multiply", tool_kwargs={"i": 30, "j": 2}
+            )
+        ],
+        "raw": '{"role": "user", "content": "30 times 2 is 60."}',
+        "structured_response": {"operation": "30 times 2", "result": 60},
+        "current_agent_name": "CalculatorAgent",
+    }
+
+
+class MathResult(BaseModel):
+    operation: str
+    result: int
+
+
+class WrongMathResult(BaseModel):
+    operation: str
+    result: str
 
 
 def test_agent_workflow_start_event():
@@ -42,3 +75,18 @@ def test_agent_workflow_start_event_to_dict():
     assert dump["chat_history"][0]["role"] == "user"
     assert dump["chat_history"][0]["blocks"][0]["text"] == "Hello, world!"
     assert dump["max_iterations"] == 10
+
+
+def test_agent_output_with_structured_response(example_agent_output: dict) -> None:
+    try:
+        agent_output = AgentOutput.model_validate(example_agent_output)
+        success = True
+    except ValidationError:
+        success = False
+    assert success
+    assert agent_output.get_pydantic_model(MathResult) == MathResult.model_validate(
+        example_agent_output["structured_response"]
+    )
+    with pytest.warns(PydanticConversionWarning):
+        a = agent_output.get_pydantic_model(WrongMathResult)
+    assert a is None
