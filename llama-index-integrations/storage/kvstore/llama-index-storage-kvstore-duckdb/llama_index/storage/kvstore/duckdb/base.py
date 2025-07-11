@@ -230,11 +230,10 @@ class DuckDBKVStore(BaseKVStore):
         ]
         arrow_table = pyarrow.Table.from_pylist(rows)
 
-        _ = self.client.from_arrow(arrow_table).query(
-            "put_all",
-            sql_query=f"""
+        _ = self.client.sql(
+            query=f"""
             INSERT OR REPLACE INTO {self.table.alias}
-            SELECT * from put_all;
+            SELECT * from arrow_table;
             """,
         )
 
