@@ -416,9 +416,10 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 "increase the max iterations with `.run(.., max_iterations=...)`"
             )
 
+        memory: BaseMemory = await ctx.store.get("memory")
+
         if ev.retry_messages:
             # Retry with the given messages to let the LLM fix potential errors
-            memory: BaseMemory = await ctx.store.get("memory")
             history = await memory.aget()
             user_msg_str = await ctx.store.get("user_msg_str")
             agent_name: str = await ctx.store.get("current_agent_name")
@@ -434,7 +435,6 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
 
         if not ev.tool_calls:
             agent = self.agents[ev.current_agent_name]
-            memory: BaseMemory = await ctx.store.get("memory")
             output = await agent.finalize(ctx, ev, memory)
 
             cur_tool_calls: List[ToolCallResult] = await ctx.store.get(

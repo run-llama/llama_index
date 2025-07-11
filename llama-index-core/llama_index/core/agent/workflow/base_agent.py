@@ -381,9 +381,10 @@ class BaseWorkflowAgent(
                 "increase the max iterations with `.run(.., max_iterations=...)`"
             )
 
+        memory: BaseMemory = await ctx.store.get("memory")
+
         if ev.retry_messages:
             # Retry with the given messages to let the LLM fix potential errors
-            memory: BaseMemory = await ctx.store.get("memory")
             history = await memory.aget()
             user_msg_str = await ctx.store.get("user_msg_str")
 
@@ -397,7 +398,6 @@ class BaseWorkflowAgent(
             )
 
         if not ev.tool_calls:
-            memory: BaseMemory = await ctx.store.get("memory")
             output = await self.finalize(ctx, ev, memory)
 
             cur_tool_calls: List[ToolCallResult] = await ctx.store.get(
