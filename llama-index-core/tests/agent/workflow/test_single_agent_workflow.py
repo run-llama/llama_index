@@ -177,7 +177,7 @@ async def test_single_react_agent(calculator_agent):
 
 @pytest.mark.asyncio
 async def test_single_react_agent_retry(retry_calculator_agent):
-    """Verify execution of basic ReAct single agent with retry du to a output parsing error."""
+    """Verify execution of basic ReAct single agent with retry due to a output parsing error."""
     memory = ChatMemoryBuffer.from_defaults()
     handler = retry_calculator_agent.run(user_msg="Can you add 5 and 3?", memory=memory)
 
