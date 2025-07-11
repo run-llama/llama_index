@@ -106,16 +106,13 @@ class AIGatewayClientWrapper:
         # Get endpoint from URL
         endpoint = self.provider_config.transform_endpoint(url)
 
-        # Transform the request body according to provider
-        transformed_body = self.provider_config.transform_request(
-            json_data.get("messages", []), json_data
-        )
-
+        # Pass the original request body directly to AI Gateway
+        # AI Gateway handles provider-specific format differences internally
         return {
             "provider": self.provider_config.name,
             "endpoint": endpoint,
             "headers": headers,
-            "query": transformed_body,
+            "query": json_data,
         }
 
 
