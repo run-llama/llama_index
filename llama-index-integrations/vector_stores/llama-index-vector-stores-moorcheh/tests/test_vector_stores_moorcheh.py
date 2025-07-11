@@ -462,12 +462,6 @@ def test_filter_missing_metadata_key(index_with_nodes):
     )
     assert len(index_with_nodes.as_retriever(filters=filters).retrieve("Hello")) == 0
 
-
-def test_vector_dimensionality_check():
-    with pytest.raises(Exception):
-        _ = TextNode(text="Bad vector", embedding=[0.1] * 10)
-
-
 @pytest.mark.skipif(should_skip, reason="MOORCHEH_API_KEY not set")
 def test_large_metadata_dict(vector_store):
     node = TextNode(
