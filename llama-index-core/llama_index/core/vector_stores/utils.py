@@ -51,7 +51,7 @@ def node_to_metadata_dict(
     if remove_text and text_field in node_dict:
         node_dict[text_field] = ""
     if remove_text and text_resource_field in node_dict:
-        node_dict[text_resource_field] = ""
+        del node_dict[text_resource_field]
 
     # remove embedding from node_dict
     node_dict["embedding"] = None
@@ -79,7 +79,7 @@ def metadata_dict_to_node(metadata: dict, text: Optional[str] = None) -> BaseNod
     node: BaseNode
     if node_type == Node.class_name():
         node = Node.from_json(node_json)
-    if node_type == IndexNode.class_name():
+    elif node_type == IndexNode.class_name():
         node = IndexNode.from_json(node_json)
     elif node_type == ImageNode.class_name():
         node = ImageNode.from_json(node_json)
