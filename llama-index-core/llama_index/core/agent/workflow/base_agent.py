@@ -367,7 +367,7 @@ class BaseWorkflowAgent(
     @step
     async def parse_agent_output(
         self, ctx: Context, ev: AgentOutput
-    ) -> Union[StopEvent, ToolCall, None]:
+    ) -> Union[StopEvent, AgentInput, ToolCall, None]:
         max_iterations = await ctx.store.get(
             "max_iterations", default=DEFAULT_MAX_ITERATIONS
         )
@@ -379,6 +379,21 @@ class BaseWorkflowAgent(
             raise WorkflowRuntimeError(
                 f"Max iterations of {max_iterations} reached! Either something went wrong, or you can "
                 "increase the max iterations with `.run(.., max_iterations=...)`"
+            )
+
+        if ev.retry_messages:
+            # Retry with the given messages to let the LLM fix potential errors
+            memory: BaseMemory = await ctx.store.get("memory")
+            history = await memory.aget()
+            user_msg_str = await ctx.store.get("user_msg_str")
+
+            return AgentInput(
+                input=[
+                    *history,
+                    ChatMessage(role="user", content=user_msg_str),
+                    *ev.retry_messages,
+                ],
+                current_agent_name=self.name,
             )
 
         if not ev.tool_calls:

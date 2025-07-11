@@ -38,9 +38,10 @@ class AgentOutput(Event):
     """LLM output."""
 
     response: ChatMessage
-    tool_calls: list[ToolSelection]
-    raw: Optional[Any] = Field(default=None, exclude=True)
     current_agent_name: str
+    raw: Optional[Any] = Field(default=None, exclude=True)
+    tool_calls: list[ToolSelection] = Field(default_factory=list)
+    retry_messages: list[ChatMessage] = Field(default_factory=list)
 
     def __str__(self) -> str:
         return self.response.content or ""
