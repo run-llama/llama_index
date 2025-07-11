@@ -10,7 +10,10 @@ from llama_index.core.storage.docstore.types import (
     DEFAULT_PERSIST_PATH,
 )
 from llama_index.core.storage.kvstore.simple_kvstore import SimpleKVStore
-from llama_index.core.storage.kvstore.types import MutableMappingKVStore, BaseInMemoryKVStore
+from llama_index.core.storage.kvstore.types import (
+    MutableMappingKVStore,
+    BaseInMemoryKVStore,
+)
 from llama_index.core.utils import concat_dirs
 
 
