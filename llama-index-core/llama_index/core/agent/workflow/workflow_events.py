@@ -30,7 +30,7 @@ class AgentStream(Event):
     delta: str
     response: str
     current_agent_name: str
-    tool_calls: list[ToolSelection]
+    tool_calls: list[ToolSelection] = Field(default_factory=list)
     raw: Optional[Any] = Field(default=None, exclude=True)
 
 

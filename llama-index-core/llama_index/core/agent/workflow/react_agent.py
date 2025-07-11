@@ -122,7 +122,6 @@ class ReActAgent(BaseWorkflowAgent):
                 AgentStream(
                     delta=last_chat_response.delta or "",
                     response=last_chat_response.message.content or "",
-                    tool_calls=[],
                     raw=raw,
                     current_agent_name=self.name,
                 )
@@ -146,7 +145,6 @@ class ReActAgent(BaseWorkflowAgent):
             # Return with retry messages to let the LLM fix the error
             return AgentOutput(
                 response=last_chat_response.message,
-                tool_calls=[],
                 raw=raw,
                 current_agent_name=self.name,
                 retry_messages=[
@@ -168,7 +166,6 @@ class ReActAgent(BaseWorkflowAgent):
         if reasoning_step.is_done:
             return AgentOutput(
                 response=last_chat_response.message,
-                tool_calls=[],
                 raw=raw,
                 current_agent_name=self.name,
             )
