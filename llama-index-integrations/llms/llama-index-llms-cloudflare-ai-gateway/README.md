@@ -26,7 +26,9 @@ from llama_index.core.llms import ChatMessage
 
 # Create LLM instances
 openai_llm = OpenAI(model="gpt-4o-mini", api_key="your-openai-key")
-anthropic_llm = Anthropic(model="claude-3-5-sonnet-20241022", api_key="your-anthropic-key")
+anthropic_llm = Anthropic(
+    model="claude-3-5-sonnet-20241022", api_key="your-anthropic-key"
+)
 
 # Create Cloudflare AI Gateway LLM
 llm = CloudflareAIGateway(
@@ -45,7 +47,7 @@ print(response.message.content)
 ## Supported Providers
 
 - OpenAI
-- Anthropic  
+- Anthropic
 - Mistral AI
 - Groq
 - DeepSeek
@@ -59,7 +61,7 @@ print(response.message.content)
 ```bash
 # Set environment variables
 export OPENAI_API_KEY="your-key"
-export ANTHROPIC_API_KEY="your-key" 
+export ANTHROPIC_API_KEY="your-key"
 export CLOUDFLARE_ACCOUNT_ID="your-id"
 export CLOUDFLARE_API_KEY="your-key"
 export CLOUDFLARE_GATEWAY="your-gateway"
@@ -67,4 +69,3 @@ export CLOUDFLARE_GATEWAY="your-gateway"
 # Run tests
 uv run pytest tests/
 ```
- 

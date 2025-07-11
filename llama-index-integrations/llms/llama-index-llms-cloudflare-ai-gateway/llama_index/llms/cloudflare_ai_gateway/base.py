@@ -32,31 +32,39 @@ from .providers import get_provider_config
 
 logger = logging.getLogger(__name__)
 
+
 class CloudflareAIGatewayError(Exception):
     """Base exception for Cloudflare AI Gateway errors."""
+
     pass
 
 
 class CloudflareAIGatewayUnauthorizedError(CloudflareAIGatewayError):
     """Raised when AI Gateway authentication fails."""
+
     pass
 
 
 class CloudflareAIGatewayDoesNotExistError(CloudflareAIGatewayError):
     """Raised when AI Gateway does not exist."""
+
     pass
 
 
 class CloudflareAIGatewayOptions(BaseModel):
     """Options for Cloudflare AI Gateway requests."""
-    
+
     cache_key: Optional[str] = Field(default=None, description="Custom cache key")
-    cache_ttl: Optional[int] = Field(default=None, ge=0, description="Cache time-to-live in seconds")
+    cache_ttl: Optional[int] = Field(
+        default=None, ge=0, description="Cache time-to-live in seconds"
+    )
     skip_cache: bool = Field(default=False, description="Bypass caching")
     metadata: Optional[Dict[str, Union[str, int, bool, None]]] = Field(
         default=None, description="Custom metadata for the request"
     )
-    collect_log: Optional[bool] = Field(default=None, description="Enable/disable log collection")
+    collect_log: Optional[bool] = Field(
+        default=None, description="Enable/disable log collection"
+    )
     event_id: Optional[str] = Field(default=None, description="Custom event identifier")
     request_timeout_ms: Optional[int] = Field(
         default=None, ge=0, description="Request timeout in milliseconds"
@@ -65,42 +73,44 @@ class CloudflareAIGatewayOptions(BaseModel):
 
 class AIGatewayClientWrapper:
     """Wrapper for HTTP clients that intercepts requests and routes through AI Gateway."""
-    
+
     def __init__(self, gateway_instance, original_client, llm_instance):
         self.gateway = gateway_instance
         self.original_client = original_client
         self.llm = llm_instance
         self.provider_config = get_provider_config(llm_instance)
-        
+
         if not self.provider_config:
-            raise CloudflareAIGatewayError(f"Unsupported provider for LLM: {type(self.llm).__name__}")
-    
+            raise CloudflareAIGatewayError(
+                f"Unsupported provider for LLM: {type(self.llm).__name__}"
+            )
+
     def __getattr__(self, name):
         """Delegate attribute access to the original client."""
         return getattr(self.original_client, name)
-    
+
     def post(self, url: str, **kwargs):
         """Intercept POST requests and route through AI Gateway."""
         # Transform request for AI Gateway
         transformed_request = self._transform_request(url, kwargs)
-        
+
         # Make request to AI Gateway
         return self.gateway._make_ai_gateway_request(transformed_request)
-    
+
     def _transform_request(self, url: str, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         """Transform request for AI Gateway format."""
         # Extract headers and body
-        headers = kwargs.get('headers', {})
-        json_data = kwargs.get('json', {})
-        
+        headers = kwargs.get("headers", {})
+        json_data = kwargs.get("json", {})
+
         # Get endpoint from URL
         endpoint = self.provider_config.transform_endpoint(url)
-        
+
         # Transform the request body according to provider
         transformed_body = self.provider_config.transform_request(
-            json_data.get('messages', []), json_data
+            json_data.get("messages", []), json_data
         )
-        
+
         return {
             "provider": self.provider_config.name,
             "endpoint": endpoint,
@@ -112,14 +122,14 @@ class AIGatewayClientWrapper:
 class CloudflareAIGateway(LLM):
     """
     Cloudflare AI Gateway LLM.
-    
+
     This class intercepts requests to multiple LLM providers and routes them through
     Cloudflare AI Gateway for automatic fallback and load balancing.
-    
+
     The key concept is that you provide multiple LLM instances (from different providers),
     and this class intercepts their requests, transforms them for AI Gateway, and
     delegates the actual LLM functionality to the first available provider.
-    
+
     Args:
         llms: List of LLM instances to use (will be tried in order)
         account_id: Your Cloudflare account ID
@@ -144,9 +154,7 @@ class CloudflareAIGateway(LLM):
     gateway: Optional[str] = Field(
         default=None, description="The name of your AI Gateway"
     )
-    api_key: Optional[str] = Field(
-        default=None, description="Your Cloudflare API key"
-    )
+    api_key: Optional[str] = Field(default=None, description="Your Cloudflare API key")
     binding: Optional[Any] = Field(
         default=None, description="Cloudflare AI Gateway binding"
     )
@@ -194,10 +202,12 @@ class CloudflareAIGateway(LLM):
         # Validate configuration
         if not llms:
             raise ValueError("At least one LLM must be provided")
-        
+
         if binding is None:
             if not account_id or not gateway:
-                raise ValueError("Either binding or account_id+gateway must be provided")
+                raise ValueError(
+                    "Either binding or account_id+gateway must be provided"
+                )
             if not api_key:
                 raise ValueError("api_key is required when not using binding")
 
@@ -219,7 +229,7 @@ class CloudflareAIGateway(LLM):
 
         self._client = http_client
         self._aclient = async_http_client
-        
+
         # Inject AI Gateway client into each LLM
         self._inject_ai_gateway_clients()
 
@@ -227,12 +237,12 @@ class CloudflareAIGateway(LLM):
         """Inject AI Gateway client into each LLM to intercept requests."""
         for i, llm in enumerate(self.llms):
             # Store original client if it exists
-            if hasattr(llm, '_client') and llm._client is not None:
+            if hasattr(llm, "_client") and llm._client is not None:
                 self._original_clients[i] = llm._client
                 llm._client = AIGatewayClientWrapper(self, llm._client, llm)
-            
+
             # Store original async client if it exists
-            if hasattr(llm, '_aclient') and llm._aclient is not None:
+            if hasattr(llm, "_aclient") and llm._aclient is not None:
                 self._original_async_clients[i] = llm._aclient
                 llm._aclient = AIGatewayClientWrapper(self, llm._aclient, llm)
 
@@ -254,31 +264,33 @@ class CloudflareAIGateway(LLM):
             )
         return self._aclient
 
-    def _parse_options_to_headers(self, options: Optional[CloudflareAIGatewayOptions]) -> Dict[str, str]:
+    def _parse_options_to_headers(
+        self, options: Optional[CloudflareAIGatewayOptions]
+    ) -> Dict[str, str]:
         """Parse options to headers."""
         headers = {}
-        
+
         if options is None:
             return headers
-            
+
         if options.skip_cache:
             headers["cf-skip-cache"] = "true"
-            
+
         if options.cache_ttl is not None:
             headers["cf-cache-ttl"] = str(options.cache_ttl)
-            
+
         if options.metadata:
             headers["cf-aig-metadata"] = json.dumps(options.metadata)
-            
+
         if options.collect_log is not None:
             headers["cf-aig-collect-log"] = str(options.collect_log).lower()
-            
+
         if options.event_id:
             headers["cf-aig-event-id"] = options.event_id
-            
+
         if options.request_timeout_ms is not None:
             headers["cf-aig-request-timeout-ms"] = str(options.request_timeout_ms)
-            
+
         return headers
 
     def _get_current_llm(self) -> LLM:
@@ -301,19 +313,23 @@ class CloudflareAIGateway(LLM):
         else:
             # Use API
             headers = self._parse_options_to_headers(self.options)
-            headers.update({
-                "Content-Type": "application/json",
-                "cf-aig-authorization": f"Bearer {self.api_key}",
-            })
-            
-            url = f"https://gateway.ai.cloudflare.com/v1/{self.account_id}/{self.gateway}"
-            
+            headers.update(
+                {
+                    "Content-Type": "application/json",
+                    "cf-aig-authorization": f"Bearer {self.api_key}",
+                }
+            )
+
+            url = (
+                f"https://gateway.ai.cloudflare.com/v1/{self.account_id}/{self.gateway}"
+            )
+
             client = self._get_client()
             response = client.post(url, json=request_body, headers=headers)
-            
+
             # Handle response
             self._handle_ai_gateway_response(response)
-            
+
             return response
 
     def _handle_ai_gateway_response(self, response: httpx.Response) -> None:
@@ -321,29 +337,37 @@ class CloudflareAIGateway(LLM):
         if response.status_code == 400:
             try:
                 result = response.json()
-                if (not result.get("success") and 
-                    result.get("error") and 
-                    result["error"][0].get("code") == 2001):
-                    raise CloudflareAIGatewayDoesNotExistError("This AI gateway does not exist")
+                if (
+                    not result.get("success")
+                    and result.get("error")
+                    and result["error"][0].get("code") == 2001
+                ):
+                    raise CloudflareAIGatewayDoesNotExistError(
+                        "This AI gateway does not exist"
+                    )
             except (ValueError, KeyError, IndexError):
                 pass
             raise CloudflareAIGatewayError(f"Bad request: {response.text}")
-            
+
         elif response.status_code == 401:
             try:
                 result = response.json()
-                if (not result.get("success") and 
-                    result.get("error") and 
-                    result["error"][0].get("code") == 2009):
+                if (
+                    not result.get("success")
+                    and result.get("error")
+                    and result["error"][0].get("code") == 2009
+                ):
                     raise CloudflareAIGatewayUnauthorizedError(
                         "Your AI Gateway has authentication active, but you didn't provide a valid apiKey"
                     )
             except (ValueError, KeyError, IndexError):
                 pass
             raise CloudflareAIGatewayError("Unauthorized")
-            
+
         elif response.status_code != 200:
-            raise CloudflareAIGatewayError(f"Request failed with status {response.status_code}: {response.text}")
+            raise CloudflareAIGatewayError(
+                f"Request failed with status {response.status_code}: {response.text}"
+            )
 
     @classmethod
     def class_name(cls) -> str:
@@ -364,7 +388,9 @@ class CloudflareAIGateway(LLM):
                 return current_llm.chat(messages, **kwargs)
             except Exception as e:
                 # Try next LLM on failure
-                logger.warning(f"It seems that the current LLM is not working with the AI Gateway. Error: {e}")
+                logger.warning(
+                    f"It seems that the current LLM is not working with the AI Gateway. Error: {e}"
+                )
                 self._try_next_llm()
                 continue
 
@@ -379,7 +405,9 @@ class CloudflareAIGateway(LLM):
                 return current_llm.stream_chat(messages, **kwargs)
             except Exception as e:
                 # Try next LLM on failure
-                logger.warning(f"It seems that the current LLM is not working with the AI Gateway. Error: {e}")
+                logger.warning(
+                    f"It seems that the current LLM is not working with the AI Gateway. Error: {e}"
+                )
                 self._try_next_llm()
                 continue
 
@@ -394,7 +422,9 @@ class CloudflareAIGateway(LLM):
                 return current_llm.complete(prompt, formatted, **kwargs)
             except Exception as e:
                 # Try next LLM on failure
-                logger.warning(f"It seems that the current LLM is not working with the AI Gateway. Error: {e}")
+                logger.warning(
+                    f"It seems that the current LLM is not working with the AI Gateway. Error: {e}"
+                )
                 self._try_next_llm()
                 continue
 
@@ -409,7 +439,9 @@ class CloudflareAIGateway(LLM):
                 return current_llm.stream_complete(prompt, formatted, **kwargs)
             except Exception as e:
                 # Try next LLM on failure
-                logger.warning(f"It seems that the current LLM is not working with the AI Gateway. Error: {e}")
+                logger.warning(
+                    f"It seems that the current LLM is not working with the AI Gateway. Error: {e}"
+                )
                 self._try_next_llm()
                 continue
 
@@ -424,7 +456,9 @@ class CloudflareAIGateway(LLM):
                 return await current_llm.achat(messages, **kwargs)
             except Exception as e:
                 # Try next LLM on failure
-                logger.warning(f"It seems that the current LLM is not working with the AI Gateway. Error: {e}")
+                logger.warning(
+                    f"It seems that the current LLM is not working with the AI Gateway. Error: {e}"
+                )
                 self._try_next_llm()
                 continue
 
@@ -439,7 +473,9 @@ class CloudflareAIGateway(LLM):
                 return current_llm.astream_chat(messages, **kwargs)
             except Exception as e:
                 # Try next LLM on failure
-                logger.warning(f"It seems that the current LLM is not working with the AI Gateway. Error: {e}")
+                logger.warning(
+                    f"It seems that the current LLM is not working with the AI Gateway. Error: {e}"
+                )
                 self._try_next_llm()
                 continue
 
@@ -454,7 +490,9 @@ class CloudflareAIGateway(LLM):
                 return await current_llm.acomplete(prompt, formatted, **kwargs)
             except Exception as e:
                 # Try next LLM on failure
-                logger.warning(f"It seems that the current LLM is not working with the AI Gateway. Error: {e}")
+                logger.warning(
+                    f"It seems that the current LLM is not working with the AI Gateway. Error: {e}"
+                )
                 self._try_next_llm()
                 continue
 
@@ -469,6 +507,8 @@ class CloudflareAIGateway(LLM):
                 return current_llm.astream_complete(prompt, formatted, **kwargs)
             except Exception as e:
                 # Try next LLM on failure
-                logger.warning(f"It seems that the current LLM is not working with the AI Gateway. Error: {e}")
+                logger.warning(
+                    f"It seems that the current LLM is not working with the AI Gateway. Error: {e}"
+                )
                 self._try_next_llm()
                 continue

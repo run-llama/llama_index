@@ -9,7 +9,7 @@ from llama_index.llms.cloudflare_ai_gateway.base import (
 __all__ = [
     "CloudflareAIGateway",
     "CloudflareAIGatewayError",
-    "CloudflareAIGatewayUnauthorizedError", 
+    "CloudflareAIGatewayUnauthorizedError",
     "CloudflareAIGatewayDoesNotExistError",
     "CloudflareAIGatewayOptions",
-] 
+]

@@ -44,7 +44,7 @@ requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "httpx>=0.24.0,<1", 
+    "httpx>=0.24.0,<1",
     "llama-index-core>=0.12.41,<0.13",
 ]
 
@@ -75,4 +75,4 @@ ignore_missing_imports = true
 python_version = "3.8"
 
 [tool.ruff.lint.flake8-pytest-style]
-fixture-parentheses = true 
+fixture-parentheses = true
