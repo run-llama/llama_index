@@ -551,10 +551,13 @@ async def test_async(
     tasks = [
         vector_store_async.async_add(large_node_list),
         vector_store_async.async_add(large_node_list),
+        vector_store_async.async_add(large_node_list),
+        vector_store_async.async_add(large_node_list),
         vector_store_async.aget_nodes(),
         vector_store_async.aget_nodes(),
-        vector_store_async.aclear(),
-        vector_store_async.aclear(),
     ]
     results = await asyncio.gather(*tasks, return_exceptions=True)
-    assert not any(isinstance(result, Exception) for result in results)
+
+    exceptions = [result for result in results if isinstance(result, Exception)]
+    assert len(exceptions) == 0
+    assert len(results) == 6

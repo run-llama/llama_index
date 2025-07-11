@@ -1,6 +1,11 @@
 from abc import ABCMeta
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union, cast
+import json
+import inspect
+import warnings
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Type, cast
+from pydantic import BaseModel
 
+from llama_index.core.agent.utils import messages_to_xml_format
 from llama_index.core.agent.workflow.base_agent import (
     BaseWorkflowAgent,
     DEFAULT_AGENT_NAME,
@@ -87,6 +92,10 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         handoff_output_prompt: Optional[Union[str, BasePromptTemplate]] = None,
         state_prompt: Optional[Union[str, BasePromptTemplate]] = None,
         timeout: Optional[float] = None,
+        output_cls: Optional[Type[BaseModel]] = None,
+        structured_output_fn: Optional[
+            Callable[[List[ChatMessage]], Dict[str, Any]]
+        ] = None,
         **workflow_kwargs: Any,
     ):
         super().__init__(timeout=timeout, **workflow_kwargs)
@@ -153,6 +162,11 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             ):
                 raise ValueError("State prompt must contain {state} and {msg}")
         self.state_prompt = state_prompt
+
+        self.output_cls = output_cls
+        self.structured_output_fn = structured_output_fn
+        if output_cls is not None and structured_output_fn is not None:
+            self.structured_output_fn = None
 
     def _get_prompts(self) -> PromptDictType:
         """Get prompts."""
@@ -435,6 +449,8 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
 
         if not ev.tool_calls:
             agent = self.agents[ev.current_agent_name]
+            memory: BaseMemory = await ctx.store.get("memory")
+            messages = await memory.aget()
             output = await agent.finalize(ctx, ev, memory)
 
             cur_tool_calls: List[ToolCallResult] = await ctx.store.get(
@@ -442,6 +458,32 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             )
             output.tool_calls.extend(cur_tool_calls)  # type: ignore
             await ctx.store.set("current_tool_calls", [])
+
+            if self.structured_output_fn is not None:
+                try:
+                    if inspect.iscoroutinefunction(self.structured_output_fn):
+                        output.structured_response = await self.structured_output_fn(
+                            messages
+                        )
+                    else:
+                        output.structured_response = self.structured_output_fn(messages)
+                except Exception as e:
+                    warnings.warn(
+                        message=f"An error occurred while producing the structured output from your agent: {e}."
+                    )
+            if self.output_cls is not None:
+                try:
+                    xml_message = messages_to_xml_format(messages)
+                    structured_response = await agent.llm.as_structured_llm(
+                        self.output_cls
+                    ).achat(messages=[xml_message], tool_required=True)
+                    output.structured_response = json.loads(
+                        structured_response.message.content
+                    )
+                except Exception as e:
+                    warnings.warn(
+                        message=f"An error occurred while producing the structured output from your agent: {e}."
+                    )
 
             return StopEvent(result=output)
 
