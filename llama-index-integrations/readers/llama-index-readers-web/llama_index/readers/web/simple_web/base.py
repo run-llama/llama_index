@@ -1,7 +1,7 @@
 """Simple Web scraper."""
 
 from typing import List, Optional, Dict, Callable
-
+import uuid
 import requests
 
 from llama_index.core.bridge.pydantic import PrivateAttr
@@ -69,10 +69,14 @@ class SimpleWebPageReader(BasePydanticReader):
 
                 response = html2text.html2text(response)
 
-            metadata: Optional[Dict] = None
+            metadata: Dict = {"url": url}
             if self._metadata_fn is not None:
                 metadata = self._metadata_fn(url)
+                if "url" not in metadata:
+                    metadata["url"] = url
 
-            documents.append(Document(text=response, id_=url, metadata=metadata or {}))
+            documents.append(
+                Document(text=response, id_=str(uuid.uuid4()), metadata=metadata)
+            )
 
         return documents
