@@ -86,6 +86,31 @@ def _handle_exceptions(func: T) -> T:
     return cast(T, wrapper)
 
 
+def _get_connection(client: Any) -> Connection | None:
+    # Dynamically import oracledb and the required classes
+    try:
+        import oracledb
+    except ImportError as e:
+        raise ImportError(
+            "Unable to import oracledb, please install with `pip install -U oracledb`."
+        ) from e
+
+    # check if ConnectionPool exists
+    connection_pool_class = getattr(oracledb, "ConnectionPool", None)
+
+    if isinstance(client, oracledb.Connection):
+        return client
+    elif connection_pool_class and isinstance(client, connection_pool_class):
+        return client.acquire()
+    else:
+        valid_types = "oracledb.Connection"
+        if connection_pool_class:
+            valid_types += " or oracledb.ConnectionPool"
+        raise TypeError(
+            f"Expected client of type {valid_types}, got {type(client).__name__}"
+        )
+
+
 def _escape_str(value: str) -> str:
     BS = "\\"
     must_escape = (BS, "'")
@@ -103,7 +128,7 @@ column_config: Dict = {
     },
     "node_info": {
         "type": "JSON",
-        "extract_func": lambda x: json.dumps(x.node_info),
+        "extract_func": lambda x: json.dumps(x.get_node_info()),
     },
     "metadata": {
         "type": "JSON",
@@ -195,10 +220,11 @@ def _create_table(connection: Connection, table_name: str) -> None:
 
 @_handle_exceptions
 def create_index(
-    connection: Connection,
+    client: Any,
     vector_store: OraLlamaVS,
     params: Optional[dict[str, Any]] = None,
 ) -> None:
+    connection = _get_connection(client)
     if params:
         if params["idx_type"] == "HNSW":
             _create_hnsw_index(
@@ -350,7 +376,8 @@ def _create_ivf_index(
 
 
 @_handle_exceptions
-def drop_table_purge(connection: Connection, table_name: str) -> None:
+def drop_table_purge(client: Any, table_name: str) -> None:
+    connection = _get_connection(client)
     if _table_exists(connection, table_name):
         cursor = connection.cursor()
         with cursor:
@@ -427,9 +454,10 @@ class OraLlamaVS(BasePydanticVectorStore):
                 batch_size=batch_size,
                 params=params,
             )
+            connection = _get_connection(_client)
             # Assign _client to PrivateAttr after the Pydantic initialization
             object.__setattr__(self, "_client", _client)
-            _create_table(_client, table_name)
+            _create_table(connection, table_name)
 
         except oracledb.DatabaseError as db_err:
             logger.exception(f"Database error occurred while create table: {db_err}")
@@ -534,22 +562,25 @@ class OraLlamaVS(BasePydanticVectorStore):
         if not nodes:
             return []
 
+        connection = _get_connection(self._client)
+
         for result_batch in iter_batch(nodes, self.batch_size):
             dml, bind_values = self._build_insert(values=result_batch)
 
-            with self._client.cursor() as cursor:
+            with connection.cursor() as cursor:
                 # Use executemany to insert the batch
                 cursor.executemany(dml, bind_values)
-                self._client.commit()
+                connection.commit()
 
         return [node.node_id for node in nodes]
 
     @_handle_exceptions
     def delete(self, ref_doc_id: str, **kwargs: Any) -> None:
-        with self._client.cursor() as cursor:
+        connection = _get_connection(self._client)
+        with connection.cursor() as cursor:
             ddl = f"DELETE FROM {self.table_name} WHERE doc_id = :ref_doc_id"
             cursor.execute(ddl, [ref_doc_id])
-            self._client.commit()
+            connection.commit()
 
     @_handle_exceptions
     def _get_clob_value(self, result: Any) -> str:
@@ -595,7 +626,7 @@ class OraLlamaVS(BasePydanticVectorStore):
         bind_vars = []
         if query.filters is not None:
             where_str, bind_vars = self._append_meta_filter_condition(
-                where_str, query.filters.filters
+                where_str, query.filters
             )
 
         # build query sql
@@ -625,7 +656,9 @@ class OraLlamaVS(BasePydanticVectorStore):
         params = {"embedding": embedding}
         for i, value in enumerate(bind_vars):
             params[f"value{i}"] = value
-        with self._client.cursor() as cursor:
+
+        connection = _get_connection(self._client)
+        with connection.cursor() as cursor:
             cursor.execute(query_sql, **params)
             results = cursor.fetchall()
 
