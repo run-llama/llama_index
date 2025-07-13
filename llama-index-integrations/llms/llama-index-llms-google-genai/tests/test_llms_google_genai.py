@@ -890,3 +890,326 @@ def test_cached_content_in_chat_params() -> None:
 
     # Verify cached_content is preserved in the config
     assert chat_kwargs["config"].cached_content == cached_content_value
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_google_search_basic(llm: GoogleGenAI) -> None:
+    """Test basic Google Search functionality with chat_with_tools."""
+    grounding_tool = types.Tool(google_search=types.GoogleSearch())
+
+    response = llm.chat_with_tools(
+        user_msg="What is the current weather in San Francisco?",
+        tools=[grounding_tool],
+    )
+
+    assert response is not None
+    assert response.message.content is not None
+    assert len(response.message.content) > 0
+
+    # Check if grounding metadata is present in the response
+    assert "raw" in response.__dict__
+    raw_response = response.raw
+    assert isinstance(raw_response, dict)
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_google_search_with_chat_history(llm: GoogleGenAI) -> None:
+    """Test Google Search with chat history."""
+    grounding_tool = types.Tool(google_search=types.GoogleSearch())
+
+    chat_history = [
+        ChatMessage(
+            role=MessageRole.USER, content="Tell me about recent developments in AI"
+        ),
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content="I'd be happy to help you learn about recent AI developments.",
+        ),
+        ChatMessage(
+            role=MessageRole.USER, content="What about the latest news on Gemini?"
+        ),
+    ]
+
+    response = llm.chat_with_tools(
+        tools=[grounding_tool],
+        chat_history=chat_history,
+    )
+
+    assert response is not None
+    assert response.message.content is not None
+    assert len(response.message.content) > 0
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_google_search_predict_and_call(llm: GoogleGenAI) -> None:
+    """Test Google Search using predict_and_call method."""
+    grounding_tool = types.Tool(google_search=types.GoogleSearch())
+
+    response = llm.predict_and_call(
+        tools=[grounding_tool],
+        user_msg="When is the next total solar eclipse in the US?",
+        error_on_no_tool_call=False,
+    )
+
+    assert response is not None
+    assert hasattr(response, "content") or hasattr(response, "response")
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+@pytest.mark.asyncio
+async def test_google_search_async(llm: GoogleGenAI) -> None:
+    """Test async Google Search functionality."""
+    grounding_tool = types.Tool(google_search=types.GoogleSearch())
+
+    chat_history = [
+        ChatMessage(
+            role=MessageRole.USER,
+            content="What are the latest news about climate change?",
+        ),
+    ]
+
+    response = await llm.achat_with_tools(
+        tools=[grounding_tool],
+        chat_history=chat_history,
+    )
+
+    assert response is not None
+    assert response.message.content is not None
+    assert len(response.message.content) > 0
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_google_search_with_mixed_tools(llm: GoogleGenAI) -> None:
+    """Test Google Search combined with custom function tools."""
+
+    # Create a custom function tool
+    def get_current_time() -> str:
+        """Get the current time."""
+        from datetime import datetime
+
+        return datetime.now().strftime("%H:%M:%S")
+
+    custom_tool = FunctionTool.from_defaults(fn=get_current_time)
+    grounding_tool = types.Tool(google_search=types.GoogleSearch())
+
+    # Test that mixing tools raises an appropriate error
+    with pytest.raises(
+        ValueError,
+        match="Mixing Google GenAI tools with function calling tools is not supported",
+    ):
+        llm.chat_with_tools(
+            user_msg="What time is it and what's the latest news about AI?",
+            tools=[custom_tool, grounding_tool],
+        )
+
+    # Test Google Search alone works
+    response_google = llm.chat_with_tools(
+        user_msg="What's the latest news about AI?",
+        tools=[grounding_tool],
+    )
+
+    assert response_google is not None
+    assert response_google.message.content is not None
+    assert len(response_google.message.content) > 0
+
+    # Test custom function tool alone works
+    response_custom = llm.chat_with_tools(
+        user_msg="What time is it?",
+        tools=[custom_tool],
+    )
+
+    assert response_custom is not None
+    # For function calls, the content might be None but tool_calls should be present
+    assert (
+        response_custom.message.content is not None
+        or response_custom.message.additional_kwargs.get("tool_calls") is not None
+    )
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_google_search_stream_chat(llm: GoogleGenAI) -> None:
+    """Test Google Search with streaming chat."""
+    grounding_tool = types.Tool(google_search=types.GoogleSearch())
+
+    chunks = []
+    for chunk in llm.stream_chat_with_tools(
+        user_msg="What are the recent developments in quantum computing?",
+        tools=[grounding_tool],
+    ):
+        chunks.append(chunk)
+
+    assert len(chunks) > 0
+    # Concatenate all chunks to get full response
+    full_response = "".join(
+        [chunk.message.content for chunk in chunks if chunk.message.content]
+    )
+    assert len(full_response) > 0
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+@pytest.mark.asyncio
+async def test_google_search_astream_chat(llm: GoogleGenAI) -> None:
+    """Test async streaming with Google Search."""
+    grounding_tool = types.Tool(google_search=types.GoogleSearch())
+
+    chunks = []
+    async for chunk in await llm.astream_chat_with_tools(
+        user_msg="What are the latest space exploration missions?",
+        tools=[grounding_tool],
+    ):
+        chunks.append(chunk)
+
+    assert len(chunks) > 0
+    # Concatenate all chunks to get full response
+    full_response = "".join(
+        [chunk.message.content for chunk in chunks if chunk.message.content]
+    )
+    assert len(full_response) > 0
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_google_search_grounding_metadata(llm: GoogleGenAI) -> None:
+    """Test that Google Search returns comprehensive grounding metadata in response."""
+    grounding_tool = types.Tool(google_search=types.GoogleSearch())
+
+    response = llm.chat_with_tools(
+        user_msg="What is the capital of Japan?",
+        tools=[grounding_tool],
+    )
+
+    assert response is not None
+    assert response.message.content is not None
+    assert len(response.message.content) > 0
+
+    raw_response = response.raw
+    assert raw_response is not None
+    assert isinstance(raw_response, dict)
+
+    # Grounding metadata must always be present
+    assert "grounding_metadata" in raw_response
+    assert raw_response["grounding_metadata"] is not None
+    grounding_metadata = raw_response["grounding_metadata"]
+    assert isinstance(grounding_metadata, dict)
+
+    # Web search queries must always be present
+    assert "web_search_queries" in grounding_metadata
+    assert grounding_metadata["web_search_queries"] is not None
+    assert isinstance(grounding_metadata["web_search_queries"], list)
+    assert len(grounding_metadata["web_search_queries"]) > 0
+
+    # Validate each web search query
+    for query in grounding_metadata["web_search_queries"]:
+        assert isinstance(query, str)
+        assert len(query.strip()) > 0
+
+    # Search entry point must always be present
+    assert "search_entry_point" in grounding_metadata
+    assert grounding_metadata["search_entry_point"] is not None
+    search_entry_point = grounding_metadata["search_entry_point"]
+    assert isinstance(search_entry_point, dict)
+
+    # Rendered content must always be present
+    assert "rendered_content" in search_entry_point
+    assert search_entry_point["rendered_content"] is not None
+    assert isinstance(search_entry_point["rendered_content"], str)
+    assert len(search_entry_point["rendered_content"].strip()) > 0
+
+    # Grounding supports must always be present
+    assert "grounding_supports" in grounding_metadata
+    assert grounding_metadata["grounding_supports"] is not None
+    assert isinstance(grounding_metadata["grounding_supports"], list)
+    assert len(grounding_metadata["grounding_supports"]) > 0
+
+    # Validate each grounding support entry has required structure
+    for support in grounding_metadata["grounding_supports"]:
+        assert isinstance(support, dict)
+
+        # Required fields that must be present
+        assert "segment" in support
+        assert "grounding_chunk_indices" in support
+        segment = support["segment"]
+        assert isinstance(segment, dict)
+
+        # Segment fields must be present
+        assert "start_index" in segment
+        assert "end_index" in segment
+        assert "part_index" in segment
+        assert "text" in segment
+
+    # Grounding chunks must always be present
+    assert "grounding_chunks" in grounding_metadata
+    assert grounding_metadata["grounding_chunks"] is not None
+    assert isinstance(grounding_metadata["grounding_chunks"], list)
+    assert len(grounding_metadata["grounding_chunks"]) > 0
+
+    # Validate each grounding chunk has required structure
+    for chunk in grounding_metadata["grounding_chunks"]:
+        assert isinstance(chunk, dict)
+
+        # Required fields that must be present
+        assert "web" in chunk
+        web_chunk = chunk["web"]
+        assert isinstance(web_chunk, dict)
+
+        # Web chunk fields must be present
+        assert "uri" in web_chunk
+        assert "title" in web_chunk
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_google_search_tool_config(llm: GoogleGenAI) -> None:
+    """Test Google Search with specific tool configuration."""
+    grounding_tool = types.Tool(google_search=types.GoogleSearch())
+
+    response = llm.chat_with_tools(
+        user_msg="Find recent news about renewable energy",
+        tools=[grounding_tool],
+        tool_required=True,  # Force tool usage
+    )
+
+    assert response is not None
+    assert response.message.content is not None
+    assert len(response.message.content) > 0
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_google_search_multi_turn_chat(llm: GoogleGenAI) -> None:
+    """Test multi-turn chat with Google Search grounding tool."""
+    grounding_tool = types.Tool(google_search=types.GoogleSearch())
+
+    # Start with initial chat history
+    chat_history = [
+        ChatMessage(
+            role=MessageRole.USER,
+            content="I'm interested in learning about renewable energy developments.",
+        )
+    ]
+
+    # First turn
+    response = llm.chat_with_tools(
+        tools=[grounding_tool],
+        chat_history=chat_history,
+    )
+
+    assert response is not None
+    assert response.message.content is not None
+    assert len(response.message.content) > 0
+
+    # Add the response to chat history
+    chat_history.append(
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content=response.message.content,
+        )
+    )
+
+    # Second turn
+    response = llm.chat_with_tools(
+        user_msg="What are the latest advancements in solar energy?",
+        tools=[grounding_tool],
+        chat_history=chat_history,
+    )
+
+    assert response is not None
+    assert response.message.content is not None
+    assert len(response.message.content) > 0
