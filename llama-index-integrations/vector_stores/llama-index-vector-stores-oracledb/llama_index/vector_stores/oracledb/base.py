@@ -36,6 +36,9 @@ from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryResult,
+    FilterOperator,
+    MetadataFilters,
+    MetadataFilter,
 )
 
 if TYPE_CHECKING:
@@ -484,26 +487,82 @@ class OraLlamaVS(BasePydanticVectorStore):
     def class_name(cls) -> str:
         return "OraLlamaVS"
 
+    def _convert_oper_to_sql(
+        self,
+        oper: FilterOperator,
+        metadata_column: str,
+        filter_key: str,
+        value_bind: str,
+    ) -> str:
+        if oper == FilterOperator.IS_EMPTY:
+            return f"NOT JSON_EXISTS({metadata_column}, '$.{filter_key}') OR JSON_EQUAL(JSON_QUERY({metadata_column}, '$.{filter_key}'), '[]') OR JSON_EQUAL(JSON_QUERY({metadata_column}, '$.{filter_key}'), 'null')"
+        elif oper == FilterOperator.CONTAINS:
+            return f"JSON_EXISTS({metadata_column}, '$.{filter_key}[*]?(@ == $val)' PASSING {value_bind} AS \"val\")"
+        else:
+            oper_map = {
+                FilterOperator.EQ: "{0} = {1}",  # default operator (string, int, float)
+                FilterOperator.GT: "{0} > {1}",  # greater than (int, float)
+                FilterOperator.LT: "{0} < {1}",  # less than (int, float)
+                FilterOperator.NE: "{0} != {1}",  # not equal to (string, int, float)
+                FilterOperator.GTE: "{0} >= {1}",  # greater than or equal to (int, float)
+                FilterOperator.LTE: "{0} <= {1}",  # less than or equal to (int, float)
+                FilterOperator.IN: "{0} IN ({1})",  # In array (string or number)
+                FilterOperator.NIN: "{0} NOT IN ({1})",  # Not in array (string or number)
+                FilterOperator.TEXT_MATCH: "{0} LIKE '%' || {1} || '%'",  # full text match (allows you to search for a specific substring, token or phrase within the text field)
+            }
+
+            if oper not in oper_map:
+                raise ValueError(
+                    f"FilterOperation {oper} cannot be used with this vector store."
+                )
+
+            operation_f = oper_map.get(oper)
+
+            return operation_f.format(
+                f"JSON_VALUE({metadata_column}, '$.{filter_key}')", value_bind
+            )
+
+    def _get_filter_string(
+        self, filter: MetadataFilters | MetadataFilter, bind_variables: list
+    ) -> str:
+        if isinstance(filter, MetadataFilter):
+            if not re.match(r"^[a-zA-Z0-9_]+$", filter.key):
+                raise ValueError(f"Invalid metadata key format: {filter.key}")
+
+            value_bind = f""
+            if filter.operator == FilterOperator.IS_EMPTY:
+                # No values needed
+                pass
+            elif isinstance(filter.value, List):
+                # Needs multiple binds for a list https://python-oracledb.readthedocs.io/en/latest/user_guide/bind.html#binding-multiple-values-to-a-sql-where-in-clause
+                value_binds = []
+                for val in filter.value:
+                    value_binds.append(f":value{len(bind_variables)}")
+                    bind_variables.append(val)
+                value_bind = ",".join(value_binds)
+            else:
+                value_bind = f":value{len(bind_variables)}"
+                bind_variables.append(filter.value)
+
+            return self._convert_oper_to_sql(
+                filter.operator, self.metadata_column, filter.key, value_bind
+            )
+
+        # Combine all sub filters
+        filter_strings = [
+            self._get_filter_string(f_, bind_variables) for f_ in filter.filters
+        ]
+
+        return f" {filter.condition.value.upper()} ".join(filter_strings)
+
     def _append_meta_filter_condition(
-        self, where_str: Optional[str], exact_match_filter: list
+        self, where_str: Optional[str], filters: Optional[MetadataFilters]
     ) -> Tuple[str, list]:
         bind_variables = []
-        filter_conditions = []
 
-        # Validate metadata keys (only allow alphanumeric and underscores)
-        for filter_item in exact_match_filter:
-            # Validate the key - only allow safe characters for JSON path
-            if not re.match(r"^[a-zA-Z0-9_]+$", filter_item.key):
-                raise ValueError(f"Invalid metadata key format: {filter_item.key}")
-            # Use JSON_VALUE with parameterized values
-            filter_conditions.append(
-                f"JSON_VALUE({self.metadata_column}, '$.{filter_item.key}') = :value{len(bind_variables)}"
-            )
-            bind_variables.append(filter_item.value)
+        filter_str = self._get_filter_string(filters, bind_variables)
 
         # Convert filter conditions to a single string
-        filter_str = " AND ".join(filter_conditions)
-
         if where_str is None:
             where_str = filter_str
         else:
