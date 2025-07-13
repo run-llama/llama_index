@@ -391,7 +391,7 @@ class GoogleGenAI(FunctionCallingLLM):
 
     def _prepare_chat_with_tools(
         self,
-        tools: Sequence["BaseTool"],
+        tools: Sequence[Union["BaseTool", types.Tool]],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
@@ -402,6 +402,34 @@ class GoogleGenAI(FunctionCallingLLM):
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Predict and call the tool."""
+        # Split tools into Google GenAI tools and function calling tools
+        genai_tools = [tool for tool in tools if isinstance(tool, types.Tool)]
+        func_call_tools = [tool for tool in tools if not isinstance(tool, types.Tool)]
+
+        # Check if Google GenAI tools and function calling tools are mixed
+        if genai_tools and func_call_tools:
+            raise ValueError(
+                "Mixing Google GenAI tools with function calling tools is not supported"
+            )
+
+        # Check if multiple Google GenAI tools are provided
+        if len(genai_tools) > 1:
+            raise ValueError("Providing multiple Google GenAI tools is not supported")
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+
+        messages = chat_history or []
+        if user_msg:
+            messages.append(user_msg)
+
+        if genai_tools:
+            return {
+                "messages": messages,
+                "tools": genai_tools,
+                **kwargs,
+            }
+
         if tool_choice is None:
             tool_choice = "any" if tool_required else "auto"
 
@@ -438,13 +466,6 @@ class GoogleGenAI(FunctionCallingLLM):
                     self._client, tool
                 )
                 tool_declarations.append(function_declaration)
-
-        if isinstance(user_msg, str):
-            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
-
-        messages = chat_history or []
-        if user_msg:
-            messages.append(user_msg)
 
         return {
             "messages": messages,
