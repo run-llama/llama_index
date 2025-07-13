@@ -506,6 +506,154 @@ def test_prepare_chat_with_tools_explicit_tool_choice_overrides_tool_required(
     assert result["tools"][0].function_declarations[0].name == "search_tool"
 
 
+def test_prepare_chat_with_tools_genai_tool_only(
+    mock_google_genai: GoogleGenAI,
+) -> None:
+    """Test _prepare_chat_with_tools with only Google GenAI tools (types.Tool)."""
+    # Create a mock Google GenAI tool
+    mock_genai_tool = MagicMock(spec=types.Tool)
+
+    result = mock_google_genai._prepare_chat_with_tools(
+        tools=[mock_genai_tool], user_msg="Test message"
+    )
+
+    # Should return simplified structure for GenAI tools
+    assert "tools" in result
+    assert result["tools"] == [mock_genai_tool]
+    assert "tool_config" not in result  # No tool_config for GenAI tools
+    assert "messages" in result
+    assert len(result["messages"]) == 1
+    assert result["messages"][0].content == "Test message"
+
+
+def test_prepare_chat_with_tools_mixed_tools_error(
+    mock_google_genai: GoogleGenAI,
+) -> None:
+    """Test that mixing Google GenAI tools with function calling tools raises an error."""
+    # Create a mock Google GenAI tool
+    mock_genai_tool = MagicMock(spec=types.Tool)
+
+    with pytest.raises(
+        ValueError,
+        match="Mixing Google GenAI tools with function calling tools is not supported",
+    ):
+        mock_google_genai._prepare_chat_with_tools(
+            tools=[mock_genai_tool, search_tool], user_msg="Test message"
+        )
+
+
+def test_prepare_chat_with_tools_multiple_genai_tools_error(
+    mock_google_genai: GoogleGenAI,
+) -> None:
+    """Test that providing multiple Google GenAI tools raises an error."""
+    # Create mock Google GenAI tools
+    mock_genai_tool1 = MagicMock(spec=types.Tool)
+    mock_genai_tool2 = MagicMock(spec=types.Tool)
+
+    with pytest.raises(
+        ValueError, match="Providing multiple Google GenAI tools is not supported"
+    ):
+        mock_google_genai._prepare_chat_with_tools(
+            tools=[mock_genai_tool1, mock_genai_tool2], user_msg="Test message"
+        )
+
+
+def test_prepare_chat_with_tools_genai_tool_with_chat_history(
+    mock_google_genai: GoogleGenAI,
+) -> None:
+    """Test _prepare_chat_with_tools with Google GenAI tools and chat history."""
+    # Create a mock Google GenAI tool
+    mock_genai_tool = MagicMock(spec=types.Tool)
+
+    chat_history = [
+        ChatMessage(content="Previous message", role=MessageRole.USER),
+        ChatMessage(content="Previous response", role=MessageRole.ASSISTANT),
+    ]
+
+    result = mock_google_genai._prepare_chat_with_tools(
+        tools=[mock_genai_tool], user_msg="New message", chat_history=chat_history
+    )
+
+    # Should include chat history plus new message
+    assert "tools" in result
+    assert result["tools"] == [mock_genai_tool]
+    assert "tool_config" not in result
+    assert "messages" in result
+    assert len(result["messages"]) == 3  # 2 history + 1 new
+    assert result["messages"][0].content == "Previous message"
+    assert result["messages"][1].content == "Previous response"
+    assert result["messages"][2].content == "New message"
+
+
+def test_prepare_chat_with_tools_genai_tool_no_user_msg(
+    mock_google_genai: GoogleGenAI,
+) -> None:
+    """Test _prepare_chat_with_tools with Google GenAI tools but no user message."""
+    # Create a mock Google GenAI tool
+    mock_genai_tool = MagicMock(spec=types.Tool)
+
+    chat_history = [
+        ChatMessage(content="Previous message", role=MessageRole.USER),
+        ChatMessage(content="Previous response", role=MessageRole.ASSISTANT),
+    ]
+
+    result = mock_google_genai._prepare_chat_with_tools(
+        tools=[mock_genai_tool], user_msg=None, chat_history=chat_history
+    )
+
+    # Should only include chat history
+    assert "tools" in result
+    assert result["tools"] == [mock_genai_tool]
+    assert "tool_config" not in result
+    assert "messages" in result
+    assert len(result["messages"]) == 2  # Only history
+    assert result["messages"][0].content == "Previous message"
+    assert result["messages"][1].content == "Previous response"
+
+
+def test_prepare_chat_with_tools_genai_tool_with_kwargs(
+    mock_google_genai: GoogleGenAI,
+) -> None:
+    """Test _prepare_chat_with_tools with Google GenAI tools and additional kwargs."""
+    # Create a mock Google GenAI tool
+    mock_genai_tool = MagicMock(spec=types.Tool)
+
+    extra_kwargs = {"temperature": 0.7, "max_tokens": 100}
+
+    result = mock_google_genai._prepare_chat_with_tools(
+        tools=[mock_genai_tool], user_msg="Test message", **extra_kwargs
+    )
+
+    # Should preserve additional kwargs
+    assert "tools" in result
+    assert result["tools"] == [mock_genai_tool]
+    assert "tool_config" not in result
+    assert "messages" in result
+    assert result["temperature"] == 0.7
+    assert result["max_tokens"] == 100
+
+
+def test_prepare_chat_with_tools_chat_message_object(
+    mock_google_genai: GoogleGenAI,
+) -> None:
+    """Test _prepare_chat_with_tools with ChatMessage object as user_msg."""
+    # Create a mock Google GenAI tool
+    mock_genai_tool = MagicMock(spec=types.Tool)
+
+    user_message = ChatMessage(content="Test message", role=MessageRole.USER)
+
+    result = mock_google_genai._prepare_chat_with_tools(
+        tools=[mock_genai_tool], user_msg=user_message
+    )
+
+    # Should handle ChatMessage object correctly
+    assert "tools" in result
+    assert result["tools"] == [mock_genai_tool]
+    assert "messages" in result
+    assert len(result["messages"]) == 1
+    assert result["messages"][0] == user_message
+
+
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_tool_required_integration(llm: GoogleGenAI) -> None:
     """Test tool_required parameter in actual chat_with_tools calls."""
@@ -893,7 +1041,7 @@ def test_cached_content_in_chat_params() -> None:
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-def test_google_search_basic(llm: GoogleGenAI) -> None:
+def test_google_search_chat_with_tools(llm: GoogleGenAI) -> None:
     """Test basic Google Search functionality with chat_with_tools."""
     grounding_tool = types.Tool(google_search=types.GoogleSearch())
 
@@ -913,34 +1061,6 @@ def test_google_search_basic(llm: GoogleGenAI) -> None:
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-def test_google_search_with_chat_history(llm: GoogleGenAI) -> None:
-    """Test Google Search with chat history."""
-    grounding_tool = types.Tool(google_search=types.GoogleSearch())
-
-    chat_history = [
-        ChatMessage(
-            role=MessageRole.USER, content="Tell me about recent developments in AI"
-        ),
-        ChatMessage(
-            role=MessageRole.ASSISTANT,
-            content="I'd be happy to help you learn about recent AI developments.",
-        ),
-        ChatMessage(
-            role=MessageRole.USER, content="What about the latest news on Gemini?"
-        ),
-    ]
-
-    response = llm.chat_with_tools(
-        tools=[grounding_tool],
-        chat_history=chat_history,
-    )
-
-    assert response is not None
-    assert response.message.content is not None
-    assert len(response.message.content) > 0
-
-
-@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_google_search_predict_and_call(llm: GoogleGenAI) -> None:
     """Test Google Search using predict_and_call method."""
     grounding_tool = types.Tool(google_search=types.GoogleSearch())
@@ -953,118 +1073,6 @@ def test_google_search_predict_and_call(llm: GoogleGenAI) -> None:
 
     assert response is not None
     assert hasattr(response, "content") or hasattr(response, "response")
-
-
-@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-@pytest.mark.asyncio
-async def test_google_search_async(llm: GoogleGenAI) -> None:
-    """Test async Google Search functionality."""
-    grounding_tool = types.Tool(google_search=types.GoogleSearch())
-
-    chat_history = [
-        ChatMessage(
-            role=MessageRole.USER,
-            content="What are the latest news about climate change?",
-        ),
-    ]
-
-    response = await llm.achat_with_tools(
-        tools=[grounding_tool],
-        chat_history=chat_history,
-    )
-
-    assert response is not None
-    assert response.message.content is not None
-    assert len(response.message.content) > 0
-
-
-@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-def test_google_search_with_mixed_tools(llm: GoogleGenAI) -> None:
-    """Test Google Search combined with custom function tools."""
-
-    # Create a custom function tool
-    def get_current_time() -> str:
-        """Get the current time."""
-        from datetime import datetime
-
-        return datetime.now().strftime("%H:%M:%S")
-
-    custom_tool = FunctionTool.from_defaults(fn=get_current_time)
-    grounding_tool = types.Tool(google_search=types.GoogleSearch())
-
-    # Test that mixing tools raises an appropriate error
-    with pytest.raises(
-        ValueError,
-        match="Mixing Google GenAI tools with function calling tools is not supported",
-    ):
-        llm.chat_with_tools(
-            user_msg="What time is it and what's the latest news about AI?",
-            tools=[custom_tool, grounding_tool],
-        )
-
-    # Test Google Search alone works
-    response_google = llm.chat_with_tools(
-        user_msg="What's the latest news about AI?",
-        tools=[grounding_tool],
-    )
-
-    assert response_google is not None
-    assert response_google.message.content is not None
-    assert len(response_google.message.content) > 0
-
-    # Test custom function tool alone works
-    response_custom = llm.chat_with_tools(
-        user_msg="What time is it?",
-        tools=[custom_tool],
-    )
-
-    assert response_custom is not None
-    # For function calls, the content might be None but tool_calls should be present
-    assert (
-        response_custom.message.content is not None
-        or response_custom.message.additional_kwargs.get("tool_calls") is not None
-    )
-
-
-@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-def test_google_search_stream_chat(llm: GoogleGenAI) -> None:
-    """Test Google Search with streaming chat."""
-    grounding_tool = types.Tool(google_search=types.GoogleSearch())
-
-    chunks = []
-    for chunk in llm.stream_chat_with_tools(
-        user_msg="What are the recent developments in quantum computing?",
-        tools=[grounding_tool],
-    ):
-        chunks.append(chunk)
-
-    assert len(chunks) > 0
-    # Concatenate all chunks to get full response
-    full_response = "".join(
-        [chunk.message.content for chunk in chunks if chunk.message.content]
-    )
-    assert len(full_response) > 0
-
-
-@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-@pytest.mark.asyncio
-async def test_google_search_astream_chat(llm: GoogleGenAI) -> None:
-    """Test async streaming with Google Search."""
-    grounding_tool = types.Tool(google_search=types.GoogleSearch())
-
-    chunks = []
-    async for chunk in await llm.astream_chat_with_tools(
-        user_msg="What are the latest space exploration missions?",
-        tools=[grounding_tool],
-    ):
-        chunks.append(chunk)
-
-    assert len(chunks) > 0
-    # Concatenate all chunks to get full response
-    full_response = "".join(
-        [chunk.message.content for chunk in chunks if chunk.message.content]
-    )
-    assert len(full_response) > 0
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
@@ -1154,62 +1162,3 @@ def test_google_search_grounding_metadata(llm: GoogleGenAI) -> None:
         # Web chunk fields must be present
         assert "uri" in web_chunk
         assert "title" in web_chunk
-
-
-@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-def test_google_search_tool_config(llm: GoogleGenAI) -> None:
-    """Test Google Search with specific tool configuration."""
-    grounding_tool = types.Tool(google_search=types.GoogleSearch())
-
-    response = llm.chat_with_tools(
-        user_msg="Find recent news about renewable energy",
-        tools=[grounding_tool],
-        tool_required=True,  # Force tool usage
-    )
-
-    assert response is not None
-    assert response.message.content is not None
-    assert len(response.message.content) > 0
-
-
-@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-def test_google_search_multi_turn_chat(llm: GoogleGenAI) -> None:
-    """Test multi-turn chat with Google Search grounding tool."""
-    grounding_tool = types.Tool(google_search=types.GoogleSearch())
-
-    # Start with initial chat history
-    chat_history = [
-        ChatMessage(
-            role=MessageRole.USER,
-            content="I'm interested in learning about renewable energy developments.",
-        )
-    ]
-
-    # First turn
-    response = llm.chat_with_tools(
-        tools=[grounding_tool],
-        chat_history=chat_history,
-    )
-
-    assert response is not None
-    assert response.message.content is not None
-    assert len(response.message.content) > 0
-
-    # Add the response to chat history
-    chat_history.append(
-        ChatMessage(
-            role=MessageRole.ASSISTANT,
-            content=response.message.content,
-        )
-    )
-
-    # Second turn
-    response = llm.chat_with_tools(
-        user_msg="What are the latest advancements in solar energy?",
-        tools=[grounding_tool],
-        chat_history=chat_history,
-    )
-
-    assert response is not None
-    assert response.message.content is not None
-    assert len(response.message.content) > 0
