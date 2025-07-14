@@ -420,21 +420,12 @@ class BaseWorkflowAgent(
             )
 
         if not ev.tool_calls:
-            messages = await memory.aget()
             output = await self.finalize(ctx, ev, memory)
+            messages = await memory.aget()
             cur_tool_calls: List[ToolCallResult] = await ctx.store.get(
                 "current_tool_calls", default=[]
             )
             output.tool_calls.extend(cur_tool_calls)  # type: ignore
-
-            # with the following code we try to address errors while generating the
-            # structured response. These errors often stem from the fact that the memory
-            # does not contain a 'final' answer by the assistant, which would be key
-            # to format the output in the structured way.
-            # In this sense, we first try generating the output directly from the
-            # in-memory messages. If that does not work and the in-memory messages
-            # are missing the final answer from the agent, we then proceed to add
-            # that using the output object and re-try generating the structured response.
 
             if self.structured_output_fn is not None:
                 try:
@@ -447,61 +438,18 @@ class BaseWorkflowAgent(
                             Dict[str, Any], self.structured_output_fn(messages)
                         )
                 except Exception as e:
-                    error = e
-                    if (
-                        isinstance(output.response.content, str)
-                        and messages[-1].role.value == "user"
-                    ):
-                        messages.append(
-                            output.response,
-                        )
-                        try:
-                            if inspect.iscoroutinefunction(self.structured_output_fn):
-                                output.structured_response = (
-                                    await self.structured_output_fn(messages)
-                                )
-                            else:
-                                output.structured_response = cast(
-                                    Dict[str, Any], self.structured_output_fn(messages)
-                                )
-                        except Exception as e:
-                            warnings.warn(
-                                f"There was a problem with the generation of the structured output: {e}"
-                            )
-                    else:
-                        warnings.warn(
-                            f"There was a problem with the generation of the structured output: {error}"
-                        )
+                    warnings.warn(
+                        f"There was a problem with the generation of the structured output: {e}"
+                    )
             if self.output_cls is not None:
                 try:
                     output.structured_response = await generate_structured_response(
                         messages=messages, llm=self.llm, output_cls=self.output_cls
                     )
                 except Exception as e:
-                    error = e
-                    if (
-                        isinstance(output.response.content, str)
-                        and messages[-1].role.value == "user"
-                    ):
-                        messages.append(
-                            output.response,
-                        )
-                        try:
-                            output.structured_response = (
-                                await generate_structured_response(
-                                    messages=messages,
-                                    llm=self.llm,
-                                    output_cls=self.output_cls,
-                                )
-                            )
-                        except Exception as e:
-                            warnings.warn(
-                                f"There was a problem with the generation of the structured output: {e}"
-                            )
-                    else:
-                        warnings.warn(
-                            f"There was a problem with the generation of the structured output: {error}"
-                        )
+                    warnings.warn(
+                        f"There was a problem with the generation of the structured output: {e}"
+                    )
 
             await ctx.store.set("current_tool_calls", [])
 

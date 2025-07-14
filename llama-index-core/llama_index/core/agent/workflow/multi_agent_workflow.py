@@ -26,7 +26,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentOutput,
     AgentWorkflowStartEvent,
 )
-from llama_index.core.llms import ChatMessage, TextBlock, MessageRole
+from llama_index.core.llms import ChatMessage, TextBlock
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
@@ -449,18 +449,9 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         if not ev.tool_calls:
             agent = self.agents[ev.current_agent_name]
             memory = await ctx.store.get("memory")
-            messages = await memory.aget()
             output = await agent.finalize(ctx, ev, memory)
+            messages = await memory.aget()
 
-            if (
-                isinstance(output.response.content, str)
-                and messages[-1].role.value == "user"
-            ):
-                messages.append(
-                    ChatMessage(
-                        role=MessageRole.ASSISTANT, content=output.response.content
-                    )
-                )
             cur_tool_calls: List[ToolCallResult] = await ctx.store.get(
                 "current_tool_calls", default=[]
             )
@@ -478,61 +469,18 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                             Dict[str, Any], self.structured_output_fn(messages)
                         )
                 except Exception as e:
-                    error = e
-                    if (
-                        isinstance(output.response.content, str)
-                        and messages[-1].role.value == "user"
-                    ):
-                        messages.append(
-                            output.response,
-                        )
-                        try:
-                            if inspect.iscoroutinefunction(self.structured_output_fn):
-                                output.structured_response = (
-                                    await self.structured_output_fn(messages)
-                                )
-                            else:
-                                output.structured_response = cast(
-                                    Dict[str, Any], self.structured_output_fn(messages)
-                                )
-                        except Exception as e:
-                            warnings.warn(
-                                f"There was a problem with the generation of the structured output: {e}"
-                            )
-                    else:
-                        warnings.warn(
-                            f"There was a problem with the generation of the structured output: {error}"
-                        )
+                    warnings.warn(
+                        f"There was a problem with the generation of the structured output: {e}"
+                    )
             if self.output_cls is not None:
                 try:
                     output.structured_response = await generate_structured_response(
                         messages=messages, llm=agent.llm, output_cls=self.output_cls
                     )
                 except Exception as e:
-                    error = e
-                    if (
-                        isinstance(output.response.content, str)
-                        and messages[-1].role.value == "user"
-                    ):
-                        messages.append(
-                            output.response,
-                        )
-                        try:
-                            output.structured_response = (
-                                await generate_structured_response(
-                                    messages=messages,
-                                    llm=agent.llm,
-                                    output_cls=self.output_cls,
-                                )
-                            )
-                        except Exception as e:
-                            warnings.warn(
-                                f"There was a problem with the generation of the structured output: {e}"
-                            )
-                    else:
-                        warnings.warn(
-                            f"There was a problem with the generation of the structured output: {error}"
-                        )
+                    warnings.warn(
+                        f"There was a problem with the generation of the structured output: {e}"
+                    )
 
             return StopEvent(result=output)
 
