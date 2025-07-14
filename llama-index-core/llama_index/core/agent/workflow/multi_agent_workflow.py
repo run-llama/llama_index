@@ -27,7 +27,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentOutput,
     AgentWorkflowStartEvent,
 )
-from llama_index.core.llms import ChatMessage, TextBlock
+from llama_index.core.llms import ChatMessage, TextBlock, MessageRole
 from llama_index.core.llms.llm import LLM
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
@@ -453,6 +453,16 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             messages = await memory.aget()
             output = await agent.finalize(ctx, ev, memory)
 
+            if (
+                isinstance(output.response.content, str)
+                and messages[-1].role.value == "user"
+            ):
+                messages.append(
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT, content=output.response.content
+                    )
+                )
+            print(messages)
             cur_tool_calls: List[ToolCallResult] = await ctx.store.get(
                 "current_tool_calls", default=[]
             )
@@ -476,7 +486,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                     xml_message = messages_to_xml_format(messages)
                     structured_response = await agent.llm.as_structured_llm(
                         self.output_cls
-                    ).achat(messages=[xml_message], tool_required=True)
+                    ).achat(messages=[xml_message])
                     output.structured_response = json.loads(
                         structured_response.message.content
                     )

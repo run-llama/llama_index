@@ -22,7 +22,7 @@ from llama_index.core.bridge.pydantic import (
 )
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.agent.utils import messages_to_xml_format
-from llama_index.core.llms import ChatMessage, LLM, TextBlock
+from llama_index.core.llms import ChatMessage, LLM, TextBlock, MessageRole
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptMixin, PromptMixinType, PromptDictType
@@ -406,7 +406,7 @@ class BaseWorkflowAgent(
 
         memory: BaseMemory = await ctx.store.get("memory")
 
-        if ev.retry_messages:
+        if len(ev.retry_messages) > 0:
             # Retry with the given messages to let the LLM fix potential errors
             history = await memory.aget()
             user_msg_str = await ctx.store.get("user_msg_str")
@@ -421,12 +421,20 @@ class BaseWorkflowAgent(
             )
 
         if not ev.tool_calls:
-            memory = await ctx.store.get("memory")
             messages = await memory.aget()
             output = await self.finalize(ctx, ev, memory)
             cur_tool_calls: List[ToolCallResult] = await ctx.store.get(
                 "current_tool_calls", default=[]
             )
+            if (
+                isinstance(output.response.content, str)
+                and messages[-1].role.value == "user"
+            ):
+                messages.append(
+                    ChatMessage(
+                        role=MessageRole.ASSISTANT, content=output.response.content
+                    )
+                )
             output.tool_calls.extend(cur_tool_calls)  # type: ignore
             if self.structured_output_fn is not None:
                 try:
@@ -444,8 +452,8 @@ class BaseWorkflowAgent(
                 try:
                     xml_message = messages_to_xml_format(messages)
                     structured_response = await self.llm.as_structured_llm(
-                        self.output_cls
-                    ).achat(messages=[xml_message], tool_required=True)
+                        self.output_cls,
+                    ).achat(messages=[xml_message])
                     output.structured_response = json.loads(
                         structured_response.message.content
                     )
