@@ -1,11 +1,10 @@
 from abc import ABCMeta
-import json
 import inspect
 import warnings
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Type, cast
 from pydantic import BaseModel
 
-from llama_index.core.agent.utils import messages_to_xml_format
+from llama_index.core.agent.utils import generate_structured_response
 from llama_index.core.agent.workflow.base_agent import (
     BaseWorkflowAgent,
     DEFAULT_AGENT_NAME,
@@ -478,22 +477,59 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                     else:
                         output.structured_response = self.structured_output_fn(messages)
                 except Exception as e:
-                    warnings.warn(
-                        message=f"An error occurred while producing the structured output from your agent: {e}."
-                    )
+                    if (
+                        isinstance(output.response.content, str)
+                        and messages[-1].role.value == "user"
+                    ):
+                        messages.append(
+                            output.response,
+                        )
+                        try:
+                            if inspect.iscoroutinefunction(self.structured_output_fn):
+                                output.structured_response = (
+                                    await self.structured_output_fn(messages)
+                                )
+                            else:
+                                output.structured_response = self.structured_output_fn(
+                                    messages
+                                )
+                        except Exception as e:
+                            warnings.warn(
+                                f"There was a problem with the generation of the structured output: {e}"
+                            )
+                    else:
+                        warnings.warn(
+                            f"There was a problem with the generation of the structured output: {e}"
+                        )
             if self.output_cls is not None:
                 try:
-                    xml_message = messages_to_xml_format(messages)
-                    structured_response = await agent.llm.as_structured_llm(
-                        self.output_cls
-                    ).achat(messages=[xml_message])
-                    output.structured_response = json.loads(
-                        structured_response.message.content
+                    output.structured_response = await generate_structured_response(
+                        messages=messages, llm=agent.llm, output_cls=self.output_cls
                     )
                 except Exception as e:
-                    warnings.warn(
-                        message=f"An error occurred while producing the structured output from your agent: {e}."
-                    )
+                    if (
+                        isinstance(output.response.content, str)
+                        and messages[-1].role.value == "user"
+                    ):
+                        messages.append(
+                            output.response,
+                        )
+                        try:
+                            output.structured_response = (
+                                await generate_structured_response(
+                                    messages=messages,
+                                    llm=agent.llm,
+                                    output_cls=self.output_cls,
+                                )
+                            )
+                        except Exception as e:
+                            warnings.warn(
+                                f"There was a problem with the generation of the structured output: {e}"
+                            )
+                    else:
+                        warnings.warn(
+                            f"There was a problem with the generation of the structured output: {e}"
+                        )
 
             return StopEvent(result=output)
 

@@ -1,5 +1,4 @@
 from abc import abstractmethod
-import json
 import warnings
 import inspect
 from typing import Any, Callable, Dict, List, Sequence, Optional, Union, Type, cast
@@ -21,8 +20,8 @@ from llama_index.core.bridge.pydantic import (
     field_validator,
 )
 from llama_index.core.prompts import PromptTemplate
-from llama_index.core.agent.utils import messages_to_xml_format
-from llama_index.core.llms import ChatMessage, LLM, TextBlock, MessageRole
+from llama_index.core.agent.utils import generate_structured_response
+from llama_index.core.llms import ChatMessage, LLM, TextBlock
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
 from llama_index.core.prompts.mixin import PromptMixin, PromptMixinType, PromptDictType
@@ -406,7 +405,7 @@ class BaseWorkflowAgent(
 
         memory: BaseMemory = await ctx.store.get("memory")
 
-        if len(ev.retry_messages) > 0:
+        if ev.retry_messages:
             # Retry with the given messages to let the LLM fix potential errors
             history = await memory.aget()
             user_msg_str = await ctx.store.get("user_msg_str")
@@ -426,16 +425,17 @@ class BaseWorkflowAgent(
             cur_tool_calls: List[ToolCallResult] = await ctx.store.get(
                 "current_tool_calls", default=[]
             )
-            if (
-                isinstance(output.response.content, str)
-                and messages[-1].role.value == "user"
-            ):
-                messages.append(
-                    ChatMessage(
-                        role=MessageRole.ASSISTANT, content=output.response.content
-                    )
-                )
             output.tool_calls.extend(cur_tool_calls)  # type: ignore
+
+            # with the following code we try to address errors while generating the
+            # structured response. These errors often stem from the fact that the memory
+            # does not contain a 'final' answer by the assistant, which would be key
+            # to format the output in the structured way.
+            # In this sense, we first try generating the output directly from the
+            # in-memory messages. If that does not work and the in-memory messages
+            # are missing the final answer from the agent, we then proceed to add
+            # that using the output object and re-try generating the structured response.
+
             if self.structured_output_fn is not None:
                 try:
                     if inspect.iscoroutinefunction(self.structured_output_fn):
@@ -445,22 +445,59 @@ class BaseWorkflowAgent(
                     else:
                         output.structured_response = self.structured_output_fn(messages)
                 except Exception as e:
-                    warnings.warn(
-                        message=f"An error occurred while producing the structured output from your agent: {e}."
-                    )
+                    if (
+                        isinstance(output.response.content, str)
+                        and messages[-1].role.value == "user"
+                    ):
+                        messages.append(
+                            output.response,
+                        )
+                        try:
+                            if inspect.iscoroutinefunction(self.structured_output_fn):
+                                output.structured_response = (
+                                    await self.structured_output_fn(messages)
+                                )
+                            else:
+                                output.structured_response = self.structured_output_fn(
+                                    messages
+                                )
+                        except Exception as e:
+                            warnings.warn(
+                                f"There was a problem with the generation of the structured output: {e}"
+                            )
+                    else:
+                        warnings.warn(
+                            f"There was a problem with the generation of the structured output: {e}"
+                        )
             if self.output_cls is not None:
                 try:
-                    xml_message = messages_to_xml_format(messages)
-                    structured_response = await self.llm.as_structured_llm(
-                        self.output_cls,
-                    ).achat(messages=[xml_message])
-                    output.structured_response = json.loads(
-                        structured_response.message.content
+                    output.structured_response = await generate_structured_response(
+                        messages=messages, llm=self.llm, output_cls=self.output_cls
                     )
                 except Exception as e:
-                    warnings.warn(
-                        message=f"An error occurred while producing the structured output from your agent: {e}."
-                    )
+                    if (
+                        isinstance(output.response.content, str)
+                        and messages[-1].role.value == "user"
+                    ):
+                        messages.append(
+                            output.response,
+                        )
+                        try:
+                            output.structured_response = (
+                                await generate_structured_response(
+                                    messages=messages,
+                                    llm=self.llm,
+                                    output_cls=self.output_cls,
+                                )
+                            )
+                        except Exception as e:
+                            warnings.warn(
+                                f"There was a problem with the generation of the structured output: {e}"
+                            )
+                    else:
+                        warnings.warn(
+                            f"There was a problem with the generation of the structured output: {e}"
+                        )
 
             await ctx.store.set("current_tool_calls", [])
 
