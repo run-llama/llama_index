@@ -443,8 +443,11 @@ class BaseWorkflowAgent(
                             messages
                         )
                     else:
-                        output.structured_response = self.structured_output_fn(messages)
+                        output.structured_response = cast(
+                            Dict[str, Any], self.structured_output_fn(messages)
+                        )
                 except Exception as e:
+                    error = e
                     if (
                         isinstance(output.response.content, str)
                         and messages[-1].role.value == "user"
@@ -458,8 +461,8 @@ class BaseWorkflowAgent(
                                     await self.structured_output_fn(messages)
                                 )
                             else:
-                                output.structured_response = self.structured_output_fn(
-                                    messages
+                                output.structured_response = cast(
+                                    Dict[str, Any], self.structured_output_fn(messages)
                                 )
                         except Exception as e:
                             warnings.warn(
@@ -467,7 +470,7 @@ class BaseWorkflowAgent(
                             )
                     else:
                         warnings.warn(
-                            f"There was a problem with the generation of the structured output: {e}"
+                            f"There was a problem with the generation of the structured output: {error}"
                         )
             if self.output_cls is not None:
                 try:
@@ -475,6 +478,7 @@ class BaseWorkflowAgent(
                         messages=messages, llm=self.llm, output_cls=self.output_cls
                     )
                 except Exception as e:
+                    error = e
                     if (
                         isinstance(output.response.content, str)
                         and messages[-1].role.value == "user"
@@ -496,7 +500,7 @@ class BaseWorkflowAgent(
                             )
                     else:
                         warnings.warn(
-                            f"There was a problem with the generation of the structured output: {e}"
+                            f"There was a problem with the generation of the structured output: {error}"
                         )
 
             await ctx.store.set("current_tool_calls", [])

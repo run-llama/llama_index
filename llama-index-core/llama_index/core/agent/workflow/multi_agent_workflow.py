@@ -461,7 +461,6 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                         role=MessageRole.ASSISTANT, content=output.response.content
                     )
                 )
-            print(messages)
             cur_tool_calls: List[ToolCallResult] = await ctx.store.get(
                 "current_tool_calls", default=[]
             )
@@ -475,8 +474,11 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                             messages
                         )
                     else:
-                        output.structured_response = self.structured_output_fn(messages)
+                        output.structured_response = cast(
+                            Dict[str, Any], self.structured_output_fn(messages)
+                        )
                 except Exception as e:
+                    error = e
                     if (
                         isinstance(output.response.content, str)
                         and messages[-1].role.value == "user"
@@ -490,8 +492,8 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                                     await self.structured_output_fn(messages)
                                 )
                             else:
-                                output.structured_response = self.structured_output_fn(
-                                    messages
+                                output.structured_response = cast(
+                                    Dict[str, Any], self.structured_output_fn(messages)
                                 )
                         except Exception as e:
                             warnings.warn(
@@ -499,7 +501,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                             )
                     else:
                         warnings.warn(
-                            f"There was a problem with the generation of the structured output: {e}"
+                            f"There was a problem with the generation of the structured output: {error}"
                         )
             if self.output_cls is not None:
                 try:
@@ -507,6 +509,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                         messages=messages, llm=agent.llm, output_cls=self.output_cls
                     )
                 except Exception as e:
+                    error = e
                     if (
                         isinstance(output.response.content, str)
                         and messages[-1].role.value == "user"
@@ -528,7 +531,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                             )
                     else:
                         warnings.warn(
-                            f"There was a problem with the generation of the structured output: {e}"
+                            f"There was a problem with the generation of the structured output: {error}"
                         )
 
             return StopEvent(result=output)
