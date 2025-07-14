@@ -1,13 +1,23 @@
 import logging
-from typing import Any, Optional
+import warnings
+from typing import Any, Optional, Dict, Type
 
-from llama_index.core.bridge.pydantic import Field, model_serializer, ValidationError
+from llama_index.core.bridge.pydantic import (
+    Field,
+    model_serializer,
+    ValidationError,
+    BaseModel,
+)
 from llama_index.core.tools import ToolSelection, ToolOutput
 from llama_index.core.llms import ChatMessage
 from llama_index.core.workflow import Event, StartEvent
 
 
 logger = logging.getLogger(__name__)
+
+
+class PydanticConversionWarning(Warning):
+    """Warning raised when the conversion from a dictionary to a Pydantic model fails"""
 
 
 class AgentInput(Event):
@@ -30,7 +40,7 @@ class AgentStream(Event):
     delta: str
     response: str
     current_agent_name: str
-    tool_calls: list[ToolSelection]
+    tool_calls: list[ToolSelection] = Field(default_factory=list)
     raw: Optional[Any] = Field(default=None, exclude=True)
 
 
@@ -38,9 +48,23 @@ class AgentOutput(Event):
     """LLM output."""
 
     response: ChatMessage
-    tool_calls: list[ToolSelection]
-    raw: Optional[Any] = Field(default=None, exclude=True)
+    structured_response: Optional[Dict[str, Any]] = Field(default=None)
     current_agent_name: str
+    raw: Optional[Any] = Field(default=None, exclude=True)
+    tool_calls: list[ToolSelection] = Field(default_factory=list)
+    retry_messages: list[ChatMessage] = Field(default_factory=list)
+
+    def get_pydantic_model(self, model: Type[BaseModel]) -> Optional[BaseModel]:
+        if self.structured_response is None:
+            return self.structured_response
+        try:
+            return model.model_validate(self.structured_response)
+        except ValidationError as e:
+            warnings.warn(
+                f"Conversion of structured response to Pydantic model failed because:\n\n{e.title}\n\nPlease check the model you provided.",
+                PydanticConversionWarning,
+            )
+            return None
 
     def __str__(self) -> str:
         return self.response.content or ""

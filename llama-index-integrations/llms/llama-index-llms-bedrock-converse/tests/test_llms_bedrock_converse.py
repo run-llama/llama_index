@@ -93,7 +93,20 @@ class AsyncMockClient:
     async def converse_stream(self, *args, **kwargs):
         async def stream_generator():
             for element in EXP_STREAM_RESPONSE:
-                yield {"contentBlockDelta": {"delta": {"text": element}}}
+                yield {
+                    "contentBlockDelta": {
+                        "delta": {"text": element},
+                        "contentBlockIndex": 0,
+                    }
+                }
+            # Add messageStop and metadata events for token usage testing
+            yield {"messageStop": {"stopReason": "end_turn"}}
+            yield {
+                "metadata": {
+                    "usage": {"inputTokens": 15, "outputTokens": 26, "totalTokens": 41},
+                    "metrics": {"latencyMs": 886},
+                }
+            }
 
         return {"stream": stream_generator()}
 
@@ -107,8 +120,21 @@ class MockClient:
 
     def converse_stream(self, *args, **kwargs):
         def stream_generator():
-            for element in EXP_STREAM_RESPONSE:
-                yield {"contentBlockDelta": {"delta": {"text": element}}}
+            for i, element in enumerate(EXP_STREAM_RESPONSE):
+                yield {
+                    "contentBlockDelta": {
+                        "delta": {"text": element},
+                        "contentBlockIndex": 0,
+                    }
+                }
+            # Add messageStop and metadata events for token usage testing
+            yield {"messageStop": {"stopReason": "end_turn"}}
+            yield {
+                "metadata": {
+                    "usage": {"inputTokens": 15, "outputTokens": 26, "totalTokens": 41},
+                    "metrics": {"latencyMs": 886},
+                }
+            }
 
         return {"stream": stream_generator()}
 
@@ -202,9 +228,30 @@ def test_complete(bedrock_converse):
 def test_stream_chat(bedrock_converse):
     response_stream = bedrock_converse.stream_chat(messages)
 
-    for response in response_stream:
+    responses = list(response_stream)
+
+    # Check that we have content responses plus final metadata response
+    assert len(responses) == len(EXP_STREAM_RESPONSE) + 1  # +1 for metadata response
+
+    # Check content responses
+    for i, response in enumerate(responses[:-1]):  # All except last
         assert response.message.role == MessageRole.ASSISTANT
         assert response.delta in EXP_STREAM_RESPONSE
+
+    # Check final metadata response with token usage
+    final_response = responses[-1]
+    assert final_response.message.role == MessageRole.ASSISTANT
+    assert final_response.delta == ""  # No delta for metadata response
+
+    # Verify raw contains complete metadata
+    assert "metadata" in final_response.raw
+    assert "usage" in final_response.raw["metadata"]
+
+    # Verify token counts in additional_kwargs
+    assert "prompt_tokens" in final_response.additional_kwargs
+    assert final_response.additional_kwargs["prompt_tokens"] == 15
+    assert final_response.additional_kwargs["completion_tokens"] == 26
+    assert final_response.additional_kwargs["total_tokens"] == 41
 
 
 @pytest.mark.asyncio
@@ -222,8 +269,30 @@ async def test_astream_chat(bedrock_converse):
 
     responses = []
     async for response in response_stream:
+        responses.append(response)
+
+    # Check that we have content responses plus final metadata response
+    assert len(responses) == len(EXP_STREAM_RESPONSE) + 1  # +1 for metadata response
+
+    # Check content responses
+    for i, response in enumerate(responses[:-1]):  # All except last
         assert response.message.role == MessageRole.ASSISTANT
         assert response.delta in EXP_STREAM_RESPONSE
+
+    # Check final metadata response with token usage
+    final_response = responses[-1]
+    assert final_response.message.role == MessageRole.ASSISTANT
+    assert final_response.delta == ""  # No delta for metadata response
+
+    # Verify raw contains complete metadata
+    assert "metadata" in final_response.raw
+    assert "usage" in final_response.raw["metadata"]
+
+    # Verify token counts in additional_kwargs
+    assert "prompt_tokens" in final_response.additional_kwargs
+    assert final_response.additional_kwargs["prompt_tokens"] == 15
+    assert final_response.additional_kwargs["completion_tokens"] == 26
+    assert final_response.additional_kwargs["total_tokens"] == 41
 
 
 @pytest.mark.asyncio
@@ -245,8 +314,12 @@ async def test_astream_complete(bedrock_converse):
     async for response in response_stream:
         responses.append(response)
 
-    assert len(responses) == len(EXP_STREAM_RESPONSE)
-    assert "".join([r.delta for r in responses]) == "".join(EXP_STREAM_RESPONSE)
+    # Check that we have content responses plus final metadata response
+    assert len(responses) == len(EXP_STREAM_RESPONSE) + 1  # +1 for metadata response
+
+    # Check that content responses match expected
+    content_responses = responses[:-1]  # All except last (metadata) response
+    assert "".join([r.delta for r in content_responses]) == "".join(EXP_STREAM_RESPONSE)
 
 
 @needs_aws_creds
