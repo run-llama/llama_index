@@ -148,7 +148,8 @@ def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
                                                                     "text": response_text,
                                                                 }
                                                             )
-                                                        ]
+                                                        ],
+                                                        "tool_calls": [],
                                                     }
                                                 ),
                                                 "finish_reason": "stop",
@@ -213,8 +214,10 @@ def test_llm_chat(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
 @pytest.mark.parametrize(
     "test_model_id", ["cohere.command-r-16k", "cohere.command-r-plus"]
 )
-def test_llm_chat_with_tools(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
-    """Test chat_with_tools call to OCI Generative AI LLM service with tool calling."""
+def test_llm_chat_with_tools_Cohere(
+    monkeypatch: MonkeyPatch, test_model_id: str
+) -> None:
+    """Test chat_with_tools call to OCI Generative AI LLM Cohere service with tool calling."""
     oci_gen_ai_client = MagicMock()
     llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
 
@@ -269,9 +272,6 @@ def test_llm_chat_with_tools(monkeypatch: MonkeyPatch, test_model_id: str) -> No
                     "headers": {"content-length": "1234"},
                 }
             )
-        else:
-            # MetaProvider does not support tools
-            raise NotImplementedError("Tools not supported for this provider.")
         return response
 
     monkeypatch.setattr(llm._client, "chat", mocked_response)
@@ -341,6 +341,131 @@ def test_llm_chat_with_tools(monkeypatch: MonkeyPatch, test_model_id: str) -> No
         "meta.llama-3.1-70b-instruct",
     ],
 )
+def test_llm_chat_with_tools_Meta(monkeypatch: MonkeyPatch, test_model_id: str) -> None:
+    """Test chat_with_tools call to OCI Generative AI LLM Meta service with tool calling."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+
+    provider = llm._provider.__class__.__name__
+
+    def mock_tool_function(param1: str) -> str:
+        """Mock tool function that takes a string parameter."""
+        return f"Mock tool function called with {param1}"
+
+    # Create proper FunctionTool
+    mock_tool = FunctionTool.from_defaults(fn=mock_tool_function)
+    tools = [mock_tool]
+
+    messages = [
+        ChatMessage(role="user", content="User message"),
+    ]
+
+    # Mock the client response
+    def mocked_response(*args, **kwargs):
+        # Mock response with tool calls
+        return MockResponseDict(
+            {
+                "status": 200,
+                "data": MockResponseDict(
+                    {
+                        "chat_response": MockResponseDict(
+                            {
+                                "choices": [
+                                    MockResponseDict(
+                                        {
+                                            "message": MockResponseDict(
+                                                {
+                                                    "content": None,
+                                                    "name": None,
+                                                    "tool_calls": [
+                                                        MockResponseDict(
+                                                            {
+                                                                "type": "FUNCTION",
+                                                                "id": "call_123",
+                                                                "name": "mock_tool_function",
+                                                                "arguments": '{"param1": "test"}',
+                                                            }
+                                                        )
+                                                    ],
+                                                }
+                                            ),
+                                            "finish_reason": "tool_calls",
+                                        }
+                                    )
+                                ],
+                                "time_created": "2025-07-14T20:57:33.889000+00:00",
+                            }
+                        ),
+                        "model_id": test_model_id,
+                        "model_version": "1.0.0",
+                    }
+                ),
+                "request_id": "1234567890",
+                "headers": MockResponseDict({"content-length": "123"}),
+            }
+        )
+
+    monkeypatch.setattr(llm._client, "chat", mocked_response)
+
+    actual_response = llm.chat(
+        messages=messages,
+        tools=tools,
+    )
+
+    # Expected response structure
+    expected_tool_calls = [
+        {
+            "name": "mock_tool_function",
+            "toolUseId": "call_123",
+            "input": '{"param1": "test"}',
+        }
+    ]
+
+    expected_response = ChatResponse(
+        message=ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content=None,
+            additional_kwargs={
+                "finish_reason": "tool_calls",
+                "tool_calls": expected_tool_calls,
+            },
+        ),
+        raw={},
+    )
+
+    # Compare everything except the toolUseId which is randomly generated
+    assert actual_response.message.role == expected_response.message.role
+    assert actual_response.message.content == expected_response.message.content
+
+    actual_kwargs = actual_response.message.additional_kwargs
+    expected_kwargs = expected_response.message.additional_kwargs
+
+    # Check all non-tool_calls fields
+    for key in [k for k in expected_kwargs if k != "tool_calls"]:
+        assert actual_kwargs[key] == expected_kwargs[key]
+
+    # Check tool calls separately
+    actual_tool_calls = actual_kwargs["tool_calls"]
+    assert len(actual_tool_calls) == len(expected_tool_calls)
+
+    for actual_tc, expected_tc in zip(actual_tool_calls, expected_tool_calls):
+        assert actual_tc["name"] == expected_tc["name"]
+        assert actual_tc["input"] == expected_tc["input"]
+        assert "toolUseId" in actual_tc
+        assert isinstance(actual_tc["toolUseId"], str)
+        assert len(actual_tc["toolUseId"]) > 0
+
+    # Check additional_kwargs
+    assert actual_response.additional_kwargs == expected_response.additional_kwargs
+
+
+@pytest.mark.parametrize(
+    "test_model_id",
+    [
+        "meta.llama-3-70b-instruct",
+        "meta.llama-3.1-70b-instruct",
+    ],
+)
 def test_llm_multimodal_chat_with_image(
     monkeypatch: MonkeyPatch, test_model_id: str
 ) -> None:
@@ -366,7 +491,8 @@ def test_llm_multimodal_chat_with_image(
                                                         MockResponseDict(
                                                             {"text": response_text}
                                                         )
-                                                    ]
+                                                    ],
+                                                    "tool_calls": [],
                                                 }
                                             ),
                                             "finish_reason": "stop",
