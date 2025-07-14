@@ -32,7 +32,7 @@ dev = [
 
 [project]
 name = "llama-index-core"
-version = "0.12.48"
+version = "0.12.49"
 description = "Interface between LLMs and your data"
 authors = [{name = "Jerry Liu", email = "jerry@llamaindex.ai"}]
 requires-python = ">=3.9,<4.0"
