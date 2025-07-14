@@ -10,6 +10,14 @@ Install the required packages:
 pip install llama-index-llms-baseten
 pip install llama-index
 ```
+## Model APIs vs. Dedicated Deployments
+
+Baseten offers two main ways for inference.
+1. Model APIs are public endpoints for popular open source models (Deepseek, Llama, etc) where you can directly use a frontier model via slug e.g.  `deepseek-ai/DeepSeek-V3-0324` and you will be charged on a per-token basis. You can find the list of supported models here: https://docs.baseten.co/development/model-apis/overview#supported-models.
+
+2. Dedicated deployments are useful for serving custom models where you want to autoscale production workloads and have fine-grain configuration. You need to deploy a model in your Baseten dashboard and provide the 8 character model id like `abcd1234`.
+
+By default, we set the `model_apis` parameter to `True`. If you want to use a dedicated deployment, you must set the `model_apis` parameter to `False` when instantiating the Baseten object.
 
 ## Usage
 
@@ -18,12 +26,18 @@ pip install llama-index
 To use Baseten models with LlamaIndex, first initialize the LLM:
 
 ```python
-from llama_index.llms.baseten import Baseten
-
+# Model APIs
 llm = Baseten(
-    model_id="your_model_id",  # e.g. "yqvr2lxw"
-    api_key="your_api_key"
-    model_apis=False
+    model_id="MODEL_SLUG",
+    api_key="YOUR_API_KEY",
+    model_apis=True,  # Default, so not strictly necessary
+)
+
+# Dedicated Deployments
+llm = Baseten(
+    model_id="MODEL_ID",
+    api_key="YOUR_API_KEY",
+    model_apis=False,
 )
 ```
 
@@ -83,7 +97,9 @@ Baseten supports async operations for long-running inference tasks. This is usef
 - Batch inference jobs
 - Prioritizing certain requests
 
-The async implementation uses webhooks to deliver results:
+The async implementation uses webhooks to deliver results.
+
+**Note: Async is only available for dedicated deployments and not for model APIs. `achat` is not supported because chat does not make sense for async operations.**
 
 ```python
 async_llm = Baseten(
@@ -111,7 +127,7 @@ resp = requests.get(
 print(resp.json())
 ```
 
-Note: For async operations, results are posted to your provided webhook endpoint. Your endpoint should validate the webhook signature and handle the results appropriately. The results are NOT stored by Baseten.
+For async operations, results are posted to your provided webhook endpoint. Your endpoint should validate the webhook signature and handle the results appropriately. The results are NOT stored by Baseten.
 
 ## Additional Resources
 
