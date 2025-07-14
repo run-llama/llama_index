@@ -420,6 +420,7 @@ class BaseWorkflowAgent(
             )
 
         if not ev.tool_calls:
+            # important: messages should always be fetched after calling finalize, otherwise they do not contain the agent's response
             output = await self.finalize(ctx, ev, memory)
             messages = await memory.aget()
             cur_tool_calls: List[ToolCallResult] = await ctx.store.get(
