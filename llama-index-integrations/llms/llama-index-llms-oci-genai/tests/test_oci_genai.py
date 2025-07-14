@@ -417,7 +417,7 @@ def test_llm_chat_with_tools_Meta(monkeypatch: MonkeyPatch, test_model_id: str) 
         {
             "name": "mock_tool_function",
             "toolUseId": "call_123",
-            "input": '{"param1": "test"}',
+            "input": {"param1": "test"},
         }
     ]
 
