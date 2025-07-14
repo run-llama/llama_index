@@ -603,7 +603,10 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             result = await agent.finalize(ctx, result, memory)
 
             # we don't want to stop the system if we're just handing off
-            if return_direct_tool.tool_name != "handoff":
+            if (
+                return_direct_tool.tool_name != "handoff"
+                and not return_direct_tool.tool_output.is_error
+            ):
                 await ctx.store.set("current_tool_calls", [])
                 return StopEvent(result=result)
 
