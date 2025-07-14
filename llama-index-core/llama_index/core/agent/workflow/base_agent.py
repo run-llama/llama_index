@@ -562,6 +562,13 @@ class BaseWorkflowAgent(
                 current_agent_name=self.name,
             )
             result = await self.finalize(ctx, result, memory)
+            # we don't want to stop the system if we're just handing off
+            if (
+                return_direct_tool.tool_name != "handoff"
+                and not return_direct_tool.tool_output.is_error
+            ):
+                await ctx.store.set("current_tool_calls", [])
+                return StopEvent(result=result)
 
         user_msg_str = await ctx.store.get("user_msg_str")
         input_messages = await memory.aget(input=user_msg_str)
