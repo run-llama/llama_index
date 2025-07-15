@@ -51,6 +51,46 @@ include attachments, this is set to `False` by default, if set to `True` all att
 ConfluenceReader will extract the text from the attachments and add it to the Document object.
 Currently supported attachment types are: PDF, PNG, JPEG/JPG, SVG, Word and Excel.
 
+## Advanced Configuration
+
+The ConfluenceReader supports several advanced configuration options for customizing the reading behavior:
+
+**Custom Parsers**: You can provide custom parsers for specific file types using the `custom_parsers` parameter. This allows you to override the default parsing behavior for attachments of different types.
+
+**Processing Callbacks**:
+
+- `process_attachment_callback`: A callback function to control which attachments should be processed. The function receives the media type and file size as parameters and should return a tuple of `(should_process: bool, reason: str)`.
+- `process_document_callback`: A callback function to control which documents should be processed. The function receives the page ID as a parameter and should return a boolean indicating whether to process the document.
+
+**File Management**:
+
+- `custom_folder`: Specify a custom directory for storing temporary files during processing. Can only be used when `custom_parsers` are provided. Defaults to the current working directory if `custom_parsers` are used.
+
+**Error Handling**:
+
+- `fail_on_error` (default: True): Whether to raise exceptions when encountering processing errors or continue with warnings and skip problematic content.
+
+**Logging**:
+
+- `logger`: Provide a custom logger instance for controlling log output during the reading process.
+
+**Event Monitoring (Observer Pattern)**:
+The ConfluenceReader includes an observer system that emits events during document and attachment processing. This allows you to monitor progress, handle errors, or integrate with external systems like databases or message queues.
+
+Available event types:
+
+- `TOTAL_PAGES_TO_PROCESS`: When the total number of pages to process is determined
+- `PAGE_DATA_FETCH_STARTED`: When processing of a page begins
+- `PAGE_DATA_FETCH_COMPLETED`: When a page is successfully processed
+- `PAGE_FAILED`: When page processing fails
+- `PAGE_SKIPPED`: When a page is skipped due to callback decision
+- `ATTACHMENT_PROCESSING_STARTED`: When attachment processing begins
+- `ATTACHMENT_PROCESSED`: When an attachment is successfully processed
+- `ATTACHMENT_SKIPPED`: When an attachment is skipped
+- `ATTACHMENT_FAILED`: When attachment processing fails
+
+You can subscribe to specific events using `reader.observer.subscribe(event_name, callback)` or to all events using `reader.observer.subscribe_all(callback)`.
+
 Hint: `space_key` and `page_id` can both be found in the URL of a page in Confluence - https://yoursite.atlassian.com/wiki/spaces/<space_key>/pages/<page_id>
 
 ## Usage
@@ -129,6 +169,111 @@ reader = ConfluenceReader(base_url=base_url, oauth2=oauth2_dict)
 documents = reader.load_data(cql=cql, max_num_results=5)
 cursor = reader.get_next_cursor()
 documents.extend(reader.load_data(cql=cql, cursor=cursor, max_num_results=5))
+```
+
+```python
+# Example with advanced configuration options
+from llama_index.readers.confluence import ConfluenceReader
+import logging
+
+
+# Custom callback to filter attachments by size and type
+def attachment_filter(
+    media_type: str, file_size: int, title: str
+) -> tuple[bool, str]:
+    # Skip large files (>10MB)
+    if file_size > 10 * 1024 * 1024:
+        return False, f"File too large: {file_size} bytes"
+
+    # Skip certain file types
+    if media_type in ["application/x-zip-compressed", "application/zip"]:
+        return False, f"Unsupported file type: {media_type}"
+
+    return True, ""
+
+
+# Custom callback to filter documents
+def document_filter(page_id: str) -> bool:
+    # Skip specific pages by ID
+    excluded_pages = ["123456", "789012"]
+    return page_id not in excluded_pages
+
+
+# Setup custom logger
+logger = logging.getLogger("confluence_reader")
+logger.setLevel(logging.INFO)
+
+reader = ConfluenceReader(
+    base_url="https://yoursite.atlassian.com/wiki",
+    api_token="your_api_token",
+    process_attachment_callback=attachment_filter,
+    process_document_callback=document_filter,
+    custom_folder="/tmp/confluence_files",  # Custom temp directory
+    logger=logger,
+    fail_on_error=False,  # Continue processing even if some content fails
+)
+
+documents = reader.load_data(space_key="MYSPACE", include_attachments=True)
+```
+
+```python
+# Example using the Observer pattern for event monitoring
+from llama_index.readers.confluence import ConfluenceReader
+from llama_index.readers.confluence.event import EventName
+
+
+# Event handler functions
+def handle_page_started(event):
+    print(f"Started processing page: {event.page_id}")
+
+
+def handle_page_completed(event):
+    print(f"Completed processing page: {event.page_id}")
+    print(f"Document title: {event.document.metadata.get('title', 'Unknown')}")
+
+
+def handle_attachment_processed(event):
+    print(f"Processed attachment: {event.attachment_name}")
+    print(f"Attachment type: {event.attachment_type}")
+    print(f"Attachment size: {event.attachment_size}")
+
+
+def handle_processing_failed(event):
+    print(f"Processing failed: {event.error}")
+
+
+def handle_all_events(event):
+    """General event handler that logs all events"""
+    print(f"Event: {event.name}, Page ID: {event.page_id}")
+
+
+# Create reader and set up event monitoring
+reader = ConfluenceReader(
+    base_url="https://yoursite.atlassian.com/wiki", api_token="your_api_token"
+)
+
+# Subscribe to specific events
+reader.observer.subscribe(
+    EventName.PAGE_DATA_FETCH_STARTED, handle_page_started
+)
+reader.observer.subscribe(
+    EventName.PAGE_DATA_FETCH_COMPLETED, handle_page_completed
+)
+reader.observer.subscribe(
+    EventName.ATTACHMENT_PROCESSED, handle_attachment_processed
+)
+reader.observer.subscribe(EventName.PAGE_FAILED, handle_processing_failed)
+reader.observer.subscribe(
+    EventName.ATTACHMENT_FAILED, handle_processing_failed
+)
+
+# Or subscribe to all events with a single handler
+# reader.observer.subscribe_all(handle_all_events)
+
+# Load data - events will be emitted during processing
+documents = reader.load_data(space_key="MYSPACE", include_attachments=True)
+
+print(f"Processing completed. Total documents: {len(documents)}")
 ```
 
 This loader is designed to be used as a way to load data into [LlamaIndex](https://github.com/run-llama/llama_index/).

@@ -3,6 +3,7 @@ from typing import Dict, Any
 from enum import Enum
 from llama_index.core.schema import Document
 
+
 class FileType(Enum):
     IMAGE = "image"
     DOCUMENT = "document"
@@ -15,7 +16,8 @@ class FileType(Enum):
     PDF = "pdf"
     UNKNOWN = "unknown"
 
-class EventName(str, Enum):    
+
+class EventName(str, Enum):
     PAGE_DATA_FETCH_STARTED = "page_data_fetch_started"
     PAGE_DATA_FETCH_COMPLETED = "page_data_fetch_completed"
     PAGE_SKIPPED = "page_skipped"
@@ -32,6 +34,7 @@ class EventName(str, Enum):
 class Event(BaseModel):
     name: EventName
 
+
 class AttachmentEvent(Event):
     name: EventName
     attachment_id: str
@@ -41,6 +44,7 @@ class AttachmentEvent(Event):
     attachment_size: int
     attachment_link: str
     error: str = None
+
 
 class PageEvent(Event):
     name: EventName

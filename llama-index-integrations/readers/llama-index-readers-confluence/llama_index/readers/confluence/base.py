@@ -3,7 +3,6 @@
 import logging
 import os
 import uuid
-from enum import Enum
 from typing import Callable, Dict, List, Optional
 from urllib.parse import unquote
 
@@ -49,7 +48,9 @@ class Observer:
 
 
 class CustomParserManager:
-    def __init__(self, custom_parsers: Optional[Dict[FileType, BaseReader]], custom_folder: str):
+    def __init__(
+        self, custom_parsers: Optional[Dict[FileType, BaseReader]], custom_folder: str
+    ):
         self.custom_parsers = custom_parsers or {}
         self.custom_folder = custom_folder
 
@@ -60,7 +61,9 @@ class CustomParserManager:
         except Exception as e:
             print(f"Error removing file {file_path}: {e}")
 
-    def process_with_custom_parser(self, file_type: FileType, file_content: bytes, extension: str) -> Optional[str]:
+    def process_with_custom_parser(
+        self, file_type: FileType, file_content: bytes, extension: str
+    ) -> Optional[str]:
         if file_type not in self.custom_parsers:
             return None
 
@@ -71,7 +74,10 @@ class CustomParserManager:
 
         try:
             markdown_text = "\n".join(
-                doc.text for doc in self.custom_parsers[file_type].load_data(file_path=custom_file_path)
+                doc.text
+                for doc in self.custom_parsers[file_type].load_data(
+                    file_path=custom_file_path
+                )
             )
         finally:
             self.__remove_custom_file(custom_file_path)
@@ -97,6 +103,29 @@ class ConfluenceReader(BaseReader):
         user_name (str): Confluence username, used for basic auth. Must be used with `password`.
         password (str): Confluence password, used for basic auth. Must be used with `user_name`.
         client_args (dict): Additional keyword arguments to pass directly to the Atlassian Confluence client constructor, for example `{'backoff_and_retry': True}`.
+        custom_parsers (dict): Optional custom parsers for different file types. Maps FileType enum values to BaseReader instances.
+        process_attachment_callback (callable): Optional callback function to determine whether to process an attachment. Should return tuple[bool, str] where bool indicates whether to process and str provides reason if not.
+        process_document_callback (callable): Optional callback function to determine whether to process a document. Should return bool indicating whether to process.
+        custom_folder (str): Optional custom folder path for storing temporary files. Can only be used when custom_parsers are provided. Defaults to current working directory if custom_parsers are used.
+        logger (Logger): Optional custom logger instance. If not provided, uses internal logger.
+        fail_on_error (bool): Whether to raise exceptions on processing errors or continue with warnings. Default is True.
+
+    Observer Pattern:
+        The ConfluenceReader includes an observer system that emits events during document and attachment processing.
+        You can subscribe to these events to monitor progress, handle errors, or integrate with external systems.
+
+        Available events:
+        - TOTAL_PAGES_TO_PROCESS: Emitted when the total number of pages to process is determined
+        - PAGE_DATA_FETCH_STARTED: Emitted when processing of a page begins
+        - PAGE_DATA_FETCH_COMPLETED: Emitted when a page is successfully processed
+        - PAGE_FAILED: Emitted when page processing fails
+        - PAGE_SKIPPED: Emitted when a page is skipped due to callback decision
+        - ATTACHMENT_PROCESSING_STARTED: Emitted when attachment processing begins
+        - ATTACHMENT_PROCESSED: Emitted when an attachment is successfully processed
+        - ATTACHMENT_SKIPPED: Emitted when an attachment is skipped
+        - ATTACHMENT_FAILED: Emitted when attachment processing fails
+
+        Use reader.observer.subscribe(event_name, callback) or reader.observer.subscribe_all(callback) to listen to events.
 
     """
 
@@ -111,10 +140,10 @@ class ConfluenceReader(BaseReader):
         password: Optional[str] = None,
         client_args: Optional[dict] = None,
         custom_parsers: Optional[Dict[FileType, BaseReader]] = None,
-        process_attachment_callback: Optional[Callable[[str, int], tuple[bool, str]]] = None,
+        process_attachment_callback: Optional[
+            Callable[[str, int], tuple[bool, str]]
+        ] = None,
         process_document_callback: Optional[Callable[[str], bool]] = None,
-        ignore_links: bool = True,
-        ignore_images: bool = True,
         custom_folder: Optional[str] = None,
         logger: Optional[logging.Logger] = None,
         fail_on_error: bool = True,
@@ -124,9 +153,19 @@ class ConfluenceReader(BaseReader):
 
         self.base_url = base_url
         self.custom_parsers = custom_parsers or {}
-        self.ignore_links = ignore_links
-        self.ignore_images = ignore_images
-        self.custom_folder = custom_folder or os.getcwd()
+
+        # Only set custom_folder if custom_parsers are provided
+        if custom_parsers and custom_folder:
+            self.custom_folder = custom_folder
+        elif custom_parsers:
+            self.custom_folder = os.getcwd()
+        elif custom_folder:
+            raise ValueError(
+                "custom_folder can only be used when custom_parsers are provided"
+            )
+        else:
+            self.custom_folder = None
+
         self.logger = logger or internal_logger
         self.process_attachment_callback = process_attachment_callback
         self.process_document_callback = process_document_callback
@@ -188,7 +227,12 @@ class ConfluenceReader(BaseReader):
 
         self._next_cursor = None
         self.observer = Observer()
-        self.custom_parser_manager = CustomParserManager(custom_parsers, self.custom_folder)
+        if custom_parsers:
+            self.custom_parser_manager = CustomParserManager(
+                custom_parsers, self.custom_folder
+            )
+        else:
+            self.custom_parser_manager = None
 
     def _format_attachment_header(self, attachment: dict) -> str:
         """Formats the attachment title as a markdown header."""
@@ -276,11 +320,9 @@ class ConfluenceReader(BaseReader):
         except ImportError:
             raise ImportError(
                 "`html2text` package not found, please run `pip install html2text`"
-            )            
+            )
 
         text_maker = html2text.HTML2Text()
-        text_maker.ignore_links = self.ignore_links
-        text_maker.ignore_images = self.ignore_images
 
         if not start:
             start = 0
@@ -324,7 +366,9 @@ class ConfluenceReader(BaseReader):
                 max_num_remaining = max_num_results
                 for page_id in page_ids:
                     current_dfs_page_ids = self._dfs_page_ids(
-                        page_id, type="page", max_num_results=max_num_remaining,
+                        page_id,
+                        type="page",
+                        max_num_results=max_num_remaining,
                     )
                     dfs_page_ids.extend(current_dfs_page_ids)
                     if max_num_results is not None:
@@ -346,8 +390,10 @@ class ConfluenceReader(BaseReader):
             # Fetch all folders in the folder
             max_num_remaining = max_num_results
             page_ids = self._dfs_page_ids(
-                folder_id, type="folder", max_num_results=max_num_remaining,
-            )        
+                folder_id,
+                type="folder",
+                max_num_results=max_num_remaining,
+            )
             for page_id in (
                 page_ids[:max_num_results] if max_num_results is not None else page_ids
             ):
@@ -362,7 +408,14 @@ class ConfluenceReader(BaseReader):
         docs = []
 
         if pages:
-            self.observer.notify(PageEvent(name=EventName.TOTAL_PAGES_TO_PROCESS,page_id="",document={},metadata={"total_pages": len(pages)}))
+            self.observer.notify(
+                PageEvent(
+                    name=EventName.TOTAL_PAGES_TO_PROCESS,
+                    page_id="",
+                    document={},
+                    metadata={"total_pages": len(pages)},
+                )
+            )
 
         for page in pages:
             try:
@@ -371,10 +424,17 @@ class ConfluenceReader(BaseReader):
                     docs.append(doc)
             except Exception as e:
                 self.logger.error(f"Error processing page: {e}")
-                self.observer.notify(PageEvent(name=EventName.PAGE_FAILED, page_id=page["id"], document={},error=str(e)))
+                self.observer.notify(
+                    PageEvent(
+                        name=EventName.PAGE_FAILED,
+                        page_id=page["id"],
+                        document={},
+                        error=str(e),
+                    )
+                )
                 if self.fail_on_error:
-                    raise e
-                else: 
+                    raise
+                else:
                     self.logger.warning(
                         f"Failed to process page {page['id']}: {e}. Skipping this page."
                     )
@@ -394,14 +454,16 @@ class ConfluenceReader(BaseReader):
 
         # Fetch both page and folder children with their types
         child_items = [
-            (child_id, "page") for child_id in self._get_data_with_paging(
+            (child_id, "page")
+            for child_id in self._get_data_with_paging(
                 self.confluence.get_child_id_list,
                 page_id=id,
                 type="page",
                 max_num_results=max_num_remaining,
             )
         ] + [
-            (child_id, "folder") for child_id in self._get_data_with_paging(
+            (child_id, "folder")
+            for child_id in self._get_data_with_paging(
                 self.confluence.get_child_id_list,
                 page_id=id,
                 type="folder",
@@ -414,9 +476,7 @@ class ConfluenceReader(BaseReader):
                 break
 
             dfs_ids = self._dfs_page_ids(
-                child_id,
-                type=child_type,
-                max_num_results=max_num_remaining
+                child_id, type=child_type, max_num_results=max_num_remaining
             )
             ret.extend(dfs_ids)
 
@@ -508,32 +568,49 @@ class ConfluenceReader(BaseReader):
         if self.process_document_callback:
             should_process = self.process_document_callback(page["id"])
             if not should_process:
-                self.logger.info(f"Skipping page {page['id']} based on callback decision.")
-                self.observer.notify(PageEvent(name=EventName.PAGE_SKIPPED, page_id=page["id"], document={}))
+                self.logger.info(
+                    f"Skipping page {page['id']} based on callback decision."
+                )
+                self.observer.notify(
+                    PageEvent(
+                        name=EventName.PAGE_SKIPPED, page_id=page["id"], document={}
+                    )
+                )
                 return None
-        
-        self.observer.notify(PageEvent(name=EventName.PAGE_DATA_FETCH_STARTED, page_id=page["id"], document={}))  
+
+        self.observer.notify(
+            PageEvent(
+                name=EventName.PAGE_DATA_FETCH_STARTED, page_id=page["id"], document={}
+            )
+        )
 
         if include_attachments:
             attachment_texts = self.process_attachment(page["id"])
         else:
             attachment_texts = []
-        if FileType.HTML in self.custom_parsers:
+        if FileType.HTML in self.custom_parsers and self.custom_folder:
             html_text = page["body"]["export_view"]["value"]
-            # save in file 
+            # save in file
             file_location = os.path.join(self.custom_folder, "output.html")
             with open(file_location, "w", encoding="utf-8") as f:
                 f.write(html_text)
-            text = page["title"] + "\n" + "\n".join(
-                doc.text for doc in self.custom_parsers[FileType.HTML].load_data(file_path=file_location)
-            ) + "\n" + "\n".join(
-                attachment_texts
+            text = (
+                page["title"]
+                + "\n"
+                + "\n".join(
+                    doc.text
+                    for doc in self.custom_parsers[FileType.HTML].load_data(
+                        file_path=file_location
+                    )
+                )
+                + "\n"
+                + "\n".join(attachment_texts)
             )
         else:
             text = text_maker.handle(page["body"]["export_view"]["value"]) + "".join(
                 attachment_texts
             )
-        
+
         doc = Document(
             text=text,
             doc_id=page["id"],
@@ -544,19 +621,27 @@ class ConfluenceReader(BaseReader):
                 "_url": self.base_url + page["_links"]["webui"],
             },
         )
-        self.observer.notify(PageEvent(name=EventName.PAGE_DATA_FETCH_COMPLETED, page_id=page["id"], document=doc))
+        self.observer.notify(
+            PageEvent(
+                name=EventName.PAGE_DATA_FETCH_COMPLETED,
+                page_id=page["id"],
+                document=doc,
+            )
+        )
         return doc
-    
-    def get_attachment_event(self, event_name: EventName, page_id: str, attachment, error=""):
+
+    def get_attachment_event(
+        self, event_name: EventName, page_id: str, attachment, error=""
+    ):
         return AttachmentEvent(
             page_id=page_id,
             name=event_name,
-            attachment_id=attachment["id"], 
+            attachment_id=attachment["id"],
             attachment_name=attachment["title"],
             attachment_type=attachment["metadata"]["mediaType"],
             attachment_size=attachment["extensions"]["fileSize"],
             attachment_link=attachment["_links"]["webui"],
-            error=error or ""  # Ensure error is a string
+            error=error or "",  # Ensure error is a string
         )
 
     def process_attachment(self, page_id):
@@ -575,15 +660,33 @@ class ConfluenceReader(BaseReader):
             return texts
 
         for attachment in attachments:
-
             self.logger.info("Processing attachment " + attachment["title"])
-            self.observer.notify(self.get_attachment_event(event_name=EventName.ATTACHMENT_PROCESSING_STARTED, page_id=page_id, attachment=attachment))
+            self.observer.notify(
+                self.get_attachment_event(
+                    event_name=EventName.ATTACHMENT_PROCESSING_STARTED,
+                    page_id=page_id,
+                    attachment=attachment,
+                )
+            )
 
             if self.process_attachment_callback:
-                should_process, reason = self.process_attachment_callback(attachment["metadata"]["mediaType"], attachment["extensions"]["fileSize"], attachment["title"])
+                should_process, reason = self.process_attachment_callback(
+                    attachment["metadata"]["mediaType"],
+                    attachment["extensions"]["fileSize"],
+                    attachment["title"],
+                )
                 if not should_process:
-                    self.logger.info(f"Skipping attachment {attachment['title']} based on callback decision.")
-                    self.observer.notify(self.get_attachment_event(event_name=EventName.ATTACHMENT_SKIPPED, page_id=page_id, attachment=attachment,error=reason))
+                    self.logger.info(
+                        f"Skipping attachment {attachment['title']} based on callback decision."
+                    )
+                    self.observer.notify(
+                        self.get_attachment_event(
+                            event_name=EventName.ATTACHMENT_SKIPPED,
+                            page_id=page_id,
+                            attachment=attachment,
+                            error=reason,
+                        )
+                    )
                     continue
 
             try:
@@ -605,7 +708,9 @@ class ConfluenceReader(BaseReader):
                     media_type
                     == "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                 ):
-                    self.logger.info("Processing Word document attachment " + absolute_url)
+                    self.logger.info(
+                        "Processing Word document attachment " + absolute_url
+                    )
                     text = title + self.process_doc(absolute_url)
                 elif (
                     media_type == "application/vnd.ms-excel"
@@ -613,32 +718,43 @@ class ConfluenceReader(BaseReader):
                     == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     or media_type == "application/vnd.ms-excel.sheet.macroenabled.12"
                 ):
-                    if attachment['title'].endswith(".csv") or absolute_url.endswith(".csv"):
+                    if attachment["title"].endswith(".csv") or absolute_url.endswith(
+                        ".csv"
+                    ):
                         self.logger.info("Processing CSV attachment " + absolute_url)
                         text = title + self.process_csv(absolute_url)
                     else:
                         self.logger.info("Processing XLS attachment " + absolute_url)
                         text = title + self.process_xls(absolute_url)
-                elif media_type == "application/vnd.ms-excel.sheet.binary.macroenabled.12":
+                elif (
+                    media_type
+                    == "application/vnd.ms-excel.sheet.binary.macroenabled.12"
+                ):
                     self.logger.info("Processing XLSB attachment " + absolute_url)
                     text = title + self.process_xlsb(absolute_url)
                 elif media_type == "text/csv":
                     self.logger.info("Processing CSV attachment " + absolute_url)
                     text = title + self.process_csv(absolute_url)
                 elif media_type == "application/vnd.ms-outlook":
-                    self.logger.info("Processing Outlook message attachment " + absolute_url)
+                    self.logger.info(
+                        "Processing Outlook message attachment " + absolute_url
+                    )
                     text = title + self.process_msg(absolute_url)
                 elif media_type == "text/html":
                     self.logger.info("  Processing HTML attachment " + absolute_url)
                     text = title + self.process_html(absolute_url)
                 elif media_type == "text/plain":
-                    if attachment['title'].endswith(".csv") or absolute_url.endswith(".csv"):
+                    if attachment["title"].endswith(".csv") or absolute_url.endswith(
+                        ".csv"
+                    ):
                         self.logger.info("Processing CSV attachment " + absolute_url)
                         text = title + self.process_csv(absolute_url)
                     else:
                         self.logger.info("Processing Text attachment " + absolute_url)
                         text = title + self.process_txt(absolute_url)
-                elif media_type == "text/markdown" or absolute_url.endswith(".md") or absolute_url.endswith(".mdx"):
+                elif media_type == "text/markdown" or absolute_url.endswith(
+                    (".md", ".mdx")
+                ):
                     self.logger.info("Processing Markdown attachment " + absolute_url)
                     text = title + self.process_txt(absolute_url)
                 elif media_type == "image/svg+xml":
@@ -658,23 +774,47 @@ class ConfluenceReader(BaseReader):
                         + ")"
                     )
                     text = title + self.process_ppt(absolute_url)
-                elif media_type == "binary/octet-stream" and ( attachment['title'].strip().endswith(".md") or attachment['title'].strip().endswith(".mdx")):
+                elif media_type == "binary/octet-stream" and (
+                    attachment["title"].strip().endswith(".md")
+                    or attachment["title"].strip().endswith(".mdx")
+                ):
                     self.logger.info("Processing Markdown attachment " + absolute_url)
                     text = title + self.process_txt(absolute_url)
                 else:
                     self.logger.info(
                         f"Skipping unsupported attachment {absolute_url} of media_type {media_type}"
                     )
-                    self.observer.notify(self.get_attachment_event(event_name=EventName.ATTACHMENT_SKIPPED, page_id=page_id, attachment=attachment,error="Unsupported media type"))
+                    self.observer.notify(
+                        self.get_attachment_event(
+                            event_name=EventName.ATTACHMENT_SKIPPED,
+                            page_id=page_id,
+                            attachment=attachment,
+                            error="Unsupported media type",
+                        )
+                    )
                     continue
                 texts.append(text)
-                self.observer.notify(self.get_attachment_event(event_name=EventName.ATTACHMENT_PROCESSED, page_id=page_id, attachment=attachment))
+                self.observer.notify(
+                    self.get_attachment_event(
+                        event_name=EventName.ATTACHMENT_PROCESSED,
+                        page_id=page_id,
+                        attachment=attachment,
+                    )
+                )
             except Exception as e:
-                self.logger.error(f"Failed to process attachment {attachment['title']}: {e}")
-                self.observer.notify(self.get_attachment_event(event_name=EventName.ATTACHMENT_FAILED, page_id=page_id, attachment=attachment, error=str(e)))
+                self.logger.error(
+                    f"Failed to process attachment {attachment['title']}: {e}"
+                )
+                self.observer.notify(
+                    self.get_attachment_event(
+                        event_name=EventName.ATTACHMENT_FAILED,
+                        page_id=page_id,
+                        attachment=attachment,
+                        error=str(e),
+                    )
+                )
 
         return texts
-
 
     def process_pdf(self, link):
         if FileType.PDF not in self.custom_parsers:
@@ -696,12 +836,12 @@ class ConfluenceReader(BaseReader):
             or response.content is None
         ):
             return text
-        
-        if FileType.PDF in self.custom_parsers:
+
+        if FileType.PDF in self.custom_parsers and self.custom_parser_manager:
             return self.custom_parser_manager.process_with_custom_parser(
                 FileType.PDF, response.content, "pdf"
             )
-        
+
         try:
             images = convert_from_bytes(response.content)
         except ValueError:
@@ -727,8 +867,8 @@ class ConfluenceReader(BaseReader):
                 return "Error fetching HTML content: HTTP Status Code {}".format(
                     response.status_code
                 )
-            
-            if FileType.HTML in self.custom_parsers:
+
+            if FileType.HTML in self.custom_parsers and self.custom_parser_manager:
                 return self.custom_parser_manager.process_with_custom_parser(
                     FileType.HTML, response.content, "html"
                 )
@@ -843,7 +983,6 @@ class ConfluenceReader(BaseReader):
                 raise ImportError(
                     "`docx2txt` package not found, please run `pip install docx2txt`"
                 )
-        
 
         text = ""
 
@@ -859,7 +998,7 @@ class ConfluenceReader(BaseReader):
 
             # save in file
             # Use custom parser if available
-            if FileType.DOCUMENT in self.custom_parsers:
+            if FileType.DOCUMENT in self.custom_parsers and self.custom_parser_manager:
                 return self.custom_parser_manager.process_with_custom_parser(
                     FileType.DOCUMENT, file_data.getbuffer(), "docx"
                 )
@@ -882,7 +1021,7 @@ class ConfluenceReader(BaseReader):
             from io import BytesIO
         except ImportError:
             raise ImportError("Failed to import BytesIO from io")
-        
+
         if not self.custom_parsers.get(FileType.PRESENTATION):
             try:
                 from pptx import Presentation  # type: ignore
@@ -904,10 +1043,12 @@ class ConfluenceReader(BaseReader):
         file_data = BytesIO(response.content)
 
         if not file_data:
-            self.logger.error(f"Error processing PowerPoint file at {link}: Empty content.")
+            self.logger.error(
+                f"Error processing PowerPoint file at {link}: Empty content."
+            )
             return text
-        
-        if FileType.PRESENTATION in self.custom_parsers:
+
+        if FileType.PRESENTATION in self.custom_parsers and self.custom_parser_manager:
             return self.custom_parser_manager.process_with_custom_parser(
                 FileType.PRESENTATION, file_data.getbuffer(), "pptx"
             )
@@ -952,7 +1093,7 @@ class ConfluenceReader(BaseReader):
 
         file_data = BytesIO(response.content)
 
-        if FileType.SPREADSHEET in self.custom_parsers:
+        if FileType.SPREADSHEET in self.custom_parsers and self.custom_parser_manager:
             return self.custom_parser_manager.process_with_custom_parser(
                 FileType.SPREADSHEET, file_data.getbuffer(), "xlsx"
             )
