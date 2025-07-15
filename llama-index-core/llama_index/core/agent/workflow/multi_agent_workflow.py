@@ -572,13 +572,15 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             await ctx.store.set("next_agent", None)
 
         if any(
-            tool_call_result.return_direct for tool_call_result in tool_call_results
+            tool_call_result.return_direct and not tool_call_result.tool_output.is_error
+            for tool_call_result in tool_call_results
         ):
-            # if any tool calls return directly, take the first one
+            # if any tool calls return directly and it's not an error tool call, take the first one
             return_direct_tool = next(
                 tool_call_result
                 for tool_call_result in tool_call_results
                 if tool_call_result.return_direct
+                and not tool_call_result.tool_output.is_error
             )
 
             # always finalize the agent, even if we're just handing off
@@ -601,10 +603,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             result = await agent.finalize(ctx, result, memory)
 
             # we don't want to stop the system if we're just handing off
-            if (
-                return_direct_tool.tool_name != "handoff"
-                and not return_direct_tool.tool_output.is_error
-            ):
+            if return_direct_tool.tool_name != "handoff":
                 await ctx.store.set("current_tool_calls", [])
                 return StopEvent(result=result)
 
