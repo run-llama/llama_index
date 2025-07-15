@@ -62,7 +62,7 @@ class AgentStreamStructuredOutput(Event):
             )
             return None
 
-    def __str__(self):
+    def __str__(self) -> str:
         return json.dumps(self.output, indent=4)
 
 
