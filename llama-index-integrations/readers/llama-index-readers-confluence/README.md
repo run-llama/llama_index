@@ -57,6 +57,57 @@ The ConfluenceReader supports several advanced configuration options for customi
 
 **Custom Parsers**: You can provide custom parsers for specific file types using the `custom_parsers` parameter. This allows you to override the default parsing behavior for attachments of different types.
 
+Custom parsers must implement the LlamaIndex `BaseReader` interface. Here's an example for DOCX files using MarkItDown:
+
+```python
+from typing import List, Union
+import pathlib
+from llama_index.core.readers.base import BaseReader
+from llama_index.core.schema import Document
+from markitdown import MarkItDown
+
+
+class DocxParser(BaseReader):
+    """DOCX parser using MarkItDown for text extraction."""
+
+    def __init__(self):
+        self.markitdown = MarkItDown()
+
+    def load_data(
+        self, file_path: Union[str, pathlib.Path], **kwargs
+    ) -> List[Document]:
+        """Load and parse a DOCX file."""
+        result = self.markitdown.convert(source=file_path)
+
+        return [
+            Document(
+                text=result.markdown, metadata={"file_path": str(file_path)}
+            )
+        ]
+
+
+# Usage with ConfluenceReader - Multiple file type parsers
+from parsers import DocxParser
+from readers.confluence_reader import FileType as ConfluenceFileType
+
+confluence_parsers = {
+    # ConfluenceFileType.PRESENTATION: PPTXParser(),
+    ConfluenceFileType.DOCUMENT: DocxParser(),
+    # ConfluenceFileType.PDF: PDFParser(),
+    # ConfluenceFileType.HTML: HTMLParser(),
+    # ConfluenceFileType.CSV: CSVParser(),
+    # ConfluenceFileType.SPREADSHEET: ExcelParser(),
+    # ConfluenceFileType.MARKDOWN: MarkdownParser(),
+    # ConfluenceFileType.TEXT: TextParser()
+}
+
+reader = ConfluenceReader(
+    base_url="https://yoursite.atlassian.com/wiki",
+    api_token="your_token",
+    custom_parsers=confluence_parsers,
+)
+```
+
 **Processing Callbacks**:
 
 - `process_attachment_callback`: A callback function to control which attachments should be processed. The function receives the media type and file size as parameters and should return a tuple of `(should_process: bool, reason: str)`.
