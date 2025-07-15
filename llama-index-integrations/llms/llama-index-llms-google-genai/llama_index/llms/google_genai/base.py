@@ -131,6 +131,10 @@ class GoogleGenAI(FunctionCallingLLM):
         default=None,
         description="Cached content to use for the model.",
     )
+    built_in_tool: Optional[types.Tool] = Field(
+        default=None,
+        description="Google GenAI tool to use for the model to augment responses.",
+    )
 
     _max_tokens: int = PrivateAttr()
     _client: google.genai.Client = PrivateAttr()
@@ -152,6 +156,7 @@ class GoogleGenAI(FunctionCallingLLM):
         callback_manager: Optional[CallbackManager] = None,
         is_function_calling_model: bool = True,
         cached_content: Optional[str] = None,
+        built_in_tool: Optional[types.Tool] = None,
         **kwargs: Any,
     ):
         # API keys are optional. The API can be authorised via OAuth (detected
@@ -199,6 +204,7 @@ class GoogleGenAI(FunctionCallingLLM):
             is_function_calling_model=is_function_calling_model,
             max_retries=max_retries,
             cached_content=cached_content,
+            built_in_tool=built_in_tool,
             **kwargs,
         )
 
@@ -211,11 +217,26 @@ class GoogleGenAI(FunctionCallingLLM):
             self._generation_config = generation_config.model_dump()
             if cached_content:
                 self._generation_config.setdefault("cached_content", cached_content)
+            if built_in_tool is not None:
+                if self._generation_config.get("tools") is None:
+                    self._generation_config["tools"] = []
+                if isinstance(self._generation_config["tools"], list):
+                    if len(self._generation_config["tools"]) > 0:
+                        raise ValueError(
+                            "Providing multiple Google GenAI tools or mixing with custom tools is not supported."
+                        )
+                self._generation_config["tools"].append(built_in_tool)
         else:
+            config_kwargs = {
+                "temperature": temperature,
+                "max_output_tokens": max_tokens,
+                "cached_content": cached_content,
+            }
+            if built_in_tool:
+                config_kwargs["tools"] = [built_in_tool]
+
             self._generation_config = types.GenerateContentConfig(
-                temperature=temperature,
-                max_output_tokens=max_tokens,
-                cached_content=cached_content,
+                **config_kwargs
             ).model_dump()
         self._max_tokens = (
             max_tokens or model_meta.output_token_limit or DEFAULT_NUM_OUTPUTS
@@ -391,7 +412,7 @@ class GoogleGenAI(FunctionCallingLLM):
 
     def _prepare_chat_with_tools(
         self,
-        tools: Sequence[Union["BaseTool", types.Tool]],
+        tools: Sequence["BaseTool"],
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
@@ -402,34 +423,6 @@ class GoogleGenAI(FunctionCallingLLM):
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Predict and call the tool."""
-        # Split tools into Google GenAI tools and function calling tools
-        genai_tools = [tool for tool in tools if isinstance(tool, types.Tool)]
-        func_call_tools = [tool for tool in tools if not isinstance(tool, types.Tool)]
-
-        # Check if Google GenAI tools and function calling tools are mixed
-        if genai_tools and func_call_tools:
-            raise ValueError(
-                "Mixing Google GenAI tools with function calling tools is not supported"
-            )
-
-        # Check if multiple Google GenAI tools are provided
-        if len(genai_tools) > 1:
-            raise ValueError("Providing multiple Google GenAI tools is not supported")
-
-        if isinstance(user_msg, str):
-            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
-
-        messages = chat_history or []
-        if user_msg:
-            messages.append(user_msg)
-
-        if genai_tools:
-            return {
-                "messages": messages,
-                "tools": genai_tools,
-                **kwargs,
-            }
-
         if tool_choice is None:
             tool_choice = "any" if tool_required else "auto"
 
@@ -466,6 +459,13 @@ class GoogleGenAI(FunctionCallingLLM):
                     self._client, tool
                 )
                 tool_declarations.append(function_declaration)
+
+        if isinstance(user_msg, str):
+            user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)
+
+        messages = chat_history or []
+        if user_msg:
+            messages.append(user_msg)
 
         return {
             "messages": messages,
