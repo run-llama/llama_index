@@ -89,11 +89,12 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
     def _get_text_from_messages(self, messages: List[ChatMessage]) -> str:
         """Get the text from the messages."""
         text = ""
-        for message in messages:
+        for i, message in enumerate(messages):
             for block in message.blocks:
                 if isinstance(block, TextBlock):
                     text += block.text
-
+            if len(messages) > 1 and i != len(messages)-1:
+                text += " "
         return text
 
     async def _aget(
