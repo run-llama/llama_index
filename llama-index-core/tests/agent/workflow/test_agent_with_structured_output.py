@@ -12,7 +12,11 @@ from llama_index.core.llms import (
     ChatResponseAsyncGen,
     LLM,
 )
-from llama_index.core.agent.workflow import AgentWorkflow, AgentOutput
+from llama_index.core.agent.workflow import (
+    AgentWorkflow,
+    AgentOutput,
+    AgentStreamStructuredOutput,
+)
 from llama_index.core.prompts.base import PromptTemplate
 from llama_index.core.tools import ToolSelection
 from llama_index.core.agent.workflow import FunctionAgent
@@ -139,12 +143,12 @@ def function_agent_output_cls():
     )
 
 
-def structured_function_fn(*args, **kwargs) -> Structure:
-    return Structure(hello="bonjour", world=2)
+def structured_function_fn(*args, **kwargs) -> dict:
+    return Structure(hello="bonjour", world=2).model_dump()
 
 
-async def astructured_function_fn(*args, **kwargs) -> Structure:
-    return Structure(hello="guten tag", world=3)
+async def astructured_function_fn(*args, **kwargs) -> dict:
+    return Structure(hello="guten tag", world=3).model_dump()
 
 
 @pytest.fixture()
@@ -183,9 +187,11 @@ def function_agent_astruct_fn():
 async def test_output_cls_agent(function_agent_output_cls: FunctionAgent):
     """Test single agent with state management."""
     handler = function_agent_output_cls.run(user_msg="test")
-    async for _ in handler.stream_events():
-        pass
-
+    streaming_event = False
+    async for event in handler.stream_events():
+        if isinstance(event, AgentStreamStructuredOutput):
+            streaming_event = True
+    assert streaming_event
     response = await handler
     assert "Success with the FunctionAgent" in str(response.response)
     assert response.get_pydantic_model(Structure) == Structure(hello="hello", world=1)
@@ -195,9 +201,11 @@ async def test_output_cls_agent(function_agent_output_cls: FunctionAgent):
 async def test_structured_fn_agent(function_agent_struct_fn: FunctionAgent):
     """Test single agent with state management."""
     handler = function_agent_struct_fn.run(user_msg="test")
-    async for _ in handler.stream_events():
-        pass
-
+    streaming_event = False
+    async for event in handler.stream_events():
+        if isinstance(event, AgentStreamStructuredOutput):
+            streaming_event = True
+    assert streaming_event
     response = await handler
     assert "Success with the FunctionAgent" in str(response.response)
     assert response.get_pydantic_model(Structure) == Structure(hello="bonjour", world=2)
@@ -207,9 +215,10 @@ async def test_structured_fn_agent(function_agent_struct_fn: FunctionAgent):
 async def test_astructured_fn_agent(function_agent_astruct_fn: FunctionAgent):
     """Test single agent with state management."""
     handler = function_agent_astruct_fn.run(user_msg="test")
-    async for _ in handler.stream_events():
-        pass
-
+    async for event in handler.stream_events():
+        if isinstance(event, AgentStreamStructuredOutput):
+            streaming_event = True
+    assert streaming_event
     response = await handler
     assert "Success with the FunctionAgent" in str(response.response)
     assert response.get_pydantic_model(Structure) == Structure(
@@ -227,8 +236,11 @@ async def test_structured_output_agentworkflow(
         output_cls=Structure,
     )
     handler = wf.run(user_msg="test")
-    async for _ in handler.stream_events():
-        pass
+    streaming_event = False
+    async for event in handler.stream_events():
+        if isinstance(event, AgentStreamStructuredOutput):
+            streaming_event = True
+    assert streaming_event
 
     response = await handler
     assert "Success with the FunctionAgent" in str(response.response)

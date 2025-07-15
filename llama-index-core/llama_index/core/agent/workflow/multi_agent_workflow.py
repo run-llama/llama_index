@@ -25,6 +25,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentSetup,
     AgentOutput,
     AgentWorkflowStartEvent,
+    AgentStreamStructuredOutput,
 )
 from llama_index.core.llms import ChatMessage, TextBlock
 from llama_index.core.llms.llm import LLM
@@ -469,6 +470,9 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                         output.structured_response = cast(
                             Dict[str, Any], self.structured_output_fn(messages)
                         )
+                    ctx.write_event_to_stream(
+                        AgentStreamStructuredOutput(output=output.structured_response)
+                    )
                 except Exception as e:
                     warnings.warn(
                         f"There was a problem with the generation of the structured output: {e}"
@@ -477,6 +481,9 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 try:
                     output.structured_response = await generate_structured_response(
                         messages=messages, llm=agent.llm, output_cls=self.output_cls
+                    )
+                    ctx.write_event_to_stream(
+                        AgentStreamStructuredOutput(output=output.structured_response)
                     )
                 except Exception as e:
                     warnings.warn(
