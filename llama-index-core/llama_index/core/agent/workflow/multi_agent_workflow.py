@@ -655,6 +655,10 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         system_prompt: Optional[str] = None,
         state_prompt: Optional[Union[str, BasePromptTemplate]] = None,
         initial_state: Optional[dict] = None,
+        output_cls: Optional[Type[BaseModel]] = None,
+        structured_output_fn: Optional[
+            Callable[[List[ChatMessage]], Dict[str, Any]]
+        ] = None,
         timeout: Optional[float] = None,
         verbose: bool = False,
     ) -> "AgentWorkflow":
@@ -687,6 +691,8 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                     system_prompt=system_prompt,
                 )
             ],
+            output_cls=output_cls,
+            structured_output_fn=structured_output_fn,
             state_prompt=state_prompt,
             initial_state=initial_state,
             timeout=timeout,

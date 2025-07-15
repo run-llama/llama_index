@@ -323,3 +323,84 @@ async def test_multi_agent_openai() -> None:
     assert isinstance(result.structured_response, dict)
     assert isinstance(result.get_pydantic_model(MathResult), MathResult)
     assert result.get_pydantic_model(MathResult).result == 1800
+
+
+@pytest.mark.asyncio
+async def test_from_tools_or_functions() -> None:
+    def multiply(x: int, j: int) -> int:
+        """
+        Multiply two numbers together.
+
+        Args:
+            x (int): first factor
+            j (int): second factor
+        Returns:
+            int: the result of the multiplication
+
+        """
+        return x * j
+
+    wf: AgentWorkflow = AgentWorkflow.from_tools_or_functions(
+        tools_or_functions=[multiply],
+        system_prompt="You are an agent.",
+        output_cls=Structure,
+        llm=TestLLM(
+            responses=[
+                ChatMessage(role="assistant", content="Success with the workflow!")
+            ],
+            structured_response=Structure(hello="hello", world=3).model_dump_json(),
+        ),
+    )
+    response = await wf.run(user_msg="Hello world!")
+    assert "Success with the workflow!" in str(response.response)
+    assert response.get_pydantic_model(Structure) == Structure(hello="hello", world=3)
+    wf1: AgentWorkflow = AgentWorkflow.from_tools_or_functions(
+        tools_or_functions=[multiply],
+        system_prompt="You are an agent.",
+        structured_output_fn=structured_function_fn,
+        llm=TestLLM(
+            responses=[
+                ChatMessage(role="assistant", content="Success with the workflow!")
+            ],
+            structured_response=Structure(hello="hello", world=3).model_dump_json(),
+        ),
+    )
+    response = await wf1.run(user_msg="Hello world!")
+    assert "Success with the workflow!" in str(response.response)
+    assert response.get_pydantic_model(Structure) == Structure(hello="bonjour", world=2)
+
+
+@pytest.mark.asyncio
+@pytest.mark.skipif(condition=skip_condition, reason="OPENAI_API_KEY is not available.")
+async def test_multi_agent_openai_from_tools() -> None:
+    from llama_index.llms.openai import OpenAI
+
+    class MathResult(BaseModel):
+        operation: str = Field(description="The operation performed")
+        result: int = Field(description="The result of the operation")
+
+    def multiply(x: int, j: int) -> int:
+        """
+        Multiply two numbers together.
+
+        Args:
+            x (int): first factor
+            j (int): second factor
+        Returns:
+            int: the result of the multiplication
+
+        """
+        return x * j
+
+    multiplication_wf: AgentWorkflow = AgentWorkflow.from_tools_or_functions(
+        llm=OpenAI(model="gpt-4.1"),
+        system_prompt="You are the CalculatorAgent. Your task is to calculate the results of an operation, if needed using the `multiply`tool you are provided with.",
+        tools_or_functions=[multiply],
+        output_cls=MathResult,
+    )
+
+    result = await multiplication_wf.run(user_msg="What is 30 multiplied by 60?")
+    assert isinstance(result, AgentOutput)
+    assert isinstance(result.structured_response, dict)
+    assert isinstance(result.get_pydantic_model(MathResult), MathResult)
+    assert result.get_pydantic_model(MathResult).result == 1800
