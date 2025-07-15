@@ -92,13 +92,17 @@ nav:
       - Agents:
           - ./examples/agent/Chatbot_SEC.ipynb
           - ./examples/agent/agent_builder.ipynb
+          - ./examples/agent/agent_with_structured_output.ipynb
           - ./examples/agent/agent_workflow_basic.ipynb
           - ./examples/agent/agent_workflow_multi.ipynb
           - ./examples/agent/agent_workflow_research_assistant.ipynb
+          - ./examples/agent/agents_as_tools.ipynb
           - ./examples/agent/anthropic_agent.ipynb
           - ./examples/agent/bedrock_converse_agent.ipynb
           - ./examples/agent/code_act_agent.ipynb
+          - ./examples/agent/custom_multi_agent.ipynb
           - ./examples/agent/from_scratch_code_act_agent.ipynb
+          - ./examples/agent/gemini_agent.ipynb
           - ./examples/agent/memory/chat_memory_buffer.ipynb
           - ./examples/agent/memory/composable_memory.ipynb
           - ./examples/agent/memory/summary_memory_buffer.ipynb
@@ -337,6 +341,7 @@ nav:
           - ./examples/llm/friendli.ipynb
           - ./examples/llm/gemini.ipynb
           - ./examples/llm/google_genai.ipynb
+          - ./examples/llm/grok.ipynb
           - ./examples/llm/groq.ipynb
           - ./examples/llm/huggingface.ipynb
           - ./examples/llm/ibm_watsonx.ipynb
@@ -609,11 +614,13 @@ nav:
       - Tools:
           - ./examples/tools/AgentQL_browser_agent.ipynb
           - ./examples/tools/OnDemandLoaderTool.ipynb
+          - ./examples/tools/Use_Klavis_with_LlamaIndex.ipynb
           - ./examples/tools/azure_code_interpreter.ipynb
           - ./examples/tools/cassandra.ipynb
           - ./examples/tools/eval_query_engine_tool.ipynb
           - ./examples/tools/function_tool_callback.ipynb
           - ./examples/tools/mcp.ipynb
+          - ./examples/tools/mcp_agent_tools.ipynb
           - ./examples/tools/order_completion_agent_with_artifact_editor.ipynb
       - Transforms:
           - ./examples/transforms/TransformsEval.ipynb
@@ -649,6 +656,7 @@ nav:
           - ./examples/vector_stores/DeepLakeIndexDemo.ipynb
           - ./examples/vector_stores/DocArrayHnswIndexDemo.ipynb
           - ./examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb
+          - ./examples/vector_stores/DragonflyIndexDemo.ipynb
           - ./examples/vector_stores/DuckDBDemo.ipynb
           - ./examples/vector_stores/ElasticsearchIndexDemo.ipynb
           - ./examples/vector_stores/Elasticsearch_demo.ipynb
@@ -671,6 +679,7 @@ nav:
           - ./examples/vector_stores/MongoDBAtlasVectorSearch.ipynb
           - ./examples/vector_stores/MongoDBAtlasVectorSearchRAGFireworks.ipynb
           - ./examples/vector_stores/MongoDBAtlasVectorSearchRAGOpenAI.ipynb
+          - ./examples/vector_stores/MoorchehDemo.ipynb
           - ./examples/vector_stores/MyScaleIndexDemo.ipynb
           - ./examples/vector_stores/Neo4jVectorDemo.ipynb
           - ./examples/vector_stores/NileVectorStore.ipynb
@@ -711,6 +720,7 @@ nav:
           - ./examples/vector_stores/ZepIndexDemo.ipynb
           - ./examples/vector_stores/chroma_auto_retriever.ipynb
           - ./examples/vector_stores/chroma_metadata_filter.ipynb
+          - ./examples/vector_stores/db2llamavs.ipynb
           - ./examples/vector_stores/elasticsearch_auto_retriever.ipynb
           - ./examples/vector_stores/existing_data/pinecone_existing_data.ipynb
           - ./examples/vector_stores/existing_data/weaviate_existing_data.ipynb
@@ -984,6 +994,7 @@ nav:
           - ./api_reference/indices/index.md
           - ./api_reference/indices/keyword.md
           - ./api_reference/indices/knowledge_graph.md
+          - ./api_reference/indices/lancedb.md
           - ./api_reference/indices/llama_cloud.md
           - ./api_reference/indices/postgresml.md
           - ./api_reference/indices/property_graph.md
@@ -1258,6 +1269,7 @@ nav:
           - ./api_reference/postprocessor/embedding_recency.md
           - ./api_reference/postprocessor/fixed_recency.md
           - ./api_reference/postprocessor/flag_embedding_reranker.md
+          - ./api_reference/postprocessor/flashrank_rerank.md
           - ./api_reference/postprocessor/ibm.md
           - ./api_reference/postprocessor/index.md
           - ./api_reference/postprocessor/jinaai_rerank.md
@@ -1302,6 +1314,8 @@ nav:
           - ./api_reference/program/openai.md
       - Prompts:
           - ./api_reference/prompts/index.md
+      - Protocols:
+          - ./api_reference/protocols/ag_ui.md
       - Query Engines:
           - ./api_reference/query_engine/FLARE.md
           - ./api_reference/query_engine/JSONalayze.md
@@ -1410,7 +1424,6 @@ nav:
           - ./api_reference/readers/graphql.md
           - ./api_reference/readers/guru.md
           - ./api_reference/readers/hatena_blog.md
-          - ./api_reference/readers/hive.md
           - ./api_reference/readers/hubspot.md
           - ./api_reference/readers/huggingface_fs.md
           - ./api_reference/readers/hwp.md
@@ -1569,6 +1582,7 @@ nav:
               - ./api_reference/storage/docstore/azure.md
               - ./api_reference/storage/docstore/azurecosmosnosql.md
               - ./api_reference/storage/docstore/couchbase.md
+              - ./api_reference/storage/docstore/duckdb.md
               - ./api_reference/storage/docstore/dynamodb.md
               - ./api_reference/storage/docstore/elasticsearch.md
               - ./api_reference/storage/docstore/firestore.md
@@ -1594,6 +1608,7 @@ nav:
               - ./api_reference/storage/index_store/azure.md
               - ./api_reference/storage/index_store/azurecosmosnosql.md
               - ./api_reference/storage/index_store/couchbase.md
+              - ./api_reference/storage/index_store/duckdb.md
               - ./api_reference/storage/index_store/dynamodb.md
               - ./api_reference/storage/index_store/elasticsearch.md
               - ./api_reference/storage/index_store/firestore.md
@@ -1608,6 +1623,7 @@ nav:
               - ./api_reference/storage/kvstore/azure.md
               - ./api_reference/storage/kvstore/azurecosmosnosql.md
               - ./api_reference/storage/kvstore/couchbase.md
+              - ./api_reference/storage/kvstore/duckdb.md
               - ./api_reference/storage/kvstore/dynamodb.md
               - ./api_reference/storage/kvstore/elasticsearch.md
               - ./api_reference/storage/kvstore/firestore.md
@@ -1640,6 +1656,7 @@ nav:
               - ./api_reference/storage/vector_store/couchbase.md
               - ./api_reference/storage/vector_store/dashvector.md
               - ./api_reference/storage/vector_store/databricks.md
+              - ./api_reference/storage/vector_store/db2.md
               - ./api_reference/storage/vector_store/deeplake.md
               - ./api_reference/storage/vector_store/docarray.md
               - ./api_reference/storage/vector_store/duckdb.md
@@ -1661,11 +1678,13 @@ nav:
               - ./api_reference/storage/vector_store/metal.md
               - ./api_reference/storage/vector_store/milvus.md
               - ./api_reference/storage/vector_store/mongodb.md
+              - ./api_reference/storage/vector_store/moorcheh.md
               - ./api_reference/storage/vector_store/neo4jvector.md
               - ./api_reference/storage/vector_store/neptune.md
               - ./api_reference/storage/vector_store/nile.md
               - ./api_reference/storage/vector_store/objectbox.md
               - ./api_reference/storage/vector_store/oceanbase.md
+              - ./api_reference/storage/vector_store/openGauss.md
               - ./api_reference/storage/vector_store/opensearch.md
               - ./api_reference/storage/vector_store/oracledb.md
               - ./api_reference/storage/vector_store/pgvecto_rs.md
@@ -1720,6 +1739,7 @@ nav:
           - ./api_reference/tools/function.md
           - ./api_reference/tools/google.md
           - ./api_reference/tools/graphql.md
+          - ./api_reference/tools/hive.md
           - ./api_reference/tools/index.md
           - ./api_reference/tools/ionic_shopping.md
           - ./api_reference/tools/jina.md
@@ -1761,6 +1781,7 @@ nav:
           - ./api_reference/tools/zapier.md
       - Voice Agents:
           - ./api_reference/voice_agents/elevenlabs.md
+          - ./api_reference/voice_agents/openai.md
       - Workflow:
           - ./api_reference/workflow/decorators.md
           - ./api_reference/workflow/context.md
@@ -1778,9 +1799,7 @@ nav:
       - Changelog: ./CHANGELOG.md
       - Presentations: ./presentations/past_presentations.md
       - Deprecated Terms: ./changes/deprecated_terms.md
-  - LlamaCloud:
-      - LlamaCloud: ./llama_cloud/index.md
-      - LlamaParse: ./llama_cloud/llama_parse.md
+  - LlamaCloud: https://docs.cloud.llamaindex.ai/
 plugins:
   - search
   - include_dir_to_nav
@@ -2066,7 +2085,6 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-database
             - ../llama-index-integrations/readers/llama-index-readers-remote
             - ../llama-index-integrations/readers/llama-index-readers-asana
-            - ../llama-index-integrations/readers/llama-index-readers-hive
             - ../llama-index-integrations/readers/llama-index-readers-docstring-walker
             - ../llama-index-integrations/readers/llama-index-readers-airbyte-salesforce
             - ../llama-index-integrations/readers/llama-index-readers-stripe-docs
@@ -2477,6 +2495,17 @@ plugins:
             - ../llama-index-integrations/voice_agents/llama-index-voice-agents-elevenlabs
             - ../llama-index-integrations/tools/llama-index-tools-artifact-editor
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-openai-like
+            - ../llama-index-integrations/protocols/llama-index-protocols-ag-ui
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-openGauss
+            - ../llama-index-integrations/tools/llama-index-tools-hive
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-db2
+            - ../llama-index-integrations/voice_agents/llama-index-voice-agents-openai
+            - ../llama-index-integrations/indices/llama-index-indices-managed-lancedb
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-moorcheh
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-flashrank-rerank
+            - ../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-duckdb
+            - ../llama-index-integrations/storage/docstore/llama-index-storage-docstore-duckdb
+            - ../llama-index-integrations/storage/index_store/llama-index-storage-index-store-duckdb
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

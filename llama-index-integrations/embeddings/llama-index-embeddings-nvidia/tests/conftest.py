@@ -71,7 +71,8 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
     mode = get_mode(metafunc.config)
 
     if "model" in metafunc.fixturenames:
-        models = [DEFAULT_MODEL]
+        # Default models to test - include both default and custom endpoint models
+        models = [DEFAULT_MODEL, "NV-Embed-QA"]
         if model := metafunc.config.getoption("--model-id"):
             models = [model]
         elif metafunc.config.getoption("--all-models"):

@@ -254,6 +254,7 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         query_bundle: QueryBundle,
         mode: Optional[CompositeRetrievalMode] = None,
         rerank_top_n: Optional[int] = None,
+        rerank_config: Optional[ReRankConfig] = None,
     ) -> List[NodeWithScore]:
         mode = mode if mode is not None else self._mode
 

@@ -11,10 +11,13 @@ from llama_index.core.llms import (
     TextBlock,
     MessageRole,
     ChatResponse,
+    CachePoint,
+    CacheControl,
 )
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.anthropic import Anthropic
 from llama_index.llms.anthropic.base import AnthropicChatResponse
+from llama_index.llms.anthropic.utils import messages_to_anthropic_messages
 
 
 def test_text_inference_embedding_class():
@@ -360,3 +363,25 @@ def test_prepare_chat_with_no_tools_tool_not_required():
 
     assert "tool_choice" not in result
     assert len(result["tools"]) == 0
+
+
+def test_cache_point_to_cache_control() -> None:
+    messages = [
+        ChatMessage(role="system", blocks=[TextBlock(text="Hello1")]),
+        ChatMessage(
+            role="user",
+            blocks=[
+                TextBlock(text="Hello"),
+                CachePoint(cache_control=CacheControl(type="ephemeral")),
+            ],
+        ),
+    ]
+    ant_messages, _ = messages_to_anthropic_messages(messages)
+    print(ant_messages[0]["content"][-1]["cache_control"])
+    assert (
+        ant_messages[0]["content"][-1]["cache_control"]["cache_control"]["type"]
+        == "ephemeral"
+    )
+    assert (
+        ant_messages[0]["content"][-1]["cache_control"]["cache_control"]["ttl"] == "5m"
+    )

@@ -90,7 +90,7 @@ memory = Mem0Memory.from_config(
 
 Currently, Mem0 Memory is supported in the `SimpleChatEngine`, `FunctionCallingAgent` and `ReActAgent`.
 
-Intilaize the LLM
+Initialize the LLM
 
 ```python
 import os
