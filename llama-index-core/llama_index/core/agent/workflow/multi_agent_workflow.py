@@ -1,11 +1,10 @@
 from abc import ABCMeta
-import json
 import inspect
 import warnings
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Type, cast
 from pydantic import BaseModel
 
-from llama_index.core.agent.utils import messages_to_xml_format
+from llama_index.core.agent.utils import generate_structured_response
 from llama_index.core.agent.workflow.base_agent import (
     BaseWorkflowAgent,
     DEFAULT_AGENT_NAME,
@@ -450,8 +449,9 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         if not ev.tool_calls:
             agent = self.agents[ev.current_agent_name]
             memory = await ctx.store.get("memory")
-            messages = await memory.aget()
+            # important: messages should always be fetched after calling finalize, otherwise they do not contain the agent's response
             output = await agent.finalize(ctx, ev, memory)
+            messages = await memory.aget()
 
             cur_tool_calls: List[ToolCallResult] = await ctx.store.get(
                 "current_tool_calls", default=[]
@@ -466,23 +466,21 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                             messages
                         )
                     else:
-                        output.structured_response = self.structured_output_fn(messages)
+                        output.structured_response = cast(
+                            Dict[str, Any], self.structured_output_fn(messages)
+                        )
                 except Exception as e:
                     warnings.warn(
-                        message=f"An error occurred while producing the structured output from your agent: {e}."
+                        f"There was a problem with the generation of the structured output: {e}"
                     )
             if self.output_cls is not None:
                 try:
-                    xml_message = messages_to_xml_format(messages)
-                    structured_response = await agent.llm.as_structured_llm(
-                        self.output_cls
-                    ).achat(messages=[xml_message], tool_required=True)
-                    output.structured_response = json.loads(
-                        structured_response.message.content
+                    output.structured_response = await generate_structured_response(
+                        messages=messages, llm=agent.llm, output_cls=self.output_cls
                     )
                 except Exception as e:
                     warnings.warn(
-                        message=f"An error occurred while producing the structured output from your agent: {e}."
+                        f"There was a problem with the generation of the structured output: {e}"
                     )
 
             return StopEvent(result=output)

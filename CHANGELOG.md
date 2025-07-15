@@ -1,5 +1,68 @@
 # ChangeLog
 
+## [2025-07-14]
+
+### `llama-index-core` [0.12.49]
+
+- fix: skip tests on CI (#19416)
+- fix: fix structured output (#19414)
+- Fix: prevent duplicate triplets in SimpleGraphStore.upsert_triplet (#19404)
+- Add retry capability to workflow agents (#19393)
+- chore: modifying raptors dependencies with stricter rules to avoid test failures (#19394)
+- feat: adding a first implementation of structured output in agents (#19337)
+- Add tests for and fix issues with Vector Store node serdes (#19388)
+- Refactor vector index retrieval (#19382)
+- Retriever Query Engine should use async node postprocessors (#19380)
+
+### `llama-index-llms-bedrock-converse` [0.7.5]
+
+- Fix BedrockConverse streaming token counting by handling messageStop … (#19369)
+
+### `llama-index-llms-nvidia` [0.3.5]
+
+- nvidia-llm : Adding support to use llm models outside default list (#19366)
+
+### `llama-index-llms-oci-genai` [0.5.2]
+
+- Fix bugs in tool calling for OCI generative AI Llama models (#19376)
+
+### `llama-index-postprocessor-flashrank-rerank` [0.1.0]
+
+- Fix bugs in tool calling for OCI generative AI Llama models (#19376)
+
+### `llama-index-readers-web` [0.4.4]
+
+- fix: avoid SimpleWebPageReader and others to use url as a Document id (#19398)
+
+### `llama-index-storage-docstore-duckdb` [0.1.0]
+
+- Add DuckDB KV, Document, and Index Store
+  (#19282)
+
+### `llama-index-storage-index-store-duckdb` [0.1.0]
+
+- Add DuckDB KV, Document, and Index Store
+  (#19282)
+
+### `llama-index-storage-kvstore-duckdb` [0.1.3]
+
+- DuckDB: Deadlocks-b-gone (#19401)
+- Improvements for DuckDB thread safety and embed dimension handling (#19391)
+- Add DuckDB KV, Document, and Index Store
+  (#19282)
+
+### `llama-index-vector-stores-duckdb` [0.4.6]
+
+- DuckDB: Deadlocks-b-gone (#19401)
+- Improvements for DuckDB thread safety and embed dimension handling (#19391)
+- DuckDB Async and Faster Cosine Similarity
+  (#19383)
+- DuckDB Small clean-up and add embeddings to returned nodes (#19377)
+
+### `llama-index-vector-stores-moorcheh` [0.1.0]
+
+- feat: Add Moorcheh vector store integration (#19349)
+
 ## [2025-07-09]
 
 ### `llama-index-core` [0.12.48]
