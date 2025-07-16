@@ -809,6 +809,11 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
             if self._index_management == IndexManagement.VALIDATE_INDEX:
                 self._validate_index(index_name)
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Class name."""
+        return "AzureAISearchVectorStore"
+
     @property
     def client(self) -> Any:
         """Get client."""
