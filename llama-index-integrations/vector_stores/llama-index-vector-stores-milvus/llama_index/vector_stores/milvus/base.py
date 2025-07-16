@@ -402,6 +402,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
             f"Successfully set properties for collection: {self.collection_name}"
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Class name."""
+        return "MilvusVectorStore"
+
     @property
     def client(self) -> MilvusClient:
         """Get client."""

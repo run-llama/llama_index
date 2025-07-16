@@ -89,11 +89,12 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
     def _get_text_from_messages(self, messages: List[ChatMessage]) -> str:
         """Get the text from the messages."""
         text = ""
-        for message in messages:
+        for i, message in enumerate(messages):
             for block in message.blocks:
                 if isinstance(block, TextBlock):
                     text += block.text
-
+            if len(messages) > 1 and i != len(messages) - 1:
+                text += " "
         return text
 
     async def _aget(
@@ -125,7 +126,17 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
             if "filters" in self.query_kwargs and isinstance(
                 self.query_kwargs["filters"], MetadataFilters
             ):
-                self.query_kwargs["filters"].filters.append(filter)
+                # only add session_id filter if it does not exist in the filters list
+                session_id_filter_exists = False
+                for metadata_filter in self.query_kwargs["filters"].filters:
+                    if (
+                        isinstance(metadata_filter, MetadataFilter)
+                        and metadata_filter.key == "session_id"
+                    ):
+                        session_id_filter_exists = True
+                        break
+                if not session_id_filter_exists:
+                    self.query_kwargs["filters"].filters.append(filter)
             else:
                 self.query_kwargs["filters"] = MetadataFilters(filters=[filter])
 

@@ -51,13 +51,12 @@ class GlobalsHelper:
         from nltk.data import path as nltk_path
 
         # Set up NLTK data directory
-        self._nltk_data_dir = os.environ.get(
-            "NLTK_DATA",
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "_static/nltk_cache",
-            ),
-        )
+        if "NLTK_DATA" in os.environ:
+            path = Path(os.environ["NLTK_DATA"])
+        else:
+            path = Path(platformdirs.user_cache_dir("llama_index"))
+
+        self._nltk_data_dir = str(path / "_static/nltk_cache")
 
         # Ensure the directory exists
         os.makedirs(self._nltk_data_dir, exist_ok=True)
