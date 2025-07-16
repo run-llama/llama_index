@@ -1,10 +1,13 @@
 # Using Structured Output
 
-Agents are knowingly unreliable in their outputs, as most of the times we would like them to answer in a specific format but they do not follow the rules due to their internal complexity.
+Most of the time you need results from an agent in a specific format. Agents results can return structured json in two ways:
 
-To tackle this challenge, we added the possibility of specifying a structured output format within single and multi-agent workflows so that you can have a more fine-grained control over the data structure that your agent returns.
+1. `output_cls` – a Pydantic model to use as a schema for the output
+2. `structured_output_fn` – For more advanced use cases, supply a custom function that validates or rewrites the agent’s conversation into any model you want.
 
-You can do it by adding an `output_cls` argument to the initialization options of your agent/multi-agent workflows:
+Both single-agent `FunctionAgent` and multi-agent `AgentWorkflow` workflows support these options - let's explore the possibilities:
+
+### Use `output_cls`
 
 ```python
 from llama_index.core.agent.workflow import FunctionAgent, AgentWorkflow
@@ -85,7 +88,9 @@ workflow = AgentWorkflow.from_tools_or_functions(
 )
 ```
 
-Or you can define a custom function that takes as input a sequence of ChatMessages produced by the agent workflow and returns a dictionary (that can be turned into a BaseModel subclass):
+### Use `structured_output_fn`
+
+The custom function should take as input a sequence of `ChatMessage` objects produced by the agent workflow and returns a dictionary (that can be turned into a `BaseModel` subclass):
 
 ```python
 import json
@@ -98,21 +103,7 @@ class Flavor(BaseModel):
     with_sugar: bool
 
 
-# define it sync
-def structured_output_parsing(messages: List[ChatMessage]) -> Dict[str, Any]:
-    sllm = llm.as_structured_llm(Flavor)
-    messages.append(
-        ChatMessage(
-            role="user",
-            content="Given the previous message history, structure the output based on the provided format.",
-        )
-    )
-    response = sllm.chat(messages)
-    return json.loads(response.message.content)
-
-
-# define it async
-async def astructured_output_parsing(
+async def structured_output_parsing(
     messages: List[ChatMessage],
 ) -> Dict[str, Any]:
     sllm = llm.as_structured_llm(Flavor)
@@ -130,23 +121,18 @@ def get_flavor(ice_cream_shop: str):
     return "Strawberry with no extra sugar"
 
 
-agent_sync = FunctionAgent(
+agent = FunctionAgent(
     tools=[get_flavor],
     name="ice_cream_shopper",
     system_prompt="You are an agent that knows the ice cream flavors in various shops.",
     structured_output_fn=structured_output_parsing,
     llm=llm,
 )
-agent_async = FunctionAgent(
-    tools=[get_flavor],
-    name="ice_cream_shopper",
-    system_prompt="You are an agent that knows the ice cream flavors in various shops.",
-    structured_output_fn=astructured_output_parsing,
-    llm=llm,
-)
 ```
 
-Now you can get the structured output while the workflow by using the `AgentStreamStructuredOutput` event:
+### Streaming the Structured Output
+
+You can get the structured output while the workflow is running by using the `AgentStreamStructuredOutput` event:
 
 ```python
 from llama_index.core.agent.workflow import (
@@ -177,7 +163,7 @@ async for event in handler.stream_events():
 response = await handler
 ```
 
-And you can parse the structured output in the agent's response accessing it directly as a dictionary or loading it as a BaseModel subclass by using the `get_pydantic_model` method:
+And you can parse the structured output in the agent's response accessing it directly as a dictionary or loading it as a `BaseModel` subclass by using the `get_pydantic_model` method:
 
 ```python
 print(response.structured_response)
