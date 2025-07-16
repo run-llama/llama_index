@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-CI = os.getenv("CI")
+CI = os.getenv("CI", "").lower() in ("1", "true", "yes")
 
 
 @pytest.mark.skipif(CI, reason="Skipping in CI environment")
