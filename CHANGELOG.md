@@ -1,5 +1,358 @@
 # ChangeLog
 
+## [2025-07-14]
+
+### `llama-index-core` [0.12.49]
+
+- fix: skip tests on CI (#19416)
+- fix: fix structured output (#19414)
+- Fix: prevent duplicate triplets in SimpleGraphStore.upsert_triplet (#19404)
+- Add retry capability to workflow agents (#19393)
+- chore: modifying raptors dependencies with stricter rules to avoid test failures (#19394)
+- feat: adding a first implementation of structured output in agents (#19337)
+- Add tests for and fix issues with Vector Store node serdes (#19388)
+- Refactor vector index retrieval (#19382)
+- Retriever Query Engine should use async node postprocessors (#19380)
+
+### `llama-index-llms-bedrock-converse` [0.7.5]
+
+- Fix BedrockConverse streaming token counting by handling messageStop … (#19369)
+
+### `llama-index-llms-nvidia` [0.3.5]
+
+- nvidia-llm : Adding support to use llm models outside default list (#19366)
+
+### `llama-index-llms-oci-genai` [0.5.2]
+
+- Fix bugs in tool calling for OCI generative AI Llama models (#19376)
+
+### `llama-index-postprocessor-flashrank-rerank` [0.1.0]
+
+- Fix bugs in tool calling for OCI generative AI Llama models (#19376)
+
+### `llama-index-readers-web` [0.4.4]
+
+- fix: avoid SimpleWebPageReader and others to use url as a Document id (#19398)
+
+### `llama-index-storage-docstore-duckdb` [0.1.0]
+
+- Add DuckDB KV, Document, and Index Store
+  (#19282)
+
+### `llama-index-storage-index-store-duckdb` [0.1.0]
+
+- Add DuckDB KV, Document, and Index Store
+  (#19282)
+
+### `llama-index-storage-kvstore-duckdb` [0.1.3]
+
+- DuckDB: Deadlocks-b-gone (#19401)
+- Improvements for DuckDB thread safety and embed dimension handling (#19391)
+- Add DuckDB KV, Document, and Index Store
+  (#19282)
+
+### `llama-index-vector-stores-duckdb` [0.4.6]
+
+- DuckDB: Deadlocks-b-gone (#19401)
+- Improvements for DuckDB thread safety and embed dimension handling (#19391)
+- DuckDB Async and Faster Cosine Similarity
+  (#19383)
+- DuckDB Small clean-up and add embeddings to returned nodes (#19377)
+
+### `llama-index-vector-stores-moorcheh` [0.1.0]
+
+- feat: Add Moorcheh vector store integration (#19349)
+
+## [2025-07-09]
+
+### `llama-index-core` [0.12.48]
+
+- fix: convert dict chat_history to ChatMessage objects in AgentWorkflowStartEvent (#19371)
+- fix: Replace ctx.get/set with ctx.store.get/set in Context (#19350)
+- Bump the pip group across 6 directories with 1 update (#19357)
+- Make fewer trips to KV store during Document Hash Checks (#19362)
+- Don't store Copy of document in metadata and properly return Nodes (#19343)
+- Bump llama-index-core from 0.12.8 to 0.12.41 in /docs in the pip group across 1 directory (#19345)
+- fix: Ensure CallbackManager is applied to default embed_model (#19335)
+- fix publish sub-package workflow (#19338)
+
+### `llama-index-embeddings-huggingface-optimum-intel` [0.3.1]
+
+- Fix IntelEmbedding base.py (#19351)
+
+### `llama-index-indices-managed-lancedb` [0.1.0]
+
+- Fix broken lancedb tests (#19352)
+
+### `llama-index-indices-managed-llamacloud` [0.7.10]
+
+- vbump llama-cloud (#19355)
+- Fix async retrieval of page figure nodes (#19334)
+
+### `llama-index-llms-google-genai` [0.2.4]
+
+- Add Cached Content Support to GoogleGenAI LLM Integration (#19361)
+
+### `llama-index-llms-oci-genai` [0.5.1]
+
+- Add support of Image prompt for OCI generative AI Llama models (#19306)
+
+### `llama-index-readers-file` [0.4.11]
+
+- swamp xml for defusedxml (#19342)
+
+### `llama-index-storage-chat-stores-postgres` [0.2.2]
+
+- Update asyncpg (#19365)
+
+## [2025-07-06]
+
+### `llama-index-core` [0.12.47]
+
+- feat: add default `max_iterations` arg to `.run()` of 20 for agents (#19035)
+- feat: set `tool_required` to `True` for `FunctionCallingProgram` and structured LLMs where supported (#19326)
+- fix: fix missing raw in agent workflow events (#19325)
+- fix: fixed parsing of empty list in parsing json output (#19318)
+- chore: Deprecate Multi Modal LLMs (#19115)
+  - All existing multi-modal llms are now extensions of their base `LLM` counterpart
+  - Base `LLM` classes support multi-modal features in `llama-index-core`
+  - Base `LLM` classes use `ImageBlock` internally to support multi-modal features
+
+### `llama-index-cli` [0.4.4]
+
+- fix: prevent command injection vulnerability in RAG CLI --clear flag (#19322)
+
+### `llama-index-indices-managed-lancedb` [0.1.0]
+
+- feat: Adding an integration for LanceDB MultiModal AI LakeHouse (#19232)
+
+### `llama-index-llms-anthropic` [0.7.6]
+
+- feat: anthropic citations support (#19316)
+
+### `llama-index-llms-oci-genai` [0.5.1]
+
+- feat: Add support of Image prompt for OCI generative AI Llama models (#19306)
+
+### `llama-index-readers-web` [0.4.3]
+
+- chore: Add firecrawl integration source (#19203)
+
+## [2025-07-02]
+
+### `llama-index-core` [0.12.46]
+
+- feat: Add async delete and insert to vector store index (#19281)
+- fix: Fixing ChatMessage to str handling of empty inputs (#19302)
+- fix: fix function tool context detection with typed context (#19309)
+- fix: inconsistent ref node handling (#19286)
+- chore: simplify citation block schema (#19308)
+
+### `llama-index-embeddings-google-genai` [0.2.1]
+
+- chore: bump min google-genai version (#19304)
+
+### `llama-index-embeddings-nvidia` [0.3.4]
+
+- fix: embedding model with custom endpoints 404 error (#19295)
+
+### `llama-index-llms-google-genai` [0.2.3]
+
+- chore: bump min google-genai version (#19304)
+
+### `llama-index-tools-mcp` [0.2.6]
+
+- fix: configuring resources from the mcp server correctly (#19307)
+
+### `llama-index-voice-agents-elevenlabs` [0.3.0-beta]
+
+- fix: Migrating Elevenlabs to adjust it to framework standard (#19273)
+
+## [2025-06-30]
+
+### `llama-index-core` [0.12.45]
+
+- feat: allow tools to output content blocks (#19265)
+- feat: Add chat UI events and models to core package (#19242)
+- fix: Support loading `Node` from ingestion cache (#19279)
+- fix: Fix SemanticDoubleMergingSplitterNodeParser not respecting max_chunk_size (#19235)
+- fix: replace `get_doc_id()` with `id_` in base index (#19266)
+- chore: remove usage and references to deprecated Context get/set API (#19275)
+- chore: deprecate older agent packages (#19249)
+
+### `llama-index-llms-anthropic` [0.7.5]
+
+- feat: Adding new AWS Claude models available on Bedrock (#19233)
+
+### `llama-index-embeddings-azure-openai` [0.3.9]
+
+- feat: Add dimensions parameter to AzureOpenAIEmbedding (#19239)
+
+### `llama-index-embeddings-bedrock` [0.5.2]
+
+- feat: Update aioboto3 dependency (#19237)
+
+### `llama-index-llms-bedrock-converse` [0.7.4]
+
+- feat: Update aioboto3 dependency (#19237)
+
+### `llama-index-llms-dashscope` [0.4.1]
+
+- fix: Fix dashscope qwen assistant api Error response problem, extract `tool_calls` info from ChatMessage kwargs to top level (#19224)
+
+### `llama-index-memory-mem0` [0.3.2]
+
+- feat: Adapting Mem0 to new framework memory standard (#19234)
+
+### `llama-index-tools-google` [0.5.0]
+
+- feat: Add proper async google search to tool spec (#19250)
+- fix: Clean up results in GoogleSearchToolSpec (#19246)
+
+### `llama-index-vector-stores-postgres` [0.5.4]
+
+- fix: Fix pg vector store sparse query (#19241)
+
+## [2025-06-25]
+
+### `llama-index-core` [0.12.44]
+
+- feat: Adding a `CachePoint` content block for caching chat messages (#19193)
+- fix: fix react system header formatting in workflow agent (#19158)
+- fix: fix ReActOutputParser when no "Thought:" prefix is produced by the LLM (#19190)
+- fix: Fixed string striping in react output parser (#19192)
+- fix: properly handle system prompt for CodeAct agent (#19191)
+- fix: Exclude raw field in AgentStream event to fix potential serialization issue (#19150)
+- chore: Mark older agent architectures in core as deprecated (#19205)
+- chore: deprecate query pipelines in code (#19206)
+
+### `llama-index-embeddings-fastembed` [0.3.5]
+
+- feat: Add Batch Support for FastEmbed (#19147)
+
+### `llama-index-embeddings-huggingface` [0.5.5]
+
+- feat: Add async batching for huggingface using `asyncio.to_thread` (#19207)
+
+### `llama-index-llms-anthropic` [0.7.4]
+
+- fix: update kwargs for anthropic bedrock (#19169)
+
+### `llama-index-llms-google-genai` [0.2.2]
+
+- fix: Setting up System instruction properly for google genai client (#19196)
+
+### `llama-index-llms-mistralai` [0.6.1]
+
+- fix: Fix image url handling in Mistral AI (#19139)
+
+### `llama-index-llms-perplexity` [0.3.7]
+
+- fix: make api_key use `PPLX_API_KEY` in perplexity llm integration (#19217)
+
+### `llama-index-postprocessor-bedrock-rerank` [0.4.0]
+
+- fix: Avoid changing 'top_n' self attribute at runtime (#19221)
+
+### `llama-index-postprocessor-sbert-rerank` [0.3.2]
+
+- feat: add `cross_encoder_kwargs` parameter for advanced configuration (#19148)
+
+### `llama-index-utils-workflow` [0.3.5]
+
+- feat: Adding visualization functions for single/multi agent workflows (#19101)
+
+### `llama-index-vector-stores-azureaisearch` [0.3.8]
+
+- feat: Enable forwarding of arbitrary Azure Search SDK parameters in AzureAISearchVectorStore for document retrieval (#19173)
+
+### `llama-index-vector-stores-db2` [0.1.0]
+
+- feat: add IBM Db2 vector store (#19195)
+
+### `llama-index-vector-stores-duckdb` [0.4.0]
+
+- feat: refactor DuckDB VectorStore (#19106)
+
+### `llama-index-vector-stores-pinecone` [0.6.0]
+
+- feat: support pinecone v7 (#19163)
+- fix: support python version `>=3.9,<4.0` for `llama-index-vector-stores-pinecone` (#19186)
+
+### `llama-index-vector-stores-qdrant` [0.6.1]
+
+- fix: fix types with IN/NIN filters in qdrant (#19159)
+
+### `llama-index-voice-agents-openai` [0.1.1-beta]
+
+- feat: Adding beta OpenAI Realtime Conversation integration (#19010)
+
+## [2025-06-18]
+
+### `llama-index-core` [0.12.43]
+
+- feat: Make BaseWorkflowAgent a workflow itself (#19052)
+- fix: make the progress bar of title extractor unified (#19131)
+- fix: Use `get_tqdm_iterable` in SimpleDirectoryReader (#18722)
+- chore: move out Workflows code to `llama-index-workflows` and keeping backward compatibility (#19043)
+- chore: move instrumentation code out to its own package `llama-index-instrumentation` (#19062)
+
+### `llama-index-llms-bedrock-converse` [0.7.2]
+
+- fix: improve empty tool call handling in bedrock converse (#19084)
+
+### `llama-index-llms-openai` [0.4.7]
+
+- fix: fix building openai responses dicts (#19089, #19094)
+
+### `llama-index-llms-perplexity` [0.3.6]
+
+- feat: Perf/improve robustness of perplexity llm integration (#19022)
+
+### `llama-index-postprocessor-sbert-rerank` [0.3.1]
+
+- feat: Added cache dir to Sentence Transformers post processor (#19097)
+
+### `llama-index-protocols-ag-ui` [0.1.2]
+
+- feat: add `ag-ui` protocol support (#19104, #19103, #19102, #18898)
+
+### `llama-index-readers-google` [0.6.2]
+
+- fix: Fix error getting metadata file IDs in google drive reader (#19118)
+
+### `llama-index-readers-hive` [0.3.1]
+
+- chore: deprecate and remove hive reader (#18990)
+
+### `llama-index-readers-mongodb` [0.3.2]
+
+- feat: Added Async driver for `alazy_load_data` for mongodb reader (#19038)
+
+### `llama-index-storage-chat-store-sqlite` [0.1.1]
+
+- fix: sqlite chat store compatibility with sqlalchemy 1.4 (#19067)
+
+### `llama-index-tools-hive` [0.1.0]
+
+- feat: Add Hive Intelligence search tool (#19029)
+
+### `llama-index-utils-workflow` [0.3.4]
+
+- feat: support drawing mermaid diagrams of workflows (#19083)
+
+### `llama-index-vector-stores-lancedb` [0.3.3]
+
+- fix: create table with pre-defined schema (#19064)
+
+### `llama-index-vector-stores-milvus` [0.8.5]
+
+- fix: `Connections.connect()` got multiple values for argument `alias` (#19119)
+
+### `llama-index-vector-stores-opengauss` [0.1.0]
+
+- feat: add openGauss integration (#19024)
+
 ## [2025-06-11]
 
 ### `llama-index-core` [0.12.42]

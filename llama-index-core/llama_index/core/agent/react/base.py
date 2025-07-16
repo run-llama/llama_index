@@ -10,6 +10,7 @@ from llama_index.core.agent.legacy.react.base import ReActAgent
 
 """
 
+import deprecated
 from typing import (
     Any,
     List,
@@ -36,8 +37,21 @@ from llama_index.core.tools import BaseTool, ToolOutput
 from llama_index.core.prompts.mixin import PromptMixinType
 
 
+@deprecated.deprecated(
+    reason=(
+        "ReActAgent has been rewritten and replaced by llama_index.core.agent.workflow.ReActAgent.\n\n"
+        "This implementation will be removed in a v0.13.0 and the new implementation will be "
+        "promoted to the `from llama_index.core.agent import ReActAgent` path.\n\n"
+        "See the docs for more information: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+    action="once",
+)
 class ReActAgent(AgentRunner):
     """
+    DEPRECATED: ReActAgent has been deprecated and is not maintained.
+    This implementation will be removed in a v0.13.0.
+    See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/
+
     ReAct agent.
 
     Subclasses AgentRunner with a ReActAgentWorker.

@@ -525,6 +525,9 @@ def to_openai_responses_message_dict(
             for tool_call in message.additional_kwargs["tool_calls"]
         ]
 
+        if "reasoning" in message.additional_kwargs:  # and if it is reasoning model
+            message_dicts = [message.additional_kwargs["reasoning"]] + message_dicts
+
         return message_dicts
 
     # there are some cases (like image generation or MCP tool call) that only support the string input
@@ -574,7 +577,6 @@ def to_openai_message_dicts(
     """Convert generic messages to OpenAI message dicts."""
     if is_responses_api:
         final_message_dicts = []
-        final_message_txt = ""
         for message in messages:
             message_dicts = to_openai_responses_message_dict(
                 message,
@@ -584,14 +586,17 @@ def to_openai_message_dicts(
             if isinstance(message_dicts, list):
                 final_message_dicts.extend(message_dicts)
             elif isinstance(message_dicts, str):
-                final_message_txt += message_dicts
+                final_message_dicts.append({"role": "user", "content": message_dicts})
             else:
                 final_message_dicts.append(message_dicts)
-        # this follows the logic of having a string-only input from to_openai_responses_message_dict
-        if final_message_txt and len(final_message_dicts) == 0:
-            return final_message_txt
-        elif final_message_txt and len(final_message_dicts) > 0:
-            final_message_dicts.append({"role": "user", "content": final_message_txt})
+
+        # If there is only one message, and it is a user message, return the content string directly
+        if (
+            len(final_message_dicts) == 1
+            and final_message_dicts[0]["role"] == "user"
+            and isinstance(final_message_dicts[0]["content"], str)
+        ):
+            return final_message_dicts[0]["content"]
 
         return final_message_dicts
     else:

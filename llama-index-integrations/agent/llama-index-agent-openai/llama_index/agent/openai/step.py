@@ -1,6 +1,7 @@
 """OpenAI agent worker."""
 
 import asyncio
+import deprecated
 import json
 import logging
 import uuid
@@ -124,6 +125,14 @@ def advanced_tool_call_parser(tool_call: OpenAIToolCall) -> Dict:
         )
 
 
+@deprecated.deprecated(
+    reason=(
+        "OpenAIAgentWorker has been deprecated and is not maintained.\n\n"
+        "`FunctionAgent` is the recommended replacement.\n\n"
+        "See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+    action="once",
+)
 class OpenAIAgentWorker(BaseAgentWorker):
     """OpenAI Agent agent worker."""
 

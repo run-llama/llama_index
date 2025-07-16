@@ -4,7 +4,7 @@ In LlamaIndex, an agent is a semi-autonomous piece of software powered by an LLM
 
 In LlamaIndex, you can either [build your own agentic workflows from scratch](../workflows/index.md), covered in the "Building Workflows" section, or you can use our pre-built agentic workflows like `FunctionAgent` (a simple function/tool calling agent) or `AgentWorkflow` (an agent capable of managing multiple agents). This tutorial covers building a function calling agent using `FunctionAgent`.
 
-To learn about how to build a multi-agent system, go to ["Multi-agent systems with AgentWorkflow"](./multi_agent.md).
+To learn about the various ways to build multi-agent systems, go to ["Multi-agent systems"](./multi_agent.md).
 
 ![agent flow](./agent_flow.png)
 
@@ -90,6 +90,8 @@ workflow = FunctionAgent(
 ```
 
 GPT-4o-mini is actually smart enough to not need tools to do such simple math, which is why we specified that it should use tools in the prompt.
+
+Beyond `FunctionAgent`, there are other agents available in LlamaIndex, such as [`ReActAgent`](../../examples/agent/react_agent.ipynb) and [`CodeActAgent`](../../examples/agent/code_act_agent.ipynb), which use different prompting strategies to execute tools.
 
 ## Ask a question
 

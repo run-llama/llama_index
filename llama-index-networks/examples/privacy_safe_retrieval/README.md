@@ -80,7 +80,7 @@ fill in your openai-api-key and then save it as `.env.contributor.service`
 (you can also save it simply as `.env` as the `ContributorRetrieverServiceSettings`
 class will look for `.env` file if it can't find `.env.contributor.service`).
 
-Additionally, we need to define the `SIMILIARITY_TOP_K` environment variable
+Additionally, we need to define the `SIMILARITY_TOP_K` environment variable
 for each of the retrievers. To do this, you can use `template.env.retriever` file
 and fill in your desired top-k value and then save it as `.env.retriever`. You
 must do this for both contributors.

@@ -147,6 +147,9 @@ def chat_from_gemini_response(
     if response.usage_metadata:
         raw["usage_metadata"] = response.usage_metadata.model_dump()
 
+    if hasattr(response, "cached_content") and response.cached_content:
+        raw["cached_content"] = response.cached_content
+
     content_blocks = []
     if (
         len(response.candidates) > 0
@@ -291,6 +294,14 @@ def prepare_chat_params(
         - chat_kwargs: processed keyword arguments for chat creation
 
     """
+    # Extract system message if present
+    system_message: str | None = None
+    if messages and messages[0].role == MessageRole.SYSTEM:
+        sys_msg = messages.pop(0)
+        system_message = sys_msg.content
+    # Now messages contains the rest of the chat history
+
+    # Merge messages with the same role
     merged_messages = merge_neighboring_same_role_messages(messages)
     initial_history = list(map(chat_message_to_gemini, merged_messages))
 
@@ -338,6 +349,10 @@ def prepare_chat_params(
     )
     if not isinstance(config, dict):
         config = config.model_dump()
+
+    # Add system message as system_instruction if present
+    if system_message:
+        config["system_instruction"] = system_message
 
     chat_kwargs: ChatParams = {"model": model, "history": history}
 

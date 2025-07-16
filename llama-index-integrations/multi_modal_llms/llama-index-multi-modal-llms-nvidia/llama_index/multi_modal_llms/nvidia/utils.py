@@ -1,7 +1,9 @@
 import base64
 import filetype
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
-from llama_index.core.schema import ImageDocument
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+from llama_index.core.schema import ImageDocument, ImageNode
+from llama_index.core.llms import ImageBlock
+from llama_index.core.base.llms.generic_utils import image_node_to_image_block
 import json
 import os
 import re
@@ -80,14 +82,14 @@ def encode_image(image_path: str) -> str:
         return base64.b64encode(image_file.read()).decode("utf-8")
 
 
-def create_image_content(image_document) -> Optional[Dict[str, Any]]:
+def create_image_content(image_document: ImageBlock) -> Optional[Dict[str, Any]]:
     """
     Create the image content based on the provided image document.
     """
     if image_document.image:
         mimetype = (
-            image_document.mimetype
-            if image_document.mimetype
+            image_document.image_mimetype
+            if image_document.image_mimetype
             else infer_image_mimetype_from_base64(image_document.image)
         )
         return {
@@ -95,28 +97,19 @@ def create_image_content(image_document) -> Optional[Dict[str, Any]]:
             "text": f'<img src="data:image/{mimetype};base64,{image_document.image}" />',
         }, ""
 
-    elif "asset_id" in image_document.metadata:
-        asset_id = image_document.metadata["asset_id"]
-        mimetype = image_document.mimetype if image_document.mimetype else "jpeg"
-        return {
-            "type": "text",
-            "text": f'<img src="data:image/{mimetype};asset_id,{asset_id}" />',
-        }, asset_id
-
-    elif image_document.image_url and image_document.image_url != "":
-        mimetype = infer_image_mimetype_from_file_path(image_document.image_url)
+    elif image_document.url and image_document.image_url != "":
+        mimetype = image_document.image_mimetype or infer_image_mimetype_from_file_path(
+            str(image_document.url)
+        )
         return {
             "type": "image_url",
-            "image_url": image_document.image_url,
+            "image_url": image_document.url,
         }, ""
-    elif (
-        "file_path" in image_document.metadata
-        and image_document.metadata["file_path"] != ""
-    ):
-        mimetype = infer_image_mimetype_from_file_path(
-            image_document.metadata["file_path"]
+    elif image_document.path:
+        mimetype = image_document.image_mimetype or infer_image_mimetype_from_file_path(
+            str(image_document.path)
         )
-        base64_image = encode_image(image_document.metadata["file_path"])
+        base64_image = image_document.resolve_image().read().decode("utf-8")
         return {
             "type": "text",
             "text": f'<img src="data:image/{mimetype};base64,{base64_image}" />',
@@ -141,8 +134,14 @@ def generate_nvidia_multi_modal_chat_message(
         if input.content:
             asset_ids.extend(_nv_vlm_get_asset_ids(input.content))
 
+    if all(isinstance(doc, ImageNode) for doc in image_documents):
+        image_docs: Sequence[ImageBlock] = [
+            image_node_to_image_block(doc) for doc in image_document
+        ]
+    else:
+        image_docs = cast(Sequence[ImageBlock], image_documents)
     # Process each image document
-    for image_document in image_documents:
+    for image_document in image_docs:
         image_content, asset_id = create_image_content(image_document)
         if image_content:
             completion_content.append(image_content)

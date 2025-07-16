@@ -79,7 +79,7 @@ def to_mistral_chunks(content_blocks: Sequence[ContentBlock]) -> Sequence[Conten
             content_chunks.append(TextChunk(text=content_block.text))
         elif isinstance(content_block, ImageBlock):
             if content_block.url:
-                content_chunks.append(ImageURLChunk(url=content_block.url))
+                content_chunks.append(ImageURLChunk(image_url=str(content_block.url)))
             else:
                 base_64_str = (
                     content_block.resolve_image(as_base64=True).read().decode("utf-8")
@@ -97,7 +97,6 @@ def to_mistral_chunks(content_blocks: Sequence[ContentBlock]) -> Sequence[Conten
                 )
         else:
             raise ValueError(f"Unsupported content block type {type(content_block)}")
-
     return content_chunks
 
 

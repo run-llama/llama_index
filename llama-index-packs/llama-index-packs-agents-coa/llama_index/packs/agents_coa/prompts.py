@@ -30,7 +30,7 @@ Question:
 Sally has 3 apples and buys 2 more. Then magically, a wizard casts a spell that multiplies the number of apples by 3. How many apples does Sally have now?
 
 Abstract plan of reasoning:
-After buying the apples, Sally has [FUNC add(3, 2) = y1] apples. Then, the wizard casts a spell to multiply the number of apples by 3, resulting in [FUNC multiply(y1, 3) = y2] apples.
+After buying the apples, Sally has [FUNC add(3, 2) = y1] apples. Then, the wizard casts a spell to multiply the number of apples by 3, resulting in [FUNC multiply("y1", 3) = y2] apples.
 
 Your Turn:
 -----------

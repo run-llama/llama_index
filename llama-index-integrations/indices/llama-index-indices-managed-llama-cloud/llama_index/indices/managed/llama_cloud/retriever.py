@@ -210,7 +210,7 @@ class LlamaCloudRetriever(BaseRetriever):
         if self._retrieve_page_figure_nodes:
             result_nodes.extend(
                 await apage_figure_nodes_to_node_with_score(
-                    self._aclient, results.image_nodes, self.project.id
+                    self._aclient, results.page_figure_nodes, self.project.id
                 )
             )
 
