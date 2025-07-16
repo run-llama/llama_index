@@ -618,7 +618,7 @@ class ConfluenceReader(BaseReader):
                 "title": page["title"],
                 "page_id": page["id"],
                 "status": page["status"],
-                "_url": self.base_url + page["_links"]["webui"],
+                "url": self.base_url + page["_links"]["webui"],
             },
         )
         self.observer.notify(
