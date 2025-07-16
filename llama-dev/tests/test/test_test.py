@@ -202,37 +202,6 @@ def test_install_failures(
     assert "Error:\nInstall failed" in result.stdout
 
 
-# @mock.patch("llama_dev.test.find_all_packages")
-# @mock.patch("llama_dev.test.get_changed_files")
-# @mock.patch("llama_dev.test.get_changed_packages")
-# @mock.patch("llama_dev.test.get_dependants_packages")
-# def test_skip_failures(
-#     mock_get_dependants,
-#     mock_get_changed_packages,
-#     mock_get_changed_files,
-#     mock_find_all_packages,
-#     monkeypatch,
-#     data_path,
-# ):
-#     mock_find_all_packages.return_value = {Path("/fake/repo/package1")}
-#     mock_get_changed_files.return_value = {Path("/fake/repo/package1/file.py")}
-#     mock_get_changed_packages.return_value = {Path("/fake/repo/package1")}
-#     mock_get_dependants.return_value = set()
-
-#     monkeypatch.setattr(llama_dev_test, "_run_tests", mocked_skip_failed)
-
-#     runner = CliRunner()
-#     result = runner.invoke(
-#         cli,
-#         ["--repo-root", data_path, "test", "--base-ref", "main"],
-#     )
-
-#     # Check console output
-#     assert result.exit_code == 0
-#     assert "⏭️  test_integration skipped" in result.stdout
-#     assert "Error:\nIntegration skipped" in result.stdout
-
-
 @mock.patch("llama_dev.test.find_all_packages")
 @mock.patch("llama_dev.test.get_changed_files")
 @mock.patch("llama_dev.test.get_changed_packages")
@@ -292,11 +261,10 @@ def test_skip_failures_unsupported_python(
 
     # Check console output
     assert result.exit_code == 0
-    # assert "⏭️  test_integration skipped" in result.stdout
     assert (
         "⏭️ test_integration skipped due to python version incompatibility"
         in result.stdout
-    )  # assert "Not compatible with Python" in result.stdout
+    )
 
 
 @mock.patch("llama_dev.test.find_all_packages")
