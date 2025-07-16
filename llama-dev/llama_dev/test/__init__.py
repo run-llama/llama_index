@@ -157,17 +157,29 @@ def test(
         for r in results
         if r["status"] == ResultStatus.INSTALL_FAILED
     ]
-    skipped = [
+    skipped_no_tests = [
+        r["package"].relative_to(repo_root)
+        for r in results
+        if r["status"] == ResultStatus.SKIPPED and "package has no tests" in r["stderr"]
+    ]
+    skipped_pyversion_incompatible = [
         r["package"].relative_to(repo_root)
         for r in results
         if r["status"] == ResultStatus.SKIPPED
+        and "Not compatible with Python" in r["stderr"]
     ]
 
-    if skipped:
+    if skipped_pyversion_incompatible:
         console.print(
-            f"\n{len(skipped)} packages were skipped due to Python version incompatibility:"
+            f"\n{len(skipped_pyversion_incompatible)} packages were skipped due to Python version incompatibility:"
         )
-        for p in skipped:
+        for p in skipped_pyversion_incompatible:
+            print(p)
+    if skipped_no_tests:
+        console.print(
+            f"\n{len(skipped_no_tests)} packages were skipped because they have no tests:"
+        )
+        for p in skipped_no_tests:
             print(p)
 
     if install_failed:
@@ -184,7 +196,8 @@ def test(
         exit(1)
     else:
         console.print(
-            f"\nTests passed for {len(results) - len(skipped)} packages.", style="green"
+            f"\nTests passed for {len(results) - len(skipped_no_tests) - len(skipped_pyversion_incompatible)} packages.",
+            style="green",
         )
 
 
