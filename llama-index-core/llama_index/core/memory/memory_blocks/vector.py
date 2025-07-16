@@ -93,7 +93,7 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
             for block in message.blocks:
                 if isinstance(block, TextBlock):
                     text += block.text
-            if len(messages) > 1 and i != len(messages)-1:
+            if len(messages) > 1 and i != len(messages) - 1:
                 text += " "
         return text
 
