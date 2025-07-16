@@ -26,7 +26,8 @@ class ResultStatus(Enum):
     INSTALL_FAILED = auto()
     TESTS_FAILED = auto()
     TESTS_PASSED = auto()
-    SKIPPED = auto()
+    NO_TESTS = auto()
+    UNSUPPORTED_PYTHON_VERSION = auto()
     COVERAGE_FAILED = auto()
 
 
@@ -132,8 +133,15 @@ def test(
                 )
             elif result["status"] == ResultStatus.TESTS_PASSED:
                 console.print(f"✅ {package_name} succeeded in {result['time']}")
-            elif result["status"] == ResultStatus.SKIPPED:
-                console.print(f"⏭️  {package_name} skipped")
+            elif result["status"] == ResultStatus.UNSUPPORTED_PYTHON_VERSION:
+                console.print(
+                    f"⏭️ {package_name} skipped due to python version incompatibility"
+                )
+                console.print(
+                    _trim(debug, f"Error:\n{result['stderr']}"), style="warning"
+                )
+            elif result["status"] == ResultStatus.NO_TESTS:
+                console.print(f"⏭️ {package_name} skipped due to no tests")
                 console.print(
                     _trim(debug, f"Error:\n{result['stderr']}"), style="warning"
                 )
@@ -160,12 +168,13 @@ def test(
     skipped_no_tests = [
         r["package"].relative_to(repo_root)
         for r in results
-        if r["status"] == ResultStatus.SKIPPED and "package has no tests" in r["stderr"]
+        if r["status"] == ResultStatus.NO_TESTS
+        and "package has no tests" in r["stderr"]
     ]
     skipped_pyversion_incompatible = [
         r["package"].relative_to(repo_root)
         for r in results
-        if r["status"] == ResultStatus.SKIPPED
+        if r["status"] == ResultStatus.UNSUPPORTED_PYTHON_VERSION
         and "Not compatible with Python" in r["stderr"]
     ]
 
@@ -297,7 +306,7 @@ def _run_tests(
     if not is_python_version_compatible(package_data):
         return {
             "package": package_path,
-            "status": ResultStatus.SKIPPED,
+            "status": ResultStatus.UNSUPPORTED_PYTHON_VERSION,
             "stdout": "",
             "stderr": f"Skipped: Not compatible with Python {sys.version_info.major}.{sys.version_info.minor}",
             "time": "0.00s",
@@ -307,7 +316,7 @@ def _run_tests(
     if not package_has_tests(package_path):
         return {
             "package": package_path,
-            "status": ResultStatus.SKIPPED,
+            "status": ResultStatus.NO_TESTS,
             "stdout": "",
             "stderr": f"Skipped: package has no tests",
             "time": "0.00s",
