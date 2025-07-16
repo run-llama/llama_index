@@ -126,7 +126,17 @@ class VectorMemoryBlock(BaseMemoryBlock[str]):
             if "filters" in self.query_kwargs and isinstance(
                 self.query_kwargs["filters"], MetadataFilters
             ):
-                self.query_kwargs["filters"].filters.append(filter)
+                # only add session_id filter if it does not exist in the filters list
+                session_id_filter_exists = False
+                for metadata_filter in self.query_kwargs["filters"].filters:
+                    if (
+                        isinstance(metadata_filter, MetadataFilter)
+                        and metadata_filter.key == "session_id"
+                    ):
+                        session_id_filter_exists = True
+                        break
+                if not session_id_filter_exists:
+                    self.query_kwargs["filters"].filters.append(filter)
             else:
                 self.query_kwargs["filters"] = MetadataFilters(filters=[filter])
 
