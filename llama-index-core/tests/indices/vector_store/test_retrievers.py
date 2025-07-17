@@ -113,7 +113,6 @@ def test_query_image_node() -> None:
     assert results[0].node.image == "potato"
 
 
-
 def test_insert_fetched_nodes_handles_all_branches():
     """Test _insert_fetched_nodes_into_query_result for full branch coverage."""
 
@@ -142,6 +141,7 @@ def test_insert_fetched_nodes_handles_all_branches():
         retriever._insert_fetched_nodes_into_query_result(query_result, fetched_nodes)
 
     assert "Node ID unknown not found" in str(exc_info.value)
+
 
 def test_insert_fetched_nodes_with_nodes_present():
     """Test _insert_fetched_nodes_into_query_result with `nodes` present instead of `ids`."""
