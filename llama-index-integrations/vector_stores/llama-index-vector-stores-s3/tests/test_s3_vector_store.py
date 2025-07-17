@@ -142,6 +142,7 @@ def test_text_field(vector_store: S3VectorStore, nodes: List[TextNode]):
     assert len(results) == 3
 
 
+@pytest.mark.skipif(should_skip, reason="AWS credentials not set")
 @pytest.mark.asyncio
 async def test_filtering(vector_store: S3VectorStore, nodes: List[TextNode]):
     await vector_store.async_add(nodes)
