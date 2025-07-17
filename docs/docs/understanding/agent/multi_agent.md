@@ -405,3 +405,5 @@ This approach means *you* own the orchestration loop, so you can insert whatever
 | Custom planner | ⭐⭐⭐ | ★★★★★ | Yes (via sub-agents). Top-level is up to you. |
 
 If you are prototyping quickly, start with `AgentWorkflow`.  Move to an *Orchestrator agent* when you need more control over the sequence.  Reach for a *Custom planner* only when the first two patterns cannot express the flow you need.
+
+Next you will learn how to use [structured output in single and multi-agent workflows](./structured_output.md)
