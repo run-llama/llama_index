@@ -1,6 +1,11 @@
 from typing import List, cast
-
+import pytest
+from llama_index.core.indices.vector_store.retrievers.retriever import (
+    VectorIndexRetriever,
+)
+from llama_index.core.vector_stores.types import VectorStoreQueryResult
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
+from llama_index.core.vector_stores.simple import SimpleVectorStore
 from llama_index.core.schema import (
     Document,
     NodeRelationship,
@@ -9,7 +14,6 @@ from llama_index.core.schema import (
     TextNode,
     ImageNode,
 )
-from llama_index.core.vector_stores.simple import SimpleVectorStore
 
 
 def test_simple_query(
@@ -109,3 +113,51 @@ def test_query_image_node() -> None:
     assert results[0].node.node_id == image_node.node_id
     assert isinstance(results[0].node, ImageNode)
     assert results[0].node.image == "potato"
+
+
+def test_insert_fetched_nodes_handles_all_branches():
+    """Test _insert_fetched_nodes_into_query_result for full branch coverage."""
+    fetched_nodes = [
+        TextNode(id_="0", text="doc 0"),
+        TextNode(id_="1", text="doc 1"),
+        TextNode(id_="two", text="doc two"),
+    ]
+
+    query_result = VectorStoreQueryResult(
+        ids=[0, "1", "unknown"], similarities=[0.9, 0.8, 0.7], nodes=None
+    )
+
+    dummy_index = VectorStoreIndex([])
+
+    retriever = VectorIndexRetriever(
+        index=dummy_index, vector_store=None, docstore=None, embed_model=None
+    )
+
+    with pytest.raises(KeyError) as exc_info:
+        retriever._insert_fetched_nodes_into_query_result(query_result, fetched_nodes)
+
+    assert "Node ID unknown not found" in str(exc_info.value)
+
+
+def test_insert_fetched_nodes_with_nodes_present():
+    """Test _insert_fetched_nodes_into_query_result with `nodes` present instead of `ids`."""
+    fetched_nodes = [TextNode(id_="abc", text="Updated text")]
+
+    # This simulates query_result.nodes populated with old version of the same node
+    old_node = TextNode(id_="abc", text="Old text")
+
+    query_result = VectorStoreQueryResult(nodes=[old_node], similarities=[0.9])
+
+    dummy_index = VectorStoreIndex([])
+
+    retriever = VectorIndexRetriever(
+        index=dummy_index, vector_store=None, docstore=None, embed_model=None
+    )
+
+    new_nodes = retriever._insert_fetched_nodes_into_query_result(
+        query_result, fetched_nodes
+    )
+
+    # Should have replaced old node with the new one
+    assert len(new_nodes) == 1
+    assert new_nodes[0].text == "Updated text"
