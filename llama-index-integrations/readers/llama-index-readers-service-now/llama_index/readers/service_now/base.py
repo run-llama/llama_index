@@ -8,7 +8,7 @@ from llama_index.core.instrumentation import get_dispatcher
 from pysnc import GlideRecord, ServiceNowClient
 from pysnc.auth import ServiceNowPasswordGrantFlow
 import requests
-from pydantic import BaseModel, Field, field_validator, model_validator, ConfigDict
+from pydantic import BaseModel, Field, model_validator, ConfigDict
 
 from .event import (
     FileType,
@@ -42,47 +42,21 @@ class CustomParserManager(BaseModel):
     custom_folder: str = Field(
         description="Folder path for temporary files during parsing"
     )
-    logger: Optional[logging.Logger] = Field(
-        default=None, description="Optional logger instance"
+    logger: logging.Logger = Field(
+        default_factory=lambda: logging.getLogger(__name__),
+        description="Logger instance",
     )
 
     model_config = ConfigDict(arbitrary_types_allowed=True, extra="allow")
 
-    @field_validator("custom_parsers")
-    @classmethod
-    def validate_custom_parsers(cls, v):
-        if not v:
-            raise ValueError("custom_parsers is required and cannot be empty")
-
-        if not isinstance(v, dict):
-            raise TypeError("custom_parsers must be a dictionary")
-
-        # Validate each parser
-        for file_type, parser in v.items():
-            if not isinstance(file_type, FileType):
-                raise TypeError(
-                    f"custom_parsers keys must be FileType enum values, got {type(file_type)}"
-                )
-
-            if not isinstance(parser, BaseReader):
-                raise TypeError(
-                    f"custom_parsers values must be BaseReader instances, got {type(parser)} for {file_type}"
-                )
-
+    @model_validator(mode="after")
+    def validate_model(self):
         # Validate that HTML parser is provided (required for article body processing)
-        if FileType.HTML not in v:
+        if FileType.HTML not in self.custom_parsers:
             raise ValueError(
                 "HTML parser is required in custom_parsers for processing article bodies. "
                 "Please provide a parser for FileType.HTML."
             )
-
-        return v
-
-    @model_validator(mode="after")
-    def validate_custom_folder(self):
-        # Set default logger if not provided
-        if self.logger is None:
-            self.logger = internal_logger
 
         # Ensure custom_folder exists and is writable
         try:
@@ -368,13 +342,6 @@ class SnowKBReader(BaseReader):
                 raise TypeError(
                     f"custom_parsers[{file_type}] must have a callable 'load_data' method"
                 )
-
-        # Validate that HTML parser is provided (required for article body processing)
-        if FileType.HTML not in custom_parsers:
-            raise ValueError(
-                "HTML parser is required in custom_parsers for processing article bodies. "
-                "Please provide a parser for FileType.HTML."
-            )
 
         # Validate authentication parameters
         # Username and password are always required
