@@ -10,10 +10,10 @@ dev = [
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "llama-cloud>=0.0.6",
+    "llama-index-llms-openai>=0.4.7",
     "mypy==1.11.0",
     "openai",
     "pandas",
-    "platformdirs",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
     "pytest~=7.2",
@@ -32,7 +32,7 @@ dev = [
 
 [project]
 name = "llama-index-core"
-version = "0.12.48"
+version = "0.12.49"
 description = "Interface between LLMs and your data"
 authors = [{name = "Jerry Liu", email = "jerry@llamaindex.ai"}]
 requires-python = ">=3.9,<4.0"
@@ -80,6 +80,7 @@ dependencies = [
     "aiosqlite",
     "llama-index-workflows>=1.0.1,<2",
     "setuptools>=80.9.0",
+    "platformdirs",
 ]
 
 [project.urls]
@@ -96,7 +97,11 @@ ignore-words-list = "astroid,gallary,momento,narl,ot,rouge"
 skip = "./llama_index/core/_static,./examples,./experimental,*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.coverage.run]
-omit = ["llama_index/core/instrumentation/*", "llama_index/core/workflow/*", "tests/*"]
+omit = [
+    "llama_index/core/instrumentation/*",
+    "llama_index/core/workflow/*",
+    "tests/*",
+]
 
 [tool.hatch.build.targets.sdist]
 include = [

@@ -259,7 +259,7 @@ class DuckDBVectorStore(BasePydanticVectorStore):
 
         conn.begin().execute(f"""
             CREATE TABLE IF NOT EXISTS {table_name}  (
-                node_id VARCHAR,
+                node_id VARCHAR PRIMARY KEY,
                 text TEXT,
                 embedding {embedding_type},
                 metadata_ JSON

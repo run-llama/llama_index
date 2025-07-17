@@ -161,6 +161,7 @@ class BaiduVectorDB(BasePydanticVectorStore):
         super().__init__(
             user_defined_fields=table_params.filter_fields,
             batch_size=batch_size,
+            **kwargs,
         )
 
         self._init_client(endpoint, account, api_key)

@@ -1,5 +1,4 @@
 from abc import abstractmethod
-import json
 import warnings
 import inspect
 from typing import Any, Callable, Dict, List, Sequence, Optional, Union, Type, cast
@@ -11,6 +10,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
     AgentSetup,
     AgentWorkflowStartEvent,
+    AgentStreamStructuredOutput,
     ToolCall,
     ToolCallResult,
 )
@@ -21,7 +21,7 @@ from llama_index.core.bridge.pydantic import (
     field_validator,
 )
 from llama_index.core.prompts import PromptTemplate
-from llama_index.core.agent.utils import messages_to_xml_format
+from llama_index.core.agent.utils import generate_structured_response
 from llama_index.core.llms import ChatMessage, LLM, TextBlock
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
@@ -390,7 +390,7 @@ class BaseWorkflowAgent(
     @step
     async def parse_agent_output(
         self, ctx: Context, ev: AgentOutput
-    ) -> Union[StopEvent, ToolCall, None]:
+    ) -> Union[StopEvent, AgentInput, ToolCall, None]:
         max_iterations = await ctx.store.get(
             "max_iterations", default=DEFAULT_MAX_ITERATIONS
         )
@@ -404,14 +404,31 @@ class BaseWorkflowAgent(
                 "increase the max iterations with `.run(.., max_iterations=...)`"
             )
 
+        memory: BaseMemory = await ctx.store.get("memory")
+
+        if ev.retry_messages:
+            # Retry with the given messages to let the LLM fix potential errors
+            history = await memory.aget()
+            user_msg_str = await ctx.store.get("user_msg_str")
+
+            return AgentInput(
+                input=[
+                    *history,
+                    ChatMessage(role="user", content=user_msg_str),
+                    *ev.retry_messages,
+                ],
+                current_agent_name=self.name,
+            )
+
         if not ev.tool_calls:
-            memory: BaseMemory = await ctx.store.get("memory")
-            messages = await memory.aget()
+            # important: messages should always be fetched after calling finalize, otherwise they do not contain the agent's response
             output = await self.finalize(ctx, ev, memory)
+            messages = await memory.aget()
             cur_tool_calls: List[ToolCallResult] = await ctx.store.get(
                 "current_tool_calls", default=[]
             )
             output.tool_calls.extend(cur_tool_calls)  # type: ignore
+
             if self.structured_output_fn is not None:
                 try:
                     if inspect.iscoroutinefunction(self.structured_output_fn):
@@ -419,23 +436,27 @@ class BaseWorkflowAgent(
                             messages
                         )
                     else:
-                        output.structured_response = self.structured_output_fn(messages)
+                        output.structured_response = cast(
+                            Dict[str, Any], self.structured_output_fn(messages)
+                        )
+                    ctx.write_event_to_stream(
+                        AgentStreamStructuredOutput(output=output.structured_response)
+                    )
                 except Exception as e:
                     warnings.warn(
-                        message=f"An error occurred while producing the structured output from your agent: {e}."
+                        f"There was a problem with the generation of the structured output: {e}"
                     )
             if self.output_cls is not None:
                 try:
-                    xml_message = messages_to_xml_format(messages)
-                    structured_response = await self.llm.as_structured_llm(
-                        self.output_cls
-                    ).achat(messages=[xml_message], tool_required=True)
-                    output.structured_response = json.loads(
-                        structured_response.message.content
+                    output.structured_response = await generate_structured_response(
+                        messages=messages, llm=self.llm, output_cls=self.output_cls
+                    )
+                    ctx.write_event_to_stream(
+                        AgentStreamStructuredOutput(output=output.structured_response)
                     )
                 except Exception as e:
                     warnings.warn(
-                        message=f"An error occurred while producing the structured output from your agent: {e}."
+                        f"There was a problem with the generation of the structured output: {e}"
                     )
 
             await ctx.store.set("current_tool_calls", [])
@@ -519,13 +540,15 @@ class BaseWorkflowAgent(
         await self.handle_tool_call_results(ctx, tool_call_results, memory)
 
         if any(
-            tool_call_result.return_direct for tool_call_result in tool_call_results
+            tool_call_result.return_direct and not tool_call_result.tool_output.is_error
+            for tool_call_result in tool_call_results
         ):
-            # if any tool calls return directly, take the first one
+            # if any tool calls return directly and it's not an error tool call, take the first one
             return_direct_tool = next(
                 tool_call_result
                 for tool_call_result in tool_call_results
                 if tool_call_result.return_direct
+                and not tool_call_result.tool_output.is_error
             )
 
             # always finalize the agent, even if we're just handing off
@@ -546,6 +569,10 @@ class BaseWorkflowAgent(
                 current_agent_name=self.name,
             )
             result = await self.finalize(ctx, result, memory)
+            # we don't want to stop the system if we're just handing off
+            if return_direct_tool.tool_name != "handoff":
+                await ctx.store.set("current_tool_calls", [])
+                return StopEvent(result=result)
 
         user_msg_str = await ctx.store.get("user_msg_str")
         input_messages = await memory.aget(input=user_msg_str)

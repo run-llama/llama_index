@@ -1,9 +1,13 @@
 """Agent utils."""
 
+import json
+
 from llama_index.core.llms import ChatMessage, TextBlock
-from typing import List
+from typing import List, Type, Dict, Any, cast
+from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.agent.types import TaskStep
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
+from llama_index.core.llms import LLM
 from llama_index.core.memory import BaseMemory
 
 
@@ -32,3 +36,13 @@ def messages_to_xml_format(messages: List[ChatMessage]) -> ChatMessage:
         )
     )
     return ChatMessage(role="user", blocks=blocks)
+
+
+async def generate_structured_response(
+    messages: List[ChatMessage], llm: LLM, output_cls: Type[BaseModel]
+) -> Dict[str, Any]:
+    xml_message = messages_to_xml_format(messages)
+    structured_response = await llm.as_structured_llm(
+        output_cls,
+    ).achat(messages=[xml_message])
+    return cast(Dict[str, Any], json.loads(structured_response.message.content))

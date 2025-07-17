@@ -1,11 +1,10 @@
 from abc import ABCMeta
-import json
 import inspect
 import warnings
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Type, cast
 from pydantic import BaseModel
 
-from llama_index.core.agent.utils import messages_to_xml_format
+from llama_index.core.agent.utils import generate_structured_response
 from llama_index.core.agent.workflow.base_agent import (
     BaseWorkflowAgent,
     DEFAULT_AGENT_NAME,
@@ -26,6 +25,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentSetup,
     AgentOutput,
     AgentWorkflowStartEvent,
+    AgentStreamStructuredOutput,
 )
 from llama_index.core.llms import ChatMessage, TextBlock
 from llama_index.core.llms.llm import LLM
@@ -416,7 +416,7 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
     @step
     async def parse_agent_output(
         self, ctx: Context, ev: AgentOutput
-    ) -> Union[StopEvent, ToolCall, None]:
+    ) -> Union[StopEvent, AgentInput, ToolCall, None]:
         max_iterations = await ctx.store.get(
             "max_iterations", default=DEFAULT_MAX_ITERATIONS
         )
@@ -430,11 +430,29 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 "increase the max iterations with `.run(.., max_iterations=...)`"
             )
 
+        memory: BaseMemory = await ctx.store.get("memory")
+
+        if ev.retry_messages:
+            # Retry with the given messages to let the LLM fix potential errors
+            history = await memory.aget()
+            user_msg_str = await ctx.store.get("user_msg_str")
+            agent_name: str = await ctx.store.get("current_agent_name")
+
+            return AgentInput(
+                input=[
+                    *history,
+                    ChatMessage(role="user", content=user_msg_str),
+                    *ev.retry_messages,
+                ],
+                current_agent_name=agent_name,
+            )
+
         if not ev.tool_calls:
             agent = self.agents[ev.current_agent_name]
-            memory: BaseMemory = await ctx.store.get("memory")
-            messages = await memory.aget()
+            memory = await ctx.store.get("memory")
+            # important: messages should always be fetched after calling finalize, otherwise they do not contain the agent's response
             output = await agent.finalize(ctx, ev, memory)
+            messages = await memory.aget()
 
             cur_tool_calls: List[ToolCallResult] = await ctx.store.get(
                 "current_tool_calls", default=[]
@@ -449,23 +467,27 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                             messages
                         )
                     else:
-                        output.structured_response = self.structured_output_fn(messages)
+                        output.structured_response = cast(
+                            Dict[str, Any], self.structured_output_fn(messages)
+                        )
+                    ctx.write_event_to_stream(
+                        AgentStreamStructuredOutput(output=output.structured_response)
+                    )
                 except Exception as e:
                     warnings.warn(
-                        message=f"An error occurred while producing the structured output from your agent: {e}."
+                        f"There was a problem with the generation of the structured output: {e}"
                     )
             if self.output_cls is not None:
                 try:
-                    xml_message = messages_to_xml_format(messages)
-                    structured_response = await agent.llm.as_structured_llm(
-                        self.output_cls
-                    ).achat(messages=[xml_message], tool_required=True)
-                    output.structured_response = json.loads(
-                        structured_response.message.content
+                    output.structured_response = await generate_structured_response(
+                        messages=messages, llm=agent.llm, output_cls=self.output_cls
+                    )
+                    ctx.write_event_to_stream(
+                        AgentStreamStructuredOutput(output=output.structured_response)
                     )
                 except Exception as e:
                     warnings.warn(
-                        message=f"An error occurred while producing the structured output from your agent: {e}."
+                        f"There was a problem with the generation of the structured output: {e}"
                     )
 
             return StopEvent(result=output)
@@ -557,13 +579,15 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             await ctx.store.set("next_agent", None)
 
         if any(
-            tool_call_result.return_direct for tool_call_result in tool_call_results
+            tool_call_result.return_direct and not tool_call_result.tool_output.is_error
+            for tool_call_result in tool_call_results
         ):
-            # if any tool calls return directly, take the first one
+            # if any tool calls return directly and it's not an error tool call, take the first one
             return_direct_tool = next(
                 tool_call_result
                 for tool_call_result in tool_call_results
                 if tool_call_result.return_direct
+                and not tool_call_result.tool_output.is_error
             )
 
             # always finalize the agent, even if we're just handing off
@@ -640,6 +664,10 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         system_prompt: Optional[str] = None,
         state_prompt: Optional[Union[str, BasePromptTemplate]] = None,
         initial_state: Optional[dict] = None,
+        output_cls: Optional[Type[BaseModel]] = None,
+        structured_output_fn: Optional[
+            Callable[[List[ChatMessage]], Dict[str, Any]]
+        ] = None,
         timeout: Optional[float] = None,
         verbose: bool = False,
     ) -> "AgentWorkflow":
@@ -672,6 +700,8 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                     system_prompt=system_prompt,
                 )
             ],
+            output_cls=output_cls,
+            structured_output_fn=structured_output_fn,
             state_prompt=state_prompt,
             initial_state=initial_state,
             timeout=timeout,

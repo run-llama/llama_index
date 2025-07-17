@@ -131,6 +131,10 @@ class GoogleGenAI(FunctionCallingLLM):
         default=None,
         description="Cached content to use for the model.",
     )
+    built_in_tool: Optional[types.Tool] = Field(
+        default=None,
+        description="Google GenAI tool to use for the model to augment responses.",
+    )
 
     _max_tokens: int = PrivateAttr()
     _client: google.genai.Client = PrivateAttr()
@@ -152,6 +156,7 @@ class GoogleGenAI(FunctionCallingLLM):
         callback_manager: Optional[CallbackManager] = None,
         is_function_calling_model: bool = True,
         cached_content: Optional[str] = None,
+        built_in_tool: Optional[types.Tool] = None,
         **kwargs: Any,
     ):
         # API keys are optional. The API can be authorised via OAuth (detected
@@ -199,6 +204,7 @@ class GoogleGenAI(FunctionCallingLLM):
             is_function_calling_model=is_function_calling_model,
             max_retries=max_retries,
             cached_content=cached_content,
+            built_in_tool=built_in_tool,
             **kwargs,
         )
 
@@ -211,11 +217,26 @@ class GoogleGenAI(FunctionCallingLLM):
             self._generation_config = generation_config.model_dump()
             if cached_content:
                 self._generation_config.setdefault("cached_content", cached_content)
+            if built_in_tool is not None:
+                if self._generation_config.get("tools") is None:
+                    self._generation_config["tools"] = []
+                if isinstance(self._generation_config["tools"], list):
+                    if len(self._generation_config["tools"]) > 0:
+                        raise ValueError(
+                            "Providing multiple Google GenAI tools or mixing with custom tools is not supported."
+                        )
+                self._generation_config["tools"].append(built_in_tool)
         else:
+            config_kwargs = {
+                "temperature": temperature,
+                "max_output_tokens": max_tokens,
+                "cached_content": cached_content,
+            }
+            if built_in_tool:
+                config_kwargs["tools"] = [built_in_tool]
+
             self._generation_config = types.GenerateContentConfig(
-                temperature=temperature,
-                max_output_tokens=max_tokens,
-                cached_content=cached_content,
+                **config_kwargs
             ).model_dump()
         self._max_tokens = (
             max_tokens or model_meta.output_token_limit or DEFAULT_NUM_OUTPUTS
