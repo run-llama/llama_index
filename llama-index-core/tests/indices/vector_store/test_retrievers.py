@@ -1,6 +1,8 @@
 from typing import List, cast
 
-from llama_index.core.indices.vector_store.retrievers.retriever import VectorIndexRetriever
+from llama_index.core.indices.vector_store.retrievers.retriever import (
+    VectorIndexRetriever,
+)
 from llama_index.core.vector_stores.types import VectorStoreQueryResult
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.vector_stores.simple import SimpleVectorStore
@@ -12,6 +14,7 @@ from llama_index.core.schema import (
     TextNode,
     ImageNode,
 )
+
 
 def test_simple_query(
     documents: List[Document],
@@ -114,7 +117,6 @@ def test_query_image_node() -> None:
 
 def test_insert_fetched_nodes_handles_int_and_str_ids():
     """Ensure _insert_fetched_nodes_into_query_result handles int and str node IDs."""
-
     # Fetched nodes have string IDs
     fetched_nodes = [
         TextNode(id_="0", text="doc 0"),
@@ -125,20 +127,19 @@ def test_insert_fetched_nodes_handles_int_and_str_ids():
     query_result = VectorStoreQueryResult(
         ids=[0, 1],  # int IDs
         similarities=[0.9, 0.8],
-        nodes=None
+        nodes=None,
     )
 
     # Dummy index, not used in this test
     dummy_index = VectorStoreIndex([])
-    
+
     retriever = VectorIndexRetriever(
-        index=dummy_index,
-        vector_store=None,
-        docstore=None,
-        embed_model=None
+        index=dummy_index, vector_store=None, docstore=None, embed_model=None
     )
 
-    new_nodes = retriever._insert_fetched_nodes_into_query_result(query_result, fetched_nodes)
+    new_nodes = retriever._insert_fetched_nodes_into_query_result(
+        query_result, fetched_nodes
+    )
 
     assert len(new_nodes) == 2
     assert new_nodes[0].node_id == "0"

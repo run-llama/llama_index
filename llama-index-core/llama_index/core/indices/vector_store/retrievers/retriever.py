@@ -193,7 +193,7 @@ class VectorIndexRetriever(BaseRetriever):
                 "Vector store query result should return at least one of nodes or ids."
             )
         return new_nodes
-    
+
     def _convert_nodes_to_scored_nodes(
         self, query_result: VectorStoreQueryResult
     ) -> List[NodeWithScore]:
