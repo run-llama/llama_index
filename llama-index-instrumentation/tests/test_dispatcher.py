@@ -821,3 +821,237 @@ def test_mixin_decorates_overridden_method(mock_span_enter):
     for i, T in enumerate((A, B, C, D)):
         assert T().f() - i == pytest.approx(x)  # type:ignore
         assert mock_span_enter.call_count - i == 1
+
+
+@patch.object(Dispatcher, "span_exit")
+@patch.object(Dispatcher, "span_enter")
+@patch("llama_index_instrumentation.dispatcher.uuid")
+def test_span_naming_with_inheritance(mock_uuid, mock_span_enter, mock_span_exit):
+    """Test that span IDs use the runtime class name, not the definition class name."""
+    # arrange
+    mock_uuid.uuid4.return_value = "mock"
+
+    class BaseClass:
+        @dispatcher.span
+        def base_method(self, x):
+            return x * 2
+
+        @dispatcher.span
+        async def async_base_method(self, x):
+            return x * 3
+
+    class DerivedClass(BaseClass):
+        pass
+
+    class AnotherDerivedClass(BaseClass):
+        @dispatcher.span
+        def derived_method(self, x):
+            return x * 4
+
+    # act
+    base_instance = BaseClass()
+    derived_instance = DerivedClass()
+    another_derived_instance = AnotherDerivedClass()
+
+    base_result = base_instance.base_method(5)
+    derived_result = derived_instance.base_method(5)
+    another_derived_result = another_derived_instance.derived_method(5)
+
+    # assert
+    assert mock_span_enter.call_count == 3
+
+    # Check that span IDs use the actual runtime class names
+    calls = mock_span_enter.call_args_list
+
+    # BaseClass.base_method called on BaseClass instance
+    assert calls[0][1]["id_"] == "BaseClass.base_method-mock"
+
+    # BaseClass.base_method called on DerivedClass instance (should use DerivedClass)
+    assert calls[1][1]["id_"] == "DerivedClass.base_method-mock"
+
+    # AnotherDerivedClass.derived_method called on AnotherDerivedClass instance
+    assert calls[2][1]["id_"] == "AnotherDerivedClass.derived_method-mock"
+
+
+@pytest.mark.asyncio
+@patch.object(Dispatcher, "span_exit")
+@patch.object(Dispatcher, "span_enter")
+@patch("llama_index_instrumentation.dispatcher.uuid")
+async def test_async_span_naming_with_inheritance(
+    mock_uuid, mock_span_enter, mock_span_exit
+):
+    """Test that async span IDs use the runtime class name, not the definition class name."""
+    # arrange
+    mock_uuid.uuid4.return_value = "mock"
+
+    class BaseClass:
+        @dispatcher.span
+        async def async_base_method(self, x):
+            return x * 3
+
+    class DerivedClass(BaseClass):
+        pass
+
+    # act
+    base_instance = BaseClass()
+    derived_instance = DerivedClass()
+
+    base_result = await base_instance.async_base_method(5)
+    derived_result = await derived_instance.async_base_method(5)
+
+    # assert
+    assert mock_span_enter.call_count == 2
+
+    calls = mock_span_enter.call_args_list
+
+    # BaseClass.async_base_method called on BaseClass instance
+    assert calls[0][1]["id_"] == "BaseClass.async_base_method-mock"
+
+    # BaseClass.async_base_method called on DerivedClass instance (should use DerivedClass)
+    assert calls[1][1]["id_"] == "DerivedClass.async_base_method-mock"
+
+
+@patch.object(Dispatcher, "span_exit")
+@patch.object(Dispatcher, "span_enter")
+@patch("llama_index_instrumentation.dispatcher.uuid")
+def test_span_naming_regular_functions_unchanged(
+    mock_uuid, mock_span_enter, mock_span_exit
+):
+    """Test that regular functions (non-methods) still use __qualname__."""
+    # arrange
+    mock_uuid.uuid4.return_value = "mock"
+
+    @dispatcher.span
+    def regular_function(x):
+        return x * 5
+
+    # act
+    result = regular_function(10)
+
+    # assert
+    mock_span_enter.assert_called_once()
+    call_kwargs = mock_span_enter.call_args[1]
+
+    # Regular functions should still use __qualname__
+    assert call_kwargs["id_"] == f"{regular_function.__qualname__}-mock"
+
+
+@patch.object(Dispatcher, "span_exit")
+@patch.object(Dispatcher, "span_enter")
+@patch("llama_index_instrumentation.dispatcher.uuid")
+def test_span_naming_complex_inheritance(mock_uuid, mock_span_enter, mock_span_exit):
+    """Test span naming with multiple levels of inheritance."""
+    # arrange
+    mock_uuid.uuid4.return_value = "mock"
+
+    class GrandParent:
+        @dispatcher.span
+        def shared_method(self, x):
+            return x
+
+    class Parent(GrandParent):
+        pass
+
+    class Child(Parent):
+        @dispatcher.span
+        def child_method(self, x):
+            return x * 2
+
+    class GrandChild(Child):
+        pass
+
+    # act
+    instances = [GrandParent(), Parent(), Child(), GrandChild()]
+
+    # Call shared_method on all instances
+    for instance in instances:
+        instance.shared_method(1)
+
+    # Call child_method on child and grandchild
+    instances[2].child_method(1)  # Child
+    instances[3].child_method(1)  # GrandChild
+
+    # assert
+    assert mock_span_enter.call_count == 6
+
+    calls = mock_span_enter.call_args_list
+
+    # shared_method calls should use the runtime class names
+    assert calls[0][1]["id_"] == "GrandParent.shared_method-mock"
+    assert calls[1][1]["id_"] == "Parent.shared_method-mock"
+    assert calls[2][1]["id_"] == "Child.shared_method-mock"
+    assert calls[3][1]["id_"] == "GrandChild.shared_method-mock"
+
+    # child_method calls should use the runtime class names
+    assert calls[4][1]["id_"] == "Child.child_method-mock"
+    assert calls[5][1]["id_"] == "GrandChild.child_method-mock"
+
+
+@patch.object(Dispatcher, "span_exit")
+@patch.object(Dispatcher, "span_enter")
+@patch("llama_index_instrumentation.dispatcher.uuid")
+def test_span_naming_with_method_override(mock_uuid, mock_span_enter, mock_span_exit):
+    """Test span naming when methods are overridden in derived classes."""
+    # arrange
+    mock_uuid.uuid4.return_value = "mock"
+
+    class Base:
+        @dispatcher.span
+        def method(self, x):
+            return x
+
+    class Derived(Base):
+        @dispatcher.span
+        def method(self, x):
+            return x * 2
+
+    # act
+    base_instance = Base()
+    derived_instance = Derived()
+
+    base_instance.method(1)
+    derived_instance.method(1)
+
+    # assert
+    assert mock_span_enter.call_count == 2
+
+    calls = mock_span_enter.call_args_list
+
+    # Each should use their respective class names
+    assert calls[0][1]["id_"] == "Base.method-mock"
+    assert calls[1][1]["id_"] == "Derived.method-mock"
+
+
+@patch.object(Dispatcher, "span_exit")
+@patch.object(Dispatcher, "span_enter")
+@patch("llama_index_instrumentation.dispatcher.uuid")
+def test_span_naming_with_nested_classes(mock_uuid, mock_span_enter, mock_span_exit):
+    """Test span naming with nested classes."""
+    # arrange
+    mock_uuid.uuid4.return_value = "mock"
+
+    class Outer:
+        class Inner:
+            @dispatcher.span
+            def inner_method(self, x):
+                return x
+
+        @dispatcher.span
+        def outer_method(self, x):
+            return x * 2
+
+    # act
+    outer_instance = Outer()
+    inner_instance = Outer.Inner()
+
+    outer_instance.outer_method(1)
+    inner_instance.inner_method(1)
+
+    # assert
+    assert mock_span_enter.call_count == 2
+
+    calls = mock_span_enter.call_args_list
+
+    # Should use the simple class names (not qualified names)
+    assert calls[0][1]["id_"] == "Outer.outer_method-mock"
+    assert calls[1][1]["id_"] == "Inner.inner_method-mock"
