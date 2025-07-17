@@ -1,5 +1,6 @@
 import logging
 import warnings
+import json
 from typing import Any, Optional, Dict, Type
 
 from llama_index.core.bridge.pydantic import (
@@ -42,6 +43,27 @@ class AgentStream(Event):
     current_agent_name: str
     tool_calls: list[ToolSelection] = Field(default_factory=list)
     raw: Optional[Any] = Field(default=None, exclude=True)
+
+
+class AgentStreamStructuredOutput(Event):
+    """Stream the structured output"""
+
+    output: Dict[str, Any]
+
+    def get_pydantic_model(self, model: Type[BaseModel]) -> Optional[BaseModel]:
+        if self.output is None:
+            return self.output
+        try:
+            return model.model_validate(self.output)
+        except ValidationError as e:
+            warnings.warn(
+                f"Conversion of structured response to Pydantic model failed because:\n\n{e.title}\n\nPlease check the model you provided.",
+                PydanticConversionWarning,
+            )
+            return None
+
+    def __str__(self) -> str:
+        return json.dumps(self.output, indent=4)
 
 
 class AgentOutput(Event):
