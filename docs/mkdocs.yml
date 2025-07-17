@@ -696,6 +696,7 @@ nav:
           - ./examples/vector_stores/RedisIndexDemo.ipynb
           - ./examples/vector_stores/RelytDemo.ipynb
           - ./examples/vector_stores/RocksetIndexDemo.ipynb
+          - ./examples/vector_stores/S3VectorStore.ipynb
           - ./examples/vector_stores/SimpleIndexDemo.ipynb
           - ./examples/vector_stores/SimpleIndexDemoLlama-Local.ipynb
           - ./examples/vector_stores/SimpleIndexDemoLlama2.ipynb
