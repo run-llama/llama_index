@@ -5,7 +5,7 @@ Most of the time you need results from an agent in a specific format. Agents res
 1. `output_cls` – a Pydantic model to use as a schema for the output
 2. `structured_output_fn` – For more advanced use cases, supply a custom function that validates or rewrites the agent’s conversation into any model you want.
 
-Both single-agent `FunctionAgent` and multi-agent `AgentWorkflow` workflows support these options - let's explore the possibilities:
+Both single-agents like `FunctionAgent` and `ReActAgent`, as well as multi-agent `AgentWorkflow` workflows, support these options - let's explore the possibilities:
 
 ### Use `output_cls`
 
