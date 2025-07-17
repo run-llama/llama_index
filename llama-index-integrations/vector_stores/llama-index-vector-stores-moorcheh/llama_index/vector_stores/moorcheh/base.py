@@ -114,10 +114,12 @@ class MoorchehVectorStore(BasePydanticVectorStore):
         self._client = MoorchehClient(api_key=self.api_key)
         self.is_embedding_query = False
         self._sparse_embedding_model = sparse_embedding_model
+        self.namespace = namespace
 
         print("[DEBUG] Listing namespaces...")
         try:
-            namespaces = self._client.list_namespaces()
+            namespaces_response = self._client.list_namespaces()
+            namespaces = [namespace["namespace_name"] for namespace in namespaces_response.get("namespaces", [])]
             print(f"[DEBUG] Found namespaces.")
         except Exception as e:
             print(f"[ERROR] Failed to list namespaces: {e}")
