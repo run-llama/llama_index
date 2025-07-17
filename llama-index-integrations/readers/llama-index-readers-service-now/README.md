@@ -389,22 +389,21 @@ class PDFParser(BaseReader):
         ]
 
 
-def on_page_processed(event: SNOWKBPageFetchCompletedEvent):
-    print(f"Processed page: {event.page_id}")
+class MyEventHandler(BaseEventHandler):
+    """Custom event handler for ServiceNow events."""
 
-
-def on_attachment_processed(event: SNOWKBAttachmentProcessedEvent):
-    print(f"Processed attachment: {event.attachment_name}")
+    def handle(self, event):
+        """Handle incoming events."""
+        if isinstance(event, SNOWKBPageFetchCompletedEvent):
+            print(f"Processed page: {event.page_id}")
+        elif isinstance(event, SNOWKBAttachmentProcessedEvent):
+            print(f"Processed attachment: {event.attachment_name}")
 
 
 # Set up event dispatcher
-dispatcher = get_dispatcher(__name__)
-
-# Subscribe to LlamaIndex events
-dispatcher.add_event_handler(SNOWKBPageFetchCompletedEvent, on_page_processed)
-dispatcher.add_event_handler(
-    SNOWKBAttachmentProcessedEvent, on_attachment_processed
-)
+dispatcher = get_dispatcher()
+handler = MyEventHandler()
+dispatcher.add_event_handler(handler)
 
 # Custom parsers are REQUIRED
 custom_parsers = {

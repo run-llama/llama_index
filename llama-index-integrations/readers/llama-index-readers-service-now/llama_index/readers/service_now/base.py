@@ -269,8 +269,8 @@ class SnowKBReader(BaseReader):
         password: ServiceNow password for authentication (required)
         client_id: OAuth client ID for ServiceNow (optional, but if provided, client_secret is required)
         client_secret: OAuth client secret for ServiceNow (optional, but if provided, client_id is required)
-        process_attachment_callback: Optional callback to filter attachments
-        process_document_callback: Optional callback to filter documents
+        process_attachment_callback: Optional callback to filter attachments (content_type: str, size_bytes: int, file_name: str) -> tuple[bool, str]
+        process_document_callback: Optional callback to filter documents (kb_number: str) -> bool
         custom_folder: Folder for temporary files during parsing
         fail_on_error: Whether to fail on parsing errors or continue
         kb_table: ServiceNow table name for knowledge base articles
@@ -466,9 +466,17 @@ class SnowKBReader(BaseReader):
 
         while gr.next():
             try:
-                dispatcher.event(
-                    SNOWKBPageFetchStartEvent(page_id=gr.number.get_value())
-                )
+                kb_number = gr.number.get_value()
+                dispatcher.event(SNOWKBPageFetchStartEvent(page_id=kb_number))
+
+                # Check if document should be processed using callback
+                if self.process_document_callback:
+                    should_process = self.process_document_callback(kb_number)
+                    if not should_process:
+                        self.logger.info(
+                            f"Skipping document {kb_number} based on process_document_callback"
+                        )
+                        continue
 
                 # Process article text and attachments
                 txt_lm = (
