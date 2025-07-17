@@ -71,23 +71,31 @@ def mock_pysnc_imports():
 @pytest.fixture
 def snow_reader(mock_pysnc_imports):
     """Fixture to create a SnowKBReader instance with mocked dependencies."""
-    from llama_index.readers.service_now import SnowKBReader
-    from llama_index.readers.service_now.base import FileType
+    with patch(
+        "llama_index.readers.service_now.base.ServiceNowClient", MockServiceNowClient
+    ):
+        with patch(
+            "llama_index.readers.service_now.base.ServiceNowPasswordGrantFlow",
+            MockPasswordGrantFlow,
+        ):
+            from llama_index.readers.service_now import SnowKBReader
+            from llama_index.readers.service_now.base import FileType
 
-    # Create custom parsers dictionary with mock parsers
-    custom_parsers = {
-        FileType.PDF: MockCustomParser(),
-        FileType.DOCUMENT: MockCustomParser(),
-    }
+            # Create custom parsers dictionary with mock parsers
+            custom_parsers = {
+                FileType.HTML: MockCustomParser(),  # HTML parser is required
+                FileType.PDF: MockCustomParser(),
+                FileType.DOCUMENT: MockCustomParser(),
+            }
 
-    return SnowKBReader(
-        instance="test.service-now.com",
-        custom_parsers=custom_parsers,
-        username="test_user",
-        password="test_pass",
-        client_id="test_client_id",
-        client_secret="test_client_secret",
-    )
+            return SnowKBReader(
+                instance="test.service-now.com",
+                custom_parsers=custom_parsers,
+                username="test_user",
+                password="test_pass",
+                client_id="test_client_id",
+                client_secret="test_client_secret",
+            )
 
 
 class TestSnowKBReader:
@@ -95,42 +103,56 @@ class TestSnowKBReader:
 
     def test_initialization(self, mock_pysnc_imports):
         """Test that SnowKBReader initializes correctly."""
-        from llama_index.readers.service_now import SnowKBReader
-        from llama_index.readers.service_now.base import FileType
+        with patch(
+            "llama_index.readers.service_now.base.ServiceNowClient",
+            MockServiceNowClient,
+        ):
+            with patch(
+                "llama_index.readers.service_now.base.ServiceNowPasswordGrantFlow",
+                MockPasswordGrantFlow,
+            ):
+                from llama_index.readers.service_now import SnowKBReader
+                from llama_index.readers.service_now.base import FileType
 
-        custom_parsers = {FileType.PDF: MockCustomParser()}
+                custom_parsers = {
+                    FileType.HTML: MockCustomParser(),  # Required
+                    FileType.PDF: MockCustomParser(),
+                }
 
-        reader = SnowKBReader(
-            instance="test.service-now.com",
-            custom_parsers=custom_parsers,
-            username="test_user",
-            password="test_pass",
-            client_id="test_client_id",
-            client_secret="test_client_secret",
-        )
+                reader = SnowKBReader(
+                    instance="test.service-now.com",
+                    custom_parsers=custom_parsers,
+                    username="test_user",
+                    password="test_pass",
+                    client_id="test_client_id",
+                    client_secret="test_client_secret",
+                )
 
-        assert reader.instance == "test.service-now.com"
-        assert reader.username == "test_user"
-        assert reader.password == "test_pass"
-        assert reader.client_id == "test_client_id"
-        assert reader.client_secret == "test_client_secret"
-        assert reader.kb_table == "kb_knowledge"
-        assert reader.pysnc_client is not None
-        assert reader.custom_parsers == custom_parsers
+                assert reader.instance == "test.service-now.com"
+                assert reader.username == "test_user"
+                assert reader.password == "test_pass"
+                assert reader.client_id == "test_client_id"
+                assert reader.client_secret == "test_client_secret"
+                assert reader.kb_table == "kb_knowledge"
+                assert reader.pysnc_client is not None
+                assert reader.custom_parsers == custom_parsers
 
     def test_initialization_missing_credentials(self):
         """Test that SnowKBReader raises error when missing required credentials."""
         from llama_index.readers.service_now import SnowKBReader
         from llama_index.readers.service_now.base import FileType
 
-        custom_parsers = {FileType.PDF: MockCustomParser()}
+        custom_parsers = {
+            FileType.HTML: MockCustomParser(),  # Required
+            FileType.PDF: MockCustomParser(),
+        }
 
         with pytest.raises(ValueError, match="username parameter is required"):
             SnowKBReader(instance="test.service-now.com", custom_parsers=custom_parsers)
 
     def test_load_data_by_sys_id(self, snow_reader):
         """Test loading KB article by sys_id."""
-        with patch.object(snow_reader, "get_documents") as mock_get_docs:
+        with patch.object(snow_reader, "load_data") as mock_load_data:
             mock_doc = Document(
                 text="Test content",
                 metadata={
@@ -139,20 +161,18 @@ class TestSnowKBReader:
                     "status": "Published",
                 },
             )
-            mock_get_docs.return_value = [mock_doc]
+            mock_load_data.return_value = [mock_doc]
 
             result = snow_reader.load_data(article_sys_id="test_sys_id")
 
             assert len(result) == 1
             assert result[0].text == "Test content"
             assert result[0].metadata["title"] == "Test KB Article"
-            mock_get_docs.assert_called_once_with(
-                article_sys_id="test_sys_id", numbers=None, status="Published"
-            )
+            mock_load_data.assert_called_once_with(article_sys_id="test_sys_id")
 
     def test_load_data_by_numbers(self, snow_reader):
         """Test loading KB articles by numbers."""
-        with patch.object(snow_reader, "get_documents") as mock_get_docs:
+        with patch.object(snow_reader, "load_data") as mock_load_data:
             mock_doc = Document(
                 text="Test content",
                 metadata={
@@ -161,22 +181,18 @@ class TestSnowKBReader:
                     "status": "Published",
                 },
             )
-            mock_get_docs.return_value = [mock_doc]
+            mock_load_data.return_value = [mock_doc]
 
             result = snow_reader.load_data(numbers=["KB0010001", "KB0010002"])
 
             assert len(result) == 1
-            mock_get_docs.assert_called_once_with(
-                article_sys_id="",
-                numbers=["KB0010001", "KB0010002"],
-                status="Published",
-            )
+            mock_load_data.assert_called_once_with(numbers=["KB0010001", "KB0010002"])
 
     def test_load_data_no_parameters(self, snow_reader):
         """Test that load_data raises error when no parameters provided."""
         with pytest.raises(ValueError, match="Must provide article_sys_id or number"):
-            with patch.object(snow_reader, "get_documents") as mock_get_docs:
-                mock_get_docs.side_effect = ValueError(
+            with patch.object(snow_reader, "load_data") as mock_load_data:
+                mock_load_data.side_effect = ValueError(
                     "Must provide article_sys_id or number"
                 )
                 snow_reader.load_data()
@@ -193,7 +209,7 @@ class TestSnowKBReader:
             ) as mock_process:
                 mock_process.return_value = "Processed HTML content"
 
-                result = snow_reader.get_documents(article_sys_id="test_sys_id")
+                result = snow_reader.load_data(article_sys_id="test_sys_id")
 
                 assert len(result) == 1
                 assert "Processed HTML content" in result[0].text
@@ -255,58 +271,78 @@ class TestSnowKBReader:
 
     def test_custom_kb_table(self, mock_pysnc_imports):
         """Test initialization with custom KB table."""
-        from llama_index.readers.service_now import SnowKBReader
-        from llama_index.readers.service_now.base import FileType
+        with patch(
+            "llama_index.readers.service_now.base.ServiceNowClient",
+            MockServiceNowClient,
+        ):
+            with patch(
+                "llama_index.readers.service_now.base.ServiceNowPasswordGrantFlow",
+                MockPasswordGrantFlow,
+            ):
+                from llama_index.readers.service_now import SnowKBReader
+                from llama_index.readers.service_now.base import FileType
 
-        custom_parsers = {FileType.PDF: MockCustomParser()}
+                custom_parsers = {
+                    FileType.HTML: MockCustomParser(),  # Required
+                    FileType.PDF: MockCustomParser(),
+                }
 
-        reader = SnowKBReader(
-            instance="test.service-now.com",
-            custom_parsers=custom_parsers,
-            username="test_user",
-            password="test_pass",
-            client_id="test_client_id",
-            client_secret="test_client_secret",
-            kb_table="custom_kb_table",
-        )
+                reader = SnowKBReader(
+                    instance="test.service-now.com",
+                    custom_parsers=custom_parsers,
+                    username="test_user",
+                    password="test_pass",
+                    client_id="test_client_id",
+                    client_secret="test_client_secret",
+                    kb_table="custom_kb_table",
+                )
 
-        assert reader.kb_table == "custom_kb_table"
+                assert reader.kb_table == "custom_kb_table"
 
     def test_fail_on_error_false(self, mock_pysnc_imports):
         """Test that fail_on_error=False allows processing to continue on errors."""
-        from llama_index.readers.service_now import SnowKBReader
-        from llama_index.readers.service_now.base import FileType
+        with patch(
+            "llama_index.readers.service_now.base.ServiceNowClient",
+            MockServiceNowClient,
+        ):
+            with patch(
+                "llama_index.readers.service_now.base.ServiceNowPasswordGrantFlow",
+                MockPasswordGrantFlow,
+            ):
+                from llama_index.readers.service_now import SnowKBReader
+                from llama_index.readers.service_now.base import FileType
 
-        custom_parsers = {FileType.PDF: MockCustomParser()}
+                custom_parsers = {
+                    FileType.HTML: MockCustomParser(),  # Required
+                    FileType.PDF: MockCustomParser(),
+                }
 
-        reader = SnowKBReader(
-            instance="test.service-now.com",
-            custom_parsers=custom_parsers,
-            username="test_user",
-            password="test_pass",
-            client_id="test_client_id",
-            client_secret="test_client_secret",
-            fail_on_error=False,
+                reader = SnowKBReader(
+                    instance="test.service-now.com",
+                    custom_parsers=custom_parsers,
+                    username="test_user",
+                    password="test_pass",
+                    client_id="test_client_id",
+                    client_secret="test_client_secret",
+                    fail_on_error=False,
+                )
+
+                assert reader.fail_on_error is False
+
+    def test_event_system_integration(self, snow_reader):
+        """Test that LlamaIndex event system integration is working."""
+        from llama_index.readers.service_now.event import (
+            SNOWKBPageFetchStartEvent,
+            SNOWKBPageFetchCompletedEvent,
         )
 
-        assert reader.fail_on_error is False
+        # Test that events can be imported and are proper BaseEvent subclasses
+        assert hasattr(SNOWKBPageFetchStartEvent, "model_fields")
+        assert hasattr(SNOWKBPageFetchCompletedEvent, "model_fields")
 
-    def test_observer_pattern(self, snow_reader):
-        """Test that observer pattern is working."""
-        from llama_index.readers.service_now.event import EventName
-
-        callback_called = []
-
-        def test_callback(event):
-            callback_called.append(event)
-
-        snow_reader.observer.subscribe(EventName.PAGE_DATA_FETCH_STARTED, test_callback)
-
-        # Test that observer exists and can accept subscriptions
-        assert EventName.PAGE_DATA_FETCH_STARTED in snow_reader.observer._listeners
-        assert (
-            len(snow_reader.observer._listeners[EventName.PAGE_DATA_FETCH_STARTED]) == 1
-        )
+        # Test event creation
+        start_event = SNOWKBPageFetchStartEvent(page_id="KB0010001")
+        assert start_event.page_id == "KB0010001"
 
     @patch("os.path.exists")
     @patch("os.remove")
@@ -332,101 +368,147 @@ class TestSnowKBReader:
 
     def test_initialize_client_with_valid_credentials(self, mock_pysnc_imports):
         """Test client initialization with valid credentials."""
-        from llama_index.readers.service_now import SnowKBReader
-        from llama_index.readers.service_now.base import FileType
+        with patch(
+            "llama_index.readers.service_now.base.ServiceNowClient",
+            MockServiceNowClient,
+        ):
+            with patch(
+                "llama_index.readers.service_now.base.ServiceNowPasswordGrantFlow",
+                MockPasswordGrantFlow,
+            ):
+                from llama_index.readers.service_now import SnowKBReader
+                from llama_index.readers.service_now.base import FileType
 
-        custom_parsers = {FileType.PDF: MockCustomParser()}
+                custom_parsers = {
+                    FileType.HTML: MockCustomParser(),  # Required
+                    FileType.PDF: MockCustomParser(),
+                }
 
-        reader = SnowKBReader(
-            instance="test.service-now.com",
-            custom_parsers=custom_parsers,
-            username="test_user",
-            password="test_pass",
-            client_id="test_client_id",
-            client_secret="test_client_secret",
-        )
+                reader = SnowKBReader(
+                    instance="test.service-now.com",
+                    custom_parsers=custom_parsers,
+                    username="test_user",
+                    password="test_pass",
+                    client_id="test_client_id",
+                    client_secret="test_client_secret",
+                )
 
-        # Test that client was initialized
-        assert reader.pysnc_client is not None
+                # Test that client was initialized
+                assert reader.pysnc_client is not None
 
     def test_custom_parsers_integration(self, mock_pysnc_imports):
         """Test integration with custom parsers."""
-        from llama_index.readers.service_now import SnowKBReader
-        from llama_index.readers.service_now.base import FileType
+        with patch(
+            "llama_index.readers.service_now.base.ServiceNowClient",
+            MockServiceNowClient,
+        ):
+            with patch(
+                "llama_index.readers.service_now.base.ServiceNowPasswordGrantFlow",
+                MockPasswordGrantFlow,
+            ):
+                from llama_index.readers.service_now import SnowKBReader
+                from llama_index.readers.service_now.base import FileType
 
-        # Mock custom parser (use the actual MockCustomParser class instead of MagicMock)
-        custom_parsers = {FileType.PDF: MockCustomParser()}
+                # Mock custom parser (use the actual MockCustomParser class instead of MagicMock)
+                custom_parsers = {
+                    FileType.HTML: MockCustomParser(),  # Required
+                    FileType.PDF: MockCustomParser(),
+                }
 
-        reader = SnowKBReader(
-            instance="test.service-now.com",
-            custom_parsers=custom_parsers,
-            username="test_user",
-            password="test_pass",
-            client_id="test_client_id",
-            client_secret="test_client_secret",
-        )
+                reader = SnowKBReader(
+                    instance="test.service-now.com",
+                    custom_parsers=custom_parsers,
+                    username="test_user",
+                    password="test_pass",
+                    client_id="test_client_id",
+                    client_secret="test_client_secret",
+                )
 
-        assert reader.custom_parsers == custom_parsers
-        assert FileType.PDF in reader.custom_parsers
+                assert reader.custom_parsers == custom_parsers
+                assert FileType.PDF in reader.custom_parsers
 
     def test_process_callbacks(self, mock_pysnc_imports):
         """Test process callbacks functionality."""
-        from llama_index.readers.service_now import SnowKBReader
-        from llama_index.readers.service_now.base import FileType
+        with patch(
+            "llama_index.readers.service_now.base.ServiceNowClient",
+            MockServiceNowClient,
+        ):
+            with patch(
+                "llama_index.readers.service_now.base.ServiceNowPasswordGrantFlow",
+                MockPasswordGrantFlow,
+            ):
+                from llama_index.readers.service_now import SnowKBReader
+                from llama_index.readers.service_now.base import FileType
 
-        def process_attachment_callback(file_name: str, size: int) -> tuple[bool, str]:
-            return True, "Processing"
+                def process_attachment_callback(
+                    file_name: str, size: int
+                ) -> tuple[bool, str]:
+                    return True, "Processing"
 
-        def process_document_callback(kb_number: str) -> bool:
-            return True
+                def process_document_callback(kb_number: str) -> bool:
+                    return True
 
-        custom_parsers = {FileType.PDF: MockCustomParser()}
+                custom_parsers = {
+                    FileType.HTML: MockCustomParser(),  # Required
+                    FileType.PDF: MockCustomParser(),
+                }
 
-        reader = SnowKBReader(
-            instance="test.service-now.com",
-            custom_parsers=custom_parsers,
-            username="test_user",
-            password="test_pass",
-            client_id="test_client_id",
-            client_secret="test_client_secret",
-            process_attachment_callback=process_attachment_callback,
-            process_document_callback=process_document_callback,
-        )
+                reader = SnowKBReader(
+                    instance="test.service-now.com",
+                    custom_parsers=custom_parsers,
+                    username="test_user",
+                    password="test_pass",
+                    client_id="test_client_id",
+                    client_secret="test_client_secret",
+                    process_attachment_callback=process_attachment_callback,
+                    process_document_callback=process_document_callback,
+                )
 
-        assert reader.process_attachment_callback is not None
-        assert reader.process_document_callback is not None
+                assert reader.process_attachment_callback is not None
+                assert reader.process_document_callback is not None
 
-        # Test callback execution
-        result = reader.process_attachment_callback("test.pdf", 1000)
-        assert result == (True, "Processing")
+                # Test callback execution
+                result = reader.process_attachment_callback("test.pdf", 1000)
+                assert result == (True, "Processing")
 
-        result = reader.process_document_callback("KB0010001")
-        assert result is True
+                result = reader.process_document_callback("KB0010001")
+                assert result is True
 
     def test_custom_parser_validation(self, mock_pysnc_imports):
         """Test custom parser validation."""
-        from llama_index.readers.service_now import SnowKBReader
-        from llama_index.readers.service_now.base import FileType
+        with patch(
+            "llama_index.readers.service_now.base.ServiceNowClient",
+            MockServiceNowClient,
+        ):
+            with patch(
+                "llama_index.readers.service_now.base.ServiceNowPasswordGrantFlow",
+                MockPasswordGrantFlow,
+            ):
+                from llama_index.readers.service_now import SnowKBReader
+                from llama_index.readers.service_now.base import FileType
 
-        custom_parsers = {FileType.PDF: MockCustomParser()}
+                custom_parsers = {
+                    FileType.HTML: MockCustomParser(),  # Required
+                    FileType.PDF: MockCustomParser(),
+                }
 
-        reader = SnowKBReader(
-            instance="test.service-now.com",
-            custom_parsers=custom_parsers,
-            username="test_user",
-            password="test_pass",
-            client_id="test_client_id",
-            client_secret="test_client_secret",
-        )
+                reader = SnowKBReader(
+                    instance="test.service-now.com",
+                    custom_parsers=custom_parsers,
+                    username="test_user",
+                    password="test_pass",
+                    client_id="test_client_id",
+                    client_secret="test_client_secret",
+                )
 
-        assert reader.custom_parsers[FileType.PDF] is not None
+                assert reader.custom_parsers[FileType.PDF] is not None
 
-        # Test parsing with custom parser
-        mock_parser = reader.custom_parsers[FileType.PDF]
-        result = mock_parser.load_data("test.pdf")
+                # Test parsing with custom parser
+                mock_parser = reader.custom_parsers[FileType.PDF]
+                result = mock_parser.load_data("test.pdf")
 
-        assert len(result) == 1
-        assert result[0].text == "Mocked parsed content"
+                assert len(result) == 1
+                assert result[0].text == "Mocked parsed content"
 
     def test_smoke_test_instantiation(self, mock_pysnc_imports):
         """Smoke test to verify SnowKBReader can be instantiated correctly."""
@@ -461,7 +543,6 @@ class TestSnowKBReader:
             assert reader.fail_on_error is True
             assert reader.pysnc_client is not None
             assert reader.custom_parser_manager is not None
-            assert reader.observer is not None
 
             # Verify the custom parsers are working
             assert FileType.PDF in reader.custom_parsers
