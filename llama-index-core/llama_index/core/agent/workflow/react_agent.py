@@ -135,7 +135,21 @@ class ReActAgent(BaseWorkflowAgent):
         try:
             reasoning_step = output_parser.parse(message_content, is_streaming=False)
         except ValueError as e:
-            error_msg = f"Error: Could not parse output. Please follow the thought-action-input format. Try again. Details: {e!s}"
+            error_msg = (
+                f"Error while parsing the output: {e!s}\n\n"
+                "The output should be in one of the following formats:\n"
+                "1. To call a tool:\n"
+                "```\n"
+                "Thought: <thought>\n"
+                "Action: <action>\n"
+                "Action Input: <action_input>\n"
+                "```\n"
+                "2. To answer the question:\n"
+                "```\n"
+                "Thought: <thought>\n"
+                "Answer: <answer>\n"
+                "```\n"
+            )
 
             raw = (
                 last_chat_response.raw.model_dump()

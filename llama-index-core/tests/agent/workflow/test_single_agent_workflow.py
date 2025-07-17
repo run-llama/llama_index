@@ -186,10 +186,7 @@ async def test_single_react_agent_retry(retry_calculator_agent):
     async for event in handler.stream_events():
         events.append(event)
         if isinstance(event, AgentInput):
-            if (
-                "Please follow the thought-action-input format."
-                in event.input[-1].content
-            ):
+            if "Error while parsing the output" in event.input[-1].content:
                 contains_error_message = True
 
     assert contains_error_message
