@@ -161,3 +161,4 @@ def test_insert_fetched_nodes_with_nodes_present():
     # Should have replaced old node with the new one
     assert len(new_nodes) == 1
     assert new_nodes[0].text == "Updated text"
+    
