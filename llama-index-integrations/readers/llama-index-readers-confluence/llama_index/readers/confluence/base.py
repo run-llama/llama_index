@@ -9,42 +9,29 @@ from urllib.parse import unquote
 import requests
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
+from llama_index.core.instrumentation import DispatcherSpanMixin, get_dispatcher
 from retrying import retry
+from io import BytesIO
 
-from .event import AttachmentEvent, Event, EventName, PageEvent, FileType
+from .event import (
+    FileType,
+    TotalPagesToProcessEvent,
+    PageDataFetchStartedEvent,
+    PageDataFetchCompletedEvent,
+    PageSkippedEvent,
+    PageFailedEvent,
+    AttachmentProcessingStartedEvent,
+    AttachmentProcessedEvent,
+    AttachmentSkippedEvent,
+    AttachmentFailedEvent,
+)
 
 CONFLUENCE_API_TOKEN = "CONFLUENCE_API_TOKEN"
 CONFLUENCE_PASSWORD = "CONFLUENCE_PASSWORD"
 CONFLUENCE_USERNAME = "CONFLUENCE_USERNAME"
 
 internal_logger = logging.getLogger(__name__)
-
-
-class Observer:
-    def __init__(self):
-        self._listeners: Dict[EventName, List[Callable[[Event], None]]] = {}
-
-    def subscribe(self, event_name: EventName, callback: Callable[[Event], None]):
-        if event_name not in self._listeners:
-            self._listeners[event_name] = []
-        self._listeners[event_name].append(callback)
-
-    def subscribe_all(self, callback: Callable[[Event], None]):
-        for event_name in EventName:
-            if event_name not in self._listeners:
-                self._listeners[event_name] = []
-            self._listeners[event_name].append(callback)
-
-    def unsubscribe(self, event_name: EventName, callback: Callable[[Event], None]):
-        if event_name in self._listeners:
-            self._listeners[event_name].remove(callback)
-            if not self._listeners[event_name]:
-                del self._listeners[event_name]
-
-    def notify(self, event: Event):
-        if event.name in self._listeners:
-            for callback in self._listeners[event.name]:
-                callback(event)
+dispatcher = get_dispatcher(__name__)
 
 
 class CustomParserManager:
@@ -84,7 +71,7 @@ class CustomParserManager:
         return markdown_text
 
 
-class ConfluenceReader(BaseReader):
+class ConfluenceReader(BaseReader, DispatcherSpanMixin):
     """
     Confluence reader.
 
@@ -110,22 +97,33 @@ class ConfluenceReader(BaseReader):
         logger (Logger): Optional custom logger instance. If not provided, uses internal logger.
         fail_on_error (bool): Whether to raise exceptions on processing errors or continue with warnings. Default is True.
 
-    Observer Pattern:
-        The ConfluenceReader includes an observer system that emits events during document and attachment processing.
-        You can subscribe to these events to monitor progress, handle errors, or integrate with external systems.
+    Instrumentation Events:
+        The ConfluenceReader uses LlamaIndex's instrumentation system to emit events during document and attachment processing.
+        These events can be captured by adding event handlers to the dispatcher.
 
         Available events:
-        - TOTAL_PAGES_TO_PROCESS: Emitted when the total number of pages to process is determined
-        - PAGE_DATA_FETCH_STARTED: Emitted when processing of a page begins
-        - PAGE_DATA_FETCH_COMPLETED: Emitted when a page is successfully processed
-        - PAGE_FAILED: Emitted when page processing fails
-        - PAGE_SKIPPED: Emitted when a page is skipped due to callback decision
-        - ATTACHMENT_PROCESSING_STARTED: Emitted when attachment processing begins
-        - ATTACHMENT_PROCESSED: Emitted when an attachment is successfully processed
-        - ATTACHMENT_SKIPPED: Emitted when an attachment is skipped
-        - ATTACHMENT_FAILED: Emitted when attachment processing fails
+        - TotalPagesToProcessEvent: Emitted when the total number of pages to process is determined
+        - PageDataFetchStartedEvent: Emitted when processing of a page begins
+        - PageDataFetchCompletedEvent: Emitted when a page is successfully processed
+        - PageFailedEvent: Emitted when page processing fails
+        - PageSkippedEvent: Emitted when a page is skipped due to callback decision
+        - AttachmentProcessingStartedEvent: Emitted when attachment processing begins
+        - AttachmentProcessedEvent: Emitted when an attachment is successfully processed
+        - AttachmentSkippedEvent: Emitted when an attachment is skipped
+        - AttachmentFailedEvent: Emitted when attachment processing fails
 
-        Use reader.observer.subscribe(event_name, callback) or reader.observer.subscribe_all(callback) to listen to events.
+        To listen to events, add an event handler to the dispatcher:
+        ```python
+        from llama_index.core.instrumentation import get_dispatcher
+        from llama_index.core.instrumentation.event_handlers import BaseEventHandler
+
+        class MyEventHandler(BaseEventHandler):
+            def handle(self, event):
+                print(f"Event: {event.class_name()}")
+
+        dispatcher = get_dispatcher(__name__)
+        dispatcher.add_event_handler(MyEventHandler())
+        ```
 
     """
 
@@ -226,7 +224,6 @@ class ConfluenceReader(BaseReader):
                         )
 
         self._next_cursor = None
-        self.observer = Observer()
         if custom_parsers:
             self.custom_parser_manager = CustomParserManager(
                 custom_parsers, self.custom_folder
@@ -238,6 +235,7 @@ class ConfluenceReader(BaseReader):
         """Formats the attachment title as a markdown header."""
         return f"# {attachment['title']}\n"
 
+    @dispatcher.span
     def load_data(
         self,
         space_key: Optional[str] = None,
@@ -408,14 +406,7 @@ class ConfluenceReader(BaseReader):
         docs = []
 
         if pages:
-            self.observer.notify(
-                PageEvent(
-                    name=EventName.TOTAL_PAGES_TO_PROCESS,
-                    page_id="",
-                    document={},
-                    metadata={"total_pages": len(pages)},
-                )
-            )
+            dispatcher.event(TotalPagesToProcessEvent(total_pages=len(pages)))
 
         for page in pages:
             try:
@@ -424,14 +415,7 @@ class ConfluenceReader(BaseReader):
                     docs.append(doc)
             except Exception as e:
                 self.logger.error(f"Error processing page: {e}")
-                self.observer.notify(
-                    PageEvent(
-                        name=EventName.PAGE_FAILED,
-                        page_id=page["id"],
-                        document={},
-                        error=str(e),
-                    )
-                )
+                dispatcher.event(PageFailedEvent(page_id=page["id"], error=str(e)))
                 if self.fail_on_error:
                     raise
                 else:
@@ -562,6 +546,7 @@ class ConfluenceReader(BaseReader):
     def _get_data_with_retry(self, function, **kwargs):
         return function(**kwargs)
 
+    @dispatcher.span
     def process_page(self, page, include_attachments, text_maker):
         self.logger.info("Processing " + self.base_url + page["_links"]["webui"])
 
@@ -571,18 +556,10 @@ class ConfluenceReader(BaseReader):
                 self.logger.info(
                     f"Skipping page {page['id']} based on callback decision."
                 )
-                self.observer.notify(
-                    PageEvent(
-                        name=EventName.PAGE_SKIPPED, page_id=page["id"], document={}
-                    )
-                )
+                dispatcher.event(PageSkippedEvent(page_id=page["id"]))
                 return None
 
-        self.observer.notify(
-            PageEvent(
-                name=EventName.PAGE_DATA_FETCH_STARTED, page_id=page["id"], document={}
-            )
-        )
+        dispatcher.event(PageDataFetchStartedEvent(page_id=page["id"]))
 
         if include_attachments:
             attachment_texts = self.process_attachment(page["id"])
@@ -621,29 +598,10 @@ class ConfluenceReader(BaseReader):
                 "url": self.base_url + page["_links"]["webui"],
             },
         )
-        self.observer.notify(
-            PageEvent(
-                name=EventName.PAGE_DATA_FETCH_COMPLETED,
-                page_id=page["id"],
-                document=doc,
-            )
-        )
+        dispatcher.event(PageDataFetchCompletedEvent(page_id=page["id"], document=doc))
         return doc
 
-    def get_attachment_event(
-        self, event_name: EventName, page_id: str, attachment, error=""
-    ):
-        return AttachmentEvent(
-            page_id=page_id,
-            name=event_name,
-            attachment_id=attachment["id"],
-            attachment_name=attachment["title"],
-            attachment_type=attachment["metadata"]["mediaType"],
-            attachment_size=attachment["extensions"]["fileSize"],
-            attachment_link=attachment["_links"]["webui"],
-            error=error or "",  # Ensure error is a string
-        )
-
+    @dispatcher.span
     def process_attachment(self, page_id):
         try:
             pass
@@ -661,11 +619,14 @@ class ConfluenceReader(BaseReader):
 
         for attachment in attachments:
             self.logger.info("Processing attachment " + attachment["title"])
-            self.observer.notify(
-                self.get_attachment_event(
-                    event_name=EventName.ATTACHMENT_PROCESSING_STARTED,
+            dispatcher.event(
+                AttachmentProcessingStartedEvent(
                     page_id=page_id,
-                    attachment=attachment,
+                    attachment_id=attachment["id"],
+                    attachment_name=attachment["title"],
+                    attachment_type=attachment["metadata"]["mediaType"],
+                    attachment_size=attachment["extensions"]["fileSize"],
+                    attachment_link=attachment["_links"]["webui"],
                 )
             )
 
@@ -679,12 +640,15 @@ class ConfluenceReader(BaseReader):
                     self.logger.info(
                         f"Skipping attachment {attachment['title']} based on callback decision."
                     )
-                    self.observer.notify(
-                        self.get_attachment_event(
-                            event_name=EventName.ATTACHMENT_SKIPPED,
+                    dispatcher.event(
+                        AttachmentSkippedEvent(
                             page_id=page_id,
-                            attachment=attachment,
-                            error=reason,
+                            attachment_id=attachment["id"],
+                            attachment_name=attachment["title"],
+                            attachment_type=attachment["metadata"]["mediaType"],
+                            attachment_size=attachment["extensions"]["fileSize"],
+                            attachment_link=attachment["_links"]["webui"],
+                            reason=reason,
                         )
                     )
                     continue
@@ -784,32 +748,41 @@ class ConfluenceReader(BaseReader):
                     self.logger.info(
                         f"Skipping unsupported attachment {absolute_url} of media_type {media_type}"
                     )
-                    self.observer.notify(
-                        self.get_attachment_event(
-                            event_name=EventName.ATTACHMENT_SKIPPED,
+                    dispatcher.event(
+                        AttachmentSkippedEvent(
                             page_id=page_id,
-                            attachment=attachment,
-                            error="Unsupported media type",
+                            attachment_id=attachment["id"],
+                            attachment_name=attachment["title"],
+                            attachment_type=attachment["metadata"]["mediaType"],
+                            attachment_size=attachment["extensions"]["fileSize"],
+                            attachment_link=attachment["_links"]["webui"],
+                            reason="Unsupported media type",
                         )
                     )
                     continue
                 texts.append(text)
-                self.observer.notify(
-                    self.get_attachment_event(
-                        event_name=EventName.ATTACHMENT_PROCESSED,
+                dispatcher.event(
+                    AttachmentProcessedEvent(
                         page_id=page_id,
-                        attachment=attachment,
+                        attachment_id=attachment["id"],
+                        attachment_name=attachment["title"],
+                        attachment_type=attachment["metadata"]["mediaType"],
+                        attachment_size=attachment["extensions"]["fileSize"],
+                        attachment_link=attachment["_links"]["webui"],
                     )
                 )
             except Exception as e:
                 self.logger.error(
                     f"Failed to process attachment {attachment['title']}: {e}"
                 )
-                self.observer.notify(
-                    self.get_attachment_event(
-                        event_name=EventName.ATTACHMENT_FAILED,
+                dispatcher.event(
+                    AttachmentFailedEvent(
                         page_id=page_id,
-                        attachment=attachment,
+                        attachment_id=attachment["id"],
+                        attachment_name=attachment["title"],
+                        attachment_type=attachment["metadata"]["mediaType"],
+                        attachment_size=attachment["extensions"]["fileSize"],
+                        attachment_link=attachment["_links"]["webui"],
                         error=str(e),
                     )
                 )
@@ -894,8 +867,6 @@ class ConfluenceReader(BaseReader):
 
     def process_msg(self, link):
         try:
-            from io import BytesIO
-
             import extract_msg  # type: ignore
         except ImportError:
             raise ImportError(
@@ -932,8 +903,6 @@ class ConfluenceReader(BaseReader):
 
     def process_image(self, link):
         try:
-            from io import BytesIO  # type: ignore
-
             import pytesseract  # type: ignore
             from PIL import Image  # type: ignore
         except ImportError:
@@ -973,7 +942,6 @@ class ConfluenceReader(BaseReader):
     def process_doc(self, link):
         try:
             import zipfile  # Import zipfile to catch BadZipFile exceptions
-            from io import BytesIO
         except ImportError:
             raise ImportError("Failed to import BytesIO from io")
         if not self.custom_parsers.get(FileType.DOCUMENT):
@@ -1017,11 +985,6 @@ class ConfluenceReader(BaseReader):
         return text
 
     def process_ppt(self, link):
-        try:
-            from io import BytesIO
-        except ImportError:
-            raise ImportError("Failed to import BytesIO from io")
-
         if not self.custom_parsers.get(FileType.PRESENTATION):
             try:
                 from pptx import Presentation  # type: ignore
@@ -1076,10 +1039,6 @@ class ConfluenceReader(BaseReader):
             raise ImportError(
                 "`pandas` package not found, please run `pip install pandas`"
             )
-        try:
-            from io import BytesIO
-        except ImportError:
-            raise ImportError("Failed to import BytesIO from io")
 
         response = self.confluence.request(path=link, absolute=True)
         text = ""
@@ -1115,7 +1074,6 @@ class ConfluenceReader(BaseReader):
     def process_xlsb(self, link):
         try:
             import pandas as pd
-            from io import BytesIO
         except ImportError:
             raise ImportError(
                 "`pandas` package not found, please run `pip install pandas`"
@@ -1149,8 +1107,6 @@ class ConfluenceReader(BaseReader):
 
     def process_csv(self, link):
         try:
-            from io import BytesIO
-
             import pandas as pd
         except ImportError:
             raise ImportError(
@@ -1185,8 +1141,6 @@ class ConfluenceReader(BaseReader):
 
     def process_svg(self, link):
         try:
-            from io import BytesIO  # type: ignore
-
             import pytesseract  # type: ignore
             from PIL import Image  # type: ignore
             from reportlab.graphics import renderPM  # type: ignore

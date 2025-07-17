@@ -4,8 +4,21 @@ from unittest.mock import MagicMock, patch
 import tempfile
 
 from llama_index.readers.confluence import ConfluenceReader
-from llama_index.readers.confluence.event import EventName, FileType
+from llama_index.readers.confluence.event import (
+    FileType,
+    TotalPagesToProcessEvent,
+    PageDataFetchStartedEvent,
+    PageDataFetchCompletedEvent,
+    PageSkippedEvent,
+    PageFailedEvent,
+    AttachmentProcessingStartedEvent,
+    AttachmentProcessedEvent,
+    AttachmentSkippedEvent,
+    AttachmentFailedEvent,
+)
 from llama_index.core.schema import Document
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 
 
 class TestIntegration:
@@ -37,17 +50,18 @@ class TestIntegration:
         def document_filter(page_id: str) -> bool:
             return not page_id.startswith("draft_")
 
-        # Setup event tracking
+        # Setup event tracking using new event system
         events_log = []
 
-        def track_all_events(event):
-            events_log.append(
-                {
-                    "name": event.name,
-                    "page_id": getattr(event, "page_id", None),
-                    "attachment_name": getattr(event, "attachment_name", None),
-                }
-            )
+        class TestEventHandler(BaseEventHandler):
+            def handle(self, event):
+                events_log.append(
+                    {
+                        "class_name": event.class_name(),
+                        "page_id": getattr(event, "page_id", None),
+                        "attachment_name": getattr(event, "attachment_name", None),
+                    }
+                )
 
         # Create reader with all new features
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -61,8 +75,10 @@ class TestIntegration:
                 fail_on_error=False,
             )
 
-            # Subscribe to events
-            reader.observer.subscribe_all(track_all_events)
+            # Subscribe to events using new event system
+            dispatcher = get_dispatcher("llama_index.readers.confluence.base")
+            event_handler = TestEventHandler()
+            dispatcher.add_event_handler(event_handler)
 
             # Mock confluence client
             reader.confluence = MagicMock()
@@ -97,9 +113,9 @@ class TestIntegration:
             assert len(events_log) >= 2  # At least page started and skipped events
 
             # Check that we have the expected event types
-            event_names = [event["name"] for event in events_log]
-            assert EventName.PAGE_DATA_FETCH_STARTED in event_names
-            assert EventName.PAGE_SKIPPED in event_names
+            event_class_names = [event["class_name"] for event in events_log]
+            assert "PageDataFetchStartedEvent" in event_class_names
+            assert "PageSkippedEvent" in event_class_names
 
             # Verify custom folder is set correctly
             assert reader.custom_folder == temp_dir
@@ -118,10 +134,14 @@ class TestIntegration:
             assert "skip" in reason.lower()
 
             assert reader.process_document_callback("normal_page") is True
-            assert reader.process_document_callback("draft_something") is False
+            assert (
+                reader.process_document_callback("draft_something") is False
+            )  # Clean up
+        if event_handler in dispatcher.event_handlers:
+            dispatcher.event_handlers.remove(event_handler)
 
-    def test_observer_with_real_events_simulation(self):
-        """Test observer pattern with a realistic event flow simulation."""
+    def test_event_system_with_realistic_simulation(self):
+        """Test event system with a realistic event flow simulation."""
         reader = ConfluenceReader(
             base_url="https://example.atlassian.net/wiki", api_token="test_token"
         )
@@ -131,115 +151,83 @@ class TestIntegration:
         attachment_events = []
         error_events = []
 
-        def handle_page_events(event):
-            page_events.append(event)
+        class PageEventHandler(BaseEventHandler):
+            def handle(self, event):
+                if isinstance(
+                    event,
+                    (
+                        PageDataFetchStartedEvent,
+                        PageDataFetchCompletedEvent,
+                        PageSkippedEvent,
+                    ),
+                ):
+                    page_events.append(event)
 
-        def handle_attachment_events(event):
-            attachment_events.append(event)
+        class AttachmentEventHandler(BaseEventHandler):
+            def handle(self, event):
+                if isinstance(
+                    event,
+                    (
+                        AttachmentProcessingStartedEvent,
+                        AttachmentProcessedEvent,
+                        AttachmentSkippedEvent,
+                    ),
+                ):
+                    attachment_events.append(event)
 
-        def handle_error_events(event):
-            error_events.append(event)
+        class ErrorEventHandler(BaseEventHandler):
+            def handle(self, event):
+                if isinstance(event, (PageFailedEvent, AttachmentFailedEvent)):
+                    error_events.append(event)
 
-        # Subscribe to different event types
-        reader.observer.subscribe(EventName.PAGE_DATA_FETCH_STARTED, handle_page_events)
-        reader.observer.subscribe(
-            EventName.PAGE_DATA_FETCH_COMPLETED, handle_page_events
-        )
-        reader.observer.subscribe(EventName.PAGE_SKIPPED, handle_page_events)
+        # Subscribe to different event types using new event system
+        dispatcher = get_dispatcher("llama_index.readers.confluence.base")
+        page_handler = PageEventHandler()
+        attachment_handler = AttachmentEventHandler()
+        error_handler = ErrorEventHandler()
 
-        reader.observer.subscribe(
-            EventName.ATTACHMENT_PROCESSING_STARTED, handle_attachment_events
-        )
-        reader.observer.subscribe(
-            EventName.ATTACHMENT_PROCESSED, handle_attachment_events
-        )
-        reader.observer.subscribe(
-            EventName.ATTACHMENT_SKIPPED, handle_attachment_events
-        )
+        dispatcher.add_event_handler(page_handler)
+        dispatcher.add_event_handler(attachment_handler)
+        dispatcher.add_event_handler(error_handler)
 
-        reader.observer.subscribe(EventName.PAGE_FAILED, handle_error_events)
-        reader.observer.subscribe(EventName.ATTACHMENT_FAILED, handle_error_events)
-
-        # Simulate a realistic processing flow
-        from llama_index.readers.confluence.event import PageEvent, AttachmentEvent
-
+        # Simulate a realistic processing flow by manually emitting events
         # 1. Start processing pages
-        reader.observer.notify(
-            PageEvent(
-                name=EventName.TOTAL_PAGES_TO_PROCESS,
-                page_id="",
-                document=Document(text="", doc_id=""),
-                metadata={"total_pages": 3},
-            )
-        )
+        dispatcher.event(TotalPagesToProcessEvent(total_pages=3))
 
         # 2. Process first page successfully
-        reader.observer.notify(
-            PageEvent(
-                name=EventName.PAGE_DATA_FETCH_STARTED,
-                page_id="page1",
-                document=Document(text="content1", doc_id="page1"),
-            )
-        )
-
-        reader.observer.notify(
-            AttachmentEvent(
-                name=EventName.ATTACHMENT_PROCESSING_STARTED,
+        dispatcher.event(PageDataFetchStartedEvent(page_id="page1"))
+        dispatcher.event(
+            AttachmentProcessingStartedEvent(
                 page_id="page1",
                 attachment_id="att1",
                 attachment_name="doc1.pdf",
-                attachment_type="application/pdf",
+                attachment_type=FileType.PDF,
                 attachment_size=1024,
                 attachment_link="http://example.com/att1",
             )
         )
-
-        reader.observer.notify(
-            AttachmentEvent(
-                name=EventName.ATTACHMENT_PROCESSED,
+        dispatcher.event(
+            AttachmentProcessedEvent(
                 page_id="page1",
                 attachment_id="att1",
                 attachment_name="doc1.pdf",
-                attachment_type="application/pdf",
+                attachment_type=FileType.PDF,
                 attachment_size=1024,
                 attachment_link="http://example.com/att1",
             )
         )
-
-        reader.observer.notify(
-            PageEvent(
-                name=EventName.PAGE_DATA_FETCH_COMPLETED,
-                page_id="page1",
-                document=Document(text="content1", doc_id="page1"),
+        dispatcher.event(
+            PageDataFetchCompletedEvent(
+                page_id="page1", document=Document(text="content1", doc_id="page1")
             )
         )
 
         # 3. Skip second page
-        reader.observer.notify(
-            PageEvent(
-                name=EventName.PAGE_SKIPPED,
-                page_id="page2",
-                document=Document(text="", doc_id="page2"),
-            )
-        )
+        dispatcher.event(PageSkippedEvent(page_id="page2"))
 
         # 4. Fail to process third page
-        reader.observer.notify(
-            PageEvent(
-                name=EventName.PAGE_DATA_FETCH_STARTED,
-                page_id="page3",
-                document=Document(text="content3", doc_id="page3"),
-            )
-        )
-
-        reader.observer.notify(
-            PageEvent(
-                name=EventName.PAGE_FAILED,
-                page_id="page3",
-                document=Document(text="", doc_id="page3"),
-                error="Network timeout",
-            )
-        )
+        dispatcher.event(PageDataFetchStartedEvent(page_id="page3"))
+        dispatcher.event(PageFailedEvent(page_id="page3", error="Network timeout"))
 
         # Verify event counts
         assert len(page_events) == 4  # 2 started, 1 completed, 1 skipped
@@ -247,14 +235,19 @@ class TestIntegration:
         assert len(error_events) == 1  # 1 page failed
 
         # Verify event content
-        page_event_names = [event.name for event in page_events]
-        assert EventName.PAGE_DATA_FETCH_STARTED in page_event_names
-        assert EventName.PAGE_DATA_FETCH_COMPLETED in page_event_names
-        assert EventName.PAGE_SKIPPED in page_event_names
+        page_event_types = [type(event).__name__ for event in page_events]
+        assert "PageDataFetchStartedEvent" in page_event_types
+        assert "PageDataFetchCompletedEvent" in page_event_types
+        assert "PageSkippedEvent" in page_event_types
 
-        attachment_event_names = [event.name for event in attachment_events]
-        assert EventName.ATTACHMENT_PROCESSING_STARTED in attachment_event_names
-        assert EventName.ATTACHMENT_PROCESSED in attachment_event_names
+        attachment_event_types = [type(event).__name__ for event in attachment_events]
+        assert "AttachmentProcessingStartedEvent" in attachment_event_types
+        assert "AttachmentProcessedEvent" in attachment_event_types
 
-        error_event_names = [event.name for event in error_events]
-        assert EventName.PAGE_FAILED in error_event_names
+        error_event_types = [type(event).__name__ for event in error_events]
+        assert "PageFailedEvent" in error_event_types
+
+        # Clean up
+        for handler in [page_handler, attachment_handler, error_handler]:
+            if handler in dispatcher.event_handlers:
+                dispatcher.event_handlers.remove(handler)

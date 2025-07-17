@@ -3,13 +3,13 @@ from unittest.mock import patch, MagicMock
 import pytest
 from llama_index.readers.confluence import ConfluenceReader
 from llama_index.readers.confluence.event import (
-    EventName,
-    PageEvent,
-    AttachmentEvent,
     FileType,
+    PageDataFetchStartedEvent,
+    AttachmentProcessedEvent,
 )
 from llama_index.core.readers.base import BaseReader
-from llama_index.core.schema import Document
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 
 
 class MockConfluence:
@@ -206,54 +206,59 @@ def test_confluence_reader_callbacks():
     assert should_process is False
 
 
-def test_confluence_reader_observer_pattern():
-    """Test that observer pattern works correctly."""
+def test_confluence_reader_event_system():
+    """Test that the new event system works correctly."""
     reader = ConfluenceReader(
         base_url="https://example.atlassian.net/wiki",
         api_token="example_api_token",
     )
 
-    # Test event subscription
+    # Test event handling
     events_received = []
 
-    def event_handler(event):
-        events_received.append(event)
+    class TestEventHandler(BaseEventHandler):
+        def handle(self, event):
+            events_received.append(event)
 
-    def page_handler(event):
-        events_received.append(f"PAGE: {event.page_id}")
+    class PageEventHandler(BaseEventHandler):
+        def handle(self, event):
+            if isinstance(event, PageDataFetchStartedEvent):
+                events_received.append(f"PAGE: {event.page_id}")
 
-    # Subscribe to specific event
-    reader.observer.subscribe(EventName.PAGE_DATA_FETCH_STARTED, page_handler)
+    # Add event handlers to dispatcher
+    dispatcher = get_dispatcher("llama_index.readers.confluence.base")
+    test_handler = TestEventHandler()
+    page_handler = PageEventHandler()
 
-    # Subscribe to all events
-    reader.observer.subscribe_all(event_handler)
+    dispatcher.add_event_handler(test_handler)
+    dispatcher.add_event_handler(page_handler)
 
-    # Create and notify events
-    page_event = PageEvent(
-        name=EventName.PAGE_DATA_FETCH_STARTED,
-        page_id="test_page",
-        document=Document(text="test content"),
-        metadata={"test": "data"},
-    )
-
-    attachment_event = AttachmentEvent(
-        name=EventName.ATTACHMENT_PROCESSED,
+    # Create and emit events manually to test the system
+    page_event = PageDataFetchStartedEvent(page_id="test_page")
+    attachment_event = AttachmentProcessedEvent(
         page_id="test_page",
         attachment_id="att_123",
         attachment_name="test.pdf",
-        attachment_type="application/pdf",
+        attachment_type=FileType.PDF,
         attachment_size=1000,
         attachment_link="http://example.com/att_123",
     )
 
-    reader.observer.notify(page_event)
-    reader.observer.notify(attachment_event)
+    dispatcher.event(page_event)
+    dispatcher.event(attachment_event)
 
     # Check that events were received
-    assert len(events_received) == 3  # page_handler + 2 from event_handler
+    assert len(events_received) == 3  # page_handler + 2 from test_handler
     assert "PAGE: test_page" in events_received
-    assert page_event in events_received
-    assert attachment_event in events_received
+    assert any(
+        isinstance(event, PageDataFetchStartedEvent) for event in events_received
+    )
+    assert any(isinstance(event, AttachmentProcessedEvent) for event in events_received)
+
+    # Clean up handlers
+    for handler in [test_handler, page_handler]:
+        if handler in dispatcher.event_handlers:
+            dispatcher.event_handlers.remove(handler)
 
 
 def test_confluence_reader_fail_on_error_setting():

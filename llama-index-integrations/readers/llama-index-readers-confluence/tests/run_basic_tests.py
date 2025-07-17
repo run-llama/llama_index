@@ -19,7 +19,9 @@ def run_basic_tests():
 
     try:
         from llama_index.readers.confluence import ConfluenceReader
-        from llama_index.readers.confluence.event import EventName, FileType
+        from llama_index.readers.confluence.event import FileType
+        from llama_index.core.instrumentation import get_dispatcher
+        from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 
         print("✓ Successfully imported ConfluenceReader and events")
     except ImportError as e:
@@ -105,8 +107,8 @@ def run_basic_tests():
         traceback.print_exc()
         return False
 
-    # Test 4: Observer pattern
-    print("\n4. Testing observer pattern...")
+    # Test 4: Event system
+    print("\n4. Testing event system...")
     try:
         reader = ConfluenceReader(
             base_url="https://example.atlassian.net/wiki", api_token="test_token"
@@ -114,18 +116,25 @@ def run_basic_tests():
 
         events_received = []
 
-        def event_handler(event):
-            events_received.append(event.name)
+        class TestEventHandler(BaseEventHandler):
+            def handle(self, event):
+                events_received.append(event.class_name())
 
-        reader.observer.subscribe(EventName.PAGE_DATA_FETCH_STARTED, event_handler)
+        # Test that event system can be used
+        dispatcher = get_dispatcher(__name__)
+        event_handler = TestEventHandler()
+        dispatcher.add_event_handler(event_handler)
 
-        # Test that observer exists and has required methods
-        assert hasattr(reader.observer, "subscribe")
-        assert hasattr(reader.observer, "subscribe_all")
-        assert hasattr(reader.observer, "notify")
-        assert hasattr(reader.observer, "unsubscribe")
+        # Test that ConfluenceReader inherits from DispatcherSpanMixin
+        from llama_index.core.instrumentation import DispatcherSpanMixin
 
-        print("✓ Observer pattern structure is correct")
+        assert isinstance(reader, DispatcherSpanMixin)
+
+        print("✓ Event system structure is correct")
+
+        # Clean up
+        if event_handler in dispatcher.event_handlers:
+            dispatcher.event_handlers.remove(event_handler)
     except Exception as e:
         print(f"✗ Failed: {e}")
         traceback.print_exc()

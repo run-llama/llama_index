@@ -1,7 +1,6 @@
-from pydantic import BaseModel
-from typing import Dict, Any
 from enum import Enum
 from llama_index.core.schema import Document
+from llama_index.core.instrumentation.events.base import BaseEvent
 
 
 class FileType(Enum):
@@ -17,38 +16,116 @@ class FileType(Enum):
     UNKNOWN = "unknown"
 
 
-class EventName(str, Enum):
-    PAGE_DATA_FETCH_STARTED = "page_data_fetch_started"
-    PAGE_DATA_FETCH_COMPLETED = "page_data_fetch_completed"
-    PAGE_SKIPPED = "page_skipped"
-    PAGE_FAILED = "page_failed"
+# LlamaIndex instrumentation events
+class TotalPagesToProcessEvent(BaseEvent):
+    """Event emitted when the total number of pages to process is determined."""
 
-    TOTAL_PAGES_TO_PROCESS = "total_pages_to_process"
+    total_pages: int
 
-    ATTACHMENT_PROCESSING_STARTED = "attachment_processing_started"
-    ATTACHMENT_PROCESSED = "attachment_processed"
-    ATTACHMENT_SKIPPED = "attachment_skipped"
-    ATTACHMENT_FAILED = "attachment_failed"
+    @classmethod
+    def class_name(cls) -> str:
+        return "TotalPagesToProcessEvent"
 
 
-class Event(BaseModel):
-    name: EventName
+class PageDataFetchStartedEvent(BaseEvent):
+    """Event emitted when processing of a page begins."""
 
-
-class AttachmentEvent(Event):
-    name: EventName
-    attachment_id: str
     page_id: str
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "PageDataFetchStartedEvent"
+
+
+class PageDataFetchCompletedEvent(BaseEvent):
+    """Event emitted when a page is successfully processed."""
+
+    page_id: str
+    document: Document
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "PageDataFetchCompletedEvent"
+
+
+class PageSkippedEvent(BaseEvent):
+    """Event emitted when a page is skipped due to callback decision."""
+
+    page_id: str
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "PageSkippedEvent"
+
+
+class PageFailedEvent(BaseEvent):
+    """Event emitted when page processing fails."""
+
+    page_id: str
+    error: str
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "PageFailedEvent"
+
+
+class AttachmentProcessingStartedEvent(BaseEvent):
+    """Event emitted when attachment processing begins."""
+
+    page_id: str
+    attachment_id: str
     attachment_name: str
     attachment_type: str
     attachment_size: int
     attachment_link: str
-    error: str = None
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "AttachmentProcessingStartedEvent"
 
 
-class PageEvent(Event):
-    name: EventName
+class AttachmentProcessedEvent(BaseEvent):
+    """Event emitted when an attachment is successfully processed."""
+
     page_id: str
-    document: Document
-    error: str = None
-    metadata: Dict[str, Any] = {}
+    attachment_id: str
+    attachment_name: str
+    attachment_type: str
+    attachment_size: int
+    attachment_link: str
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "AttachmentProcessedEvent"
+
+
+class AttachmentSkippedEvent(BaseEvent):
+    """Event emitted when an attachment is skipped."""
+
+    page_id: str
+    attachment_id: str
+    attachment_name: str
+    attachment_type: str
+    attachment_size: int
+    attachment_link: str
+    reason: str
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "AttachmentSkippedEvent"
+
+
+class AttachmentFailedEvent(BaseEvent):
+    """Event emitted when attachment processing fails."""
+
+    page_id: str
+    attachment_id: str
+    attachment_name: str
+    attachment_type: str
+    attachment_size: int
+    attachment_link: str
+    error: str
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "AttachmentFailedEvent"

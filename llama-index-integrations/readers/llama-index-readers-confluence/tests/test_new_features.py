@@ -1,4 +1,4 @@
-"""Tests for new ConfluenceReader features: callbacks, custom parsers, observer pattern."""
+"""Tests for new ConfluenceReader features: callbacks, custom parsers, event system."""
 
 from unittest.mock import MagicMock, patch
 import pytest
@@ -6,12 +6,13 @@ import os
 
 from llama_index.readers.confluence import ConfluenceReader
 from llama_index.readers.confluence.event import (
-    EventName,
-    PageEvent,
-    AttachmentEvent,
     FileType,
+    PageDataFetchStartedEvent,
+    AttachmentProcessedEvent,
+    AttachmentFailedEvent,
 )
-from llama_index.core.schema import Document
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.event_handlers import BaseEventHandler
 
 
 class TestCustomParsersAndFolder:
@@ -176,114 +177,128 @@ class TestCallbacks:
         assert result is None
 
 
-class TestObserverPattern:
-    """Test observer pattern functionality."""
+class TestEventSystem:
+    """Test event system functionality."""
 
-    def test_observer_subscription_and_notification(self):
-        """Test that observer can subscribe to events and receive notifications."""
+    def test_event_system_subscription_and_notification(self):
+        """Test that event system can handle event subscriptions and notifications."""
         reader = ConfluenceReader(
             base_url="https://example.atlassian.net/wiki", api_token="test_token"
         )
 
         events_received = []
 
-        def event_handler(event):
-            events_received.append(event)
+        class TestEventHandler(BaseEventHandler):
+            def handle(self, event):
+                events_received.append(event)
 
-        def page_handler(event):
-            events_received.append(f"PAGE_EVENT: {event.page_id}")
+        class PageEventHandler(BaseEventHandler):
+            def handle(self, event):
+                if isinstance(event, PageDataFetchStartedEvent):
+                    events_received.append(f"PAGE_EVENT: {event.page_id}")
 
-        # Subscribe to specific event
-        reader.observer.subscribe(EventName.PAGE_DATA_FETCH_STARTED, page_handler)
+        # Subscribe to events using new event system
+        dispatcher = get_dispatcher("test_new_features_subscription")
+        general_handler = TestEventHandler()
+        page_handler = PageEventHandler()
 
-        # Subscribe to all events
-        reader.observer.subscribe_all(event_handler)
+        dispatcher.add_event_handler(general_handler)
+        dispatcher.add_event_handler(page_handler)
 
-        # Create and notify a page event
-        page_event = PageEvent(
-            name=EventName.PAGE_DATA_FETCH_STARTED,
-            page_id="test_page",
-            document=Document(text="test content", doc_id="test_page"),
-            metadata={"test": "data"},
-        )
-
-        reader.observer.notify(page_event)
+        # Create and emit a page event
+        page_event = PageDataFetchStartedEvent(page_id="test_page")
+        dispatcher.event(page_event)
 
         # Check that both handlers received the event
         assert len(events_received) == 2
         assert "PAGE_EVENT: test_page" in events_received
-        assert page_event in events_received
+        assert any(
+            isinstance(event, PageDataFetchStartedEvent) for event in events_received
+        )
 
-    def test_observer_attachment_events(self):
-        """Test observer with attachment events."""
+        # Clean up
+        for handler in [general_handler, page_handler]:
+            if handler in dispatcher.event_handlers:
+                dispatcher.event_handlers.remove(handler)
+
+    def test_event_system_attachment_events(self):
+        """Test event system with attachment events."""
         reader = ConfluenceReader(
             base_url="https://example.atlassian.net/wiki", api_token="test_token"
         )
 
         attachment_events = []
 
-        def attachment_handler(event):
-            attachment_events.append(event)
+        class AttachmentEventHandler(BaseEventHandler):
+            def handle(self, event):
+                if isinstance(event, (AttachmentProcessedEvent, AttachmentFailedEvent)):
+                    attachment_events.append(event)
 
-        reader.observer.subscribe(EventName.ATTACHMENT_PROCESSED, attachment_handler)
-        reader.observer.subscribe(EventName.ATTACHMENT_FAILED, attachment_handler)
+        dispatcher = get_dispatcher("test_new_features_attachment")
+        attachment_handler = AttachmentEventHandler()
+        dispatcher.add_event_handler(attachment_handler)
 
         # Test attachment processed event
-        processed_event = AttachmentEvent(
-            name=EventName.ATTACHMENT_PROCESSED,
+        processed_event = AttachmentProcessedEvent(
             page_id="page123",
             attachment_id="att456",
             attachment_name="document.pdf",
-            attachment_type="application/pdf",
+            attachment_type=FileType.PDF,
             attachment_size=1024,
             attachment_link="http://example.com/att456",
         )
 
-        reader.observer.notify(processed_event)
+        dispatcher.event(processed_event)
 
         # Test attachment failed event
-        failed_event = AttachmentEvent(
-            name=EventName.ATTACHMENT_FAILED,
+        failed_event = AttachmentFailedEvent(
             page_id="page123",
             attachment_id="att789",
             attachment_name="broken.pdf",
-            attachment_type="application/pdf",
+            attachment_type=FileType.PDF,
             attachment_size=2048,
             attachment_link="http://example.com/att789",
             error="Processing failed",
         )
 
-        reader.observer.notify(failed_event)
+        dispatcher.event(failed_event)
 
         assert len(attachment_events) == 2
-        assert processed_event in attachment_events
-        assert failed_event in attachment_events
+        assert any(
+            isinstance(event, AttachmentProcessedEvent) for event in attachment_events
+        )
+        assert any(
+            isinstance(event, AttachmentFailedEvent) for event in attachment_events
+        )
 
-    def test_observer_unsubscribe(self):
-        """Test observer unsubscribe functionality."""
+        # Clean up
+        if attachment_handler in dispatcher.event_handlers:
+            dispatcher.event_handlers.remove(attachment_handler)
+
+    def test_event_system_handler_removal(self):
+        """Test event system handler removal functionality."""
         reader = ConfluenceReader(
             base_url="https://example.atlassian.net/wiki", api_token="test_token"
         )
 
         events_received = []
 
-        def event_handler(event):
-            events_received.append(event)
+        class TestEventHandler(BaseEventHandler):
+            def handle(self, event):
+                events_received.append(event)
 
-        # Subscribe and then unsubscribe
-        reader.observer.subscribe(EventName.PAGE_DATA_FETCH_STARTED, event_handler)
-        reader.observer.unsubscribe(EventName.PAGE_DATA_FETCH_STARTED, event_handler)
+        # Add and then remove event handler
+        dispatcher = get_dispatcher("test_new_features_removal")
+        event_handler = TestEventHandler()
+        dispatcher.add_event_handler(event_handler)
+        if event_handler in dispatcher.event_handlers:
+            dispatcher.event_handlers.remove(event_handler)
 
-        # Create and notify event
-        page_event = PageEvent(
-            name=EventName.PAGE_DATA_FETCH_STARTED,
-            page_id="test_page",
-            document=Document(text="test content", doc_id="test_page"),
-        )
+        # Create and emit event
+        page_event = PageDataFetchStartedEvent(page_id="test_page")
+        dispatcher.event(page_event)
 
-        reader.observer.notify(page_event)
-
-        # Should not receive any events since we unsubscribed
+        # Should not receive any events since we removed the handler
         assert len(events_received) == 0
 
 
