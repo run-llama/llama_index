@@ -1,8 +1,6 @@
 from typing import List, cast
-
-from llama_index.core.indices.vector_store.retrievers.retriever import (
-    VectorIndexRetriever,
-)
+import pytest
+from llama_index.core.indices.vector_store.retrievers.retriever import VectorIndexRetriever
 from llama_index.core.vector_stores.types import VectorStoreQueryResult
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.vector_stores.simple import SimpleVectorStore
@@ -115,34 +113,61 @@ def test_query_image_node() -> None:
     assert results[0].node.image == "potato"
 
 
-def test_insert_fetched_nodes_handles_int_and_str_ids():
-    """Ensure _insert_fetched_nodes_into_query_result handles int and str node IDs."""
-    # Fetched nodes have string IDs
+
+def test_insert_fetched_nodes_handles_all_branches():
+    """Test _insert_fetched_nodes_into_query_result for full branch coverage."""
+
     fetched_nodes = [
         TextNode(id_="0", text="doc 0"),
         TextNode(id_="1", text="doc 1"),
+        TextNode(id_="two", text="doc two")
     ]
 
-    # Simulated query result with int IDs
     query_result = VectorStoreQueryResult(
-        ids=[0, 1],  # int IDs
-        similarities=[0.9, 0.8],
-        nodes=None,
+        ids=[0, "1", "unknown"],
+        similarities=[0.9, 0.8, 0.7],
+        nodes=None  
     )
 
-    # Dummy index, not used in this test
     dummy_index = VectorStoreIndex([])
 
     retriever = VectorIndexRetriever(
-        index=dummy_index, vector_store=None, docstore=None, embed_model=None
+        index=dummy_index,
+        vector_store=None,
+        docstore=None,
+        embed_model=None
     )
 
-    new_nodes = retriever._insert_fetched_nodes_into_query_result(
-        query_result, fetched_nodes
+    with pytest.raises(KeyError) as exc_info:
+        retriever._insert_fetched_nodes_into_query_result(query_result, fetched_nodes)
+
+    assert "Node ID unknown not found" in str(exc_info.value)
+
+def test_insert_fetched_nodes_with_nodes_present():
+    """Test _insert_fetched_nodes_into_query_result with `nodes` present instead of `ids`."""
+    fetched_nodes = [
+        TextNode(id_="abc", text="Updated text")
+    ]
+
+    # This simulates query_result.nodes populated with old version of the same node
+    old_node = TextNode(id_="abc", text="Old text")
+
+    query_result = VectorStoreQueryResult(
+        nodes=[old_node],
+        similarities=[0.9]
     )
 
-    assert len(new_nodes) == 2
-    assert new_nodes[0].node_id == "0"
-    assert new_nodes[1].node_id == "1"
-    assert new_nodes[0].text == "doc 0"
-    assert new_nodes[1].text == "doc 1"
+    dummy_index = VectorStoreIndex([])
+
+    retriever = VectorIndexRetriever(
+        index=dummy_index,
+        vector_store=None,
+        docstore=None,
+        embed_model=None
+    )
+
+    new_nodes = retriever._insert_fetched_nodes_into_query_result(query_result, fetched_nodes)
+
+    # Should have replaced old node with the new one
+    assert len(new_nodes) == 1
+    assert new_nodes[0].text == "Updated text"
