@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [0.1.8] - 2024-08-20
+
+- Added observability events for ConfluenceReader
+- Added support for custom parser for attachments
+- Added callback for page and attachment processing
+
 ## [0.1.7] - 2024-07-23
 
 - Sort order of authentication parameters and environment variables as:

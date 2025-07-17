@@ -10,6 +10,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
     AgentSetup,
     AgentWorkflowStartEvent,
+    AgentStreamStructuredOutput,
     ToolCall,
     ToolCallResult,
 )
@@ -438,6 +439,9 @@ class BaseWorkflowAgent(
                         output.structured_response = cast(
                             Dict[str, Any], self.structured_output_fn(messages)
                         )
+                    ctx.write_event_to_stream(
+                        AgentStreamStructuredOutput(output=output.structured_response)
+                    )
                 except Exception as e:
                     warnings.warn(
                         f"There was a problem with the generation of the structured output: {e}"
@@ -446,6 +450,9 @@ class BaseWorkflowAgent(
                 try:
                     output.structured_response = await generate_structured_response(
                         messages=messages, llm=self.llm, output_cls=self.output_cls
+                    )
+                    ctx.write_event_to_stream(
+                        AgentStreamStructuredOutput(output=output.structured_response)
                     )
                 except Exception as e:
                     warnings.warn(

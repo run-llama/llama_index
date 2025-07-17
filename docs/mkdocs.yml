@@ -41,6 +41,7 @@ nav:
           - Streaming output and events: ./understanding/agent/streaming.md
           - Human in the loop: ./understanding/agent/human_in_the_loop.md
           - Multi-agent workflows: ./understanding/agent/multi_agent.md
+          - Using structured output: ./understanding/agent/structured_output.md
       - Building Workflows:
           - Introduction to workflows: ./understanding/workflows/index.md
           - A basic workflow: ./understanding/workflows/basic_flow.md

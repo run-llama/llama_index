@@ -10,6 +10,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentOutput,
     ToolCall,
     ToolCallResult,
+    AgentStreamStructuredOutput,
 )
 
 
@@ -25,4 +26,5 @@ __all__ = [
     "ReActAgent",
     "ToolCall",
     "ToolCallResult",
+    "AgentStreamStructuredOutput",
 ]

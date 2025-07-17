@@ -25,6 +25,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentSetup,
     AgentOutput,
     AgentWorkflowStartEvent,
+    AgentStreamStructuredOutput,
 )
 from llama_index.core.llms import ChatMessage, TextBlock
 from llama_index.core.llms.llm import LLM
@@ -469,6 +470,9 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                         output.structured_response = cast(
                             Dict[str, Any], self.structured_output_fn(messages)
                         )
+                    ctx.write_event_to_stream(
+                        AgentStreamStructuredOutput(output=output.structured_response)
+                    )
                 except Exception as e:
                     warnings.warn(
                         f"There was a problem with the generation of the structured output: {e}"
@@ -477,6 +481,9 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 try:
                     output.structured_response = await generate_structured_response(
                         messages=messages, llm=agent.llm, output_cls=self.output_cls
+                    )
+                    ctx.write_event_to_stream(
+                        AgentStreamStructuredOutput(output=output.structured_response)
                     )
                 except Exception as e:
                     warnings.warn(
@@ -657,6 +664,10 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         system_prompt: Optional[str] = None,
         state_prompt: Optional[Union[str, BasePromptTemplate]] = None,
         initial_state: Optional[dict] = None,
+        output_cls: Optional[Type[BaseModel]] = None,
+        structured_output_fn: Optional[
+            Callable[[List[ChatMessage]], Dict[str, Any]]
+        ] = None,
         timeout: Optional[float] = None,
         verbose: bool = False,
     ) -> "AgentWorkflow":
@@ -689,6 +700,8 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                     system_prompt=system_prompt,
                 )
             ],
+            output_cls=output_cls,
+            structured_output_fn=structured_output_fn,
             state_prompt=state_prompt,
             initial_state=initial_state,
             timeout=timeout,
