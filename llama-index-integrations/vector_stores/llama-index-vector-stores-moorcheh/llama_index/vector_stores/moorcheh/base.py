@@ -118,24 +118,27 @@ class MoorchehVectorStore(BasePydanticVectorStore):
         print("[DEBUG] Listing namespaces...")
         try:
             namespaces = self._client.list_namespaces()
-            print(f"[DEBUG] Found namespaces: {namespaces}")
+            print(f"[DEBUG] Found namespaces.")
         except Exception as e:
             print(f"[ERROR] Failed to list namespaces: {e}")
             raise
 
-        if self.namespace not in namespaces:
-            print(f"[DEBUG] Namespace '{self.namespace}' not found. Creating...")
+         # Check if the namespace exists
+        if self.namespace in namespaces:
+            print(f"[DEBUG] Namespace '{self.namespace}' already exists. No action required.")
+        else:
+            print(f"[DEBUG] Namespace '{self.namespace}' not found. Creating it.")
+            # If the namespace doesn't exist, create it
             try:
                 self._client.create_namespace(
                     namespace_name=self.namespace,
                     type=self.namespace_type,
                     vector_dimension=self.vector_dimension,
                 )
+                print(f"[DEBUG] Namespace '{self.namespace}' created.")
             except Exception as e:
                 print(f"[ERROR] Failed to create namespace: {e}")
                 raise
-
-        print("[DEBUG] MoorchehVectorStore initialization complete.")
 
     # _client: MoorchehClient = PrivateAttr()
 
