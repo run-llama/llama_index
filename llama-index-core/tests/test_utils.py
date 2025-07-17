@@ -1,6 +1,8 @@
 """Test utils."""
 
+from pathlib import Path
 from typing import Optional, Type, Union
+from unittest import mock
 
 import pytest
 from _pytest.capture import CaptureFixture
@@ -9,12 +11,13 @@ from llama_index.core.utils import (
     _LLAMA_INDEX_COLORS,
     ErrorToRetry,
     _get_colored_text,
+    get_cache_dir,
     get_color_mapping,
+    get_retry_on_exceptions_with_backoff_decorator,
     get_tokenizer,
     iter_batch,
     print_text,
     retry_on_exceptions_with_backoff,
-    get_retry_on_exceptions_with_backoff_decorator,
 )
 
 
@@ -246,3 +249,61 @@ def test_print_text(capsys: CaptureFixture) -> None:
     print_text(text, end=" ")
     captured = capsys.readouterr()
     assert captured.out == f"{text} "
+
+
+def test_get_cache_dir_with_env_override(tmp_path, monkeypatch) -> None:
+    custom_cache_dir = str(tmp_path / "custom_cache")
+
+    # Test with environment variable set
+    monkeypatch.setenv("LLAMA_INDEX_CACHE_DIR", custom_cache_dir)
+    result = get_cache_dir()
+    assert result == custom_cache_dir
+    assert isinstance(result, str)
+    assert Path(custom_cache_dir).exists()
+    assert Path(custom_cache_dir).is_dir()
+
+
+def test_get_cache_dir_default_behavior(monkeypatch) -> None:
+    # Ensure environment variable is not set
+    monkeypatch.delenv("LLAMA_INDEX_CACHE_DIR", raising=False)
+
+    with mock.patch("platformdirs.user_cache_dir") as mock_user_cache_dir:
+        mock_cache_path = "/mock/cache/llama_index"
+        mock_user_cache_dir.return_value = mock_cache_path
+
+        with mock.patch("pathlib.Path.mkdir") as mock_mkdir:
+            result = get_cache_dir()
+            mock_user_cache_dir.assert_called_once_with("llama_index")
+            mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
+            assert result == mock_cache_path
+
+
+def test_get_cache_dir_creates_directory(tmp_path, monkeypatch) -> None:
+    cache_dir = str(tmp_path / "test_cache" / "nested" / "llama_index")
+
+    # Ensure directory doesn't exist initially
+    assert not Path(cache_dir).exists()
+    monkeypatch.setenv("LLAMA_INDEX_CACHE_DIR", cache_dir)
+    result = get_cache_dir()
+
+    assert Path(cache_dir).exists()
+    assert Path(cache_dir).is_dir()
+    assert result == cache_dir
+
+
+def test_get_cache_dir_no_toctou_issue(tmp_path, monkeypatch) -> None:
+    cache_dir = str(tmp_path / "toctou_test")
+    monkeypatch.setenv("LLAMA_INDEX_CACHE_DIR", cache_dir)
+    with mock.patch("pathlib.Path.mkdir") as mock_mkdir:
+        get_cache_dir()
+        mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
+
+
+def test_get_cache_dir_env_var_precedence(tmp_path, monkeypatch) -> None:
+    env_cache_dir = str(tmp_path / "env_cache")
+    monkeypatch.setenv("LLAMA_INDEX_CACHE_DIR", env_cache_dir)
+
+    with mock.patch("platformdirs.user_cache_dir") as mock_user_cache_dir:
+        mock_user_cache_dir.return_value = "/should/not/be/used"
+        get_cache_dir()
+        mock_user_cache_dir.assert_not_called()
