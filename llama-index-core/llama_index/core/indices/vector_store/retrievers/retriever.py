@@ -186,7 +186,6 @@ class VectorIndexRetriever(BaseRetriever):
                 else:
                     raise KeyError(
                         f"Node ID {node_id_str} not found in fetched nodes. "
-                        f"Possible ID mismatch due to type (int vs str)."
                     )
         else:
             raise ValueError(
