@@ -170,9 +170,7 @@ class VectorIndexRetriever(BaseRetriever):
         fetched_nodes_by_id: Dict[str, BaseNode] = {
             str(node.node_id): node for node in fetched_nodes
         }
-
         new_nodes: List[BaseNode] = []
-
         if query_result.nodes:
             for node in list(query_result.nodes):
                 node_id_str = str(node.node_id)
@@ -194,7 +192,6 @@ class VectorIndexRetriever(BaseRetriever):
             raise ValueError(
                 "Vector store query result should return at least one of nodes or ids."
             )
-
         return new_nodes
     
     def _convert_nodes_to_scored_nodes(

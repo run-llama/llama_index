@@ -5,7 +5,6 @@ from llama_index.core.vector_stores.types import VectorStoreQueryResult
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
 from llama_index.core.vector_stores.simple import SimpleVectorStore
 from llama_index.core.schema import (
-    BaseNode,
     Document,
     NodeRelationship,
     QueryBundle,
@@ -114,24 +113,31 @@ def test_query_image_node() -> None:
 
 
 def test_insert_fetched_nodes_handles_int_and_str_ids():
-    """Test that retriever handles mismatched int/str node ID types without KeyError."""
-    # Simulate fetched nodes with string node_ids
+    """Ensure _insert_fetched_nodes_into_query_result handles int and str node IDs."""
+
+    # Fetched nodes have string IDs
     fetched_nodes = [
-        BaseNode(node_id="0", text="doc 0"),
-        BaseNode(node_id="1", text="doc 1"),
+        TextNode(id_="0", text="doc 0"),
+        TextNode(id_="1", text="doc 1"),
     ]
 
-    # Simulate query result with integer node_ids
+    # Simulated query result with int IDs
     query_result = VectorStoreQueryResult(
         ids=[0, 1],  # int IDs
         similarities=[0.9, 0.8],
         nodes=None
     )
 
-    # Create a dummy retriever with required args as None (won't be used)
-    retriever = VectorIndexRetriever(vector_store=None, docstore=None, embed_model=None)
+    # Dummy index, not used in this test
+    dummy_index = VectorStoreIndex([])
+    
+    retriever = VectorIndexRetriever(
+        index=dummy_index,
+        vector_store=None,
+        docstore=None,
+        embed_model=None
+    )
 
-    # Call the patched method
     new_nodes = retriever._insert_fetched_nodes_into_query_result(query_result, fetched_nodes)
 
     assert len(new_nodes) == 2
