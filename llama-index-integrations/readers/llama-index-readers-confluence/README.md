@@ -125,22 +125,37 @@ reader = ConfluenceReader(
 
 - `logger`: Provide a custom logger instance for controlling log output during the reading process.
 
-**Event Monitoring (Observer Pattern)**:
-The ConfluenceReader includes an observer system that emits events during document and attachment processing. This allows you to monitor progress, handle errors, or integrate with external systems like databases or message queues.
+**Event Monitoring (LlamaIndex Instrumentation)**:
+The ConfluenceReader integrates with LlamaIndex's instrumentation system to emit events during document and attachment processing. This allows you to monitor progress, handle errors, or integrate with external systems like databases or message queues.
 
 Available event types:
 
-- `TOTAL_PAGES_TO_PROCESS`: When the total number of pages to process is determined
-- `PAGE_DATA_FETCH_STARTED`: When processing of a page begins
-- `PAGE_DATA_FETCH_COMPLETED`: When a page is successfully processed
-- `PAGE_FAILED`: When page processing fails
-- `PAGE_SKIPPED`: When a page is skipped due to callback decision
-- `ATTACHMENT_PROCESSING_STARTED`: When attachment processing begins
-- `ATTACHMENT_PROCESSED`: When an attachment is successfully processed
-- `ATTACHMENT_SKIPPED`: When an attachment is skipped
-- `ATTACHMENT_FAILED`: When attachment processing fails
+- `TotalPagesToProcessEvent`: When the total number of pages to process is determined
+- `PageDataFetchStartedEvent`: When processing of a page begins
+- `PageDataFetchCompletedEvent`: When a page is successfully processed
+- `PageFailedEvent`: When page processing fails
+- `PageSkippedEvent`: When a page is skipped due to callback decision
+- `AttachmentProcessingStartedEvent`: When attachment processing begins
+- `AttachmentProcessedEvent`: When an attachment is successfully processed
+- `AttachmentSkippedEvent`: When an attachment is skipped
+- `AttachmentFailedEvent`: When attachment processing fails
 
-You can subscribe to specific events using `reader.observer.subscribe(event_name, callback)` or to all events using `reader.observer.subscribe_all(callback)`.
+To listen to events, create custom event handlers that inherit from `BaseEventHandler` and add them to the dispatcher:
+
+```python
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.event_handlers import BaseEventHandler
+
+
+class MyEventHandler(BaseEventHandler):
+    def handle(self, event):
+        # Your event handling logic here
+        print(f"Event: {event.class_name()}")
+
+
+dispatcher = get_dispatcher("llama_index.readers.confluence.base")
+dispatcher.add_event_handler(MyEventHandler())
+```
 
 Hint: `space_key` and `page_id` can both be found in the URL of a page in Confluence - https://yoursite.atlassian.com/wiki/spaces/<space_key>/pages/<page_id>
 
@@ -267,35 +282,123 @@ reader = ConfluenceReader(
 documents = reader.load_data(space_key="MYSPACE", include_attachments=True)
 ```
 
+### Event System Integration
+
+For monitoring the processing with custom event handlers, you can import the event types directly:
+
 ```python
-# Example using the Observer pattern for event monitoring
+from llama_index.readers.confluence.event import (
+    TotalPagesToProcessEvent,
+    PageDataFetchStartedEvent,
+    PageDataFetchCompletedEvent,
+    PageFailedEvent,
+    PageSkippedEvent,
+    AttachmentProcessingStartedEvent,
+    AttachmentProcessedEvent,
+    AttachmentSkippedEvent,
+    AttachmentFailedEvent,
+    FileType,
+)
+```
+
+```python
+# Example using LlamaIndex's instrumentation system for event monitoring
 from llama_index.readers.confluence import ConfluenceReader
-from llama_index.readers.confluence.event import EventName
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.event_handlers import BaseEventHandler
+from llama_index.readers.confluence.event import (
+    TotalPagesToProcessEvent,
+    PageDataFetchStartedEvent,
+    PageDataFetchCompletedEvent,
+    PageFailedEvent,
+    PageSkippedEvent,
+    AttachmentProcessingStartedEvent,
+    AttachmentProcessedEvent,
+    AttachmentSkippedEvent,
+    AttachmentFailedEvent,
+)
 
 
-# Event handler functions
-def handle_page_started(event):
-    print(f"Started processing page: {event.page_id}")
+# Custom event handler class
+class ConfluenceEventHandler(BaseEventHandler):
+    """Custom event handler for Confluence reader events."""
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "ConfluenceEventHandler"
+
+    def handle(self, event) -> None:
+        """Handle different types of events."""
+        if isinstance(event, TotalPagesToProcessEvent):
+            print(f"Total pages to process: {event.total_pages}")
+        elif isinstance(event, PageDataFetchStartedEvent):
+            print(f"Started processing page: {event.page_id}")
+        elif isinstance(event, PageDataFetchCompletedEvent):
+            print(f"Completed processing page: {event.page_id}")
+            print(
+                f"Document title: {event.document.metadata.get('title', 'Unknown')}"
+            )
+        elif isinstance(event, PageSkippedEvent):
+            print(f"Skipped page: {event.page_id}")
+        elif isinstance(event, PageFailedEvent):
+            print(f"Failed to process page {event.page_id}: {event.error}")
+        elif isinstance(event, AttachmentProcessingStartedEvent):
+            print(f"Started processing attachment: {event.attachment_name}")
+        elif isinstance(event, AttachmentProcessedEvent):
+            print(f"Processed attachment: {event.attachment_name}")
+            print(f"Attachment type: {event.attachment_type}")
+            print(f"Attachment size: {event.attachment_size}")
+        elif isinstance(event, AttachmentSkippedEvent):
+            print(
+                f"Skipped attachment {event.attachment_name}: {event.reason}"
+            )
+        elif isinstance(event, AttachmentFailedEvent):
+            print(
+                f"Failed to process attachment {event.attachment_name}: {event.error}"
+            )
 
 
-def handle_page_completed(event):
-    print(f"Completed processing page: {event.page_id}")
-    print(f"Document title: {event.document.metadata.get('title', 'Unknown')}")
+# Alternative: Create separate handlers for different event types
+class PageEventHandler(BaseEventHandler):
+    """Handler specifically for page-related events."""
+
+    @classmethod
+    def class_name(cls) -> str:
+        return "PageEventHandler"
+
+    def handle(self, event) -> None:
+        if isinstance(
+            event,
+            (
+                PageDataFetchStartedEvent,
+                PageDataFetchCompletedEvent,
+                PageFailedEvent,
+                PageSkippedEvent,
+            ),
+        ):
+            print(f"Page event: {event.class_name()} for page {event.page_id}")
 
 
-def handle_attachment_processed(event):
-    print(f"Processed attachment: {event.attachment_name}")
-    print(f"Attachment type: {event.attachment_type}")
-    print(f"Attachment size: {event.attachment_size}")
+class AttachmentEventHandler(BaseEventHandler):
+    """Handler specifically for attachment-related events."""
 
+    @classmethod
+    def class_name(cls) -> str:
+        return "AttachmentEventHandler"
 
-def handle_processing_failed(event):
-    print(f"Processing failed: {event.error}")
-
-
-def handle_all_events(event):
-    """General event handler that logs all events"""
-    print(f"Event: {event.name}, Page ID: {event.page_id}")
+    def handle(self, event) -> None:
+        if isinstance(
+            event,
+            (
+                AttachmentProcessingStartedEvent,
+                AttachmentProcessedEvent,
+                AttachmentSkippedEvent,
+                AttachmentFailedEvent,
+            ),
+        ):
+            print(
+                f"Attachment event: {event.class_name()} for {event.attachment_name}"
+            )
 
 
 # Create reader and set up event monitoring
@@ -303,23 +406,17 @@ reader = ConfluenceReader(
     base_url="https://yoursite.atlassian.com/wiki", api_token="your_api_token"
 )
 
-# Subscribe to specific events
-reader.observer.subscribe(
-    EventName.PAGE_DATA_FETCH_STARTED, handle_page_started
-)
-reader.observer.subscribe(
-    EventName.PAGE_DATA_FETCH_COMPLETED, handle_page_completed
-)
-reader.observer.subscribe(
-    EventName.ATTACHMENT_PROCESSED, handle_attachment_processed
-)
-reader.observer.subscribe(EventName.PAGE_FAILED, handle_processing_failed)
-reader.observer.subscribe(
-    EventName.ATTACHMENT_FAILED, handle_processing_failed
-)
+# Get the dispatcher and add event handlers
+dispatcher = get_dispatcher("llama_index.readers.confluence.base")
 
-# Or subscribe to all events with a single handler
-# reader.observer.subscribe_all(handle_all_events)
+# Add handlers to the dispatcher
+confluence_handler = ConfluenceEventHandler()
+page_handler = PageEventHandler()
+attachment_handler = AttachmentEventHandler()
+
+dispatcher.add_event_handler(confluence_handler)
+dispatcher.add_event_handler(page_handler)
+dispatcher.add_event_handler(attachment_handler)
 
 # Load data - events will be emitted during processing
 documents = reader.load_data(space_key="MYSPACE", include_attachments=True)
