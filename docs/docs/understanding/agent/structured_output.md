@@ -16,8 +16,6 @@ from pydantic import BaseModel, Field
 
 llm = OpenAI(model="gpt-4.1")
 
-# single agent
-
 
 ## define structured output format  and tools
 class MathResult(BaseModel):
@@ -39,9 +37,14 @@ agent = FunctionAgent(
     llm=llm,
 )
 
-# multi agent
+response = await agent.run("What is 3415 * 43144?")
+print(response.structured_response)
+print(response.get_pydantic_model(MathResult))
+```
 
+This also works with mutl-agent workflows:
 
+```python
 ## define structured output format  and tools
 class Weather(BaseModel):
     location: str = Field(description="The location")
@@ -77,15 +80,9 @@ workflow = AgentWorkflow(
     output_cls=Weather,
 )
 
-# multi agent from tools or functions
-
-## define multi-agent workflow
-workflow = AgentWorkflow.from_tools_or_functions(
-    tools_or_functions=[get_weather],
-    system_prompt="You are a weather agent that can get the weather for a given location",
-    output_cls=Weather,
-    llm=llm,
-)
+response = await workflow.run("What is the weather in Tokyo?")
+print(response.structured_response)
+print(response.get_pydantic_model(Weather))
 ```
 
 ### Use `structured_output_fn`
@@ -128,6 +125,12 @@ agent = FunctionAgent(
     structured_output_fn=structured_output_parsing,
     llm=llm,
 )
+
+response = await agent.run(
+    "What strawberry flavor is available at Gelato Italia?"
+)
+print(response.structured_response)
+print(response.get_pydantic_model(Flavor))
 ```
 
 ### Streaming the Structured Output
