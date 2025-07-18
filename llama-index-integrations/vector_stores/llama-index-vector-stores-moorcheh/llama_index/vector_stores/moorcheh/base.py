@@ -119,15 +119,20 @@ class MoorchehVectorStore(BasePydanticVectorStore):
         logger.debug("Listing namespaces...")
         try:
             namespaces_response = self._client.list_namespaces()
-            namespaces = [namespace["namespace_name"] for namespace in namespaces_response.get("namespaces", [])]
+            namespaces = [
+                namespace["namespace_name"]
+                for namespace in namespaces_response.get("namespaces", [])
+            ]
             logger.debug("Found namespaces.")
         except Exception as e:
             logger.debug("Failed to list namespaces: {e}")
             raise
 
-         # Check if the namespace exists
+        # Check if the namespace exists
         if self.namespace in namespaces:
-            logger.debug("Namespace '{self.namespace}' already exists. No action required.")
+            logger.debug(
+                "Namespace '{self.namespace}' already exists. No action required."
+            )
         else:
             logger.debug("Namespace '{self.namespace}' not found. Creating it.")
             # If the namespace doesn't exist, create it
