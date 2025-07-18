@@ -134,10 +134,7 @@ def ag_ui_message_to_llama_index_message(message: Message) -> ChatMessage:
 
 
 def workflow_event_to_sse(event: Event) -> str:
-    event_str = EventEncoder().encode(event)
-
-    print(event_str, flush=True)
-    return event_str
+    return EventEncoder().encode(event)
 
 
 def timestamp() -> int:
