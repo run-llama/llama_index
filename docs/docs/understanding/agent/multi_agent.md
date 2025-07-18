@@ -109,15 +109,14 @@ async def call_research_agent(ctx: Context, prompt: str) -> str:
 async def call_write_agent(ctx: Context) -> str:
     """Useful for writing a report based on the research notes or revising the report based on feedback."""
     async with ctx.store.edit_state() as ctx_state:
-        state = ctx_state["state"]
-        notes = state.get("research_notes", None)
+        notes = ctx_state["state"].get("research_notes", None)
         if not notes:
             return "No research notes to write from."
 
         user_msg = f"Write a markdown report from the following notes. Be sure to output the report in the following format: <report>...</report>:\n\n"
 
         # Add the feedback to the user message if it exists
-        feedback = state.get("review", None)
+        feedback = ctx_state["state"].get("review", None)
         if feedback:
             user_msg += f"<feedback>{feedback}</feedback>\n\n"
 
