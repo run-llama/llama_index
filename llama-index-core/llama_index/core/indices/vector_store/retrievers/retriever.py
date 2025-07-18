@@ -168,25 +168,29 @@ class VectorIndexRetriever(BaseRetriever):
         If the vector store stores text, we replace non-text nodes with those fetched from the docstore.
         """
         fetched_nodes_by_id: Dict[str, BaseNode] = {
-            node.node_id: node for node in fetched_nodes
+            str(node.node_id): node for node in fetched_nodes
         }
-
         new_nodes: List[BaseNode] = []
-
         if query_result.nodes:
             for node in list(query_result.nodes):
-                if node.node_id in fetched_nodes_by_id:
-                    new_nodes.append(fetched_nodes_by_id[node.node_id])
-                    continue
-                new_nodes.append(node)
+                node_id_str = str(node.node_id)
+                if node_id_str in fetched_nodes_by_id:
+                    new_nodes.append(fetched_nodes_by_id[node_id_str])
+                else:
+                    new_nodes.append(node)
         elif query_result.ids:
             for node_id in query_result.ids:
-                new_nodes.append(fetched_nodes_by_id[node_id])
+                node_id_str = str(node_id)
+                if node_id_str in fetched_nodes_by_id:
+                    new_nodes.append(fetched_nodes_by_id[node_id_str])
+                else:
+                    raise KeyError(
+                        f"Node ID {node_id_str} not found in fetched nodes. "
+                    )
         else:
             raise ValueError(
                 "Vector store query result should return at least one of nodes or ids."
             )
-
         return new_nodes
 
     def _convert_nodes_to_scored_nodes(
