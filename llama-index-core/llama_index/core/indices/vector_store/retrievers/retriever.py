@@ -177,14 +177,9 @@ class VectorIndexRetriever(BaseRetriever):
                 else:
                     new_nodes.append(node)
         elif query_result.ids:
-            for node_id in query_result.ids:
-                node_id_str = str(node_id)
-                if node_id_str in fetched_nodes_by_id:
-                    new_nodes.append(fetched_nodes_by_id[node_id_str])
-                else:
-                    raise KeyError(
-                        f"Node ID {node_id_str} not found in fetched nodes. "
-                    )
+            for idx in query_result.ids:
+                str_node_id = self._index.index_struct.nodes_dict[idx]
+                new_nodes.append(fetched_nodes_by_id[str_node_id])
         elif query_result.ids is None and query_result.nodes is None:
             raise ValueError(
                 "Vector store query result should return at least one of nodes or ids."
