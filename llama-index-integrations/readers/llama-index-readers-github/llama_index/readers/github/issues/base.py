@@ -1,232 +1,306 @@
-"""
-GitHub repository issues reader.
+import os
+from collections.abc import AsyncGenerator, Generator
+from datetime import datetime
+from functools import cached_property
+from typing import TYPE_CHECKING, Any, Literal, override
 
-Retrieves the list of issues of a GitHub repository and converts them to documents.
+from githubkit.auth.token import TokenAuthStrategy
+from githubkit.github import GitHub
+from githubkit.utils import UNSET
+from githubkit.versions.latest.models import Issue, IssueComment
+from llama_index.core.readers.base import BasePydanticReader
+from llama_index.core.schema import Document, MediaResource
+from pydantic import Field
 
-Each issue is converted to a document by doing the following:
-
-    - The text of the document is the concatenation of the title and the body of the issue.
-    - The title of the document is the title of the issue.
-    - The doc_id of the document is the issue number.
-    - The extra_info of the document is a dictionary with the following keys:
-        - state: State of the issue.
-        - created_at: Date when the issue was created.
-        - closed_at: Date when the issue was closed. Only present if the issue is closed.
-        - url: URL of the issue.
-        - assignee: Login of the user assigned to the issue. Only present if the issue is assigned.
-    - The embedding of the document is not set.
-    - The doc_hash of the document is not set.
-
-"""
-
-import asyncio
-import enum
-import logging
-from typing import Dict, List, Optional, Tuple
-
-from llama_index.core.readers.base import BaseReader
-from llama_index.core.schema import Document
-from llama_index.readers.github.issues.github_client import (
-    BaseGitHubIssuesClient,
-    GitHubIssuesClient,
-)
-
-logger = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from githubkit.rest.paginator import Paginator
 
 
-def print_if_verbose(verbose: bool, message: str) -> None:
-    """Log message if verbose is True."""
-    if verbose:
-        print(message)
+class GithubIssueCommentsClient(BasePydanticReader):
+    owner: str = Field(description="The owner of the GitHub repository.")
+    repo: str = Field(description="The name of the GitHub repository.")
 
+    client: GitHub[Any] = Field(
+        default_factory=lambda: GitHub(
+            TokenAuthStrategy(token=os.environ["GITHUB_TOKEN"])
+        ),
+        description="The GitHub client.",
+    )
 
-class GitHubRepositoryIssuesReader(BaseReader):
-    """
-    GitHub repository issues reader.
+    def _comment_to_document(self, comment: IssueComment) -> Document:
+        metadata: dict[str, Any] = {}
 
-    Retrieves the list of issues of a GitHub repository and returns a list of documents.
+        if user := comment.user:
+            metadata["user.login"] = user.login
+            metadata["user.association"] = comment.author_association
 
-    Examples:
-        >>> reader = GitHubRepositoryIssuesReader("owner", "repo")
-        >>> issues = reader.load_data()
-        >>> print(issues)
+            if user.email:
+                metadata["user.email"] = user.email
 
-    """
+        if reactions := comment.reactions:
+            metadata["reactions.total_count"] = reactions.total_count or 0
+            metadata["reactions.plus_one_count"] = reactions.plus_one or 0
+            metadata["reactions.minus_one_count"] = reactions.minus_one or 0
+            metadata["reactions.laugh_count"] = reactions.laugh or 0
+            metadata["reactions.hooray_count"] = reactions.hooray or 0
 
-    class IssueState(enum.Enum):
-        """
-        Issue type.
+        return Document(
+            text_resource=MediaResource(text=comment.body or ""),
+            metadata={
+                "id": comment.id,
+                "type": "comment",
+                "updated_at": comment.updated_at.isoformat(),
+                "created_at": comment.created_at.isoformat(),
+                **metadata,
+            },
+        )
 
-        Used to decide what issues to retrieve.
-
-        Attributes:
-            - OPEN: Just open issues. This is the default.
-            - CLOSED: Just closed issues.
-            - ALL: All issues, open and closed.
-
-        """
-
-        OPEN = "open"
-        CLOSED = "closed"
-        ALL = "all"
-
-    class FilterType(enum.Enum):
-        """
-        Filter type.
-
-        Used to determine whether the filter is inclusive or exclusive.
-        """
-
-        EXCLUDE = enum.auto()
-        INCLUDE = enum.auto()
-
-    def __init__(
-        self,
-        github_client: BaseGitHubIssuesClient,
-        owner: str,
-        repo: str,
-        verbose: bool = False,
-    ):
-        """
-        Initialize params.
-
-        Args:
-            - github_client (BaseGitHubIssuesClient): GitHub client.
-            - owner (str): Owner of the repository.
-            - repo (str): Name of the repository.
-            - verbose (bool): Whether to print verbose messages.
-
-        Raises:
-            - `ValueError`: If the github_token is not provided and
-                the GITHUB_TOKEN environment variable is not set.
-
-        """
-        super().__init__()
-
-        self._owner = owner
-        self._repo = repo
-        self._verbose = verbose
-
-        # Set up the event loop
-        try:
-            self._loop = asyncio.get_running_loop()
-        except RuntimeError:
-            # If there is no running loop, create a new one
-            self._loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(self._loop)
-
-        self._github_client = github_client
-
+    @override
     def load_data(
         self,
-        state: Optional[IssueState] = IssueState.OPEN,
-        labelFilters: Optional[List[Tuple[str, FilterType]]] = None,
-    ) -> List[Document]:
-        """
-        Load issues from a repository and converts them to documents.
+        issue_number: int,
+        since: datetime | None = None,
+        per_page: int = 100,
+        page: int = 1,
+    ) -> list[Document]:
+        return list(self.lazy_load_data(issue_number, since, per_page, page))
 
-        Each issue is converted to a document by doing the following:
+    @override
+    def lazy_load_data(
+        self,
+        issue_number: int,
+        since: datetime | None = None,
+        per_page: int = 100,
+        page: int = 1,
+    ) -> Generator[Document, Any, Any]:
+        paginator: Paginator[IssueComment] = self.client.rest.paginate(
+            self.client.rest.issues.list_comments,
+            owner=self.owner,
+            repo=self.repo,
+            issue_number=issue_number,
+            since=since if since else UNSET,
+            per_page=per_page,
+            page=page,
+        )
 
-        - The text of the document is the concatenation of the title and the body of the issue.
-        - The title of the document is the title of the issue.
-        - The doc_id of the document is the issue number.
-        - The extra_info of the document is a dictionary with the following keys:
-            - state: State of the issue.
-            - created_at: Date when the issue was created.
-            - closed_at: Date when the issue was closed. Only present if the issue is closed.
-            - url: URL of the issue.
-            - assignee: Login of the user assigned to the issue. Only present if the issue is assigned.
-        - The embedding of the document is None.
-        - The doc_hash of the document is None.
+        for comment in paginator:
+            yield self._comment_to_document(comment)
 
-        Args:
-            - state (IssueState): State of the issues to retrieve. Default is IssueState.OPEN.
-            - labelFilters: an optional list of filters to apply to the issue list based on labels.
+    @override
+    async def aload_data(
+        self,
+        issue_number: int,
+        since: datetime | None = None,
+        per_page: int = 100,
+        page: int = 1,
+    ) -> list[Document]:
+        return [
+            doc
+            async for doc in self.alazy_load_data(issue_number, since, per_page, page)
+        ]
 
-        :return: list of documents
+    @override
+    async def alazy_load_data(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self,
+        issue_number: int,
+        since: datetime | None = None,
+        per_page: int = 100,
+        page: int = 1,
+    ) -> AsyncGenerator[Document, Any]:
+        paginator: Paginator[IssueComment] = self.client.rest.paginate(
+            self.client.rest.issues.async_list_comments,
+            owner=self.owner,
+            repo=self.repo,
+            issue_number=issue_number,
+            since=since if since else UNSET,
+            per_page=per_page,
+            page=page,
+        )
 
-        """
-        documents = []
-        page = 1
-        # Loop until there are no more issues
-        while True:
-            issues: Dict = self._loop.run_until_complete(
-                self._github_client.get_issues(
-                    self._owner, self._repo, state=state.value, page=page
-                )
-            )
-
-            if len(issues) == 0:
-                print_if_verbose(self._verbose, "No more issues found, stopping")
-
-                break
-            print_if_verbose(
-                self._verbose, f"Found {len(issues)} issues in the repo page {page}"
-            )
-            page += 1
-            filterCount = 0
-            for issue in issues:
-                if not self._must_include(labelFilters, issue):
-                    filterCount += 1
-                    continue
-                title = issue["title"]
-                body = issue["body"]
-                document = Document(
-                    doc_id=str(issue["number"]),
-                    text=f"{title}\n{body}",
-                )
-                extra_info = {
-                    "state": issue["state"],
-                    "created_at": issue["created_at"],
-                    # url is the API URL
-                    "url": issue["url"],
-                    # source is the HTML URL, more convenient for humans
-                    "source": issue["html_url"],
-                }
-                if issue["closed_at"] is not None:
-                    extra_info["closed_at"] = issue["closed_at"]
-                if issue["assignee"] is not None:
-                    extra_info["assignee"] = issue["assignee"]["login"]
-                if issue["labels"] is not None:
-                    extra_info["labels"] = [label["name"] for label in issue["labels"]]
-                document.extra_info = extra_info
-                documents.append(document)
-
-            print_if_verbose(self._verbose, f"Resulted in {len(documents)} documents")
-            if labelFilters is not None:
-                print_if_verbose(self._verbose, f"Filtered out {filterCount} issues")
-
-        return documents
-
-    def _must_include(self, labelFilters, issue):
-        if labelFilters is None:
-            return True
-        labels = [label["name"] for label in issue["labels"]]
-        for labelFilter in labelFilters:
-            label = labelFilter[0]
-            filterType = labelFilter[1]
-            # Only include issues with the label and value
-            if filterType == self.FilterType.INCLUDE:
-                return label in labels
-            elif filterType == self.FilterType.EXCLUDE:
-                return label not in labels
-
-        return True
+        async for comment in paginator:
+            yield self._comment_to_document(comment)
 
 
-if __name__ == "__main__":
-    """Load all issues in the repo labeled as bug."""
-    github_client = GitHubIssuesClient(verbose=True)
+class GithubIssuesClient(BasePydanticReader):
+    owner: str = Field(description="The owner of the GitHub repository.")
+    repo: str = Field(description="The name of the GitHub repository.")
 
-    reader = GitHubRepositoryIssuesReader(
-        github_client=github_client,
-        owner="moncho",
-        repo="dry",
-        verbose=True,
+    client: GitHub[Any] = Field(
+        default_factory=lambda: GitHub(
+            TokenAuthStrategy(token=os.environ["GITHUB_TOKEN"])
+        ),
+        description="The GitHub client.",
     )
 
-    documents = reader.load_data(
-        state=GitHubRepositoryIssuesReader.IssueState.ALL,
-        labelFilters=[("bug", GitHubRepositoryIssuesReader.FilterType.INCLUDE)],
-    )
-    print(f"Got {len(documents)} documents")
+    @cached_property
+    def comments_client(self) -> GithubIssueCommentsClient:
+        return GithubIssueCommentsClient(
+            owner=self.owner, repo=self.repo, client=self.client
+        )
+
+    def _issue_to_document(self, issue: Issue) -> Document:
+        metadata: dict[str, Any] = {}
+
+        if user := issue.user:
+            metadata["user.login"] = user.login
+            metadata["user.association"] = issue.author_association
+
+            if user.email:
+                metadata["user.email"] = user.email
+
+        if milestone := issue.milestone:
+            metadata["milestone.title"] = milestone.title
+            metadata["milestone.description"] = milestone.description
+            metadata["milestone.state"] = milestone.state
+            metadata["milestone.created_at"] = milestone.created_at.isoformat()
+            metadata["milestone.updated_at"] = milestone.updated_at.isoformat()
+            metadata["milestone.due_on"] = (
+                milestone.due_on.isoformat() if milestone.due_on else None
+            )
+
+        if assignee := issue.assignee:
+            metadata["assignee.login"] = assignee.login
+            metadata["assignee.association"] = issue.author_association
+
+            if assignee.email:
+                metadata["assignee.email"] = assignee.email
+
+        return Document(
+            text_resource=MediaResource(text=issue.body or ""),
+            metadata={
+                "number": issue.number,
+                "type": "issue",
+                "title": issue.title,
+                "url": issue.url,
+                "state": issue.state,
+                "comment_count": issue.comments,
+                "created_at": issue.created_at.isoformat(),
+                "updated_at": issue.updated_at.isoformat(),
+                "labels": issue.labels,
+                **metadata,
+            },
+        )
+
+    @override
+    def lazy_load_data(
+        self,
+        *,
+        state: Literal["open", "closed", "all"] | None = None,
+        milestone: str | None = None,
+        labels: str | None = None,
+        assignee: str | None = None,
+        sort: Literal["created", "updated", "comments"] | None = None,
+        direction: Literal["asc", "desc"] | None = None,
+        creator: str | None = None,
+        include_comments: bool = False,
+    ) -> Generator[Document, Any, Any]:
+        paginator: Paginator[Issue] = self.client.rest.paginate(
+            self.client.rest.issues.list_for_repo,
+            owner=self.owner,
+            repo=self.repo,
+            state=state if state else UNSET,
+            milestone=milestone if milestone else UNSET,
+            labels=labels if labels else UNSET,
+            assignee=assignee if assignee else UNSET,
+            sort=sort if sort else UNSET,
+            direction=direction if direction else UNSET,
+            creator=creator if creator else UNSET,
+            per_page=100,
+        )
+
+        for issue in paginator:
+            yield self._issue_to_document(issue)
+
+            if issue.comments > 0 and include_comments:
+                yield from self.comments_client.lazy_load_data(
+                    issue_number=issue.number
+                )
+
+    @override
+    def load_data(
+        self,
+        *,
+        state: Literal["open", "closed", "all"] | None = None,
+        milestone: str | None = None,
+        labels: str | None = None,
+        assignee: str | None = None,
+        sort: Literal["created", "updated", "comments"] | None = None,
+        direction: Literal["asc", "desc"] | None = None,
+        creator: str | None = None,
+        include_comments: bool = False,
+    ) -> list[Document]:
+        return list(
+            self.lazy_load_data(
+                state=state,
+                milestone=milestone,
+                labels=labels,
+                assignee=assignee,
+                sort=sort,
+                direction=direction,
+                creator=creator,
+                include_comments=include_comments,
+            )
+        )
+
+    @override
+    async def alazy_load_data(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self,
+        *,
+        state: Literal["open", "closed", "all"] | None = None,
+        milestone: str | None = None,
+        labels: str | None = None,
+        assignee: str | None = None,
+        sort: Literal["created", "updated", "comments"] | None = None,
+        direction: Literal["asc", "desc"] | None = None,
+        creator: str | None = None,
+        include_comments: bool = False,
+    ) -> AsyncGenerator[Document, Any]:
+        paginator: Paginator[Issue] = self.client.rest.paginate(
+            self.client.rest.issues.async_list_for_repo,
+            owner=self.owner,
+            repo=self.repo,
+            state=state if state else UNSET,
+            milestone=milestone if milestone else UNSET,
+            labels=labels if labels else UNSET,
+            assignee=assignee if assignee else UNSET,
+            sort=sort if sort else UNSET,
+            direction=direction if direction else UNSET,
+            creator=creator if creator else UNSET,
+            per_page=100,
+        )
+
+        async for issue in paginator:
+            yield self._issue_to_document(issue)
+
+            if issue.comments > 0 and include_comments:
+                async for comment in self.comments_client.alazy_load_data(
+                    issue_number=issue.number
+                ):
+                    yield comment
+
+    @override
+    async def aload_data(
+        self,
+        *,
+        state: Literal["open", "closed", "all"] | None = None,
+        milestone: str | None = None,
+        labels: str | None = None,
+        assignee: str | None = None,
+        sort: Literal["created", "updated", "comments"] | None = None,
+        direction: Literal["asc", "desc"] | None = None,
+        creator: str | None = None,
+        include_comments: bool = False,
+    ) -> list[Document]:
+        return [
+            doc
+            async for doc in self.alazy_load_data(
+                state=state,
+                milestone=milestone,
+                labels=labels,
+                assignee=assignee,
+                sort=sort,
+                direction=direction,
+                creator=creator,
+                include_comments=include_comments,
+            )
+        ]
