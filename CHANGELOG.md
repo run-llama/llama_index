@@ -1,5 +1,66 @@
 # ChangeLog
 
+## [2025-07-19]
+
+### `llama-index-core` [0.12.50]
+
+- feat: support html table extraction in MarkdownElementNodeParser (#19449)
+- fix/slightly breaking: make `get_cache_dir()` function more secure by changing default location (#19415)
+- fix: resolve race condition in SQLAlchemyChatStore with precise timestamps (#19432)
+- fix: update document store import to use BaseDocumentStore in DocumentContextExtractor (#19466)
+- fix: improve empty retrieval check in vector index retriever (#19471)
+- fix: Fix running workflow agents as MCP servers by adding start event handling to workflow agents (#19470)
+- fix: handle ID type mismatch in various retrievers (#19448)
+- fix: add structured output to multi agent also from secondary constructor + tests (#19435)
+- fix: duplicated `session_id` metadata_filter in VectorMemoryBlock (#19427)
+- fix: make sure to stop agent on function tool return direct (#19413)
+- fix: use a private folder to store NTLK cache (#19444)
+- fix: Update ReAct agent parse error message (#19431)
+
+### `llama-index-instrumentation` [0.3.0]
+
+- feat: Improve instrumentation span name (#19454)
+
+### `llama-index-llms-bedrock-converse` [0.7.6]
+
+- chore: added llama 4 models in Bedrock Converse, remove llama 3.2 1b and 3b from function calling models (#19434)
+
+### `llama-index-llms-cloudflare-ai-gateway` [0.1.0]
+
+- feat: introduce cloudflare ai gateway (#19395)
+
+### `llama-index-llms-google-genai` [0.2.5]
+
+- feat: Add `google_search` Tool Support to GoogleGenAI LLM Integration (#19406)
+
+### `llama-index-readers-confluence` [0.3.2]
+
+- refactor: various Confluence reader enhancements (logging, error handling) (#19424)
+
+### `llama-index-readers-service-now` [0.1.0]
+
+- feat: added service-now reader (#19429)
+
+### `llama-index-protocols-ag-ui` [0.1.4]
+
+- chore: remove some stray debug prints from AGUI (#19469)
+
+### `llama-index-tools-wikipedia` [0.3.1]
+
+- fix: Remove load_kwargs from `WikipediaToolSpec.load_data` tool (#19464)
+
+### `llama-index-vector-stores-baiduvectordb` [0.3.1]
+
+- fix: pass `**kwargs` to `super().__init__` in BaiduVectorDB (#19436)
+
+### `llama-index-vector-stores-moorcheh` [0.1.1]
+
+- fix: Update Moorcheh Vector Store namespace resolution (#19461)
+
+### `llama-index-vector-stores-s3` [0.1.0]
+
+- feat: s3 vectors support (#19456)
+
 ## [2025-07-14]
 
 ### `llama-index-core` [0.12.49]

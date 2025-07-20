@@ -100,54 +100,51 @@ async def call_research_agent(ctx: Context, prompt: str) -> str:
         user_msg=f"Write some notes about the following: {prompt}"
     )
 
-    state = await ctx.store.get("state")
-    state["research_notes"].append(str(result))
-    await ctx.store.set("state", state)
+    async with ctx.store.edit_state() as ctx_state:
+        ctx_state["state"]["research_notes"].append(str(result))
 
     return str(result)
 
 
 async def call_write_agent(ctx: Context) -> str:
     """Useful for writing a report based on the research notes or revising the report based on feedback."""
-    state = await ctx.store.get("state")
-    notes = state.get("research_notes", None)
-    if not notes:
-        return "No research notes to write from."
+    async with ctx.store.edit_state() as ctx_state:
+        notes = ctx_state["state"].get("research_notes", None)
+        if not notes:
+            return "No research notes to write from."
 
-    user_msg = f"Write a markdown report from the following notes. Be sure to output the report in the following format: <report>...</report>:\n\n"
+        user_msg = f"Write a markdown report from the following notes. Be sure to output the report in the following format: <report>...</report>:\n\n"
 
-    # Add the feedback to the user message if it exists
-    feedback = state.get("review", None)
-    if feedback:
-        user_msg += f"<feedback>{feedback}</feedback>\n\n"
+        # Add the feedback to the user message if it exists
+        feedback = ctx_state["state"].get("review", None)
+        if feedback:
+            user_msg += f"<feedback>{feedback}</feedback>\n\n"
 
-    # Add the research notes to the user message
-    notes = "\n\n".join(notes)
-    user_msg += f"<research_notes>{notes}</research_notes>\n\n"
+        # Add the research notes to the user message
+        notes = "\n\n".join(notes)
+        user_msg += f"<research_notes>{notes}</research_notes>\n\n"
 
-    # Run the write agent
-    result = await write_agent.run(user_msg=user_msg)
-    report = re.search(r"<report>(.*)</report>", str(result), re.DOTALL).group(
-        1
-    )
-    state["report_content"] = str(report)
-    await ctx.store.set("state", state)
+        # Run the write agent
+        result = await write_agent.run(user_msg=user_msg)
+        report = re.search(
+            r"<report>(.*)</report>", str(result), re.DOTALL
+        ).group(1)
+        ctx_state["state"]["report_content"] = str(report)
 
     return str(report)
 
 
 async def call_review_agent(ctx: Context) -> str:
     """Useful for reviewing the report and providing feedback."""
-    state = await ctx.store.get("state")
-    report = state.get("report_content", None)
-    if not report:
-        return "No report content to review."
+    async with ctx.store.edit_state() as ctx_state:
+        report = ctx_state["state"].get("report_content", None)
+        if not report:
+            return "No report content to review."
 
-    result = await review_agent.run(
-        user_msg=f"Review the following report: {report}"
-    )
-    state["review"] = result
-    await ctx.store.set("state", state)
+        result = await review_agent.run(
+            user_msg=f"Review the following report: {report}"
+        )
+        ctx_state["state"]["review"] = result
 
     return result
 
