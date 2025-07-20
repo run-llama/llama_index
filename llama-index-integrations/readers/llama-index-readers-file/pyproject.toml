@@ -76,6 +76,8 @@ dependencies = [
     "pandas<2.3.0",
     "llama-index-core>=0.12.0,<0.13",
     "defusedxml>=0.7.1",
+    "python-pptx>=0.6.18",
+    "tenacity>=8.0.0",
 ]
 
 [project.optional-dependencies]
