@@ -54,7 +54,9 @@ def create_schema_from_function(
                 description = args[1]
             elif isinstance(args[1], FieldInfo):
                 description = args[1].description
-                if args[1].json_schema_extra and isinstance(args[1].json_schema_extra, dict):
+                if args[1].json_schema_extra and isinstance(
+                    args[1].json_schema_extra, dict
+                ):
                     json_schema_extra.update(args[1].json_schema_extra)
 
         # Add format based on param_type
@@ -80,7 +82,11 @@ def create_schema_from_function(
         else:
             fields[param_name] = (
                 param_type,
-                FieldInfo(default=param_default, description=description, json_schema_extra=json_schema_extra),
+                FieldInfo(
+                    default=param_default,
+                    description=description,
+                    json_schema_extra=json_schema_extra,
+                ),
             )
 
     additional_fields = additional_fields or []

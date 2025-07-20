@@ -97,16 +97,23 @@ def test_create_schema_from_function_with_field_annotated() -> None:
     instance = schema(x=5)
     assert instance.x == 5  # type: ignore
 
+
 def test_create_schema_with_date_and_metadata():
     def sample_func(
         birth_date: Annotated[
             datetime.date,
-            Field(description="The birth date", json_schema_extra={"example": "2000-01-01"})
+            Field(
+                description="The birth date",
+                json_schema_extra={"example": "2000-01-01"},
+            ),
         ],
         timestamp: Annotated[
             datetime.datetime,
-            Field(description="Timestamp", json_schema_extra={"example": "2023-05-12T08:00:00"})
-        ]
+            Field(
+                description="Timestamp",
+                json_schema_extra={"example": "2023-05-12T08:00:00"},
+            ),
+        ],
     ):
         pass
 
