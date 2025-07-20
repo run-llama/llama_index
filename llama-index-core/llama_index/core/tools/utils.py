@@ -44,7 +44,7 @@ def create_schema_from_function(
         param_type = params[param_name].annotation
         param_default = params[param_name].default
         description = None
-        json_schema_extra = {}
+        json_schema_extra: dict[str, Any] = {}
 
         if get_origin(param_type) is typing.Annotated:
             args = get_args(param_type)
@@ -54,8 +54,7 @@ def create_schema_from_function(
                 description = args[1]
             elif isinstance(args[1], FieldInfo):
                 description = args[1].description
-                if args[1].json_schema_extra:
-                    # Merge user-defined json_schema_extra from Annotated
+                if args[1].json_schema_extra and isinstance(args[1].json_schema_extra, dict):
                     json_schema_extra.update(args[1].json_schema_extra)
 
         # Add format based on param_type
