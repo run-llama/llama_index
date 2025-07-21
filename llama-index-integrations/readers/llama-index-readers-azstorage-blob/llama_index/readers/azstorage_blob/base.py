@@ -31,7 +31,6 @@ from llama_index.core.readers.base import (
 from llama_index.core.schema import Document
 
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -39,6 +38,7 @@ FileMetadataCallable = Annotated[
     Callable[[str], Dict],
     WithJsonSchema({"type": "string"}),
 ]
+
 
 class SanitizedJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -186,17 +186,20 @@ class AzStorageBlobReader(
     ) -> List[Document]:
         """Load documents from a directory and extract metadata."""
 
-        
         def get_metadata(file_name: str) -> Dict[str, Any]:
             sanitized_file_name = os.path.basename(file_name)
             metadata_sanitized = files_metadata.get(sanitized_file_name, {})
             if not isinstance(metadata_sanitized, dict):
-                raise ValueError(f"Expected metadata to be a dict, got {type(metadata_sanitized)}")
+                raise ValueError(
+                    f"Expected metadata to be a dict, got {type(metadata_sanitized)}"
+                )
             try:
                 json_str = json.dumps(metadata_sanitized, cls=SanitizedJSONEncoder)
                 clean_metadata = json.loads(json_str)
             except (TypeError, ValueError) as e:
-                logger.error(f"Failed to serialize/deserialize metadata for '{sanitized_file_name}': {e}")
+                logger.error(
+                    f"Failed to serialize/deserialize metadata for '{sanitized_file_name}': {e}"
+                )
                 clean_metadata = {}
             return dict(**clean_metadata)
 
@@ -282,5 +285,3 @@ class AzStorageBlobReader(
             logger.info("Document creation starting")
 
             return self._load_documents_with_metadata(files_metadata, temp_dir)
-        
-
