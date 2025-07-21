@@ -1356,81 +1356,164 @@ def test_built_in_tool_code_execution() -> None:
     assert isinstance(raw_response, dict)
 
 
-@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_code_execution_response_parts() -> None:
     """Test that code execution response contains executable_code, code_execution_result, and text parts."""
     code_execution_tool = types.Tool(code_execution=types.ToolCodeExecution())
 
-    llm = GoogleGenAI(
-        model="gemini-2.0-flash-001",
-        api_key=os.environ["GOOGLE_API_KEY"],
-        built_in_tool=code_execution_tool,
+    # Mock response with code execution parts
+    mock_response = MagicMock()
+    mock_candidate = MagicMock()
+    mock_candidate.finish_reason = types.FinishReason.STOP
+    mock_candidate.content.role = "model"
+    mock_response.candidates = [mock_candidate]
+
+    # Create mock parts for text, executable code, and code execution result
+    mock_text_part = MagicMock()
+    mock_text_part.text = (
+        "I'll calculate the sum of the first 50 prime numbers for you."
     )
+    mock_text_part.inline_data = None
 
-    messages = [
-        ChatMessage(
-            role="user", content="What is the sum of the first 50 prime numbers?"
-        )
+    mock_code_part = MagicMock()
+    mock_code_part.text = None
+    mock_code_part.inline_data = None
+    mock_code_part.executable_code = {
+        "code": "def is_prime(n):\n    if n < 2:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True\n\nprimes = []\nn = 2\nwhile len(primes) < 50:\n    if is_prime(n):\n        primes.append(n)\n    n += 1\n\nprint(f'Sum of first 50 primes: {sum(primes)}')",
+        "language": types.Language.PYTHON,
+    }
+
+    mock_result_part = MagicMock()
+    mock_result_part.text = None
+    mock_result_part.inline_data = None
+    mock_result_part.code_execution_result = {
+        "outcome": types.Outcome.OUTCOME_OK,
+        "output": "Sum of first 50 primes: 5117",
+    }
+
+    mock_final_text_part = MagicMock()
+    mock_final_text_part.text = "The sum of the first 50 prime numbers is 5117."
+    mock_final_text_part.inline_data = None
+
+    mock_candidate.content.parts = [
+        mock_text_part,
+        mock_code_part,
+        mock_result_part,
+        mock_final_text_part,
     ]
-    response = llm.chat(messages)
+    mock_response.prompt_feedback = None
+    mock_response.usage_metadata = None
+    mock_response.function_calls = None
 
-    assert response is not None
-    assert response.message is not None
-    assert len(response.message.content) > 0
+    # Mock model_dump to return the expected structure
+    mock_candidate.model_dump.return_value = {
+        "finish_reason": types.FinishReason.STOP,
+        "content": {
+            "role": "model",
+            "parts": [
+                {
+                    "text": "I'll calculate the sum of the first 50 prime numbers for you."
+                },
+                {
+                    "executable_code": {
+                        "code": "def is_prime(n):\n    if n < 2:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True\n\nprimes = []\nn = 2\nwhile len(primes) < 50:\n    if is_prime(n):\n        primes.append(n)\n    n += 1\n\nprint(f'Sum of first 50 primes: {sum(primes)}')",
+                        "language": types.Language.PYTHON,
+                    }
+                },
+                {
+                    "code_execution_result": {
+                        "outcome": types.Outcome.OUTCOME_OK,
+                        "output": "Sum of first 50 primes: 5117",
+                    }
+                },
+                {"text": "The sum of the first 50 prime numbers is 5117."},
+            ],
+        },
+    }
 
-    # Check the raw response structure
-    raw_response = response.raw
-    assert isinstance(raw_response, dict)
-    assert "content" in raw_response
+    # Mock the client and chat method
+    with patch("google.genai.Client") as mock_client_class:
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
 
-    content = raw_response["content"]
-    assert "parts" in content
-    assert isinstance(content["parts"], list)
-    assert len(content["parts"]) > 0
+        # Mock the model metadata response
+        mock_model = MagicMock()
+        mock_model.supported_generation_methods = ["generateContent"]
+        mock_client.models.get.return_value = mock_model
 
-    # Analyze each part in the response
-    for part in content["parts"]:
-        assert isinstance(part, dict)
+        # Mock the chat creation and send_message method
+        mock_chat = MagicMock()
+        mock_client.chats.create.return_value = mock_chat
+        mock_chat.send_message.return_value = mock_response
 
-        # Check for text parts
-        if part.get("text") is not None:
-            assert isinstance(part["text"], str)
-            assert len(part["text"].strip()) > 0
+        llm = GoogleGenAI(
+            model="gemini-2.0-flash-001",
+            built_in_tool=code_execution_tool,
+        )
 
-        # Check for executable code parts
-        if part.get("executable_code") is not None:
-            executable_code_content = part["executable_code"]
+        messages = [
+            ChatMessage(
+                role="user", content="What is the sum of the first 50 prime numbers?"
+            )
+        ]
+        response = llm.chat(messages)
 
-            # Validate executable code structure
-            assert isinstance(executable_code_content, dict)
-            assert "code" in executable_code_content
-            assert "language" in executable_code_content
+        assert response is not None
+        assert response.message is not None
+        assert len(response.message.content) > 0
 
-            # Validate the code content
-            code = executable_code_content["code"]
-            assert isinstance(code, str)
-            assert len(code.strip()) > 0
+        # Check the raw response structure
+        raw_response = response.raw
+        assert isinstance(raw_response, dict)
+        assert "content" in raw_response
 
-            # Validate language
-            assert executable_code_content["language"] == types.Language.PYTHON
+        content = raw_response["content"]
+        assert "parts" in content
+        assert isinstance(content["parts"], list)
+        assert len(content["parts"]) > 0
 
-        # Check for code execution result parts
-        if part.get("code_execution_result") is not None:
-            code_execution_result = part["code_execution_result"]
+        # Analyze each part in the response
+        for part in content["parts"]:
+            assert isinstance(part, dict)
 
-            # Validate code execution result structure
-            assert isinstance(code_execution_result, dict)
-            assert "outcome" in code_execution_result
-            assert "output" in code_execution_result
+            # Check for text parts
+            if part.get("text") is not None:
+                assert isinstance(part["text"], str)
+                assert len(part["text"].strip()) > 0
 
-            # Validate the execution outcome
-            assert code_execution_result["outcome"] == types.Outcome.OUTCOME_OK
+            # Check for executable code parts
+            if part.get("executable_code") is not None:
+                executable_code_content = part["executable_code"]
 
-            # Validate the output
-            output = code_execution_result["output"]
-            assert isinstance(output, str)
-            assert len(output.strip()) > 0
+                # Validate executable code structure
+                assert isinstance(executable_code_content, dict)
+                assert "code" in executable_code_content
+                assert "language" in executable_code_content
 
-    # The response should mention the final answer
-    response_content = response.message.content
-    assert "5117" in response_content
+                # Validate the code content
+                code = executable_code_content["code"]
+                assert isinstance(code, str)
+                assert len(code.strip()) > 0
+
+                # Validate language
+                assert executable_code_content["language"] == types.Language.PYTHON
+
+            # Check for code execution result parts
+            if part.get("code_execution_result") is not None:
+                code_execution_result = part["code_execution_result"]
+
+                # Validate code execution result structure
+                assert isinstance(code_execution_result, dict)
+                assert "outcome" in code_execution_result
+                assert "output" in code_execution_result
+
+                # Validate the execution outcome
+                assert code_execution_result["outcome"] == types.Outcome.OUTCOME_OK
+
+                # Validate the output
+                output = code_execution_result["output"]
+                assert isinstance(output, str)
+                assert len(output.strip()) > 0
+
+        # The response should mention the final answer
+        response_content = response.message.content
+        assert "5117" in response_content
