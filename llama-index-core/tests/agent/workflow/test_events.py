@@ -1,5 +1,7 @@
 import pytest
+import json
 
+from typing import Tuple
 from llama_index.core.llms import ChatMessage
 from llama_index.core.tools import ToolSelection
 from llama_index.core.bridge.pydantic import BaseModel, ValidationError
@@ -7,6 +9,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentWorkflowStartEvent,
     AgentOutput,
     PydanticConversionWarning,
+    AgentStreamStructuredOutput,
 )
 from llama_index.core.memory import Memory
 
@@ -26,6 +29,12 @@ def example_agent_output() -> dict:
     }
 
 
+@pytest.fixture()
+def example_agent_stream_structured_output() -> Tuple[dict, str]:
+    d = {"output": {"flavor": "strawberry", "extra_sugar": False}}
+    return d, json.dumps(d["output"], indent=4)
+
+
 class MathResult(BaseModel):
     operation: str
     result: int
@@ -34,6 +43,11 @@ class MathResult(BaseModel):
 class WrongMathResult(BaseModel):
     operation: str
     result: str
+
+
+class Flavor(BaseModel):
+    flavor: str
+    extra_sugar: bool
 
 
 def test_agent_workflow_start_event():
@@ -90,3 +104,23 @@ def test_agent_output_with_structured_response(example_agent_output: dict) -> No
     with pytest.warns(PydanticConversionWarning):
         a = agent_output.get_pydantic_model(WrongMathResult)
     assert a is None
+
+
+def test_agent_stream_structured_output(
+    example_agent_stream_structured_output: Tuple[dict, str],
+):
+    try:
+        ev = AgentStreamStructuredOutput.model_validate(
+            example_agent_stream_structured_output[0]
+        )
+        success = True
+    except ValidationError:
+        success = False
+    assert success
+    assert str(ev) == example_agent_stream_structured_output[1]
+    assert ev.get_pydantic_model(Flavor) == Flavor(
+        flavor="strawberry", extra_sugar=False
+    )
+    with pytest.warns(PydanticConversionWarning):
+        b = ev.get_pydantic_model(MathResult)
+    assert b is None

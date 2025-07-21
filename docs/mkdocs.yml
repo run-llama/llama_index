@@ -41,6 +41,7 @@ nav:
           - Streaming output and events: ./understanding/agent/streaming.md
           - Human in the loop: ./understanding/agent/human_in_the_loop.md
           - Multi-agent workflows: ./understanding/agent/multi_agent.md
+          - Using structured output: ./understanding/agent/structured_output.md
       - Building Workflows:
           - Introduction to workflows: ./understanding/workflows/index.md
           - A basic workflow: ./understanding/workflows/basic_flow.md
@@ -679,6 +680,7 @@ nav:
           - ./examples/vector_stores/MongoDBAtlasVectorSearch.ipynb
           - ./examples/vector_stores/MongoDBAtlasVectorSearchRAGFireworks.ipynb
           - ./examples/vector_stores/MongoDBAtlasVectorSearchRAGOpenAI.ipynb
+          - ./examples/vector_stores/MoorchehDemo.ipynb
           - ./examples/vector_stores/MyScaleIndexDemo.ipynb
           - ./examples/vector_stores/Neo4jVectorDemo.ipynb
           - ./examples/vector_stores/NileVectorStore.ipynb
@@ -694,6 +696,7 @@ nav:
           - ./examples/vector_stores/RedisIndexDemo.ipynb
           - ./examples/vector_stores/RelytDemo.ipynb
           - ./examples/vector_stores/RocksetIndexDemo.ipynb
+          - ./examples/vector_stores/S3VectorStore.ipynb
           - ./examples/vector_stores/SimpleIndexDemo.ipynb
           - ./examples/vector_stores/SimpleIndexDemoLlama-Local.ipynb
           - ./examples/vector_stores/SimpleIndexDemoLlama2.ipynb
@@ -1025,6 +1028,7 @@ nav:
           - ./api_reference/llms/cerebras.md
           - ./api_reference/llms/clarifai.md
           - ./api_reference/llms/cleanlab.md
+          - ./api_reference/llms/cloudflare_ai_gateway.md
           - ./api_reference/llms/cohere.md
           - ./api_reference/llms/contextual.md
           - ./api_reference/llms/cortex.md
@@ -1268,6 +1272,7 @@ nav:
           - ./api_reference/postprocessor/embedding_recency.md
           - ./api_reference/postprocessor/fixed_recency.md
           - ./api_reference/postprocessor/flag_embedding_reranker.md
+          - ./api_reference/postprocessor/flashrank_rerank.md
           - ./api_reference/postprocessor/ibm.md
           - ./api_reference/postprocessor/index.md
           - ./api_reference/postprocessor/jinaai_rerank.md
@@ -1488,6 +1493,7 @@ nav:
           - ./api_reference/readers/s3.md
           - ./api_reference/readers/sec_filings.md
           - ./api_reference/readers/semanticscholar.md
+          - ./api_reference/readers/service_now.md
           - ./api_reference/readers/simple_directory_reader.md
           - ./api_reference/readers/singlestore.md
           - ./api_reference/readers/slack.md
@@ -1580,6 +1586,7 @@ nav:
               - ./api_reference/storage/docstore/azure.md
               - ./api_reference/storage/docstore/azurecosmosnosql.md
               - ./api_reference/storage/docstore/couchbase.md
+              - ./api_reference/storage/docstore/duckdb.md
               - ./api_reference/storage/docstore/dynamodb.md
               - ./api_reference/storage/docstore/elasticsearch.md
               - ./api_reference/storage/docstore/firestore.md
@@ -1605,6 +1612,7 @@ nav:
               - ./api_reference/storage/index_store/azure.md
               - ./api_reference/storage/index_store/azurecosmosnosql.md
               - ./api_reference/storage/index_store/couchbase.md
+              - ./api_reference/storage/index_store/duckdb.md
               - ./api_reference/storage/index_store/dynamodb.md
               - ./api_reference/storage/index_store/elasticsearch.md
               - ./api_reference/storage/index_store/firestore.md
@@ -1619,6 +1627,7 @@ nav:
               - ./api_reference/storage/kvstore/azure.md
               - ./api_reference/storage/kvstore/azurecosmosnosql.md
               - ./api_reference/storage/kvstore/couchbase.md
+              - ./api_reference/storage/kvstore/duckdb.md
               - ./api_reference/storage/kvstore/dynamodb.md
               - ./api_reference/storage/kvstore/elasticsearch.md
               - ./api_reference/storage/kvstore/firestore.md
@@ -1673,6 +1682,7 @@ nav:
               - ./api_reference/storage/vector_store/metal.md
               - ./api_reference/storage/vector_store/milvus.md
               - ./api_reference/storage/vector_store/mongodb.md
+              - ./api_reference/storage/vector_store/moorcheh.md
               - ./api_reference/storage/vector_store/neo4jvector.md
               - ./api_reference/storage/vector_store/neptune.md
               - ./api_reference/storage/vector_store/nile.md
@@ -1688,6 +1698,7 @@ nav:
               - ./api_reference/storage/vector_store/redis.md
               - ./api_reference/storage/vector_store/relyt.md
               - ./api_reference/storage/vector_store/rocksetdb.md
+              - ./api_reference/storage/vector_store/s3.md
               - ./api_reference/storage/vector_store/simple.md
               - ./api_reference/storage/vector_store/singlestoredb.md
               - ./api_reference/storage/vector_store/sqlalchemy.md
@@ -2495,6 +2506,14 @@ plugins:
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-db2
             - ../llama-index-integrations/voice_agents/llama-index-voice-agents-openai
             - ../llama-index-integrations/indices/llama-index-indices-managed-lancedb
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-moorcheh
+            - ../llama-index-integrations/postprocessor/llama-index-postprocessor-flashrank-rerank
+            - ../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-duckdb
+            - ../llama-index-integrations/storage/docstore/llama-index-storage-docstore-duckdb
+            - ../llama-index-integrations/storage/index_store/llama-index-storage-index-store-duckdb
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-s3
+            - ../llama-index-integrations/readers/llama-index-readers-service-now
+            - ../llama-index-integrations/llms/llama-index-llms-cloudflare-ai-gateway
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

@@ -28,12 +28,22 @@ def mocked_install_failed(*args, **kwargs):
     }
 
 
-def mocked_skip_failed(*args, **kwargs):
+def mocked_skip_failed_unsupported_python_version(*args, **kwargs):
     return {
         "package": Path(__file__).parent.parent / "data" / "test_integration",
-        "status": ResultStatus.SKIPPED,
+        "status": ResultStatus.UNSUPPORTED_PYTHON_VERSION,
         "stdout": "",
-        "stderr": "Integration skipped",
+        "stderr": "Not compatible with Python",
+        "time": "0.1s",
+    }
+
+
+def mocked_skip_failed_no_tests(*args, **kwargs):
+    return {
+        "package": Path(__file__).parent.parent / "data" / "test_integration",
+        "status": ResultStatus.NO_TESTS,
+        "stdout": "",
+        "stderr": "package has no tests",
         "time": "0.1s",
     }
 
@@ -196,7 +206,7 @@ def test_install_failures(
 @mock.patch("llama_dev.test.get_changed_files")
 @mock.patch("llama_dev.test.get_changed_packages")
 @mock.patch("llama_dev.test.get_dependants_packages")
-def test_skip_failures(
+def test_skip_failures_no_tests(
     mock_get_dependants,
     mock_get_changed_packages,
     mock_get_changed_files,
@@ -209,7 +219,7 @@ def test_skip_failures(
     mock_get_changed_packages.return_value = {Path("/fake/repo/package1")}
     mock_get_dependants.return_value = set()
 
-    monkeypatch.setattr(llama_dev_test, "_run_tests", mocked_skip_failed)
+    monkeypatch.setattr(llama_dev_test, "_run_tests", mocked_skip_failed_no_tests)
 
     runner = CliRunner()
     result = runner.invoke(
@@ -219,8 +229,42 @@ def test_skip_failures(
 
     # Check console output
     assert result.exit_code == 0
-    assert "⏭️  test_integration skipped" in result.stdout
-    assert "Error:\nIntegration skipped" in result.stdout
+    assert "⏭️ test_integration skipped due to no tests" in result.stdout
+
+
+@mock.patch("llama_dev.test.find_all_packages")
+@mock.patch("llama_dev.test.get_changed_files")
+@mock.patch("llama_dev.test.get_changed_packages")
+@mock.patch("llama_dev.test.get_dependants_packages")
+def test_skip_failures_unsupported_python(
+    mock_get_dependants,
+    mock_get_changed_packages,
+    mock_get_changed_files,
+    mock_find_all_packages,
+    monkeypatch,
+    data_path,
+):
+    mock_find_all_packages.return_value = {Path("/fake/repo/package1")}
+    mock_get_changed_files.return_value = {Path("/fake/repo/package1/file.py")}
+    mock_get_changed_packages.return_value = {Path("/fake/repo/package1")}
+    mock_get_dependants.return_value = set()
+
+    monkeypatch.setattr(
+        llama_dev_test, "_run_tests", mocked_skip_failed_unsupported_python_version
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["--repo-root", data_path, "test", "--base-ref", "main"],
+    )
+
+    # Check console output
+    assert result.exit_code == 0
+    assert (
+        "⏭️ test_integration skipped due to python version incompatibility"
+        in result.stdout
+    )
 
 
 @mock.patch("llama_dev.test.find_all_packages")
@@ -334,11 +378,29 @@ def test_incompatible_python_version(changed_packages):
             return_value={"project": {"requires-python": ">=3.10"}},
         ),
         mock.patch("llama_dev.test.is_python_version_compatible", return_value=False),
+        mock.patch("llama_dev.test.package_has_tests", return_value=True),
     ):
         result = _run_tests(Path(), changed_packages, "main", False, 0)
 
-        assert result["status"] == ResultStatus.SKIPPED
+        assert result["status"] == ResultStatus.UNSUPPORTED_PYTHON_VERSION
         assert "Not compatible with Python" in result["stderr"]
+        assert "package has no tests" not in result["stderr"]
+
+
+def test_no_package_tests(changed_packages):
+    with (
+        mock.patch(
+            "llama_dev.test.load_pyproject",
+            return_value={"project": {"requires-python": ">=3.8"}},
+        ),
+        mock.patch("llama_dev.test.is_python_version_compatible", return_value=True),
+        mock.patch("llama_dev.test.package_has_tests", return_value=False),
+    ):
+        result = _run_tests(Path(), changed_packages, "main", False, 0)
+
+        assert result["status"] == ResultStatus.NO_TESTS
+        assert "package has no tests" in result["stderr"]
+        assert "Not compatible with Python" not in result["stderr"]
 
 
 def test_install_dependencies_failure(changed_packages, package_data):

@@ -110,32 +110,42 @@ class MoorchehVectorStore(BasePydanticVectorStore):
             )
 
         # Initialize Moorcheh client
-        print("[DEBUG] Initializing MoorchehClient")
+        logger.debug("Initializing MoorchehClient")
         self._client = MoorchehClient(api_key=self.api_key)
         self.is_embedding_query = False
         self._sparse_embedding_model = sparse_embedding_model
+        self.namespace = namespace
 
-        print("[DEBUG] Listing namespaces...")
+        logger.debug("Listing namespaces...")
         try:
-            namespaces = self._client.list_namespaces()
-            print(f"[DEBUG] Found namespaces: {namespaces}")
+            namespaces_response = self._client.list_namespaces()
+            namespaces = [
+                namespace["namespace_name"]
+                for namespace in namespaces_response.get("namespaces", [])
+            ]
+            logger.debug("Found namespaces.")
         except Exception as e:
-            print(f"[ERROR] Failed to list namespaces: {e}")
+            logger.debug("Failed to list namespaces: {e}")
             raise
 
-        if self.namespace not in namespaces:
-            print(f"[DEBUG] Namespace '{self.namespace}' not found. Creating...")
+        # Check if the namespace exists
+        if self.namespace in namespaces:
+            logger.debug(
+                "Namespace '{self.namespace}' already exists. No action required."
+            )
+        else:
+            logger.debug("Namespace '{self.namespace}' not found. Creating it.")
+            # If the namespace doesn't exist, create it
             try:
                 self._client.create_namespace(
                     namespace_name=self.namespace,
                     type=self.namespace_type,
                     vector_dimension=self.vector_dimension,
                 )
+                logger.debug("Namespace '{self.namespace}' created.")
             except Exception as e:
-                print(f"[ERROR] Failed to create namespace: {e}")
+                logger.debug("Failed to create namespace: {e}")
                 raise
-
-        print("[DEBUG] MoorchehVectorStore initialization complete.")
 
     # _client: MoorchehClient = PrivateAttr()
 
