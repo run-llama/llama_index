@@ -10,6 +10,11 @@ import math
 import os
 import tempfile
 import time
+import json
+from datetime import datetime
+import base64
+
+
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Union
 
@@ -25,6 +30,8 @@ from llama_index.core.readers.base import (
 )
 from llama_index.core.schema import Document
 
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -32,6 +39,23 @@ FileMetadataCallable = Annotated[
     Callable[[str], Dict],
     WithJsonSchema({"type": "string"}),
 ]
+
+class SanitizedJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        # Handle datetime objects
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        # Handle bytearray by encoding to base64 string
+        if isinstance(obj, bytearray):
+            return base64.b64encode(obj).decode("utf-8")
+        # Handle custom objects with __dict__
+        if hasattr(obj, "__dict__"):
+            return {k: v for k, v in vars(obj).items() if not k.startswith("_")}
+        # Handle custom objects with __slots__
+        if hasattr(obj, "__slots__"):
+            return {k: getattr(obj, k) for k in obj.__slots__ if hasattr(obj, k)}
+        # Let the base class default method raise the TypeError
+        return super().default(obj)
 
 
 class AzStorageBlobReader(
@@ -166,6 +190,19 @@ class AzStorageBlobReader(
             sanitized_file_name = os.path.basename(file_name)
             metadata = files_metadata.get(sanitized_file_name, {})
             return dict(**metadata)
+        
+        def get_metadata(file_name: str) -> Dict[str, Any]:
+            sanitized_file_name = os.path.basename(file_name)
+            metadata_sanitized = files_metadata.get(sanitized_file_name, {})
+            if not isinstance(metadata_sanitized, dict):
+                raise ValueError(f"Expected metadata to be a dict, got {type(metadata_sanitized)}")
+            try:
+                json_str = json.dumps(metadata_sanitized, cls=SanitizedJSONEncoder)
+                clean_metadata = json.loads(json_str)
+            except (TypeError, ValueError) as e:
+                logger.error(f"Failed to serialize/deserialize metadata for '{sanitized_file_name}': {e}")
+                clean_metadata = {}
+            return dict(**clean_metadata)
 
         loader = SimpleDirectoryReader(
             input_dir=temp_dir,
@@ -249,3 +286,5 @@ class AzStorageBlobReader(
             logger.info("Document creation starting")
 
             return self._load_documents_with_metadata(files_metadata, temp_dir)
+        
+
