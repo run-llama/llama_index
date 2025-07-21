@@ -23,10 +23,10 @@ def add_user_step_to_memory(
 
 def messages_to_xml_format(messages: List[ChatMessage]) -> List[ChatMessage]:
     blocks = [TextBlock(text="<current_conversation>\n")]
-    system_msg: Optional[str] = None
+    system_msg: Optional[ChatMessage] = None
     for message in messages:
         if message.role.value == "system":
-            system_msg = message.content
+            system_msg = message
         blocks.append(TextBlock(text=f"\t<{message.role.value}>\n"))
         for block in message.blocks:
             if isinstance(block, TextBlock):
@@ -40,9 +40,7 @@ def messages_to_xml_format(messages: List[ChatMessage]) -> List[ChatMessage]:
     )
     messages = [ChatMessage(role="user", blocks=blocks)]
     if system_msg:
-        messages.insert(
-            0, ChatMessage(role=MessageRole.SYSTEM, blocks=[TextBlock(text=system_msg)])
-        )
+        messages.insert(0, system_msg)
     return messages
 
 
