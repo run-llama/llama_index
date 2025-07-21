@@ -1328,3 +1328,109 @@ def test_google_search_grounding_metadata(llm: GoogleGenAI) -> None:
                 if "web" in chunk:
                     web_chunk = chunk["web"]
                     assert isinstance(web_chunk, dict)
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_built_in_tool_code_execution() -> None:
+    """Test Code Execution functionality with built_in_tool."""
+    code_execution_tool = types.Tool(code_execution=types.ToolCodeExecution())
+
+    llm = GoogleGenAI(
+        model="gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+        built_in_tool=code_execution_tool,
+    )
+
+    response = llm.complete("Calculate 20th fibonacci number.")
+
+    assert response is not None
+    assert response.text is not None
+    assert len(response.text) > 0
+
+    # The response should contain the calculation result
+    assert "6765" in response.text
+
+    # Check if the raw response contains the expected structure
+    assert "raw" in response.__dict__
+    raw_response = response.raw
+    assert isinstance(raw_response, dict)
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_code_execution_response_parts() -> None:
+    """Test that code execution response contains executable_code, code_execution_result, and text parts."""
+    code_execution_tool = types.Tool(code_execution=types.ToolCodeExecution())
+
+    llm = GoogleGenAI(
+        model="gemini-2.0-flash-001",
+        api_key=os.environ["GOOGLE_API_KEY"],
+        built_in_tool=code_execution_tool,
+    )
+
+    messages = [
+        ChatMessage(
+            role="user", content="What is the sum of the first 50 prime numbers?"
+        )
+    ]
+    response = llm.chat(messages)
+
+    assert response is not None
+    assert response.message is not None
+    assert len(response.message.content) > 0
+
+    # Check the raw response structure
+    raw_response = response.raw
+    assert isinstance(raw_response, dict)
+    assert "content" in raw_response
+
+    content = raw_response["content"]
+    assert "parts" in content
+    assert isinstance(content["parts"], list)
+    assert len(content["parts"]) > 0
+
+    # Analyze each part in the response
+    for part in content["parts"]:
+        assert isinstance(part, dict)
+
+        # Check for text parts
+        if part.get("text") is not None:
+            assert isinstance(part["text"], str)
+            assert len(part["text"].strip()) > 0
+
+        # Check for executable code parts
+        if part.get("executable_code") is not None:
+            executable_code_content = part["executable_code"]
+
+            # Validate executable code structure
+            assert isinstance(executable_code_content, dict)
+            assert "code" in executable_code_content
+            assert "language" in executable_code_content
+
+            # Validate the code content
+            code = executable_code_content["code"]
+            assert isinstance(code, str)
+            assert len(code.strip()) > 0
+
+            # Validate language
+            assert executable_code_content["language"] == types.Language.PYTHON
+
+        # Check for code execution result parts
+        if part.get("code_execution_result") is not None:
+            code_execution_result = part["code_execution_result"]
+
+            # Validate code execution result structure
+            assert isinstance(code_execution_result, dict)
+            assert "outcome" in code_execution_result
+            assert "output" in code_execution_result
+
+            # Validate the execution outcome
+            assert code_execution_result["outcome"] == types.Outcome.OUTCOME_OK
+
+            # Validate the output
+            output = code_execution_result["output"]
+            assert isinstance(output, str)
+            assert len(output.strip()) > 0
+
+    # The response should mention the final answer
+    response_content = response.message.content
+    assert "5117" in response_content
