@@ -10,7 +10,7 @@ from llama_index.core.bridge.pydantic import (
     BaseModel,
 )
 from llama_index.core.tools import ToolSelection, ToolOutput
-from llama_index.core.llms import ChatMessage
+from llama_index.core.llms import ChatMessage, MessageRole
 from llama_index.core.workflow import Event, StartEvent
 
 
@@ -113,6 +113,15 @@ class ToolCallResult(Event):
 class AgentWorkflowStartEvent(StartEvent):
     def __init__(self, **data: Any) -> None:
         """Convert chat_history items to ChatMessage objects if they aren't already"""
+        if "system_prompt" in data and data["system_prompt"]:
+            if "chat_history" in data and data["chat_history"]:
+                data["chat_history"].append(
+                    ChatMessage(role=MessageRole.SYSTEM, content=data["system_prompt"])
+                )
+            else:
+                data["chat_history"] = [
+                    ChatMessage(role=MessageRole.SYSTEM, content=data["system_prompt"])
+                ]
         if "chat_history" in data and data["chat_history"]:
             converted_history = []
             for i, msg in enumerate(data["chat_history"]):
@@ -128,6 +137,19 @@ class AgentWorkflowStartEvent(StartEvent):
                             f"Invalid message: {msg}"
                         )
                         raise
+            if (
+                not all(message.role == "system" for message in converted_history)
+                and converted_history[-1].role != "user"
+            ):
+                # Put the last user message in the last position
+                user_hist_enum = [
+                    index
+                    for index, message in enumerate(converted_history)
+                    if message.role == "user"
+                ]
+                last_user_index = user_hist_enum[-1]
+                last_user_message = converted_history.pop(last_user_index)
+                converted_history.append(last_user_message)
             data["chat_history"] = converted_history
 
         super().__init__(**data)
