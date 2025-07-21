@@ -178,6 +178,8 @@ class VectorIndexRetriever(BaseRetriever):
                     new_nodes.append(node)
         elif query_result.ids:
             for node_id in query_result.ids:
+                if node_id not in self._index.index_struct.nodes_dict:
+                    raise KeyError(f"Node ID {node_id} not found in index. ")
                 node_id_str = str(self._index.index_struct.nodes_dict[node_id])
                 if node_id_str in fetched_nodes_by_id:
                     new_nodes.append(fetched_nodes_by_id[node_id_str])
