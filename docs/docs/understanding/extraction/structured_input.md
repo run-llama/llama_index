@@ -2,7 +2,7 @@
 
 The other side of structured data, beyond the output, is the input: many prompting guides and best practices, indeed, include some techniques such as XML tagging of the input prompt to boost the LLM's understanding of the input.
 
-LlamaIndex offers you the possibility of natively formatting your inputs as XML snippets, leveraging [banks](https://masci.github.io/banks) and [Jinja](https://jinja.palletsprojects.com/en/stable/) (make sure to have `banks>=2.2.0` installed!).
+LlamaIndex offers you the possibility of natively formatting your inputs as XML snippets, leveraging [banks](https://masci.github.io/banks) and [Jinja](https://jinja.palletsprojects.com/en/stable/) (make sure to have `llama-index>=0.12.34` installed).
 
 ## Using Structured Input Alone
 
