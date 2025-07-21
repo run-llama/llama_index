@@ -186,10 +186,6 @@ class AzStorageBlobReader(
     ) -> List[Document]:
         """Load documents from a directory and extract metadata."""
 
-        def get_metadata(file_name: str) -> Dict[str, Any]:
-            sanitized_file_name = os.path.basename(file_name)
-            metadata = files_metadata.get(sanitized_file_name, {})
-            return dict(**metadata)
         
         def get_metadata(file_name: str) -> Dict[str, Any]:
             sanitized_file_name = os.path.basename(file_name)
