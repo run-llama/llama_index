@@ -4,12 +4,14 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "fastembed>=0.2.5",
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
     "pytest==7.2.1",
+    "pytest-asyncio==0.21.0",
     "pytest-mock==3.11.1",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
@@ -22,21 +24,20 @@ dev = [
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "pytest-cov>=6.1.1",
+    "pytest-asyncio>=0.21.0",
 ]
 
 [project]
-name = "llama-index-vector-stores-moorcheh"
-version = "0.1.1"
-description = "llama-index vector_stores moorcheh integration"
-authors = [{name = "EdgeAI Innovations"}]
-requires-python = ">=3.10,<4.0"
+name = "llama-index-vector-stores-s3"
+version = "0.1.0"
+description = "llama-index vector_stores s3Vectors integration"
+authors = [{name = "Logan Markewich", email = "logan@runllama.ai"}]
+requires-python = ">=3.9,<3.14"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "moorcheh-sdk>=0.1.0,<2.1.0",
-    "llama-index-core>=0.12.0,<0.13",
-    "llama-index-llms-openai>=0.1.0",
-    "openai>=1.0.0",
+    "boto3>=1.39.8",
+    "llama-index-core>=0.12.7,<0.13",
 ]
 
 [tool.codespell]
@@ -53,11 +54,11 @@ include = ["llama_index/"]
 exclude = ["**/BUILD"]
 
 [tool.llamahub]
-contains_example = true
-import_path = "llama_index.vector_stores.moorcheh"
+contains_example = false
+import_path = "llama_index.vector_stores.s3"
 
 [tool.llamahub.class_authors]
-MoorchehVectorStore = "llama-index"
+S3VectorStore = "logan-markewich"
 
 [tool.mypy]
 disallow_untyped_defs = true

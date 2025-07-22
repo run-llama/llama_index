@@ -154,9 +154,7 @@ class VectorIndexRetriever(BaseRetriever):
                 self._index.index_struct.nodes_dict[idx] for idx in query_result.ids
             ]
         else:
-            raise ValueError(
-                "Vector store query result should return at least one of nodes or ids."
-            )
+            return []
 
     def _insert_fetched_nodes_into_query_result(
         self, query_result: VectorStoreQueryResult, fetched_nodes: List[BaseNode]
@@ -180,14 +178,16 @@ class VectorIndexRetriever(BaseRetriever):
                     new_nodes.append(node)
         elif query_result.ids:
             for node_id in query_result.ids:
-                node_id_str = str(node_id)
+                if node_id not in self._index.index_struct.nodes_dict:
+                    raise KeyError(f"Node ID {node_id} not found in index. ")
+                node_id_str = str(self._index.index_struct.nodes_dict[node_id])
                 if node_id_str in fetched_nodes_by_id:
                     new_nodes.append(fetched_nodes_by_id[node_id_str])
                 else:
                     raise KeyError(
                         f"Node ID {node_id_str} not found in fetched nodes. "
                     )
-        else:
+        elif query_result.ids is None and query_result.nodes is None:
             raise ValueError(
                 "Vector store query result should return at least one of nodes or ids."
             )
@@ -215,13 +215,15 @@ class VectorIndexRetriever(BaseRetriever):
         query_result = self._vector_store.query(query, **self._kwargs)
 
         # Fetch any missing nodes from the docstore and insert them into the query result
-        fetched_nodes: List[BaseNode] = self._docstore.get_nodes(
-            node_ids=self._determine_nodes_to_fetch(query_result), raise_error=False
-        )
+        nodes_to_fetch = self._determine_nodes_to_fetch(query_result)
+        if nodes_to_fetch:
+            fetched_nodes: List[BaseNode] = self._docstore.get_nodes(
+                node_ids=nodes_to_fetch, raise_error=False
+            )
 
-        query_result.nodes = self._insert_fetched_nodes_into_query_result(
-            query_result, fetched_nodes
-        )
+            query_result.nodes = self._insert_fetched_nodes_into_query_result(
+                query_result, fetched_nodes
+            )
 
         log_vector_store_query_result(query_result)
 
@@ -234,13 +236,15 @@ class VectorIndexRetriever(BaseRetriever):
         query_result = await self._vector_store.aquery(query, **self._kwargs)
 
         # Async fetch any missing nodes from the docstore and insert them into the query result
-        fetched_nodes: List[BaseNode] = await self._docstore.aget_nodes(
-            node_ids=self._determine_nodes_to_fetch(query_result), raise_error=False
-        )
+        nodes_to_fetch = self._determine_nodes_to_fetch(query_result)
+        if nodes_to_fetch:
+            fetched_nodes: List[BaseNode] = await self._docstore.aget_nodes(
+                node_ids=nodes_to_fetch, raise_error=False
+            )
 
-        query_result.nodes = self._insert_fetched_nodes_into_query_result(
-            query_result, fetched_nodes
-        )
+            query_result.nodes = self._insert_fetched_nodes_into_query_result(
+                query_result, fetched_nodes
+            )
 
         log_vector_store_query_result(query_result)
 

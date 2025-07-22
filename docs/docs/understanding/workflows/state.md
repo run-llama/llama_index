@@ -64,6 +64,19 @@ result = await w.run(query="Some query")
 print(result)
 ```
 
+## Handling Concurrent State Changes
+
+When multiple agents are running in parallel, it's possible that they will try to modify the same state at the same time. This can lead to race conditions and unexpected behavior.
+
+To avoid this, you can use a `with` statement to edit the state. This will ensure that the state is updated atomically.
+
+```python
+async with ctx.store.edit_state() as state:
+    state["some_key"] = "some_value"
+```
+
+This will ensure that only one step/task can access and edit the state at a given time. If other steps/tasks need to access the state, they will wait until the current edit operation exits.
+
 ## Adding Typed State
 
 Often, you'll have some preset shape that you want to use as the state for your workflow. The best way to do this is to use a `Pydantic` model to define the state. This way, you:
@@ -124,14 +137,12 @@ class MyState(BaseModel):
 class MyStatefulFlow(Workflow):
     @step
     async def start(self, ctx: Context[MyState], ev: StartEvent) -> StopEvent:
-        # Returns MyState directly
-        state = await ctx.store.get_state()
-        state.my_obj.name = "new_name"
-        await ctx.store.set_state(state)
+        # Allows for atomic state updates
+        async with ctx.store.edit_state() as state:
+            state.my_obj.name = "new_name"
 
         # Can also access fields directly if needed
         name = await ctx.store.get("my_obj.name")
-        await ctx.store.set("my_obj.name", "newer_name")
 
         return StopEvent(result="Done!")
 

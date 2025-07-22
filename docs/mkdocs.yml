@@ -67,6 +67,7 @@ nav:
           - Using Structured LLMs: ./understanding/extraction/structured_llms.md
           - Structured Prediction: ./understanding/extraction/structured_prediction.md
           - Lower-level extraction: ./understanding/extraction/lower_level.md
+          - Bonus - Structured Input: ./understanding/extraction/structured_input.md
       - Tracing and Debugging: ./understanding/tracing_and_debugging/tracing_and_debugging.md
       - Evaluating:
           - ./understanding/evaluating/evaluating.md
@@ -542,6 +543,7 @@ nav:
           - ./examples/prompts/emotion_prompt.ipynb
           - ./examples/prompts/prompt_mixin.ipynb
           - ./examples/prompts/rich_prompt_template_features.ipynb
+          - ./examples/prompts/structured_input.ipynb
       - Property Graph:
           - ./examples/property_graph/graph_store.ipynb
           - ./examples/property_graph/property_graph_advanced.ipynb
@@ -696,6 +698,7 @@ nav:
           - ./examples/vector_stores/RedisIndexDemo.ipynb
           - ./examples/vector_stores/RelytDemo.ipynb
           - ./examples/vector_stores/RocksetIndexDemo.ipynb
+          - ./examples/vector_stores/S3VectorStore.ipynb
           - ./examples/vector_stores/SimpleIndexDemo.ipynb
           - ./examples/vector_stores/SimpleIndexDemoLlama-Local.ipynb
           - ./examples/vector_stores/SimpleIndexDemoLlama2.ipynb
@@ -1027,6 +1030,7 @@ nav:
           - ./api_reference/llms/cerebras.md
           - ./api_reference/llms/clarifai.md
           - ./api_reference/llms/cleanlab.md
+          - ./api_reference/llms/cloudflare_ai_gateway.md
           - ./api_reference/llms/cohere.md
           - ./api_reference/llms/contextual.md
           - ./api_reference/llms/cortex.md
@@ -1491,6 +1495,7 @@ nav:
           - ./api_reference/readers/s3.md
           - ./api_reference/readers/sec_filings.md
           - ./api_reference/readers/semanticscholar.md
+          - ./api_reference/readers/service_now.md
           - ./api_reference/readers/simple_directory_reader.md
           - ./api_reference/readers/singlestore.md
           - ./api_reference/readers/slack.md
@@ -1695,6 +1700,7 @@ nav:
               - ./api_reference/storage/vector_store/redis.md
               - ./api_reference/storage/vector_store/relyt.md
               - ./api_reference/storage/vector_store/rocksetdb.md
+              - ./api_reference/storage/vector_store/s3.md
               - ./api_reference/storage/vector_store/simple.md
               - ./api_reference/storage/vector_store/singlestoredb.md
               - ./api_reference/storage/vector_store/sqlalchemy.md
@@ -2507,6 +2513,9 @@ plugins:
             - ../llama-index-integrations/storage/kvstore/llama-index-storage-kvstore-duckdb
             - ../llama-index-integrations/storage/docstore/llama-index-storage-docstore-duckdb
             - ../llama-index-integrations/storage/index_store/llama-index-storage-index-store-duckdb
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-s3
+            - ../llama-index-integrations/readers/llama-index-readers-service-now
+            - ../llama-index-integrations/llms/llama-index-llms-cloudflare-ai-gateway
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

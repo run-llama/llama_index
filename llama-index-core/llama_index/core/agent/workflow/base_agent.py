@@ -323,12 +323,17 @@ class BaseWorkflowAgent(
                 ]
             )
             await ctx.store.set("user_msg_str", content_str)
-        elif chat_history:
+        elif chat_history and not all(
+            message.role == "system" for message in chat_history
+        ):
             # If no user message, use the last message from chat history as user_msg_str
+            user_hist: List[ChatMessage] = [
+                msg for msg in chat_history if msg.role == "user"
+            ]
             content_str = "\n".join(
                 [
                     block.text
-                    for block in chat_history[-1].blocks
+                    for block in user_hist[-1].blocks
                     if isinstance(block, TextBlock)
                 ]
             )
@@ -588,6 +593,7 @@ class BaseWorkflowAgent(
         stepwise: bool = False,
         checkpoint_callback: Optional[CheckpointCallback] = None,
         max_iterations: Optional[int] = None,
+        start_event: Optional[AgentWorkflowStartEvent] = None,
         **kwargs: Any,
     ) -> WorkflowHandler:
         # Detect if hitl is needed
@@ -599,14 +605,16 @@ class BaseWorkflowAgent(
                 **kwargs,
             )
         else:
+            start_event = start_event or AgentWorkflowStartEvent(
+                user_msg=user_msg,
+                chat_history=chat_history,
+                memory=memory,
+                max_iterations=max_iterations,
+                system_prompt=self.system_prompt,
+                **kwargs,
+            )
             return super().run(
-                start_event=AgentWorkflowStartEvent(
-                    user_msg=user_msg,
-                    chat_history=chat_history,
-                    memory=memory,
-                    max_iterations=max_iterations,
-                    **kwargs,
-                ),
+                start_event=start_event,
                 ctx=ctx,
                 stepwise=stepwise,
                 checkpoint_callback=checkpoint_callback,
