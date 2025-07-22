@@ -167,7 +167,7 @@ class MultiModalLLMCompletionProgram(BasePydanticProgram[BaseModel]):
         blocks.append(TextBlock(text=formatted_prompt))
 
         response = await self._multi_modal_llm.achat(
-            messages=[ChatMessage(role="user", blocks=image_docs)],
+            messages=[ChatMessage(role="user", blocks=blocks)],
             **llm_kwargs,
         )
 
