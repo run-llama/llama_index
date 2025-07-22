@@ -1,5 +1,17 @@
 # ChangeLog
 
+## [2025-07-21]
+
+### `llama-index-core` [0.12.51]
+
+- feat: Enhance FunctionTool with auto type conversion for basic Python types like date when using pydantic fields in functions (#19479)
+- fix: Fix retriever KeyError when using FAISS and other vector stores that do no store text (#19476)
+- fix: add system prompt to memory and use it also for structured generation (#19490)
+
+### `llama-index-readers-azstorage-blob` [0.3.2]
+
+- fix: Fix metadata serialization issue in AzStorageBlobReader (#19491)
+
 ## [2025-07-19]
 
 ### `llama-index-core` [0.12.50]
