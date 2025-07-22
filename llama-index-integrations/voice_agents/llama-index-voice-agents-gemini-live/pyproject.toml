@@ -35,7 +35,7 @@ license = "MIT"
 maintainers = [{name = "AstraBert"}]
 dependencies = [
     "pyaudio>=0.2.14,<0.3",
-    "llama-index-core>=0.12.44,<0.13",
+    "llama-index-core>=0.12.50,<0.13",
     "google-genai>=1.26.0,<1.27",
 ]
 
@@ -54,10 +54,10 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.voice_agents.openai"
+import_path = "llama_index.voice_agents.gemini_live"
 
 [tool.llamahub.class_authors]
-OpenAIConversation = "AstraBert"
+GeminiLiveVoiceAgent = "AstraBert"
 
 [tool.mypy]
 disallow_untyped_defs = true

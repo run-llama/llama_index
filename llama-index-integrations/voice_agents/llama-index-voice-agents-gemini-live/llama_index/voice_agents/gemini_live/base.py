@@ -63,6 +63,7 @@ class GeminiLiveVoiceAgent(BaseVoiceAgent):
         self.interface.start(session=session)
 
     async def ping(self):
+        print("The agent is ready...")
         while True:
             text = await asyncio.to_thread(
                 input,
@@ -118,7 +119,6 @@ class GeminiLiveVoiceAgent(BaseVoiceAgent):
                             TextReceivedEvent(type_t="text_received", text=text)
                         )
                 elif tool_call := response.tool_call:
-                    print(tool_call)
                     function_responses: List[types.FunctionResponse] = []
                     for fn_call in tool_call.function_calls:
                         self._events.append(
@@ -128,10 +128,9 @@ class GeminiLiveVoiceAgent(BaseVoiceAgent):
                                 tool_args=fn_call.args,
                             )
                         )
-                        result: types.FunctionResponse = self.gemini_tools[
-                            fn_call.name
-                        ](fn_call.args, fn_call.id, fn_call.name)
-                        print(result)
+                        result = self._functions_dict[fn_call.name](
+                            fn_call.args, fn_call.id, fn_call.name
+                        )
                         self._events.append(
                             ToolCallResultEvent(
                                 type_t="tool_call_result",
