@@ -189,10 +189,6 @@ class AzStorageBlobReader(
         def get_metadata(file_name: str) -> Dict[str, Any]:
             sanitized_file_name = os.path.basename(file_name)
             metadata_sanitized = files_metadata.get(sanitized_file_name, {})
-            if not isinstance(metadata_sanitized, dict):
-                raise ValueError(
-                    f"Expected metadata to be a dict, got {type(metadata_sanitized)}"
-                )
             try:
                 json_str = json.dumps(metadata_sanitized, cls=SanitizedJSONEncoder)
                 clean_metadata = json.loads(json_str)
