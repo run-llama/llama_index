@@ -339,18 +339,17 @@ class Neo4jVectorStore(BasePydanticVectorStore):
         to create a new vector index in Neo4j.
         """
         index_query = (
-            "CALL db.index.vector.createNodeIndex("
-            "$index_name,"
-            "$node_label,"
-            "$embedding_node_property,"
-            "toInteger($embedding_dimension),"
-            "$similarity_metric )"
+            f"CREATE VECTOR INDEX {self.index_name} "
+            f"FOR (n:{self.node_label}) "
+            f"ON n.{self.embedding_node_property} "
+            "OPTIONS { indexConfig: {"
+            "`vector.dimensions`: toInteger($embedding_dimension), "
+            "`vector.similarity_function`: $similarity_metric"
+            "}"
+            "}"
         )
 
         parameters = {
-            "index_name": self.index_name,
-            "node_label": self.node_label,
-            "embedding_node_property": self.embedding_node_property,
             "embedding_dimension": self.embedding_dimension,
             "similarity_metric": self.distance_strategy,
         }
@@ -480,12 +479,11 @@ class Neo4jVectorStore(BasePydanticVectorStore):
         ids = [r.node_id for r in nodes]
         import_query = (
             "UNWIND $data AS row "
-            "CALL { WITH row "
+            "CALL (row) { "
             f"MERGE (c:`{self.node_label}` {{id: row.id}}) "
             "WITH c, row "
-            f"CALL db.create.setVectorProperty(c, "
+            f"CALL db.create.setNodeVectorProperty(c, "
             f"'{self.embedding_node_property}', row.embedding) "
-            "YIELD node "
             f"SET c.`{self.text_node_property}` = row.text "
             "SET c += row.metadata } IN TRANSACTIONS OF 1000 ROWS"
         )
