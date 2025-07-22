@@ -845,6 +845,60 @@ def test_cached_content_without_cached_content() -> None:
     assert "cached_content" not in chat_response.raw
 
 
+def test_thoughts_in_response() -> None:
+    """Test response processing when thought summaries are present."""
+    # Mock response without cached_content
+    mock_response = MagicMock()
+    mock_response.candidates = [MagicMock()]
+    mock_response.candidates[0].finish_reason = types.FinishReason.STOP
+    mock_response.candidates[0].content.role = "model"
+    mock_response.candidates[0].content.parts = [MagicMock(), MagicMock()]
+    mock_response.candidates[0].content.parts[0].text = "This is a thought."
+    mock_response.candidates[0].content.parts[0].inline_data = None
+    mock_response.candidates[0].content.parts[0].thought = True
+    mock_response.candidates[0].content.parts[1].text = "This is not a thought."
+    mock_response.candidates[0].content.parts[1].inline_data = None
+    mock_response.candidates[0].content.parts[1].thought = None
+    mock_response.prompt_feedback = None
+    mock_response.usage_metadata = None
+    mock_response.function_calls = None
+    # No cached_content attribute
+    del mock_response.cached_content
+
+    # Convert response
+    chat_response = chat_from_gemini_response(mock_response)
+
+    # Verify thoughts in raw response
+    assert "thoughts" in chat_response.message.additional_kwargs
+    assert chat_response.message.additional_kwargs["thoughts"] == "This is a thought."
+    assert chat_response.message.content == "This is not a thought."
+
+
+def test_thoughts_without_thought_response() -> None:
+    """Test response processing when thought summaries are not present."""
+    # Mock response without cached_content
+    mock_response = MagicMock()
+    mock_response.candidates = [MagicMock()]
+    mock_response.candidates[0].finish_reason = types.FinishReason.STOP
+    mock_response.candidates[0].content.role = "model"
+    mock_response.candidates[0].content.parts = [MagicMock()]
+    mock_response.candidates[0].content.parts[0].text = "This is not a thought."
+    mock_response.candidates[0].content.parts[0].inline_data = None
+    mock_response.candidates[0].content.parts[0].thought = None
+    mock_response.prompt_feedback = None
+    mock_response.usage_metadata = None
+    mock_response.function_calls = None
+    # No cached_content attribute
+    del mock_response.cached_content
+
+    # Convert response
+    chat_response = chat_from_gemini_response(mock_response)
+
+    # Verify no cached_content key in raw response
+    assert "thoughts" not in chat_response.message.additional_kwargs
+    assert chat_response.message.content == "This is not a thought."
+
+
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_cached_content_with_generation_config() -> None:
     """Test that cached_content works with custom generation_config."""
@@ -936,6 +990,7 @@ def test_built_in_tool_in_response() -> None:
         0
     ].text = "Test response with search results"
     mock_response.candidates[0].content.parts[0].inline_data = None
+    mock_response.candidates[0].content.parts[0].thought = None
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = MagicMock()
     mock_response.usage_metadata.model_dump.return_value = {
@@ -1373,10 +1428,12 @@ def test_code_execution_response_parts() -> None:
         "I'll calculate the sum of the first 50 prime numbers for you."
     )
     mock_text_part.inline_data = None
+    mock_text_part.thought = None
 
     mock_code_part = MagicMock()
     mock_code_part.text = None
     mock_code_part.inline_data = None
+    mock_code_part.thought = None
     mock_code_part.executable_code = {
         "code": "def is_prime(n):\n    if n < 2:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True\n\nprimes = []\nn = 2\nwhile len(primes) < 50:\n    if is_prime(n):\n        primes.append(n)\n    n += 1\n\nprint(f'Sum of first 50 primes: {sum(primes)}')",
         "language": types.Language.PYTHON,
@@ -1385,6 +1442,7 @@ def test_code_execution_response_parts() -> None:
     mock_result_part = MagicMock()
     mock_result_part.text = None
     mock_result_part.inline_data = None
+    mock_result_part.thought = None
     mock_result_part.code_execution_result = {
         "outcome": types.Outcome.OUTCOME_OK,
         "output": "Sum of first 50 primes: 5117",
@@ -1393,6 +1451,7 @@ def test_code_execution_response_parts() -> None:
     mock_final_text_part = MagicMock()
     mock_final_text_part.text = "The sum of the first 50 prime numbers is 5117."
     mock_final_text_part.inline_data = None
+    mock_final_text_part.thought = None
 
     mock_candidate.content.parts = [
         mock_text_part,
@@ -1517,3 +1576,123 @@ def test_code_execution_response_parts() -> None:
         # The response should mention the final answer
         response_content = response.message.content
         assert "5117" in response_content
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_thoughts_with_streaming() -> None:
+    """Test that thought summaries work correctly with streaming responses."""
+    llm = GoogleGenAI(
+        model="gemini-2.5-flash",
+        api_key=os.environ["GOOGLE_API_KEY"],
+        generation_config=GenerateContentConfig(
+            thinking_config=ThinkingConfig(
+                include_thoughts=True,
+            ),
+        ),
+    )
+
+    # Test streaming chat
+    messages = [ChatMessage(content="What is your name?", role=MessageRole.USER)]
+
+    stream_response = llm.stream_chat(messages)
+
+    # Collect all streaming chunks
+    chunks = []
+    final_response = None
+    for chunk in stream_response:
+        chunks.append(chunk)
+        final_response = chunk
+    print(final_response)
+    assert len(chunks) > 0
+    assert final_response is not None
+    assert final_response.message is not None
+    assert len(final_response.message.content) != 0
+    assert "thoughts" in final_response.message.additional_kwargs
+    assert len(final_response.message.additional_kwargs["thoughts"]) != 0
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+@pytest.mark.asyncio
+async def test_thoughts_with_async_streaming() -> None:
+    """Test that thought summaries work correctly with streaming responses."""
+    llm = GoogleGenAI(
+        model="gemini-2.5-flash",
+        api_key=os.environ["GOOGLE_API_KEY"],
+        generation_config=GenerateContentConfig(
+            thinking_config=ThinkingConfig(
+                include_thoughts=True,
+            ),
+        ),
+    )
+
+    # Test streaming chat
+    messages = [ChatMessage(content="What is your name?", role=MessageRole.USER)]
+
+    stream_response = await llm.astream_chat(messages)
+
+    # Collect all streaming chunks
+    chunks = []
+    final_response = None
+    async for chunk in stream_response:
+        chunks.append(chunk)
+        final_response = chunk
+
+    assert len(chunks) > 0
+    assert final_response is not None
+    assert final_response.message is not None
+    assert len(final_response.message.content) != 0
+    assert "thoughts" in final_response.message.additional_kwargs
+    assert len(final_response.message.additional_kwargs["thoughts"]) != 0
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_thoughts_with_chat() -> None:
+    """Test that thought summaries work correctly with chat responses."""
+    llm = GoogleGenAI(
+        model="gemini-2.5-flash",
+        api_key=os.environ["GOOGLE_API_KEY"],
+        generation_config=GenerateContentConfig(
+            thinking_config=ThinkingConfig(
+                include_thoughts=True,
+            ),
+        ),
+    )
+
+    # Test streaming chat
+    messages = [ChatMessage(content="What is your name?", role=MessageRole.USER)]
+
+    response = llm.chat(messages)
+    final_response = response
+
+    assert final_response is not None
+    assert final_response.message is not None
+    assert len(final_response.message.content) != 0
+    assert "thoughts" in final_response.message.additional_kwargs
+    assert len(final_response.message.additional_kwargs["thoughts"]) != 0
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+@pytest.mark.asyncio
+async def test_thoughts_with_async_chat() -> None:
+    """Test that thought summaries work correctly with chat responses."""
+    llm = GoogleGenAI(
+        model="gemini-2.5-flash",
+        api_key=os.environ["GOOGLE_API_KEY"],
+        generation_config=GenerateContentConfig(
+            thinking_config=ThinkingConfig(
+                include_thoughts=True,
+            ),
+        ),
+    )
+
+    # Test streaming chat
+    messages = [ChatMessage(content="What is your name?", role=MessageRole.USER)]
+
+    response = await llm.achat(messages)
+    final_response = response
+
+    assert final_response is not None
+    assert final_response.message is not None
+    assert len(final_response.message.content) != 0
+    assert "thoughts" in final_response.message.additional_kwargs
+    assert len(final_response.message.additional_kwargs["thoughts"]) != 0
