@@ -1,6 +1,6 @@
 """Top-level imports for LlamaIndex."""
 
-__version__ = "0.12.51"
+__version__ = "0.12.52"
 
 import logging
 from logging import NullHandler

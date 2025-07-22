@@ -32,7 +32,7 @@ dev = [
 
 [project]
 name = "llama-index-core"
-version = "0.12.51"
+version = "0.12.52"
 description = "Interface between LLMs and your data"
 authors = [{name = "Jerry Liu", email = "jerry@llamaindex.ai"}]
 requires-python = ">=3.9,<4.0"
@@ -76,7 +76,7 @@ dependencies = [
     "pydantic>=2.8.0",
     "filetype>=1.2.0,<2",
     "eval-type-backport>=0.2.0,<0.3 ; python_version < '3.10'",
-    "banks>=2.0.0,<3",
+    "banks>=2.2.0,<3",
     "aiosqlite",
     "llama-index-workflows>=1.0.1,<2",
     "setuptools>=80.9.0",
