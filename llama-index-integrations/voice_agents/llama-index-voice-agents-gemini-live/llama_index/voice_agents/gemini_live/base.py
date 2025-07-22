@@ -44,6 +44,16 @@ class GeminiLiveVoiceAgent(BaseVoiceAgent):
         """
         self.interface.start(session=session)
 
+    async def ping(self):
+        while True:
+            text = await asyncio.to_thread(
+                input,
+                "",
+            )
+            if text.lower() == "q":
+                break
+            await self.session.send(input=text or ".", end_of_turn=True)
+
     @override
     async def send(self) -> None:
         """
@@ -78,11 +88,13 @@ class GeminiLiveVoiceAgent(BaseVoiceAgent):
                 self.session = session
                 await self.start(session=session)
 
+                ping = tg.create_task(self.ping())
                 tg.create_task(self.send())
                 tg.create_task(self.interface._microphone_callback())
                 tg.create_task(self.interface.receive())
                 tg.create_task(self.interface.output())
 
+                await ping
                 raise asyncio.CancelledError("User requested exit")
 
         except asyncio.CancelledError:
