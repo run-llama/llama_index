@@ -1,6 +1,7 @@
 """Jira tool spec."""
 
-from typing import Optional
+import os
+from typing import Optional, Dict, Any, Literal
 from jira import JIRA
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
@@ -9,7 +10,6 @@ class JiraIssueToolSpec(BaseToolSpec):
     """Atlassian Jira Issue Tool Spec."""
 
     spec_functions = [
-        "get_all_projects",
         "search_issues",
         "create_issue",
         "add_comment_to_issue",
@@ -22,9 +22,9 @@ class JiraIssueToolSpec(BaseToolSpec):
 
     def __init__(
         self,
-        email: str = EMAIL,
-        api_key: str = JIRA_API_KEY,
-        server_url: str = SERVER_URL,
+        email: str = os.environ.get("JIRA_ACCOUNT_EMAIL", ""),
+        api_key: Optional[str] = os.environ.get("JIRA_API_KEY", ""),
+        server_url: Optional[str] = os.environ.get("JIRA_SERVER_URL", ""),
     ) -> None:
         if email and api_key and server_url:
             self.jira = JIRA(
@@ -33,26 +33,6 @@ class JiraIssueToolSpec(BaseToolSpec):
             )
         else:
             raise Exception("Please provide Jira credentials to continue.")
-
-    def get_all_projects(self) -> Dict[str, Any]:
-        """Get all JIRA projects."""
-        try:
-            projects = self.jira.projects()
-
-            if projects:
-                return {
-                    "error": False,
-                    "message": "All Projects from the account",
-                    "projects": [
-                        {"id": project.id, "key": project.key, "name": project.name}
-                        for project in projects
-                    ],
-                }
-        except Exception as e:
-            return {
-                "error": True,
-                "message": f"Failed to fetch projects from JIRA: {e!s}",
-            }
 
     def search_issues(self, jql_str: str) -> Dict[str, Any]:
         """
