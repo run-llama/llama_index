@@ -141,7 +141,6 @@ class VectorIndexRetriever(BaseRetriever):
         If the vector store does not store text, we need to fetch every node from the docstore.
         If the vector store stores text, we need to fetch only the nodes that are not text.
         """
-        # Fetch all nodes from the docstore
         if query_result.nodes:
             # Fetch non-text nodes from the docstore
             return [
@@ -149,10 +148,12 @@ class VectorIndexRetriever(BaseRetriever):
                 for node in query_result.nodes  # no folding
                 if node.as_related_node_info().node_type != ObjectType.TEXT
             ]
+        # Fetch all nodes from the docstore
         elif query_result.ids:
             return [
                 self._index.index_struct.nodes_dict[idx] for idx in query_result.ids
             ]
+
         else:
             return []
 
