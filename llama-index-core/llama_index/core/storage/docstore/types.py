@@ -218,8 +218,9 @@ class BaseDocumentStore(ABC):
         """
         doc = await self.aget_document(node_id, raise_error=raise_error)
 
-        # The document should always be a BaseNode, but we check to be safe
         if doc is None:
+            # The doc store should have raised an error if the node_id is not found, but it didn't
+            # so we raise an error here
             if raise_error:
                 raise ValueError(f"Node {node_id} not found")
             return None
