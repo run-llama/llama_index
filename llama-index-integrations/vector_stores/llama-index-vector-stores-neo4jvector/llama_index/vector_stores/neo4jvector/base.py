@@ -332,6 +332,12 @@ class Neo4jVectorStore(BasePydanticVectorStore):
             self._support_metadata_filter = True
         # Flag for enterprise
         self._is_enterprise = db_data[0]["edition"] == "enterprise"
+        # Flag for call parameter
+        call_param_required_version = (5, 23, 0)
+        if version_tuple < call_param_required_version:
+            self._call_param_required = False
+        else:
+            self._call_param_required = True
 
     def create_new_index(self) -> None:
         """
@@ -479,7 +485,7 @@ class Neo4jVectorStore(BasePydanticVectorStore):
         ids = [r.node_id for r in nodes]
         import_query = (
             "UNWIND $data AS row "
-            "CALL (row) { "
+            f"{'CALL (row) { ' if self._call_param_required else 'CALL { WITH row '}"
             f"MERGE (c:`{self.node_label}` {{id: row.id}}) "
             "WITH c, row "
             f"CALL db.create.setNodeVectorProperty(c, "
