@@ -141,18 +141,20 @@ class VectorIndexRetriever(BaseRetriever):
         If the vector store does not store text, we need to fetch every node from the docstore.
         If the vector store stores text, we need to fetch only the nodes that are not text.
         """
-        # Fetch all nodes from the docstore
         if query_result.nodes:
             # Fetch non-text nodes from the docstore
             return [
                 node.node_id
                 for node in query_result.nodes  # no folding
-                if node.as_related_node_info().node_type != ObjectType.TEXT
+                if node.as_related_node_info().node_type
+                != ObjectType.TEXT  # TODO: no need to fetch multimodal `Node` if they only include text
             ]
         elif query_result.ids:
+            # Fetch all nodes from the docstore
             return [
                 self._index.index_struct.nodes_dict[idx] for idx in query_result.ids
             ]
+
         else:
             return []
 
@@ -163,18 +165,21 @@ class VectorIndexRetriever(BaseRetriever):
         Insert the fetched nodes into the query result.
 
         If the vector store does not store text, all nodes are inserted into the query result.
-        If the vector store stores text, we replace non-text nodes with those fetched from the docstore.
+        If the vector store stores text, we replace non-text nodes with those fetched from the docstore,
+            unless the node was not found in the docstore, in which case we keep the original node.
         """
         fetched_nodes_by_id: Dict[str, BaseNode] = {
             str(node.node_id): node for node in fetched_nodes
         }
         new_nodes: List[BaseNode] = []
+
         if query_result.nodes:
             for node in list(query_result.nodes):
                 node_id_str = str(node.node_id)
                 if node_id_str in fetched_nodes_by_id:
                     new_nodes.append(fetched_nodes_by_id[node_id_str])
                 else:
+                    # We did not fetch a replacement node, so we keep the original node
                     new_nodes.append(node)
         elif query_result.ids:
             for node_id in query_result.ids:
@@ -214,9 +219,9 @@ class VectorIndexRetriever(BaseRetriever):
         query = self._build_vector_store_query(query_bundle_with_embeddings)
         query_result = self._vector_store.query(query, **self._kwargs)
 
-        # Fetch any missing nodes from the docstore and insert them into the query result
         nodes_to_fetch = self._determine_nodes_to_fetch(query_result)
         if nodes_to_fetch:
+            # Fetch any missing nodes from the docstore and insert them into the query result
             fetched_nodes: List[BaseNode] = self._docstore.get_nodes(
                 node_ids=nodes_to_fetch, raise_error=False
             )
@@ -235,9 +240,9 @@ class VectorIndexRetriever(BaseRetriever):
         query = self._build_vector_store_query(query_bundle_with_embeddings)
         query_result = await self._vector_store.aquery(query, **self._kwargs)
 
-        # Async fetch any missing nodes from the docstore and insert them into the query result
         nodes_to_fetch = self._determine_nodes_to_fetch(query_result)
         if nodes_to_fetch:
+            # Fetch any missing nodes from the docstore and insert them into the query result
             fetched_nodes: List[BaseNode] = await self._docstore.aget_nodes(
                 node_ids=nodes_to_fetch, raise_error=False
             )
