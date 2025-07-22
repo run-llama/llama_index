@@ -141,7 +141,11 @@ class BaseDocumentStore(ABC):
             raise_error (bool): raise error if node_id not found
 
         """
-        return [node for node_id in node_ids if (node := self.get_node(node_id, raise_error=raise_error))]
+        # if/else needed for type checking
+        if raise_error:
+            return [node for node_id in node_ids if (node := self.get_node(node_id, raise_error=True))]
+        else:
+            return [self.get_node(node_id) for node_id in node_ids]
 
     async def aget_nodes(
         self, node_ids: List[str], raise_error: bool = True
@@ -154,11 +158,18 @@ class BaseDocumentStore(ABC):
             raise_error (bool): raise error if node_id not found
 
         """
-        return [
-            node
-            for node_id in node_ids
-            if (node := await self.aget_node(node_id, raise_error=raise_error))
-        ]
+        # if/else needed for type checking
+        if raise_error:
+            return [
+                node
+                for node_id in node_ids
+                if (node := await self.aget_node(node_id, raise_error=True))
+            ]
+        else:
+            return [
+                await self.aget_node(node_id)
+                for node_id in node_ids
+            ]
 
     @overload
     def get_node(self, node_id: str, raise_error: Literal[True] = True) -> BaseNode: ...
