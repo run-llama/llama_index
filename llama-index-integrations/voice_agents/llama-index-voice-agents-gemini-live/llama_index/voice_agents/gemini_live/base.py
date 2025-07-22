@@ -1,10 +1,18 @@
 import asyncio
-from typing import Optional, Any, List
+from typing import Optional, Any, List, Dict, Callable
 from typing_extensions import override
 
 from .audio_interface import GeminiLiveVoiceAgentInterface
+from .utils import tools_to_gemini_tools, tools_to_functions_dict
+from .events import (
+    TextReceivedEvent,
+    AudioReceivedEvent,
+    ToolCallEvent,
+    ToolCallResultEvent,
+)
 from google.genai.live import AsyncSession
-from google.genai import Client
+from google.genai import Client, types
+from llama_index.core.llms import ChatMessage, AudioBlock, TextBlock
 from llama_index.core.voice_agents import BaseVoiceAgent
 from llama_index.core.tools import BaseTool
 
@@ -28,6 +36,16 @@ class GeminiLiveVoiceAgent(BaseVoiceAgent):
         self.session: Optional[AsyncSession] = None
         interface = interface or GeminiLiveVoiceAgentInterface()
         super().__init__(api_key=api_key, tools=tools, interface=interface)
+        if self.tools is not None:
+            self.gemini_tools: List[Dict[str, List[Dict[str, str]]]] = (
+                tools_to_gemini_tools(tools)
+            )
+            self._functions_dict: Dict[
+                str, Callable[[Dict[str, Any], str, str], types.FunctionResponse]
+            ] = tools_to_functions_dict(self.tools)
+        else:
+            self.gemini_tools = []
+            self._functions_dict = {}
 
     @property
     def client(self) -> Client:
@@ -63,7 +81,8 @@ class GeminiLiveVoiceAgent(BaseVoiceAgent):
             msg = await self.interface.out_queue.get()
             await self.session.send(input=msg)
 
-    async def handle_message(self, message: Any, *args: Any, **kwargs: Any) -> Any:
+    @override
+    async def handle_message(self) -> Any:
         """
         Handle incoming message.
 
@@ -76,12 +95,66 @@ class GeminiLiveVoiceAgent(BaseVoiceAgent):
             out (Any): This function can return any output.
 
         """
+        while True:
+            turn = self.session.receive()
+            async for response in turn:
+                if response.server_content:
+                    if data := response.data:
+                        await self.interface.receive(data=data)
+                        self._messages.append(
+                            ChatMessage(
+                                role="assistant", blocks=[AudioBlock(audio=data)]
+                            )
+                        )
+                        self._events.append(
+                            AudioReceivedEvent(type_t="audio_received", data=data)
+                        )
+                        continue
+                    if text := response.text:
+                        self._messages.append(
+                            ChatMessage(role="assistant", blocks=[TextBlock(text=text)])
+                        )
+                        self._events.append(
+                            TextReceivedEvent(type_t="text_received", text=text)
+                        )
+                elif tool_call := response.tool_call:
+                    print(tool_call)
+                    function_responses: List[types.FunctionResponse] = []
+                    for fn_call in tool_call.function_calls:
+                        self._events.append(
+                            ToolCallEvent(
+                                type_t="tool_call",
+                                tool_name=fn_call.name,
+                                tool_args=fn_call.args,
+                            )
+                        )
+                        result: types.FunctionResponse = self.gemini_tools[
+                            fn_call.name
+                        ](fn_call.args, fn_call.id, fn_call.name)
+                        print(result)
+                        self._events.append(
+                            ToolCallResultEvent(
+                                type_t="tool_call_result",
+                                tool_name=result.name,
+                                tool_result=result.response,
+                            )
+                        )
+                        function_responses.append(result)
+                    await self.session.send_tool_response(
+                        function_responses=function_responses
+                    )
+            while not self.interface.audio_in_queue.empty():
+                self.interrupt()
 
     async def run(self):
         try:
             async with (
                 self.client.aio.live.connect(
-                    model=self.model, config={"response_modalities": ["AUDIO"]}
+                    model=self.model,
+                    config={
+                        "response_modalities": ["AUDIO"],
+                        "tools": self.gemini_tools,
+                    },
                 ) as session,
                 asyncio.TaskGroup() as tg,
             ):
@@ -91,7 +164,7 @@ class GeminiLiveVoiceAgent(BaseVoiceAgent):
                 ping = tg.create_task(self.ping())
                 tg.create_task(self.send())
                 tg.create_task(self.interface._microphone_callback())
-                tg.create_task(self.interface.receive())
+                tg.create_task(self.handle_message())
                 tg.create_task(self.interface.output())
 
                 await ping
