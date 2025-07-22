@@ -345,12 +345,17 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 ]
             )
             await ctx.store.set("user_msg_str", content_str)
-        elif chat_history:
+        elif chat_history and not all(
+            message.role == "system" for message in chat_history
+        ):
             # If no user message, use the last message from chat history as user_msg_str
+            user_hist: List[ChatMessage] = [
+                msg for msg in chat_history if msg.role == "user"
+            ]
             content_str = "\n".join(
                 [
                     block.text
-                    for block in chat_history[-1].blocks
+                    for block in user_hist[-1].blocks
                     if isinstance(block, TextBlock)
                 ]
             )

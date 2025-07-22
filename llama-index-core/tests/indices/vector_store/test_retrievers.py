@@ -136,7 +136,7 @@ def test_insert_fetched_nodes_handles_all_branches():
     with pytest.raises(KeyError) as exc_info:
         retriever._insert_fetched_nodes_into_query_result(query_result, fetched_nodes)
 
-    assert "Node ID unknown not found" in str(exc_info.value)
+    assert "Node ID 0 not found in index." in str(exc_info.value)
 
 
 def test_insert_fetched_nodes_with_nodes_present():
