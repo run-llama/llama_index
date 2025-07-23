@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from typing import Optional, Any, List, Dict, Callable
 from typing_extensions import override
 
@@ -18,6 +19,10 @@ from llama_index.core.tools import BaseTool
 
 DEFAULT_MODEL = "models/gemini-2.0-flash-live-001"
 
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
+
 
 class GeminiLiveVoiceAgent(BaseVoiceAgent):
     """
@@ -34,6 +39,7 @@ class GeminiLiveVoiceAgent(BaseVoiceAgent):
         self.model: str = model or DEFAULT_MODEL
         self._client: Optional[Client] = None
         self.session: Optional[AsyncSession] = None
+        self._quitflag: bool = False
         interface = interface or GeminiLiveVoiceAgentInterface()
         super().__init__(api_key=api_key, tools=tools, interface=interface)
         if self.tools is not None:
@@ -55,25 +61,32 @@ class GeminiLiveVoiceAgent(BaseVoiceAgent):
             )
         return self._client
 
+    def _signal_exit(self):
+        logging.info("Preparing exit...")
+        self._quitflag = True
+
     @override
-    async def start(self, session: AsyncSession) -> None:
+    async def _start(self, session: AsyncSession) -> None:
         """
         Start the voice agent.
         """
         self.interface.start(session=session)
 
-    async def ping(self):
-        print("The agent is ready...")
-        while True:
+    async def _run_loop(self) -> None:
+        logging.info("The agent is ready for the conversation")
+        logging.info("Type q and press enter to stop the conversation at any time")
+        while not self._quitflag:
             text = await asyncio.to_thread(
                 input,
                 "",
             )
-            if text.lower() == "q":
-                break
+            if text == "q":
+                self._signal_exit()
             await self.session.send(input=text or ".", end_of_turn=True)
+        logging.info("Session has been successfully closed")
+        await self.interrupt()
+        await self.stop()
 
-    @override
     async def send(self) -> None:
         """
         Send audio to the websocket underlying the voice agent.
@@ -143,9 +156,9 @@ class GeminiLiveVoiceAgent(BaseVoiceAgent):
                         function_responses=function_responses
                     )
             while not self.interface.audio_in_queue.empty():
-                self.interrupt()
+                await self.interrupt()
 
-    async def run(self):
+    async def start(self):
         try:
             async with (
                 self.client.aio.live.connect(
@@ -158,15 +171,15 @@ class GeminiLiveVoiceAgent(BaseVoiceAgent):
                 asyncio.TaskGroup() as tg,
             ):
                 self.session = session
-                await self.start(session=session)
+                await self._start(session=session)
 
-                ping = tg.create_task(self.ping())
+                _run_loop = tg.create_task(self._run_loop())
                 tg.create_task(self.send())
                 tg.create_task(self.interface._microphone_callback())
                 tg.create_task(self.handle_message())
                 tg.create_task(self.interface.output())
 
-                await ping
+                await _run_loop
                 raise asyncio.CancelledError("User requested exit")
 
         except asyncio.CancelledError:
