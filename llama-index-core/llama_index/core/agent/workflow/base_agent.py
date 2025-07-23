@@ -453,8 +453,14 @@ class BaseWorkflowAgent(
                     )
             if self.output_cls is not None:
                 try:
+                    llm_input = [*messages]
+                    if self.system_prompt:
+                        llm_input = [
+                            ChatMessage(role="system", content=self.system_prompt),
+                            *llm_input,
+                        ]
                     output.structured_response = await generate_structured_response(
-                        messages=messages, llm=self.llm, output_cls=self.output_cls
+                        messages=llm_input, llm=self.llm, output_cls=self.output_cls
                     )
                     ctx.write_event_to_stream(
                         AgentStreamStructuredOutput(output=output.structured_response)
@@ -610,7 +616,6 @@ class BaseWorkflowAgent(
                 chat_history=chat_history,
                 memory=memory,
                 max_iterations=max_iterations,
-                system_prompt=self.system_prompt,
                 **kwargs,
             )
             return super().run(
