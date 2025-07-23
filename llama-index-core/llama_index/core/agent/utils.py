@@ -47,6 +47,7 @@ def messages_to_xml_format(messages: List[ChatMessage]) -> List[ChatMessage]:
 async def generate_structured_response(
     messages: List[ChatMessage], llm: LLM, output_cls: Type[BaseModel]
 ) -> Dict[str, Any]:
+    breakpoint()
     xml_message = messages_to_xml_format(messages)
     structured_response = await llm.as_structured_llm(
         output_cls,

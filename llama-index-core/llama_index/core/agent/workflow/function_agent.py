@@ -44,6 +44,7 @@ class FunctionAgent(BaseWorkflowAgent):
             AgentInput(input=current_llm_input, current_agent_name=self.name)
         )
 
+        breakpoint()
         response = await self.llm.astream_chat_with_tools(  # type: ignore
             tools=tools,
             chat_history=current_llm_input,
