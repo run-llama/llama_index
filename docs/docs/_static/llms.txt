@@ -1,0 +1,350 @@
+# LlamaIndex
+
+> LlamaIndex is a comprehensive framework for building production-ready data-backed LLM applications, specializing in Retrieval-Augmented Generation (RAG) and autonomous agentic workflows that connect language models to your private data.
+
+## What is LlamaIndex?
+
+LlamaIndex enables developers to build sophisticated AI applications that combine the reasoning capabilities of Large Language Models with real-world data sources. Unlike general-purpose LLM frameworks, LlamaIndex is specifically designed for applications that need to work with private, proprietary, or domain-specific data.
+
+The framework addresses the fundamental challenge of LLMs: they are trained on public data with knowledge cutoffs, but most valuable business applications require access to private documents, databases, APIs, and real-time information. LlamaIndex bridges this gap through advanced Retrieval-Augmented Generation (RAG) techniques and agentic workflows.
+
+Core differentiators include:
+- 100+ data connectors for ingesting diverse data sources (PDFs, databases, APIs, cloud services)
+- Advanced RAG techniques (hybrid retrieval, auto-merging, recursive retrieval, contextual retrieval)
+- Support for 40+ LLM providers including OpenAI, Anthropic, and local models (Ollama, vLLM)
+- Comprehensive production infrastructure (LlamaCloud, observability, evaluation frameworks)
+- Unique event-driven workflow orchestration with human-in-the-loop capabilities
+- Async-first architecture designed for enterprise scalability with microservice deployment
+
+## Core Architecture
+
+### The RAG Pipeline
+
+At its heart, LlamaIndex implements a sophisticated RAG (Retrieval-Augmented Generation) pipeline:
+
+1. **Data Loading**: Documents are ingested using specialized readers for different data sources
+2. **Parsing & Chunking**: Raw data is split into manageable chunks while preserving semantic meaning
+3. **Indexing**: Chunks are converted to embeddings and stored in vector databases or other index structures
+4. **Retrieval**: Relevant chunks are retrieved based on query similarity and other criteria
+5. **Synthesis**: Retrieved context is combined with the original query to generate accurate responses
+
+### Document Processing
+
+LlamaIndex transforms raw documents into a structured `Document` and `Node` representation:
+
+- **Documents**: Represent entire files or data sources with metadata
+- **Nodes**: Smaller chunks of documents optimized for retrieval and processing
+- **Metadata**: Rich context including source, timestamps, relationships, and custom attributes
+
+The framework uses sophisticated parsing strategies:
+- **Sentence Splitters**: Preserve semantic boundaries while maintaining optimal chunk sizes
+- **Token-based Splitting**: Ensure chunks fit within LLM context windows
+- **Hierarchical Parsing**: Maintain document structure (headings, sections, tables)
+- **Semantic Chunking**: Group related content using embedding similarity
+
+### Indexing Strategies
+
+LlamaIndex supports multiple indexing approaches for different use cases:
+
+**Vector Store Index**
+- Primary indexing method using semantic embeddings
+- Stores document chunks as high-dimensional vectors
+- Enables similarity-based retrieval using cosine similarity or other metrics
+- Supports 30+ vector store backends (Pinecone, Weaviate, Chroma, etc.)
+
+**Property Graph Index**
+- Graph-based indexing that captures relationships between entities
+- Extracts entities and relationships from documents automatically
+- Enables graph traversal and relationship-aware retrieval
+- Integrates with Neo4j, Neptune, and other graph databases
+
+**Keyword Index**
+- Traditional keyword-based search using TF-IDF or BM25
+- Useful for exact phrase matching and traditional search patterns
+- Can be combined with vector search for hybrid retrieval
+
+**Tree Index**
+- Hierarchical organization of documents
+- Builds summary trees for efficient multi-level retrieval
+- Optimized for summarization and high-level question answering
+
+### Advanced Retrieval Techniques
+
+**Hybrid Retrieval**
+Combines multiple retrieval methods for better accuracy:
+- Vector similarity search for semantic matching
+- Keyword search for exact phrase matching
+- Graph traversal for relationship discovery
+- Results are merged and re-ranked using fusion algorithms
+
+**Auto-Merging Retrieval**
+Intelligently combines retrieved chunks:
+- Retrieves initial set of relevant chunks
+- Automatically merges adjacent or overlapping chunks
+- Reconstructs larger context when needed
+- Reduces information fragmentation
+
+**Recursive Retrieval**
+Multi-step retrieval process:
+- First retrieves document summaries or high-level chunks
+- Uses initial results to guide deeper retrieval into specific sections
+- Enables efficient search through large document collections
+- Particularly effective for hierarchical documents
+
+**Contextual Retrieval**
+Enhances chunks with additional context:
+- Prepends document-level context to each chunk
+- Maintains global document understanding during retrieval
+- Improves relevance scoring and reduces hallucinations
+- Based on Anthropic's contextual retrieval research
+
+## Query Processing
+
+### Query Engines
+
+Query engines handle standalone questions and return structured responses:
+
+**Basic Query Flow**
+1. Query is processed and potentially transformed
+2. Relevant context is retrieved from indexes
+3. Context and query are sent to LLM for response generation
+4. Response is post-processed and returned
+
+**Response Modes**
+- **Compact**: Combines retrieved chunks into single LLM call
+- **Refine**: Iteratively refines answer using multiple LLM calls
+- **Tree Summarize**: Hierarchically processes chunks for better synthesis
+- **Generation**: Direct generation without retrieval for knowledge-based queries
+
+### Chat Engines
+
+Chat engines maintain conversation state and handle multi-turn interactions:
+
+**Conversation Memory**
+- Maintains chat history across turns
+- Implements conversation summarization for long conversations
+- Supports custom memory backends (Redis, databases, etc.)
+- Balances context retention with token limits
+
+**Context Management**
+- Combines conversation history with retrieved context
+- Implements context windowing for long conversations
+- Maintains topic coherence across turns
+- Supports context injection and manipulation
+
+### Agents
+
+Agents are autonomous systems that can use tools, access data, and make decisions:
+
+**Agent Architecture**
+- **LLM Brain**: Core reasoning engine (GPT-4, Claude, etc.)
+- **Memory**: Conversation and working memory management
+- **Tools**: Functions the agent can call (search, calculation, API calls)
+- **Planning**: Multi-step reasoning and task decomposition
+
+**Agent Types**
+
+**ReAct Agents**
+- Implement Reasoning + Acting pattern
+- Alternate between reasoning about the problem and taking actions
+- Maintain internal thought process for transparency
+- Effective for complex, multi-step tasks
+
+**Function Calling Agents**
+- Use LLM provider's native function calling capabilities
+- More reliable tool usage with structured outputs
+- Support parallel function calls for efficiency
+- Work with OpenAI, Anthropic, and other function-calling models
+
+**Code Act Agents**
+- Generate and execute code to solve problems
+- Particularly effective for data analysis and computation
+- Can create visualizations, perform calculations, and manipulate data
+- Sandbox execution for security
+
+**Multi-Agent Systems**
+- Coordinate multiple specialized agents
+- Enable agent handoffs and collaboration
+- Support hierarchical agent structures
+- Useful for complex workflows requiring different expertise
+
+## Data Integration
+
+### Data Connectors
+
+LlamaIndex provides 100+ data connectors for diverse sources:
+
+**Document Sources**
+- PDF parsing with table and image extraction
+- Microsoft Office documents (Word, PowerPoint, Excel)
+- Google Workspace (Docs, Sheets, Slides, Drive)
+- Notion, Confluence, SharePoint
+- Web pages with intelligent content extraction
+
+**Database Integration**
+- SQL databases (PostgreSQL, MySQL, SQLite)
+- NoSQL databases (MongoDB, CouchDB, DynamoDB)
+- Data warehouses (BigQuery, Snowflake, Redshift)
+- Vector databases (Pinecone, Weaviate, Chroma)
+
+**API and Cloud Services**
+- Slack, Discord, Teams for communication data
+- GitHub, GitLab for code repositories
+- Salesforce, HubSpot for CRM data
+- Jira, Asana for project management
+- Cloud storage (S3, Google Cloud, Azure)
+
+**Specialized Sources**
+- Financial data (SEC filings, market data)
+- Academic papers (arXiv, PubMed)
+- E-commerce platforms
+- Social media platforms
+- IoT and sensor data
+
+### LlamaParse
+
+LlamaParse is LlamaIndex's advanced document parsing service:
+
+**Advanced PDF Processing**
+- Extracts text, tables, and images with high accuracy
+- Maintains document layout and structure
+- Handles complex multi-column layouts
+- Preserves mathematical formulas and diagrams
+
+**Structured Data Extraction**
+- Converts tables to structured formats (JSON, CSV)
+- Extracts forms and structured document sections
+- Maintains relationships between document elements
+- Supports custom extraction schemas
+
+**Multi-Modal Capabilities**
+- Processes images and diagrams within documents
+- Extracts text from images using OCR
+- Understands charts, graphs, and infographics
+- Maintains visual-textual relationships
+
+## Production Features
+
+### LlamaCloud
+
+LlamaCloud provides managed infrastructure for LlamaIndex applications:
+
+**Managed Ingestion**
+- Scalable document processing pipelines
+- Automatic retry and error handling
+- Incremental updates for large document collections
+- 10,000 free monthly processing credits
+
+**Hosted Retrieval**
+- High-performance vector search endpoints
+- Automatic scaling based on query volume
+- Global CDN for low-latency access
+- Enterprise security and compliance
+
+**Pipeline Management**
+- Visual pipeline designer for complex workflows
+- Monitoring and observability dashboards
+- A/B testing for retrieval configurations
+- Version control for data pipelines
+
+### llama_deploy
+
+Microservice deployment architecture for scalable production:
+
+**Service Architecture**
+- Containerized components for independent scaling
+- Service mesh for reliable inter-service communication
+- Load balancing and auto-scaling capabilities
+- Kubernetes and Docker support
+
+**Workflow Orchestration**
+- Event-driven workflow execution
+- State persistence and checkpointing
+- Error handling and retry mechanisms
+- Human-in-the-loop integration points
+
+### Observability
+
+Comprehensive monitoring and debugging capabilities:
+
+**Tracing and Logging**
+- Detailed execution traces for all operations
+- Performance metrics and latency monitoring
+- Error tracking and debugging information
+- Integration with OpenTelemetry standards
+
+**Evaluation Frameworks**
+- Automated evaluation of retrieval quality
+- Response correctness and relevance scoring
+- A/B testing frameworks for optimization
+- Integration with evaluation services (TruLens, Arize, etc.)
+
+**Production Monitoring**
+- Real-time dashboards for system health
+- Alerting for performance degradation
+- Cost tracking and optimization insights
+- Usage analytics and user behavior tracking
+
+## Model Support
+
+### Language Models
+
+LlamaIndex supports 40+ LLM providers:
+
+**Cloud Providers**
+- OpenAI (GPT-4, GPT-3.5, embeddings)
+- Anthropic (Claude 3, Claude 2)
+- Google (Gemini, PaLM, Vertex AI)
+- Cohere (Command, Generate)
+- Azure OpenAI Service
+
+**Local and Open Source**
+- Ollama for local model deployment
+- Hugging Face Transformers
+- vLLM for high-performance inference
+- Llama.cpp for efficient CPU inference
+- Custom model integration APIs
+
+**Enterprise Solutions**
+- AWS Bedrock with multiple model options
+- Google Vertex AI with managed scaling
+- Azure AI with enterprise security
+- IBM Watson for enterprise deployments
+
+### Embeddings
+
+Text embedding models for semantic search:
+
+**Popular Providers**
+- OpenAI embeddings (text-embedding-3-large/small)
+- Hugging Face models (BGE, E5, Sentence Transformers)
+- Cohere embeddings with multilingual support
+- Google Universal Sentence Encoder
+
+**Specialized Embeddings**
+- Domain-specific models for legal, medical, financial text
+- Multilingual embeddings for global applications
+- Code embeddings for programming-related content
+- Fine-tuned embeddings for specific use cases
+
+### Multi-Modal Capabilities
+
+Support for images, audio, and mixed-media content:
+
+**Vision Models**
+- GPT-4 Vision for image understanding
+- Google Gemini Pro Vision
+- LLaVA for open-source multi-modal
+- Claude 3 with vision capabilities
+
+**Multi-Modal RAG**
+- Index images alongside text documents
+- Visual question answering over document collections
+- Chart and diagram interpretation
+- Multi-modal search and retrieval
+
+For detailed information on specific topics, see:
+- [Advanced RAG Techniques](llamaindex-rag-techniques.txt): Deep dive into retrieval strategies
+- [Agent Development Guide](llamaindex-agents.txt): Building autonomous AI systems
+- [Production Deployment](llamaindex-production.txt): Scaling and monitoring LlamaIndex applications
+- [Integration Examples](llamaindex-examples.txt): Real-world implementation patterns

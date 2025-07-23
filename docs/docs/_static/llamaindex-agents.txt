@@ -1,0 +1,591 @@
+# Agent Development Guide for LlamaIndex
+
+> Building autonomous AI systems that can reason, use tools, and coordinate complex workflows
+
+## What are LlamaIndex Agents?
+
+LlamaIndex agents are autonomous AI systems that combine Large Language Models with tools, memory, and planning capabilities. Unlike simple query-response systems, agents can:
+
+- **Use Tools**: Call functions, APIs, and external services
+- **Maintain Memory**: Remember conversation context and working information
+- **Plan and Reason**: Break down complex tasks into manageable steps
+- **Make Decisions**: Choose appropriate actions based on current state
+- **Handle Errors**: Recover from failures and adapt strategies
+
+## Agent Architecture
+
+### Core Components
+
+**LLM Brain**
+The central reasoning engine that:
+- Interprets user requests and current context
+- Decides which tools to use and when
+- Generates responses and next actions
+- Maintains coherent conversation flow
+
+**Tool Library**
+Functions the agent can execute:
+- Search and retrieval tools
+- Calculation and data processing functions
+- API calls to external services
+- File system operations
+- Custom business logic functions
+
+**Memory System**
+Stores and manages information:
+- **Conversation Memory**: Chat history and context
+- **Working Memory**: Temporary information during task execution
+- **Long-term Memory**: Persistent knowledge and preferences
+- **Tool Memory**: Results from previous tool calls
+
+**Planning Module**
+Orchestrates complex workflows:
+- Task decomposition into subtasks
+- Dependency management between steps
+- Progress tracking and error recovery
+- Resource allocation and optimization
+
+## Agent Types
+
+### ReAct Agents
+
+ReAct (Reasoning + Acting) agents implement a think-act-observe loop:
+
+**How ReAct Works**
+1. **Thought**: Agent reasons about the current situation
+2. **Action**: Agent chooses and executes a tool
+3. **Observation**: Agent processes the tool result
+4. **Repeat**: Continue until task completion
+
+**Implementation Example**
+```python
+from llama_index.core.agent import ReActAgent
+from llama_index.core.tools import FunctionTool
+from llama_index.llms.openai import OpenAI
+
+def search_tool(query: str) -> str:
+    """Search for information using the query."""
+    # Implementation here
+    return search_results
+
+def calculator_tool(expression: str) -> str:
+    """Calculate mathematical expressions."""
+    # Implementation here
+    return str(result)
+
+tools = [
+    FunctionTool.from_defaults(fn=search_tool),
+    FunctionTool.from_defaults(fn=calculator_tool),
+]
+
+agent = ReActAgent.from_tools(
+    tools,
+    llm=OpenAI(model="gpt-4"),
+    verbose=True,
+    max_iterations=10
+)
+
+response = agent.chat("Calculate the market cap of Apple and compare it to Microsoft")
+```
+
+**ReAct Advantages**
+- Transparent reasoning process
+- Good for complex, multi-step problems
+- Self-correcting through observation loop
+- Works well with function-calling LLMs
+
+### Function Calling Agents
+
+Function calling agents use LLM providers' native function calling capabilities:
+
+**How Function Calling Works**
+1. LLM receives function schemas alongside the prompt
+2. LLM decides which functions to call with what parameters
+3. Functions are executed and results returned to LLM
+4. LLM generates response based on function results
+
+**Provider Support**
+- OpenAI: GPT-4, GPT-3.5 with function calling
+- Anthropic: Claude 3 with tool use
+- Mistral: Function calling models
+- Local models: Some support via fine-tuning
+
+**Parallel Function Calling**
+Modern agents can call multiple functions simultaneously:
+```python
+# Agent might call these in parallel:
+weather_result = get_weather("New York")
+news_result = get_news("weather")
+traffic_result = get_traffic("NYC")
+
+# Then synthesize results
+response = synthesize_travel_advice(weather_result, news_result, traffic_result)
+```
+
+### Code Act Agents
+
+Code Act agents generate and execute code to solve problems:
+
+**Capabilities**
+- Write Python code for data analysis
+- Create visualizations and charts
+- Perform complex calculations
+- Manipulate files and data structures
+- Interface with databases and APIs
+
+**Security Considerations**
+- Sandboxed execution environments
+- Code review and validation
+- Limited file system access
+- Resource usage monitoring
+- Timeout mechanisms
+
+**Use Cases**
+- Data analysis and reporting
+- Financial modeling and calculations
+- Scientific computations
+- Automated testing and validation
+- Dynamic content generation
+
+### Multi-Agent Systems
+
+Complex workflows often require multiple specialized agents:
+
+**Agent Coordination Patterns**
+
+**Sequential Handoffs**
+Agents work in sequence, passing results:
+```
+User Query → Research Agent → Analysis Agent → Report Agent → User
+```
+
+**Hierarchical Structure**
+Manager agent coordinates worker agents:
+```
+Manager Agent
+├── Data Collection Agent
+├── Analysis Agent
+└── Presentation Agent
+```
+
+**Collaborative Teams**
+Agents work together on shared tasks:
+```
+Legal Agent ←→ Financial Agent ←→ Technical Agent
+       ↓              ↓              ↓
+            Synthesis Agent
+```
+
+**Agent Handoff Implementation**
+```python
+class ResearchAgent:
+    def research(self, topic):
+        # Perform research
+        return research_results
+
+class AnalysisAgent:
+    def analyze(self, data):
+        # Analyze data
+        return analysis_results
+
+# Workflow orchestrator
+def multi_agent_workflow(query):
+    research_agent = ResearchAgent()
+    analysis_agent = AnalysisAgent()
+
+    # Sequential processing
+    research_results = research_agent.research(query)
+    analysis_results = analysis_agent.analyze(research_results)
+
+    return final_synthesis(research_results, analysis_results)
+```
+
+## Tool Development
+
+### Built-in Tools
+
+LlamaIndex provides many pre-built tools:
+
+**Search and Retrieval**
+- Vector search over document collections
+- Web search (Google, Bing, DuckDuckGo)
+- Database queries (SQL, NoSQL)
+- API searches (Wikipedia, arXiv, etc.)
+
+**Data Processing**
+- Mathematical calculations
+- Data transformation and filtering
+- Statistical analysis
+- File operations
+
+**External Services**
+- Email sending and reading
+- Calendar management
+- Social media posting
+- Cloud service integration
+
+### Custom Tool Creation
+
+Creating domain-specific tools:
+
+**Simple Function Tool**
+```python
+from llama_index.core.tools import FunctionTool
+
+def company_search(company_name: str) -> str:
+    """Search for company information in our proprietary database.
+
+    Args:
+        company_name: Name of the company to search for
+
+    Returns:
+        JSON string with company information
+    """
+    # Implementation
+    return json.dumps(company_data)
+
+tool = FunctionTool.from_defaults(fn=company_search)
+```
+
+**Class-Based Tool**
+```python
+from llama_index.core.tools import BaseTool
+from llama_index.core.tools.tool_spec.base import BaseToolSpec
+
+class DatabaseToolSpec(BaseToolSpec):
+    def __init__(self, connection_string):
+        self.connection = create_connection(connection_string)
+
+    def execute_query(self, query: str) -> str:
+        """Execute SQL query and return results."""
+        results = self.connection.execute(query)
+        return format_results(results)
+
+    def get_table_schema(self, table_name: str) -> str:
+        """Get schema information for a table."""
+        schema = self.connection.get_schema(table_name)
+        return format_schema(schema)
+
+# Convert to tools
+db_tools = DatabaseToolSpec(connection_string).to_tool_list()
+```
+
+**Tool with State Management**
+```python
+class StatefulCalculator(BaseTool):
+    def __init__(self):
+        self.memory = {}
+        self.history = []
+
+    def calculate(self, expression: str, save_as: str = None) -> str:
+        """Calculate expression and optionally save result."""
+        result = eval(expression)  # Note: Use safe_eval in production
+
+        self.history.append((expression, result))
+
+        if save_as:
+            self.memory[save_as] = result
+
+        return f"Result: {result}"
+
+    def recall(self, variable_name: str) -> str:
+        """Recall a saved calculation result."""
+        if variable_name in self.memory:
+            return str(self.memory[variable_name])
+        return f"Variable {variable_name} not found"
+```
+
+## Advanced Agent Patterns
+
+### Agent with RAG Integration
+
+Combining agents with retrieval-augmented generation:
+
+```python
+from llama_index.core import VectorStoreIndex
+from llama_index.core.agent import FunctionCallingAgentWorker
+from llama_index.core.tools import QueryEngineTool
+
+# Create RAG system
+index = VectorStoreIndex.from_documents(documents)
+query_engine = index.as_query_engine()
+
+# Create tool from query engine
+rag_tool = QueryEngineTool.from_defaults(
+    query_engine=query_engine,
+    name="company_docs",
+    description="Search company documentation and policies"
+)
+
+# Create agent with RAG tool
+agent = FunctionCallingAgentWorker.from_tools([rag_tool, ...])
+```
+
+### Workflow Integration
+
+Agents can participate in larger workflow systems:
+
+```python
+from llama_index.core.workflow import Workflow, StartEvent, StopEvent
+
+class AgentWorkflow(Workflow):
+    @step
+    async def research_step(self, ev: StartEvent) -> ResearchEvent:
+        research_agent = ResearchAgent()
+        results = await research_agent.research(ev.query)
+        return ResearchEvent(results=results)
+
+    @step
+    async def analysis_step(self, ev: ResearchEvent) -> AnalysisEvent:
+        analysis_agent = AnalysisAgent()
+        analysis = await analysis_agent.analyze(ev.results)
+        return AnalysisEvent(analysis=analysis)
+
+    @step
+    async def synthesis_step(self, ev: AnalysisEvent) -> StopEvent:
+        synthesis_agent = SynthesisAgent()
+        final_report = await synthesis_agent.synthesize(ev.analysis)
+        return StopEvent(result=final_report)
+```
+
+### Human-in-the-Loop Agents
+
+Agents that can request human intervention:
+
+```python
+class HumanApprovalTool(BaseTool):
+    def request_approval(self, action: str, details: str) -> str:
+        """Request human approval for sensitive actions."""
+        print(f"Agent requesting approval for: {action}")
+        print(f"Details: {details}")
+
+        approval = input("Approve? (y/n): ")
+        return "approved" if approval.lower() == 'y' else "denied"
+
+class SupervisedAgent(FunctionCallingAgent):
+    def execute_tool(self, tool_call):
+        # Check if tool requires approval
+        if tool_call.tool_name in self.approval_required_tools:
+            approval_result = self.approval_tool.request_approval(
+                tool_call.tool_name,
+                str(tool_call.tool_kwargs)
+            )
+            if approval_result != "approved":
+                return "Action denied by human supervisor"
+
+        return super().execute_tool(tool_call)
+```
+
+## Memory Management
+
+### Conversation Memory
+
+Managing chat history and context:
+
+**Token-Based Memory**
+```python
+from llama_index.core.memory import ChatMemoryBuffer
+
+memory = ChatMemoryBuffer.from_defaults(
+    token_limit=4000,  # Keep conversation within token limit
+    tokenizer_fn=tiktoken_tokenizer,  # Custom tokenizer
+)
+
+agent = ReActAgent.from_tools(tools, memory=memory)
+```
+
+**Summarization Memory**
+```python
+class SummarizingMemory(BaseChatMemory):
+    def __init__(self, summary_llm, max_tokens=2000):
+        self.summary_llm = summary_llm
+        self.max_tokens = max_tokens
+        self.messages = []
+        self.summary = ""
+
+    def put(self, message):
+        self.messages.append(message)
+        if self.estimate_tokens() > self.max_tokens:
+            self.summarize_and_compress()
+
+    def summarize_and_compress(self):
+        # Create summary of older messages
+        old_messages = self.messages[:-10]  # Keep recent messages
+        summary_prompt = f"Summarize this conversation: {old_messages}"
+        self.summary = self.summary_llm.complete(summary_prompt)
+        self.messages = self.messages[-10:]  # Keep recent messages
+```
+
+### Working Memory
+
+Temporary storage during task execution:
+
+```python
+class WorkingMemoryAgent(ReActAgent):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.working_memory = {}
+        self.task_progress = {}
+
+    def store_intermediate_result(self, key: str, value: any):
+        """Store intermediate results during task execution."""
+        self.working_memory[key] = value
+
+    def get_intermediate_result(self, key: str):
+        """Retrieve stored intermediate results."""
+        return self.working_memory.get(key)
+
+    def clear_working_memory(self):
+        """Clear working memory after task completion."""
+        self.working_memory.clear()
+        self.task_progress.clear()
+```
+
+## Error Handling and Recovery
+
+### Robust Tool Execution
+
+```python
+class RobustAgent(FunctionCallingAgent):
+    def execute_tool_with_retry(self, tool_call, max_retries=3):
+        for attempt in range(max_retries):
+            try:
+                result = self.execute_tool(tool_call)
+                return result
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    return f"Tool execution failed after {max_retries} attempts: {str(e)}"
+
+                # Wait before retry with exponential backoff
+                time.sleep(2 ** attempt)
+
+                # Modify tool call if needed based on error
+                tool_call = self.adapt_tool_call_for_retry(tool_call, e)
+
+    def adapt_tool_call_for_retry(self, tool_call, error):
+        """Modify tool parameters based on error type."""
+        if "timeout" in str(error).lower():
+            # Reduce request size or complexity
+            pass
+        elif "rate limit" in str(error).lower():
+            # Wait longer before retry
+            time.sleep(60)
+        return tool_call
+```
+
+### Graceful Degradation
+
+```python
+class GracefulAgent(FunctionCallingAgent):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fallback_strategies = {
+            "search_tool": self.fallback_search,
+            "calculation_tool": self.fallback_calculation,
+        }
+
+    def execute_tool(self, tool_call):
+        try:
+            return super().execute_tool(tool_call)
+        except Exception as e:
+            # Try fallback strategy
+            if tool_call.tool_name in self.fallback_strategies:
+                fallback_fn = self.fallback_strategies[tool_call.tool_name]
+                return fallback_fn(tool_call.tool_kwargs)
+
+            # If no fallback, inform user and continue
+            return f"Tool {tool_call.tool_name} temporarily unavailable. Continuing with available information."
+```
+
+## Performance Optimization
+
+### Parallel Tool Execution
+
+```python
+import asyncio
+
+class ParallelAgent(FunctionCallingAgent):
+    async def execute_parallel_tools(self, tool_calls):
+        """Execute multiple tools in parallel."""
+        tasks = []
+        for tool_call in tool_calls:
+            task = asyncio.create_task(self.execute_tool_async(tool_call))
+            tasks.append(task)
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        return results
+```
+
+### Tool Result Caching
+
+```python
+from functools import lru_cache
+import hashlib
+
+class CachingAgent(FunctionCallingAgent):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.tool_cache = {}
+
+    def execute_tool_with_cache(self, tool_call):
+        # Create cache key from tool call
+        cache_key = self.create_cache_key(tool_call)
+
+        if cache_key in self.tool_cache:
+            return self.tool_cache[cache_key]
+
+        result = self.execute_tool(tool_call)
+        self.tool_cache[cache_key] = result
+        return result
+
+    def create_cache_key(self, tool_call):
+        tool_str = f"{tool_call.tool_name}:{str(tool_call.tool_kwargs)}"
+        return hashlib.md5(tool_str.encode()).hexdigest()
+```
+
+## Production Deployment
+
+### Agent Monitoring
+
+```python
+import logging
+from datetime import datetime
+
+class MonitoredAgent(FunctionCallingAgent):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.logger = logging.getLogger(f"agent_{id(self)}")
+        self.metrics = {
+            "tool_calls": 0,
+            "successful_calls": 0,
+            "failed_calls": 0,
+            "response_times": []
+        }
+
+    def execute_tool(self, tool_call):
+        start_time = datetime.now()
+        self.metrics["tool_calls"] += 1
+
+        try:
+            result = super().execute_tool(tool_call)
+            self.metrics["successful_calls"] += 1
+            self.logger.info(f"Tool {tool_call.tool_name} executed successfully")
+            return result
+        except Exception as e:
+            self.metrics["failed_calls"] += 1
+            self.logger.error(f"Tool {tool_call.tool_name} failed: {str(e)}")
+            raise
+        finally:
+            execution_time = (datetime.now() - start_time).total_seconds()
+            self.metrics["response_times"].append(execution_time)
+```
+
+### Scaling Considerations
+
+- **Stateless Design**: Minimize agent state for horizontal scaling
+- **Resource Management**: Monitor memory usage and execution times
+- **Rate Limiting**: Implement backoff for external API calls
+- **Load Balancing**: Distribute agent workload across instances
+- **Circuit Breakers**: Prevent cascade failures from tool dependencies
+
+Agents represent the cutting edge of LLM applications, enabling autonomous AI systems that can handle complex, real-world tasks with minimal human intervention.

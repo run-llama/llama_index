@@ -1,0 +1,696 @@
+# Real-World Implementation Patterns for LlamaIndex
+
+> Practical examples and code patterns for building production LlamaIndex applications
+
+## Getting Started Examples
+
+### Basic RAG System with OpenAI
+
+A simple yet complete RAG implementation:
+
+```python
+import os
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.llms.openai import OpenAI
+
+# Configure global settings
+Settings.llm = OpenAI(model="gpt-4o-mini", temperature=0.1)
+Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-small")
+
+# Load documents from a directory
+documents = SimpleDirectoryReader("./data").load_data()
+
+# Create vector index
+index = VectorStoreIndex.from_documents(documents)
+
+# Create query engine
+query_engine = index.as_query_engine(similarity_top_k=3)
+
+# Query the system
+response = query_engine.query("What are the main benefits of using LlamaIndex?")
+print(response)
+
+# Create chat engine for conversational interface
+chat_engine = index.as_chat_engine(chat_mode="best", verbose=True)
+chat_response = chat_engine.chat("Can you elaborate on those benefits?")
+print(chat_response)
+```
+
+### Local Models with Ollama
+
+Running completely local with no external API calls:
+
+```python
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader, Settings
+from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.llms.ollama import Ollama
+
+# Configure local models
+Settings.llm = Ollama(model="llama3.1", context_window=8000, temperature=0.1)
+Settings.embed_model = HuggingFaceEmbedding(
+    model_name="BAAI/bge-base-en-v1.5"
+)
+
+# Set chunk size for local models
+Settings.chunk_size = 512
+Settings.chunk_overlap = 50
+
+# Rest of the implementation is identical
+documents = SimpleDirectoryReader("./data").load_data()
+index = VectorStoreIndex.from_documents(documents)
+query_engine = index.as_query_engine()
+
+response = query_engine.query("Summarize the key concepts in these documents")
+print(response)
+```
+
+## Advanced RAG Patterns
+
+### Hybrid Retrieval with Keyword and Vector Search
+
+Combining semantic and keyword search for better precision:
+
+```python
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.retrievers.bm25 import BM25Retriever
+from llama_index.core.retrievers import QueryFusionRetriever
+from llama_index.core.query_engine import RetrieverQueryEngine
+
+# Load and index documents
+documents = SimpleDirectoryReader("./data").load_data()
+index = VectorStoreIndex.from_documents(documents)
+
+# Create vector retriever
+vector_retriever = index.as_retriever(similarity_top_k=10)
+
+# Create BM25 retriever for keyword matching
+bm25_retriever = BM25Retriever.from_defaults(
+    docstore=index.docstore,
+    similarity_top_k=10
+)
+
+# Combine retrievers with fusion
+fusion_retriever = QueryFusionRetriever(
+    [vector_retriever, bm25_retriever],
+    similarity_top_k=5,
+    num_queries=4,  # Generate query variations
+    mode="reciprocal_rerank",  # Fusion algorithm
+    use_async=True,
+    verbose=True,
+)
+
+# Create query engine with hybrid retrieval
+query_engine = RetrieverQueryEngine.from_args(
+    retriever=fusion_retriever,
+    response_mode="compact"
+)
+
+# Test the hybrid system
+response = query_engine.query(
+    "What specific metrics were mentioned for Q3 financial performance?"
+)
+print(f"Response: {response}")
+print(f"Source nodes: {len(response.source_nodes)}")
+```
+
+### Auto-Merging Retrieval for Better Context
+
+Automatically merge related chunks for more coherent context:
+
+```python
+from llama_index.core import VectorStoreIndex
+from llama_index.core.node_parser import HierarchicalNodeParser
+from llama_index.core.node_parser import get_leaf_nodes
+from llama_index.retrievers.auto_merging_retriever import AutoMergingRetriever
+from llama_index.core.query_engine import RetrieverQueryEngine
+
+# Create hierarchical node parser
+node_parser = HierarchicalNodeParser.from_defaults(
+    chunk_sizes=[2048, 512, 128]  # Large -> Medium -> Small chunks
+)
+
+# Parse documents into hierarchical nodes
+nodes = node_parser.get_nodes_from_documents(documents)
+leaf_nodes = get_leaf_nodes(nodes)
+
+# Create index from leaf nodes
+index = VectorStoreIndex(leaf_nodes)
+
+# Create auto-merging retriever
+retriever = AutoMergingRetriever(
+    index.as_retriever(similarity_top_k=12),
+    index.storage_context,
+    verbose=True
+)
+
+# Create query engine
+query_engine = RetrieverQueryEngine.from_args(retriever)
+
+# Query with automatic context merging
+response = query_engine.query(
+    "Explain the complete process described in the documentation"
+)
+
+# The retriever automatically merges related small chunks
+# into larger, more coherent context
+print(f"Merged context from {len(response.source_nodes)} chunks")
+```
+
+## Agent Examples
+
+### Simple ReAct Agent with Tools
+
+Building an agent that can use tools to answer questions:
+
+```python
+from llama_index.core.agent import ReActAgent
+from llama_index.core.tools import FunctionTool
+from llama_index.llms.openai import OpenAI
+import requests
+import json
+
+# Define tool functions
+def search_web(query: str) -> str:
+    """Search the web for current information."""
+    # Simulated web search - replace with actual search API
+    return f"Web search results for '{query}': [Simulated results]"
+
+def calculate(expression: str) -> str:
+    """Calculate mathematical expressions safely."""
+    try:
+        # Simple calculator - use more sophisticated math parser in production
+        result = eval(expression.replace("^", "**"))
+        return f"Result: {result}"
+    except Exception as e:
+        return f"Error calculating {expression}: {str(e)}"
+
+def get_weather(city: str) -> str:
+    """Get current weather for a city."""
+    # Replace with actual weather API
+    return f"Current weather in {city}: 72°F, sunny"
+
+# Create tools from functions
+tools = [
+    FunctionTool.from_defaults(fn=search_web),
+    FunctionTool.from_defaults(fn=calculate),
+    FunctionTool.from_defaults(fn=get_weather),
+]
+
+# Create ReAct agent
+agent = ReActAgent.from_tools(
+    tools,
+    llm=OpenAI(model="gpt-4"),
+    verbose=True,
+    max_iterations=10
+)
+
+# Agent conversation
+response = agent.chat("What's the weather in New York and what's 15% of 2500?")
+print(response)
+
+# Continue conversation with memory
+follow_up = agent.chat("Can you search for news about weather patterns?")
+print(follow_up)
+```
+
+### Multi-Agent Research System
+
+Coordinating multiple specialized agents:
+
+```python
+from llama_index.core.agent import FunctionCallingAgentWorker
+from llama_index.core.agent import AgentRunner
+from llama_index.core.tools import QueryEngineTool
+from llama_index.llms.openai import OpenAI
+
+class MultiAgentResearchSystem:
+    def __init__(self, documents):
+        self.llm = OpenAI(model="gpt-4", temperature=0.1)
+        self.setup_specialized_agents(documents)
+
+    def setup_specialized_agents(self, documents):
+        # Create specialized indexes for different types of content
+        financial_docs = [doc for doc in documents if "financial" in doc.metadata.get("category", "")]
+        technical_docs = [doc for doc in documents if "technical" in doc.metadata.get("category", "")]
+
+        # Financial analysis agent
+        self.financial_index = VectorStoreIndex.from_documents(financial_docs)
+        financial_tool = QueryEngineTool.from_defaults(
+            query_engine=self.financial_index.as_query_engine(),
+            name="financial_analysis",
+            description="Analyzes financial data, reports, and metrics"
+        )
+
+        self.financial_agent = AgentRunner(
+            FunctionCallingAgentWorker.from_tools(
+                [financial_tool],
+                llm=self.llm,
+                system_prompt="You are a financial analyst. Focus on financial metrics, trends, and insights."
+            )
+        )
+
+        # Technical analysis agent
+        self.technical_index = VectorStoreIndex.from_documents(technical_docs)
+        technical_tool = QueryEngineTool.from_defaults(
+            query_engine=self.technical_index.as_query_engine(),
+            name="technical_analysis",
+            description="Analyzes technical specifications, architectures, and implementations"
+        )
+
+        self.technical_agent = AgentRunner(
+            FunctionCallingAgentWorker.from_tools(
+                [technical_tool],
+                llm=self.llm,
+                system_prompt="You are a technical analyst. Focus on technical details, implementations, and architectures."
+            )
+        )
+
+    async def comprehensive_analysis(self, question: str):
+        """Coordinate multiple agents for comprehensive analysis."""
+
+        # Get perspectives from both agents
+        financial_response = await self.financial_agent.achat(
+            f"From a financial perspective: {question}"
+        )
+
+        technical_response = await self.technical_agent.achat(
+            f"From a technical perspective: {question}"
+        )
+
+        # Synthesize responses
+        synthesis_prompt = f"""
+        Synthesize these two expert perspectives into a comprehensive analysis:
+
+        Financial Analysis:
+        {financial_response.response}
+
+        Technical Analysis:
+        {technical_response.response}
+
+        Original Question: {question}
+
+        Provide a balanced, comprehensive response that incorporates both perspectives.
+        """
+
+        final_response = self.llm.complete(synthesis_prompt)
+
+        return {
+            "comprehensive_analysis": str(final_response),
+            "financial_perspective": str(financial_response.response),
+            "technical_perspective": str(technical_response.response)
+        }
+
+# Usage example
+research_system = MultiAgentResearchSystem(documents)
+result = await research_system.comprehensive_analysis(
+    "What are the key factors affecting our product's market performance?"
+)
+
+print("Comprehensive Analysis:")
+print(result["comprehensive_analysis"])
+```
+
+## Production Integration Examples
+
+### FastAPI REST API Service
+
+Building a production-ready API service:
+
+```python
+from fastapi import FastAPI, HTTPException, BackgroundTasks
+from pydantic import BaseModel
+from typing import List, Optional
+import asyncio
+import logging
+from contextlib import asynccontextmanager
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Global variables for index
+index = None
+query_engine = None
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Initialize the index
+    global index, query_engine
+    logger.info("Initializing LlamaIndex...")
+
+    documents = SimpleDirectoryReader("./data").load_data()
+    index = VectorStoreIndex.from_documents(documents)
+    query_engine = index.as_query_engine()
+
+    logger.info("LlamaIndex initialized successfully")
+    yield
+
+    # Shutdown: Clean up resources
+    logger.info("Shutting down...")
+
+# Create FastAPI app with lifespan
+app = FastAPI(
+    title="LlamaIndex API",
+    description="Production RAG API with LlamaIndex",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+# Request/Response models
+class QueryRequest(BaseModel):
+    question: str
+    max_tokens: Optional[int] = 1000
+    temperature: Optional[float] = 0.1
+
+class QueryResponse(BaseModel):
+    answer: str
+    sources: List[dict]
+    metadata: dict
+
+class ChatRequest(BaseModel):
+    message: str
+    session_id: str
+
+# Store chat sessions
+chat_sessions = {}
+
+@app.post("/query", response_model=QueryResponse)
+async def query_documents(request: QueryRequest):
+    """Query the document index."""
+    try:
+        if not query_engine:
+            raise HTTPException(status_code=503, detail="Service not ready")
+
+        # Execute query
+        response = query_engine.query(request.question)
+
+        # Format sources
+        sources = []
+        for node in response.source_nodes:
+            sources.append({
+                "content": node.text[:200] + "..." if len(node.text) > 200 else node.text,
+                "metadata": node.metadata,
+                "score": node.score if hasattr(node, 'score') else None
+            })
+
+        return QueryResponse(
+            answer=str(response),
+            sources=sources,
+            metadata={
+                "query_length": len(request.question),
+                "num_sources": len(sources),
+                "model_used": "gpt-4o-mini"
+            }
+        )
+
+    except Exception as e:
+        logger.error(f"Query failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Query failed: {str(e)}")
+
+@app.post("/chat")
+async def chat_with_documents(request: ChatRequest):
+    """Maintain conversational context."""
+    try:
+        # Get or create chat engine for this session
+        if request.session_id not in chat_sessions:
+            chat_sessions[request.session_id] = index.as_chat_engine()
+
+        chat_engine = chat_sessions[request.session_id]
+        response = chat_engine.chat(request.message)
+
+        return {
+            "response": str(response),
+            "session_id": request.session_id
+        }
+
+    except Exception as e:
+        logger.error(f"Chat failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Chat failed: {str(e)}")
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {
+        "status": "healthy",
+        "index_ready": index is not None,
+        "query_engine_ready": query_engine is not None
+    }
+
+@app.post("/reindex")
+async def reindex_documents(background_tasks: BackgroundTasks):
+    """Trigger reindexing in the background."""
+    background_tasks.add_task(rebuild_index)
+    return {"message": "Reindexing started"}
+
+async def rebuild_index():
+    """Rebuild the index with latest documents."""
+    global index, query_engine
+    try:
+        logger.info("Starting reindex...")
+        documents = SimpleDirectoryReader("./data").load_data()
+        new_index = VectorStoreIndex.from_documents(documents)
+
+        # Atomic replacement
+        index = new_index
+        query_engine = index.as_query_engine()
+
+        logger.info("Reindex completed successfully")
+    except Exception as e:
+        logger.error(f"Reindex failed: {str(e)}")
+
+# Run with: uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+### Streamlit Chat Interface
+
+Building an interactive chat interface:
+
+```python
+import streamlit as st
+from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
+from llama_index.core.memory import ChatMemoryBuffer
+import time
+
+# Configure Streamlit page
+st.set_page_config(
+    page_title="Document Chat Assistant",
+    page_icon="🤖",
+    layout="wide"
+)
+
+@st.cache_resource
+def initialize_index():
+    """Initialize and cache the index."""
+    with st.spinner("Loading documents and building index..."):
+        documents = SimpleDirectoryReader("./data").load_data()
+        index = VectorStoreIndex.from_documents(documents)
+        return index
+
+@st.cache_resource
+def create_chat_engine(_index):
+    """Create and cache the chat engine."""
+    memory = ChatMemoryBuffer.from_defaults(token_limit=3000)
+    return _index.as_chat_engine(
+        chat_mode="condense_plus_context",
+        memory=memory,
+        system_prompt="You are a helpful assistant that answers questions based on the provided documents. Always cite your sources."
+    )
+
+def main():
+    st.title("🤖 Document Chat Assistant")
+    st.caption("Ask questions about your documents")
+
+    # Initialize index and chat engine
+    try:
+        index = initialize_index()
+        chat_engine = create_chat_engine(index)
+    except Exception as e:
+        st.error(f"Failed to initialize: {str(e)}")
+        return
+
+    # Sidebar with document info
+    with st.sidebar:
+        st.header("Document Information")
+        st.info(f"Documents loaded: {len(index.ref_doc_info)}")
+
+        # Add document upload capability
+        uploaded_files = st.file_uploader(
+            "Upload additional documents",
+            accept_multiple_files=True,
+            type=['txt', 'pdf', 'docx']
+        )
+
+        if uploaded_files:
+            if st.button("Process uploaded files"):
+                with st.spinner("Processing uploaded files..."):
+                    # Process uploaded files
+                    # Implementation depends on file types
+                    st.success("Files processed successfully!")
+                    st.rerun()
+
+    # Chat interface
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+        st.session_state.messages.append({
+            "role": "assistant",
+            "content": "Hello! I'm here to help you with questions about your documents. What would you like to know?"
+        })
+
+    # Display chat history
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.write(message["content"])
+
+            # Show sources for assistant messages
+            if message["role"] == "assistant" and "sources" in message:
+                with st.expander("View Sources"):
+                    for i, source in enumerate(message["sources"]):
+                        st.write(f"**Source {i+1}:**")
+                        st.write(source["text"][:300] + "...")
+                        st.write(f"*File: {source.get('file_name', 'Unknown')}*")
+
+    # Chat input
+    if prompt := st.chat_input("Ask a question about your documents"):
+        # Add user message
+        st.session_state.messages.append({"role": "user", "content": prompt})
+
+        with st.chat_message("user"):
+            st.write(prompt)
+
+        # Generate response
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                start_time = time.time()
+                response = chat_engine.chat(prompt)
+                response_time = time.time() - start_time
+
+                # Display response
+                st.write(str(response))
+
+                # Show response metadata
+                st.caption(f"Response generated in {response_time:.2f} seconds")
+
+                # Prepare sources for display
+                sources = []
+                if hasattr(response, 'source_nodes'):
+                    sources = [
+                        {
+                            "text": node.text,
+                            "file_name": node.metadata.get("file_name", "Unknown"),
+                            "score": getattr(node, 'score', None)
+                        }
+                        for node in response.source_nodes
+                    ]
+
+                # Add assistant message with sources
+                st.session_state.messages.append({
+                    "role": "assistant",
+                    "content": str(response),
+                    "sources": sources
+                })
+
+    # Add clear chat button
+    if st.button("Clear Chat History"):
+        st.session_state.messages = []
+        st.rerun()
+
+if __name__ == "__main__":
+    main()
+
+# Run with: streamlit run app.py
+```
+
+### Database Integration Example
+
+Connecting LlamaIndex with SQL databases:
+
+```python
+from llama_index.core import SQLDatabase
+from llama_index.core.query_engine import NLSQLTableQueryEngine
+from llama_index.core.tools import QueryEngineTool
+from llama_index.core.agent import ReActAgent
+from sqlalchemy import create_engine, MetaData, Table, Column, String, Integer, Float
+
+# Database setup
+DATABASE_URL = "sqlite:///./example.db"
+engine = create_engine(DATABASE_URL)
+
+# Create sample tables
+metadata = MetaData()
+
+customers = Table(
+    'customers', metadata,
+    Column('id', Integer, primary_key=True),
+    Column('name', String(100)),
+    Column('email', String(100)),
+    Column('city', String(50))
+)
+
+orders = Table(
+    'orders', metadata,
+    Column('id', Integer, primary_key=True),
+    Column('customer_id', Integer),
+    Column('product', String(100)),
+    Column('amount', Float),
+    Column('order_date', String(20))
+)
+
+metadata.create_all(engine)
+
+# Insert sample data
+with engine.connect() as conn:
+    conn.execute(customers.insert().values([
+        {'name': 'John Doe', 'email': 'john@example.com', 'city': 'New York'},
+        {'name': 'Jane Smith', 'email': 'jane@example.com', 'city': 'Los Angeles'},
+    ]))
+
+    conn.execute(orders.insert().values([
+        {'customer_id': 1, 'product': 'Widget A', 'amount': 99.99, 'order_date': '2024-01-15'},
+        {'customer_id': 2, 'product': 'Widget B', 'amount': 149.99, 'order_date': '2024-01-16'},
+    ]))
+    conn.commit()
+
+# Create LlamaIndex SQL interface
+sql_database = SQLDatabase(engine, include_tables=["customers", "orders"])
+
+# Create natural language SQL query engine
+sql_query_engine = NLSQLTableQueryEngine(
+    sql_database=sql_database,
+    tables=["customers", "orders"],
+    verbose=True
+)
+
+# Create agent with SQL capabilities
+sql_tool = QueryEngineTool.from_defaults(
+    query_engine=sql_query_engine,
+    name="sql_database",
+    description="Query the customer and orders database using natural language"
+)
+
+# Also add document query capability
+documents = SimpleDirectoryReader("./data").load_data()
+doc_index = VectorStoreIndex.from_documents(documents)
+doc_tool = QueryEngineTool.from_defaults(
+    query_engine=doc_index.as_query_engine(),
+    name="documents",
+    description="Search and query company documents and policies"
+)
+
+# Create multi-modal agent
+agent = ReActAgent.from_tools([sql_tool, doc_tool], verbose=True)
+
+# Example queries combining structured and unstructured data
+response1 = agent.chat("How many customers do we have in New York?")
+print("SQL Query Response:", response1)
+
+response2 = agent.chat("What's our refund policy according to the documents?")
+print("Document Query Response:", response2)
+
+response3 = agent.chat(
+    "Show me customers who ordered Widget A and check if our return policy covers their purchase"
+)
+print("Combined Query Response:", response3)
+```
+
+These examples demonstrate real-world patterns for implementing LlamaIndex in production environments, from simple RAG systems to complex multi-agent architectures with database integration and web interfaces.
