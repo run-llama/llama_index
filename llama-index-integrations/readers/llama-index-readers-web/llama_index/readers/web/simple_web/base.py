@@ -35,7 +35,7 @@ class SimpleWebPageReader(BasePydanticReader):
         self,
         html_to_text: bool = False,
         metadata_fn: Optional[Callable[[str], Dict]] = None,
-        timeout: Optional[int] = None,
+        timeout: Optional[int] = 60,
         fail_on_error: bool = False,
     ) -> None:
         """Initialize with parameters."""

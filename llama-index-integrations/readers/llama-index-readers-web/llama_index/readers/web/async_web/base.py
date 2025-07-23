@@ -29,7 +29,7 @@ class AsyncWebPageReader(BaseReader):
         limit: int = 10,
         dedupe: bool = True,
         fail_on_error: bool = False,
-        timeout: Optional[int] = None,
+        timeout: Optional[int] = 60,
     ) -> None:
         """Initialize with parameters."""
         try:
