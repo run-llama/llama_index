@@ -1751,6 +1751,7 @@ nav:
           - ./api_reference/tools/ionic_shopping.md
           - ./api_reference/tools/jina.md
           - ./api_reference/tools/jira.md
+          - ./api_reference/tools/jira_issue.md
           - ./api_reference/tools/linkup_research.md
           - ./api_reference/tools/load_and_search.md
           - ./api_reference/tools/mcp.md
@@ -2516,6 +2517,7 @@ plugins:
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-s3
             - ../llama-index-integrations/readers/llama-index-readers-service-now
             - ../llama-index-integrations/llms/llama-index-llms-cloudflare-ai-gateway
+            - ../llama-index-integrations/tools/llama-index-tools-jira-issue
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

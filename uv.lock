@@ -1336,7 +1336,7 @@ dev = [
 requires-dist = [
     { name = "llama-index-agent-openai", specifier = ">=0.4.0,<0.5" },
     { name = "llama-index-cli", specifier = ">=0.4.2,<0.5" },
-    { name = "llama-index-core", specifier = ">=0.12.52,<0.13" },
+    { name = "llama-index-core", specifier = ">=0.12.52.post1,<0.13" },
     { name = "llama-index-embeddings-openai", specifier = ">=0.3.0,<0.4" },
     { name = "llama-index-indices-managed-llama-cloud", specifier = ">=0.4.0" },
     { name = "llama-index-llms-openai", specifier = ">=0.4.0,<0.5" },
@@ -1401,7 +1401,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.12.52"
+version = "0.12.52.post1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1435,9 +1435,9 @@ dependencies = [
     { name = "typing-inspect" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/28/b2/cbcfa9f25876477067269f6c31d4ff7ed02c0a12563308b4b9dc0db8859b/llama_index_core-0.12.52.tar.gz", hash = "sha256:4cf58dce96d8bd46722dc595c058bcd0e546a900fb5b93b06b9ca052c198f0a4", size = 7278997, upload-time = "2025-07-22T23:35:25.916Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9e/3b/3937a1756a02e549a776272371dd6ec3a4541833b2dbb8ef58e61167f9c9/llama_index_core-0.12.52.post1.tar.gz", hash = "sha256:ac6f447271e5ac4c12e1901373ec4b5ac7814ea33bd1ad3c3c8e9ac9771834ab", size = 7279221, upload-time = "2025-07-23T17:32:33.961Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7c/de/b18815e198c62aca3edce89fa6a014552ca56a114d32cb6dc8dcc32100f9/llama_index_core-0.12.52-py3-none-any.whl", hash = "sha256:c75719bb46a445c2917b1c6631c633247b4a3a0a0b82b8c166df7565bd0ff241", size = 7649966, upload-time = "2025-07-22T23:35:17.961Z" },
+    { url = "https://files.pythonhosted.org/packages/51/48/8f6ea9f2a2f5a080166f0a45a252609df32cc1ad626836aaad2424e2c7ec/llama_index_core-0.12.52.post1-py3-none-any.whl", hash = "sha256:3e28d65d238bad8ec5ce372659ae0a3878851c6ba9c9447d6ddb4de138694b1f", size = 7649855, upload-time = "2025-07-23T17:32:28.271Z" },
 ]
 
 [[package]]
