@@ -352,12 +352,6 @@ class BaseWorkflowAgent(
         """Main agent handling logic."""
         llm_input = [*ev.input]
 
-        if self.system_prompt:
-            llm_input = [
-                ChatMessage(role="system", content=self.system_prompt),
-                *llm_input,
-            ]
-
         state = await ctx.store.get("state", default=None)
         formatted_input_with_state = await ctx.store.get(
             "formatted_input_with_state", default=False

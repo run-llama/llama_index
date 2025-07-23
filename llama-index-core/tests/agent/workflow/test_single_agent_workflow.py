@@ -153,8 +153,11 @@ def retry_calculator_agent():
 async def test_single_function_agent(function_agent):
     """Test single agent with state management."""
     handler = function_agent.run(user_msg="test")
-    async for _ in handler.stream_events():
-        pass
+    async for event in handler.stream_events():
+        if isinstance(event, AgentInput):
+            assert (
+                sum(message.role == MessageRole.SYSTEM for message in event.input) == 1
+            )
 
     response = await handler
     assert "Success with the FunctionAgent" in str(response.response)
