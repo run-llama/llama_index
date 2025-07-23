@@ -484,8 +484,14 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                     )
             if self.output_cls is not None:
                 try:
+                    llm_input = [*messages]
+                    if agent.system_prompt:
+                        llm_input = [
+                            ChatMessage(role="system", content=agent.system_prompt),
+                            *llm_input,
+                        ]
                     output.structured_response = await generate_structured_response(
-                        messages=messages, llm=agent.llm, output_cls=self.output_cls
+                        messages=llm_input, llm=agent.llm, output_cls=self.output_cls
                     )
                     ctx.write_event_to_stream(
                         AgentStreamStructuredOutput(output=output.structured_response)
