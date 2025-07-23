@@ -3,7 +3,7 @@
 import json
 
 from llama_index.core.llms import ChatMessage, TextBlock
-from typing import List, Type, Dict, Any, cast
+from typing import List, Type, Dict, Any, Optional, cast
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.agent.types import TaskStep
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
@@ -21,9 +21,12 @@ def add_user_step_to_memory(
         print(f"Added user message to memory: {step.input}")
 
 
-def messages_to_xml_format(messages: List[ChatMessage]) -> ChatMessage:
+def messages_to_xml_format(messages: List[ChatMessage]) -> List[ChatMessage]:
     blocks = [TextBlock(text="<current_conversation>\n")]
+    system_msg: Optional[ChatMessage] = None
     for message in messages:
+        if message.role.value == "system":
+            system_msg = message
         blocks.append(TextBlock(text=f"\t<{message.role.value}>\n"))
         for block in message.blocks:
             if isinstance(block, TextBlock):
@@ -35,7 +38,10 @@ def messages_to_xml_format(messages: List[ChatMessage]) -> ChatMessage:
             text="Given the conversation, format the output according to the provided schema."
         )
     )
-    return ChatMessage(role="user", blocks=blocks)
+    messages = [ChatMessage(role="user", blocks=blocks)]
+    if system_msg:
+        messages.insert(0, system_msg)
+    return messages
 
 
 async def generate_structured_response(
@@ -44,5 +50,5 @@ async def generate_structured_response(
     xml_message = messages_to_xml_format(messages)
     structured_response = await llm.as_structured_llm(
         output_cls,
-    ).achat(messages=[xml_message])
+    ).achat(messages=xml_message)
     return cast(Dict[str, Any], json.loads(structured_response.message.content))

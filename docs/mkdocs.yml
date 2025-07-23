@@ -67,6 +67,7 @@ nav:
           - Using Structured LLMs: ./understanding/extraction/structured_llms.md
           - Structured Prediction: ./understanding/extraction/structured_prediction.md
           - Lower-level extraction: ./understanding/extraction/lower_level.md
+          - Bonus - Structured Input: ./understanding/extraction/structured_input.md
       - Tracing and Debugging: ./understanding/tracing_and_debugging/tracing_and_debugging.md
       - Evaluating:
           - ./understanding/evaluating/evaluating.md
@@ -542,6 +543,7 @@ nav:
           - ./examples/prompts/emotion_prompt.ipynb
           - ./examples/prompts/prompt_mixin.ipynb
           - ./examples/prompts/rich_prompt_template_features.ipynb
+          - ./examples/prompts/structured_input.ipynb
       - Property Graph:
           - ./examples/property_graph/graph_store.ipynb
           - ./examples/property_graph/property_graph_advanced.ipynb
