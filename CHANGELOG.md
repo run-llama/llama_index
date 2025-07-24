@@ -1,5 +1,36 @@
 # ChangeLog
 
+## [2025-07-22]
+
+### `llama-index-core` [0.12.52.post1]
+
+- fix: do not write system prompt to memory in agents (#19512)
+
+### `llama-index-core` [0.12.52]
+
+- fix: Fix missing prompt in async MultiModalLLMProgram calls (#19504)
+- fix: Properly raise errors from docstore, fixes Vector Index Retrieval for `stores_text=True/False` (#19501)
+
+### `llama-index-indices-managed-bge-m3` [0.5.0]
+
+- feat: optimize memory usage for BGEM3Index persistence (#19496)
+
+### `llama-index-readers-web` [0.4.5]
+
+- feat: Add timeout to webpage readers, defaults to 60 seconds (#19503)
+
+### `llama-index-tools-jira-issue` [0.1.0]
+
+- feat: added jira issue tool spec (#19457)
+
+### `llama-index-vector-stores-azureaisearch` [0.3.10]
+
+- chore: add `**kwargs` into AzureAISearchVectorStore super init (#19500)
+
+### `llama-index-vector-stores-neo4jvector` [0.4.1]
+
+- fix: Patch Neo4jVector Call version (#19498)
+
 ## [2025-07-21]
 
 ### `llama-index-core` [0.12.51]
