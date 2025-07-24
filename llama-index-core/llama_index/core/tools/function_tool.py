@@ -33,6 +33,11 @@ from llama_index.core.workflow.context import Context
 
 AsyncCallable = Callable[..., Awaitable[Any]]
 
+# Callback Types
+CallbackReturn = Optional[Union[ToolOutput, str]]
+CallbackFunction = Callable[[ToolOutput], CallbackReturn]
+AsyncCallbackFunction = Callable[[ToolOutput], Awaitable[CallbackReturn]]
+
 
 def _is_context_param(param_annotation: Any) -> bool:
     """Check if a parameter annotation is Context or Context[SomeType]."""
@@ -58,10 +63,6 @@ def async_to_sync(func_async: AsyncCallable) -> Callable:
     return _sync_wrapped_fn
 
 
-# The type that the callback can return: either a ToolOutput instance or a string to override the content.
-CallbackReturn = Optional[Union[ToolOutput, str]]
-
-
 class FunctionTool(AsyncBaseTool):
     """
     Function Tool.
@@ -76,8 +77,8 @@ class FunctionTool(AsyncBaseTool):
         fn: Optional[Callable[..., Any]] = None,
         metadata: Optional[ToolMetadata] = None,
         async_fn: Optional[AsyncCallable] = None,
-        callback: Optional[Callable[..., Any]] = None,
-        async_callback: Optional[Callable[..., Any]] = None,
+        callback: Optional[CallbackFunction] = None,
+        async_callback: Optional[AsyncCallbackFunction] = None,
         partial_params: Optional[Dict[str, Any]] = None,
     ) -> None:
         if fn is None and async_fn is None:
@@ -123,17 +124,17 @@ class FunctionTool(AsyncBaseTool):
         if callback is not None:
             self._callback = callback
         elif async_callback is not None:
-            self._callback = async_to_sync(async_callback)
+            self._callback = async_to_sync(async_callback)  # type: ignore
 
         self._async_callback = None
         if async_callback is not None:
             self._async_callback = async_callback
         elif self._callback is not None:
-            self._async_callback = sync_to_async(self._callback)
+            self._async_callback = sync_to_async(self._callback)  # type: ignore
 
         self.partial_params = partial_params or {}
 
-    def _run_sync_callback(self, result: Any) -> CallbackReturn:
+    def _run_sync_callback(self, result: ToolOutput) -> CallbackReturn:
         """
         Runs the sync callback, if provided, and returns either a ToolOutput
         to override the default output or a string to override the content.
@@ -143,7 +144,7 @@ class FunctionTool(AsyncBaseTool):
             return ret
         return None
 
-    async def _run_async_callback(self, result: Any) -> CallbackReturn:
+    async def _run_async_callback(self, result: ToolOutput) -> CallbackReturn:
         """
         Runs the async callback, if provided, and returns either a ToolOutput
         to override the default output or a string to override the content.
@@ -163,8 +164,8 @@ class FunctionTool(AsyncBaseTool):
         fn_schema: Optional[Type[BaseModel]] = None,
         async_fn: Optional[AsyncCallable] = None,
         tool_metadata: Optional[ToolMetadata] = None,
-        callback: Optional[Callable[[Any], Any]] = None,
-        async_callback: Optional[AsyncCallable] = None,
+        callback: Optional[CallbackFunction] = None,
+        async_callback: Optional[AsyncCallbackFunction] = None,
         partial_params: Optional[Dict[str, Any]] = None,
     ) -> "FunctionTool":
         partial_params = partial_params or {}
@@ -208,9 +209,11 @@ class FunctionTool(AsyncBaseTool):
             # Handle FieldInfo defaults
             fn_sig = fn_sig.replace(
                 parameters=[
-                    param.replace(default=inspect.Parameter.empty)
-                    if isinstance(param.default, FieldInfo)
-                    else param
+                    (
+                        param.replace(default=inspect.Parameter.empty)
+                        if isinstance(param.default, FieldInfo)
+                        else param
+                    )
                     for param in fn_sig.parameters.values()
                     if param.name not in partial_params
                 ]
@@ -314,7 +317,7 @@ class FunctionTool(AsyncBaseTool):
             raw_output=raw_output,
         )
         # Check for a sync callback override
-        callback_result = self._run_sync_callback(raw_output)
+        callback_result = self._run_sync_callback(default_output)
         if callback_result is not None:
             if isinstance(callback_result, ToolOutput):
                 return callback_result
@@ -353,7 +356,7 @@ class FunctionTool(AsyncBaseTool):
             raw_output=raw_output,
         )
         # Check for an async callback override
-        callback_result = await self._run_async_callback(raw_output)
+        callback_result = await self._run_async_callback(default_output)
         if callback_result is not None:
             if isinstance(callback_result, ToolOutput):
                 return callback_result
