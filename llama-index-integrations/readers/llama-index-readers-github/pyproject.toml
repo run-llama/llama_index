@@ -51,6 +51,7 @@ dependencies = [
     "llama-index-readers-file>=0.4.0,<0.5",
     "httpx>=0.26.0",
     "llama-index-core>=0.12.0,<0.13",
+    "githubkit>=0.12.15",
 ]
 
 [tool.codespell]
