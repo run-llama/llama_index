@@ -10,7 +10,7 @@ CHAT_MODELS = {
     "solar-pro": 4096,
 }
 
-FUNCTION_CALLING_MODELS = ["solar-mini"]
+FUNCTION_CALLING_MODELS = ["solar-mini", "solar-pro"]
 DOC_PARSING_MODELS = ["solar-pro"]
 
 ALL_AVAILABLE_MODELS = {**CHAT_MODELS}
