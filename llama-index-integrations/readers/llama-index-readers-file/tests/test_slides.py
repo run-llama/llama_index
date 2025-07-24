@@ -1,15 +1,6 @@
 import pytest
 from llama_index.readers.file.slides import PptxReader
-
-# Set testing environment variable
-
-
-# Add the parent directory to sys.path to import generate_ppt
-
-try:
-    from .generate_test_ppt import create_comprehensive_test_presentation
-except ImportError:
-    create_comprehensive_test_presentation = None
+from .generate_test_ppt import create_comprehensive_test_presentation
 
 
 @pytest.fixture()
@@ -45,8 +36,8 @@ def test_load_data_pptx(pptx_file):
     # Check first slide
     first_slide = documents[0]
     assert "Enhanced PowerPoint Reader Test" in first_slide.text
-    assert first_slide.metadata["slide_number"] == 1
-    assert first_slide.metadata["has_notes"] is True
+    assert first_slide.metadata["page_label"] == 1
+    assert len(first_slide.metadata["notes"]) > 0  # Check notes content exists
 
 
 def test_table_extraction(pptx_file):
@@ -55,7 +46,7 @@ def test_table_extraction(pptx_file):
     documents = reader.load_data(pptx_file)
 
     # Find slides with tables
-    table_slides = [doc for doc in documents if doc.metadata.get("has_tables")]
+    table_slides = [doc for doc in documents if len(doc.metadata.get("tables", [])) > 0]
     assert len(table_slides) >= 1
 
     # Check table metadata
@@ -75,7 +66,7 @@ def test_chart_extraction(pptx_file):
     documents = reader.load_data(pptx_file)
 
     # Find slides with charts
-    chart_slides = [doc for doc in documents if doc.metadata.get("has_charts")]
+    chart_slides = [doc for doc in documents if len(doc.metadata.get("charts", [])) > 0]
     assert len(chart_slides) >= 1
 
     # Check chart metadata
@@ -94,7 +85,9 @@ def test_speaker_notes_extraction(pptx_file):
     documents = reader.load_data(pptx_file)
 
     # All slides should have notes
-    slides_with_notes = [doc for doc in documents if doc.metadata.get("notes")]
+    slides_with_notes = [
+        doc for doc in documents if len(doc.metadata.get("notes", "")) > 0
+    ]
     assert len(slides_with_notes) == 12
 
     # Check notes content
@@ -112,7 +105,7 @@ def test_content_consolidation(pptx_file):
     # Check content structure
     for doc in documents:
         assert "-----" in doc.text  # Section separators
-        assert doc.metadata.get("content") == doc.text  # Content preserved in metadata
+        assert len(doc.text) > 0  # Content should exist
 
 
 def test_multithreading(pptx_file):
@@ -122,7 +115,7 @@ def test_multithreading(pptx_file):
 
     # Should process successfully with threading
     assert len(documents) == 12
-    assert all(doc.metadata.get("slide_number") for doc in documents)
+    assert all(doc.metadata.get("page_label") for doc in documents)
 
 
 def test_llm_consolidation_with_settings_llm(pptx_file):

@@ -36,9 +36,11 @@ class ImageExtractor:
             )
         except ImportError:
             raise ImportError(
-                "Please install extra dependencies that are required for "
-                "image extraction: "
-                "`pip install torch 'transformers<4.50' python-pptx Pillow`"
+                "Missing required dependencies for image extraction and captioning.\n"
+                "Please install the following packages:\n"
+                "  pip install 'torch>=2.7.1' 'transformers<4.50' 'pillow>=11.2.1'\n\n"
+                "Note: This feature requires PyTorch and transformers for AI-powered image captioning.\n"
+                "If you don't need image extraction, set extract_images=False when initializing PptxReader."
             )
 
         model = VisionEncoderDecoderModel.from_pretrained(

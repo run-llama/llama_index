@@ -115,18 +115,9 @@ class PptxReader(BaseReader):
             metadata = {
                 "file_path": str(file),
                 "page_label": i,
-                "slide_number": i,
                 "title": slide.get("title", ""),
-                "has_tables": len(slide.get("tables", [])) > 0,
-                "has_charts": len(slide.get("charts", [])) > 0,
-                "has_notes": bool(slide.get("notes", "")),
-                "has_images": len(slide.get("images", [])) > 0,
                 "extraction_errors": slide.get("extraction_errors", []),
                 "extraction_warnings": slide.get("extraction_warnings", []),
-                # Add actual content
-                "content": slide.get(
-                    "content", ""
-                ),  # Preserve the consolidated content
                 "tables": slide.get("tables", []),
                 "charts": slide.get("charts", []),
                 "notes": slide.get("notes", ""),
@@ -157,9 +148,6 @@ class PptxReader(BaseReader):
         fs: Optional[AbstractFileSystem] = None,
     ) -> Dict[str, Any]:
         """Extract content from PowerPoint file with validation and multithreaded processing."""
-        from pptx import Presentation
-        import io
-
         result: Dict[str, Any] = {
             "success": False,
             "data": None,
@@ -168,24 +156,23 @@ class PptxReader(BaseReader):
             "stats": {},
         }
 
-        # Validate file
+        # Validate file and get presentation object
         validation = self._validate_file(file_path, fs)
         if not validation.get("valid", False):
             result["errors"] = validation.get("errors", [])
+            return result
+
+        # Use the presentation object from validation
+        presentation = validation.get("presentation")
+        if presentation is None:
+            result["errors"].append("Failed to get presentation object from validation")
             return result
 
         filename = Path(file_path).name
         logger.debug(f"Processing file: {filename}")
 
         try:
-            # Open presentation
             start_time = datetime.now()
-            if fs:
-                with fs.open(file_path) as f:
-                    presentation = Presentation(io.BytesIO(f.read()))
-            else:
-                presentation = Presentation(file_path)
-
             total_slides = len(presentation.slides)
             logger.debug(f"Processing {total_slides} slides from {filename}")
 
@@ -341,11 +328,16 @@ class PptxReader(BaseReader):
     def _validate_file(
         self, file_path: str, fs: Optional[AbstractFileSystem] = None
     ) -> Dict[str, Any]:
-        """Validate that the file exists, and can be opened."""
+        """Validate that the file exists, and can be opened. Returns presentation object for reuse."""
         from pptx import Presentation
         import io
 
-        validation: Dict[str, Any] = {"valid": True, "errors": [], "warnings": []}
+        validation: Dict[str, Any] = {
+            "valid": True,
+            "errors": [],
+            "warnings": [],
+            "presentation": None,
+        }
 
         # Extension warning
         if not file_path.lower().endswith((".pptx", ".ppt")):
@@ -364,17 +356,19 @@ class PptxReader(BaseReader):
         try:
             if fs:
                 with fs.open(file_path) as f:
-                    tmp = Presentation(io.BytesIO(f.read()))
+                    presentation = Presentation(io.BytesIO(f.read()))
             else:
-                tmp = Presentation(file_path)
+                presentation = Presentation(file_path)
 
-            count = len(tmp.slides)
+            count = len(presentation.slides)
             if count == 0:
                 validation["warnings"].append("Presentation contains no slides")
             elif count > 1000:
                 validation["warnings"].append(f"Large presentation: {count} slides")
-            del tmp
-            gc.collect()
+
+            # Return the presentation object for reuse
+            validation["presentation"] = presentation
+
         except Exception as e:
             validation["valid"] = False
             validation["errors"].append(f"Cannot open as PowerPoint file: {e}")
