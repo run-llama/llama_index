@@ -62,6 +62,10 @@ class MockLLM(CustomLLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
         def gen_prompt() -> CompletionResponseGen:
+            if not prompt:
+                yield CompletionResponse(text="", delta="")
+                return
+
             for ch in prompt:
                 yield CompletionResponse(
                     text=prompt,
