@@ -497,6 +497,13 @@ CHAT_MODEL_TABLE = {
         model_type="chat",
         client="NVIDIA",
     ),
+    "moonshotai/kimi-k2-instruct": Model(
+        id="moonshotai/kimi-k2-instruct",
+        model_type="chat",
+        client="NVIDIA",
+        supports_tools=True,
+        supports_structured_output=True,
+    ),
 }
 
 VLM_MODEL_TABLE = {
