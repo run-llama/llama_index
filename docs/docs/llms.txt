@@ -1,0 +1,100 @@
+# LlamaIndex
+
+> LlamaIndex is a framework for building data-backed LLM applications, specializing in agentic workflows and Retrieval-Augmented Generation (RAG) that connect language models to your private data.
+
+## What is LlamaIndex?
+
+LlamaIndex enables developers to build AI applications that combine Large Language Models with real-world data sources. The framework is specifically designed for applications that need to work with private, proprietary, or domain-specific data.
+
+LlamaIndex addresses the fundamental challenge that LLMs are trained on public data with knowledge cutoffs, but most valuable business applications require access to private documents, databases, APIs, and real-time information. LlamaIndex bridges this gap through agentic workflows and Retrieval-Augmented Generation (RAG) techniques.
+
+## Agentic Applications
+
+When an LLM is used within an application to make decisions, take actions, and/or interact with the world, this is the core definition of an **agentic application**.
+
+Key characteristics of agentic applications include:
+- **LLM Augmentation**: The LLM is augmented with tools (arbitrary callable functions in code), memory, and/or dynamic prompts
+- **Prompt Chaining**: Several LLM calls are used that build on each other, with the output of one LLM call being used as the input to the next
+- **Routing**: The LLM is used to route the application to the next appropriate step or state
+- **Parallelism**: The application can perform multiple steps or actions in parallel
+- **Orchestration**: A hierarchical structure of LLMs is used to orchestrate lower-level actions and LLMs
+- **Reflection**: The LLM is used to reflect and validate outputs of previous steps or LLM calls
+
+**Agents**: An agent is a piece of software that semi-autonomously performs tasks by combining LLMs with other tools and memory, orchestrated in a reasoning loop that decides which tool to use next. An agent receives a user message, uses an LLM to determine the next appropriate action using previous chat history and tools, may invoke tools to assist with the request, interprets tool outputs, and returns the final output to the user.
+
+**Workflows**: A Workflow in LlamaIndex is an event-driven abstraction that allows you to orchestrate a sequence of steps and LLM calls. Workflows can be used to implement any agentic application, and are a core component of LlamaIndex.
+
+## Core Use Cases
+
+LlamaIndex applications can be grouped into four main categories:
+
+[**Agents**](https://github.com/run-llama/llama_index/blob/main/docs/docs/module_guides/deploying/agents/index.md): An automated decision-maker powered by an LLM that interacts with the world via a set of [tools](https://github.com/run-llama/llama_index/blob/main/docs/docs/module_guides/deploying/agents/tools.md). Agents can take an arbitrary number of steps to complete a given task, dynamically deciding on the best course of action rather than following pre-determined steps.
+
+[**Workflows**](https://github.com/run-llama/llama_index/blob/main/docs/docs/module_guides/workflow/index.md): A Workflow in LlamaIndex is a specific event-driven abstraction that allows you to orchestrate a sequence of steps and LLMs calls. Workflows can be used to implement any agentic application, and are a core component of LlamaIndex.
+
+[**Query Engines**](https://github.com/run-llama/llama_index/blob/main/docs/docs/module_guides/deploying/query_engine/index.md): A query engine is an end-to-end flow that allows you to ask questions over your data. It takes in a natural language query, and returns a response, along with reference context retrieved and passed to the LLM.
+
+[**Chat Engines**](https://github.com/run-llama/llama_index/blob/main/docs/docs/module_guides/deploying/chat_engines/index.md): A chat engine is an end-to-end flow for having a conversation with your data (multiple back-and-forth instead of a single question-and-answer).
+
+## Retrieval-Augmented Generation (RAG)
+
+Retrieval-Augmented Generation (RAG) is a core technique for building data-backed LLM applications with LlamaIndex. It allows LLMs to answer questions about your private data by providing it to the LLM at query time, rather than training the LLM on your data. To avoid sending all of your data to the LLM every time, RAG indexes your data and selectively sends only the relevant parts along with your query.
+
+### RAG Pipeline Stages
+
+There are five key stages within RAG:
+
+1. **Loading**: Getting your data from where it lives - whether it's text files, PDFs, another website, a database, or an API - into your workflow. [LlamaHub](https://llamahub.ai/) provides hundreds of connectors to choose from.
+
+2. **Indexing**: Creating a data structure that allows for querying the data. For LLMs this nearly always means creating vector embeddings, numerical representations of the meaning of your data, as well as numerous other metadata strategies.
+
+3. **Storing**: Once your data is indexed you will almost always want to store your index, as well as other metadata, to avoid having to re-index it.
+
+4. **Querying**: For any given indexing strategy there are many ways you can utilize LLMs and LlamaIndex data structures to query, including sub-queries, multi-step queries and hybrid strategies.
+
+5. **Evaluation**: A critical step in any flow is checking how effective it is relative to other strategies, or when you make changes. Evaluation provides objective measures of how accurate, faithful and fast your responses to queries are.
+
+## Key Components
+
+**Documents and Nodes**: A [Document](https://github.com/run-llama/llama_index/blob/main/docs/docs/module_guides/loading/documents_and_nodes/index.md) is a container around any data source - for instance, a PDF, an API output, or retrieve data from a database. A Node is the atomic unit of data in LlamaIndex and represents a "chunk" of a source Document.
+
+**Indexes**: LlamaIndex helps you [index](https://github.com/run-llama/llama_index/blob/main/docs/docs/module_guides/indexing/index.md) data into a structure that's easy to retrieve. This usually involves generating vector embeddings which are stored in a specialized database called a vector store.
+
+**Retrievers**: A [retriever](https://github.com/run-llama/llama_index/blob/main/docs/docs/module_guides/querying/retriever/index.md) defines how to efficiently retrieve relevant context from an index when given a query. Your retrieval strategy is key to the relevancy of the data retrieved and the efficiency with which it's done.
+
+**Response Synthesizers**: A [response synthesizer](https://github.com/run-llama/llama_index/blob/main/docs/docs/module_guides/querying/response_synthesizers/index.md) generates a response from an LLM, using a user query and a given set of retrieved text chunks.
+
+## Getting Started
+
+To get started with LlamaIndex:
+
+1. **[Installation](https://github.com/run-llama/llama_index/blob/main/docs/docs/getting_started/installation.md)**: Install LlamaIndex using pip or your preferred package manager
+2. **[Basic Agent Example](https://github.com/run-llama/llama_index/blob/main/docs/docs/getting_started/starter_example.md)**: Create a simple agent that can perform basic tasks using tools
+3. **Adding RAG Capabilities**: Enhance your agent with the ability to search through documents
+4. **[Advanced Features](https://github.com/run-llama/llama_index/blob/main/docs/docs/understanding/index.md)**: Explore workflows, multi-agent systems, and production deployment
+
+## Documentation and Resources
+
+### Getting Started
+- [Installation Guide](https://github.com/run-llama/llama_index/blob/main/docs/docs/getting_started/installation.md) - Setup and installation instructions
+- [Core Concepts](https://github.com/run-llama/llama_index/blob/main/docs/docs/getting_started/concepts.md) - Fundamental LlamaIndex concepts and architecture
+- [Starter Example](https://github.com/run-llama/llama_index/blob/main/docs/docs/getting_started/starter_example.md) - Basic agent implementation walkthrough
+- [Local Deployment Example](https://github.com/run-llama/llama_index/blob/main/docs/docs/getting_started/starter_example_local.md) - Running LlamaIndex locally with open-source models
+- [Customization Guide](https://github.com/run-llama/llama_index/blob/main/docs/docs/getting_started/customization.md) - Tailoring LlamaIndex to your needs
+
+### Core Module Guides
+- [Loading Data](https://github.com/run-llama/llama_index/tree/main/docs/docs/module_guides/loading) - Data connectors and ingestion strategies
+- [Indexing](https://github.com/run-llama/llama_index/tree/main/docs/docs/module_guides/indexing) - Vector, graph, and keyword indexing approaches
+- [Querying](https://github.com/run-llama/llama_index/tree/main/docs/docs/module_guides/querying) - Query engines, retrievers, and response synthesis
+- [Models](https://github.com/run-llama/llama_index/tree/main/docs/docs/module_guides/models) - LLM providers, embeddings, and multi-modal models
+- [Storing](https://github.com/run-llama/llama_index/tree/main/docs/docs/module_guides/storing) - Vector stores and storage backends
+- [Workflows](https://github.com/run-llama/llama_index/tree/main/docs/docs/module_guides/workflow) - Event-driven orchestration and complex pipelines
+
+### Agents and Workflows
+- [Building Agents](https://github.com/run-llama/llama_index/blob/main/docs/docs/understanding/agent/index.md) - Autonomous AI systems with tool use
+- [Agent Tools](https://github.com/run-llama/llama_index/blob/main/docs/docs/understanding/agent/tools.md) - Available tools and how to create custom ones
+- [Multi-Agent Systems](https://github.com/run-llama/llama_index/blob/main/docs/docs/understanding/agent/multi_agent.md) - Collaborative agent workflows
+- [Workflow Documentation](https://github.com/run-llama/llama_index/blob/main/docs/docs/understanding/workflows/index.md) - Event-driven application orchestration
+- [Human-in-the-Loop](https://github.com/run-llama/llama_index/blob/main/docs/docs/understanding/agent/human_in_the_loop.md) - Interactive agent workflows
+
+LlamaIndex supports dozens of LLM providers including OpenAI, Anthropic, and local models, with hundreds of data connectors for ingesting diverse data sources.
