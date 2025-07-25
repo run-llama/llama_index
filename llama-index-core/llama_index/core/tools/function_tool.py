@@ -216,7 +216,7 @@ class FunctionTool(AsyncBaseTool):
                 doc_lines = docstring.strip().splitlines()
                 for line in doc_lines:
                     if line.strip():
-                        description += f"{line.strip()}\n"
+                        description += line.strip()
                         break
 
             for param in final_params:
