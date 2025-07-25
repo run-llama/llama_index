@@ -12,16 +12,19 @@ Here's an example usage of the AzureCVToolSpec.
 
 ```python
 from llama_index.tools.azure_cv import AzureCVToolSpec
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 
 tool_spec = AzureCVToolSpec(api_key="your-key", resource="your-resource")
 
-agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
+agent = FunctionAgent(
+    tools=tool_spec.to_tool_list(), llm=OpenAI(model="gpt-4.1")
+)
 
-agent.chat(
+await agent.run(
     "caption this image and tell me what tags are in it https://portal.vision.cognitive.azure.com/dist/assets/ImageCaptioningSample1-bbe41ac5.png"
 )
-agent.chat(
+await agent.run(
     "caption this image and read any text https://portal.vision.cognitive.azure.com/dist/assets/OCR3-4782f088.jpg"
 )
 ```

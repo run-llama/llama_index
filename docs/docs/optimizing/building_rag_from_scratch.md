@@ -6,7 +6,7 @@ Out of the box abstractions include:
 
 - High-level ingestion code e.g. `VectorStoreIndex.from_documents`
 - High-level query and retriever code e.g. `VectorStoreIndex.as_retriever()` and `VectorStoreIndex.as_query_engine()`
-- High-level agent abstractions e.g. `OpenAIAgent`
+- High-level agent abstractions e.g. `FunctionAgent`, `ReActAgent`, `CodeActAgent`
 
 Instead of using these, the goal here is to educate users on what's going on under the hood. By showing you the underlying algorithms for constructing RAG and agent workflows, you can then be empowered to create your own custom LLM workflows (while still using LlamaIndex abstractions at any level of granularity that makes sense).
 

@@ -58,7 +58,6 @@ We then launch a finetuning job, and get back a distilled model. We can evaluate
 
 - [GPT-3.5 Fine-tuning Notebook (Colab)](https://colab.research.google.com/drive/1NgyCJVyrC2xcZ5lxt2frTU862v6eJHlc?usp=sharing)
 - [GPT-3.5 Fine-tuning Notebook (Notebook link)](../../examples/finetuning/openai_fine_tuning.ipynb)
-  /examples/finetuning/react_agent/react_agent_finetune.ipynb
 - [[WIP] Function Calling Fine-tuning](../../examples/finetuning/openai_fine_tuning_functions.ipynb)
 
 **Old**

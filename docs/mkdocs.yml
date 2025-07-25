@@ -307,7 +307,6 @@ nav:
           - ./examples/finetuning/mistralai_fine_tuning.ipynb
           - ./examples/finetuning/openai_fine_tuning.ipynb
           - ./examples/finetuning/openai_fine_tuning_functions.ipynb
-          - ./examples/finetuning/react_agent/react_agent_finetune.ipynb
           - ./examples/finetuning/rerankers/cohere_custom_reranker.ipynb
           - ./examples/finetuning/router/router_finetune.ipynb
       - Ingestion:
@@ -459,7 +458,6 @@ nav:
           - ./examples/multi_modal/llava_demo.ipynb
           - ./examples/multi_modal/llava_multi_modal_tesla_10q.ipynb
           - ./examples/multi_modal/mistral_multi_modal.ipynb
-          - ./examples/multi_modal/mm_agent.ipynb
           - ./examples/multi_modal/multi_modal_pydantic.ipynb
           - ./examples/multi_modal/multi_modal_rag_nomic.ipynb
           - ./examples/multi_modal/multi_modal_retrieval.ipynb
@@ -2760,7 +2758,6 @@ plugins:
         ./examples/finetuning/llm_judge/pairwise/finetune_llm_judge.html: https://docs.llamaindex.ai/en/stable/examples/finetuning/llm_judge/pairwise/finetune_llm_judge/
         ./examples/finetuning/openai_fine_tuning.html: https://docs.llamaindex.ai/en/stable/examples/finetuning/openai_fine_tuning/
         ./examples/finetuning/openai_fine_tuning_functions.html: https://docs.llamaindex.ai/en/stable/examples/finetuning/openai_fine_tuning_functions/
-        ./examples/finetuning/react_agent/react_agent_finetune.html: https://docs.llamaindex.ai/en/stable/examples/finetuning/react_agent/react_agent_finetune/
         ./examples/finetuning/rerankers/cohere_custom_reranker.html: https://docs.llamaindex.ai/en/stable/examples/finetuning/rerankers/cohere_custom_reranker/
         ./examples/finetuning/router/router_finetune.html: https://docs.llamaindex.ai/en/stable/examples/finetuning/router/router_finetune/
         ./examples/index_structs/doc_summary/DocSummary.html: https://docs.llamaindex.ai/en/stable/examples/index_structs/doc_summary/DocSummary/
@@ -2872,7 +2869,7 @@ plugins:
         ./examples/multi_modal/image_to_image_retrieval.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/image_to_image_retrieval/
         ./examples/multi_modal/llava_demo.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/llava_demo/
         ./examples/multi_modal/llava_multi_modal_tesla_10q.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/llava_multi_modal_tesla_10q/
-        ./examples/multi_modal/mm_agent.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/mm_agent/
+        ./examples/multi_modal/mm_agent.html: https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/#multi-modal-agents
         ./examples/multi_modal/multi_modal_pydantic.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/multi_modal_pydantic/
         ./examples/multi_modal/multi_modal_retrieval.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/multi_modal_retrieval/
         ./examples/multi_modal/multi_modal_video_RAG.html: https://docs.llamaindex.ai/en/stable/examples/multi_modal/multi_modal_video_RAG/

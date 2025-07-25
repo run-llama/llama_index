@@ -12,7 +12,7 @@ pip install llama-index-tools-linkup-research
 
 ```python
 import os
-from llama_index.core.agent import FunctionCallingAgent
+from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.llms.openai import OpenAI
 from llama_index.tools.linkup_research.base import LinkupToolSpec
 
@@ -27,13 +27,15 @@ linkup_tool = LinkupToolSpec(
 )
 
 # Creation of the agent
-agent = FunctionCallingAgent.from_tools(
-    linkup_tool.to_tool_list(),
+agent = FunctionAgent(
+    tools=linkup_tool.to_tool_list(),
     llm=OpenAI(model="gpt-4o"),
 )
 
 # Query for the agent
-agent.chat("Can you tell me which women were awarded the Physics Nobel Prize")
+await agent.run(
+    "Can you tell me which women were awarded the Physics Nobel Prize"
+)
 ```
 
 This loader is designed to be used as a way to load data as a Tool in an Agent.

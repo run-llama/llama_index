@@ -26,7 +26,7 @@ from llama_index.core.base.llms.types import ChatMessage, TextBlock, ImageBlock
 class AzureFoundryAgent(BaseWorkflowAgent):
     """
     Workflow-compatible Azure Foundry Agent for multi-agent orchestration.
-    Inherits from BaseWorkflowAgent and SingleAgentRunnerMixin.
+    Inherits from BaseWorkflowAgent.
     Implements async methods for workflow integration using the async Azure SDK.
     """
 
