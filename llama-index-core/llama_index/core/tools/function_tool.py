@@ -209,7 +209,16 @@ class FunctionTool(AsyncBaseTool):
             fn_sig = fn_sig.replace(parameters=final_params)
 
             # 5. Build enriched description using param_docs
-            description = description or f"{name}{fn_sig}\n"
+            if description is None:
+                description = f"{name}{fn_sig}\n"
+
+                # Extract the first meaningful line (summary) from the docstring
+                doc_lines = docstring.strip().splitlines()
+                for line in doc_lines:
+                    if line.strip():
+                        description += f"{line.strip()}\n"
+                        break
+
             for param in final_params:
                 desc = param_docs.get(param.name)
                 if desc:
@@ -411,10 +420,10 @@ class FunctionTool(AsyncBaseTool):
             - unknown_params: Params found in docstring but not in fn_params (ignored in final output).
 
         """
-        raw_param_docs = {}
+        raw_param_docs: dict[str, str] = {}
         unknown_params = set()
 
-        def try_add_param(name, desc):
+        def try_add_param(name: str, desc: str) -> None:
             desc = desc.strip()
             if fn_params and name not in fn_params:
                 unknown_params.add(name)
