@@ -1,7 +1,6 @@
 from typing import List, Sequence
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
-from llama_index.core.agent.workflow.single_agent_workflow import SingleAgentRunnerMixin
 from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
     AgentOutput,
@@ -16,7 +15,7 @@ from llama_index.core.tools import AsyncBaseTool
 from llama_index.core.workflow import Context
 
 
-class FunctionAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
+class FunctionAgent(BaseWorkflowAgent):
     """Function calling agent implementation."""
 
     scratchpad_key: str = "scratchpad"
@@ -36,7 +35,9 @@ class FunctionAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
         if not self.llm.metadata.is_function_calling_model:
             raise ValueError("LLM must be a FunctionCallingLLM")
 
-        scratchpad: List[ChatMessage] = await ctx.get(self.scratchpad_key, default=[])
+        scratchpad: List[ChatMessage] = await ctx.store.get(
+            self.scratchpad_key, default=[]
+        )
         current_llm_input = [*llm_input, *scratchpad]
 
         ctx.write_event_to_stream(
@@ -76,7 +77,7 @@ class FunctionAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
 
         # only add to scratchpad if we didn't select the handoff tool
         scratchpad.append(last_chat_response.message)
-        await ctx.set(self.scratchpad_key, scratchpad)
+        await ctx.store.set(self.scratchpad_key, scratchpad)
 
         raw = (
             last_chat_response.raw.model_dump()
@@ -94,13 +95,15 @@ class FunctionAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
         self, ctx: Context, results: List[ToolCallResult], memory: BaseMemory
     ) -> None:
         """Handle tool call results for function calling agent."""
-        scratchpad: List[ChatMessage] = await ctx.get(self.scratchpad_key, default=[])
+        scratchpad: List[ChatMessage] = await ctx.store.get(
+            self.scratchpad_key, default=[]
+        )
 
         for tool_call_result in results:
             scratchpad.append(
                 ChatMessage(
                     role="tool",
-                    content=str(tool_call_result.tool_output.content),
+                    blocks=tool_call_result.tool_output.blocks,
                     additional_kwargs={"tool_call_id": tool_call_result.tool_id},
                 )
             )
@@ -118,7 +121,7 @@ class FunctionAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
                 )
                 break
 
-        await ctx.set(self.scratchpad_key, scratchpad)
+        await ctx.store.set(self.scratchpad_key, scratchpad)
 
     async def finalize(
         self, ctx: Context, output: AgentOutput, memory: BaseMemory
@@ -128,10 +131,12 @@ class FunctionAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
 
         Adds all in-progress messages to memory.
         """
-        scratchpad: List[ChatMessage] = await ctx.get(self.scratchpad_key, default=[])
+        scratchpad: List[ChatMessage] = await ctx.store.get(
+            self.scratchpad_key, default=[]
+        )
         await memory.aput_messages(scratchpad)
 
         # reset scratchpad
-        await ctx.set(self.scratchpad_key, [])
+        await ctx.store.set(self.scratchpad_key, [])
 
         return output

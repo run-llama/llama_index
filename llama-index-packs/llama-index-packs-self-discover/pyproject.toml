@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-packs-self-discover"
-version = "0.3.0"
+version = "0.3.1"
 description = "llama-index packs self_discover paper implementation"
 authors = [{name = "Ravi Theja", email = "ravi03071991@gmail.com"}]
 requires-python = ">=3.9,<4.0"
@@ -40,7 +40,7 @@ keywords = [
 ]
 dependencies = [
     "llama-index-core>=0.12.0,<0.13",
-    "llama-index-llms-openai>=0.3.38",
+    "llama-index-llms-openai>=0.4.0,<0.5",
 ]
 
 [tool.codespell]

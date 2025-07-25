@@ -1,15 +1,15 @@
 """Base vector store index query."""
 
+from collections.abc import Sequence
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.base.base_retriever import BaseRetriever
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_SIMILARITY_TOP_K
-from llama_index.core.data_structs.data_structs import IndexDict
 from llama_index.core.indices.utils import log_vector_store_query_result
 from llama_index.core.indices.vector_store.base import VectorStoreIndex
-from llama_index.core.schema import NodeWithScore, ObjectType, QueryBundle
+from llama_index.core.schema import BaseNode, NodeWithScore, ObjectType, QueryBundle
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,
@@ -132,44 +132,83 @@ class VectorIndexRetriever(BaseRetriever):
             hybrid_top_k=self._hybrid_top_k,
         )
 
-    def _build_node_list_from_query_result(
+    def _determine_nodes_to_fetch(
         self, query_result: VectorStoreQueryResult
-    ) -> List[NodeWithScore]:
-        if query_result.nodes is None:
-            # NOTE: vector store does not keep text and returns node indices.
-            # Need to recover all nodes from docstore
-            if query_result.ids is None:
-                raise ValueError(
-                    "Vector store query result should return at "
-                    "least one of nodes or ids."
-                )
-            assert isinstance(self._index.index_struct, IndexDict)
-            node_ids = [
+    ) -> list[str]:
+        """
+        Determine the nodes to fetch from the docstore.
+
+        If the vector store does not store text, we need to fetch every node from the docstore.
+        If the vector store stores text, we need to fetch only the nodes that are not text.
+        """
+        if query_result.nodes:
+            # Fetch non-text nodes from the docstore
+            return [
+                node.node_id
+                for node in query_result.nodes  # no folding
+                if node.as_related_node_info().node_type
+                != ObjectType.TEXT  # TODO: no need to fetch multimodal `Node` if they only include text
+            ]
+        elif query_result.ids:
+            # Fetch all nodes from the docstore
+            return [
                 self._index.index_struct.nodes_dict[idx] for idx in query_result.ids
             ]
-            nodes = self._docstore.get_nodes(node_ids)
-            query_result.nodes = nodes
+
         else:
-            # NOTE: vector store keeps text, returns nodes.
-            # Only need to recover image or index nodes from docstore
-            for i in range(len(query_result.nodes)):
-                source_node = query_result.nodes[i].source_node
-                if (not self._vector_store.stores_text) or (
-                    source_node is not None and source_node.node_type != ObjectType.TEXT
-                ):
-                    node_id = query_result.nodes[i].node_id
-                    if self._docstore.document_exists(node_id):
-                        query_result.nodes[i] = self._docstore.get_node(  # type: ignore
-                            node_id
-                        )
+            return []
 
-        log_vector_store_query_result(query_result)
+    def _insert_fetched_nodes_into_query_result(
+        self, query_result: VectorStoreQueryResult, fetched_nodes: List[BaseNode]
+    ) -> Sequence[BaseNode]:
+        """
+        Insert the fetched nodes into the query result.
 
+        If the vector store does not store text, all nodes are inserted into the query result.
+        If the vector store stores text, we replace non-text nodes with those fetched from the docstore,
+            unless the node was not found in the docstore, in which case we keep the original node.
+        """
+        fetched_nodes_by_id: Dict[str, BaseNode] = {
+            str(node.node_id): node for node in fetched_nodes
+        }
+        new_nodes: List[BaseNode] = []
+
+        if query_result.nodes:
+            for node in list(query_result.nodes):
+                node_id_str = str(node.node_id)
+                if node_id_str in fetched_nodes_by_id:
+                    new_nodes.append(fetched_nodes_by_id[node_id_str])
+                else:
+                    # We did not fetch a replacement node, so we keep the original node
+                    new_nodes.append(node)
+        elif query_result.ids:
+            for node_id in query_result.ids:
+                if node_id not in self._index.index_struct.nodes_dict:
+                    raise KeyError(f"Node ID {node_id} not found in index. ")
+                node_id_str = str(self._index.index_struct.nodes_dict[node_id])
+                if node_id_str in fetched_nodes_by_id:
+                    new_nodes.append(fetched_nodes_by_id[node_id_str])
+                else:
+                    raise KeyError(
+                        f"Node ID {node_id_str} not found in fetched nodes. "
+                    )
+        elif query_result.ids is None and query_result.nodes is None:
+            raise ValueError(
+                "Vector store query result should return at least one of nodes or ids."
+            )
+        return new_nodes
+
+    def _convert_nodes_to_scored_nodes(
+        self, query_result: VectorStoreQueryResult
+    ) -> List[NodeWithScore]:
+        """Create scored nodes from the vector store query result."""
         node_with_scores: List[NodeWithScore] = []
-        for ind, node in enumerate(query_result.nodes):
+
+        for ind, node in enumerate(list(query_result.nodes or [])):
             score: Optional[float] = None
             if query_result.similarities is not None:
                 score = query_result.similarities[ind]
+
             node_with_scores.append(NodeWithScore(node=node, score=score))
 
         return node_with_scores
@@ -179,11 +218,39 @@ class VectorIndexRetriever(BaseRetriever):
     ) -> List[NodeWithScore]:
         query = self._build_vector_store_query(query_bundle_with_embeddings)
         query_result = self._vector_store.query(query, **self._kwargs)
-        return self._build_node_list_from_query_result(query_result)
+
+        nodes_to_fetch = self._determine_nodes_to_fetch(query_result)
+        if nodes_to_fetch:
+            # Fetch any missing nodes from the docstore and insert them into the query result
+            fetched_nodes: List[BaseNode] = self._docstore.get_nodes(
+                node_ids=nodes_to_fetch, raise_error=False
+            )
+
+            query_result.nodes = self._insert_fetched_nodes_into_query_result(
+                query_result, fetched_nodes
+            )
+
+        log_vector_store_query_result(query_result)
+
+        return self._convert_nodes_to_scored_nodes(query_result)
 
     async def _aget_nodes_with_embeddings(
         self, query_bundle_with_embeddings: QueryBundle
     ) -> List[NodeWithScore]:
         query = self._build_vector_store_query(query_bundle_with_embeddings)
         query_result = await self._vector_store.aquery(query, **self._kwargs)
-        return self._build_node_list_from_query_result(query_result)
+
+        nodes_to_fetch = self._determine_nodes_to_fetch(query_result)
+        if nodes_to_fetch:
+            # Fetch any missing nodes from the docstore and insert them into the query result
+            fetched_nodes: List[BaseNode] = await self._docstore.aget_nodes(
+                node_ids=nodes_to_fetch, raise_error=False
+            )
+
+            query_result.nodes = self._insert_fetched_nodes_into_query_result(
+                query_result, fetched_nodes
+            )
+
+        log_vector_store_query_result(query_result)
+
+        return self._convert_nodes_to_scored_nodes(query_result)

@@ -1,4 +1,5 @@
 import asyncio
+import deprecated
 from itertools import chain
 from typing import (
     Any,
@@ -45,8 +46,21 @@ from llama_index.core.types import Thread
 from llama_index.core.utils import print_text, unit_generator
 
 
+@deprecated.deprecated(
+    reason=(
+        "ReActAgent has been rewritten and replaced by llama_index.core.agent.workflow.ReActAgent.\n\n"
+        "This implementation will be removed in a v0.13.0 and the new implementation will be "
+        "promoted to the `from llama_index.core.agent import ReActAgent` path.\n\n"
+        "See the docs for more information: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+    action="once",
+)
 class ReActAgent(BaseAgent):
     """
+    DEPRECATED: ReActAgent has been deprecated and is not maintained.
+    This implementation will be removed in a v0.13.0.
+    See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/
+
     ReAct agent.
 
     Uses a ReAct prompt that can be used in both chat and text
@@ -383,9 +397,9 @@ class ReActAgent(BaseAgent):
         tools = self.get_tools(message)
 
         if chat_history is not None:
-            self._memory.set(chat_history)
+            await self._memory.aset(chat_history)
 
-        self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
+        await self._memory.aput(ChatMessage(content=message, role=MessageRole.USER))
 
         current_reasoning: List[BaseReasoningStep] = []
         # start loop
@@ -393,7 +407,7 @@ class ReActAgent(BaseAgent):
             # prepare inputs
             input_chat = self._react_chat_formatter.format(
                 tools,
-                chat_history=self._memory.get(),
+                chat_history=await self._memory.aget(),
                 current_reasoning=current_reasoning,
             )
             # send prompt
@@ -407,7 +421,7 @@ class ReActAgent(BaseAgent):
                 break
 
         response = self._get_response(current_reasoning)
-        self._memory.put(
+        await self._memory.aput(
             ChatMessage(content=response.response, role=MessageRole.ASSISTANT)
         )
         return response
@@ -482,9 +496,9 @@ class ReActAgent(BaseAgent):
         tools = self.get_tools(message)
 
         if chat_history is not None:
-            self._memory.set(chat_history)
+            await self._memory.aset(chat_history)
 
-        self._memory.put(ChatMessage(content=message, role=MessageRole.USER))
+        await self._memory.aput(ChatMessage(content=message, role=MessageRole.USER))
 
         current_reasoning: List[BaseReasoningStep] = []
         # start loop
@@ -495,7 +509,7 @@ class ReActAgent(BaseAgent):
             # prepare inputs
             input_chat = self._react_chat_formatter.format(
                 tools,
-                chat_history=self._memory.get(),
+                chat_history=await self._memory.aget(),
                 current_reasoning=current_reasoning,
             )
             # send prompt

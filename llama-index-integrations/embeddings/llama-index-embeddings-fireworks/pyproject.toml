@@ -27,14 +27,14 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-fireworks"
-version = "0.3.0"
+version = "0.3.1"
 description = "llama-index embeddings fireworks integration"
 authors = [{name = "benjibc"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-llms-openai>=0.3.0,<0.4",
+    "llama-index-llms-openai>=0.4.0,<0.5",
     "llama-index-core>=0.12.0,<0.13",
 ]
 

@@ -14,7 +14,6 @@ from azure.ai.projects.aio import AIProjectClient
 from azure.identity.aio import DefaultAzureCredential
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
-from llama_index.core.agent.workflow.single_agent_workflow import SingleAgentRunnerMixin
 from llama_index.core.agent.workflow.workflow_events import AgentOutput, ToolCallResult
 from llama_index.core.llms import ChatMessage, MockLLM
 from llama_index.core.memory import BaseMemory
@@ -24,7 +23,7 @@ from llama_index.core.tools import FunctionTool as LLamaIndexFunctionTool
 from llama_index.core.base.llms.types import ChatMessage, TextBlock, ImageBlock
 
 
-class AzureFoundryAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
+class AzureFoundryAgent(BaseWorkflowAgent):
     """
     Workflow-compatible Azure Foundry Agent for multi-agent orchestration.
     Inherits from BaseWorkflowAgent and SingleAgentRunnerMixin.

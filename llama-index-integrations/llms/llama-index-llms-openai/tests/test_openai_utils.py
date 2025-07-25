@@ -29,6 +29,7 @@ from llama_index.llms.openai.utils import (
     from_openai_messages,
     from_openai_token_logprob,
     from_openai_token_logprobs,
+    is_json_schema_supported,
     to_openai_message_dicts,
     to_openai_tool,
 )
@@ -362,3 +363,46 @@ def test_get_tool_calls_from_response_returns_arguments_with_dict_json_input() -
     tools = OpenAI().get_tool_calls_from_response(response)
     assert len(tools) == 1
     assert tools[0].tool_kwargs == arguments
+
+
+def test_is_json_schema_supported_supported_models() -> None:
+    """Test that supported models return True."""
+    supported_models = [
+        "gpt-4o",
+        "gpt-4o-2024-05-13",
+        "gpt-4.1",
+    ]
+
+    for model in supported_models:
+        assert is_json_schema_supported(model) is True, (
+            f"Model {model} should be supported"
+        )
+
+
+def test_is_json_schema_supported_o1_mini_excluded() -> None:
+    """Test that o1-mini models are explicitly excluded."""
+    o1_mini_models = [
+        "o1-mini",
+        "o1-mini-2024-09-12",
+    ]
+
+    for model in o1_mini_models:
+        assert is_json_schema_supported(model) is False, (
+            f"Model {model} should be excluded"
+        )
+
+
+def test_is_json_schema_supported_unsupported_models() -> None:
+    """Test that unsupported models return False."""
+    unsupported_models = [
+        "gpt-3.5-turbo-0613",
+        "gpt-4-0613",
+        "text-davinci-003",
+        "babbage-002",
+        "unknown-model",
+    ]
+
+    for model in unsupported_models:
+        assert is_json_schema_supported(model) is False, (
+            f"Model {model} should not be supported"
+        )

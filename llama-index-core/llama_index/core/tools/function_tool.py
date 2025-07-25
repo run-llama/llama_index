@@ -1,17 +1,42 @@
 import asyncio
 import inspect
-from typing import TYPE_CHECKING, Any, Awaitable, Callable, Dict, Optional, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Type,
+    Union,
+    get_origin,
+)
+
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import StructuredTool, Tool
 
 from llama_index.core.async_utils import asyncio_run
+from llama_index.core.base.llms.types import (
+    TextBlock,
+    ImageBlock,
+    AudioBlock,
+    CitableBlock,
+    CitationBlock,
+    ContentBlock,
+)
 from llama_index.core.bridge.pydantic import BaseModel, FieldInfo
 from llama_index.core.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
 from llama_index.core.tools.utils import create_schema_from_function
 from llama_index.core.workflow.context import Context
 
 AsyncCallable = Callable[..., Awaitable[Any]]
+
+
+def _is_context_param(param_annotation: Any) -> bool:
+    """Check if a parameter annotation is Context or Context[SomeType]."""
+    return param_annotation == Context or (get_origin(param_annotation) is Context)
 
 
 def sync_to_async(fn: Callable[..., Any]) -> AsyncCallable:
@@ -77,13 +102,13 @@ class FunctionTool(AsyncBaseTool):
         assert fn_to_inspect is not None
         sig = inspect.signature(fn_to_inspect)
         self.requires_context = any(
-            param.annotation == Context for param in sig.parameters.values()
+            _is_context_param(param.annotation) for param in sig.parameters.values()
         )
         self.ctx_param_name = (
             next(
                 param.name
                 for param in sig.parameters.values()
-                if param.annotation == Context
+                if _is_context_param(param.annotation)
             )
             if self.requires_context
             else None
@@ -156,13 +181,13 @@ class FunctionTool(AsyncBaseTool):
             # Remove ctx parameter from schema if present
             ctx_param_name = None
             for param in fn_sig.parameters.values():
-                if param.annotation == Context:
+                if _is_context_param(param.annotation):
                     ctx_param_name = param.name
                     fn_sig = fn_sig.replace(
                         parameters=[
                             param
                             for param in fn_sig.parameters.values()
-                            if param.annotation != Context
+                            if not _is_context_param(param.annotation)
                         ]
                     )
 
@@ -244,6 +269,22 @@ class FunctionTool(AsyncBaseTool):
 
         return self._real_fn
 
+    def _parse_tool_output(self, raw_output: Any) -> List[ContentBlock]:
+        """Parse tool output into content blocks."""
+        if isinstance(
+            raw_output, (TextBlock, ImageBlock, AudioBlock, CitableBlock, CitationBlock)
+        ):
+            return [raw_output]
+        elif isinstance(raw_output, list) and all(
+            isinstance(
+                item, (TextBlock, ImageBlock, AudioBlock, CitableBlock, CitationBlock)
+            )
+            for item in raw_output
+        ):
+            return raw_output
+        else:
+            return [TextBlock(text=str(raw_output))]
+
     def __call__(self, *args: Any, **kwargs: Any) -> ToolOutput:
         all_kwargs = {**self.partial_params, **kwargs}
         return self.call(*args, **all_kwargs)
@@ -256,11 +297,20 @@ class FunctionTool(AsyncBaseTool):
                 raise ValueError("Context is required for this tool")
 
         raw_output = self._fn(*args, **all_kwargs)
+
+        # Exclude the Context param from the tool output so that the Context can be serialized
+        tool_output_kwargs = {
+            k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
+        }
+
+        # Parse tool output into content blocks
+        output_blocks = self._parse_tool_output(raw_output)
+
         # Default ToolOutput based on the raw output
         default_output = ToolOutput(
-            content=str(raw_output),
-            tool_name=self.metadata.name,
-            raw_input={"args": args, "kwargs": all_kwargs},
+            blocks=output_blocks,
+            tool_name=self.metadata.get_name(),
+            raw_input={"args": args, "kwargs": tool_output_kwargs},
             raw_output=raw_output,
         )
         # Check for a sync callback override
@@ -272,8 +322,8 @@ class FunctionTool(AsyncBaseTool):
                 # Assume callback_result is a string to override the content.
                 return ToolOutput(
                     content=str(callback_result),
-                    tool_name=self.metadata.name,
-                    raw_input={"args": args, "kwargs": all_kwargs},
+                    tool_name=self.metadata.get_name(),
+                    raw_input={"args": args, "kwargs": tool_output_kwargs},
                     raw_output=raw_output,
                 )
         return default_output
@@ -286,11 +336,20 @@ class FunctionTool(AsyncBaseTool):
                 raise ValueError("Context is required for this tool")
 
         raw_output = await self._async_fn(*args, **all_kwargs)
+
+        # Exclude the Context param from the tool output so that the Context can be serialized
+        tool_output_kwargs = {
+            k: v for k, v in all_kwargs.items() if k != self.ctx_param_name
+        }
+
+        # Parse tool output into content blocks
+        output_blocks = self._parse_tool_output(raw_output)
+
         # Default ToolOutput based on the raw output
         default_output = ToolOutput(
-            content=str(raw_output),
-            tool_name=self.metadata.name,
-            raw_input={"args": args, "kwargs": all_kwargs},
+            blocks=output_blocks,
+            tool_name=self.metadata.get_name(),
+            raw_input={"args": args, "kwargs": tool_output_kwargs},
             raw_output=raw_output,
         )
         # Check for an async callback override
@@ -302,8 +361,8 @@ class FunctionTool(AsyncBaseTool):
                 # Assume callback_result is a string to override the content.
                 return ToolOutput(
                     content=str(callback_result),
-                    tool_name=self.metadata.name,
-                    raw_input={"args": args, "kwargs": all_kwargs},
+                    tool_name=self.metadata.get_name(),
+                    raw_input={"args": args, "kwargs": tool_output_kwargs},
                     raw_output=raw_output,
                 )
         return default_output

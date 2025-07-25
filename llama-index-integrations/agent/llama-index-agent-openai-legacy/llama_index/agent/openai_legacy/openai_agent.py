@@ -1,4 +1,5 @@
 import asyncio
+import deprecated
 import json
 import logging
 from abc import abstractmethod
@@ -150,6 +151,13 @@ def resolve_tool_choice(tool_choice: Union[str, dict] = "auto") -> Union[str, di
     return tool_choice
 
 
+@deprecated.deprecated(
+    reason=(
+        "BaseOpenAIAgent has been deprecated and is not maintained.\n\n"
+        "`FunctionAgent` is the recommended replacement.\n\n"
+        "See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+)
 class BaseOpenAIAgent(BaseAgent):
     def __init__(
         self,
@@ -301,7 +309,7 @@ class BaseOpenAIAgent(BaseAgent):
             )
             event.on_end(payload={EventPayload.FUNCTION_OUTPUT: str(tool_output)})
         self.sources.append(tool_output)
-        self.memory.put(function_message)
+        await self.memory.aput(function_message)
 
     def _get_llm_chat_kwargs(
         self, openai_tools: List[dict], tool_choice: Union[str, dict] = "auto"

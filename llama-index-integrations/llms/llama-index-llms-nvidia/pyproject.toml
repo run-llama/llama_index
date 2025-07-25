@@ -34,15 +34,15 @@ test_integration = [
 
 [project]
 name = "llama-index-llms-nvidia"
-version = "0.3.3"
+version = "0.3.5"
 description = "llama-index llms nvidia api catalog integration"
 authors = [{name = "Chris Alexiuk", email = "calexiuk@nvidia.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-llms-openai>=0.3.0,<0.4",
-    "llama-index-llms-openai-like>=0.3.0,<0.4",
+    "llama-index-llms-openai>=0.4.0,<0.5",
+    "llama-index-llms-openai-like>=0.4.0,<0.5",
     "llama-index-core>=0.12.0,<0.13",
 ]
 

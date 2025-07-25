@@ -16,7 +16,9 @@ pip install llama-index-tools-playwright
 In order to use this tool, you need to have a async Playwright browser instance. You can hook one up by running the following code:
 
 ```python
-browser = PlaywrightToolSpec.create_async_playwright_browser(headless=False)
+browser = await PlaywrightToolSpec.create_async_playwright_browser(
+    headless=False
+)
 playwright_tool = PlaywrightToolSpec.from_async_browser(browser)
 ```
 

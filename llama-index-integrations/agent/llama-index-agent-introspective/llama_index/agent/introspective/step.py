@@ -1,5 +1,6 @@
 """Introspective agent worker."""
 
+import deprecated
 import logging
 import uuid
 from typing import Any, List, Optional
@@ -24,6 +25,14 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.WARNING)
 
 
+@deprecated.deprecated(
+    reason=(
+        "IntrospectiveAgentWorker has been deprecated and is not maintained.\n\n"
+        "Contributions are welcome to migrate this class to the new agent architecture.\n\n"
+        "See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+    action="once",
+)
 class IntrospectiveAgentWorker(BaseAgentWorker):
     """
     Introspective Agent Worker.
@@ -97,7 +106,7 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
         reflective_memory = ChatMemoryBuffer.from_defaults()
 
         # put current history in new memory
-        messages = task.memory.get()
+        messages = task.memory.get(input=task.input)
         for message in messages:
             main_memory.put(message)
 
@@ -119,7 +128,7 @@ class IntrospectiveAgentWorker(BaseAgentWorker):
 
     def get_all_messages(self, task: Task) -> List[ChatMessage]:
         return (
-            +task.memory.get()
+            +task.memory.get(input=task.input)
             + task.extra_state["main"]["memory"].get_all()
             + task.extra_state["reflection"]["memory"].get_all()
         )

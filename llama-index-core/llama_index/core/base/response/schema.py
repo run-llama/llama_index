@@ -80,7 +80,7 @@ class PydanticResponse:
 
         However, it appears that in that automatic conversion, this method
         is left as NoneType, which raises an error. To safeguard against that,
-        we are expilcitly defining this method as something that can be called.
+        we are explicitly defining this method as something that can be called.
 
         Sources:
             - https://docs.pydantic.dev/1.10/usage/dataclasses/#use-of-stdlib-dataclasses-with-basemodel

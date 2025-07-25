@@ -23,6 +23,7 @@ dev = [
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "pytest-cov>=6.1.1",
+    "pip>=25.1.1",
 ]
 
 [project]

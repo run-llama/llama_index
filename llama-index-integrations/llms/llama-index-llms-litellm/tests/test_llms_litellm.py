@@ -3,6 +3,7 @@ import httpx
 from llama_index.core.base.llms.base import BaseLLM
 import pytest
 import respx
+import os
 from unittest.mock import patch
 from llama_index.llms.litellm import LiteLLM
 from llama_index.core.llms import ChatMessage
@@ -13,8 +14,11 @@ from llama_index.core.base.llms.types import (
     ChatResponse,
     TextBlock,
     ImageBlock,
+    DocumentBlock,
 )
 import json
+
+os.environ["OPENAI_API_KEY"] = "fake-api-key"
 
 
 def test_embedding_class():
@@ -30,6 +34,10 @@ def test_chat(respx_mock: respx.MockRouter, llm: LiteLLM):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(
+    condition=os.getenv("OPENAI_API_KEY", "fake-api-key") == "fake-api-key",
+    reason="OPENAI_API_KEY not set or invalid",
+)
 async def test_achat(respx_mock: respx.MockRouter, llm: LiteLLM):
     mock_chat_response(respx_mock)
     message = ChatMessage(role="user", content="Hey! how's it going async?")
@@ -45,6 +53,10 @@ def test_completion(respx_mock: respx.MockRouter, llm: LiteLLM):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(
+    condition=os.getenv("OPENAI_API_KEY", "fake-api-key") == "fake-api-key",
+    reason="OPENAI_API_KEY not set or invalid",
+)
 async def test_acompletion(respx_mock: respx.MockRouter, llm: LiteLLM):
     mock_completion_response(respx_mock)
     response = await llm.acomplete("What is the capital of France?")
@@ -172,6 +184,10 @@ def test_get_tool_calls_from_response_returns_arguments_with_dict_json_input(
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(
+    condition=os.getenv("OPENAI_API_KEY", "fake-api-key") == "fake-api-key",
+    reason="OPENAI_API_KEY not set or invalid",
+)
 async def test_achat_tool_calling(respx_mock: respx.MockRouter, llm: LiteLLM):
     mock_tool_response(respx_mock)
     message = "what's 1+1?"
@@ -223,6 +239,16 @@ def test_token_calculation_errors():
 add_tool = FunctionTool.from_defaults(fn=add, name="add")
 
 
+def search(query: str) -> str:
+    """Search for information about a query."""
+    return f"Results for {query}"
+
+
+search_tool = FunctionTool.from_defaults(
+    fn=search, name="search_tool", description="A tool for searching information"
+)
+
+
 def mock_chat_response(respx_mock: respx.MockRouter):
     respx_mock.post("https://api.openai.com/v1/chat/completions").mock(
         return_value=httpx.Response(
@@ -270,14 +296,6 @@ def mock_tool_response(
             },
         )
     )
-
-
-@pytest.fixture(autouse=True)
-def setup_openai_api_key(monkeypatch):
-    """Fixture to set up and tear down OPENAI_API_KEY for all tests."""
-    monkeypatch.setenv("OPENAI_API_KEY", "fake-api-key")
-    yield
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
 
 @pytest.fixture()
@@ -346,6 +364,10 @@ def test_stream_tool_calls(respx_mock: respx.MockRouter, llm: LiteLLM):
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(
+    condition=os.getenv("OPENAI_API_KEY", "fake-api-key") == "fake-api-key",
+    reason="OPENAI_API_KEY not set or invalid",
+)
 async def test_astream_tool_calls(respx_mock: respx.MockRouter, llm: LiteLLM):
     """Test async streaming with tool calls being built up incrementally."""
     # Create the weather tool
@@ -466,3 +488,98 @@ def test_image_block_chat(respx_mock: respx.MockRouter, llm: LiteLLM):
     )
     assert text_content is not None
     assert text_content["text"] == "What's in this image?"
+
+
+def test_document_block_chat(respx_mock: respx.MockRouter, llm: LiteLLM):
+    """Test sending document blocks to OpenAI via LiteLLM."""
+    # Mock the API response for a request with document blocks
+    respx_mock.post("https://api.openai.com/v1/chat/completions").mock(
+        return_value=httpx.Response(
+            status_code=200,
+            json={
+                "choices": [
+                    {
+                        "message": {
+                            "content": "I can see this is a PDF document with text content."
+                        }
+                    }
+                ]
+            },
+        )
+    )
+
+    # Create a mock PDF document
+    mock_pdf_data = b"fake_pdf_data_for_testing"
+    document_block = DocumentBlock(
+        data=mock_pdf_data,
+        document_mimetype="application/pdf",
+        title="test_document.pdf",
+    )
+    text_block = TextBlock(text="Please analyze this document.")
+
+    message = ChatMessage(role=MessageRole.USER, content=[document_block, text_block])
+
+    # Send the message
+    chat_response = llm.chat([message])
+
+    # Check the response content
+    assert (
+        chat_response.message.blocks[0].text
+        == "I can see this is a PDF document with text content."
+    )
+
+    # Verify the request was sent correctly (check the last request)
+    request = respx_mock.calls.last.request
+    request_json = json.loads(request.content)
+
+    # Verify document block was correctly formatted in the request
+    assert len(request_json["messages"]) == 1
+    assert isinstance(request_json["messages"][0]["content"], list)
+
+    # Check for both document and text blocks in the request
+    content_blocks = request_json["messages"][0]["content"]
+    assert len(content_blocks) == 2
+
+    # Verify document block
+    document_content = next(
+        (item for item in content_blocks if item["type"] == "file"), None
+    )
+    assert document_content is not None
+    assert "file" in document_content
+    assert "file_data" in document_content["file"]
+    assert document_content["file"]["file_data"].startswith(
+        "data:application/pdf;base64,"
+    )
+
+    # Verify text block
+    text_content = next(
+        (item for item in content_blocks if item["type"] == "text"), None
+    )
+    assert text_content is not None
+    assert text_content["text"] == "Please analyze this document."
+
+
+def test_prepare_chat_with_tools_tool_required():
+    """Test that tool_required is correctly passed to the API request when True."""
+    llm = LiteLLM(model="gpt-3.5-turbo")
+
+    # Test with tool_required=True
+    result = llm._prepare_chat_with_tools(tools=[search_tool], tool_required=True)
+
+    assert result["tool_choice"] == "required"
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["function"]["name"] == "search_tool"
+
+
+def test_prepare_chat_with_tools_tool_not_required():
+    """Test that tool_required is correctly passed to the API request when False."""
+    llm = LiteLLM(model="gpt-3.5-turbo")
+
+    # Test with tool_required=False (default)
+    result = llm._prepare_chat_with_tools(
+        tools=[search_tool],
+    )
+
+    assert result["tool_choice"] == "auto"
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["function"]["name"] == "search_tool"

@@ -1,4 +1,4 @@
-import urllib.request
+import httpx
 from typing import List
 
 from defusedxml.ElementTree import fromstring
@@ -30,9 +30,9 @@ class SitemapReader(BaseReader):
         self._limit = limit
 
     def _load_sitemap(self, sitemap_url: str) -> str:
-        sitemap_url_request = urllib.request.urlopen(sitemap_url)
+        sitemap_url_request = httpx.get(sitemap_url)
 
-        return sitemap_url_request.read()
+        return sitemap_url_request.content
 
     def _parse_sitemap(self, raw_sitemap: str, filter_locs: str = None) -> list:
         sitemap = fromstring(raw_sitemap)
