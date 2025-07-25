@@ -501,6 +501,8 @@ CHAT_MODEL_TABLE = {
         id="moonshotai/kimi-k2-instruct",
         model_type="chat",
         client="NVIDIA",
+        supports_tools=True,
+        supports_structured_output=True,
     ),
 }
 
