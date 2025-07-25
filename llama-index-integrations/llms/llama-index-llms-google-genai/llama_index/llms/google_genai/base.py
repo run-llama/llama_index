@@ -339,6 +339,7 @@ class GoogleGenAI(FunctionCallingLLM):
         def gen() -> ChatResponseGen:
             content = ""
             existing_tool_calls = []
+            thoughts = ""
             for r in response:
                 if not r.candidates:
                     continue
@@ -346,13 +347,17 @@ class GoogleGenAI(FunctionCallingLLM):
                 top_candidate = r.candidates[0]
                 content_delta = top_candidate.content.parts[0].text
                 if content_delta:
-                    content += content_delta
+                    if top_candidate.content.parts[0].thought:
+                        thoughts += content_delta
+                    else:
+                        content += content_delta
                 llama_resp = chat_from_gemini_response(r)
                 existing_tool_calls.extend(
                     llama_resp.message.additional_kwargs.get("tool_calls", [])
                 )
                 llama_resp.delta = content_delta
                 llama_resp.message.content = content
+                llama_resp.message.additional_kwargs["thoughts"] = thoughts
                 llama_resp.message.additional_kwargs["tool_calls"] = existing_tool_calls
                 yield llama_resp
 
@@ -378,6 +383,7 @@ class GoogleGenAI(FunctionCallingLLM):
         async def gen() -> ChatResponseAsyncGen:
             content = ""
             existing_tool_calls = []
+            thoughts = ""
             async for r in await chat.send_message_stream(next_msg.parts):
                 if candidates := r.candidates:
                     if not candidates:
@@ -388,7 +394,10 @@ class GoogleGenAI(FunctionCallingLLM):
                         if parts := response_content.parts:
                             content_delta = parts[0].text
                             if content_delta:
-                                content += content_delta
+                                if parts[0].thought:
+                                    thoughts += content_delta
+                                else:
+                                    content += content_delta
                             llama_resp = chat_from_gemini_response(r)
                             existing_tool_calls.extend(
                                 llama_resp.message.additional_kwargs.get(
@@ -397,6 +406,7 @@ class GoogleGenAI(FunctionCallingLLM):
                             )
                             llama_resp.delta = content_delta
                             llama_resp.message.content = content
+                            llama_resp.message.additional_kwargs["thoughts"] = thoughts
                             llama_resp.message.additional_kwargs["tool_calls"] = (
                                 existing_tool_calls
                             )
@@ -499,9 +509,9 @@ class GoogleGenAI(FunctionCallingLLM):
         for tool_call in tool_calls:
             tool_selections.append(
                 ToolSelection(
-                    tool_id=tool_call.name,
-                    tool_name=tool_call.name,
-                    tool_kwargs=dict(tool_call.args),
+                    tool_id=tool_call["name"],
+                    tool_name=tool_call["name"],
+                    tool_kwargs=tool_call["args"],
                 )
             )
 
