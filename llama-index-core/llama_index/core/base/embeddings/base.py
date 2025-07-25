@@ -460,11 +460,10 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         model_dict.pop("api_key", None)
 
         cur_batch: List[str] = []
-        pre_recorded_embs: List[Embedding] = []
-        non_cached_txts: List[str] = []
-        callback_payloads: List[Tuple[str, List[str]]] = []
-        result_embeddings: List[Embedding] = []
         embeddings_coroutines: List[Coroutine] = []
+        callback_payloads: List[Tuple[str, List[str]]] = []
+
+        # for idx, text in queue_with_progress:
         for idx, text in enumerate(texts):
             cur_batch.append(text)
             if idx == len(texts) - 1 or len(cur_batch) == self.embed_batch_size:
@@ -479,64 +478,71 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     payload={EventPayload.SERIALIZED: self.to_dict()},
                 )
                 callback_payloads.append((event_id, cur_batch))
+
                 if not self.embeddings_cache:
                     embeddings_coroutines.append(self._aget_text_embeddings(cur_batch))
                 elif self.embeddings_cache is not None:
-                    for txt in cur_batch:
+                    embeddings = [None for i in range(len(cur_batch))]
+                    non_cached_texts: List[Tuple[int, str]] = []
+                    for i, txt in enumerate(cur_batch):
                         cached_emb = self.embeddings_cache.get(
                             key=txt, collection="embeddings"
                         )
                         if cached_emb is not None:
                             cached_key = next(iter(cached_emb.keys()))
-                            pre_recorded_embs.append(cached_emb[cached_key])
+                            embeddings[i] = cached_emb[cached_key]
                         else:
-                            embeddings_coroutines.append(
-                                self._aget_text_embeddings([txt])
+                            non_cached_texts.append((i, txt))
+
+                    local_cur_batch = cur_batch
+
+                    async def batch_coroutine():
+                        nonlocal local_cur_batch, non_cached_texts, embeddings
+
+                        if len(non_cached_texts) > 0:
+                            batch_embeddings = await self._aget_text_embeddings(
+                                [x[1] for x in non_cached_texts]
                             )
-                            non_cached_txts.append(txt)
+                            for j, text_embedding in enumerate(batch_embeddings):
+                                orig_i = non_cached_texts[j][0]
+                                embeddings[orig_i] = text_embedding
+                                await self.embeddings_cache.aput(
+                                    key=local_cur_batch[orig_i],
+                                    val={str(uuid.uuid4()): text_embedding},
+                                    collection="embeddings",
+                                )
+                        return embeddings
+
+                    embeddings_coroutines.append(batch_coroutine())
 
                 cur_batch = []
 
-        # flatten the results of asyncio.gather, which is a list of embeddings lists
-        nested_embeddings = []
+        # Execute all coroutines
+        if num_workers and num_workers > 1:
+            nested_embeddings = await run_jobs(
+                embeddings_coroutines,
+                show_progress=show_progress,
+                workers=self.num_workers,
+                desc="Generating embeddings",
+            )
+        else:
+            if show_progress:
+                try:
+                    from tqdm.asyncio import tqdm_asyncio
 
-        if len(embeddings_coroutines) > 0:
-            if num_workers and num_workers > 1:
-                nested_embeddings = await run_jobs(
-                    embeddings_coroutines,
-                    show_progress=show_progress,
-                    workers=self.num_workers,
-                    desc="Generating embeddings",
-                )
-            else:
-                if show_progress:
-                    try:
-                        from tqdm.asyncio import tqdm_asyncio
-
-                        nested_embeddings = await tqdm_asyncio.gather(
-                            *embeddings_coroutines,
-                            total=len(embeddings_coroutines),
-                            desc="Generating embeddings",
-                        )
-                    except ImportError:
-                        nested_embeddings = await asyncio.gather(*embeddings_coroutines)
-                else:
+                    nested_embeddings = await tqdm_asyncio.gather(
+                        *embeddings_coroutines,
+                        total=len(embeddings_coroutines),
+                        desc="Generating embeddings",
+                    )
+                except ImportError:
                     nested_embeddings = await asyncio.gather(*embeddings_coroutines)
+            else:
+                nested_embeddings = await asyncio.gather(*embeddings_coroutines)
 
         result_embeddings = [
             embedding for embeddings in nested_embeddings for embedding in embeddings
         ]
-        if self.embeddings_cache is not None:
-            if len(result_embeddings) > 0:
-                for j in range(len(result_embeddings)):
-                    self.embeddings_cache.put(
-                        key=non_cached_txts[j],
-                        val={str(uuid.uuid4()): result_embeddings[j]},
-                        collection="embeddings",
-                    )
-                result_embeddings += pre_recorded_embs
-            else:
-                result_embeddings += pre_recorded_embs
 
         for (event_id, text_batch), embeddings in zip(
             callback_payloads, nested_embeddings
