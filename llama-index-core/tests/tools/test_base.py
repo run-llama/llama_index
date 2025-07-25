@@ -323,3 +323,28 @@ async def test_function_tool_output_single_block() -> None:
 
     assert len(tool_output.blocks) == 1
     assert tool_output.content == "Hello"
+
+
+def test_fn_schema_docstring_descriptions():
+    def sample_tool(a: int, b: Optional[str] = None) -> str:
+        """
+        A test tool function.
+
+        :param a: an integer value
+        :param b: an optional string
+        :return: a string output
+        """
+        return f"{a}-{b}"
+
+    metadata = ToolMetadata(name="sample_tool", description="A test tool.")
+    tool = FunctionTool.from_defaults(fn=sample_tool, tool_metadata=None)
+
+    fn_schema = tool.metadata.fn_schema
+    assert fn_schema is not None, "Expected fn_schema to be generated"
+
+    fields = fn_schema.model_fields
+    assert "a" in fields
+    assert "b" in fields
+
+    assert fields["a"].description == "an integer value"
+    assert fields["b"].description == "an optional string"
