@@ -102,10 +102,13 @@ class SlideContentExtractor:
 
         # Extract title safely
         try:
-            if slide.shapes.title:
+            if slide.shapes.title and slide.shapes.title.text.strip():
                 slide_data["title"] = slide.shapes.title.text.strip()
+            else:
+                # Fallback: find likely title from slide content
+                slide_data["title"] = self._find_likely_title(slide)
         except Exception:
-            # Fallback: find largest text at top of slide
+            # Final fallback: find likely title from slide content
             slide_data["title"] = self._find_likely_title(slide)
 
         # Process all shapes with error isolation
@@ -121,8 +124,6 @@ class SlideContentExtractor:
                 {"component": "notes", "warning": f"Notes extraction failed: {e!s}"}
             )
             slide_data["notes"] = ""  # Set to empty string
-
-        # Consolidate slide data for RAG using the instance flag
         try:
             slide_data["content"] = self._consolidate_slide_data(
                 slide_data, with_llm=self.context_consolidation_with_llm
@@ -142,9 +143,16 @@ class SlideContentExtractor:
         return slide_data
 
     def _find_likely_title(self, slide) -> str:
-        """Find the most likely title from slide shapes using scoring."""
+        """Find the most likely title from slide shapes using balanced scoring."""
         try:
             candidates = []
+
+            # Get slide height from presentation (slide.part.presentation gives us the presentation)
+            try:
+                presentation = slide.part.presentation
+                slide_height = presentation.slide_height
+            except Exception:
+                slide_height = 6858000  # Default slide height in EMUs
 
             for shape in slide.shapes:
                 if (
@@ -152,21 +160,27 @@ class SlideContentExtractor:
                     and shape.text_frame
                     and shape.text_frame.text.strip()
                 ):
-                    # Score based on position and formatting
+                    text = shape.text_frame.text.strip()
                     score = 0
 
-                    # Position score (higher = closer to top)
-                    if hasattr(shape, "top"):
-                        score += (10000 - shape.top) / 1000
+                    # Position score (0-100): closer to top = higher score
+                    # The value of top is basically the distance from the top of the slide to the top of the shape, so smaller top = closer to top of the slide
+                    if hasattr(shape, "top") and shape.top is not None:
+                        position_score = max(
+                            0, 100 * (slide_height - shape.top) / slide_height
+                        )
+                        score += position_score
 
-                    # Size score
-                    if hasattr(shape, "height"):
-                        score += shape.height / 100
+                    # Size score (0-50): smaller height = higher score (titles are compact)
+                    # The value of height is basically the height of the shape, so smaller height = higher score, as title would ideally be compact
+                    if hasattr(shape, "height") and shape.height is not None:
+                        size_score = max(0, 50 * (1 - shape.height / slide_height))
+                        score += size_score
 
-                    # Text length (prefer shorter for titles)
-                    text = shape.text_frame.text.strip()
+                    # Text length score (0-25): shorter text = higher score, as titles are typically short
                     if len(text) < 100:
-                        score += 50 - len(text) / 2
+                        text_score = min(25, 25 - len(text) / 4)
+                        score += text_score
 
                     candidates.append((text, score))
 
@@ -621,6 +635,8 @@ class SlideContentExtractor:
 
             5.  **Deliver as Plain Text:** The final output must be one continuous paragraph of plain English text, without any special formatting like backticks, bullet points, or section headers.
             The paragraph should be concise, accurate, and in English.
+
+            6. The output should not exceed 300 words.
             """
             try:
                 refined_slide_content = self._chat(

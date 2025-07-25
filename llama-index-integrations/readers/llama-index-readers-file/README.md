@@ -152,6 +152,7 @@ parser = PptxReader(
     context_consolidation_with_llm=True,  # Use LLM for content synthesis
     num_workers=4,  # Parallel processing
     batch_size=10,  # Slides processed per worker batch
+    raise_on_error=True,  # Raise value error if file_parsing is not successful
 )
 
 file_extractor = {".pptx": parser}

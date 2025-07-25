@@ -45,6 +45,7 @@ class PptxReader(BaseReader):
         llm: Optional[BaseLLM] = None,
         batch_size: int = 10,
         num_workers: int = 4,
+        raise_on_error: bool = False,
     ) -> None:
         """
         Initialize enhanced PptxReader.
@@ -67,11 +68,13 @@ class PptxReader(BaseReader):
         self.llm = llm
         self.batch_size = batch_size
         self.num_workers = num_workers
+        self.raise_on_error = raise_on_error
         self.content_extractor = SlideContentExtractor(
             llm=self.llm,
             extract_images=self.extract_images,
             context_consolidation_with_llm=self.context_consolidation_with_llm,
         )
+        self.raise_on_error = raise_on_error
 
     def load_data(
         self,
@@ -102,11 +105,15 @@ class PptxReader(BaseReader):
             fs=fs,
         )
 
-        if not result["success"]:
+        if not result["success"] and not self.raise_on_error:
             logger.error(
                 f"Failed to extract data from {file_path_str}: {result['errors']}"
             )
             return []
+        elif not result["success"] and self.raise_on_error:
+            raise ValueError(
+                f"Failed to extract data from {file_path_str}: {result['errors']}"
+            )
 
         # Convert to Documents
         docs = []
@@ -134,6 +141,9 @@ class PptxReader(BaseReader):
                     excluded_embed_metadata_keys=list(
                         metadata.keys()
                     ),  # excluding the metadata keys from the embedding since the metadata size can potentially be too large and may cause the embedding to fail
+                    excluded_llm_metadata_keys=list(
+                        metadata.keys()
+                    ),  # excluding the metadata keys from the llm
                 )
             )
 
