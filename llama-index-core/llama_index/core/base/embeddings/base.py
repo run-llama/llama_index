@@ -88,6 +88,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         default=None,
         description="The number of workers to use for async embedding calls.",
     )
+    # Use Any to avoid import loops
     embeddings_cache: Optional[Any] = Field(
         default=None,
         description="Cache for the embeddings: if None, the embeddings are not cached",
@@ -405,19 +406,29 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     if not self.embeddings_cache:
                         embeddings = self._get_text_embeddings(cur_batch)
                     elif self.embeddings_cache is not None:
-                        embeddings = []
-                        for txt in cur_batch:
+                        embeddings = [None for i in range(len(cur_batch))]
+                        # Tuples of (index, text) to be able to keep same order of embeddings
+                        non_cached_texts: List[Tuple[int, str]] = []
+                        for i, txt in enumerate(cur_batch):
                             cached_emb = self.embeddings_cache.get(
                                 key=txt, collection="embeddings"
                             )
                             if cached_emb is not None:
                                 cached_key = next(iter(cached_emb.keys()))
-                                embeddings.append(cached_emb[cached_key])
+                                embeddings[i] = cached_emb[cached_key]
                             else:
-                                text_embedding = self._get_text_embedding(txt)
-                                embeddings.append(text_embedding)
+                                non_cached_texts.append((i, txt))
+
+                        if len(non_cached_texts) > 0:
+                            text_embeddings = self._get_text_embeddings(
+                                [x[1] for x in non_cached_texts]
+                            )
+                            for j, text_embedding in enumerate(text_embeddings):
+                                orig_i = non_cached_texts[j][0]
+                                embeddings[orig_i] = text_embedding
+
                                 self.embeddings_cache.put(
-                                    key=txt,
+                                    key=cur_batch[orig_i],
                                     val={str(uuid.uuid4()): text_embedding},
                                     collection="embeddings",
                                 )
