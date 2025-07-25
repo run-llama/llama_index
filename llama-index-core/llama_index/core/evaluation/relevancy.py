@@ -19,7 +19,8 @@ DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "You have two options to answer. Either YES/ NO.\n"
     "Answer - YES, if the response for the query \
     is in line with context information otherwise NO.\n"
-    "Query and Response: \n {query_str}\n"
+    "Query: \n {query_str}\n"
+    "Response: \n {response_str}\n"
     "Context: \n {context_str}\n"
     "Answer: "
 )
