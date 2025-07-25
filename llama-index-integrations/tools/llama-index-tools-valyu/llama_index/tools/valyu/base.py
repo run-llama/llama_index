@@ -1,6 +1,6 @@
 """Valyu tool spec."""
 
-from typing import List, Optional
+from typing import List, Optional, Union
 
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
@@ -35,6 +35,10 @@ class ValyuToolSpec(BaseToolSpec):
         max_price: Optional[float] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
+        included_sources: Optional[List[str]] = None,
+        excluded_sources: Optional[List[str]] = None,
+        response_length: Optional[Union[int, str]] = None,
+        country_code: Optional[str] = None,
     ) -> List[Document]:
         """
         Search and retrieve relevant content from proprietary and public sources using Valyu's deep search.
@@ -47,6 +51,10 @@ class ValyuToolSpec(BaseToolSpec):
             max_price (Optional[float]): Maximum cost in dollars for this search. Defaults to 20.0
             start_date (Optional[str]): Start date for time filtering in YYYY-MM-DD format
             end_date (Optional[str]): End date for time filtering in YYYY-MM-DD format
+            included_sources (Optional[List[str]]): List of URLs, domains or datasets to only search over and return in results
+            excluded_sources (Optional[List[str]]): List of URLs, domains or datasets to exclude from search results
+            response_length (Optional[Union[int, str]]): Number of characters to return per item or preset values: "short" (25k chars), "medium" (50k chars), "large" (100k chars), "max" (full content)
+            country_code (Optional[str]): 2-letter ISO country code (e.g., "GB", "US") to bias search results to a specific country
 
         Returns:
             List[Document]: List of Document objects containing the search results
@@ -63,6 +71,10 @@ class ValyuToolSpec(BaseToolSpec):
             max_price=max_price,
             start_date=start_date,
             end_date=end_date,
+            included_sources=included_sources,
+            excluded_sources=excluded_sources,
+            response_length=response_length,
+            country_code=country_code,
         )
 
         if self._verbose:

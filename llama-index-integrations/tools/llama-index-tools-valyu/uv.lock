@@ -1608,7 +1608,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-tools-valyu"
-version = "0.2.0"
+version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1641,7 +1641,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "llama-index-core", specifier = ">=0.12.0,<0.13" },
-    { name = "valyu", specifier = ">=2.0.0" },
+    { name = "valyu", specifier = ">=2.0.2" },
 ]
 
 [package.metadata.requires-dev]
@@ -3693,16 +3693,16 @@ wheels = [
 
 [[package]]
 name = "valyu"
-version = "2.0.0"
+version = "2.0.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "requests" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/74/84/e7620cb97276e2ce680f41f3ffc48192d355c098411e9c92b28c4bc1c6ce/valyu-2.0.0.tar.gz", hash = "sha256:14bfbbea30d72d101ca912e246034dbc293fb032be912f6c60c144d437c30641", size = 8450 }
+sdist = { url = "https://files.pythonhosted.org/packages/e1/a0/9d04fc5c277ecf0244ace992b9a4d57f831dc4179a765caaa2ea9bd36606/valyu-2.0.2.tar.gz", hash = "sha256:d381a1fb63395f91ccc6e9f04add028e29e099e210d0b2534cd82ecd0dabfc89", size = 9042 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e9/99/2ff9ac7685caa8b638cf7b3659b0b6f09d3fc1c0a9f80aed882dc3ef02bf/valyu-2.0.0-py3-none-any.whl", hash = "sha256:d4812e24a41061eef03b29a347cc6c5559f1a6ff9f7d74b3bc8eae0977775659", size = 6637 },
+    { url = "https://files.pythonhosted.org/packages/30/23/ce86045324949d8f8be7f62ad23d268c1bc36abb70edd3a5b324e41cc459/valyu-2.0.2-py3-none-any.whl", hash = "sha256:044e58c1d55bb2ccf45d4d3750f6be0f011cd4be6770eaa32816b1586230313e", size = 7072 },
 ]
 
 [[package]]
