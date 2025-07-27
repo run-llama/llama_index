@@ -22,6 +22,7 @@ DEFAULT_VOYAGE_3_LITE_BATCH_SIZE = 30
 DEFAULT_VOYAGE_3_BATCH_SIZE = 10
 DEFAULT_BATCH_SIZE = 7
 MULTIMODAL_MODELS = ["voyage-multimodal-3"]
+CONTEXT_MODELS = ["voyage-context-3"]
 
 SUPPORTED_IMAGE_FORMATS = {"png", "jpeg", "jpg", "webp", "gif"}
 
@@ -177,7 +178,16 @@ class VoyageEmbedding(MultiModalEmbedding):
         return await self._aembed_image(img_file_path)
 
     def _embed(self, texts: List[str], input_type: str) -> List[List[float]]:
-        if self.model_name in MULTIMODAL_MODELS:
+        if self.model_name in CONTEXT_MODELS:
+            r = self._client.contextualized_embed(
+                inputs=[texts],
+                model=self.model_name,
+                input_type=input_type,
+                output_dtype=self.output_dtype,
+                output_dimension=self.output_dimension,
+            ).results
+            return r[0].embeddings
+        elif self.model_name in MULTIMODAL_MODELS:
             return self._client.multimodal_embed(
                 inputs=self._texts_to_content(texts),
                 model=self.model_name,
@@ -195,7 +205,17 @@ class VoyageEmbedding(MultiModalEmbedding):
             ).embeddings
 
     async def _aembed(self, texts: List[str], input_type: str) -> List[List[float]]:
-        if self.model_name in MULTIMODAL_MODELS:
+        if self.model_name in CONTEXT_MODELS:
+            ar = await self._aclient.contextualized_embed(
+                inputs=[texts],
+                model=self.model_name,
+                input_type=input_type,
+                output_dtype=self.output_dtype,
+                output_dimension=self.output_dimension,
+            )
+            r = ar.results
+            return r[0].embeddings
+        elif self.model_name in MULTIMODAL_MODELS:
             r = await self._aclient.multimodal_embed(
                 inputs=self._texts_to_content(texts),
                 model=self.model_name,
