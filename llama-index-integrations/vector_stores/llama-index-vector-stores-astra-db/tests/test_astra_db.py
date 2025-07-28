@@ -297,9 +297,16 @@ def test_add_with_exception_mock(mock_client):
     partial_result = Mock(spec=InsertManyResult)
     partial_result.inserted_ids = ["test_id_2"]  # Only second doc inserted
     insert_exception = InsertManyException(
-        "Some docs failed to insert",
+        text="Some docs failed to insert",
+        detailed_error_descriptors=[
+            "Some docs failed to insert",
+            "Some docs failed to insert",
+        ],
         partial_result=partial_result,
-        error_descriptors=[],
+        error_descriptors=[
+            "Some docs failed to insert",
+            "Some docs failed to insert",
+        ],
     )
 
     # Mock replace_one result
