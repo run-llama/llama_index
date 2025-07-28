@@ -25,17 +25,18 @@ dev = [
 ]
 
 [project]
-name = "llama-index-tools-valyu"
-version = "0.3.0"
-description = "llama-index tools valyu integration"
-authors = [{name = "Alex Ng", email = "alexander.ng@valyu.network"}]
+name = "llama-index-voice-agents-gemini-live"
+version = "0.1.0-beta"
+description = "LlamaIndex x Gemini Live integration"
+authors = [{name = "Clelia Astra Bertelli", email = "clelia@runllama.ai"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
-maintainers = [{name = "alexngys"}]
+maintainers = [{name = "AstraBert"}]
 dependencies = [
-    "valyu>=2.0.2",
-    "llama-index-core>=0.12.0,<0.13",
+    "pyaudio>=0.2.14,<0.3",
+    "llama-index-core>=0.12.50,<0.13",
+    "google-genai>=1.26.0,<1.27",
 ]
 
 [tool.codespell]
@@ -53,13 +54,16 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.tools.valyu"
+import_path = "llama_index.voice_agents.gemini_live"
 
 [tool.llamahub.class_authors]
-ValyuToolSpec = "alexngys"
+GeminiLiveVoiceAgent = "AstraBert"
 
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
 python_version = "3.8"
+
+[tool.uv.sources]
+llama-index-core = {path = "../../../llama-index-core"}
