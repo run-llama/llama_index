@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 maintainers = [{name = "alexngys"}]
 dependencies = [
-    "valyu>=2.0.2",
+    "valyu>=2.0.3",
     "llama-index-core>=0.12.0,<0.13",
 ]
 
