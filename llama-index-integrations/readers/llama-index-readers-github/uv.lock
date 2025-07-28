@@ -1023,6 +1023,22 @@ wheels = [
 ]
 
 [[package]]
+name = "githubkit"
+version = "0.12.15"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "hishel" },
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a6/d9/ccbfee35b103dbbd4ea9c660b0b3f078e3c3bee643d9f8efd948237f7e18/githubkit-0.12.15.tar.gz", hash = "sha256:5efce5bec3afc67f5f929c13940c804b800b94f30220690d5c07a6922c4c10c7", size = 2141906, upload_time = "2025-06-29T05:51:34.931Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6c/68/af86fca22a10d882819b9ca32f138b207625d042ae46292208c5a7620416/githubkit-0.12.15-py3-none-any.whl", hash = "sha256:14a7ffa87495c4e4502296be1c46ddebdb9b4287a7c3b11114ba49dbc601d63d", size = 5776298, upload_time = "2025-06-29T05:51:33.025Z" },
+]
+
+[[package]]
 name = "greenlet"
 version = "3.2.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1103,6 +1119,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/01/ee/02a2c011bdab74c6fb3c75474d40b3052059d95df7e73351460c8588d963/h11-0.16.0.tar.gz", hash = "sha256:4e35b956cf45792e4caa5885e69fba00bdbc6ffafbfa020300e549b208ee5ff1", size = 101250, upload_time = "2025-04-24T03:35:25.427Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/04/4b/29cac41a4d98d144bf5f6d33995617b185d14b22401f75ca86f384e87ff1/h11-0.16.0-py3-none-any.whl", hash = "sha256:63cf8bbe7522de3bf65932fda1d9c2772064ffb3dae62d55932da54b31cb6c86", size = 37515, upload_time = "2025-04-24T03:35:24.344Z" },
+]
+
+[[package]]
+name = "hishel"
+version = "0.1.3"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3e/b5/c063cd3eab8154ddd61deb07b50497cf24010727eaeec4d78ed1a6262986/hishel-0.1.3.tar.gz", hash = "sha256:db3e07429cb739dcda851ff9b35b0f3e7589e21b90ee167df54336ac608b6ec3", size = 36649, upload_time = "2025-07-06T14:19:23.528Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/29/a5/bf3553b44a36e1c5d2aa0cd15478e02b466dcaecdc2983b07068999d2675/hishel-0.1.3-py3-none-any.whl", hash = "sha256:bae3ba9970ffc56f90014aea2b3019158fb0a5b0b635a56f414ba6b96651966e", size = 42518, upload_time = "2025-07-06T14:19:22.336Z" },
 ]
 
 [[package]]
@@ -1630,6 +1658,7 @@ name = "llama-index-readers-github"
 version = "0.6.1"
 source = { editable = "." }
 dependencies = [
+    { name = "githubkit" },
     { name = "httpx" },
     { name = "llama-index-core" },
     { name = "llama-index-readers-file" },
@@ -1660,6 +1689,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "githubkit", specifier = ">=0.12.15" },
     { name = "httpx", specifier = ">=0.26.0" },
     { name = "llama-index-core", specifier = ">=0.12.0,<0.13" },
     { name = "llama-index-readers-file", specifier = ">=0.4.0,<0.5" },
