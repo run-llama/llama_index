@@ -53,7 +53,7 @@ class S3Reader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
         Default is None.
     aws_access_id (Optional[str]): provide AWS access key directly.
     aws_access_secret (Optional[str]): provide AWS access key directly.
-    aws_region_name (Optional[str]): AWS region for the S3 bucket. If not provided,
+    region_name (Optional[str]): AWS region for the S3 bucket. If not provided,
     the default environment region or AWS config will be used.
     s3_endpoint_url (Optional[str]): provide S3 endpoint URL directly.
 
@@ -75,7 +75,7 @@ class S3Reader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
     aws_access_id: Optional[str] = None
     aws_access_secret: Optional[str] = None
     aws_session_token: Optional[str] = None
-    aws_region_name: Optional[str] = None
+    region_name: Optional[str] = None
     s3_endpoint_url: Optional[str] = None
     custom_reader_path: Optional[str] = None
     invalidate_s3fs_cache: bool = True
@@ -88,8 +88,8 @@ class S3Reader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
         from s3fs import S3FileSystem
 
         client_kwargs = {}
-        if isinstance(self.aws_region_name, str) and self.aws_region_name.strip():
-            client_kwargs["region_name"] = self.aws_region_name.strip()
+        if isinstance(self.region_name, str) and self.region_name.strip():
+            client_kwargs["region_name"] = self.region_name.strip()
 
         s3fs = S3FileSystem(
             key=self.aws_access_id,
