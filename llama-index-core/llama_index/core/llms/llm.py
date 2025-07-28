@@ -16,6 +16,7 @@ from typing import (
 )
 from typing_extensions import Annotated
 
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponseAsyncGen,
@@ -811,7 +812,9 @@ class LLM(BaseLLM):
         from llama_index.core.agent.workflow import ReActAgent
         from llama_index.core.chat_engine.types import AgentChatResponse
         from llama_index.core.memory import Memory
+        from llama_index.core.tools.calling import call_tool_with_selection
         from llama_index.core.workflow import Context
+        from workflows.context.state_store import DictState
 
         agent = ReActAgent(
             tools=tools,
@@ -835,17 +838,28 @@ class LLM(BaseLLM):
         if user_msg:
             llm_input.append(user_msg)
 
-        ctx = Context(agent)
+        ctx: Context[DictState] = Context(agent)
 
         try:
             resp = asyncio_run(
                 agent.take_step(
-                    ctx=ctx, llm_input=llm_input, tools=agent.tools, memory=memory
+                    ctx=ctx, llm_input=llm_input, tools=tools or [], memory=memory
                 )
             )
+            tool_outputs = []
+            for tool_call in resp.tool_calls:
+                tool_output = call_tool_with_selection(
+                    tool_call=tool_call,
+                    tools=tools or [],
+                    verbose=verbose,
+                )
+                tool_outputs.append(tool_output)
+            output_text = "\n\n".join(
+                [tool_output.content for tool_output in tool_outputs]
+            )
             return AgentChatResponse(
-                response=resp.response.content,
-                sources=resp.tool_calls,
+                response=output_text,
+                sources=tool_outputs,
             )
         except Exception as e:
             output = AgentChatResponse(
@@ -868,7 +882,9 @@ class LLM(BaseLLM):
         from llama_index.core.agent.workflow import ReActAgent
         from llama_index.core.chat_engine.types import AgentChatResponse
         from llama_index.core.memory import Memory
+        from llama_index.core.tools.calling import acall_tool_with_selection
         from llama_index.core.workflow import Context
+        from workflows.context.state_store import DictState
 
         agent = ReActAgent(
             tools=tools,
@@ -892,15 +908,27 @@ class LLM(BaseLLM):
         if user_msg:
             llm_input.append(user_msg)
 
-        ctx = Context(agent)
+        ctx: Context[DictState] = Context(agent)
 
         try:
             resp = await agent.take_step(
-                ctx=ctx, llm_input=llm_input, tools=agent.tools, memory=memory
+                ctx=ctx, llm_input=llm_input, tools=tools or [], memory=memory
+            )
+            tool_outputs = []
+            for tool_call in resp.tool_calls:
+                tool_output = await acall_tool_with_selection(
+                    tool_call=tool_call,
+                    tools=tools or [],
+                    verbose=verbose,
+                )
+                tool_outputs.append(tool_output)
+
+            output_text = "\n\n".join(
+                [tool_output.content for tool_output in tool_outputs]
             )
             return AgentChatResponse(
-                response=resp.response.content,
-                sources=resp.tool_calls,
+                response=output_text,
+                sources=tool_outputs,
             )
         except Exception as e:
             output = AgentChatResponse(
