@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-tools-valyu"
-version = "0.3.0"
+version = "0.3.1"
 description = "llama-index tools valyu integration"
 authors = [{name = "Alex Ng", email = "alexander.ng@valyu.network"}]
 requires-python = ">=3.9,<4.0"
