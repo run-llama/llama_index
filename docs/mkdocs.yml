@@ -128,7 +128,6 @@ nav:
           - ./examples/chat_engine/chat_engine_condense_plus_context.ipynb
           - ./examples/chat_engine/chat_engine_condense_question.ipynb
           - ./examples/chat_engine/chat_engine_context.ipynb
-          - ./examples/chat_engine/chat_engine_openai.ipynb
           - ./examples/chat_engine/chat_engine_personality.ipynb
           - ./examples/chat_engine/chat_engine_react.ipynb
           - ./examples/chat_engine/chat_engine_repl.ipynb
@@ -571,7 +570,6 @@ nav:
           - ./examples/query_engine/pdf_tables/recursive_retriever.ipynb
           - ./examples/query_engine/pgvector_sql_query_engine.ipynb
           - ./examples/query_engine/pydantic_query_engine.ipynb
-          - ./examples/query_engine/recursive_retriever_agents.ipynb
           - ./examples/query_engine/sec_tables/tesla_10q_table.ipynb
           - ./examples/query_engine/sub_question_query_engine.ipynb
       - Query Pipeline:
