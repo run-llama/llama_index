@@ -60,12 +60,12 @@ class Schema(BaseModel):
 # Define the models to test against
 GEMINI_MODELS_TO_TEST = (
     [
-        {"model": "models/gemini-2.0-flash-001", "config": {}},
+        {"model": "models/gemini-2.5-flash-lite", "config": {}},
         {
-            "model": "models/gemini-2.5-flash-preview-04-17",
+            "model": "models/gemini-2.5-flash",
             "config": {
                 "generation_config": GenerateContentConfig(
-                    thinking_config=ThinkingConfig(thinking_budget=0)
+                    thinking_config=ThinkingConfig(thinking_budget=512)
                 )
             },
         },
