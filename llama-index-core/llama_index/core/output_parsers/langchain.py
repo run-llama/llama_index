@@ -2,7 +2,7 @@
 
 from typing import TYPE_CHECKING, Any, Optional
 
-from llama_index.core.output_parsers.base import ChainableOutputParser
+from llama_index.core.output_parsers import BaseOutputParser
 from llama_index.core.prompts.utils import SafeFormatter
 
 if TYPE_CHECKING:
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     )
 
 
-class LangchainOutputParser(ChainableOutputParser):
+class LangchainOutputParser(BaseOutputParser):
     """Langchain output parser."""
 
     def __init__(
