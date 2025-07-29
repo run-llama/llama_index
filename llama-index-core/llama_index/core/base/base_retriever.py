@@ -91,20 +91,6 @@ class BaseRetriever(PromptMixin, DispatcherSpanMixin):
             ]
         elif isinstance(obj, BaseRetriever):
             return obj.retrieve(query_bundle)
-        elif isinstance(obj, QueryComponent):
-            component_keys = obj.input_keys.required_keys
-            if len(component_keys) > 1:
-                raise ValueError(
-                    f"QueryComponent {obj} has more than one input key: {component_keys}"
-                )
-            elif len(component_keys) == 0:
-                component_response = obj.run_component()
-            else:
-                kwargs = {next(iter(component_keys)): query_bundle.query_str}
-                component_response = obj.run_component(**kwargs)
-
-            result_output = str(next(iter(component_response.values())))
-            return [NodeWithScore(node=TextNode(text=result_output), score=score)]
         else:
             raise ValueError(f"Object {obj} is not retrievable.")
 
@@ -124,20 +110,6 @@ class BaseRetriever(PromptMixin, DispatcherSpanMixin):
             return [NodeWithScore(node=TextNode(text=str(response)), score=score)]
         elif isinstance(obj, BaseRetriever):
             return await obj.aretrieve(query_bundle)
-        elif isinstance(obj, QueryComponent):
-            component_keys = obj.input_keys.required_keys
-            if len(component_keys) > 1:
-                raise ValueError(
-                    f"QueryComponent {obj} has more than one input key: {component_keys}"
-                )
-            elif len(component_keys) == 0:
-                component_response = await obj.arun_component()
-            else:
-                kwargs = {next(iter(component_keys)): query_bundle.query_str}
-                component_response = await obj.arun_component(**kwargs)
-
-            result_output = str(next(iter(component_response.values())))
-            return [NodeWithScore(node=TextNode(text=result_output), score=score)]
         else:
             raise ValueError(f"Object {obj} is not retrievable.")
 
