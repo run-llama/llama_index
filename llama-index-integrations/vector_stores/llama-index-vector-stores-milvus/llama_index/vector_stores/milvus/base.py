@@ -895,6 +895,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             output_fields=output_fields,
             search_params=kwargs.get("milvus_search_config", self.search_config),
             anns_field=self.embedding_field,
+            partition_names=kwargs.get("milvus_partition_names"),
         )
         logger.debug(
             f"Successfully searched embedding in collection: {self.collection_name}"
