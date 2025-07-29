@@ -7,6 +7,7 @@ import pytest
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import TextBlock, ImageBlock
 from llama_index.core.tools.function_tool import FunctionTool
+from llama_index.core.workflow.context import Context
 from llama_index.core.workflow import Context
 
 try:
@@ -323,3 +324,104 @@ async def test_function_tool_output_single_block() -> None:
 
     assert len(tool_output.blocks) == 1
     assert tool_output.content == "Hello"
+
+
+def test_fn_schema_docstring_descriptions():
+    def sample_tool(a: int, b: Optional[str] = None) -> str:
+        """
+        A test tool function.
+
+        :param a: an integer value
+        :param b: an optional string
+        :return: a string output
+        """
+        return f"{a}-{b}"
+
+    metadata = ToolMetadata(name="sample_tool", description="A test tool.")
+    tool = FunctionTool.from_defaults(fn=sample_tool, tool_metadata=None)
+
+    fn_schema = tool.metadata.fn_schema
+    assert fn_schema is not None, "Expected fn_schema to be generated"
+
+    fields = fn_schema.model_fields
+    assert "a" in fields
+    assert "b" in fields
+
+    assert fields["a"].description == "an integer value"
+    assert fields["b"].description == "an optional string"
+
+
+def test_docstring_param_extraction_javadoc_style():
+    def tool_fn(foo: int, bar: str) -> str:
+        """
+        Test tool.
+
+        @param foo value for foo
+        @param bar value for bar
+        @return result string
+        """
+        return f"{foo}-{bar}"
+
+    tool = FunctionTool.from_defaults(fn=tool_fn)
+    fields = tool.metadata.fn_schema.model_fields
+
+    assert fields["foo"].description == "value for foo"
+    assert fields["bar"].description == "value for bar"
+
+
+def test_docstring_param_extraction_google_style():
+    def tool_fn(a: int, b: str) -> str:
+        """
+        Test tool.
+
+        Args:
+            a (int): integer input
+            b (str): string input
+
+        Returns:
+            str: output string
+
+        """
+        return f"{a}-{b}"
+
+    tool = FunctionTool.from_defaults(fn=tool_fn)
+    fields = tool.metadata.fn_schema.model_fields
+
+    assert fields["a"].description == "integer input"
+    assert fields["b"].description == "string input"
+
+
+def test_docstring_ignores_unknown_params():
+    def tool_fn(a: int) -> str:
+        """
+        Test tool.
+
+        :param a: valid param
+        :param unknown: should be ignored
+        """
+        return str(a)
+
+    tool = FunctionTool.from_defaults(fn=tool_fn)
+    fields = tool.metadata.fn_schema.model_fields
+
+    assert "a" in fields
+    assert fields["a"].description == "valid param"
+    assert "unknown" not in fields
+
+
+def test_docstring_with_self_and_context():
+    class MyTool:
+        def my_method(self, ctx: Context, a: int) -> str:
+            """
+            Tool with self and context.
+
+            :param a: some input value
+            """
+            return str(a)
+
+    tool = FunctionTool.from_defaults(fn=MyTool().my_method)
+    fields = tool.metadata.fn_schema.model_fields
+
+    assert "a" in fields
+    assert fields["a"].description == "some input value"
+    assert "self" not in fields

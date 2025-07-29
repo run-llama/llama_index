@@ -31,8 +31,26 @@ print(
         "What are the implications of using different volatility calculation methods (EWMA vs. GARCH) in Value at Risk (VaR) modeling for fixed income portfolios?"
     )
 )
+
+# You can also search directly with the new parameters
+results = valyu_tool.search(
+    query="artificial intelligence trends 2024",
+    included_sources=[
+        "arxiv.org",
+        "nature.com",
+    ],  # Only search academic sources
+    response_length="medium",  # 50k characters per result
+    max_num_results=3,
+    relevance_threshold=0.5,
+)
 ```
 
-`search`: Search and retrieve relevant content from proprietary and public sources using Valyu's deep search. Supports filtering by search type ("all", "proprietary", or "web"), relevance threshold, specific sources, date ranges, and categories.
+`search`: Search and retrieve relevant content from proprietary and public sources using Valyu's deep search. Supports filtering by:
+
+- Search type ("all", "proprietary", or "web")
+- Relevance threshold
+- Date ranges (start_date, end_date)
+- Source filtering (included_sources, excluded_sources)
+- Response length (integer for character count or preset values: "short" 25k, "medium" 50k, "large" 100k, "max" full content)
 
 This loader is designed to be used as a way to load data as a Tool in a Agent.
