@@ -61,7 +61,7 @@ This includes the following deprecated classes:
 - `AgentRunner`
 - `FunctionCallingAgent`
 - `FunctionCallingAgentWorker`
-- `llama_index.core.agent.ReActAgent` (use [llama_index.core.agent.workflow.ReActAgent](../module_guides/workflow/index.md))
+- `llama_index.core.agent.ReActAgent` (use [llama_index.core.agent.workflow.ReActAgent](../module_guides/deploying/agents/index.md))
 - `ReActAgentWorker`
 - `LATSAgentWorker`
 - `CoAAgentWorker`

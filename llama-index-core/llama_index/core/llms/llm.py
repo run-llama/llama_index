@@ -15,6 +15,7 @@ from typing import (
 )
 from typing_extensions import Annotated
 
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponseAsyncGen,
@@ -789,51 +790,58 @@ class LLM(BaseLLM):
         but function calling LLMs will implement this differently.
 
         """
-        from llama_index.core.agent.react import ReActAgentWorker
-        from llama_index.core.agent.types import Task
+        from llama_index.core.agent.workflow import ReActAgent
         from llama_index.core.chat_engine.types import AgentChatResponse
-        from llama_index.core.memory import ChatMemoryBuffer
+        from llama_index.core.memory import Memory
+        from llama_index.core.tools.calling import call_tool_with_selection
+        from llama_index.core.workflow import Context
+        from workflows.context.state_store import DictState
 
-        worker = ReActAgentWorker(
-            tools,
+        agent = ReActAgent(
+            tools=tools,
             llm=self,
-            callback_manager=self.callback_manager,
             verbose=verbose,
-            max_iterations=kwargs.get("max_iterations", 10),
-            react_chat_formatter=kwargs.get("react_chat_formatter"),
+            formatter=kwargs.get("react_chat_formatter"),
             output_parser=kwargs.get("output_parser"),
             tool_retriever=kwargs.get("tool_retriever"),
-            handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn"),
         )
+
+        memory = kwargs.get("memory", Memory.from_defaults())
 
         if isinstance(user_msg, ChatMessage) and isinstance(user_msg.content, str):
-            user_msg = user_msg.content
-        elif isinstance(user_msg, str):
             pass
-        elif (
-            not user_msg
-            and chat_history is not None
-            and len(chat_history) > 0
-            and isinstance(chat_history[-1].content, str)
-        ):
-            user_msg = chat_history[-1].content
-        else:
-            raise ValueError("No user message provided or found in chat history.")
+        elif isinstance(user_msg, str):
+            user_msg = ChatMessage(content=user_msg, role=MessageRole.USER)
 
-        task = Task(
-            input=user_msg,
-            memory=ChatMemoryBuffer.from_defaults(chat_history=chat_history),
-            extra_state={},
-            callback_manager=self.callback_manager,
-        )
-        step = worker.initialize_step(task)
+        llm_input = []
+        if chat_history:
+            llm_input.extend(chat_history)
+        if user_msg:
+            llm_input.append(user_msg)
+
+        ctx: Context[DictState] = Context(agent)
 
         try:
-            output = worker.run_step(step, task).output
-
-            # react agent worker inserts a "Observation: " prefix to the response
-            if output.response and output.response.startswith("Observation: "):
-                output.response = output.response.replace("Observation: ", "")
+            resp = asyncio_run(
+                agent.take_step(
+                    ctx=ctx, llm_input=llm_input, tools=tools or [], memory=memory
+                )
+            )
+            tool_outputs = []
+            for tool_call in resp.tool_calls:
+                tool_output = call_tool_with_selection(
+                    tool_call=tool_call,
+                    tools=tools or [],
+                    verbose=verbose,
+                )
+                tool_outputs.append(tool_output)
+            output_text = "\n\n".join(
+                [tool_output.content for tool_output in tool_outputs]
+            )
+            return AgentChatResponse(
+                response=output_text,
+                sources=tool_outputs,
+            )
         except Exception as e:
             output = AgentChatResponse(
                 response="An error occurred while running the tool: " + str(e),
@@ -852,51 +860,57 @@ class LLM(BaseLLM):
         **kwargs: Any,
     ) -> "AgentChatResponse":
         """Predict and call the tool."""
-        from llama_index.core.agent.react import ReActAgentWorker
-        from llama_index.core.agent.types import Task
+        from llama_index.core.agent.workflow import ReActAgent
         from llama_index.core.chat_engine.types import AgentChatResponse
-        from llama_index.core.memory import ChatMemoryBuffer
+        from llama_index.core.memory import Memory
+        from llama_index.core.tools.calling import acall_tool_with_selection
+        from llama_index.core.workflow import Context
+        from workflows.context.state_store import DictState
 
-        worker = ReActAgentWorker(
-            tools,
+        agent = ReActAgent(
+            tools=tools,
             llm=self,
-            callback_manager=self.callback_manager,
             verbose=verbose,
-            max_iterations=kwargs.get("max_iterations", 10),
-            react_chat_formatter=kwargs.get("react_chat_formatter"),
+            formatter=kwargs.get("react_chat_formatter"),
             output_parser=kwargs.get("output_parser"),
             tool_retriever=kwargs.get("tool_retriever"),
-            handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn"),
         )
+
+        memory = kwargs.get("memory", Memory.from_defaults())
 
         if isinstance(user_msg, ChatMessage) and isinstance(user_msg.content, str):
-            user_msg = user_msg.content
-        elif isinstance(user_msg, str):
             pass
-        elif (
-            not user_msg
-            and chat_history is not None
-            and len(chat_history) > 0
-            and isinstance(chat_history[-1].content, str)
-        ):
-            user_msg = chat_history[-1].content
-        else:
-            raise ValueError("No user message provided or found in chat history.")
+        elif isinstance(user_msg, str):
+            user_msg = ChatMessage(content=user_msg, role=MessageRole.USER)
 
-        task = Task(
-            input=user_msg,
-            memory=ChatMemoryBuffer.from_defaults(chat_history=chat_history),
-            extra_state={},
-            callback_manager=self.callback_manager,
-        )
-        step = worker.initialize_step(task)
+        llm_input = []
+        if chat_history:
+            llm_input.extend(chat_history)
+        if user_msg:
+            llm_input.append(user_msg)
+
+        ctx: Context[DictState] = Context(agent)
 
         try:
-            output = (await worker.arun_step(step, task)).output
+            resp = await agent.take_step(
+                ctx=ctx, llm_input=llm_input, tools=tools or [], memory=memory
+            )
+            tool_outputs = []
+            for tool_call in resp.tool_calls:
+                tool_output = await acall_tool_with_selection(
+                    tool_call=tool_call,
+                    tools=tools or [],
+                    verbose=verbose,
+                )
+                tool_outputs.append(tool_output)
 
-            # react agent worker inserts a "Observation: " prefix to the response
-            if output.response and output.response.startswith("Observation: "):
-                output.response = output.response.replace("Observation: ", "")
+            output_text = "\n\n".join(
+                [tool_output.content for tool_output in tool_outputs]
+            )
+            return AgentChatResponse(
+                response=output_text,
+                sources=tool_outputs,
+            )
         except Exception as e:
             output = AgentChatResponse(
                 response="An error occurred while running the tool: " + str(e),
