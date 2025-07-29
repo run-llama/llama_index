@@ -52,7 +52,7 @@ def query_input(query_str: Optional[str] = None) -> str:
 
 class RagCLI(BaseModel):
     """
-    CLI tool for chatting with output of a IngestionPipeline via a QueryPipeline.
+    CLI tool for chatting with output of a IngestionPipeline via a RetrieverQueryEngine.
     """
 
     ingestion_pipeline: IngestionPipeline = Field(
