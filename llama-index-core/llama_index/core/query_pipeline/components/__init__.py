@@ -1,9 +1,3 @@
-from llama_index.core.query_pipeline.components.agent import (
-    AgentFnComponent,
-    AgentInputComponent,
-    BaseAgentComponent,
-    CustomAgentComponent,
-)
 from llama_index.core.query_pipeline.components.argpacks import ArgPackComponent
 from llama_index.core.query_pipeline.components.function import (
     FnComponent,
@@ -19,10 +13,6 @@ from llama_index.core.query_pipeline.components.stateful import StatefulFnCompon
 from llama_index.core.query_pipeline.components.loop import LoopComponent
 
 __all__ = [
-    "AgentFnComponent",
-    "AgentInputComponent",
-    "BaseAgentComponent",
-    "CustomAgentComponent",
     "ArgPackComponent",
     "FnComponent",
     "FunctionComponent",

@@ -13,17 +13,23 @@ Here's an example usage of the ValyuToolSpec.
 # %pip install llama-index llama-index-core llama-index-tools-valyu
 
 from llama_index.tools.valyu import ValyuToolSpec
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 import os
 
 valyu_tool = ValyuToolSpec(
     api_key=os.environ["VALYU_API_KEY"],
     max_price=100,  # default is 100
 )
-agent = OpenAIAgent.from_tools(valyu_tool.to_tool_list())
+agent = FunctionAgent(
+    tools=valyu_tool.to_tool_list(),
+    llm=OpenAI(model="gpt-4.1"),
+)
 
-agent.chat(
-    "What are the implications of using different volatility calculation methods (EWMA vs. GARCH) in Value at Risk (VaR) modeling for fixed income portfolios?"
+print(
+    await agent.run(
+        "What are the implications of using different volatility calculation methods (EWMA vs. GARCH) in Value at Risk (VaR) modeling for fixed income portfolios?"
+    )
 )
 ```
 
