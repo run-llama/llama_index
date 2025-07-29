@@ -6,17 +6,16 @@ from typing import Optional
 
 import logging
 import pandas as pd
-import json
 
-from llama_index.experimental.retrievers.natrual_language import NLDataframeRetriever
+from llama_index.experimental.retrievers.natural_language import NLDataframeRetriever
 
 logger = logging.getLogger(__name__)
 
 
-class NLJsonRetriever(NLDataframeRetriever):
+class NLCSVRetriever(NLDataframeRetriever):
     def __init__(
         self,
-        json_path: str,
+        csv_path: str,
         llm: llm,
         name: Optional[str] = None,
         text_to_sql_prompt: Optional[BasePromptTemplate] = None,
@@ -24,8 +23,7 @@ class NLJsonRetriever(NLDataframeRetriever):
         callback_manager: Optional[CallbackManager] = None,
         verbose: bool = False,
     ):
-        data = json.loads(open(json_path).read())
-        df = pd.DataFrame.from_dict(data, orient="columns")
+        df = pd.read_csv(csv_path)
 
         super().__init__(
             df=df,

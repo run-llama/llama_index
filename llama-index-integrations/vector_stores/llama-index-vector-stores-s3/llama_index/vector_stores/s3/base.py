@@ -267,14 +267,23 @@ class S3VectorStore(BasePydanticVectorStore):
         available_requests = 5
         added_ids = []
         for node_batch in iter_batch(nodes, self.insert_batch_size):
-            vectors = [
-                {
-                    "key": str(node.id_),
-                    "data": {"float32": node.embedding},
-                    "metadata": node_to_metadata_dict(node),
-                }
-                for node in node_batch
-            ]
+            vectors = []
+            for node in node_batch:
+                node_metadata = node_to_metadata_dict(node)
+
+                # delete fields that aren't used to save space
+                node_metadata.pop("document_id", None)
+                node_metadata.pop("doc_id", None)
+                node_metadata.pop("embedding", None)
+
+                vectors.append(
+                    {
+                        "key": str(node.id_),
+                        "data": {"float32": node.embedding},
+                        "metadata": {**node_metadata},
+                    }
+                )
+
             kwargs = {
                 "vectors": vectors,
                 "vectorBucketName": self.bucket_name_or_arn,
