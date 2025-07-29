@@ -9,7 +9,6 @@ from typing import (
     Protocol,
     Sequence,
     Union,
-    get_args,
     runtime_checkable,
     TYPE_CHECKING,
     Type,
@@ -24,29 +23,18 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     MessageRole,
 )
-from llama_index.core.base.query_pipeline.query import (
-    InputKeys,
-    OutputKeys,
-    QueryComponent,
-    StringableInput,
-    validate_and_convert_stringable,
-)
 from llama_index.core.bridge.pydantic import (
     BaseModel,
     WithJsonSchema,
     Field,
     field_validator,
     model_validator,
-    ConfigDict,
     ValidationError,
 )
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.base.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
-)
-from llama_index.core.base.llms.generic_utils import (
-    prompt_to_messages,
 )
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.types import (
@@ -311,13 +299,6 @@ class LLM(BaseLLM):
                 *messages,
             ]
         return messages
-
-    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
-        """Return query component."""
-        if self.metadata.is_chat_model:
-            return LLMChatComponent(llm=self, **kwargs)
-        else:
-            return LLMCompleteComponent(llm=self, **kwargs)
 
     # -- Structured outputs --
 
@@ -933,126 +914,3 @@ class LLM(BaseLLM):
         from llama_index.core.llms.structured_llm import StructuredLLM
 
         return StructuredLLM(llm=self, output_cls=output_cls, **kwargs)
-
-
-class BaseLLMComponent(QueryComponent):
-    """Base LLM component."""
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    llm: LLM = Field(..., description="LLM")
-    streaming: bool = Field(default=False, description="Streaming mode")
-
-    def set_callback_manager(self, callback_manager: Any) -> None:
-        """Set callback manager."""
-        self.llm.callback_manager = callback_manager
-
-
-class LLMCompleteComponent(BaseLLMComponent):
-    """LLM completion component."""
-
-    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate component inputs during run_component."""
-        if "prompt" not in input:
-            raise ValueError("Prompt must be in input dict.")
-
-        # do special check to see if prompt is a list of chat messages
-        if isinstance(input["prompt"], get_args(List[ChatMessage])):
-            if self.llm.messages_to_prompt:
-                input["prompt"] = self.llm.messages_to_prompt(input["prompt"])
-            input["prompt"] = validate_and_convert_stringable(input["prompt"])
-        else:
-            input["prompt"] = validate_and_convert_stringable(input["prompt"])
-            if self.llm.completion_to_prompt:
-                input["prompt"] = self.llm.completion_to_prompt(input["prompt"])
-
-        return input
-
-    def _run_component(self, **kwargs: Any) -> Any:
-        """Run component."""
-        # TODO: support only complete for now
-        # non-trivial to figure how to support chat/complete/etc.
-        prompt = kwargs["prompt"]
-        # ignore all other kwargs for now
-
-        response: Any
-        if self.streaming:
-            response = self.llm.stream_complete(prompt, formatted=True)
-        else:
-            response = self.llm.complete(prompt, formatted=True)
-        return {"output": response}
-
-    async def _arun_component(self, **kwargs: Any) -> Any:
-        """Run component."""
-        # TODO: support only complete for now
-        # non-trivial to figure how to support chat/complete/etc.
-        prompt = kwargs["prompt"]
-        # ignore all other kwargs for now
-        response = await self.llm.acomplete(prompt, formatted=True)
-        return {"output": response}
-
-    @property
-    def input_keys(self) -> InputKeys:
-        """Input keys."""
-        # TODO: support only complete for now
-        return InputKeys.from_keys({"prompt"})
-
-    @property
-    def output_keys(self) -> OutputKeys:
-        """Output keys."""
-        return OutputKeys.from_keys({"output"})
-
-
-class LLMChatComponent(BaseLLMComponent):
-    """LLM chat component."""
-
-    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate component inputs during run_component."""
-        if "messages" not in input:
-            raise ValueError("Messages must be in input dict.")
-
-        # if `messages` is a string, convert to a list of chat message
-        if isinstance(input["messages"], get_args(StringableInput)):
-            input["messages"] = validate_and_convert_stringable(input["messages"])
-            input["messages"] = prompt_to_messages(str(input["messages"]))
-
-        for message in input["messages"]:
-            if not isinstance(message, ChatMessage):
-                raise ValueError("Messages must be a list of ChatMessage")
-        return input
-
-    def _run_component(self, **kwargs: Any) -> Any:
-        """Run component."""
-        # TODO: support only complete for now
-        # non-trivial to figure how to support chat/complete/etc.
-        messages = kwargs["messages"]
-
-        response: Any
-        if self.streaming:
-            response = self.llm.stream_chat(messages)
-        else:
-            response = self.llm.chat(messages)
-        return {"output": response}
-
-    async def _arun_component(self, **kwargs: Any) -> Any:
-        """Run component."""
-        # TODO: support only complete for now
-        # non-trivial to figure how to support chat/complete/etc.
-        messages = kwargs["messages"]
-
-        response: Any
-        if self.streaming:
-            response = await self.llm.astream_chat(messages)
-        else:
-            response = await self.llm.achat(messages)
-        return {"output": response}
-
-    @property
-    def input_keys(self) -> InputKeys:
-        """Input keys."""
-        # TODO: support only complete for now
-        return InputKeys.from_keys({"messages"})
-
-    @property
-    def output_keys(self) -> OutputKeys:
-        """Output keys."""
-        return OutputKeys.from_keys({"output"})

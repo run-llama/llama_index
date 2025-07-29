@@ -4,14 +4,6 @@ from abc import abstractmethod
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.base.base_query_engine import BaseQueryEngine
-from llama_index.core.base.query_pipeline.query import (
-    ChainableMixin,
-    InputKeys,
-    OutputKeys,
-    QueryComponent,
-    validate_and_convert_stringable,
-)
-from llama_index.core.bridge.pydantic import Field, ConfigDict
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.callbacks.schema import CBEventType, EventPayload
 from llama_index.core.prompts.mixin import (
@@ -39,7 +31,7 @@ import llama_index.core.instrumentation as instrument
 dispatcher = instrument.get_dispatcher(__name__)
 
 
-class BaseRetriever(ChainableMixin, PromptMixin, DispatcherSpanMixin):
+class BaseRetriever(PromptMixin, DispatcherSpanMixin):
     """Base retriever."""
 
     def __init__(
@@ -308,44 +300,3 @@ class BaseRetriever(ChainableMixin, PromptMixin, DispatcherSpanMixin):
 
         """
         return self._retrieve(query_bundle)
-
-    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
-        """Return a query component."""
-        return RetrieverComponent(retriever=self)
-
-
-class RetrieverComponent(QueryComponent):
-    """Retriever component."""
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    retriever: BaseRetriever = Field(..., description="Retriever")
-
-    def set_callback_manager(self, callback_manager: CallbackManager) -> None:
-        """Set callback manager."""
-        self.retriever.callback_manager = callback_manager
-
-    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate component inputs during run_component."""
-        # make sure input is a string
-        input["input"] = validate_and_convert_stringable(input["input"])
-        return input
-
-    def _run_component(self, **kwargs: Any) -> Any:
-        """Run component."""
-        output = self.retriever.retrieve(kwargs["input"])
-        return {"output": output}
-
-    async def _arun_component(self, **kwargs: Any) -> Any:
-        """Run component."""
-        output = await self.retriever.aretrieve(kwargs["input"])
-        return {"output": output}
-
-    @property
-    def input_keys(self) -> InputKeys:
-        """Input keys."""
-        return InputKeys.from_keys({"input"})
-
-    @property
-    def output_keys(self) -> OutputKeys:
-        """Output keys."""
-        return OutputKeys.from_keys({"output"})

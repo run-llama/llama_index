@@ -73,3 +73,24 @@ This includes the following deprecated classes:
 - `ToolInteractiveReflectionAgentWorker`
 - `LLMCompilerAgentWorker`
 - `QueryUnderstandAgentWorker`
+
+## QueryPipeline (and related classes)
+
+QueryPipeline has been deprecated in favour of [Workflows](../module_guides/workflow/index.md).
+
+This includes the following deprecated classes:
+
+- `AgentFnComponent`
+- `AgentInputComponent`
+- `BaseAgentComponent`
+- `CustomAgentComponent`
+- `ArgPackComponent`
+- `FnComponent`
+- `FunctionComponent`
+- `InputComponent`
+- `RouterComponent`
+- `SelectorComponent`
+- `ToolRunnerComponent`
+- `StatefulFnComponent`
+- `LoopComponent`
+- etc.
