@@ -59,6 +59,8 @@ class VercelAIGateway(OpenAILike):
             model="anthropic/claude-4-sonnet",
         )
 
+
+
         response = llm.complete("Hello World!")
         print(str(response))
         ```
@@ -87,6 +89,7 @@ class VercelAIGateway(OpenAILike):
         max_retries: int = 5,
         api_base: Optional[str] = DEFAULT_API_BASE,
         api_key: Optional[str] = None,
+        default_headers: Optional[Dict[str, str]] = None,
         **kwargs: Any,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
@@ -109,6 +112,15 @@ class VercelAIGateway(OpenAILike):
                 except ValueError:
                     pass
 
+        # Set up required Vercel AI Gateway headers
+        gateway_headers = {
+            "http-referer": "https://www.llamaindex.ai/",
+            "x-title": "LlamaIndex",
+        }
+
+        if default_headers:
+            gateway_headers.update(default_headers)
+
         super().__init__(
             model=model,
             temperature=temperature,
@@ -117,6 +129,7 @@ class VercelAIGateway(OpenAILike):
             api_key=api_key,
             additional_kwargs=additional_kwargs,
             max_retries=max_retries,
+            default_headers=gateway_headers,
             **kwargs,
         )
 
