@@ -482,7 +482,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                 if not self.embeddings_cache:
                     embeddings_coroutines.append(self._aget_text_embeddings(cur_batch))
                 elif self.embeddings_cache is not None:
-                    embeddings = [None for i in range(len(cur_batch))]
+                    embeddings: List[Optional[List[float]]] = [None for i in range(len(cur_batch))]
                     non_cached_texts: List[Tuple[int, str]] = []
                     for i, txt in enumerate(cur_batch):
                         cached_emb = self.embeddings_cache.get(
