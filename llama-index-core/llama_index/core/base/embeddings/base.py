@@ -496,7 +496,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
 
                     local_cur_batch = cur_batch
 
-                    async def batch_coroutine():
+                    async def batch_coroutine() -> List[List[float]]:
                         nonlocal local_cur_batch, non_cached_texts, embeddings
 
                         if len(non_cached_texts) > 0:
