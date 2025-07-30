@@ -59,7 +59,15 @@ class VercelAIGateway(OpenAILike):
             model="anthropic/claude-4-sonnet",
         )
 
-
+        # Customizing headers (overrides default http-referer and x-title)
+        llm = VercelAIGateway(
+            api_key="<your-api-key>",
+            model="anthropic/claude-4-sonnet",
+            default_headers={
+                "http-referer": "https://myapp.com/",
+                "x-title": "My App"
+            }
+        )
 
         response = llm.complete("Hello World!")
         print(str(response))
