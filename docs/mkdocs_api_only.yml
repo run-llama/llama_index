@@ -436,6 +436,7 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-langchain
             - ../llama-index-integrations/llms/llama-index-llms-everlyai
             - ../llama-index-integrations/llms/llama-index-llms-openrouter
+            - ../llama-index-integrations/llms/llama-index-llms-vercel-ai-gateway
             - ../llama-index-integrations/llms/llama-index-llms-openai
             - ../llama-index-integrations/llms/llama-index-llms-cerebras
             - ../llama-index-integrations/llms/llama-index-llms-gradient

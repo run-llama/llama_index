@@ -43,6 +43,7 @@ We support integrations with OpenAI, Anthropic, Google, Hugging Face, and more.
 - [OpenAI](../../../examples/llm/openai.ipynb)
 - [OpenLLM](../../../examples/llm/openllm.ipynb)
 - [OpenRouter](../../../examples/llm/openrouter.ipynb)
+- [Vercel AI Gateway](../../../examples/llm/vercel-ai-gateway.ipynb)
 - [Perplexity](../../../examples/llm/perplexity.ipynb)
 - [Pipeshift](../../../examples/llm/pipeshift.ipynb)
 - [PremAI](../../../examples/llm/premai.ipynb)

@@ -384,6 +384,7 @@ nav:
           - ./examples/llm/openai_responses.ipynb
           - ./examples/llm/openllm.ipynb
           - ./examples/llm/openrouter.ipynb
+          - ./examples/llm/vercel-ai-gateway.ipynb
           - ./examples/llm/openvino-genai.ipynb
           - ./examples/llm/openvino.ipynb
           - ./examples/llm/optimum_intel.ipynb
@@ -1087,6 +1088,7 @@ nav:
           - ./api_reference/llms/openai_like.md
           - ./api_reference/llms/openllm.md
           - ./api_reference/llms/openrouter.md
+          - ./api_reference/llms/vercel_ai_gateway.md
           - ./api_reference/llms/openvino.md
           - ./api_reference/llms/openvino_genai.md
           - ./api_reference/llms/optimum_intel.md
@@ -2229,6 +2231,7 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-langchain
             - ../llama-index-integrations/llms/llama-index-llms-everlyai
             - ../llama-index-integrations/llms/llama-index-llms-openrouter
+            - ../llama-index-integrations/llms/llama-index-llms-vercel-ai-gateway
             - ../llama-index-integrations/llms/llama-index-llms-openai
             - ../llama-index-integrations/llms/llama-index-llms-cerebras
             - ../llama-index-integrations/llms/llama-index-llms-gradient
@@ -2831,6 +2834,7 @@ plugins:
         ./examples/llm/openai_json_vs_function_calling.html: https://docs.llamaindex.ai/en/stable/examples/llm/openai_json_vs_function_calling/
         ./examples/llm/openllm.html: https://docs.llamaindex.ai/en/stable/examples/llm/openllm/
         ./examples/llm/openrouter.html: https://docs.llamaindex.ai/en/stable/examples/llm/openrouter/
+        ./examples/llm/vercel-ai-gateway.html: https://docs.llamaindex.ai/en/stable/examples/llm/vercel-ai-gateway/
         ./examples/llm/palm.html: https://docs.llamaindex.ai/en/stable/examples/llm/palm/
         ./examples/llm/perplexity.html: https://docs.llamaindex.ai/en/stable/examples/llm/perplexity/
         ./examples/llm/pipeshift.html: https://docs.llamaindex.ai/en/stable/examples/llm/pipeshift/
