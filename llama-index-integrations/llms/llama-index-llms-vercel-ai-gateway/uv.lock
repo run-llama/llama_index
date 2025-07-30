@@ -1832,7 +1832,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-vercel-ai-gateway"
-version = "0.3.2"
+version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
