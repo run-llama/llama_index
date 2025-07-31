@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-maps"
-version = "0.3.0"
+version = "0.4.0"
 description = "llama-index readers maps integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -43,7 +43,7 @@ keywords = [
 dependencies = [
     "osmxtract>=0.0.1,<0.0.2",
     "geopy>=2.4.1,<3",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

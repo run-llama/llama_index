@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-packs-retry-engine-weaviate"
-version = "0.4.0"
+version = "0.5.0"
 description = "llama-index packs retry_engine_weaviate integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"

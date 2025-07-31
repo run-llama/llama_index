@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-mariadb"
-version = "0.3.1"
+version = "0.4.0"
 description = "llama-index vector_stores mariadb integration"
 authors = [
     {name = "Kalin Arsov", email = "kalin@skysql.com"},
@@ -36,7 +36,7 @@ requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
     "pymysql>=1.1.1,<2",
     "sqlalchemy>=2.0,<2.1",
 ]

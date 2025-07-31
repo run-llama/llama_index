@@ -23,7 +23,6 @@ mkdocs-redirects = "^1.2.1"
 mkdocs-render-swagger-plugin = "^0.1.2"
 mkdocstrings = {extras = ["python"], version = "^0.26.1"}
 griffe-fieldz = "^0.2.0"
-llama_deploy = {extras = ["awssqs", "kafka", "rabbitmq", "redis"], version = "<1"}
 appnope = "0.1.4"
 asttokens = "2.4.1"
 attrs = "23.2.0"

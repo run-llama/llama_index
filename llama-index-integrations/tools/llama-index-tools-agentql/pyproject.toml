@@ -28,7 +28,7 @@ dev = [
 
 [project]
 name = "llama-index-tools-agentql"
-version = "1.0.0"
+version = "1.1.0"
 description = "llama-index tools agentql integration"
 authors = [{name = "Jason Zhang", email = "jason@tinyfish.io"}]
 requires-python = ">=3.9,<4.0"

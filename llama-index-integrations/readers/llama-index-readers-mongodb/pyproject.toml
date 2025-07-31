@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-mongodb"
-version = "0.3.2"
+version = "0.4.0"
 description = "llama-index readers mongodb integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -36,7 +36,7 @@ maintainers = [{name = "jerryjliu"}]
 dependencies = [
     "pymongo>=4.6.1,<5",
     "motor",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

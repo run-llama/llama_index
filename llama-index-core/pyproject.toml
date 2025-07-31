@@ -10,7 +10,6 @@ dev = [
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "llama-cloud>=0.0.6",
-    "llama-index-llms-openai>=0.5.0",
     "mypy==1.11.0",
     "openai",
     "pandas",
