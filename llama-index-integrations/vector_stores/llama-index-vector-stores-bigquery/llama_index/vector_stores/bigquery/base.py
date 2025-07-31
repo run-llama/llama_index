@@ -52,7 +52,7 @@ class BigQueryVectorStore(BasePydanticVectorStore):
     Vector store index using Google BigQuery.
 
     Provides integration with BigQuery for storing and querying vector embeddings.
-    For more information visit: https://cloud.google.com/bigquery/docs/vector-search-intro
+    For more information, visit: https://cloud.google.com/bigquery/docs/vector-search-intro
 
     Required IAM Permissions:
         - `roles/bigquery.dataOwner` (BigQuery Data Owner)
@@ -63,6 +63,7 @@ class BigQueryVectorStore(BasePydanticVectorStore):
 
         ```python
         from google.cloud.bigquery import Client
+        from llama_index.vector_stores.bigquery import BigQueryVectorStore
 
         client = Client()
 
