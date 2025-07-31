@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "google-cloud-bigquery>=3.34.0,<4",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]
