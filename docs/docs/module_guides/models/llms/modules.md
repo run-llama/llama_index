@@ -56,6 +56,7 @@ We support integrations with OpenAI, Anthropic, Google, Hugging Face, and more.
 - [Together.ai](../../../examples/llm/together.ipynb)
 - [Unify AI](../../../examples/llm/unify.ipynb)
 - [Upstage](../../../examples/llm/upstage.ipynb)
+- [Vercel AI Gateway](../../../examples/llm/vercel-ai-gateway.ipynb)
 - [vLLM](../../../examples/llm/vllm.ipynb)
 - [Xorbits Inference](../../../examples/llm/xinference_local_deployment.ipynb)
 - [Yi](../../../examples/llm/yi.ipynb)

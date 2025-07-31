@@ -996,6 +996,7 @@
   "EverlyAI": "llama_index.llms.everlyai",
   "PremAI": "llama_index.llms.premai",
   "OpenRouter": "llama_index.llms.openrouter",
+  "VercelAIGateway": "llama_index.llms.vercel_ai_gateway",
   "You": "llama_index.llms.you",
   "OpenAI": "llama_index.llms.openai",
   "Tokenizer": "llama_index.llms.openai",

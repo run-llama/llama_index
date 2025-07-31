@@ -396,6 +396,7 @@ nav:
           - ./examples/llm/sambanovasystems.ipynb
           - ./examples/llm/together.ipynb
           - ./examples/llm/upstage.ipynb
+          - ./examples/llm/vercel-ai-gateway.ipynb
           - ./examples/llm/vertex.ipynb
           - ./examples/llm/vicuna.ipynb
           - ./examples/llm/vllm.ipynb
@@ -1098,6 +1099,7 @@ nav:
           - ./api_reference/llms/together.md
           - ./api_reference/llms/unify.md
           - ./api_reference/llms/upstage.md
+          - ./api_reference/llms/vercel_ai_gateway.md
           - ./api_reference/llms/vertex.md
           - ./api_reference/llms/vllm.md
           - ./api_reference/llms/xinference.md
@@ -2171,6 +2173,7 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-langchain
             - ../llama-index-integrations/llms/llama-index-llms-everlyai
             - ../llama-index-integrations/llms/llama-index-llms-openrouter
+            - ../llama-index-integrations/llms/llama-index-llms-vercel-ai-gateway
             - ../llama-index-integrations/llms/llama-index-llms-openai
             - ../llama-index-integrations/llms/llama-index-llms-cerebras
             - ../llama-index-integrations/llms/llama-index-llms-gradient
@@ -2778,6 +2781,7 @@ plugins:
         ./examples/llm/sagemaker_endpoint_llm.html: https://docs.llamaindex.ai/en/stable/examples/llm/sagemaker_endpoint_llm/
         ./examples/llm/solar.html: https://docs.llamaindex.ai/en/stable/examples/llm/solar/
         ./examples/llm/together.html: https://docs.llamaindex.ai/en/stable/examples/llm/together/
+        ./examples/llm/vercel-ai-gateway.html: https://docs.llamaindex.ai/en/stable/examples/llm/vercel-ai-gateway/
         ./examples/llm/vertex.html: https://docs.llamaindex.ai/en/stable/examples/llm/vertex/
         ./examples/llm/vicuna.html: https://docs.llamaindex.ai/en/stable/examples/llm/vicuna/
         ./examples/llm/vllm.html: https://docs.llamaindex.ai/en/stable/examples/llm/vllm/
