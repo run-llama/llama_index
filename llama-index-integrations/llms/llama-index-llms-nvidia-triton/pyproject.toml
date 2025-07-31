@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-nvidia-triton"
-version = "0.3.0"
+version = "0.4.0"
 description = "llama-index llms nvidia triton integration"
 authors = [{name = "Rohith Ramakrishnan", email = "rrohith2001@gmail.com"}]
 requires-python = ">=3.9,<4.0"
@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "tritonclient[grpc, http]>=2.48.0,<3",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

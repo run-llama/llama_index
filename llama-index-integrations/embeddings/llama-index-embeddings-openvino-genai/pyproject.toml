@@ -27,14 +27,14 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-openvino-genai"
-version = "0.5.0"
+version = "0.6.0"
 description = "llama-index embeddings openvino genai integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
     "openvino>=2025.1.0",
     "openvino-genai>=2025.1.0.0",
     "openvino-tokenizers>=2025.1.0.0",

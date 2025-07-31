@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-packs-raft-dataset"
-version = "0.3.1"
+version = "0.4.0"
 description = "llama-index packs RAFT Dataset paper implementation"
 authors = [{name = "Ravi Theja", email = "ravi03071991@gmail.com"}]
 requires-python = ">=3.9,<4.0"
@@ -40,9 +40,9 @@ keywords = [
 ]
 dependencies = [
     "datasets>=2.18.0,<3",
-    "llama-index-llms-openai>=0.4.0,<0.5",
-    "llama-index-embeddings-openai>=0.3.0,<0.4",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-llms-openai>=0.5.0,<0.6",
+    "llama-index-embeddings-openai>=0.5.0,<0.6",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

@@ -26,14 +26,14 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-hnswlib"
-version = "0.3.0"
+version = "0.4.0"
 description = "llama-index vector_stores hnswlib integration"
 authors = [{name = "Artur Stopa", email = "arturstopa10@gmail.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
     "hnswlib>=0.8.0,<0.9",
 ]
 
