@@ -58,7 +58,7 @@ include = ["llama_index/"]
 include = ["llama_index/"]
 
 [tool.llamahub]
-contains_example = false
+contains_example = true
 import_path = "llama_index.llms.heroku"
 
 [tool.llamahub.class_authors]
