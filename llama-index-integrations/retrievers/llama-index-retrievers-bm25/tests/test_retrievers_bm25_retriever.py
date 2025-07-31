@@ -25,3 +25,22 @@ def test_scores():
     for node in result_nodes:
         assert node.score is not None
         assert node.score > 0.0
+
+
+def test_large_value_of_top_k():
+    documents = [Document.example()]
+
+    splitter = SentenceSplitter(chunk_size=1024)
+    nodes = splitter.get_nodes_from_documents(documents)
+
+    # Passing a high value of similarity_top_k w.r.t Document example
+    similarity_top_k = 20
+    retriever = BM25Retriever.from_defaults(
+        nodes=nodes, similarity_top_k=similarity_top_k
+    )
+    result_nodes = retriever.retrieve("What is llama index about?")
+
+    # As we had less nodes then similarity_top_k in the retriever
+    assert len(result_nodes) < similarity_top_k
+    # Retrieved nodes should be all the nodes added in retriever
+    assert len(result_nodes) == len(nodes)
