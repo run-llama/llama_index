@@ -16,16 +16,13 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     TextBlock,
 )
-from llama_index.core.base.query_pipeline.query import (
-    ChainableMixin,
-)
 from llama_index.core.bridge.pydantic import Field, model_validator, ConfigDict
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.instrumentation import DispatcherSpanMixin
 from llama_index.core.schema import BaseComponent
 
 
-class BaseLLM(ChainableMixin, BaseComponent, DispatcherSpanMixin):
+class BaseLLM(BaseComponent, DispatcherSpanMixin):
     """BaseLLM interface."""
 
     model_config = ConfigDict(arbitrary_types_allowed=True)

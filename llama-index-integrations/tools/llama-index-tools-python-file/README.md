@@ -10,17 +10,23 @@ Here's an example usage of the PythonFileToolSpec.
 
 ```python
 from llama_index.tools.python_file import PythonFileToolSpec
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 
 pyfile = PythonFileToolSpec("./numpy_linalg.py")
 
-agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
+agent = FunctionAgent(
+    tools=pyfile.to_tool_list(),
+    llm=OpenAI(model="gpt-4.1"),
+)
 
-agent.chat(
-    """Load the eig, transpose and solve functions from the python file,
+print(
+    await agent.run(
+        """Load the eig, transpose and solve functions from the python file,
 and then write a function definition using only builtin python types (List, float, Tuple)
 with a short 5-10 line doc string tool prompts for the functions that only has a small description and arguments
 """
+    )
 )
 ```
 

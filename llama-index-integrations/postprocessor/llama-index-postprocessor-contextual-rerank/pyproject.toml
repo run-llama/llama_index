@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-postprocessor-contextual-rerank"
-version = "0.1.0"
+version = "0.2.0"
 description = "llama-index postprocessor contextual rerank integration"
 authors = [{name = "Sean Smith", email = "sean.smith@contextual.ai"}]
 requires-python = ">=3.9,<4.0"
@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "contextual-client>=0.4.0,<0.5",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

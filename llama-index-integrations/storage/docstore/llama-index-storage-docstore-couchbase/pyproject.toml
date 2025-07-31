@@ -26,15 +26,15 @@ dev = [
 
 [project]
 name = "llama-index-docstore-couchbase"
-version = "0.2.0"
+version = "0.3.0"
 description = "llama-index docstore couchbase integration"
 authors = [{name = "Couchbase", email = "devadvocates@couchbase.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.12.0,<0.13",
-    "llama-index-kvstore-couchbase>=0.2.0,<0.3",
+    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-kvstore-couchbase>=0.3.0,<0.4",
 ]
 
 [tool.codespell]
