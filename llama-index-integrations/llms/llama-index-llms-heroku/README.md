@@ -15,7 +15,7 @@ pip install llama-index-llms-heroku
 First, create an app in Heroku:
 
 ```bash
-heroku create example-app
+heroku create $APP_NAME
 ```
 
 ### 2. Create and Attach AI Models
@@ -23,7 +23,7 @@ heroku create example-app
 Create and attach a chat model to your app:
 
 ```bash
-heroku ai:models:create -a example-app claude-3-5-haiku
+heroku ai:models:create -a $APP_NAME claude-3-5-haiku
 ```
 
 ### 3. Export Configuration Variables
@@ -31,9 +31,9 @@ heroku ai:models:create -a example-app claude-3-5-haiku
 Export the required configuration variables:
 
 ```bash
-export INFERENCE_KEY=$(heroku config:get INFERENCE_KEY -a example-app)
-export INFERENCE_MODEL_ID=$(heroku config:get INFERENCE_MODEL_ID -a example-app)
-export INFERENCE_URL=$(heroku config:get INFERENCE_URL -a example-app)
+export INFERENCE_KEY=$(heroku config:get INFERENCE_KEY -a $APP_NAME)
+export INFERENCE_MODEL_ID=$(heroku config:get INFERENCE_MODEL_ID -a $APP_NAME)
+export INFERENCE_URL=$(heroku config:get INFERENCE_URL -a $APP_NAME)
 ```
 
 ## Usage
