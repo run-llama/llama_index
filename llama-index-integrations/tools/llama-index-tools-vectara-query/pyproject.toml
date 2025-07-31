@@ -9,6 +9,7 @@ dev = [
     "diff-cover>=9.2.0",
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
+    "llama-index-llms-openai",
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",

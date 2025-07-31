@@ -1587,7 +1587,7 @@ dev = [
 requires-dist = [
     { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
     { name = "llama-index-embeddings-huggingface", specifier = ">=0.6.0,<0.7" },
-    { name = "optimum", extras = ["exporters"], specifier = ">=1.16.2,<2" },
+    { name = "optimum", extras = ["exporters"] },
 ]
 
 [package.metadata.requires-dev]
