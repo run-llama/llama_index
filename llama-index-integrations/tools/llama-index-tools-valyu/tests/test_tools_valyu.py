@@ -60,6 +60,10 @@ def test_search_with_default_max_price(mock_valyu):
         max_price=75.0,  # Should use the default from init
         start_date=None,
         end_date=None,
+        included_sources=None,
+        excluded_sources=None,
+        response_length=None,
+        country_code=None,
     )
 
     # Verify document creation
@@ -157,6 +161,10 @@ def test_search_with_custom_parameters(mock_valyu):
         max_price=50.0,
         start_date="2023-01-01",
         end_date="2023-12-31",
+        included_sources=None,
+        excluded_sources=None,
+        response_length=None,
+        country_code=None,
     )
 
     # Verify document creation
@@ -208,3 +216,108 @@ def test_search_multiple_results(mock_valyu):
     assert documents[1].text == "Second result content"
     assert documents[0].metadata["title"] == "First title"
     assert documents[1].metadata["title"] == "Second title"
+
+
+@patch("valyu.Valyu")
+def test_search_with_new_parameters(mock_valyu):
+    """Test search method with the new parameters: included_sources, excluded_sources, response_length, country_code."""
+    # Mock the Valyu client and response
+    mock_client = Mock()
+    mock_valyu.return_value = mock_client
+
+    # Create mock result object
+    mock_result = Mock()
+    mock_result.content = "New parameters test content"
+    mock_result.title = "New parameters test title"
+    mock_result.url = "https://new-params-test.com"
+    mock_result.source = "new_params_source"
+    mock_result.price = 1.5
+    mock_result.length = 150
+    mock_result.data_type = "text"
+    mock_result.relevance_score = 0.85
+
+    # Mock response object
+    mock_response = Mock()
+    mock_response.results = [mock_result]
+    mock_client.search.return_value = mock_response
+
+    tool = ValyuToolSpec(api_key="test_key")
+
+    # Test search with new parameters
+    documents = tool.search(
+        query="new parameters test query",
+        included_sources=["example.com", "trusted-source.org"],
+        excluded_sources=["spam-site.com"],
+        response_length="medium",
+        country_code="US",
+    )
+
+    # Verify the client was called with the new parameters
+    mock_client.search.assert_called_once_with(
+        query="new parameters test query",
+        search_type="all",
+        max_num_results=5,
+        relevance_threshold=0.5,
+        max_price=100,  # Default from class init
+        start_date=None,
+        end_date=None,
+        included_sources=["example.com", "trusted-source.org"],
+        excluded_sources=["spam-site.com"],
+        response_length="medium",
+        country_code="US",
+    )
+
+    # Verify document creation
+    assert len(documents) == 1
+    assert documents[0].text == "New parameters test content"
+
+
+@patch("valyu.Valyu")
+def test_search_with_response_length_as_int(mock_valyu):
+    """Test search method with response_length as an integer."""
+    # Mock the Valyu client and response
+    mock_client = Mock()
+    mock_valyu.return_value = mock_client
+
+    # Create mock result object
+    mock_result = Mock()
+    mock_result.content = "Integer response length test"
+    mock_result.title = "Int response length test"
+    mock_result.url = "https://int-test.com"
+    mock_result.source = "int_source"
+    mock_result.price = 0.5
+    mock_result.length = 50
+    mock_result.data_type = "text"
+    mock_result.relevance_score = 0.75
+
+    # Mock response object
+    mock_response = Mock()
+    mock_response.results = [mock_result]
+    mock_client.search.return_value = mock_response
+
+    tool = ValyuToolSpec(api_key="test_key")
+
+    # Test search with response_length as integer
+    documents = tool.search(
+        query="integer response length test",
+        response_length=30000,  # 30k characters
+    )
+
+    # Verify the client was called with integer response_length
+    mock_client.search.assert_called_once_with(
+        query="integer response length test",
+        search_type="all",
+        max_num_results=5,
+        relevance_threshold=0.5,
+        max_price=100,
+        start_date=None,
+        end_date=None,
+        included_sources=None,
+        excluded_sources=None,
+        response_length=30000,
+        country_code=None,
+    )
+
+    # Verify document creation
+    assert len(documents) == 1
+    assert documents[0].text == "Integer response length test"

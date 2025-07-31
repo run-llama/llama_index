@@ -41,7 +41,6 @@ We support integrations with OpenAI, Anthropic, Google, Hugging Face, and more.
 - [Nvidia Triton](../../../examples/llm/nvidia_triton.ipynb)
 - [Ollama](../../../examples/llm/ollama.ipynb)
 - [OpenAI](../../../examples/llm/openai.ipynb)
-- [OpenLLM](../../../examples/llm/openllm.ipynb)
 - [OpenRouter](../../../examples/llm/openrouter.ipynb)
 - [Perplexity](../../../examples/llm/perplexity.ipynb)
 - [Pipeshift](../../../examples/llm/pipeshift.ipynb)

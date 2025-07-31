@@ -2,7 +2,7 @@
 
 # Welcome to LlamaIndex 🦙 !
 
-LlamaIndex is the leading framework for building LLM-powered agents over your data with [LLMs](https://en.wikipedia.org/wiki/Large_language_model) and [workflows](./understanding/workflows/).
+LlamaIndex is the leading framework for building LLM-powered agents over your data with [LLMs](https://en.wikipedia.org/wiki/Large_language_model) and [workflows](./understanding/workflows/index.md).
 
 <div class="grid cards" markdown>
 
@@ -36,13 +36,13 @@ LlamaIndex is the leading framework for building LLM-powered agents over your da
 
 ### What are agents?
 
-[Agents](./understanding/agent/basic_agent/) are LLM-powered knowledge assistants that use tools to perform tasks like research, data extraction, and more. Agents range from simple question-answering to being able to sense, decide and take actions in order to complete tasks.
+[Agents](./understanding/agent/index.md) are LLM-powered knowledge assistants that use tools to perform tasks like research, data extraction, and more. Agents range from simple question-answering to being able to sense, decide and take actions in order to complete tasks.
 
 LlamaIndex provides a framework for building agents including the ability to use RAG pipelines as one of many tools to complete a task.
 
 ### What are workflows?
 
-[Workflows](./understanding/workflows/) are multi-step processes that combine one or more agents, data connectors, and other tools to complete a task. They are event-driven software that allows you to combine RAG data sources and multiple agents to create a complex application that can perform a wide variety of tasks with reflection, error-correction, and other hallmarks of advanced LLM applications. You can then [deploy these agentic workflows](./module_guides/workflow/deployment.md) as production microservices.
+[Workflows](./understanding/workflows/index.md) are multi-step processes that combine one or more agents, data connectors, and other tools to complete a task. They are event-driven software that allows you to combine RAG data sources and multiple agents to create a complex application that can perform a wide variety of tasks with reflection, error-correction, and other hallmarks of advanced LLM applications. You can then [deploy these agentic workflows](./module_guides/workflow/deployment.md) as production microservices.
 
 ### What is context augmentation?
 

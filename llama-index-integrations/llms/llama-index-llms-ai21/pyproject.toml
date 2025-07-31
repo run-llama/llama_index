@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-ai21"
-version = "0.5.0"
+version = "0.6.0"
 description = "llama-index llms ai21 integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -35,7 +35,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "ai21>=2.13.0,<3",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

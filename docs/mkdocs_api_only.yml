@@ -415,7 +415,6 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-replicate
             - ../llama-index-integrations/llms/llama-index-llms-openai-like
             - ../llama-index-integrations/llms/llama-index-llms-konko
-            - ../llama-index-integrations/llms/llama-index-llms-openllm
             - ../llama-index-integrations/llms/llama-index-llms-litellm
             - ../llama-index-integrations/llms/llama-index-llms-sagemaker-endpoint
             - ../llama-index-integrations/llms/llama-index-llms-portkey

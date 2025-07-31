@@ -3,13 +3,13 @@
 from string import Formatter
 from typing import TYPE_CHECKING, Any, Optional
 
-from llama_index.core.output_parsers.base import ChainableOutputParser
+from llama_index.core.output_parsers import BaseOutputParser
 
 if TYPE_CHECKING:
     from llama_index.core.bridge.langchain import BaseOutputParser as LCOutputParser
 
 
-class LangchainOutputParser(ChainableOutputParser):
+class LangchainOutputParser(BaseOutputParser):
     """Langchain output parser."""
 
     def __init__(

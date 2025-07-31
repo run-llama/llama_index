@@ -9,7 +9,7 @@ dev = [
     "diff-cover>=9.2.0",
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
-    "llama-index-agent-openai>=0.4.6",
+    "llama-index-llms-openai",
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
@@ -27,15 +27,15 @@ dev = [
 
 [project]
 name = "llama-index-tools-vectara-query"
-version = "0.3.1"
+version = "0.4.0"
 description = "llama-index tools vectara query integration"
 authors = [{name = "David Oplatka", email = "david.oplatka@vectara.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.12.0,<0.13",
-    "llama-index-indices-managed-vectara>=0.4.0,<0.5",
+    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-indices-managed-vectara>=0.5.0,<0.6",
 ]
 
 [tool.codespell]

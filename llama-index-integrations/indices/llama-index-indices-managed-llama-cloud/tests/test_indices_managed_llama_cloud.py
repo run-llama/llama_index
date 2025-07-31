@@ -22,11 +22,9 @@ from llama_index.indices.managed.llama_cloud import (
     LlamaCloudIndex,
     LlamaCloudCompositeRetriever,
 )
-from llama_index.embeddings.openai import OpenAIEmbedding
 
 base_url = os.environ.get("LLAMA_CLOUD_BASE_URL", DEFAULT_BASE_URL)
 api_key = os.environ.get("LLAMA_CLOUD_API_KEY", None)
-openai_api_key = os.environ.get("OPENAI_API_KEY", None)
 organization_id = os.environ.get("LLAMA_CLOUD_ORGANIZATION_ID", None)
 project_name = os.environ.get("LLAMA_CLOUD_PROJECT_NAME", "framework_integration_test")
 
@@ -74,7 +72,6 @@ def _setup_index_with_file(
     # create pipeline
     pipeline_create = PipelineCreate(
         name=index_name,
-        embedding_config={"type": "OPENAI_EMBEDDING", "component": OpenAIEmbedding()},
         transform_config=AutoTransformConfig(),
     )
     pipeline = client.pipelines.upsert_pipeline(
@@ -109,7 +106,6 @@ def test_conflicting_index_identifiers():
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 def test_resolve_index_with_id(remote_file: Tuple[str, str], index_name: str):
     """Test that we can instantiate an index with a given id."""
     client = LlamaCloud(token=api_key, base_url=base_url)
@@ -132,7 +128,6 @@ def test_resolve_index_with_id(remote_file: Tuple[str, str], index_name: str):
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 def test_resolve_index_with_name(remote_file: Tuple[str, str], index_name: str):
     """Test that we can instantiate an index with a given name."""
     client = LlamaCloud(token=api_key, base_url=base_url)
@@ -157,7 +152,6 @@ def test_resolve_index_with_name(remote_file: Tuple[str, str], index_name: str):
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 def test_upload_file(index_name: str):
     index = LlamaCloudIndex.create_index(
         name=index_name,
@@ -192,7 +186,6 @@ def test_upload_file(index_name: str):
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 def test_upload_file_from_url(remote_file: Tuple[str, str], index_name: str):
     index = LlamaCloudIndex.create_index(
         name=index_name,
@@ -219,7 +212,6 @@ def test_upload_file_from_url(remote_file: Tuple[str, str], index_name: str):
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 def test_index_from_documents(index_name: str):
     documents = [
         Document(text="Hello world.", doc_id="1", metadata={"source": "test"}),
@@ -282,7 +274,6 @@ def test_index_from_documents(index_name: str):
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 @pytest.mark.asyncio
 async def test_page_screenshot_retrieval(index_name: str, local_file: str):
     index = await LlamaCloudIndex.acreate_index(
@@ -325,7 +316,6 @@ async def test_page_screenshot_retrieval(index_name: str, local_file: str):
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 @pytest.mark.asyncio
 async def test_page_figure_retrieval(index_name: str, local_figures_file: str):
     index = await LlamaCloudIndex.acreate_index(
@@ -373,7 +363,6 @@ async def test_page_figure_retrieval(index_name: str, local_figures_file: str):
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 @pytest.mark.asyncio
 async def test_composite_retriever(index_name: str):
     """Test the LlamaCloudCompositeRetriever with multiple indices."""
@@ -447,7 +436,6 @@ async def test_composite_retriever(index_name: str):
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 @pytest.mark.asyncio
 async def test_async_index_from_documents(index_name: str):
     documents = [
@@ -468,7 +456,6 @@ async def test_async_index_from_documents(index_name: str):
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 @pytest.mark.asyncio
 async def test_async_upload_file_from_url(
     remote_file: Tuple[str, str], index_name: str
@@ -492,7 +479,6 @@ async def test_async_upload_file_from_url(
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 @pytest.mark.asyncio
 async def test_async_index_from_file(index_name: str, local_file: str):
     index = await LlamaCloudIndex.acreate_index(
@@ -515,7 +501,6 @@ class DummySchema(BaseModel):
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 @pytest.mark.asyncio
 async def test_search_filters_inference_schema(index_name: str):
     """Test the use of search_filters_inference_schema in retrieval."""

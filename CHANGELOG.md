@@ -1,5 +1,74 @@
 # ChangeLog
 
+## [2025-07-30]
+
+**NOTE:** All packages have been bumped to handle the latest llama-index-core version.
+
+### `llama-index-core` [0.13.0]
+
+- breaking: removed deprecated agent classes, including `FunctionCallingAgent`, the older `ReActAgent` implementation, `AgentRunner`, all step workers, `StructuredAgentPlanner`, `OpenAIAgent`, and more. All users should migrate to the new workflow based agents: `FunctionAgent`, `CodeActAgent`, `ReActAgent`, and `AgentWorkflow` (#19529)
+- breaking: removed deprecated `QueryPipeline` class and all associated code (#19554)
+- breaking: changed default `index.as_chat_engine()` to return a `CondensePlusContextChatEngine`. Agent-based chat engines have been removed (which was the previous default). If you need an agent, use the above mentioned agent classes. (#19529)
+- fix: Update BaseDocumentStore to not return Nones in result (#19513)
+- fix: Fix FunctionTool param doc parsing and signature mutation; update tests (#19532)
+- fix: Handle empty prompt in MockLLM.stream_complete (#19521)
+
+### `llama-index-embeddings-mixedbreadai` [0.5.0]
+
+- feat: Update mixedbread embeddings and rerank for latest sdk (#19519)
+
+### `llama-index-instrumentation` [0.4.0]
+
+- fix: let wrapped exceptions bubble up (#19566)
+
+### `llama-index-llms-google-genai` [0.3.0]
+
+- feat: Add Thought Summaries and signatures for Gemini (#19505)
+
+### `llama-index-llms-nvidia` [0.4.0]
+
+- feat: add support for kimi-k2-instruct (#19525)
+
+### `llama-index-llms-upstage` [0.6.0]
+
+- feat: add new upstage model(solar-pro2) (#19526)
+
+### `llama-index-postprocessor-mixedbreadai-rerank` [0.5.0]
+
+- feat: Update mixedbread embeddings and rerank for latest sdk (#19519)
+
+### `llama-index-readers-github` [0.8.0]
+
+- feat: Github Reader enhancements for file filtering and custom processing (#19543)
+
+### `llama-index-readers-s3` [0.5.0]
+
+- feat: add support for region_name via `client_kwargs` in S3Reader (#19546)
+
+### `llama-index-tools-valyu` [0.4.0]
+
+- feat: Update Valyu sdk to latest version (#19538)
+
+### `llama-index-voice-agents-gemini-live` [0.2.0]
+
+- feat(beta): adding first implementation of gemini live (#19489)
+
+### `llama-index-vector-stores-astradb` [0.5.0]
+
+- feat: astradb get nodes + delete nodes support (#19544)
+
+### `llama-index-vector-stores-milvus` [0.9.0]
+
+- feat: Add support for specifying partition_names in Milvus search configuration (#19555)
+
+### `llama-index-vector-stores-s3` [0.2.0]
+
+- fix: reduce some metadata keys from S3VectorStore to save space (#19550)
+
+### `llama-index-vector-stores-postgres` [0.6.0]
+
+- feat: Add support for ANY/ALL postgres operators (#19553)
+
 ## [2025-07-22]
 
 ### `llama-index-core` [0.12.52.post1]

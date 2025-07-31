@@ -14,14 +14,14 @@ dev = [
 
 [project]
 name = "llama-index-llms-contextual"
-version = "0.0.3"
+version = "0.1.0"
 description = "llama-index contextual integration"
 authors = [{name = "Sean Smith", email = "sean.smith@contextual.ai"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-llms-openai-like>=0.4.0,<0.5",
+    "llama-index-llms-openai-like>=0.5.0,<0.6",
     "contextual-client>=0.4.0,<0.5",
 ]
 

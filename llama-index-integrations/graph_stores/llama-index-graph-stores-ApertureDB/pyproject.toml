@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-graph-stores-ApertureDB"
-version = "0.1.0"
+version = "0.2.0"
 description = "llama-index graph stores ApertureDB integration"
 authors = [{name = "ApertureData", email = "team@aperturedata.io"}]
 requires-python = ">=3.9,<4.0"
@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "aperturedb>=0.4.46",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]
