@@ -50,8 +50,7 @@ llm = Heroku()
 # Create chat messages
 messages = [
     ChatMessage(
-        role=MessageRole.SYSTEM, 
-        content="You are a helpful assistant."
+        role=MessageRole.SYSTEM, content="You are a helpful assistant."
     ),
     ChatMessage(
         role=MessageRole.USER,
@@ -90,8 +89,10 @@ import os
 llm = Heroku(
     model=os.getenv("INFERENCE_MODEL_ID", "claude-3-5-haiku"),
     api_key=os.getenv("INFERENCE_KEY", "your-inference-key"),
-    inference_url=os.getenv("INFERENCE_URL", "https://us.inference.heroku.com"),
-    max_tokens=1024
+    inference_url=os.getenv(
+        "INFERENCE_URL", "https://us.inference.heroku.com"
+    ),
+    max_tokens=1024,
 )
 ```
 
@@ -117,4 +118,4 @@ The integration includes proper error handling for common issues:
 
 ## Additional Information
 
-For more information about Heroku Managed Inference, visit the [official documentation](https://devcenter.heroku.com/articles/heroku-inference). 
+For more information about Heroku Managed Inference, visit the [official documentation](https://devcenter.heroku.com/articles/heroku-inference).

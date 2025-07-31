@@ -12,9 +12,9 @@ def clean_env() -> Generator[None, None, None]:
         if key in os.environ:
             original_env[key] = os.environ[key]
             del os.environ[key]
-    
+
     yield
-    
+
     # Restore original environment variables
     for key, value in original_env.items():
         os.environ[key] = value
@@ -23,4 +23,4 @@ def clean_env() -> Generator[None, None, None]:
 @pytest.fixture()
 def masked_env_var() -> str:
     """Return a masked environment variable for testing."""
-    return "test-key-12345" 
+    return "test-key-12345"

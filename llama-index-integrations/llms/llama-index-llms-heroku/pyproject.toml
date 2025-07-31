@@ -78,4 +78,4 @@ markers = [
 [tool.uv]
 default-groups = [
     "dev",
-] 
+]

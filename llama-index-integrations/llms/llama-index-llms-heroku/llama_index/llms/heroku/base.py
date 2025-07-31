@@ -1,4 +1,3 @@
-import os
 from typing import Any, Optional
 
 from llama_index.core.bridge.pydantic import PrivateAttr
@@ -43,6 +42,7 @@ class Heroku(OpenAILike):
 
         Raises:
             ValueError: If required environment variables are not set.
+
         """
         # Get API key from parameter or environment
         try:
@@ -96,4 +96,4 @@ class Heroku(OpenAILike):
     @classmethod
     def class_name(cls) -> str:
         """Get class name."""
-        return "Heroku" 
+        return "Heroku"

@@ -18,16 +18,12 @@ def mock_heroku_chat_completion(httpx_mock: HTTPXMock):
                 "index": 0,
                 "message": {
                     "role": "assistant",
-                    "content": "Hello! I'm here to help you with any questions you might have."
+                    "content": "Hello! I'm here to help you with any questions you might have.",
                 },
-                "finish_reason": "stop"
+                "finish_reason": "stop",
             }
         ],
-        "usage": {
-            "prompt_tokens": 9,
-            "completion_tokens": 12,
-            "total_tokens": 21
-        }
+        "usage": {"prompt_tokens": 9, "completion_tokens": 12, "total_tokens": 21},
     }
 
     httpx_mock.add_response(
@@ -52,14 +48,10 @@ def mock_heroku_completion(httpx_mock: HTTPXMock):
                 "text": "This is a test completion response.",
                 "index": 0,
                 "logprobs": None,
-                "finish_reason": "stop"
+                "finish_reason": "stop",
             }
         ],
-        "usage": {
-            "prompt_tokens": 5,
-            "completion_tokens": 8,
-            "total_tokens": 13
-        }
+        "usage": {"prompt_tokens": 5, "completion_tokens": 8, "total_tokens": 13},
     }
 
     httpx_mock.add_response(
@@ -78,15 +70,16 @@ def test_chat_completion() -> None:
         model="claude-3-5-haiku",
         api_key="test-key",
         inference_url="https://test-app.herokuapp.com",
-        is_chat_model=True
+        is_chat_model=True,
     )
 
-    messages = [
-        ChatMessage(role=MessageRole.USER, content="Hello, how are you?")
-    ]
+    messages = [ChatMessage(role=MessageRole.USER, content="Hello, how are you?")]
 
     response = llm.chat(messages)
-    assert response.message.content == "Hello! I'm here to help you with any questions you might have."
+    assert (
+        response.message.content
+        == "Hello! I'm here to help you with any questions you might have."
+    )
 
 
 @pytest.mark.usefixtures("mock_heroku_completion")
@@ -96,7 +89,7 @@ def test_text_completion() -> None:
         model="claude-3-5-haiku",
         api_key="test-key",
         inference_url="https://test-app.herokuapp.com",
-        is_chat_model=False
+        is_chat_model=False,
     )
 
     response = llm.complete("Test prompt")
@@ -110,16 +103,19 @@ def test_chat_with_system_message() -> None:
         model="claude-3-5-haiku",
         api_key="test-key",
         inference_url="https://test-app.herokuapp.com",
-        is_chat_model=True
+        is_chat_model=True,
     )
 
     messages = [
         ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
-        ChatMessage(role=MessageRole.USER, content="Hello, how are you?")
+        ChatMessage(role=MessageRole.USER, content="Hello, how are you?"),
     ]
 
     response = llm.chat(messages)
-    assert response.message.content == "Hello! I'm here to help you with any questions you might have."
+    assert (
+        response.message.content
+        == "Hello! I'm here to help you with any questions you might have."
+    )
 
 
 @pytest.mark.usefixtures("mock_heroku_chat_completion")
@@ -130,15 +126,16 @@ def test_chat_with_max_tokens() -> None:
         api_key="test-key",
         inference_url="https://test-app.herokuapp.com",
         is_chat_model=True,
-        max_tokens=50
+        max_tokens=50,
     )
 
-    messages = [
-        ChatMessage(role=MessageRole.USER, content="Hello, how are you?")
-    ]
+    messages = [ChatMessage(role=MessageRole.USER, content="Hello, how are you?")]
 
     response = llm.chat(messages)
-    assert response.message.content == "Hello! I'm here to help you with any questions you might have."
+    assert (
+        response.message.content
+        == "Hello! I'm here to help you with any questions you might have."
+    )
 
 
 def test_class_name() -> None:
@@ -147,6 +144,6 @@ def test_class_name() -> None:
         model="claude-3-5-haiku",
         api_key="test-key",
         inference_url="https://test-app.herokuapp.com",
-        is_chat_model=True
+        is_chat_model=True,
     )
-    assert llm.class_name() == "Heroku" 
+    assert llm.class_name() == "Heroku"
