@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-cleanlab"
-version = "0.5.1"
+version = "0.6.0"
 description = "llama-index llms cleanlab integration"
 authors = [{name = "Ashish Sardana", email = "ashishsardana21@gmail.com"}]
 requires-python = ">=3.9,<4.0"
@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "cleanlab-tlm>=1.1.2,<2",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

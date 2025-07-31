@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-tools-openai-image-generation"
-version = "0.4.0"
+version = "0.5.0"
 description = "llama-index tools openai_image_generation integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -40,7 +40,7 @@ keywords = [
     "openai",
     "vision",
 ]
-dependencies = ["llama-index-core>=0.12.0,<0.13"]
+dependencies = ["llama-index-core>=0.13.0,<0.14"]
 
 [tool.codespell]
 check-filenames = true

@@ -13,14 +13,18 @@ Here's an example usage of the OpenWeatherMapToolSpec.
 
 ```python
 from llama_index.tools.weather import OpenWeatherMapToolSpec
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 
 tool_spec = OpenWeatherMapToolSpec(key="...")
 
-agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
+agent = FunctionAgent(
+    tools=tool_spec.to_tool_list(),
+    llm=OpenAI(model="gpt-4.1"),
+)
 
-agent.chat("What is the temperature like in Paris?")
-agent.chat("What is the wind like in Budapest tomorrow?")
+print(await agent.run("What is the temperature like in Paris?"))
+print(await agent.run("What is the wind like in Budapest tomorrow?"))
 ```
 
 `weather_at_location`: Use pyowm to get current weather details at a location

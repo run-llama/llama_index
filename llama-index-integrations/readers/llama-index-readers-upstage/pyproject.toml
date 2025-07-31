@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-upstage"
-version = "0.3.0"
+version = "0.4.0"
 description = "llama-index readers upstage integration"
 authors = [{name = "JunKeon Park", email = "junkeon@upstage.ai"}]
 requires-python = ">=3.9,<4.0"
@@ -34,7 +34,7 @@ readme = "README.md"
 license = "AGPL-3.0"
 dependencies = [
     "pymupdf>=1.23.21,<2",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

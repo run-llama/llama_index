@@ -3,7 +3,7 @@
 import json
 from typing import Any, Generic, List, Optional, Type
 
-from llama_index.core.output_parsers.base import ChainableOutputParser
+from llama_index.core.output_parsers import BaseOutputParser
 from llama_index.core.output_parsers.utils import extract_json_str
 from llama_index.core.types import Model
 
@@ -15,7 +15,7 @@ Output a valid JSON object but do not repeat the schema.
 """
 
 
-class PydanticOutputParser(ChainableOutputParser, Generic[Model]):
+class PydanticOutputParser(BaseOutputParser, Generic[Model]):
     """
     Pydantic Output Parser.
 
