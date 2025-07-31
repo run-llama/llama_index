@@ -129,7 +129,6 @@ nav:
           - ./examples/chat_engine/chat_engine_condense_question.ipynb
           - ./examples/chat_engine/chat_engine_context.ipynb
           - ./examples/chat_engine/chat_engine_personality.ipynb
-          - ./examples/chat_engine/chat_engine_react.ipynb
           - ./examples/chat_engine/chat_engine_repl.ipynb
       - Cookbooks:
           - ./examples/cookbooks/GraphRAG_v1.ipynb
@@ -380,7 +379,6 @@ nav:
           - ./examples/llm/openai.ipynb
           - ./examples/llm/openai_json_vs_function_calling.ipynb
           - ./examples/llm/openai_responses.ipynb
-          - ./examples/llm/openllm.ipynb
           - ./examples/llm/openrouter.ipynb
           - ./examples/llm/openvino-genai.ipynb
           - ./examples/llm/openvino.ipynb
@@ -572,13 +570,7 @@ nav:
           - ./examples/query_engine/pydantic_query_engine.ipynb
           - ./examples/query_engine/sec_tables/tesla_10q_table.ipynb
           - ./examples/query_engine/sub_question_query_engine.ipynb
-      - Query Pipeline:
-          - ./examples/pipeline/query_pipeline.ipynb
-          - ./examples/pipeline/query_pipeline_async.ipynb
-          - ./examples/pipeline/query_pipeline_memory.ipynb
-          - ./examples/pipeline/query_pipeline_pandas.ipynb
-          - ./examples/pipeline/query_pipeline_routing.ipynb
-          - ./examples/pipeline/query_pipeline_sql.ipynb
+      - Query Pipeline: []
       - Query Transformations:
           - ./examples/query_transformations/HyDEQueryTransformDemo.ipynb
           - ./examples/query_transformations/SimpleIndexDemo-multistep.ipynb
@@ -1081,7 +1073,6 @@ nav:
           - ./api_reference/llms/opea.md
           - ./api_reference/llms/openai.md
           - ./api_reference/llms/openai_like.md
-          - ./api_reference/llms/openllm.md
           - ./api_reference/llms/openrouter.md
           - ./api_reference/llms/openvino.md
           - ./api_reference/llms/openvino_genai.md
@@ -1785,6 +1776,7 @@ nav:
           - ./api_reference/tools/zapier.md
       - Voice Agents:
           - ./api_reference/voice_agents/elevenlabs.md
+          - ./api_reference/voice_agents/gemini_live.md
           - ./api_reference/voice_agents/openai.md
       - Workflow:
           - ./api_reference/workflow/decorators.md
@@ -2204,7 +2196,6 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-replicate
             - ../llama-index-integrations/llms/llama-index-llms-openai-like
             - ../llama-index-integrations/llms/llama-index-llms-konko
-            - ../llama-index-integrations/llms/llama-index-llms-openllm
             - ../llama-index-integrations/llms/llama-index-llms-litellm
             - ../llama-index-integrations/llms/llama-index-llms-sagemaker-endpoint
             - ../llama-index-integrations/llms/llama-index-llms-portkey
@@ -2514,6 +2505,7 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-service-now
             - ../llama-index-integrations/llms/llama-index-llms-cloudflare-ai-gateway
             - ../llama-index-integrations/tools/llama-index-tools-jira-issue
+            - ../llama-index-integrations/voice_agents/llama-index-voice-agents-gemini-live
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
@@ -2824,7 +2816,6 @@ plugins:
         ./examples/llm/ollama_gemma.html: https://docs.llamaindex.ai/en/stable/examples/llm/ollama_gemma/
         ./examples/llm/openai.html: https://docs.llamaindex.ai/en/stable/examples/llm/openai/
         ./examples/llm/openai_json_vs_function_calling.html: https://docs.llamaindex.ai/en/stable/examples/llm/openai_json_vs_function_calling/
-        ./examples/llm/openllm.html: https://docs.llamaindex.ai/en/stable/examples/llm/openllm/
         ./examples/llm/openrouter.html: https://docs.llamaindex.ai/en/stable/examples/llm/openrouter/
         ./examples/llm/palm.html: https://docs.llamaindex.ai/en/stable/examples/llm/palm/
         ./examples/llm/perplexity.html: https://docs.llamaindex.ai/en/stable/examples/llm/perplexity/
