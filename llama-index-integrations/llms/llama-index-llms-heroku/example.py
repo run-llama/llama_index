@@ -11,12 +11,8 @@ from llama_index.llms.heroku import Heroku
 from llama_index.core.llms import ChatMessage, MessageRole
 
 
-def main():
-    """Main example function."""
-    # Example 1: Using environment variables
-    print("=== Example 1: Using Environment Variables ===")
-
-    # Check if environment variables are set (in real usage, these would be set in your environment)
+def setup_environment():
+    """Set up environment variables for demonstration."""
     if (
         not os.getenv("INFERENCE_KEY")
         or not os.getenv("INFERENCE_URL")
@@ -31,38 +27,20 @@ def main():
     else:
         print("Using existing environment variables.")
 
-    try:
-        # Initialize the LLM using environment variables
-        llm = Heroku()
 
-        # Simple text completion
-        response = llm.complete(
-            "Explain the importance of open source LLMs in one sentence."
-        )
-        print(f"Completion: {response.text}")
-
-    except ValueError as e:
-        print(f"Error: {e}")
-        print("Please set the required environment variables or use parameters.")
-    except Exception as e:
-        print(f"API Error: {e}")
-        print("This is expected when using placeholder values.")
-        print("To test with real Heroku inference, set valid environment variables:")
-        print("  export INFERENCE_KEY='your-actual-key'")
-        print("  export INFERENCE_URL='https://us.inference.heroku.com'")
-        print("  export INFERENCE_MODEL_ID='your-model-id'")
-
-    # Example 2: Using parameters directly
-    print("\n=== Example 2: Using Parameters ===")
+def example_1_parameters():
+    """Example 1: Using parameters directly."""
+    print("\n=== Example 1: Using Parameters ===")
 
     try:
         # Initialize with parameters
         llm = Heroku(
-            model=os.getenv("INFERENCE_MODEL_ID", "claude-3-5-haiku"),
-            api_key=os.getenv("INFERENCE_KEY", "your-api-key"),
-            inference_url=os.getenv("INFERENCE_URL", "https://us.inference.heroku.com"),
+            model=os.getenv("INFERENCE_MODEL_ID"),
+            api_key=os.getenv("INFERENCE_KEY"),
+            inference_url=os.getenv("INFERENCE_URL"),
             is_chat_model=True,
             max_tokens=100,
+            temperature=0.5,
         )
 
         # Chat completion
@@ -87,30 +65,41 @@ def main():
         print("This is expected when using placeholder values.")
         print("To test with real Heroku inference, set valid environment variables.")
 
-    # Example 3: Text completion with non-chat model
+
+def example_2_environment_variables():
+    """Example 2: Using environment variables."""
+    print("=== Example 2: Using Environment Variables ===")
+
+    # Initialize the LLM using environment variables
+    llm = Heroku()
+
+    # Simple text completion
+    response = llm.complete(
+        "Explain the importance of open source LLMs in one sentence."
+    )
+    print(f"Completion: {response.text}")
+
+
+def example_3_text_completion():
+    """Example 3: Text completion with non-chat model."""
     print("\n=== Example 3: Text Completion ===")
 
-    try:
-        # Initialize for text completion
-        llm = Heroku(
-            model=os.getenv("INFERENCE_MODEL_ID", "claude-3-5-haiku"),
-            api_key=os.getenv("INFERENCE_KEY", "your-api-key"),
-            inference_url=os.getenv("INFERENCE_URL", "https://us.inference.heroku.com"),
-            is_chat_model=True,
-            max_tokens=50,
-        )
+    llm = Heroku()
 
-        # Text completion
-        response = llm.complete("The future of artificial intelligence is")
-        print(f"Text Completion: {response.text}")
+    # Text completion
+    response = llm.complete("The future of artificial intelligence is")
+    print(f"Text Completion: {response.text}")
 
-    except ValueError as e:
-        print(f"Error: {e}")
-        print("Please provide valid parameters.")
-    except Exception as e:  # Catch-all for other potential API errors
-        print(f"API Error: {e}")
-        print("This is expected when using placeholder values.")
-        print("To test with real Heroku inference, set valid environment variables.")
+
+def main():
+    """Main function that runs all examples."""
+    # Set up environment variables for demonstration
+    setup_environment()
+
+    # Run all examples
+    example_1_parameters()
+    example_2_environment_variables()
+    example_3_text_completion()
 
 
 if __name__ == "__main__":
