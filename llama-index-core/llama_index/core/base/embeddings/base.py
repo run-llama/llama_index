@@ -4,7 +4,7 @@ import asyncio
 import uuid
 from abc import abstractmethod
 from enum import Enum
-from typing import Any, Callable, Coroutine, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Coroutine, List, Optional, Sequence, Tuple, cast
 from typing_extensions import Self
 
 import numpy as np
@@ -282,7 +282,10 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
         """
         Get text embeddings from cache. If not in cache, generate them.
         """
-        embeddings: List[Optional[List[float]]] = [None for i in range(len(texts))]
+        if self.embeddings_cache is None:
+            raise ValueError("embeddings_cache must be defined")
+
+        embeddings: List[Optional[Embedding]] = [None for i in range(len(texts))]
         # Tuples of (index, text) to be able to keep same order of embeddings
         non_cached_texts: List[Tuple[int, str]] = []
         for i, txt in enumerate(texts):
@@ -305,13 +308,16 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     val={str(uuid.uuid4()): text_embedding},
                     collection="embeddings",
                 )
-        return embeddings
+        return cast(List[Embedding], embeddings)
 
-    async def _aget_text_embeddings_cached(self, texts: List[str]) -> List[List[float]]:
+    async def _aget_text_embeddings_cached(self, texts: List[str]) -> List[Embedding]:
         """
         Asynchronously get text embeddings from cache. If not in cache, generate them.
         """
-        embeddings: List[Optional[List[float]]] = [None for i in range(len(texts))]
+        if self.embeddings_cache is None:
+            raise ValueError("embeddings_cache must be defined")
+
+        embeddings: List[Optional[Embedding]] = [None for i in range(len(texts))]
         # Tuples of (index, text) to be able to keep same order of embeddings
         non_cached_texts: List[Tuple[int, str]] = []
         for i, txt in enumerate(texts):
@@ -336,7 +342,7 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
                     val={str(uuid.uuid4()): text_embedding},
                     collection="embeddings",
                 )
-        return embeddings
+        return cast(List[Embedding], embeddings)
 
     @dispatcher.span
     def get_text_embedding(self, text: str) -> Embedding:
