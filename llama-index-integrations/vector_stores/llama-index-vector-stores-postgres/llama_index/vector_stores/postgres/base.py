@@ -877,7 +877,7 @@ class PGVectorStore(BasePydanticVectorStore):
         config_type_coerce = type_coerce(self.text_search_config, REGCONFIG)
         ts_query = func.to_tsquery(
             type_coerce(self.text_search_config, REGCONFIG),
-            query_str.replace(" ", "|")
+            query_str.replace(" ", "|"),
         )
         stmt = (
             select(  # type: ignore
