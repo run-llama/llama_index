@@ -63,6 +63,7 @@ class PresidioPIINodePostprocessor(BaseNodePostprocessor):
     pii_node_info_key: str = "__pii_node_info__"
     entity_mapping: Dict[str, Dict] = {}
     mapping: Dict[str, str] = {}
+    presidio_entities: List = []
 
     @classmethod
     def class_name(cls) -> str:
@@ -70,7 +71,7 @@ class PresidioPIINodePostprocessor(BaseNodePostprocessor):
 
     def mask_pii(self, text: str) -> Tuple[str, Dict]:
         analyzer = AnalyzerEngine()
-        results = analyzer.analyze(text=text, language="en")
+        results = analyzer.analyze(text=text, language="en", entities=self.presidio_entities)
         engine = AnonymizerEngine()
         engine.add_anonymizer(EntityTypeCountAnonymizer)
 
