@@ -99,6 +99,21 @@ class BM25Retriever(BaseRetriever):
             )
             self.bm25 = bm25s.BM25()
             self.bm25.index(corpus_tokens, show_progress=verbose)
+
+        if (
+            self.bm25.scores.get("num_docs")
+            and int(self.bm25.scores["num_docs"]) < self.similarity_top_k
+        ):
+            if int(self.bm25.scores["num_docs"]) == 0:
+                raise ValueError(
+                    "No nodes added to the retriever kindly add more data."
+                )
+
+            logger.warning(
+                "As bm25s.BM25 requires k less than or equal to number of nodes added. Overriding the value of similarity_top_k to number of nodes added."
+            )
+            self.similarity_top_k = int(self.bm25.scores["num_docs"])
+
         super().__init__(
             callback_manager=callback_manager,
             object_map=object_map,
