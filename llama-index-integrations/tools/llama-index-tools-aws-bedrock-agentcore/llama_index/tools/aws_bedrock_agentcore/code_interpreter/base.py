@@ -33,17 +33,20 @@ def extract_output_from_stream(response):
     for event in response["stream"]:
         if "result" in event:
             result = event["result"]
-            for content_item in result["content"]:
-                if content_item["type"] == "text":
-                    output.append(content_item["text"])
-                if content_item["type"] == "resource":
-                    resource = content_item["resource"]
-                    if "text" in resource:
-                        file_path = resource["uri"].replace("file://", "")
-                        file_content = resource["text"]
-                        output.append(f"==== File: {file_path} ====\n{file_content}\n")
-                    else:
-                        output.append(json.dumps(resource))
+            if "content" in result:
+                for content_item in result["content"]:
+                    if content_item["type"] == "text":
+                        output.append(content_item["text"])
+                    if content_item["type"] == "resource":
+                        resource = content_item["resource"]
+                        if "text" in resource:
+                            file_path = resource["uri"].replace("file://", "")
+                            file_content = resource["text"]
+                            output.append(
+                                f"==== File: {file_path} ====\n{file_content}\n"
+                            )
+                        else:
+                            output.append(json.dumps(resource))
 
     return "\n".join(output)
 
@@ -69,24 +72,15 @@ class AgentCoreCodeInterpreterToolSpec(BaseToolSpec):
     """
 
     spec_functions = [
-        "execute_code",
-        "aexecute_code",
-        "execute_command",
-        "aexecute_command",
-        "read_files",
-        "aread_files",
-        "list_files",
-        "alist_files",
-        "delete_files",
-        "adelete_files",
-        "write_files",
-        "awrite_files",
-        "start_command",
-        "astart_command",
-        "get_task",
-        "aget_task",
-        "stop_task",
-        "astop_task",
+        ("execute_code", "aexecute_code"),
+        ("execute_command", "aexecute_command"),
+        ("read_files", "aread_files"),
+        ("list_files", "alist_files"),
+        ("delete_files", "adelete_files"),
+        ("write_files", "awrite_files"),
+        ("start_command", "astart_command"),
+        ("get_task", "aget_task"),
+        ("stop_task", "astop_task"),
     ]
 
     def __init__(self, region: Optional[str] = None) -> None:

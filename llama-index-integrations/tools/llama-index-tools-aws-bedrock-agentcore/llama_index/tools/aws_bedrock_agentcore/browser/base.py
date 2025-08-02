@@ -40,20 +40,13 @@ class AgentCoreBrowserToolSpec(BaseToolSpec):
     """
 
     spec_functions = [
-        "navigate_browser",
-        "anavigate_browser",
-        "click_element",
-        "aclick_element",
-        "extract_text",
-        "aextract_text",
-        "extract_hyperlinks",
-        "aextract_hyperlinks",
-        "get_elements",
-        "aget_elements",
-        "navigate_back",
-        "anavigate_back",
-        "current_webpage",
-        "acurrent_webpage",
+        ("navigate_browser", "anavigate_browser"),
+        ("click_element", "aclick_element"),
+        ("extract_text", "aextract_text"),
+        ("extract_hyperlinks", "aextract_hyperlinks"),
+        ("get_elements", "aget_elements"),
+        ("navigate_back", "anavigate_back"),
+        ("current_webpage", "acurrent_webpage"),
     ]
 
     def __init__(self, region: Optional[str] = None) -> None:
