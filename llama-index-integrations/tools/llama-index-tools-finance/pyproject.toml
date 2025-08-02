@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-tools-finance"
-version = "0.3.0"
+version = "0.4.0"
 description = "llama-index finance-tools integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<3.12"
@@ -37,7 +37,7 @@ dependencies = [
     "newsapi-python>=0.2.7,<0.3",
     "pytrends>=4.9.2,<5",
     "pandas",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

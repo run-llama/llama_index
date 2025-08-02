@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-papers"
-version = "0.3.2"
+version = "0.4.0"
 description = "llama-index readers papers integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -35,7 +35,7 @@ license = "MIT"
 maintainers = [{name = "thejessezhang"}]
 dependencies = [
     "arxiv>=2.1.0,<3",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
     "defusedxml>=0.7.1,<0.8",
 ]
 

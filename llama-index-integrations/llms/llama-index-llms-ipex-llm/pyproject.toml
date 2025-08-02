@@ -25,7 +25,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-ipex-llm"
-version = "0.3.1"
+version = "0.4.0"
 description = "llama-index llms ipex-llm integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<3.12"

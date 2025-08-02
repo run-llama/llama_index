@@ -6,7 +6,8 @@ This tool wraps a VectorStoreIndex and enables a agent to call it with queries a
 
 ```python
 from llama_index.tools.vector_db import VectorDB
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 from llama_index.core.vector_stores import VectorStoreInfo
 from llama_index.core import VectorStoreIndex
 
@@ -28,8 +29,8 @@ vector_store_info = VectorStoreInfo(
     ],
 )
 
-agent = OpenAIAgent.from_tools(
-    tool_spec.to_tool_list(
+agent = FunctionAgent(
+    tools=tool_spec.to_tool_list(
         func_to_metadata_mapping={
             "auto_retrieve_fn": ToolMetadata(
                 name="celebrity_bios",
@@ -47,10 +48,12 @@ agent = OpenAIAgent.from_tools(
             )
         }
     ),
-    verbose=True,
+    llm=OpenAI(model="gpt-4.1"),
 )
 
-agent.chat("Tell me about two celebrities from the United States. ")
+print(
+    await agent.run("Tell me about two celebrities from the United States. ")
+)
 ```
 
 `auto_retrieve_fn`: Retrieves data from the index

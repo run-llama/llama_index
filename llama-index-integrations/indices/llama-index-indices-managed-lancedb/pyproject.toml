@@ -28,7 +28,7 @@ dev = [
 
 [project]
 name = "llama-index-indices-managed-lancedb"
-version = "0.1.0"
+version = "0.2.0"
 description = "LlamaIndex x LanceDB MultiModal AI Lakehouse"
 authors = [{name = "Clelia Astra Bertelli", email = "clelia@runllama.ai"}]
 requires-python = ">=3.9,<4.0"
@@ -40,7 +40,7 @@ dependencies = [
     "tantivy>=0.24.0,<1",
     "pyarrow>=20.0.0,<21",
     "polars>=1.31.0,<2",
-    "llama-index-core>=0.12.44,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
     "open-clip-torch>=2.32.0,<3",
     "sentence-transformers>=5.0.0,<6",
 ]
