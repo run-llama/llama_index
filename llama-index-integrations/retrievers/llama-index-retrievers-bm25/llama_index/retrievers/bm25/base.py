@@ -16,18 +16,24 @@ from llama_index.core.schema import (
     MetadataMode,
 )
 from llama_index.core.storage.docstore.types import BaseDocumentStore
+from llama_index.core.vector_stores.types import MetadataFilters
 from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
     metadata_dict_to_node,
+    build_metadata_filter_fn,
 )
 
 import bm25s
 import Stemmer
-
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_PERSIST_ARGS = {"similarity_top_k": "similarity_top_k", "_verbose": "verbose"}
+DEFAULT_PERSIST_ARGS = {
+    "similarity_top_k": "similarity_top_k",
+    "_verbose": "verbose",
+    "corpus_weight_mask": "corpus_weight_mask",
+}
 
 DEFAULT_PERSIST_FILENAME = "retriever.json"
 
@@ -75,6 +81,7 @@ class BM25Retriever(BaseRetriever):
         verbose: bool = False,
         skip_stemming: bool = False,
         token_pattern: str = r"(?u)\b\w\w+\b",
+        filters: Optional[MetadataFilters] = None,
     ) -> None:
         self.stemmer = stemmer or Stemmer.Stemmer("english")
         self.similarity_top_k = similarity_top_k
@@ -114,6 +121,19 @@ class BM25Retriever(BaseRetriever):
             )
             self.similarity_top_k = int(self.bm25.scores["num_docs"])
 
+        self.corpus_weight_mask = None
+        if filters:
+            # Build a weight mask for each corpus to filter out only relevant nodes
+            _corpus_dict = {
+                node.ref_doc_id: node_to_metadata_dict(node) for node in nodes
+            }
+            _query_filter_fn = build_metadata_filter_fn(
+                lambda node_id: _corpus_dict[node_id], filters
+            )
+            self.corpus_weight_mask = [
+                int(_query_filter_fn(node.ref_doc_id)) for node in nodes
+            ]
+
         super().__init__(
             callback_manager=callback_manager,
             object_map=object_map,
@@ -133,6 +153,7 @@ class BM25Retriever(BaseRetriever):
         verbose: bool = False,
         skip_stemming: bool = False,
         token_pattern: str = r"(?u)\b\w\w+\b",
+        filters: Optional[MetadataFilters] = None,
         # deprecated
         tokenizer: Optional[Callable[[str], List[str]]] = None,
     ) -> "BM25Retriever":
@@ -164,6 +185,7 @@ class BM25Retriever(BaseRetriever):
             verbose=verbose,
             skip_stemming=skip_stemming,
             token_pattern=token_pattern,
+            filters=filters,
         )
 
     def get_persist_args(self) -> Dict[str, Any]:
@@ -201,7 +223,12 @@ class BM25Retriever(BaseRetriever):
             show_progress=self._verbose,
         )
         indexes, scores = self.bm25.retrieve(
-            tokenized_query, k=self.similarity_top_k, show_progress=self._verbose
+            tokenized_query,
+            k=self.similarity_top_k,
+            show_progress=self._verbose,
+            weight_mask=np.array(self.corpus_weight_mask)
+            if self.corpus_weight_mask
+            else None,
         )
 
         # batched, but only one query
