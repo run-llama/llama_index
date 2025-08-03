@@ -296,7 +296,7 @@ class FunctionTool(AsyncBaseTool):
         ):
             return raw_output
         else:
-            return [TextBlock(text=str(raw_output))]
+            return [TextBlock(text=raw_output.get_content())]
 
     def __call__(self, *args: Any, **kwargs: Any) -> ToolOutput:
         all_kwargs = {**self.partial_params, **kwargs}
