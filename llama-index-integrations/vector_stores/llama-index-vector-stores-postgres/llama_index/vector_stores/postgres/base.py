@@ -644,6 +644,10 @@ class PGVectorStore(BasePydanticVectorStore):
             return "ILIKE"
         elif operator == FilterOperator.IS_EMPTY:
             return "IS NULL"
+        elif operator == FilterOperator.ANY:
+            return "?|"
+        elif operator == FilterOperator.ALL:
+            return "?&"
         else:
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
             return "="
@@ -662,6 +666,17 @@ class PGVectorStore(BasePydanticVectorStore):
                 f"metadata_->>'{filter_.key}' "
                 f"{self._to_postgres_operator(filter_.operator)} "
                 f"({filter_value})"
+            )
+        elif filter_.operator in [FilterOperator.ANY, FilterOperator.ALL]:
+            # Expects a list stored in the metadata, and a single value to compare
+
+            # We apply same logic as above, but as an array
+            filter_value = ", ".join(f"'{e}'" for e in filter_.value)
+
+            return text(
+                f"metadata_::jsonb->'{filter_.key}' "
+                f"{self._to_postgres_operator(filter_.operator)} "
+                f"array[{filter_value}]"
             )
         elif filter_.operator == FilterOperator.CONTAINS:
             # Expects a list stored in the metadata, and a single value to compare
@@ -858,15 +873,11 @@ class PGVectorStore(BasePydanticVectorStore):
         if query_str is None:
             raise ValueError("query_str must be specified for a sparse vector query.")
 
-        # Replace '&' with '|' to perform an OR search for higher recall
+        # Spaces get converted to "&", so replace them with "|" to perform an OR search for higher recall
         config_type_coerce = type_coerce(self.text_search_config, REGCONFIG)
         ts_query = func.to_tsquery(
-            config_type_coerce,
-            func.replace(
-                func.text(func.plainto_tsquery(config_type_coerce, query_str)),
-                "&",
-                "|",
-            ),
+            type_coerce(self.text_search_config, REGCONFIG),
+            query_str.replace(" ", "|"),
         )
         stmt = (
             select(  # type: ignore

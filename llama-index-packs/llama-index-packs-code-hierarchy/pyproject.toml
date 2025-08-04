@@ -10,13 +10,14 @@ dev = [
     "black[jupyter]<=23.9.1,>=23.7.0",
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
+    "llama-index-llms-openai",
     "pytest-cov>=6.1.1",
     "ruff==0.11.11",
 ]
 
 [project]
 name = "llama-index-packs-code-hierarchy"
-version = "0.5.1"
+version = "0.6.0"
 description = "A node parser which can create a hierarchy of all code scopes in a directory."
 authors = [{name = "Ryan Peach", email = "rgpeach10@gmail.com"}]
 requires-python = ">=3.9,<3.13"
@@ -37,9 +38,8 @@ keywords = [
 dependencies = [
     "tree-sitter-language-pack",
     "tree-sitter",
-    "llama-index-agent-openai>=0.4.0,<0.5",
-    "llama-index-readers-file>=0.4.0,<0.5",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-readers-file>=0.5.0,<0.6",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

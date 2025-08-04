@@ -27,15 +27,15 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-upstage"
-version = "0.4.1"
+version = "0.5.0"
 description = "llama-index embeddings upstage integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-embeddings-openai>=0.3.0,<0.4",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-embeddings-openai>=0.5.0,<0.6",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]
