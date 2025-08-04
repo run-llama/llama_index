@@ -297,11 +297,11 @@ class FunctionTool(AsyncBaseTool):
         ):
             return raw_output
         elif isinstance(raw_output, (BaseNode, Document)):
-            return raw_output.get_content()
+            return [TextBlock(text=raw_output.get_content())]
         elif isinstance(raw_output, list) and all(
             isinstance(item, (BaseNode, Document)) for item in raw_output
         ):
-            return [item.get_content() for item in raw_output]
+            return [TextBlock(text=item.get_content()) for item in raw_output]
         else:
             return [TextBlock(text=str(raw_output))]
 
