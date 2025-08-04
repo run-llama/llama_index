@@ -432,7 +432,6 @@ class BaiduVectorDB(BasePydanticVectorStore):
         except (pymochow.exception.ServerError, AttributeError):
             # Table doesn't exist or _table not properly initialized, nothing to delete
             logger.debug("Table does not exist, nothing to clear.")
-            pass
 
     def add(
         self,
@@ -454,6 +453,7 @@ class BaiduVectorDB(BasePydanticVectorStore):
 
         Returns:
             List of node IDs that were added to the table.
+
         """
         return asyncio.get_event_loop().run_until_complete(
             self.async_add(
@@ -484,6 +484,7 @@ class BaiduVectorDB(BasePydanticVectorStore):
 
         Returns:
             List of node IDs that were added to the table.
+
         """
         if len(nodes) == 0:
             return []
@@ -569,6 +570,7 @@ class BaiduVectorDB(BasePydanticVectorStore):
 
         Returns:
             VectorStoreQueryResult: Query result containing nodes, similarities, and ids.
+
         """
         return asyncio.get_event_loop().run_until_complete(self.aquery(query, **kwargs))
 
@@ -586,6 +588,7 @@ class BaiduVectorDB(BasePydanticVectorStore):
 
         Returns:
             VectorStoreQueryResult: Query result containing nodes, similarities, and ids.
+
         """
         from pymochow.model.table import AnnSearch, HNSWSearchParams
 
