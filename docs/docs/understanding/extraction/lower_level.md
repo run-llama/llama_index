@@ -94,3 +94,7 @@ For a deeper look at structured data extraction with LlamaIndex, check out the f
 - [Structured Outputs](../../module_guides/querying/structured_outputs/index.md)
 - [Pydantic Programs](../../module_guides/querying/structured_outputs/pydantic_program.md)
 - [Output Parsing](../../module_guides/querying/structured_outputs/output_parser.md)
+
+## Bonus Track
+
+If you're curious of learning how to boost your LLM's performance using structured inputs, check out [this guide](./structured_input.md)!

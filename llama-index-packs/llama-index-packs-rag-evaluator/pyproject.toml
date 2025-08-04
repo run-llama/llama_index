@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-packs-rag-evaluator"
-version = "0.3.1"
+version = "0.4.0"
 description = "llama-index packs rag_evaluator integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -39,8 +39,8 @@ keywords = [
     "rag",
 ]
 dependencies = [
-    "llama-index-llms-openai>=0.4.0,<0.5",
-    "llama-index-embeddings-openai>=0.3.0,<0.4",
+    "llama-index-llms-openai>=0.5.0,<0.6",
+    "llama-index-embeddings-openai>=0.5.0,<0.6",
     "pandas",
 ]
 

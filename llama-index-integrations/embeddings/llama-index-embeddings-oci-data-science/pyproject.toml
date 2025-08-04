@@ -27,14 +27,14 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-oci-data-science"
-version = "0.1.0"
+version = "0.2.0"
 description = "llama-index embeddings OCI Data Science integration"
 authors = [{name = "Dmitrii Cherkasov", email = "dmitrii.cherkasov@oracle.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
     "oci>=2.150.2",
 ]
 

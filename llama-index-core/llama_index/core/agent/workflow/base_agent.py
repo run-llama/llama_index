@@ -323,12 +323,17 @@ class BaseWorkflowAgent(
                 ]
             )
             await ctx.store.set("user_msg_str", content_str)
-        elif chat_history:
+        elif chat_history and not all(
+            message.role == "system" for message in chat_history
+        ):
             # If no user message, use the last message from chat history as user_msg_str
+            user_hist: List[ChatMessage] = [
+                msg for msg in chat_history if msg.role == "user"
+            ]
             content_str = "\n".join(
                 [
                     block.text
-                    for block in chat_history[-1].blocks
+                    for block in user_hist[-1].blocks
                     if isinstance(block, TextBlock)
                 ]
             )
@@ -448,8 +453,14 @@ class BaseWorkflowAgent(
                     )
             if self.output_cls is not None:
                 try:
+                    llm_input = [*messages]
+                    if self.system_prompt:
+                        llm_input = [
+                            ChatMessage(role="system", content=self.system_prompt),
+                            *llm_input,
+                        ]
                     output.structured_response = await generate_structured_response(
-                        messages=messages, llm=self.llm, output_cls=self.output_cls
+                        messages=llm_input, llm=self.llm, output_cls=self.output_cls
                     )
                     ctx.write_event_to_stream(
                         AgentStreamStructuredOutput(output=output.structured_response)

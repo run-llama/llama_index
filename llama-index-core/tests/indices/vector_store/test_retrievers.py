@@ -98,21 +98,36 @@ def test_query(
 
 def test_query_image_node() -> None:
     """Test embedding query."""
-    image_node = ImageNode(image="potato")
+    image_node = ImageNode(
+        image="potato", embeddings=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    )
+    text_node = TextNode(
+        text="potato", embeddings=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    )
 
     index = VectorStoreIndex.from_documents([])
-    index.insert_nodes([image_node])
+    index.insert_nodes([image_node, text_node])
 
     # test embedding query
     query_str = "What is?"
     retriever = index.as_retriever()
     results = retriever.retrieve(QueryBundle(query_str))
 
-    assert len(results) == 1
+    assert len(results) == 2
 
-    assert results[0].node.node_id == image_node.node_id
-    assert isinstance(results[0].node, ImageNode)
-    assert results[0].node.image == "potato"
+    text_node = next(
+        node
+        for node in results
+        if isinstance(node.node, TextNode) and not isinstance(node.node, ImageNode)
+    )
+    image_node = next(node for node in results if isinstance(node.node, ImageNode))
+
+    assert image_node.node.node_id == image_node.node_id
+    assert isinstance(image_node.node, ImageNode)
+    assert image_node.node.image == "potato"
+    assert text_node.node.node_id == text_node.node_id
+    assert isinstance(text_node.node, TextNode)
+    assert text_node.node.text == "potato"
 
 
 def test_insert_fetched_nodes_handles_all_branches():
@@ -136,7 +151,7 @@ def test_insert_fetched_nodes_handles_all_branches():
     with pytest.raises(KeyError) as exc_info:
         retriever._insert_fetched_nodes_into_query_result(query_result, fetched_nodes)
 
-    assert "Node ID unknown not found" in str(exc_info.value)
+    assert "Node ID 0 not found in index." in str(exc_info.value)
 
 
 def test_insert_fetched_nodes_with_nodes_present():

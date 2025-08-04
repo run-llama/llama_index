@@ -28,7 +28,7 @@ dev = [
 authors = [{name = "Desearch", email = "support@desearch.com"}]
 dependencies = [
     "desearch-py>=1.0.0",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
     "openai",
 ]
 description = "llama-index tools desearch integration"

@@ -132,9 +132,22 @@ def chat_messages() -> List[ChatMessage]:
     ]
 
 
+@pytest.fixture()
+def chat_messages_sys(chat_messages: List[ChatMessage]) -> List[ChatMessage]:
+    return [
+        ChatMessage(role="system", content="You are a helpful assistant."),
+        *chat_messages,
+    ]
+
+
 @pytest.fixture
 def xml_string() -> str:
     return "<current_conversation>\n\t<user>\n\t\t<message>hello</message>\n\t</user>\n\t<assistant>\n\t\t<message>hello back</message>\n\t</assistant>\n\t<user>\n\t\t<message>how are you?</message>\n\t</user>\n\t<assistant>\n\t\t<message>I am good, thank you.</message>\n\t</assistant>\n</current_conversation>\n\nGiven the conversation, format the output according to the provided schema."
+
+
+@pytest.fixture
+def xml_string_sys() -> str:
+    return "<current_conversation>\n\t<system>\n\t\t<message>You are a helpful assistant.</message>\n\t</system>\n\t<user>\n\t\t<message>hello</message>\n\t</user>\n\t<assistant>\n\t\t<message>hello back</message>\n\t</assistant>\n\t<user>\n\t\t<message>how are you?</message>\n\t</user>\n\t<assistant>\n\t\t<message>I am good, thank you.</message>\n\t</assistant>\n</current_conversation>\n\nGiven the conversation, format the output according to the provided schema."
 
 
 @pytest.fixture
@@ -144,11 +157,26 @@ def structured_response() -> str:
 
 def test_messages_to_xml(chat_messages: List[ChatMessage], xml_string: str) -> None:
     msg = messages_to_xml_format(chat_messages)
-    assert isinstance(msg, ChatMessage)
+    assert len(msg) == 1
+    assert isinstance(msg[0], ChatMessage)
     s = ""
-    for block in msg.blocks:
+    for block in msg[0].blocks:
         s += block.text
     assert s == xml_string
+
+
+def test_messages_to_xml_sys(
+    chat_messages_sys: List[ChatMessage], xml_string_sys: str
+) -> None:
+    msg = messages_to_xml_format(chat_messages_sys)
+    assert len(msg) == 2
+    assert isinstance(msg[0], ChatMessage)
+    assert msg[0].role == "system"
+    assert msg[0].content == "You are a helpful assistant."
+    s = ""
+    for block in msg[1].blocks:
+        s += block.text
+    assert s == xml_string_sys
 
 
 @pytest.mark.asyncio

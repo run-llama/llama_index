@@ -26,14 +26,14 @@ dev = [
 
 [project]
 name = "llama-index-observability-otel"
-version = "0.1.1"
+version = "0.2.0"
 description = "llama-index observability integration with OpenTelemetry"
 authors = [{name = "Clelia Astra Bertelli", email = "clelia@runllama.ai"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.12.36,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
     "opentelemetry-sdk>=1.33.0,<2",
     "opentelemetry-api>=1.33.0,<2",
     "opentelemetry-semantic-conventions>=0.54b0,<1",

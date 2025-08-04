@@ -202,7 +202,7 @@ wheels = [
 
 [[package]]
 name = "banks"
-version = "2.1.2"
+version = "2.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "deprecated" },
@@ -212,9 +212,9 @@ dependencies = [
     { name = "platformdirs" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/77/34/2b6697f02ffb68bee50e5fd37d6c64432244d3245603fd62950169dfed7e/banks-2.1.2.tar.gz", hash = "sha256:a0651db9d14b57fa2e115e78f68dbb1b36fe226ad6eef96192542908b1d20c1f", size = 173332, upload-time = "2025-04-20T07:09:21.674Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7d/f8/25ef24814f77f3fd7f0fd3bd1ef3749e38a9dbd23502fbb53034de49900c/banks-2.2.0.tar.gz", hash = "sha256:d1446280ce6e00301e3e952dd754fd8cee23ff277d29ed160994a84d0d7ffe62", size = 179052, upload-time = "2025-07-18T16:28:26.892Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/04/4a/7fdca29d1db62f5f5c3446bf8f668beacdb0b5a8aff4247574ddfddc6bcd/banks-2.1.2-py3-none-any.whl", hash = "sha256:7fba451069f6bea376483b8136a0f29cb1e6883133626d00e077e20a3d102c0e", size = 28064, upload-time = "2025-04-20T07:09:20.201Z" },
+    { url = "https://files.pythonhosted.org/packages/b4/d6/f9168956276934162ec8d48232f9920f2985ee45aa7602e3c6b4bc203613/banks-2.2.0-py3-none-any.whl", hash = "sha256:963cd5c85a587b122abde4f4064078def35c50c688c1b9d36f43c92503854e7d", size = 29244, upload-time = "2025-07-18T16:28:27.835Z" },
 ]
 
 [[package]]
@@ -1048,7 +1048,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.12.50"
+version = "0.15.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -1093,7 +1093,6 @@ dev = [
     { name = "codespell", extra = ["toml"] },
     { name = "diff-cover" },
     { name = "llama-cloud" },
-    { name = "llama-index-llms-openai" },
     { name = "mypy" },
     { name = "openai" },
     { name = "pandas" },
@@ -1119,7 +1118,7 @@ dev = [
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.8.6,<4" },
     { name = "aiosqlite" },
-    { name = "banks", specifier = ">=2.0.0,<3" },
+    { name = "banks", specifier = ">=2.2.0,<3" },
     { name = "dataclasses-json" },
     { name = "deprecated", specifier = ">=1.2.9.3" },
     { name = "dirtyjson", specifier = ">=1.0.8,<2" },
@@ -1155,7 +1154,6 @@ dev = [
     { name = "codespell", extras = ["toml"], specifier = ">=2.2.6" },
     { name = "diff-cover", specifier = ">=9.2.0" },
     { name = "llama-cloud", specifier = ">=0.0.6" },
-    { name = "llama-index-llms-openai", specifier = ">=0.4.7" },
     { name = "mypy", specifier = "==1.11.0" },
     { name = "openai" },
     { name = "pandas" },
@@ -1186,19 +1184,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/85/82/31d8e44ea00ecc55f8383c97ee5f9bcb52f9418b4139da2e8439d2430288/llama_index_instrumentation-0.1.0.tar.gz", hash = "sha256:8f0b8535670d917cc7fde9600d5be9e75c0ed8872ddb9b89005d09130ffcff0f", size = 44004, upload-time = "2025-06-09T15:41:31.376Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b8/ea/184ac78743ebe1cf88c3286d1864499794f449b01e20c66186d7c5b99d1d/llama_index_instrumentation-0.1.0-py3-none-any.whl", hash = "sha256:b533d5715e41fe572bc959c7bda2ddf0c6f36de95e4d9a4d78265e4069ac0583", size = 14802, upload-time = "2025-06-09T15:41:29.822Z" },
-]
-
-[[package]]
-name = "llama-index-llms-openai"
-version = "0.4.7"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "llama-index-core" },
-    { name = "openai" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/d9/39/a7ce514fb500951e9edb713ed918a9ffe49f1a76fccfc531a4ec5c7fe15a/llama_index_llms_openai-0.4.7.tar.gz", hash = "sha256:564af8ab39fb3f3adfeae73a59c0dca46c099ab844a28e725eee0c551d4869f8", size = 24251, upload-time = "2025-06-16T03:38:47.175Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/61/e9/391926dad180ced6bb37a62edddb8483fbecde411239bd5e726841bb77b4/llama_index_llms_openai-0.4.7-py3-none-any.whl", hash = "sha256:3b8d9d3c1bcadc2cff09724de70f074f43eafd5b7048a91247c9a41b7cd6216d", size = 25365, upload-time = "2025-06-16T03:38:45.72Z" },
 ]
 
 [[package]]

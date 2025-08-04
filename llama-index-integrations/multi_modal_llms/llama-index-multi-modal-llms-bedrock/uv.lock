@@ -348,7 +348,7 @@ wheels = [
 
 [[package]]
 name = "banks"
-version = "2.1.2"
+version = "2.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "deprecated" },
@@ -358,9 +358,9 @@ dependencies = [
     { name = "platformdirs" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/77/34/2b6697f02ffb68bee50e5fd37d6c64432244d3245603fd62950169dfed7e/banks-2.1.2.tar.gz", hash = "sha256:a0651db9d14b57fa2e115e78f68dbb1b36fe226ad6eef96192542908b1d20c1f", size = 173332, upload-time = "2025-04-20T07:09:21.674Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7d/f8/25ef24814f77f3fd7f0fd3bd1ef3749e38a9dbd23502fbb53034de49900c/banks-2.2.0.tar.gz", hash = "sha256:d1446280ce6e00301e3e952dd754fd8cee23ff277d29ed160994a84d0d7ffe62", size = 179052, upload-time = "2025-07-18T16:28:26.892Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/04/4a/7fdca29d1db62f5f5c3446bf8f668beacdb0b5a8aff4247574ddfddc6bcd/banks-2.1.2-py3-none-any.whl", hash = "sha256:7fba451069f6bea376483b8136a0f29cb1e6883133626d00e077e20a3d102c0e", size = 28064, upload-time = "2025-04-20T07:09:20.201Z" },
+    { url = "https://files.pythonhosted.org/packages/b4/d6/f9168956276934162ec8d48232f9920f2985ee45aa7602e3c6b4bc203613/banks-2.2.0-py3-none-any.whl", hash = "sha256:963cd5c85a587b122abde4f4064078def35c50c688c1b9d36f43c92503854e7d", size = 29244, upload-time = "2025-07-18T16:28:27.835Z" },
 ]
 
 [[package]]
@@ -1679,7 +1679,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.12.47"
+version = "0.13.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1700,6 +1700,7 @@ dependencies = [
     { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "numpy", version = "2.2.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "pillow" },
+    { name = "platformdirs" },
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "requests" },
@@ -1712,9 +1713,9 @@ dependencies = [
     { name = "typing-inspect" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a5/97/8d70d20d8a2e3a7b35f35630c6e4e266324b617d382e5cbfed360f52d2f5/llama_index_core-0.12.47.tar.gz", hash = "sha256:983f623c771a1cbdbfbf9276987f05e350c315344a94404a1c6f843b50916ec6", size = 7274961, upload-time = "2025-07-07T04:31:16.633Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1a/0d/29865c82de51c2c1f263a61c267c336d35b14839fded66061a999dba1d40/llama_index_core-0.13.0.tar.gz", hash = "sha256:01fec50d3d807e3c3bc17a62ed1f5b93dad2205cda52f7d0c2d34cc6a6ab2b92", size = 7230599, upload-time = "2025-07-30T17:24:00.398Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ff/02/e66ced16ab94d1fe9a2510596514feae4d80f4f514812ef052b4b90939a2/llama_index_core-0.12.47-py3-none-any.whl", hash = "sha256:a61602c1d2c8214c2ecf60c0d5f278f4fa317c9212f5b44e3ed68e5d02ff8f8b", size = 7645577, upload-time = "2025-07-07T04:31:12.025Z" },
+    { url = "https://files.pythonhosted.org/packages/f3/27/36a3ad19c8e2e7967ca1c9e469e5205901d2b6d299420e9aba4eafd90d8d/llama_index_core-0.13.0-py3-none-any.whl", hash = "sha256:46c14fc2a26b8f7618c2dd2daf6e430e3f94b1908474baee539f705c9c638348", size = 7573714, upload-time = "2025-07-30T17:23:52.355Z" },
 ]
 
 [[package]]
@@ -1732,21 +1733,21 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-bedrock-converse"
-version = "0.7.4"
+version = "0.8.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aioboto3" },
     { name = "boto3" },
     { name = "llama-index-core" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8f/e5/d33db7e2817e06c9690654eccbd4101cf127f0479973c57e7a2d408e0d00/llama_index_llms_bedrock_converse-0.7.4.tar.gz", hash = "sha256:db50b82c9e5970fc7f3ccc1ecb960dd7f1462f80c7b8739a2f2e8b29d91fc108", size = 14561, upload-time = "2025-06-29T00:48:14.117Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4d/9d/aca06bbbdf5bddeb466244e41034da53b9c4d9d35b2a366ff1105eb3af29/llama_index_llms_bedrock_converse-0.8.0.tar.gz", hash = "sha256:c60ce9ef5c95a257f183fa8261b75edad972044e2c2a6f01a2affafed494571c", size = 14886, upload-time = "2025-07-30T21:03:14.127Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/65/63/7ba64cfcce18d0960c52eb74df578f0e3c9f86c2fcf9a7027e15c9802e33/llama_index_llms_bedrock_converse-0.7.4-py3-none-any.whl", hash = "sha256:13d26dff6e5b753b3ef54c631502a18587018ad8aefa76055eadcadaac934f31", size = 15116, upload-time = "2025-06-29T00:48:13.28Z" },
+    { url = "https://files.pythonhosted.org/packages/de/0a/abc0eb6645453c996ffeace6fdc7b0755d323d8e0321eca10cb7969a67dc/llama_index_llms_bedrock_converse-0.8.0-py3-none-any.whl", hash = "sha256:830ea3d441823156aad038d6b23fee9de9ff1c7f45d867a41ebc914bdde7b60f", size = 15373, upload-time = "2025-07-30T21:03:13.293Z" },
 ]
 
 [[package]]
 name = "llama-index-multi-modal-llms-bedrock"
-version = "0.1.2"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "aioboto3" },
@@ -1783,8 +1784,8 @@ dev = [
 requires-dist = [
     { name = "aioboto3", specifier = ">=12.3.0" },
     { name = "boto3", specifier = ">=1.34.0" },
-    { name = "llama-index-core", specifier = ">=0.12.47,<0.13" },
-    { name = "llama-index-llms-bedrock-converse", specifier = ">=0.7.2,<0.8" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-llms-bedrock-converse", specifier = ">=0.8.0,<0.9" },
 ]
 
 [package.metadata.requires-dev]

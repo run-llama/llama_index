@@ -653,7 +653,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
 
-        super().__init__()
+        super().__init__(**kwargs)
         base_user_agent = "llamaindex-python"
         self._user_agent = (
             f"{base_user_agent} {user_agent}" if user_agent else base_user_agent
