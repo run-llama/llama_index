@@ -95,7 +95,10 @@ class BM25Retriever(BaseRetriever):
             if nodes is None:
                 raise ValueError("Please pass nodes or an existing BM25 object.")
 
-            self.corpus = [node_to_metadata_dict(node) for node in nodes]
+            self.corpus = [
+                node_to_metadata_dict(node) | {"node_id": node.node_id}
+                for node in nodes
+            ]
 
             corpus_tokens = bm25s.tokenize(
                 [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes],
@@ -122,16 +125,17 @@ class BM25Retriever(BaseRetriever):
             self.similarity_top_k = int(self.bm25.scores["num_docs"])
 
         self.corpus_weight_mask = None
-        if filters:
+        if filters and self.corpus:
             # Build a weight mask for each corpus to filter out only relevant nodes
             _corpus_dict = {
-                node.ref_doc_id: node_to_metadata_dict(node) for node in nodes
+                corpus_token["node_id"]: corpus_token for corpus_token in self.corpus
             }
             _query_filter_fn = build_metadata_filter_fn(
                 lambda node_id: _corpus_dict[node_id], filters
             )
             self.corpus_weight_mask = [
-                int(_query_filter_fn(node.ref_doc_id)) for node in nodes
+                int(_query_filter_fn(corpus_token["node_id"]))
+                for corpus_token in self.corpus
             ]
 
         super().__init__(
