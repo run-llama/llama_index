@@ -52,44 +52,6 @@ JSON_TO_PYTHON_TYPES = {
 }
 
 
-def _format_oci_tool_calls(
-    tool_calls: Optional[List[Any]] = None,
-) -> List[Dict]:
-    """
-    Formats an OCI GenAI API response into the tool call format used in LlamaIndex.
-    Handles both dictionary and object formats.
-    """
-    if not tool_calls:
-        return []
-
-    formatted_tool_calls = []
-    for tool_call in tool_calls:
-        # Handle both object and dict formats
-        if isinstance(tool_call, dict):
-            name = tool_call.get("name", tool_call.get("functionName"))
-            parameters = tool_call.get(
-                "parameters", tool_call.get("functionParameters")
-            )
-        else:
-            name = getattr(tool_call, "name", getattr(tool_call, "functionName", None))
-            parameters = getattr(
-                tool_call, "parameters", getattr(tool_call, "functionParameters", None)
-            )
-
-        if name and parameters:
-            formatted_tool_calls.append(
-                {
-                    "toolUseId": uuid.uuid4().hex[:],
-                    "name": name,
-                    "input": json.dumps(parameters)
-                    if isinstance(parameters, dict)
-                    else parameters,
-                }
-            )
-
-    return formatted_tool_calls
-
-
 def create_client(auth_type, auth_profile, auth_file_location, service_endpoint):
     """
     OCI Gen AI client.
@@ -227,6 +189,15 @@ class Provider(ABC):
     def chat_stream_generation_info(self, event_data: Dict) -> Dict[str, Any]: ...
 
     @abstractmethod
+    def chat_stream_tool_calls(self, event_data: Dict) -> List[Any]: ...
+
+    @abstractmethod
+    def format_response_tool_calls(self, tool_calls: List[Any]) -> List[Any]: ...
+
+    @abstractmethod
+    def format_stream_tool_calls(self, tool_calls: List[Any]) -> List[Any]: ...
+
+    @abstractmethod
     def messages_to_oci_params(
         self, messages: Sequence[ChatMessage]
     ) -> Dict[str, Any]: ...
@@ -291,7 +262,7 @@ class CohereProvider(Provider):
         if response.data.chat_response.tool_calls:
             # Only populate tool_calls when 1) present on the response and
             #  2) has one or more calls.
-            generation_info["tool_calls"] = _format_oci_tool_calls(
+            generation_info["tool_calls"] = self.format_response_tool_calls(
                 response.data.chat_response.tool_calls
             )
 
@@ -309,11 +280,105 @@ class CohereProvider(Provider):
 
         # Handle tool calls if present
         if "toolCalls" in event_data:
-            generation_info["tool_calls"] = _format_oci_tool_calls(
+            generation_info["tool_calls"] = self.format_stream_tool_calls(
                 event_data["toolCalls"]
             )
 
         return {k: v for k, v in generation_info.items() if v is not None}
+
+    def chat_stream_tool_calls(self, event_data: Dict) -> List[Any]:
+        """Retrieve tool calls from Cohere stream event data."""
+        tool_calls_data = []
+        for key in ["toolCalls", "tool_calls", "functionCalls"]:
+            if key in event_data:
+                tool_calls_data = event_data[key]
+                break
+
+        return tool_calls_data
+
+    def format_response_tool_calls(
+        self,
+        tool_calls: Optional[List[Any]] = None,
+    ) -> List[Dict]:
+        """
+        Formats an OCI GenAI API Cohere response into the tool call format used in LlamaIndex.
+        Handles both dictionary and object formats.
+        """
+        if not tool_calls:
+            return []
+
+        formatted_tool_calls = []
+        for tool_call in tool_calls:
+            # Handle both object and dict formats
+            if isinstance(tool_call, dict):
+                name = tool_call.get("name", tool_call.get("functionName"))
+                parameters = tool_call.get(
+                    "parameters", tool_call.get("functionParameters")
+                )
+            else:
+                name = getattr(
+                    tool_call, "name", getattr(tool_call, "functionName", None)
+                )
+                parameters = getattr(
+                    tool_call,
+                    "parameters",
+                    getattr(tool_call, "functionParameters", None),
+                )
+
+            if name and parameters:
+                formatted_tool_calls.append(
+                    {
+                        "toolUseId": uuid.uuid4().hex[:],
+                        "name": name,
+                        "input": json.dumps(parameters)
+                        if isinstance(parameters, dict)
+                        else parameters,
+                    }
+                )
+
+        return formatted_tool_calls
+
+    def format_stream_tool_calls(
+        self,
+        tool_calls: Optional[List[Any]] = None,
+    ) -> List[Dict]:
+        """
+        Formats an OCI GenAI API Cohere stream response into the tool call format used in LlamaIndex.
+        Handles both dictionary and object formats.
+        """
+        if not tool_calls:
+            return []
+
+        formatted_tool_calls = []
+        for tool_call in tool_calls:
+            # Handle both object and dict formats
+            if isinstance(tool_call, dict):
+                name = tool_call.get("name", tool_call.get("functionName"))
+                parameters = tool_call.get(
+                    "parameters", tool_call.get("functionParameters")
+                )
+            else:
+                name = getattr(
+                    tool_call, "name", getattr(tool_call, "functionName", None)
+                )
+                parameters = getattr(
+                    tool_call,
+                    "parameters",
+                    getattr(tool_call, "functionParameters", None),
+                )
+
+            if name and parameters:
+                formatted_tool_calls.append(
+                    {
+                        "toolUseId": uuid.uuid4().hex[:],
+                        "name": name,
+                        "input": json.dumps(parameters)
+                        if isinstance(parameters, dict)
+                        else parameters,
+                    }
+                )
+
+        return formatted_tool_calls
 
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
         role_map = {
@@ -571,6 +636,9 @@ class MetaProvider(Provider):
         self.oci_chat_message_image_content = models.ImageContent
         self.oci_chat_message_image_url = models.ImageUrl
 
+        # Tool-related models
+        self.oci_function_definition = models.FunctionDefinition
+
         self.chat_api_format = models.BaseChatRequest.API_FORMAT_GENERIC
 
     def completion_response_to_text(self, response: Any) -> str:
@@ -594,16 +662,72 @@ class MetaProvider(Provider):
 
     def chat_generation_info(self, response: Any) -> Dict[str, Any]:
         """Extract generation metadata from Meta chat response."""
-        return {
+        generation_info: Dict[str, Any] = {
             "finish_reason": response.data.chat_response.choices[0].finish_reason,
             "time_created": str(response.data.chat_response.time_created),
         }
+        if self.chat_tool_calls(response):
+            print("Tool calls found:", self.chat_tool_calls(response))
+            generation_info["tool_calls"] = self.format_response_tool_calls(
+                self.chat_tool_calls(response)
+            )
+        return generation_info
 
     def chat_stream_generation_info(self, event_data: Dict) -> Dict[str, Any]:
         """Extract generation metadata from Meta chat stream event."""
-        return {
-            "finish_reason": event_data["finishReason"],
-        }
+        return {"finish_reason": event_data.get("finishReason")}
+
+    def chat_tool_calls(self, response: Any) -> List[Any]:
+        """Retrieve tool calls from Meta chat response."""
+        return response.data.chat_response.choices[0].message.tool_calls
+
+    def chat_stream_tool_calls(self, event_data: Dict) -> List[Any]:
+        """Retrieve tool calls from Meta stream event."""
+        return event_data.get("message", {}).get("toolCalls", [])
+
+    def format_response_tool_calls(
+        self,
+        tool_calls: Optional[List[Any]] = None,
+    ) -> List[Dict]:
+        """
+        Formats an OCI GenAI API Meta response into the tool call format used in LlamaIndex.
+        """
+        if not tool_calls:
+            return []
+
+        formatted_tool_calls = []
+        for tool_call in tool_calls:
+            formatted_tool_calls.append(
+                {
+                    "toolUseId": tool_call.id,
+                    "name": tool_call.name,
+                    "input": json.loads(tool_call.arguments),
+                }
+            )
+        return formatted_tool_calls
+
+    def format_stream_tool_calls(
+        self,
+        tool_calls: Optional[List[Any]] = None,
+    ) -> List[Dict]:
+        """
+        Formats a OCI GenAI API Meta stream response
+        into the tool call format used in LlamaIndex.
+        """
+        if not tool_calls:
+            return []
+
+        formatted_tool_calls = []
+        for tool_call in tool_calls:
+            # empty string for fields not present in the tool call
+            formatted_tool_calls.append(
+                {
+                    "toolUseId": tool_call.get("id", ""),
+                    "name": tool_call.get("name", ""),
+                    "input": tool_call.get("arguments", ""),
+                }
+            )
+        return formatted_tool_calls
 
     def messages_to_oci_params(self, messages: Sequence[ChatMessage]) -> Dict[str, Any]:
         """
@@ -686,9 +810,69 @@ class MetaProvider(Provider):
         self,
         tool: Union[Union[Dict[str, Any], Type[BaseModel], Callable, BaseTool]],
     ) -> Dict[str, Any]:
-        raise NotImplementedError(
-            "Tools not supported for OCI Generative AI Meta models"
-        )
+        """
+        Convert a BaseTool instance to a OCI tool in Meta's format.
+
+        Args:
+            tool: The tool to convert, can be a BaseTool instance.
+
+        Returns:
+            Dict containing the tool definition in Meta's format.
+
+        Raises:
+            ValueError: If the tool type is not supported.
+
+        """
+        if isinstance(tool, BaseTool):
+            # Extract tool name and description for BaseTool
+            tool_name, tool_description = (
+                getattr(tool, "name", None),
+                getattr(tool, "description", None),
+            )
+            if not tool_name or not tool_description:
+                tool_name = getattr(tool.metadata, "name", None)
+                if tool_fn := getattr(tool, "fn", None):
+                    tool_description = tool_fn.__doc__
+                    if not tool_name:
+                        tool_name = tool_fn.__name__
+                else:
+                    tool_description = getattr(tool.metadata, "description", None)
+                if not tool_name or not tool_description:
+                    raise ValueError(
+                        f"Tool {tool} does not have a name or description."
+                    )
+
+            return self.oci_function_definition(
+                name=tool_name,
+                description=tool_description,
+                parameters={
+                    "type": "object",
+                    "properties": {
+                        p_name: {
+                            "type": JSON_TO_PYTHON_TYPES.get(
+                                p_def.get("type"), p_def.get("type", "string")
+                            ),
+                            "description": p_def.get("description", ""),
+                        }
+                        for p_name, p_def in tool.metadata.get_parameters_dict()
+                        .get("properties", {})
+                        .items()
+                    },
+                    "required": [
+                        p_name
+                        for p_name, p_def in tool.metadata.get_parameters_dict()
+                        .get("properties", {})
+                        .items()
+                        if p_name
+                        in tool.metadata.get_parameters_dict().get("required", [])
+                    ],
+                },
+            )
+
+        else:
+            raise ValueError(
+                f"Tool type {type(tool)} not supported. Tool must be passed in as a BaseTool instance"
+            )
 
 
 PROVIDERS = {

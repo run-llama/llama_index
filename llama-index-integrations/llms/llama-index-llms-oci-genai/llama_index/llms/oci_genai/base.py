@@ -37,7 +37,6 @@ from llama_index.llms.oci_genai.utils import (
     get_completion_generator,
     get_chat_generator,
     get_context_size,
-    _format_oci_tool_calls,
     force_single_tool_call,
     validate_tool_call,
 )
@@ -244,13 +243,6 @@ class OCIGenAI(FunctionCallingLLM):
 
         generation_info = self._provider.chat_generation_info(response)
 
-        llm_output = {
-            "model_id": response.data.model_id,
-            "model_version": response.data.model_version,
-            "request_id": response.request_id,
-            "content-length": response.headers["content-length"],
-        }
-
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
@@ -294,14 +286,12 @@ class OCIGenAI(FunctionCallingLLM):
                 try:
                     event_data = json.loads(event.data)
 
-                    tool_calls_data = None
-                    for key in ["toolCalls", "tool_calls", "functionCalls"]:
-                        if key in event_data:
-                            tool_calls_data = event_data[key]
-                            break
+                    tool_calls_data = self._provider.chat_stream_tool_calls(event_data)
 
                     if tool_calls_data:
-                        new_tool_calls = _format_oci_tool_calls(tool_calls_data)
+                        new_tool_calls = self._provider.format_stream_tool_calls(
+                            tool_calls_data
+                        )
                         for tool_call in new_tool_calls:
                             existing = next(
                                 (
@@ -313,6 +303,11 @@ class OCIGenAI(FunctionCallingLLM):
                             )
                             if existing:
                                 existing.update(tool_call)
+                            elif tool_call["name"] == "" and tool_calls_accumulated:
+                                tool_calls_accumulated[-1]["input"] = (
+                                    tool_calls_accumulated[-1].get("input", "")
+                                    + tool_call.get("input", "")
+                                )
                             else:
                                 tool_calls_accumulated.append(tool_call)
 
@@ -393,14 +388,12 @@ class OCIGenAI(FunctionCallingLLM):
         if user_msg:
             messages.append(user_msg)
 
-        oci_params = self._provider.messages_to_oci_params(messages)
         chat_params = self._get_all_kwargs(**kwargs)
 
         return {
             "messages": messages,
             "tools": tool_specs,
             **({"tool_choice": "REQUIRED"} if tool_required else {}),
-            **oci_params,
             **chat_params,
         }
 
