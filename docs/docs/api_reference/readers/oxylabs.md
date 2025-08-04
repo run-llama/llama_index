@@ -1,4 +1,4 @@
-::: llama_index.readers.oxylabs
+::: llama_index.readers.oxylabs.base
     options:
       members:
-        - OxylabsReader
+        - OxylabsBaseReader
