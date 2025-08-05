@@ -4,7 +4,7 @@ import json
 import logging
 import os
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence, cast
+from typing import Any, Dict, List, Optional, Sequence, cast
 
 import fsspec
 from dataclasses_json import DataClassJsonMixin
@@ -21,13 +21,14 @@ from llama_index.core.vector_stores.types import (
     DEFAULT_PERSIST_FNAME,
     BasePydanticVectorStore,
     MetadataFilters,
-    FilterCondition,
-    FilterOperator,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
-from llama_index.core.vector_stores.utils import node_to_metadata_dict
+from llama_index.core.vector_stores.utils import (
+    node_to_metadata_dict,
+    build_metadata_filter_fn,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -41,83 +42,6 @@ MMR_MODE = VectorStoreQueryMode.MMR
 
 NAMESPACE_SEP = "__"
 DEFAULT_VECTOR_STORE = "default"
-
-
-def _build_metadata_filter_fn(
-    metadata_lookup_fn: Callable[[str], Mapping[str, Any]],
-    metadata_filters: Optional[MetadataFilters] = None,
-) -> Callable[[str], bool]:
-    """Build metadata filter function."""
-    filter_list = metadata_filters.filters if metadata_filters else []
-    if not filter_list or not metadata_filters:
-        return lambda _: True
-
-    filter_condition = cast(MetadataFilters, metadata_filters.condition)
-
-    def filter_fn(node_id: str) -> bool:
-        def _process_filter_match(
-            operator: FilterOperator, value: Any, metadata_value: Any
-        ) -> bool:
-            if metadata_value is None:
-                return False
-            if operator == FilterOperator.EQ:
-                return metadata_value == value
-            if operator == FilterOperator.NE:
-                return metadata_value != value
-            if operator == FilterOperator.GT:
-                return metadata_value > value
-            if operator == FilterOperator.GTE:
-                return metadata_value >= value
-            if operator == FilterOperator.LT:
-                return metadata_value < value
-            if operator == FilterOperator.LTE:
-                return metadata_value <= value
-            if operator == FilterOperator.IN:
-                return metadata_value in value
-            if operator == FilterOperator.NIN:
-                return metadata_value not in value
-            if operator == FilterOperator.CONTAINS:
-                return value in metadata_value
-            if operator == FilterOperator.TEXT_MATCH:
-                return value.lower() in metadata_value.lower()
-            if operator == FilterOperator.ALL:
-                return all(val in metadata_value for val in value)
-            if operator == FilterOperator.ANY:
-                return any(val in metadata_value for val in value)
-            raise ValueError(f"Invalid operator: {operator}")
-
-        metadata = metadata_lookup_fn(node_id)
-
-        filter_matches_list = []
-        for filter_ in filter_list:
-            if isinstance(filter_, MetadataFilters):
-                raise ValueError("Nested MetadataFilters are not supported.")
-
-            filter_matches = True
-            metadata_value = metadata.get(filter_.key, None)
-            if filter_.operator == FilterOperator.IS_EMPTY:
-                filter_matches = (
-                    metadata_value is None
-                    or metadata_value == ""
-                    or metadata_value == []
-                )
-            else:
-                filter_matches = _process_filter_match(
-                    operator=filter_.operator,
-                    value=filter_.value,
-                    metadata_value=metadata_value,
-                )
-
-            filter_matches_list.append(filter_matches)
-
-        if filter_condition == FilterCondition.AND:
-            return all(filter_matches_list)
-        elif filter_condition == FilterCondition.OR:
-            return any(filter_matches_list)
-        else:
-            raise ValueError(f"Invalid filter condition: {filter_condition}")
-
-    return filter_fn
 
 
 @dataclass
@@ -292,7 +216,7 @@ class SimpleVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        filter_fn = _build_metadata_filter_fn(
+        filter_fn = build_metadata_filter_fn(
             lambda node_id: self.data.metadata_dict[node_id], filters
         )
 
@@ -334,7 +258,7 @@ class SimpleVectorStore(BasePydanticVectorStore):
                 "Please rebuild the store with metadata to enable filtering."
             )
         # Prefilter nodes based on the query filter and node ID restrictions.
-        query_filter_fn = _build_metadata_filter_fn(
+        query_filter_fn = build_metadata_filter_fn(
             lambda node_id: self.data.metadata_dict[node_id], query.filters
         )
 

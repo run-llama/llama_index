@@ -7,6 +7,7 @@ import pytest
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import TextBlock, ImageBlock
 from llama_index.core.tools.function_tool import FunctionTool
+from llama_index.core.schema import Document, TextNode
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow import Context
 
@@ -425,3 +426,31 @@ def test_docstring_with_self_and_context():
     assert "a" in fields
     assert fields["a"].description == "some input value"
     assert "self" not in fields
+
+
+def test_function_tool_output_document_and_nodes():
+    def get_document() -> Document:
+        return Document(text="Hello" * 1024)
+
+    def get_node() -> TextNode:
+        return TextNode(text="Hello" * 1024)
+
+    def get_documents() -> List[Document]:
+        return [Document(text="Hello" * 1024), Document(text="World" * 1024)]
+
+    def get_nodes() -> List[TextNode]:
+        return [TextNode(text="Hello" * 1024), TextNode(text="World" * 1024)]
+
+    tool = FunctionTool.from_defaults(get_document)
+    assert tool.call().content == "Hello" * 1024
+
+    tool = FunctionTool.from_defaults(get_node)
+    assert tool.call().content == "Hello" * 1024
+
+    tool = FunctionTool.from_defaults(get_documents)
+    assert "Hello" * 1024 in tool.call().content
+    assert "World" * 1024 in tool.call().content
+
+    tool = FunctionTool.from_defaults(get_nodes)
+    assert "Hello" * 1024 in tool.call().content
+    assert "World" * 1024 in tool.call().content
