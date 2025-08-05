@@ -147,6 +147,7 @@ nav:
           - ./examples/cookbooks/mistralai.ipynb
           - ./examples/cookbooks/mixedbread_reranker.ipynb
           - ./examples/cookbooks/mongodb_retrieval_strategies.ipynb
+          - ./examples/cookbooks/ollama_gpt_oss_cookbook.ipynb
           - ./examples/cookbooks/oracleai_demo.ipynb
           - ./examples/cookbooks/oreilly_course_cookbooks/Module-2/Components_Of_LlamaIndex.ipynb
           - ./examples/cookbooks/oreilly_course_cookbooks/Module-3/Evaluating_RAG_Systems.ipynb
