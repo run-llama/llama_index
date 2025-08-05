@@ -4,22 +4,37 @@ Couchbase Vector store interface.
 
 import logging
 import warnings
-from typing import Any, Dict, List, Optional
+from datetime import timedelta
+from enum import Enum
+from typing import Any, Dict, List, Optional, Union
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
+    MetadataFilter,
     MetadataFilters,
+    FilterOperator,
     VectorStoreQuery,
     VectorStoreQueryResult,
 )
+import couchbase.search as search
+from couchbase.options import SearchOptions, QueryOptions
+from couchbase.vector_search import VectorQuery, VectorSearch
+
 from llama_index.core.vector_stores.utils import (
     metadata_dict_to_node,
     node_to_metadata_dict,
 )
 
 logger = logging.getLogger(__name__)
+
+
+class QueryVectorSearchType(str, Enum):
+    """Enum for search types supported by Couchbase GSI."""
+
+    ANN = "ANN"
+    KNN = "KNN"
 
 
 def _transform_couchbase_filter_condition(condition: str) -> str:
@@ -115,12 +130,89 @@ def _to_couchbase_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
     return {"query": filters}
 
 
-class CouchbaseSearchVectorStore(BasePydanticVectorStore):
+def _convert_llamaindex_filters_to_sql(
+    filters: MetadataFilters, metadata_key: str
+) -> str:
     """
-    Couchbase Vector Store.
+    Convert LlamaIndex MetadataFilters to SQL++ WHERE clause.
 
-    To use, you should have the ``couchbase`` python package installed.
+    Args:
+        filters: LlamaIndex MetadataFilters object
+        metadata_key: The metadata field prefix for the document
 
+    Returns:
+        SQL++ WHERE clause string
+
+    """
+    if not filters or not filters.filters:
+        return ""
+
+    def _build_condition(filter_item: Any) -> str:
+        """Build a single SQL++ condition from a MetadataFilter."""
+        field_name = f"d.{metadata_key}.{filter_item.key}"
+
+        if filter_item.operator == FilterOperator.EQ:
+            if isinstance(filter_item.value, str):
+                return f"{field_name} = '{filter_item.value}'"
+            else:
+                return f"{field_name} = {filter_item.value}"
+        elif filter_item.operator == FilterOperator.NE:
+            if isinstance(filter_item.value, str):
+                return f"{field_name} != '{filter_item.value}'"
+            else:
+                return f"{field_name} != {filter_item.value}"
+        elif filter_item.operator == FilterOperator.GT:
+            return f"{field_name} > {filter_item.value}"
+        elif filter_item.operator == FilterOperator.GTE:
+            return f"{field_name} >= {filter_item.value}"
+        elif filter_item.operator == FilterOperator.LT:
+            return f"{field_name} < {filter_item.value}"
+        elif filter_item.operator == FilterOperator.LTE:
+            return f"{field_name} <= {filter_item.value}"
+        elif filter_item.operator == FilterOperator.IN:
+            if isinstance(filter_item.value, list):
+                values = ", ".join(
+                    [
+                        f"'{v}'" if isinstance(v, str) else str(v)
+                        for v in filter_item.value
+                    ]
+                )
+                return f"{field_name} IN [{values}]"
+            else:
+                raise ValueError(
+                    f"'in' operator expects a list value, got {type(filter_item.value)}"
+                )
+        else:
+            raise ValueError(f"Unsupported filter operator: {filter_item.operator}")
+
+    # Build conditions for all filters
+    filter_conditions = []
+    for filter_item in filters.filters:
+        if isinstance(filter_item, MetadataFilter):
+            condition = _build_condition(filter_item)
+            filter_conditions.append(condition)
+        elif isinstance(filter_item, MetadataFilters):
+            condition = (
+                "("
+                + _convert_llamaindex_filters_to_sql(filter_item, metadata_key)
+                + ")"
+            )
+            filter_conditions.append(condition)
+        else:
+            logger.warning(f"Unsupported filter type: {type(filter_item)}")
+            continue
+
+    if not filter_conditions:
+        return ""
+
+    # Join conditions based on the filter condition (AND/OR)
+    condition_connector = " AND " if filters.condition == "and" else " OR "
+    return condition_connector.join(filter_conditions)
+
+
+class CouchbaseVectorStoreBase(BasePydanticVectorStore):
+    """
+    Base class for Couchbase Vector Stores providing common database operations.
     """
 
     stores_text: bool = True
@@ -135,12 +227,9 @@ class CouchbaseSearchVectorStore(BasePydanticVectorStore):
     _bucket_name: str = PrivateAttr()
     _scope_name: str = PrivateAttr()
     _collection_name: str = PrivateAttr()
-    _index_name: str = PrivateAttr()
-    _id_key: str = PrivateAttr()
     _text_key: str = PrivateAttr()
     _embedding_key: str = PrivateAttr()
     _metadata_key: str = PrivateAttr()
-    _scoped_index: bool = PrivateAttr()
 
     def __init__(
         self,
@@ -148,29 +237,24 @@ class CouchbaseSearchVectorStore(BasePydanticVectorStore):
         bucket_name: str,
         scope_name: str,
         collection_name: str,
-        index_name: str,
         text_key: Optional[str] = "text",
         embedding_key: Optional[str] = "embedding",
         metadata_key: Optional[str] = "metadata",
-        scoped_index: bool = True,
     ) -> None:
         """
-        Initializes a connection to a Couchbase Vector Store.
+        Base initialization for Couchbase Vector Stores.
 
         Args:
             cluster (Cluster): Couchbase cluster object with active connection.
             bucket_name (str): Name of bucket to store documents in.
             scope_name (str): Name of scope in the bucket to store documents in.
             collection_name (str): Name of collection in the scope to store documents in.
-            index_name (str): Name of the Search index.
             text_key (Optional[str], optional): The field for the document text.
                 Defaults to "text".
             embedding_key (Optional[str], optional): The field for the document embedding.
                 Defaults to "embedding".
             metadata_key (Optional[str], optional): The field for the document metadata.
                 Defaults to "metadata".
-            scoped_index (Optional[bool]): specify whether the index is a scoped index.
-                Set to True by default.
 
         Returns:
             None
@@ -202,17 +286,12 @@ class CouchbaseSearchVectorStore(BasePydanticVectorStore):
         if not collection_name:
             raise ValueError("collection_name must be provided.")
 
-        if not index_name:
-            raise ValueError("index_name must be provided.")
-
         self._bucket_name = bucket_name
         self._scope_name = scope_name
         self._collection_name = collection_name
         self._text_key = text_key
         self._embedding_key = embedding_key
-        self._index_name = index_name
         self._metadata_key = metadata_key
-        self._scoped_index = scoped_index
 
         # Check if the bucket exists
         if not self._check_bucket_exists():
@@ -236,16 +315,6 @@ class CouchbaseSearchVectorStore(BasePydanticVectorStore):
             self._check_scope_and_collection_exists()
         except Exception as e:
             raise
-
-        # Check if the index exists. Throws ValueError if it doesn't
-        try:
-            self._check_index_exists()
-        except Exception as e:
-            raise
-
-        self._bucket = self._cluster.bucket(self._bucket_name)
-        self._scope = self._bucket.scope(self._scope_name)
-        self._collection = self._scope.collection(self._collection_name)
 
     def add(self, nodes: List[BaseNode], **kwargs: Any) -> List[str]:
         """
@@ -326,6 +395,153 @@ class CouchbaseSearchVectorStore(BasePydanticVectorStore):
             logger.error(f"Error deleting document {ref_doc_id}")
             raise
 
+    @property
+    def client(self) -> Any:
+        """
+        Property function to access the client attribute.
+        """
+        return self._cluster
+
+    def _check_bucket_exists(self) -> bool:
+        """
+        Check if the bucket exists in the linked Couchbase cluster.
+
+        Returns:
+            True if the bucket exists
+
+        """
+        bucket_manager = self._cluster.buckets()
+        try:
+            bucket_manager.get_bucket(self._bucket_name)
+            return True
+        except Exception as e:
+            logger.debug("Error checking if bucket exists:", e)
+            return False
+
+    def _check_scope_and_collection_exists(self) -> bool:
+        """
+        Check if the scope and collection exists in the linked Couchbase bucket
+        Returns:
+            True if the scope and collection exist in the bucket
+            Raises a ValueError if either is not found.
+        """
+        scope_collection_map: Dict[str, Any] = {}
+
+        # Get a list of all scopes in the bucket
+        for scope in self._bucket.collections().get_all_scopes():
+            scope_collection_map[scope.name] = []
+
+            # Get a list of all the collections in the scope
+            for collection in scope.collections:
+                scope_collection_map[scope.name].append(collection.name)
+
+        # Check if the scope exists
+        if self._scope_name not in scope_collection_map:
+            raise ValueError(
+                f"Scope {self._scope_name} not found in Couchbase "
+                f"bucket {self._bucket_name}"
+            )
+
+        # Check if the collection exists in the scope
+        if self._collection_name not in scope_collection_map[self._scope_name]:
+            raise ValueError(
+                f"Collection {self._collection_name} not found in scope "
+                f"{self._scope_name} in Couchbase bucket {self._bucket_name}"
+            )
+
+        return True
+
+    def _format_metadata(self, row_fields: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Helper method to format the metadata from the Couchbase Search API.
+
+        Args:
+            row_fields (Dict[str, Any]): The fields to format.
+
+        Returns:
+            Dict[str, Any]: The formatted metadata.
+
+        """
+        metadata = {}
+        for key, value in row_fields.items():
+            # Couchbase Search returns the metadata key with a prefix
+            # `metadata.` We remove it to get the original metadata key
+            if key.startswith(self._metadata_key):
+                new_key = key.split(self._metadata_key + ".")[-1]
+                metadata[new_key] = value
+            else:
+                metadata[key] = value
+
+        return metadata
+
+
+class CouchbaseSearchVectorStore(CouchbaseVectorStoreBase):
+    """
+    Couchbase Vector Store using Full-Text Search (FTS).
+
+    To use, you should have the ``couchbase`` python package installed.
+
+    """
+
+    _index_name: str = PrivateAttr()
+    _scoped_index: bool = PrivateAttr()
+
+    def __init__(
+        self,
+        cluster: Any,
+        bucket_name: str,
+        scope_name: str,
+        collection_name: str,
+        index_name: str,
+        text_key: Optional[str] = "text",
+        embedding_key: Optional[str] = "embedding",
+        metadata_key: Optional[str] = "metadata",
+        scoped_index: bool = True,
+    ) -> None:
+        """
+        Initializes a connection to a Couchbase Vector Store using FTS.
+
+        Args:
+            cluster (Cluster): Couchbase cluster object with active connection.
+            bucket_name (str): Name of bucket to store documents in.
+            scope_name (str): Name of scope in the bucket to store documents in.
+            collection_name (str): Name of collection in the scope to store documents in.
+            index_name (str): Name of the Search index.
+            text_key (Optional[str], optional): The field for the document text.
+                Defaults to "text".
+            embedding_key (Optional[str], optional): The field for the document embedding.
+                Defaults to "embedding".
+            metadata_key (Optional[str], optional): The field for the document metadata.
+                Defaults to "metadata".
+            scoped_index (Optional[bool]): specify whether the index is a scoped index.
+                Set to True by default.
+
+        Returns:
+            None
+
+        """
+        super().__init__(
+            cluster=cluster,
+            bucket_name=bucket_name,
+            scope_name=scope_name,
+            collection_name=collection_name,
+            text_key=text_key,
+            embedding_key=embedding_key,
+            metadata_key=metadata_key,
+        )
+
+        if not index_name:
+            raise ValueError("index_name must be provided.")
+
+        self._index_name = index_name
+        self._scoped_index = scoped_index
+
+        # Check if the index exists. Throws ValueError if it doesn't
+        try:
+            self._check_index_exists()
+        except Exception as e:
+            raise
+
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """
         Executes a query in the vector store and returns the result.
@@ -339,10 +555,6 @@ class CouchbaseSearchVectorStore(BasePydanticVectorStore):
             VectorStoreQueryResult: The result of the query containing the top-k nodes, similarities, and ids.
 
         """
-        import couchbase.search as search
-        from couchbase.options import SearchOptions
-        from couchbase.vector_search import VectorQuery, VectorSearch
-
         fields = query.output_fields
 
         if not fields:
@@ -432,62 +644,6 @@ class CouchbaseSearchVectorStore(BasePydanticVectorStore):
             nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
         )
 
-    @property
-    def client(self) -> Any:
-        """
-        Property function to access the client attribute.
-        """
-        return self._cluster
-
-    def _check_bucket_exists(self) -> bool:
-        """
-        Check if the bucket exists in the linked Couchbase cluster.
-
-        Returns:
-            True if the bucket exists
-
-        """
-        bucket_manager = self._cluster.buckets()
-        try:
-            bucket_manager.get_bucket(self._bucket_name)
-            return True
-        except Exception as e:
-            logger.debug("Error checking if bucket exists:", e)
-            return False
-
-    def _check_scope_and_collection_exists(self) -> bool:
-        """
-        Check if the scope and collection exists in the linked Couchbase bucket
-        Returns:
-            True if the scope and collection exist in the bucket
-            Raises a ValueError if either is not found.
-        """
-        scope_collection_map: Dict[str, Any] = {}
-
-        # Get a list of all scopes in the bucket
-        for scope in self._bucket.collections().get_all_scopes():
-            scope_collection_map[scope.name] = []
-
-            # Get a list of all the collections in the scope
-            for collection in scope.collections:
-                scope_collection_map[scope.name].append(collection.name)
-
-        # Check if the scope exists
-        if self._scope_name not in scope_collection_map:
-            raise ValueError(
-                f"Scope {self._scope_name} not found in Couchbase "
-                f"bucket {self._bucket_name}"
-            )
-
-        # Check if the collection exists in the scope
-        if self._collection_name not in scope_collection_map[self._scope_name]:
-            raise ValueError(
-                f"Collection {self._collection_name} not found in scope "
-                f"{self._scope_name} in Couchbase bucket {self._bucket_name}"
-            )
-
-        return True
-
     def _check_index_exists(self) -> bool:
         """
         Check if the Search index exists in the linked Couchbase cluster
@@ -516,28 +672,187 @@ class CouchbaseSearchVectorStore(BasePydanticVectorStore):
 
         return True
 
-    def _format_metadata(self, row_fields: Dict[str, Any]) -> Dict[str, Any]:
+
+class CouchbaseQueryVectorStore(CouchbaseVectorStoreBase):
+    """
+    Couchbase Vector Store using Global Secondary Index (GSI) with vector search capabilities.
+
+    This implementation supports:
+    - BHIVE indexes for high-performance ANN vector search
+    - Composite Secondary Indexes with vector search functions
+    - Various similarity metrics (cosine, euclidean, dot_product)
+    """
+
+    _search_type: QueryVectorSearchType = PrivateAttr()
+    _similarity: str = PrivateAttr()
+    _query_timeout: timedelta = PrivateAttr()
+
+    def __init__(
+        self,
+        cluster: Any,
+        bucket_name: str,
+        scope_name: str,
+        collection_name: str,
+        search_type: Union[QueryVectorSearchType, str] = QueryVectorSearchType.ANN,
+        similarity: str = "cosine",
+        nprobes: Optional[int] = None,
+        text_key: Optional[str] = "text",
+        embedding_key: Optional[str] = "embedding",
+        metadata_key: Optional[str] = "metadata",
+        query_timeout: Optional[timedelta] = None,
+    ) -> None:
         """
-        Helper method to format the metadata from the Couchbase Search API.
+        Initializes a connection to a Couchbase Vector Store using GSI.
 
         Args:
-            row_fields (Dict[str, Any]): The fields to format.
+            cluster (Cluster): Couchbase cluster object with active connection.
+            bucket_name (str): Name of bucket to store documents in.
+            scope_name (str): Name of scope in the bucket to store documents in.
+            collection_name (str): Name of collection in the scope to store documents in.
+            search_type (Union[QueryVectorSearchType, str]): Type of vector search (ANN or KNN).
+                Defaults to ANN.
+            similarity (str): Similarity metric to use (cosine, euclidean, dot_product).
+                Defaults to "cosine".
+            nprobes (Optional[int], optional): Number of probes for the ANN search.
+                Defaults to None, uses the value set at index creation time.
+            text_key (Optional[str], optional): The field for the document text.
+                Defaults to "text".
+            embedding_key (Optional[str], optional): The field for the document embedding.
+                Defaults to "embedding".
+            metadata_key (Optional[str], optional): The field for the document metadata.
+                Defaults to "metadata".
+            query_timeout (Optional[timedelta]): Timeout for SQL++ queries.
+                Defaults to 60 seconds.
 
         Returns:
-            Dict[str, Any]: The formatted metadata.
+            None
 
         """
-        metadata = {}
-        for key, value in row_fields.items():
-            # Couchbase Search returns the metadata key with a prefix
-            # `metadata.` We remove it to get the original metadata key
-            if key.startswith(self._metadata_key):
-                new_key = key.split(self._metadata_key + ".")[-1]
-                metadata[new_key] = value
-            else:
-                metadata[key] = value
+        super().__init__(
+            cluster=cluster,
+            bucket_name=bucket_name,
+            scope_name=scope_name,
+            collection_name=collection_name,
+            text_key=text_key,
+            embedding_key=embedding_key,
+            metadata_key=metadata_key,
+        )
 
-        return metadata
+        if isinstance(search_type, str):
+            search_type = QueryVectorSearchType(search_type)
+
+        self._search_type = search_type
+        self._similarity = similarity
+        self._query_timeout = query_timeout or timedelta(seconds=60)
+        self._nprobes = nprobes
+
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        """
+        Executes a vector similarity query using GSI.
+
+        Args:
+            query (VectorStoreQuery): The query object containing the search parameters.
+            **kwargs (Any): Additional keyword arguments.
+
+        Returns:
+            VectorStoreQueryResult: The result of the query containing the top-k nodes, similarities, and ids.
+
+        """
+        if not query.query_embedding:
+            raise ValueError("Query embedding must not be empty")
+
+        k = query.similarity_top_k
+        query_context = (
+            f"{self._bucket_name}.{self._scope_name}.{self._collection_name}"
+        )
+
+        # Convert embedding to string representation for query
+        query_vector_str = str(query.query_embedding)
+
+        # Handle filters if provided
+        where_clause = ""
+        if query.filters:
+            try:
+                # Convert LlamaIndex filters to SQL++ conditions
+                filter_sql = _convert_llamaindex_filters_to_sql(
+                    query.filters, self._metadata_key
+                )
+                if filter_sql:
+                    where_clause = f"WHERE {filter_sql}"
+            except Exception as e:
+                logger.warning(f"Failed to process filters: {e}")
+
+        if query.output_fields:
+            fields = query.output_fields.join(",")
+        else:
+            fields = "*, meta().id as id"
+
+        nprobes = self._nprobes
+        if kwargs.get("nprobes"):
+            nprobes = kwargs.get("nprobes")
+
+        # Determine the appropriate distance function based on search type
+        if self._search_type == QueryVectorSearchType.ANN:
+            nprobes_exp = f", {nprobes}" if nprobes else ""
+            distance_function_exp = f"APPROX_VECTOR_DISTANCE(d.{self._embedding_key}, {query_vector_str}, '{self._similarity}'{nprobes_exp})"
+        else:
+            distance_function_exp = f"VECTOR_DISTANCE(d.{self._embedding_key}, {query_vector_str}, '{self._similarity}')"
+
+        # Build the SQL++ query
+        query_str = f"""
+        SELECT {fields}, {distance_function_exp} as distance
+        FROM {query_context} d
+        {where_clause}
+        ORDER BY distance
+        LIMIT {k}
+        """
+
+        try:
+            # Execute the query
+            query_options = QueryOptions(
+                timeout=self._query_timeout,
+            )
+
+            result = self._cluster.query(query_str, query_options)
+
+            top_k_nodes = []
+            top_k_scores = []
+            top_k_ids = []
+
+            # Process results
+            for row in result.rows():
+                doc_id = row.get("id", "")
+                text = row.get(self._text_key, "")
+                score = row.get("distance", 0.0)
+
+                # Extract metadata
+                metadata_dict = {}
+                if self._metadata_key in row:
+                    metadata_dict = row[self._metadata_key]
+
+                try:
+                    node = metadata_dict_to_node(metadata_dict, text)
+                    node.node_id = doc_id
+                except Exception:
+                    # Fallback for backwards compatibility
+                    node = TextNode(
+                        text=text,
+                        id_=doc_id,
+                        score=score,
+                        metadata=metadata_dict,
+                    )
+
+                top_k_nodes.append(node)
+                top_k_scores.append(score)
+                top_k_ids.append(doc_id)
+
+            return VectorStoreQueryResult(
+                nodes=top_k_nodes, similarities=top_k_scores, ids=top_k_ids
+            )
+
+        except Exception as e:
+            logger.error(f"Vector search failed: {e}")
+            raise ValueError(f"Vector search failed with error: {e}")
 
 
 class CouchbaseVectorStore(CouchbaseSearchVectorStore):
