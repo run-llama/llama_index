@@ -26,13 +26,13 @@ dev = [
 
 [project]
 name = "llama-index-node-parser-docling"
-version = "0.3.2"
+version = "0.4.0"
 description = "llama-index node_parser docling integration"
 authors = [{name = "Panos Vagenas", email = "pva@zurich.ibm.com"}]
 requires-python = "~=3.10"
 readme = "README.md"
 license = "MIT"
-dependencies = ["llama-index-core>=0.12.0,<0.13", "docling-core>=2.18.0,<3"]
+dependencies = ["llama-index-core>=0.13.0,<0.14", "docling-core>=2.18.0,<3"]
 
 [tool.codespell]
 check-filenames = true

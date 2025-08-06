@@ -26,15 +26,15 @@ dev = [
 
 [project]
 name = "llama-index-storage-docstore-tablestore"
-version = "0.1.0"
+version = "0.2.0"
 description = "llama-index docstore tablestore integration"
 authors = [{name = "xunjian.sl", email = "xunjian.sl@alibaba-inc.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-storage-kvstore-tablestore>=0.1.0,<0.2",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-storage-kvstore-tablestore>=0.2.0,<0.3",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

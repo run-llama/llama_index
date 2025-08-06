@@ -49,6 +49,7 @@ BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS: Dict[str, int] = {
     "anthropic.claude-3-7-sonnet-20250219-v1:0": 200000,
     "anthropic.claude-opus-4-20250514-v1:0": 200000,
     "anthropic.claude-sonnet-4-20250514-v1:0": 200000,
+    "anthropic.claude-opus-4-1-20250805-v1:0": 200000,
 }
 BEDROCK_CLAUDE_MODELS: Dict[str, int] = {
     "anthropic.claude-instant-v1": 100000,
@@ -67,6 +68,7 @@ VERTEX_CLAUDE_MODELS: Dict[str, int] = {
     "claude-3-7-sonnet@20250219": 200000,
     "claude-opus-4@20250514": 200000,
     "claude-sonnet-4@20250514": 200000,
+    "claude-opus-4-1@20250805": 200000,
 }
 
 # Anthropic API/SDK identifiers
@@ -95,6 +97,7 @@ ANTHROPIC_MODELS: Dict[str, int] = {
     "claude-sonnet-4-0": 200000,
     "claude-sonnet-4-20250514": 200000,
     "claude-4-sonnet-20250514": 200000,
+    "claude-opus-4-1-20250805": 200000,
 }
 
 # All provider Anthropic identifiers

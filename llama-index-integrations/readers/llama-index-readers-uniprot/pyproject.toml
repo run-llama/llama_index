@@ -12,7 +12,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-uniprot"
-version = "0.1.0"
+version = "0.2.0"
 description = "UniProt reader for LlamaIndex"
 authors = [{name = "Evgenii Neumerzhitckii", email = "sausageskin@gmail.com"}]
 requires-python = ">=3.9,<4.0"
@@ -33,7 +33,7 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
 ]
-dependencies = ["llama-index-core>=0.12.0,<0.13"]
+dependencies = ["llama-index-core>=0.13.0,<0.14"]
 
 [tool.hatch.build.targets.sdist]
 include = ["llama_index/"]

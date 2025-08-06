@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-packs-searchain"
-version = "0.1.0"
+version = "0.2.0"
 description = "llama-index packs searchain integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -39,10 +39,10 @@ keywords = [
 ]
 dependencies = [
     "llama-cpp-python>=0.2.39,<0.3",
-    "llama-index-llms-openai>=0.4.0,<0.5",
+    "llama-index-llms-openai>=0.5.0,<0.6",
     "transformers>=4.38.1",
     "sentence_transformers>=2.5.1",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

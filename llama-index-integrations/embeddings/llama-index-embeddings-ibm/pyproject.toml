@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-ibm"
-version = "0.3.1"
+version = "0.4.0"
 description = "llama-index embeddings IBM watsonx.ai integration"
 authors = [{name = "IBM"}]
 requires-python = ">=3.10,<4.0"
@@ -36,7 +36,7 @@ license = "MIT"
 dependencies = [
     "ibm-watsonx-ai>=1.0.1",
     "pyarrow",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

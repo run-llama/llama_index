@@ -26,14 +26,14 @@ dev = [
 
 [project]
 name = "llama-index-graph-stores-memgraph"
-version = "0.3.1"
+version = "0.4.0"
 description = "llama-index graph-stores memgraph integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
     "neo4j>=5.24.0,<6",
 ]
 

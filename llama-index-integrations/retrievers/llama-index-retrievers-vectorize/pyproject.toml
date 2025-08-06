@@ -13,7 +13,7 @@ dev = [
 
 [project]
 name = "llama-index-retrievers-vectorize"
-version = "0.1.0"
+version = "0.2.0"
 description = "llama-index retrievers Vectorize.io integration"
 readme = "README.md"
 keywords = ["llama-index", "vectorize", "retrieval", "search"]
@@ -22,7 +22,7 @@ authors = [
 ]
 requires-python = ">=3.9"
 dependencies = [
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
     "vectorize-client>=0.1.3",
 ]
 classifiers = [

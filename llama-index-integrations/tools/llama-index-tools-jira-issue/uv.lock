@@ -977,7 +977,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-tools-jira-issue"
-version = "0.1.0"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "jira" },

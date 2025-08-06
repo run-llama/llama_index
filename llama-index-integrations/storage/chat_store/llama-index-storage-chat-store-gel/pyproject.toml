@@ -28,14 +28,14 @@ dev = [
 
 [project]
 name = "llama-index-storage-chat-store-gel"
-version = "0.1.0"
+version = "0.2.0"
 description = "llama-index storage-chat-store gel integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
     "gel>=3.0.1",
     "jinja2>=3.1.4",
 ]
