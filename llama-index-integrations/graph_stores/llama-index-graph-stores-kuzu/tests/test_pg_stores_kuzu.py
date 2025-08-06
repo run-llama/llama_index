@@ -182,19 +182,25 @@ def test_create_vector_index_disabled(pg_store: KuzuPropertyGraphStore) -> None:
     # Should return without doing anything
     pg_store._create_vector_index("Chunk")
 
-    # Verify no indexes were created
-    assert len(pg_store._vector_indexes_created) == 0
+    # Verify no indexes were created by checking database
+    indexes_result = pg_store.connection.execute("CALL SHOW_INDEXES() RETURN *")
+    index_names = [row[1] for row in indexes_result if len(row) > 1]
+    assert "chunk_embedding_index" not in index_names
 
 
 def test_create_vector_index_no_data(
     pg_store_with_vectors: KuzuPropertyGraphStore,
 ) -> None:
     """Test _create_vector_index when table has no embedding data."""
-    # Try to create index on empty table
+    # Try to create index on empty table - should not create index since Kuzu requires data first
     pg_store_with_vectors._create_vector_index("Chunk")
 
-    # Should not create index since no data exists
-    assert "chunk_embedding_index" not in pg_store_with_vectors._vector_indexes_created
+    # Should not create index since no data exists (Kuzu requirement)
+    indexes_result = pg_store_with_vectors.connection.execute(
+        "CALL SHOW_INDEXES() RETURN *"
+    )
+    index_names = [row[1] for row in indexes_result if len(row) > 1]
+    assert "chunk_embedding_index" not in index_names
 
 
 def test_create_vector_index_with_data(
@@ -221,13 +227,25 @@ def test_create_vector_index_already_exists(
 
     # Create index first time
     pg_store_with_vectors._create_vector_index("Chunk")
-    initial_indexes = len(pg_store_with_vectors._vector_indexes_created)
+
+    # Verify index exists
+    indexes_result = pg_store_with_vectors.connection.execute(
+        "CALL SHOW_INDEXES() RETURN *"
+    )
+    index_names = [row[1] for row in indexes_result if len(row) > 1]
+    assert "chunk_embedding_index" in index_names
+    initial_count = len(index_names)
 
     # Try to create again - should not duplicate
     pg_store_with_vectors._create_vector_index("Chunk")
-    final_indexes = len(pg_store_with_vectors._vector_indexes_created)
 
-    assert initial_indexes == final_indexes
+    # Verify no duplicate was created
+    indexes_result = pg_store_with_vectors.connection.execute(
+        "CALL SHOW_INDEXES() RETURN *"
+    )
+    index_names = [row[1] for row in indexes_result if len(row) > 1]
+    final_count = len(index_names)
+    assert initial_count == final_count
 
 
 def test_ensure_vector_indexes_disabled(pg_store: KuzuPropertyGraphStore) -> None:
@@ -238,7 +256,9 @@ def test_ensure_vector_indexes_disabled(pg_store: KuzuPropertyGraphStore) -> Non
     pg_store._ensure_vector_indexes()
 
     # Verify no indexes were created
-    assert len(pg_store._vector_indexes_created) == 0
+    indexes_result = pg_store.connection.execute("CALL SHOW_INDEXES() RETURN *")
+    index_names = [row[1] for row in indexes_result if len(row) > 1]
+    assert "chunk_embedding_index" not in index_names
 
 
 def test_ensure_vector_indexes_enabled(
