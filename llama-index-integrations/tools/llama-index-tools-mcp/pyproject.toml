@@ -29,9 +29,9 @@ dev = [
 
 [project]
 name = "llama-index-tools-mcp"
-version = "0.3.0"
+version = "0.4.0"
 description = "llama-index tools mcp integration"
-authors = [{name = "Chojan Shang", email = "psiace@outlook.com"}]
+authors = [{name = "Chojan Shang", email = "psiace@outlook.com"}, {name = "Sebastian Kalisz"}]
 requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
