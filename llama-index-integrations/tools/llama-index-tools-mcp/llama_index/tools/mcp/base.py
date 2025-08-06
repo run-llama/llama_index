@@ -9,10 +9,16 @@ from pydantic import BaseModel, create_model
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.core.tools.types import ToolMetadata
-from llama_index.tool_spec_mixins import TypeResolutionMixin, TypeCreationMixin, FieldExtractionMixin
+from llama_index.tool_spec_mixins import (
+    TypeResolutionMixin,
+    TypeCreationMixin,
+    FieldExtractionMixin,
+)
 
 
-class McpToolSpec(BaseToolSpec, TypeResolutionMixin, TypeCreationMixin, FieldExtractionMixin):
+class McpToolSpec(
+    BaseToolSpec, TypeResolutionMixin, TypeCreationMixin, FieldExtractionMixin
+):
     """
     MCPToolSpec will get the tools from MCP Client (only need to implement ClientSession) and convert them to LlamaIndex's FunctionTool objects.
 

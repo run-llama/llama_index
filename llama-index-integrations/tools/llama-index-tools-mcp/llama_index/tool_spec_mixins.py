@@ -14,6 +14,7 @@ json_type_mapping: Dict[str, Type] = {
     "array": List,
 }
 
+
 class TypeResolutionMixin:
     def _resolve_field_type(
         self: "McpToolSpec",
@@ -64,7 +65,9 @@ class TypeResolutionMixin:
         defs: dict,
     ) -> Any:
         """Resolve a Union type (anyOf)."""
-        union_types = [self._resolve_union_option(option, defs) for option in schema["anyOf"]]
+        union_types = [
+            self._resolve_union_option(option, defs) for option in schema["anyOf"]
+        ]
         return Union[tuple(union_types)] if len(union_types) > 1 else union_types[0]
 
     def _resolve_union_option(
