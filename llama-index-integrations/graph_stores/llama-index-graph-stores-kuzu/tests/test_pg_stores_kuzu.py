@@ -312,8 +312,16 @@ def test_vector_query_with_mock_results(
             pg_store_with_vectors, "structured_query"
         ) as mock_structured_query,
     ):
-        # Mock vector index query result
-        mock_execute.return_value = [("chunk1", 0.1), ("chunk2", 0.3)]
+        # Mock different execute calls based on query type
+        def mock_execute_side_effect(query, **kwargs):
+            if "COUNT(n)" in query:
+                return [(2,)]  # Return count of 2
+            elif "SHOW_INDEXES" in query:
+                return [("table", "chunk_embedding_index")]  # Return existing index
+            else:
+                return [("chunk1", 0.1), ("chunk2", 0.3)]  # Vector search results
+
+        mock_execute.side_effect = mock_execute_side_effect
 
         # Mock structured query results for fetching chunk data
         mock_structured_query.side_effect = [

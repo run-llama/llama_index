@@ -190,6 +190,13 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
             if len(row) > 1 and row[1] == "chunk_embedding_index":
                 return
 
+        # Check if table has any data - Kuzu requires data before creating vector index
+        count_result = self.connection.execute(
+            f"MATCH (n:{table_name}) RETURN COUNT(n)"
+        )
+        if not any(int(row[0]) > 0 for row in count_result):
+            return
+
         # Create vector index for Chunk table
         self.connection.execute("""
         CALL CREATE_VECTOR_INDEX(
