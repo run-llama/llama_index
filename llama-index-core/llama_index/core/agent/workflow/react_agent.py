@@ -74,7 +74,7 @@ class ReActAgent(BaseWorkflowAgent):
             react_header = prompts["react_header"]
             if isinstance(react_header, str):
                 react_header = PromptTemplate(react_header)
-            self.formatter.system_header = react_header.get_template()
+            self.formatter.system_header = react_header.format()
 
     async def take_step(
         self,
