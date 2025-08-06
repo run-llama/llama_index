@@ -17,8 +17,6 @@ from llama_cloud import (
     PageFigureNodeWithScore,
     PageScreenshotNodeWithScore,
     Pipeline,
-    PipelineCreateEmbeddingConfig,
-    PipelineCreateEmbeddingConfig_OpenaiEmbedding,
     PipelineCreateTransformConfig,
     PipelineType,
     Project,
@@ -47,15 +45,6 @@ def retry_on_failure(func: Callable) -> Callable:
         retry=retry_if_exception(is_retryable_http_error),
         reraise=True,
     )(func)
-
-
-def default_embedding_config() -> PipelineCreateEmbeddingConfig:
-    from llama_index.embeddings.openai import OpenAIEmbedding  # pants: no-infer-dep
-
-    return PipelineCreateEmbeddingConfig_OpenaiEmbedding(
-        type="OPENAI_EMBEDDING",
-        component=OpenAIEmbedding(),
-    )
 
 
 def default_transform_config() -> PipelineCreateTransformConfig:

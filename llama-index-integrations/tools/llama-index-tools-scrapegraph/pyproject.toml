@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-tools-scrapegraphai"
-version = "0.1.1"
+version = "0.2.0"
 description = "llama-index tools integrating ScrapegraphAI"
 authors = [{name = "Marco Vinciguerra", email = "mvincig11@gmail.com"}]
 requires-python = ">=3.10,<4.0"
@@ -36,7 +36,7 @@ license = "MIT"
 maintainers = [{name = "Vincigit00"}]
 keywords = ["scraping"]
 dependencies = [
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
     "scrapegraph-py>=1.6.0,<2",
 ]
 

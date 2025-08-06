@@ -25,7 +25,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-kdbai"
-version = "0.5.0"
+version = "0.6.0"
 description = "llama-index vector_stores kdbai integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -35,7 +35,7 @@ dependencies = [
     "pykx>=2.1.1,<3",
     "kdbai-client>=1.4.0",
     "pandas",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

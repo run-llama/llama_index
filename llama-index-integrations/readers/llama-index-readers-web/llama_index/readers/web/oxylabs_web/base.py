@@ -24,14 +24,13 @@ def get_default_config() -> dict[str, Any]:
 
 class OxylabsWebReader(BasePydanticReader):
     """
-    Scrape any website with Oxylabs Scraper.
+    Scrape any website with Oxylabs Web Scraper API and get results in Markdown format.
 
-    Oxylabs API documentation:
-    https://developers.oxylabs.io/scraper-apis/web-scraper-api/other-websites
+    [See the API documentation](https://developers.oxylabs.io/scraper-apis/web-scraper-api/other-websites)
 
     Args:
-        username: Oxylabs username.
-        password: Oxylabs password.
+        username: Oxylabs API username.
+        password: Oxylabs API password.
 
     Example:
         .. code-block:: python
@@ -106,9 +105,8 @@ class OxylabsWebReader(BasePydanticReader):
 
         Args:
             urls: List of URLs to load.
-            additional_params: Dictionary with the scraper parameters. Accepts the values from
-                the additional parameters described here:
-                https://developers.oxylabs.io/scraper-apis/web-scraper-api/targets/generic-target#additional
+            additional_params: Dictionary of scraper parameters as described
+                [here](https://developers.oxylabs.io/scraper-apis/web-scraper-api/targets/generic-target#additional)
 
         """
         if additional_params is None:
@@ -140,9 +138,8 @@ class OxylabsWebReader(BasePydanticReader):
 
         Args:
             urls: List of URLs to load.
-            additional_params: Dictionary with the scraper parameters. Accepts the values from
-                the additional parameters described here:
-                https://developers.oxylabs.io/scraper-apis/web-scraper-api/targets/generic-target#additional
+            additional_params: Dictionary of scraper parameters as described
+                [here](https://developers.oxylabs.io/scraper-apis/web-scraper-api/targets/generic-target#additional)
 
         """
         if additional_params is None:

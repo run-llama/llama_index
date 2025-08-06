@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-structured-data"
-version = "0.3.0"
+version = "0.4.0"
 description = "llama-index readers structured_data integration"
 authors = [{name = "Haoran Chen", email = "congling.chr@alibaba-inc.com"}]
 requires-python = ">=3.9,<4.0"
@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "pandas",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

@@ -287,14 +287,7 @@ class Dispatcher(BaseModel):
                 context: Context,
             ) -> None:
                 try:
-                    exception = future.exception()
-                    if exception is not None:
-                        if exception.__class__.__name__ == "WorkflowCancelledByUser":
-                            result = None
-                        else:
-                            raise exception
-                    else:
-                        result = future.result()
+                    result = None if future.exception() else future.result()
 
                     self.span_exit(
                         id_=span_id,

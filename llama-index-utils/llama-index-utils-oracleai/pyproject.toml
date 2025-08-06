@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-utils-oracleai"
-version = "0.2.0"
+version = "0.3.0"
 description = "llama-index utils oracleai integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
