@@ -132,8 +132,6 @@ class FieldExtractionMixin:
         if "enum" in schema:
             required_fields = {schema.get("title", "enum_field")}
 
-        print(f"\n❗required_fields: {required_fields}")
-
         fields = {}
         for field_name, field_schema in properties.items():
             field_type = self._resolve_field_type(field_schema, defs)
