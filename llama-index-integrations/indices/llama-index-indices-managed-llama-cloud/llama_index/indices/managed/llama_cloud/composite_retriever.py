@@ -1,5 +1,6 @@
 from typing import Any, List, Optional
 
+from deprecated import deprecated
 import httpx
 from llama_cloud import (
     CompositeRetrievalMode,
@@ -24,6 +25,10 @@ from llama_index.indices.managed.llama_cloud.api_utils import (
 )
 
 
+@deprecated(
+    reason="llama-index-indices-managed-llama-cloud has been moved to llama-cloud-services (https://github.com/run-llama/llama_cloud_services) as of llama-cloud-services v0.6.55, thus llama-index-indices-managed-llama-cloud package will be deprecated and no longer maintained. Check out the LlamaCloud documentation for more information: https://docs.cloud.llamaindex.ai",
+    version="0.9.1",
+)
 class LlamaCloudCompositeRetriever(BaseRetriever):
     def __init__(
         self,
