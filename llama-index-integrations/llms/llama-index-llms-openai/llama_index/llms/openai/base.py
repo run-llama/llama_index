@@ -228,7 +228,7 @@ class OpenAI(FunctionCallingLLM):
         default=False,
         description="Whether to use strict mode for invoking tools/using schemas.",
     )
-    reasoning_effort: Optional[Literal["low", "medium", "high"]] = Field(
+    reasoning_effort: Optional[Literal["low", "medium", "high", "minimal"]] = Field(
         default=None,
         description="The effort to use for reasoning models.",
     )
