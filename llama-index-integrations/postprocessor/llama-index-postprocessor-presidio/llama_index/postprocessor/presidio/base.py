@@ -71,7 +71,9 @@ class PresidioPIINodePostprocessor(BaseNodePostprocessor):
 
     def mask_pii(self, text: str) -> Tuple[str, Dict]:
         analyzer = AnalyzerEngine()
-        results = analyzer.analyze(text=text, language="en", entities=self.presidio_entities)
+        results = analyzer.analyze(
+            text=text, language="en", entities=self.presidio_entities
+        )
         engine = AnonymizerEngine()
         engine.add_anonymizer(EntityTypeCountAnonymizer)
 
