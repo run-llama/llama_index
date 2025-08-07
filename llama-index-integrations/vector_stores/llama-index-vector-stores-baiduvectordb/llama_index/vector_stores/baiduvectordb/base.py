@@ -160,12 +160,14 @@ class BaiduVectorDB(BasePydanticVectorStore):
         database_name: str = DEFAULT_DATABASE_NAME,
         table_params: TableParams = TableParams(dimension=1536),
         batch_size: int = 1000,
+        stores_text: bool = True,
         **kwargs: Any,
     ):
         """Init params."""
         super().__init__(
             user_defined_fields=table_params.filter_fields,
             batch_size=batch_size,
+            stores_text=stores_text,
             **kwargs,
         )
 
@@ -643,21 +645,24 @@ class BaiduVectorDB(BasePydanticVectorStore):
         filters_list = []
 
         for filter in standard_filters.filters:
+            value = (
+                f"'{filter.value}'"
+                if isinstance(filter.value, (str, bool))
+                else filter.value
+            )
+
             if filter.operator:
-                if filter.operator in ["<", ">", "<=", ">=", "!="]:
-                    condition = f"{filter.key}{filter.operator}{filter.value}"
-                elif filter.operator in ["=="]:
-                    if isinstance(filter.value, str):
-                        condition = f"{filter.key}='{filter.value}'"
-                    else:
-                        condition = f"{filter.key}=={filter.value}"
+                if filter.operator.value in ["<", ">", "<=", ">=", "!="]:
+                    condition = f"{filter.key} {filter.operator.value} {value}"
+                elif filter.operator.value in ["=="]:
+                    condition = f"{filter.key} == {value}"
                 else:
                     raise ValueError(
                         f"Filter operator {filter.operator} not supported."
                     )
             else:
-                condition = f"{filter.key}={filter.value}"
+                condition = f"{filter.key} = {value}"
 
             filters_list.append(condition)
 
-        return standard_filters.condition.join(filters_list)
+        return f" {standard_filters.condition.value.upper()} ".join(filters_list)
