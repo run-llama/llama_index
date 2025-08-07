@@ -159,6 +159,7 @@ nav:
           - ./examples/cookbooks/oreilly_course_cookbooks/Module-7/Multi_Modal_RAG_System.ipynb
           - ./examples/cookbooks/oreilly_course_cookbooks/Module-8/Advanced_RAG_with_LlamaParse.ipynb
           - ./examples/cookbooks/prometheus2_cookbook.ipynb
+          - ./examples/cookbooks/rerank_llamaparsed_pdfs.ipynb
           - ./examples/cookbooks/toolhouse_llamaindex.ipynb
       - Customization:
           - ./examples/customization/llms/AzureOpenAI.ipynb
