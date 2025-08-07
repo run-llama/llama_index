@@ -88,3 +88,60 @@ async def test_pydantic_models_tool(client: BasicMCPClient):
     assert (
         "Name: John Doe, Method: POST, List: [1, 2, 3, 4, 5]" in result.content[0].text
     )
+
+
+def test_pydantic_models_schema_structure(client: BasicMCPClient):
+    """Test that the test_pydantic tool generates correct schema structure."""
+    tool = McpToolSpec(client, allowed_tools=["test_pydantic"]).to_tool_list()[0]
+
+    assert tool.metadata.name == "test_pydantic"
+    assert tool.metadata.fn_schema is not None
+
+    json_schema = tool.metadata.fn_schema.model_json_schema()
+    assert all(key in json_schema["properties"] for key in ["name", "method", "lst"])
+    assert all(
+        key in json_schema["$defs"]
+        for key in ["TestName", "TestMethod", "TestList", "MethodType"]
+    )
+
+    # Check property types
+    assert json_schema["properties"]["name"]["$ref"] == "#/$defs/TestName"
+    assert json_schema["properties"]["method"]["$ref"] == "#/$defs/TestMethod"
+    assert json_schema["properties"]["lst"]["$ref"] == "#/$defs/TestList"
+
+    # Check model types
+    assert json_schema["$defs"]["TestName"]["properties"]["name"]["type"] == "string"
+    assert (
+        json_schema["$defs"]["TestMethod"]["properties"]["method"]["$ref"]
+        == "#/$defs/MethodType"
+    )
+    assert json_schema["$defs"]["TestList"]["properties"]["lst"]["type"] == "array"
+    assert (
+        json_schema["$defs"]["TestList"]["properties"]["lst"]["items"]["type"]
+        == "integer"
+    )
+    assert json_schema["$defs"]["MethodType"]["properties"]["enum_field"]["enum"] == [
+        "POST",
+        "GET",
+        "UPDATE",
+        "DELETE",
+    ]
+
+
+def test_schema_structure_exact_match(client: BasicMCPClient):
+    """Test that the generated schema structure exactly matches the expected format."""
+    json_schema = (
+        McpToolSpec(client, allowed_tools=["test_pydantic"])
+        .to_tool_list()[0]
+        .metadata.fn_schema.model_json_schema()
+    )
+
+    assert json_schema["type"] == "object"
+    assert set(json_schema["required"]) == {"name", "method", "lst"}
+    assert "MethodType" in json_schema["$defs"]
+    assert json_schema["$defs"]["MethodType"]["properties"]["enum_field"]["enum"] == [
+        "POST",
+        "GET",
+        "UPDATE",
+        "DELETE",
+    ]
