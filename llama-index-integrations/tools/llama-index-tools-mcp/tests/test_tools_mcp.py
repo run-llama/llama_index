@@ -68,3 +68,23 @@ async def test_get_zero_tools_async(client: BasicMCPClient):
     tool_spec = McpToolSpec(client, allowed_tools=[])
     tools = await tool_spec.to_tool_list_async()
     assert len(tools) == 0
+
+
+@pytest.mark.asyncio
+async def test_pydantic_models_tool(client: BasicMCPClient):
+    """Test the test_pydantic tool with Pydantic models that use custom type aliases and Literal types."""
+    tool_spec = McpToolSpec(client, allowed_tools=["test_pydantic"])
+    tools = await tool_spec.to_tool_list_async()
+
+    tool = tools[0]
+    assert tool.metadata.name == "test_pydantic"
+
+    result = await tool.async_fn(
+        name={"name": "John Doe"},
+        method={"method": "POST"},
+        lst={"lst": [1, 2, 3, 4, 5]},
+    )
+
+    assert (
+        "Name: John Doe, Method: POST, List: [1, 2, 3, 4, 5]" in result.content[0].text
+    )
