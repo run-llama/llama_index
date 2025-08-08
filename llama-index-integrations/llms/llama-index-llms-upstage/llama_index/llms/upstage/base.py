@@ -121,6 +121,28 @@ class Upstage(OpenAI):
         default="https://api.upstage.ai/v1/solar",
         description="The Upstage API base URL.",
     )
+    top_p: Optional[float] = Field(
+        default=1,
+        gte=0,
+        lte=1,
+        description="An optional parameter to trigger nucleus sampling.",
+    )
+    frequency_penalty: Optional[float] = Field(
+        default=0,
+        gte=-2,
+        lte=2,
+        description="An optional parameter that controls the model’s tendency to repeat tokens.",
+    )
+    presence_penalty: Optional[float] = Field(
+        default=0,
+        gte=-2,
+        lte=2,
+        description="An optional parameter that adjusts the model’s tendency to include tokens already present in the input or generated text.",
+    )
+    response_format: Optional[dict] = Field(
+        default=None,
+        description="An object specifying the format that the model must generate.",
+    )
 
     _client: Optional[SyncOpenAI] = PrivateAttr()
     _aclient: Optional[AsyncOpenAI] = PrivateAttr()
@@ -149,6 +171,10 @@ class Upstage(OpenAI):
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
         reasoning_effort: Optional[Literal["low", "medium", "high"]] = None,
+        top_p: Optional[float] = None,
+        frequency_penalty: Optional[float] = None,
+        presence_penalty: Optional[float] = None,
+        response_format: Optional[dict] = None,
         **kwargs: Any,
     ) -> None:
         if "upstage_api_key" in kwargs:
@@ -188,6 +214,10 @@ class Upstage(OpenAI):
         self._aclient = None
         self._http_client = http_client
         self.reasoning_effort = reasoning_effort
+        self.top_p = top_p
+        self.frequency_penalty = frequency_penalty
+        self.presence_penalty = presence_penalty
+        self.response_format = response_format
 
     def _get_model_name(self) -> str:
         return self.model
@@ -296,4 +326,8 @@ class Upstage(OpenAI):
         all_kwargs = super()._get_model_kwargs(**kwargs)
         return all_kwargs | {
             "reasoning_effort": self.reasoning_effort,
+            "top_p": self.top_p,
+            "frequency_penalty": self.frequency_penalty,
+            "presence_penalty": self.presence_penalty,
+            "response_format": self.response_format,
         }
