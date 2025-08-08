@@ -1,5 +1,6 @@
 from typing import Any, List, Optional
 
+from deprecated import deprecated
 import httpx
 from llama_cloud import (
     CompositeRetrievalMode,
@@ -21,9 +22,14 @@ from llama_index.indices.managed.llama_cloud.api_utils import (
     resolve_project,
     resolve_retriever,
     page_screenshot_nodes_to_node_with_score,
+    DEPRECATION_REASON,
 )
 
 
+@deprecated(
+    reason=DEPRECATION_REASON,
+    version="0.9.1",
+)
 class LlamaCloudCompositeRetriever(BaseRetriever):
     def __init__(
         self,
