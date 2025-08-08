@@ -49,6 +49,7 @@ from anthropic.types import (
     ContentBlockDeltaEvent,
     ContentBlockStartEvent,
     ContentBlockStopEvent,
+    CitationsSearchResultLocation,
     InputJSONDelta,
     TextBlock,
     TextDelta,
@@ -57,12 +58,6 @@ from anthropic.types import (
     ToolUseBlock,
     TextCitation,
     SignatureDelta,
-)
-from anthropic.types.beta import (
-    BetaCitationSearchResultLocation,
-    BetaTextBlock,
-    BetaThinkingBlock,
-    BetaToolUseBlock,
 )
 
 if TYPE_CHECKING:
@@ -355,13 +350,13 @@ class Anthropic(FunctionCallingLLM):
         tracked_citations: Set[str] = set()
 
         for content_block in response.content:
-            if isinstance(content_block, (TextBlock, BetaTextBlock)):
+            if isinstance(content_block, TextBlock):
                 blocks.append(LITextBlock(text=content_block.text))
                 # Check for citations in this text block
                 if hasattr(content_block, "citations") and content_block.citations:
                     for citation in content_block.citations:
                         if (
-                            isinstance(citation, BetaCitationSearchResultLocation)
+                            isinstance(citation, CitationsSearchResultLocation)
                             and str(citation) not in tracked_citations
                         ):
                             tracked_citations.add(str(citation))
@@ -379,9 +374,9 @@ class Anthropic(FunctionCallingLLM):
                             )
                     citations.extend(content_block.citations)
             # this assumes a single thinking block, which as of 2025-03-06, is always true
-            elif isinstance(content_block, (ThinkingBlock, BetaThinkingBlock)):
+            elif isinstance(content_block, ThinkingBlock):
                 thinking = content_block.model_dump()
-            elif isinstance(content_block, (ToolUseBlock, BetaToolUseBlock)):
+            elif isinstance(content_block, ToolUseBlock):
                 tool_calls.append(content_block.model_dump())
 
         return blocks, tool_calls, thinking, [x.model_dump() for x in citations]
@@ -395,7 +390,7 @@ class Anthropic(FunctionCallingLLM):
         )
         all_kwargs = self._get_all_kwargs(**kwargs)
 
-        response = self._client.beta.messages.create(
+        response = self._client.messages.create(
             messages=anthropic_messages,
             stream=False,
             system=system_prompt,
@@ -459,31 +454,24 @@ class Anthropic(FunctionCallingLLM):
                         else:
                             content[-1].text += content_delta
 
-                        if getattr(r.delta, "citation", None):
-                            citation = r.delta.citation
-                            if str(citation) not in tracked_citations:
-                                tracked_citations.add(str(citation))
-                                cited_block_index = len(content) - 1
-                                content.append(
-                                    LICitationBlock(
-                                        cited_content=LITextBlock(
-                                            text=citation.get("cited_text", "")
-                                        ),
-                                        source=citation.get("source", ""),
-                                        title=citation.get("title", ""),
-                                        additional_location_info={
-                                            "start_block_index": citation.get(
-                                                "start_block_index", 0
-                                            ),
-                                            "end_block_index": citation.get(
-                                                "end_block_index", 1
-                                            ),
-                                            "search_result_index": citation.get(
-                                                "search_result_index", 0
-                                            ),
-                                        },
-                                    )
+                    elif isinstance(r.delta, CitationsDelta) and isinstance(
+                        r.delta.citation, CitationsSearchResultLocation
+                    ):
+                        citation = r.delta.citation
+                        if str(citation) not in tracked_citations:
+                            tracked_citations.add(str(citation))
+                            content.append(
+                                LICitationBlock(
+                                    cited_content=LITextBlock(text=citation.cited_text),
+                                    source=citation.source,
+                                    title=citation.title,
+                                    additional_location_info={
+                                        "start_block_index": citation.start_block_index,
+                                        "end_block_index": citation.end_block_index,
+                                        "search_result_index": citation.search_result_index,
+                                    },
                                 )
+                            )
                     elif isinstance(r.delta, SignatureDelta):
                         if thinking is None:
                             thinking = ThinkingBlock(
@@ -533,7 +521,9 @@ class Anthropic(FunctionCallingLLM):
                             role=role,
                             blocks=content,
                             additional_kwargs={
-                                "tool_calls": [t.dict() for t in tool_calls_to_send],
+                                "tool_calls": [
+                                    t.model_dump() for t in tool_calls_to_send
+                                ],
                                 "thinking": thinking.model_dump() if thinking else None,
                             },
                         ),
@@ -637,31 +627,24 @@ class Anthropic(FunctionCallingLLM):
                         else:
                             content[-1].text += content_delta
 
-                        if getattr(r.delta, "citation", None):
-                            citation = r.delta.citation
-                            if str(citation) not in tracked_citations:
-                                tracked_citations.add(str(citation))
-                                cited_block_index = len(content) - 1
-                                content.append(
-                                    LICitationBlock(
-                                        cited_content=LITextBlock(
-                                            text=citation.get("cited_text", "")
-                                        ),
-                                        source=citation.get("source", ""),
-                                        title=citation.get("title", ""),
-                                        additional_location_info={
-                                            "start_block_index": citation.get(
-                                                "start_block_index", 0
-                                            ),
-                                            "end_block_index": citation.get(
-                                                "end_block_index", 1
-                                            ),
-                                            "search_result_index": citation.get(
-                                                "search_result_index", 0
-                                            ),
-                                        },
-                                    )
+                    elif isinstance(r.delta, CitationsDelta) and isinstance(
+                        r.delta.citation, CitationsSearchResultLocation
+                    ):
+                        citation = r.delta.citation
+                        if str(citation) not in tracked_citations:
+                            tracked_citations.add(str(citation))
+                            content.append(
+                                LICitationBlock(
+                                    cited_content=LITextBlock(text=citation.cited_text),
+                                    source=citation.source,
+                                    title=citation.title,
+                                    additional_location_info={
+                                        "start_block_index": citation.start_block_index,
+                                        "end_block_index": citation.end_block_index,
+                                        "search_result_index": citation.search_result_index,
+                                    },
                                 )
+                            )
                     elif isinstance(r.delta, SignatureDelta):
                         if thinking is None:
                             thinking = ThinkingBlock(
