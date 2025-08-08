@@ -22,11 +22,12 @@ from llama_index.indices.managed.llama_cloud.api_utils import (
     resolve_project,
     resolve_retriever,
     page_screenshot_nodes_to_node_with_score,
+    DEPRECATION_REASON,
 )
 
 
 @deprecated(
-    reason="llama-index-indices-managed-llama-cloud has been moved to llama-cloud-services (https://github.com/run-llama/llama_cloud_services) as of llama-cloud-services v0.6.55, thus llama-index-indices-managed-llama-cloud package will be deprecated and no longer maintained. Check out the LlamaCloud documentation for more information: https://docs.cloud.llamaindex.ai",
+    reason=DEPRECATION_REASON,
     version="0.9.1",
 )
 class LlamaCloudCompositeRetriever(BaseRetriever):
