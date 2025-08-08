@@ -1,5 +1,74 @@
 # ChangeLog
 
+## [2025-08-08]
+
+### `llama-index-core` [0.13.1]
+
+- fix: safer token counting in messages (#19599)
+- fix: Fix Document truncation in `FunctionTool._parse_tool_output` (#19585)
+- feat: Enabled partially formatted system prompt for ReAct agent (#19598)
+
+### `llama-index-embeddings-ollama` [0.8.0]
+
+- fix: use /embed instead of /embeddings for ollama (#19622)
+
+### `llama-index-embeddings-voyageai` [0.4.1]
+
+- feat: Add support for voyage context embeddings (#19590)
+
+### `llama-index-graph-stores-kuzu` [0.9.0]
+
+- feat: Update Kuzu graph store integration to latest SDK (#19603)
+
+### `llama-index-indices-managed-llama-cloud` [0.9.1]
+
+- chore: deprecate llama-index-indices-managed-llama-cloud in favor of llama-cloud-services (#19608)
+
+### `llama-index-llms-anthropic` [0.8.2]
+
+- feat: anthropic citation update to non-beta support (#19624)
+- feat: add support for opus 4.1 (#19593)
+
+### `llama-index-llms-heroku` [0.1.0]
+
+- feat: heroku llm integration (#19576)
+
+### `llama-index-llms-nvidia` [0.4.1]
+
+- feat: add support for gpt-oss NIM (#19618)
+
+### `llama-index-llms-oci-genai` [0.6.1]
+
+- chore: update list of supported LLMs for OCI integration (#19604)
+
+### `llama-index-llms-openai` [0.5.2]
+
+- fix: fix isinstance check in openai (#19617)
+- feat: add gpt-5 (#19613)
+
+### `llama-index-llms-upstage` [0.6.1]
+
+- fix: Fix reasoning_effort parameter ineffective and Add new custom parameters (#19619)
+
+### `llama-index-postprocessor-presidio` [0.5.0]
+
+- feat: Support presidio entities (#19584)
+
+### `llama-index-retrievers-bm25` [0.6.2]
+
+- fix: BM25 Retriever allow `top_k` value greater than number of nodes added (#19577)
+- feat: Add metadata filtering support to BM25 Retriever and update documentation (#19586)
+
+### `llama-index-vector-stores-baiduvectordb` [0.6.0]
+
+- fix: fix filter operators and add stores_text support (#19591)
+- feat: add wait logic for critical operations (#19587)
+
+### `llama-index-vector-stores-postgres` [0.6.2]
+
+- fix: Fixed special character bug in PGVectorStore query (#19621)
+- fix: change ts_query definition to avoid double-stemming (#19581)
+
 ## [2025-07-30]
 
 **NOTE:** All packages have been bumped to handle the latest llama-index-core version.
