@@ -59,6 +59,10 @@
 - fix: BM25 Retriever allow `top_k` value greater than number of nodes added (#19577)
 - feat: Add metadata filtering support to BM25 Retriever and update documentation (#19586)
 
+### `llama-index-tools-aws-bedrock-agentcore` [0.1.0]
+
+- feat: Bedrock AgentCore browser and code interpreter toolspecs (#19559)
+
 ### `llama-index-vector-stores-baiduvectordb` [0.6.0]
 
 - fix: fix filter operators and add stores_text support (#19591)
