@@ -26,6 +26,8 @@ from llama_cloud.core import remove_none_from_dict
 from llama_cloud.client import LlamaCloud, AsyncLlamaCloud
 from llama_cloud.core.api_error import ApiError
 
+DEPRECATION_REASON = "llama-index-indices-managed-llama-cloud has been moved to llama-cloud-services (https://github.com/run-llama/llama_cloud_services) as of llama-cloud-services v0.6.55, thus llama-index-indices-managed-llama-cloud package will be deprecated and no longer maintained. Check out the LlamaCloud documentation for more information: https://docs.cloud.llamaindex.ai"
+
 
 def is_retryable_http_error(exception):
     # Retry for ApiError with 5xx status codes

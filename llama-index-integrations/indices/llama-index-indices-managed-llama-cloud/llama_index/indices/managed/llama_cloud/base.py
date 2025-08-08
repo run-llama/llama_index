@@ -7,6 +7,7 @@ interfaces a managed service.
 """
 
 import asyncio
+from deprecated import deprecated
 import httpx
 import os
 import time
@@ -53,12 +54,17 @@ from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.indices.managed.llama_cloud.api_utils import (
     default_transform_config,
     resolve_project_and_pipeline,
+    DEPRECATION_REASON,
 )
 import logging
 
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    reason=DEPRECATION_REASON,
+    version="0.9.1",
+)
 class LlamaCloudIndex(BaseManagedIndex):
     """
     A managed index that stores documents in LlamaCloud.
