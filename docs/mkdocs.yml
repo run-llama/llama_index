@@ -344,6 +344,7 @@ nav:
           - ./examples/llm/google_genai.ipynb
           - ./examples/llm/grok.ipynb
           - ./examples/llm/groq.ipynb
+          - ./examples/llm/heroku.ipynb
           - ./examples/llm/huggingface.ipynb
           - ./examples/llm/ibm_watsonx.ipynb
           - ./examples/llm/ipex_llm.ipynb
