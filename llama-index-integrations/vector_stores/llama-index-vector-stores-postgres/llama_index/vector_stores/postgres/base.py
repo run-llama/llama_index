@@ -873,8 +873,11 @@ class PGVectorStore(BasePydanticVectorStore):
         if query_str is None:
             raise ValueError("query_str must be specified for a sparse vector query.")
 
-        # Remove "&", "|" and collapse multiple spaces ("&" and "|" are used by ts_query)
-        query_str = re.sub(r"\s*(?:[|&]|\s)\s*", " ", query_str).strip()
+        # Remove special characters used by ts_query
+        query_str = re.sub(r"[&|!:*()'<>]", " ", query_str)
+
+        # Collapse multiple spaces
+        query_str = re.sub(r"\s+", " ", query_str).strip()
 
         # Replace space with "|" to perform an OR search for higher recall
         query_str = query_str.replace(" ", "|")
