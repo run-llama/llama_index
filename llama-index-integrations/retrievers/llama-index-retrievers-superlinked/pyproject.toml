@@ -1,51 +1,33 @@
-[project]
-name = "llama-index-retrievers-superlinked"
-version = "0.1.0"
-description = "LlamaIndex retriever integration for Superlinked"
-readme = "README.md"
-requires-python = ">=3.9,<4.0"
-license = { text = "MIT" }
-authors = [
-  { name = "Superlinked", email = "dev@superlinked.com" }
-]
-classifiers = [
-  "Programming Language :: Python :: 3",
-  "License :: OSI Approved :: MIT License",
-  "Operating System :: OS Independent",
-]
-
-dependencies = [
-  "llama-index-core>=0.13.1,<0.14",
-]
-
-[project.urls]
-Homepage = "https://github.com/run-llama/llama_index"
-
 [build-system]
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [dependency-groups]
 dev = [
-  "pytest>=8.4",
+    "pytest>=8.4",
 ]
 
-[tool.setuptools]
-package-dir = {"" = "src"}
-
-[tool.setuptools.packages.find]
-where = ["src"]
-include = [
-  "llama_index*",
-  "llama_index_retrievers_superlinked*",
+[project]
+name = "llama-index-retrievers-superlinked"
+version = "0.1.0"
+description = "LlamaIndex retriever integration for Superlinked"
+readme = "README.md"
+requires-python = ">=3.9,<4.0"
+license = {text = "MIT"}
+authors = [
+    {name = "Superlinked", email = "dev@superlinked.com"},
 ]
-exclude = [
-  "tests*",
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "llama-index-core>=0.13.1,<0.14",
 ]
 
-[tool.pytest.ini_options]
-addopts = "-q"
-pythonpath = ["src"]
+[project.urls]
+Homepage = "https://github.com/run-llama/llama_index"
 
 [tool.llamahub]
 contains_example = true
@@ -53,3 +35,20 @@ import_path = "llama_index.retrievers.superlinked"
 
 [tool.llamahub.class_authors]
 SuperlinkedRetriever = "Superlinked"
+
+[tool.pytest.ini_options]
+addopts = "-q"
+pythonpath = ["src"]
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = [
+    "llama_index*",
+    "llama_index_retrievers_superlinked*",
+]
+exclude = [
+    "tests*",
+]

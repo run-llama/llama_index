@@ -24,8 +24,8 @@ from llama_index.retrievers.superlinked import SuperlinkedRetriever
 from llama_index.core import QueryBundle
 
 retriever = SuperlinkedRetriever(
-    sl_client=app,                 # Superlinked App
-    sl_query=query_descriptor,     # Superlinked QueryDescriptor
+    sl_client=app,  # Superlinked App
+    sl_query=query_descriptor,  # Superlinked QueryDescriptor
     page_content_field="text",
     query_text_param="query_text",
     metadata_fields=None,
