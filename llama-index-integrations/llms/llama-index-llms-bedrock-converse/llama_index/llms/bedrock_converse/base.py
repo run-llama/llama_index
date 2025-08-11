@@ -252,6 +252,7 @@ class BedrockConverse(FunctionCallingLLM):
                     retries={"max_attempts": max_retries, "mode": "standard"},
                     connect_timeout=timeout,
                     read_timeout=timeout,
+                    user_agent_extra="x-client-framework:llama_index",
                 )
                 if botocore_config is None
                 else botocore_config

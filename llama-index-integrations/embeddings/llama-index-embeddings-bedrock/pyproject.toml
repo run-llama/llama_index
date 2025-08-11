@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-bedrock"
-version = "0.6.0"
+version = "0.6.1"
 description = "llama-index embeddings bedrock integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
