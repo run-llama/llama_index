@@ -534,8 +534,11 @@ class OpenAI(FunctionCallingLLM):
                 if len(response.choices) > 0:
                     delta = response.choices[0].delta
                 else:
-                    # This could happen if we receive usage details or content filtering result.
-                    # In that case, we simply generate an empty delta.
+                    # Choices could be empty if we receive usage details or content filtering result.
+                    # In the case of usage details, we simply generate an empty delta. The usage delta comes in the last
+                    # chunk of the response and avoid yielding in other cases.
+                    if response.usage is None:
+                        continue
                     delta = ChoiceDelta()
 
                 if delta is None:
@@ -802,8 +805,11 @@ class OpenAI(FunctionCallingLLM):
                         continue
                     delta = response.choices[0].delta
                 else:
-                    # This could happen if we receive usage details or content filtering result.
-                    # In that case, we simply generate an empty delta.
+                    # Choices could be empty if we receive usage details or content filtering result.
+                    # In the case of usage details, we simply generate an empty delta. The usage delta comes in the last
+                    # chunk of the response and avoid yielding in other cases.
+                    if response.usage is None:
+                        continue
                     delta = ChoiceDelta()
                 first_chat_chunk = False
 
