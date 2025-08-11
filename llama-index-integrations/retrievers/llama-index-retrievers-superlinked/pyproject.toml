@@ -5,6 +5,7 @@ build-backend = "setuptools.build_meta"
 [dependency-groups]
 dev = [
     "pytest>=8.4",
+    "pytest-cov>=6.1.1",
 ]
 
 [project]
