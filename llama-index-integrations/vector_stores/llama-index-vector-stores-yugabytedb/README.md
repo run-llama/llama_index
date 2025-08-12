@@ -7,7 +7,7 @@ A LlamaIndex vector store using YugabyteDB as the backend.
 Pre-requisite:
 
 ```bash
-pip install llama-index-vector-stores-astra-db
+pip install llama-index-vector-stores-yugabytedb
 ```
 
 A minimal example:
