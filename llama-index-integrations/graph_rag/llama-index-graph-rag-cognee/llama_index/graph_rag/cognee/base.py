@@ -24,7 +24,9 @@ class GraphRAG(Protocol):
     """
 
     @abstractmethod
-    async def add(self, data: Union[Document, List[Document]], dataset_name: str = 'main_dataset') -> None:
+    async def add(
+        self, data: Union[Document, List[Document]], dataset_name: str = "main_dataset"
+    ) -> None:
         """
         Add data to the specified dataset.
         This data will later be processed and made into a knowledge graph.
@@ -32,10 +34,11 @@ class GraphRAG(Protocol):
         Args:
             data (Union[Document, List[Document]]): The document(s) to be added to the graph.
             dataset_name (str): Name of the dataset or node set where the data will be added.
+
         """
 
     @abstractmethod
-    async def process_data(self, dataset_name: str = 'main_dataset') -> None:
+    async def process_data(self, dataset_name: str = "main_dataset") -> None:
         """
         Process and structure data in the dataset and make a knowledge graph out of it.
 
@@ -51,9 +54,10 @@ class GraphRAG(Protocol):
 
         Args:
             query (str): The query string to match against entities and relationships in the graph.
-            
+
         Returns:
             list: Search results containing graph-based insights and related information.
+
         """
 
     @abstractmethod
@@ -63,13 +67,16 @@ class GraphRAG(Protocol):
 
         Args:
             node_id (str): The identifier or name of the node to find connections for.
-            
+
         Returns:
             list: Related nodes, relationships, and insights connected to the specified node.
+
         """
-    
+
     @abstractmethod
-    async def visualize_graph(self, open_browser: bool = False, output_file_path: str | None = None) -> str:
+    async def visualize_graph(
+        self, open_browser: bool = False, output_file_path: str | None = None
+    ) -> str:
         """
         Generate HTML visualization of the knowledge graph.
 
@@ -77,7 +84,8 @@ class GraphRAG(Protocol):
             open_browser (bool): Whether to automatically open the visualization in the default browser.
             output_file_path (str | None): Directory path where the HTML file will be saved.
                                          If None, saves to user's home directory.
-                                         
+
         Returns:
             str: Full path to the generated HTML visualization file.
+
         """

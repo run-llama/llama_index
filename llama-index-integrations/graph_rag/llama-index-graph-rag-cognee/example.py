@@ -28,58 +28,58 @@ async def main():
         return
 
     print("🚀 Initializing CogneeGraphRAG...")
-    
+
     # Initialize the GraphRAG system
     cognee_rag = CogneeGraphRAG(
         llm_api_key=api_key,
         llm_provider="openai",
         llm_model="gpt-4o-mini",
         graph_db_provider="kuzu",
-        vector_db_provider="lancedb", 
+        vector_db_provider="lancedb",
         relational_db_provider="sqlite",
-        relational_db_name="cognee_example_db"
+        relational_db_name="cognee_example_db",
     )
 
     print("📄 Creating sample documents...")
-    
+
     # Create sample documents
     documents = [
         Document(
             text="Apple Inc. is a multinational technology company headquartered in Cupertino, California. "
-                 "It was founded by Steve Jobs, Steve Wozniak, and Ronald Wayne in 1976. "
-                 "Apple is known for its consumer electronics, software, and online services."
+            "It was founded by Steve Jobs, Steve Wozniak, and Ronald Wayne in 1976. "
+            "Apple is known for its consumer electronics, software, and online services."
         ),
         Document(
             text="Steve Jobs was the co-founder and longtime CEO of Apple Inc. "
-                 "He was known for his innovation in personal computing, animated movies, and mobile phones. "
-                 "Jobs passed away in 2011, leaving behind a legacy of revolutionary products."
+            "He was known for his innovation in personal computing, animated movies, and mobile phones. "
+            "Jobs passed away in 2011, leaving behind a legacy of revolutionary products."
         ),
         Document(
             text="The iPhone is Apple's flagship smartphone product, first released in 2007. "
-                 "It revolutionized the mobile phone industry with its touchscreen interface "
-                 "and App Store ecosystem. The iPhone runs on iOS operating system."
-        )
+            "It revolutionized the mobile phone industry with its touchscreen interface "
+            "and App Store ecosystem. The iPhone runs on iOS operating system."
+        ),
     ]
 
     print("➕ Adding documents to the knowledge graph...")
-    
+
     # Add documents to the graph
     await cognee_rag.add(documents, dataset_name="apple_knowledge")
     print("   ✅ Documents added successfully")
 
     print("🔄 Processing data into knowledge graph...")
-    
+
     # Process the data to create the knowledge graph
     await cognee_rag.process_data("apple_knowledge")
     print("   ✅ Data processed into graph")
 
     print("🔍 Searching the knowledge graph...")
-    
+
     # Perform searches
     queries = [
         "Who founded Apple?",
-        "When was iPhone released?", 
-        "What is Steve Jobs known for?"
+        "When was iPhone released?",
+        "What is Steve Jobs known for?",
     ]
 
     for query in queries:
@@ -91,10 +91,12 @@ async def main():
             print("   No results found")
 
     print("\n🕸️  Generating graph visualization...")
-    
+
     # Create visualization (saves to home directory by default)
     try:
-        viz_path = await cognee_rag.visualize_graph(open_browser=True, output_file_path=".")
+        viz_path = await cognee_rag.visualize_graph(
+            open_browser=True, output_file_path="."
+        )
         print(f"   ✅ Graph visualization saved to: {viz_path}")
         print(f"   🌐 Open the file in your browser to view the knowledge graph")
     except Exception as e:
