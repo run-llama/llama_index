@@ -742,7 +742,7 @@ async def test_sparse_query_with_special_characters(
     assert isinstance(pg_hybrid, PGVectorStore)
     assert hasattr(pg_hybrid, "_engine")
 
-    # text search should work when query is a sentence and not just a single word
+    # text search should work with special characters
     q = VectorStoreQuery(
         query_embedding=_get_sample_vector(0.1),
         query_str="   who' & s |     (the): <-> **fox**?!!!  ",
@@ -884,7 +884,7 @@ async def test_hybrid_query_with_special_characters(
     assert res.nodes[2].node_id == "ccc"
     assert res.nodes[3].node_id == "ddd"
 
-    # text search should work when query is a sentence and not just a single word
+    # text search should work with special characters
     q = VectorStoreQuery(
         query_embedding=_get_sample_vector(0.1),
         query_str="   who' & s |     (the): <-> **fox**?!!!  ",
