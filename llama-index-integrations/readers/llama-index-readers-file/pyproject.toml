@@ -23,6 +23,7 @@ dev = [
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "pytest-cov>=6.1.1",
+    "python-pptx",
 ]
 
 [project]
@@ -76,8 +77,6 @@ dependencies = [
     "pandas<2.3.0",
     "llama-index-core>=0.13.0,<0.14",
     "defusedxml>=0.7.1",
-    "python-pptx>=0.6.18",
-    "tenacity>=8.0.0",
 ]
 
 [project.optional-dependencies]

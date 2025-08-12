@@ -16,7 +16,6 @@ from tenacity import (
     before_sleep_log,
 )
 
-from pptx.enum.shapes import MSO_SHAPE_TYPE
 from llama_index.core.base.llms.base import BaseLLM
 
 from .image_extractor import ImageExtractor
@@ -238,6 +237,8 @@ class SlideContentExtractor:
                     slide_data["extraction_warnings"].append(error_msg)
 
         # Process grouped shapes recursively
+        from pptx.enum.shapes import MSO_SHAPE_TYPE
+
         if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
             for shape_in_group in shape.shapes:
                 self._process_shape_safe(shape_in_group, slide_data)
