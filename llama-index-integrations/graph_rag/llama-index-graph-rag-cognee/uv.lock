@@ -2357,7 +2357,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-graph-rag-cognee"
-version = "0.2.1"
+version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "cognee", extra = ["neo4j", "postgres", "qdrant"] },
