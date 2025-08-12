@@ -2,19 +2,23 @@ import sys
 
 import pytest
 from llama_index.graph_rag.cognee import CogneeGraphRAG
-
+import os
 
 @pytest.mark.skipif(
     sys.version_info < (3, 10), reason="mock strategy requires python3.10 or higher"
+)
+@pytest.mark.skipif(
+    os.getenv("OPENAI_API_KEY") is None,
+    reason="OPENAI_API_KEY not available to test Cognee integration",
 )
 @pytest.mark.asyncio
 async def test_get_graph_url(monkeypatch):
     # Instantiate cognee GraphRAG
     cogneeRAG = CogneeGraphRAG(
-        llm_api_key="",
+        llm_api_key=os.getenv("OPENAI_API_KEY", "your-api-key"),
         llm_provider="openai",
         llm_model="gpt-4o-mini",
-        graph_db_provider="networkx",
+        graph_db_provider="kuzu",
         vector_db_provider="lancedb",
         relational_db_provider="sqlite",
         relational_db_name="cognee_db",
