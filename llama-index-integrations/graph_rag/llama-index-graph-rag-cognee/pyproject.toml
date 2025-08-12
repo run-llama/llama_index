@@ -54,7 +54,7 @@ include = ["llama_index/"]
 exclude = ["**/BUILD"]
 
 [tool.llamahub]
-contains_example = false
+contains_example = true
 import_path = "llama_index.graph_rag.cognee"
 
 [tool.llamahub.class_authors]
