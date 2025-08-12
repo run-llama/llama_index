@@ -1,9 +1,12 @@
 import os
 import httpx
 from unittest.mock import MagicMock
+from typing import List
 
 import pytest
 from pathlib import Path
+from pydantic import BaseModel
+from llama_index.core.prompts import PromptTemplate
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.llms import (
     ChatMessage,
@@ -385,3 +388,82 @@ def test_cache_point_to_cache_control() -> None:
     assert (
         ant_messages[0]["content"][-1]["cache_control"]["cache_control"]["ttl"] == "5m"
     )
+
+
+@pytest.mark.skipif(
+    os.getenv("ANTHROPIC_API_KEY") is None,
+    reason="Anthropic API key not available to test Anthropic document uploading ",
+)
+def test_thinking_with_structured_output():
+    # Example from: https://docs.llamaindex.ai/en/stable/examples/llm/anthropic/#structured-prediction
+    class MenuItem(BaseModel):
+        """A menu item in a restaurant."""
+
+        course_name: str
+        is_vegetarian: bool
+
+    class Restaurant(BaseModel):
+        """A restaurant with name, city, and cuisine."""
+
+        name: str
+        city: str
+        cuisine: str
+        menu_items: List[MenuItem]
+
+    llm = Anthropic(
+        model="claude-sonnet-4-0",
+        # max_tokens must be greater than budget_tokens
+        max_tokens=64000,
+        # temperature must be 1.0 for thinking to work
+        temperature=1.0,
+        thinking_dict={"type": "enabled", "budget_tokens": 1600},
+    )
+    prompt_tmpl = PromptTemplate("Generate a restaurant in a given city {city_name}")
+
+    restaurant_obj = (
+        llm.as_structured_llm(Restaurant)
+        .complete(prompt_tmpl.format(city_name="Miami"))
+        .raw
+    )
+
+    assert isinstance(restaurant_obj, Restaurant)
+
+
+@pytest.mark.skipif(
+    os.getenv("ANTHROPIC_API_KEY") is None,
+    reason="Anthropic API key not available to test Anthropic document uploading ",
+)
+def test_thinking_with_tool_should_fail():
+    class MenuItem(BaseModel):
+        """A menu item in a restaurant."""
+
+        course_name: str
+        is_vegetarian: bool
+
+    class Restaurant(BaseModel):
+        """A restaurant with name, city, and cuisine."""
+
+        name: str
+        city: str
+        cuisine: str
+        menu_items: List[MenuItem]
+
+    def generate_restaurant(restaurant: Restaurant) -> Restaurant:
+        return restaurant
+
+    llm = Anthropic(
+        model="claude-sonnet-4-0",
+        # max_tokens must be greater than budget_tokens
+        max_tokens=64000,
+        # temperature must be 1.0 for thinking to work
+        temperature=1.0,
+        thinking_dict={"type": "enabled", "budget_tokens": 1600},
+    )
+
+    # Raises an exception because Anthropic doesn't support tool choice when thinking is enabled
+    with pytest.raises(Exception):
+        llm.chat_with_tools(
+            user_msg="Generate a restaurant in a given city Miami",
+            tools=[generate_restaurant],
+            tool_choice={"type": "any"},
+        )
