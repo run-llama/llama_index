@@ -80,7 +80,6 @@ def find_all_packages(root_path: Path) -> list[Path]:
     return [
         root_path / "llama-index-core",
         *find_integrations(root_path),
-        root_path / "llama-index-networks",
         *find_packs(root_path),
         *find_utils(root_path),
         root_path / "llama-index-instrumentation",

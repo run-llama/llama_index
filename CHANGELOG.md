@@ -1,5 +1,147 @@
 # ChangeLog
 
+## [2025-08-08]
+
+### `llama-index-core` [0.13.1]
+
+- fix: safer token counting in messages (#19599)
+- fix: Fix Document truncation in `FunctionTool._parse_tool_output` (#19585)
+- feat: Enabled partially formatted system prompt for ReAct agent (#19598)
+
+### `llama-index-embeddings-ollama` [0.8.0]
+
+- fix: use /embed instead of /embeddings for ollama (#19622)
+
+### `llama-index-embeddings-voyageai` [0.4.1]
+
+- feat: Add support for voyage context embeddings (#19590)
+
+### `llama-index-graph-stores-kuzu` [0.9.0]
+
+- feat: Update Kuzu graph store integration to latest SDK (#19603)
+
+### `llama-index-indices-managed-llama-cloud` [0.9.1]
+
+- chore: deprecate llama-index-indices-managed-llama-cloud in favor of llama-cloud-services (#19608)
+
+### `llama-index-llms-anthropic` [0.8.2]
+
+- feat: anthropic citation update to non-beta support (#19624)
+- feat: add support for opus 4.1 (#19593)
+
+### `llama-index-llms-heroku` [0.1.0]
+
+- feat: heroku llm integration (#19576)
+
+### `llama-index-llms-nvidia` [0.4.1]
+
+- feat: add support for gpt-oss NIM (#19618)
+
+### `llama-index-llms-oci-genai` [0.6.1]
+
+- chore: update list of supported LLMs for OCI integration (#19604)
+
+### `llama-index-llms-openai` [0.5.2]
+
+- fix: fix isinstance check in openai (#19617)
+- feat: add gpt-5 (#19613)
+
+### `llama-index-llms-upstage` [0.6.1]
+
+- fix: Fix reasoning_effort parameter ineffective and Add new custom parameters (#19619)
+
+### `llama-index-postprocessor-presidio` [0.5.0]
+
+- feat: Support presidio entities (#19584)
+
+### `llama-index-retrievers-bm25` [0.6.2]
+
+- fix: BM25 Retriever allow `top_k` value greater than number of nodes added (#19577)
+- feat: Add metadata filtering support to BM25 Retriever and update documentation (#19586)
+
+### `llama-index-tools-aws-bedrock-agentcore` [0.1.0]
+
+- feat: Bedrock AgentCore browser and code interpreter toolspecs (#19559)
+
+### `llama-index-vector-stores-baiduvectordb` [0.6.0]
+
+- fix: fix filter operators and add stores_text support (#19591)
+- feat: add wait logic for critical operations (#19587)
+
+### `llama-index-vector-stores-postgres` [0.6.2]
+
+- fix: Fixed special character bug in PGVectorStore query (#19621)
+- fix: change ts_query definition to avoid double-stemming (#19581)
+
+## [2025-07-30]
+
+**NOTE:** All packages have been bumped to handle the latest llama-index-core version.
+
+### `llama-index-core` [0.13.0]
+
+- breaking: removed deprecated agent classes, including `FunctionCallingAgent`, the older `ReActAgent` implementation, `AgentRunner`, all step workers, `StructuredAgentPlanner`, `OpenAIAgent`, and more. All users should migrate to the new workflow based agents: `FunctionAgent`, `CodeActAgent`, `ReActAgent`, and `AgentWorkflow` (#19529)
+- breaking: removed deprecated `QueryPipeline` class and all associated code (#19554)
+- breaking: changed default `index.as_chat_engine()` to return a `CondensePlusContextChatEngine`. Agent-based chat engines have been removed (which was the previous default). If you need an agent, use the above mentioned agent classes. (#19529)
+- fix: Update BaseDocumentStore to not return Nones in result (#19513)
+- fix: Fix FunctionTool param doc parsing and signature mutation; update tests (#19532)
+- fix: Handle empty prompt in MockLLM.stream_complete (#19521)
+
+### `llama-index-embeddings-mixedbreadai` [0.5.0]
+
+- feat: Update mixedbread embeddings and rerank for latest sdk (#19519)
+
+### `llama-index-instrumentation` [0.4.0]
+
+- fix: let wrapped exceptions bubble up (#19566)
+
+### `llama-index-llms-google-genai` [0.3.0]
+
+- feat: Add Thought Summaries and signatures for Gemini (#19505)
+
+### `llama-index-llms-nvidia` [0.4.0]
+
+- feat: add support for kimi-k2-instruct (#19525)
+
+### `llama-index-llms-upstage` [0.6.0]
+
+- feat: add new upstage model(solar-pro2) (#19526)
+
+### `llama-index-postprocessor-mixedbreadai-rerank` [0.5.0]
+
+- feat: Update mixedbread embeddings and rerank for latest sdk (#19519)
+
+### `llama-index-readers-github` [0.8.0]
+
+- feat: Github Reader enhancements for file filtering and custom processing (#19543)
+
+### `llama-index-readers-s3` [0.5.0]
+
+- feat: add support for region_name via `client_kwargs` in S3Reader (#19546)
+
+### `llama-index-tools-valyu` [0.4.0]
+
+- feat: Update Valyu sdk to latest version (#19538)
+
+### `llama-index-voice-agents-gemini-live` [0.2.0]
+
+- feat(beta): adding first implementation of gemini live (#19489)
+
+### `llama-index-vector-stores-astradb` [0.5.0]
+
+- feat: astradb get nodes + delete nodes support (#19544)
+
+### `llama-index-vector-stores-milvus` [0.9.0]
+
+- feat: Add support for specifying partition_names in Milvus search configuration (#19555)
+
+### `llama-index-vector-stores-s3` [0.2.0]
+
+- fix: reduce some metadata keys from S3VectorStore to save space (#19550)
+
+### `llama-index-vector-stores-postgres` [0.6.0]
+
+- feat: Add support for ANY/ALL postgres operators (#19553)
+
 ## [2025-07-22]
 
 ### `llama-index-core` [0.12.52.post1]

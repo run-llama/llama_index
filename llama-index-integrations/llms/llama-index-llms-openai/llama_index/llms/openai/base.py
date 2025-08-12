@@ -16,7 +16,6 @@ from typing import (
     Type,
     Union,
     cast,
-    get_args,
     runtime_checkable,
 )
 
@@ -65,7 +64,6 @@ from llama_index.core.program.utils import FlexibleModel
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.openai.utils import (
     O1_MODELS,
-    OpenAIToolCall,
     create_retry_decorator,
     from_openai_completion_logprobs,
     from_openai_message,
@@ -79,7 +77,7 @@ from llama_index.llms.openai.utils import (
     update_tool_calls,
     is_json_schema_supported,
 )
-from openai import AsyncOpenAI, AzureOpenAI, AsyncAzureOpenAI
+from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
 from openai.types.chat.chat_completion_chunk import (
     ChatCompletionChunk,
@@ -228,7 +226,7 @@ class OpenAI(FunctionCallingLLM):
         default=False,
         description="Whether to use strict mode for invoking tools/using schemas.",
     )
-    reasoning_effort: Optional[Literal["low", "medium", "high"]] = Field(
+    reasoning_effort: Optional[Literal["low", "medium", "high", "minimal"]] = Field(
         default=None,
         description="The effort to use for reasoning models.",
     )
@@ -534,10 +532,7 @@ class OpenAI(FunctionCallingLLM):
                 if len(response.choices) > 0:
                     delta = response.choices[0].delta
                 else:
-                    if isinstance(client, AzureOpenAI):
-                        continue
-                    else:
-                        delta = ChoiceDelta()
+                    delta = ChoiceDelta()
 
                 if delta is None:
                     continue
@@ -803,10 +798,7 @@ class OpenAI(FunctionCallingLLM):
                         continue
                     delta = response.choices[0].delta
                 else:
-                    if isinstance(aclient, AsyncAzureOpenAI):
-                        continue
-                    else:
-                        delta = ChoiceDelta()
+                    delta = ChoiceDelta()
                 first_chat_chunk = False
 
                 if delta is None:
@@ -980,10 +972,8 @@ class OpenAI(FunctionCallingLLM):
 
         tool_selections = []
         for tool_call in tool_calls:
-            if not isinstance(tool_call, get_args(OpenAIToolCall)):
-                raise ValueError("Invalid tool_call object")
             if tool_call.type != "function":
-                raise ValueError("Invalid tool type. Unsupported by OpenAI")
+                raise ValueError("Invalid tool type. Unsupported by OpenAI llm")
 
             # this should handle both complete and partial jsons
             try:

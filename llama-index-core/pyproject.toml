@@ -10,7 +10,6 @@ dev = [
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "llama-cloud>=0.0.6",
-    "llama-index-llms-openai>=0.4.7",
     "mypy==1.11.0",
     "openai",
     "pandas",
@@ -32,7 +31,7 @@ dev = [
 
 [project]
 name = "llama-index-core"
-version = "0.12.52.post1"
+version = "0.13.1"
 description = "Interface between LLMs and your data"
 authors = [{name = "Jerry Liu", email = "jerry@llamaindex.ai"}]
 requires-python = ">=3.9,<4.0"

@@ -17,14 +17,18 @@ Here's an example usage of the VectaraQueryToolSpec.
 
 ```python
 from llama_index.tools.vectara_query import VectaraQueryToolSpec
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 
 # Connecting to a Vectara corpus about Electric Vehicles
 tool_spec = VectaraQueryToolSpec()
 
-agent = OpenAIAgent.from_tools(tool_spec.to_tool_list())
+agent = FunctionAgent(
+    tools=tool_spec.to_tool_list(),
+    llm=OpenAI(model="gpt-4.1"),
+)
 
-agent.chat("What are the different types of electric vehicles?")
+print(await agent.run("What are the different types of electric vehicles?"))
 ```
 
 The available tools are:

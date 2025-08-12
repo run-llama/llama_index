@@ -6,7 +6,7 @@ Out of the box abstractions include:
 
 - High-level ingestion code e.g. `VectorStoreIndex.from_documents`
 - High-level query and retriever code e.g. `VectorStoreIndex.as_retriever()` and `VectorStoreIndex.as_query_engine()`
-- High-level agent abstractions e.g. `OpenAIAgent`
+- High-level agent abstractions e.g. `FunctionAgent`, `ReActAgent`, `CodeActAgent`
 
 Instead of using these, the goal here is to educate users on what's going on under the hood. By showing you the underlying algorithms for constructing RAG and agent workflows, you can then be empowered to create your own custom LLM workflows (while still using LlamaIndex abstractions at any level of granularity that makes sense).
 
@@ -77,7 +77,6 @@ Here we show you how to build an advanced retriever capable of query-rewriting, 
 
 RAG as a framework is primarily focused on unstructured data. LlamaIndex also has out of the box support for structured data and semi-structured data as well.
 
-Take a look at our guides below to see how to build text-to-SQL and text-to-Pandas from scratch (using our Query Pipeline syntax).
+Take a look at our guides below to see how to build text-to-SQL from scratch (using our Workflows library).
 
-- [Text-to-SQL from Scratch](../examples/pipeline/query_pipeline_sql.ipynb)
-- [Text-to-Pandas from Scratch](../examples/pipeline/query_pipeline_pandas.ipynb)
+- [Text-to-SQL from Scratch](../examples/workflow/advanced_text_to_sql.ipynb)

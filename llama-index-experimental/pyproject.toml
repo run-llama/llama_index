@@ -25,15 +25,15 @@ dev = [
 
 [project]
 name = "llama-index-experimental"
-version = "0.5.6"
+version = "0.6.1"
 description = "llama-index experimental package"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.12.13,<0.13",
-    "llama-index-finetuning>=0.3.2,<0.4",
+    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-finetuning>=0.4,<0.5",
     "pandas<2.3.0",
     "duckdb>=1.0.0,<2",
 ]
