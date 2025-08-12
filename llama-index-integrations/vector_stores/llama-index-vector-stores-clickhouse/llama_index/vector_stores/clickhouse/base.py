@@ -214,7 +214,7 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
             index_type=index_type,
             metric=metric,
             batch_size=batch_size,
-            dimension = dimension,
+            dimension=dimension,
             index_params=index_params,
             search_params=search_params,
             **kwargs,
@@ -282,12 +282,24 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
         ef_c = 128
 
         if self._config.index_type.lower() == "hnsw":
-            if self._config.index_params and "quantization" in self._config.index_params:
+            if (
+                self._config.index_params
+                and "quantization" in self._config.index_params
+            ):
                 quantization = self._config.index_params["quantization"]
-            if self._config.index_params and "hnsw_max_connections_per_layer" in self._config.index_params:
+            if (
+                self._config.index_params
+                and "hnsw_max_connections_per_layer" in self._config.index_params
+            ):
                 M = self._config.index_params["hnsw_max_connections_per_layer"]
-            if self._config.index_params and "hnsw_candidate_list_size_for_construction" in self._config.index_params:
-                ef_c = self._config.index_params["hnsw_candidate_list_size_for_construction"]
+            if (
+                self._config.index_params
+                and "hnsw_candidate_list_size_for_construction"
+                in self._config.index_params
+            ):
+                ef_c = self._config.index_params[
+                    "hnsw_candidate_list_size_for_construction"
+                ]
             index = f"INDEX vector_index vector TYPE vector_similarity('hnsw', '{DISTANCE_MAPPING[self._config.metric]}', {dimension}, '{quantization}', {M}, {ef_c})"
         schema_ = f"""
             CREATE TABLE IF NOT EXISTS {self._config.database}.{self._config.table}(

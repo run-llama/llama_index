@@ -1,5 +1,4 @@
 import logging
-import sys
 import uuid
 from typing import Any, Generator, List
 import clickhouse_connect
@@ -299,7 +298,9 @@ def test_add_to_ch_query_and_delete(
 
     clickhouse_store.delete("test-0")
 
-    clickhouse_client.command(f"OPTIMIZE TABLE {TEST_DB}.{table_name} FINAL SETTINGS mutations_sync=2")
+    clickhouse_client.command(
+        f"OPTIMIZE TABLE {TEST_DB}.{table_name} FINAL SETTINGS mutations_sync=2"
+    )
 
     res = clickhouse_store.query(q)
     assert res.nodes
