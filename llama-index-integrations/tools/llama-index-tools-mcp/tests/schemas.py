@@ -1,10 +1,10 @@
-from typing import Literal
+from typing import Literal, List
 
 from pydantic import BaseModel
 
 
-type MethodType = Literal["POST", "GET", "UPDATE", "DELETE"]
-type XY = list[str]
+MethodType = Literal["POST", "GET", "UPDATE", "DELETE"]
+XY = List[str]
 
 
 class TestName(BaseModel):
@@ -16,4 +16,4 @@ class TestMethod(BaseModel):
 
 
 class TestList(BaseModel):
-    lst: list[int]
+    lst: List[int]

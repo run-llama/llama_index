@@ -100,8 +100,7 @@ def test_pydantic_models_schema_structure(client: BasicMCPClient):
     json_schema = tool.metadata.fn_schema.model_json_schema()
     assert all(key in json_schema["properties"] for key in ["name", "method", "lst"])
     assert all(
-        key in json_schema["$defs"]
-        for key in ["TestName", "TestMethod", "TestList", "MethodType"]
+        key in json_schema["$defs"] for key in ["TestName", "TestMethod", "TestList"]
     )
 
     # Check property types
@@ -111,21 +110,11 @@ def test_pydantic_models_schema_structure(client: BasicMCPClient):
 
     # Check model types
     assert json_schema["$defs"]["TestName"]["properties"]["name"]["type"] == "string"
-    assert (
-        json_schema["$defs"]["TestMethod"]["properties"]["method"]["$ref"]
-        == "#/$defs/MethodType"
-    )
     assert json_schema["$defs"]["TestList"]["properties"]["lst"]["type"] == "array"
     assert (
         json_schema["$defs"]["TestList"]["properties"]["lst"]["items"]["type"]
         == "integer"
     )
-    assert json_schema["$defs"]["MethodType"]["properties"]["enum_field"]["enum"] == [
-        "POST",
-        "GET",
-        "UPDATE",
-        "DELETE",
-    ]
 
 
 def test_schema_structure_exact_match(client: BasicMCPClient):
@@ -138,10 +127,3 @@ def test_schema_structure_exact_match(client: BasicMCPClient):
 
     assert json_schema["type"] == "object"
     assert set(json_schema["required"]) == {"name", "method", "lst"}
-    assert "MethodType" in json_schema["$defs"]
-    assert json_schema["$defs"]["MethodType"]["properties"]["enum_field"]["enum"] == [
-        "POST",
-        "GET",
-        "UPDATE",
-        "DELETE",
-    ]

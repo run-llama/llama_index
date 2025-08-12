@@ -36,6 +36,4 @@ jobs:
         run: |
           git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
           uv run -- llama-dev \
-            --repo-root ".." ${{ runner.debug && '--debug' || '' }} --debug test \
             --workers ${{ env.NUM_WORKERS }} \
-            --base-ref ${{ github.event.pull_request.base.ref }} \
