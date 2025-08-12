@@ -33,7 +33,7 @@ requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "clickhouse-connect>=0.7.0,<0.8",
+    "clickhouse-connect>=0.7.0",
     "llama-index-core>=0.13.0,<0.14",
 ]
 
