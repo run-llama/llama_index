@@ -2,11 +2,13 @@ import os
 import pathlib
 from typing import List, Union
 
-import cognee
+import cognee as cognee_lib
 
 from llama_index.core import Document
 
 from .base import GraphRAG
+
+# mypy: disable-error-code="attr-defined"
 
 
 class CogneeGraphRAG(GraphRAG):
@@ -59,7 +61,7 @@ class CogneeGraphRAG(GraphRAG):
         relational_db_username: str = "",
         relational_db_password: str = "",
     ) -> None:
-        cognee.config.set_llm_config(
+        cognee_lib.config.set_llm_config(
             {
                 "llm_api_key": llm_api_key,
                 "llm_provider": llm_provider,
@@ -67,14 +69,14 @@ class CogneeGraphRAG(GraphRAG):
             }
         )
 
-        cognee.config.set_vector_db_config(
+        cognee_lib.config.set_vector_db_config(
             {
                 "vector_db_url": vector_db_url,
                 "vector_db_key": vector_db_key,
                 "vector_db_provider": vector_db_provider,
             }
         )
-        cognee.config.set_relational_db_config(
+        cognee_lib.config.set_relational_db_config(
             {
                 "db_path": "",
                 "db_name": relational_db_name,
@@ -86,7 +88,7 @@ class CogneeGraphRAG(GraphRAG):
             }
         )
 
-        cognee.config.set_graph_db_config(
+        cognee_lib.config.set_graph_db_config(
             {
                 "graph_database_provider": graph_db_provider,
                 "graph_database_url": graph_database_url,
@@ -101,14 +103,14 @@ class CogneeGraphRAG(GraphRAG):
             ).resolve()
         )
 
-        cognee.config.data_root_directory(data_directory_path)
+        cognee_lib.config.data_root_directory(data_directory_path)
         cognee_directory_path = str(
             pathlib.Path(
                 os.path.join(pathlib.Path(__file__).parent, ".cognee_system/")
             ).resolve()
         )
-        cognee.config.system_root_directory(cognee_directory_path)
-        cognee.config.data_root_directory(data_directory_path)
+        cognee_lib.config.system_root_directory(cognee_directory_path)
+        cognee_lib.config.data_root_directory(data_directory_path)
 
     async def add(
         self, data: Union[Document, List[Document]], dataset_name: str # name this nodeset
@@ -123,12 +125,15 @@ class CogneeGraphRAG(GraphRAG):
 
         """
         # Convert LlamaIndex Document type to text
+        text_data: List[str]
         if isinstance(data, List) and len(data) > 0:
-            data = [data.text for data in data if type(data) is Document]
-        elif type(data) is Document:
-            data = [data.text]
+            text_data = [doc.text for doc in data if isinstance(doc, Document)]
+        elif isinstance(data, Document):
+            text_data = [data.text]
+        else:
+            text_data = []
 
-        await cognee.add(data, 'main_dataset', node_set=dataset_name)
+        await cognee_lib.add(text_data, 'main_dataset', node_set=dataset_name)
 
     async def process_data(self, dataset_names: str) -> None:
         """
@@ -144,9 +149,9 @@ class CogneeGraphRAG(GraphRAG):
         datasets = await get_datasets_by_name(
             dataset_names, user.id
         ) 
-        await cognee.cognify(datasets, user)
+        await cognee_lib.cognify(datasets, user)
 
-    async def get_graph_url(self, graphistry_password, graphistry_username) -> str:
+    async def get_graph_url(self, graphistry_password: str, graphistry_username: str) -> str:
         """
         Retrieve the URL or endpoint for visualizing or interacting with the graph.
 
@@ -155,7 +160,7 @@ class CogneeGraphRAG(GraphRAG):
 
         """
         if graphistry_password and graphistry_username:
-            cognee.config.set_graphistry_config(
+            cognee_lib.config.set_graphistry_config(
                 {"username": graphistry_username, "password": graphistry_password}
             )
 
@@ -181,9 +186,9 @@ class CogneeGraphRAG(GraphRAG):
             query (str): The query string.
 
         """
-        user = await cognee.modules.users.methods.get_default_user()
-        return await cognee.search(
-            query_type=cognee.SearchType.RAG_COMPLETION, # RAG_COMPLETION
+        user = await cognee_lib.modules.users.methods.get_default_user()
+        return await cognee_lib.search(
+            query_type=cognee_lib.SearchType.RAG_COMPLETION, # RAG_COMPLETION
             query_text=query,
             user=user,
         )
@@ -196,9 +201,9 @@ class CogneeGraphRAG(GraphRAG):
             query (str): The query string to match against data from the graph.
 
         """
-        user = await cognee.modules.users.methods.get_default_user()
-        return await cognee.search(
-            query_type=cognee.SearchType.GRAPH_COMPLETION,
+        user = await cognee_lib.modules.users.methods.get_default_user()
+        return await cognee_lib.search(
+            query_type=cognee_lib.SearchType.GRAPH_COMPLETION,
             query_text=query,
             user=user,
         )
@@ -211,9 +216,9 @@ class CogneeGraphRAG(GraphRAG):
             node_id (str): The name of the node to match against nodes in the graph.
 
         """
-        user = await cognee.modules.users.methods.get_default_user()
-        return await cognee.search(
-            query_type=cognee.SearchType.INSIGHTS,
+        user = await cognee_lib.modules.users.methods.get_default_user()
+        return await cognee_lib.search(
+            query_type=cognee_lib.SearchType.INSIGHTS,
             query_text=node_id,
             user=user,
         )

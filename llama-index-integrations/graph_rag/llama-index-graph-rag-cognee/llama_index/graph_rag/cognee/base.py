@@ -1,5 +1,7 @@
 from abc import abstractmethod
-from typing import Protocol
+from typing import Protocol, Union, List
+
+from llama_index.core import Document
 
 
 # NOTE: This is a bare-bone suggestion for an abstract protocol to define GraphRAG for llama-index
@@ -22,7 +24,7 @@ class GraphRAG(Protocol):
     """
 
     @abstractmethod
-    async def add(self, data, dataset_name) -> None:
+    async def add(self, data: Union[Document, List[Document]], dataset_name: str) -> None:
         """
         Add data to the specified dataset.
         This data will later be processed and made into a knowledge graph.
@@ -44,7 +46,7 @@ class GraphRAG(Protocol):
         """
 
     @abstractmethod
-    async def search(self, query: str):
+    async def search(self, query: str) -> list:
         """
         Search the graph for relevant information based on a query.
 
@@ -54,7 +56,7 @@ class GraphRAG(Protocol):
         """
 
     @abstractmethod
-    async def get_related_nodes(self, node_id: str):
+    async def get_related_nodes(self, node_id: str) -> list:
         """
         Search the graph for relevant nodes or relationships based on node id.
 
