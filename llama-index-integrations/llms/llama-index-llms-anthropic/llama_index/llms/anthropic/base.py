@@ -728,9 +728,12 @@ class Anthropic(FunctionCallingLLM):
     def _map_tool_choice_to_anthropic(
         self, tool_required: bool, allow_parallel_tool_calls: bool
     ) -> dict:
+        is_thinking_enabled = (
+            self.thinking_dict and self.thinking_dict.get("type") == "enabled"
+        )
         return {
             "disable_parallel_tool_use": not allow_parallel_tool_calls,
-            "type": "any" if tool_required else "auto",
+            "type": "any" if tool_required and not is_thinking_enabled else "auto",
         }
 
     def _prepare_chat_with_tools(
