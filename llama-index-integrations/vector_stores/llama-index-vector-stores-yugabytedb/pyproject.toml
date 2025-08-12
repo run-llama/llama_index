@@ -29,7 +29,7 @@ dev = [
 name = "llama-index-vector-stores-yugabytedb"
 version = "0.5.4"
 description = "llama-index vector_stores yugabytedb integration"
-authors = [{name = "Your Name", email = "you@example.com"}]
+authors = [{name = "YugabyteDB", email = "pypi@yugabyte.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
