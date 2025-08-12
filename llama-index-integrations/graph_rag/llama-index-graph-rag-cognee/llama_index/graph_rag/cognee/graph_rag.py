@@ -117,16 +117,20 @@ class CogneeGraphRAG:
         cognee_lib.config.data_root_directory(data_directory_path)
 
     async def add(
-        self, data: Union[Document, List[Document]], dataset_name: str # name this nodeset
+        self, data: Union[Document, List[Document]], dataset_name: str
     ) -> None:
         """
         Add data to the specified dataset.
         This data will later be processed and made into a knowledge graph.
 
         Args:
-             data Union[Document, List[Document]]: The data to be added to the graph.
-             dataset_name (str): Name of the dataset or node set where the data will be added.
-
+            data (Union[Document, List[Document]]): The document(s) to be added to the graph.
+                Can be a single Document or a list of Documents.
+            dataset_name (str): Name of the dataset or node set where the data will be added.
+                               Note: While cognee supports custom dataset organization, this integration
+                               currently adds all data to 'main_dataset'. Full dataset_name support
+                               will be added in a future version. This parameter is included to show
+                               the intended API design.
         """
         # Convert LlamaIndex Document type to text
         text_data: List[str]
@@ -137,15 +141,21 @@ class CogneeGraphRAG:
         else:
             text_data = []
 
-        await cognee_lib.add(text_data, 'main_dataset', node_set=dataset_name)
+        await cognee_lib.add(text_data, 'main_dataset')
 
     async def process_data(self, dataset_names: str) -> None:
         """
-        Process and structure data in the dataset and make a knowledge graph out of it.
+        Process and structure data in the dataset and create a knowledge graph from it.
+        
+        This method takes the raw data that was previously added and transforms it into
+        a structured knowledge graph with entities, relationships, and properties.
 
         Args:
-            dataset_name (str): The dataset name to process.
-
+            dataset_names (str): The name of the dataset to process into a knowledge graph.
+                               Note: While cognee supports multiple datasets, this integration
+                               currently processes 'main_dataset' only. Full dataset_names 
+                               support will be added in a future version. This parameter is 
+                               included to show the intended API design.
         """
         from cognee.modules.users.methods import get_default_user
         user = await get_default_user()
@@ -153,26 +163,36 @@ class CogneeGraphRAG:
 
     async def rag_search(self, query: str) -> list:
         """
-        Answer query based on data chunk most relevant to query.
+        Answer query using traditional RAG approach with document chunks.
+        
+        This method performs retrieval-augmented generation by finding the most
+        relevant document chunks and generating a response based on them.
 
         Args:
-            query (str): The query string.
-
+            query (str): The question or query to answer.
+            
+        Returns:
+            list: Search results containing relevant document chunks and generated responses.
         """
         user = await cognee_lib.modules.users.methods.get_default_user()
         return await cognee_lib.search(
-            query_type=cognee_lib.SearchType.RAG_COMPLETION, # RAG_COMPLETION
+            query_type=cognee_lib.SearchType.RAG_COMPLETION,
             query_text=query,
             user=user,
         )
 
     async def search(self, query: str) -> list:
         """
-        Search the graph for relevant information based on a query.
+        Search the knowledge graph for relevant information using graph-based retrieval.
+        
+        This method leverages the graph structure to find related entities, relationships,
+        and contextual information that traditional RAG might miss.
 
         Args:
-            query (str): The query string to match against data from the graph.
-
+            query (str): The question or search term to match against entities and relationships in the graph.
+            
+        Returns:
+            list: Search results containing graph-based insights and related information.
         """
         user = await cognee_lib.modules.users.methods.get_default_user()
         return await cognee_lib.search(
@@ -183,11 +203,16 @@ class CogneeGraphRAG:
 
     async def get_related_nodes(self, node_id: str) -> list:
         """
-        Search the graph for relevant nodes or relationships based on node id.
+        Find nodes and relationships connected to a specific node in the knowledge graph.
+        
+        This method explores the graph structure to discover entities and concepts
+        that are directly or indirectly related to the specified node.
 
         Args:
-            node_id (str): The name of the node to match against nodes in the graph.
-
+            node_id (str): The identifier or name of the node to find connections for.
+            
+        Returns:
+            list: Related nodes, relationships, and insights connected to the specified node.
         """
         user = await cognee_lib.modules.users.methods.get_default_user()
         return await cognee_lib.search(
@@ -201,8 +226,15 @@ class CogneeGraphRAG:
         Generate HTML visualization of the graph and optionally open in browser.
         
         Args:
-            open_browser: Whether to open the graph in a browser
-            output_file_path: The path to save the graph to
+            open_browser (bool): Whether to automatically open the visualization in the default browser. Defaults to False.
+            output_file_path (str | None): Directory path where the HTML file will be saved. 
+                                         If None, saves to user's home directory. Defaults to None.
+        
+        Returns:
+            str: Full path to the generated HTML visualization file.
+            
+        Raises:
+            ValueError: If output_file_path is provided but is not a valid directory.
         """
         # TODO: Implement graph visualization
         # This will generate an HTML file with the graph visualization
