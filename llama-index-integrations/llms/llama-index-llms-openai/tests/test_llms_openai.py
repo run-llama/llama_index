@@ -165,3 +165,21 @@ def test_tool_required():
     )
     print(repr(response))
     assert len(response.message.additional_kwargs["tool_calls"]) == 1
+
+
+@pytest.mark.skipif(
+    os.getenv("OPENAI_API_KEY") is None, reason="OpenAI API key not available"
+)
+def test_streaming_with_usage_tokens():
+    llm = OpenAI(
+        model="gpt-4.1-mini",
+        additional_kwargs={"stream_options": {"include_usage": True}},
+    )
+    response_gen = llm.stream_complete("What is the capital of France?")
+    intermediate_response = None
+    for chunk in response_gen:
+        intermediate_response = chunk
+
+    assert intermediate_response.additional_kwargs["prompt_tokens"] > 0
+    assert intermediate_response.additional_kwargs["completion_tokens"] > 0
+    assert intermediate_response.additional_kwargs["total_tokens"] > 0

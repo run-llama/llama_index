@@ -26,14 +26,14 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-clickhouse"
-version = "0.5.0"
+version = "0.6.0"
 description = "llama-index vector_stores clickhouse integration"
 authors = [{name = "ClickHouse", email = "info@clickhouse.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "clickhouse-connect>=0.7.0,<0.8",
+    "clickhouse-connect>=0.7.0",
     "llama-index-core>=0.13.0,<0.14",
 ]
 
