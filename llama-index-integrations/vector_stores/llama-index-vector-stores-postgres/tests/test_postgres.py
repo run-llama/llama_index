@@ -730,6 +730,39 @@ async def test_sparse_query(
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
+async def test_sparse_query_with_special_characters(
+    pg_hybrid: PGVectorStore,
+    hybrid_node_embeddings: List[TextNode],
+    use_async: bool,
+) -> None:
+    if use_async:
+        await pg_hybrid.async_add(hybrid_node_embeddings)
+    else:
+        pg_hybrid.add(hybrid_node_embeddings)
+    assert isinstance(pg_hybrid, PGVectorStore)
+    assert hasattr(pg_hybrid, "_engine")
+
+    # text search should work with special characters
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.1),
+        query_str="   who' & s |     (the): <-> **fox**?!!!  ",
+        sparse_top_k=2,
+        mode=VectorStoreQueryMode.SPARSE,
+    )
+
+    if use_async:
+        res = await pg_hybrid.aquery(q)
+    else:
+        res = pg_hybrid.query(q)
+    assert res.nodes
+    assert len(res.nodes) == 2
+    assert res.nodes[0].node_id == "ccc"
+    assert res.nodes[1].node_id == "ddd"
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
 async def test_hybrid_query(
     pg_hybrid: PGVectorStore,
     hybrid_node_embeddings: List[TextNode],
@@ -783,6 +816,78 @@ async def test_hybrid_query(
     q = VectorStoreQuery(
         query_embedding=_get_sample_vector(0.1),
         query_str="who is the fox?",
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.HYBRID,
+    )
+
+    if use_async:
+        res = await pg_hybrid.aquery(q)
+    else:
+        res = pg_hybrid.query(q)
+    assert res.nodes
+    assert len(res.nodes) == 4
+    assert res.nodes[0].node_id == "aaa"
+    assert res.nodes[1].node_id == "bbb"
+    assert res.nodes[2].node_id == "ccc"
+    assert res.nodes[3].node_id == "ddd"
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_hybrid_query_with_special_characters(
+    pg_hybrid: PGVectorStore,
+    hybrid_node_embeddings: List[TextNode],
+    use_async: bool,
+) -> None:
+    if use_async:
+        await pg_hybrid.async_add(hybrid_node_embeddings)
+    else:
+        pg_hybrid.add(hybrid_node_embeddings)
+    assert isinstance(pg_hybrid, PGVectorStore)
+    assert hasattr(pg_hybrid, "_engine")
+
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.1),
+        query_str="fox",
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.HYBRID,
+        sparse_top_k=1,
+    )
+
+    if use_async:
+        res = await pg_hybrid.aquery(q)
+    else:
+        res = pg_hybrid.query(q)
+    assert res.nodes
+    assert len(res.nodes) == 3
+    assert res.nodes[0].node_id == "aaa"
+    assert res.nodes[1].node_id == "bbb"
+    assert res.nodes[2].node_id == "ccc"
+
+    # if sparse_top_k is not specified, it should default to similarity_top_k
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.1),
+        query_str="fox",
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.HYBRID,
+    )
+
+    if use_async:
+        res = await pg_hybrid.aquery(q)
+    else:
+        res = pg_hybrid.query(q)
+    assert res.nodes
+    assert len(res.nodes) == 4
+    assert res.nodes[0].node_id == "aaa"
+    assert res.nodes[1].node_id == "bbb"
+    assert res.nodes[2].node_id == "ccc"
+    assert res.nodes[3].node_id == "ddd"
+
+    # text search should work with special characters
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.1),
+        query_str="   who' & s |     (the): <-> **fox**?!!!  ",
         similarity_top_k=2,
         mode=VectorStoreQueryMode.HYBRID,
     )
