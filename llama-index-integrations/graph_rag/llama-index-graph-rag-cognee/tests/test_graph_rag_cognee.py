@@ -74,6 +74,10 @@ async def test_graph_rag_cognee():
     await cognee.prune.prune_system(metadata=True)
 
 
+@pytest.mark.skipif(
+    os.getenv("OPENAI_API_KEY") is None,
+    reason="OPENAI_API_KEY not available to test Cognee integration",
+)
 @pytest.mark.asyncio
 async def test_empty_documents():
     """Test handling of empty document lists and documents with empty text."""
@@ -98,6 +102,10 @@ async def test_empty_documents():
     assert True
 
 
+@pytest.mark.skipif(
+    os.getenv("OPENAI_API_KEY") is None,
+    reason="OPENAI_API_KEY not available to test Cognee integration",
+)
 @pytest.mark.asyncio
 async def test_single_document():
     """Test processing a single document vs a list of documents."""
@@ -146,6 +154,10 @@ async def test_visualize_graph():
         )
 
 
+@pytest.mark.skipif(
+    os.getenv("OPENAI_API_KEY") is None,
+    reason="OPENAI_API_KEY not available to test Cognee integration",
+)
 @pytest.mark.asyncio
 async def test_search_error_handling():
     """Test error handling in search methods."""
@@ -217,6 +229,10 @@ async def test_mock_full_workflow():
         assert len(related_results) == 1
 
 
+@pytest.mark.skipif(
+    os.getenv("OPENAI_API_KEY") is None,
+    reason="OPENAI_API_KEY not available to test Cognee integration",
+)
 @pytest.mark.asyncio
 async def test_mixed_document_types():
     """Test handling of mixed valid and invalid document types."""
