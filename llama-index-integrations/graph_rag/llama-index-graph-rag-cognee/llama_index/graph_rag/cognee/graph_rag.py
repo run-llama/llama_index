@@ -1,17 +1,21 @@
 import os
 import pathlib
+import webbrowser
 from typing import List, Union
 
 import cognee as cognee_lib
 
 from llama_index.core import Document
 
-from .base import GraphRAG
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .base import GraphRAG
 
 # mypy: disable-error-code="attr-defined"
 
 
-class CogneeGraphRAG(GraphRAG):
+class CogneeGraphRAG:
     """
     Cognee GraphRAG, handles adding, storing, processing and retrieving information from knowledge graphs.
 
@@ -144,39 +148,8 @@ class CogneeGraphRAG(GraphRAG):
 
         """
         from cognee.modules.users.methods import get_default_user
-        from cognee.modules.data.methods import get_datasets_by_name
         user = await get_default_user()
-        datasets = await get_datasets_by_name(
-            dataset_names, user.id
-        ) 
-        await cognee_lib.cognify(datasets, user)
-
-    async def get_graph_url(self, graphistry_password: str, graphistry_username: str) -> str:
-        """
-        Retrieve the URL or endpoint for visualizing or interacting with the graph.
-
-        Returns:
-            str: The URL endpoint of the graph.
-
-        """
-        if graphistry_password and graphistry_username:
-            cognee_lib.config.set_graphistry_config(
-                {"username": graphistry_username, "password": graphistry_password}
-            )
-
-        from cognee.shared.utils import render_graph
-        from cognee.infrastructure.databases.graph import get_graph_engine
-        import graphistry
-
-        graphistry.login(
-            username=graphistry_username,
-            password=graphistry_password,
-        )
-        graph_engine = await get_graph_engine()
-
-        graph_url = await render_graph(graph_engine.graph)
-        print(graph_url)
-        return graph_url
+        await cognee_lib.cognify('main_dataset', user)
 
     async def rag_search(self, query: str) -> list:
         """
@@ -222,3 +195,32 @@ class CogneeGraphRAG(GraphRAG):
             query_text=node_id,
             user=user,
         )
+
+    async def visualize_graph(self, open_browser: bool = False, output_file_path: str | None = None) -> str:
+        """
+        Generate HTML visualization of the graph and optionally open in browser.
+        
+        Args:
+            open_browser: Whether to open the graph in a browser
+            output_file_path: The path to save the graph to
+        """
+        # TODO: Implement graph visualization
+        # This will generate an HTML file with the graph visualization
+        # and optionally open it in the user's browser
+        await cognee_lib.visualize_graph(output_file_path)
+        
+        if output_file_path and not os.path.isdir(output_file_path):
+            raise ValueError(f"The provided path '{output_file_path}' is not a directory")
+        
+        if output_file_path:
+            output_file_path = os.path.join(output_file_path, "graph_visualization.html")
+        else:
+            home_dir = os.path.expanduser("~")
+            output_file_path = os.path.join(home_dir, "graph_visualization.html")
+        
+        if open_browser:
+            webbrowser.open(output_file_path)
+        return output_file_path
+
+if TYPE_CHECKING:
+    _: GraphRAG = CogneeGraphRAG('dummy_key')

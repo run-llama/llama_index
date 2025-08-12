@@ -31,7 +31,7 @@ async def test_add_data(monkeypatch):
         relational_db_name="cognee_db",
     )
 
-    async def mock_add_return(add, dataset_name):
+    async def mock_add_return(add, dataset_name, node_set=None):
         return True
 
     import cognee

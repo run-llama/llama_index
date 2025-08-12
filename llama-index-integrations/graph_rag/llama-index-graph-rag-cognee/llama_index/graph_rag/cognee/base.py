@@ -64,3 +64,14 @@ class GraphRAG(Protocol):
             node_id (str): The name of the node to match against nodes in the graph.
 
         """
+    
+    @abstractmethod
+    async def visualize_graph(self, open_browser: bool = False, output_file_path: str | None = None) -> str:
+        """
+        Visualize the graph.
+
+        Args:
+            open_browser (bool): Whether to open the graph in a browser.
+            output_file_path (str): The path to save the graph to.
+
+        """
