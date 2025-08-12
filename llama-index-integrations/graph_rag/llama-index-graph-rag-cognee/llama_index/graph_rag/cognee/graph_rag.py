@@ -117,7 +117,7 @@ class CogneeGraphRAG:
         cognee_lib.config.data_root_directory(data_directory_path)
 
     async def add(
-        self, data: Union[Document, List[Document]], dataset_name: str
+        self, data: Union[Document, List[Document]], dataset_name: str = 'main_dataset'
     ) -> None:
         """
         Add data to the specified dataset.
@@ -139,11 +139,11 @@ class CogneeGraphRAG:
         elif isinstance(data, Document):
             text_data = [data.text]
         else:
-            text_data = []
+            raise ValueError("Invalid data type. Please provide a list of Documents or a single Document.")
 
-        await cognee_lib.add(text_data, 'main_dataset')
+        await cognee_lib.add(text_data, dataset_name)
 
-    async def process_data(self, dataset_names: str) -> None:
+    async def process_data(self, dataset_name: str = 'main_dataset') -> None:
         """
         Process and structure data in the dataset and create a knowledge graph from it.
         
@@ -159,7 +159,7 @@ class CogneeGraphRAG:
         """
         from cognee.modules.users.methods import get_default_user
         user = await get_default_user()
-        await cognee_lib.cognify('main_dataset', user)
+        await cognee_lib.cognify(dataset_name, user)
 
     async def rag_search(self, query: str) -> list:
         """

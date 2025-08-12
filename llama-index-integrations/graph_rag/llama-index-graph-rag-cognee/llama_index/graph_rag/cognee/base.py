@@ -24,7 +24,7 @@ class GraphRAG(Protocol):
     """
 
     @abstractmethod
-    async def add(self, data: Union[Document, List[Document]], dataset_name: str) -> None:
+    async def add(self, data: Union[Document, List[Document]], dataset_name: str = 'main_dataset') -> None:
         """
         Add data to the specified dataset.
         This data will later be processed and made into a knowledge graph.
@@ -35,7 +35,7 @@ class GraphRAG(Protocol):
         """
 
     @abstractmethod
-    async def process_data(self, dataset_name: str) -> None:
+    async def process_data(self, dataset_name: str = 'main_dataset') -> None:
         """
         Process and structure data in the dataset and make a knowledge graph out of it.
 
