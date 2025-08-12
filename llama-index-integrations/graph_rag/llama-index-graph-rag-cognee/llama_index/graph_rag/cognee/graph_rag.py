@@ -21,8 +21,8 @@ class CogneeGraphRAG(GraphRAG):
     llm_api_key: str: API key for desired LLM.
     llm_provider: str: Provider for desired LLM (default: "openai").
     llm_model: str: Model for desired LLM (default: "gpt-4o-mini").
-    graph_db_provider: str: The graph database provider (default: "networkx").
-                            Supported providers: "neo4j", "networkx".
+    graph_db_provider: str: The graph database provider (default: "kuzu").
+                            Supported providers: "neo4j", "networkx", "kuzu".
     graph_database_url: str: URL for the graph database.
     graph_database_username: str: Username for accessing the graph database.
     graph_database_password: str: Password for accessing the graph database.
@@ -45,7 +45,7 @@ class CogneeGraphRAG(GraphRAG):
         llm_api_key: str,
         llm_provider: str = "openai",
         llm_model: str = "gpt-4o-mini",
-        graph_db_provider: str = "networkx",
+        graph_db_provider: str = "kuzu",
         graph_database_url: str = "",
         graph_database_username: str = "",
         graph_database_password: str = "",
@@ -108,16 +108,17 @@ class CogneeGraphRAG(GraphRAG):
             ).resolve()
         )
         cognee.config.system_root_directory(cognee_directory_path)
+        cognee.config.data_root_directory(data_directory_path)
 
     async def add(
-        self, data: Union[Document, List[Document]], dataset_name: str
+        self, data: Union[Document, List[Document]], dataset_name: str # name this nodeset
     ) -> None:
         """
         Add data to the specified dataset.
         This data will later be processed and made into a knowledge graph.
 
         Args:
-             data (Any): The data to be added to the graph.
+             data Union[Document, List[Document]]: The data to be added to the graph.
              dataset_name (str): Name of the dataset or node set where the data will be added.
 
         """
@@ -127,7 +128,7 @@ class CogneeGraphRAG(GraphRAG):
         elif type(data) is Document:
             data = [data.text]
 
-        await cognee.add(data, dataset_name)
+        await cognee.add(data, 'main_dataset', node_set=dataset_name)
 
     async def process_data(self, dataset_names: str) -> None:
         """
@@ -137,10 +138,12 @@ class CogneeGraphRAG(GraphRAG):
             dataset_name (str): The dataset name to process.
 
         """
-        user = await cognee.modules.users.methods.get_default_user()
-        datasets = await cognee.modules.data.methods.get_datasets_by_name(
+        from cognee.modules.users.methods import get_default_user
+        from cognee.modules.data.methods import get_datasets_by_name
+        user = await get_default_user()
+        datasets = await get_datasets_by_name(
             dataset_names, user.id
-        )
+        ) 
         await cognee.cognify(datasets, user)
 
     async def get_graph_url(self, graphistry_password, graphistry_username) -> str:
@@ -180,7 +183,7 @@ class CogneeGraphRAG(GraphRAG):
         """
         user = await cognee.modules.users.methods.get_default_user()
         return await cognee.search(
-            query_type=cognee.api.v1.search.SearchType.COMPLETION,
+            query_type=cognee.SearchType.RAG_COMPLETION, # RAG_COMPLETION
             query_text=query,
             user=user,
         )
@@ -195,7 +198,7 @@ class CogneeGraphRAG(GraphRAG):
         """
         user = await cognee.modules.users.methods.get_default_user()
         return await cognee.search(
-            query_type=cognee.api.v1.search.SearchType.GRAPH_COMPLETION,
+            query_type=cognee.SearchType.GRAPH_COMPLETION,
             query_text=query,
             user=user,
         )
@@ -210,7 +213,7 @@ class CogneeGraphRAG(GraphRAG):
         """
         user = await cognee.modules.users.methods.get_default_user()
         return await cognee.search(
-            query_type=cognee.api.v1.search.SearchType.INSIGHTS,
+            query_type=cognee.SearchType.INSIGHTS,
             query_text=node_id,
             user=user,
         )

@@ -22,7 +22,7 @@ class GraphRAG(Protocol):
     """
 
     @abstractmethod
-    async def add(self, data, dataset_name):
+    async def add(self, data, dataset_name) -> None:
         """
         Add data to the specified dataset.
         This data will later be processed and made into a knowledge graph.
@@ -34,7 +34,7 @@ class GraphRAG(Protocol):
         """
 
     @abstractmethod
-    async def process_data(self, dataset_name: str):
+    async def process_data(self, dataset_name: str) -> None:
         """
         Process and structure data in the dataset and make a knowledge graph out of it.
 
