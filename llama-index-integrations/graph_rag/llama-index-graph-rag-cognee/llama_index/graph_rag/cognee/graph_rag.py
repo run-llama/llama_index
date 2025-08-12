@@ -236,23 +236,23 @@ class CogneeGraphRAG:
         Raises:
             ValueError: If output_file_path is provided but is not a valid directory.
         """
-        # TODO: Implement graph visualization
-        # This will generate an HTML file with the graph visualization
-        # and optionally open it in the user's browser
-        await cognee_lib.visualize_graph(output_file_path)
-        
-        if output_file_path and not os.path.isdir(output_file_path):
-            raise ValueError(f"The provided path '{output_file_path}' is not a directory")
-        
+        # Determine the full file path for the visualization
         if output_file_path:
-            output_file_path = os.path.join(output_file_path, "graph_visualization.html")
+            if not os.path.isdir(output_file_path):
+                raise ValueError(f"The provided path '{output_file_path}' is not a directory")
+            full_file_path = os.path.join(output_file_path, "graph_visualization.html")
         else:
             home_dir = os.path.expanduser("~")
-            output_file_path = os.path.join(home_dir, "graph_visualization.html")
+            full_file_path = os.path.join(home_dir, "graph_visualization.html")
         
+        # Generate the visualization using cognee
+        await cognee_lib.visualize_graph(full_file_path)
+        
+        # Open in browser if requested
         if open_browser:
-            webbrowser.open(output_file_path)
-        return output_file_path
+            webbrowser.open(f"file://{os.path.abspath(full_file_path)}")
+            
+        return full_file_path
 
 if TYPE_CHECKING:
     _: GraphRAG = CogneeGraphRAG('dummy_key')
