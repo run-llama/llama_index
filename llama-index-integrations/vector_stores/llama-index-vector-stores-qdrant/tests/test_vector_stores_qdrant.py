@@ -235,7 +235,9 @@ def test_filters_with_types(vector_store: QdrantVectorStore) -> None:
     assert len(results) == 1
 
 
-def test_hybrid_vector_store_query(hybrid_vector_store: QdrantVectorStore) -> None:
+def test_hybrid_vector_store_query(
+    hybrid_vector_store: QdrantVectorStore,
+) -> None:
     query = VectorStoreQuery(
         query_embedding=[0.0, 0.0],
         query_str="test1",
@@ -252,3 +254,132 @@ def test_hybrid_vector_store_query(hybrid_vector_store: QdrantVectorStore) -> No
     query.mode = VectorStoreQueryMode.DEFAULT
     results = hybrid_vector_store.query(query)
     assert len(results.nodes) == 1
+
+
+@pytest.mark.asyncio
+async def test_shard_vector_store_async(
+    shard_vector_store: QdrantVectorStore,
+) -> None:
+    """
+    Validate that LlamaIndex's QdrantVectorStore custom sharding + metadata filtering
+    behaves as expected.
+
+    Setup (see fixture below):
+      - Three nodes, each assigned to a different *custom* shard (1, 2, 3).
+      - Metadata key "some_key" set to 1, 2, and "3" respectively (note: "3" is a string).
+    """
+    # 1) Sanity check: without filters or shard restriction, we should see all 3 nodes.
+    results = await shard_vector_store.aget_nodes()
+    assert len(results) == 3
+
+    # 2) Query *only* shard 3, but with IN filter for values [1, 2].
+    #    Because shard 3 contains the node with metadata "some_key" == "3" (string),
+    #    there should be no matches for the integer values 1 or 2 in that shard.
+    results = await shard_vector_store.aget_nodes(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(key="some_key", value=[1, 2], operator=FilterOperator.IN)
+            ]
+        ),
+        shard_identifier=3,
+    )
+
+    assert len(results) == 0
+
+    # 3) Still on shard 3, use NIN (NOT IN) for [1, 2].
+    #    The only node in shard 3 has "some_key" == "3" (string), which is not 1 or 2.
+    #    So we expect exactly 1 match.
+    results = await shard_vector_store.aget_nodes(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="some_key", value=[1, 2], operator=FilterOperator.NIN
+                )
+            ]
+        ),
+        shard_identifier=3,
+    )
+    assert len(results) == 1
+
+    # 4) Query shard 3 with IN filter for "3" (string).
+    #    This should match the only node in shard 3.
+    results = await shard_vector_store.aget_nodes(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(key="some_key", value=["3"], operator=FilterOperator.IN)
+            ]
+        ),
+        shard_identifier=3,
+    )
+    assert len(results) == 1
+
+    # 5) Delete the node in shard 3.
+    #    This should remove the only node in shard 3.
+    await shard_vector_store.adelete_nodes(
+        shard_identifier=3,
+    )
+
+    results = await shard_vector_store.aget_nodes(
+        shard_identifier=3,
+    )
+    assert len(results) == 0  # No nodes should remain in shard 3
+    results = await shard_vector_store.aget_nodes()
+    assert len(results) == 2  # Only nodes in shards 1 and 2 should remain
+
+
+@pytest.mark.asyncio
+def test_shard_vector_store_sync(
+    shard_vector_store: QdrantVectorStore,
+) -> None:
+    """
+    Validate that LlamaIndex's QdrantVectorStore custom sharding + metadata filtering
+    behaves as expected.
+
+    Setup (see fixture below):
+      - Three nodes, each assigned to a different *custom* shard (1, 2, 3).
+      - Metadata key "some_key" set to 1, 2, and "3" respectively (note: "3" is a string).
+    """
+    # 1) Sanity check: without filters or shard restriction, we should see all 3 nodes.
+    results = shard_vector_store.get_nodes()
+    assert len(results) == 3
+
+    # 2) Query *only* shard 3, but with IN filter for values [1, 2].
+    #    Because shard 3 contains the node with metadata "some_key" == "3" (string),
+    #    there should be no matches for the integer values 1 or 2 in that shard.
+    results = shard_vector_store.get_nodes(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(key="some_key", value=[1, 2], operator=FilterOperator.IN)
+            ]
+        ),
+        shard_identifier=3,
+    )
+
+    assert len(results) == 0
+
+    # 3) Still on shard 3, use NIN (NOT IN) for [1, 2].
+    #    The only node in shard 3 has "some_key" == "3" (string), which is not 1 or 2.
+    #    So we expect exactly 1 match.
+    results = shard_vector_store.get_nodes(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="some_key", value=[1, 2], operator=FilterOperator.NIN
+                )
+            ]
+        ),
+        shard_identifier=3,
+    )
+    assert len(results) == 1
+
+    # 4) Query shard 3 with IN filter for "3" (string).
+    #    This should match the only node in shard 3.
+    results = shard_vector_store.get_nodes(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(key="some_key", value=["3"], operator=FilterOperator.IN)
+            ]
+        ),
+        shard_identifier=3,
+    )
+    assert len(results) == 1
