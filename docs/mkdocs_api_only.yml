@@ -642,6 +642,7 @@ plugins:
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-bedrock-rerank
             - ../llama-index-integrations/postprocessor/llama-index-postprocessor-pinecone-native-rerank
             - ../llama-index-integrations/tools/llama-index-tools-scrapegraph
+            - ../llama-index-integrations/graph_rag/llama-index-graph-rag-cognee
             - ../llama-index-integrations/llms/llama-index-llms-keywordsai
             - ../llama-index-integrations/embeddings/llama-index-embeddings-opea
             - ../llama-index-integrations/multi_modal_llms/llama-index-multi-modal-llms-bedrock
