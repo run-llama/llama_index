@@ -1,7 +1,7 @@
 import inspect
 import re
 import uuid
-from typing import Awaitable, Callable, List, Sequence, Union, Optional
+from typing import Awaitable, Callable, List, Sequence, Union, Optional, Tuple
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 from llama_index.core.agent.workflow.workflow_events import (
@@ -214,7 +214,7 @@ class CodeActAgent(BaseWorkflowAgent):
         ctx: Context,
         current_llm_input: List[ChatMessage],
         tools: Sequence[BaseTool],
-    ) -> ChatResponse:
+    ) -> Tuple[ChatResponse, str]:
         if any(tool.metadata.name == "handoff" for tool in tools):
             if not isinstance(self.llm, FunctionCallingLLM):
                 raise ValueError("llm must be a function calling LLM to use handoff")
