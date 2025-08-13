@@ -122,6 +122,9 @@ This should give you output similar to the following:
 The result of (20 + (2 times 4)) is 28.
 ```
 
+!!! tip
+    Some models might not support streaming LLM output. While streaming is enabled by default, if you encounter an error, you can always set `FunctionAgent(..., streaming=False)` to disable streaming.
+
 Check the [repo](https://github.com/run-llama/python-agents-tutorial/blob/main/1_basic_agent.py) to see what the final code should look like.
 
 Congratulations! You've built the most basic kind of agent. Next let's learn how to use [pre-built tools](./tools.md).

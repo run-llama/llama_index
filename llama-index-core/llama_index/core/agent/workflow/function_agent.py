@@ -24,29 +24,22 @@ class FunctionAgent(BaseWorkflowAgent):
         description="If True, the agent will call multiple tools in parallel. If False, the agent will call tools sequentially.",
     )
 
-    async def take_step(
+    async def _get_response(
+        self, current_llm_input: List[ChatMessage], tools: Sequence[AsyncBaseTool]
+    ) -> ChatResponse:
+        return await self.llm.achat_with_tools(  # type: ignore
+            tools=tools, chat_history=current_llm_input
+        )
+
+    async def _get_streaming_response(
         self,
         ctx: Context,
-        llm_input: List[ChatMessage],
+        current_llm_input: List[ChatMessage],
         tools: Sequence[AsyncBaseTool],
-        memory: BaseMemory,
-    ) -> AgentOutput:
-        """Take a single step with the function calling agent."""
-        if not self.llm.metadata.is_function_calling_model:
-            raise ValueError("LLM must be a FunctionCallingLLM")
-
-        scratchpad: List[ChatMessage] = await ctx.store.get(
-            self.scratchpad_key, default=[]
-        )
-        current_llm_input = [*llm_input, *scratchpad]
-
-        ctx.write_event_to_stream(
-            AgentInput(input=current_llm_input, current_agent_name=self.name)
-        )
-
+    ) -> ChatResponse:
         response = await self.llm.astream_chat_with_tools(  # type: ignore
-            tools=tools,
             chat_history=current_llm_input,
+            tools=tools,
             allow_parallel_tool_calls=self.allow_parallel_tool_calls,
         )
         # last_chat_response will be used later, after the loop.
@@ -70,6 +63,35 @@ class FunctionAgent(BaseWorkflowAgent):
                     current_agent_name=self.name,
                 )
             )
+
+        return last_chat_response
+
+    async def take_step(
+        self,
+        ctx: Context,
+        llm_input: List[ChatMessage],
+        tools: Sequence[AsyncBaseTool],
+        memory: BaseMemory,
+    ) -> AgentOutput:
+        """Take a single step with the function calling agent."""
+        if not self.llm.metadata.is_function_calling_model:
+            raise ValueError("LLM must be a FunctionCallingLLM")
+
+        scratchpad: List[ChatMessage] = await ctx.store.get(
+            self.scratchpad_key, default=[]
+        )
+        current_llm_input = [*llm_input, *scratchpad]
+
+        ctx.write_event_to_stream(
+            AgentInput(input=current_llm_input, current_agent_name=self.name)
+        )
+
+        if self.streaming:
+            last_chat_response = await self._get_streaming_response(
+                ctx, current_llm_input, tools
+            )
+        else:
+            last_chat_response = await self._get_response(current_llm_input, tools)
 
         tool_calls = self.llm.get_tool_calls_from_response(  # type: ignore
             last_chat_response, error_on_no_tool_call=False
