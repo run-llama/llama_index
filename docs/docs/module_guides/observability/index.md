@@ -513,22 +513,33 @@ set_global_handler("langfuse")
 
 ### DeepEval
 
-[DeepEval (by Confident AI)](https://github.com/confident-ai/deepeval) is an open-source evaluation framework for LLM applications. As you "unit test" your LLM app using DeepEval's 14+ default metrics it currently offers (summarization, hallucination, answer relevancy, faithfulness, RAGAS, etc.), you can debug failing test cases through this tracing integration with LlamaIndex, or debug unsatisfactory evaluations in **production** through DeepEval's hosted evaluation platform, [Confident AI](https://confident-ai.com), that runs referenceless evaluations in production.
+[DeepEval (by Confident AI)](https://github.com/confident-ai/deepeval) is an open-source evaluation framework for LLM applications. As you "unit test" your LLM app using DeepEval's 14+ default metrics it currently offers (summarization, hallucination, answer relevancy, faithfulness, RAGAS, etc.), you can debug failing test cases through this tracing integration with LlamaIndex, or debug unsatisfactory evaluations in **production** through DeepEval's hosted evaluation platform, [Confident AI](https://documentation.confident-ai.com/docs), that runs referenceless evaluations in production.
 
 #### Usage Pattern
 
-```python
-from llama_index.core import set_global_handler
-
-set_global_handler("deepeval")
-
-# NOTE: Run 'deepeval login' in the CLI to log traces on Confident AI, DeepEval's hosted evaluation platform.
-# Run all of your LlamaIndex applications as usual and traces
-# will be collected and displayed on Confident AI whenever evaluations are ran.
-...
+```bash
+pip install -U deepeval llama-index
 ```
 
-![tracing](https://d2lsxfc3p6r9rv.cloudfront.net/confident-tracing.gif)
+```python
+import deepeval
+from deepeval.integrations.llama_index import instrument_llama_index
+
+import llama_index.core.instrumentation as instrument
+ 
+# Login
+deepeval.login("<your-confident-api-key>")
+ 
+# Let DeepEval collect traces
+instrument_llama_index(instrument.get_dispatcher())
+```
+
+![tracing](https://confident-docs.s3.us-east-1.amazonaws.com/llm-tracing%3Allama-index.gif)
+
+#### Guides
+
+- [Evaluate Llama Index Agents](https://deepeval.com/integrations/frameworks/langchain)
+- [Tracing Llama Index Agents](https://documentation.confident-ai.com/docs/llm-tracing/integrations/llamaindex)
 
 ### Weights and Biases Prompts
 
