@@ -404,6 +404,7 @@ CHAT_MODEL_TABLE = {
         model_type="chat",
         client="NVIDIA",
         supports_tools=True,
+        supports_structured_output=True,
     ),
     "mistralai/mistral-small-24b-instruct": Model(
         id="mistralai/mistral-small-24b-instruct",
@@ -646,6 +647,7 @@ CHAT_MODEL_TABLE = {
         client="NVIDIA",
         supports_thinking=True,
         supports_tools=True,
+        supports_structured_output=True,
     ),
     "qwen/qwq-32b": Model(
         id="qwen/qwq-32b",
@@ -653,6 +655,7 @@ CHAT_MODEL_TABLE = {
         client="NVIDIA",
         supports_thinking=True,
         supports_tools=True,
+        supports_structured_output=True,
     ),
     "nvidia/llama-3.1-nemotron-70b-reward": Model(
         id="nvidia/llama-3.1-nemotron-70b-reward",
@@ -668,7 +671,7 @@ CHAT_MODEL_TABLE = {
         id="deepseek-ai/deepseek-r1-0528",
         model_type="chat",
         client="NVIDIA",
-        supports_tools=True,
+        supports_structured_output=True,
     ),
     "deepseek-ai/deepseek-r1-distill-llama-8b": Model(
         id="deepseek-ai/deepseek-r1-distill-llama-8b",
@@ -866,7 +869,6 @@ VLM_MODEL_TABLE = {
         id="mistralai/mistral-small-3.1-24b-instruct-2503",
         model_type="vlm",
         client="NVIDIA",
-        supports_tools=True,
     ),
     "nvidia/llama-3.1-nemotron-nano-vl-8b-v1": Model(
         id="nvidia/llama-3.1-nemotron-nano-vl-8b-v1",

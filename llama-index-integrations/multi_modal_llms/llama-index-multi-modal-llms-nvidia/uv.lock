@@ -1807,7 +1807,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-multi-modal-llms-nvidia"
-version = "0.5.0"
+version = "0.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "filetype" },
