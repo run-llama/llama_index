@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-retrievers-bm25"
-version = "0.6.2"
+version = "0.6.3"
 description = "llama-index retrievers bm25 integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
