@@ -253,7 +253,7 @@ class CodeActAgent(BaseWorkflowAgent):
                 )
             )
 
-        return last_chat_response
+        return last_chat_response, full_response_text
 
     async def take_step(
         self,
@@ -297,13 +297,12 @@ class CodeActAgent(BaseWorkflowAgent):
         )
 
         if self.streaming:
-            chat_response = await self._get_streaming_response(
+            chat_response, full_response_text = await self._get_streaming_response(
                 ctx, current_llm_input, tools
             )
         else:
             chat_response = await self._get_response(current_llm_input, tools)
-
-        full_response_text = chat_response.message.content
+            full_response_text = chat_response.message.content or ""
 
         # Extract code from the response
         code = self._extract_code_from_response(full_response_text)
