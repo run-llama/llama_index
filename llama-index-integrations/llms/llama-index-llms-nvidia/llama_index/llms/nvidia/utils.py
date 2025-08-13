@@ -459,6 +459,7 @@ CHAT_MODEL_TABLE = {
         model_type="chat",
         client="NVIDIA",
         supports_tools=True,
+        supports_structured_output=True,
     ),
     "utter-project/eurollm-9b-instruct": Model(
         id="utter-project/eurollm-9b-instruct",
@@ -714,6 +715,7 @@ CHAT_MODEL_TABLE = {
         client="NVIDIA",
         supports_thinking=True,
         supports_tools=True,
+        supports_structured_output=True,
     ),
     "nvidia/llama-3.3-nemotron-super-49b-v1.5": Model(
         id="nvidia/llama-3.3-nemotron-super-49b-v1.5",
@@ -721,6 +723,7 @@ CHAT_MODEL_TABLE = {
         client="NVIDIA",
         supports_thinking=True,
         supports_tools=True,
+        supports_structured_output=True,
     ),
     "moonshotai/kimi-k2-instruct": Model(
         id="moonshotai/kimi-k2-instruct",
