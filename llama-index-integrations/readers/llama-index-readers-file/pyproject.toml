@@ -23,11 +23,12 @@ dev = [
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "pytest-cov>=6.1.1",
+    "python-pptx",
 ]
 
 [project]
 name = "llama-index-readers-file"
-version = "0.5.0"
+version = "0.5.1"
 description = "llama-index readers file integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"

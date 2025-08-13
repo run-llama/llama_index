@@ -48,7 +48,7 @@ BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS: Dict[str, int] = {
     "anthropic.claude-3-5-haiku-20241022-v1:0": 200000,
     "anthropic.claude-3-7-sonnet-20250219-v1:0": 200000,
     "anthropic.claude-opus-4-20250514-v1:0": 200000,
-    "anthropic.claude-sonnet-4-20250514-v1:0": 200000,
+    "anthropic.claude-sonnet-4-20250514-v1:0": 1000000,
     "anthropic.claude-opus-4-1-20250805-v1:0": 200000,
 }
 BEDROCK_CLAUDE_MODELS: Dict[str, int] = {
@@ -94,9 +94,9 @@ ANTHROPIC_MODELS: Dict[str, int] = {
     "claude-opus-4-0": 200000,
     "claude-opus-4-20250514": 200000,
     "claude-4-opus-20250514": 200000,
-    "claude-sonnet-4-0": 200000,
-    "claude-sonnet-4-20250514": 200000,
-    "claude-4-sonnet-20250514": 200000,
+    "claude-sonnet-4-0": 1000000,
+    "claude-sonnet-4-20250514": 1000000,
+    "claude-4-sonnet-20250514": 1000000,
     "claude-opus-4-1-20250805": 200000,
 }
 
