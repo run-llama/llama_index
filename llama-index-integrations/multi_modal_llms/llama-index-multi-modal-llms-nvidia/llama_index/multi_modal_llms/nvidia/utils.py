@@ -38,13 +38,49 @@ NVIDIA_MULTI_MODAL_MODELS = {
         "endpoint": f"{BASE_URL}microsoft/microsoft/phi-3_5-vision-instruct",
         "type": "nv-vlm",
     },
+    "microsoft/phi-4-multimodal-instruct": {
+        "endpoint": f"{BASE_URL}microsoft/phi-4-multimodal-instruct",
+        "type": "vlm",
+    },
     "nvidia/vila": {"endpoint": f"{BASE_URL}vlm/nvidia/vila", "type": "nv-vlm"},
+    "nvidia/nvclip": {
+        "endpoint": f"{BASE_URL}nvidia/nvclip",
+        "type": "vlm",
+    },
     "meta/llama-3.2-11b-vision-instruct": {
         "endpoint": f"{BASE_URL}gr/meta/llama-3.2-11b-vision-instruct/chat/completions",
         "type": "vlm",
     },
     "meta/llama-3.2-90b-vision-instruct": {
-        "endpoint": f"{BASE_URL}/gr/meta/llama-3.2-90b-vision-instruct/chat/completions",
+        "endpoint": f"{BASE_URL}gr/meta/llama-3.2-90b-vision-instruct/chat/completions",
+        "type": "vlm",
+    },
+    "meta/llama-4-maverick-17b-128e-instruct": {
+        "endpoint": f"{BASE_URL}meta/llama-4-maverick-17b-128e-instruct",
+        "type": "vlm",
+    },
+    "meta/llama-4-scout-17b-16e-instruct": {
+        "endpoint": f"{BASE_URL}meta/llama-4-scout-17b-16e-instruct",
+        "type": "vlm",
+    },
+    "google/gemma-3n-e2b-it": {
+        "endpoint": f"{BASE_URL}google/gemma-3n-e2b-it",
+        "type": "vlm",
+    },
+    "google/gemma-3n-e4b-it": {
+        "endpoint": f"{BASE_URL}google/gemma-3n-e4b-it",
+        "type": "vlm",
+    },
+    "mistralai/mistral-medium-3-instruct": {
+        "endpoint": f"{BASE_URL}mistralai/mistral-medium-3-instruct",
+        "type": "vlm",
+    },
+    "mistralai/mistral-small-3.1-24b-instruct-2503": {
+        "endpoint": f"{BASE_URL}mistralai/mistral-small-3.1-24b-instruct-2503",
+        "type": "vlm",
+    },
+    "nvidia/llama-3.1-nemotron-nano-vl-8b-v1": {
+        "endpoint": f"{BASE_URL}nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
         "type": "vlm",
     },
 }
