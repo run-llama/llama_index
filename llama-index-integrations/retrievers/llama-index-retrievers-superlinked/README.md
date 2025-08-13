@@ -17,6 +17,12 @@ Option B (monorepo): Add this directory under `llama-index-integrations/retrieve
 
 Note: Examples require Python 3.10–3.12 (Superlinked does not support Python 3.9).
 
+## References and resources
+
+- Superlinked framework repository: [superlinked/superlinked](https://links.superlinked.com/llamaindex_repo_sl)
+- Steam Games example article: [read the article](https://links.superlinked.com/llamaindex_article_sl)
+- Open in Colab: [Steam Games example notebook](https://colab.research.google.com/github/run-llama/llama_index/blob/main/llama-index-integrations/retrievers/llama-index-retrievers-superlinked/examples/steam_games_example.ipynb)
+
 ## Usage
 
 ```python
