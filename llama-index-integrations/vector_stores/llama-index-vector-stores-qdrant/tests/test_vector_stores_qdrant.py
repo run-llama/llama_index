@@ -1,11 +1,14 @@
 import pytest
 import os
+import requests
+import httpx
 
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import (
     PointsList,
     PointStruct,
     Filter,
+    ShardingMethod,
 )
 from unittest.mock import MagicMock
 
@@ -334,6 +337,21 @@ async def test_shard_vector_store_async(
     results = await shard_vector_store.aget_nodes()
     assert len(results) == 2  # Only nodes in shards 1 and 2 should remain
 
+    # 6) Delete the node in shard 2 with ref_doc_id "test-0"
+    #    This should remove the only node in shard 2.
+    #    This shouldn't remove the node in shard 1 having same ref_doc_id.
+    await shard_vector_store.adelete(
+        ref_doc_id="test-0",
+        shard_identifier=2,
+    )
+
+    results = await shard_vector_store.aget_nodes(
+        shard_identifier=2,
+    )
+    assert len(results) == 0  # No nodes should remain in shard 2
+    results = await shard_vector_store.aget_nodes()
+    assert len(results) == 1  # Only nodes in shards 1 should remain
+
 
 @pytest.mark.asyncio
 @requires_qdrant_cluster
@@ -405,3 +423,121 @@ def test_shard_vector_store_sync(
     assert len(results) == 0  # No nodes should remain in shard 3
     results = shard_vector_store.get_nodes()
     assert len(results) == 2  # Only nodes in shards 1 and 2 should remain
+
+    # 6) Delete the node in shard 2 with ref_doc_id "test-0"
+    #    This should remove the only node in shard 2.
+    #    This shouldn't remove the node in shard 1 having same ref_doc_id.
+    shard_vector_store.delete(
+        ref_doc_id="test-0",
+        shard_identifier=2,
+    )
+
+    results = shard_vector_store.get_nodes(
+        shard_identifier=2,
+    )
+    assert len(results) == 0  # No nodes should remain in shard 2
+    results = shard_vector_store.get_nodes()
+    assert len(results) == 1  # Only nodes in shards 1 should remain
+
+
+@requires_qdrant_cluster
+def test_validate_custom_sharding(shard_vector_store: QdrantVectorStore):
+    shard_vector_store._validate_custom_sharding()
+
+
+def test_generate_shard_key_selector_none(vector_store: QdrantVectorStore):
+    # no selector function set
+    assert vector_store._generate_shard_key_selector(None) is None
+    assert vector_store._generate_shard_key_selector(5) is None
+
+
+@requires_qdrant_cluster
+def test_generate_shard_key_selector_custom(
+    shard_vector_store: QdrantVectorStore,
+):
+    shard_vector_store.sharding_method = ShardingMethod.CUSTOM
+    shard_vector_store.shard_key_selector_fn = lambda x: x % 5
+    selector = shard_vector_store._generate_shard_key_selector(7)
+    assert selector is not None
+    assert selector == 1
+
+
+@pytest.mark.asyncio
+@requires_qdrant_cluster
+async def test_shard_keys_created(shard_vector_store: QdrantVectorStore):
+    # Ensure shard key configuration exists and expected number of shard keys created
+    base_url = os.getenv("QDRANT_CLUSTER_URL")
+    if not base_url:
+        raise RuntimeError(
+            "QDRANT_CLUSTER_URL environment variable must be set for direct HTTP call"
+        )
+
+    url = f"http://{base_url.rstrip('/')}/collections/{shard_vector_store.collection_name}/cluster"
+
+    # Use async HTTP client instead of blocking requests in an async test
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        resp = await client.get(url)
+        resp.raise_for_status()
+        raw = resp.json()
+
+    print(raw)
+    result = raw.get("result", {})
+    shard_keys = {
+        shard.get("shard_key")
+        for shard in result.get("local_shards", []) + result.get("remote_shards", [])
+    }
+    assert shard_keys, "Shard key parameter missing in collection config"
+    assert len(shard_keys) == 3
+
+
+@requires_qdrant_cluster
+def test_shard_keys_created_sync(shard_vector_store: QdrantVectorStore):
+    # Ensure shard key configuration exists and expected number of shard keys created
+    # Determine base URL (env var name per instructions; fall back to QDRANT_CLUSTER_URL if typo)
+    base_url = os.getenv("QDRANT_CLUSTER_URL")
+    if not base_url:
+        raise RuntimeError(
+            "QDRANT_CLUSTER_URL environment variable must be set for direct HTTP call"
+        )
+
+    url = f"http://{base_url.rstrip('/')}/collections/{shard_vector_store.collection_name}/cluster"
+    resp = requests.get(url, timeout=10)
+    resp.raise_for_status()
+    raw = resp.json()
+
+    print(raw)
+    result = raw.get("result", {})
+    shard_keys = set()
+    for shard in result.get("local_shards", []) + result.get("remote_shards", []):
+        shard_keys.add(shard.get("shard_key"))
+    assert shard_keys, "Shard key parameter missing in collection config"
+    # Expect 3 custom shard keys based on fixture inserting 3 shards
+    assert len(shard_keys) == 3
+
+
+@pytest.mark.asyncio
+@requires_qdrant_cluster
+async def test_shard_vector_store_aquery(
+    shard_vector_store: QdrantVectorStore,
+):
+    # Test the aquery functionality of the shard vector store
+    query = VectorStoreQuery(
+        query_embedding=[0.0, 0.0], query_str="test1", similarity_top_k=5
+    )
+    results = await shard_vector_store.aquery(query, shard_identifier=3)
+    assert results is not None
+    assert len(results.nodes) == 1
+
+
+@requires_qdrant_cluster
+def test_shard_vector_store_query(
+    shard_vector_store: QdrantVectorStore,
+):
+    # Test the aquery functionality of the shard vector store
+    query = VectorStoreQuery(
+        query_embedding=[0.0, 0.0], query_str="test1", similarity_top_k=5
+    )
+    results = shard_vector_store.query(query, shard_identifier=3)
+    assert results is not None
+    assert len(results.nodes) == 1
