@@ -1,11 +1,10 @@
 """Integration-like tests using only mocks to simulate Superlinked behavior."""
 
-from __future__ import annotations
-
+import pytest
 from typing import Any, List
 from unittest.mock import Mock
 
-import pytest
+from llama_index.retrievers.superlinked import SuperlinkedRetriever
 
 
 # Patch superlinked modules once for all tests
@@ -42,8 +41,6 @@ def _make_entries(docs: List[dict]) -> list:
 
 
 def test_basic_flow() -> None:
-    from llama_index_retrievers_superlinked import SuperlinkedRetriever
-
     retriever = SuperlinkedRetriever(
         sl_client=MockApp(),
         sl_query=MockQuery(),
@@ -69,8 +66,6 @@ def test_basic_flow() -> None:
 
 
 def test_k_limit_and_metadata_subset() -> None:
-    from llama_index_retrievers_superlinked import SuperlinkedRetriever
-
     retriever = SuperlinkedRetriever(
         sl_client=MockApp(),
         sl_query=MockQuery(),
@@ -98,8 +93,6 @@ def test_k_limit_and_metadata_subset() -> None:
 
 
 def test_error_returns_empty_list() -> None:
-    from llama_index_retrievers_superlinked import SuperlinkedRetriever
-
     retriever = SuperlinkedRetriever(
         sl_client=MockApp(),
         sl_query=MockQuery(),

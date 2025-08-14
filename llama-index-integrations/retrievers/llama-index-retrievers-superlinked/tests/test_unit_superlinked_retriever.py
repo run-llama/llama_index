@@ -1,11 +1,10 @@
 """Unit tests for SuperlinkedRetriever (LlamaIndex)."""
 
-from __future__ import annotations
-
+import pytest
 from typing import Any
 from unittest.mock import Mock
 
-import pytest
+from llama_index.retrievers.superlinked import SuperlinkedRetriever
 
 
 # Patch superlinked types before importing the retriever to satisfy validators
@@ -32,8 +31,6 @@ def _patch_superlinked_modules(monkeypatch: Any) -> None:
 
 
 def test_retriever_validate_and_retrieve_success() -> None:
-    from llama_index_retrievers_superlinked import SuperlinkedRetriever
-
     retriever = SuperlinkedRetriever(
         sl_client=MockApp(),
         sl_query=MockQuery(),
@@ -69,8 +66,6 @@ def test_retriever_validate_and_retrieve_success() -> None:
 
 
 def test_retriever_respects_k() -> None:
-    from llama_index_retrievers_superlinked import SuperlinkedRetriever
-
     retriever = SuperlinkedRetriever(
         sl_client=MockApp(),
         sl_query=MockQuery(),
@@ -95,8 +90,6 @@ def test_retriever_respects_k() -> None:
 
 
 def test_retriever_metadata_fields_subset() -> None:
-    from llama_index_retrievers_superlinked import SuperlinkedRetriever
-
     retriever = SuperlinkedRetriever(
         sl_client=MockApp(),
         sl_query=MockQuery(),
@@ -116,8 +109,6 @@ def test_retriever_metadata_fields_subset() -> None:
 
 
 def test_retriever_missing_page_content_skips() -> None:
-    from llama_index_retrievers_superlinked import SuperlinkedRetriever
-
     retriever = SuperlinkedRetriever(
         sl_client=MockApp(),
         sl_query=MockQuery(),
@@ -136,8 +127,6 @@ def test_retriever_missing_page_content_skips() -> None:
 
 
 def test_retriever_query_exception_returns_empty() -> None:
-    from llama_index_retrievers_superlinked import SuperlinkedRetriever
-
     retriever = SuperlinkedRetriever(
         sl_client=MockApp(),
         sl_query=MockQuery(),
@@ -150,8 +139,6 @@ def test_retriever_query_exception_returns_empty() -> None:
 
 
 def test_query_text_param_is_used() -> None:
-    from llama_index_retrievers_superlinked import SuperlinkedRetriever
-
     retriever = SuperlinkedRetriever(
         sl_client=MockApp(),
         sl_query=MockQuery(),

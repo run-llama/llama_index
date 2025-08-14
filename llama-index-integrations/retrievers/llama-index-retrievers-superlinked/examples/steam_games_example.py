@@ -18,7 +18,7 @@ from typing import List, Optional
 import pandas as pd
 
 import superlinked.framework as sl
-from llama_index_retrievers_superlinked import SuperlinkedRetriever
+from llama_index.retrievers.superlinked import SuperlinkedRetriever
 
 try:
     from llama_index.core.query_engine import RetrieverQueryEngine
