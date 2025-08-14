@@ -1,3 +1,5 @@
+import os
+
 from llama_index.core.schema import NodeRelationship, RelatedNodeInfo, TextNode
 from llama_index.vector_stores.qdrant import QdrantVectorStore
 import qdrant_client
@@ -92,14 +94,11 @@ async def shard_vector_store() -> QdrantVectorStore:
       - Ensure that the Qdrant instance is properly set up and accessible.
 
     """
-    client = qdrant_client.QdrantClient(
-        host="localhost",
-        port=6333,
-    )
-    aclient = qdrant_client.AsyncQdrantClient(
-        host="localhost",
-        port=6333,
-    )
+    url = os.getenv("QDRANT_CLUSTER_URL")
+    assert url, "QDRANT_CLUSTER_URL must be set for sharding tests"
+
+    client = qdrant_client.QdrantClient(url)
+    aclient = qdrant_client.AsyncQdrantClient(url)
 
     vector_store = QdrantVectorStore(
         "test",
