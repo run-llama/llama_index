@@ -1,12 +1,10 @@
-from __future__ import annotations
-
 from typing import Any, List, Optional
 
 from llama_index.core.retrievers import BaseRetriever
 from llama_index.core.schema import QueryBundle, NodeWithScore, TextNode
 from llama_index.core.callbacks.base import CallbackManager
-from superlinked.framework.dsl.app.app import App  # type: ignore  # noqa: F401
-from superlinked.framework.dsl.query.query_descriptor import (  # type: ignore  # noqa: F401
+from superlinked.framework.dsl.app.app import App
+from superlinked.framework.dsl.query.query_descriptor import (
     QueryDescriptor,
 )
 
@@ -22,8 +20,8 @@ class SuperlinkedRetriever(BaseRetriever):
     def __init__(
         self,
         *,
-        sl_client: Any,
-        sl_query: Any,
+        sl_client: App,
+        sl_query: QueryDescriptor,
         page_content_field: str,
         query_text_param: str = "query_text",
         metadata_fields: Optional[List[str]] = None,
@@ -59,8 +57,7 @@ class SuperlinkedRetriever(BaseRetriever):
         # Initialize BaseRetriever
         super().__init__(callback_manager=callback_manager)
 
-    # LlamaIndex retrievers implement _retrieve(QueryBundle)
-    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:  # type: ignore[override]
+    def _retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         """
         Execute the Superlinked query and map results to nodes.
 

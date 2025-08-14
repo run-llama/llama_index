@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
@@ -10,10 +10,10 @@ dev = [
 
 [project]
 name = "llama-index-retrievers-superlinked"
-version = "0.1.0"
+version = "0.1.1"
 description = "LlamaIndex retriever integration for Superlinked"
 readme = "README.md"
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 license = {text = "MIT"}
 authors = [
     {name = "Superlinked", email = "dev@superlinked.com"},
@@ -32,6 +32,14 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/run-llama/llama_index"
 
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
 [tool.llamahub]
 contains_example = true
 import_path = "llama_index.retrievers.superlinked"
@@ -42,16 +50,3 @@ SuperlinkedRetriever = "Superlinked"
 [tool.pytest.ini_options]
 addopts = "-q"
 pythonpath = ["src"]
-
-[tool.setuptools]
-package-dir = {"" = "src"}
-
-[tool.setuptools.packages.find]
-where = ["src"]
-include = [
-    "llama_index*",
-    "llama_index_retrievers_superlinked*",
-]
-exclude = [
-    "tests*",
-]
