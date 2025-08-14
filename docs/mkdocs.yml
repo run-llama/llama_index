@@ -1776,16 +1776,16 @@ nav:
       - Deprecated Terms: ./changes/deprecated_terms.md
   - Workflows:
       - ./workflows/index.md
-      - v1.x:
-          - ./workflows/v1.x/getting_started.md
-          - ./workflows/v1.x/customizing_entry_exit_points.md
-          - ./workflows/v1.x/drawing.md
-          - ./workflows/v1.x/managing_events.md
-          - ./workflows/v1.x/managing_state.md
-          - ./workflows/v1.x/retry_steps.md
-          - ./workflows/v1.x/resources.md
-          - ./workflows/v1.x/stepwise.md
-          - ./workflows/v1.x/deployment.md
+      - v1:
+          - ./workflows/v1/index.md
+          - ./workflows/v1/customizing_entry_exit_points.md
+          - ./workflows/v1/drawing.md
+          - ./workflows/v1/managing_events.md
+          - ./workflows/v1/managing_state.md
+          - ./workflows/v1/retry_steps.md
+          - ./workflows/v1/resources.md
+          - ./workflows/v1/stepwise.md
+          - ./workflows/v1/deployment.md
 
   - LlamaCloud: https://docs.cloud.llamaindex.ai/
 plugins:
