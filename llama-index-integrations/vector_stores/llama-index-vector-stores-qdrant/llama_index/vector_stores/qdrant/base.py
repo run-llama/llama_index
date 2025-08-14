@@ -946,7 +946,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
             if self._shard_keys:
                 for shard_key in self._shard_keys:
                     try:
-                        self._client.create_shard_key(
+                        await self._client.create_shard_key(
                             collection_name=collection_name,
                             shard_key=shard_key,
                         )
