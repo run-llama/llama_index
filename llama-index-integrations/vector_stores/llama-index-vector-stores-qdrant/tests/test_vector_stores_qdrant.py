@@ -1,4 +1,6 @@
 import pytest
+import os
+
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import (
     PointsList,
@@ -16,6 +18,11 @@ from llama_index.core.vector_stores.types import (
     MetadataFilter,
     FilterCondition,
     FilterOperator,
+)
+
+requires_qdrant_cluster = pytest.mark.skipif(
+    not os.getenv("QDRANT_CLUSTER_URL"),
+    reason="Qdrant cluster not available in CI",
 )
 
 
@@ -257,6 +264,7 @@ def test_hybrid_vector_store_query(
 
 
 @pytest.mark.asyncio
+@requires_qdrant_cluster
 async def test_shard_vector_store_async(
     shard_vector_store: QdrantVectorStore,
 ) -> None:
@@ -328,6 +336,7 @@ async def test_shard_vector_store_async(
 
 
 @pytest.mark.asyncio
+@requires_qdrant_cluster
 def test_shard_vector_store_sync(
     shard_vector_store: QdrantVectorStore,
 ) -> None:
@@ -383,3 +392,16 @@ def test_shard_vector_store_sync(
         shard_identifier=3,
     )
     assert len(results) == 1
+
+    # 5) Delete the node in shard 3.
+    #    This should remove the only node in shard 3.
+    shard_vector_store.delete_nodes(
+        shard_identifier=3,
+    )
+
+    results = shard_vector_store.get_nodes(
+        shard_identifier=3,
+    )
+    assert len(results) == 0  # No nodes should remain in shard 3
+    results = shard_vector_store.get_nodes()
+    assert len(results) == 2  # Only nodes in shards 1 and 2 should remain
