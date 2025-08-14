@@ -140,6 +140,7 @@ async def shard_vector_store() -> QdrantVectorStore:
         id_="33333333-3333-3333-3333-333333333333",
         embedding=[1.0, 1.0],
         metadata={"some_key": "3"},
+        relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="test-1")},
     )
 
     vector_store.add([node_3], shard_identifier=3)
