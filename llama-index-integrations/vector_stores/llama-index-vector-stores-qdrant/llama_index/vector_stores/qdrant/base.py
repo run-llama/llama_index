@@ -1273,6 +1273,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 ),
                 limit=query.similarity_top_k,
                 query_filter=query_filter,
+                shard_key_selector=shard_key,
             )
 
             return self.parse_to_query_result(response)
