@@ -8,7 +8,6 @@ from qdrant_client.http.models import (
     PointsList,
     PointStruct,
     Filter,
-    ShardingMethod,
 )
 from unittest.mock import MagicMock
 
@@ -455,8 +454,6 @@ def test_generate_shard_key_selector_none(vector_store: QdrantVectorStore):
 def test_generate_shard_key_selector_custom(
     shard_vector_store: QdrantVectorStore,
 ):
-    shard_vector_store.sharding_method = ShardingMethod.CUSTOM
-    shard_vector_store.shard_key_selector_fn = lambda x: x % 5
     selector = shard_vector_store._generate_shard_key_selector(7)
     assert selector is not None
     assert selector == 1
