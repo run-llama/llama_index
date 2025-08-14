@@ -824,7 +824,7 @@ nav:
               - ./module_guides/querying/response_synthesizers/index.md
               - ./module_guides/querying/response_synthesizers/response_synthesizers.md
           - Routing: ./module_guides/querying/router/index.md
-          - Workflows: ./module_guides/workflow/index.md
+          - Workflows: /workflows
           - Query Pipelines (Deprecated):
               - ./module_guides/querying/pipeline/index.md
               - ./module_guides/querying/pipeline/usage_pattern.md
@@ -840,7 +840,7 @@ nav:
           - ./module_guides/deploying/agents/memory.md
           - ./module_guides/deploying/agents/tools.md
       - Workflows:
-          - ./module_guides/workflow/index.md
+          - workflows
       - Evaluation:
           - ./module_guides/evaluating/index.md
           - ./module_guides/evaluating/usage_pattern.md
@@ -1769,6 +1769,19 @@ nav:
       - Changelog: ./CHANGELOG.md
       - Presentations: ./presentations/past_presentations.md
       - Deprecated Terms: ./changes/deprecated_terms.md
+  - Workflows:
+      - ./workflows/index.md
+      - v1.x:
+          - ./workflows/v1.x/getting_started.md
+          - ./workflows/v1.x/customizing_entry_exit_points.md
+          - ./workflows/v1.x/drawing.md
+          - ./workflows/v1.x/managing_events.md
+          - ./workflows/v1.x/managing_state.md
+          - ./workflows/v1.x/retry_steps.md
+          - ./workflows/v1.x/resources.md
+          - ./workflows/v1.x/stepwise.md
+          - ./workflows/v1.x/deployment.md
+
   - LlamaCloud: https://docs.cloud.llamaindex.ai/
 plugins:
   - search
