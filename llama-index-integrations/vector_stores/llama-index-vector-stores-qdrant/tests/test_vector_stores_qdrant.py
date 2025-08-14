@@ -534,7 +534,7 @@ async def test_shard_vector_store_aquery(
 def test_shard_vector_store_query(
     shard_vector_store: QdrantVectorStore,
 ):
-    # Test the aquery functionality of the shard vector store
+    # Test the query functionality of the shard vector store
     query = VectorStoreQuery(
         query_embedding=[0.0, 0.0], query_str="test1", similarity_top_k=5
     )
