@@ -841,6 +841,11 @@ nav:
           - ./module_guides/deploying/agents/tools.md
       - Workflows:
           - workflows
+      - MCP:
+          - ./module_guides/mcp/index.md
+          - ./module_guides/mcp/llamaindex_mcp.md
+          - ./module_guides/mcp/llamacloud_mcp.md
+          - ./module_guides/mcp/convert_existing.md
       - Evaluation:
           - ./module_guides/evaluating/index.md
           - ./module_guides/evaluating/usage_pattern.md
