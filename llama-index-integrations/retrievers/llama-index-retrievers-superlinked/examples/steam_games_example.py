@@ -176,7 +176,7 @@ def run_demo(csv_path: Optional[str], top_k: int, query_text: str) -> None:
             "original_price",
             "discount_price",
         ],
-        k=top_k,
+        top_k=top_k,
     )
 
     print(f"\nRetrieving for: {query_text!r}")

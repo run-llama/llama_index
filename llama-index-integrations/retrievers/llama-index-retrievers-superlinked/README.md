@@ -35,7 +35,7 @@ retriever = SuperlinkedRetriever(
     page_content_field="text",
     query_text_param="query_text",
     metadata_fields=None,
-    k=4,
+    top_k=4,
 )
 
 nodes = retriever.retrieve("What is a landmark in Paris?")

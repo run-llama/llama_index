@@ -48,7 +48,7 @@ def test_basic_flow() -> None:
         sl_client=MockApp(),
         sl_query=MockQuery(),
         page_content_field="text",
-        k=4,
+        top_k=4,
     )
 
     docs = [
@@ -76,7 +76,7 @@ def test_k_limit_and_metadata_subset() -> None:
         sl_query=MockQuery(),
         page_content_field="text",
         metadata_fields=["category"],
-        k=2,
+        top_k=2,
     )
 
     docs = [

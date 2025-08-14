@@ -38,7 +38,7 @@ def test_retriever_validate_and_retrieve_success() -> None:
         sl_client=MockApp(),
         sl_query=MockQuery(),
         page_content_field="text",
-        k=4,
+        top_k=4,
     )
 
     # Build fake Superlinked response
@@ -75,7 +75,7 @@ def test_retriever_respects_k() -> None:
         sl_client=MockApp(),
         sl_query=MockQuery(),
         page_content_field="text",
-        k=1,
+        top_k=1,
     )
 
     mock_entry = Mock()
