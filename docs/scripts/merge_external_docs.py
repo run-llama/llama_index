@@ -47,16 +47,34 @@ def main():
     else:
         print("llama_deploy repo already exists")
 
-    # Get the latest version tag and checkout
+    # clone the workflows-py repo
+    if not os.path.exists("workflows-py"):
+        os.system("git clone https://github.com/run-llama/workflows-py.git")
+        print("Cloned workflows-py")
+    else:
+        print("workflows-py repo already exists")
+
+    # Get the latest version tag and checkout for llama_deploy
     latest_tag = get_latest_version_tag("llama_deploy")
-    print(f"Checking out latest version tag: {latest_tag}")
+    print(f"Checking out llama_deploy latest version tag: {latest_tag}")
 
     if latest_tag != "main":
         os.system(f"git -C llama_deploy checkout {latest_tag}")
-        print(f"Checked out tag: {latest_tag}")
+        print(f"Checked out llama_deploy at tag: {latest_tag}")
     else:
         os.system("git -C llama_deploy pull")
-        print("Updated to latest main branch")
+        print("Updated llama_deploy to latest main branch")
+
+    # Get the latest version tag and checkout for workflows-py
+    latest_tag = get_latest_version_tag("llama_deploy")
+    print(f"Checking out workflows-py latest version tag: {latest_tag}")
+
+    if latest_tag != "main":
+        os.system(f"git -C workflows-py checkout {latest_tag}")
+        print(f"Checked out workflows-py at tag: {latest_tag}")
+    else:
+        os.system("git -C llama_deploy pull")
+        print("Updated workflows-py to latest main branch")
 
     # copy the llama_deploy/docs/docs/api_reference/llama_deploy to the current docs/api_reference
     os.system(
@@ -69,6 +87,24 @@ def main():
         "cp -r llama_deploy/docs/docs/module_guides/llama_deploy/* ./docs/module_guides/llama_deploy/"
     )
     print("Copied in latest llama-deploy docs")
+
+    # copy the workflows-py/docs/docs/api_reference/workflow to the current docs/api_reference
+    os.system(
+        "cp -r workflows-py/docs/docs/api_reference/workflow ./docs/api_reference/"
+    )
+    print("Copied in latest workflows-py reference")
+
+    # copy the module guides
+    os.system(
+        "cp -r workflows-py/docs/docs/module_guides/workflow/* ./docs/module_guides/workflow/"
+    )
+    print("Copied in latest llama-deploy docs")
+
+    # copy the understanding section
+    os.system(
+        "cp -r workflows-py/docs/docs/understanding/workflow/* ./docs/understanding/workflow/"
+    )
+    print("Copied in latest workflows-py docs")
 
 
 if __name__ == "__main__":
