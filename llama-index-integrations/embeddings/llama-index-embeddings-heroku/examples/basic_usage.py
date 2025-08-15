@@ -7,7 +7,8 @@ from llama_index.embeddings.heroku import HerokuEmbedding
 def main():
     """Demonstrate basic usage of Heroku embeddings."""
 
-    # Initialize the embedding model
+    # Initialize the embedding model. This assumes the presence of EMBEDDING_MODEL_ID,
+    # EMBEDDING_KEY, and EMBEDDING_URL in the host environment
     embedding_model = HerokuEmbedding()
 
     # Example texts to embed
@@ -30,11 +31,11 @@ def main():
 
     # Get embeddings for all texts at once
     print("Getting batch embeddings...")
-    all_embeddings = embedding_model.get_text_embeddings(texts)
+    all_embeddings = embedding_model.get_text_embedding_batch(texts)
     print(f"Generated {len(all_embeddings)} embeddings")
 
     # Demonstrate similarity (cosine similarity)
-    from llama_index.core.embeddings import similarity
+    from llama_index.core.base.embeddings.base import similarity
 
     print("\nCalculating similarities...")
     for i in range(len(texts)):

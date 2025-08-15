@@ -53,7 +53,7 @@ print(f"Embedding dimension: {len(embedding)}")
 
 # Get embeddings for multiple texts
 texts = ["Hello", "world", "from", "Heroku"]
-embeddings = embedding_model.get_text_embeddings(texts)
+embeddings = embedding_model.get_text_embedding_batch(texts)
 print(f"Number of embeddings: {len(embeddings)}")
 ```
 
@@ -63,6 +63,7 @@ You can also pass parameters directly:
 
 ```python
 import os
+from llama_index.embeddings.heroku import HerokuEmbedding
 
 embedding_model = HerokuEmbedding(
     model=os.getenv("EMBEDDING_MODEL_ID", "cohere-embed-multilingual"),
@@ -70,6 +71,8 @@ embedding_model = HerokuEmbedding(
     base_url=os.getenv("EMBEDDING_URL", "https://us.inference.heroku.com"),
     timeout=60.0,
 )
+
+print(embedding_model.get_text_embedding("Hello Heroku!"))
 ```
 
 ### Async Usage
@@ -78,6 +81,7 @@ The integration also supports async operations:
 
 ```python
 import asyncio
+from llama_index.embeddings.heroku import HerokuEmbedding
 
 
 async def get_embeddings_async():
@@ -85,7 +89,9 @@ async def get_embeddings_async():
 
     # Get async embeddings
     embedding = await embedding_model.aget_text_embedding("Hello, world!")
-    embeddings = await embedding_model.aget_text_embeddings(["Hello", "world"])
+    embeddings = await embedding_model.aget_text_embedding_batch(
+        ["Hello", "world"]
+    )
 
     # Clean up
     await embedding_model.aclose()
@@ -95,6 +101,18 @@ async def get_embeddings_async():
 
 # Run async function
 result = asyncio.run(get_embeddings_async())
+print(result)
+```
+
+### Runnable Examples
+
+See the `./examples` directory for more, runnable examples.
+
+#### Running an Example
+
+```bash
+cd examples
+uv run python basic_usage.py
 ```
 
 ### Integration with LlamaIndex
