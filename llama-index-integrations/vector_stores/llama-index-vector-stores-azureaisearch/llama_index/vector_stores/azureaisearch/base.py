@@ -653,7 +653,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         except ImportError:
             raise ImportError(import_err_msg)
 
-        super().__init__()
+        super().__init__(**kwargs)
         base_user_agent = "llamaindex-python"
         self._user_agent = (
             f"{base_user_agent} {user_agent}" if user_agent else base_user_agent
@@ -808,6 +808,11 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
 
             if self._index_management == IndexManagement.VALIDATE_INDEX:
                 self._validate_index(index_name)
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Class name."""
+        return "AzureAISearchVectorStore"
 
     @property
     def client(self) -> Any:
@@ -1205,8 +1210,8 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         odata_filter = None
         semantic_configuration_name = None
 
-        # NOTE: users can provide odata_filters directly to the query
-        odata_filters = kwargs.get("odata_filters")
+        # NOTE: users can provide odata_filters directly to the query and any other search parameters like scoring_profile etc .
+        odata_filters = kwargs.get("odata_filters") or kwargs.get("odata_filter")
         if odata_filters is not None:
             odata_filter = odata_filters
         elif query.filters is not None:
@@ -1223,6 +1228,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                     odata_filter,
                     self._search_client,
                     self._async_search_client,
+                    **kwargs,
                 )
             )
         if query.mode == VectorStoreQueryMode.SPARSE:
@@ -1232,6 +1238,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
+                **kwargs,
             )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             azure_query_result_search = AzureQueryResultSearchHybrid(
@@ -1240,6 +1247,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
+                **kwargs,
             )
         elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
             azure_query_result_search = AzureQueryResultSearchSemanticHybrid(
@@ -1249,6 +1257,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 self._search_client,
                 self._async_search_client,
                 self._semantic_configuration_name or "mySemanticConfig",
+                **kwargs,
             )
         return azure_query_result_search.search()
 
@@ -1272,6 +1281,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
+                **kwargs,
             )
         )
         if query.mode == VectorStoreQueryMode.SPARSE:
@@ -1281,6 +1291,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
+                **kwargs,
             )
         elif query.mode == VectorStoreQueryMode.HYBRID:
             azure_query_result_search = AzureQueryResultSearchHybrid(
@@ -1289,6 +1300,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 odata_filter,
                 self._search_client,
                 self._async_search_client,
+                **kwargs,
             )
         elif query.mode == VectorStoreQueryMode.SEMANTIC_HYBRID:
             azure_query_result_search = AzureQueryResultSearchSemanticHybrid(
@@ -1298,6 +1310,7 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
                 self._search_client,
                 self._async_search_client,
                 self._semantic_configuration_name or "mySemanticConfig",
+                **kwargs,
             )
         return await azure_query_result_search.asearch()
 
@@ -1439,6 +1452,7 @@ class AzureQueryResultSearchBase:
         search_client: SearchClient,
         async_search_client: AsyncSearchClient,
         semantic_configuration_name: Optional[str] = None,
+        **search_kwargs: Any,
     ) -> None:
         self._query = query
         self._field_mapping = field_mapping
@@ -1446,6 +1460,7 @@ class AzureQueryResultSearchBase:
         self._search_client = search_client
         self._async_search_client = async_search_client
         self._semantic_configuration_name = semantic_configuration_name
+        self._search_kwargs = search_kwargs
 
     @property
     def _select_fields(self) -> List[str]:
@@ -1465,14 +1480,18 @@ class AzureQueryResultSearchBase:
     def _create_query_result(
         self, search_query: str, vectors: Optional[List[Any]]
     ) -> VectorStoreQueryResult:
-        results = self._search_client.search(
-            search_text=search_query,
-            vector_queries=vectors,
-            top=self._query.similarity_top_k,
-            select=self._select_fields,
-            filter=self._odata_filter,
-            semantic_configuration_name=self._semantic_configuration_name,
-        )
+        params = {
+            "search_text": search_query,
+            "vector_queries": vectors,
+            "top": self._query.similarity_top_k,
+            "select": self._select_fields,
+            "filter": self._odata_filter,
+            "semantic_configuration_name": self._semantic_configuration_name,
+        }
+
+        search_params = {**self._search_kwargs, **params}
+
+        results = self._search_client.search(**search_params)
 
         id_result = []
         node_result = []
@@ -1519,14 +1538,18 @@ class AzureQueryResultSearchBase:
     async def _acreate_query_result(
         self, search_query: str, vectors: Optional[List[Any]]
     ) -> VectorStoreQueryResult:
-        results = await self._async_search_client.search(
-            search_text=search_query,
-            vector_queries=vectors,
-            top=self._query.similarity_top_k,
-            select=self._select_fields,
-            filter=self._odata_filter,
-            semantic_configuration_name=self._semantic_configuration_name,
-        )
+        params = {
+            "search_text": search_query,
+            "vector_queries": vectors,
+            "top": self._query.similarity_top_k,
+            "select": self._select_fields,
+            "filter": self._odata_filter,
+            "semantic_configuration_name": self._semantic_configuration_name,
+        }
+
+        search_params = {**self._search_kwargs, **params}
+
+        results = await self._async_search_client.search(**search_params)
 
         id_result = []
         node_result = []
@@ -1643,15 +1666,19 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
     def _create_query_result(
         self, search_query: str, vectors: Optional[List[Any]]
     ) -> VectorStoreQueryResult:
-        results = self._search_client.search(
-            search_text=search_query,
-            vector_queries=vectors,
-            top=self._query.similarity_top_k,
-            select=self._select_fields,
-            filter=self._odata_filter,
-            query_type="semantic",
-            semantic_configuration_name=self._semantic_configuration_name,
-        )
+        params = {
+            "search_text": search_query,
+            "vector_queries": vectors,
+            "top": self._query.similarity_top_k,
+            "select": self._select_fields,
+            "filter": self._odata_filter,
+            "semantic_configuration_name": self._semantic_configuration_name,
+            "query_type": "semantic",
+        }
+
+        search_params = {**self._search_kwargs, **params}
+
+        results = self._search_client.search(**search_params)
 
         id_result = []
         node_result = []
@@ -1699,16 +1726,19 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
     async def _acreate_query_result(
         self, search_query: str, vectors: Optional[List[Any]]
     ) -> VectorStoreQueryResult:
-        results = await self._async_search_client.search(
-            search_text=search_query,
-            vector_queries=vectors,
-            top=self._query.similarity_top_k,
-            select=self._select_fields,
-            filter=self._odata_filter,
-            query_type="semantic",
-            semantic_configuration_name=self._semantic_configuration_name,
-        )
+        params = {
+            "search_text": search_query,
+            "vector_queries": vectors,
+            "top": self._query.similarity_top_k,
+            "select": self._select_fields,
+            "filter": self._odata_filter,
+            "semantic_configuration_name": self._semantic_configuration_name,
+            "query_type": "semantic",
+        }
 
+        search_params = {**self._search_kwargs, **params}
+
+        results = await self._async_search_client.search(**search_params)
         id_result = []
         node_result = []
         score_result = []

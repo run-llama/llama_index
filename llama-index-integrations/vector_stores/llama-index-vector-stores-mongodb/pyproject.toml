@@ -6,9 +6,9 @@ build-backend = "hatchling.build"
 dev = [
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
-    "llama-index-embeddings-openai>=0.3.0,<0.4",
-    "llama-index-llms-openai>=0.4.0,<0.5",
-    "llama-index-readers-file>=0.4.0,<0.5",
+    "llama-index-embeddings-openai>=0.5.0,<0.6",
+    "llama-index-llms-openai>=0.5.0,<0.6",
+    "llama-index-readers-file>=0.5.0,<0.6",
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
@@ -29,14 +29,14 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-mongodb"
-version = "0.6.1"
+version = "0.8.0"
 description = "llama-index vector_stores mongodb integration"
 authors = [{name = "The MongoDB Python Team"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.12.0,<0.13.0",
+    "llama-index-core>=0.13.0,<0.14.0",
     "pymongo>=4.6.1,<5",
 ]
 

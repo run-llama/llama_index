@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-voyageai"
-version = "0.3.6"
+version = "0.4.1"
 description = "llama-index embeddings voyageai integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "voyageai>=0.3.2,<0.4.0 ; python_version >= '3.9' and python_version < '3.13'",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

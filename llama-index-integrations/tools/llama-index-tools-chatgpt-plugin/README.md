@@ -17,7 +17,8 @@ f = requests.get(
 manifest = yaml.safe_load(f)
 
 from llama_index.tools.chatgpt_plugin import ChatGPTPluginToolSpec
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 from llama_index.tools.requests import RequestsToolSpec
 
 requests_spec = RequestsToolSpec()
@@ -27,10 +28,11 @@ plugin_spec = ChatGPTPluginToolSpec(
     manifest_url="https://raw.githubusercontent.com/sisbell/chatgpt-plugin-store/main/manifests/today-currency-converter.oiconma.repl.co.json"
 )
 
-agent = OpenAIAgent.from_tools(
-    [*plugin_spec.to_tool_list(), *requests_spec.to_tool_list()], verbose=True
+agent = FunctionAgent(
+    tools=[*plugin_spec.to_tool_list(), *requests_spec.to_tool_list()],
+    llm=OpenAI(model="gpt-4.1"),
 )
-print(agent.chat("Convert 100 euros to CAD"))
+print(await agent.run("Convert 100 euros to CAD"))
 ```
 
 `describe_plugin`: Describe the plugin that has been loaded.

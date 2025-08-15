@@ -12,6 +12,8 @@ from PIL import Image as PILImage
 import numpy as np
 import io
 
+from tests.schemas import TestName, TestMethod, TestList
+
 
 @asynccontextmanager
 async def app_lifespan(server: FastMCP) -> AsyncIterator[None]:
@@ -138,6 +140,12 @@ def update_weather(temperature: float, condition: str) -> Dict:
     global last_weather
     last_weather = {"temperature": temperature, "condition": condition}
     return last_weather
+
+
+@mcp.tool(description="Test tool with Pydantic models")
+def test_pydantic(name: TestName, method: TestMethod, lst: TestList) -> str:
+    """Test tool with Pydantic models."""
+    return f"Name: {name.name}, Method: {method.method}, List: {lst.lst}"
 
 
 # --- Static Resources ---

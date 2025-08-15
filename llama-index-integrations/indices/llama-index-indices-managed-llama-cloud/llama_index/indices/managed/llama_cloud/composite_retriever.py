@@ -1,5 +1,6 @@
 from typing import Any, List, Optional
 
+from deprecated import deprecated
 import httpx
 from llama_cloud import (
     CompositeRetrievalMode,
@@ -20,10 +21,15 @@ from llama_index.indices.managed.llama_cloud.base import LlamaCloudIndex
 from llama_index.indices.managed.llama_cloud.api_utils import (
     resolve_project,
     resolve_retriever,
-    image_nodes_to_node_with_score,
+    page_screenshot_nodes_to_node_with_score,
+    DEPRECATION_REASON,
 )
 
 
+@deprecated(
+    reason=DEPRECATION_REASON,
+    version="0.9.1",
+)
 class LlamaCloudCompositeRetriever(BaseRetriever):
     def __init__(
         self,
@@ -242,7 +248,7 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         node_w_scores = [
             self._result_nodes_to_node_with_score(node) for node in result.nodes
         ]
-        image_nodes_w_scores = image_nodes_to_node_with_score(
+        image_nodes_w_scores = page_screenshot_nodes_to_node_with_score(
             self._client, result.image_nodes, self.retriever.project_id
         )
         return sorted(
@@ -254,6 +260,7 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         query_bundle: QueryBundle,
         mode: Optional[CompositeRetrievalMode] = None,
         rerank_top_n: Optional[int] = None,
+        rerank_config: Optional[ReRankConfig] = None,
     ) -> List[NodeWithScore]:
         mode = mode if mode is not None else self._mode
 
@@ -282,7 +289,7 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
         node_w_scores = [
             self._result_nodes_to_node_with_score(node) for node in result.nodes
         ]
-        image_nodes_w_scores = image_nodes_to_node_with_score(
+        image_nodes_w_scores = page_screenshot_nodes_to_node_with_score(
             self._aclient, result.image_nodes, self.retriever.project_id
         )
         return sorted(

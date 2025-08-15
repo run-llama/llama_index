@@ -19,7 +19,7 @@ While the definition of an agentic application is broad, there are several key c
 - **Orchestration**: A hierarchical structure of LLMs is used to orchestrate lower-level actions and LLMs.
 - **Reflection**: The LLM is used to reflect and validate outputs of previous steps or LLM calls, which can be used to guide the application to the next appropriate step or state.
 
-In LlamaIndex, you can build agentic applications by using the `Workflow` class to orchestrate a sequence of steps and LLMs. You can [learn more about workflows](../understanding/workflow/index.md).
+In LlamaIndex, you can build agentic applications by using the `Workflow` class to orchestrate a sequence of steps and LLMs. You can [learn more about workflows](../understanding/workflows/index.md).
 
 ## Agents
 

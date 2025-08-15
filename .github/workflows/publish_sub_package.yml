@@ -13,29 +13,45 @@ jobs:
     if: github.repository == 'run-llama/llama_index'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
+      - name: Get changed pyproject files
+        id: changed-files
+        run: |
+          echo "changed_files=$(git diff --name-only ${{ github.event.before }} \
+            ${{ github.event.after }} | grep -v llama-index-core | \
+            grep llama-index | grep pyproject | xargs)" >> "$GITHUB_OUTPUT"
+
       - name: Install uv and set the python version
+        if: ${{ steps.changed-files.outputs.changed_files != '' }}
         uses: astral-sh/setup-uv@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           enable-cache: true
 
-      - name: Get changed pyproject files
-        id: changed-files
-        run: |
-          echo "changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }} | grep -v llama-index-core | grep llama-index | grep pyproject | xargs)" >> $GITHUB_OUTPUT
-
       - name: Publish changed packages
+        if: ${{ steps.changed-files.outputs.changed_files != '' }}
         env:
           PYPI_TOKEN: ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}
         run: |
+          result=0   # 0 = success so far
+
           for file in ${{ steps.changed-files.outputs.changed_files }}; do
-              cd `echo $file | sed 's/\/pyproject.toml//g'`
-              uv sync
-              uv build
-              uv publish --token $PYPI_TOKEN
-              cd -
+            pkg_dir="$(echo "$file" | sed 's/\/pyproject.toml//')"
+            echo "Publishing $pkg_dir …"
+
+            # Run all three commands; mark failure if any of them fails.
+            cd "$pkg_dir"
+            if ! (
+              uv sync \
+              && uv build \
+              && uv publish --token "$PYPI_TOKEN"
+            ); then
+              echo "::error ::Publishing $pkg_dir failed"
+              result=1   # remember the failure, but keep going
+            fi
+
+            cd - >/dev/null
           done

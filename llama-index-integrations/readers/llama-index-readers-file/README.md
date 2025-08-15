@@ -143,7 +143,18 @@ documents = SimpleDirectoryReader(
 ).load_data()
 
 # Pptx Reader example
+# Basic usage - extracts text, tables, charts, and speaker notes
 parser = PptxReader()
+
+# Advanced usage - control parsing behavior
+parser = PptxReader(
+    extract_images=True,  # Enable image captioning
+    context_consolidation_with_llm=True,  # Use LLM for content synthesis
+    num_workers=4,  # Parallel processing
+    batch_size=10,  # Slides processed per worker batch
+    raise_on_error=True,  # Raise value error if file_parsing is not successful
+)
+
 file_extractor = {".pptx": parser}
 documents = SimpleDirectoryReader(
     "./data", file_extractor=file_extractor

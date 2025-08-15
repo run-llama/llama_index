@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-voice-agents-elevenlabs"
-version = "0.2.0-beta"
+version = "0.4.0"
 description = "LlamaIndex x ElevenLabs integration"
 authors = [{name = "Clelia Astra Bertelli", email = "clelia@runllama.ai"}]
 requires-python = ">=3.9,<4.0"
@@ -34,8 +34,9 @@ readme = "README.md"
 license = "MIT"
 maintainers = [{name = "AstraBert"}]
 dependencies = [
-    "llama-index-core>=0.12.40,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
     "elevenlabs[pyaudio]>=2.1.0,<3",
+    "websockets>=15,<16",
 ]
 
 [tool.codespell]

@@ -257,7 +257,12 @@ class Dispatcher(BaseModel):
         @wrapt.decorator
         def wrapper(func: Callable, instance: Any, args: list, kwargs: dict) -> Any:
             bound_args = inspect.signature(func).bind(*args, **kwargs)
-            id_ = f"{func.__qualname__}-{uuid.uuid4()}"
+            if instance is not None:
+                actual_class = type(instance).__name__
+                method_name = func.__name__
+                id_ = f"{actual_class}.{method_name}-{uuid.uuid4()}"
+            else:
+                id_ = f"{func.__qualname__}-{uuid.uuid4()}"
             tags = active_instrument_tags.get()
             result = None
 
@@ -282,14 +287,7 @@ class Dispatcher(BaseModel):
                 context: Context,
             ) -> None:
                 try:
-                    exception = future.exception()
-                    if exception is not None:
-                        if exception.__class__.__name__ == "WorkflowCancelledByUser":
-                            result = None
-                        else:
-                            raise exception
-                    else:
-                        result = future.result()
+                    result = None if future.exception() else future.result()
 
                     self.span_exit(
                         id_=span_id,
@@ -349,7 +347,12 @@ class Dispatcher(BaseModel):
             func: Callable, instance: Any, args: list, kwargs: dict
         ) -> Any:
             bound_args = inspect.signature(func).bind(*args, **kwargs)
-            id_ = f"{func.__qualname__}-{uuid.uuid4()}"
+            if instance is not None:
+                actual_class = type(instance).__name__
+                method_name = func.__name__
+                id_ = f"{actual_class}.{method_name}-{uuid.uuid4()}"
+            else:
+                id_ = f"{func.__qualname__}-{uuid.uuid4()}"
             tags = active_instrument_tags.get()
 
             token = active_span_id.set(id_)

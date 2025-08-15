@@ -13,6 +13,7 @@ from typing import (
     Sequence,
     Set,
     Union,
+    cast,
 )
 from typing_extensions import TypeGuard
 
@@ -29,7 +30,7 @@ from llama_index.core.llms import (
     DocumentBlock,
 )
 from llama_index.core.schema import BaseNode, Node, TextNode
-from llama_index.core.storage.docstore.simple_docstore import DocumentStore
+from llama_index.core.storage.docstore.types import BaseDocumentStore
 
 
 def is_text_node(node: BaseNode) -> TypeGuard[Union[Node, TextNode]]:
@@ -63,7 +64,7 @@ class DocumentContextExtractor(BaseExtractor):
 
     Attributes:
         llm (LLM): Language model instance for generating context
-        docstore (DocumentStore): Storage for parent documents
+        docstore (BaseDocumentStore): Storage for parent documents
         key (str): Metadata key for storing extracted context
         prompt (str): Prompt template for context generation
         doc_ids (Set[str]): Set of processed document IDs
@@ -86,7 +87,7 @@ class DocumentContextExtractor(BaseExtractor):
 
     # Pydantic fields
     llm: LLM
-    docstore: DocumentStore
+    docstore: BaseDocumentStore
     key: str
     prompt: str
     doc_ids: Set[str]
@@ -102,7 +103,7 @@ class DocumentContextExtractor(BaseExtractor):
 
     def __init__(
         self,
-        docstore: DocumentStore,
+        docstore: BaseDocumentStore,
         llm: Optional[LLM] = None,
         max_context_length: int = 1000,
         key: str = DEFAULT_KEY,
@@ -207,7 +208,10 @@ class DocumentContextExtractor(BaseExtractor):
                 )
 
                 first_block: Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock] = (
-                    response.message.blocks[0]
+                    cast(
+                        Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock],
+                        response.message.blocks[0],
+                    )
                 )
                 if isinstance(first_block, TextBlock):
                     metadata[key] = first_block.text

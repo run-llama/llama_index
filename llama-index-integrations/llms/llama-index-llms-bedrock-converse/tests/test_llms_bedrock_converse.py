@@ -13,6 +13,7 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.tools import FunctionTool
 from llama_index.core.agent.workflow import AgentWorkflow, FunctionAgent
+from llama_index.core.workflow import Context
 from PIL import Image
 import io
 import numpy as np
@@ -92,7 +93,20 @@ class AsyncMockClient:
     async def converse_stream(self, *args, **kwargs):
         async def stream_generator():
             for element in EXP_STREAM_RESPONSE:
-                yield {"contentBlockDelta": {"delta": {"text": element}}}
+                yield {
+                    "contentBlockDelta": {
+                        "delta": {"text": element},
+                        "contentBlockIndex": 0,
+                    }
+                }
+            # Add messageStop and metadata events for token usage testing
+            yield {"messageStop": {"stopReason": "end_turn"}}
+            yield {
+                "metadata": {
+                    "usage": {"inputTokens": 15, "outputTokens": 26, "totalTokens": 41},
+                    "metrics": {"latencyMs": 886},
+                }
+            }
 
         return {"stream": stream_generator()}
 
@@ -106,8 +120,21 @@ class MockClient:
 
     def converse_stream(self, *args, **kwargs):
         def stream_generator():
-            for element in EXP_STREAM_RESPONSE:
-                yield {"contentBlockDelta": {"delta": {"text": element}}}
+            for i, element in enumerate(EXP_STREAM_RESPONSE):
+                yield {
+                    "contentBlockDelta": {
+                        "delta": {"text": element},
+                        "contentBlockIndex": 0,
+                    }
+                }
+            # Add messageStop and metadata events for token usage testing
+            yield {"messageStop": {"stopReason": "end_turn"}}
+            yield {
+                "metadata": {
+                    "usage": {"inputTokens": 15, "outputTokens": 26, "totalTokens": 41},
+                    "metrics": {"latencyMs": 886},
+                }
+            }
 
         return {"stream": stream_generator()}
 
@@ -201,9 +228,30 @@ def test_complete(bedrock_converse):
 def test_stream_chat(bedrock_converse):
     response_stream = bedrock_converse.stream_chat(messages)
 
-    for response in response_stream:
+    responses = list(response_stream)
+
+    # Check that we have content responses plus final metadata response
+    assert len(responses) == len(EXP_STREAM_RESPONSE) + 1  # +1 for metadata response
+
+    # Check content responses
+    for i, response in enumerate(responses[:-1]):  # All except last
         assert response.message.role == MessageRole.ASSISTANT
         assert response.delta in EXP_STREAM_RESPONSE
+
+    # Check final metadata response with token usage
+    final_response = responses[-1]
+    assert final_response.message.role == MessageRole.ASSISTANT
+    assert final_response.delta == ""  # No delta for metadata response
+
+    # Verify raw contains complete metadata
+    assert "metadata" in final_response.raw
+    assert "usage" in final_response.raw["metadata"]
+
+    # Verify token counts in additional_kwargs
+    assert "prompt_tokens" in final_response.additional_kwargs
+    assert final_response.additional_kwargs["prompt_tokens"] == 15
+    assert final_response.additional_kwargs["completion_tokens"] == 26
+    assert final_response.additional_kwargs["total_tokens"] == 41
 
 
 @pytest.mark.asyncio
@@ -221,8 +269,30 @@ async def test_astream_chat(bedrock_converse):
 
     responses = []
     async for response in response_stream:
+        responses.append(response)
+
+    # Check that we have content responses plus final metadata response
+    assert len(responses) == len(EXP_STREAM_RESPONSE) + 1  # +1 for metadata response
+
+    # Check content responses
+    for i, response in enumerate(responses[:-1]):  # All except last
         assert response.message.role == MessageRole.ASSISTANT
         assert response.delta in EXP_STREAM_RESPONSE
+
+    # Check final metadata response with token usage
+    final_response = responses[-1]
+    assert final_response.message.role == MessageRole.ASSISTANT
+    assert final_response.delta == ""  # No delta for metadata response
+
+    # Verify raw contains complete metadata
+    assert "metadata" in final_response.raw
+    assert "usage" in final_response.raw["metadata"]
+
+    # Verify token counts in additional_kwargs
+    assert "prompt_tokens" in final_response.additional_kwargs
+    assert final_response.additional_kwargs["prompt_tokens"] == 15
+    assert final_response.additional_kwargs["completion_tokens"] == 26
+    assert final_response.additional_kwargs["total_tokens"] == 41
 
 
 @pytest.mark.asyncio
@@ -244,8 +314,12 @@ async def test_astream_complete(bedrock_converse):
     async for response in response_stream:
         responses.append(response)
 
-    assert len(responses) == len(EXP_STREAM_RESPONSE)
-    assert "".join([r.delta for r in responses]) == "".join(EXP_STREAM_RESPONSE)
+    # Check that we have content responses plus final metadata response
+    assert len(responses) == len(EXP_STREAM_RESPONSE) + 1  # +1 for metadata response
+
+    # Check that content responses match expected
+    content_responses = responses[:-1]  # All except last (metadata) response
+    assert "".join([r.delta for r in content_responses]) == "".join(EXP_STREAM_RESPONSE)
 
 
 @needs_aws_creds
@@ -587,6 +661,38 @@ def test_bedrock_converse_integration_chat_with_empty_user_message(
     assert len(response.message.content) > 0
 
 
+@needs_aws_creds
+@pytest.mark.asyncio
+async def test_bedrock_converse_integration_astream_chat_with_empty_assistant_message(
+    bedrock_converse_integration,
+):
+    """Test astream_chat integration with empty assistant message."""
+    llm = bedrock_converse_integration
+
+    # Create a conversation with various empty and valid content scenarios
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
+        ChatMessage(role=MessageRole.USER, content="Hello"),
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                TextBlock(text=""),
+                TextBlock(text="Previous response"),
+            ],
+        ),
+        ChatMessage(role=MessageRole.USER, content="What is 2+2?"),
+    ]
+
+    response_stream = await llm.astream_chat(messages)
+    chunks = []
+    async for response in response_stream:
+        chunks.append(response.delta)
+
+    assert len(chunks) > 0
+    combined = "".join(chunks)
+    assert len(combined) > 0
+
+
 # Define a tool function that returns no value
 def log_activity(activity: str) -> None:
     """
@@ -598,6 +704,14 @@ def log_activity(activity: str) -> None:
     """
     print(f"[LOG] User activity: {activity}")
     # This function intentionally returns no value
+
+
+# Define a tool function that returns no value and takes no arguments
+def wake_up_user() -> None:
+    """
+    Sends a notification to the user to wake them up.
+    """
+    return
 
 
 @needs_aws_creds
@@ -632,7 +746,7 @@ async def test_bedrock_converse_agent_with_void_tool_and_continued_conversation(
     # Create agent using both tools
     agent = FunctionAgent(
         name="assistant_with_logging",
-        tools=[log_activity_tool, get_temperature_tool],
+        tools=[log_activity_tool, get_temperature_tool, wake_up_user],
         llm=bedrock_converse_integration,
         system_prompt=(
             "You are a helpful assistant that logs important user activities. "
@@ -640,11 +754,13 @@ async def test_bedrock_converse_agent_with_void_tool_and_continued_conversation(
         ),
     )
     workflow = AgentWorkflow(agents=[agent])
+    ctx = Context(workflow)
 
     # First conversation: Request weather information
     # Agent should call log_activity (void tool) first, then call get_temperature
     response1 = await workflow.run(
-        user_msg="What's the weather like in San Francisco today? What's the temperature?"
+        user_msg="What's the weather like in San Francisco today? What's the temperature?",
+        ctx=ctx,
     )
 
     # Verify first conversation has normal response
@@ -656,7 +772,7 @@ async def test_bedrock_converse_agent_with_void_tool_and_continued_conversation(
     # Second conversation: Continue asking other questions
     # Ensure agent can still handle subsequent conversations after calling void tool
     response2 = await workflow.run(
-        user_msg="Will the weather be better tomorrow? Any suggestions?"
+        user_msg="Will the weather be better tomorrow? Any suggestions?", ctx=ctx
     )
 
     # Verify second conversation also has normal response
@@ -666,10 +782,22 @@ async def test_bedrock_converse_agent_with_void_tool_and_continued_conversation(
     assert len(response2_text) > 0
 
     # Third conversation: General question not involving tools
-    response3 = await workflow.run(user_msg="Thank you for your help!")
+    response3 = await workflow.run(user_msg="Thank you for your help!", ctx=ctx)
 
     # Verify third conversation response
     assert response3 is not None
     assert hasattr(response3, "response")
     response3_text = str(response3.response)
     assert len(response3_text) > 0
+
+    # Verify blank tool calls are handled correctly
+    response_4 = await workflow.run(user_msg="Wake me up please!", ctx=ctx)
+    assert response_4 is not None
+    assert hasattr(response_4, "response")
+    assert len(response_4.tool_calls) > 0
+
+    # Verify all history is handled properly and LLM can continue conversation
+    response_5 = await workflow.run(user_msg="Thank you, I am awake now.", ctx=ctx)
+    assert response_5 is not None
+    assert hasattr(response_5, "response")
+    assert len(str(response_5)) > 0

@@ -4,8 +4,11 @@ import json
 from typing import List, Optional
 
 import pytest
-from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import BaseModel, Field
+from llama_index.core.llms import TextBlock, ImageBlock
 from llama_index.core.tools.function_tool import FunctionTool
+from llama_index.core.schema import Document, TextNode
+from llama_index.core.workflow.context import Context
 from llama_index.core.workflow import Context
 
 try:
@@ -251,6 +254,24 @@ def test_function_tool_ctx_param() -> None:
     assert actual_schema["properties"]["x"]["type"] == "integer"
 
 
+def test_function_tool_ctx_generic_param() -> None:
+    class MyState(BaseModel):
+        name: str = Field(default="Logan")
+
+    async def test_function(x: int, ctx_arg: Context[MyState]) -> str:
+        return f"x: {x}, ctx: {ctx_arg}"
+
+    tool = FunctionTool.from_defaults(test_function)
+    assert tool.metadata.fn_schema is not None
+    assert tool.ctx_param_name == "ctx_arg"
+    assert tool.requires_context
+
+    actual_schema = tool.metadata.fn_schema.model_json_schema()
+    assert "ctx_arg" not in actual_schema["properties"]
+    assert len(actual_schema["properties"]) == 1
+    assert actual_schema["properties"]["x"]["type"] == "integer"
+
+
 def test_function_tool_self_param() -> None:
     class FunctionHolder:
         def test_function(self, x: int, ctx: Context) -> str:
@@ -265,3 +286,171 @@ def test_function_tool_self_param() -> None:
     assert "self" not in actual_schema["properties"]
     assert "ctx" not in actual_schema["properties"]
     assert "x" in actual_schema["properties"]
+
+
+@pytest.mark.asyncio
+async def test_function_tool_output_blocks() -> None:
+    def test_function() -> str:
+        return [
+            TextBlock(text="Hello"),
+            ImageBlock(url="https://example.com/image.png"),
+        ]
+
+    tool = FunctionTool.from_defaults(test_function)
+
+    tool_output = tool.call()
+
+    assert len(tool_output.blocks) == 2
+    assert tool_output.content == "Hello"
+
+    tool_output = await tool.acall()
+
+    assert len(tool_output.blocks) == 2
+    assert tool_output.content == "Hello"
+
+
+@pytest.mark.asyncio
+async def test_function_tool_output_single_block() -> None:
+    def test_function() -> str:
+        return TextBlock(text="Hello")
+
+    tool = FunctionTool.from_defaults(test_function)
+
+    tool_output = tool.call()
+
+    assert len(tool_output.blocks) == 1
+    assert tool_output.content == "Hello"
+
+    tool_output = await tool.acall()
+
+    assert len(tool_output.blocks) == 1
+    assert tool_output.content == "Hello"
+
+
+def test_fn_schema_docstring_descriptions():
+    def sample_tool(a: int, b: Optional[str] = None) -> str:
+        """
+        A test tool function.
+
+        :param a: an integer value
+        :param b: an optional string
+        :return: a string output
+        """
+        return f"{a}-{b}"
+
+    metadata = ToolMetadata(name="sample_tool", description="A test tool.")
+    tool = FunctionTool.from_defaults(fn=sample_tool, tool_metadata=None)
+
+    fn_schema = tool.metadata.fn_schema
+    assert fn_schema is not None, "Expected fn_schema to be generated"
+
+    fields = fn_schema.model_fields
+    assert "a" in fields
+    assert "b" in fields
+
+    assert fields["a"].description == "an integer value"
+    assert fields["b"].description == "an optional string"
+
+
+def test_docstring_param_extraction_javadoc_style():
+    def tool_fn(foo: int, bar: str) -> str:
+        """
+        Test tool.
+
+        @param foo value for foo
+        @param bar value for bar
+        @return result string
+        """
+        return f"{foo}-{bar}"
+
+    tool = FunctionTool.from_defaults(fn=tool_fn)
+    fields = tool.metadata.fn_schema.model_fields
+
+    assert fields["foo"].description == "value for foo"
+    assert fields["bar"].description == "value for bar"
+
+
+def test_docstring_param_extraction_google_style():
+    def tool_fn(a: int, b: str) -> str:
+        """
+        Test tool.
+
+        Args:
+            a (int): integer input
+            b (str): string input
+
+        Returns:
+            str: output string
+
+        """
+        return f"{a}-{b}"
+
+    tool = FunctionTool.from_defaults(fn=tool_fn)
+    fields = tool.metadata.fn_schema.model_fields
+
+    assert fields["a"].description == "integer input"
+    assert fields["b"].description == "string input"
+
+
+def test_docstring_ignores_unknown_params():
+    def tool_fn(a: int) -> str:
+        """
+        Test tool.
+
+        :param a: valid param
+        :param unknown: should be ignored
+        """
+        return str(a)
+
+    tool = FunctionTool.from_defaults(fn=tool_fn)
+    fields = tool.metadata.fn_schema.model_fields
+
+    assert "a" in fields
+    assert fields["a"].description == "valid param"
+    assert "unknown" not in fields
+
+
+def test_docstring_with_self_and_context():
+    class MyTool:
+        def my_method(self, ctx: Context, a: int) -> str:
+            """
+            Tool with self and context.
+
+            :param a: some input value
+            """
+            return str(a)
+
+    tool = FunctionTool.from_defaults(fn=MyTool().my_method)
+    fields = tool.metadata.fn_schema.model_fields
+
+    assert "a" in fields
+    assert fields["a"].description == "some input value"
+    assert "self" not in fields
+
+
+def test_function_tool_output_document_and_nodes():
+    def get_document() -> Document:
+        return Document(text="Hello" * 1024)
+
+    def get_node() -> TextNode:
+        return TextNode(text="Hello" * 1024)
+
+    def get_documents() -> List[Document]:
+        return [Document(text="Hello" * 1024), Document(text="World" * 1024)]
+
+    def get_nodes() -> List[TextNode]:
+        return [TextNode(text="Hello" * 1024), TextNode(text="World" * 1024)]
+
+    tool = FunctionTool.from_defaults(get_document)
+    assert tool.call().content == "Hello" * 1024
+
+    tool = FunctionTool.from_defaults(get_node)
+    assert tool.call().content == "Hello" * 1024
+
+    tool = FunctionTool.from_defaults(get_documents)
+    assert "Hello" * 1024 in tool.call().content
+    assert "World" * 1024 in tool.call().content
+
+    tool = FunctionTool.from_defaults(get_nodes)
+    assert "Hello" * 1024 in tool.call().content
+    assert "World" * 1024 in tool.call().content

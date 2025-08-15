@@ -26,13 +26,16 @@ dev = [
 
 [project]
 name = "llama-index-multi-modal-llms-mistralai"
-version = "0.4.0"
+version = "0.5.0"
 description = "llama-index multi-modal-llms mistral integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
-dependencies = ["llama-index-llms-mistralai>=0.4.0,<0.5"]
+dependencies = [
+    "llama-index-llms-mistralai>=0.7.0,<0.8",
+    "llama-index-core>=0.13.0,<0.14",
+]
 
 [tool.codespell]
 check-filenames = true

@@ -1,10 +1,9 @@
 import inspect
 import re
 import uuid
-from typing import Awaitable, Callable, List, Sequence, Union, Optional
+from typing import Awaitable, Callable, List, Sequence, Union, Optional, Tuple
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
-from llama_index.core.agent.workflow.single_agent_workflow import SingleAgentRunnerMixin
 from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
     AgentOutput,
@@ -19,7 +18,7 @@ from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.core.memory import BaseMemory
 from llama_index.core.objects import ObjectRetriever
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
-from llama_index.core.tools import AsyncBaseTool, FunctionTool
+from llama_index.core.tools import BaseTool, FunctionTool
 from llama_index.core.workflow import Context
 
 DEFAULT_CODE_ACT_PROMPT = """You are a helpful AI assistant that can write and execute Python code to solve problems.
@@ -60,7 +59,7 @@ Reminder: Always place your Python code between <execute>...</execute> tags when
 EXECUTE_TOOL_NAME = "execute"
 
 
-class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
+class CodeActAgent(BaseWorkflowAgent):
     """
     A workflow agent that can execute code.
     """
@@ -86,20 +85,28 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
         name: str = "code_act_agent",
         description: str = "A workflow agent that can execute code.",
         system_prompt: Optional[str] = None,
-        tools: Optional[Sequence[AsyncBaseTool]] = None,
+        tools: Optional[List[Union[BaseTool, Callable]]] = None,
         tool_retriever: Optional[ObjectRetriever] = None,
         can_handoff_to: Optional[List[str]] = None,
         llm: Optional[LLM] = None,
         code_act_system_prompt: Union[
             str, BasePromptTemplate
         ] = DEFAULT_CODE_ACT_PROMPT,
+        streaming: bool = True,
     ):
         tools = tools or []
         tools.append(  # type: ignore
             FunctionTool.from_defaults(code_execute_fn, name=EXECUTE_TOOL_NAME)  # type: ignore
         )
         if isinstance(code_act_system_prompt, str):
+            if system_prompt:
+                code_act_system_prompt += "\n" + system_prompt
             code_act_system_prompt = PromptTemplate(code_act_system_prompt)
+        elif isinstance(code_act_system_prompt, BasePromptTemplate):
+            if system_prompt:
+                code_act_system_str = code_act_system_prompt.get_template()
+                code_act_system_str += "\n" + system_prompt
+            code_act_system_prompt = PromptTemplate(code_act_system_str)
 
         super().__init__(
             name=name,
@@ -111,9 +118,10 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
             llm=llm,
             code_act_system_prompt=code_act_system_prompt,
             code_execute_fn=code_execute_fn,
+            streaming=streaming,
         )
 
-    def _get_tool_fns(self, tools: Sequence[AsyncBaseTool]) -> List[Callable]:
+    def _get_tool_fns(self, tools: Sequence[BaseTool]) -> List[Callable]:
         """Get the tool functions while validating that they are valid tools for the CodeActAgent."""
         callables = []
         for tool in tools:
@@ -159,7 +167,7 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
 
         return None
 
-    def _get_tool_descriptions(self, tools: Sequence[AsyncBaseTool]) -> str:
+    def _get_tool_descriptions(self, tools: Sequence[BaseTool]) -> str:
         """
         Generate tool descriptions for the system prompt using tool metadata.
 
@@ -187,59 +195,37 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
 
         return "\n\n".join(tool_descriptions)
 
-    async def take_step(
+    async def _get_response(
+        self, current_llm_input: List[ChatMessage], tools: Sequence[BaseTool]
+    ) -> ChatResponse:
+        if any(tool.metadata.name == "handoff" for tool in tools):
+            if not isinstance(self.llm, FunctionCallingLLM):
+                raise ValueError("llm must be a function calling LLM to use handoff")
+
+            tools = [tool for tool in tools if tool.metadata.name == "handoff"]
+            return await self.llm.achat_with_tools(
+                tools=tools, chat_history=current_llm_input
+            )
+        else:
+            return await self.llm.achat(current_llm_input)
+
+    async def _get_streaming_response(
         self,
         ctx: Context,
-        llm_input: List[ChatMessage],
-        tools: Sequence[AsyncBaseTool],
-        memory: BaseMemory,
-    ) -> AgentOutput:
-        """Take a single step with the code act agent."""
-        if not self.code_execute_fn:
-            raise ValueError("code_execute_fn must be provided for CodeActAgent")
-
-        # Get current scratchpad
-        scratchpad: List[ChatMessage] = await ctx.get(self.scratchpad_key, default=[])
-        current_llm_input = [*llm_input, *scratchpad]
-
-        # Create a system message with tool descriptions
-        tool_descriptions = self._get_tool_descriptions(tools)
-        system_prompt = self.code_act_system_prompt.format(
-            tool_descriptions=tool_descriptions
-        )
-
-        # Add or overwrite system message
-        has_system = False
-        for i, msg in enumerate(current_llm_input):
-            if msg.role.value == "system":
-                current_llm_input[i] = ChatMessage(role="system", content=system_prompt)
-                has_system = True
-                break
-
-        if not has_system:
-            current_llm_input.insert(
-                0, ChatMessage(role="system", content=system_prompt)
-            )
-
-        # Write the input to the event stream
-        ctx.write_event_to_stream(
-            AgentInput(input=current_llm_input, current_agent_name=self.name)
-        )
-
-        # For now, only support the handoff tool
-        # All other tools should be part of the code execution
+        current_llm_input: List[ChatMessage],
+        tools: Sequence[BaseTool],
+    ) -> Tuple[ChatResponse, str]:
         if any(tool.metadata.name == "handoff" for tool in tools):
             if not isinstance(self.llm, FunctionCallingLLM):
                 raise ValueError("llm must be a function calling LLM to use handoff")
 
             tools = [tool for tool in tools if tool.metadata.name == "handoff"]
             response = await self.llm.astream_chat_with_tools(
-                tools, chat_history=current_llm_input
+                tools=tools, chat_history=current_llm_input
             )
         else:
             response = await self.llm.astream_chat(current_llm_input)
 
-        # Initialize for streaming
         last_chat_response = ChatResponse(message=ChatMessage())
         full_response_text = ""
 
@@ -267,6 +253,57 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
                 )
             )
 
+        return last_chat_response, full_response_text
+
+    async def take_step(
+        self,
+        ctx: Context,
+        llm_input: List[ChatMessage],
+        tools: Sequence[BaseTool],
+        memory: BaseMemory,
+    ) -> AgentOutput:
+        """Take a single step with the code act agent."""
+        if not self.code_execute_fn:
+            raise ValueError("code_execute_fn must be provided for CodeActAgent")
+
+        # Get current scratchpad
+        scratchpad: List[ChatMessage] = await ctx.store.get(
+            self.scratchpad_key, default=[]
+        )
+        current_llm_input = [*llm_input, *scratchpad]
+
+        # Create a system message with tool descriptions
+        tool_descriptions = self._get_tool_descriptions(tools)
+        system_prompt = self.code_act_system_prompt.format(
+            tool_descriptions=tool_descriptions
+        )
+
+        # Add or overwrite system message
+        has_system = False
+        for i, msg in enumerate(current_llm_input):
+            if msg.role.value == "system":
+                current_llm_input[i] = ChatMessage(role="system", content=system_prompt)
+                has_system = True
+                break
+
+        if not has_system:
+            current_llm_input.insert(
+                0, ChatMessage(role="system", content=system_prompt)
+            )
+
+        # Write the input to the event stream
+        ctx.write_event_to_stream(
+            AgentInput(input=current_llm_input, current_agent_name=self.name)
+        )
+
+        if self.streaming:
+            chat_response, full_response_text = await self._get_streaming_response(
+                ctx, current_llm_input, tools
+            )
+        else:
+            chat_response = await self._get_response(current_llm_input, tools)
+            full_response_text = chat_response.message.content or ""
+
         # Extract code from the response
         code = self._extract_code_from_response(full_response_text)
 
@@ -285,20 +322,20 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
 
         if isinstance(self.llm, FunctionCallingLLM):
             extra_tool_calls = self.llm.get_tool_calls_from_response(
-                last_chat_response, error_on_no_tool_call=False
+                chat_response, error_on_no_tool_call=False
             )
             tool_calls.extend(extra_tool_calls)
 
         # Add the response to the scratchpad
         message = ChatMessage(role="assistant", content=full_response_text)
         scratchpad.append(message)
-        await ctx.set(self.scratchpad_key, scratchpad)
+        await ctx.store.set(self.scratchpad_key, scratchpad)
 
         # Create the raw object for the output
         raw = (
-            last_chat_response.raw.model_dump()
-            if isinstance(last_chat_response.raw, BaseModel)
-            else last_chat_response.raw
+            chat_response.raw.model_dump()
+            if isinstance(chat_response.raw, BaseModel)
+            else chat_response.raw
         )
 
         return AgentOutput(
@@ -312,7 +349,9 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
         self, ctx: Context, results: List[ToolCallResult], memory: BaseMemory
     ) -> None:
         """Handle tool call results for code act agent."""
-        scratchpad: List[ChatMessage] = await ctx.get(self.scratchpad_key, default=[])
+        scratchpad: List[ChatMessage] = await ctx.store.get(
+            self.scratchpad_key, default=[]
+        )
 
         # handle code execution and handoff
         for tool_call_result in results:
@@ -329,14 +368,14 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
                 scratchpad.append(
                     ChatMessage(
                         role="tool",
-                        content=str(tool_call_result.tool_output.content),
+                        blocks=tool_call_result.tool_output.blocks,
                         additional_kwargs={"tool_call_id": tool_call_result.tool_id},
                     )
                 )
             else:
                 raise ValueError(f"Unknown tool name: {tool_call_result.tool_name}")
 
-        await ctx.set(self.scratchpad_key, scratchpad)
+        await ctx.store.set(self.scratchpad_key, scratchpad)
 
     async def finalize(
         self, ctx: Context, output: AgentOutput, memory: BaseMemory
@@ -346,10 +385,12 @@ class CodeActAgent(SingleAgentRunnerMixin, BaseWorkflowAgent):
 
         Adds all in-progress messages to memory.
         """
-        scratchpad: List[ChatMessage] = await ctx.get(self.scratchpad_key, default=[])
+        scratchpad: List[ChatMessage] = await ctx.store.get(
+            self.scratchpad_key, default=[]
+        )
         await memory.aput_messages(scratchpad)
 
         # reset scratchpad
-        await ctx.set(self.scratchpad_key, [])
+        await ctx.store.set(self.scratchpad_key, [])
 
         return output

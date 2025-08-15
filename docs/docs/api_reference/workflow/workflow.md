@@ -1,4 +1,4 @@
-::: llama_index.core.workflow.workflow
+::: workflows.workflow
     options:
       members:
         - Workflow

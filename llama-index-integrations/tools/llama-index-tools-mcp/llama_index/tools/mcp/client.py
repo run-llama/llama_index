@@ -310,6 +310,11 @@ class BasicMCPClient(ClientSession):
         async with self._run_session() as session:
             return await session.list_resources()
 
+    async def list_resource_templates(self) -> types.ListToolsRequest:
+        """List all dynamic available resources on the MCP server."""
+        async with self._run_session() as session:
+            return await session.list_resource_templates()
+
     async def read_resource(self, resource_name: str) -> types.ReadResourceResult:
         """
         Read a resource from the MCP server.

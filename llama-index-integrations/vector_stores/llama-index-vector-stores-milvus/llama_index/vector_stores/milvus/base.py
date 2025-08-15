@@ -317,6 +317,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
             token=token,
             **kwargs,  # pass additional arguments such as server_pem_path
         )
+
+        # As of writing, milvus sets alias internally in the async client.
+        # This will cause an error if not removed.
+        kwargs.pop("alias", None)
+
         self._async_milvusclient = AsyncMilvusClient(
             uri=uri,
             token=token,
@@ -396,6 +401,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
         logger.debug(
             f"Successfully set properties for collection: {self.collection_name}"
         )
+
+    @classmethod
+    def class_name(cls) -> str:
+        """Class name."""
+        return "MilvusVectorStore"
 
     @property
     def client(self) -> MilvusClient:
@@ -885,6 +895,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             output_fields=output_fields,
             search_params=kwargs.get("milvus_search_config", self.search_config),
             anns_field=self.embedding_field,
+            partition_names=kwargs.get("milvus_partition_names"),
         )
         logger.debug(
             f"Successfully searched embedding in collection: {self.collection_name}"
