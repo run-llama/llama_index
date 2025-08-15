@@ -120,7 +120,12 @@ uv run python basic_usage.py
 ```python
 from llama_index.core import VectorStoreIndex, Settings
 from llama_index.embeddings.heroku import HerokuEmbedding
+from llama_index.llms.heroku import Heroku
 from llama_index.core import Document
+
+# Set the LLM
+llm = Heroku()
+Settings.llm = llm
 
 # Set the embedding model globally
 Settings.embed_model = HerokuEmbedding()
@@ -135,7 +140,9 @@ documents = [
 index = VectorStoreIndex.from_documents(documents)
 
 # Query the index
-query_engine = index.as_query_engine()
+query_engine = index.as_query_engine(
+    llm=llm, response_mode="compact", similarity_top_k=5
+)
 response = query_engine.query("What documents do you have?")
 print(response)
 ```
@@ -166,11 +173,11 @@ The integration includes proper error handling for common issues:
 
 ## Environment Variables
 
-| Variable             | Description                          | Required |
-| -------------------- | ------------------------------------ | -------- |
-| `EMBEDDING_KEY`      | The API key for Heroku embedding     | Yes      |
-| `EMBEDDING_URL`      | The base URL for inference endpoints | Yes      |
-| `EMBEDDING_MODEL_ID` | The model ID to use                  | Yes      |
+| Variable             | Description                          |
+| -------------------- | ------------------------------------ |
+| `EMBEDDING_KEY`      | The API key for Heroku embedding     |
+| `EMBEDDING_URL`      | The base URL for inference endpoints |
+| `EMBEDDING_MODEL_ID` | The model ID to use                  |
 
 ## Testing
 
