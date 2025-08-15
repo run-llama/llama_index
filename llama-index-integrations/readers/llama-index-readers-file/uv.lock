@@ -1792,7 +1792,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-file"
-version = "0.5.1"
+version = "0.5.2"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
@@ -1800,9 +1800,7 @@ dependencies = [
     { name = "llama-index-core" },
     { name = "pandas" },
     { name = "pypdf" },
-    { name = "python-pptx" },
     { name = "striprtf" },
-    { name = "tenacity" },
 ]
 
 [package.optional-dependencies]
@@ -1824,6 +1822,7 @@ dev = [
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-mock" },
+    { name = "python-pptx" },
     { name = "ruff" },
     { name = "types-deprecated" },
     { name = "types-protobuf" },
@@ -1840,10 +1839,8 @@ requires-dist = [
     { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
     { name = "pandas", specifier = "<2.3.0" },
     { name = "pymupdf", marker = "extra == 'pymupdf'", specifier = ">=1.23.21,<2" },
-    { name = "pypdf", specifier = ">=5.1.0,<6" },
-    { name = "python-pptx", specifier = ">=0.6.18" },
+    { name = "pypdf", specifier = ">=5.1.0,<7" },
     { name = "striprtf", specifier = ">=0.0.26,<0.0.27" },
-    { name = "tenacity", specifier = ">=8.0.0" },
 ]
 provides-extras = ["pymupdf"]
 
@@ -1861,6 +1858,7 @@ dev = [
     { name = "pytest", specifier = "==7.2.1" },
     { name = "pytest-cov", specifier = ">=6.1.1" },
     { name = "pytest-mock", specifier = "==3.11.1" },
+    { name = "python-pptx" },
     { name = "ruff", specifier = "==0.11.11" },
     { name = "types-deprecated", specifier = ">=0.1.0" },
     { name = "types-protobuf", specifier = ">=4.24.0.4,<5" },
