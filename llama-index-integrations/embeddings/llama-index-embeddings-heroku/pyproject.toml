@@ -61,7 +61,7 @@ contains_example = true
 import_path = "llama_index.embeddings.heroku"
 
 [tool.llamahub.class_authors]
-HerokuEmbedding = "llama-index"
+HerokuEmbedding = "tlowrimore-heroku"
 
 [tool.mypy]
 disallow_untyped_defs = true
