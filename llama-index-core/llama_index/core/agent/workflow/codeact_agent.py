@@ -1,7 +1,7 @@
 import inspect
 import re
 import uuid
-from typing import Awaitable, Callable, List, Sequence, Union, Optional
+from typing import Awaitable, Callable, List, Sequence, Union, Optional, Tuple
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 from llama_index.core.agent.workflow.workflow_events import (
@@ -92,6 +92,7 @@ class CodeActAgent(BaseWorkflowAgent):
         code_act_system_prompt: Union[
             str, BasePromptTemplate
         ] = DEFAULT_CODE_ACT_PROMPT,
+        streaming: bool = True,
     ):
         tools = tools or []
         tools.append(  # type: ignore
@@ -117,6 +118,7 @@ class CodeActAgent(BaseWorkflowAgent):
             llm=llm,
             code_act_system_prompt=code_act_system_prompt,
             code_execute_fn=code_execute_fn,
+            streaming=streaming,
         )
 
     def _get_tool_fns(self, tools: Sequence[BaseTool]) -> List[Callable]:
@@ -193,6 +195,66 @@ class CodeActAgent(BaseWorkflowAgent):
 
         return "\n\n".join(tool_descriptions)
 
+    async def _get_response(
+        self, current_llm_input: List[ChatMessage], tools: Sequence[BaseTool]
+    ) -> ChatResponse:
+        if any(tool.metadata.name == "handoff" for tool in tools):
+            if not isinstance(self.llm, FunctionCallingLLM):
+                raise ValueError("llm must be a function calling LLM to use handoff")
+
+            tools = [tool for tool in tools if tool.metadata.name == "handoff"]
+            return await self.llm.achat_with_tools(
+                tools=tools, chat_history=current_llm_input
+            )
+        else:
+            return await self.llm.achat(current_llm_input)
+
+    async def _get_streaming_response(
+        self,
+        ctx: Context,
+        current_llm_input: List[ChatMessage],
+        tools: Sequence[BaseTool],
+    ) -> Tuple[ChatResponse, str]:
+        if any(tool.metadata.name == "handoff" for tool in tools):
+            if not isinstance(self.llm, FunctionCallingLLM):
+                raise ValueError("llm must be a function calling LLM to use handoff")
+
+            tools = [tool for tool in tools if tool.metadata.name == "handoff"]
+            response = await self.llm.astream_chat_with_tools(
+                tools=tools, chat_history=current_llm_input
+            )
+        else:
+            response = await self.llm.astream_chat(current_llm_input)
+
+        last_chat_response = ChatResponse(message=ChatMessage())
+        full_response_text = ""
+
+        # Process streaming response
+        async for last_chat_response in response:
+            delta = last_chat_response.delta or ""
+            full_response_text += delta
+
+            # Create a raw object for the event stream
+            raw = (
+                last_chat_response.raw.model_dump()
+                if isinstance(last_chat_response.raw, BaseModel)
+                else last_chat_response.raw
+            )
+
+            # Write delta to the event stream
+            ctx.write_event_to_stream(
+                AgentStream(
+                    delta=delta,
+                    response=full_response_text,
+                    # We'll add the tool call after processing the full response
+                    tool_calls=[],
+                    raw=raw,
+                    current_agent_name=self.name,
+                )
+            )
+
+        return last_chat_response, full_response_text
+
     async def take_step(
         self,
         ctx: Context,
@@ -234,46 +296,13 @@ class CodeActAgent(BaseWorkflowAgent):
             AgentInput(input=current_llm_input, current_agent_name=self.name)
         )
 
-        # For now, only support the handoff tool
-        # All other tools should be part of the code execution
-        if any(tool.metadata.name == "handoff" for tool in tools):
-            if not isinstance(self.llm, FunctionCallingLLM):
-                raise ValueError("llm must be a function calling LLM to use handoff")
-
-            tools = [tool for tool in tools if tool.metadata.name == "handoff"]
-            response = await self.llm.astream_chat_with_tools(
-                tools, chat_history=current_llm_input
+        if self.streaming:
+            chat_response, full_response_text = await self._get_streaming_response(
+                ctx, current_llm_input, tools
             )
         else:
-            response = await self.llm.astream_chat(current_llm_input)
-
-        # Initialize for streaming
-        last_chat_response = ChatResponse(message=ChatMessage())
-        full_response_text = ""
-
-        # Process streaming response
-        async for last_chat_response in response:
-            delta = last_chat_response.delta or ""
-            full_response_text += delta
-
-            # Create a raw object for the event stream
-            raw = (
-                last_chat_response.raw.model_dump()
-                if isinstance(last_chat_response.raw, BaseModel)
-                else last_chat_response.raw
-            )
-
-            # Write delta to the event stream
-            ctx.write_event_to_stream(
-                AgentStream(
-                    delta=delta,
-                    response=full_response_text,
-                    # We'll add the tool call after processing the full response
-                    tool_calls=[],
-                    raw=raw,
-                    current_agent_name=self.name,
-                )
-            )
+            chat_response = await self._get_response(current_llm_input, tools)
+            full_response_text = chat_response.message.content or ""
 
         # Extract code from the response
         code = self._extract_code_from_response(full_response_text)
@@ -293,7 +322,7 @@ class CodeActAgent(BaseWorkflowAgent):
 
         if isinstance(self.llm, FunctionCallingLLM):
             extra_tool_calls = self.llm.get_tool_calls_from_response(
-                last_chat_response, error_on_no_tool_call=False
+                chat_response, error_on_no_tool_call=False
             )
             tool_calls.extend(extra_tool_calls)
 
@@ -304,9 +333,9 @@ class CodeActAgent(BaseWorkflowAgent):
 
         # Create the raw object for the output
         raw = (
-            last_chat_response.raw.model_dump()
-            if isinstance(last_chat_response.raw, BaseModel)
-            else last_chat_response.raw
+            chat_response.raw.model_dump()
+            if isinstance(chat_response.raw, BaseModel)
+            else chat_response.raw
         )
 
         return AgentOutput(

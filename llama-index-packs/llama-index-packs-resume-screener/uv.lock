@@ -1609,7 +1609,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-packs-resume-screener"
-version = "0.8.0"
+version = "0.9.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-llms-openai" },
@@ -1642,7 +1642,7 @@ dev = [
 requires-dist = [
     { name = "llama-index-llms-openai", specifier = ">=0.5.0,<0.6" },
     { name = "llama-index-readers-file", specifier = ">=0.5.0,<0.6" },
-    { name = "pypdf", specifier = ">=5.1.0,<6" },
+    { name = "pypdf" },
 ]
 
 [package.metadata.requires-dev]
