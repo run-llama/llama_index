@@ -6,6 +6,7 @@ The highest-level way to extract structured data in LlamaIndex is to instantiate
 from datetime import datetime
 from pydantic import BaseModel, Field
 
+
 class LineItem(BaseModel):
     """A line item in an invoice."""
 
