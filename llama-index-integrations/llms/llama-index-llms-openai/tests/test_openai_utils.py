@@ -412,22 +412,31 @@ def test_is_json_schema_supported_unsupported_models() -> None:
             f"Model {model} should not be supported"
         )
 
+
 def test_gpt_5_chat_latest_model_support() -> None:
     """Test that gpt-5-chat-latest is properly supported."""
     model_name = "gpt-5-chat-latest"
 
     # Test that model is in available models
-    assert model_name in ALL_AVAILABLE_MODELS, f"{model_name} should be in ALL_AVAILABLE_MODELS"
+    assert model_name in ALL_AVAILABLE_MODELS, (
+        f"{model_name} should be in ALL_AVAILABLE_MODELS"
+    )
 
     # Test that model is recognized as a chat model
-    assert is_chat_model(model_name) is True, f"{model_name} should be recognized as a chat model"
+    assert is_chat_model(model_name) is True, (
+        f"{model_name} should be recognized as a chat model"
+    )
 
     # Test that model supports function calling
-    assert is_function_calling_model(model_name) is True, f"{model_name} should support function calling"
+    assert is_function_calling_model(model_name) is True, (
+        f"{model_name} should support function calling"
+    )
 
     # Test that model has correct context size
     context_size = openai_modelname_to_contextsize(model_name)
-    assert context_size == 400000, f"{model_name} should have 400000 tokens context, got {context_size}"
+    assert context_size == 400000, (
+        f"{model_name} should have 400000 tokens context, got {context_size}"
+    )
 
     # Test that model is in CHAT_MODELS
     assert model_name in CHAT_MODELS, f"{model_name} should be in CHAT_MODELS"
