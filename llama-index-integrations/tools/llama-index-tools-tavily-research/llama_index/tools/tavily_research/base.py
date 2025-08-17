@@ -40,3 +40,50 @@ class TavilyToolSpec(BaseToolSpec):
             Document(text=result["content"], extra_info={"url": result["url"]})
             for result in response["results"]
         ]
+
+    def extract(
+        self,
+        urls: List[str],
+        include_images: bool = False,
+        include_favicon: bool = False,
+        extract_depth: str = "basic",
+        format: str = "markdown",
+    ) -> List[Document]:
+        """
+        Extract raw content from a URL using Tavily Extract API
+
+        Args:
+            urls: the URL/(s) to extract content from
+            include_images: Whether to include images in the response
+            include_favicon: Whether to include the favicon in the response
+            extract_depth: 'basic' or 'advanced' (default -> advanced)
+            format: 'markdown' or 'text' (default -> markdown)
+
+        Returns:
+            A list with one Document containing the extracted content and metadata, or an empty list if no results were returned
+        """
+
+        response = self.client.extract(
+            urls,
+            include_images=include_images,
+            include_favicon=include_favicon,
+            extract_depth=extract_depth,
+            format=format,
+        )
+
+        results = response.get("results", [])
+
+        if not results:
+            return []
+
+        return [
+            Document(
+                text=result.get("raw_content", ""),
+                extra_info={
+                    "url": result.get("url"),
+                    "favicon": result.get("favicon"),
+                    "images": result.get("images"),
+                },
+            )
+            for result in results
+        ]
