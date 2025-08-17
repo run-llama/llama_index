@@ -482,6 +482,36 @@ Once this is set up, Agenta will automatically capture all execution steps. You 
 - [Documentation Observability for LlamaIndex with Agenta](https://docs.agenta.ai/observability/integrations/llamaindex)
 - [Notebook Observability for LlamaIndex with Agenta](https://github.com/agenta-ai/agenta/blob/main/examples/jupyter/integrations/observability-openinference-llamaindex.ipynb)
 
+### Deepeval
+
+[DeepEval (by Confident AI)](https://github.com/confident-ai/deepeval) is an open-source evaluation framework for LLM applications. As you "unit test" your LLM app using DeepEval's 14+ default metrics it currently offers (summarization, hallucination, answer relevancy, faithfulness, RAGAS, etc.), you can debug failing test cases through this tracing integration with LlamaIndex, or debug unsatisfactory evaluations in **production** through DeepEval's hosted evaluation platform, [Confident AI](https://documentation.confident-ai.com/docs), that runs referenceless evaluations in production.
+
+#### Usage Pattern
+
+```bash
+pip install -U deepeval llama-index
+```
+
+```python
+import deepeval
+from deepeval.integrations.llama_index import instrument_llama_index
+
+import llama_index.core.instrumentation as instrument
+ 
+# Login
+deepeval.login("<your-confident-api-key>")
+ 
+# Let DeepEval collect traces
+instrument_llama_index(instrument.get_dispatcher())
+```
+
+![tracing](https://confident-bucket.s3.us-east-1.amazonaws.com/llama-index%3Atrace.gif)
+
+#### Guides
+
+- [Evaluate Llama Index Agents](https://deepeval.com/integrations/frameworks/langchain)
+- [Tracing Llama Index Agents](https://documentation.confident-ai.com/docs/llm-tracing/integrations/llamaindex)
+
 
 ## Other Partner `One-Click` Integrations (Legacy Modules)
 
@@ -510,36 +540,6 @@ set_global_handler("langfuse")
 - [Langfuse Tracing with PostHog](../../examples/observability/LangfuseMistralPostHog.ipynb)
 
 ![langfuse-tracing](https://static.langfuse.com/llamaindex-langfuse-docs.gif)
-
-### DeepEval
-
-[DeepEval (by Confident AI)](https://github.com/confident-ai/deepeval) is an open-source evaluation framework for LLM applications. As you "unit test" your LLM app using DeepEval's 14+ default metrics it currently offers (summarization, hallucination, answer relevancy, faithfulness, RAGAS, etc.), you can debug failing test cases through this tracing integration with LlamaIndex, or debug unsatisfactory evaluations in **production** through DeepEval's hosted evaluation platform, [Confident AI](https://documentation.confident-ai.com/docs), that runs referenceless evaluations in production.
-
-#### Usage Pattern
-
-```bash
-pip install -U deepeval llama-index
-```
-
-```python
-import deepeval
-from deepeval.integrations.llama_index import instrument_llama_index
-
-import llama_index.core.instrumentation as instrument
- 
-# Login
-deepeval.login("<your-confident-api-key>")
- 
-# Let DeepEval collect traces
-instrument_llama_index(instrument.get_dispatcher())
-```
-
-![tracing](https://confident-docs.s3.us-east-1.amazonaws.com/llm-tracing%3Allama-index.gif)
-
-#### Guides
-
-- [Evaluate Llama Index Agents](https://deepeval.com/integrations/frameworks/langchain)
-- [Tracing Llama Index Agents](https://documentation.confident-ai.com/docs/llm-tracing/integrations/llamaindex)
 
 ### Weights and Biases Prompts
 
