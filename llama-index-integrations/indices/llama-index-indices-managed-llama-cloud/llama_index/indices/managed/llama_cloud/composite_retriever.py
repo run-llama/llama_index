@@ -228,11 +228,18 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
             rerank_config if rerank_config is not None else self._rerank_config
         )
 
+        # Inject rerank_top_n into rerank_config if specified
+        if rerank_top_n is not None and rerank_top_n != OMIT:
+            if rerank_config is None or rerank_config == OMIT:
+                rerank_config = ReRankConfig(top_n=rerank_top_n)
+            else:
+                # Update existing rerank_config with top_n
+                rerank_config = rerank_config.copy(update={"top_n": rerank_top_n})
+
         if self._persisted:
             result = self._client.retrievers.retrieve(
                 self.retriever.id,
                 mode=mode,
-                rerank_top_n=rerank_top_n,
                 rerank_config=rerank_config,
                 query=query_bundle.query_str,
             )
@@ -240,7 +247,6 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
             result = self._client.retrievers.direct_retrieve(
                 project_id=self.project.id,
                 mode=mode,
-                rerank_top_n=rerank_top_n,
                 rerank_config=rerank_config,
                 query=query_bundle.query_str,
                 pipelines=self.retriever.pipelines,
@@ -269,19 +275,25 @@ class LlamaCloudCompositeRetriever(BaseRetriever):
             rerank_config if rerank_config is not None else self._rerank_config
         )
 
+        # Inject rerank_top_n into rerank_config if specified
+        if rerank_top_n is not None and rerank_top_n != OMIT:
+            if rerank_config is None or rerank_config == OMIT:
+                rerank_config = ReRankConfig(top_n=rerank_top_n)
+            else:
+                # Update existing rerank_config with top_n
+                rerank_config = rerank_config.copy(update={"top_n": rerank_top_n})
+
         if self._persisted:
             result = await self._aclient.retrievers.retrieve(
                 self.retriever.id,
                 mode=mode,
                 rerank_config=rerank_config,
-                rerank_top_n=rerank_top_n,
                 query=query_bundle.query_str,
             )
         else:
             result = await self._aclient.retrievers.direct_retrieve(
                 project_id=self.project.id,
                 mode=mode,
-                rerank_top_n=rerank_top_n,
                 rerank_config=rerank_config,
                 query=query_bundle.query_str,
                 pipelines=self.retriever.pipelines,
