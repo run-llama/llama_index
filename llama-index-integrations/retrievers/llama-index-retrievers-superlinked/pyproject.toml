@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4",
+    "pytest-cov>=6.1.1",
+]
+
+[project]
+name = "llama-index-retrievers-superlinked"
+version = "0.1.1"
+description = "LlamaIndex retriever integration for Superlinked"
+readme = "README.md"
+requires-python = ">=3.10,<4.0"
+license = {text = "MIT"}
+authors = [
+    {name = "Superlinked", email = "dev@superlinked.com"},
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "llama-index-core>=0.13.1,<0.14",
+    "superlinked==33.5.1",
+    "pandas>=2.2.0,<3.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/run-llama/llama_index"
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.llamahub]
+contains_example = true
+import_path = "llama_index.retrievers.superlinked"
+
+[tool.llamahub.class_authors]
+SuperlinkedRetriever = "Superlinked"
+
+[tool.pytest.ini_options]
+addopts = "-q"
+pythonpath = ["src"]

@@ -135,6 +135,7 @@ nav:
           - ./examples/cookbooks/GraphRAG_v2.ipynb
           - ./examples/cookbooks/airtrain.ipynb
           - ./examples/cookbooks/anthropic_haiku.ipynb
+          - ./examples/cookbooks/build_knowledge_graph_with_neo4j_llamacloud.ipynb
           - ./examples/cookbooks/cleanlab_tlm_rag.ipynb
           - ./examples/cookbooks/codestral.ipynb
           - ./examples/cookbooks/cohere_retriever_eval.ipynb
@@ -514,6 +515,7 @@ nav:
           - ./examples/observability/LangfuseCallbackHandler.ipynb
           - ./examples/observability/LangfuseMistralPostHog.ipynb
           - ./examples/observability/LlamaDebugHandler.ipynb
+          - ./examples/observability/Deepeval.ipynb
           - ./examples/observability/MLflow.ipynb
           - ./examples/observability/OpenInferenceCallback.ipynb
           - ./examples/observability/OpenLLMetry.ipynb
@@ -617,6 +619,7 @@ nav:
           - ./examples/tools/function_tool_callback.ipynb
           - ./examples/tools/mcp.ipynb
           - ./examples/tools/mcp_agent_tools.ipynb
+          - ./examples/tools/mcp_toolbox.ipynb
           - ./examples/tools/order_completion_agent_with_artifact_editor.ipynb
       - Transforms:
           - ./examples/transforms/TransformsEval.ipynb
@@ -1518,6 +1521,7 @@ nav:
           - ./api_reference/retrievers/router.md
           - ./api_reference/retrievers/sql.md
           - ./api_reference/retrievers/summary.md
+          - ./api_reference/retrievers/superlinked.md
           - ./api_reference/retrievers/tldw.md
           - ./api_reference/retrievers/transform.md
           - ./api_reference/retrievers/tree.md
@@ -1786,7 +1790,6 @@ nav:
           - ./workflows/v1/resources.md
           - ./workflows/v1/stepwise.md
           - ./workflows/v1/deployment.md
-
   - LlamaCloud: https://docs.cloud.llamaindex.ai/
 plugins:
   - search
@@ -2488,6 +2491,7 @@ plugins:
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-bigquery
             - ../llama-index-integrations/tools/llama-index-tools-aws-bedrock-agentcore
             - ../llama-index-integrations/llms/llama-index-llms-heroku
+            - ../llama-index-integrations/retrievers/llama-index-retrievers-superlinked
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
