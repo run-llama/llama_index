@@ -497,10 +497,10 @@ import deepeval
 from deepeval.integrations.llama_index import instrument_llama_index
 
 import llama_index.core.instrumentation as instrument
- 
+
 # Login
 deepeval.login("<your-confident-api-key>")
- 
+
 # Let DeepEval collect traces
 instrument_llama_index(instrument.get_dispatcher())
 ```
