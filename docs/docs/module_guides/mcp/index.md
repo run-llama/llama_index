@@ -1,6 +1,6 @@
 # Model Context Protocol (MCP)
 
-The Model Context Protocol (MCP) is an open-source standard protocol that allows Large Language Models (LLMs) to interact with external tools and data sources through structured API calls.
+Model Context Protocol (MCP) is an open-source standard protocol that allows Large Language Models (LLMs) to interact with external tools and data sources through structured API calls.
 
 MCP serves as a standardization layer for AI applications to communicate effectively with external services such as tools, databases and predefined templates. Think of MCP as a "USB-C port" for AI applications - it provides a standardized way for various tools, platforms, and data sources to connect to AI models.
 
@@ -22,13 +22,11 @@ MCP supports three main types of capabilities:
 
 ## With LlamaIndex
 
-MCP introduces a compelling alternative to vector indexing for some use cases. Instead of crawling Salesforce data into a vector store for example, you can expose Salesforce as a live queryable tool.
+With LlamaIndex, there are a number of ways you can use MCP servers, which allows you to bring additional resources and functionality your agentic workflows.
 
-This is particularly valuable for:
-
-- **Real-time Data**: Get fresh data directly from source systems at query time
-- **Structured Queries**: Handle complex queries requiring relationships and logic
-- **Action-Taking**: Execute operations beyond just information retrieval
+- **Use existing MCP servers tools with LlamaIndex workflows**: Get data from external resources that are served via existing MCP servers.
+- **Serve LlamaIndex workflows as MCP servers**: You can convert your own custom LlamaIndex workflows to MCP servers.
+- **Use LlamaCloud services within LlamaIndex workflows**: Run one of our MCP servers (both in Python and Typescript) that serve LlamaCloud functionality such as LlamaExtract or LlamaParse, within any other application that communicates with MCP servers, including LlamaIndex workflows
 
 ## Next Steps
 
