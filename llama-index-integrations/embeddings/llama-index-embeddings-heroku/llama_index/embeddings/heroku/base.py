@@ -1,7 +1,7 @@
 """Heroku embeddings file."""
 
 import logging
-from typing import Any, List, Optional
+from typing import Any, Optional
 
 import httpx
 from llama_index.core.base.embeddings.base import (
@@ -175,14 +175,6 @@ class HerokuEmbedding(BaseEmbedding):
             logger.error(f"Error while embedding text: {e}")
             raise ValueError(f"Unable to embed text: {e}")
 
-    def _get_text_embeddings(self, texts: List[str]) -> List[Embedding]:
-        """Get text embeddings."""
-        embeddings = []
-        for text in texts:
-            embedding = self._get_text_embedding(text)
-            embeddings.append(embedding)
-        return embeddings
-
     async def _aget_query_embedding(self, query: str) -> Embedding:
         """Get query embedding asynchronously."""
         return await self._aget_text_embedding(query)
@@ -206,14 +198,6 @@ class HerokuEmbedding(BaseEmbedding):
         except Exception as e:
             logger.error(f"Error while embedding text: {e}")
             raise ValueError(f"Unable to embed text: {e}")
-
-    async def _aget_text_embeddings(self, texts: List[str]) -> List[Embedding]:
-        """Get text embeddings asynchronously."""
-        embeddings = []
-        for text in texts:
-            embedding = await self._aget_text_embedding(text)
-            embeddings.append(embedding)
-        return embeddings
 
     def __del__(self) -> None:
         """Clean up resources."""
