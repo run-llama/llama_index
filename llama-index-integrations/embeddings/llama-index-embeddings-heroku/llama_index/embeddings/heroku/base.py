@@ -24,7 +24,9 @@ class HerokuEmbedding(BaseEmbedding):
     Heroku Managed Inference Embeddings Integration.
 
     This class provides an interface to Heroku's Managed Inference API for embeddings.
-    It connects to your Heroku app's embedding endpoints for embedding models.
+    It connects to your Heroku app's embedding endpoint for embedding models. For more
+    information about Heroku's embedding endpoint
+    see: https://devcenter.heroku.com/articles/heroku-inference-api-model-cohere-embed-multilingual
 
     Args:
         model (str, optional): The model to use. If not provided, will use EMBEDDING_MODEL_ID.
@@ -35,7 +37,7 @@ class HerokuEmbedding(BaseEmbedding):
 
     Environment Variables:
         - EMBEDDING_KEY: The API key for Heroku embedding
-        - EMBEDDING_URL: The base URL for embedding endpoints
+        - EMBEDDING_URL: The base URL for embedding endpoint
         - EMBEDDING_MODEL_ID: The model ID to use
 
     Raises:
@@ -50,7 +52,7 @@ class HerokuEmbedding(BaseEmbedding):
         default=None, description="The API key for Heroku embedding."
     )
     base_url: Optional[str] = Field(
-        default=None, description="The base URL for embedding endpoints."
+        default=None, description="The base URL for embedding endpoint."
     )
     timeout: float = Field(default=60.0, description="Timeout for requests in seconds.")
 
