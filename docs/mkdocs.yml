@@ -135,6 +135,7 @@ nav:
           - ./examples/cookbooks/GraphRAG_v2.ipynb
           - ./examples/cookbooks/airtrain.ipynb
           - ./examples/cookbooks/anthropic_haiku.ipynb
+          - ./examples/cookbooks/build_knowledge_graph_with_neo4j_llamacloud.ipynb
           - ./examples/cookbooks/cleanlab_tlm_rag.ipynb
           - ./examples/cookbooks/codestral.ipynb
           - ./examples/cookbooks/cohere_retriever_eval.ipynb
@@ -147,6 +148,7 @@ nav:
           - ./examples/cookbooks/mistralai.ipynb
           - ./examples/cookbooks/mixedbread_reranker.ipynb
           - ./examples/cookbooks/mongodb_retrieval_strategies.ipynb
+          - ./examples/cookbooks/ollama_gpt_oss_cookbook.ipynb
           - ./examples/cookbooks/oracleai_demo.ipynb
           - ./examples/cookbooks/oreilly_course_cookbooks/Module-2/Components_Of_LlamaIndex.ipynb
           - ./examples/cookbooks/oreilly_course_cookbooks/Module-3/Evaluating_RAG_Systems.ipynb
@@ -158,6 +160,7 @@ nav:
           - ./examples/cookbooks/oreilly_course_cookbooks/Module-7/Multi_Modal_RAG_System.ipynb
           - ./examples/cookbooks/oreilly_course_cookbooks/Module-8/Advanced_RAG_with_LlamaParse.ipynb
           - ./examples/cookbooks/prometheus2_cookbook.ipynb
+          - ./examples/cookbooks/rerank_llamaparsed_pdfs.ipynb
           - ./examples/cookbooks/toolhouse_llamaindex.ipynb
       - Customization:
           - ./examples/customization/llms/AzureOpenAI.ipynb
@@ -342,6 +345,7 @@ nav:
           - ./examples/llm/google_genai.ipynb
           - ./examples/llm/grok.ipynb
           - ./examples/llm/groq.ipynb
+          - ./examples/llm/heroku.ipynb
           - ./examples/llm/huggingface.ipynb
           - ./examples/llm/ibm_watsonx.ipynb
           - ./examples/llm/ipex_llm.ipynb
@@ -383,6 +387,7 @@ nav:
           - ./examples/llm/openvino-genai.ipynb
           - ./examples/llm/openvino.ipynb
           - ./examples/llm/optimum_intel.ipynb
+          - ./examples/llm/opus_4_1.ipynb
           - ./examples/llm/paieas.ipynb
           - ./examples/llm/palm.ipynb
           - ./examples/llm/perplexity.ipynb
@@ -510,6 +515,7 @@ nav:
           - ./examples/observability/LangfuseCallbackHandler.ipynb
           - ./examples/observability/LangfuseMistralPostHog.ipynb
           - ./examples/observability/LlamaDebugHandler.ipynb
+          - ./examples/observability/Deepeval.ipynb
           - ./examples/observability/MLflow.ipynb
           - ./examples/observability/OpenInferenceCallback.ipynb
           - ./examples/observability/OpenLLMetry.ipynb
@@ -613,6 +619,7 @@ nav:
           - ./examples/tools/function_tool_callback.ipynb
           - ./examples/tools/mcp.ipynb
           - ./examples/tools/mcp_agent_tools.ipynb
+          - ./examples/tools/mcp_toolbox.ipynb
           - ./examples/tools/order_completion_agent_with_artifact_editor.ipynb
       - Transforms:
           - ./examples/transforms/TransformsEval.ipynb
@@ -820,7 +827,7 @@ nav:
               - ./module_guides/querying/response_synthesizers/index.md
               - ./module_guides/querying/response_synthesizers/response_synthesizers.md
           - Routing: ./module_guides/querying/router/index.md
-          - Workflows: ./module_guides/workflow/index.md
+          - Workflows: /workflows
           - Query Pipelines (Deprecated):
               - ./module_guides/querying/pipeline/index.md
               - ./module_guides/querying/pipeline/usage_pattern.md
@@ -836,7 +843,12 @@ nav:
           - ./module_guides/deploying/agents/memory.md
           - ./module_guides/deploying/agents/tools.md
       - Workflows:
-          - ./module_guides/workflow/index.md
+          - workflows
+      - MCP:
+          - ./module_guides/mcp/index.md
+          - ./module_guides/mcp/llamaindex_mcp.md
+          - ./module_guides/mcp/llamacloud_mcp.md
+          - ./module_guides/mcp/convert_existing.md
       - Evaluation:
           - ./module_guides/evaluating/index.md
           - ./module_guides/evaluating/usage_pattern.md
@@ -1038,6 +1050,7 @@ nav:
           - ./api_reference/llms/google_genai.md
           - ./api_reference/llms/gradient.md
           - ./api_reference/llms/groq.md
+          - ./api_reference/llms/heroku.md
           - ./api_reference/llms/huggingface.md
           - ./api_reference/llms/huggingface_api.md
           - ./api_reference/llms/ibm.md
@@ -1508,6 +1521,7 @@ nav:
           - ./api_reference/retrievers/router.md
           - ./api_reference/retrievers/sql.md
           - ./api_reference/retrievers/summary.md
+          - ./api_reference/retrievers/superlinked.md
           - ./api_reference/retrievers/tldw.md
           - ./api_reference/retrievers/transform.md
           - ./api_reference/retrievers/tree.md
@@ -1609,6 +1623,7 @@ nav:
               - ./api_reference/storage/vector_store/azurecosmosnosql.md
               - ./api_reference/storage/vector_store/bagel.md
               - ./api_reference/storage/vector_store/baiduvectordb.md
+              - ./api_reference/storage/vector_store/bigquery.md
               - ./api_reference/storage/vector_store/cassandra.md
               - ./api_reference/storage/vector_store/chatgpt_plugin.md
               - ./api_reference/storage/vector_store/chroma.md
@@ -1677,6 +1692,7 @@ nav:
           - ./api_reference/tools/agentql.md
           - ./api_reference/tools/artifact_editor.md
           - ./api_reference/tools/arxiv.md
+          - ./api_reference/tools/aws_bedrock_agentcore.md
           - ./api_reference/tools/azure_code_interpreter.md
           - ./api_reference/tools/azure_cv.md
           - ./api_reference/tools/azure_speech.md
@@ -1762,6 +1778,18 @@ nav:
       - Changelog: ./CHANGELOG.md
       - Presentations: ./presentations/past_presentations.md
       - Deprecated Terms: ./changes/deprecated_terms.md
+  - Workflows:
+      - ./workflows/index.md
+      - v1:
+          - ./workflows/v1/index.md
+          - ./workflows/v1/customizing_entry_exit_points.md
+          - ./workflows/v1/drawing.md
+          - ./workflows/v1/managing_events.md
+          - ./workflows/v1/managing_state.md
+          - ./workflows/v1/retry_steps.md
+          - ./workflows/v1/resources.md
+          - ./workflows/v1/stepwise.md
+          - ./workflows/v1/deployment.md
   - LlamaCloud: https://docs.cloud.llamaindex.ai/
 plugins:
   - search
@@ -2460,6 +2488,10 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-cloudflare-ai-gateway
             - ../llama-index-integrations/tools/llama-index-tools-jira-issue
             - ../llama-index-integrations/voice_agents/llama-index-voice-agents-gemini-live
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-bigquery
+            - ../llama-index-integrations/tools/llama-index-tools-aws-bedrock-agentcore
+            - ../llama-index-integrations/llms/llama-index-llms-heroku
+            - ../llama-index-integrations/retrievers/llama-index-retrievers-superlinked
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
@@ -3088,6 +3120,7 @@ plugins:
         ./module_guides/supporting_modules/service_context_migration.html: https://docs.llamaindex.ai/en/stable/module_guides/supporting_modules/service_context_migration/
         ./module_guides/supporting_modules/settings.html: https://docs.llamaindex.ai/en/stable/module_guides/supporting_modules/settings/
         ./module_guides/supporting_modules/supporting_modules.html: https://docs.llamaindex.ai/en/stable/module_guides/supporting_modules/supporting_modules/
+        ./module_guides/workflow/index.html: https://docs.llamaindex.ai/en/stable/workflows/
         ./optimizing/advanced_retrieval/advanced_retrieval.html: https://docs.llamaindex.ai/en/stable/optimizing/advanced_retrieval/advanced_retrieval/
         ./optimizing/advanced_retrieval/query_transformations.html: https://docs.llamaindex.ai/en/stable/optimizing/advanced_retrieval/query_transformations/
         ./optimizing/agentic_strategies/agentic_strategies.html: https://docs.llamaindex.ai/en/stable/optimizing/agentic_strategies/agentic_strategies/

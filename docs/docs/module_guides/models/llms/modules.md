@@ -21,6 +21,7 @@ We support integrations with OpenAI, Anthropic, Google, Hugging Face, and more.
 - [Gradient](../../../examples/llm/gradient_base_model.ipynb)
 - [Gradient Model Adapter](../../../examples/llm/gradient_model_adapter.ipynb)
 - [Groq](../../../examples/llm/groq.ipynb)
+- [Heroku](../../../examples/llm/heroku.ipynb)
 - [HuggingFace Camel-7B](../../../examples/customization/llms/SimpleIndexDemo-Huggingface_camel.ipynb)
 - [HuggingFace StableLM](../../../examples/customization/llms/SimpleIndexDemo-Huggingface_stablelm.ipynb)
 - [HuggingFace Llama2](../../../examples/vector_stores/SimpleIndexDemoLlama-Local.ipynb)

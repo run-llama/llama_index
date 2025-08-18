@@ -2,6 +2,7 @@
 ClickHouse vector store.
 
 An index that is built on top of an existing ClickHouse cluster.
+For current documentation, refer to : https://clickhouse.com/docs/engines/table-engines/mergetree-family/annindexes
 """
 
 import importlib
@@ -56,7 +57,6 @@ def format_list_to_string(lst: List) -> str:
 DISTANCE_MAPPING = {
     "l2": "L2Distance",
     "cosine": "cosineDistance",
-    "dot": "dotProduct",
 }
 
 
@@ -69,7 +69,7 @@ class ClickHouseSettings:
         database (str): Database name to find the table.
         engine (str): Engine. Options are "MergeTree" and "Memory". Default is "MergeTree".
         index_type (str): Index type string.
-        metric (str): Metric type to compute distance e.g., cosine, l3, or dot.
+        metric (str): Metric type to compute distance e.g., cosine or l2
         batch_size (int): The size of documents to insert.
         index_params (dict, optional): Index build parameter.
         search_params (dict, optional): Index search parameters for ClickHouse query.
@@ -84,6 +84,7 @@ class ClickHouseSettings:
         index_type: str,
         metric: str,
         batch_size: int,
+        dimension: Optional[int] = None,
         index_params: Optional[dict] = None,
         search_params: Optional[dict] = None,
         **kwargs: Any,
@@ -94,6 +95,7 @@ class ClickHouseSettings:
         self.index_type = index_type
         self.metric = metric
         self.batch_size = batch_size
+        self.dimension = dimension
         self.index_params = index_params
         self.search_params = search_params
 
@@ -131,12 +133,15 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
         database (str, optional): The name of the ClickHouse database
             where data will be stored. Defaults to "default".
         index_type (str, optional): The type of the ClickHouse vector index.
-            Defaults to "NONE", supported are ("NONE", "HNSW", "ANNOY")
+            Defaults to "HNSW", supported are ("NONE", "HNSW"). Use NONE for brute-force KNN search.
         metric (str, optional): The metric type of the ClickHouse vector index.
-            Defaults to "cosine".
+            Defaults to "cosine". Alternate metric type is "l2".
         batch_size (int, optional): the size of documents to insert. Defaults to 1000.
         index_params (dict, optional): The index parameters for ClickHouse.
-            Defaults to None.
+            Defaults to None. For HNSW, following parameters are supported :-
+            "quantization" : One of 'f64','f32', 'f16', 'bf16', 'i8', 'b1'. Default is 'bf16'.
+            "hnsw_max_connections_per_layer": Default is 32.
+            "hnsw_candidate_list_size_for_construction" : Default is 128.
         search_params (dict, optional): The search parameters for a ClickHouse query.
             Defaults to None.
 
@@ -180,9 +185,10 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
         table: str = "llama_index",
         database: str = "default",
         engine: str = "MergeTree",
-        index_type: str = "NONE",
+        index_type: str = "HNSW",
         metric: str = "cosine",
         batch_size: int = 1000,
+        dimension: Optional[int] = None,
         index_params: Optional[dict] = None,
         search_params: Optional[dict] = None,
         **kwargs: Any,
@@ -208,6 +214,7 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
             index_type=index_type,
             metric=metric,
             batch_size=batch_size,
+            dimension=dimension,
             index_params=index_params,
             search_params=search_params,
             **kwargs,
@@ -249,6 +256,7 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
             index_type=index_type,
             metric=metric,
             batch_size=batch_size,
+            dimension=dimension,
             index_params=index_params,
             search_params=search_params,
         )
@@ -257,7 +265,8 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
         self._column_config = column_config
         self._column_names = column_names
         self._column_type_names = column_type_names
-        dimension = len(Settings.embed_model.get_query_embedding("try this out"))
+        if dimension is None:
+            dimension = len(Settings.embed_model.get_query_embedding("try this out"))
         self.create_table(dimension)
 
     @property
@@ -267,19 +276,31 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
 
     def create_table(self, dimension: int) -> None:
         index = ""
-        settings = {"allow_experimental_object_type": "1"}
+        settings = {"allow_experimental_vector_similarity_index": "1"}
+        quantization = "bf16"
+        M = 32
+        ef_c = 128
+
         if self._config.index_type.lower() == "hnsw":
-            scalarKind = "f32"
-            if self._config.index_params and "ScalarKind" in self._config.index_params:
-                scalarKind = self._config.index_params["ScalarKind"]
-            index = f"INDEX hnsw_indx vector TYPE usearch('{DISTANCE_MAPPING[self._config.metric]}', '{scalarKind}')"
-            settings["allow_experimental_usearch_index"] = "1"
-        elif self._config.index_type.lower() == "annoy":
-            numTrees = 100
-            if self._config.index_params and "NumTrees" in self._config.index_params:
-                numTrees = self._config.index_params["NumTrees"]
-            index = f"INDEX annoy_indx vector TYPE annoy('{DISTANCE_MAPPING[self._config.metric]}', {numTrees})"
-            settings["allow_experimental_annoy_index"] = "1"
+            if (
+                self._config.index_params
+                and "quantization" in self._config.index_params
+            ):
+                quantization = self._config.index_params["quantization"]
+            if (
+                self._config.index_params
+                and "hnsw_max_connections_per_layer" in self._config.index_params
+            ):
+                M = self._config.index_params["hnsw_max_connections_per_layer"]
+            if (
+                self._config.index_params
+                and "hnsw_candidate_list_size_for_construction"
+                in self._config.index_params
+            ):
+                ef_c = self._config.index_params[
+                    "hnsw_candidate_list_size_for_construction"
+                ]
+            index = f"INDEX vector_index vector TYPE vector_similarity('hnsw', '{DISTANCE_MAPPING[self._config.metric]}', {dimension}, '{quantization}', {M}, {ef_c})"
         schema_ = f"""
             CREATE TABLE IF NOT EXISTS {self._config.database}.{self._config.table}(
                 {",".join([f"{k} {v['type']}" for k, v in self._column_config.items()])},
@@ -288,6 +309,7 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
             ) ENGINE = MergeTree ORDER BY id
             """
         self._dim = dimension
+        self.drop()
         self._client.command(schema_, settings=settings)
         self._table_existed = True
 
@@ -321,7 +343,7 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
             sql_escaped = escape_str(regex_escaped)
             safe_tokens.append(sql_escaped)
 
-        terms_pattern = [f"\\\\b(?i){token}\\\\b" for token in safe_tokens]
+        terms_pattern = [f"\\b(?i){token}\\b" for token in safe_tokens]
         joined_tokens_pattern = escape_str("|".join(safe_tokens))
         column_keys = [k for k in self._column_config if k != "vector"]
         column_list = ",".join(column_keys)
@@ -330,7 +352,7 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
             f"FROM {self._config.database}.{self._config.table} WHERE score > 0 "
             f"ORDER BY length(multiMatchAllIndices(text, {terms_pattern})) "
             f"AS score DESC, "
-            f"log(1 + countMatches(text, '\\\\b(?i)({joined_tokens_pattern})\\\\b')) "
+            f"log(1 + countMatches(text, '\\b(?i)({joined_tokens_pattern})\\b')) "
             f"AS d2 DESC limit {similarity_top_k}"
         )
 
@@ -345,7 +367,7 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
             sql_escaped = escape_str(regex_escaped)
             safe_tokens.append(sql_escaped)
 
-        terms_pattern = [f"\\\\b(?i){token}\\\\b" for token in safe_tokens]
+        terms_pattern = [f"\\b(?i){token}\\b" for token in safe_tokens]
         joined_tokens_pattern = escape_str("|".join(safe_tokens))
         column_keys = [k for k in self._column_config if k != "vector"]
         column_list = ",".join(column_keys)
@@ -354,7 +376,7 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
             f"FROM ({stage_one_sql}) tempt "
             f"ORDER BY length(multiMatchAllIndices(text, {terms_pattern})) "
             f"AS d1 DESC, "
-            f"log(1 + countMatches(text, '\\\\\\\\b(?i)({joined_tokens_pattern})\\\\\\\\b')) "
+            f"log(1 + countMatches(text, '\\b(?i)({joined_tokens_pattern})\\b')) "
             f"AS d2 DESC limit {similarity_top_k}"
         )
 

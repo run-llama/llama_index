@@ -183,7 +183,7 @@ async def test_async_chat_with_tools() -> None:
     client is None, reason="Ollama client is not available or test model is missing"
 )
 def test_chat_with_think() -> None:
-    llm = Ollama(model=thinking_test_model, thinking=True)
+    llm = Ollama(model=thinking_test_model, thinking=True, request_timeout=360)
     response = llm.chat(
         [ChatMessage(role="user", content="Hello! What is 32 * 4?")], think=False
     )

@@ -84,7 +84,7 @@ class VoyageEmbedding(MultiModalEmbedding):
                     if model_name in ["voyage-3-lite", "voyage-3.5-lite"]
                     else (
                         DEFAULT_VOYAGE_3_BATCH_SIZE
-                        if model_name in ["voyage-3", "voyage-3.5"]
+                        if model_name in ["voyage-3", "voyage-3.5", "voyage-context-3"]
                         else DEFAULT_BATCH_SIZE
                     )
                 )

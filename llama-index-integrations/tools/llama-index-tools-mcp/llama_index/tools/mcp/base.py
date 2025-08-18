@@ -1,62 +1,24 @@
 import asyncio
 import logging
-from typing import Any, Callable, Dict, List, Optional, Type
+from typing import Any, Callable, List, Optional
 
 from mcp.client.session import ClientSession
 from mcp.types import Resource
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, create_model
 
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 from llama_index.core.tools.types import ToolMetadata
-
-# Map JSON Schema types to Python types
-json_type_mapping: Dict[str, Type] = {
-    "string": str,
-    "number": float,
-    "integer": int,
-    "boolean": bool,
-    "object": dict,
-    "array": list,
-}
+from llama_index.tools.mcp.tool_spec_mixins import (
+    TypeResolutionMixin,
+    TypeCreationMixin,
+    FieldExtractionMixin,
+)
 
 
-def create_model_from_json_schema(
-    schema: Dict[str, Any], model_name: str = "DynamicModel"
-) -> Type[BaseModel]:
-    """
-    To create a Pydantic model from the JSON Schema of MCP tools.
-
-    Args:
-        schema: A JSON Schema dictionary containing properties and required fields.
-        model_name: The name of the model.
-
-    Returns:
-        A Pydantic model class.
-
-    """
-    properties = schema.get("properties", {})
-    required_fields = set(schema.get("required", []))
-    fields = {}
-
-    for field_name, field_schema in properties.items():
-        json_type = field_schema.get("type", "string")
-        json_type = json_type[0] if isinstance(json_type, list) else json_type
-
-        field_type = json_type_mapping.get(json_type, str)
-        if field_name in required_fields:
-            default_value = ...
-        else:
-            default_value = None
-            field_type = Optional[field_type]
-        fields[field_name] = (
-            field_type,
-            Field(default_value, description=field_schema.get("description", "")),
-        )
-    return create_model(model_name, **fields)
-
-
-class McpToolSpec(BaseToolSpec):
+class McpToolSpec(
+    BaseToolSpec, TypeResolutionMixin, TypeCreationMixin, FieldExtractionMixin
+):
     """
     MCPToolSpec will get the tools from MCP Client (only need to implement ClientSession) and convert them to LlamaIndex's FunctionTool objects.
 
@@ -80,6 +42,7 @@ class McpToolSpec(BaseToolSpec):
         self.client = client
         self.allowed_tools = allowed_tools
         self.include_resources = include_resources
+        self.properties_cache = {}
 
     async def fetch_tools(self) -> List[Any]:
         """
@@ -167,7 +130,7 @@ class McpToolSpec(BaseToolSpec):
         for tool in tools_list:
             fn = self._create_tool_fn(tool.name)
             # Create a Pydantic model based on the tool inputSchema
-            model_schema = create_model_from_json_schema(
+            model_schema = self.create_model_from_json_schema(
                 tool.inputSchema, model_name=f"{tool.name}_Schema"
             )
             metadata = ToolMetadata(
@@ -208,6 +171,49 @@ class McpToolSpec(BaseToolSpec):
 
         """
         return patch_sync(self.to_tool_list_async)()
+
+    def create_model_from_json_schema(
+        self,
+        schema: dict[str, Any],
+        model_name: str = "DynamicModel",
+    ) -> type[BaseModel]:
+        """
+        To create a Pydantic model from the JSON Schema of MCP tools.
+
+        Args:
+            schema: A JSON Schema dictionary containing properties and required fields.
+            model_name: The name of the model.
+
+        Returns:
+            A Pydantic model class.
+
+        """
+        defs = schema.get("$defs", {})
+
+        # Process all type definitions
+        for cls_name, cls_schema in defs.items():
+            self.properties_cache[cls_name] = self._create_model(
+                cls_schema,
+                cls_name,
+                defs,
+            )
+
+        return self._create_model(schema, model_name)
+
+    def _create_model(
+        self,
+        schema: dict,
+        model_name: str,
+        defs: dict = {},
+    ) -> type[BaseModel]:
+        """Create a Pydantic model from a schema."""
+        if model_name in self.properties_cache:
+            return self.properties_cache[model_name]
+
+        fields = self._extract_fields(schema, defs)
+        model = create_model(model_name, **fields)
+        self.properties_cache[model_name] = model
+        return model
 
 
 def patch_sync(func_async: Callable) -> Callable:

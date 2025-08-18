@@ -113,6 +113,10 @@ class BaseWorkflowAgent(
             default=None,
         )
     )
+    streaming: bool = Field(
+        default=True,
+        description="Whether to stream the agent's output to the event stream. Useful for long-running agents, but not every LLM will support streaming.",
+    )
 
     def __init__(
         self,
@@ -127,6 +131,7 @@ class BaseWorkflowAgent(
         state_prompt: Optional[Union[str, BasePromptTemplate]] = None,
         output_cls: Optional[Type[BaseModel]] = None,
         structured_output_fn: Optional[Callable[[List[ChatMessage]], BaseModel]] = None,
+        streaming: bool = True,
         timeout: Optional[float] = None,
         verbose: bool = False,
         **kwargs: Any,
@@ -157,6 +162,7 @@ class BaseWorkflowAgent(
             state_prompt=state_prompt,
             output_cls=output_cls,
             structured_output_fn=structured_output_fn,
+            streaming=streaming,
             **model_kwargs,
         )
 

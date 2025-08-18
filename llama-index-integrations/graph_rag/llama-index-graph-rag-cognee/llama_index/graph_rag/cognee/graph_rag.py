@@ -1,15 +1,21 @@
 import os
 import pathlib
+import webbrowser
 from typing import List, Union
 
-import cognee
+import cognee as cognee_lib
 
 from llama_index.core import Document
 
-from .base import GraphRAG
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .base import GraphRAG
+
+# mypy: disable-error-code="attr-defined"
 
 
-class CogneeGraphRAG(GraphRAG):
+class CogneeGraphRAG:
     """
     Cognee GraphRAG, handles adding, storing, processing and retrieving information from knowledge graphs.
 
@@ -21,8 +27,8 @@ class CogneeGraphRAG(GraphRAG):
     llm_api_key: str: API key for desired LLM.
     llm_provider: str: Provider for desired LLM (default: "openai").
     llm_model: str: Model for desired LLM (default: "gpt-4o-mini").
-    graph_db_provider: str: The graph database provider (default: "networkx").
-                            Supported providers: "neo4j", "networkx".
+    graph_db_provider: str: The graph database provider (default: "kuzu").
+                            Supported providers: "neo4j", "networkx", "kuzu".
     graph_database_url: str: URL for the graph database.
     graph_database_username: str: Username for accessing the graph database.
     graph_database_password: str: Password for accessing the graph database.
@@ -45,7 +51,7 @@ class CogneeGraphRAG(GraphRAG):
         llm_api_key: str,
         llm_provider: str = "openai",
         llm_model: str = "gpt-4o-mini",
-        graph_db_provider: str = "networkx",
+        graph_db_provider: str = "kuzu",
         graph_database_url: str = "",
         graph_database_username: str = "",
         graph_database_password: str = "",
@@ -59,7 +65,7 @@ class CogneeGraphRAG(GraphRAG):
         relational_db_username: str = "",
         relational_db_password: str = "",
     ) -> None:
-        cognee.config.set_llm_config(
+        cognee_lib.config.set_llm_config(
             {
                 "llm_api_key": llm_api_key,
                 "llm_provider": llm_provider,
@@ -67,14 +73,14 @@ class CogneeGraphRAG(GraphRAG):
             }
         )
 
-        cognee.config.set_vector_db_config(
+        cognee_lib.config.set_vector_db_config(
             {
                 "vector_db_url": vector_db_url,
                 "vector_db_key": vector_db_key,
                 "vector_db_provider": vector_db_provider,
             }
         )
-        cognee.config.set_relational_db_config(
+        cognee_lib.config.set_relational_db_config(
             {
                 "db_path": "",
                 "db_name": relational_db_name,
@@ -86,7 +92,7 @@ class CogneeGraphRAG(GraphRAG):
             }
         )
 
-        cognee.config.set_graph_db_config(
+        cognee_lib.config.set_graph_db_config(
             {
                 "graph_database_provider": graph_db_provider,
                 "graph_database_url": graph_database_url,
@@ -101,116 +107,166 @@ class CogneeGraphRAG(GraphRAG):
             ).resolve()
         )
 
-        cognee.config.data_root_directory(data_directory_path)
+        cognee_lib.config.data_root_directory(data_directory_path)
         cognee_directory_path = str(
             pathlib.Path(
                 os.path.join(pathlib.Path(__file__).parent, ".cognee_system/")
             ).resolve()
         )
-        cognee.config.system_root_directory(cognee_directory_path)
+        cognee_lib.config.system_root_directory(cognee_directory_path)
+        cognee_lib.config.data_root_directory(data_directory_path)
 
     async def add(
-        self, data: Union[Document, List[Document]], dataset_name: str
+        self, data: Union[Document, List[Document]], dataset_name: str = "main_dataset"
     ) -> None:
         """
         Add data to the specified dataset.
         This data will later be processed and made into a knowledge graph.
 
         Args:
-             data (Any): The data to be added to the graph.
-             dataset_name (str): Name of the dataset or node set where the data will be added.
+            data (Union[Document, List[Document]]): The document(s) to be added to the graph.
+                Can be a single Document or a list of Documents.
+            dataset_name (str): Name of the dataset or node set where the data will be added.
+                               Note: While cognee supports custom dataset organization, this integration
+                               currently adds all data to 'main_dataset'. Full dataset_name support
+                               will be added in a future version. This parameter is included to show
+                               the intended API design.
 
         """
         # Convert LlamaIndex Document type to text
+        text_data: List[str]
         if isinstance(data, List) and len(data) > 0:
-            data = [data.text for data in data if type(data) is Document]
-        elif type(data) is Document:
-            data = [data.text]
-
-        await cognee.add(data, dataset_name)
-
-    async def process_data(self, dataset_names: str) -> None:
-        """
-        Process and structure data in the dataset and make a knowledge graph out of it.
-
-        Args:
-            dataset_name (str): The dataset name to process.
-
-        """
-        user = await cognee.modules.users.methods.get_default_user()
-        datasets = await cognee.modules.data.methods.get_datasets_by_name(
-            dataset_names, user.id
-        )
-        await cognee.cognify(datasets, user)
-
-    async def get_graph_url(self, graphistry_password, graphistry_username) -> str:
-        """
-        Retrieve the URL or endpoint for visualizing or interacting with the graph.
-
-        Returns:
-            str: The URL endpoint of the graph.
-
-        """
-        if graphistry_password and graphistry_username:
-            cognee.config.set_graphistry_config(
-                {"username": graphistry_username, "password": graphistry_password}
+            text_data = [doc.text for doc in data if isinstance(doc, Document)]
+        elif isinstance(data, Document):
+            text_data = [data.text]
+        else:
+            raise ValueError(
+                "Invalid data type. Please provide a list of Documents or a single Document."
             )
 
-        from cognee.shared.utils import render_graph
-        from cognee.infrastructure.databases.graph import get_graph_engine
-        import graphistry
+        await cognee_lib.add(text_data, dataset_name)
 
-        graphistry.login(
-            username=graphistry_username,
-            password=graphistry_password,
-        )
-        graph_engine = await get_graph_engine()
+    async def process_data(self, dataset_name: str = "main_dataset") -> None:
+        """
+        Process and structure data in the dataset and create a knowledge graph from it.
 
-        graph_url = await render_graph(graph_engine.graph)
-        print(graph_url)
-        return graph_url
+        This method takes the raw data that was previously added and transforms it into
+        a structured knowledge graph with entities, relationships, and properties.
+
+        Args:
+            dataset_names (str): The name of the dataset to process into a knowledge graph.
+                               Note: While cognee supports multiple datasets, this integration
+                               currently processes 'main_dataset' only. Full dataset_names
+                               support will be added in a future version. This parameter is
+                               included to show the intended API design.
+
+        """
+        from cognee.modules.users.methods import get_default_user
+
+        user = await get_default_user()
+        await cognee_lib.cognify(dataset_name, user)
 
     async def rag_search(self, query: str) -> list:
         """
-        Answer query based on data chunk most relevant to query.
+        Answer query using traditional RAG approach with document chunks.
+
+        This method performs retrieval-augmented generation by finding the most
+        relevant document chunks and generating a response based on them.
 
         Args:
-            query (str): The query string.
+            query (str): The question or query to answer.
+
+        Returns:
+            list: Search results containing relevant document chunks and generated responses.
 
         """
-        user = await cognee.modules.users.methods.get_default_user()
-        return await cognee.search(
-            query_type=cognee.api.v1.search.SearchType.COMPLETION,
+        user = await cognee_lib.modules.users.methods.get_default_user()
+        return await cognee_lib.search(
+            query_type=cognee_lib.SearchType.RAG_COMPLETION,
             query_text=query,
             user=user,
         )
 
     async def search(self, query: str) -> list:
         """
-        Search the graph for relevant information based on a query.
+        Search the knowledge graph for relevant information using graph-based retrieval.
+
+        This method leverages the graph structure to find related entities, relationships,
+        and contextual information that traditional RAG might miss.
 
         Args:
-            query (str): The query string to match against data from the graph.
+            query (str): The question or search term to match against entities and relationships in the graph.
+
+        Returns:
+            list: Search results containing graph-based insights and related information.
 
         """
-        user = await cognee.modules.users.methods.get_default_user()
-        return await cognee.search(
-            query_type=cognee.api.v1.search.SearchType.GRAPH_COMPLETION,
+        user = await cognee_lib.modules.users.methods.get_default_user()
+        return await cognee_lib.search(
+            query_type=cognee_lib.SearchType.GRAPH_COMPLETION,
             query_text=query,
             user=user,
         )
 
     async def get_related_nodes(self, node_id: str) -> list:
         """
-        Search the graph for relevant nodes or relationships based on node id.
+        Find nodes and relationships connected to a specific node in the knowledge graph.
+
+        This method explores the graph structure to discover entities and concepts
+        that are directly or indirectly related to the specified node.
 
         Args:
-            node_id (str): The name of the node to match against nodes in the graph.
+            node_id (str): The identifier or name of the node to find connections for.
+
+        Returns:
+            list: Related nodes, relationships, and insights connected to the specified node.
 
         """
-        user = await cognee.modules.users.methods.get_default_user()
-        return await cognee.search(
-            query_type=cognee.api.v1.search.SearchType.INSIGHTS,
+        user = await cognee_lib.modules.users.methods.get_default_user()
+        return await cognee_lib.search(
+            query_type=cognee_lib.SearchType.INSIGHTS,
             query_text=node_id,
             user=user,
         )
+
+    async def visualize_graph(
+        self, open_browser: bool = False, output_file_path: str | None = None
+    ) -> str:
+        """
+        Generate HTML visualization of the graph and optionally open in browser.
+
+        Args:
+            open_browser (bool): Whether to automatically open the visualization in the default browser. Defaults to False.
+            output_file_path (str | None): Directory path where the HTML file will be saved.
+                                         If None, saves to user's home directory. Defaults to None.
+
+        Returns:
+            str: Full path to the generated HTML visualization file.
+
+        Raises:
+            ValueError: If output_file_path is provided but is not a valid directory.
+
+        """
+        # Determine the full file path for the visualization
+        if output_file_path:
+            if not os.path.isdir(output_file_path):
+                raise ValueError(
+                    f"The provided path '{output_file_path}' is not a directory"
+                )
+            full_file_path = os.path.join(output_file_path, "graph_visualization.html")
+        else:
+            home_dir = os.path.expanduser("~")
+            full_file_path = os.path.join(home_dir, "graph_visualization.html")
+
+        # Generate the visualization using cognee
+        await cognee_lib.visualize_graph(full_file_path)
+
+        # Open in browser if requested
+        if open_browser:
+            webbrowser.open(f"file://{os.path.abspath(full_file_path)}")
+
+        return full_file_path
+
+
+if TYPE_CHECKING:
+    _: GraphRAG = CogneeGraphRAG("dummy_key")
