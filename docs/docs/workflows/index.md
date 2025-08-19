@@ -20,3 +20,4 @@ Workflows are also automatically instrumented, so you get observability into eac
     1.3
 
 - [v1.x Documentation](./v1/index.md)
+- [v2.x Documentation](./v2/index.md)
