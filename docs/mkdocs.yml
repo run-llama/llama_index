@@ -843,7 +843,7 @@ nav:
           - ./module_guides/deploying/agents/memory.md
           - ./module_guides/deploying/agents/tools.md
       - Workflows:
-          - workflows
+          - ./module_guides/workflow/index.md
       - MCP:
           - ./module_guides/mcp/index.md
           - ./module_guides/mcp/llamaindex_mcp.md
@@ -3123,7 +3123,6 @@ plugins:
         ./module_guides/supporting_modules/service_context_migration.html: https://docs.llamaindex.ai/en/stable/module_guides/supporting_modules/service_context_migration/
         ./module_guides/supporting_modules/settings.html: https://docs.llamaindex.ai/en/stable/module_guides/supporting_modules/settings/
         ./module_guides/supporting_modules/supporting_modules.html: https://docs.llamaindex.ai/en/stable/module_guides/supporting_modules/supporting_modules/
-        ./module_guides/workflow/index.html: https://docs.llamaindex.ai/en/stable/workflows/
         ./optimizing/advanced_retrieval/advanced_retrieval.html: https://docs.llamaindex.ai/en/stable/optimizing/advanced_retrieval/advanced_retrieval/
         ./optimizing/advanced_retrieval/query_transformations.html: https://docs.llamaindex.ai/en/stable/optimizing/advanced_retrieval/query_transformations/
         ./optimizing/agentic_strategies/agentic_strategies.html: https://docs.llamaindex.ai/en/stable/optimizing/agentic_strategies/agentic_strategies/
