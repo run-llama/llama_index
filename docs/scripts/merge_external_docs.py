@@ -88,22 +88,8 @@ def main():
     )
     print("Copied in latest llama-deploy docs")
 
-    # copy the workflows-py/docs/docs/api_reference/workflow to the current docs/api_reference
-    os.system(
-        "cp -r workflows-py/docs/docs/api_reference/workflow ./docs/api_reference/"
-    )
-    print("Copied in latest workflows-py reference")
-
-    # copy the module guides
-    os.system(
-        "cp -r workflows-py/docs/docs/module_guides/workflow/* ./docs/module_guides/workflow/"
-    )
-    print("Copied in latest llama-deploy docs")
-
-    # copy the understanding section
-    os.system(
-        "cp -r workflows-py/docs/docs/understanding/workflow/* ./docs/understanding/workflow/"
-    )
+    # copy the Workflows v2 section
+    os.system("cp -r ./docs/workflows/v2 ./docs/workflows/")
     print("Copied in latest workflows-py docs")
 
 
