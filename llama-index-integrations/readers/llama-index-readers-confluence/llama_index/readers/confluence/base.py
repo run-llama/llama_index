@@ -570,7 +570,13 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
             html_text = page["body"]["export_view"]["value"]
             # save in temporary file
             file_location = None
-            with tempfile.NamedTemporaryFile(mode="w", suffix=".html", encoding="utf-8", dir=self.custom_folder, delete=False) as f:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                suffix=".html",
+                encoding="utf-8",
+                dir=self.custom_folder,
+                delete=False,
+            ) as f:
                 f.write(html_text)
                 file_location = f.name
             try:
