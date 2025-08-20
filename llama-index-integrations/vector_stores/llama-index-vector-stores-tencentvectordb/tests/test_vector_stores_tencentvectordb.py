@@ -1,5 +1,9 @@
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
-from llama_index.vector_stores.tencentvectordb import TencentVectorDB, CollectionParams
+from llama_index.vector_stores.tencentvectordb import (
+    TencentVectorDB,
+    CollectionParams,
+    FilterField,
+)
 
 
 def test_class():
