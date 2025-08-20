@@ -424,6 +424,40 @@ async def test_composite_retriever(index_name: str):
     assert any(n.node.metadata["pipeline_id"] == index1.id for n in nodes)
     assert any(n.node.metadata["pipeline_id"] == index1.id for n in nodes)
 
+    # Test additional rerank_top_n configurations to cover the injection logic
+
+    # Test retriever with only rerank_top_n=1 (no existing rerank_config)
+    retriever_with_rerank_top_n = LlamaCloudCompositeRetriever(
+        name="composite_retriever_test_2",
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+        create_if_not_exists=True,
+        mode=CompositeRetrievalMode.FULL,
+        rerank_top_n=1,
+    )
+    retriever_with_rerank_top_n.add_index(index1)
+    retriever_with_rerank_top_n.add_index(index2)
+    nodes = retriever_with_rerank_top_n.retrieve("Hello world.")
+    assert len(nodes) <= 1  # Should be limited to 1 result by rerank_top_n
+
+    # Test retriever with both rerank_top_n and custom rerank_config
+    custom_config = ReRankConfig(top_n=10, model="test-model")
+    retriever_with_both = LlamaCloudCompositeRetriever(
+        name="composite_retriever_test_3",
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+        create_if_not_exists=True,
+        mode=CompositeRetrievalMode.FULL,
+        rerank_top_n=2,
+        rerank_config=custom_config,
+    )
+    retriever_with_both.add_index(index1)
+    retriever_with_both.add_index(index2)
+    nodes = retriever_with_both.retrieve("Hello world.")
+    assert len(nodes) >= 2  # Should have results from both indices
+
     # Retrieve nodes using the composite retriever
     nodes = await retriever.aretrieve("Hello world.")
 
@@ -431,6 +465,14 @@ async def test_composite_retriever(index_name: str):
     assert len(nodes) >= 2
     assert any(n.node.metadata["pipeline_id"] == index1.id for n in nodes)
     assert any(n.node.metadata["pipeline_id"] == index1.id for n in nodes)
+
+    # Test async retrieve with the rerank_top_n only retriever
+    nodes = await retriever_with_rerank_top_n.aretrieve("Hello world.")
+    assert len(nodes) >= 1
+
+    # Test async retrieve with the both rerank_top_n and rerank_config retriever
+    nodes = await retriever_with_both.aretrieve("Hello world.")
+    assert len(nodes) >= 2
 
 
 @pytest.mark.skipif(
