@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-ollama"
-version = "0.6.2"
+version = "0.7.1"
 description = "llama-index llms ollama integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -35,7 +35,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "ollama>=0.5.1",
-    "llama-index-core>=0.12.4,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

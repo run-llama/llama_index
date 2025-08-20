@@ -325,7 +325,8 @@ class StreamingAgentChatResponse:
                                 self.aqueue.get(), timeout=0.1
                             )
                         except asyncio.TimeoutError:
-                            if self.is_done:
+                            # Break only when the stream is done and the queue is empty
+                            if self.is_done and self.aqueue.empty():
                                 break
                             continue
                         if delta is not None:
@@ -463,6 +464,8 @@ class ChatMode(str, Enum):
     """Corresponds to `ReActAgent`.
 
     Use a ReAct agent loop with query engine tools.
+
+    NOTE: Deprecated and unsupported.
     """
 
     OPENAI = "openai"
@@ -470,12 +473,11 @@ class ChatMode(str, Enum):
 
     Use an OpenAI function calling agent loop.
 
-    NOTE: only works with OpenAI models that support function calling API.
+    NOTE: Deprecated and unsupported.
     """
 
     BEST = "best"
     """Select the best chat engine based on the current LLM.
 
-    Corresponds to `OpenAIAgent` if using an OpenAI model that supports
-    function calling API, otherwise, corresponds to `ReActAgent`.
+    Corresponds to `condense_plus_context`
     """

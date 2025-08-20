@@ -26,13 +26,13 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-openai-like"
-version = "0.1.1"
+version = "0.2.1"
 description = "llama-index embeddings openai integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
-dependencies = ["llama-index-embeddings-openai>=0.3.0,<0.4"]
+dependencies = ["llama-index-embeddings-openai>=0.5.0,<0.6"]
 
 [tool.codespell]
 check-filenames = true

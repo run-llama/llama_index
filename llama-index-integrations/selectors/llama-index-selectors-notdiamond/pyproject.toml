@@ -28,13 +28,13 @@ dev = [
 
 [project]
 name = "llama-index-selectors-notdiamond"
-version = "0.2.1"
+version = "0.3.0"
 description = "llama-index selectors Not Diamond integration"
 authors = [{name = "Not Diamond", email = "support@notdiamond.ai"}]
 requires-python = ">=3.10,<4"
 readme = "README.md"
 dependencies = [
-    "llama-index-core>=0.10.0,<0.11",
+    "llama-index-core>=0.10.0,<0.13",
     "notdiamond>=0.3.5,<0.4",
     "litellm",
 ]

@@ -38,6 +38,9 @@ CHAT_MODELS = {
     "meta.llama-3.1-70b-instruct": 128000,
     "meta.llama-3.1-405b-instruct": 128000,
     "meta.llama-3.2-90b-vision-instruct": 128000,
+    "meta.llama-3.3-70b-instruct": 128000,
+    "meta.llama-4-scout-17b-16e-instruct": 192000,
+    "meta.llama-4-maverick-17b-128e-instruct-fp8": 512000,
 }
 
 OCIGENAI_LLMS = {**COMPLETION_MODELS, **CHAT_MODELS}
@@ -600,6 +603,7 @@ class MetaProvider(Provider):
         }
 
     def chat_stream_generation_info(self, event_data: Dict) -> Dict[str, Any]:
+        """Extract generation metadata from Meta chat stream event."""
         return {
             "finish_reason": event_data["finishReason"],
         }

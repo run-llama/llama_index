@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-packs-multi-tenancy-rag"
-version = "0.4.1"
+version = "0.5.0"
 description = "llama-index packs multi_tenancy_rag integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -40,8 +40,8 @@ keywords = [
     "tenancy",
 ]
 dependencies = [
-    "llama-index-llms-openai>=0.4.0,<0.5",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-llms-openai>=0.5.0,<0.6",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

@@ -26,13 +26,13 @@ dev = [
 
 [project]
 name = "llama-index-retrievers-galaxia"
-version = "0.1.0"
+version = "0.2.0"
 description = "llama-index retrievers galaxia integration"
 authors = [{name = "Robert Rozanski"}]
 requires-python = ">=3.8.1,<4.0"
 readme = "README.md"
 license = "MIT"
-dependencies = ["llama-index-core>=0.10.0,<0.11"]
+dependencies = ["llama-index-core>=0.10.0,<0.13"]
 
 [tool.codespell]
 check-filenames = true

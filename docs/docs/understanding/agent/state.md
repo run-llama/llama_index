@@ -82,9 +82,9 @@ To access the Context, the Context parameter should be the first parameter of th
 
 ```python
 async def set_name(ctx: Context, name: str) -> str:
-    state = await ctx.store.get("state")
-    state["name"] = name
-    await ctx.store.set("state", state)
+    async with ctx.store.edit_state() as ctx_state:
+        ctx_state["state"]["name"] = name
+
     return f"Name set to {name}"
 ```
 

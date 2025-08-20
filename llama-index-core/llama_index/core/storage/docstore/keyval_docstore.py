@@ -642,22 +642,19 @@ class KVDocumentStore(BaseDocumentStore):
         else:
             return None
 
+
     def get_all_document_hashes(self) -> Dict[str, str]:
         """Get the stored hash for all documents."""
-        hashes = {}
-        for doc_id in self._kvstore.get_all(collection=self._metadata_collection):
-            hash = self.get_document_hash(doc_id)
-            if hash is not None:
-                hashes[hash] = doc_id
-        return hashes
+        return {
+            doc_hash: doc_id
+            for doc_id, doc in (self._kvstore.get_all(collection=self._metadata_collection)).items()
+            if (doc_hash := doc.get("doc_hash"))
+        }
 
     async def aget_all_document_hashes(self) -> Dict[str, str]:
         """Get the stored hash for all documents."""
-        hashes = {}
-        for doc_id in await self._kvstore.aget_all(
-            collection=self._metadata_collection
-        ):
-            hash = await self.aget_document_hash(doc_id)
-            if hash is not None:
-                hashes[hash] = doc_id
-        return hashes
+        return {
+            doc_hash: doc_id
+            for doc_id, doc in (await self._kvstore.aget_all(collection=self._metadata_collection)).items()
+            if (doc_hash := doc.get("doc_hash"))
+        }

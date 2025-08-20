@@ -7,6 +7,7 @@ interfaces a managed service.
 """
 
 import asyncio
+from deprecated import deprecated
 import httpx
 import os
 import time
@@ -51,15 +52,19 @@ from llama_index.core.settings import (
 )
 from llama_index.core.storage.docstore.types import RefDocInfo
 from llama_index.indices.managed.llama_cloud.api_utils import (
-    default_embedding_config,
     default_transform_config,
     resolve_project_and_pipeline,
+    DEPRECATION_REASON,
 )
 import logging
 
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    reason=DEPRECATION_REASON,
+    version="0.9.1",
+)
 class LlamaCloudIndex(BaseManagedIndex):
     """
     A managed index that stores documents in LlamaCloud.
@@ -527,7 +532,7 @@ class LlamaCloudIndex(BaseManagedIndex):
         pipeline_create = PipelineCreate(
             name=name,
             pipeline_type=PipelineType.MANAGED,
-            embedding_config=embedding_config or default_embedding_config(),
+            embedding_config=embedding_config,  # If it's None, the default embedding config will be used
             transform_config=transform_config or default_transform_config(),
             llama_parse_parameters=llama_parse_parameters or LlamaParseParameters(),
         )
@@ -585,7 +590,7 @@ class LlamaCloudIndex(BaseManagedIndex):
         pipeline_create = PipelineCreate(
             name=name,
             pipeline_type=PipelineType.MANAGED,
-            embedding_config=embedding_config or default_embedding_config(),
+            embedding_config=embedding_config,  # If it's None, the default embedding config will be used
             transform_config=transform_config or default_transform_config(),
             llama_parse_parameters=llama_parse_parameters or LlamaParseParameters(),
         )

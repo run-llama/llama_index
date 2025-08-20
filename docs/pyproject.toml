@@ -11,6 +11,7 @@ version = "0.1.0"
 
 [tool.poetry.dependencies]
 python = "^3.11"
+llama-deploy = "*"
 mkdocs = "^1.6.1"
 mkdocs-autorefs = "^1.0.1"
 mkdocs-click = "^0.8.1"
@@ -23,7 +24,6 @@ mkdocs-redirects = "^1.2.1"
 mkdocs-render-swagger-plugin = "^0.1.2"
 mkdocstrings = {extras = ["python"], version = "^0.26.1"}
 griffe-fieldz = "^0.2.0"
-llama_deploy = {extras = ["awssqs", "kafka", "rabbitmq", "redis"], version = "<1"}
 appnope = "0.1.4"
 asttokens = "2.4.1"
 attrs = "23.2.0"
@@ -99,6 +99,6 @@ webencodings = "0.5.1"
 llama-index-workflows = "^0.2.2"
 
 [tool.poetry.scripts]
-merge-llama-deploy-docs = "scripts.merge_llama_deploy_docs:main"
+merge-external-docs = "scripts.merge_external_docs:main"
 prepare-for-build = "scripts.prepare_for_build:main"
 serve = "scripts.serve:main"

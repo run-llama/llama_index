@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-retrievers-vertexai-search"
-version = "0.2.0"
+version = "0.3.0"
 description = "llama-index retrievers vertex ai search integration"
 authors = [{name = "Dave Wang", email = "wangdave@google.com"}]
 requires-python = ">=3.9,<4.0"
@@ -37,7 +37,7 @@ dependencies = [
     "google-cloud-discoveryengine>=0.11.13,<0.12",
     "google-auth-httplib2>=0.2.0,<0.3",
     "google-auth-oauthlib>=1.2.0,<2",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

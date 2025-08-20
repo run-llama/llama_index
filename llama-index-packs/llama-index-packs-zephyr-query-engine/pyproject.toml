@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-packs-zephyr-query-engine"
-version = "0.4.0"
+version = "0.5.0"
 description = "llama-index packs zephyr_query_engine integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -46,8 +46,8 @@ dependencies = [
     "transformers>=4.37.1,<5",
     "accelerate>=0.26.1,<0.27",
     "bitsandbytes>=0.42.0,<0.43",
-    "llama-index-llms-huggingface>=0.4.0,<0.5",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-llms-huggingface>=0.6.0,<0.7",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

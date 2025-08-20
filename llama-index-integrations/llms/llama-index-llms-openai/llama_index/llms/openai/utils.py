@@ -53,6 +53,14 @@ O1_MODELS: Dict[str, int] = {
     "o3-pro-2025-06-10": 200000,
     "o4-mini": 200000,
     "o4-mini-2025-04-16": 200000,
+    # gpt-5 is a reasoning model, putting it in the o models list
+    "gpt-5": 400000,
+    "gpt-5-2025-08-07": 400000,
+    "gpt-5-mini": 400000,
+    "gpt-5-mini-2025-08-07": 400000,
+    "gpt-5-nano": 400000,
+    "gpt-5-nano-2025-08-07": 400000,
+    "gpt-5-chat-latest": 400000,
 }
 
 O1_MODELS_WITHOUT_FUNCTION_CALLING = {

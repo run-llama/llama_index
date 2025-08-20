@@ -19,10 +19,10 @@ Make sure to check out our [full module guide on Data Agents](../../module_guide
 
 Our [lower-level agent API](../../module_guides/deploying/agents/index.md#manual-agents) shows you the internals of how an agent works (with step-wise execution).
 
-Example guides below (using OpenAI function calling):
+Example guides below (using LLM-provider-specific function calling):
 
-- [OpenAIAgent](../../examples/workflow/function_calling_agent.ipynb)
-- [OpenAIAgent with Query Engine Tools](../../examples/agent/openai_agent_with_query_engine.ipynb)
-- [OpenAIAgent Retrieval](../../examples/agent/openai_agent_retrieval.ipynb)
-- [OpenAIAgent Query Cookbook](../../examples/agent/openai_agent_query_cookbook.ipynb)
-- [OpenAIAgent Context Retrieval](../../examples/agent/openai_agent_context_retrieval.ipynb)
+- [Basic Function Agent](../../examples/workflow/function_calling_agent.ipynb)
+- [Function Agent with Query Engine Tools](../../examples/agent/openai_agent_with_query_engine.ipynb)
+- [Function Agent Retrieval](../../examples/agent/openai_agent_retrieval.ipynb)
+- [Function Agent Query Cookbook](../../examples/agent/openai_agent_query_cookbook.ipynb)
+- [Function Agent w/ Context Retrieval](../../examples/agent/openai_agent_context_retrieval.ipynb)

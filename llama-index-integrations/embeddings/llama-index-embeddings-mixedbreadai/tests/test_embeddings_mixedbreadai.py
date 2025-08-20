@@ -4,8 +4,6 @@ import pytest
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.embeddings.mixedbreadai import (
     MixedbreadAIEmbedding,
-    EncodingFormat,
-    TruncationStrategy,
 )
 
 
@@ -21,8 +19,7 @@ def test_sync_embedding():
     emb = MixedbreadAIEmbedding(
         api_key=os.environ["MXBAI_API_KEY"],
         model_name="mixedbread-ai/mxbai-embed-large-v1",
-        encoding_format=EncodingFormat.INT_8,
-        truncation_strategy=TruncationStrategy.START,
+        encoding_format="int8",
     )
 
     emb.get_query_embedding("Who is german and likes bread?")
@@ -36,8 +33,7 @@ async def test_async_embedding():
     emb = MixedbreadAIEmbedding(
         api_key=os.environ["MXBAI_API_KEY"],
         model_name="mixedbread-ai/mxbai-embed-large-v1",
-        encoding_format=EncodingFormat.FLOAT,
-        truncation_strategy=TruncationStrategy.START,
+        encoding_format="float",
     )
 
     await emb.aget_query_embedding("Who is german and likes bread?")
