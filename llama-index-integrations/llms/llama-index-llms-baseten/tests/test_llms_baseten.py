@@ -4,4 +4,4 @@ from llama_index.llms.baseten import Baseten
 
 def test_text_inference_embedding_class():
     names_of_base_classes = [b.__name__ for b in Baseten.__mro__]
-    assert BaseLLM.__name__ in names_of_base_classes 
+    assert BaseLLM.__name__ in names_of_base_classes

@@ -62,4 +62,4 @@ BasetenEmbedding = "alexker"
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.8" 
+python_version = "3.8"

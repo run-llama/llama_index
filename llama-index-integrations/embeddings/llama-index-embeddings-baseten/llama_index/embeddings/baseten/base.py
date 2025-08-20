@@ -7,7 +7,9 @@ from llama_index.core.callbacks import CallbackManager
 from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.embeddings.openai import OpenAIEmbedding
 
-DEFAULT_API_BASE = "https://model-{model_id}.api.baseten.co/environments/production/sync/v1"
+DEFAULT_API_BASE = (
+    "https://model-{model_id}.api.baseten.co/environments/production/sync/v1"
+)
 
 
 class BasetenEmbedding(OpenAIEmbedding):
@@ -33,16 +35,17 @@ class BasetenEmbedding(OpenAIEmbedding):
             model_id="03y7n6e3",  # Your specific model ID
             api_key="YOUR_API_KEY",
         )
-        
+
         # Single embedding
         embedding = embed_model.get_text_embedding("Hello, world!")
-        
+
         # Batch embeddings
         embeddings = embed_model.get_text_embedding_batch([
             "Hello, world!",
             "Goodbye, world!"
         ])
         ```
+
     """
 
     additional_kwargs: Dict[str, Any] = Field(
@@ -70,7 +73,6 @@ class BasetenEmbedding(OpenAIEmbedding):
         http_client: Optional[httpx.Client] = None,
         **kwargs: Any,
     ) -> None:
-
         # Use the dedicated endpoint URL format
         api_base = DEFAULT_API_BASE.format(model_id=model_id)
         api_key = get_from_param_or_env("api_key", api_key, "BASETEN_API_KEY")
@@ -94,4 +96,4 @@ class BasetenEmbedding(OpenAIEmbedding):
 
     @classmethod
     def class_name(cls) -> str:
-        return "BasetenEmbedding" 
+        return "BasetenEmbedding"

@@ -2,7 +2,6 @@ from typing import Any, Callable, Dict, Optional, Sequence
 import aiohttp
 from llama_index.core.base.llms.types import (
     ChatMessage,
-    ChatResponse,
     CompletionResponse,
     LLMMetadata,
 )
@@ -14,13 +13,18 @@ from llama_index.llms.openai import OpenAI
 from llama_index.core.bridge.pydantic import Field
 from .utils import validate_model_slug
 
-DEFAULT_SYNC_API_BASE = "https://model-{model_id}.api.baseten.co/environments/production/sync/v1"
-DEFAULT_ASYNC_API_BASE = "https://model-{model_id}.api.baseten.co/production/async_predict"
+DEFAULT_SYNC_API_BASE = (
+    "https://model-{model_id}.api.baseten.co/environments/production/sync/v1"
+)
+DEFAULT_ASYNC_API_BASE = (
+    "https://model-{model_id}.api.baseten.co/production/async_predict"
+)
 MODEL_APIS_BASE = "https://inference.baseten.co/v1/"
 
 
 class Baseten(OpenAI):
-    """Baseten LLM with support for both dedicated and model apis endpoints.
+    """
+    Baseten LLM with support for both dedicated and model apis endpoints.
 
     Args:
         model_id (str): The Baseten model ID (e.g., "12a3b4c5") or model name (e.g., "deepseek-ai/DeepSeek-V3-0324").
@@ -77,14 +81,15 @@ class Baseten(OpenAI):
         request_id = response.text  # Track this ID for webhook response
 
         ```
+
     """
+
     webhook_endpoint: Optional[str] = Field(
-        default=None,
-        description="Webhook endpoint for async operations"
+        default=None, description="Webhook endpoint for async operations"
     )
     model_apis: bool = Field(
         default=True,
-        description="Whether to use the model apis endpoint or the dedicated endpoint"
+        description="Whether to use the model apis endpoint or the dedicated endpoint",
     )
 
     def __init__(
@@ -107,17 +112,17 @@ class Baseten(OpenAI):
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
-        
+
         # Validate model_id if using model apis endpoint
         if model_apis:
             validate_model_slug(model_id)
-        
+
         # Determine API base URL based on endpoint type
         if model_apis:
             api_base = MODEL_APIS_BASE
         else:
             api_base = DEFAULT_SYNC_API_BASE.format(model_id=model_id)
-            
+
         api_key = get_from_param_or_env("api_key", api_key, "BASETEN_API_KEY")
 
         super().__init__(
@@ -145,15 +150,17 @@ class Baseten(OpenAI):
         """Get class name."""
         return "Baseten_LLM"
 
-    async def acomplete(
-        self, prompt: str, **kwargs: Any
-    ) -> CompletionResponse:
+    async def acomplete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
         """Async completion - requires webhook_endpoint for async API."""
         if not self.webhook_endpoint:
-            raise ValueError("webhook_endpoint must be provided for async operations with Baseten")
-            
+            raise ValueError(
+                "webhook_endpoint must be provided for async operations with Baseten"
+            )
+
         if self.model_apis:
-            raise ValueError("Async operations are not supported with model apis endpoints")
+            raise ValueError(
+                "Async operations are not supported with model apis endpoints"
+            )
 
         async with aiohttp.ClientSession() as session:
             headers = {"Authorization": f"Api-Key {self.api_key}"}
@@ -162,26 +169,28 @@ class Baseten(OpenAI):
                     "prompt": prompt,
                     "temperature": self.temperature,
                     "max_tokens": self.max_tokens,
-                    **kwargs
+                    **kwargs,
                 },
-                "webhook_endpoint": self.webhook_endpoint
+                "webhook_endpoint": self.webhook_endpoint,
             }
-            
+
             async with session.post(
                 DEFAULT_ASYNC_API_BASE.format(model_id=self.model),
                 headers=headers,
-                json=payload
+                json=payload,
             ) as response:
                 if response.status not in [200, 201]:
-                    raise Exception(f"Error from Baseten API: {await response.text()}, Response status: {response.status}")
-                
+                    raise Exception(
+                        f"Error from Baseten API: {await response.text()}, Response status: {response.status}"
+                    )
+
                 result = await response.json()
                 request_id = result.get("request_id")
-                
+
                 return CompletionResponse(
                     text=request_id,  # Return request_id for tracking
                     raw=result,
-                    additional_kwargs={"async_request": True}
+                    additional_kwargs={"async_request": True},
                 )
 
     @property

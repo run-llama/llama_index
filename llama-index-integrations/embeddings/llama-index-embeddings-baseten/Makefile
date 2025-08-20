@@ -13,4 +13,4 @@ test:	## Run tests via pytest.
 	pytest tests
 
 watch-docs:	## Build and watch documentation.
-	sphinx-autobuild docs/ docs/_build/html --open-browser --watch $(GIT_ROOT)/llama_index/ 
+	sphinx-autobuild docs/ docs/_build/html --open-browser --watch $(GIT_ROOT)/llama_index/

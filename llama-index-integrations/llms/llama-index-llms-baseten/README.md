@@ -10,10 +10,12 @@ Install the required packages:
 pip install llama-index-llms-baseten
 pip install llama-index
 ```
+
 ## Model APIs vs. Dedicated Deployments
 
 Baseten offers two main ways for inference.
-1. Model APIs are public endpoints for popular open source models (GPT-OSS, Kimi K2, DeepSeek etc) where you can directly use a frontier model via slug e.g.  `deepseek-ai/DeepSeek-V3-0324` and you will be charged on a per-token basis. You can find the list of supported models here: https://docs.baseten.co/development/model-apis/overview#supported-models.
+
+1. Model APIs are public endpoints for popular open source models (GPT-OSS, Kimi K2, DeepSeek etc) where you can directly use a frontier model via slug e.g. `deepseek-ai/DeepSeek-V3-0324` and you will be charged on a per-token basis. You can find the list of supported models here: https://docs.baseten.co/development/model-apis/overview#supported-models.
 
 2. Dedicated deployments are useful for serving custom models where you want to autoscale production workloads and have fine-grain configuration. You need to deploy a model in your Baseten dashboard and provide the 8 character model id like `abcd1234`.
 
@@ -105,7 +107,7 @@ The async implementation uses webhooks to deliver results.
 async_llm = Baseten(
     model_id="your_model_id",
     api_key="your_api_key",
-    webhook_endpoint="your_webhook_endpoint"
+    webhook_endpoint="your_webhook_endpoint",
 )
 response = await async_llm.acomplete("Paul Graham is")
 print(response)
@@ -122,7 +124,7 @@ api_key = "your_api_key"
 
 resp = requests.get(
     f"https://model-{model_id}.api.baseten.co/async_request/{request_id}",
-    headers={"Authorization": f"Api-Key {api_key}"}
+    headers={"Authorization": f"Api-Key {api_key}"},
 )
 print(resp.json())
 ```
