@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-alibabacloud-opensearch"
-version = "0.3.0"
+version = "0.4.0"
 description = "llama-index vector_stores Alibaba Cloud OpenSearch integration"
 authors = [{name = "goctave", email = "gshuiwang@gmail.com"}]
 requires-python = ">=3.9,<4.0"
@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "alibabacloud_ha3engine_vector>=1.1.8,<2",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-storage-kvstore-tablestore"
-version = "0.1.0"
+version = "0.2.0"
 description = "llama-index kvstore tablestore integration"
 authors = [{name = "xunjian.sl", email = "xunjian.sl@alibaba-inc.com"}]
 requires-python = ">=3.9,<4.0"
@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "tablestore>=6.1.0",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

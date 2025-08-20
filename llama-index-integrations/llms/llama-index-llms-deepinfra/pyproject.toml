@@ -26,17 +26,17 @@ dev = [
 
 [project]
 name = "llama-index-llms-deepinfra"
-version = "0.4.1"
+version = "0.5.0"
 description = "llama-index llms deepinfra integration"
 authors = [{name = "Oguz Vuruskaneer", email = "oguzvuruskaner@gmail.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-llms-openai>=0.4.0,<0.5",
+    "llama-index-llms-openai>=0.5.0,<0.6",
     "aiohttp>=3.8.1,<4",
     "tenacity>=8.1.0,<8.4.0",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

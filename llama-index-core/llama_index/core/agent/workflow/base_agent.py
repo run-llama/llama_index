@@ -1,5 +1,7 @@
 from abc import abstractmethod
-from typing import Any, Callable, Dict, List, Sequence, Optional, Union, cast
+import warnings
+import inspect
+from typing import Any, Callable, Dict, List, Sequence, Optional, Union, Type, cast
 
 from pydantic._internal._model_construction import ModelMetaclass
 from llama_index.core.agent.workflow.prompts import DEFAULT_STATE_PROMPT
@@ -8,6 +10,7 @@ from llama_index.core.agent.workflow.workflow_events import (
     AgentInput,
     AgentSetup,
     AgentWorkflowStartEvent,
+    AgentStreamStructuredOutput,
     ToolCall,
     ToolCallResult,
 )
@@ -17,6 +20,8 @@ from llama_index.core.bridge.pydantic import (
     ConfigDict,
     field_validator,
 )
+from llama_index.core.prompts import PromptTemplate
+from llama_index.core.agent.utils import generate_structured_response
 from llama_index.core.llms import ChatMessage, LLM, TextBlock
 from llama_index.core.memory import BaseMemory, ChatMemoryBuffer
 from llama_index.core.prompts.base import BasePromptTemplate, PromptTemplate
@@ -97,6 +102,21 @@ class BaseWorkflowAgent(
         description="The prompt to use to update the state of the agent",
         validate_default=True,
     )
+    output_cls: Optional[Type[BaseModel]] = Field(
+        description="Output class for the agent. If you set this field to a non-null value, `structured_output_fn` will be ignored.",
+        default=None,
+        exclude=True,
+    )
+    structured_output_fn: Optional[Callable[[List[ChatMessage]], Dict[str, Any]]] = (
+        Field(
+            description="Custom function to generate structured output from the agent's run. It has to take a list of ChatMessage instances (derived from the memory) and output a BaseModel subclass instance. If you set `output_cls` to a non-null value, this field will be ignored.",
+            default=None,
+        )
+    )
+    streaming: bool = Field(
+        default=True,
+        description="Whether to stream the agent's output to the event stream. Useful for long-running agents, but not every LLM will support streaming.",
+    )
 
     def __init__(
         self,
@@ -109,6 +129,9 @@ class BaseWorkflowAgent(
         llm: Optional[LLM] = None,
         initial_state: Optional[Dict[str, Any]] = None,
         state_prompt: Optional[Union[str, BasePromptTemplate]] = None,
+        output_cls: Optional[Type[BaseModel]] = None,
+        structured_output_fn: Optional[Callable[[List[ChatMessage]], BaseModel]] = None,
+        streaming: bool = True,
         timeout: Optional[float] = None,
         verbose: bool = False,
         **kwargs: Any,
@@ -123,6 +146,9 @@ class BaseWorkflowAgent(
         elif state_prompt is None:
             state_prompt = DEFAULT_STATE_PROMPT
 
+        if output_cls is not None and structured_output_fn is not None:
+            structured_output_fn = None
+
         BaseModel.__init__(
             self,
             name=name,
@@ -134,6 +160,9 @@ class BaseWorkflowAgent(
             llm=llm or get_default_llm(),
             initial_state=initial_state or {},
             state_prompt=state_prompt,
+            output_cls=output_cls,
+            structured_output_fn=structured_output_fn,
+            streaming=streaming,
             **model_kwargs,
         )
 
@@ -229,14 +258,14 @@ class BaseWorkflowAgent(
         if not await ctx.store.get("state", default=None):
             await ctx.store.set("state", self.initial_state.copy())
 
-        if not await ctx.get("max_iterations", default=None):
+        if not await ctx.store.get("max_iterations", default=None):
             max_iterations = (
                 ev.get("max_iterations", default=None) or DEFAULT_MAX_ITERATIONS
             )
-            await ctx.set("max_iterations", max_iterations)
+            await ctx.store.set("max_iterations", max_iterations)
 
         # Reset the number of iterations
-        await ctx.set("num_iterations", 0)
+        await ctx.store.set("num_iterations", 0)
 
         # always set to false initially
         await ctx.store.set("formatted_input_with_state", False)
@@ -300,12 +329,17 @@ class BaseWorkflowAgent(
                 ]
             )
             await ctx.store.set("user_msg_str", content_str)
-        elif chat_history:
+        elif chat_history and not all(
+            message.role == "system" for message in chat_history
+        ):
             # If no user message, use the last message from chat history as user_msg_str
+            user_hist: List[ChatMessage] = [
+                msg for msg in chat_history if msg.role == "user"
+            ]
             content_str = "\n".join(
                 [
                     block.text
-                    for block in chat_history[-1].blocks
+                    for block in user_hist[-1].blocks
                     if isinstance(block, TextBlock)
                 ]
             )
@@ -367,11 +401,13 @@ class BaseWorkflowAgent(
     @step
     async def parse_agent_output(
         self, ctx: Context, ev: AgentOutput
-    ) -> Union[StopEvent, ToolCall, None]:
-        max_iterations = await ctx.get("max_iterations", default=DEFAULT_MAX_ITERATIONS)
-        num_iterations = await ctx.get("num_iterations", default=0)
+    ) -> Union[StopEvent, AgentInput, ToolCall, None]:
+        max_iterations = await ctx.store.get(
+            "max_iterations", default=DEFAULT_MAX_ITERATIONS
+        )
+        num_iterations = await ctx.store.get("num_iterations", default=0)
         num_iterations += 1
-        await ctx.set("num_iterations", num_iterations)
+        await ctx.store.set("num_iterations", num_iterations)
 
         if num_iterations >= max_iterations:
             raise WorkflowRuntimeError(
@@ -379,14 +415,67 @@ class BaseWorkflowAgent(
                 "increase the max iterations with `.run(.., max_iterations=...)`"
             )
 
-        if not ev.tool_calls:
-            memory: BaseMemory = await ctx.store.get("memory")
-            output = await self.finalize(ctx, ev, memory)
+        memory: BaseMemory = await ctx.store.get("memory")
 
+        if ev.retry_messages:
+            # Retry with the given messages to let the LLM fix potential errors
+            history = await memory.aget()
+            user_msg_str = await ctx.store.get("user_msg_str")
+
+            return AgentInput(
+                input=[
+                    *history,
+                    ChatMessage(role="user", content=user_msg_str),
+                    *ev.retry_messages,
+                ],
+                current_agent_name=self.name,
+            )
+
+        if not ev.tool_calls:
+            # important: messages should always be fetched after calling finalize, otherwise they do not contain the agent's response
+            output = await self.finalize(ctx, ev, memory)
+            messages = await memory.aget()
             cur_tool_calls: List[ToolCallResult] = await ctx.store.get(
                 "current_tool_calls", default=[]
             )
             output.tool_calls.extend(cur_tool_calls)  # type: ignore
+
+            if self.structured_output_fn is not None:
+                try:
+                    if inspect.iscoroutinefunction(self.structured_output_fn):
+                        output.structured_response = await self.structured_output_fn(
+                            messages
+                        )
+                    else:
+                        output.structured_response = cast(
+                            Dict[str, Any], self.structured_output_fn(messages)
+                        )
+                    ctx.write_event_to_stream(
+                        AgentStreamStructuredOutput(output=output.structured_response)
+                    )
+                except Exception as e:
+                    warnings.warn(
+                        f"There was a problem with the generation of the structured output: {e}"
+                    )
+            if self.output_cls is not None:
+                try:
+                    llm_input = [*messages]
+                    if self.system_prompt:
+                        llm_input = [
+                            ChatMessage(role="system", content=self.system_prompt),
+                            *llm_input,
+                        ]
+                    output.structured_response = await generate_structured_response(
+                        messages=llm_input, llm=self.llm, output_cls=self.output_cls
+                    )
+                    ctx.write_event_to_stream(
+                        AgentStreamStructuredOutput(output=output.structured_response)
+                    )
+                except Exception as e:
+                    warnings.warn(
+                        f"There was a problem with the generation of the structured output: {e}"
+                    )
+
             await ctx.store.set("current_tool_calls", [])
 
             return StopEvent(result=output)
@@ -468,13 +557,15 @@ class BaseWorkflowAgent(
         await self.handle_tool_call_results(ctx, tool_call_results, memory)
 
         if any(
-            tool_call_result.return_direct for tool_call_result in tool_call_results
+            tool_call_result.return_direct and not tool_call_result.tool_output.is_error
+            for tool_call_result in tool_call_results
         ):
-            # if any tool calls return directly, take the first one
+            # if any tool calls return directly and it's not an error tool call, take the first one
             return_direct_tool = next(
                 tool_call_result
                 for tool_call_result in tool_call_results
                 if tool_call_result.return_direct
+                and not tool_call_result.tool_output.is_error
             )
 
             # always finalize the agent, even if we're just handing off
@@ -495,6 +586,10 @@ class BaseWorkflowAgent(
                 current_agent_name=self.name,
             )
             result = await self.finalize(ctx, result, memory)
+            # we don't want to stop the system if we're just handing off
+            if return_direct_tool.tool_name != "handoff":
+                await ctx.store.set("current_tool_calls", [])
+                return StopEvent(result=result)
 
         user_msg_str = await ctx.store.get("user_msg_str")
         input_messages = await memory.aget(input=user_msg_str)
@@ -510,6 +605,7 @@ class BaseWorkflowAgent(
         stepwise: bool = False,
         checkpoint_callback: Optional[CheckpointCallback] = None,
         max_iterations: Optional[int] = None,
+        start_event: Optional[AgentWorkflowStartEvent] = None,
         **kwargs: Any,
     ) -> WorkflowHandler:
         # Detect if hitl is needed
@@ -521,14 +617,15 @@ class BaseWorkflowAgent(
                 **kwargs,
             )
         else:
+            start_event = start_event or AgentWorkflowStartEvent(
+                user_msg=user_msg,
+                chat_history=chat_history,
+                memory=memory,
+                max_iterations=max_iterations,
+                **kwargs,
+            )
             return super().run(
-                start_event=AgentWorkflowStartEvent(
-                    user_msg=user_msg,
-                    chat_history=chat_history,
-                    memory=memory,
-                    max_iterations=max_iterations,
-                    **kwargs,
-                ),
+                start_event=start_event,
                 ctx=ctx,
                 stepwise=stepwise,
                 checkpoint_callback=checkpoint_callback,

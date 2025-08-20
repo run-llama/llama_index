@@ -228,6 +228,7 @@ class OCIGenAI(FunctionCallingLLM):
         tools = kwargs.pop("tools", None)
         all_kwargs = self._get_all_kwargs(**kwargs)
         chat_params = {**all_kwargs, **oci_params}
+
         if tools:
             chat_params["tools"] = [
                 self._provider.convert_to_oci_tool(tool) for tool in tools
@@ -383,7 +384,7 @@ class OCIGenAI(FunctionCallingLLM):
         tool_required: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        tool_specs = [self._provider.convert_to_oci_tool(tool) for tool in tools]
+        tool_specs = tools
 
         if isinstance(user_msg, str):
             user_msg = ChatMessage(role=MessageRole.USER, content=user_msg)

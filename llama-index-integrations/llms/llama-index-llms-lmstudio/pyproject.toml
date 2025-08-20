@@ -26,13 +26,13 @@ dev = [
 
 [project]
 name = "llama-index-llms-lmstudio"
-version = "0.3.0"
+version = "0.4.0"
 description = "llama-index llms lmstudio integration"
 authors = [{name = "Shivam Kalra", email = "dev@kaltq.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
-dependencies = ["llama-index-core>=0.12.0,<0.13"]
+dependencies = ["llama-index-core>=0.13.0,<0.14"]
 
 [tool.codespell]
 check-filenames = true

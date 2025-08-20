@@ -1,16 +1,18 @@
-from typing import Any, List, Dict, Optional, Tuple
-import kuzu
-from llama_index.core.graph_stores.types import (
-    PropertyGraphStore,
-    Triplet,
-    LabelledNode,
-    Relation,
-    EntityNode,
-    ChunkNode,
-)
-from llama_index.core.vector_stores.types import VectorStoreQuery
-from llama_index.core.graph_stores.utils import value_sanitize
+from typing import Any, Dict, List, Optional, Tuple
+
 import llama_index.graph_stores.kuzu.utils as utils
+from llama_index.core.graph_stores.types import (
+    ChunkNode,
+    EntityNode,
+    LabelledNode,
+    PropertyGraphStore,
+    Relation,
+    Triplet,
+)
+from llama_index.core.graph_stores.utils import value_sanitize
+from llama_index.core.vector_stores.types import VectorStoreQuery
+
+import kuzu
 
 # Threshold for max number of returned triplets
 LIMIT = 100
@@ -36,9 +38,29 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
         relationship_schema: Optional[List[Tuple[str, str, str]]] = None,
         has_structured_schema: Optional[bool] = False,
         sanitize_query_output: Optional[bool] = True,
+        use_vector_index: bool = True,
+        embed_model: Optional[Any] = None,
+        embed_dimension: Optional[int] = None,
     ) -> None:
         self.db = db
         self.connection = kuzu.Connection(self.db)
+        self.use_vector_index = use_vector_index
+
+        # Initialize embedding dimension with auto-detection and fallback logic
+        self.embed_dimension = self._initialize_embedding_dimension(
+            embed_model, embed_dimension
+        )
+
+        # Install and load vector extension if using vector indexes
+        if self.use_vector_index:
+            try:
+                self.connection.execute("INSTALL vector; LOAD vector;")
+            except RuntimeError:
+                # print("Warning: Skipping installing vector extension due to RuntimeError:", e)
+                # print("Check that you can install Kuzu's vector extension by running: " \
+                #       "`INSTALL vector; LOAD vector;` in a Kuzu CLI session."
+                # )
+                pass
 
         if has_structured_schema:
             if relationship_schema is None:
@@ -63,7 +85,9 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
 
     def init_schema(self) -> None:
         """Initialize schema if the required tables do not exist."""
-        utils.create_chunk_node_table(self.connection)
+        utils.create_chunk_node_table(
+            self.connection, embedding_dimension=self.embed_dimension
+        )
         utils.create_entity_node_tables(self.connection, entities=self.entities)
         utils.create_relation_tables(
             self.connection,
@@ -90,6 +114,121 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
                 + [rel[2] for rel in self.relationship_schema]
             )
         )
+
+    def _initialize_embedding_dimension(
+        self, embed_model: Optional[Any], embedding_dimension: Optional[int]
+    ) -> Optional[int]:
+        """
+        Initialize embedding dimension using auto-detection and fallback logic.
+
+        Args:
+            embed_model: Optional embedding model for auto-detection
+            embedding_dimension: Optional manual dimension specification
+
+        Returns:
+            Detected or specified embedding dimension, or None if unavailable
+
+        """
+        if embed_model is not None:
+            # Try auto-detection first
+            detected_dim = self._detect_embedding_dimension(embed_model)
+            if detected_dim is not None:
+                print(f"Auto-detected embedding dimension: {detected_dim}")
+                return detected_dim
+            elif embedding_dimension is not None:
+                # Fall back to manual specification if auto-detection fails
+                print(
+                    f"Using manually specified embedding dimension: {embedding_dimension}"
+                )
+                return embedding_dimension
+            else:
+                # Neither auto-detection nor manual specification available
+                print(
+                    "Warning: Could not determine embedding dimension. Vector indexing may not work properly."
+                )
+                return None
+        else:
+            # No embed_model provided, use manual specification
+            if embedding_dimension is not None:
+                print(
+                    f"Using manually specified embedding dimension: {embedding_dimension}"
+                )
+            return embedding_dimension
+
+    def _detect_embedding_dimension(self, embed_model: Any) -> Optional[int]:
+        """
+        Detect embedding dimension by creating a test embedding.
+
+        Args:
+            embed_model: The embedding model instance
+
+        Returns:
+            Detected dimension or None if cannot be determined
+
+        """
+        try:
+            test_embedding = embed_model.get_text_embedding("hello")
+            if isinstance(test_embedding, list) and len(test_embedding) > 0:
+                return len(test_embedding)
+        except Exception:
+            print(
+                "Error: Could not detect embedding dimension from model. Please specify it manually via the `embedding_dimension` parameter."
+            )  # noqa: E501
+
+        return None
+
+    def _create_vector_index(self, table_name: str) -> None:
+        """Create a vector index for the embedding column of a table."""
+        if not self.use_vector_index or table_name != "Chunk":
+            return
+
+        # Check if chunk_embedding_index already exists
+        existing_indexes_result = self.connection.execute(
+            "CALL SHOW_INDEXES() RETURN *"
+        )
+        for row in existing_indexes_result:
+            if len(row) > 1 and row[1] == "chunk_embedding_index":
+                return
+
+        # Check if table has any data - Kuzu requires data before creating vector index
+        count_result = self.connection.execute(
+            f"MATCH (n:{table_name}) RETURN COUNT(n)"
+        )
+        if not any(int(row[0]) > 0 for row in count_result):
+            return
+
+        # Create vector index for Chunk table
+        self.connection.execute("""
+        CALL CREATE_VECTOR_INDEX(
+            'Chunk',
+            'chunk_embedding_index',
+            'embedding',
+            metric := 'cosine'
+        )
+        """)
+
+    def _ensure_vector_indexes(self) -> None:
+        """Ensure vector indexes are created for Chunk table only."""
+        if not self.use_vector_index:
+            return
+        # Only create index for Chunk table since these have larger blobs of text
+        # This makes the workflow easier to manage as a whole
+        self._create_vector_index("Chunk")
+
+    def refresh_vector_index(self) -> None:
+        """Drop and recreate the vector index for Chunk table."""
+        index_name = "chunk_embedding_index"
+        # Drop existing index if it exists
+        try:
+            self.connection.execute(f"DROP INDEX {index_name}")
+            print(f"Dropped vector index: {index_name}")
+        except Exception:
+            # Index may not exist, which is fine
+            pass
+
+        # Recreate the index
+        self._create_vector_index("Chunk")
+        print(f"Created vector index: {index_name}")
 
     def upsert_nodes(self, nodes: List[LabelledNode]) -> None:
         entity_list: List[EntityNode] = []
@@ -140,7 +279,6 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
                 MERGE (e:{entity_label} {{id: $id}})
                 SET e.label = $label,
                     e.name = $name,
-                    e.embedding = $embedding,
                     e.creation_date = date($creation_date),
                     e.last_modified_date = date($last_modified_date),
                     e.file_name = $file_name,
@@ -156,7 +294,6 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
                     "id": entity.name,
                     "label": entity.label,
                     "name": entity.name,
-                    "embedding": entity.embedding,
                     "creation_date": entity.properties.get("creation_date"),
                     "last_modified_date": entity.properties.get("last_modified_date"),
                     "file_name": entity.properties.get("file_name"),
@@ -166,6 +303,13 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
                     "triplet_source_id": entity.properties.get("triplet_source_id"),
                 },
             )
+        # Create vector index for Chunk table if embeddings were inserted
+        if self.use_vector_index and any(
+            chunk.embedding is not None for chunk in chunk_list
+        ):
+            self._create_vector_index("Chunk")
+        # Manual checkpoint
+        self.connection.execute("CHECKPOINT;")
 
     def upsert_relations(self, relations: List[Relation]) -> None:
         for rel in relations:
@@ -206,6 +350,8 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
                     "triplet_source_id": rel.properties.get("triplet_source_id"),
                 },
             )
+        # Manual checkpoint
+        self.connection.execute("CHECKPOINT;")
 
     def structured_query(
         self, query: str, param_map: Optional[Dict[str, Any]] = None
@@ -213,21 +359,76 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
         response = self.connection.execute(query, parameters=param_map)
         column_names = response.get_column_names()
         result = []
-        while response.has_next():
-            row = response.get_next()
+        for row in response:
             result.append(dict(zip(column_names, row)))
 
         if self.sanitize_query_output:
             return value_sanitize(result)
+        self.connection.execute("CHECKPOINT;")
 
         return result
 
     def vector_query(
         self, query: VectorStoreQuery, **kwargs: Any
     ) -> Tuple[List[LabelledNode], List[float]]:
-        raise NotImplementedError(
-            "Vector query is not currently implemented for KuzuPropertyGraphStore."
+        """Perform vector similarity search on Chunk nodes."""
+        self._ensure_vector_indexes()
+
+        # Use Kuzu's vector index for similarity search
+        result = self.connection.execute(
+            """
+            CALL QUERY_VECTOR_INDEX(
+                'Chunk',
+                'chunk_embedding_index',
+                $query_embedding,
+                $top_k
+            )
+            RETURN node.id as id, distance
+            ORDER BY distance
+            """,
+            parameters={
+                "query_embedding": query.query_embedding,
+                "top_k": query.similarity_top_k,
+            },
         )
+
+        # Get matching chunk nodes and convert distances to similarities
+        node_data = []
+
+        for row in result:
+            node_id, distance = row[0], row[1]
+
+            # Fetch the chunk node
+            chunk_result = self.structured_query(
+                "MATCH (n:Chunk {id: $node_id}) RETURN n.*",
+                param_map={"node_id": node_id},
+            )
+
+            if chunk_result:
+                record = chunk_result[0]
+                properties = {
+                    k: v for k, v in record.items() if k not in ["n.id", "n.text"]
+                }
+                node = ChunkNode(
+                    id_=record["n.id"],
+                    text=record.get("n.text", ""),
+                    properties=utils.remove_empty_values(properties),
+                )
+                # Convert distance to similarity (lower distance = higher similarity)
+                similarity = 1.0 - distance
+                node_data.append((node, similarity))
+
+        # Sort by similarity in descending order
+        node_data.sort(key=lambda x: x[1], reverse=True)
+
+        # Separate nodes and similarities
+        nodes = [item[0] for item in node_data]
+        similarities = [item[1] for item in node_data]
+
+        # Manual checkpoint
+        self.connection.execute("CHECKPOINT;")
+
+        return nodes, similarities
 
     def get(
         self,
@@ -494,8 +695,8 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
             prop_values = self.connection.execute(
                 f"MATCH ()-[r:{table_name}]->() RETURN distinct r.label AS label;"
             )
-            while prop_values.has_next():
-                rel_label = prop_values.get_next()[0]
+            for row in prop_values:
+                rel_label = row[0]
                 src, dst = rel_tables[i]["src"], rel_tables[i]["dst"]
                 current_table_schema["relationships"].append(
                     {"start": src, "type": rel_label, "end": dst}
@@ -504,8 +705,7 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
                 table_details = self.connection.execute(
                     f"CALL TABLE_INFO('{table_name}') RETURN *;"
                 )
-                while table_details.has_next():
-                    props = table_details.get_next()
+                for props in table_details:
                     rel_props = {}
                     rel_props["property"] = props[1]
                     rel_props["type"] = props[2]

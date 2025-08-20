@@ -7,7 +7,7 @@ dev = ["pytest>=8.4.0", "pytest-asyncio>=1.0.0", "pytest-cov>=6.1.1"]
 
 [project]
 name = "llama-index-instrumentation"
-version = "0.2.0"
+version = "0.4.0"
 description = "Add your description here"
 readme = "README.md"
 authors = [{name = "Massimiliano Pippi", email = "mpippi@gmail.com"}]

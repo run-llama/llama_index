@@ -51,6 +51,7 @@ We are actively adding more integrations and improving feature coverage for each
 | pgvecto.rs                 | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
 | Qdrant                     | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               | ✓     |
 | Redis                      | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
+| S3                         | cloud                   | ✓                  |               | ✓      | ✓               | ✓* (using asyncio.to_thread)    |
 | Simple                     | in-memory               | ✓                  |               | ✓      |                 |       |
 | SingleStore                | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
 | Supabase                   | self-hosted / cloud     | ✓                  |               | ✓      | ✓               |       |
@@ -113,6 +114,7 @@ For more details, see [Vector Store Integrations](../../community/integrations/v
 - [Qdrant](../../examples/vector_stores/QdrantIndexDemo.ipynb)
 - [Qdrant Hybrid Search](../../examples/vector_stores/qdrant_hybrid.ipynb)
 - [Rockset](../../examples/vector_stores/RocksetIndexDemo.ipynb)
+- [S3](../../examples/vector_stores/S3VectorStore.ipynb)
 - [Simple](../../examples/vector_stores/SimpleIndexDemo.ipynb)
 - [Supabase](../../examples/vector_stores/SupabaseVectorIndexDemo.ipynb)
 - [Tablestore](../../examples/vector_stores/TablestoreDemo.ipynb)

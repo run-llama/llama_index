@@ -30,7 +30,7 @@ pip install -U llama-index-indices-managed-llama-cloud
 
 ## Usage
 
-You can create an index on LlamaCloud using the following code:
+You can create an index on LlamaCloud using the following code. By default, new indexes use managed embeddings (OpenAI text-embedding-3-small, 1536 dimensions, 1 credit/page):
 
 ```python
 import os
@@ -42,7 +42,7 @@ os.environ[
 from llama_index.core import SimpleDirectoryReader
 from llama_index.indices.managed.llama_cloud import LlamaCloudIndex
 
-# create a new index
+# create a new index (uses managed embeddings by default)
 index = LlamaCloudIndex.from_documents(
     documents,
     "my_first_index",

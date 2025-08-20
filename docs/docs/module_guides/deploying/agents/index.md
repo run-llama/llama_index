@@ -46,6 +46,11 @@ Calling this agent kicks off a specific loop of actions:
 
 The `FunctionAgent` is a type of agent that uses an LLM provider's function/tool calling capabilities to execute tools. Other types of agents, such as [`ReActAgent`](../../../examples/agent/react_agent.ipynb) and [`CodeActAgent`](../../../examples/agent/code_act_agent.ipynb), use different prompting strategies to execute tools.
 
+You can visit [the agents guide](../../../understanding/agent/index.md) to learn more about agents and their capabilities.
+
+!!! tip
+    Some models might not support streaming LLM output. While streaming is enabled by default, if you encounter an error, you can always set `FunctionAgent(..., streaming=False)` to disable streaming.
+
 ## Tools
 
 Tools can be defined simply as python functions, or further customized using classes like `FunctionTool` and `QueryEngineTool`. LlamaIndex also provides sets of pre-defined tools for common APIs using something called `Tool Specs`.

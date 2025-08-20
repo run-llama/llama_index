@@ -74,7 +74,37 @@ class ReActAgent(BaseWorkflowAgent):
             react_header = prompts["react_header"]
             if isinstance(react_header, str):
                 react_header = PromptTemplate(react_header)
-            self.formatter.system_header = react_header.get_template()
+            self.formatter.system_header = react_header.format()
+
+    async def _get_response(self, current_llm_input: List[ChatMessage]) -> ChatResponse:
+        return await self.llm.achat(current_llm_input)
+
+    async def _get_streaming_response(
+        self, ctx: Context, current_llm_input: List[ChatMessage]
+    ) -> ChatResponse:
+        response = await self.llm.astream_chat(
+            current_llm_input,
+        )
+
+        # last_chat_response will be used later, after the loop.
+        # We initialize it so it's valid even when 'response' is empty
+        last_chat_response = ChatResponse(message=ChatMessage())
+        async for last_chat_response in response:
+            raw = (
+                last_chat_response.raw.model_dump()
+                if isinstance(last_chat_response.raw, BaseModel)
+                else last_chat_response.raw
+            )
+            ctx.write_event_to_stream(
+                AgentStream(
+                    delta=last_chat_response.delta or "",
+                    response=last_chat_response.message.content or "",
+                    raw=raw,
+                    current_agent_name=self.name,
+                )
+            )
+
+        return last_chat_response
 
     async def take_step(
         self,
@@ -108,25 +138,10 @@ class ReActAgent(BaseWorkflowAgent):
         )
 
         # Initial LLM call
-        response = await self.llm.astream_chat(input_chat)
-        # last_chat_response will be used later, after the loop.
-        # We initialize it so it's valid even when 'response' is empty
-        last_chat_response = ChatResponse(message=ChatMessage())
-        async for last_chat_response in response:
-            raw = (
-                last_chat_response.raw.model_dump()
-                if isinstance(last_chat_response.raw, BaseModel)
-                else last_chat_response.raw
-            )
-            ctx.write_event_to_stream(
-                AgentStream(
-                    delta=last_chat_response.delta or "",
-                    response=last_chat_response.message.content or "",
-                    tool_calls=[],
-                    raw=raw,
-                    current_agent_name=self.name,
-                )
-            )
+        if self.streaming:
+            last_chat_response = await self._get_streaming_response(ctx, input_chat)
+        else:
+            last_chat_response = await self._get_response(input_chat)
 
         # Parse reasoning step and check if done
         message_content = last_chat_response.message.content
@@ -136,20 +151,36 @@ class ReActAgent(BaseWorkflowAgent):
         try:
             reasoning_step = output_parser.parse(message_content, is_streaming=False)
         except ValueError as e:
-            error_msg = f"Error: Could not parse output. Please follow the thought-action-input format. Try again. Details: {e!s}"
-            await memory.aput(last_chat_response.message)
-            await memory.aput(ChatMessage(role="user", content=error_msg))
+            error_msg = (
+                f"Error while parsing the output: {e!s}\n\n"
+                "The output should be in one of the following formats:\n"
+                "1. To call a tool:\n"
+                "```\n"
+                "Thought: <thought>\n"
+                "Action: <action>\n"
+                "Action Input: <action_input>\n"
+                "```\n"
+                "2. To answer the question:\n"
+                "```\n"
+                "Thought: <thought>\n"
+                "Answer: <answer>\n"
+                "```\n"
+            )
 
             raw = (
                 last_chat_response.raw.model_dump()
                 if isinstance(last_chat_response.raw, BaseModel)
                 else last_chat_response.raw
             )
+            # Return with retry messages to let the LLM fix the error
             return AgentOutput(
                 response=last_chat_response.message,
-                tool_calls=[],
                 raw=raw,
                 current_agent_name=self.name,
+                retry_messages=[
+                    last_chat_response.message,
+                    ChatMessage(role="user", content=error_msg),
+                ],
             )
 
         # add to reasoning if not a handoff
@@ -165,7 +196,6 @@ class ReActAgent(BaseWorkflowAgent):
         if reasoning_step.is_done:
             return AgentOutput(
                 response=last_chat_response.message,
-                tool_calls=[],
                 raw=raw,
                 current_agent_name=self.name,
             )

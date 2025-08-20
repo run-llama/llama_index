@@ -27,16 +27,17 @@ dev = [
 
 [project]
 name = "llama-index-graph-rag-cognee"
-version = "0.1.4"
+version = "0.3.0"
 description = "llama-index graph rag cognee integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.10,<4"
+requires-python = ">=3.11,<=3.13"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "cognee[neo4j, postgres, qdrant, weaviate]",
+    "cognee[neo4j, postgres, qdrant]",
     "httpx~=0.27.0",
-    "llama-index-core>=0.12.5,<0.13",
+    "graphistry",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]
@@ -53,7 +54,7 @@ include = ["llama_index/"]
 exclude = ["**/BUILD"]
 
 [tool.llamahub]
-contains_example = false
+contains_example = true
 import_path = "llama_index.graph_rag.cognee"
 
 [tool.llamahub.class_authors]
@@ -63,7 +64,11 @@ GraphRag = "llama-index"
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.8"
+python_version = "3.11"
+
+[[tool.mypy.overrides]]
+module = "cognee.*"
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"

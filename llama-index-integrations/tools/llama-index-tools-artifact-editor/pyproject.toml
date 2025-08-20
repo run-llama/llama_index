@@ -29,7 +29,7 @@ dev = [
 
 [project]
 name = "llama-index-tools-artifact-editor"
-version = "0.1.0"
+version = "0.2.0"
 description = "llama-index tools artifact editor integration"
 authors = [{name = "Logan Markewich", email = "logan@runllama.ai"}]
 requires-python = ">=3.10,<4.0"
@@ -43,7 +43,7 @@ keywords = [
     "tools",
 ]
 dependencies = [
-    "llama-index-core>=0.12.37,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
     "pydantic>=2.0.0,<3",
 ]
 

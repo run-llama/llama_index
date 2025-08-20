@@ -4,7 +4,6 @@ import asyncio
 import base64
 import os
 import random
-import requests
 import sys
 import time
 import traceback
@@ -17,6 +16,7 @@ from io import BytesIO
 from itertools import islice
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncGenerator,
     Callable,
@@ -30,8 +30,10 @@ from typing import (
     Type,
     Union,
     runtime_checkable,
-    TYPE_CHECKING,
 )
+
+import platformdirs
+import requests
 
 if TYPE_CHECKING:
     from nltk.tokenize import PunktSentenceTokenizer
@@ -49,13 +51,11 @@ class GlobalsHelper:
         from nltk.data import path as nltk_path
 
         # Set up NLTK data directory
-        self._nltk_data_dir = os.environ.get(
-            "NLTK_DATA",
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "_static/nltk_cache",
-            ),
-        )
+        if "NLTK_DATA" in os.environ:
+            self._nltk_data_dir = str(Path(os.environ["NLTK_DATA"]))
+        else:
+            path = Path(platformdirs.user_cache_dir("llama_index"))
+            self._nltk_data_dir = str(path / "_static/nltk_cache")
 
         # Ensure the directory exists
         os.makedirs(self._nltk_data_dir, exist_ok=True)
@@ -69,8 +69,8 @@ class GlobalsHelper:
 
     def _download_nltk_data(self) -> None:
         """Download NLTK data packages in the background."""
-        from nltk.data import find as nltk_find
         from nltk import download
+        from nltk.data import find as nltk_find
 
         try:
             # Download stopwords
@@ -424,26 +424,12 @@ def get_cache_dir() -> str:
     # User override
     if "LLAMA_INDEX_CACHE_DIR" in os.environ:
         path = Path(os.environ["LLAMA_INDEX_CACHE_DIR"])
-
-    # Linux, Unix, AIX, etc.
-    elif os.name == "posix" and sys.platform != "darwin":
-        path = Path("/tmp/llama_index")
-
-    # Mac OS
-    elif sys.platform == "darwin":
-        path = Path(os.path.expanduser("~"), "Library/Caches/llama_index")
-
-    # Windows (hopefully)
     else:
-        local = os.environ.get("LOCALAPPDATA", None) or os.path.expanduser(
-            "~\\AppData\\Local"
-        )
-        path = Path(local, "llama_index")
+        path = Path(platformdirs.user_cache_dir("llama_index"))
 
-    if not os.path.exists(path):
-        os.makedirs(
-            path, exist_ok=True
-        )  # prevents https://github.com/jerryjliu/llama_index/issues/7362
+    # Pass exist_ok and call makedirs directly, so we avoid TOCTOU issues
+    path.mkdir(parents=True, exist_ok=True)
+
     return str(path)
 
 
