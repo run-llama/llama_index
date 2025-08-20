@@ -123,34 +123,18 @@ orallamavs.create_index(
 
 print("Index created.")
 
-
 # Perform Semantic Search
-query = "What is Oracle AI Vector Store?"
-filter = {"document_id": ["1"]}
-
+embedding = embedder._get_text_embedding("What is Oracle AI Vector Store?")
+query = VectorStoreQuery(query_embedding=embedding, similarity_top_k=1)
 # Similarity search without a filter
-print(vectorstore.similarity_search(query, 1))
+print(vectorstore.query(query))
 
+filters = MetadataFilters(
+    filters=[ExactMatchFilter(key="document_id", value="1")]
+)
+query = VectorStoreQuery(
+    query_embedding=embedding, filters=filters, similarity_top_k=1
+)
 # Similarity search with a filter
-print(vectorstore.similarity_search(query, 1, filter=filter))
-
-# Similarity search with relevance score
-print(vectorstore.similarity_search_with_score(query, 1))
-
-# Similarity search with relevance score with filter
-print(vectorstore.similarity_search_with_score(query, 1, filter=filter))
-
-# Max marginal relevance search
-print(
-    vectorstore.max_marginal_relevance_search(
-        query, 1, fetch_k=20, lambda_mult=0.5
-    )
-)
-
-# Max marginal relevance search with filter
-print(
-    vectorstore.max_marginal_relevance_search(
-        query, 1, fetch_k=20, lambda_mult=0.5, filter=filter
-    )
-)
+print(vectorstore.query(query))
 ```
