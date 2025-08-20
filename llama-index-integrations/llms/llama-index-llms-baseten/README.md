@@ -13,7 +13,7 @@ pip install llama-index
 ## Model APIs vs. Dedicated Deployments
 
 Baseten offers two main ways for inference.
-1. Model APIs are public endpoints for popular open source models (Deepseek, Llama, etc) where you can directly use a frontier model via slug e.g.  `deepseek-ai/DeepSeek-V3-0324` and you will be charged on a per-token basis. You can find the list of supported models here: https://docs.baseten.co/development/model-apis/overview#supported-models.
+1. Model APIs are public endpoints for popular open source models (GPT-OSS, Kimi K2, DeepSeek etc) where you can directly use a frontier model via slug e.g.  `deepseek-ai/DeepSeek-V3-0324` and you will be charged on a per-token basis. You can find the list of supported models here: https://docs.baseten.co/development/model-apis/overview#supported-models.
 
 2. Dedicated deployments are useful for serving custom models where you want to autoscale production workloads and have fine-grain configuration. You need to deploy a model in your Baseten dashboard and provide the 8 character model id like `abcd1234`.
 
@@ -26,14 +26,14 @@ By default, we set the `model_apis` parameter to `True`. If you want to use a de
 To use Baseten models with LlamaIndex, first initialize the LLM:
 
 ```python
-# Model APIs
+# Model APIs, you can find the model_slug here: https://docs.baseten.co/development/model-apis/overview#supported-models
 llm = Baseten(
     model_id="MODEL_SLUG",
     api_key="YOUR_API_KEY",
     model_apis=True,  # Default, so not strictly necessary
 )
 
-# Dedicated Deployments
+# Dedicated Deployments, you can find the model_id by in the Baseten dashboard here: https://app.baseten.co/overview
 llm = Baseten(
     model_id="MODEL_ID",
     api_key="YOUR_API_KEY",
