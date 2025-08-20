@@ -2495,6 +2495,7 @@ plugins:
             - ../llama-index-integrations/tools/llama-index-tools-aws-bedrock-agentcore
             - ../llama-index-integrations/llms/llama-index-llms-heroku
             - ../llama-index-integrations/retrievers/llama-index-retrievers-superlinked
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-heroku
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
