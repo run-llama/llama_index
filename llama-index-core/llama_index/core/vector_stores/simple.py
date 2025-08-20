@@ -309,7 +309,9 @@ class SimpleVectorStore(BasePydanticVectorStore):
         else:
             raise ValueError(f"Invalid query mode: {query.mode}")
 
-        return VectorStoreQueryResult(similarities=top_similarities, ids=top_ids, nodes=[])
+        return VectorStoreQueryResult(
+            similarities=top_similarities, ids=top_ids, nodes=[]
+        )
 
     def persist(
         self,
