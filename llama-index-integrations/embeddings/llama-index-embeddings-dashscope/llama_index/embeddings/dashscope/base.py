@@ -51,7 +51,8 @@ def get_text_embedding(
     api_key: Optional[str] = None,
     **kwargs: Any,
 ) -> List[List[float]]:
-    """Call DashScope text embedding.
+    """
+    Call DashScope text embedding.
        ref: https://help.aliyun.com/zh/dashscope/developer-reference/text-embedding-api-details.
 
     Args:
@@ -64,6 +65,7 @@ def get_text_embedding(
     Returns:
         List[List[float]]: The list of embedding result, if failed return empty list.
             if some of test no output, the correspond index of output is None.
+
     """
     try:
         import dashscope
@@ -87,7 +89,8 @@ def get_text_embedding(
 def get_batch_text_embedding(
     model: str, url: str, api_key: Optional[str] = None, **kwargs: Any
 ) -> Optional[str]:
-    """Call DashScope batch text embedding.
+    """
+    Call DashScope batch text embedding.
 
     Args:
         model (str): The `DashScopeMultiModalEmbeddingModels`
@@ -99,6 +102,7 @@ def get_batch_text_embedding(
     Returns:
         str: The url of the embedding result, format ref:
         https://help.aliyun.com/zh/dashscope/developer-reference/text-embedding-async-api-details
+
     """
     try:
         import dashscope
@@ -117,7 +121,8 @@ def get_batch_text_embedding(
 def get_multimodal_embedding(
     model: str, input: list, api_key: Optional[str] = None, **kwargs: Any
 ) -> List[float]:
-    """Call DashScope multimodal embedding.
+    """
+    Call DashScope multimodal embedding.
        ref: https://help.aliyun.com/zh/dashscope/developer-reference/one-peace-multimodal-embedding-api-details.
 
     Args:
@@ -132,6 +137,7 @@ def get_multimodal_embedding(
 
     Returns:
         List[float]: Embedding result, if failed return empty list.
+
     """
     try:
         import dashscope
@@ -148,7 +154,8 @@ def get_multimodal_embedding(
 
 
 class DashScopeEmbedding(MultiModalEmbedding):
-    """DashScope class for text embedding.
+    """
+    DashScope class for text embedding.
 
     Args:
         model_name (str): Model name for embedding.
@@ -165,6 +172,7 @@ class DashScopeEmbedding(MultiModalEmbedding):
             be specially specified, and the system default
             value "document" can be used.
         api_key (str): The DashScope api key.
+
     """
 
     _api_key: Optional[str] = PrivateAttr()
@@ -236,7 +244,8 @@ class DashScopeEmbedding(MultiModalEmbedding):
         return self._get_query_embedding(query)
 
     def get_batch_query_embedding(self, embedding_file_url: str) -> Optional[str]:
-        """Get batch query embeddings.
+        """
+        Get batch query embeddings.
 
         Args:
             embedding_file_url (str): The url of the file to embedding which with lines of text to embedding.
@@ -244,6 +253,7 @@ class DashScopeEmbedding(MultiModalEmbedding):
         Returns:
             str: The url of the embedding result, format ref:
                  https://help.aliyun.com/zh/dashscope/developer-reference/text-embedding-async-api-details.
+
         """
         return get_batch_text_embedding(
             self.model_name,
@@ -253,7 +263,8 @@ class DashScopeEmbedding(MultiModalEmbedding):
         )
 
     def get_batch_text_embedding(self, embedding_file_url: str) -> Optional[str]:
-        """Get batch text embeddings.
+        """
+        Get batch text embeddings.
 
         Args:
             embedding_file_url (str): The url of the file to embedding which with lines of text to embedding.
@@ -261,6 +272,7 @@ class DashScopeEmbedding(MultiModalEmbedding):
         Returns:
             str: The url of the embedding result, format ref:
                  https://help.aliyun.com/zh/dashscope/developer-reference/text-embedding-async-api-details.
+
         """
         return get_batch_text_embedding(
             self.model_name,
@@ -288,7 +300,8 @@ class DashScopeEmbedding(MultiModalEmbedding):
     def get_multimodal_embedding(
         self, input: List[Dict], auto_truncation: bool = False
     ) -> List[float]:
-        """Call DashScope multimodal embedding.
+        """
+        Call DashScope multimodal embedding.
         ref: https://help.aliyun.com/zh/dashscope/developer-reference/one-peace-multimodal-embedding-api-details.
 
         Args:
@@ -302,6 +315,7 @@ class DashScopeEmbedding(MultiModalEmbedding):
 
         Returns:
             List[float]: The embedding result
+
         """
         return get_multimodal_embedding(
             self.model_name,

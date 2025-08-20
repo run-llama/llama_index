@@ -88,9 +88,9 @@ memory = Mem0Memory.from_config(
 
 ## Basic Usage
 
-Currently, Mem0 Memory is supported in the `SimpleChatEngine`, `FunctionCallingAgent` and `ReActAgent`.
+Currently, Mem0 Memory is supported in agents and chat engines.
 
-Intilaize the LLM
+Initialize the LLM
 
 ```python
 import os
@@ -105,12 +105,12 @@ llm = OpenAI(model="gpt-4o")
 ```python
 from llama_index.core import SimpleChatEngine
 
-agent = SimpleChatEngine.from_defaults(
+chat_engine = SimpleChatEngine.from_defaults(
     llm=llm, memory=memory  # set you memory here
 )
 
 # Start the chat
-response = agent.chat("Hi, My name is Mayank")
+response = chat_engine.chat("Hi, My name is Mayank")
 print(response)
 ```
 
@@ -140,37 +140,33 @@ call_tool = FunctionTool.from_defaults(fn=call_fn)
 email_tool = FunctionTool.from_defaults(fn=email_fn)
 ```
 
-### FunctionCallingAgent
+### FunctionAgent
 
 ```python
-from llama_index.core.agent import FunctionCallingAgent
+from llama_index.core.agent.workflow import FunctionAgent
 
-agent = FunctionCallingAgent.from_tools(
-    [call_tool, email_tool],
+agent = FunctionAgent(
+    tools=[call_tool, email_tool],
     llm=llm,
-    memory=memory,
-    verbose=True,
 )
 
 # Start the chat
-response = agent.chat("Hi, My name is Mayank")
+response = await agent.run("Hi, My name is Mayank", memory=memory)
 print(response)
 ```
 
 ### ReActAgent
 
 ```python
-from llama_index.core.agent import ReActAgent
+from llama_index.core.agent.workflow import ReActAgent
 
-agent = ReActAgent.from_tools(
-    [call_tool, email_tool],
+agent = ReActAgent(
+    tools=[call_tool, email_tool],
     llm=llm,
-    memory=memory,
-    verbose=True,
 )
 
 # Start the chat
-response = agent.chat("Hi, My name is Mayank")
+response = await agent.run("Hi, My name is Mayank", memory=memory)
 print(response)
 ```
 

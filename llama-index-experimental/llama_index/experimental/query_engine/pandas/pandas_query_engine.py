@@ -1,4 +1,5 @@
-"""Default query for PandasIndex.
+"""
+Default query for PandasIndex.
 
 WARNING: This tool provides the LLM with access to the `eval` function.
 Arbitrary code execution is possible on the machine running this tool.
@@ -51,7 +52,8 @@ DEFAULT_RESPONSE_SYNTHESIS_PROMPT = PromptTemplate(
 
 
 class PandasQueryEngine(BaseQueryEngine):
-    """Pandas query engine.
+    """
+    Pandas query engine.
 
     Convert natural language to Pandas python code.
 
@@ -64,15 +66,24 @@ class PandasQueryEngine(BaseQueryEngine):
     Args:
         df (pd.DataFrame): Pandas dataframe to use.
         instruction_str (Optional[str]): Instruction string to use.
-        output_processor (Optional[Callable[[str], str]]): Output processor.
-            A callable that takes in the output string, pandas DataFrame,
-            and any output kwargs and returns a string.
+        instruction_parser (Optional[PandasInstructionParser]): The output parser
+            that takes the pandas query output string and returns a string.
+            It defaults to PandasInstructionParser and takes pandas DataFrame,
+            and any output kwargs as parameters.
             eg.kwargs["max_colwidth"] = [int] is used to set the length of text
             that each column can display during str(df). Set it to a higher number
             if there is possibly long text in the dataframe.
         pandas_prompt (Optional[BasePromptTemplate]): Pandas prompt to use.
+        output_kwargs (dict): Additional output processor kwargs for the
+            PandasInstructionParser.
         head (int): Number of rows to show in the table context.
+        verbose (bool): Whether to print verbose output.
         llm (Optional[LLM]): Language model to use.
+        synthesize_response (bool): Whether to synthesize a response from the
+            query results. Defaults to False.
+        response_synthesis_prompt (Optional[BasePromptTemplate]): A
+            Response Synthesis BasePromptTemplate to use for the query. Defaults to
+            DEFAULT_RESPONSE_SYNTHESIS_PROMPT.
 
     Examples:
         `pip install llama-index-experimental`
@@ -170,7 +181,7 @@ class PandasQueryEngine(BaseQueryEngine):
         )
 
         if self._verbose:
-            print_text(f"> Pandas Instructions:\n" f"```\n{pandas_response_str}\n```\n")
+            print_text(f"> Pandas Instructions:\n```\n{pandas_response_str}\n```\n")
         pandas_output = self._instruction_parser.parse(pandas_response_str)
         if self._verbose:
             print_text(f"> Pandas Output: {pandas_output}\n")

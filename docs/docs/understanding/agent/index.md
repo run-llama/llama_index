@@ -2,13 +2,15 @@
 
 In LlamaIndex, an agent is a semi-autonomous piece of software powered by an LLM that is given a task and executes a series of steps towards solving that task. It is given a set of tools, which can be anything from arbitrary functions up to full LlamaIndex query engines, and it selects the best available tool to complete each step. When each step is completed, the agent judges whether the task is now complete, in which case it returns a result to the user, or whether it needs to take another step, in which case it loops back to the start.
 
-In LlamaIndex, you can either [build your own agentic workflows from scratch](../understanding/workflows/index.md), covered in the "Building Workflows" section, or you can use our pre-built `AgentWorkflow` class. This tutorial covers building single and multi-agent systems using `AgentWorkflow`. Because `AgentWorkflow` is itself a Workflow, you'll learn lots of concepts that you can apply to building Workflows from scratch later.
+In LlamaIndex, you can either [build your own agentic workflows from scratch](../workflows/index.md), covered in the "Building Workflows" section, or you can use our pre-built agentic workflows like `FunctionAgent` (a simple function/tool calling agent) or `AgentWorkflow` (an agent capable of managing multiple agents). This tutorial covers building a function calling agent using `FunctionAgent`.
+
+To learn about the various ways to build multi-agent systems, go to ["Multi-agent systems"](./multi_agent.md).
 
 ![agent flow](./agent_flow.png)
 
 ## Getting started
 
-You can find all of this code in [the tutorial repo](https://github.com/run-llama/python-agents-tutorial).
+You can find all of this code in [the agents tutorial repo](https://github.com/run-llama/python-agents-tutorial).
 
 To avoid conflicts and keep things clean, we'll start a new Python virtual environment. You can use any virtual environment manager, but we'll use `poetry` here:
 
@@ -33,7 +35,7 @@ Our agent will be powered by OpenAI's `gpt-4o-mini` LLM, so you'll need an [API 
 OPENAI_API_KEY=sk-proj-xxxx
 ```
 
-If you don't want to use OpenAI, you can use [any other LLM](../using_llms/index.md) including local models. Agents require capable models, so smaller models may be less reliable.
+If you don't want to use OpenAI, you can use [any other LLM](../using_llms/using_llms.md) including local models. Agents require capable models, so smaller models may be less reliable.
 
 ## Bring in dependencies
 
@@ -45,7 +47,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from llama_index.llms.openai import OpenAI
-from llama_index.core.agent.workflow import AgentWorkflow
+from llama_index.core.agent.workflow import FunctionAgent
 ```
 
 ## Create basic tools
@@ -89,6 +91,8 @@ workflow = FunctionAgent(
 
 GPT-4o-mini is actually smart enough to not need tools to do such simple math, which is why we specified that it should use tools in the prompt.
 
+Beyond `FunctionAgent`, there are other agents available in LlamaIndex, such as [`ReActAgent`](../../examples/agent/react_agent.ipynb) and [`CodeActAgent`](../../examples/agent/code_act_agent.ipynb), which use different prompting strategies to execute tools.
+
 ## Ask a question
 
 Now we can ask the agent to do some math:
@@ -117,6 +121,9 @@ This should give you output similar to the following:
 ```
 The result of (20 + (2 times 4)) is 28.
 ```
+
+!!! tip
+    Some models might not support streaming LLM output. While streaming is enabled by default, if you encounter an error, you can always set `FunctionAgent(..., streaming=False)` to disable streaming.
 
 Check the [repo](https://github.com/run-llama/python-agents-tutorial/blob/main/1_basic_agent.py) to see what the final code should look like.
 

@@ -49,6 +49,7 @@ Various embedding model integrations:
 - [HuggingFace Embeddings](./embeddings/huggingface.ipynb) - Use open-source embeddings from HuggingFace locally
 - [Jina Embeddings](./embeddings/jina_embeddings.ipynb) - Jina AI's embedding models
 - [Ollama Embeddings](./embeddings/ollama_embedding.ipynb) - Ollama's embedding models
+- [VoyageAI Embeddings](./embeddings/voyageai.ipynb) - VoyageAI's embedding models
 
 ## Vector Stores
 

@@ -13,7 +13,8 @@ from llama_index.core.utils import truncate_text
 
 @dataclass
 class Response:
-    """Response object.
+    """
+    Response object.
 
     Returned if streaming=False.
 
@@ -43,7 +44,8 @@ class Response:
 
 @dataclass
 class PydanticResponse:
-    """PydanticResponse object.
+    """
+    PydanticResponse object.
 
     Returned if streaming=False.
 
@@ -68,7 +70,8 @@ class PydanticResponse:
             return None
 
     def __post_init_post_parse__(self) -> None:
-        """This method is required.
+        """
+        This method is required.
 
         According to the Pydantic docs, if a stdlib dataclass (which this class
         is one) gets mixed with a BaseModel (in the sense that this gets used as a
@@ -77,7 +80,7 @@ class PydanticResponse:
 
         However, it appears that in that automatic conversion, this method
         is left as NoneType, which raises an error. To safeguard against that,
-        we are expilcitly defining this method as something that can be called.
+        we are explicitly defining this method as something that can be called.
 
         Sources:
             - https://docs.pydantic.dev/1.10/usage/dataclasses/#use-of-stdlib-dataclasses-with-basemodel
@@ -103,7 +106,8 @@ class PydanticResponse:
 
 @dataclass
 class StreamingResponse:
-    """StreamingResponse object.
+    """
+    StreamingResponse object.
 
     Returned if streaming=True.
 
@@ -161,7 +165,8 @@ class StreamingResponse:
 
 @dataclass
 class AsyncStreamingResponse:
-    """AsyncStreamingResponse object.
+    """
+    AsyncStreamingResponse object.
 
     Returned if streaming=True while using async.
 

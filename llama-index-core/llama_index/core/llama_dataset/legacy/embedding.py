@@ -14,7 +14,8 @@ from tqdm import tqdm
 
 
 class EmbeddingQAFinetuneDataset(BaseModel):
-    """Embedding QA Finetuning Dataset.
+    """
+    Embedding QA Finetuning Dataset.
 
     Args:
         queries (Dict[str, str]): Dict id -> query.

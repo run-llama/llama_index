@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 import numpy as np
 import pandas as pd
 from llama_index.experimental.exec_utils import safe_eval, safe_exec
-from llama_index.core.output_parsers.base import ChainableOutputParser
+from llama_index.core.output_parsers import BaseOutputParser
 from llama_index.core.output_parsers.utils import parse_code_markdown
 
 logger = logging.getLogger(__name__)
@@ -70,15 +70,15 @@ def default_output_processor(
             raise
     except Exception as e:
         err_string = (
-            "There was an error running the output as Python code. "
-            f"Error message: {e}"
+            f"There was an error running the output as Python code. Error message: {e}"
         )
         traceback.print_exc()
         return err_string
 
 
-class PandasInstructionParser(ChainableOutputParser):
-    """Pandas instruction parser.
+class PandasInstructionParser(BaseOutputParser):
+    """
+    Pandas instruction parser.
 
     This 'output parser' takes in pandas instructions (in Python code) and
     executes them to return an output.

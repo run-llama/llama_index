@@ -181,7 +181,8 @@ def llm_retry_decorator(f: Callable[..., Any]) -> Callable[..., Any]:
 
 
 class SiliconFlow(FunctionCallingLLM):
-    """SiliconFlow LLM.
+    """
+    SiliconFlow LLM.
 
     Visit https://siliconflow.cn/ to get more information about SiliconFlow.
 
@@ -196,6 +197,7 @@ class SiliconFlow(FunctionCallingLLM):
         response = llm.complete("who are you?")
         print(response)
         ```
+
     """
 
     model: str = Field(
@@ -307,6 +309,7 @@ class SiliconFlow(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,  # unsupported by SiliconFlow - https://docs.siliconflow.cn/en/api-reference/chat-completions/chat-completions
         **kwargs: Any,
     ) -> Dict[str, Any]:
         tool_specs = [
@@ -379,7 +382,7 @@ class SiliconFlow(FunctionCallingLLM):
                 "messages": messages_dict,
                 "stream": False,
                 "n": 1,
-                "tools": kwargs.get("tools", None),
+                "tools": kwargs.get("tools"),
                 "response_format": response_format,
                 **self.model_kwargs,
             }
@@ -414,7 +417,7 @@ class SiliconFlow(FunctionCallingLLM):
                 "messages": messages_dict,
                 "stream": False,
                 "n": 1,
-                "tools": kwargs.get("tools", None),
+                "tools": kwargs.get("tools"),
                 "response_format": response_format,
                 **self.model_kwargs,
             }
@@ -452,7 +455,7 @@ class SiliconFlow(FunctionCallingLLM):
                     "messages": messages_dict,
                     "stream": True,
                     "n": 1,
-                    "tools": kwargs.get("tools", None),
+                    "tools": kwargs.get("tools"),
                     "response_format": response_format,
                     **self.model_kwargs,
                 }
@@ -502,7 +505,7 @@ class SiliconFlow(FunctionCallingLLM):
                     "messages": messages_dict,
                     "stream": True,
                     "n": 1,
-                    "tools": kwargs.get("tools", None),
+                    "tools": kwargs.get("tools"),
                     "response_format": response_format,
                     **self.model_kwargs,
                 }

@@ -1,4 +1,5 @@
 """Jira tool spec."""
+
 from typing import Optional, Union
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
@@ -44,6 +45,7 @@ class JiraToolSpec(BaseToolSpec):
                 - 'message' (str): A description of the result.
                 - 'projects' (list, optional): A list of projects with their details
                   (ID, key, name) if retrieval is successful.
+
         """
         try:
             projects = self.jira.projects()
@@ -87,6 +89,7 @@ class JiraToolSpec(BaseToolSpec):
                     - 'body' (str): The content of the comment.
                     - 'created_at' (str): The timestamp when the comment was created.
                     - 'updated_at' (str): The timestamp when the comment was last updated.
+
         """
         error = False
 
@@ -163,6 +166,7 @@ class JiraToolSpec(BaseToolSpec):
                 'assignee': 'Jane Smith',
                 'assignee_email': 'jane.smith@example.com'
             }
+
         """
         error = False
         try:
@@ -225,6 +229,7 @@ class JiraToolSpec(BaseToolSpec):
                 - 'error' (bool): Indicates if an error occurred during the fetch operation.
                 - 'message' (str): Describes the outcome of the operation.
                 - 'results' (list, optional): A list of issues matching the search criteria, present only if no error occurred.
+
         """
         error = False
 

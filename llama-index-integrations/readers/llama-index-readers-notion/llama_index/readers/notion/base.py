@@ -16,7 +16,8 @@ SEARCH_URL = "https://api.notion.com/v1/search"
 
 # TODO: Notion DB reader coming soon!
 class NotionPageReader(BasePydanticReader):
-    """Notion Page reader.
+    """
+    Notion Page reader.
 
     Reads a set of Notion pages.
 
@@ -195,7 +196,8 @@ class NotionPageReader(BasePydanticReader):
         database_ids: Optional[List[str]] = None,
         load_all_if_empty: bool = False,
     ) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             page_ids (List[str]): List of page ids to load.

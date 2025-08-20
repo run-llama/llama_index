@@ -75,7 +75,7 @@ def mock_memory():
     return memory
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_code_act_agent_basic_execution(
     mock_llm, mock_code_execute_fn, mock_memory
 ):
@@ -113,7 +113,7 @@ async def test_code_act_agent_basic_execution(
     assert "print('Hello World')" in output.tool_calls[0].tool_kwargs["code"]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_code_act_agent_tool_handling(
     mock_llm, mock_code_execute_fn, mock_memory
 ):
@@ -159,7 +159,7 @@ async def test_code_act_agent_tool_handling(
     await agent.handle_tool_call_results(ctx, tool_results, mock_memory)
 
     # Verify scratchpad was updated
-    scratchpad = await ctx.get("scratchpad")
+    scratchpad = await ctx.store.get("scratchpad")
     assert len(scratchpad) == 2  # User message and assistant response
     assert "4" in scratchpad[1].content  # Verify the result was added to scratchpad
 

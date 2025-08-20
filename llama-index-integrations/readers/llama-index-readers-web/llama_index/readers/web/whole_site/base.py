@@ -1,4 +1,5 @@
 import time
+import warnings
 from typing import List, Optional
 
 from llama_index.core.readers.base import BaseReader
@@ -25,6 +26,7 @@ class WholeSiteReader(BaseReader):
         prefix (str): URL prefix for scraping.
         max_depth (int, optional): Maximum depth for BFS. Defaults to 10.
         uri_as_id (bool, optional): Whether to use the URI as the document ID. Defaults to False.
+
     """
 
     def __init__(
@@ -48,6 +50,7 @@ class WholeSiteReader(BaseReader):
 
         Returns:
             WebDriver: An instance of Chrome WebDriver.
+
         """
         try:
             import chromedriver_autoinstaller
@@ -88,7 +91,8 @@ class WholeSiteReader(BaseReader):
         return self.driver.execute_script(js_script)
 
     def load_data(self, base_url: str) -> List[Document]:
-        """Load data from the base URL using BFS algorithm.
+        """
+        Load data from the base URL using BFS algorithm.
 
         Args:
             base_url (str): Base URL to start scraping.
@@ -96,6 +100,7 @@ class WholeSiteReader(BaseReader):
 
         Returns:
             List[Document]: List of scraped documents.
+
         """
         added_urls = set()
         urls_to_visit = [(base_url, 0)]
@@ -130,6 +135,9 @@ class WholeSiteReader(BaseReader):
 
                 doc = Document(text=page_content, extra_info={"URL": current_url})
                 if self.uri_as_id:
+                    warnings.warn(
+                        "Setting the URI as the id of the document might break the code execution downstream and should be avoided."
+                    )
                     doc.id_ = current_url
                 documents.append(doc)
                 time.sleep(1)

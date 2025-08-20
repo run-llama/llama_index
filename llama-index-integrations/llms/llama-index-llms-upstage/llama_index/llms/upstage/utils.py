@@ -5,17 +5,15 @@ from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 
 DEFAULT_UPSTAGE_API_BASE = "https://api.upstage.ai/v1/solar"
 DEFAULT_CONTEXT_WINDOW = 32768
-CHAT_MODELS = {
-    "solar-mini": 32768,
-    "solar-pro": 4096,
-}
+CHAT_MODELS = {"solar-mini": 32768, "solar-pro": 4096, "solar-pro2": 65536}
 
-FUNCTION_CALLING_MODELS = ["solar-mini"]
-DOC_PARSING_MODELS = ["solar-pro"]
+FUNCTION_CALLING_MODELS = ["solar-mini", "solar-pro", "solar-pro2"]
+DOC_PARSING_MODELS = ["solar-pro", "solar-pro2"]
 
 ALL_AVAILABLE_MODELS = {**CHAT_MODELS}
 
 SOLAR_TOKENIZERS = {
+    "solar-pro2": "upstage/solar-pro2-tokenizer",
     "solar-pro": "upstage/solar-pro-tokenizer",
     "solar-mini": "upstage/solar-1-mini-tokenizer",
 }
@@ -27,7 +25,8 @@ def resolve_upstage_credentials(
     api_key: Optional[str] = None,
     api_base: Optional[str] = None,
 ) -> Tuple[Optional[str], str]:
-    """Resolve Upstage credentials.
+    """
+    Resolve Upstage credentials.
 
     The order of precedence is:
     1. param

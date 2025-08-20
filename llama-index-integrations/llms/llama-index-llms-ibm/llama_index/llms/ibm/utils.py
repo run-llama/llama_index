@@ -20,7 +20,7 @@ def resolve_watsonx_credentials(
     token: Optional[str] = None,
     username: Optional[str] = None,
     password: Optional[str] = None,
-    instance_id: Optional[str] = None
+    instance_id: Optional[str] = None,
 ) -> Dict[str, SecretStr]:
     """
     Resolve watsonx.ai credentials. If the value of given param is None
@@ -138,7 +138,8 @@ def from_watsonx_message(message: dict) -> ChatMessage:
 
 
 def update_tool_calls(tool_calls: list, tool_calls_update: list):
-    """Use the tool_calls_update objects received from stream chunks
+    """
+    Use the tool_calls_update objects received from stream chunks
     to update the running tool_calls object.
     """
     if tool_calls_update is None:

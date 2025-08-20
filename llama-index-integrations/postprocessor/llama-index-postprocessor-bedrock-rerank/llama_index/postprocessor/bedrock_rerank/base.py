@@ -47,8 +47,7 @@ class BedrockRerank(BaseNodePostprocessor):
     region_name: Optional[str] = Field(
         default=None,
         description=(
-            "AWS region name to use. "
-            "Uses region configured in AWS CLI if not passed."
+            "AWS region name to use. Uses region configured in AWS CLI if not passed."
         ),
     )
     botocore_session: Optional[Any] = Field(
@@ -209,8 +208,7 @@ class BedrockRerank(BaseNodePostprocessor):
                     }
                 )
             # change top_n if the number of nodes is less than top_n
-            if len(nodes) < self.top_n:
-                self.top_n = len(nodes)
+            top_n = min(self.top_n, len(nodes))
 
             queries = [
                 {
@@ -219,10 +217,10 @@ class BedrockRerank(BaseNodePostprocessor):
                 }
             ]
 
-            rerankingConfiguration = {
+            reranking_configuration = {
                 "type": "BEDROCK_RERANKING_MODEL",
                 "bedrockRerankingConfiguration": {
-                    "numberOfResults": self.top_n,
+                    "numberOfResults": top_n,
                     "modelConfiguration": {
                         "modelArn": self._model_package_arn,
                     },
@@ -233,7 +231,7 @@ class BedrockRerank(BaseNodePostprocessor):
                 response = self._client.rerank(
                     queries=queries,
                     sources=text_sources,
-                    rerankingConfiguration=rerankingConfiguration,
+                    rerankingConfiguration=reranking_configuration,
                 )
 
                 results = response["results"]

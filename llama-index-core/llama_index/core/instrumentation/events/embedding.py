@@ -5,10 +5,12 @@ from llama_index.core.bridge.pydantic import ConfigDict
 
 
 class EmbeddingStartEvent(BaseEvent):
-    """EmbeddingStartEvent.
+    """
+    EmbeddingStartEvent.
 
     Args:
         model_dict (dict): Model dictionary containing details about the embedding model.
+
     """
 
     model_config = ConfigDict(protected_namespaces=("pydantic_model_",))
@@ -21,7 +23,8 @@ class EmbeddingStartEvent(BaseEvent):
 
 
 class EmbeddingEndEvent(BaseEvent):
-    """EmbeddingEndEvent.
+    """
+    EmbeddingEndEvent.
 
     Args:
         chunks (List[str]): List of chunks.
@@ -39,10 +42,12 @@ class EmbeddingEndEvent(BaseEvent):
 
 
 class SparseEmbeddingStartEvent(BaseEvent):
-    """EmbeddingStartEvent.
+    """
+    EmbeddingStartEvent.
 
     Args:
         model_dict (dict): Model dictionary containing details about the embedding model.
+
     """
 
     model_config = ConfigDict(protected_namespaces=("pydantic_model_",))
@@ -55,11 +60,13 @@ class SparseEmbeddingStartEvent(BaseEvent):
 
 
 class SparseEmbeddingEndEvent(BaseEvent):
-    """EmbeddingEndEvent.
+    """
+    EmbeddingEndEvent.
 
     Args:
         chunks (List[str]): List of chunks.
         embeddings (List[List[float]]): List of embeddings.
+
     """
 
     chunks: List[str]

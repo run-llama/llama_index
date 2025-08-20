@@ -48,12 +48,10 @@ def test_no_weaviate_client_instance_provided():
     assert len(results.nodes) == 1
     weaviate_client = vector_store.client
     del vector_store
-    assert (
-        not weaviate_client.is_connected()
-    )  # As the Weaviate client was created within WeaviateVectorStore, it lies in its responsibility to close the connection when it is not longer needed
+    assert not weaviate_client.is_connected()  # As the Weaviate client was created within WeaviateVectorStore, it lies in its responsibility to close the connection when it is not longer needed
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 class TestWeaviateAsync:
     @pytest_asyncio.fixture(scope="class")
     async def async_client(self):

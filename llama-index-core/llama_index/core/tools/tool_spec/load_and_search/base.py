@@ -1,4 +1,5 @@
-"""Ad-hoc data loader tool.
+"""
+Ad-hoc data loader tool.
 
 Tool that wraps any data loader, and is able to load data on-demand.
 
@@ -17,7 +18,8 @@ from llama_index.core.tools.utils import create_schema_from_function
 
 
 class LoadAndSearchToolSpec(BaseToolSpec):
-    """Load and Search Tool.
+    """
+    Load and Search Tool.
 
     This tool can be used with other tools that load large amounts of
     information. Compared to OndemandLoaderTool this returns two tools,
@@ -141,11 +143,7 @@ class LoadAndSearchToolSpec(BaseToolSpec):
                 self._index.insert(doc, **self._index_kwargs)
         else:
             self._index = self._index_cls.from_documents(docs, **self._index_kwargs)
-        return (
-            "Content loaded! You can now search the information using read_{}".format(
-                self._metadata.name
-            )
-        )
+        return f"Content loaded! You can now search the information using read_{self._metadata.name}"
 
     def read(self, query: str) -> Any:
         # Query the index for the result

@@ -1,26 +1,48 @@
+import logging
 from collections.abc import Sequence
 from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
     Union,
+    Optional,
+    Type,
+    Tuple,
 )
 import typing
 
 import google.genai.types as types
 import google.genai
+import httpx
 from google.genai import _transformers
+from google.genai import errors
+
+from llama_index.core.bridge.pydantic import BaseModel, ValidationError
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponse,
     ImageBlock,
     MessageRole,
     TextBlock,
+    DocumentBlock,
 )
+from llama_index.core.program.utils import _repair_incomplete_json
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    retry_if_exception,
+    stop_after_attempt,
+    stop_after_delay,
+    wait_exponential,
+    wait_random_exponential,
+)
+from tenacity.stop import stop_base
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
 
+logger = logging.getLogger(__name__)
 
 ROLES_TO_GEMINI: dict[MessageRole, MessageRole] = {
     MessageRole.USER: MessageRole.USER,
@@ -57,7 +79,8 @@ def merge_neighboring_same_role_messages(
     i = 0
 
     while i < len(messages):
-        current_message = messages[i]
+        # operate on a copy of the message to avoid mutating the original
+        current_message = messages[i].model_copy()
         # Initialize merged content with current message content
         merged_content = current_message.blocks
 
@@ -124,6 +147,10 @@ def chat_from_gemini_response(
     if response.usage_metadata:
         raw["usage_metadata"] = response.usage_metadata.model_dump()
 
+    if hasattr(response, "cached_content") and response.cached_content:
+        raw["cached_content"] = response.cached_content
+
+    additional_kwargs: Dict[str, Any] = {"thought_signatures": []}
     content_blocks = []
     if (
         len(response.candidates) > 0
@@ -133,7 +160,13 @@ def chat_from_gemini_response(
         parts = response.candidates[0].content.parts
         for part in parts:
             if part.text:
-                content_blocks.append(TextBlock(text=part.text))
+                if part.thought:
+                    if "thoughts" not in additional_kwargs:
+                        additional_kwargs["thoughts"] = ""
+                    additional_kwargs["thoughts"] += part.text
+                else:
+                    content_blocks.append(TextBlock(text=part.text))
+                additional_kwargs["thought_signatures"].append(part.thought_signature)
             if part.inline_data:
                 content_blocks.append(
                     ImageBlock(
@@ -141,13 +174,18 @@ def chat_from_gemini_response(
                         image_mimetype=part.inline_data.mime_type,
                     )
                 )
-
-    additional_kwargs: Dict[str, Any] = {}
-    if response.function_calls:
-        for fn in response.function_calls:
-            if "tool_calls" not in additional_kwargs:
-                additional_kwargs["tool_calls"] = []
-            additional_kwargs["tool_calls"].append(fn)
+                additional_kwargs["thought_signatures"].append(part.thought_signature)
+            if part.function_call:
+                if "tool_calls" not in additional_kwargs:
+                    additional_kwargs["tool_calls"] = []
+                additional_kwargs["tool_calls"].append(
+                    {
+                        "id": part.function_call.id if part.function_call.id else "",
+                        "name": part.function_call.name,
+                        "args": part.function_call.args,
+                        "thought_signature": part.thought_signature,
+                    }
+                )
 
     role = ROLES_FROM_GEMINI[top_candidate.content.role]
     return ChatResponse(
@@ -162,38 +200,56 @@ def chat_from_gemini_response(
 def chat_message_to_gemini(message: ChatMessage) -> types.Content:
     """Convert ChatMessages to Gemini-specific history, including ImageDocuments."""
     parts = []
-    for block in message.blocks:
+    part = None
+    for index, block in enumerate(message.blocks):
         if isinstance(block, TextBlock):
             if block.text:
-                parts.append(types.Part.from_text(text=block.text))
+                part = types.Part.from_text(text=block.text)
         elif isinstance(block, ImageBlock):
             base64_bytes = block.resolve_image(as_base64=False).read()
             if not block.image_mimetype:
                 # TODO: fail ?
                 block.image_mimetype = "image/png"
 
-            parts.append(
-                types.Part.from_bytes(
-                    data=base64_bytes,
-                    mime_type=block.image_mimetype,
-                )
+            part = types.Part.from_bytes(
+                data=base64_bytes, mime_type=block.image_mimetype
             )
-
+        elif isinstance(block, DocumentBlock):
+            file_buffer = block.resolve_document()
+            file_bytes = file_buffer.read()
+            mimetype = (
+                block.document_mimetype
+                if block.document_mimetype is not None
+                else "application/pdf"
+            )
+            part = types.Part.from_bytes(data=file_bytes, mime_type=mimetype)
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
+        if part is not None:
+            if message.role == MessageRole.MODEL:
+                thought_signatures = message.additional_kwargs.get(
+                    "thought_signatures", []
+                )
+                part.thought_signature = (
+                    thought_signatures[index]
+                    if index < len(thought_signatures)
+                    else None
+                )
+            parts.append(part)
 
     for tool_call in message.additional_kwargs.get("tool_calls", []):
         if isinstance(tool_call, dict):
-            parts.append(
-                types.Part.from_function_call(
-                    name=tool_call.get("name"), args=tool_call.get("args")
-                )
+            part = types.Part.from_function_call(
+                name=tool_call.get("name"), args=tool_call.get("args")
             )
+            part.thought_signature = tool_call.get("thought_signature")
         else:
-            parts.append(
-                types.Part.from_function_call(name=tool_call.name, args=tool_call.args)
+            part = types.Part.from_function_call(
+                name=tool_call.name, args=tool_call.args
             )
+            part.thought_signature = tool_call.thought_signature
+        parts.append(part)
 
     # the tool call id is the name of the tool
     # the tool call response is the content of the message, overriding the existing content
@@ -220,13 +276,7 @@ def convert_schema_to_function_declaration(
         raise ValueError("fn_schema is missing")
 
     # Get the JSON schema
-    json_schema = tool.metadata.fn_schema.model_json_schema()
-
-    if json_schema.get("properties"):
-        _transformers.process_schema(json_schema, client)
-        root_schema = json_schema
-    else:
-        root_schema = None
+    root_schema = _transformers.t_schema(client, tool.metadata.fn_schema)
 
     description_parts = tool.metadata.description.split("\n", maxsplit=1)
     if len(description_parts) > 1:
@@ -264,7 +314,16 @@ def prepare_chat_params(
         tuple containing:
         - next_msg: the next message to send
         - chat_kwargs: processed keyword arguments for chat creation
+
     """
+    # Extract system message if present
+    system_message: str | None = None
+    if messages and messages[0].role == MessageRole.SYSTEM:
+        sys_msg = messages.pop(0)
+        system_message = sys_msg.content
+    # Now messages contains the rest of the chat history
+
+    # Merge messages with the same role
     merged_messages = merge_neighboring_same_role_messages(messages)
     initial_history = list(map(chat_message_to_gemini, merged_messages))
 
@@ -283,7 +342,7 @@ def prepare_chat_params(
             history.append(msg)
             continue
 
-        last_msg = history[idx - 1]
+        last_msg = history[-1]
 
         # Skip if the last message is not a tool message
         if last_msg.parts and not any(
@@ -313,6 +372,10 @@ def prepare_chat_params(
     if not isinstance(config, dict):
         config = config.model_dump()
 
+    # Add system message as system_instruction if present
+    if system_message:
+        config["system_instruction"] = system_message
+
     chat_kwargs: ChatParams = {"model": model, "history": history}
 
     if tools:
@@ -330,3 +393,64 @@ def prepare_chat_params(
     chat_kwargs["config"] = types.GenerateContentConfig(**config)
 
     return next_msg, chat_kwargs
+
+
+def handle_streaming_flexible_model(
+    current_json: str,
+    candidate: types.Candidate,
+    output_cls: Type[BaseModel],
+    flexible_model: Type[BaseModel],
+) -> Tuple[Optional[BaseModel], str]:
+    parts = candidate.content.parts or []
+    data = parts[0].text if parts else None
+    if data:
+        current_json += data
+        try:
+            return output_cls.model_validate_json(current_json), current_json
+        except ValidationError:
+            try:
+                return flexible_model.model_validate_json(
+                    _repair_incomplete_json(current_json)
+                ), current_json
+            except ValidationError:
+                return None, current_json
+
+    return None, current_json
+
+
+def _should_retry(exception: BaseException):
+    if isinstance(exception, errors.ClientError):
+        if exception.status in (429, 408):
+            return True
+    return False
+
+
+def create_retry_decorator(
+    max_retries: int,
+    random_exponential: bool = False,
+    stop_after_delay_seconds: Optional[float] = None,
+    min_seconds: float = 4,
+    max_seconds: float = 60,
+) -> typing.Callable[[Any], Any]:
+    wait_strategy = (
+        wait_random_exponential(min=min_seconds, max=max_seconds)
+        if random_exponential
+        else wait_exponential(multiplier=1, min=min_seconds, max=max_seconds)
+    )
+
+    stop_strategy: stop_base = stop_after_attempt(max_retries)
+    if stop_after_delay_seconds is not None:
+        stop_strategy = stop_strategy | stop_after_delay(stop_after_delay_seconds)
+
+    return retry(
+        reraise=True,
+        stop=stop_strategy,
+        wait=wait_strategy,
+        retry=(
+            retry_if_exception_type(
+                (errors.ServerError, httpx.ConnectError, httpx.ConnectTimeout)
+            )
+            | retry_if_exception(_should_retry)
+        ),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )

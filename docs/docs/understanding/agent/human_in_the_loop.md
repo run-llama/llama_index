@@ -2,7 +2,7 @@
 
 Tools can also be defined that get a human in the loop. This is useful for tasks that require human input, such as confirming a tool call or providing feedback.
 
-As we'll see in the our [Workflows tutorial](../workflows/index.md), the way Workflows work under the hood of AgentWorkflow is by running steps which both emit and receive events. Here's a diagram of the steps (in blue) that makes up an AgentWorkflow and the events (in green) that pass data between them. You'll recognize these events, they're the same ones we were handling in the output stream earlier.
+As we'll see in our [Workflows tutorial](../workflows/index.md), the way Workflows work under the hood of AgentWorkflow is by running steps which both emit and receive events. Here's a diagram of the steps (in blue) that make up an AgentWorkflow and the events (in green) that pass data between them. You'll recognize these events, they're the same ones we were handling in the output stream earlier.
 
 ![Workflows diagram](./agentworkflow.jpg)
 
@@ -25,6 +25,9 @@ Next we'll create a tool that performs a hypothetical dangerous task. There are 
 * The `requirements` argument is used to specify that we want to wait for a HumanResponseEvent with a specific `user_name`.
 
 ```python
+from llama_index.core.workflow import Context
+
+
 async def dangerous_task(ctx: Context) -> str:
     """A dangerous task that requires human confirmation."""
 
@@ -83,4 +86,4 @@ As usual, you can see the [full code of this example](https://github.com/run-lla
 
 You can do anything you want to capture the input; you could use a GUI, or audio input, or even get another, separate agent involved. If your input is going to take a while, or happen in another process, you might want to [serialize the context](./state.md) and save it to a database or file so that you can resume the workflow later.
 
-Speaking of getting other agents involved brings us to our next section, [multi-agent systems](./multi_agent.md).
+Speaking of getting other agents involved brings us to our next section, detailing several ways to build [multi-agent systems](./multi_agent.md).

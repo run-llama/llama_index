@@ -48,6 +48,7 @@ class UnstructuredReader(BaseReader):
             url (str or None): URL for the Unstructured.io API if using the API.
             allowed_metadata_types (Tuple): Tuple of types that are allowed in the metadata.
             excluded_metadata_keys (Set): Set of metadata keys to exclude from the final document.
+
         """
         super().__init__(*args)  # not passing kwargs to parent bc it cannot accept it
 
@@ -98,6 +99,7 @@ class UnstructuredReader(BaseReader):
 
         Returns:
             List[Document]: List of parsed documents.
+
         """
         unstructured_kwargs = unstructured_kwargs.copy() if unstructured_kwargs else {}
 
@@ -131,6 +133,7 @@ class UnstructuredReader(BaseReader):
 
         Returns:
             List[Element]: List of partitioned elements.
+
         """
         if file:
             unstructured_kwargs["filename"] = str(file)
@@ -168,6 +171,7 @@ class UnstructuredReader(BaseReader):
 
         Returns:
             List[Document]: List of parsed documents.
+
         """
         doc_kwargs = document_kwargs or {}
         doc_extras = extra_info or {}
@@ -216,9 +220,9 @@ class UnstructuredReader(BaseReader):
                     id_=hash_id,
                     **doc_kwargs,
                 )
-                node.relationships[
-                    NodeRelationship.SOURCE
-                ] = source.as_related_node_info()
+                node.relationships[NodeRelationship.SOURCE] = (
+                    source.as_related_node_info()
+                )
                 docs.append(node)
         else:
             docs = [source]

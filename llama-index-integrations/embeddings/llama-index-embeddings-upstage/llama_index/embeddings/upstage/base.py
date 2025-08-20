@@ -30,7 +30,7 @@ MAX_EMBED_BATCH_SIZE = 100
 
 def get_engine(model) -> Tuple[Any, Any]:
     """
-    get query engine and passage engine for the model.
+    Get query engine and passage engine for the model.
     """
     if model not in UPSTAGE_EMBEDDING_MODELS:
         raise ValueError(
@@ -103,6 +103,8 @@ class UpstageEmbedding(OpenAIEmbedding):
                 f"Model name should not end with '-query' or '-passage'. The suffix has been removed. "
                 f"Model name: {model}"
             )
+
+        default_headers = (default_headers or {}) | {"x-upstage-client": "llamaindex"}
 
         super().__init__(
             embed_batch_size=embed_batch_size,

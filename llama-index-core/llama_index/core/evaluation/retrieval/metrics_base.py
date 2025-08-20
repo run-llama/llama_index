@@ -5,7 +5,8 @@ from llama_index.core.bridge.pydantic import BaseModel, Field, ConfigDict
 
 
 class RetrievalMetricResult(BaseModel):
-    """Metric result.
+    """
+    Metric result.
 
     Attributes:
         score (float): Score for the metric
@@ -43,7 +44,8 @@ class BaseRetrievalMetric(BaseModel, ABC):
         retrieved_texts: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> RetrievalMetricResult:
-        """Compute metric.
+        """
+        Compute metric.
 
         Args:
             query (Optional[str]): Query string

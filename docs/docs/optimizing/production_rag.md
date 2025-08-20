@@ -87,7 +87,6 @@ Embed document summaries and map to chunks per document. Fetch at the document-l
 
 - [Chroma Auto-Retrieval](../examples/vector_stores/chroma_auto_retriever.ipynb)
 - [Document Summary Index](../examples/index_structs/doc_summary/DocSummary.ipynb)
-- [Recursive Retriever](../examples/query_engine/recursive_retriever_agents.ipynb)
 - [Auto-Retriever vs. Recursive Retriever](../examples/retrievers/auto_vs_recursive_retriever.ipynb)
 
 ## Dynamically Retrieve Chunks Depending on your Task
@@ -116,7 +115,6 @@ You can use these modules to do joint question-answering and summarization, or e
 
 - [Sub-Question Query Engine](../examples/query_engine/sub_question_query_engine.ipynb)
 - [Joint QA-Summary](../examples/query_engine/JointQASummary.ipynb)
-- [Recursive Retriever Agents](../examples/query_engine/recursive_retriever_agents.ipynb)
 - [Router Query Engine](../examples/query_engine/RouterQueryEngine.ipynb)
 - [OpenAI Agent Cookbook](../examples/agent/openai_agent_query_cookbook.ipynb)
 

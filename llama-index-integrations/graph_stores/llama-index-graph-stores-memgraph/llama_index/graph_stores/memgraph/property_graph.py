@@ -106,7 +106,9 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
         # Close the Memgraph connection explicitly.
         graph_store.close()
         ```
+
     """
+
     supports_structured_queries: bool = True
     supports_vector_queries: bool = True
     text_to_cypher_template: PromptTemplate = DEFAULT_CYPHER_TEMPALTE
@@ -924,7 +926,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                             example = (
                                 (
                                     "Available options: "
-                                    f'{[clean_string_values(el) for el in prop["values"]]}'
+                                    f"{[clean_string_values(el) for el in prop['values']]}"
                                 )
                                 if prop["values"]
                                 else ""
@@ -940,7 +942,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                         "LocalDateTime",
                     ]:
                         if prop.get("min") is not None:
-                            example = f'Min: {prop["min"]}, Max: {prop["max"]}'
+                            example = f"Min: {prop['min']}, Max: {prop['max']}"
                         else:
                             example = (
                                 f'Example: "{prop["values"][0]}"'
@@ -951,7 +953,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                         # Skip embeddings
                         if not prop.get("min_size") or prop["min_size"] > LIST_LIMIT:
                             continue
-                        example = f'Min Size: {prop["min_size"]}, Max Size: {prop["max_size"]}'
+                        example = f"Min Size: {prop['min_size']}, Max Size: {prop['max_size']}"
                     formatted_node_props.append(
                         f"  - `{prop['property']}`: {prop['type']} {example}"
                     )
@@ -972,7 +974,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                             example = (
                                 (
                                     "Available options: "
-                                    f'{[clean_string_values(el) for el in prop["values"]]}'
+                                    f"{[clean_string_values(el) for el in prop['values']]}"
                                 )
                                 if prop.get("values")
                                 else ""
@@ -987,7 +989,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                         "LocalDateTime",
                     ]:
                         if prop.get("min"):  # If we have min/max
-                            example = f'Min: {prop["min"]}, Max:  {prop["max"]}'
+                            example = f"Min: {prop['min']}, Max:  {prop['max']}"
                         else:  # return a single value
                             example = (
                                 f'Example: "{prop["values"][0]}"'
@@ -998,7 +1000,7 @@ class MemgraphPropertyGraphStore(PropertyGraphStore):
                         # Skip embeddings
                         if prop["min_size"] > LIST_LIMIT:
                             continue
-                        example = f'Min Size: {prop["min_size"]}, Max Size: {prop["max_size"]}'
+                        example = f"Min Size: {prop['min_size']}, Max Size: {prop['max_size']}"
                     formatted_rel_props.append(
                         f"  - `{prop['property']}: {prop['type']}` {example}"
                     )

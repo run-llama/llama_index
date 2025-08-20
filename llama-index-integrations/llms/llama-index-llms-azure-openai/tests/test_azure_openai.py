@@ -79,7 +79,8 @@ def test_custom_azure_ad_token_provider(sync_azure_openai_mock: MagicMock):
 def mock_chat_completion_stream_with_filter_results(
     *args: Any, **kwargs: Any
 ) -> Generator[ChatCompletionChunk, None, None]:
-    """Azure sends a chunk without text content (empty `choices` attribute) as the first chunk.
+    """
+    Azure sends a chunk without text content (empty `choices` attribute) as the first chunk.
     It only contains prompt filter results. Documentation on this can be found here: https://learn.microsoft.com/en-us/azure/ai-services/openai/concepts/content-filter?tabs=warning%2Cuser-prompt%2Cpython-new#sample-response-stream-passes-filters.
     """
     responses = [
@@ -162,7 +163,8 @@ async def mock_async_chat_completion_stream_with_filter_results(
 
 @patch("llama_index.llms.azure_openai.base.SyncAzureOpenAI")
 def test_chat_completion_with_filter_results(sync_azure_openai_mock: MagicMock) -> None:
-    """Tests that synchronous chat completions work correctly if first chunk contains prompt
+    """
+    Tests that synchronous chat completions work correctly if first chunk contains prompt
     filter results (empty `choices` list).
     """
     mock_instance = MagicMock(spec=SyncAzureOpenAI)
@@ -191,12 +193,13 @@ def test_chat_completion_with_filter_results(sync_azure_openai_mock: MagicMock) 
     assert chat_responses[-1].message.role == "assistant"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch("llama_index.llms.azure_openai.base.AsyncAzureOpenAI")
 async def test_async_chat_completion_with_filter_results(
     async_azure_openai_mock: MagicMock,
 ) -> None:
-    """Tests that asynchronous chat completions work correctly if first chunk contains prompt
+    """
+    Tests that asynchronous chat completions work correctly if first chunk contains prompt
     filter results (empty `choices` list).
     """
     mock_instance = MagicMock(spec=AsyncAzureOpenAI)

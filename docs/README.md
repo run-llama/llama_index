@@ -42,6 +42,18 @@ working on the "Examples" section of the documentation, you can run the same com
 poetry run serve --skip-notebooks
 ```
 
+Another way to save build time is to skip generating the API reference:
+
+```
+poetry run serve --skip-reference
+```
+
+The two options can go together for a minimal build
+
+```
+poetry run serve --skip-notebooks --skip-reference
+```
+
 > [!IMPORTANT]
 > Building the documentation takes a while, so make sure you see the following output before opening the browser:
 >

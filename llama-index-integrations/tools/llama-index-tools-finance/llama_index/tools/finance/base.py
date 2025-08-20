@@ -54,7 +54,8 @@ class FinanceAgentToolSpec(BaseToolSpec):
     def get_stocks_with_upcoming_earnings(
         self, num_days_from_now: int, only_sp500: bool
     ) -> pd.DataFrame:
-        """Returns a pandas dataframe containing all stocks which are announcing earnings in upcoming days.
+        """
+        Returns a pandas dataframe containing all stocks which are announcing earnings in upcoming days.
 
         Arguments:
          num_days_from_now: only returns stocks which announcing earnings from today's date to num_days_from_now.
@@ -72,7 +73,8 @@ class FinanceAgentToolSpec(BaseToolSpec):
         )
 
     def get_current_gainer_stocks(self) -> pd.DataFrame:
-        """Return US stocks which are classified as day gainers as per Yahoo Finance.
+        """
+        Return US stocks which are classified as day gainers as per Yahoo Finance.
 
         A US stock is classified as day gainer if %change in price > 3, price >=5, volume > 15_000
 
@@ -80,7 +82,8 @@ class FinanceAgentToolSpec(BaseToolSpec):
         return news.get_current_gainer_stocks()
 
     def get_current_loser_stocks(self) -> pd.DataFrame:
-        """Returns US stocks which are classified as day losers as per Yahoo Finance.
+        """
+        Returns US stocks which are classified as day losers as per Yahoo Finance.
 
         A US stock is classified as day loser if %change in price < -2.5, price >=5, volume > 20_000
 
@@ -88,7 +91,8 @@ class FinanceAgentToolSpec(BaseToolSpec):
         return news.get_current_loser_stocks()
 
     def get_current_undervalued_growth_stocks(self) -> pd.DataFrame:
-        """Get list of undervalued growth stocks in US market as per Yahoo Finance.
+        """
+        Get list of undervalued growth stocks in US market as per Yahoo Finance.
 
         A stock with Price to Earnings ratio between 0-20, Price / Earnings to Growth < 1
 
@@ -96,7 +100,8 @@ class FinanceAgentToolSpec(BaseToolSpec):
         return news.get_current_undervalued_growth_stocks()
 
     def get_current_technology_growth_stocks(self) -> pd.DataFrame:
-        """Returns a data frame of growth stocks in technology sector in US market.
+        """
+        Returns a data frame of growth stocks in technology sector in US market.
 
         If a stocks's quarterly revenue growth YoY% > 25%.
 
@@ -104,7 +109,8 @@ class FinanceAgentToolSpec(BaseToolSpec):
         return news.get_current_technology_growth_stocks()
 
     def get_current_most_traded_stocks(self) -> pd.DataFrame:
-        """Returns a dataframe storing stocks which were traded the most in current market.
+        """
+        Returns a dataframe storing stocks which were traded the most in current market.
 
         Stocks are ordered in decreasing order of activity i.e stock traded the most on top.
 
@@ -125,7 +131,8 @@ class FinanceAgentToolSpec(BaseToolSpec):
         return [t["title"] for t in trends]
 
     def get_google_trending_searches(self) -> Optional[pd.DataFrame]:
-        """Returns trending searches in US as per google trends.
+        """
+        Returns trending searches in US as per google trends.
 
         If unable to find any trends, returns None.
 
@@ -133,7 +140,8 @@ class FinanceAgentToolSpec(BaseToolSpec):
         return news.get_google_trending_searches(region="united_states")
 
     def get_google_trends_for_query(self, query: str) -> Optional[pd.DataFrame]:
-        """Finds google search trends for a given query in United States.
+        """
+        Finds google search trends for a given query in United States.
 
         Returns None if unable to find any trends.
 

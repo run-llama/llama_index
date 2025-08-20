@@ -46,14 +46,17 @@ def get_function_tool(output_cls: Type[Model]) -> FunctionTool:
 
     return FunctionTool.from_defaults(
         fn=model_fn,
-        name=schema["title"],
+        # schema won't always have a title attribute
+        # fallback to using the class name directly
+        name=schema.get("title", output_cls.__name__),
         description=schema_description,
         fn_schema=output_cls,
     )
 
 
 class FunctionCallingProgram(BasePydanticProgram[Model]):
-    """Function Calling Program.
+    """
+    Function Calling Program.
 
     Uses function calling LLMs to obtain a structured output.
     """
@@ -65,6 +68,7 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
         prompt: BasePromptTemplate,
         tool_choice: Optional[Union[str, Dict[str, Any]]] = None,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = True,
         verbose: bool = False,
     ) -> None:
         """Init params."""
@@ -74,6 +78,7 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
         self._verbose = verbose
         self._allow_parallel_tool_calls = allow_parallel_tool_calls
         self._tool_choice = tool_choice
+        self._tool_required = tool_required
 
     @classmethod
     def from_defaults(
@@ -85,6 +90,7 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         tool_choice: Optional[Union[str, Dict[str, Any]]] = None,
+        tool_required: bool = True,
         **kwargs: Any,
     ) -> "FunctionCallingProgram":
         llm = llm or Settings.llm  # type: ignore
@@ -109,6 +115,7 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
             prompt=cast(PromptTemplate, prompt),
             tool_choice=tool_choice,
             allow_parallel_tool_calls=allow_parallel_tool_calls,
+            tool_required=tool_required,
             verbose=verbose,
         )
 
@@ -130,7 +137,12 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Union[Model, List[Model]]:
+        # avoid passing in duplicate kwargs
         llm_kwargs = llm_kwargs or {}
+        llm_kwargs.pop("tool_required", None)
+        llm_kwargs.pop("tool_choice", None)
+        llm_kwargs.pop("allow_parallel_tool_calls", None)
+
         tool = get_function_tool(self._output_cls)
 
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
@@ -141,6 +153,7 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
             chat_history=messages,
             verbose=self._verbose,
             allow_parallel_tool_calls=self._allow_parallel_tool_calls,
+            tool_required=self._tool_required,
             **llm_kwargs,
         )
         return self._parse_tool_outputs(
@@ -154,7 +167,12 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
         llm_kwargs: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ) -> Union[Model, List[Model]]:
+        # avoid passing in duplicate kwargs
         llm_kwargs = llm_kwargs or {}
+        llm_kwargs.pop("tool_required", None)
+        llm_kwargs.pop("tool_choice", None)
+        llm_kwargs.pop("allow_parallel_tool_calls", None)
+
         tool = get_function_tool(self._output_cls)
 
         agent_response = await self._llm.apredict_and_call(
@@ -162,6 +180,7 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
             chat_history=self._prompt.format_messages(llm=self._llm, **kwargs),
             verbose=self._verbose,
             allow_parallel_tool_calls=self._allow_parallel_tool_calls,
+            tool_required=self._tool_required,
             **llm_kwargs,
         )
         return self._parse_tool_outputs(
@@ -240,7 +259,8 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
     ) -> Generator[
         Union[Model, List[Model], FlexibleModel, List[FlexibleModel]], None, None
     ]:
-        """Stream object.
+        """
+        Stream object.
 
         Returns a generator returning partials of the same object
         or a list of objects until it returns.
@@ -249,7 +269,12 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
         if not isinstance(self._llm, FunctionCallingLLM):
             raise ValueError("stream_call is only supported for LLMs.")
 
+        # avoid passing in duplicate kwargs
         llm_kwargs = llm_kwargs or {}
+        llm_kwargs.pop("tool_required", None)
+        llm_kwargs.pop("tool_choice", None)
+        llm_kwargs.pop("allow_parallel_tool_calls", None)
+
         tool = get_function_tool(self._output_cls)
 
         messages = self._prompt.format_messages(llm=self._llm, **kwargs)
@@ -285,13 +310,20 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
     ) -> AsyncGenerator[
         Union[Model, List[Model], FlexibleModel, List[FlexibleModel]], None
     ]:
-        """Stream objects.
+        """
+        Stream objects.
 
         Returns a generator returning partials of the same object
         or a list of objects until it returns.
         """
         if not isinstance(self._llm, FunctionCallingLLM):
             raise ValueError("stream_call is only supported for LLMs.")
+
+        # avoid passing in duplicate kwargs
+        llm_kwargs = llm_kwargs or {}
+        llm_kwargs.pop("tool_required", None)
+        llm_kwargs.pop("tool_choice", None)
+        llm_kwargs.pop("allow_parallel_tool_calls", None)
 
         tool = get_function_tool(self._output_cls)
 
@@ -303,7 +335,7 @@ class FunctionCallingProgram(BasePydanticProgram[Model]):
             chat_history=messages,
             verbose=self._verbose,
             allow_parallel_tool_calls=self._allow_parallel_tool_calls,
-            **(llm_kwargs or {}),
+            **llm_kwargs,
         )
 
         async def gen() -> AsyncGenerator[

@@ -31,6 +31,7 @@ def add_extra_header_to_box_client(box_client: BoxClient) -> BoxClient:
 
     Returns:
         BoxClient: A Box client object with the extra headers added.
+
     """
     header = {"x-box-ai-library": "llama-index"}
     return box_client.with_extra_headers(extra_headers=header)
@@ -45,6 +46,7 @@ def box_check_connection(box_client: BoxClient) -> None:
 
     Returns:
         bool: True if the Box client is connected to the Box API, False otherwise.
+
     """
     try:
         box_client.users.get_user_me()
@@ -69,6 +71,7 @@ def get_box_files_details(box_client: BoxClient, file_ids: List[str]) -> List[Fi
 
     Raises:
         BoxAPIError: If an error occurs while retrieving file details from the Box API.
+
     """
     box_files_details: List[File] = []
 
@@ -105,6 +108,7 @@ def get_box_folder_files_details(
 
     Raises:
         BoxAPIError: If an error occurs while retrieving folder or file details from the Box API.
+
     """
     box_files_details: List[File] = []
     try:
@@ -142,6 +146,7 @@ def download_file_by_id(box_client: BoxClient, box_file: File, temp_dir: str) ->
 
     Raises:
         BoxAPIError: If an error occurs while interacting with the Box API.
+
     """
     # Save the downloaded file to the specified local directory.
     file_path = os.path.join(temp_dir, box_file.name)
@@ -192,6 +197,7 @@ def get_ai_response_from_box_files(
 
     Raises:
         BoxAPIError: If an error occurs while interacting with the Box AI API.
+
     """
     if individual_document_prompt:
         mode = CreateAiAskMode.SINGLE_ITEM_QA
@@ -245,6 +251,7 @@ def _do_request(box_client: BoxClient, url: str):
         BoxSDKError: If an error occurs while retrieving the access token.
         requests.exceptions.RequestException: If the request fails (e.g., network error,
                                              4XX or 5XX status code).
+
     """
     try:
         access_token = box_client.auth.retrieve_token().access_token
@@ -276,6 +283,7 @@ def get_text_representation(
 
     Raises:
         BoxAPIError: If an error occurs while interacting with the Box API.
+
     """
     box_files_text_representations: List[File] = []
     for file in box_files:
@@ -347,6 +355,7 @@ def get_files_ai_extract_data(
 
     Raises:
         BoxAPIError: If an error occurs while interacting with the Box AI API.
+
     """
     for file in box_files:
         ask_item = AiItemBase(file.id)
@@ -394,6 +403,7 @@ def search_files(
 
     Returns:
         List[File]: A list of Box file objects that match the search query.
+
     """
     # force to return only object type "file"
     type = SearchForContentType.FILE
@@ -443,6 +453,7 @@ def search_files_by_metadata(
 
     Returns:
         List[File]: A list of Box file objects that match the search query.
+
     """
     # return only the file id
     fields = ["id"]

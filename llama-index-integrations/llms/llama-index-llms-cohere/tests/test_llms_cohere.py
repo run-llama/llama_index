@@ -1,3 +1,4 @@
+import os
 from typing import Sequence, Optional, List
 from unittest import mock
 
@@ -16,6 +17,25 @@ from llama_index.llms.cohere import Cohere, DocumentMessage, is_cohere_model
 def test_is_cohere():
     assert is_cohere_model(Cohere(api_key="mario"))
     assert not is_cohere_model(MockLLM())
+
+
+@pytest.mark.skipif(
+    os.getenv("COHERE_API_KEY") is None, reason="COHERE_API_KEY is not set"
+)
+def test_tool_required():
+    llm = Cohere(
+        api_key=os.getenv("COHERE_API_KEY"),
+        model="command-r7b-12-2024",
+        temperature=0.3,
+    )
+    result = llm.chat_with_tools(
+        tools=[search_tool],
+        user_msg="What is the capital of France? Respond simply",
+        tool_required=True,
+    )
+    assert "tool_calls" in result.message.additional_kwargs
+    assert len(result.message.additional_kwargs["tool_calls"]) == 1
+    assert result.message.additional_kwargs["tool_calls"][0].name == "search_tool"
 
 
 def test_embedding_class():
@@ -93,6 +113,45 @@ def test_chat(
             model="command-r",
             temperature=0.3,
         )
+
+
+def search(query: str) -> str:
+    """Search for information about a query."""
+    return f"Results for {query}"
+
+
+search_tool = FunctionTool.from_defaults(
+    fn=search, name="search_tool", description="A tool for searching information"
+)
+
+
+def test_prepare_chat_with_tools_tool_required():
+    """Test that tool_required is correctly passed to the API request when True."""
+    with mock.patch("llama_index.llms.cohere.base.cohere.Client", autospec=True):
+        llm = Cohere(api_key="dummy", temperature=0.3)
+
+    # Test with tool_required=True
+    result = llm._prepare_chat_with_tools(tools=[search_tool], tool_required=True)
+
+    assert "force_single_step" in result
+    assert result["force_single_step"]
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["name"] == "search_tool"
+
+
+def test_prepare_chat_with_tools_tool_not_required():
+    """Test that tool_required is correctly passed to the API request when False."""
+    with mock.patch("llama_index.llms.cohere.base.cohere.Client", autospec=True):
+        llm = Cohere(api_key="dummy", temperature=0.3)
+
+    # Test with tool_required=False (default)
+    result = llm._prepare_chat_with_tools(
+        tools=[search_tool],
+    )
+
+    assert "force_single_step" not in result
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["name"] == "search_tool"
 
 
 def test_invoke_tool_calls() -> None:

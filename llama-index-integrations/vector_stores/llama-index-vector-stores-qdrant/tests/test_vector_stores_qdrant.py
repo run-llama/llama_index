@@ -9,7 +9,14 @@ from unittest.mock import MagicMock
 
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 from llama_index.vector_stores.qdrant import QdrantVectorStore
-from llama_index.core.vector_stores.types import VectorStoreQuery, VectorStoreQueryMode
+from llama_index.core.vector_stores.types import (
+    VectorStoreQuery,
+    VectorStoreQueryMode,
+    MetadataFilters,
+    MetadataFilter,
+    FilterCondition,
+    FilterOperator,
+)
 
 
 def test_class():
@@ -42,7 +49,7 @@ def test_clear(vector_store: QdrantVectorStore) -> None:
         )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_adelete_and_aget(vector_store: QdrantVectorStore) -> None:
     await vector_store.adelete_nodes(node_ids=["11111111-1111-1111-1111-111111111111"])
 
@@ -56,7 +63,7 @@ async def test_adelete_and_aget(vector_store: QdrantVectorStore) -> None:
     assert len(existing_nodes) == 2
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_aclear(vector_store: QdrantVectorStore) -> None:
     await vector_store.aclear()
     with pytest.raises(ValueError, match="Collection test not found"):
@@ -100,7 +107,7 @@ def test_parse_query_result(vector_store: QdrantVectorStore) -> None:
     assert results.nodes[0].embedding == [1, 2, 3]
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_get_with_embedding(vector_store: QdrantVectorStore) -> None:
     existing_nodes = await vector_store.aget_nodes(
         node_ids=[
@@ -115,13 +122,6 @@ async def test_get_with_embedding(vector_store: QdrantVectorStore) -> None:
 
 def test_filter_conditions():
     """Test AND, OR, and NOT filter conditions."""
-    from llama_index.core.vector_stores.types import (
-        MetadataFilter,
-        MetadataFilters,
-        FilterCondition,
-        FilterOperator,
-    )
-
     # Create a mock Qdrant client
     mock_client = MagicMock(spec=QdrantClient)
     vector_store = QdrantVectorStore(
@@ -202,6 +202,37 @@ def test_filter_conditions():
     assert len(filter_and_not.must[1].must_not) == 1
     assert filter_and_not.must[1].must_not[0].key == "price"
     assert filter_and_not.must[1].must_not[0].match.value == 50
+
+
+def test_filters_with_types(vector_store: QdrantVectorStore) -> None:
+    results = vector_store.get_nodes(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(key="some_key", value=[1, 2], operator=FilterOperator.IN)
+            ]
+        )
+    )
+    assert len(results) == 2
+
+    results = vector_store.get_nodes(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="some_key", value=[1, 2], operator=FilterOperator.NIN
+                )
+            ]
+        )
+    )
+    assert len(results) == 1
+
+    results = vector_store.get_nodes(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(key="some_key", value=["3"], operator=FilterOperator.IN)
+            ]
+        )
+    )
+    assert len(results) == 1
 
 
 def test_hybrid_vector_store_query(hybrid_vector_store: QdrantVectorStore) -> None:

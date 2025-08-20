@@ -22,21 +22,21 @@ def text():
     ]
 
 
-@pytest.mark.single()
+@pytest.mark.single
 def test_modelscope_query(modelscope_embedding, query):
     sentence_embedding = modelscope_embedding.get_query_embedding(query)
     assert sentence_embedding is not None
     assert len(sentence_embedding) > 0
 
 
-@pytest.mark.single()
+@pytest.mark.single
 def test_modelscope_text(modelscope_embedding, query):
     sentence_embedding = modelscope_embedding.get_text_embedding(query)
     assert sentence_embedding is not None
     assert len(sentence_embedding) > 0
 
 
-@pytest.mark.batch()
+@pytest.mark.batch
 def test_modelscope_text_embedding_batch(modelscope_embedding, text):
     sentence_embedding = modelscope_embedding.get_text_embedding_batch(text)
     assert sentence_embedding is not None
@@ -44,7 +44,7 @@ def test_modelscope_text_embedding_batch(modelscope_embedding, text):
     assert len(sentence_embedding[0]) > 0
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_modelscope_async_query(modelscope_embedding, query):
     sentence_embedding = await modelscope_embedding.aget_query_embedding(query)
     assert sentence_embedding is not None

@@ -175,7 +175,7 @@ def test_sql_index_async_query(
 
 def test_default_output_parser() -> None:
     """Test default output parser."""
-    test_str = "user_id:2\n" "foo:bar\n" ",,testing:testing2..\n" "number:123,456,789\n"
+    test_str = "user_id:2\nfoo:bar\n,,testing:testing2..\nnumber:123,456,789\n"
     fields = default_output_parser(test_str)
     assert fields == {
         "user_id": "2",
@@ -318,6 +318,96 @@ def test_sql_table_retriever_query_engine_with_rows_retriever(
         sql_database,
         table_retriever,
         rows_retrievers,
+        synthesize_response=False,
+        markdown_response=True,
+    )
+    response = nl_table_engine.query("test_table:user_id,foo")
+    assert (
+        str(response)
+        == """| user_id | foo |
+|---|---|
+| 2 | bar |
+| 8 | hello |"""
+    )
+
+
+def test_sql_table_retriever_query_engine_with_cols_retriever(
+    patch_llm_predictor,
+    patch_token_text_splitter,
+    struct_kwargs: Tuple[Dict, Dict],
+) -> None:
+    """Test SQLTableRetrieverQueryEngine."""
+    index_kwargs, query_kwargs = struct_kwargs
+    sql_to_test = "SELECT user_id, foo FROM test_table"
+    engine = create_engine("sqlite:///:memory:")
+    metadata_obj = MetaData()
+    table_name = "test_table"
+    # NOTE: table is created by tying to metadata_obj
+    table_instance = Table(
+        table_name,
+        metadata_obj,
+        Column("user_id", Integer, primary_key=True),
+        Column("foo", String(16), nullable=False),
+    )
+    metadata_obj.create_all(engine)
+    sql_database = SQLDatabase(engine)
+    # Inserting fake values into table
+    statement = insert(table_instance).values(
+        [{"user_id": 2, "foo": "bar"}, {"user_id": 8, "foo": "hello"}]
+    )
+    with engine.connect() as conn:
+        conn.execute(statement)
+        conn.commit()
+
+    # Building rows retriever
+    with engine.connect() as conn:
+        cursor = conn.execute(text(f'SELECT * FROM "{table_name}"'))
+        result = cursor.fetchall()
+        row_tups = []
+        for row in result:
+            row_tups.append(tuple(row))
+
+    # index each row, put into vector store index
+    nodes = [TextNode(text=t[1]) for t in result]
+    foo_col_index = VectorStoreIndex(nodes)
+    cols_retrievers = {table_name: {"foo": foo_col_index.as_retriever()}}
+
+    # Building the table retriever
+    table_node_mapping = SQLTableNodeMapping(sql_database)
+    table_schema_objs = [
+        SQLTableSchema(
+            table_name=table_name,
+            context_str="This table contains information about user id and the foo attribute.",
+        )
+    ]  # add a SQLTableSchema for each table
+    obj_index = ObjectIndex.from_objects(
+        table_schema_objs,
+        table_node_mapping,
+        VectorStoreIndex,  # type: ignore
+    )
+    table_retriever = obj_index.as_retriever()
+
+    # query the index with natural language
+    print(cols_retrievers)
+    nl_query_engine = SQLTableRetrieverQueryEngine(
+        sql_database,
+        table_retriever,
+        cols_retrievers=cols_retrievers,
+    )
+    response = nl_query_engine.query("test_table:user_id,foo")
+    assert str(response) == "[(2, 'bar'), (8, 'hello')]"
+
+    nl_table_engine = SQLTableRetrieverQueryEngine(
+        sql_database, table_retriever, cols_retrievers=cols_retrievers, sql_only=True
+    )
+    response = nl_table_engine.query("test_table:user_id,foo")
+    assert str(response) == sql_to_test
+
+    # query with markdown return
+    nl_table_engine = SQLTableRetrieverQueryEngine(
+        sql_database,
+        table_retriever,
+        cols_retrievers=cols_retrievers,
         synthesize_response=False,
         markdown_response=True,
     )

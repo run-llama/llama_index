@@ -19,13 +19,14 @@ def _marshal_llm_to_json(output: str) -> str:
 
     Returns:
         A string containing a valid JSON object or array.
+
     """
     output = output.strip()
 
     left_square = output.find("[")
     left_brace = output.find("{")
 
-    if left_square < left_brace and left_square != -1:
+    if (left_square < left_brace and left_square != -1) or left_brace == -1:
         left = left_square
         right = output.rfind("]")
     else:

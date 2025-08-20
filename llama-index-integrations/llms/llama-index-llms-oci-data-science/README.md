@@ -294,13 +294,13 @@ response = llm.predict_and_call(
 print(response)
 ```
 
-### Using `FunctionCallingAgent`
+### Using `FunctionAgent`
 
 ```python
 import ads
 from llama_index.llms.oci_data_science import OCIDataScience
 from llama_index.core.tools import FunctionTool
-from llama_index.core.agent import FunctionCallingAgent
+from llama_index.core.agent.workflow import FunctionAgent
 
 ads.set_auth(auth="security_token", profile="<replace-with-your-profile>")
 
@@ -344,12 +344,11 @@ add_tool = FunctionTool.from_defaults(fn=add)
 sub_tool = FunctionTool.from_defaults(fn=subtract)
 divide_tool = FunctionTool.from_defaults(fn=divide)
 
-agent = FunctionCallingAgent.from_tools(
+agent = FunctionAgent(
     tools=[multiply_tool, add_tool, sub_tool, divide_tool],
     llm=llm,
-    verbose=True,
 )
-response = agent.chat(
+response = await agent.run(
     "Calculate the result of `8 + 2 - 6`. Use tools. Return the calculated result."
 )
 

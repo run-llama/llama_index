@@ -30,6 +30,18 @@ from llama_index.core.schema import Document
 from llama_index.readers.file import MarkdownReader
 
 
+def is_hardlink(filepath: Path) -> bool:
+    """
+    Check if a file is a hardlink by checking the number of links to/from it.
+
+    Args:
+        filepath (Path): path to the file.
+
+    """
+    stat_info = os.stat(filepath)
+    return stat_info.st_nlink > 1
+
+
 class ObsidianReader(BaseReader):
     """
     input_dir (str): Path to the Obsidian vault.
@@ -68,6 +80,11 @@ class ObsidianReader(BaseReader):
                     filepath = os.path.join(dirpath, filename)
                     file_path_obj = Path(filepath).resolve()
                     try:
+                        if is_hardlink(filepath=file_path_obj):
+                            print(
+                                f"Warning: Skipping file because it is a hardlink (potential malicious exploit): {filepath}"
+                            )
+                            continue
                         if not str(file_path_obj).startswith(str(input_dir_abs)):
                             print(
                                 f"Warning: Skipping file outside input directory: {filepath}"

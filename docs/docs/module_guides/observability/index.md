@@ -35,7 +35,80 @@ Note that all `kwargs` to `set_global_handler` are passed to the underlying call
 
 And that's it! Executions will get seamlessly piped to downstream service and you'll be able to access features such as viewing execution traces of your application.
 
-## Partner `One-Click` Integrations
+## Integrations
+
+### OpenTelemetry
+
+[OpenTelemetry](https://openetelemetry.io) is a widely used open-source service for tracing and observability, with numerous backend integrations (such as Jaeger, Zipkin or Prometheus).
+
+Our OpenTelemetry integration traces all the events produced by pieces of LlamaIndex code, including LLMs, Agents, RAG pipeline components and many more: everything you would get out with LlamaIndex native instrumentation you can export in OpenTelemetry format!
+
+You can install the library with:
+
+```bash
+pip install llama-index-observability-otel
+```
+
+And can use it in your code with the default settings, as in this example with a RAG pipeline:
+
+```python
+from llama_index.observability.otel import LlamaIndexOpenTelemetry
+from llama_index.core import SimpleDirectoryReader, VectorStoreIndex
+from llama_index.llms.openai import OpenAI
+from llama_index.embeddings.openai import OpenAIEmbedding
+from llama_index.core import Settings
+
+# initialize the instrumentation object
+instrumentor = LlamaIndexOpenTelemetry()
+
+if __name__ == "__main__":
+    embed_model = OpenAIEmbedding(model_name="text-embedding-3-small")
+    llm = OpenAI(model="gpt-4.1-mini")
+
+    # start listening!
+    instrumentor.start_registering()
+
+    # register events
+    documents = SimpleDirectoryReader(
+        input_dir="./data/paul_graham/"
+    ).load_data()
+
+    index = VectorStoreIndex.from_documents(documents, embed_model=embed_model)
+    query_engine = index.as_query_engine(llm=llm)
+
+    query_result_one = query_engine.query("Who is Paul?")
+    query_result_two = query_engine.query("What did Paul do?")
+```
+
+Or you can use a more complex and customized set-up, such as in the following example:
+
+```python
+import json
+from pydantic import BaseModel, Field
+from typing import List
+
+from llama_index.observability.otel import LlamaIndexOpenTelemetry
+from opentelemetry.exporter.otlp.proto.http.trace_exporter import (
+    OTLPSpanExporter,
+)
+
+# define a custom span exporter
+span_exporter = OTLPSpanExporter("http://0.0.0.0:4318/v1/traces")
+
+# initialize the instrumentation object
+instrumentor = LlamaIndexOpenTelemetry(
+    service_name_or_resource="my.test.service.1",
+    span_exporter=span_exporter,
+    debug=True,
+)
+
+
+if __name__ == "__main__":
+    instrumentor.start_registering()
+    # ... your code here
+```
+
+We also have a [demo repository](https://github.com/run-llama/agents-observability-demo) where we show how to trace agentic workflows and pipe the registered traces into a Postgres database.
 
 ### LlamaTrace (Hosted Arize Phoenix)
 
@@ -174,37 +247,43 @@ llama_index.core.set_global_handler("arize_phoenix")
 Make sure you have both `llama-index` and `langfuse` installed.
 
 ```bash
-pip install llama-index langfuse
+pip install llama-index langfuse openinference-instrumentation-llama-index
 ```
 
-At the root of your LlamaIndex application, register Langfuse's `LlamaIndexInstrumentor`. When instantiating `LlamaIndexInstrumentor`, make sure to configure your Langfuse API keys and the Host URL correctly via environment variables or constructor arguments.
+Next, set up your Langfuse API keys. You can get these keys by signing up for a free [Langfuse Cloud](https://cloud.langfuse.com/) account or by [self-hosting Langfuse](https://langfuse.com/self-hosting). These environment variables are essential for the Langfuse client to authenticate and send data to your Langfuse project.
 
 ```python
 import os
 
 # Get keys for your project from the project settings page: https://cloud.langfuse.com
+
 os.environ["LANGFUSE_PUBLIC_KEY"] = "pk-lf-..."
 os.environ["LANGFUSE_SECRET_KEY"] = "sk-lf-..."
 os.environ["LANGFUSE_HOST"] = "https://cloud.langfuse.com"  # 🇪🇺 EU region
 # os.environ["LANGFUSE_HOST"] = "https://us.cloud.langfuse.com" # 🇺🇸 US region
 ```
 
+With the environment variables set, we can now initialize the Langfuse client. `get_client()` initializes the Langfuse client using the credentials provided in the environment variables.
+
 ```python
-from langfuse.llama_index import LlamaIndexInstrumentor
+from langfuse import get_client
 
-# Get your keys from the Langfuse project settings page and set them as environment variables
-# or pass them as arguments when initializing the instrumentor
+langfuse = get_client()
 
-instrumentor = LlamaIndexInstrumentor()
+# Verify connection
+if langfuse.auth_check():
+    print("Langfuse client is authenticated and ready!")
+else:
+    print("Authentication failed. Please check your credentials and host.")
+```
 
-# Automatically trace all LlamaIndex operations
-instrumentor.start()
+Now, we initialize the [OpenInference LlamaIndex instrumentation](https://docs.arize.com/phoenix/tracing/integrations-tracing/llamaindex). This third-party instrumentation automatically captures LlamaIndex operations and exports OpenTelemetry (OTel) spans to Langfuse.
 
-# ... your LlamaIndex index creation ...
-index.as_query_engine().query("What is the capital of France?")
+```python
+from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
 
-# Flush events to langfuse
-instrumentor.flush()
+# Initialize LlamaIndex instrumentation
+LlamaIndexInstrumentor().instrument()
 ```
 
 You can now see the logs of your LlamaIndex application in Langfuse:
@@ -216,9 +295,7 @@ _[Example trace link in Langfuse](https://cloud.langfuse.com/project/cloramnkj00
 #### Example Guides
 
 - [Langfuse Documentation](https://langfuse.com/docs/integrations/llama-index/get-started)
-- [End-to-end example notebook](https://langfuse.com/docs/integrations/llama-index/example-python-instrumentation-module)
 - [Tracing LlamaIndex Agents](https://langfuse.com/docs/integrations/llama-index/workflows)
-- [Analyze and Debug LlamaIndex Applications with PostHog and Langfuse](https://docs.llamaindex.ai/en/stable/examples/observability/LangfuseMistralPostHog/)
 
 ### Literal AI
 
@@ -247,8 +324,6 @@ set_global_handler("literalai")
 
 - [Literal AI integration with Llama Index](https://docs.getliteral.ai/integrations/llama-index)
 - [Build a Q&A application with LLamaIndex and monitor it with Literal AI](https://github.com/Chainlit/literal-cookbook/blob/main/python/llamaindex-integration)
-
-![](../../_static/integrations/literal_ai.gif)
 
 ### Comet Opik
 
@@ -342,6 +417,101 @@ root_dispatcher.add_event_handler(argilla_handler)
 
 ![Argilla integration with LlamaIndex](../../_static/integrations/argilla.png)
 
+### Agenta
+
+[Agenta](https://agenta.ai) is an **open-source** LLMOps platform that helps developers and product teams build robust AI applications powered by LLMs. It offers all the tools for **observability**, **prompt management and engineering**, and **LLM evaluation**.
+
+#### Usage Pattern
+
+Install the necessary dependencies for the integration:
+
+```bash
+pip install agenta llama-index openinference-instrumentation-llama-index
+```
+
+Set up your API credentials and initialize Agenta:
+
+```python
+import os
+import agenta as ag
+from openinference.instrumentation.llama_index import LlamaIndexInstrumentor
+
+# Set your Agenta credentials
+os.environ["AGENTA_API_KEY"] = "your_agenta_api_key"
+os.environ[
+    "AGENTA_HOST"
+] = "https://cloud.agenta.ai"  # Use your self-hosted URL if applicable
+
+# Initialize Agenta SDK
+ag.init()
+
+# Enable LlamaIndex instrumentation
+LlamaIndexInstrumentor().instrument()
+```
+
+Build your instrumented application:
+
+```python
+@ag.instrument()
+def document_search_app(user_query: str):
+    """
+    Document search application using LlamaIndex.
+    Loads documents, builds a searchable index, and answers user queries.
+    """
+    # Load documents from local directory
+    docs = SimpleDirectoryReader("data").load_data()
+
+    # Build vector search index
+    search_index = VectorStoreIndex.from_documents(docs)
+
+    # Initialize query processor
+    query_processor = search_index.as_query_engine()
+
+    # Process user query
+    answer = query_processor.query(user_query)
+
+    return answer
+```
+
+Once this is set up, Agenta will automatically capture all execution steps. You can then view the traces in Agenta to debug your application, link them to specific configurations and prompts, evaluate their performance, query the data, and monitor key metrics.
+
+![Agenta integration with LlamaIndex](../../_static/integrations/agenta.png)
+
+#### Example Guides
+
+- [Documentation Observability for LlamaIndex with Agenta](https://docs.agenta.ai/observability/integrations/llamaindex)
+- [Notebook Observability for LlamaIndex with Agenta](https://github.com/agenta-ai/agenta/blob/main/examples/jupyter/integrations/observability-openinference-llamaindex.ipynb)
+
+### Deepeval
+
+[DeepEval (by Confident AI)](https://github.com/confident-ai/deepeval) is an open-source evaluation framework for LLM applications. As you "unit test" your LLM app using DeepEval's 14+ default metrics it currently offers (summarization, hallucination, answer relevancy, faithfulness, RAGAS, etc.), you can debug failing test cases through this tracing integration with LlamaIndex, or debug unsatisfactory evaluations in **production** through DeepEval's hosted evaluation platform, [Confident AI](https://documentation.confident-ai.com/docs), that runs referenceless evaluations in production.
+
+#### Usage Pattern
+
+```bash
+pip install -U deepeval llama-index
+```
+
+```python
+import deepeval
+from deepeval.integrations.llama_index import instrument_llama_index
+
+import llama_index.core.instrumentation as instrument
+
+# Login
+deepeval.login("<your-confident-api-key>")
+
+# Let DeepEval collect traces
+instrument_llama_index(instrument.get_dispatcher())
+```
+
+![tracing](https://confident-bucket.s3.us-east-1.amazonaws.com/llama-index%3Atrace.gif)
+
+#### Guides
+
+- [Evaluate Llama Index Agents](https://deepeval.com/integrations/frameworks/langchain)
+- [Tracing Llama Index Agents](https://documentation.confident-ai.com/docs/llm-tracing/integrations/llamaindex)
+
 
 ## Other Partner `One-Click` Integrations (Legacy Modules)
 
@@ -370,25 +540,6 @@ set_global_handler("langfuse")
 - [Langfuse Tracing with PostHog](../../examples/observability/LangfuseMistralPostHog.ipynb)
 
 ![langfuse-tracing](https://static.langfuse.com/llamaindex-langfuse-docs.gif)
-
-### DeepEval
-
-[DeepEval (by Confident AI)](https://github.com/confident-ai/deepeval) is an open-source evaluation framework for LLM applications. As you "unit test" your LLM app using DeepEval's 14+ default metrics it currently offers (summarization, hallucination, answer relevancy, faithfulness, RAGAS, etc.), you can debug failing test cases through this tracing integration with LlamaIndex, or debug unsatisfactory evaluations in **production** through DeepEval's hosted evaluation platform, [Confident AI](https://confident-ai.com), that runs referenceless evaluations in production.
-
-#### Usage Pattern
-
-```python
-from llama_index.core import set_global_handler
-
-set_global_handler("deepeval")
-
-# NOTE: Run 'deepeval login' in the CLI to log traces on Confident AI, DeepEval's hosted evaluation platform.
-# Run all of your LlamaIndex applications as usual and traces
-# will be collected and displayed on Confident AI whenever evaluations are ran.
-...
-```
-
-![tracing](https://d2lsxfc3p6r9rv.cloudfront.net/confident-tracing.gif)
 
 ### Weights and Biases Prompts
 
@@ -566,8 +717,6 @@ from langtrace_python_sdk import (
 langtrace.init(api_key="<LANGTRACE_API_KEY>")
 ```
 
-![](../../_static/integrations/langtrace.gif)
-
 #### Guides
 
 - [Langtrace](https://docs.langtrace.ai/supported-integrations/llm-frameworks/llamaindex)
@@ -589,8 +738,6 @@ import openlit
 
 openlit.init()
 ```
-
-![](../../_static/integrations/openlit.gif)
 
 #### Guides
 

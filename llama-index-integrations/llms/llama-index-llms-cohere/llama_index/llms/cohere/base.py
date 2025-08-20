@@ -42,7 +42,8 @@ from cohere.types import (
 
 
 class Cohere(FunctionCallingLLM):
-    """Cohere LLM.
+    """
+    Cohere LLM.
 
     Examples:
         `pip install llama-index-llms-cohere`
@@ -54,6 +55,7 @@ class Cohere(FunctionCallingLLM):
         resp = llm.complete("Paul Graham is ")
         print(resp)
         ```
+
     """
 
     model: str = Field(description="The cohere model to use.")
@@ -147,6 +149,7 @@ class Cohere(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Prepare the chat with tools."""
@@ -162,6 +165,8 @@ class Cohere(FunctionCallingLLM):
         return {
             "messages": chat_history,
             "tools": tools_cohere_format or [],
+            # switch to tool_choice on V2
+            **({"force_single_step": True} if tool_required else {}),
             **kwargs,
         }
 
@@ -202,7 +207,8 @@ class Cohere(FunctionCallingLLM):
         stop_sequences: Optional[List[str]] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
-        """Get the request for the Cohere chat API.
+        """
+        Get the request for the Cohere chat API.
 
         Args:
             messages: The messages.
@@ -211,6 +217,7 @@ class Cohere(FunctionCallingLLM):
 
         Returns:
             The request for the Cohere chat API.
+
         """
         additional_kwargs = messages[-1].additional_kwargs
 
@@ -222,10 +229,9 @@ class Cohere(FunctionCallingLLM):
 
         messages, documents = remove_documents_from_messages(messages)
 
-        tool_results: Optional[
-            List[Dict[str, Any]]
-        ] = _messages_to_cohere_tool_results_curr_chat_turn(messages) or kwargs.get(
-            "tool_results"
+        tool_results: Optional[List[Dict[str, Any]]] = (
+            _messages_to_cohere_tool_results_curr_chat_turn(messages)
+            or kwargs.get("tool_results")
         )
         if not tool_results:
             tool_results = None

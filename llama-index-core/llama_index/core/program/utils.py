@@ -1,4 +1,5 @@
 """Program utils."""
+
 import logging
 from typing import Any, List, Type, Sequence, Union, Optional, Dict
 
@@ -28,7 +29,7 @@ def create_flexible_model(model: Type[BaseModel]) -> Type[FlexibleModel]:
     return create_model(
         f"Flexible{model.__name__}",
         __base__=FlexibleModel,
-        **{field: (Optional[Any], None) for field in model.model_fields},
+        **dict.fromkeys(model.model_fields, (Optional[Any], None)),
     )  # type: ignore
 
 
@@ -135,13 +136,15 @@ def get_program_for_llm(
 
 
 def _repair_incomplete_json(json_str: str) -> str:
-    """Attempt to repair incomplete JSON strings.
+    """
+    Attempt to repair incomplete JSON strings.
 
     Args:
         json_str (str): Potentially incomplete JSON string
 
     Returns:
         str: Repaired JSON string
+
     """
     if not json_str.strip():
         return "{}"
@@ -167,7 +170,8 @@ def process_streaming_objects(
     flexible_mode: bool = True,
     llm: Optional[FunctionCallingLLM] = None,
 ) -> Union[Model, List[Model], FlexibleModel, List[FlexibleModel]]:
-    """Process streaming response into structured objects.
+    """
+    Process streaming response into structured objects.
 
     Args:
         chat_response (ChatResponse): The chat response to process
@@ -178,6 +182,7 @@ def process_streaming_objects(
 
     Returns:
         Union[BaseModel, List[BaseModel]]: Processed object(s)
+
     """
     if flexible_mode:
         # Create flexible version of model that allows partial responses
@@ -258,7 +263,7 @@ def process_streaming_objects(
 
 
 def num_valid_fields(
-    obj: Union[BaseModel, Sequence[BaseModel], Dict[str, BaseModel]]
+    obj: Union[BaseModel, Sequence[BaseModel], Dict[str, BaseModel]],
 ) -> int:
     """
     Recursively count the number of fields in a Pydantic object (including nested objects) that aren't None.
@@ -268,6 +273,7 @@ def num_valid_fields(
 
     Returns:
         int: The number of fields that have non-None values.
+
     """
     if isinstance(obj, BaseModel):
         count = 0

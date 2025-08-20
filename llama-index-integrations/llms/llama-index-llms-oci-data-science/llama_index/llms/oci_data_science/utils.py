@@ -13,11 +13,13 @@ logger = logging.getLogger(__name__)
 
 
 class UnsupportedOracleAdsVersionError(Exception):
-    """Custom exception for unsupported `oracle-ads` versions.
+    """
+    Custom exception for unsupported `oracle-ads` versions.
 
     Attributes:
         current_version: The installed version of `oracle-ads`.
         required_version: The minimum required version of `oracle-ads`.
+
     """
 
     def __init__(self, current_version: str, required_version: str):
@@ -30,7 +32,8 @@ class UnsupportedOracleAdsVersionError(Exception):
 
 
 def _validate_dependency(func: Callable[..., Any]) -> Callable[..., Any]:
-    """Decorator to validate the presence and version of `oracle-ads`.
+    """
+    Decorator to validate the presence and version of `oracle-ads`.
 
     This decorator checks that `oracle-ads` is installed and that its version meets
     the minimum requirement. If not, it raises an error.
@@ -44,6 +47,7 @@ def _validate_dependency(func: Callable[..., Any]) -> Callable[..., Any]:
     Raises:
         ImportError: If `oracle-ads` is not installed.
         UnsupportedOracleAdsVersionError: If the installed version is below the required version.
+
     """
 
     @wraps(func)
@@ -66,7 +70,8 @@ def _validate_dependency(func: Callable[..., Any]) -> Callable[..., Any]:
 def _to_message_dicts(
     messages: Sequence[ChatMessage], drop_none: bool = False
 ) -> List[Dict[str, Any]]:
-    """Convert a sequence of ChatMessage objects to a list of dictionaries.
+    """
+    Convert a sequence of ChatMessage objects to a list of dictionaries.
 
     Args:
         messages: The messages to convert.
@@ -74,6 +79,7 @@ def _to_message_dicts(
 
     Returns:
         A list of message dictionaries.
+
     """
     message_dicts = []
     for message in messages:
@@ -89,15 +95,17 @@ def _to_message_dicts(
 
 
 def _from_completion_logprobs_dict(
-    completion_logprobs_dict: Dict[str, Any]
+    completion_logprobs_dict: Dict[str, Any],
 ) -> List[List[LogProb]]:
-    """Convert completion logprobs to a list of generic LogProb objects.
+    """
+    Convert completion logprobs to a list of generic LogProb objects.
 
     Args:
         completion_logprobs_dict: The completion logprobs to convert.
 
     Returns:
         A list of lists of LogProb objects.
+
     """
     return [
         [
@@ -109,9 +117,10 @@ def _from_completion_logprobs_dict(
 
 
 def _from_token_logprob_dicts(
-    token_logprob_dicts: Sequence[Dict[str, Any]]
+    token_logprob_dicts: Sequence[Dict[str, Any]],
 ) -> List[List[LogProb]]:
-    """Convert a sequence of token logprob dictionaries to a list of LogProb objects.
+    """
+    Convert a sequence of token logprob dictionaries to a list of LogProb objects.
 
     Args:
         token_logprob_dicts: The token logprob dictionaries to convert.
@@ -121,6 +130,7 @@ def _from_token_logprob_dicts(
 
     Raises:
         Warning: Logs a warning if an error occurs while parsing token logprobs.
+
     """
     result = []
     for token_logprob_dict in token_logprob_dicts:
@@ -144,13 +154,15 @@ def _from_token_logprob_dicts(
 
 
 def _from_message_dict(message_dict: Dict[str, Any]) -> ChatMessage:
-    """Convert a message dictionary to a ChatMessage object.
+    """
+    Convert a message dictionary to a ChatMessage object.
 
     Args:
         message_dict: The message dictionary.
 
     Returns:
         A ChatMessage object representing the given dictionary.
+
     """
     return ChatMessage(
         role=message_dict.get("role"),
@@ -160,13 +172,15 @@ def _from_message_dict(message_dict: Dict[str, Any]) -> ChatMessage:
 
 
 def _get_response_token_counts(raw_response: Dict[str, Any]) -> Dict[str, int]:
-    """Extract token usage information from the response.
+    """
+    Extract token usage information from the response.
 
     Args:
         raw_response: The raw response containing token usage information.
 
     Returns:
         A dictionary containing token counts, or an empty dictionary if usage info is not found.
+
     """
     if not raw_response.get("usage"):
         return {}
@@ -181,7 +195,8 @@ def _get_response_token_counts(raw_response: Dict[str, Any]) -> Dict[str, int]:
 def _update_tool_calls(
     tool_calls: List[Dict[str, Any]], tool_calls_delta: Optional[List[Dict[str, Any]]]
 ) -> List[Dict[str, Any]]:
-    """Update the tool calls using delta objects received from stream chunks.
+    """
+    Update the tool calls using delta objects received from stream chunks.
 
     Args:
         tool_calls: The list of existing tool calls.
@@ -189,6 +204,7 @@ def _update_tool_calls(
 
     Returns:
         The updated list of tool calls.
+
     """
     if not tool_calls_delta:
         return tool_calls
@@ -213,9 +229,11 @@ def _update_tool_calls(
 
 
 def _resolve_tool_choice(
-    tool_choice: Union[str, dict] = DEFAULT_TOOL_CHOICE
+    tool_choice: Optional[Union[str, dict]] = None,
+    tool_required: bool = False,
 ) -> Union[str, dict]:
-    """Resolve the tool choice into a string or a dictionary.
+    """
+    Resolve the tool choice into a string or a dictionary.
 
     If the tool_choice is a string that is not in SUPPORTED_TOOL_CHOICES, a dictionary
     representing a function call is returned.
@@ -225,7 +243,10 @@ def _resolve_tool_choice(
 
     Returns:
         Either the original tool_choice if valid or a dictionary representing a function call.
+
     """
+    if tool_choice is None:
+        tool_choice = "required" if tool_required else "auto"
     if isinstance(tool_choice, str) and tool_choice not in SUPPORTED_TOOL_CHOICES:
         return {"type": "function", "function": {"name": tool_choice}}
     return tool_choice

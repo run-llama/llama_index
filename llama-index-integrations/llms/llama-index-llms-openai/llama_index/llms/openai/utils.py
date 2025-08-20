@@ -28,6 +28,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     AudioBlock,
+    DocumentBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 
@@ -48,8 +49,18 @@ O1_MODELS: Dict[str, int] = {
     "o3-mini-2025-01-31": 200000,
     "o3": 200000,
     "o3-2025-04-16": 200000,
+    "o3-pro": 200000,
+    "o3-pro-2025-06-10": 200000,
     "o4-mini": 200000,
     "o4-mini-2025-04-16": 200000,
+    # gpt-5 is a reasoning model, putting it in the o models list
+    "gpt-5": 400000,
+    "gpt-5-2025-08-07": 400000,
+    "gpt-5-mini": 400000,
+    "gpt-5-mini-2025-08-07": 400000,
+    "gpt-5-nano": 400000,
+    "gpt-5-nano-2025-08-07": 400000,
+    "gpt-5-chat-latest": 400000,
 }
 
 O1_MODELS_WITHOUT_FUNCTION_CALLING = {
@@ -178,6 +189,32 @@ DISCONTINUED_MODELS = {
     "code-cushman-002": 2048,
     "code-cushman-001": 2048,
 }
+
+JSON_SCHEMA_MODELS = [
+    "o4-mini",
+    "o1",
+    "o1-pro",
+    "o3",
+    "o3-mini",
+    "gpt-4.1",
+    "gpt-4o",
+    "gpt-4.1",
+]
+
+
+def is_json_schema_supported(model: str) -> bool:
+    try:
+        from openai.resources.beta.chat import completions
+
+        if not hasattr(completions, "_type_to_response_format"):
+            return False
+
+        return not model.startswith("o1-mini") and any(
+            model.startswith(m) for m in JSON_SCHEMA_MODELS
+        )
+    except ImportError:
+        return False
+
 
 MISSING_API_KEY_ERROR_MESSAGE = """No API key found for OpenAI.
 Please set either the OPENAI_API_KEY environment variable or \
@@ -410,7 +447,7 @@ def to_openai_responses_message_dict(
     message: ChatMessage,
     drop_none: bool = False,
     model: Optional[str] = None,
-) -> Union[Dict[str, Any], List[Dict[str, Any]]]:
+) -> Union[str, Dict[str, Any], List[Dict[str, Any]]]:
     """Convert a ChatMessage to an OpenAI message dict."""
     content = []
     content_txt = ""
@@ -419,6 +456,20 @@ def to_openai_responses_message_dict(
         if isinstance(block, TextBlock):
             content.append({"type": "input_text", "text": block.text})
             content_txt += block.text
+        elif isinstance(block, DocumentBlock):
+            if not block.data:
+                file_buffer = block.resolve_document()
+                b64_string = block._get_b64_string(file_buffer)
+                mimetype = block._guess_mimetype()
+            else:
+                b64_string = block.data.decode("utf-8")
+            content.append(
+                {
+                    "type": "input_file",
+                    "filename": block.title,
+                    "file_data": f"data:{mimetype};base64,{b64_string}",
+                }
+            )
         elif isinstance(block, ImageBlock):
             if block.url:
                 content.append(
@@ -482,7 +533,20 @@ def to_openai_responses_message_dict(
             for tool_call in message.additional_kwargs["tool_calls"]
         ]
 
+        if "reasoning" in message.additional_kwargs:  # and if it is reasoning model
+            message_dicts = [message.additional_kwargs["reasoning"]] + message_dicts
+
         return message_dicts
+
+    # there are some cases (like image generation or MCP tool call) that only support the string input
+    # this is why, if context_txt is a non-empty string, all the blocks are TextBlocks and the role is user, we return directly context_txt
+    elif (
+        isinstance(content_txt, str)
+        and len(content_txt) != 0
+        and all(item["type"] == "input_text" for item in content)
+        and message.role.value == "user"
+    ):
+        return content_txt
     else:
         message_dict = {
             "role": message.role.value,
@@ -517,7 +581,7 @@ def to_openai_message_dicts(
     drop_none: bool = False,
     model: Optional[str] = None,
     is_responses_api: bool = False,
-) -> List[ChatCompletionMessageParam]:
+) -> Union[List[ChatCompletionMessageParam], str]:
     """Convert generic messages to OpenAI message dicts."""
     if is_responses_api:
         final_message_dicts = []
@@ -529,8 +593,18 @@ def to_openai_message_dicts(
             )
             if isinstance(message_dicts, list):
                 final_message_dicts.extend(message_dicts)
+            elif isinstance(message_dicts, str):
+                final_message_dicts.append({"role": "user", "content": message_dicts})
             else:
                 final_message_dicts.append(message_dicts)
+
+        # If there is only one message, and it is a user message, return the content string directly
+        if (
+            len(final_message_dicts) == 1
+            and final_message_dicts[0]["role"] == "user"
+            and isinstance(final_message_dicts[0]["content"], str)
+        ):
+            return final_message_dicts[0]["content"]
 
         return final_message_dicts
     else:
@@ -724,13 +798,19 @@ def validate_openai_api_key(api_key: Optional[str] = None) -> None:
         raise ValueError(MISSING_API_KEY_ERROR_MESSAGE)
 
 
-def resolve_tool_choice(tool_choice: Union[str, dict] = "auto") -> Union[str, dict]:
+def resolve_tool_choice(
+    tool_choice: Optional[Union[str, dict]], tool_required: bool = False
+) -> Union[str, dict]:
     """
     Resolve tool choice.
 
     If tool_choice is a function name string, return the appropriate dict.
     """
-    if isinstance(tool_choice, str) and tool_choice not in ["none", "auto", "required"]:
+    if tool_choice is None:
+        tool_choice = "required" if tool_required else "auto"
+    if isinstance(tool_choice, dict):
+        return tool_choice
+    if tool_choice not in ["none", "auto", "required"]:
         return {"type": "function", "function": {"name": tool_choice}}
 
     return tool_choice
@@ -752,7 +832,7 @@ def update_tool_calls(
         List[ChoiceDeltaToolCall]: the updated tool calls
     """
     # openai provides chunks consisting of tool_call deltas one tool at a time
-    if tool_calls_delta is None:
+    if tool_calls_delta is None or len(tool_calls_delta) == 0:
         return tool_calls
 
     tc_delta = tool_calls_delta[0]

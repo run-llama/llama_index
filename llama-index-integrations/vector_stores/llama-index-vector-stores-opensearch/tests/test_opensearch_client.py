@@ -18,6 +18,7 @@ from llama_index.core.vector_stores.types import (
     MetadataFilter,
     MetadataFilters,
     VectorStoreQuery,
+    VectorStoreQueryMode,
 )
 
 ##
@@ -26,7 +27,7 @@ from llama_index.core.vector_stores.types import (
 # docker-compose up
 #
 # Run tests
-# pytest test_opensearch_client.py
+# uv run -- pytest test_opensearch_client.py
 
 logging.basicConfig(level=logging.DEBUG)
 evt_loop = asyncio.get_event_loop()
@@ -241,7 +242,7 @@ def test_functionality(
         assert count_docs_in_index(os_store) == len(node_embeddings) - 1
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
 async def test_async_functionality(
     os_stores: List[OpensearchVectorStore], node_embeddings: List[TextNode]
@@ -291,7 +292,7 @@ def test_delete_nodes(
         assert "ccc" in res.ids
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
 async def test_adelete_nodes(
     os_stores: List[OpensearchVectorStore], node_embeddings_2: List[TextNode]
@@ -421,7 +422,7 @@ def test_clear(
         assert len(res.ids) == 0
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
 async def test_aclear(
     os_stores: List[OpensearchVectorStore], node_embeddings_2: List[TextNode]
@@ -656,7 +657,8 @@ def test_filter_text_match(
     os_stores: List[OpensearchVectorStore],
     insert_document,
 ):
-    """Test that OpensearchVectorStore correctly applies FilterOperator.TEXT_MATCH in filters. Also tests that
+    """
+    Test that OpensearchVectorStore correctly applies FilterOperator.TEXT_MATCH in filters. Also tests that
     fuzzy matching works as intended.
     """
     for os_store in os_stores:
@@ -685,7 +687,8 @@ def test_filter_text_match(
 
 @pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
 def test_filter_contains(os_stores: List[OpensearchVectorStore], insert_document):
-    """Test that OpensearchVectorStore correctly applies FilterOperator.CONTAINS in filters. Should only match
+    """
+    Test that OpensearchVectorStore correctly applies FilterOperator.CONTAINS in filters. Should only match
     exact substring matches.
     """
     for os_store in os_stores:
@@ -709,6 +712,36 @@ def test_filter_contains(os_stores: List[OpensearchVectorStore], insert_document
 
         doc_ids = {node.id_ for node in query_result.nodes}
         assert doc_ids == {"match1", "match2"}
+
+
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+def test_filter_is_empty(os_stores: List[OpensearchVectorStore], insert_document):
+    """
+    Test that OpensearchVectorStore correctly applies FilterOperator.IS_EMPTY in filters. Should only match
+    documents where the specified field doesn't exist.
+    """
+    for os_store in os_stores:
+        for metadata, id_ in [
+            ({"author": "John Doe", "category": "fiction"}, "has_author"),
+            ({"category": "non-fiction", "year": 2023}, "no_author1"),
+            ({"year": 2022, "publisher": "ABC Books"}, "no_author2"),
+            ({}, "no_author3"),
+        ]:
+            insert_document(os_store, doc_id=id_, metadata=metadata)
+
+        query = _get_sample_vector_store_query(
+            filters=MetadataFilters(
+                filters=[
+                    MetadataFilter(
+                        key="author", value=None, operator=FilterOperator.IS_EMPTY
+                    )
+                ]
+            )
+        )
+        query_result = os_store.query(query)
+
+        doc_ids = {node.id_ for node in query_result.nodes}
+        assert doc_ids == {"no_author1", "no_author2", "no_author3"}
 
 
 @pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
@@ -788,7 +821,8 @@ def test_filter_nested(
 def test_filter_array_of_strings(
     os_stores: List[OpensearchVectorStore], insert_document
 ):
-    """Test that OpensearchVectorStore correctly applies Filter.Operator.IN filters
+    """
+    Test that OpensearchVectorStore correctly applies Filter.Operator.IN filters
     when the filter value is an array of strings. Should only match all members
     of the input array exist in the field.
     """
@@ -850,3 +884,87 @@ def test_efficient_filtering_used_when_enabled(os_stores: List[OpensearchVectorS
             embedding_field="embedding", query_embedding=[1], k=20, filters=filters
         )
         assert patched_default_approximate_search_query.called
+
+
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+@pytest.mark.parametrize(
+    "query_mode",
+    [
+        VectorStoreQueryMode.DEFAULT,
+        VectorStoreQueryMode.TEXT_SEARCH,
+        VectorStoreQueryMode.HYBRID,
+    ],
+)
+def test_excluded_source_fields(
+    os_stores: List[OpensearchVectorStore],
+    node_embeddings: List[TextNode],
+    query_mode: VectorStoreQueryMode,
+):
+    os_store = os_stores[0]
+    os_store.add(node_embeddings)
+    os_store.client._search_pipeline = "search_pipeline"  # value doesn't matter
+
+    # set excluded source fields
+    excluded_fields = ["embedding"]
+    os_store.client._excluded_source_fields = excluded_fields
+
+    with mock.patch.object(os_store.client._os_client, "search") as patched_search:
+        exp_node = node_embeddings[3]
+        query = VectorStoreQuery(
+            query_embedding=exp_node.embedding,
+            similarity_top_k=1,
+            mode=query_mode,
+            query_str=exp_node.text,
+        )
+        os_store.query(query)
+        assert patched_search.called
+
+        kwargs = patched_search.call_args.kwargs
+        body = kwargs["body"]
+        assert "_source" in body
+        assert "exclude" in body["_source"]
+        assert body["_source"]["exclude"] == excluded_fields
+
+    kwargs.pop("params", None)  # params not needed, even when testing hybrid
+    res = os_store.client._os_client.search(params=None, **kwargs)
+    assert len(res["hits"]["hits"]) > 0
+    for hit in res["hits"]["hits"]:
+        source = hit["_source"]
+        for ex in excluded_fields:
+            assert ex not in source
+
+
+@pytest.mark.skipif(opensearch_not_available, reason="opensearch is not available")
+@pytest.mark.parametrize(
+    "query_mode",
+    [
+        VectorStoreQueryMode.DEFAULT,
+        VectorStoreQueryMode.TEXT_SEARCH,
+        VectorStoreQueryMode.HYBRID,
+    ],
+)
+def test_no_excluded_source_fields(
+    os_stores: List[OpensearchVectorStore],
+    node_embeddings: List[TextNode],
+    query_mode: VectorStoreQueryMode,
+) -> None:
+    os_store = os_stores[0]
+    os_store.add(node_embeddings)
+    os_store.client._search_pipeline = "search_pipeline"  # value doesn't matter
+
+    # explicitly show `None` for excluded source fields (default)
+    os_store.client._excluded_source_fields = None
+
+    with mock.patch.object(os_store.client._os_client, "search") as patched_search:
+        exp_node = node_embeddings[3]
+        query = VectorStoreQuery(
+            query_embedding=exp_node.embedding,
+            similarity_top_k=1,
+            mode=query_mode,
+            query_str=exp_node.text,
+        )
+        os_store.query(query)
+        assert patched_search.called
+
+        body = patched_search.call_args.kwargs["body"]
+        assert "_source" not in body

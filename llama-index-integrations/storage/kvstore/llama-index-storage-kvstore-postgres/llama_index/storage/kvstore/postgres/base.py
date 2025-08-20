@@ -1,6 +1,13 @@
 import json
 from typing import Any, Dict, List, Optional, Tuple, Type
 from urllib.parse import urlparse
+from llama_index.core.bridge.pydantic import PrivateAttr
+
+try:
+    import sqlalchemy
+    import sqlalchemy.ext.asyncio  # noqa
+except ImportError:
+    raise ImportError("`sqlalchemy[asyncio]` package should be pre installed")
 
 from llama_index.core.storage.kvstore.types import (
     DEFAULT_BATCH_SIZE,
@@ -52,7 +59,8 @@ def get_data_model(
 
 
 class PostgresKVStore(BaseKVStore):
-    """Postgres Key-Value store.
+    """
+    Postgres Key-Value store.
 
     Args:
         connection_string (str): psycopg2 connection string
@@ -62,22 +70,27 @@ class PostgresKVStore(BaseKVStore):
         perform_setup (Optional[bool]): perform table setup
         debug (Optional[bool]): debug mode
         use_jsonb (Optional[bool]): use JSONB data type for storage
+
     """
 
-    connection_string: str
-    async_connection_string: str
+    connection_string: Optional[str]
+    async_connection_string: Optional[str]
     table_name: str
     schema_name: str
     perform_setup: bool
     debug: bool
     use_jsonb: bool
+    _engine: Optional[sqlalchemy.engine.Engine] = PrivateAttr()
+    _async_engine: Optional[sqlalchemy.ext.asyncio.AsyncEngine] = PrivateAttr()
 
     def __init__(
         self,
-        connection_string: str,
-        async_connection_string: str,
         table_name: str,
+        connection_string: Optional[str] = None,
+        async_connection_string: Optional[str] = None,
         schema_name: str = "public",
+        engine: Optional[sqlalchemy.engine.Engine] = None,
+        async_engine: Optional[sqlalchemy.ext.asyncio.AsyncEngine] = None,
         perform_setup: bool = True,
         debug: bool = False,
         use_jsonb: bool = False,
@@ -85,12 +98,9 @@ class PostgresKVStore(BaseKVStore):
         try:
             import asyncpg  # noqa
             import psycopg2  # noqa
-            import sqlalchemy
-            import sqlalchemy.ext.asyncio  # noqa
         except ImportError:
             raise ImportError(
-                "`sqlalchemy[asyncio]`, `psycopg2-binary` and `asyncpg` "
-                "packages should be pre installed"
+                "`psycopg2-binary` and `asyncpg` packages should be pre installed"
             )
 
         table_name = table_name.lower()
@@ -102,7 +112,26 @@ class PostgresKVStore(BaseKVStore):
         self.perform_setup = perform_setup
         self.debug = debug
         self.use_jsonb = use_jsonb
+        self._engine = engine
+        self._async_engine = async_engine
         self._is_initialized = False
+
+        if not self._async_engine and not self.async_connection_string:
+            raise ValueError(
+                "You should provide an asynchronous connection string, if you do not provide an asynchronous SqlAlchemy engine"
+            )
+        elif not self._engine and not self.connection_string:
+            raise ValueError(
+                "You should provide a synchronous connection string, if you do not provide a synchronous SqlAlchemy engine"
+            )
+        elif (
+            not self._engine
+            and not self._async_engine
+            and (not self.connection_string or not self.connection_string)
+        ):
+            raise ValueError(
+                "If a SqlAlchemy engine is not provided, you should provide a synchronous and an asynchronous connection string"
+            )
 
         from sqlalchemy.orm import declarative_base
 
@@ -175,10 +204,14 @@ class PostgresKVStore(BaseKVStore):
         from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
         from sqlalchemy.orm import sessionmaker
 
-        self._engine = create_engine(self.connection_string, echo=self.debug)
+        self._engine = self._engine or create_engine(
+            self.connection_string, echo=self.debug
+        )
         self._session = sessionmaker(self._engine)
 
-        self._async_engine = create_async_engine(self.async_connection_string)
+        self._async_engine = self._async_engine or create_async_engine(
+            self.async_connection_string
+        )
         self._async_session = sessionmaker(self._async_engine, class_=AsyncSession)
 
     def _create_schema_if_not_exists(self) -> None:
@@ -218,7 +251,8 @@ class PostgresKVStore(BaseKVStore):
         val: dict,
         collection: str = DEFAULT_COLLECTION,
     ) -> None:
-        """Put a key-value pair into the store.
+        """
+        Put a key-value pair into the store.
 
         Args:
             key (str): key
@@ -234,7 +268,8 @@ class PostgresKVStore(BaseKVStore):
         val: dict,
         collection: str = DEFAULT_COLLECTION,
     ) -> None:
-        """Put a key-value pair into the store.
+        """
+        Put a key-value pair into the store.
 
         Args:
             key (str): key
@@ -329,7 +364,8 @@ class PostgresKVStore(BaseKVStore):
                 await session.commit()
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
-        """Get a value from the store.
+        """
+        Get a value from the store.
 
         Args:
             key (str): key
@@ -353,7 +389,8 @@ class PostgresKVStore(BaseKVStore):
     async def aget(
         self, key: str, collection: str = DEFAULT_COLLECTION
     ) -> Optional[dict]:
-        """Get a value from the store.
+        """
+        Get a value from the store.
 
         Args:
             key (str): key
@@ -375,7 +412,8 @@ class PostgresKVStore(BaseKVStore):
         return None
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
-        """Get all values from the store.
+        """
+        Get all values from the store.
 
         Args:
             collection (str): collection name
@@ -392,7 +430,8 @@ class PostgresKVStore(BaseKVStore):
         return {result.key: result.value for result in results} if results else {}
 
     async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
-        """Get all values from the store.
+        """
+        Get all values from the store.
 
         Args:
             collection (str): collection name
@@ -409,7 +448,8 @@ class PostgresKVStore(BaseKVStore):
         return {result.key: result.value for result in results} if results else {}
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        """Delete a value from the store.
+        """
+        Delete a value from the store.
 
         Args:
             key (str): key
@@ -429,7 +469,8 @@ class PostgresKVStore(BaseKVStore):
         return result.rowcount > 0
 
     async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        """Delete a value from the store.
+        """
+        Delete a value from the store.
 
         Args:
             key (str): key

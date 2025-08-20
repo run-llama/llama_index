@@ -18,7 +18,8 @@ def format_metadata(nodes=List[NodeWithScore]):
 
 
 class LongLLMLinguaPostprocessor(BaseNodePostprocessor):
-    """Optimization of nodes.
+    """
+    Optimization of nodes.
 
     Compress using LongLLMLingua paper.
 
@@ -69,7 +70,9 @@ class LongLLMLinguaPostprocessor(BaseNodePostprocessor):
         if self.use_llmlingua2 is True:
             assert (
                 model_name == "microsoft/llmlingua-2-xlm-roberta-large-meetingbank"
-            ), 'Must use "microsoft/llmlingua-2-xlm-roberta-large-meetingbank" as the model name for llmlingua2'
+            ), (
+                'Must use "microsoft/llmlingua-2-xlm-roberta-large-meetingbank" as the model name for llmlingua2'
+            )
 
         self._llm_lingua = PromptCompressor(
             model_name=model_name,

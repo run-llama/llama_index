@@ -2,10 +2,12 @@ from llama_index.core.instrumentation.events import BaseEvent
 
 
 class ExceptionEvent(BaseEvent):
-    """ExceptionEvent.
+    """
+    ExceptionEvent.
 
     Args:
         exception (BaseException): exception.
+
     """
 
     exception: BaseException

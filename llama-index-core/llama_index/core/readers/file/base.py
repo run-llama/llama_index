@@ -14,20 +14,22 @@ from functools import reduce
 from itertools import repeat
 from pathlib import Path, PurePosixPath
 from typing import (
+    Optional,
     Any,
     Callable,
     Generator,
     Type,
     cast,
+    Union,
 )
 
 import fsspec
 from fsspec.implementations.local import LocalFileSystem
-from tqdm import tqdm
 
 from llama_index.core.async_utils import get_asyncio_module, run_jobs
 from llama_index.core.readers.base import BaseReader, ResourcesReaderMixin
 from llama_index.core.schema import Document
+from llama_index.core.utils import get_tqdm_iterable
 
 
 logger = logging.getLogger(__name__)
@@ -44,6 +46,7 @@ class FileSystemReaderMixin(ABC):
 
         Returns:
             bytes: File content.
+
         """
 
     async def aread_file_content(
@@ -57,13 +60,14 @@ class FileSystemReaderMixin(ABC):
 
         Returns:
             bytes: File content.
+
         """
         return self.read_file_content(input_file, **kwargs)
 
 
-def _try_loading_included_file_formats() -> (
-    dict[str, Type[BaseReader]]
-):  # pragma: no cover
+def _try_loading_included_file_formats() -> dict[
+    str, Type[BaseReader]
+]:  # pragma: no cover
     try:
         from llama_index.readers.file import (
             DocxReader,
@@ -124,6 +128,7 @@ def _format_file_timestamp(
     Returns:
         str: formatted timestamp
         None: if the timestamp passed was None
+
     """
     if timestamp is None:
         return None
@@ -148,6 +153,7 @@ def default_file_metadata_func(
 
     Args:
         file_path: str: file path in str
+
     """
     fs = fs or get_default_fs()
     stat_result = fs.stat(file_path)
@@ -228,32 +234,33 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             to text. If not specified, use default from DEFAULT_FILE_READER_CLS.
         num_files_limit (Optional[int]): Maximum number of files to read.
             Default is None.
-        file_metadata (Optional[Callable[str, Dict]]): A function that takes
+        file_metadata (Optional[Callable[[str], Dict]]): A function that takes
             in a filename and returns a Dict of metadata for the Document.
             Default is None.
         raise_on_error (bool): Whether to raise an error if a file cannot be read.
         fs (Optional[fsspec.AbstractFileSystem]): File system to use. Defaults
         to using the local file system. Can be changed to use any remote file system
         exposed via the fsspec interface.
+
     """
 
     supported_suffix_fn: Callable = _try_loading_included_file_formats
 
     def __init__(
         self,
-        input_dir: Path | str | None = None,
-        input_files: list | None = None,
-        exclude: list | None = None,
+        input_dir: Optional[Union[Path, str]] = None,
+        input_files: Optional[list] = None,
+        exclude: Optional[list] = None,
         exclude_hidden: bool = True,
         exclude_empty: bool = False,
         errors: str = "ignore",
         recursive: bool = False,
         encoding: str = "utf-8",
         filename_as_id: bool = False,
-        required_exts: list[str] | None = None,
-        file_extractor: dict[str, BaseReader] | None = None,
-        num_files_limit: int | None = None,
-        file_metadata: Callable[[str], dict] | None = None,
+        required_exts: Optional[list[str]] = None,
+        file_extractor: Optional[dict[str, BaseReader]] = None,
+        num_files_limit: Optional[int] = None,
+        file_metadata: Optional[Callable[[str], dict]] = None,
         raise_on_error: bool = False,
         fs: fsspec.AbstractFileSystem | None = None,
     ) -> None:
@@ -327,10 +334,21 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                         rejected_files.add(_Path(str(file)))
 
         file_refs: list[str] = []
-        if self.recursive:
-            file_refs = cast(list[str], self.fs.glob(str(input_dir) + "/**/*"))
-        else:
-            file_refs = cast(list[str], self.fs.glob(str(input_dir) + "/*"))
+        limit = (
+            self.num_files_limit
+            if self.num_files_limit is not None and self.num_files_limit > 0
+            else None
+        )
+        c = 0
+        depth = 1000 if self.recursive else 1
+        for root, _, files in self.fs.walk(
+            str(input_dir), topdown=True, maxdepth=depth
+        ):
+            for file in files:
+                c += 1
+                if limit and c > limit:
+                    break
+                file_refs.append(os.path.join(root, file))
 
         for _ref in file_refs:
             # Manually check if file is hidden or directory instead of
@@ -375,9 +393,6 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         if len(new_input_files) == 0:
             raise ValueError(f"No files found in {input_dir}.")
 
-        if self.num_files_limit is not None and self.num_files_limit > 0:
-            new_input_files = new_input_files[0 : self.num_files_limit]
-
         # print total number of files added
         logger.debug(
             f"> [SimpleDirectoryReader] Total files added: {len(new_input_files)}"
@@ -391,6 +406,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
         Args:
             documents (List[Document]): List of documents.
+
         """
         for doc in documents:
             # Keep only metadata['file_path'] in both embedding and llm content
@@ -520,31 +536,24 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         NOTE: necessarily as a static method for parallel processing.
 
         Args:
-            input_file (Path): _description_
-            file_metadata (Callable[[str], Dict]): _description_
-            file_extractor (Dict[str, BaseReader]): _description_
-            filename_as_id (bool, optional): _description_. Defaults to False.
-            encoding (str, optional): _description_. Defaults to "utf-8".
-            errors (str, optional): _description_. Defaults to "ignore".
-            fs (Optional[fsspec.AbstractFileSystem], optional): _description_. Defaults to None.
-
-        input_file (Path): File path to read
-        file_metadata ([Callable[str, Dict]]): A function that takes
-            in a filename and returns a Dict of metadata for the Document.
-        file_extractor (Dict[str, BaseReader]): A mapping of file
-            extension to a BaseReader class that specifies how to convert that file
-            to text.
-        filename_as_id (bool): Whether to use the filename as the document id.
-        encoding (str): Encoding of the files.
-            Default is utf-8.
-        errors (str): how encoding and decoding errors are to be handled,
-              see https://docs.python.org/3/library/functions.html#open
-        raise_on_error (bool): Whether to raise an error if a file cannot be read.
-        fs (Optional[fsspec.AbstractFileSystem]): File system to use. Defaults
-            to using the local file system. Can be changed to use any remote file system
+            input_file (Path): File path to read
+            file_metadata ([Callable[[str], Dict]]): A function that takes
+                in a filename and returns a Dict of metadata for the Document.
+            file_extractor (Dict[str, BaseReader]): A mapping of file
+                extension to a BaseReader class that specifies how to convert that file
+                to text.
+            filename_as_id (bool): Whether to use the filename as the document id.
+            encoding (str): Encoding of the files.
+                Default is utf-8.
+            errors (str): how encoding and decoding errors are to be handled,
+                see https://docs.python.org/3/library/functions.html#open
+            raise_on_error (bool): Whether to raise an error if a file cannot be read.
+            fs (Optional[fsspec.AbstractFileSystem]): File system to use. Defaults
+                to using the local file system. Can be changed to use any remote file system
 
         Returns:
             List[Document]: loaded documents
+
         """
         # TODO: make this less redundant
         default_file_reader_cls = SimpleDirectoryReader.supported_suffix_fn()
@@ -691,6 +700,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
         Returns:
             List[Document]: A list of documents.
+
         """
         documents = []
 
@@ -723,10 +733,14 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                 documents = reduce(lambda x, y: x + y, results)
 
         else:
-            if show_progress:
-                files_to_process = tqdm(
-                    self.input_files, desc="Loading files", unit="file"
-                )
+            files_to_process = cast(
+                list[Union[Path, PurePosixPath]],
+                get_tqdm_iterable(
+                    self.input_files,
+                    show_progress=show_progress,
+                    desc="Loading files",
+                ),
+            )
             for input_file in files_to_process:
                 documents.extend(
                     SimpleDirectoryReader.load_file(
@@ -760,6 +774,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
         Returns:
             List[Document]: A list of documents.
+
         """
         files_to_process = self.input_files
         fs = fs or self.fs
@@ -802,12 +817,16 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
         Returns:
             Generator[List[Document]]: A list of documents.
+
         """
-        files_to_process = self.input_files
-
-        if show_progress:
-            files_to_process = tqdm(self.input_files, desc="Loading files", unit="file")
-
+        files_to_process = cast(
+            list[Union[Path, PurePosixPath]],
+            get_tqdm_iterable(
+                self.input_files,
+                show_progress=show_progress,
+                desc="Loading files",
+            ),
+        )
         for input_file in files_to_process:
             documents = SimpleDirectoryReader.load_file(
                 input_file=input_file,

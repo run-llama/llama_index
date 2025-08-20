@@ -1,6 +1,5 @@
 """Base tool spec class."""
 
-
 import asyncio
 from inspect import signature
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
@@ -8,7 +7,6 @@ from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, 
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.tools.function_tool import FunctionTool
 from llama_index.core.tools.types import ToolMetadata
-from llama_index.core.tools.utils import create_schema_from_function
 
 AsyncCallable = Callable[..., Awaitable[Any]]
 
@@ -26,32 +24,34 @@ class BaseToolSpec:
     def get_fn_schema_from_fn_name(
         self, fn_name: str, spec_functions: Optional[List[SPEC_FUNCTION_TYPE]] = None
     ) -> Optional[Type[BaseModel]]:
-        """Return map from function name.
+        """
+        NOTE: This function is deprecated and kept only for backwards compatibility.
+
+        Return map from function name.
 
         Return type is Optional, meaning that the schema can be None.
         In this case, it's up to the downstream tool implementation to infer the schema.
 
         """
-        spec_functions = spec_functions or self.spec_functions
-        for fn in spec_functions:
-            if fn == fn_name:
-                return create_schema_from_function(fn_name, getattr(self, fn_name))
-
-        raise ValueError(f"Invalid function name: {fn_name}")
+        return None
 
     def get_metadata_from_fn_name(
         self, fn_name: str, spec_functions: Optional[List[SPEC_FUNCTION_TYPE]] = None
     ) -> Optional[ToolMetadata]:
-        """Return map from function name.
+        """
+        NOTE: This function is deprecated and kept only for backwards compatibility.
+
+        Return map from function name.
 
         Return type is Optional, meaning that the schema can be None.
         In this case, it's up to the downstream tool implementation to infer the schema.
 
         """
-        try:
-            func = getattr(self, fn_name)
-        except AttributeError:
+        schema = self.get_fn_schema_from_fn_name(fn_name, spec_functions=spec_functions)
+        if schema is None:
             return None
+
+        func = getattr(self, fn_name)
         name = fn_name
         docstring = func.__doc__ or ""
         description = f"{name}{signature(func)}\n{docstring}"
@@ -94,14 +94,6 @@ class BaseToolSpec:
                     "spec_functions must be of type: List[Union[str, Tuple[str, str]]]"
                 )
 
-            if func_sync is None:
-                if func_async is not None:
-                    func_sync = patch_sync(func_async)
-                else:
-                    raise ValueError(
-                        f"Could not retrieve a function for spec: {func_spec}"
-                    )
-
             tool = FunctionTool.from_defaults(
                 fn=func_sync,
                 async_fn=func_async,
@@ -109,13 +101,3 @@ class BaseToolSpec:
             )
             tool_list.append(tool)
         return tool_list
-
-
-def patch_sync(func_async: AsyncCallable) -> Callable:
-    """Patch sync function from async function."""
-
-    def patched_sync(*args: Any, **kwargs: Any) -> Any:
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(func_async(*args, **kwargs))
-
-    return patched_sync

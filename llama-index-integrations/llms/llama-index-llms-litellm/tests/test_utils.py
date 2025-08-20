@@ -12,6 +12,7 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     ImageBlock,
     AudioBlock,
+    DocumentBlock,
 )
 from litellm.types.utils import ChatCompletionDeltaToolCall
 import json
@@ -189,6 +190,43 @@ def test_audio_block_conversion(monkeypatch):
     assert audio_content["type"] == "input_audio"
     assert "data" in audio_content["input_audio"]
     assert audio_content["input_audio"]["format"] == "mp3"
+
+
+def test_document_block_conversion():
+    """Test converting a ChatMessage with DocumentBlock to OpenAI format."""
+    # Create a DocumentBlock with mock PDF data
+    mock_pdf_data = b"fake_pdf_data"
+    document_block = DocumentBlock(
+        data=mock_pdf_data,
+        document_mimetype="application/pdf",
+        title="test_document.pdf",
+    )
+    message = ChatMessage(role=MessageRole.USER, content=[document_block])
+
+    # Convert to OpenAI format
+    openai_message = to_openailike_message_dict(message)
+
+    # Verify correct format for document block
+    assert openai_message["role"] == "user"
+    assert isinstance(openai_message["content"], list)
+    assert len(openai_message["content"]) == 1
+
+    document_content = openai_message["content"][0]
+    assert document_content["type"] == "file"
+    assert "file" in document_content
+    assert "file_data" in document_content["file"]
+    assert document_content["file"]["file_data"].startswith(
+        "data:application/pdf;base64,"
+    )
+
+    # Verify the base64 encoded data
+    file_data = document_content["file"]["file_data"]
+    header, encoded_data = file_data.split(",", 1)
+    assert header == "data:application/pdf;base64"
+
+    # Verify the encoded data can be decoded back to original
+    decoded_data = base64.b64decode(encoded_data.encode("utf-8"))
+    assert decoded_data == mock_pdf_data
 
 
 def test_mixed_content_conversion():

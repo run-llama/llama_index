@@ -1,4 +1,5 @@
 """Slack reader."""
+
 import logging
 import os
 import re
@@ -16,7 +17,8 @@ logger = logging.getLogger(__name__)
 
 
 class SlackReader(BasePydanticReader):
-    """Slack reader.
+    """
+    Slack reader.
 
     Reads conversations from channels. If an earliest_date is provided, an
     optional latest_date can also be provided. If no latest_date is provided,
@@ -32,6 +34,7 @@ class SlackReader(BasePydanticReader):
         latest_date (Optional[datetime]): Latest date from which to
             read conversations. If not provided, defaults to current timestamp
             in combination with earliest_date.
+
     """
 
     is_remote: bool = True
@@ -220,13 +223,15 @@ class SlackReader(BasePydanticReader):
     def load_data(
         self, channel_ids: List[str], reverse_chronological: bool = True
     ) -> List[Document]:
-        """Load data from the input slack channel ids.
+        """
+        Load data from the input slack channel ids.
 
         Args:
             channel_ids (List[str]): List of channel ids to read.
 
         Returns:
             List[Document]: List of documents.
+
         """
         results = []
         for channel_id in channel_ids:
@@ -281,13 +286,15 @@ class SlackReader(BasePydanticReader):
         return filtered_channels
 
     def get_channel_ids(self, channel_patterns: List[str]) -> List[str]:
-        """Get list of channel IDs based on names and regex patterns.
+        """
+        Get list of channel IDs based on names and regex patterns.
 
         Args:
             channel_patterns List[str]: List of channel name patterns (names or regex) to read.
 
         Returns:
             List[Document]: List of documents.
+
         """
         if not channel_patterns:
             raise ValueError("No channel patterns provided.")

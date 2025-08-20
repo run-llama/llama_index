@@ -44,6 +44,13 @@ Calling this agent kicks off a specific loop of actions:
     - The tool call results are added to the chat history
     - The Agent is invoked again with updated history, and either responds directly or selects more calls
 
+The `FunctionAgent` is a type of agent that uses an LLM provider's function/tool calling capabilities to execute tools. Other types of agents, such as [`ReActAgent`](../../../examples/agent/react_agent.ipynb) and [`CodeActAgent`](../../../examples/agent/code_act_agent.ipynb), use different prompting strategies to execute tools.
+
+You can visit [the agents guide](../../../understanding/agent/index.md) to learn more about agents and their capabilities.
+
+!!! tip
+    Some models might not support streaming LLM output. While streaming is enabled by default, if you encounter an error, you can always set `FunctionAgent(..., streaming=False)` to disable streaming.
+
 ## Tools
 
 Tools can be defined simply as python functions, or further customized using classes like `FunctionTool` and `QueryEngineTool`. LlamaIndex also provides sets of pre-defined tools for common APIs using something called `Tool Specs`.
@@ -116,7 +123,7 @@ multi_agent = AgentWorkflow(agents=[FunctionAgent(...), FunctionAgent(...)])
 resp = await agent.run("query")
 ```
 
-Read on to learn more about [multi-agent systems](../../../understanding/agent/multi_agent.md).
+This is only one way to build multi-agent systems. Read on to learn more about [multi-agent systems](../../../understanding/agent/multi_agent.md).
 
 ## Manual Agents
 
