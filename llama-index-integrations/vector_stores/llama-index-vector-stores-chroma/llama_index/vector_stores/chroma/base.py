@@ -254,7 +254,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         if not self._collection:
             raise ValueError("Collection not initialized")
 
-        node_ids = node_ids or []
+        node_ids = node_ids or None
 
         if filters:
             where = _to_chroma_filter(filters)
