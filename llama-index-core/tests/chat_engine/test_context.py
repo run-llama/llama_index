@@ -128,7 +128,7 @@ async def test_chat_astream(chat_engine: ContextChatEngine):
     q = QueryBundle("Hello World through QueryBundle")
     response = await chat_engine.astream_chat(q)
     num_iters = 0
-    for _ in response.response_gen:
+    async for _ in response.async_response_gen():
         num_iters += 1
     assert num_iters > 10
     assert str(q) in str(response)
