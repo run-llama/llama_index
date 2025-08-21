@@ -7,6 +7,7 @@ dev = [
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
     "llama-index-embeddings-openai>=0.5.0,<0.6",
+    "llama-index-embeddings-azure_openai>=0.4.0,<0.5",
     "llama-index-llms-openai>=0.5.0,<0.6",
     "llama-index-readers-file>=0.5.0,<0.6",
     "mypy==0.991",
