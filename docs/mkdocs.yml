@@ -1780,6 +1780,8 @@ nav:
       - Deprecated Terms: ./changes/deprecated_terms.md
   - Workflows:
       - ./workflows/index.md
+      - ./workflows/durable_workflows.md
+      - ./workflows/deployment.md
       - v1:
           - ./workflows/v1/index.md
           - ./workflows/v1/customizing_entry_exit_points.md

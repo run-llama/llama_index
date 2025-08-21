@@ -29,6 +29,12 @@ Install all dependencies required for building docs (mainly `mkdocs` and its ext
 - [Install poetry](https://python-poetry.org/docs/#installation) - this will help you manage package dependencies
 - `poetry install` - this will install all dependencies needed for building docs
 
+To pull external docs:
+
+```
+poetry run python scripts/merge_external_docs.py
+```
+
 To build the docs and browse them locally run:
 
 ```

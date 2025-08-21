@@ -66,14 +66,17 @@ def main():
         print("Updated llama_deploy to latest main branch")
 
     # Get the latest version tag and checkout for workflows-py
-    latest_tag = get_latest_version_tag("llama_deploy")
+    # FIXME: temporarily hardcoding 'latest_tag' until Workflows 2.0
+    # is released, uncomment the following line when ready.
+    # latest_tag = get_latest_version_tag("workflows-py")
+    latest_tag = "main"
     print(f"Checking out workflows-py latest version tag: {latest_tag}")
 
     if latest_tag != "main":
         os.system(f"git -C workflows-py checkout {latest_tag}")
         print(f"Checked out workflows-py at tag: {latest_tag}")
     else:
-        os.system("git -C llama_deploy pull")
+        os.system("git -C workflows-py pull origin main")
         print("Updated workflows-py to latest main branch")
 
     # copy the llama_deploy/docs/docs/api_reference/llama_deploy to the current docs/api_reference
@@ -89,7 +92,7 @@ def main():
     print("Copied in latest llama-deploy docs")
 
     # copy the Workflows v2 section
-    os.system("cp -r workflows-py/docs/docs/workflows/v2 ./docs/workflows/")
+    os.system("cp -r workflows-py/docs/docs/workflows/ ./docs/workflows/")
     print("Copied in latest workflows-py docs")
 
 
