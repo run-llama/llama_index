@@ -569,10 +569,12 @@ from llama_index.core.agent import FunctionAgent
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.openai import OpenAI
 
+
 # Define tools and create agent
 def add_numbers(a: float, b: float) -> float:
     """Add two numbers together."""
     return a + b
+
 
 add_tool = FunctionTool.from_defaults(fn=add_numbers)
 llm = OpenAI(model="gpt-4o-mini", temperature=0)
@@ -581,11 +583,12 @@ agent = FunctionAgent(
     tools=[add_tool],
     llm=llm,
     verbose=True,
-    system_prompt="You are a helpful calculator assistant."
+    system_prompt="You are a helpful calculator assistant.",
 )
 
 # This will be automatically logged by Maxim instrumentation
 import asyncio
+
 response = await agent.run("What is 15 + 25?")
 print(f"Response: {response}")
 ```
