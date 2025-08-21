@@ -66,8 +66,10 @@ def main():
         print("Updated llama_deploy to latest main branch")
 
     # Get the latest version tag and checkout for workflows-py
+    # FIXME: temporarily hardcoding 'latest_tag' until Workflows 2.0
+    # is released, uncomment the following line when ready.
     # latest_tag = get_latest_version_tag("workflows-py")
-    latest_tag = "massi/move-docs"
+    latest_tag = "main"
     print(f"Checking out workflows-py latest version tag: {latest_tag}")
 
     if latest_tag != "main":
