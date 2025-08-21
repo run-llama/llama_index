@@ -66,7 +66,8 @@ def main():
         print("Updated llama_deploy to latest main branch")
 
     # Get the latest version tag and checkout for workflows-py
-    latest_tag = get_latest_version_tag("workflows-py")
+    # latest_tag = get_latest_version_tag("workflows-py")
+    latest_tag = "massi/move-docs"
     print(f"Checking out workflows-py latest version tag: {latest_tag}")
 
     if latest_tag != "main":
