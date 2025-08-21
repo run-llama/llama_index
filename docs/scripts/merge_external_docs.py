@@ -89,7 +89,7 @@ def main():
     print("Copied in latest llama-deploy docs")
 
     # copy the Workflows v2 section
-    os.system("cp -r workflows-py/docs/docs/workflows/v2 ./docs/workflows/")
+    os.system("cp -r workflows-py/docs/docs/workflows/ ./docs/workflows/")
     print("Copied in latest workflows-py docs")
 
 
