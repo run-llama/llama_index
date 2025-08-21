@@ -66,14 +66,14 @@ def main():
         print("Updated llama_deploy to latest main branch")
 
     # Get the latest version tag and checkout for workflows-py
-    latest_tag = get_latest_version_tag("llama_deploy")
+    latest_tag = get_latest_version_tag("workflows-py")
     print(f"Checking out workflows-py latest version tag: {latest_tag}")
 
     if latest_tag != "main":
         os.system(f"git -C workflows-py checkout {latest_tag}")
         print(f"Checked out workflows-py at tag: {latest_tag}")
     else:
-        os.system("git -C llama_deploy pull")
+        os.system("git -C workflows-py pull origin main")
         print("Updated workflows-py to latest main branch")
 
     # copy the llama_deploy/docs/docs/api_reference/llama_deploy to the current docs/api_reference
