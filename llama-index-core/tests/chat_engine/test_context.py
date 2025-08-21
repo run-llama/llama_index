@@ -6,7 +6,7 @@ from llama_index.core.chat_engine.context import (
 )
 from llama_index.core.indices import VectorStoreIndex
 from llama_index.core.llms.mock import MockLLM
-from llama_index.core.schema import (Document, QueryBundle)
+from llama_index.core.schema import Document, QueryBundle
 
 SYSTEM_PROMPT = "Talk like a pirate."
 
@@ -97,6 +97,7 @@ async def test_achat(chat_engine: ContextChatEngine):
     assert str(q) in str(response)
     assert len(chat_engine.chat_history) == 2
     assert str(q) in str(chat_engine.chat_history[0])
+
 
 @pytest.mark.asyncio
 async def test_chat_astream(chat_engine: ContextChatEngine):
