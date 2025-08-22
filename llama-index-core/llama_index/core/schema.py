@@ -1232,7 +1232,7 @@ def is_image_pil(file_path: str) -> bool:
 
 def is_image_url_pil(url: str) -> bool:
     try:
-        response = requests.get(url, stream=True)
+        response = requests.get(url, stream=True, timeout=(60,60))
         response.raise_for_status()  # Raise an exception for bad status codes
         # Open image from the response content
         img = Image.open(BytesIO(response.content))
