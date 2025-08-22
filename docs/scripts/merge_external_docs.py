@@ -92,7 +92,13 @@ def main():
     print("Copied in latest llama-deploy docs")
 
     # copy the Workflows v2 section
-    os.system("cp -r workflows-py/docs/docs/workflows/ ./docs/workflows/")
+    docs_to_copy = os.listdir("workflows-py/docs/docs/workflows")
+    destination = os.listdir("./docs/workflows/")
+    print(f"Copying\n{docs_to_copy}\n\nto\n{destination}")
+    os.system("cp -r workflows-py/docs/docs/workflows/* ./docs/workflows/")
+
+    new_destination = os.listdir("./docs/workflows/")
+    print(f"New destination files:\n{new_destination}")
     print("Copied in latest workflows-py docs")
 
 
