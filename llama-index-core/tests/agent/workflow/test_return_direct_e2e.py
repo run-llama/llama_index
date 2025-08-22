@@ -4,6 +4,11 @@ import pytest
 
 CI = os.getenv("CI", "").lower() in ("1", "true", "yes")
 
+try:
+    from llama_index.llms.openai import OpenAI  # noqa: F401
+except ImportError:
+    pytest.skip("OpenAI is not installed")
+
 
 @pytest.mark.skipif(CI, reason="Skipping in CI environment")
 @pytest.mark.asyncio
