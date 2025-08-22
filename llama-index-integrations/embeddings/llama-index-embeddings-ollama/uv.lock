@@ -1625,11 +1625,12 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-ollama"
-version = "0.7.0"
+version = "0.8.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
     { name = "ollama" },
+    { name = "pytest-asyncio" },
 ]
 
 [package.dev-dependencies]
@@ -1659,6 +1660,7 @@ dev = [
 requires-dist = [
     { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
     { name = "ollama", specifier = ">=0.3.1" },
+    { name = "pytest-asyncio", specifier = ">=0.23.8" },
 ]
 
 [package.metadata.requires-dev]
@@ -2781,6 +2783,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e5/6c/f3a15217ac72912c28c5d7a7a8e87ff6d6475c9530595ae9f0f8dedd8dd8/pytest-7.2.1.tar.gz", hash = "sha256:d45e0952f3727241918b8fd0f376f5ff6b301cc0777c6f9a556935c92d8a7d42", size = 1301901, upload-time = "2023-01-14T12:17:33.798Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/cc/02/8f59bf194c9a1ceac6330850715e9ec11e21e2408a30a596c65d54cf4d2a/pytest-7.2.1-py3-none-any.whl", hash = "sha256:c7c6ca206e93355074ae32f7403e8ea12163b1163c976fee7d4d84027c162be5", size = 317109, upload-time = "2023-01-14T12:17:32.206Z" },
+]
+
+[[package]]
+name = "pytest-asyncio"
+version = "0.23.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/de/b4/0b378b7bf26a8ae161c3890c0b48a91a04106c5713ce81b4b080ea2f4f18/pytest_asyncio-0.23.8.tar.gz", hash = "sha256:759b10b33a6dc61cce40a8bd5205e302978bbbcc00e279a8b61d9a6a3c82e4d3", size = 46920, upload-time = "2024-07-17T17:39:34.617Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ee/82/62e2d63639ecb0fbe8a7ee59ef0bc69a4669ec50f6d3459f74ad4e4189a2/pytest_asyncio-0.23.8-py3-none-any.whl", hash = "sha256:50265d892689a5faefb84df80819d1ecef566eb3549cf915dfb33569359d1ce2", size = 17663, upload-time = "2024-07-17T17:39:32.478Z" },
 ]
 
 [[package]]
