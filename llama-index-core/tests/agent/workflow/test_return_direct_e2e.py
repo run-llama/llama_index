@@ -6,11 +6,13 @@ CI = os.getenv("CI", "").lower() in ("1", "true", "yes")
 
 try:
     from llama_index.llms.openai import OpenAI  # noqa: F401
+
+    has_openai = True
 except ImportError:
-    pytest.skip("OpenAI is not installed")
+    has_openai = False
 
 
-@pytest.mark.skipif(CI, reason="Skipping in CI environment")
+@pytest.mark.skipif(CI or not has_openai, reason="Skipping in CI environment")
 @pytest.mark.asyncio
 async def test_return_direct_e2e():
     from llama_index.core.agent.workflow import FunctionAgent, ToolCallResult
