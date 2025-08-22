@@ -13,8 +13,10 @@ async def test_return_direct_e2e():
     from llama_index.core.workflow import Context
     from llama_index.llms.openai import OpenAI
 
-    if not os.getenv("OPENAI_API_KEY"):
-        raise KeyError("Please provide OPENAI_API_KEY as a Environment Variables")
+    if not os.getenv("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY") == "sk-" + (
+        "a" * 48
+    ):
+        pytest.skip("OPENAI_API_KEY is not defined")
 
     llm = OpenAI()
 

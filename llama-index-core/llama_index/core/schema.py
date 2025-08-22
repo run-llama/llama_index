@@ -852,7 +852,7 @@ class ImageNode(TextNode):
             # load image from URL
             import requests
 
-            response = requests.get(self.image_url)
+            response = requests.get(self.image_url, timeout=(60, 60))
             return BytesIO(response.content)
         else:
             raise ValueError("No image found in node.")
@@ -1351,7 +1351,7 @@ class ImageDocument(Document):
             return BytesIO(img_bytes)
         elif self.image_resource.url is not None:
             # load image from URL
-            response = requests.get(str(self.image_resource.url))
+            response = requests.get(str(self.image_resource.url), timeout=(60, 60))
             img_bytes = response.content
             if as_base64:
                 return BytesIO(base64.b64encode(img_bytes))
