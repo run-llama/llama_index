@@ -31,8 +31,9 @@ class BasetenEmbedding(OpenAIEmbedding):
         from llama_index.embeddings.baseten import BasetenEmbedding
 
         # Using dedicated endpoint
+        # You can find the model_id by in the Baseten dashboard here: https://app.baseten.co/overview
         embed_model = BasetenEmbedding(
-            model_id="03y7n6e3",  # Your specific model ID
+            model_id="MODEL_ID,
             api_key="YOUR_API_KEY",
         )
 

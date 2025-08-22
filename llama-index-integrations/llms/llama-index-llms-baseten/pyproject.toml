@@ -33,8 +33,8 @@ requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-llms-openai>=0.3.0,<0.4",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-llms-openai>=0.5.0,<0.6",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]
