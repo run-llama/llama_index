@@ -29,6 +29,7 @@ HUMAN_PREFIX = "\n\nHuman:"
 ASSISTANT_PREFIX = "\n\nAssistant:"
 
 BEDROCK_MODELS = {
+    "amazon.nova-premier-v1:0": 1000000,
     "amazon.nova-pro-v1:0": 300000,
     "amazon.nova-lite-v1:0": 300000,
     "amazon.nova-micro-v1:0": 128000,
@@ -80,6 +81,7 @@ BEDROCK_MODELS = {
 }
 
 BEDROCK_FUNCTION_CALLING_MODELS = (
+    "amazon.nova-premier-v1:0",
     "amazon.nova-pro-v1:0",
     "amazon.nova-lite-v1:0",
     "amazon.nova-micro-v1:0",
@@ -108,6 +110,7 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
 )
 
 BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
+    "amazon.nova-premier-v1:0",
     "amazon.nova-pro-v1:0",
     "amazon.nova-lite-v1:0",
     "amazon.nova-micro-v1:0",
