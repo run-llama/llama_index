@@ -583,29 +583,37 @@ class MediaResource(BaseModel):
         return str(path)
 
     @property
-    def hash(self) -> str:
+    def hash(self) -> str | None:
         """
         Generate a hash to uniquely identify the media resource.
 
         The hash is generated based on the available content (data, path, text or url).
-        Returns an empty string if no content is available.
+        Returns None if no content is available, or a hash string if content exists.
         """
         bits: list[str] = []
+        has_content = False
+
         if self.text is not None:
             bits.append(self.text)
+            has_content = True
         if self.data is not None:
             # Hash the binary data if available
             bits.append(str(sha256(self.data).hexdigest()))
+            has_content = True
         if self.path is not None:
             # Hash the file path if provided
             bits.append(str(sha256(str(self.path).encode("utf-8")).hexdigest()))
+            has_content = True
         if self.url is not None:
             # Use the URL string as basis for hash
             bits.append(str(sha256(str(self.url).encode("utf-8")).hexdigest()))
+            has_content = True
+
+        # Return None if no content is available
+        if not has_content:
+            return None
 
         doc_identity = "".join(bits)
-        if not doc_identity:
-            return ""
         return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
 
 
@@ -675,14 +683,24 @@ class Node(BaseNode):
         metadata_str = self.get_metadata_str(mode=MetadataMode.ALL)
         if metadata_str:
             doc_identities.append(metadata_str)
+
+        # Only add resource hashes if they exist and have content
         if self.audio_resource is not None:
-            doc_identities.append(self.audio_resource.hash)
+            hash_val = self.audio_resource.hash
+            if hash_val is not None:
+                doc_identities.append(hash_val)
         if self.image_resource is not None:
-            doc_identities.append(self.image_resource.hash)
+            hash_val = self.image_resource.hash
+            if hash_val is not None:
+                doc_identities.append(hash_val)
         if self.text_resource is not None:
-            doc_identities.append(self.text_resource.hash)
+            hash_val = self.text_resource.hash
+            if hash_val is not None:
+                doc_identities.append(hash_val)
         if self.video_resource is not None:
-            doc_identities.append(self.video_resource.hash)
+            hash_val = self.video_resource.hash
+            if hash_val is not None:
+                doc_identities.append(hash_val)
 
         doc_identity = "-".join(doc_identities)
         return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
