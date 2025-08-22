@@ -28,7 +28,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-qdrant"
-version = "0.8.0"
+version = "0.8.1"
 description = "llama-index vector_stores qdrant integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<3.14"
