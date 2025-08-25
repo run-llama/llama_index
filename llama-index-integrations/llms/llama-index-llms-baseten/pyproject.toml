@@ -4,14 +4,12 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "fastembed>=0.2.5",
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
     "pytest==7.2.1",
-    "pytest-asyncio==0.21.0",
     "pytest-mock==3.11.1",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
@@ -27,21 +25,17 @@ dev = [
 ]
 
 [project]
-name = "llama-index-vector-stores-qdrant"
-version = "0.8.1"
-description = "llama-index vector_stores qdrant integration"
-authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<3.14"
+name = "llama-index-llms-baseten"
+version = "0.0.1"
+description = "llama-index llms baseten integration"
+authors = [{name = "alexker"}]
+requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "qdrant-client>=1.7.1",
-    "grpcio>=1.60.0,<2",
+    "llama-index-llms-openai>=0.5.0,<0.6",
     "llama-index-core>=0.13.0,<0.14",
 ]
-
-[project.optional-dependencies]
-fastembed = []
 
 [tool.codespell]
 check-filenames = true
@@ -50,18 +44,16 @@ skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
 
 [tool.hatch.build.targets.sdist]
 include = ["llama_index/"]
-exclude = ["**/BUILD"]
 
 [tool.hatch.build.targets.wheel]
 include = ["llama_index/"]
-exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.vector_stores.qdrant"
+import_path = "llama_index.llms.baseten"
 
 [tool.llamahub.class_authors]
-QdrantVectorStore = "llama-index"
+Baseten = "alexker"
 
 [tool.mypy]
 disallow_untyped_defs = true

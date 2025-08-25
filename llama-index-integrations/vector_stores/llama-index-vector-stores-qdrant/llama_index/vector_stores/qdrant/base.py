@@ -145,14 +145,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
     dense_vector_name: str
     sparse_vector_name: str
 
-    shard_number: Optional[int] = None
-    sharding_method: Optional[rest.ShardingMethod] = None
-    replication_factor: Optional[int] = None
-    write_consistency_factor: Optional[int] = None
-
-    shard_key_selector_fn: Optional[Callable[..., rest.ShardKeySelector]] = None
-    shard_keys: Optional[list[rest.ShardKey]] = None
-
     _client: QdrantClient = PrivateAttr()
     _aclient: AsyncQdrantClient = PrivateAttr()
     _collection_initialized: bool = PrivateAttr()
@@ -163,6 +155,14 @@ class QdrantVectorStore(BasePydanticVectorStore):
     _sparse_config: Optional[rest.SparseVectorParams] = PrivateAttr()
     _quantization_config: Optional[QuantizationConfig] = PrivateAttr()
     _legacy_vector_format: Optional[bool] = PrivateAttr()
+    _shard_key_selector_fn: Optional[Callable[..., rest.ShardKeySelector]] = (
+        PrivateAttr()
+    )
+    _shard_keys: Optional[list[rest.ShardKey]] = PrivateAttr()
+    _shard_number: Optional[int] = PrivateAttr()
+    _sharding_method: Optional[rest.ShardingMethod] = PrivateAttr()
+    _replication_factor: Optional[int] = PrivateAttr()
+    _write_consistency_factor: Optional[int] = PrivateAttr()
 
     def __init__(
         self,
