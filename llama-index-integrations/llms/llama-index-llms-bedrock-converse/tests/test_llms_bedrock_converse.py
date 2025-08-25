@@ -69,6 +69,7 @@ def bedrock_converse_integration():
         aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
         max_tokens=EXP_MAX_TOKENS,
+        system_prompt_caching=True
     )
 
 
@@ -542,6 +543,15 @@ def test_prepare_chat_with_tools_custom_tool_choice(bedrock_converse):
     assert "toolChoice" in result["tools"]
     assert result["tools"]["toolChoice"] == custom_tool_choice
 
+def test_prepare_chat_with_tools_cache_enabled(bedrock_converse):
+    """Test that custom tool_choice overrides tool_required."""
+    custom_tool_choice = {"specific": {"name": "search_tool"}}
+    result = bedrock_converse._prepare_chat_with_tools(
+        tools=[search_tool], tool_caching=True
+    )
+
+    assert "tools" in result
+    assert "toolChoice" in result["tools"]
 
 # Integration test for reproducing the empty text field error
 def get_temperature(location: str) -> float:
