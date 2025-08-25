@@ -1,4 +1,8 @@
 import pytest
+import os
+import requests
+import httpx
+
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import (
     PointsList,
@@ -16,6 +20,11 @@ from llama_index.core.vector_stores.types import (
     MetadataFilter,
     FilterCondition,
     FilterOperator,
+)
+
+requires_qdrant_cluster = pytest.mark.skipif(
+    not os.getenv("QDRANT_CLUSTER_URL"),
+    reason="Qdrant cluster not available in CI",
 )
 
 
@@ -235,7 +244,9 @@ def test_filters_with_types(vector_store: QdrantVectorStore) -> None:
     assert len(results) == 1
 
 
-def test_hybrid_vector_store_query(hybrid_vector_store: QdrantVectorStore) -> None:
+def test_hybrid_vector_store_query(
+    hybrid_vector_store: QdrantVectorStore,
+) -> None:
     query = VectorStoreQuery(
         query_embedding=[0.0, 0.0],
         query_str="test1",
@@ -251,4 +262,279 @@ def test_hybrid_vector_store_query(hybrid_vector_store: QdrantVectorStore) -> No
     hybrid_vector_store.enable_hybrid = False
     query.mode = VectorStoreQueryMode.DEFAULT
     results = hybrid_vector_store.query(query)
+    assert len(results.nodes) == 1
+
+
+@pytest.mark.asyncio
+@requires_qdrant_cluster
+async def test_shard_vector_store_async(
+    shard_vector_store: QdrantVectorStore,
+) -> None:
+    """
+    Validate that LlamaIndex's QdrantVectorStore custom sharding + metadata filtering
+    behaves as expected.
+
+    Setup (see fixture below):
+      - Three nodes, each assigned to a different *custom* shard (1, 2, 3).
+      - Metadata key "some_key" set to 1, 2, and "3" respectively (note: "3" is a string).
+    """
+    # 1) Sanity check: without filters or shard restriction, we should see all 3 nodes.
+    results = await shard_vector_store.aget_nodes()
+    assert len(results) == 3
+
+    # 2) Query *only* shard 3, but with IN filter for values [1, 2].
+    #    Because shard 3 contains the node with metadata "some_key" == "3" (string),
+    #    there should be no matches for the integer values 1 or 2 in that shard.
+    results = await shard_vector_store.aget_nodes(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(key="some_key", value=[1, 2], operator=FilterOperator.IN)
+            ]
+        ),
+        shard_identifier=3,
+    )
+
+    assert len(results) == 0
+
+    # 3) Still on shard 3, use NIN (NOT IN) for [1, 2].
+    #    The only node in shard 3 has "some_key" == "3" (string), which is not 1 or 2.
+    #    So we expect exactly 1 match.
+    results = await shard_vector_store.aget_nodes(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="some_key", value=[1, 2], operator=FilterOperator.NIN
+                )
+            ]
+        ),
+        shard_identifier=3,
+    )
+    assert len(results) == 1
+
+    # 4) Query shard 3 with IN filter for "3" (string).
+    #    This should match the only node in shard 3.
+    results = await shard_vector_store.aget_nodes(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(key="some_key", value=["3"], operator=FilterOperator.IN)
+            ]
+        ),
+        shard_identifier=3,
+    )
+    assert len(results) == 1
+
+    # 5) Delete the node in shard 3.
+    #    This should remove the only node in shard 3.
+    await shard_vector_store.adelete_nodes(
+        shard_identifier=3,
+    )
+
+    results = await shard_vector_store.aget_nodes(
+        shard_identifier=3,
+    )
+    assert len(results) == 0  # No nodes should remain in shard 3
+    results = await shard_vector_store.aget_nodes()
+    assert len(results) == 2  # Only nodes in shards 1 and 2 should remain
+
+    # 6) Delete the node in shard 2 with ref_doc_id "test-0"
+    #    This should remove the only node in shard 2.
+    #    This shouldn't remove the node in shard 1 having same ref_doc_id.
+    await shard_vector_store.adelete(
+        ref_doc_id="test-0",
+        shard_identifier=2,
+    )
+
+    results = await shard_vector_store.aget_nodes(
+        shard_identifier=2,
+    )
+    assert len(results) == 0  # No nodes should remain in shard 2
+    results = await shard_vector_store.aget_nodes()
+    assert len(results) == 1  # Only nodes in shards 1 should remain
+
+
+@pytest.mark.asyncio
+@requires_qdrant_cluster
+def test_shard_vector_store_sync(
+    shard_vector_store: QdrantVectorStore,
+) -> None:
+    """
+    Validate that LlamaIndex's QdrantVectorStore custom sharding + metadata filtering
+    behaves as expected.
+
+    Setup (see fixture below):
+      - Three nodes, each assigned to a different *custom* shard (1, 2, 3).
+      - Metadata key "some_key" set to 1, 2, and "3" respectively (note: "3" is a string).
+    """
+    # 1) Sanity check: without filters or shard restriction, we should see all 3 nodes.
+    results = shard_vector_store.get_nodes()
+    assert len(results) == 3
+
+    # 2) Query *only* shard 3, but with IN filter for values [1, 2].
+    #    Because shard 3 contains the node with metadata "some_key" == "3" (string),
+    #    there should be no matches for the integer values 1 or 2 in that shard.
+    results = shard_vector_store.get_nodes(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(key="some_key", value=[1, 2], operator=FilterOperator.IN)
+            ]
+        ),
+        shard_identifier=3,
+    )
+
+    assert len(results) == 0
+
+    # 3) Still on shard 3, use NIN (NOT IN) for [1, 2].
+    #    The only node in shard 3 has "some_key" == "3" (string), which is not 1 or 2.
+    #    So we expect exactly 1 match.
+    results = shard_vector_store.get_nodes(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(
+                    key="some_key", value=[1, 2], operator=FilterOperator.NIN
+                )
+            ]
+        ),
+        shard_identifier=3,
+    )
+    assert len(results) == 1
+
+    # 4) Query shard 3 with IN filter for "3" (string).
+    #    This should match the only node in shard 3.
+    results = shard_vector_store.get_nodes(
+        filters=MetadataFilters(
+            filters=[
+                MetadataFilter(key="some_key", value=["3"], operator=FilterOperator.IN)
+            ]
+        ),
+        shard_identifier=3,
+    )
+    assert len(results) == 1
+
+    # 5) Delete the node in shard 3.
+    #    This should remove the only node in shard 3.
+    shard_vector_store.delete_nodes(
+        shard_identifier=3,
+    )
+
+    results = shard_vector_store.get_nodes(
+        shard_identifier=3,
+    )
+    assert len(results) == 0  # No nodes should remain in shard 3
+    results = shard_vector_store.get_nodes()
+    assert len(results) == 2  # Only nodes in shards 1 and 2 should remain
+
+    # 6) Delete the node in shard 2 with ref_doc_id "test-0"
+    #    This should remove the only node in shard 2.
+    #    This shouldn't remove the node in shard 1 having same ref_doc_id.
+    shard_vector_store.delete(
+        ref_doc_id="test-0",
+        shard_identifier=2,
+    )
+
+    results = shard_vector_store.get_nodes(
+        shard_identifier=2,
+    )
+    assert len(results) == 0  # No nodes should remain in shard 2
+    results = shard_vector_store.get_nodes()
+    assert len(results) == 1  # Only nodes in shards 1 should remain
+
+
+@requires_qdrant_cluster
+def test_validate_custom_sharding(shard_vector_store: QdrantVectorStore):
+    shard_vector_store._validate_custom_sharding()
+
+
+def test_generate_shard_key_selector_none(vector_store: QdrantVectorStore):
+    # no selector function set
+    assert vector_store._generate_shard_key_selector(None) is None
+    assert vector_store._generate_shard_key_selector(5) is None
+
+
+@requires_qdrant_cluster
+def test_generate_shard_key_selector_custom(
+    shard_vector_store: QdrantVectorStore,
+):
+    selector = shard_vector_store._generate_shard_key_selector(7)
+    assert selector is not None
+    assert selector == 1
+
+
+@pytest.mark.asyncio
+@requires_qdrant_cluster
+async def test_shard_keys_created(shard_vector_store: QdrantVectorStore):
+    # Ensure shard key configuration exists and expected number of shard keys created
+    base_url = os.getenv("QDRANT_CLUSTER_URL")
+    if not base_url:
+        raise RuntimeError(
+            "QDRANT_CLUSTER_URL environment variable must be set for direct HTTP call"
+        )
+
+    url = f"http://{base_url.rstrip('/')}/collections/{shard_vector_store.collection_name}/cluster"
+
+    # Use async HTTP client instead of blocking requests in an async test
+
+    async with httpx.AsyncClient(timeout=10) as client:
+        resp = await client.get(url)
+        resp.raise_for_status()
+        raw = resp.json()
+
+    print(raw)
+    result = raw.get("result", {})
+    shard_keys = {
+        shard.get("shard_key")
+        for shard in result.get("local_shards", []) + result.get("remote_shards", [])
+    }
+    assert shard_keys, "Shard key parameter missing in collection config"
+    assert len(shard_keys) == 3
+
+
+@requires_qdrant_cluster
+def test_shard_keys_created_sync(shard_vector_store: QdrantVectorStore):
+    # Ensure shard key configuration exists and expected number of shard keys created
+    # Determine base URL (env var name per instructions; fall back to QDRANT_CLUSTER_URL if typo)
+    base_url = os.getenv("QDRANT_CLUSTER_URL")
+    if not base_url:
+        raise RuntimeError(
+            "QDRANT_CLUSTER_URL environment variable must be set for direct HTTP call"
+        )
+
+    url = f"http://{base_url.rstrip('/')}/collections/{shard_vector_store.collection_name}/cluster"
+    resp = requests.get(url, timeout=10)
+    resp.raise_for_status()
+    raw = resp.json()
+
+    print(raw)
+    result = raw.get("result", {})
+    shard_keys = set()
+    for shard in result.get("local_shards", []) + result.get("remote_shards", []):
+        shard_keys.add(shard.get("shard_key"))
+    assert shard_keys, "Shard key parameter missing in collection config"
+    # Expect 3 custom shard keys based on fixture inserting 3 shards
+    assert len(shard_keys) == 3
+
+
+@pytest.mark.asyncio
+@requires_qdrant_cluster
+async def test_shard_vector_store_aquery(
+    shard_vector_store: QdrantVectorStore,
+):
+    # Test the aquery functionality of the shard vector store
+    query = VectorStoreQuery(
+        query_embedding=[0.0, 0.0], query_str="test1", similarity_top_k=5
+    )
+    results = await shard_vector_store.aquery(query, shard_identifier=3)
+    assert results is not None
+    assert len(results.nodes) == 1
+
+
+@requires_qdrant_cluster
+def test_shard_vector_store_query(
+    shard_vector_store: QdrantVectorStore,
+):
+    # Test the query functionality of the shard vector store
+    query = VectorStoreQuery(
+        query_embedding=[0.0, 0.0], query_str="test1", similarity_top_k=5
+    )
+    results = shard_vector_store.query(query, shard_identifier=3)
+    assert results is not None
     assert len(results.nodes) == 1

@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-ollama"
-version = "0.8.1"
+version = "0.8.2"
 description = "llama-index embeddings ollama integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -35,6 +35,7 @@ license = "MIT"
 dependencies = [
     "ollama>=0.3.1",
     "llama-index-core>=0.13.0,<0.14",
+    "pytest-asyncio>=0.23.8",
 ]
 
 [tool.codespell]

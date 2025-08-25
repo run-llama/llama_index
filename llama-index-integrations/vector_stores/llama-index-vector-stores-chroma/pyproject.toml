@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-chroma"
-version = "0.5.0"
+version = "0.5.1"
 description = "llama-index vector_stores chroma integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<4.0"

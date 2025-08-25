@@ -51,20 +51,31 @@ def log_vector_store_query_result(
     logger = logger or _logger
 
     assert result.ids is not None
-    assert result.nodes is not None
+
     similarities = (
         result.similarities
         if result.similarities is not None and len(result.similarities) > 0
         else [1.0 for _ in result.ids]
     )
 
-    fmt_txts = []
-    for node_idx, node_similarity, node in zip(result.ids, similarities, result.nodes):
-        fmt_txt = f"> [Node {node_idx}] [Similarity score: \
-            {float(node_similarity):.6}] {truncate_text(node.get_content(), 100)}"
-        fmt_txts.append(fmt_txt)
-    top_k_node_text = "\n".join(fmt_txts)
-    logger.debug(f"> Top {len(result.nodes)} nodes:\n{top_k_node_text}")
+    if result.nodes is not None:
+        fmt_txts = []
+        for node_idx, node_similarity, node in zip(
+            result.ids, similarities, result.nodes
+        ):
+            fmt_txt = f"> [Node {node_idx}] [Similarity score: \
+                {float(node_similarity):.6}] {truncate_text(node.get_content(), 100)}"
+            fmt_txts.append(fmt_txt)
+        top_k_node_text = "\n".join(fmt_txts)
+        logger.debug(f"> Top {len(result.nodes)} nodes:\n{top_k_node_text}")
+    else:
+        fmt_txts = []
+        for node_idx, node_similarity in zip(result.ids, similarities):
+            fmt_txt = f"> [Node {node_idx}] [Similarity score: \
+                {float(node_similarity):.6}]"
+            fmt_txts.append(fmt_txt)
+        top_k_node_text = "\n".join(fmt_txts)
+        logger.debug(f"> Top {len(result.ids)} nodes:\n{top_k_node_text}")
 
 
 def default_format_node_batch_fn(

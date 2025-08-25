@@ -243,6 +243,7 @@ nav:
           - ./examples/embeddings/gigachat.ipynb
           - ./examples/embeddings/google_genai.ipynb
           - ./examples/embeddings/google_palm.ipynb
+          - ./examples/embeddings/heroku.ipynb
           - ./examples/embeddings/huggingface.ipynb
           - ./examples/embeddings/ibm_watsonx.ipynb
           - ./examples/embeddings/ipex_llm.ipynb
@@ -510,6 +511,7 @@ nav:
           - ./examples/objects/object_index.ipynb
       - Observability:
           - ./examples/observability/AimCallback.ipynb
+          - ./examples/observability/Deepeval.ipynb
           - ./examples/observability/HoneyHiveLlamaIndexTracer.ipynb
           - ./examples/observability/Langfuse-Instrumentation.ipynb
           - ./examples/observability/LangfuseCallbackHandler.ipynb
@@ -885,7 +887,6 @@ nav:
           - ./api_reference/callbacks/aim.md
           - ./api_reference/callbacks/argilla.md
           - ./api_reference/callbacks/arize_phoenix.md
-          - ./api_reference/callbacks/deepeval.md
           - ./api_reference/callbacks/honeyhive.md
           - ./api_reference/callbacks/index.md
           - ./api_reference/callbacks/langfuse.md
@@ -929,6 +930,7 @@ nav:
           - ./api_reference/embeddings/google.md
           - ./api_reference/embeddings/google_genai.md
           - ./api_reference/embeddings/gradient.md
+          - ./api_reference/embeddings/heroku.md
           - ./api_reference/embeddings/huggingface.md
           - ./api_reference/embeddings/huggingface_api.md
           - ./api_reference/embeddings/huggingface_openvino.md
@@ -1781,6 +1783,8 @@ nav:
       - Deprecated Terms: ./changes/deprecated_terms.md
   - Workflows:
       - ./workflows/index.md
+      - ./workflows/durable_workflows.md
+      - ./workflows/deployment.md
       - v1:
           - ./workflows/v1/index.md
           - ./workflows/v1/customizing_entry_exit_points.md
