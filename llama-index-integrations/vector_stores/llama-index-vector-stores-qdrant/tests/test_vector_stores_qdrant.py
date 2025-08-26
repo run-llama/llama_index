@@ -581,3 +581,79 @@ def test_payload_indexes_created_sync(
         missing = schema_keys - payload_keys
         extra = payload_keys - schema_keys
         assert not missing and not extra, f"Missing: {missing}, Extra: {extra}"
+
+
+@pytest.mark.asyncio
+@requires_qdrant_server
+async def test_payload_indexes_created_on_existing_collection(
+    collection_initialized_payload_indexed_vector_store: QdrantVectorStore,
+):
+    collection_info = (
+        collection_initialized_payload_indexed_vector_store._client.get_collection(
+            collection_initialized_payload_indexed_vector_store.collection_name
+        )
+    )
+    if collection_initialized_payload_indexed_vector_store._payload_indexes:
+        payload_keys = {
+            d["field_name"]
+            for d in collection_initialized_payload_indexed_vector_store._payload_indexes
+        }
+        schema_keys = set(collection_info.payload_schema)
+        missing = schema_keys - payload_keys
+        extra = payload_keys - schema_keys
+        assert not missing and not extra, f"Missing: {missing}, Extra: {extra}"
+    await collection_initialized_payload_indexed_vector_store._acreate_collection(
+        collection_initialized_payload_indexed_vector_store.collection_name, 2
+    )
+    collection_info = (
+        collection_initialized_payload_indexed_vector_store._client.get_collection(
+            collection_initialized_payload_indexed_vector_store.collection_name
+        )
+    )
+    if collection_initialized_payload_indexed_vector_store._payload_indexes:
+        payload_keys = {
+            d["field_name"]
+            for d in collection_initialized_payload_indexed_vector_store._payload_indexes
+        }
+        schema_keys = set(collection_info.payload_schema)
+        missing = schema_keys - payload_keys
+        extra = payload_keys - schema_keys
+        assert not missing and not extra, f"Missing: {missing}, Extra: {extra}"
+
+
+@requires_qdrant_server
+def test_payload_indexes_created_on_existing_collection_sync(
+    collection_initialized_payload_indexed_vector_store: QdrantVectorStore,
+):
+    collection_info = (
+        collection_initialized_payload_indexed_vector_store._client.get_collection(
+            collection_initialized_payload_indexed_vector_store.collection_name
+        )
+    )
+    if collection_initialized_payload_indexed_vector_store._payload_indexes:
+        payload_keys = {
+            d["field_name"]
+            for d in collection_initialized_payload_indexed_vector_store._payload_indexes
+        }
+        schema_keys = set(collection_info.payload_schema)
+        missing = schema_keys - payload_keys
+        extra = payload_keys - schema_keys
+        assert not missing and not extra, f"Missing: {missing}, Extra: {extra}"
+
+    collection_initialized_payload_indexed_vector_store._create_collection(
+        collection_initialized_payload_indexed_vector_store.collection_name, 2
+    )
+    collection_info = (
+        collection_initialized_payload_indexed_vector_store._client.get_collection(
+            collection_initialized_payload_indexed_vector_store.collection_name
+        )
+    )
+    if collection_initialized_payload_indexed_vector_store._payload_indexes:
+        payload_keys = {
+            d["field_name"]
+            for d in collection_initialized_payload_indexed_vector_store._payload_indexes
+        }
+        schema_keys = set(collection_info.payload_schema)
+        missing = schema_keys - payload_keys
+        extra = payload_keys - schema_keys
+        assert not missing and not extra, f"Missing: {missing}, Extra: {extra}"
