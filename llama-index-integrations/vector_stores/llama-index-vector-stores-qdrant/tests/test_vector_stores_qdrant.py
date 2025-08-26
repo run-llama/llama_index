@@ -556,9 +556,7 @@ async def test_payload_indexes_created(
         payload_keys = {
             d["field_name"] for d in payload_indexed_vector_store._payload_indexes
         }
-        print(collection_info)
         schema_keys = set(collection_info.payload_schema)
-        print(schema_keys)
         missing = schema_keys - payload_keys
         extra = payload_keys - schema_keys
         assert not missing and not extra, f"Missing: {missing}, Extra: {extra}"
@@ -575,9 +573,7 @@ def test_payload_indexes_created_sync(
         payload_keys = {
             d["field_name"] for d in payload_indexed_vector_store._payload_indexes
         }
-        print(collection_info)
         schema_keys = set(collection_info.payload_schema)
-        print(schema_keys)
         missing = schema_keys - payload_keys
         extra = payload_keys - schema_keys
         assert not missing and not extra, f"Missing: {missing}, Extra: {extra}"
