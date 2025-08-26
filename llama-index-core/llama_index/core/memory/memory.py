@@ -283,6 +283,7 @@ class Memory(BaseMemory):
         table_name: str = "llama_index_memory",
         async_database_uri: Optional[str] = None,
         async_engine: Optional[AsyncEngine] = None,
+        db_schema: Optional[str] = None,
     ) -> "Memory":
         """Initialize Memory."""
         session_id = session_id or generate_chat_store_key()
@@ -292,6 +293,7 @@ class Memory(BaseMemory):
             table_name=table_name,
             async_database_uri=async_database_uri,
             async_engine=async_engine,
+            db_schema=db_schema,
         )
 
         if chat_history is not None:
