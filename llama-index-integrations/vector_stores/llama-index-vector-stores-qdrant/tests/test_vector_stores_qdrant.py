@@ -26,6 +26,10 @@ requires_qdrant_cluster = pytest.mark.skipif(
     not os.getenv("QDRANT_CLUSTER_URL"),
     reason="Qdrant cluster not available in CI",
 )
+requires_qdrant_server = pytest.mark.skipif(
+    not os.getenv("QDRANT_URL") and not os.getenv("QDRANT_CLUSTER_URL"),
+    reason="Qdrant server not available in CI",
+)
 
 
 def test_class():
@@ -538,3 +542,42 @@ def test_shard_vector_store_query(
     results = shard_vector_store.query(query, shard_identifier=3)
     assert results is not None
     assert len(results.nodes) == 1
+
+
+@pytest.mark.asyncio
+@requires_qdrant_server
+async def test_payload_indexes_created(
+    payload_indexed_vector_store: QdrantVectorStore,
+):
+    collection_info = payload_indexed_vector_store._client.get_collection(
+        payload_indexed_vector_store.collection_name
+    )
+    if payload_indexed_vector_store._payload_indexes:
+        payload_keys = {
+            d["field_name"] for d in payload_indexed_vector_store._payload_indexes
+        }
+        print(collection_info)
+        schema_keys = set(collection_info.payload_schema)
+        print(schema_keys)
+        missing = schema_keys - payload_keys
+        extra = payload_keys - schema_keys
+        assert not missing and not extra, f"Missing: {missing}, Extra: {extra}"
+
+
+@requires_qdrant_server
+def test_payload_indexes_created_sync(
+    payload_indexed_vector_store: QdrantVectorStore,
+):
+    collection_info = payload_indexed_vector_store._client.get_collection(
+        payload_indexed_vector_store.collection_name
+    )
+    if payload_indexed_vector_store._payload_indexes:
+        payload_keys = {
+            d["field_name"] for d in payload_indexed_vector_store._payload_indexes
+        }
+        print(collection_info)
+        schema_keys = set(collection_info.payload_schema)
+        print(schema_keys)
+        missing = schema_keys - payload_keys
+        extra = payload_keys - schema_keys
+        assert not missing and not extra, f"Missing: {missing}, Extra: {extra}"
