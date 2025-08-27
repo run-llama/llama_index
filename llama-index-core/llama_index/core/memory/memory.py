@@ -806,6 +806,10 @@ class Memory(BaseMemory):
         """Add a message to the chat store and process waterfall logic if needed."""
         return asyncio_run(self.aput(message))
 
+    def put_messages(self, messages: List[ChatMessage]) -> None:
+        """Add a list of messages to the chat store and process waterfall logic if needed."""
+        return asyncio_run(self.aput_messages(messages))
+
     def set(self, messages: List[ChatMessage]) -> None:
         """Set the chat history."""
         return asyncio_run(self.aset(messages))
