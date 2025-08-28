@@ -254,7 +254,7 @@ def blocks_to_anthropic_blocks(
         elif isinstance(block, CachePoint):
             if len(anthropic_blocks) > 0:
                 anthropic_blocks[-1]["cache_control"] = CacheControlEphemeralParam(
-                    **block.model_dump(exclude="block_type")
+                    **block.cache_control.model_dump()
                 )
             else:
                 raise ValueError("Cache point must be after at least one block")

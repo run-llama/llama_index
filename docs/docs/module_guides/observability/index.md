@@ -512,6 +512,94 @@ instrument_llama_index(instrument.get_dispatcher())
 - [Evaluate Llama Index Agents](https://deepeval.com/integrations/frameworks/langchain)
 - [Tracing Llama Index Agents](https://documentation.confident-ai.com/docs/llm-tracing/integrations/llamaindex)
 
+### Maxim AI
+
+[Maxim AI](https://www.getmaxim.ai/) is an Agent Simulation, Evaluation & Observability platform that helps developers build, monitor, and improve their LLM applications. The Maxim integration with LlamaIndex provides comprehensive tracing, monitoring, and evaluation capabilities for your RAG systems, agents, and other LLM workflows.
+
+#### Usage Pattern
+
+Install the required packages:
+
+```bash
+pip install maxim-py
+```
+
+Set up your environment variables:
+
+```python
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Get environment variables
+MAXIM_API_KEY = os.getenv("MAXIM_API_KEY")
+MAXIM_LOG_REPO_ID = os.getenv("MAXIM_LOG_REPO_ID")
+
+# Verify required environment variables are set
+if not MAXIM_API_KEY:
+    raise ValueError("MAXIM_API_KEY environment variable is required")
+if not MAXIM_LOG_REPO_ID:
+    raise ValueError("MAXIM_LOG_REPO_ID environment variable is required")
+```
+
+Initialize Maxim and instrument LlamaIndex:
+
+```python
+from maxim import Config, Maxim
+from maxim.logger import LoggerConfig
+from maxim.logger.llamaindex import instrument_llamaindex
+
+# Initialize Maxim logger
+maxim = Maxim(Config(api_key=os.getenv("MAXIM_API_KEY")))
+logger = maxim.logger(LoggerConfig(id=os.getenv("MAXIM_LOG_REPO_ID")))
+
+# Instrument LlamaIndex with Maxim observability
+# Set debug=True to see detailed logs during development
+instrument_llamaindex(logger, debug=True)
+
+print("✅ Maxim instrumentation enabled for LlamaIndex")
+```
+
+Now your LlamaIndex applications will automatically send traces to Maxim:
+
+```python
+from llama_index.core.agent import FunctionAgent
+from llama_index.core.tools import FunctionTool
+from llama_index.llms.openai import OpenAI
+
+
+# Define tools and create agent
+def add_numbers(a: float, b: float) -> float:
+    """Add two numbers together."""
+    return a + b
+
+
+add_tool = FunctionTool.from_defaults(fn=add_numbers)
+llm = OpenAI(model="gpt-4o-mini", temperature=0)
+
+agent = FunctionAgent(
+    tools=[add_tool],
+    llm=llm,
+    verbose=True,
+    system_prompt="You are a helpful calculator assistant.",
+)
+
+# This will be automatically logged by Maxim instrumentation
+import asyncio
+
+response = await agent.run("What is 15 + 25?")
+print(f"Response: {response}")
+```
+
+#### Guides
+
+- [Maxim Instrumentation Cookbook](../../examples/observability/Maxim-Instrumentation.ipynb)
+- [Maxim AI Documentation](https://www.getmaxim.ai/docs/sdk/python/integrations/llamaindex/llamaindex)
+
+![tracing](https://cdn.getmaxim.ai/public/images/llamaindex.gif)
+
 
 ## Other Partner `One-Click` Integrations (Legacy Modules)
 

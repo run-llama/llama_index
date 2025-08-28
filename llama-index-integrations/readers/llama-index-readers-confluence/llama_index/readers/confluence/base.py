@@ -3,6 +3,7 @@
 import logging
 import os
 import uuid
+import tempfile
 from typing import Callable, Dict, List, Optional
 from urllib.parse import unquote
 
@@ -567,22 +568,35 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
             attachment_texts = []
         if FileType.HTML in self.custom_parsers and self.custom_folder:
             html_text = page["body"]["export_view"]["value"]
-            # save in file
-            file_location = os.path.join(self.custom_folder, "output.html")
-            with open(file_location, "w", encoding="utf-8") as f:
+            # save in temporary file
+            file_location = None
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                suffix=".html",
+                encoding="utf-8",
+                dir=self.custom_folder,
+                delete=False,
+            ) as f:
                 f.write(html_text)
-            text = (
-                page["title"]
-                + "\n"
-                + "\n".join(
-                    doc.text
-                    for doc in self.custom_parsers[FileType.HTML].load_data(
-                        file_path=file_location
+                file_location = f.name
+            try:
+                text = (
+                    page["title"]
+                    + "\n"
+                    + "\n".join(
+                        doc.text
+                        for doc in self.custom_parsers[FileType.HTML].load_data(
+                            file_path=file_location
+                        )
                     )
+                    + "\n"
+                    + "\n".join(attachment_texts)
                 )
-                + "\n"
-                + "\n".join(attachment_texts)
-            )
+            finally:
+                try:
+                    os.unlink(file_location)
+                except OSError:
+                    pass
         else:
             text = text_maker.handle(page["body"]["export_view"]["value"]) + "".join(
                 attachment_texts
