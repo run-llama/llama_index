@@ -629,42 +629,6 @@ set_global_handler("langfuse")
 
 ![langfuse-tracing](https://static.langfuse.com/llamaindex-langfuse-docs.gif)
 
-### Weights and Biases Prompts
-
-Prompts allows users to log/trace/inspect the execution flow of LlamaIndex during index construction and querying. It also allows users to version-control their indices.
-
-#### Usage Pattern
-
-```python
-from llama_index.core import set_global_handler
-
-set_global_handler("wandb", run_args={"project": "llamaindex"})
-
-# NOTE: No need to do the following
-from llama_index.callbacks.wandb import WandbCallbackHandler
-from llama_index.core.callbacks import CallbackManager
-from llama_index.core import Settings
-
-# wandb_callback = WandbCallbackHandler(run_args={"project": "llamaindex"})
-# Settings.callback_manager = CallbackManager([wandb_callback])
-
-# access additional methods on handler to persist index + load index
-import llama_index.core
-
-# persist index
-llama_index.core.global_handler.persist_index(graph, index_name="my_index")
-# load storage context
-storage_context = llama_index.core.global_handler.load_storage_context(
-    artifact_url="ayut/llamaindex/my_index:v0"
-)
-```
-
-![](../../_static/integrations/wandb.png)
-
-#### Guides
-
-- [Wandb Callback Handler](../../examples/callbacks/WandbCallbackHandler.ipynb)
-
 ### OpenInference
 
 [OpenInference](https://github.com/Arize-ai/open-inference-spec) is an open standard for capturing and storing AI model inferences. It enables experimentation, visualization, and evaluation of LLM applications using LLM observability solutions such as [Phoenix](https://github.com/Arize-ai/phoenix).
