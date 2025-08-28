@@ -1002,7 +1002,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         if not self._payload_indexes:
             return
         for payload_index in self._payload_indexes:
-            self._client.create_payload_index(
+            self._aclient.create_payload_index(
                 collection_name=self.collection_name,
                 field_name=payload_index["field_name"],
                 field_schema=payload_index["field_schema"],
