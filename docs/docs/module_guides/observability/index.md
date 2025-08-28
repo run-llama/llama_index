@@ -154,20 +154,20 @@ llama_index.core.set_global_handler(
 
 ### Weights and Biases (W&B) Weave
 
-[W&B Weave](https://weave-docs.wandb.ai/) is a framework for tracking, iterating on, evaluating, and improving LLM applications. It is designed for scalability and flexibility and supports every stage of an LLM application development workflow.
+[W&B Weave](https://weave-docs.wandb.ai/) is a framework for tracking, experimenting with, evaluating, deploying, and improving LLM applications. Designed for scalability and flexibility, Weave supports every stage of your application development workflow.
 
 #### Usage Pattern
 
 The integration leverages LlamaIndex's [`instrumentation` module](./instrumentation.md) to register spans/events as Weave calls. By default, Weave automatically patches and tracks calls to [common LLM libraries and frameworks](https://weave-docs.wandb.ai/guides/integrations/).
 
-First install the weave library:
+Install the `weave` library:
 
-```python
+```bash
 pip install weave
 ```
 Get a W&B API Key:
 
-If you don't already have a W&B account create one by visiting [https://wandb.ai](https://wandb.ai) and copy your API key from [https://wandb.ai/authorize](https://wandb.ai/authorize). When prompted to authenticate, put in the API key.
+If you don't already have a W&B account, create one by visiting [https://wandb.ai](https://wandb.ai) and copy your API key from [https://wandb.ai/authorize](https://wandb.ai/authorize). When prompted to authenticate, enter the API key.
 
 ```python
 import weave
@@ -193,6 +193,8 @@ You can also control the patching behavior using the `autopatch_settings` argume
 ```python
 weave.init(..., autopatch_settings={"openai": {"enabled": False}})
 ```
+
+No additional LlamaIndex configuration is required; tracing begins once `weave.init()` is called.
 
 #### Guides
 
