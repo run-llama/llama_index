@@ -949,7 +949,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 )
 
             if self._payload_indexes:
-                self._create_payload_indexes()
+                await self._acreate_payload_indexes()
         except (RpcError, ValueError, UnexpectedResponse) as exc:
             if "already exists" not in str(exc):
                 raise exc  # noqa: TRY201
@@ -974,7 +974,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                         )
                         continue
             if self._payload_indexes:
-                self._create_payload_indexes()
+                await self._acreate_payload_indexes()
 
         self._collection_initialized = True
 
@@ -987,6 +987,17 @@ class QdrantVectorStore(BasePydanticVectorStore):
         return await self._aclient.collection_exists(collection_name)
 
     def _create_payload_indexes(self) -> None:
+        """Create payload indexes in Qdrant collection."""
+        if not self._payload_indexes:
+            return
+        for payload_index in self._payload_indexes:
+            self._client.create_payload_index(
+                collection_name=self.collection_name,
+                field_name=payload_index["field_name"],
+                field_schema=payload_index["field_schema"],
+            )
+
+    async def _acreate_payload_indexes(self) -> None:
         """Create payload indexes in Qdrant collection."""
         if not self._payload_indexes:
             return
