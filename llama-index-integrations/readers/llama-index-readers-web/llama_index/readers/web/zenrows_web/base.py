@@ -266,7 +266,7 @@ class ZenRowsWebReader(BasePydanticReader):
     ) -> requests.Response:
         """Make request to ZenRows API."""
         params, request_headers = self._prepare_request_params(url, extra_params)
-        
+
         response = requests.get(
             self._base_url,
             params=params,
@@ -320,7 +320,7 @@ class ZenRowsWebReader(BasePydanticReader):
         screenshot_params = ["screenshot", "screenshot_fullpage", "screenshot_selector"]
         if any(getattr(self, param, None) for param in screenshot_params):
             return response.content
-        
+
         # For all other responses, return text
         return response.text
 
@@ -366,7 +366,7 @@ class ZenRowsWebReader(BasePydanticReader):
                     "status": "failed",
                 }
                 error_document = Document(
-                    text=f"Error scraping {url}: {str(e)}",
+                    text=f"Error scraping {url}: {e!s}",
                     metadata=error_metadata,
                 )
                 documents.append(error_document)

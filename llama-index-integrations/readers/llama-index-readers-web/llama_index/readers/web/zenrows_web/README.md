@@ -5,7 +5,7 @@ The ZenRows Web Reader allows you to scrape web pages using the [ZenRows Univers
 ## Features
 
 - **JavaScript Rendering**: Handle SPAs and dynamic content with headless browser rendering
-- **Premium Proxies**: Bypass anti-bot protection with 55M+ residential IPs from 190+ countries  
+- **Premium Proxies**: Bypass anti-bot protection with 55M+ residential IPs from 190+ countries
 - **Session Management**: Maintain the same IP across multiple requests
 - **Advanced Data Extraction**: Use CSS selectors or automatic parsing to extract specific data
 - **Multiple Output Formats**: Get results in HTML, Markdown, Text, or PDF format
@@ -16,11 +16,13 @@ The ZenRows Web Reader allows you to scrape web pages using the [ZenRows Univers
 ## Installation
 
 Installation with `pip`
+
 ```bash
 pip install llama-index-readers-web
 ```
 
 Installation with `uv`
+
 ```bash
 uv add llama-index-readers-web
 ```
@@ -45,8 +47,7 @@ from llama_index.readers.web import ZenRowsWebReader
 
 # Initialize the reader
 reader = ZenRowsWebReader(
-    api_key=os.getenv("ZENROWS_API_KEY"),
-    response_type="markdown"
+    api_key=os.getenv("ZENROWS_API_KEY"), response_type="markdown"
 )
 
 # Scrape a single URL
@@ -61,11 +62,13 @@ For websites with strong anti-bot protection (like Cloudflare, DataDome, etc.):
 ```python
 reader = ZenRowsWebReader(
     api_key=os.getenv("ZENROWS_API_KEY"),
-    js_render=True,       # Enable JavaScript rendering
-    premium_proxy=True    # Use residential proxies
+    js_render=True,  # Enable JavaScript rendering
+    premium_proxy=True,  # Use residential proxies
 )
 
-documents = reader.load_data(["https://www.scrapingcourse.com/antibot-challenge"])
+documents = reader.load_data(
+    ["https://www.scrapingcourse.com/antibot-challenge"]
+)
 ```
 
 ### Scraping with JavaScript Rendering
@@ -75,10 +78,12 @@ For modern websites that use JavaScript frameworks:
 ```python
 reader = ZenRowsWebReader(
     api_key=os.getenv("ZENROWS_API_KEY"),
-    js_render=True  # Enable JavaScript rendering
+    js_render=True,  # Enable JavaScript rendering
 )
 
-documents = reader.load_data(["https://www.scrapingcourse.com/javascript-rendering"])
+documents = reader.load_data(
+    ["https://www.scrapingcourse.com/javascript-rendering"]
+)
 ```
 
 ### Premium Proxy with Geo-targeting
@@ -89,7 +94,7 @@ Access geo-restricted content:
 reader = ZenRowsWebReader(
     api_key=os.getenv("ZENROWS_API_KEY"),
     premium_proxy=True,  # Use residential proxies
-    proxy_country="us"  # Optional: specify country
+    proxy_country="us",  # Optional: specify country
 )
 
 documents = reader.load_data(["https://httpbin.io/ip"])
@@ -102,14 +107,12 @@ Get content in different formats:
 ```python
 # Get content as Markdown
 reader = ZenRowsWebReader(
-    api_key=os.getenv("ZENROWS_API_KEY"),
-    response_type="markdown"
+    api_key=os.getenv("ZENROWS_API_KEY"), response_type="markdown"
 )
 
 # Get content as plain text
 reader = ZenRowsWebReader(
-    api_key=os.getenv("ZENROWS_API_KEY"),
-    response_type="text"
+    api_key=os.getenv("ZENROWS_API_KEY"), response_type="text"
 )
 ```
 
@@ -117,27 +120,27 @@ reader = ZenRowsWebReader(
 
 ### Core Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `api_key` | str | required | Your ZenRows API key |
-| `js_render` | bool | False | Enable JavaScript rendering with headless browser |
-| `premium_proxy` | bool | False | Use premium residential proxies |
-| `js_instructions` | str | None | Execute custom JavaScript on the page |
-| `proxy_country` | str | None | Specify proxy country |
-| `session_id` | int | None | Session ID for IP consistency |
+| Parameter         | Type | Default  | Description                                       |
+| ----------------- | ---- | -------- | ------------------------------------------------- |
+| `api_key`         | str  | required | Your ZenRows API key                              |
+| `js_render`       | bool | False    | Enable JavaScript rendering with headless browser |
+| `premium_proxy`   | bool | False    | Use premium residential proxies                   |
+| `js_instructions` | str  | None     | Execute custom JavaScript on the page             |
+| `proxy_country`   | str  | None     | Specify proxy country                             |
+| `session_id`      | int  | None     | Session ID for IP consistency                     |
 
 ### Advanced Parameters
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `custom_headers` | dict | None | Include custom headers in your request to mimic browser behavior |
-| `wait_for` | str | None | CSS selector to wait for |
-| `wait` | int | None | Fixed wait time in milliseconds |
-| `css_extractor` | dict | None | CSS selectors for data extraction |
-| `autoparse` | bool | False | Enable automatic parsing |
-| `response_type` | str | None | Output format (markdown/plaintext/pdf) |
-| `screenshot` | bool | False | Capture screenshot |
-| `screenshot_fullpage` | bool | False | Capture full page screenshot |
+| Parameter             | Type | Default | Description                                                      |
+| --------------------- | ---- | ------- | ---------------------------------------------------------------- |
+| `custom_headers`      | dict | None    | Include custom headers in your request to mimic browser behavior |
+| `wait_for`            | str  | None    | CSS selector to wait for                                         |
+| `wait`                | int  | None    | Fixed wait time in milliseconds                                  |
+| `css_extractor`       | dict | None    | CSS selectors for data extraction                                |
+| `autoparse`           | bool | False   | Enable automatic parsing                                         |
+| `response_type`       | str  | None    | Output format (markdown/plaintext/pdf)                           |
+| `screenshot`          | bool | False   | Capture screenshot                                               |
+| `screenshot_fullpage` | bool | False   | Capture full page screenshot                                     |
 
 ## Integration with LlamaIndex
 
@@ -150,15 +153,15 @@ from llama_index.readers.web import ZenRowsWebReader
 # Scrape multiple pages
 reader = ZenRowsWebReader(
     api_key=os.getenv("ZENROWS_API_KEY"),
-    js_render=True,       
+    js_render=True,
     premium_proxy=True,
-    response_type="markdown"
+    response_type="markdown",
 )
 
 urls = [
     "https://docs.example.com/page1",
     "https://docs.example.com/page2",
-    "https://docs.example.com/page3"
+    "https://docs.example.com/page3",
 ]
 
 documents = reader.load_data(urls)
@@ -181,9 +184,7 @@ from llama_index.readers.file import PDFReader
 
 # Scrape web content
 web_reader = ZenRowsWebReader(
-    api_key=os.getenv("ZENROWS_API_KEY"),
-    js_render=True,       
-    premium_proxy=True    
+    api_key=os.getenv("ZENROWS_API_KEY"), js_render=True, premium_proxy=True
 )
 web_docs = web_reader.load_data(["https://company.com/docs"])
 
