@@ -1793,7 +1793,6 @@ nav:
           - ./workflows/v1/retry_steps.md
           - ./workflows/v1/resources.md
           - ./workflows/v1/stepwise.md
-          - ./workflows/v1/deployment.md
       - v2:
           - ./workflows/v2/index.md
           - ./workflows/v2
