@@ -152,6 +152,52 @@ llama_index.core.set_global_handler(
 
 ![](../../_static/integrations/arize_phoenix.png)
 
+### Weights and Biases (W&B) Weave
+
+[W&B Weave](https://weave-docs.wandb.ai/) is a framework for tracking, iterating on, evaluating, and improving LLM applications. It is designed for scalability and flexibility and supports every stage of an LLM application development workflow.
+
+#### Usage Pattern
+
+The integration leverages LlamaIndex's [`instrumentation` module](./instrumentation.md) to register spans/events as Weave calls. By default, Weave automatically patches and tracks calls to [common LLM libraries and frameworks](https://weave-docs.wandb.ai/guides/integrations/).
+
+First install the weave library:
+
+```python
+pip install weave
+```
+Get a W&B API Key:
+
+If you don't already have a W&B account create one by visiting [https://wandb.ai](https://wandb.ai) and copy your API key from [https://wandb.ai/authorize](https://wandb.ai/authorize). When prompted to authenticate, put in the API key.
+
+```python
+import weave
+from llama_index.llms.openai import OpenAI
+
+# Initialize Weave with your project name
+weave.init("llamaindex-demo")
+
+# All LlamaIndex operations are now automatically traced
+llm = OpenAI(model="gpt-4o-mini")
+response = llm.complete("William Shakespeare is ")
+print(response)
+```
+
+![weave quickstart](../../_static/integrations/weave/weave_quickstart.png)
+
+Traces include execution time, token usage, cost, inputs/outputs, errors, nested operations, and streaming data. If you are new to Weave tracing, learn more about how to navigate it [here](https://weave-docs.wandb.ai/guides/tracking/trace-tree).
+
+If you have a custom function which is not traced, decorate it with [`@weave.op()`](https://weave-docs.wandb.ai/guides/tracking/ops).
+
+You can also control the patching behavior using the `autopatch_settings` argument in `weave.init`. For example if you don't want to trace a library/framework you can turn it off like this:
+
+```python
+weave.init(..., autopatch_settings={"openai": {"enabled": False}})
+```
+
+#### Guides
+
+The integration with LlamaIndex supports almost every component of LlamaIndex -- streaming/async, completions, chat, tool calling, agents, workflows, and RAG support. Learn more about them in the official [W&B Weave × LlamaIndex](https://weave-docs.wandb.ai/guides/integrations/llamaindex) documentation.
+
 
 ### MLflow
 
