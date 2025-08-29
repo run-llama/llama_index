@@ -7,11 +7,8 @@ from llama_index.core.bridge.pydantic import PrivateAttr
 
 import random
 import numpy as np
-from tritonclient.http import (
-    InferenceServerClient,
-    InferInput,
-    InferRequestedOutput,
-)
+import tritonclient.http as triton
+import tritonclient.http.aio as async_triton
 
 DEFAULT_INPUT_TENSOR_NAME = "INPUT_TEXT"
 DEFAULT_OUTPUT_TENSOR_NAME = "OUTPUT_EMBEDDINGS"
@@ -49,9 +46,10 @@ class NvidiaTritonEmbedding(BaseEmbedding):
 
     """
 
-    _client: InferenceServerClient = PrivateAttr()
     _input_tensor_name: str = PrivateAttr()
     _output_tensor_name: str = PrivateAttr()
+    _url: str = PrivateAttr()
+    _client_kwargs: Dict[str, Any] = PrivateAttr()
 
     def __init__(
         self,
@@ -71,10 +69,8 @@ class NvidiaTritonEmbedding(BaseEmbedding):
             **kwargs,
         )
 
-        self._client = InferenceServerClient(
-            url=server_url,
-            **client_kwargs or {},
-        )
+        self._url = server_url
+        self._client_kwargs = client_kwargs or {}
         self._input_tensor_name = input_tensor_name
         self._output_tensor_name = output_tensor_name
 
@@ -110,17 +106,24 @@ class NvidiaTritonEmbedding(BaseEmbedding):
 
     def get_general_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Get Triton embedding."""
-        input_data = InferInput(self._input_tensor_name, [len(texts)], "BYTES")
+        input_data = triton.InferInput(self._input_tensor_name, [len(texts)], "BYTES")
         input_data.set_data_from_numpy(np.array(texts, dtype=np.object_))
-        output_data = InferRequestedOutput(self._output_tensor_name)
+        output_data = triton.InferRequestedOutput(self._output_tensor_name)
         request_id = str(random.randint(1, 9999999))  # nosec
 
-        response = self._client.infer(
+        client = triton.InferenceServerClient(
+            url=self._url,
+            **self._client_kwargs,
+        )
+
+        response = client.infer(
             model_name=self.model_name,
             inputs=[input_data],
             outputs=[output_data],
             request_id=request_id,
         )
+
+        client.close()
 
         embeddings = response.as_numpy(self._output_tensor_name)
         if embeddings is None:
@@ -129,4 +132,28 @@ class NvidiaTritonEmbedding(BaseEmbedding):
 
     async def aget_general_text_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Asynchronously get Triton embedding."""
-        return self.get_general_text_embeddings(texts)
+        input_data = async_triton.InferInput(
+            self._input_tensor_name, [len(texts)], "BYTES"
+        )
+        input_data.set_data_from_numpy(np.array(texts, dtype=np.object_))
+        output_data = async_triton.InferRequestedOutput(self._output_tensor_name)
+        request_id = str(random.randint(1, 9999999))  # nosec
+
+        aclient = async_triton.InferenceServerClient(
+            url=self._url,
+            **self._client_kwargs,
+        )
+
+        response = await aclient.infer(
+            model_name=self.model_name,
+            inputs=[input_data],
+            outputs=[output_data],
+            request_id=request_id,
+        )
+
+        await aclient.close()
+
+        embeddings = response.as_numpy(self._output_tensor_name)
+        if embeddings is None:
+            raise ValueError("No embeddings returned from Triton server.")
+        return [e.tolist() for e in embeddings]
