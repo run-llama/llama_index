@@ -653,3 +653,44 @@ def test_payload_indexes_created_on_existing_collection_sync(
         missing = schema_keys - payload_keys
         extra = payload_keys - schema_keys
         assert not missing and not extra, f"Missing: {missing}, Extra: {extra}"
+
+
+@requires_qdrant_cluster
+@pytest.mark.asyncio
+async def test_arecreate_shard_keys(
+    shard_vector_store: QdrantVectorStore,
+):
+    await shard_vector_store._acreate_shard_keys()
+
+
+@requires_qdrant_cluster
+def test_recreate_shard_keys(
+    shard_vector_store: QdrantVectorStore,
+):
+    shard_vector_store._create_shard_keys()
+
+
+@pytest.mark.asyncio
+async def test_acreate_shard_keys_returns_early_when_no_shard_keys(
+    vector_store: QdrantVectorStore,
+):
+    await vector_store._acreate_shard_keys()
+
+
+def test_create_shard_keys_returns_early_when_no_shard_keys(
+    vector_store: QdrantVectorStore,
+):
+    vector_store._create_shard_keys()
+
+
+@pytest.mark.asyncio
+async def test_acreate_payload_indexes_returns_early_when_no_payload_indexes(
+    vector_store: QdrantVectorStore,
+):
+    await vector_store._acreate_payload_indexes()
+
+
+def test_create_payload_indexes_returns_early_when_no_payload_indexes(
+    vector_store: QdrantVectorStore,
+):
+    vector_store._create_payload_indexes()
