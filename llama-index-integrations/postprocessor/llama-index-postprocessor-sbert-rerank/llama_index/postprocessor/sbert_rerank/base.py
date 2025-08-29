@@ -29,6 +29,7 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         top_n (int): Number of nodes to return sorted by score. Defaults to 2.
         keep_retrieval_score (bool, optional): Whether to keep the retrieval score in metadata. Defaults to False.
         cross_encoder_kwargs (dict, optional): Additional keyword arguments for CrossEncoder initialization. Defaults to None.
+
     """
 
     model: str = Field(description="Sentence transformer model name.")
