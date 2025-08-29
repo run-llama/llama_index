@@ -9,6 +9,7 @@ from llama_index.agent.legacy.openai.base import OpenAIAgent
 ```
 """
 
+import deprecated
 from typing import (
     Any,
     Dict,
@@ -34,6 +35,14 @@ from llama_index.llms.openai.utils import OpenAIToolCall
 DEFAULT_MAX_FUNCTION_CALLS = 5
 
 
+@deprecated.deprecated(
+    reason=(
+        "OpenAIAgent has been deprecated and is not maintained.\n\n"
+        "`FunctionAgent` is the recommended replacement.\n\n"
+        "See the docs for more information on updated agent usage: https://docs.llamaindex.ai/en/stable/understanding/agent/"
+    ),
+    action="once",
+)
 class OpenAIAgent(AgentRunner):
     """
     OpenAI agent.

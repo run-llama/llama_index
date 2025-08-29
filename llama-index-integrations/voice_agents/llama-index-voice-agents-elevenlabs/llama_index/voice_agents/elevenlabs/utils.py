@@ -121,3 +121,11 @@ def callback_agent_message_correction(
 
 def callback_latency_measurement(latencies: List[int], latency: int) -> None:
     latencies.append(latency)
+
+
+def get_messages_from_chat(chat: Dict[int, List[ChatMessage]]) -> List[ChatMessage]:
+    messages: List[ChatMessage] = []
+    for msgs in chat.values():
+        for msg in msgs:
+            messages.append(msg)
+    return messages

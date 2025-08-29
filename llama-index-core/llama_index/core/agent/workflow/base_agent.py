@@ -88,7 +88,7 @@ class BaseWorkflowAgent(
     )
     initial_state: Dict[str, Any] = Field(
         default_factory=dict,
-        description="The initial state of the agent, can be used by accessed under `await ctx.get('state')`",
+        description="The initial state of the agent, can be used by accessed under `await ctx.store.get('state')`",
     )
     state_prompt: Union[str, BasePromptTemplate] = Field(
         default=DEFAULT_STATE_PROMPT,
@@ -218,17 +218,17 @@ class BaseWorkflowAgent(
 
     async def _init_context(self, ctx: Context, ev: AgentWorkflowStartEvent) -> None:
         """Initialize the context once, if needed."""
-        if not await ctx.get("memory", default=None):
+        if not await ctx.store.get("memory", default=None):
             default_memory = ev.get("memory", default=None)
             default_memory = default_memory or ChatMemoryBuffer.from_defaults(
                 llm=self.llm or Settings.llm
             )
-            await ctx.set("memory", default_memory)
-        if not await ctx.get("state", default=None):
-            await ctx.set("state", self.initial_state.copy())
+            await ctx.store.set("memory", default_memory)
+        if not await ctx.store.get("state", default=None):
+            await ctx.store.set("state", self.initial_state.copy())
 
         # always set to false initially
-        await ctx.set("formatted_input_with_state", False)
+        await ctx.store.set("formatted_input_with_state", False)
 
     async def _call_tool(
         self,
@@ -251,7 +251,7 @@ class BaseWorkflowAgent(
         except Exception as e:
             tool_output = ToolOutput(
                 content=str(e),
-                tool_name=tool.metadata.name,
+                tool_name=tool.metadata.get_name(),
                 raw_input=tool_input,
                 raw_output=str(e),
                 is_error=True,
@@ -272,7 +272,7 @@ class BaseWorkflowAgent(
             user_msg = ChatMessage(role="user", content=user_msg)
 
         # Add messages to memory
-        memory: BaseMemory = await ctx.get("memory")
+        memory: BaseMemory = await ctx.store.get("memory")
 
         # First set chat history if it exists
         if chat_history:
@@ -288,7 +288,7 @@ class BaseWorkflowAgent(
                     if isinstance(block, TextBlock)
                 ]
             )
-            await ctx.set("user_msg_str", content_str)
+            await ctx.store.set("user_msg_str", content_str)
         elif chat_history:
             # If no user message, use the last message from chat history as user_msg_str
             content_str = "\n".join(
@@ -298,7 +298,7 @@ class BaseWorkflowAgent(
                     if isinstance(block, TextBlock)
                 ]
             )
-            await ctx.set("user_msg_str", content_str)
+            await ctx.store.set("user_msg_str", content_str)
         else:
             raise ValueError("Must provide either user_msg or chat_history")
 
@@ -319,8 +319,8 @@ class BaseWorkflowAgent(
                 *llm_input,
             ]
 
-        state = await ctx.get("state", default=None)
-        formatted_input_with_state = await ctx.get(
+        state = await ctx.store.get("state", default=None)
+        formatted_input_with_state = await ctx.store.get(
             "formatted_input_with_state", default=False
         )
         if state and not formatted_input_with_state:
@@ -329,7 +329,7 @@ class BaseWorkflowAgent(
                 if isinstance(block, TextBlock):
                     block.text = self.state_prompt.format(state=state, msg=block.text)
                     break
-            await ctx.set("formatted_input_with_state", True)
+            await ctx.store.set("formatted_input_with_state", True)
 
         return AgentSetup(
             input=llm_input,
@@ -339,8 +339,8 @@ class BaseWorkflowAgent(
     @step
     async def run_agent_step(self, ctx: Context, ev: AgentSetup) -> AgentOutput:
         """Run the agent."""
-        memory: BaseMemory = await ctx.get("memory")
-        user_msg_str = await ctx.get("user_msg_str")
+        memory: BaseMemory = await ctx.store.get("memory")
+        user_msg_str = await ctx.store.get("user_msg_str")
         tools = await self.get_tools(user_msg_str or "")
 
         agent_output = await self.take_step(
@@ -358,18 +358,18 @@ class BaseWorkflowAgent(
         self, ctx: Context, ev: AgentOutput
     ) -> Union[StopEvent, ToolCall, None]:
         if not ev.tool_calls:
-            memory: BaseMemory = await ctx.get("memory")
+            memory: BaseMemory = await ctx.store.get("memory")
             output = await self.finalize(ctx, ev, memory)
 
-            cur_tool_calls: List[ToolCallResult] = await ctx.get(
+            cur_tool_calls: List[ToolCallResult] = await ctx.store.get(
                 "current_tool_calls", default=[]
             )
             output.tool_calls.extend(cur_tool_calls)  # type: ignore
-            await ctx.set("current_tool_calls", [])
+            await ctx.store.set("current_tool_calls", [])
 
             return StopEvent(result=output)
 
-        await ctx.set("num_tool_calls", len(ev.tool_calls))
+        await ctx.store.set("num_tool_calls", len(ev.tool_calls))
 
         for tool_call in ev.tool_calls:
             ctx.send_event(
@@ -424,7 +424,7 @@ class BaseWorkflowAgent(
         self, ctx: Context, ev: ToolCallResult
     ) -> Union[AgentInput, StopEvent, None]:
         """Aggregate tool results and return the next agent input."""
-        num_tool_calls = await ctx.get("num_tool_calls", default=0)
+        num_tool_calls = await ctx.store.get("num_tool_calls", default=0)
         if num_tool_calls == 0:
             raise ValueError("No tool calls found, cannot aggregate results.")
 
@@ -434,14 +434,14 @@ class BaseWorkflowAgent(
         if not tool_call_results:
             return None
 
-        memory: BaseMemory = await ctx.get("memory")
+        memory: BaseMemory = await ctx.store.get("memory")
 
         # track tool calls made during a .run() call
-        cur_tool_calls: List[ToolCallResult] = await ctx.get(
+        cur_tool_calls: List[ToolCallResult] = await ctx.store.get(
             "current_tool_calls", default=[]
         )
         cur_tool_calls.extend(tool_call_results)
-        await ctx.set("current_tool_calls", cur_tool_calls)
+        await ctx.store.set("current_tool_calls", cur_tool_calls)
 
         await self.handle_tool_call_results(ctx, tool_call_results, memory)
 
@@ -474,7 +474,7 @@ class BaseWorkflowAgent(
             )
             result = await self.finalize(ctx, result, memory)
 
-        user_msg_str = await ctx.get("user_msg_str")
+        user_msg_str = await ctx.store.get("user_msg_str")
         input_messages = await memory.aget(input=user_msg_str)
 
         return AgentInput(input=input_messages, current_agent_name=self.name)
