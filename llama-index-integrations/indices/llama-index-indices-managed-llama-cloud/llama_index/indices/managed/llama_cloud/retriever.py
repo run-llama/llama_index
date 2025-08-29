@@ -1,5 +1,6 @@
 from typing import Any, List, Optional
 
+from deprecated import deprecated
 import httpx
 from llama_cloud import (
     TextNodeWithScore,
@@ -18,6 +19,7 @@ from llama_index.indices.managed.llama_cloud.api_utils import (
     page_figure_nodes_to_node_with_score,
     apage_screenshot_nodes_to_node_with_score,
     apage_figure_nodes_to_node_with_score,
+    DEPRECATION_REASON,
 )
 import logging
 
@@ -25,6 +27,10 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+@deprecated(
+    reason=DEPRECATION_REASON,
+    version="0.9.1",
+)
 class LlamaCloudRetriever(BaseRetriever):
     def __init__(
         self,
@@ -210,7 +216,7 @@ class LlamaCloudRetriever(BaseRetriever):
         if self._retrieve_page_figure_nodes:
             result_nodes.extend(
                 await apage_figure_nodes_to_node_with_score(
-                    self._aclient, results.image_nodes, self.project.id
+                    self._aclient, results.page_figure_nodes, self.project.id
                 )
             )
 

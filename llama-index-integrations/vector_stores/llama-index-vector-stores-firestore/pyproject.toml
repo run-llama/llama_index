@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-store-firestore"
-version = "0.3.0"
+version = "0.4.0"
 description = "llama-index vector_store firestore integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -35,7 +35,7 @@ license = "MIT"
 dependencies = [
     "google-cloud-firestore>=2.16.0,<3.0.0",
     "more_itertools>=10.2.0,<11.0.0",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

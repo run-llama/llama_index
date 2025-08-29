@@ -127,6 +127,14 @@ class GoogleGenAI(FunctionCallingLLM):
     is_function_calling_model: bool = Field(
         default=True, description="Whether the model is a function calling model."
     )
+    cached_content: Optional[str] = Field(
+        default=None,
+        description="Cached content to use for the model.",
+    )
+    built_in_tool: Optional[types.Tool] = Field(
+        default=None,
+        description="Google GenAI tool to use for the model to augment responses.",
+    )
 
     _max_tokens: int = PrivateAttr()
     _client: google.genai.Client = PrivateAttr()
@@ -147,6 +155,8 @@ class GoogleGenAI(FunctionCallingLLM):
         generation_config: Optional[types.GenerateContentConfig] = None,
         callback_manager: Optional[CallbackManager] = None,
         is_function_calling_model: bool = True,
+        cached_content: Optional[str] = None,
+        built_in_tool: Optional[types.Tool] = None,
         **kwargs: Any,
     ):
         # API keys are optional. The API can be authorised via OAuth (detected
@@ -193,6 +203,8 @@ class GoogleGenAI(FunctionCallingLLM):
             callback_manager=callback_manager,
             is_function_calling_model=is_function_calling_model,
             max_retries=max_retries,
+            cached_content=cached_content,
+            built_in_tool=built_in_tool,
             **kwargs,
         )
 
@@ -201,14 +213,31 @@ class GoogleGenAI(FunctionCallingLLM):
         self._model_meta = model_meta
         # store this as a dict and not as a pydantic model so we can more easily
         # merge it later
-        self._generation_config = (
-            generation_config.model_dump()
-            if generation_config
-            else types.GenerateContentConfig(
-                temperature=temperature,
-                max_output_tokens=max_tokens,
+        if generation_config:
+            self._generation_config = generation_config.model_dump()
+            if cached_content:
+                self._generation_config.setdefault("cached_content", cached_content)
+            if built_in_tool is not None:
+                if self._generation_config.get("tools") is None:
+                    self._generation_config["tools"] = []
+                if isinstance(self._generation_config["tools"], list):
+                    if len(self._generation_config["tools"]) > 0:
+                        raise ValueError(
+                            "Providing multiple Google GenAI tools or mixing with custom tools is not supported."
+                        )
+                self._generation_config["tools"].append(built_in_tool)
+        else:
+            config_kwargs = {
+                "temperature": temperature,
+                "max_output_tokens": max_tokens,
+                "cached_content": cached_content,
+            }
+            if built_in_tool:
+                config_kwargs["tools"] = [built_in_tool]
+
+            self._generation_config = types.GenerateContentConfig(
+                **config_kwargs
             ).model_dump()
-        )
         self._max_tokens = (
             max_tokens or model_meta.output_token_limit or DEFAULT_NUM_OUTPUTS
         )
@@ -310,6 +339,7 @@ class GoogleGenAI(FunctionCallingLLM):
         def gen() -> ChatResponseGen:
             content = ""
             existing_tool_calls = []
+            thoughts = ""
             for r in response:
                 if not r.candidates:
                     continue
@@ -317,13 +347,17 @@ class GoogleGenAI(FunctionCallingLLM):
                 top_candidate = r.candidates[0]
                 content_delta = top_candidate.content.parts[0].text
                 if content_delta:
-                    content += content_delta
+                    if top_candidate.content.parts[0].thought:
+                        thoughts += content_delta
+                    else:
+                        content += content_delta
                 llama_resp = chat_from_gemini_response(r)
                 existing_tool_calls.extend(
                     llama_resp.message.additional_kwargs.get("tool_calls", [])
                 )
                 llama_resp.delta = content_delta
                 llama_resp.message.content = content
+                llama_resp.message.additional_kwargs["thoughts"] = thoughts
                 llama_resp.message.additional_kwargs["tool_calls"] = existing_tool_calls
                 yield llama_resp
 
@@ -349,6 +383,7 @@ class GoogleGenAI(FunctionCallingLLM):
         async def gen() -> ChatResponseAsyncGen:
             content = ""
             existing_tool_calls = []
+            thoughts = ""
             async for r in await chat.send_message_stream(next_msg.parts):
                 if candidates := r.candidates:
                     if not candidates:
@@ -359,7 +394,10 @@ class GoogleGenAI(FunctionCallingLLM):
                         if parts := response_content.parts:
                             content_delta = parts[0].text
                             if content_delta:
-                                content += content_delta
+                                if parts[0].thought:
+                                    thoughts += content_delta
+                                else:
+                                    content += content_delta
                             llama_resp = chat_from_gemini_response(r)
                             existing_tool_calls.extend(
                                 llama_resp.message.additional_kwargs.get(
@@ -368,6 +406,7 @@ class GoogleGenAI(FunctionCallingLLM):
                             )
                             llama_resp.delta = content_delta
                             llama_resp.message.content = content
+                            llama_resp.message.additional_kwargs["thoughts"] = thoughts
                             llama_resp.message.additional_kwargs["tool_calls"] = (
                                 existing_tool_calls
                             )
@@ -470,9 +509,9 @@ class GoogleGenAI(FunctionCallingLLM):
         for tool_call in tool_calls:
             tool_selections.append(
                 ToolSelection(
-                    tool_id=tool_call.name,
-                    tool_name=tool_call.name,
-                    tool_kwargs=dict(tool_call.args),
+                    tool_id=tool_call["name"],
+                    tool_name=tool_call["name"],
+                    tool_kwargs=tool_call["args"],
                 )
             )
 

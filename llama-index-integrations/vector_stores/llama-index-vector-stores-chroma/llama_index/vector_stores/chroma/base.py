@@ -7,12 +7,14 @@ from typing import Any, Dict, Generator, List, Optional, Union, cast
 import chromadb
 from chromadb.api.models.Collection import Collection
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
+from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.utils import truncate_text
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
     MetadataFilters,
     VectorStoreQuery,
+    VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
 from llama_index.core.vector_stores.utils import (
@@ -22,6 +24,9 @@ from llama_index.core.vector_stores.utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+# MMR constants
+DEFAULT_MMR_PREFETCH_FACTOR = 4.0
 
 
 def _transform_chroma_filter_condition(condition: str) -> str:
@@ -119,12 +124,15 @@ class ChromaVectorStore(BasePydanticVectorStore):
     During query time, the index uses ChromaDB to query for the top
     k most similar nodes.
 
+    Supports MMR (Maximum Marginal Relevance) search mode for improved diversity
+    in search results.
+
     Args:
         chroma_collection (chromadb.api.models.Collection.Collection):
             ChromaDB collection instance
 
     Examples:
-        `pip install llama-index-vector-stores-chroma`
+        `uv add llama-index-vector-stores-chroma`
 
         ```python
         import chromadb
@@ -136,6 +144,12 @@ class ChromaVectorStore(BasePydanticVectorStore):
 
         # Set up the ChromaVectorStore and StorageContext
         vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
+
+        # Use MMR mode with threshold
+        query_engine = index.as_query_engine(
+            vector_store_query_mode="mmr",
+            vector_store_kwargs={"mmr_threshold": 0.5}
+        )
         ```
 
     """
@@ -254,7 +268,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         if not self._collection:
             raise ValueError("Collection not initialized")
 
-        node_ids = node_ids or []
+        node_ids = node_ids or None
 
         if filters:
             where = _to_chroma_filter(filters)
@@ -375,6 +389,10 @@ class ChromaVectorStore(BasePydanticVectorStore):
         if not query.query_embedding:
             return self._get(limit=query.similarity_top_k, where=where, **kwargs)
 
+        # Handle MMR mode
+        if query.mode == VectorStoreQueryMode.MMR:
+            return self._mmr_search(query, where, **kwargs)
+
         return self._query(
             query_embeddings=query.query_embedding,
             n_results=query.similarity_top_k,
@@ -439,6 +457,182 @@ class ChromaVectorStore(BasePydanticVectorStore):
             ids.append(node_id)
 
         return VectorStoreQueryResult(nodes=nodes, similarities=similarities, ids=ids)
+
+    def _mmr_search(
+        self, query: VectorStoreQuery, where: dict, **kwargs
+    ) -> VectorStoreQueryResult:
+        """
+        Perform MMR search using ChromaDB.
+
+        Args:
+            query: VectorStoreQuery object containing the query parameters
+            where: ChromaDB filter conditions
+            **kwargs: Additional keyword arguments including mmr_threshold
+
+        Returns:
+            VectorStoreQueryResult: Query result with MMR-applied nodes
+
+        """
+        # Extract MMR parameters
+        mmr_threshold = kwargs.get("mmr_threshold")
+
+        # Validate MMR parameters
+        if mmr_threshold is not None and (
+            not isinstance(mmr_threshold, (int, float))
+            or mmr_threshold < 0
+            or mmr_threshold > 1
+        ):
+            raise ValueError("mmr_threshold must be a float between 0 and 1")
+
+        # Validate prefetch parameters (check before popping)
+        raw_prefetch_factor = kwargs.get("mmr_prefetch_factor")
+        raw_prefetch_k = kwargs.get("mmr_prefetch_k")
+        if raw_prefetch_factor is not None and raw_prefetch_k is not None:
+            raise ValueError(
+                "'mmr_prefetch_factor' and 'mmr_prefetch_k' "
+                "cannot coexist in a call to query()"
+            )
+
+        # Strip MMR-only kwargs so they aren't forwarded to Chroma
+        mmr_threshold = kwargs.pop("mmr_threshold", None)
+        prefetch_k_override = kwargs.pop("mmr_prefetch_k", None)
+        prefetch_factor = kwargs.pop("mmr_prefetch_factor", DEFAULT_MMR_PREFETCH_FACTOR)
+
+        # Calculate prefetch size (get more candidates than needed for MMR)
+        if prefetch_k_override is not None:
+            prefetch_k = int(prefetch_k_override)
+        else:
+            prefetch_k = int(query.similarity_top_k * prefetch_factor)
+
+        # Ensure prefetch_k is at least as large as similarity_top_k
+        prefetch_k = max(prefetch_k, query.similarity_top_k)
+
+        logger.debug(
+            f"MMR search: prefetching {prefetch_k} candidates for {query.similarity_top_k} final results"
+        )
+
+        # Query ChromaDB for more candidates than needed (kwargs now safe)
+        if where:
+            prefetch_results = self._collection.query(
+                query_embeddings=query.query_embedding,
+                n_results=prefetch_k,
+                where=where,
+                include=["embeddings", "documents", "metadatas", "distances"],
+                **kwargs,
+            )
+        else:
+            prefetch_results = self._collection.query(
+                query_embeddings=query.query_embedding,
+                n_results=prefetch_k,
+                include=["embeddings", "documents", "metadatas", "distances"],
+                **kwargs,
+            )
+
+        # Extract embeddings and metadata for MMR processing
+        prefetch_embeddings = []
+        prefetch_ids = []
+        prefetch_metadata = []
+        prefetch_documents = []
+        prefetch_distances = []
+
+        # Process prefetch results
+        for i in range(len(prefetch_results["ids"][0])):
+            node_id = prefetch_results["ids"][0][i]
+            text = prefetch_results["documents"][0][i]
+            metadata = prefetch_results["metadatas"][0][i]
+            distance = prefetch_results["distances"][0][i]
+
+            # Get the actual embedding from ChromaDB results
+            if "embeddings" in prefetch_results and prefetch_results["embeddings"]:
+                embedding = prefetch_results["embeddings"][0][i]
+            else:
+                # Fallback: if embeddings not available, we'll use distance-based approach
+                embedding = None
+
+            # Store for MMR processing
+            prefetch_embeddings.append(embedding)
+            prefetch_ids.append(node_id)
+            prefetch_metadata.append(metadata)
+            prefetch_documents.append(text)
+            prefetch_distances.append(distance)
+
+        if not prefetch_embeddings:
+            logger.warning("No results found during MMR prefetch")
+            return VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
+
+        # Check if we have valid embeddings for MMR
+        valid_embeddings = [emb for emb in prefetch_embeddings if emb is not None]
+
+        if len(valid_embeddings) < query.similarity_top_k:
+            logger.warning(
+                f"Not enough valid embeddings for MMR: {len(valid_embeddings)} < {query.similarity_top_k}"
+            )
+            # Fallback to regular similarity search
+            return self._query(
+                query_embeddings=query.query_embedding,
+                n_results=query.similarity_top_k,
+                where=where,
+                **kwargs,
+            )
+
+        # Apply MMR algorithm using the core utility function
+        mmr_similarities, mmr_indices = get_top_k_mmr_embeddings(
+            query_embedding=query.query_embedding,
+            embeddings=valid_embeddings,
+            similarity_top_k=query.similarity_top_k,
+            embedding_ids=list(range(len(valid_embeddings))),
+            mmr_threshold=mmr_threshold,
+        )
+
+        # Build final results based on MMR selection
+        final_nodes = []
+        final_similarities = []
+        final_ids = []
+
+        # Create a mapping from valid embedding indices to original prefetch indices
+        valid_indices = [
+            i for i, emb in enumerate(prefetch_embeddings) if emb is not None
+        ]
+
+        for mmr_index in mmr_indices:
+            if mmr_index < len(valid_indices):
+                original_index = valid_indices[mmr_index]
+                if original_index < len(prefetch_ids):
+                    node_id = prefetch_ids[original_index]
+                    text = prefetch_documents[original_index]
+                    metadata = prefetch_metadata[original_index]
+                    distance = prefetch_distances[original_index]
+
+                    # Create node (reusing logic from _query method)
+                    try:
+                        node = metadata_dict_to_node(metadata)
+                        node.set_content(text)
+                    except Exception:
+                        # NOTE: deprecated legacy logic for backward compatibility
+                        metadata, node_info, relationships = (
+                            legacy_metadata_dict_to_node(metadata)
+                        )
+
+                        node = TextNode(
+                            text=text,
+                            id_=node_id,
+                            metadata=metadata,
+                            start_char_idx=node_info.get("start", None),
+                            end_char_idx=node_info.get("end", None),
+                            relationships=relationships,
+                        )
+
+                    final_nodes.append(node)
+                    final_similarities.append(math.exp(-distance))
+                    final_ids.append(node_id)
+
+        logger.debug(
+            f"MMR search completed: {len(final_nodes)} results selected from {len(prefetch_embeddings)} candidates"
+        )
+
+        return VectorStoreQueryResult(
+            nodes=final_nodes, similarities=final_similarities, ids=final_ids
+        )
 
     def _get(
         self, limit: Optional[int], where: dict, **kwargs

@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-tools-measurespace"
-version = "0.1.0"
+version = "0.2.0"
 description = "llama-index tools weather, climate, air quality and geocoding integration"
 authors = [{name = "Measure Space", email = "support@measurespace.io"}]
 requires-python = ">=3.10"

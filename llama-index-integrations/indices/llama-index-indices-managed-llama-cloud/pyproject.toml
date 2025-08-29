@@ -6,7 +6,6 @@ build-backend = "hatchling.build"
 dev = [
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
-    "llama-index-embeddings-openai>=0.3.1,<0.4",
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
@@ -28,15 +27,16 @@ dev = [
 
 [project]
 name = "llama-index-indices-managed-llama-cloud"
-version = "0.7.7"
+version = "0.9.2"
 description = "llama-index indices llama-cloud integration"
 authors = [{name = "Logan Markewich", email = "logan@llamaindex.ai"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-cloud==0.1.26",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-cloud==0.1.35",
+    "llama-index-core>=0.13.0,<0.14",
+    "deprecated==1.2.18",
 ]
 
 [tool.codespell]

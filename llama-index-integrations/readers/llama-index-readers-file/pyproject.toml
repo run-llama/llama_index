@@ -23,11 +23,12 @@ dev = [
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "pytest-cov>=6.1.1",
+    "python-pptx",
 ]
 
 [project]
 name = "llama-index-readers-file"
-version = "0.4.9"
+version = "0.5.2"
 description = "llama-index readers file integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -70,11 +71,12 @@ keywords = [
 ]
 dependencies = [
     "beautifulsoup4>=4.12.3,<5",
-    "pypdf>=5.1.0,<6",
+    "pypdf>=5.1.0,<7",
     "striprtf>=0.0.26,<0.0.27",
     # note: pandas 2.3.0 changed build requirements, unpin when resolved
     "pandas<2.3.0",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
+    "defusedxml>=0.7.1",
 ]
 
 [project.optional-dependencies]

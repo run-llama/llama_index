@@ -27,13 +27,13 @@ dev = [
 
 [project]
 name = "llama-index-llms-openai"
-version = "0.4.7"
+version = "0.5.4"
 description = "llama-index llms openai integration"
 authors = [{name = "llama-index"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
-dependencies = ["openai>=1.81.0,<2", "llama-index-core>=0.12.41,<0.13"]
+dependencies = ["openai>=1.81.0,<2", "llama-index-core>=0.13.0,<0.14"]
 
 [tool.codespell]
 check-filenames = true

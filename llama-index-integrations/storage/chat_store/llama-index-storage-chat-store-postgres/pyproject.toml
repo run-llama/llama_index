@@ -28,15 +28,15 @@ dev = [
 
 [project]
 name = "llama-index-storage-chat-store-postgres"
-version = "0.2.1"
+version = "0.3.0"
 description = "llama-index storage-chat-store postgres integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.12.0,<0.13",
-    "asyncpg>=0.29.0,<0.30",
+    "llama-index-core>=0.13.0,<0.14",
+    "asyncpg>=0.30.0,<0.31",
     "psycopg>=3.0.0,<4",
 ]
 

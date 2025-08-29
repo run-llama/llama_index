@@ -16,18 +16,24 @@ from llama_index.core.schema import (
     MetadataMode,
 )
 from llama_index.core.storage.docstore.types import BaseDocumentStore
+from llama_index.core.vector_stores.types import MetadataFilters
 from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
     metadata_dict_to_node,
+    build_metadata_filter_fn,
 )
 
 import bm25s
 import Stemmer
-
+import numpy as np
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_PERSIST_ARGS = {"similarity_top_k": "similarity_top_k", "_verbose": "verbose"}
+DEFAULT_PERSIST_ARGS = {
+    "similarity_top_k": "similarity_top_k",
+    "_verbose": "verbose",
+    "corpus_weight_mask": "corpus_weight_mask",
+}
 
 DEFAULT_PERSIST_FILENAME = "retriever.json"
 
@@ -75,6 +81,8 @@ class BM25Retriever(BaseRetriever):
         verbose: bool = False,
         skip_stemming: bool = False,
         token_pattern: str = r"(?u)\b\w\w+\b",
+        filters: Optional[MetadataFilters] = None,
+        corpus_weight_mask: Optional[List[int]] = None,
     ) -> None:
         self.stemmer = stemmer or Stemmer.Stemmer("english")
         self.similarity_top_k = similarity_top_k
@@ -88,7 +96,10 @@ class BM25Retriever(BaseRetriever):
             if nodes is None:
                 raise ValueError("Please pass nodes or an existing BM25 object.")
 
-            self.corpus = [node_to_metadata_dict(node) for node in nodes]
+            self.corpus = [
+                node_to_metadata_dict(node) | {"node_id": node.node_id}
+                for node in nodes
+            ]
 
             corpus_tokens = bm25s.tokenize(
                 [node.get_content(metadata_mode=MetadataMode.EMBED) for node in nodes],
@@ -99,6 +110,35 @@ class BM25Retriever(BaseRetriever):
             )
             self.bm25 = bm25s.BM25()
             self.bm25.index(corpus_tokens, show_progress=verbose)
+
+        if (
+            self.bm25.scores.get("num_docs")
+            and int(self.bm25.scores["num_docs"]) < self.similarity_top_k
+        ):
+            if int(self.bm25.scores["num_docs"]) == 0:
+                raise ValueError(
+                    "No nodes added to the retriever kindly add more data."
+                )
+
+            logger.warning(
+                "As bm25s.BM25 requires k less than or equal to number of nodes added. Overriding the value of similarity_top_k to number of nodes added."
+            )
+            self.similarity_top_k = int(self.bm25.scores["num_docs"])
+
+        self.corpus_weight_mask = corpus_weight_mask or None
+        if filters and self.corpus:
+            # Build a weight mask for each corpus to filter out only relevant nodes
+            _corpus_dict = {
+                corpus_token["node_id"]: corpus_token for corpus_token in self.corpus
+            }
+            _query_filter_fn = build_metadata_filter_fn(
+                lambda node_id: _corpus_dict[node_id], filters
+            )
+            self.corpus_weight_mask = [
+                int(_query_filter_fn(corpus_token["node_id"]))
+                for corpus_token in self.corpus
+            ]
+
         super().__init__(
             callback_manager=callback_manager,
             object_map=object_map,
@@ -118,6 +158,7 @@ class BM25Retriever(BaseRetriever):
         verbose: bool = False,
         skip_stemming: bool = False,
         token_pattern: str = r"(?u)\b\w\w+\b",
+        filters: Optional[MetadataFilters] = None,
         # deprecated
         tokenizer: Optional[Callable[[str], List[str]]] = None,
     ) -> "BM25Retriever":
@@ -149,6 +190,7 @@ class BM25Retriever(BaseRetriever):
             verbose=verbose,
             skip_stemming=skip_stemming,
             token_pattern=token_pattern,
+            filters=filters,
         )
 
     def get_persist_args(self) -> Dict[str, Any]:
@@ -186,7 +228,12 @@ class BM25Retriever(BaseRetriever):
             show_progress=self._verbose,
         )
         indexes, scores = self.bm25.retrieve(
-            tokenized_query, k=self.similarity_top_k, show_progress=self._verbose
+            tokenized_query,
+            k=self.similarity_top_k,
+            show_progress=self._verbose,
+            weight_mask=np.array(self.corpus_weight_mask)
+            if self.corpus_weight_mask
+            else None,
         )
 
         # batched, but only one query

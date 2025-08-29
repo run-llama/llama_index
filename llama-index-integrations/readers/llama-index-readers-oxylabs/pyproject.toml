@@ -16,7 +16,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-oxylabs"
-version = "0.1.2"
+version = "0.2.0"
 description = "llama-index readers oxylabs integration"
 readme = "README.md"
 requires-python = ">=3.10,<4.0"
@@ -54,7 +54,16 @@ contains_example = false
 import_path = "llama_index.readers.oxylabs"
 
 [tool.llamahub.class_authors]
-OxylabsReader = "oxy-rostyslav"
+OxylabsBaseReader = "oxy-rostyslav"
+OxylabsAmazonSearchReader = "oxy-rostyslav"
+OxylabsAmazonPricingReader = "oxy-rostyslav"
+OxylabsAmazonProductReader = "oxy-rostyslav"
+OxylabsAmazonSellersReader = "oxy-rostyslav"
+OxylabsAmazonBestsellersReader = "oxy-rostyslav"
+OxylabsAmazonReviewsReader = "oxy-rostyslav"
+OxylabsGoogleSearchReader = "oxy-rostyslav"
+OxylabsGoogleAdsReader = "oxy-rostyslav"
+OxylabsYoutubeTranscriptReader = "oxy-rostyslav"
 
 [tool.mypy]
 disallow_untyped_defs = true

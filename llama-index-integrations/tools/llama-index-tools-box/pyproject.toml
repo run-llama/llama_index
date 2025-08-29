@@ -9,6 +9,7 @@ dev = [
     "diff-cover>=9.2.0",
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
+    "llama-index-llms-openai",
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
@@ -27,7 +28,7 @@ dev = [
 
 [project]
 name = "llama-index-tools-box"
-version = "0.3.0"
+version = "0.4.0"
 description = "llama-index tools box integration"
 authors = [{name = "Rui Barbosa", email = "rbarbosa@box.com"}]
 requires-python = ">=3.9,<4.0"
@@ -35,9 +36,8 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "box-sdk-gen>=1.5.0",
-    "llama-index-readers-box>=0.3.0,<0.4",
-    "llama-index-agent-openai>=0.4.0,<0.5",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-readers-box>=0.4.0,<0.5",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

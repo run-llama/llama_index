@@ -57,7 +57,7 @@ def get_additional_kwargs(
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
-    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    tool_calls = response.message.additional_kwargs.get("tool_calls", []) or []
     if len(tool_calls) > 1:
         response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
 
@@ -361,8 +361,8 @@ class Ollama(FunctionCallingLLM):
 
         return ChatResponse(
             message=ChatMessage(
-                content=response["message"]["content"],
-                role=response["message"]["role"],
+                content=response["message"].get("content", ""),
+                role=response["message"].get("role", MessageRole.ASSISTANT),
                 additional_kwargs={"tool_calls": tool_calls, "thinking": thinking},
             ),
             raw=response,
@@ -425,13 +425,13 @@ class Ollama(FunctionCallingLLM):
                 yield ChatResponse(
                     message=ChatMessage(
                         content=response_txt,
-                        role=r["message"]["role"],
+                        role=r["message"].get("role", MessageRole.ASSISTANT),
                         additional_kwargs={
                             "tool_calls": list(set(all_tool_calls)),
                             "thinking": thinking_txt,
                         },
                     ),
-                    delta=r["message"]["content"],
+                    delta=r["message"].get("content", ""),
                     raw=r,
                     additional_kwargs={
                         "thinking_delta": r["message"].get("thinking", None),
@@ -497,13 +497,13 @@ class Ollama(FunctionCallingLLM):
                 yield ChatResponse(
                     message=ChatMessage(
                         content=response_txt,
-                        role=r["message"]["role"],
+                        role=r["message"].get("role", MessageRole.ASSISTANT),
                         additional_kwargs={
                             "tool_calls": all_tool_calls,
                             "thinking": thinking_txt,
                         },
                     ),
-                    delta=r["message"]["content"],
+                    delta=r["message"].get("content", ""),
                     raw=r,
                     additional_kwargs={
                         "thinking_delta": r["message"].get("thinking", None),
@@ -543,8 +543,8 @@ class Ollama(FunctionCallingLLM):
 
         return ChatResponse(
             message=ChatMessage(
-                content=response["message"]["content"],
-                role=response["message"]["role"],
+                content=response["message"].get("content", ""),
+                role=response["message"].get("role", MessageRole.ASSISTANT),
                 additional_kwargs={"tool_calls": tool_calls, "thinking": thinking},
             ),
             raw=response,

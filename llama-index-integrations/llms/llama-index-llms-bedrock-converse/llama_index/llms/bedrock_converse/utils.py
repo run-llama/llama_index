@@ -29,6 +29,7 @@ HUMAN_PREFIX = "\n\nHuman:"
 ASSISTANT_PREFIX = "\n\nAssistant:"
 
 BEDROCK_MODELS = {
+    "amazon.nova-premier-v1:0": 1000000,
     "amazon.nova-pro-v1:0": 300000,
     "amazon.nova-lite-v1:0": 300000,
     "amazon.nova-micro-v1:0": 128000,
@@ -65,17 +66,22 @@ BEDROCK_MODELS = {
     "meta.llama3-2-11b-instruct-v1:0": 128000,
     "meta.llama3-2-90b-instruct-v1:0": 128000,
     "meta.llama3-3-70b-instruct-v1:0": 128000,
+    "meta.llama4-maverick-17b-instruct-v1:0": 1000000,
+    "meta.llama4-scout-17b-instruct-v1:0": 3500000,
     "mistral.mistral-7b-instruct-v0:2": 32000,
     "mistral.mixtral-8x7b-instruct-v0:1": 32000,
     "mistral.mistral-large-2402-v1:0": 32000,
     "mistral.mistral-small-2402-v1:0": 32000,
     "mistral.mistral-large-2407-v1:0": 32000,
+    "openai.gpt-oss-120b-1:0": 128000,
+    "openai.gpt-oss-20b-1:0": 128000,
     "ai21.jamba-1-5-mini-v1:0": 256000,
     "ai21.jamba-1-5-large-v1:0": 256000,
     "deepseek.r1-v1:0": 128000,
 }
 
 BEDROCK_FUNCTION_CALLING_MODELS = (
+    "amazon.nova-premier-v1:0",
     "amazon.nova-pro-v1:0",
     "amazon.nova-lite-v1:0",
     "amazon.nova-micro-v1:0",
@@ -94,14 +100,17 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "mistral.mistral-large-2407-v1:0",
     "meta.llama3-1-8b-instruct-v1:0",
     "meta.llama3-1-70b-instruct-v1:0",
-    "meta.llama3-2-1b-instruct-v1:0",
-    "meta.llama3-2-3b-instruct-v1:0",
     "meta.llama3-2-11b-instruct-v1:0",
     "meta.llama3-2-90b-instruct-v1:0",
     "meta.llama3-3-70b-instruct-v1:0",
+    "meta.llama4-maverick-17b-instruct-v1:0",
+    "meta.llama4-scout-17b-instruct-v1:0",
+    "openai.gpt-oss-120b-1:0",
+    "openai.gpt-oss-20b-1:0",
 )
 
 BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
+    "amazon.nova-premier-v1:0",
     "amazon.nova-pro-v1:0",
     "amazon.nova-lite-v1:0",
     "amazon.nova-micro-v1:0",
@@ -121,6 +130,8 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "meta.llama3-2-11b-instruct-v1:0",
     "meta.llama3-2-90b-instruct-v1:0",
     "meta.llama3-3-70b-instruct-v1:0",
+    "meta.llama4-maverick-17b-instruct-v1:0",
+    "meta.llama4-scout-17b-instruct-v1:0",
     "deepseek.r1-v1:0",
 )
 

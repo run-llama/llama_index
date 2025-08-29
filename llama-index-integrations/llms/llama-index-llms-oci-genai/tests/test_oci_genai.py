@@ -7,7 +7,13 @@ import pytest
 from pytest import MonkeyPatch
 
 from llama_index.llms.oci_genai import OCIGenAI
-from llama_index.core.base.llms.types import ChatMessage, ChatResponse, MessageRole
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    MessageRole,
+    TextBlock,
+    ImageBlock,
+)
 from llama_index.core.tools import FunctionTool
 import json
 
@@ -326,3 +332,90 @@ def test_llm_chat_with_tools(monkeypatch: MonkeyPatch, test_model_id: str) -> No
 
     # Check additional_kwargs
     assert actual_response.additional_kwargs == expected_response.additional_kwargs
+
+
+@pytest.mark.parametrize(
+    "test_model_id",
+    [
+        "meta.llama-3-70b-instruct",
+        "meta.llama-3.1-70b-instruct",
+    ],
+)
+def test_llm_multimodal_chat_with_image(
+    monkeypatch: MonkeyPatch, test_model_id: str
+) -> None:
+    """Test multimodal chat call to OCI Generative AI LLM service with image input."""
+    oci_gen_ai_client = MagicMock()
+    llm = OCIGenAI(model=test_model_id, client=oci_gen_ai_client)
+
+    def mocked_response(*args, **kwargs):
+        response_text = "The image contains the OCI logo."
+        return MockResponseDict(
+            {
+                "status": 200,
+                "data": MockResponseDict(
+                    {
+                        "chat_response": MockResponseDict(
+                            {
+                                "choices": [
+                                    MockResponseDict(
+                                        {
+                                            "message": MockResponseDict(
+                                                {
+                                                    "content": [
+                                                        MockResponseDict(
+                                                            {"text": response_text}
+                                                        )
+                                                    ]
+                                                }
+                                            ),
+                                            "finish_reason": "stop",
+                                        }
+                                    )
+                                ],
+                                "time_created": "2024-07-02T12:00:00Z",
+                            }
+                        ),
+                        "model_id": test_model_id,
+                        "model_version": "1.0",
+                    }
+                ),
+                "request_id": "req-0987654321",
+                "headers": {"content-length": "1234"},
+            }
+        )
+
+    monkeypatch.setattr(llm._client, "chat", mocked_response)
+
+    image_url = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI12P4AIX8EAgALgAD/aNpbtEAAAAASUVORK5CYII="
+    messages = [
+        ChatMessage(
+            role="user",
+            content=[
+                TextBlock(text="What is in this image?"),
+                ImageBlock(image_url=image_url),
+            ],
+        )
+    ]
+
+    expected = ChatResponse(
+        message=ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content="The image contains the OCI logo.",
+            additional_kwargs={
+                "finish_reason": "stop",
+                "time_created": "2024-07-02T12:00:00Z",
+            },
+        ),
+        raw={},
+        additional_kwargs={
+            "model_id": test_model_id,
+            "model_version": "1.0",
+            "request_id": "req-0987654321",
+            "content-length": "1234",
+        },
+    )
+
+    actual = llm.chat(messages)
+
+    assert actual.message.content == expected.message.content

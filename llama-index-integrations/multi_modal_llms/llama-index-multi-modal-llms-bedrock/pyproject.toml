@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-multi-modal-llms-bedrock"
-version = "0.1.0"
+version = "0.2.0"
 description = "llama-index multi-modal llms bedrock integration"
 authors = [{name = "LlamaIndex"}]
 requires-python = ">=3.9,<4.0"
@@ -36,7 +36,8 @@ license = "MIT"
 dependencies = [
     "boto3>=1.34.0",
     "aioboto3>=12.3.0",
-    "llama-index-core>=0.12.5,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-llms-bedrock-converse>=0.8.0,<0.9",
 ]
 
 [tool.codespell]

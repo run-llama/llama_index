@@ -222,7 +222,7 @@ def node_embeddings() -> List[TextNode]:
             text="consectetur adipiscing elit",
             id_="ccc",
             relationships={NodeRelationship.SOURCE: RelatedNodeInfo(node_id="ccc")},
-            extra_info={"test_key_list": ["test_value"]},
+            extra_info={"test_key_list": ["test_value_1", "test_value_2"]},
             embedding=_get_sample_vector(0.1),
         ),
         TextNode(
@@ -522,6 +522,91 @@ async def test_add_to_db_and_query_with_metadata_filters_with_in_operator_and_si
 @pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
 @pytest.mark.parametrize("use_async", [True, False])
+async def test_add_to_db_and_query_with_metadata_filters_with_any_operator(
+    pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+) -> None:
+    if use_async:
+        await pg_fixture.async_add(node_embeddings)
+    else:
+        pg_fixture.add(node_embeddings)
+    assert isinstance(pg_fixture, PGVectorStore)
+    assert hasattr(pg_fixture, "_engine")
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="test_key_list",
+                value=["test_value_1", "test_value_new"],
+                operator=FilterOperator.ANY,
+            )
+        ]
+    )
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.5), similarity_top_k=10, filters=filters
+    )
+    if use_async:
+        res = await pg_fixture.aquery(q)
+    else:
+        res = pg_fixture.query(q)
+    assert res.nodes
+    assert len(res.nodes) == 1
+    assert res.nodes[0].node_id == "ccc"
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_add_to_db_and_query_with_metadata_filters_with_all_operator(
+    pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
+) -> None:
+    if use_async:
+        await pg_fixture.async_add(node_embeddings)
+    else:
+        pg_fixture.add(node_embeddings)
+    assert isinstance(pg_fixture, PGVectorStore)
+    assert hasattr(pg_fixture, "_engine")
+    filters = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="test_key_list",
+                value=["test_value_1", "test_value_2"],
+                operator=FilterOperator.ALL,
+            )
+        ]
+    )
+    filters_no_all_match = MetadataFilters(
+        filters=[
+            MetadataFilter(
+                key="test_key_list",
+                value=["test_value_1", "test_value_3"],
+                operator=FilterOperator.ALL,
+            )
+        ]
+    )
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.5), similarity_top_k=10, filters=filters
+    )
+    q2 = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.5),
+        similarity_top_k=10,
+        filters=filters_no_all_match,
+    )
+    if use_async:
+        res = await pg_fixture.aquery(q)
+        res_no_match = await pg_fixture.aquery(q2)
+    else:
+        res = pg_fixture.query(q)
+        res_no_match = pg_fixture.query(q2)
+    assert res.nodes
+    assert len(res.nodes) == 1
+    assert res.nodes[0].node_id == "ccc"
+    assert not res_no_match.nodes
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
+@pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_db_and_query_with_metadata_filters_with_contains_operator(
     pg_fixture: PGVectorStore, node_embeddings: List[TextNode], use_async: bool
 ) -> None:
@@ -535,7 +620,7 @@ async def test_add_to_db_and_query_with_metadata_filters_with_contains_operator(
         filters=[
             MetadataFilter(
                 key="test_key_list",
-                value="test_value",
+                value="test_value_1",
                 operator=FilterOperator.CONTAINS,
             )
         ]
@@ -645,6 +730,39 @@ async def test_sparse_query(
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
+async def test_sparse_query_with_special_characters(
+    pg_hybrid: PGVectorStore,
+    hybrid_node_embeddings: List[TextNode],
+    use_async: bool,
+) -> None:
+    if use_async:
+        await pg_hybrid.async_add(hybrid_node_embeddings)
+    else:
+        pg_hybrid.add(hybrid_node_embeddings)
+    assert isinstance(pg_hybrid, PGVectorStore)
+    assert hasattr(pg_hybrid, "_engine")
+
+    # text search should work with special characters
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.1),
+        query_str="   who' & s |     (the): <-> **fox**?!!!  ",
+        sparse_top_k=2,
+        mode=VectorStoreQueryMode.SPARSE,
+    )
+
+    if use_async:
+        res = await pg_hybrid.aquery(q)
+    else:
+        res = pg_hybrid.query(q)
+    assert res.nodes
+    assert len(res.nodes) == 2
+    assert res.nodes[0].node_id == "ccc"
+    assert res.nodes[1].node_id == "ddd"
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
 async def test_hybrid_query(
     pg_hybrid: PGVectorStore,
     hybrid_node_embeddings: List[TextNode],
@@ -698,6 +816,78 @@ async def test_hybrid_query(
     q = VectorStoreQuery(
         query_embedding=_get_sample_vector(0.1),
         query_str="who is the fox?",
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.HYBRID,
+    )
+
+    if use_async:
+        res = await pg_hybrid.aquery(q)
+    else:
+        res = pg_hybrid.query(q)
+    assert res.nodes
+    assert len(res.nodes) == 4
+    assert res.nodes[0].node_id == "aaa"
+    assert res.nodes[1].node_id == "bbb"
+    assert res.nodes[2].node_id == "ccc"
+    assert res.nodes[3].node_id == "ddd"
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_hybrid_query_with_special_characters(
+    pg_hybrid: PGVectorStore,
+    hybrid_node_embeddings: List[TextNode],
+    use_async: bool,
+) -> None:
+    if use_async:
+        await pg_hybrid.async_add(hybrid_node_embeddings)
+    else:
+        pg_hybrid.add(hybrid_node_embeddings)
+    assert isinstance(pg_hybrid, PGVectorStore)
+    assert hasattr(pg_hybrid, "_engine")
+
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.1),
+        query_str="fox",
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.HYBRID,
+        sparse_top_k=1,
+    )
+
+    if use_async:
+        res = await pg_hybrid.aquery(q)
+    else:
+        res = pg_hybrid.query(q)
+    assert res.nodes
+    assert len(res.nodes) == 3
+    assert res.nodes[0].node_id == "aaa"
+    assert res.nodes[1].node_id == "bbb"
+    assert res.nodes[2].node_id == "ccc"
+
+    # if sparse_top_k is not specified, it should default to similarity_top_k
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.1),
+        query_str="fox",
+        similarity_top_k=2,
+        mode=VectorStoreQueryMode.HYBRID,
+    )
+
+    if use_async:
+        res = await pg_hybrid.aquery(q)
+    else:
+        res = pg_hybrid.query(q)
+    assert res.nodes
+    assert len(res.nodes) == 4
+    assert res.nodes[0].node_id == "aaa"
+    assert res.nodes[1].node_id == "bbb"
+    assert res.nodes[2].node_id == "ccc"
+    assert res.nodes[3].node_id == "ddd"
+
+    # text search should work with special characters
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.1),
+        query_str="   who' & s |     (the): <-> **fox**?!!!  ",
         similarity_top_k=2,
         mode=VectorStoreQueryMode.HYBRID,
     )

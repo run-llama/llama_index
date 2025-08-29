@@ -26,10 +26,11 @@ dev = [
 
 [project]
 name = "llama-index-llms-oci-genai"
-version = "0.5.0"
+version = "0.6.1"
 description = "llama-index llms OCI GenAI integration"
 authors = [
     {name = "Arthur Cheng", email = "arthur.cheng@oracle.com"},
+    {name = "Pan Xia", email = "pan.xia@oracle.com"},
     {name = "Rave Harpaz", email = "rave.harpaz@oracle.com"},
 ]
 requires-python = ">=3.9,<4.0"
@@ -37,7 +38,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "oci>=2.134.0,<3",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]
