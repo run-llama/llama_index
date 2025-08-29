@@ -1689,7 +1689,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-postgres"
-version = "0.6.0"
+version = "0.6.3"
 source = { editable = "." }
 dependencies = [
     { name = "asyncpg" },
