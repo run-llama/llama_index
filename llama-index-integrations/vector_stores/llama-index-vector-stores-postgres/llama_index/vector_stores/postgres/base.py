@@ -1070,7 +1070,7 @@ class PGVectorStore(BasePydanticVectorStore):
         self._initialize()
         with self._session() as session, session.begin():
             stmt = delete(self._table_class).where(
-                self._table_class.metadata_["doc_id"].astext == ref_doc_id
+                self._table_class.metadata_["ref_doc_id"].astext == ref_doc_id
             )
 
             session.execute(stmt)
@@ -1082,7 +1082,7 @@ class PGVectorStore(BasePydanticVectorStore):
         self._initialize()
         async with self._async_session() as session, session.begin():
             stmt = delete(self._table_class).where(
-                self._table_class.metadata_["doc_id"].astext == ref_doc_id
+                self._table_class.metadata_["ref_doc_id"].astext == ref_doc_id
             )
 
             await session.execute(stmt)
