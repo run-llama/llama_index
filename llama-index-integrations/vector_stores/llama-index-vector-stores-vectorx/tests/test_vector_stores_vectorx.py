@@ -33,7 +33,9 @@ class VectorXTestSetup(unittest.TestCase):
         # Get API token from environment
         cls.vecx_api_token = os.getenv("VECTORX_API_TOKEN")
         if not cls.vecx_api_token:
-            raise ValueError("Missing VECTORX_API_TOKEN. Please set it in your environment.")
+            raise ValueError(
+                "Missing VECTORX_API_TOKEN. Please set it in your environment."
+            )
 
         # Initialize VectorX client
         cls.vx = VectorX(token=cls.vecx_api_token)
@@ -52,15 +54,27 @@ class VectorXTestSetup(unittest.TestCase):
         cls.test_documents = [
             Document(
                 text="Python is a high-level, interpreted programming language known for its readability and simplicity.",
-                metadata={"category": "programming", "language": "python", "difficulty": "beginner"}
+                metadata={
+                    "category": "programming",
+                    "language": "python",
+                    "difficulty": "beginner",
+                },
             ),
             Document(
                 text="Machine learning algorithms learn patterns from data to make predictions.",
-                metadata={"category": "ai", "field": "machine_learning", "difficulty": "intermediate"}
+                metadata={
+                    "category": "ai",
+                    "field": "machine_learning",
+                    "difficulty": "intermediate",
+                },
             ),
             Document(
                 text="Deep learning uses neural networks with multiple layers for complex pattern recognition.",
-                metadata={"category": "ai", "field": "deep_learning", "difficulty": "advanced"}
+                metadata={
+                    "category": "ai",
+                    "field": "deep_learning",
+                    "difficulty": "advanced",
+                },
             ),
         ]
 
@@ -96,8 +110,7 @@ class VectorXTestSetup(unittest.TestCase):
 class TestVectorXVectorStore(VectorXTestSetup):
     def setUp(self):
         self.embed_model = HuggingFaceEmbedding(
-            model_name="sentence-transformers/all-MiniLM-L6-v2",
-            device="cpu"
+            model_name="sentence-transformers/all-MiniLM-L6-v2", device="cpu"
         )
 
     def test_create_vector_store_from_params(self):
@@ -106,7 +119,7 @@ class TestVectorXVectorStore(VectorXTestSetup):
             index_name=self.test_index_name,
             encryption_key=self.encryption_key,
             dimension=self.dimension,
-            space_type=self.space_type
+            space_type=self.space_type,
         )
         self.assertIsNotNone(vector_store)
         self.assertEqual(vector_store.index_name, self.test_index_name)
@@ -117,13 +130,13 @@ class TestVectorXVectorStore(VectorXTestSetup):
             index_name=self.test_index_name,
             encryption_key=self.encryption_key,
             dimension=self.dimension,
-            space_type=self.space_type
+            space_type=self.space_type,
         )
         storage_context = StorageContext.from_defaults(vector_store=vector_store)
         index = VectorStoreIndex.from_documents(
             self.test_documents,
             storage_context=storage_context,
-            embed_model=self.embed_model
+            embed_model=self.embed_model,
         )
         self.assertIsNotNone(index)
 
@@ -134,7 +147,7 @@ class TestVectorXVectorStore(VectorXTestSetup):
                 index_name=self.test_index_name,
                 encryption_key=self.encryption_key,
                 dimension=self.dimension,
-                space_type=self.space_type
+                space_type=self.space_type,
             )
 
 
@@ -142,27 +155,34 @@ class TestCustomRetrieval(VectorXTestSetup):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.embed_model = HuggingFaceEmbedding("sentence-transformers/all-MiniLM-L6-v2", device="cpu")
+        cls.embed_model = HuggingFaceEmbedding(
+            "sentence-transformers/all-MiniLM-L6-v2", device="cpu"
+        )
         cls.vector_store = VectorXVectorStore.from_params(
             api_token=cls.vecx_api_token,
             index_name=cls.test_index_name,
             encryption_key=cls.encryption_key,
             dimension=cls.dimension,
-            space_type=cls.space_type
+            space_type=cls.space_type,
         )
-        cls.storage_context = StorageContext.from_defaults(vector_store=cls.vector_store)
+        cls.storage_context = StorageContext.from_defaults(
+            vector_store=cls.vector_store
+        )
         Settings.llm = None
         cls.index = VectorStoreIndex.from_documents(
             cls.test_documents,
             storage_context=cls.storage_context,
-            embed_model=cls.embed_model
+            embed_model=cls.embed_model,
         )
 
     def test_custom_retriever(self):
-        ai_filter = MetadataFilter(key="category", value="ai", operator=FilterOperator.EQ)
+        ai_filter = MetadataFilter(
+            key="category", value="ai", operator=FilterOperator.EQ
+        )
         retriever = VectorIndexRetriever(
-            index=self.index, similarity_top_k=3,
-            filters=MetadataFilters(filters=[ai_filter])
+            index=self.index,
+            similarity_top_k=3,
+            filters=MetadataFilters(filters=[ai_filter]),
         )
         nodes = retriever.retrieve("What is deep learning?")
         self.assertGreater(len(nodes), 0)
@@ -178,20 +198,24 @@ class TestQueryAndFilter(VectorXTestSetup):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.embed_model = HuggingFaceEmbedding("sentence-transformers/all-MiniLM-L6-v2", device="cpu")
+        cls.embed_model = HuggingFaceEmbedding(
+            "sentence-transformers/all-MiniLM-L6-v2", device="cpu"
+        )
         cls.vector_store = VectorXVectorStore.from_params(
             api_token=cls.vecx_api_token,
             index_name=cls.test_index_name,
             encryption_key=cls.encryption_key,
             dimension=cls.dimension,
-            space_type=cls.space_type
+            space_type=cls.space_type,
         )
-        cls.storage_context = StorageContext.from_defaults(vector_store=cls.vector_store)
+        cls.storage_context = StorageContext.from_defaults(
+            vector_store=cls.vector_store
+        )
         Settings.llm = None
         cls.index = VectorStoreIndex.from_documents(
             cls.test_documents,
             storage_context=cls.storage_context,
-            embed_model=cls.embed_model
+            embed_model=cls.embed_model,
         )
 
     def test_basic_query(self):
@@ -204,11 +228,13 @@ class TestQueryAndFilter(VectorXTestSetup):
     def test_filtered_query(self):
         query_text = "Explain machine learning"
         query_embedding = self.embed_model.get_text_embedding(query_text)
-        ai_filter = MetadataFilter(key="category", value="ai", operator=FilterOperator.EQ)
+        ai_filter = MetadataFilter(
+            key="category", value="ai", operator=FilterOperator.EQ
+        )
         query = VectorStoreQuery(
             query_embedding=query_embedding,
             similarity_top_k=2,
-            filters=MetadataFilters(filters=[ai_filter])
+            filters=MetadataFilters(filters=[ai_filter]),
         )
         results = self.vector_store.query(query)
         self.assertGreater(len(results.nodes), 0)

@@ -18,6 +18,7 @@ from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
 
+
 def _import_vectorx() -> Any:
     """
     Try to import vectorx module. If it's not already installed, instruct user how to install.
@@ -30,6 +31,7 @@ def _import_vectorx() -> Any:
             "Please install it with `pip install vecx`."
         ) from e
     return vecx
+
 
 ID_KEY = "id"
 VECTOR_KEY = "values"
@@ -52,7 +54,6 @@ reverse_operator_map = {
     FilterOperator.IN: "$in",
     FilterOperator.NIN: "$nin",
 }
-
 
 
 def build_dict(input_batch: List[List[int]]) -> List[Dict[str, Any]]:
@@ -99,7 +100,6 @@ import_err_msg = (
 
 
 class VectorXVectorStore(BasePydanticVectorStore):
-
     stores_text: bool = True
     flat_metadata: bool = False
 
@@ -255,12 +255,11 @@ class VectorXVectorStore(BasePydanticVectorStore):
             if "feature" in metadata:
                 filter_data["feature"] = metadata["feature"]
 
-
             entry = {
                 "id": node_id,
                 "vector": node.get_embedding(),
                 "meta": metadata,
-                "filter": filter_data
+                "filter": filter_data,
             }
 
             ids.append(node_id)
@@ -319,10 +318,16 @@ class VectorXVectorStore(BasePydanticVectorStore):
         if query.filters is not None:
             for filter_item in query.filters.filters:
                 # Case 1: MetadataFilter object
-                if hasattr(filter_item, "key") and hasattr(filter_item, "value") and hasattr(filter_item, "operator"):
+                if (
+                    hasattr(filter_item, "key")
+                    and hasattr(filter_item, "value")
+                    and hasattr(filter_item, "operator")
+                ):
                     op_symbol = reverse_operator_map.get(filter_item.operator)
                     if not op_symbol:
-                        raise ValueError(f"Unsupported filter operator: {filter_item.operator}")
+                        raise ValueError(
+                            f"Unsupported filter operator: {filter_item.operator}"
+                        )
 
                     if filter_item.key not in filters:
                         filters[filter_item.key] = {}
@@ -355,7 +360,7 @@ class VectorXVectorStore(BasePydanticVectorStore):
                 vector=query_embedding,
                 top_k=query.similarity_top_k,
                 filter=filters if filters else None,
-                include_vectors=True
+                include_vectors=True,
             )
         except Exception as e:
             _logger.error(f"Error querying VectorX: {e}")
