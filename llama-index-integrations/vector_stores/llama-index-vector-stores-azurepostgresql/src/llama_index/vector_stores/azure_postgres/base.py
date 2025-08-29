@@ -242,6 +242,7 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
             register_vector(conn)
             with conn.cursor(row_factory=dict_row) as cursor:
                 for node in nodes:
+                    print(node.node_id)
                     ids.append(node.node_id)
                     cursor.execute(
                         insert_sql,
@@ -332,7 +333,6 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
         with self.connection_pool.connection() as conn:
             register_vector(conn)
             with conn.cursor(row_factory=dict_row) as cursor:
-                self._initialize()
                 stmt = sql.SQL("TRUNCATE TABLE {schema}.{table}").format(
                     schema=sql.Identifier(self.schema_name),
                     table=sql.Identifier(self.table_name),

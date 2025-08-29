@@ -116,20 +116,16 @@ async def async_create_extensions(
                     """
                 ).format(
                     ext_name=sql.Identifier(ext_name),
-                    schema_expr=(
-                        sql.SQL("schema {schema_name}").format(
-                            schema_name=sql.Identifier(schema_name)
-                        )
-                        if schema_name is not None
-                        else sql.SQL("")
-                    ),
-                    version_expr=(
-                        sql.SQL("version {version}").format(
-                            version=sql.Literal(ext_version)
-                        )
-                        if ext_version is not None
-                        else sql.SQL("")
-                    ),
+                    schema_expr=sql.SQL("schema {schema_name}").format(
+                        schema_name=sql.Identifier(schema_name)
+                    )
+                    if schema_name is not None
+                    else sql.SQL(""),
+                    version_expr=sql.SQL("version {version}").format(
+                        version=sql.Literal(ext_version)
+                    )
+                    if ext_version is not None
+                    else sql.SQL(""),
                     cascade_expr=sql.SQL("cascade") if cascade else sql.SQL(""),
                 )
             )

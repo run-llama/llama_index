@@ -95,7 +95,7 @@ env_list = ["3.10", "3.11", "3.12", "3.13", "lint", "package", "type", "vuln"]
 # Base environment configuration, which is inherited by all environments.
 [tool.tox.env_run_base]
 description = "Run tests under Python {base_python}"
-extras = ["langchain"]
+extras = ["llama_index"]
 dependency_groups = ["test"]
 labels = ["test"]
 commands = [
@@ -152,7 +152,7 @@ commands = [
 # Environment configuration for the "type" environment.
 [tool.tox.env.type]
 description = "Run type checks on the code base"
-extras = ["langchain"]
+extras = ["llama_index"]
 dependency_groups = ["test", "type"]
 labels = ["type"]
 commands = [["mypy", "src"], ["mypy", "tests"]]
@@ -160,7 +160,7 @@ commands = [["mypy", "src"], ["mypy", "tests"]]
 # Environment configuration for the "vuln" environment.
 [tool.tox.env.vuln]
 description = "Run vulnerability scanning on the code base"
-extras = ["langchain"]
+extras = ["llama_index"]
 dependency_groups = ["package"]
 labels = ["package", "vuln"]
 commands = [["uv-secure"]]
