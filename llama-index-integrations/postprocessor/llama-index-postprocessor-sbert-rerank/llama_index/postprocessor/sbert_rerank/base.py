@@ -18,12 +18,21 @@ dispatcher = get_dispatcher(__name__)
 
 
 class SentenceTransformerRerank(BaseNodePostprocessor):
+    """
+    HuggingFace class for cross encoding two sentences/texts.
+
+    Args:
+        model (str): A model name from Hugging Face Hub that can be loaded with AutoModel, or a path to a local model.
+        device (str, optional): Device (like “cuda”, “cpu”, “mps”, “npu”) that should be used for computation.
+            If None, checks if a GPU can be used.
+        cache_folder (str, Path, optional): Path to the folder where cached files are stored. Defaults to None.
+        top_n (int): Number of nodes to return sorted by score. Defaults to 2.
+        keep_retrieval_score (bool, optional): Whether to keep the retrieval score in metadata. Defaults to False.
+        cross_encoder_kwargs (dict, optional): Additional keyword arguments for CrossEncoder initialization. Defaults to None.
+    """
+
     model: str = Field(description="Sentence transformer model name.")
     top_n: int = Field(description="Number of nodes to return sorted by score.")
-    device: str = Field(
-        default="cpu",
-        description="Device to use for sentence transformer.",
-    )
     keep_retrieval_score: bool = Field(
         default=False,
         description="Whether to keep the retrieval score in metadata.",
@@ -34,14 +43,15 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         "device and model should not be included here.",
     )
     _model: Any = PrivateAttr()
+    _device: str = PrivateAttr()
 
     def __init__(
         self,
-        top_n: int = 2,
         model: str = "cross-encoder/stsb-distilroberta-base",
         device: Optional[str] = None,
+        cache_folder: Optional[Union[str, Path]] = None,
+        top_n: int = 2,
         keep_retrieval_score: Optional[bool] = False,
-        cache_dir: Optional[Union[str, Path]] = None,
         cross_encoder_kwargs: Optional[dict] = None,
     ):
         try:
@@ -74,11 +84,13 @@ class SentenceTransformerRerank(BaseNodePostprocessor):
         # Explicit arguments from the constructor take precedence over kwargs
         resolved_device = infer_torch_device() if device is None else device
         init_kwargs["device"] = resolved_device
-        if cache_dir:
-            init_kwargs["cache_dir"] = cache_dir
+        self._device = resolved_device
+
+        if cache_folder:
+            init_kwargs["cache_folder"] = cache_folder
 
         self._model = CrossEncoder(
-            model_name=model,
+            model_name_or_path=model,
             **init_kwargs,
         )
 
