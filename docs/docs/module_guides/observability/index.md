@@ -152,6 +152,54 @@ llama_index.core.set_global_handler(
 
 ![](../../_static/integrations/arize_phoenix.png)
 
+### Weights and Biases (W&B) Weave
+
+[W&B Weave](https://weave-docs.wandb.ai/) is a framework for tracking, experimenting with, evaluating, deploying, and improving LLM applications. Designed for scalability and flexibility, Weave supports every stage of your application development workflow.
+
+#### Usage Pattern
+
+The integration leverages LlamaIndex's [`instrumentation` module](./instrumentation.md) to register spans/events as Weave calls. By default, Weave automatically patches and tracks calls to [common LLM libraries and frameworks](https://weave-docs.wandb.ai/guides/integrations/).
+
+Install the `weave` library:
+
+```bash
+pip install weave
+```
+Get a W&B API Key:
+
+If you don't already have a W&B account, create one by visiting [https://wandb.ai](https://wandb.ai) and copy your API key from [https://wandb.ai/authorize](https://wandb.ai/authorize). When prompted to authenticate, enter the API key.
+
+```python
+import weave
+from llama_index.llms.openai import OpenAI
+
+# Initialize Weave with your project name
+weave.init("llamaindex-demo")
+
+# All LlamaIndex operations are now automatically traced
+llm = OpenAI(model="gpt-4o-mini")
+response = llm.complete("William Shakespeare is ")
+print(response)
+```
+
+![weave quickstart](../../_static/integrations/weave/weave_quickstart.png)
+
+Traces include execution time, token usage, cost, inputs/outputs, errors, nested operations, and streaming data. If you are new to Weave tracing, learn more about how to navigate it [here](https://weave-docs.wandb.ai/guides/tracking/trace-tree).
+
+If you have a custom function which is not traced, decorate it with [`@weave.op()`](https://weave-docs.wandb.ai/guides/tracking/ops).
+
+You can also control the patching behavior using the `autopatch_settings` argument in `weave.init`. For example if you don't want to trace a library/framework you can turn it off like this:
+
+```python
+weave.init(..., autopatch_settings={"openai": {"enabled": False}})
+```
+
+No additional LlamaIndex configuration is required; tracing begins once `weave.init()` is called.
+
+#### Guides
+
+The integration with LlamaIndex supports almost every component of LlamaIndex -- streaming/async, completions, chat, tool calling, agents, workflows, and RAG support. Learn more about them in the official [W&B Weave × LlamaIndex](https://weave-docs.wandb.ai/guides/integrations/llamaindex) documentation.
+
 
 ### MLflow
 
@@ -512,6 +560,94 @@ instrument_llama_index(instrument.get_dispatcher())
 - [Evaluate Llama Index Agents](https://deepeval.com/integrations/frameworks/langchain)
 - [Tracing Llama Index Agents](https://documentation.confident-ai.com/docs/llm-tracing/integrations/llamaindex)
 
+### Maxim AI
+
+[Maxim AI](https://www.getmaxim.ai/) is an Agent Simulation, Evaluation & Observability platform that helps developers build, monitor, and improve their LLM applications. The Maxim integration with LlamaIndex provides comprehensive tracing, monitoring, and evaluation capabilities for your RAG systems, agents, and other LLM workflows.
+
+#### Usage Pattern
+
+Install the required packages:
+
+```bash
+pip install maxim-py
+```
+
+Set up your environment variables:
+
+```python
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Get environment variables
+MAXIM_API_KEY = os.getenv("MAXIM_API_KEY")
+MAXIM_LOG_REPO_ID = os.getenv("MAXIM_LOG_REPO_ID")
+
+# Verify required environment variables are set
+if not MAXIM_API_KEY:
+    raise ValueError("MAXIM_API_KEY environment variable is required")
+if not MAXIM_LOG_REPO_ID:
+    raise ValueError("MAXIM_LOG_REPO_ID environment variable is required")
+```
+
+Initialize Maxim and instrument LlamaIndex:
+
+```python
+from maxim import Config, Maxim
+from maxim.logger import LoggerConfig
+from maxim.logger.llamaindex import instrument_llamaindex
+
+# Initialize Maxim logger
+maxim = Maxim(Config(api_key=os.getenv("MAXIM_API_KEY")))
+logger = maxim.logger(LoggerConfig(id=os.getenv("MAXIM_LOG_REPO_ID")))
+
+# Instrument LlamaIndex with Maxim observability
+# Set debug=True to see detailed logs during development
+instrument_llamaindex(logger, debug=True)
+
+print("✅ Maxim instrumentation enabled for LlamaIndex")
+```
+
+Now your LlamaIndex applications will automatically send traces to Maxim:
+
+```python
+from llama_index.core.agent import FunctionAgent
+from llama_index.core.tools import FunctionTool
+from llama_index.llms.openai import OpenAI
+
+
+# Define tools and create agent
+def add_numbers(a: float, b: float) -> float:
+    """Add two numbers together."""
+    return a + b
+
+
+add_tool = FunctionTool.from_defaults(fn=add_numbers)
+llm = OpenAI(model="gpt-4o-mini", temperature=0)
+
+agent = FunctionAgent(
+    tools=[add_tool],
+    llm=llm,
+    verbose=True,
+    system_prompt="You are a helpful calculator assistant.",
+)
+
+# This will be automatically logged by Maxim instrumentation
+import asyncio
+
+response = await agent.run("What is 15 + 25?")
+print(f"Response: {response}")
+```
+
+#### Guides
+
+- [Maxim Instrumentation Cookbook](../../examples/observability/Maxim-Instrumentation.ipynb)
+- [Maxim AI Documentation](https://www.getmaxim.ai/docs/sdk/python/integrations/llamaindex/llamaindex)
+
+![tracing](https://cdn.getmaxim.ai/public/images/llamaindex.gif)
+
 
 ## Other Partner `One-Click` Integrations (Legacy Modules)
 
@@ -540,42 +676,6 @@ set_global_handler("langfuse")
 - [Langfuse Tracing with PostHog](../../examples/observability/LangfuseMistralPostHog.ipynb)
 
 ![langfuse-tracing](https://static.langfuse.com/llamaindex-langfuse-docs.gif)
-
-### Weights and Biases Prompts
-
-Prompts allows users to log/trace/inspect the execution flow of LlamaIndex during index construction and querying. It also allows users to version-control their indices.
-
-#### Usage Pattern
-
-```python
-from llama_index.core import set_global_handler
-
-set_global_handler("wandb", run_args={"project": "llamaindex"})
-
-# NOTE: No need to do the following
-from llama_index.callbacks.wandb import WandbCallbackHandler
-from llama_index.core.callbacks import CallbackManager
-from llama_index.core import Settings
-
-# wandb_callback = WandbCallbackHandler(run_args={"project": "llamaindex"})
-# Settings.callback_manager = CallbackManager([wandb_callback])
-
-# access additional methods on handler to persist index + load index
-import llama_index.core
-
-# persist index
-llama_index.core.global_handler.persist_index(graph, index_name="my_index")
-# load storage context
-storage_context = llama_index.core.global_handler.load_storage_context(
-    artifact_url="ayut/llamaindex/my_index:v0"
-)
-```
-
-![](../../_static/integrations/wandb.png)
-
-#### Guides
-
-- [Wandb Callback Handler](../../examples/callbacks/WandbCallbackHandler.ipynb)
 
 ### OpenInference
 

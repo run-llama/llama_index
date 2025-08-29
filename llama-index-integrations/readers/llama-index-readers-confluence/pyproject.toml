@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-confluence"
-version = "0.4.0"
+version = "0.4.1"
 description = "llama-index readers confluence integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"

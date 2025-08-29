@@ -1,5 +1,55 @@
 # ChangeLog
 
+## [2025-08-22]
+
+### `llama-index-core` [0.13.3]
+
+- fix: add timeouts on image `.get()` requests (#19723)
+- fix: fix StreamingAgentChatResponse losses message bug (#19674)
+- fix: Fixing crashing when retrieving from empty vector store index (#19706)
+- fix: Calling ContextChatEngine with a QueryBundle (instead of a string) (#19714)
+- fix: Fix faithfulness evaluate crash when no images provided (#19686)
+
+### `llama-index-embeddings-heroku` [0.1.0]
+
+- feat: Adds support for HerokuEmbeddings (#19685)
+
+### `llama-index-embeddings-ollama` [0.8.2]
+
+- feat: enhance OllamaEmbedding with instruction support (#19721)
+
+### `llama-index-llms-anthropic` [0.8.5]
+
+- fix: Fix prompt caching with CachePoint (#19711)
+
+### `llama-index-llms-openai` [0.5.4]
+
+- feat: add gpt-5-chat-latest model support (#19687)
+
+### `llama-index-llms-sagemaker-endpoint` [0.4.1]
+
+- fix: fix constructor region read to not read region_name before is popped from kwargs, and fix assign to super (#19705)
+
+### `llama-index-llms-upstage` [0.6.2]
+
+- chore: remove deprecated model(solar-pro) (#19704)
+
+### `llama-index-readers-confluence` [0.4.1]
+
+- fix: Support concurrent use of multiple ConfluenceReader instances (#19698)
+
+### `llama-index-vector-stores-chroma` [0.5.1]
+
+- fix: fix `get_nodes()` with empty node ids (#19711)
+
+### `llama-index-vector-stores-qdrant` [0.8.1]
+
+- feat: support qdrant sharding (#19652)
+
+### `llama-index-vector-stores-tencentvectordb` [0.4.1]
+
+- fix: Resolve AttributeError in CollectionParams.filter_fields access (#19695)
+
 ## [2025-08-14]
 
 ### `llama-index-core` [0.13.2]
@@ -57,7 +107,6 @@
 ### `llama-index-vector-stores-postgres` [0.6.3]
 
 - fix: Add other special characters in `ts_query` normalization (#19637)
-
 
 ## [2025-08-08]
 

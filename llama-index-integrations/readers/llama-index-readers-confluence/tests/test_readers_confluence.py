@@ -319,7 +319,7 @@ def test_confluence_reader_process_page_with_callbacks(mock_html2text_class):
     result = reader.process_page(page_data, False, mock_text_maker)
     assert result is not None
     assert result.doc_id == "normal_page"
-    assert result.extra_info["title"] == "Test Page"
+    assert result.metadata["title"] == "Test Page"
 
     # Test page that should be skipped
     page_data_skip = {

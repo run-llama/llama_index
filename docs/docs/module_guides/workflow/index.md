@@ -1,6 +1,6 @@
 # Workflows
 
-A `Workflow` in LlamaIndex is an event-driven abstraction used to chain together several events. Workflows are made up
+A [`Workflow`](../../workflows/) in LlamaIndex is an event-driven abstraction used to chain together several events. Workflows are made up
 of `steps`, with each step responsible for handling certain event types and emitting new events.
 
 You can create a `Workflow` to do anything! Build an agent, a RAG flow, an extraction flow, or anything else you want.
@@ -19,5 +19,5 @@ Workflows are also automatically instrumented, so you get observability into eac
     At the moment, the latest version of `llama-index-workflows` is 2.0 while the one shipped with `llama-index` is
     1.3
 
-- [v1.x Documentation](./v1/index.md)
-- [v2.x Documentation](./v2/index.md)
+- [v1.x Documentation](../../workflows/v1/index.md)
+- [v2.x Documentation](../../workflows/v2/index.md)
