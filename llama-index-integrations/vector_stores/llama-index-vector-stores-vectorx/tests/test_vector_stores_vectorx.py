@@ -11,7 +11,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from vecx.vectorx import VectorX
 from llama_index.vector_stores.vectorx import VectorXVectorStore
 from llama_index.core import Document, StorageContext, VectorStoreIndex, Settings
-from llama_index.embeddings.huggingface import HuggingFaceEmbedding
+from llama_index.embeddings.huggingface.base import HuggingFaceEmbedding
 from llama_index.core.vector_stores.types import (
     MetadataFilters,
     MetadataFilter,

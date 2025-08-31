@@ -7,6 +7,7 @@ dev = [
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
     "mypy==0.991",
+    "pip",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
     "pytest==7.2.1",
@@ -28,13 +29,14 @@ dev = [
 name = "llama-index-vector-stores-vectorx"
 version = "0.1.0"
 description = "LlamaIndex VectorX vector store integration"
-authors = [{ name = "Your Name", email = "you@example.com" }]
+authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
     "vecx>=0.1.0",
     "llama-index-core>=0.13.0,<0.14",
+    "llama-index-embeddings-huggingface",
 ]
 
 [tool.codespell]

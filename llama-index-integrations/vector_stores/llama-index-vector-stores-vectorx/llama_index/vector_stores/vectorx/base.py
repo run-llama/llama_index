@@ -18,21 +18,6 @@ from llama_index.core.vector_stores.utils import (
     node_to_metadata_dict,
 )
 
-
-def _import_vectorx() -> Any:
-    """
-    Try to import vectorx module. If it's not already installed, instruct user how to install.
-    """
-    try:
-        import vecx
-    except ImportError as e:
-        raise ImportError(
-            "Could not import vectorx python package. "
-            "Please install it with `pip install vecx`."
-        ) from e
-    return vecx
-
-
 ID_KEY = "id"
 VECTOR_KEY = "values"
 SPARSE_VECTOR_KEY = "sparse_values"
@@ -89,14 +74,14 @@ def generate_sparse_vectors(
 
     """
     # create batch of input_ids
-    inputs = tokenizer(context_batch)["input_ids"]
+    outputs = tokenizer(context_batch)
+
+    if not isinstance(outputs, dict) or "input_ids" not in outputs:
+        raise ValueError("Tokenizer must return a dict with 'input_ids'.")
+
+    input_ids = outputs["input_ids"]
     # create sparse dictionaries
-    return build_dict(inputs)
-
-
-import_err_msg = (
-    "`vectorx` package not found, please run `pip install vecx` to install it.`"
-)
+    return build_dict(input_ids)
 
 
 class VectorXVectorStore(BasePydanticVectorStore):
@@ -161,8 +146,13 @@ class VectorXVectorStore(BasePydanticVectorStore):
         space_type: Optional[str] = "cosine",
     ) -> Any:
         """Initialize VectorX index using the current API."""
-        vecx = _import_vectorx()
-        from vecx.vectorx import VectorX
+        try:
+            from vecx.vectorx import VectorX
+        except ImportError as e:
+            raise ImportError(
+                "Could not import `vecx` package. "
+                "Please install it with `pip install vecx`."
+            ) from e
 
         # Initialize VectorX client
         vx = VectorX(token=api_token)
@@ -364,7 +354,7 @@ class VectorXVectorStore(BasePydanticVectorStore):
             )
         except Exception as e:
             _logger.error(f"Error querying VectorX: {e}")
-            return VectorStoreQueryResult(nodes=[], similarities=[], ids=[])
+            raise
 
         # Process results
         nodes = []
