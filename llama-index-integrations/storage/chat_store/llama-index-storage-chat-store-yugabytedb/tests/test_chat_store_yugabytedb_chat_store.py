@@ -27,14 +27,10 @@ def yugabytedb_connection() -> Generator[Dict[str, Union[str, Container]], None,
     YUGABYTEDB_PASSWORD = "yugabyte"
     YUGABYTEDB_PORT = 5433
     YUGABYTEDB_LOAD_BALANCE = True
-    try:
-        connection_string = f"postgresql://{YUGABYTEDB_USER}:{YUGABYTEDB_PASSWORD}@{YUGABYTEDB_HOST}:{YUGABYTEDB_PORT}/{YUGABYTEDB_DBNAME}?load_balance={YUGABYTEDB_LOAD_BALANCE}"
-        psycopg2.connect(connection_string)
-        yield {
-            "connection_string": connection_string,
-        }
-    except Exception as e:
-        print(f"Could not connect to yugabytedb: {e}")
+    connection_string = f"yugabytedb+psycopg2://{YUGABYTEDB_USER}:{YUGABYTEDB_PASSWORD}@{YUGABYTEDB_HOST}:{YUGABYTEDB_PORT}/{YUGABYTEDB_DBNAME}?load_balance={YUGABYTEDB_LOAD_BALANCE}"
+    yield {
+        "connection_string": connection_string,
+    }
 
 
 @pytest.fixture()

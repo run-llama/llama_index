@@ -1,5 +1,5 @@
 from typing import Any, Optional
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs
 
 from sqlalchemy import (
     Index,
@@ -96,7 +96,7 @@ class YugabyteDBChatStore(BaseChatStore):
         user: Optional[str] = None,
         password: Optional[str] = None,
         load_balance: Optional[bool] = False,
-        topology: Optional[str] = None,
+        topology_keys: Optional[str] = None,
         yb_servers_refresh_interval: Optional[int] = 300,
         fallback_to_topology_keys_only: Optional[bool] = False,
         failed_host_ttl_seconds: Optional[int] = 5,
@@ -113,8 +113,8 @@ class YugabyteDBChatStore(BaseChatStore):
             "load_balance": str(load_balance)
         }
 
-        if topology is not None:
-            query_params["topology_keys"] = topology
+        if topology_keys is not None:
+            query_params["topology_keys"] = topology_keys
         if yb_servers_refresh_interval is not None:
             query_params["yb_servers_refresh_interval"] = yb_servers_refresh_interval
         if fallback_to_topology_keys_only:
@@ -320,11 +320,17 @@ class YugabyteDBChatStore(BaseChatStore):
 def params_from_uri(uri: str) -> dict:
     result = urlparse(uri)
     database = result.path[1:]
-    port = result.port if result.port else 5432
+    query_params = parse_qs(result.query)
+    port = result.port if result.port else 5433
     return {
         "database": database,
         "user": result.username,
         "password": result.password,
         "host": result.hostname,
         "port": port,
+        "load_balance": query_params.get("load_balance", ["false"])[0].lower() == "true",
+        "topology_keys": query_params.get("topology_keys", [None])[0],
+        "yb_servers_refresh_interval": int(query_params.get("yb_servers_refresh_interval", [300])[0]),
+        "fallback_to_topology_keys_only": query_params.get("fallback_to_topology_keys_only", ["false"])[0].lower() == "true",
+        "failed_host_ttl_seconds": int(query_params.get("failed_host_ttl_seconds", [5])[0]),
     }

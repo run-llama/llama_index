@@ -13,7 +13,7 @@ from llama_index.storage.chat_store.yugabytedb import YugabyteDBChatStore
 from llama_index.core.memory import ChatMemoryBuffer
 
 chat_store = YugabyteDBChatStore.from_uri(
-    uri="postgresql+psycopg2://postgres:password@127.0.0.1:5433/yugabyte?load_balance=true",
+    uri="yugabytedb+psycopg2://postgres:password@127.0.0.1:5433/yugabyte?load_balance=true",
 )
 
 chat_memory = ChatMemoryBuffer.from_defaults(
