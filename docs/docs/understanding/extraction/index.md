@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 1
+---
+
 # Introduction to Structured Data Extraction
 
 LLMs excel at data understanding, leading to one of their most important use cases: the ability to turn regular human language (which we refer to as **unstructured data**) into specific, regular, expected formats for consumption by computer programs. We call the output of this process **structured data**. Since in the process of conversion a lot of superfluous data is often ignored, we call it **extraction**.
