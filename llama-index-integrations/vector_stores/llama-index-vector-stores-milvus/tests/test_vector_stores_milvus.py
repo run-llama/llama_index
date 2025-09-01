@@ -781,7 +781,7 @@ def test_custom_node_format():
         primary_field_name="id",
         vector_field_name="embedding",
         metric_type="COSINE",
-        auto_id=True
+        auto_id=True,
     )
     vector_store = MilvusVectorStore(
         uri=milvus_db_uri,
@@ -790,21 +790,32 @@ def test_custom_node_format():
         doc_id_field="id",
         embedding_field="embedding",
         text_key="custom_text",
-        output_fields=["custom_meta"]
+        output_fields=["custom_meta"],
     )
-    vector_store.client.insert(COLLECTION_NAME, data=[
-        {"embedding": [0.5] * DIM, "custom_text": "n1_text", "custom_meta": "n1_meta"},
-        {"embedding": [-0.5] * DIM, "custom_text": "n2_text", "custom_meta": "n2_meta"},
-    ])
+    vector_store.client.insert(
+        COLLECTION_NAME,
+        data=[
+            {
+                "embedding": [0.5] * DIM,
+                "custom_text": "n1_text",
+                "custom_meta": "n1_meta",
+            },
+            {
+                "embedding": [-0.5] * DIM,
+                "custom_text": "n2_text",
+                "custom_meta": "n2_meta",
+            },
+        ],
+    )
 
     query = VectorStoreQuery(query_embedding=[0.5] * DIM, similarity_top_k=1)
     result = vector_store.query(query=query)
     assert len(result.nodes) == 1
     assert result.nodes[0].text == "n1_text"
-    assert result.nodes[0].metadata.get('custom_meta') == 'n1_meta'
+    assert result.nodes[0].metadata.get("custom_meta") == "n1_meta"
 
     query = VectorStoreQuery(query_embedding=[-0.5] * DIM, similarity_top_k=1)
     result = vector_store.query(query=query)
     assert len(result.nodes) == 1
     assert result.nodes[0].text == "n2_text"
-    assert result.nodes[0].metadata.get('custom_meta') == 'n2_meta'
+    assert result.nodes[0].metadata.get("custom_meta") == "n2_meta"

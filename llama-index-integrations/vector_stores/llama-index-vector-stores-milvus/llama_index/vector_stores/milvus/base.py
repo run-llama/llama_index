@@ -688,12 +688,17 @@ class MilvusVectorStore(BasePydanticVectorStore):
                     "The passed in text_key value does not exist "
                     "in the retrieved entity."
                 )
-            if '_node_type' in item.keys():
+            if "_node_type" in item:
                 node = metadata_dict_to_node(item, text=text_content)
             elif text_content:
-                node = TextNode(text=text_content, metadata={key: item.get(key) for key in self.output_fields})
+                node = TextNode(
+                    text=text_content,
+                    metadata={key: item.get(key) for key in self.output_fields},
+                )
             else:
-                raise ValueError("Node type not found in metadata dict and no text content found.")
+                raise ValueError(
+                    "Node type not found in metadata dict and no text content found."
+                )
             node.embedding = item.get(self.embedding_field, None)
             nodes.append(node)
         return nodes
@@ -726,12 +731,17 @@ class MilvusVectorStore(BasePydanticVectorStore):
                     "The passed in text_key value does not exist "
                     "in the retrieved entity."
                 )
-            if '_node_type' in item.keys():
+            if "_node_type" in item:
                 node = metadata_dict_to_node(item, text=text_content)
             elif text_content:
-                node = TextNode(text=text_content, metadata={key: item.get(key) for key in self.output_fields})
+                node = TextNode(
+                    text=text_content,
+                    metadata={key: item.get(key) for key in self.output_fields},
+                )
             else:
-                raise ValueError("Node type not found in metadata dict and no text content found.")
+                raise ValueError(
+                    "Node type not found in metadata dict and no text content found."
+                )
             node.embedding = item.get(self.embedding_field, None)
             nodes.append(node)
         return nodes
@@ -1422,7 +1432,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         ids = []
         # Parse the results
         for hit in results[0]:
-            if '_node_type' in hit["entity"].keys():
+            if "_node_type" in hit["entity"]:
                 metadata = {
                     "_node_content": hit["entity"].get("_node_content", None),
                     "_node_type": hit["entity"].get("_node_type", None),
@@ -1431,7 +1441,9 @@ class MilvusVectorStore(BasePydanticVectorStore):
                     metadata[key] = hit["entity"].get(key)
                 node = metadata_dict_to_node(metadata)
             else:
-                node = TextNode(metadata={key: hit["entity"].get(key) for key in self.output_fields})
+                node = TextNode(
+                    metadata={key: hit["entity"].get(key) for key in self.output_fields}
+                )
 
             # Set the text field if it exists
             if self.text_key in hit["entity"]:
