@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 7
+---
+
 # Subclassing workflows
 
 Another great feature of workflows is their extensibility. You can take workflows written by others or built-ins from LlamaIndex and extend them to customize them to your needs. We'll look at two ways to do that.

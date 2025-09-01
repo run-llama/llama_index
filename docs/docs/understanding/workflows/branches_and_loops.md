@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 3
+---
+
 # Branches and loops
 
 A key feature of Workflows is their enablement of branching and looping logic, more simply and flexibly than graph-based approaches.

@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 1
+---
+
 # High-Level Concepts
 
 This is a quick guide to the high-level concepts you'll encounter frequently when building LLM applications.

@@ -1,3 +1,7 @@
+---
+sidebar:
+  order: 1
+---
 # Building an LLM application
 
 Welcome to Understanding LlamaIndex. This is a series of short, bite-sized tutorials on every stage of building an agentic LLM application to get you acquainted with how to use LlamaIndex before diving into more advanced and subtle strategies. If you're an experienced programmer new to LlamaIndex, this is the place to start.

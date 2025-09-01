@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 9
+---
+
 # Observability
 
 Debugging is essential to any application development, and Workflows provide you a number of ways to do that.

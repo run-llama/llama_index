@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 2
+---
+
 # Basic workflow
 
 ## Getting started

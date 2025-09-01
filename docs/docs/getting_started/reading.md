@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 4
+---
+
 # How to read these docs
 
 Welcome to the LlamaIndex documentation! We've tried hard to make these docs approachable regardless of your experience level with LlamaIndex and with LLMs and generative AI in general.

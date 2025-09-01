@@ -1,3 +1,7 @@
+---
+sidebar:
+  order: 8
+---
 # Frequently Asked Questions (FAQ)
 
 !!! tip

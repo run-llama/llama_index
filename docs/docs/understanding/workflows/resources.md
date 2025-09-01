@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 8
+---
+
 # Resources
 
 Resources are external dependencies such as memory, LLMs, query engines or chat history instances that will be injected

@@ -1,4 +1,9 @@
-# Adding other tools
+---
+sidebar:
+  order: 2
+---
+
+# Using existing tools
 
 Now that you've built a capable agent, we hope you're excited about all it can do. The core of expanding agent capabilities is the tools available, and we have good news: [LlamaHub](https://llamahub.ai) from LlamaIndex has hundreds of integrations, including [dozens of existing agent tools](https://llamahub.ai/?tab=tools) that you can use right away. We'll show you how to use one of the existing tools, and also how to build and contribute your own.
 

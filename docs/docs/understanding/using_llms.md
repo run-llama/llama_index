@@ -1,3 +1,7 @@
+---
+sidebar:
+  order: 2
+---
 # Using LLMs
 
 !!! tip
