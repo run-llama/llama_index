@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 7
+---
+
 # ChangeLog
 
 ## [2025-08-22]

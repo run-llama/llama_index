@@ -1,3 +1,7 @@
+---
+sidebar:
+  order: 7
+---
 # Discover LlamaIndex Video Series
 
 If you like learning from videos, now's a good time to check out our "Discover LlamaIndex" series. If not, we recommend heading on to our [Understanding LlamaIndex](../understanding/index.md) tutorial.

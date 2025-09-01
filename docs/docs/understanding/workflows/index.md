@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 1
+---
+
 # Workflows introduction
 
 ## What is a workflow?

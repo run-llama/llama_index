@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 10
+---
+
 # Workflows from unbound functions
 
 Throughout this tutorial we have been showing workflows defined as classes. However, this is not the only way to define a workflow: you can also define the steps in your workflow through independent or "unbound" functions and assign them to a workflow using the `@step()` decorator. Let's see how that works.

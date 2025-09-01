@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 3
+---
+
 # Maintaining state
 
 By default, the `AgentWorkflow` is stateless between runs. This means that the agent will not have any memory of previous runs.

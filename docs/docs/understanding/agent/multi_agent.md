@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 6
+---
+
 # Multi-agent patterns in LlamaIndex
 
 When more than one specialist is required to solve a task you have several options in LlamaIndex, each trading off convenience for flexibility.  This page walks through the three most common patterns, when to choose each one, and provides a minimal code sketch for every approach.

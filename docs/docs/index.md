@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 1
+---
+
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
 # Welcome to LlamaIndex 🦙 !

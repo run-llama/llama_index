@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 5
+---
+
 # Streaming events
 
 Workflows can be complex -- they are designed to handle complex, branching, concurrent logic -- which means they can take time to fully execute. To provide your user with a good experience, you may want to provide an indication of progress by streaming events as they occur. Workflows have built-in support for this on the `Context` object.

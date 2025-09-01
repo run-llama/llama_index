@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 7
+---
+
 # Using Structured Output
 
 Most of the time you need results from an agent in a specific format. Agents results can return structured json in two ways:

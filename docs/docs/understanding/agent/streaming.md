@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 4
+---
+
 # Streaming output and events
 
 In real-world use, agents can take a long time to run. Providing feedback to the user about the progress of the agent is critical, and streaming allows you to do that.

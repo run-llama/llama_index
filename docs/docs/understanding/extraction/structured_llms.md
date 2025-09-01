@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 2
+---
+
 # Using Structured LLMs
 
 The highest-level way to extract structured data in LlamaIndex is to instantiate a Structured LLM. First, let’s instantiate our Pydantic class as previously:

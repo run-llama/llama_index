@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 3
+---
+
 # Installation and Setup
 
 The LlamaIndex ecosystem is structured using a collection of namespaced python packages.

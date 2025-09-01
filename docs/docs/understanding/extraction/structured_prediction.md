@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 3
+---
+
 # Structured Prediction
 
 Structured Prediction gives you more granular control over how your application calls the LLM and uses Pydantic. We will use the same `Invoice` class, load the PDF as we did in the previous example, and use OpenAI as before. Instead of creating a structured LLM, we will call `structured_predict` on the LLM itself; this a method of every LLM class.

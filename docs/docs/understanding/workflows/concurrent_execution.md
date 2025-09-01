@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 6
+---
+
 # Concurrent execution of workflows
 
 In addition to looping and branching, workflows can run steps concurrently. This is useful when you have multiple steps that can be run independently of each other and they have time-consuming operations that they `await`, allowing other steps to run in parallel.

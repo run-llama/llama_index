@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 4
+---
+
 # Low-level structured data extraction
 
 If your LLM supports tool calling and you need more direct control over how LlamaIndex extracts data, you can use `chat_with_tools` on an LLM directly. If your LLM does not support tool calling you can instruct your LLM directly and parse the output yourself. We’ll show how to do both.

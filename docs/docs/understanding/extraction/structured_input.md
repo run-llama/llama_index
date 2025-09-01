@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 5
+---
+
 # Structured Input
 
 The other side of structured data, beyond the output, is the input: many prompting guides and best practices, indeed, include some techniques such as XML tagging of the input prompt to boost the LLM's understanding of the input.

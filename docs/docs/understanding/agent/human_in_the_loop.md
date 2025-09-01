@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 5
+---
+
 # Human in the loop
 
 Tools can also be defined that get a human in the loop. This is useful for tasks that require human input, such as confirming a tool call or providing feedback.

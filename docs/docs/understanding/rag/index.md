@@ -1,3 +1,9 @@
+---
+sidebar:
+  order: 1
+title: Introduction to RAG
+---
+
 !!! tip
     If you haven't, [install LlamaIndex](../../getting_started/installation.md) and complete the [starter tutorial](../../getting_started/starter_example.md) before you read this. It will help ground these steps in your experience.
 
