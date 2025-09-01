@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Optional, Union, Dict
 import json
+import re
 
 if TYPE_CHECKING:
     from langchain.base_language import BaseLanguageModel  # pants: no-infer-dep
@@ -173,6 +174,12 @@ def parse_partial_json(s: str) -> Dict:
     # Close any remaining open structures in the reverse order that they were opened.
     for closing_char in reversed(stack):
         new_s += closing_char
+
+    # Extract the JSON from the string
+    json_match = re.search(r"(\{.*?\}|\[.*?\])", new_s, re.DOTALL)
+    if not json_match:
+        raise ValueError("No JSON found in the string")
+    new_s = json_match.group(0)
 
     # Attempt to parse the modified string as JSON.
     try:
