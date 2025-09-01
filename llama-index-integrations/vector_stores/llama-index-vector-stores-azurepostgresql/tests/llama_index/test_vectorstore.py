@@ -1,11 +1,16 @@
-from typing import Any
+from typing import Any, List
 from llama_index.core.schema import (
     TextNode,
 )
+from llama_index.core.vector_stores.types import VectorStoreQuery
+from llama_index.core.vector_stores.types import (
+    MetadataFilter,
+    MetadataFilters,
+)
+
 
 import re
 from contextlib import nullcontext
-from typing import Any
 
 import pytest
 from pgvector.psycopg import (  # type: ignore[import-untyped]
@@ -84,14 +89,12 @@ def verify_table_created(table: Table, resultset: list[dict[str, Any]]) -> None:
     )
 
 class TestAzurePGVectorStore:
-    # @pytest.mark.skip
     @pytest.mark.xfail(
         reason="Table creation failure tests not yet implemented",
         raises=AssertionError,
     )
     def test_table_creation_failure(self):
         assert False
-
 
     # @pytest.mark.skip
     def test_table_creation_success(
@@ -175,45 +178,6 @@ class TestAzurePGVectorStore:
                 "Retrieved node ID does not match expected"
             )
     
-    
-    @pytest.mark.parametrize(
-        ["query", "embedding", "k"],
-        [
-            ("query about cats", [0.99] * 1536, 2),
-            ("query about animals", [0.5] * 1536, 3),
-        ],
-        ids=["search-cats", "search-animals"],
-    )
-    def test_similarity_search_by_vector(
-        self, vectorstore: AzurePGVectorStore, query: str, embedding: list[float], k: int
-    ):
-        results = vectorstore._similarity_search_by_vector_with_distance(
-            embedding=embedding, k=k
-        )
-
-        contents = [row[0]["content"] for row in results]
-
-        if ("cats" in query) or ("animals" in query):
-            assert len(results) == k, f"Expected {k} results"
-            assert any("cats" in c for c in contents) or any(
-                "tigers" in c for c in contents
-            ), (
-                f"Expected 'cats' or 'tigers' in retrieved documents' contents for query: {query}"
-            )
-
-        if "cats" in query:
-            assert all("dogs" not in c for c in contents), (
-                f"Expected 'dogs' not to be in retrieved documents' contents for query: {query}"
-            )
-        elif "animals" in query:
-            assert any("dogs" in c for c in contents), (
-                f"Expected 'dogs' to be in retrieved documents' contents for query: {query}"
-            )
-
-        assert all("plants" not in c for c in contents), (
-            f"Expected 'plants' not to be in retrieved documents' contents for query: {query}"
-        )
-        
 
     # @pytest.mark.skip
     @pytest.mark.parametrize(
@@ -360,4 +324,53 @@ class TestAzurePGVectorStore:
 
         assert not remaining_set, (
             "All document IDs should have been deleted"
+        )
+
+
+    
+    @pytest.mark.parametrize(
+        ["query", "embedding", "k", "filters"],
+        [
+            ("query about cats", [0.99] * 1536, 2, None),
+            ("query about animals", [0.5] * 1536, 3, None),
+            ("query about cats", [0.99] * 1536, 2, "filter1"),
+            ("query about cats", [0.99] * 1536, 2, "filter2"),
+        ],
+        indirect=["filters"],
+        ids=[
+            "search-cats", 
+            "search-animals", 
+            "search-cats-filtered",
+            "search-cats-multifiltered"],
+    )
+    def test_query(
+        self, vectorstore: AzurePGVectorStore, query: str, embedding: list[float], k: int, filters: MetadataFilters | None
+    ):
+        vsquery = VectorStoreQuery(query_str=query, query_embedding=embedding, similarity_top_k=k, filters=filters)
+        results = vectorstore.query(
+            query=vsquery
+        )
+
+        results = results.nodes
+        contents = [row.get_content() for row in results]
+
+        if ("cats" in query) or ("animals" in query):
+            assert len(results) == k, f"Expected {k} results"
+            assert any("cats" in c for c in contents) or any(
+                "tigers" in c for c in contents
+            ), (
+                f"Expected 'cats' or 'tigers' in retrieved documents' contents for query: {query}"
+            )
+
+        if "cats" in query:
+            assert all("dogs" not in c for c in contents), (
+                f"Expected 'dogs' not to be in retrieved documents' contents for query: {query}"
+            )
+        elif "animals" in query:
+            assert any("dogs" in c for c in contents), (
+                f"Expected 'dogs' to be in retrieved documents' contents for query: {query}"
+            )
+
+        assert all("plants" not in c for c in contents), (
+            f"Expected 'plants' not to be in retrieved documents' contents for query: {query}"
         )

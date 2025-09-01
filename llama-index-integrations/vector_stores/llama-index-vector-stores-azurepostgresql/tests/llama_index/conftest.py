@@ -8,6 +8,10 @@ from psycopg_pool import ConnectionPool
 from pydantic import BaseModel, PositiveInt
 
 from llama_index.core.schema import Node
+from llama_index.core.vector_stores.types import (
+    MetadataFilter,
+    MetadataFilters,
+)
 
 from llama_index.vector_stores.azure_postgres.common import Algorithm, VectorType
 from llama_index.vector_stores.azure_postgres import (
@@ -61,13 +65,13 @@ def node_tuple(
         n.node_id = '00000000-0000-0000-0000-000000000001'
         n.set_content("Text 1 about cats")
         n.embedding = [1.0] * 1536
-        n.metadata = {"metadata_column1": "text1", "doc_id": 1}
+        n.metadata = {"metadata_column1": "text1", "metadata_column2": 1}
     elif request.param == "node-not-found":
         n = Node()
         n.node_id = '00000000-0000-0000-0000-000000000010'
         n.set_content("Text 10 about cats")
         n.embedding = [10.0] * 1536
-        n.metadata = {"metadata_column1": "text1", "doc_id": 10}
+        n.metadata = {"metadata_column1": "text1", "metadata_column2": 10}
     else:
         raise ValueError(f"Unknown node parameter: {request.param}")
 
@@ -167,6 +171,45 @@ def table(
         )
 
 
+@pytest.fixture(
+    params=[
+        "filter1",
+        "filter2",
+    ]
+)
+def filters(
+    request: pytest.FixtureRequest,
+) -> MetadataFilters | None:
+    if request.param == "filter1":
+        vsfilters = MetadataFilters(
+                    filters=[
+                        MetadataFilter(key="metadata_column2", value="3", operator="!=")
+                    ],
+                    condition="and",
+                )
+    elif request.param == "filter2":
+        vsfilters = MetadataFilters(
+                    filters=[
+                        MetadataFilters(
+                            filters=[
+                                MetadataFilter(key="metadata_column1", value="not-text", operator="!="),
+                            ],
+                            condition="or",
+                        ),
+                        MetadataFilters(
+                            filters=[
+                                MetadataFilter(key="metadata_column2", value="3", operator="!="),
+                            ],
+                            condition="and",
+                        )
+                    ],
+                    condition="and",
+                )
+    else:
+        return None
+    return vsfilters
+
+
 @pytest.fixture
 def vectorstore(connection_pool: ConnectionPool, table: Table) -> AzurePGVectorStore:
     vector_store = AzurePGVectorStore.from_params(
@@ -191,7 +234,7 @@ def vectorstore(connection_pool: ConnectionPool, table: Table) -> AzurePGVectorS
     n1.node_id = '00000000-0000-0000-0000-000000000001'
     n1.set_content("Text 1 about cats")
     n1.embedding = [1.0] * dim
-    n1.metadata = {"metadata_column1": "text1", "doc_id": 1}
+    n1.metadata = {"metadata_column1": "text1", "metadata_column2": 1}
     nodes.append(n1)
 
     n2 = Node()
@@ -199,21 +242,21 @@ def vectorstore(connection_pool: ConnectionPool, table: Table) -> AzurePGVectorS
     n2.set_content("Text 2 about tigers")
     # tigers should be close to cats
     n2.embedding = [0.95] * dim
-    n2.metadata = {"metadata_column1": "text2", "doc_id": 2}
+    n2.metadata = {"metadata_column1": "text2", "metadata_column2": 2}
     nodes.append(n2)
 
     n3 = Node()
     n3.node_id = '00000000-0000-0000-0000-000000000003'
     n3.set_content("Text 3 about dogs")
     n3.embedding = [0.3] * dim
-    n3.metadata = {"metadata_column1": "text3", "doc_id": 3}
+    n3.metadata = {"metadata_column1": "text3", "metadata_column2": 3}
     nodes.append(n3)
 
     n4 = Node()
     n4.node_id = '00000000-0000-0000-0000-000000000004'
     n4.set_content("Text 4 about plants")
     n4.embedding = [-1.0] * dim
-    n4.metadata = {"metadata_column1": "text4", "doc_id": 4}
+    n4.metadata = {"metadata_column1": "text4", "metadata_column2": 4}
     nodes.append(n4)
 
     vector_store.add(nodes)

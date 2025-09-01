@@ -173,19 +173,7 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
             ivfflat_kwargs=ivfflat_kwargs or {},
         )
 
-    def _node_to_table_row(self, node: BaseNode) -> Any:
-        """Convert a BaseNode to a table row dictionary for insertion."""
-        return {
-            "id": node.node_id,
-            "content": node.get_content(metadata_mode=MetadataMode.NONE),
-            "embedding": node.get_embedding(),
-            "metadata": node_to_metadata_dict(
-                node,
-                remove_text=True,
-                flat_metadata=self.flat_metadata,
-            ),
-        }
-
+    
     def _table_row_to_node(self, row: dict[str, Any]) -> BaseNode:
         """Convert a table row dictionary to a BaseNode object."""
         metadata = row.get("metadata")
@@ -209,6 +197,7 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
 
         return node
 
+    
     def add(self, nodes: list[BaseNode], **add_kwargs: Any) -> list[str]:
         """Add a list of BaseNode objects to the vector store.
 
@@ -242,7 +231,6 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
             register_vector(conn)
             with conn.cursor(row_factory=dict_row) as cursor:
                 for node in nodes:
-                    print(node.node_id)
                     ids.append(node.node_id)
                     cursor.execute(
                         insert_sql,
@@ -269,6 +257,7 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
         Returns:
             VectorStoreQueryResult containing the search results.
         """
+
         results = self._similarity_search_by_vector_with_distance(
             embedding=query.query_embedding,
             k=query.similarity_top_k,

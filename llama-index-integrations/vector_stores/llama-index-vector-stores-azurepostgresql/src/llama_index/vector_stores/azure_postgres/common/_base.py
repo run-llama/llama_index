@@ -639,9 +639,7 @@ class BaseAzurePGVectorStore(BaseModel):
                         "top_k": k,
                     },
                 )
-
                 resultset = cursor.fetchall()
-
         return [
             (
                 {
