@@ -73,13 +73,13 @@ class FireCrawlWebReader(BasePydanticReader):
 
     def _to_dict_best_effort(self, obj: Any) -> Dict[str, Any]:
         # pydantic v2
-        if hasattr(obj, "model_dump") and callable(getattr(obj, "model_dump")):
+        if hasattr(obj, "model_dump") and callable(obj.model_dump):
             try:
                 return obj.model_dump()  # type: ignore[attr-defined]
             except Exception:
                 pass
         # pydantic v1
-        if hasattr(obj, "dict") and callable(getattr(obj, "dict")):
+        if hasattr(obj, "dict") and callable(obj.dict):
             try:
                 return obj.dict()  # type: ignore[attr-defined]
             except Exception:
@@ -116,11 +116,19 @@ class FireCrawlWebReader(BasePydanticReader):
                 return data_obj.get(k)
         return None
 
-    def _scrape_from_dict(self, firecrawl_docs: Dict[str, Any]) -> (str, Dict[str, Any]):
+    def _scrape_from_dict(
+        self, firecrawl_docs: Dict[str, Any]
+    ) -> (str, Dict[str, Any]):
         data_obj = firecrawl_docs.get("data", firecrawl_docs)
         text_value = (
             self._scrape_get_first(
-                data_obj, "markdown", "content", "html", "raw_html", "rawHtml", "summary"
+                data_obj,
+                "markdown",
+                "content",
+                "html",
+                "raw_html",
+                "rawHtml",
+                "summary",
             )
             or ""
         )
@@ -137,7 +145,13 @@ class FireCrawlWebReader(BasePydanticReader):
                 metadata_value = {"metadata": str(meta_obj)}
 
         if isinstance(data_obj, dict):
-            for extra_key in ("links", "actions", "screenshot", "warning", "changeTracking"):
+            for extra_key in (
+                "links",
+                "actions",
+                "screenshot",
+                "warning",
+                "changeTracking",
+            ):
                 if extra_key in data_obj and data_obj.get(extra_key) is not None:
                     metadata_value[extra_key] = data_obj.get(extra_key)
 
@@ -149,14 +163,17 @@ class FireCrawlWebReader(BasePydanticReader):
         return text_value, metadata_value
 
     def _scrape_from_obj(self, firecrawl_docs: Any) -> (str, Dict[str, Any]):
-        text_value = self._safe_get_attr(
-            firecrawl_docs,
-            "markdown",
-            "content",
-            "html",
-            "raw_html",
-            "summary",
-        ) or ""
+        text_value = (
+            self._safe_get_attr(
+                firecrawl_docs,
+                "markdown",
+                "content",
+                "html",
+                "raw_html",
+                "summary",
+            )
+            or ""
+        )
 
         meta_obj = getattr(firecrawl_docs, "metadata", None)
         metadata_value: Dict[str, Any] = {}
@@ -166,7 +183,13 @@ class FireCrawlWebReader(BasePydanticReader):
             except Exception:
                 metadata_value = {"metadata": str(meta_obj)}
 
-        for extra_attr in ("links", "actions", "screenshot", "warning", "change_tracking"):
+        for extra_attr in (
+            "links",
+            "actions",
+            "screenshot",
+            "warning",
+            "change_tracking",
+        ):
             try:
                 extra_val = getattr(firecrawl_docs, extra_attr, None)
             except Exception:
@@ -186,15 +209,18 @@ class FireCrawlWebReader(BasePydanticReader):
     # Aux handlers (CRAWL)
     # --------------------
     def _normalize_crawl_response(self, firecrawl_docs: Any) -> List[Dict[str, Any]]:
-        firecrawl_docs = firecrawl_docs.get("data", firecrawl_docs)
-        return firecrawl_docs
+        return firecrawl_docs.get("data", firecrawl_docs)
 
     # --------------------
     # Aux handlers (MAP)
     # --------------------
     def _handle_map_error_or_links(self, response: Any, url: str) -> List[Document]:
         docs: List[Document] = []
-        if isinstance(response, dict) and "error" in response and not response.get("success", False):
+        if (
+            isinstance(response, dict)
+            and "error" in response
+            and not response.get("success", False)
+        ):
             error_message = response.get("error", "Unknown error")
             docs.append(
                 Document(
@@ -226,7 +252,9 @@ class FireCrawlWebReader(BasePydanticReader):
     # --------------------
     # Aux handlers (SEARCH)
     # --------------------
-    def _process_search_dict(self, search_response: Dict[str, Any], query: str) -> List[Document]:
+    def _process_search_dict(
+        self, search_response: Dict[str, Any], query: str
+    ) -> List[Document]:
         documents: List[Document] = []
         if search_response.get("success", False):
             search_results = search_response.get("data", [])
@@ -255,7 +283,9 @@ class FireCrawlWebReader(BasePydanticReader):
             )
         return documents
 
-    def _process_search_items(self, result_list: Any, result_type: str, query: str) -> List[Document]:
+    def _process_search_items(
+        self, result_list: Any, result_type: str, query: str
+    ) -> List[Document]:
         docs: List[Document] = []
         if not result_list:
             return docs
@@ -283,9 +313,15 @@ class FireCrawlWebReader(BasePydanticReader):
 
     def _process_search_sdk(self, search_response: Any, query: str) -> List[Document]:
         documents: List[Document] = []
-        documents += self._process_search_items(getattr(search_response, "web", None), "web", query)  # type: ignore[attr-defined]
-        documents += self._process_search_items(getattr(search_response, "news", None), "news", query)  # type: ignore[attr-defined]
-        documents += self._process_search_items(getattr(search_response, "images", None), "images", query)  # type: ignore[attr-defined]
+        documents += self._process_search_items(
+            getattr(search_response, "web", None), "web", query
+        )  # type: ignore[attr-defined]
+        documents += self._process_search_items(
+            getattr(search_response, "news", None), "news", query
+        )  # type: ignore[attr-defined]
+        documents += self._process_search_items(
+            getattr(search_response, "images", None), "images", query
+        )  # type: ignore[attr-defined]
         return documents
 
     # --------------------
@@ -310,7 +346,7 @@ class FireCrawlWebReader(BasePydanticReader):
         """Initialize with parameters."""
         # Ensure firecrawl client is installed and instantiate
         try:
-            from firecrawl import Firecrawl # type: ignore
+            from firecrawl import Firecrawl  # type: ignore
         except Exception as exc:
             raise ImportError(
                 "firecrawl not found, please run `pip install 'firecrawl-py>=3.4.0'`"
@@ -319,7 +355,7 @@ class FireCrawlWebReader(BasePydanticReader):
         # Instantiate the new Firecrawl client
         client_kwargs: Dict[str, Any] = {"api_key": api_key}
         if api_url is not None:
-            client_kwargs["api_url"] = api_url        
+            client_kwargs["api_url"] = api_url
 
         firecrawl = Firecrawl(**client_kwargs)
 
@@ -381,39 +417,65 @@ class FireCrawlWebReader(BasePydanticReader):
 
                 def _get_first(*keys: str) -> Optional[Any]:
                     for k in keys:
-                        if isinstance(data_obj, dict) and k in data_obj and data_obj.get(k):
+                        if (
+                            isinstance(data_obj, dict)
+                            and k in data_obj
+                            and data_obj.get(k)
+                        ):
                             return data_obj.get(k)
                     return None
 
                 text_value = (
-                    _get_first("markdown", "content", "html", "raw_html", "rawHtml", "summary")
+                    _get_first(
+                        "markdown", "content", "html", "raw_html", "rawHtml", "summary"
+                    )
                     or ""
                 )
 
-                meta_obj = data_obj.get("metadata", {}) if isinstance(data_obj, dict) else {}
+                meta_obj = (
+                    data_obj.get("metadata", {}) if isinstance(data_obj, dict) else {}
+                )
                 if isinstance(meta_obj, dict):
                     metadata_value = meta_obj
                 else:
                     # Convert metadata object to dict if needed
                     try:
-                        if hasattr(meta_obj, "model_dump") and callable(getattr(meta_obj, "model_dump")):
+                        if hasattr(meta_obj, "model_dump") and callable(
+                            meta_obj.model_dump
+                        ):
                             metadata_value = meta_obj.model_dump()  # type: ignore[attr-defined]
-                        elif hasattr(meta_obj, "dict") and callable(getattr(meta_obj, "dict")):
+                        elif hasattr(meta_obj, "dict") and callable(meta_obj.dict):
                             metadata_value = meta_obj.dict()  # type: ignore[attr-defined]
                         elif hasattr(meta_obj, "__dict__"):
-                            metadata_value = {k: v for k, v in vars(meta_obj).items() if not k.startswith("_")}
+                            metadata_value = {
+                                k: v
+                                for k, v in vars(meta_obj).items()
+                                if not k.startswith("_")
+                            }
                     except Exception:
                         metadata_value = {"metadata": str(meta_obj)}
 
                 # Capture other helpful fields into metadata
                 if isinstance(data_obj, dict):
-                    for extra_key in ("links", "actions", "screenshot", "warning", "changeTracking"):
-                        if extra_key in data_obj and data_obj.get(extra_key) is not None:
+                    for extra_key in (
+                        "links",
+                        "actions",
+                        "screenshot",
+                        "warning",
+                        "changeTracking",
+                    ):
+                        if (
+                            extra_key in data_obj
+                            and data_obj.get(extra_key) is not None
+                        ):
                             metadata_value[extra_key] = data_obj.get(extra_key)
                 # Bubble up success/warning if at top-level
                 if "success" in firecrawl_docs:
                     metadata_value["success"] = firecrawl_docs.get("success")
-                if "warning" in firecrawl_docs and firecrawl_docs.get("warning") is not None:
+                if (
+                    "warning" in firecrawl_docs
+                    and firecrawl_docs.get("warning") is not None
+                ):
                     metadata_value["warning_top"] = firecrawl_docs.get("warning")
             else:
                 # SDK object with attributes
@@ -427,31 +489,46 @@ class FireCrawlWebReader(BasePydanticReader):
                             return val
                     return None
 
-                text_value = _safe_get(
-                    firecrawl_docs,
-                    "markdown",
-                    "content",
-                    "html",
-                    "raw_html",
-                    "summary",
-                ) or ""
+                text_value = (
+                    _safe_get(
+                        firecrawl_docs,
+                        "markdown",
+                        "content",
+                        "html",
+                        "raw_html",
+                        "summary",
+                    )
+                    or ""
+                )
 
                 meta_obj = getattr(firecrawl_docs, "metadata", None)
                 if meta_obj is not None:
                     try:
-                        if hasattr(meta_obj, "model_dump") and callable(getattr(meta_obj, "model_dump")):
+                        if hasattr(meta_obj, "model_dump") and callable(
+                            meta_obj.model_dump
+                        ):
                             metadata_value = meta_obj.model_dump()  # type: ignore[attr-defined]
-                        elif hasattr(meta_obj, "dict") and callable(getattr(meta_obj, "dict")):
+                        elif hasattr(meta_obj, "dict") and callable(meta_obj.dict):
                             metadata_value = meta_obj.dict()  # type: ignore[attr-defined]
                         elif hasattr(meta_obj, "__dict__"):
-                            metadata_value = {k: v for k, v in vars(meta_obj).items() if not k.startswith("_")}
+                            metadata_value = {
+                                k: v
+                                for k, v in vars(meta_obj).items()
+                                if not k.startswith("_")
+                            }
                         else:
                             metadata_value = {"metadata": str(meta_obj)}
                     except Exception:
                         metadata_value = {"metadata": str(meta_obj)}
 
                 # Attach extra top-level attributes if present on SDK object
-                for extra_attr in ("links", "actions", "screenshot", "warning", "change_tracking"):
+                for extra_attr in (
+                    "links",
+                    "actions",
+                    "screenshot",
+                    "warning",
+                    "change_tracking",
+                ):
                     try:
                         extra_val = getattr(firecrawl_docs, extra_attr, None)
                     except Exception:
@@ -489,7 +566,11 @@ class FireCrawlWebReader(BasePydanticReader):
             response = self.firecrawl.map(url, **map_params)  # type: ignore[attr-defined]
 
             # Handle error response format: { "error": "..." }
-            if isinstance(response, dict) and "error" in response and not response.get("success", False):
+            if (
+                isinstance(response, dict)
+                and "error" in response
+                and not response.get("success", False)
+            ):
                 error_message = response.get("error", "Unknown error")
                 documents.append(
                     Document(
@@ -582,7 +663,11 @@ class FireCrawlWebReader(BasePydanticReader):
                             },
                         )
                     )
-            elif hasattr(search_response, "web") or hasattr(search_response, "news") or hasattr(search_response, "images"):
+            elif (
+                hasattr(search_response, "web")
+                or hasattr(search_response, "news")
+                or hasattr(search_response, "images")
+            ):
                 # New SDK object response like: web=[SearchResultWeb(...)] news=None images=None
                 def _process_results(result_list, result_type: str) -> None:
                     if not result_list:
@@ -608,13 +693,13 @@ class FireCrawlWebReader(BasePydanticReader):
 
                         def _item_to_dict(obj: Any) -> Dict[str, Any]:
                             # pydantic v2
-                            if hasattr(obj, "model_dump") and callable(getattr(obj, "model_dump")):
+                            if hasattr(obj, "model_dump") and callable(obj.model_dump):
                                 try:
                                     return obj.model_dump()  # type: ignore[attr-defined]
                                 except Exception:
                                     pass
                             # pydantic v1
-                            if hasattr(obj, "dict") and callable(getattr(obj, "dict")):
+                            if hasattr(obj, "dict") and callable(obj.dict):
                                 try:
                                     return obj.dict()  # type: ignore[attr-defined]
                                 except Exception:
@@ -622,7 +707,11 @@ class FireCrawlWebReader(BasePydanticReader):
                             # dataclass or simple object
                             if hasattr(obj, "__dict__"):
                                 try:
-                                    return {k: v for k, v in vars(obj).items() if not k.startswith("_")}
+                                    return {
+                                        k: v
+                                        for k, v in vars(obj).items()
+                                        if not k.startswith("_")
+                                    }
                                 except Exception:
                                     pass
                             # Fallback: reflect over attributes

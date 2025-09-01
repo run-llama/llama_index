@@ -26,7 +26,7 @@ firecrawl_reader = FireCrawlWebReader(
     # e.g. formats for content types and crawl limits
     params={
         "formats": ["markdown", "html"],  # for scrape or crawl
-        "limit": 100,                        # for crawl
+        "limit": 100,  # for crawl
         # "scrape_options": {"formats": ["markdown", "html"]},  # alternative shape for crawl
     },
 )

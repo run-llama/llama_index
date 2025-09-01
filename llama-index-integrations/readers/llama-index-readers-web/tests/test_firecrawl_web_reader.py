@@ -7,8 +7,8 @@ from llama_index.readers.web.firecrawl_web.base import FireCrawlWebReader
 
 def _install_fake_firecrawl(FirecrawlClass) -> None:
     mod = types.ModuleType("firecrawl")
-    setattr(mod, "Firecrawl", FirecrawlClass)
-    setattr(mod, "__version__", "test")
+    mod.Firecrawl = FirecrawlClass
+    mod.__version__ = "test"
     sys.modules["firecrawl"] = mod
 
 
@@ -40,9 +40,11 @@ def test_init_uses_api_key_and_url():
             self.api_url = api_url
 
     _install_fake_firecrawl(Firecrawl)
-    reader = FireCrawlWebReader(api_key="KEY123", api_url="https://api.example", mode="scrape")
-    assert getattr(reader.firecrawl, "api_key") == "KEY123"
-    assert getattr(reader.firecrawl, "api_url") == "https://api.example"
+    reader = FireCrawlWebReader(
+        api_key="KEY123", api_url="https://api.example", mode="scrape"
+    )
+    assert reader.firecrawl.api_key == "KEY123"
+    assert reader.firecrawl.api_url == "https://api.example"
 
 
 def test_scrape_mode_with_dict_response_includes_text_and_metadata():
@@ -66,7 +68,9 @@ def test_scrape_mode_with_dict_response_includes_text_and_metadata():
             }
 
     _install_fake_firecrawl(Firecrawl)
-    reader = FireCrawlWebReader(api_key="k", mode="scrape", params={"formats": ["markdown"]})
+    reader = FireCrawlWebReader(
+        api_key="k", mode="scrape", params={"formats": ["markdown"]}
+    )
     docs = reader.load_data(url="https://site")
     assert len(docs) == 1
     assert docs[0].text == "Hello MD"
@@ -123,7 +127,9 @@ def test_crawl_mode_strips_maxDepth_and_maps_docs():
             }
 
     _install_fake_firecrawl(Firecrawl)
-    reader = FireCrawlWebReader(api_key="k", mode="crawl", params={"maxDepth": 2, "limit": 1})
+    reader = FireCrawlWebReader(
+        api_key="k", mode="crawl", params={"maxDepth": 2, "limit": 1}
+    )
     docs = reader.load_data(url="https://site/x")
     assert [d.text for d in docs] == ["A", "B"]
     assert "maxDepth" not in last_kwargs
@@ -136,10 +142,12 @@ def test_map_mode_success_yields_link_documents():
             pass
 
         def map(self, url: str, **kwargs):  # type: ignore[override]
-            return _MapResponse([
-                _Link(url="https://a", title="T1", description="D1"),
-                _Link(url="https://b", title="", description="D2"),
-            ])
+            return _MapResponse(
+                [
+                    _Link(url="https://a", title="T1", description="D1"),
+                    _Link(url="https://b", title="", description="D2"),
+                ]
+            )
 
     _install_fake_firecrawl(Firecrawl)
     reader = FireCrawlWebReader(api_key="k", mode="map", params={"limit": 2})
@@ -185,7 +193,9 @@ def test_search_mode_with_dict_success_and_markdown_fallbacks():
             }
 
     _install_fake_firecrawl(Firecrawl)
-    reader = FireCrawlWebReader(api_key="k", mode="search", params={"query": "dup", "region": "us"})
+    reader = FireCrawlWebReader(
+        api_key="k", mode="search", params={"query": "dup", "region": "us"}
+    )
     docs = reader.load_data(query="q")
     assert [d.text for d in docs] == ["M1", "D2"]
     # ensure reader removed duplicate 'query' from params before call
@@ -274,7 +284,7 @@ def test_extract_mode_success_no_data_yields_notice():
 
     _install_fake_firecrawl(Firecrawl)
     reader = FireCrawlWebReader(api_key="k", mode="extract", params={"prompt": "x"})
-    docs = reader.load_data(urls=["https://x"]) 
+    docs = reader.load_data(urls=["https://x"])
     assert len(docs) == 1
     assert "no data" in docs[0].text.lower()
 
@@ -289,7 +299,7 @@ def test_extract_mode_failure_returns_error_document():
 
     _install_fake_firecrawl(Firecrawl)
     reader = FireCrawlWebReader(api_key="k", mode="extract", params={"prompt": "x"})
-    docs = reader.load_data(urls=["https://x"]) 
+    docs = reader.load_data(urls=["https://x"])
     assert len(docs) == 1
     assert docs[0].metadata["error"] == "no quota"
 
@@ -318,5 +328,3 @@ def test_argument_validation_requires_exactly_one_of_url_query_urls():
         reader.load_data(url="u", query="q")  # two
     with pytest.raises(ValueError):
         reader.load_data(url="u", urls=["u"])  # two
-
-
