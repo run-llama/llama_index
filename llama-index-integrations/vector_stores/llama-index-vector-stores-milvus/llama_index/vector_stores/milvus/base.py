@@ -12,7 +12,7 @@ from enum import Enum
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
-from llama_index.core.schema import BaseNode
+from llama_index.core.schema import BaseNode, TextNode
 from llama_index.core.utils import iter_batch
 from llama_index.vector_stores.milvus.utils import (
     get_default_sparse_embedding_function,
@@ -688,7 +688,12 @@ class MilvusVectorStore(BasePydanticVectorStore):
                     "The passed in text_key value does not exist "
                     "in the retrieved entity."
                 )
-            node = metadata_dict_to_node(item, text=text_content)
+            if '_node_type' in item.keys():
+                node = metadata_dict_to_node(item, text=text_content)
+            elif text_content:
+                node = TextNode(text=text_content, metadata={key: item.get(key) for key in self.output_fields})
+            else:
+                raise ValueError("Node type not found in metadata dict and no text content found.")
             node.embedding = item.get(self.embedding_field, None)
             nodes.append(node)
         return nodes
@@ -721,7 +726,12 @@ class MilvusVectorStore(BasePydanticVectorStore):
                     "The passed in text_key value does not exist "
                     "in the retrieved entity."
                 )
-            node = metadata_dict_to_node(item, text=text_content)
+            if '_node_type' in item.keys():
+                node = metadata_dict_to_node(item, text=text_content)
+            elif text_content:
+                node = TextNode(text=text_content, metadata={key: item.get(key) for key in self.output_fields})
+            else:
+                raise ValueError("Node type not found in metadata dict and no text content found.")
             node.embedding = item.get(self.embedding_field, None)
             nodes.append(node)
         return nodes
@@ -1412,13 +1422,16 @@ class MilvusVectorStore(BasePydanticVectorStore):
         ids = []
         # Parse the results
         for hit in results[0]:
-            metadata = {
-                "_node_content": hit["entity"].get("_node_content", None),
-                "_node_type": hit["entity"].get("_node_type", None),
-            }
-            for key in self.output_fields:
-                metadata[key] = hit["entity"].get(key)
-            node = metadata_dict_to_node(metadata)
+            if '_node_type' in hit["entity"].keys():
+                metadata = {
+                    "_node_content": hit["entity"].get("_node_content", None),
+                    "_node_type": hit["entity"].get("_node_type", None),
+                }
+                for key in self.output_fields:
+                    metadata[key] = hit["entity"].get(key)
+                node = metadata_dict_to_node(metadata)
+            else:
+                node = TextNode(metadata={key: hit["entity"].get(key) for key in self.output_fields})
 
             # Set the text field if it exists
             if self.text_key in hit["entity"]:
