@@ -52,6 +52,7 @@ from qdrant_client.http.models import (
     IsEmptyCondition,
 )
 from qdrant_client.qdrant_fastembed import IDF_EMBEDDING_MODELS
+from qdrant_client.http.exceptions import UnexpectedResponse
 
 logger = logging.getLogger(__name__)
 import_err_msg = (
@@ -575,8 +576,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
             ValueError: If trying to using async methods without aclient
 
         """
-        from qdrant_client.http.exceptions import UnexpectedResponse
-
         self._ensure_async_client()
 
         collection_initialized = await self._acollection_exists(self.collection_name)
@@ -799,9 +798,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
     def _create_collection(self, collection_name: str, vector_size: int) -> None:
         """Create a Qdrant collection."""
-        from qdrant_client.http import models as rest
-        from qdrant_client.http.exceptions import UnexpectedResponse
-
         dense_config = self._dense_config or rest.VectorParams(
             size=vector_size,
             distance=rest.Distance.COSINE,
@@ -875,9 +871,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
     async def _acreate_collection(self, collection_name: str, vector_size: int) -> None:
         """Asynchronous method to create a Qdrant collection."""
-        from qdrant_client.http import models as rest
-        from qdrant_client.http.exceptions import UnexpectedResponse
-
         dense_config = self._dense_config or rest.VectorParams(
             size=vector_size,
             distance=rest.Distance.COSINE,
@@ -956,8 +949,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
     def _create_shard_keys(self) -> None:
         """Create shard keys in Qdrant collection."""
-        from qdrant_client.http.exceptions import UnexpectedResponse
-
         if not self._shard_keys:
             return
 
@@ -978,8 +969,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
     async def _acreate_shard_keys(self) -> None:
         """Asynchronous method to create shard keys in Qdrant collection."""
-        from qdrant_client.http.exceptions import UnexpectedResponse
-
         if not self._shard_keys:
             return
 
