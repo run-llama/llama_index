@@ -745,7 +745,7 @@ async def test_sparse_query_with_special_characters(
     # text search should work with special characters
     q = VectorStoreQuery(
         query_embedding=_get_sample_vector(0.1),
-        query_str="   who' & s |     (the): <-> **fox**?!!!  ",
+        query_str="   who' &..s |     (the): <-> **fox**?!!! lorem.ipsum ",
         sparse_top_k=2,
         mode=VectorStoreQueryMode.SPARSE,
     )
