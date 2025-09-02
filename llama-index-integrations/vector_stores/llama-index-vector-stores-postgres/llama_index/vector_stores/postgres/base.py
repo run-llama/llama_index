@@ -875,7 +875,7 @@ class PGVectorStore(BasePydanticVectorStore):
 
         # Remove special characters used by ts_query (essentially, all punctuation except single periods within words)
         # and collapse multiple spaces
-        query_str = re.sub(r"(?!\b\.\b)\W+", " " query_str).strip()
+        query_str = re.sub(r"(?!\b\.\b)\W+", " ", query_str).strip()
 
         # Replace space with "|" to perform an OR search for higher recall
         query_str = query_str.replace(" ", "|")
