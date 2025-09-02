@@ -726,6 +726,7 @@ async def test_sparse_query(
     assert res.nodes[0].node_id == "ccc"
     assert res.nodes[1].node_id == "ddd"
 
+print(postgres_not_available)
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio
@@ -749,7 +750,6 @@ async def test_sparse_query_with_special_characters(
         sparse_top_k=2,
         mode=VectorStoreQueryMode.SPARSE,
     )
-
     built_query = pg_hybrid._build_sparse_query(q)
     assert built_query.compile().params["to_tsquery_1"] == "who|s|the|fox"
 
