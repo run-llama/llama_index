@@ -743,7 +743,8 @@ async def test_sparse_query_special_character_parsing(
     )
     built_query = pg_hybrid._build_sparse_query(q)
     assert built_query.compile().params["to_tsquery_1"] == "who|s|the|fox"
-    
+
+
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
