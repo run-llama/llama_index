@@ -726,8 +726,23 @@ async def test_sparse_query(
     assert res.nodes[0].node_id == "ccc"
     assert res.nodes[1].node_id == "ddd"
 
-print(postgres_not_available)
-
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_sparse_query_special_character_parsing(
+    pg_hybrid: PGVectorStore,
+    hybrid_node_embeddings: List[TextNode],
+    use_async: bool,
+) -> None:
+    q = VectorStoreQuery(
+        query_embedding=_get_sample_vector(0.1),
+        query_str="   who' &..s |     (the): <-> **fox**?!!!",
+        sparse_top_k=2,
+        mode=VectorStoreQueryMode.SPARSE,
+    )
+    built_query = pg_hybrid._build_sparse_query(q)
+    assert built_query.compile().params["to_tsquery_1"] == "who|s|the|fox"
+    
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
@@ -750,8 +765,6 @@ async def test_sparse_query_with_special_characters(
         sparse_top_k=2,
         mode=VectorStoreQueryMode.SPARSE,
     )
-    built_query = pg_hybrid._build_sparse_query(q)
-    assert built_query.compile().params["to_tsquery_1"] == "who|s|the|fox"
 
     if use_async:
         res = await pg_hybrid.aquery(q)
