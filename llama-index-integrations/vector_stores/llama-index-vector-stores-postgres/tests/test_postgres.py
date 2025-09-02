@@ -729,7 +729,6 @@ async def test_sparse_query(
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio
-@pytest.mark.parametrize("use_async", [True, False])
 async def test_sparse_query_special_character_parsing(
     pg_hybrid: PGVectorStore,
     use_async: bool,
