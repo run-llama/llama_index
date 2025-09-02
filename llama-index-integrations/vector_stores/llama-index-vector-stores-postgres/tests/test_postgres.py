@@ -745,10 +745,13 @@ async def test_sparse_query_with_special_characters(
     # text search should work with special characters
     q = VectorStoreQuery(
         query_embedding=_get_sample_vector(0.1),
-        query_str="   who' &..s |     (the): <-> **fox**?!!! lorem.ipsum ",
+        query_str="   who' &..s |     (the): <-> **fox**?!!!",
         sparse_top_k=2,
         mode=VectorStoreQueryMode.SPARSE,
     )
+
+    built_query = pg_hybrid._build_sparse_query(q)
+    assert built_query.compile().params["to_tsquery_1"] == "who|s|the|fox"
 
     if use_async:
         res = await pg_hybrid.aquery(q)
