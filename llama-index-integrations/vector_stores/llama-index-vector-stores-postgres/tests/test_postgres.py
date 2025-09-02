@@ -726,6 +726,7 @@ async def test_sparse_query(
     assert res.nodes[0].node_id == "ccc"
     assert res.nodes[1].node_id == "ddd"
 
+
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
