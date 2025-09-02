@@ -697,7 +697,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 )
             else:
                 raise ValueError(
-                    "Node type not found in metadata dict and no text content found."
+                    "Node content not found in metadata dict and no text content found."
                 )
             node.embedding = item.get(self.embedding_field, None)
             nodes.append(node)
@@ -740,7 +740,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
                 )
             else:
                 raise ValueError(
-                    "Node type not found in metadata dict and no text content found."
+                    "Node content not found in metadata dict and no text content found."
                 )
             node.embedding = item.get(self.embedding_field, None)
             nodes.append(node)
