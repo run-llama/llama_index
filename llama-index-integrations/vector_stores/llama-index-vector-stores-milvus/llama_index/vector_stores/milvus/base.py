@@ -688,7 +688,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
                     "The passed in text_key value does not exist "
                     "in the retrieved entity."
                 )
-            if "_node_type" in item:
+            if "_node_content" in item:
                 node = metadata_dict_to_node(item, text=text_content)
             elif text_content:
                 node = TextNode(
@@ -731,7 +731,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
                     "The passed in text_key value does not exist "
                     "in the retrieved entity."
                 )
-            if "_node_type" in item:
+            if "_node_content" in item:
                 node = metadata_dict_to_node(item, text=text_content)
             elif text_content:
                 node = TextNode(
@@ -1432,7 +1432,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         ids = []
         # Parse the results
         for hit in results[0]:
-            if "_node_type" in hit["entity"]:
+            if "_node_content" in hit["entity"]:
                 metadata = {
                     "_node_content": hit["entity"].get("_node_content", None),
                     "_node_type": hit["entity"].get("_node_type", None),
