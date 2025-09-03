@@ -36,41 +36,55 @@ class MockThinkingLLM(MockLLM):
         self, tools: List[Any], chat_history: List[ChatMessage], **kwargs: Any
     ) -> AsyncGenerator[ChatResponse, None]:
         """Stream chat responses with thinking_delta."""
-        for i in range(len(self._response_deltas)):
-            response_delta = self._response_deltas[i]
-            thinking_delta = self._thinking_deltas[i]
 
-            yield ChatResponse(
-                message=ChatMessage(
-                    role="assistant",
-                    content=response_delta,
-                ),
-                delta=response_delta,
-                additional_kwargs={"thinking_delta": thinking_delta},
-                raw={
-                    "message": {"content": response_delta, "thinking": thinking_delta}
-                },
-            )
+        async def _gen():
+            for i in range(len(self._response_deltas)):
+                response_delta = self._response_deltas[i]
+                thinking_delta = self._thinking_deltas[i]
+
+                yield ChatResponse(
+                    message=ChatMessage(
+                        role="assistant",
+                        content=response_delta,
+                    ),
+                    delta=response_delta,
+                    additional_kwargs={"thinking_delta": thinking_delta},
+                    raw={
+                        "message": {
+                            "content": response_delta,
+                            "thinking": thinking_delta,
+                        }
+                    },
+                )
+
+        return _gen()
 
     async def astream_chat(
         self, messages: List[ChatMessage], **kwargs: Any
     ) -> AsyncGenerator[ChatResponse, None]:
         """Stream chat responses for CodeActAgent and ReActAgent."""
-        for i in range(len(self._response_deltas)):
-            response_delta = self._response_deltas[i]
-            thinking_delta = self._thinking_deltas[i]
 
-            yield ChatResponse(
-                message=ChatMessage(
-                    role="assistant",
-                    content=response_delta,
-                ),
-                delta=response_delta,
-                additional_kwargs={"thinking_delta": thinking_delta},
-                raw={
-                    "message": {"content": response_delta, "thinking": thinking_delta}
-                },
-            )
+        async def _gen():
+            for i in range(len(self._response_deltas)):
+                response_delta = self._response_deltas[i]
+                thinking_delta = self._thinking_deltas[i]
+
+                yield ChatResponse(
+                    message=ChatMessage(
+                        role="assistant",
+                        content=response_delta,
+                    ),
+                    delta=response_delta,
+                    additional_kwargs={"thinking_delta": thinking_delta},
+                    raw={
+                        "message": {
+                            "content": response_delta,
+                            "thinking": thinking_delta,
+                        }
+                    },
+                )
+
+        return _gen()
 
     def get_tool_calls_from_response(
         self, response: ChatResponse, error_on_no_tool_call: bool = False
@@ -243,12 +257,15 @@ async def test_agents_handle_missing_thinking_delta():
         async def astream_chat_with_tools(
             self, tools: List[Any], chat_history: List[ChatMessage], **kwargs: Any
         ) -> AsyncGenerator[ChatResponse, None]:
-            yield ChatResponse(
-                message=ChatMessage(role="assistant", content="Hello!"),
-                delta="Hello!",
-                additional_kwargs={},  # No thinking_delta
-                raw={"message": {"content": "Hello!"}},
-            )
+            async def _gen():
+                yield ChatResponse(
+                    message=ChatMessage(role="assistant", content="Hello!"),
+                    delta="Hello!",
+                    additional_kwargs={},  # No thinking_delta
+                    raw={"message": {"content": "Hello!"}},
+                )
+
+            return _gen()
 
         def get_tool_calls_from_response(
             self, response: ChatResponse, error_on_no_tool_call: bool = False

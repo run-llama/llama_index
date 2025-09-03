@@ -66,7 +66,7 @@ class FunctionAgent(BaseWorkflowAgent):
         ):
             chat_kwargs["tool_choice"] = self.initial_tool_choice
 
-        response = self.llm.astream_chat_with_tools(  # type: ignore
+        response = await self.llm.astream_chat_with_tools(  # type: ignore
             **chat_kwargs
         )
         # last_chat_response will be used later, after the loop.
