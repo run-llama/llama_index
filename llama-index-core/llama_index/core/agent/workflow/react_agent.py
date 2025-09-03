@@ -82,7 +82,7 @@ class ReActAgent(BaseWorkflowAgent):
     async def _get_streaming_response(
         self, ctx: Context, current_llm_input: List[ChatMessage]
     ) -> ChatResponse:
-        response = await self.llm.astream_chat(
+        response = self.llm.astream_chat(
             current_llm_input,
         )
 

@@ -220,11 +220,11 @@ class CodeActAgent(BaseWorkflowAgent):
                 raise ValueError("llm must be a function calling LLM to use handoff")
 
             tools = [tool for tool in tools if tool.metadata.name == "handoff"]
-            response = await self.llm.astream_chat_with_tools(
+            response = self.llm.astream_chat_with_tools(
                 tools=tools, chat_history=current_llm_input
             )
         else:
-            response = await self.llm.astream_chat(current_llm_input)
+            response = self.llm.astream_chat(current_llm_input)
 
         last_chat_response = ChatResponse(message=ChatMessage())
         full_response_text = ""
