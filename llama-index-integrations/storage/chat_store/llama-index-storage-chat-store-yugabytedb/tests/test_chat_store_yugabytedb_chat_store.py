@@ -1,16 +1,11 @@
+import docker
+import time
 from typing import Dict, Generator, Union
 import pytest
 from docker.models.containers import Container
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store.base import BaseChatStore
 from llama_index.storage.chat_store.yugabytedb import YugabyteDBChatStore
-
-try:
-    import psycopg2  # noqa
-    import sqlalchemy  # noqa
-    no_packages = False
-except ImportError:
-    no_packages = True
 
 
 def test_class():
@@ -19,30 +14,66 @@ def test_class():
 
 
 @pytest.fixture()
-def yugabytedb_connection() -> Generator[Dict[str, Union[str, Container]], None, None]:
+def yugabytedb_container() -> Generator[Dict[str, Union[str, Container]], None, None]:
     # Define YugabyteDB settings
-    YUGABYTEDB_HOST = "localhost"
-    YUGABYTEDB_DBNAME= "yugabyte"
+    YUGABYTEDB_HOST = "0.0.0.0"
+    YUGABYTEDB_DBNAME = "yugabyte"
     YUGABYTEDB_USER = "yugabyte"
     YUGABYTEDB_PASSWORD = "yugabyte"
     YUGABYTEDB_PORT = 5433
-    YUGABYTEDB_LOAD_BALANCE = True
-    connection_string = f"yugabytedb+psycopg2://{YUGABYTEDB_USER}:{YUGABYTEDB_PASSWORD}@{YUGABYTEDB_HOST}:{YUGABYTEDB_PORT}/{YUGABYTEDB_DBNAME}?load_balance={YUGABYTEDB_LOAD_BALANCE}"
-    yield {
-        "connection_string": connection_string,
-    }
+    YUGABYTEDB_LOAD_BALANCE = False
+
+    yugabytedb_image = "yugabytedb/yugabyte:2.25.2.0-b359"
+    yugabytedb_command = ["bin/yugabyted", "start", "--background=false"]
+
+    # Port mapping (host:container)
+    yugabytedb_ports = {"5433/tcp": 5433}
+
+    container = None
+    try:
+        # Initialize Docker client
+        client = docker.from_env()
+
+        # Run YugabyteDB container
+        container = client.containers.run(
+            yugabytedb_image,
+            command=yugabytedb_command,
+            ports=yugabytedb_ports,
+            name="yugabyte",
+            detach=True,
+        )
+
+        # Reload to fetch latest state
+        container.reload()
+
+        print(f"Container started with ID: {container.id}")
+
+        # Wait for PostgreSQL to start
+        time.sleep(10)  # Adjust the sleep time if necessary
+
+        connection_string = f"yugabytedb+psycopg2://{YUGABYTEDB_USER}:{YUGABYTEDB_PASSWORD}@{YUGABYTEDB_HOST}:{YUGABYTEDB_PORT}/{YUGABYTEDB_DBNAME}?load_balance={YUGABYTEDB_LOAD_BALANCE}"
+        yield {
+            "container": container,
+            "connection_string": connection_string,
+        }
+    except Exception as e:
+        print(f"Error: {e!s}")
+    finally:
+        # Stop and remove the container
+        if container:
+            container.stop()
+            container.remove()
+            client.close()
 
 
 @pytest.fixture()
 def yugabytedb_chat_store(
-    yugabytedb_connection: Dict[str, Union[str, Container]],
+    yugabytedb_container: Dict[str, Union[str, Container]],
 ) -> Generator[YugabyteDBChatStore, None, None]:
-    if no_packages:
-        pytest.skip("psycopg2 or sqlalchemy not installed")
     chat_store = None
     try:
         chat_store = YugabyteDBChatStore.from_uri(
-            uri=yugabytedb_connection["connection_string"],
+            uri=yugabytedb_container["connection_string"],
             use_jsonb=True,
         )
         yield chat_store
@@ -53,7 +84,6 @@ def yugabytedb_chat_store(
                 chat_store.delete_messages(key)
 
 
-@pytest.mark.skipif(no_packages, reason="psycopg2 or sqlalchemy not installed")
 def test_yugabytedb_add_message(yugabytedb_chat_store: YugabyteDBChatStore):
     key = "test_add_key"
 
@@ -65,7 +95,6 @@ def test_yugabytedb_add_message(yugabytedb_chat_store: YugabyteDBChatStore):
     assert result[0].content == "add_message_test" and result[0].role == "user"
 
 
-@pytest.mark.skipif(no_packages, reason="psycopg2 or sqlalchemy not installed")
 def test_set_and_retrieve_messages(yugabytedb_chat_store: YugabyteDBChatStore):
     messages = [
         ChatMessage(content="First message", role="user"),
@@ -80,7 +109,6 @@ def test_set_and_retrieve_messages(yugabytedb_chat_store: YugabyteDBChatStore):
     assert retrieved_messages[1].content == "Second message"
 
 
-@pytest.mark.skipif(no_packages, reason="psycopg2 or sqlalchemy not installed")
 def test_delete_messages(yugabytedb_chat_store: YugabyteDBChatStore):
     messages = [ChatMessage(content="Message to delete", role="user")]
     key = "test_delete_key"
@@ -91,7 +119,6 @@ def test_delete_messages(yugabytedb_chat_store: YugabyteDBChatStore):
     assert retrieved_messages == []
 
 
-@pytest.mark.skipif(no_packages, reason="psycopg2 or sqlalchemy not installed")
 def test_delete_specific_message(yugabytedb_chat_store: YugabyteDBChatStore):
     messages = [
         ChatMessage(content="Keep me", role="user"),
@@ -106,7 +133,6 @@ def test_delete_specific_message(yugabytedb_chat_store: YugabyteDBChatStore):
     assert retrieved_messages[0].content == "Keep me"
 
 
-@pytest.mark.skipif(no_packages, reason="psycopg2 or sqlalchemy not installed")
 def test_get_keys(yugabytedb_chat_store: YugabyteDBChatStore):
     # Add some test data
     yugabytedb_chat_store.set_messages(
@@ -121,7 +147,6 @@ def test_get_keys(yugabytedb_chat_store: YugabyteDBChatStore):
     assert "key2" in keys
 
 
-@pytest.mark.skipif(no_packages, reason="psycopg2 or sqlalchemy not installed")
 def test_delete_last_message(yugabytedb_chat_store: YugabyteDBChatStore):
     key = "test_delete_last_message"
     messages = [
@@ -138,4 +163,3 @@ def test_delete_last_message(yugabytedb_chat_store: YugabyteDBChatStore):
 
     assert len(remaining_messages) == 1
     assert remaining_messages[0].content == "First message"
-

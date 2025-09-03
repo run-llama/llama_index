@@ -1652,7 +1652,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-storage-chat-store-yugabytedb"
-version = "0.3.0.1"
+version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },

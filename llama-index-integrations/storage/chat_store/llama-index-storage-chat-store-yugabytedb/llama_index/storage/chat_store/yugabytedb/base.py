@@ -26,7 +26,21 @@ def get_data_model(
     use_jsonb: bool = False,
 ) -> Any:
     """
-    This part create a dynamic sqlalchemy model with a new table.
+    Create a dynamic SQLAlchemy model class for storing chat data in YugabyteDB.
+
+    This function generates a SQLAlchemy model class with a table structure optimized for
+    storing chat messages. The table includes columns for a unique key and an array of
+    message values stored in either JSON or JSONB format.
+
+    Args:
+        base (type): The declarative base class from SQLAlchemy's `declarative_base()`.
+        index_name (str): The base name to use for the table and class. Will be normalized
+                         to create valid SQL identifiers (e.g., 'chat_store' becomes 'data_chat_store').
+        schema_name (str): The database schema where the table will be created.
+        use_jsonb (bool, optional): If True, uses JSONB column type for better query performance
+                                   and indexing capabilities. If False, uses standard JSON.
+                                   Defaults to False.
+
     """
     tablename = f"data_{index_name}"  # dynamic table name
     class_name = f"Data{index_name}"  # dynamic class name
@@ -106,19 +120,45 @@ class YugabyteDBChatStore(BaseChatStore):
         debug: bool = False,
         use_jsonb: bool = False,
     ) -> "YugabyteDBChatStore":
-        """Return connection string from database parameters."""
+        """
+        Return connection string from database parameters.
 
+        Args:
+            host (str): YugabyteDB host.
+            port (str): YugabyteDB port.
+            database (str): YugabyteDB database name.
+            user (str): YugabyteDB user.
+            password (str): YugabyteDB password.
+            load_balance (bool, optional): Enables uniform load balancing. Defaults to False.
+            topology_keys (str, optional): Enables topology-aware load balancing.
+                Specify comma-separated geo-locations in the form of cloud.region.zone:priority.
+                Ignored if load_balance is false. Defaults to None.
+            yb_servers_refresh_interval (int, optional): The interval in seconds to refresh the servers list;
+                ignored if load_balance is false. Defaults to 300.
+            fallback_to_topology_keys_only (bool, optional): If set to true and topology_keys are specified,
+                the driver only tries to connect to nodes specified in topology_keys
+                Defaults to False.
+            failed_host_ttl_seconds (int, optional): Time, in seconds, to wait before trying to connect to failed nodes.
+                Defaults to 5.
+            connection_string (Union[str, sqlalchemy.engine.URL]): Connection string to yugabytedb db.
+            table_name (str): Table name.
+            schema_name (str): Schema name.
+            debug (bool, optional): Debug mode. Defaults to False.
+            use_jsonb (bool, optional): Use JSONB instead of JSON. Defaults to False.
+
+        """
         from urllib.parse import urlencode
-        query_params = {
-            "load_balance": str(load_balance)
-        }
+
+        query_params = {"load_balance": str(load_balance)}
 
         if topology_keys is not None:
             query_params["topology_keys"] = topology_keys
         if yb_servers_refresh_interval is not None:
             query_params["yb_servers_refresh_interval"] = yb_servers_refresh_interval
         if fallback_to_topology_keys_only:
-            query_params["fallback_to_topology_keys_only"] = fallback_to_topology_keys_only
+            query_params["fallback_to_topology_keys_only"] = (
+                fallback_to_topology_keys_only
+            )
         if failed_host_ttl_seconds is not None:
             query_params["failed_host_ttl_seconds"] = failed_host_ttl_seconds
 
@@ -161,9 +201,8 @@ class YugabyteDBChatStore(BaseChatStore):
         cls, connection_string: str, debug: bool
     ) -> tuple[sessionmaker, sessionmaker]:
         _engine = create_engine(connection_string, echo=debug)
-        session = sessionmaker(_engine)
 
-        return session
+        return sessionmaker(_engine)
 
     def _create_schema_if_not_exists(self) -> None:
         with self._session() as session, session.begin():
@@ -196,12 +235,11 @@ class YugabyteDBChatStore(BaseChatStore):
             stmt = (
                 insert(self._table_class)
                 .values(
-                    key=bindparam("key"),
-                    value=cast(bindparam("value"), ARRAY(JSONB))
+                    key=bindparam("key"), value=cast(bindparam("value"), ARRAY(JSONB))
                 )
                 .on_conflict_do_update(
                     index_elements=["key"],
-                    set_={"value": cast(bindparam("value"), ARRAY(JSONB))}
+                    set_={"value": cast(bindparam("value"), ARRAY(JSONB))},
                 )
             )
 
@@ -232,12 +270,11 @@ class YugabyteDBChatStore(BaseChatStore):
             stmt = (
                 insert(self._table_class)
                 .values(
-                    key=bindparam("key"),
-                    value=cast(bindparam("value"), ARRAY(JSONB))
+                    key=bindparam("key"), value=cast(bindparam("value"), ARRAY(JSONB))
                 )
                 .on_conflict_do_update(
                     index_elements=["key"],
-                    set_={"value": cast(bindparam("value"), ARRAY(JSONB))}
+                    set_={"value": cast(bindparam("value"), ARRAY(JSONB))},
                 )
             )
             params = {"key": key, "value": [message.model_dump_json()]}
@@ -328,9 +365,17 @@ def params_from_uri(uri: str) -> dict:
         "password": result.password,
         "host": result.hostname,
         "port": port,
-        "load_balance": query_params.get("load_balance", ["false"])[0].lower() == "true",
+        "load_balance": query_params.get("load_balance", ["false"])[0].lower()
+        == "true",
         "topology_keys": query_params.get("topology_keys", [None])[0],
-        "yb_servers_refresh_interval": int(query_params.get("yb_servers_refresh_interval", [300])[0]),
-        "fallback_to_topology_keys_only": query_params.get("fallback_to_topology_keys_only", ["false"])[0].lower() == "true",
-        "failed_host_ttl_seconds": int(query_params.get("failed_host_ttl_seconds", [5])[0]),
+        "yb_servers_refresh_interval": int(
+            query_params.get("yb_servers_refresh_interval", [300])[0]
+        ),
+        "fallback_to_topology_keys_only": query_params.get(
+            "fallback_to_topology_keys_only", ["false"]
+        )[0].lower()
+        == "true",
+        "failed_host_ttl_seconds": int(
+            query_params.get("failed_host_ttl_seconds", [5])[0]
+        ),
     }

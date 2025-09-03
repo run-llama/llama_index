@@ -28,7 +28,7 @@ dev = [
 
 [project]
 name = "llama-index-storage-chat-store-yugabytedb"
-version = "0.3.0.1"
+version = "0.1.0"
 description = "llama-index storage-chat-store yugabytedb integration"
 authors = [{name = "YugabyteDB", email = "pypi@yugabyte.com"}]
 requires-python = ">=3.9,<4.0"
