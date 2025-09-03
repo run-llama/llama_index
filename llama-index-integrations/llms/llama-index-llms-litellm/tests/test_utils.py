@@ -24,8 +24,8 @@ def test_model_context_size():
     # After the fix, these should return the actual context window sizes
     # GPT-4 has an 8192 token context window (max_input_tokens)
     assert openai_modelname_to_contextsize("gpt-4") == 8192
-    # GPT-3.5-turbo has a 4096 token context window
-    assert openai_modelname_to_contextsize("gpt-3.5-turbo") == 4096
+    # GPT-3.5-turbo has a 16385 token context window (updated context size)
+    assert openai_modelname_to_contextsize("gpt-3.5-turbo") == 16385
     # Unknown models should still default to 2048
     assert openai_modelname_to_contextsize("unknown-model") == 2048
 
