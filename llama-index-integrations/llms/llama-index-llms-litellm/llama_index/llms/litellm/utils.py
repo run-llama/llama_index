@@ -114,7 +114,27 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
         modelname = modelname.split(":")[0]
 
     try:
-        context_size = int(litellm.get_max_tokens(modelname))
+        model_info = litellm.get_model_info(modelname)
+
+        # Priority order for context window determination:
+        # 1. max_input_tokens (actual context window for input)
+        # 2. max_tokens (total context window, may be incorrect for some models)
+        # 3. max_output_tokens (fallback for backward compatibility)
+
+        max_input_tokens = model_info.get("max_input_tokens")
+        max_tokens = model_info.get("max_tokens")
+        max_output_tokens = model_info.get("max_output_tokens")
+
+        if max_input_tokens is not None:
+            context_size = int(max_input_tokens)
+        elif max_tokens is not None:
+            context_size = int(max_tokens)
+        elif max_output_tokens is not None:
+            # Fallback to old behavior for compatibility
+            context_size = int(max_output_tokens)
+        else:
+            raise ValueError("No token limit information available")
+
     except Exception:
         context_size = 2048  # by default assume models have at least 2048 tokens
 
