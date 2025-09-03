@@ -195,7 +195,6 @@ def test_token_calculation_errors():
     # Test case 2: Prompt too long
     with patch("tiktoken.encoding_for_model") as mock_encoding:
         # Mock the encoding to return a token count that exceeds context window
-        # After our fix, gpt-3.5-turbo has 16385 tokens, so use more than that
         mock_encoding.return_value.encode.return_value = [1] * 20000  # 20000 tokens
         llm = LiteLLM(model="gpt-3.5-turbo")
         with pytest.raises(ValueError) as exc_info:
