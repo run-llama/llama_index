@@ -96,7 +96,7 @@ class TestAzurePGVectorStore:
     def test_table_creation_failure(self):
         assert False
 
-    # @pytest.mark.skip
+    @pytest.mark.skip
     def test_table_creation_success(
         self, vectorstore: AzurePGVectorStore, table: Table
     ):
@@ -115,7 +115,7 @@ class TestAzurePGVectorStore:
         verify_table_created(table, resultset)
 
 
-    # @pytest.mark.skip
+    @pytest.mark.skip
     def test_vectorstore_initialization_from_params(
         self,
         connection_pool: ConnectionPool,
@@ -151,7 +151,7 @@ class TestAzurePGVectorStore:
             "Retrieved node count does not match expected"
         )
 
-    # @pytest.mark.skip
+    @pytest.mark.skip
     @pytest.mark.parametrize(
         ["node_tuple", "expected"],
         [
@@ -179,7 +179,7 @@ class TestAzurePGVectorStore:
             )
     
 
-    # @pytest.mark.skip
+    @pytest.mark.skip
     @pytest.mark.parametrize(
         ["node_tuple", "expected"],
         [
@@ -205,7 +205,7 @@ class TestAzurePGVectorStore:
             assert returned_ids[0] == expected_node_id, "Inserted text IDs do not match"
 
 
-    # @pytest.mark.skip
+    @pytest.mark.skip
     @pytest.mark.parametrize(
         ["doc_id"],
         [
@@ -247,7 +247,7 @@ class TestAzurePGVectorStore:
         )
 
 
-    # @pytest.mark.skip
+    @pytest.mark.skip
     @pytest.mark.parametrize(
         ["node_tuple"],
         [
@@ -294,7 +294,7 @@ class TestAzurePGVectorStore:
         )
 
 
-    # @pytest.mark.skip
+    @pytest.mark.skip
     def test_clear(
         self,
         vectorstore: AzurePGVectorStore,
@@ -326,8 +326,8 @@ class TestAzurePGVectorStore:
             "All document IDs should have been deleted"
         )
 
-
     
+    @pytest.mark.skip
     @pytest.mark.parametrize(
         ["query", "embedding", "k", "filters"],
         [

@@ -33,7 +33,7 @@ _logger = logging.getLogger(__name__)
 class BaseAzurePGVectorStore(BaseModel):
     connection_pool: AzurePGConnectionPool
     schema_name: str = "public"
-    table_name: str = "langchain"
+    table_name: str = "vector_store"
     id_column: str = "id"
     content_column: str = "content"
     embedding_column: str = "embedding"

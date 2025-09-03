@@ -152,7 +152,7 @@ def connection_pool(
 @pytest.fixture(scope="session", 
                 params=[
                     "azure-ad", 
-                    # "basic-auth"
+                    "basic-auth"
                 ])
 def credentials(
     pytestconfig: pytest.Config, request: pytest.FixtureRequest

@@ -1,9 +1,11 @@
 """VectorStore integration for Azure Database for PostgreSQL using LlamaIndex."""
 
+import sys
 from typing import (
     Any,
     Optional,
-    Union,
+    Sequence,
+    Union
 )
 
 import numpy as np
@@ -29,8 +31,18 @@ from llama_index.core.vector_stores.utils import (
 from .common import (
     AzurePGConnectionPool,
     BaseAzurePGVectorStore,
+    HNSW,
+    Algorithm,
+    DiskANN,
+    IVFFlat,
+    VectorOpClass,
+    VectorType,
 )
 
+if sys.version_info < (3, 12):
+    from typing_extensions import override
+else:
+    from typing import override
 
 def metadata_filters_to_sql(filters: Optional[MetadataFilters]) -> sql.SQL:
     """Convert LlamaIndex MetadataFilters to a SQL WHERE clause.
@@ -140,6 +152,7 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
     """Azure PostgreSQL vector store for LlamaIndex."""
 
     stores_text: bool = True
+    metadata_columns: str | None = "metadata"
 
     @classmethod
     def class_name(cls) -> str:
@@ -151,6 +164,7 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
         """Return the client property (not used for AzurePGVectorStore)."""
         return
 
+    @override
     @classmethod
     def from_params(
         cls,
@@ -158,9 +172,7 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
         schema_name: str = "public",
         table_name: str = "llamaindex_vectors",
         embed_dim: int = 1536,
-        pg_diskann_kwargs: dict | None = None,
-        hnsw_kwargs: dict | None = None,
-        ivfflat_kwargs: dict | None = None,
+        embedding_index: Algorithm | None = DiskANN,
     ) -> "AzurePGVectorStore":
         """Create an AzurePGVectorStore from connection and configuration parameters."""
         return cls(
@@ -168,9 +180,7 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
             schema_name=schema_name,
             table_name=table_name,
             embed_dim=embed_dim,
-            pg_diskann_kwargs=pg_diskann_kwargs or {},
-            hnsw_kwargs=hnsw_kwargs or {},
-            ivfflat_kwargs=ivfflat_kwargs or {},
+            embedding_index=embedding_index,
         )
 
     
@@ -197,18 +207,8 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
 
         return node
 
-    
-    def add(self, nodes: list[BaseNode], **add_kwargs: Any) -> list[str]:
-        """Add a list of BaseNode objects to the vector store.
-
-        Args:
-            nodes: List of BaseNode objects to add.
-            **add_kwargs: Additional keyword arguments.
-
-        Returns:
-            List of node IDs added.
-        """
-        ids = []
+    def _get_insert_sql_dict(self, node: BaseNode) -> tuple[sql.SQL, dict[str, Any]]:
+        """Get the SQL command and dictionary for inserting a node."""
         insert_sql = sql.SQL(
             """
             INSERT INTO {schema}.{table} ({id_col}, {content_col}, {embedding_col}, {metadata_col})
@@ -227,26 +227,38 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
             metadata_col=sql.Identifier(self.metadata_columns),
         )
 
+        return (insert_sql, {
+            "id": node.node_id,
+            "content": node.get_content(metadata_mode=MetadataMode.NONE),
+            "embedding": np.array(node.get_embedding(), dtype=np.float32),
+            "metadata": Jsonb(node_to_metadata_dict(node)),
+        })
+
+    @override
+    def add(self, nodes: list[BaseNode], **add_kwargs: Any) -> list[str]:
+        """Add a list of BaseNode objects to the vector store.
+
+        Args:
+            nodes: List of BaseNode objects to add.
+            **add_kwargs: Additional keyword arguments.
+
+        Returns:
+            List of node IDs added.
+        """
+        ids = []
         with self.connection_pool.connection() as conn:
             register_vector(conn)
             with conn.cursor(row_factory=dict_row) as cursor:
                 for node in nodes:
                     ids.append(node.node_id)
+                    insert_sql, insert_dict = self._get_insert_sql_dict(node)
                     cursor.execute(
                         insert_sql,
-                        {
-                            "id": node.node_id,
-                            "content": node.get_content(
-                                metadata_mode=MetadataMode.NONE
-                            ),
-                            "embedding": np.array(
-                                node.get_embedding(), dtype=np.float32
-                            ),
-                            "metadata": Jsonb(node_to_metadata_dict(node)),
-                        },
+                        insert_dict
                     )
         return ids
-
+                     
+    @override
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
         """Perform a similarity search using the provided query.
 
@@ -279,6 +291,8 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
             ids=ids,
         )
 
+
+    @override
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a node from the vector store by reference document ID.
 
@@ -290,13 +304,13 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
             register_vector(conn)
             with conn.cursor(row_factory=dict_row) as cursor:
                 delete_sql = sql.SQL(
-                    "DELETE FROM {schema}.{table} WHERE metadata ->> 'doc_id' = %s"
+                    "DELETE FROM {table} WHERE metadata ->> 'doc_id' = %s"
                 ).format(
-                    schema=sql.Identifier(self.schema_name),
-                    table=sql.Identifier(self.table_name),
+                    table=sql.Identifier(self.schema_name, self.table_name)
                 )
                 cursor.execute(delete_sql, (ref_doc_id,))
 
+    @override
     def delete_nodes(
         self,
         node_ids: Optional[list[str]] = None,
@@ -310,13 +324,15 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
             filters: Optional MetadataFilters to filter nodes for deletion.
             **delete_kwargs: Additional keyword arguments.
         """
-        if not node_ids and not filters:
+        if not node_ids:
             return
 
         self._delete_rows_from_table(
             ids=node_ids, filters=metadata_filters_to_sql(filters), **delete_kwargs
         )
 
+
+    @override
     def clear(self) -> None:
         """Clear all data from the vector store table."""
         with self.connection_pool.connection() as conn:
@@ -329,6 +345,8 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
                 cursor.execute(stmt)
                 conn.commit()
 
+
+    @override
     def get_nodes(
         self,
         node_ids: Optional[list[str]] = None,
