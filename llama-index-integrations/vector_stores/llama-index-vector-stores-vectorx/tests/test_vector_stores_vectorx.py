@@ -4,6 +4,7 @@ import pytest
 import time
 import os
 from pathlib import Path
+from unittest.mock import MagicMock
 
 # Add parent directory to Python path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -21,36 +22,31 @@ from llama_index.core.vector_stores.types import (
 from llama_index.core.retrievers import VectorIndexRetriever
 from llama_index.core.query_engine import RetrieverQueryEngine
 
-
 # ---- Check if credentials exist ----
 HAS_VECX = os.getenv("VECTORX_API_TOKEN") is not None
 
 
+# ------------------ Base Test Setup ------------------
 @pytest.mark.skipif(not HAS_VECX, reason="VECTORX_API_TOKEN not set in environment")
 class VectorXTestSetup(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # Get API token from environment
         cls.vecx_api_token = os.getenv("VECTORX_API_TOKEN")
         if not cls.vecx_api_token:
             raise ValueError(
                 "Missing VECTORX_API_TOKEN. Please set it in your environment."
             )
 
-        # Initialize VectorX client
         cls.vx = VectorX(token=cls.vecx_api_token)
         cls.encryption_key = cls.vx.generate_key()
 
-        # Test index configuration
         timestamp = int(time.time())
         cls.test_index_name = f"test_index_{timestamp}"
         cls.dimension = 384
         cls.space_type = "cosine"
 
-        # Track all test indexes for cleanup
         cls.test_indexes = {cls.test_index_name}
 
-        # Documents for testing
         cls.test_documents = [
             Document(
                 text="Python is a high-level, interpreted programming language known for its readability and simplicity.",
@@ -80,17 +76,14 @@ class VectorXTestSetup(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        """Clean up by deleting test indexes"""
         for index_name in cls.test_indexes:
             try:
                 cls.vx.delete_index(name=index_name)
-                print(f"Successfully deleted test index: {index_name}")
             except Exception as e:
                 if "not found" not in str(e).lower():
                     print(f"Error deleting test index {index_name}: {e}")
 
     def tearDown(self):
-        """Clean up any test indexes created during a test"""
         try:
             indexes = self.vx.list_indexes()
             if isinstance(indexes, list):
@@ -100,13 +93,13 @@ class VectorXTestSetup(unittest.TestCase):
                         if index_name.startswith("test_index_"):
                             try:
                                 self.vx.delete_index(name=index_name)
-                                print(f"Cleaned up test index: {index_name}")
                             except Exception as e:
                                 print(f"Error cleaning up test index {index_name}: {e}")
         except Exception as e:
             print(f"Error listing indexes for cleanup: {e}")
 
 
+# ------------------ VectorX VectorStore Tests ------------------
 class TestVectorXVectorStore(VectorXTestSetup):
     def setUp(self):
         self.embed_model = HuggingFaceEmbedding(
@@ -151,6 +144,7 @@ class TestVectorXVectorStore(VectorXTestSetup):
             )
 
 
+# ------------------ Custom Retrieval Tests ------------------
 class TestCustomRetrieval(VectorXTestSetup):
     @classmethod
     def setUpClass(cls):
@@ -194,6 +188,7 @@ class TestCustomRetrieval(VectorXTestSetup):
         self.assertTrue(len(str(response)) > 0)
 
 
+# ------------------ Query & Filter Tests ------------------
 class TestQueryAndFilter(VectorXTestSetup):
     @classmethod
     def setUpClass(cls):
@@ -240,5 +235,110 @@ class TestQueryAndFilter(VectorXTestSetup):
         self.assertGreater(len(results.nodes), 0)
 
 
+# ------------------ Mocked VectorX Tests ------------------
+class TestVectorXMock(unittest.TestCase):
+    def setUp(self):
+        self.mock_index = MagicMock()
+        self.mock_index.dimension = 2
+        self.mock_index.query.return_value = [
+            {
+                "id": "1",
+                "similarity": 0.9,
+                "meta": {"text": "mock text"},
+                "vector": [0.1, 0.2],
+            }
+        ]
+        self.store = VectorXVectorStore(
+            vectorx_index=self.mock_index, dimension=2, index_name="mock_index"
+        )
+
+    def test_add_and_query_mock(self):
+        query = VectorStoreQuery(query_embedding=[0.1, 0.2], similarity_top_k=1)
+        result = self.store.query(query)
+        self.assertEqual(result.similarities[0], 0.9)
+        self.assertEqual(len(result.nodes), 1)
+
+    def test_delete_non_existent_node(self):
+        self.store.delete("nonexistent")
+
+    def test_query_with_empty_filters(self):
+        query = VectorStoreQuery(
+            query_embedding=[0.1, 0.2],
+            similarity_top_k=1,
+            filters=MetadataFilters(filters=[]),
+        )
+        result = self.store.query(query)
+        self.assertEqual(len(result.nodes), 1)
+
+    def test_error_on_invalid_embedding(self):
+        self.store._vectorx_index = MagicMock()
+        del self.store._vectorx_index.dimension
+        with pytest.raises(ValueError):
+            self.store.query(VectorStoreQuery(query_embedding=None, similarity_top_k=1))
+
+
+# ------------------ Advanced Tests with Mocking ------------------
+class TestVectorXAdvanced(unittest.TestCase):
+    def setUp(self):
+        self.mock_index = MagicMock()
+        self.mock_index.dimension = 2
+        self.mock_index.query.return_value = [
+            {
+                "id": "1",
+                "similarity": 0.9,
+                "meta": {"text": "mock text"},
+                "vector": [0.1, 0.2],
+            }
+        ]
+        self.mock_index.delete_with_filter = MagicMock()
+        self.store = VectorXVectorStore(
+            vectorx_index=self.mock_index, dimension=2, index_name="mock_index"
+        )
+
+    def test_initialize_vectorx_index_import_error(self):
+        import builtins
+
+        original_import = builtins.__import__
+
+        def mock_import(name, *args, **kwargs):
+            if name == "vecx.vectorx":
+                raise ImportError("No module named vecx.vectorx")
+            return original_import(name, *args, **kwargs)
+
+        builtins.__import__ = mock_import
+        with pytest.raises(ImportError):
+            VectorXVectorStore._initialize_vectorx_index(
+                api_token="token", encryption_key="key", index_name="idx", dimension=2
+            )
+        builtins.__import__ = original_import
+
+    def test_query_hybrid_with_alpha(self):
+        query = VectorStoreQuery(
+            query_embedding=[0.1, 0.2], similarity_top_k=1, mode="HYBRID", alpha=2.0
+        )
+        result = self.store.query(query)
+        self.assertEqual(result.similarities[0], 0.9)
+
+    def test_delete_with_error_logging(self):
+        self.store._vectorx_index.delete_with_filter.side_effect = Exception(
+            "Delete failed"
+        )
+        self.store.delete("ref_doc")
+
+    def test_query_missing_dimension_and_no_embedding(self):
+        self.store._vectorx_index = MagicMock()
+        del self.store._vectorx_index.dimension
+        self.store._vectorx_index.describe.side_effect = Exception("No dimension")
+        with pytest.raises(ValueError):
+            self.store.query(VectorStoreQuery(query_embedding=None, similarity_top_k=1))
+
+    def test_mocked_vectorx_index_usage(self):
+        query = VectorStoreQuery(query_embedding=[0.1, 0.2], similarity_top_k=1)
+        result = self.store.query(query)
+        self.assertEqual(result.similarities[0], 0.9)
+        self.assertEqual(len(result.nodes), 1)
+
+
+# ------------------ Run Tests ------------------
 if __name__ == "__main__":
     unittest.main()

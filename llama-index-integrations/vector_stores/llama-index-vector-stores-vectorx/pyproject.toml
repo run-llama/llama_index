@@ -30,7 +30,7 @@ name = "llama-index-vector-stores-vectorx"
 version = "0.1.0"
 description = "LlamaIndex VectorX vector store integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
@@ -63,4 +63,4 @@ VectorXVectorStore = "llama-index"
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.9"
+python_version = "3.10"
