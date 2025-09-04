@@ -1,4 +1,5 @@
 import json
+import uuid
 from json import JSONDecodeError
 from typing import (
     Any,
@@ -275,6 +276,8 @@ class LiteLLM(FunctionCallingLLM):
                         tool_kwargs=argument_dict,
                     )
                 )
+        if len(tool_selections) == 0 and error_on_no_tool_call:
+            raise ValueError("No valid tool calls found.")
 
         return tool_selections
 
