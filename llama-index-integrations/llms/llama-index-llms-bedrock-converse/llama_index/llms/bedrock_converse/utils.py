@@ -443,8 +443,8 @@ def converse_with_retry(
     messages: Sequence[Dict[str, Any]],
     max_retries: int = 3,
     system_prompt: Optional[str] = None,
-    system_prompt_caching: bool=False,
-    tool_caching: bool=False,
+    system_prompt_caching: bool = False,
+    tool_caching: bool = False,
     max_tokens: int = 1000,
     temperature: float = 0.1,
     stream: bool = False,
@@ -471,7 +471,9 @@ def converse_with_retry(
     if tool_config := kwargs.get("tools"):
         converse_kwargs["toolConfig"] = tool_config
         if tool_caching and "tools" in converse_kwargs["toolConfig"]:
-            converse_kwargs["toolConfig"]["tools"].append({"cachePoint": {"type": "default"}})
+            converse_kwargs["toolConfig"]["tools"].append(
+                {"cachePoint": {"type": "default"}}
+            )
     if guardrail_identifier and guardrail_version:
         converse_kwargs["guardrailConfig"] = {}
         converse_kwargs["guardrailConfig"]["guardrailIdentifier"] = guardrail_identifier
@@ -503,8 +505,8 @@ async def converse_with_retry_async(
     messages: Sequence[Dict[str, Any]],
     max_retries: int = 3,
     system_prompt: Optional[str] = None,
-    system_prompt_caching: bool=False,
-    tool_caching: bool=False,
+    system_prompt_caching: bool = False,
+    tool_caching: bool = False,
     max_tokens: int = 1000,
     temperature: float = 0.1,
     stream: bool = False,
@@ -532,7 +534,9 @@ async def converse_with_retry_async(
     if tool_config := kwargs.get("tools"):
         converse_kwargs["toolConfig"] = tool_config
         if tool_caching and "tools" in converse_kwargs["toolConfig"]:
-            converse_kwargs["toolConfig"]["tools"].append({"cachePoint": {"type": "default"}})
+            converse_kwargs["toolConfig"]["tools"].append(
+                {"cachePoint": {"type": "default"}}
+            )
     if guardrail_identifier and guardrail_version:
         converse_kwargs["guardrailConfig"] = {}
         converse_kwargs["guardrailConfig"]["guardrailIdentifier"] = guardrail_identifier

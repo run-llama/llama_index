@@ -758,7 +758,10 @@ class BedrockConverse(FunctionCallingLLM):
 
         # convert Llama Index tools to AWS Bedrock Converse tools
         tool_config = tools_to_converse_tools(
-            tools, tool_choice=tool_choice, tool_required=tool_required, tool_caching=tool_caching
+            tools,
+            tool_choice=tool_choice,
+            tool_required=tool_required,
+            tool_caching=tool_caching,
         )
 
         return {

@@ -183,6 +183,7 @@ def test_tools_to_converse_tools_with_custom_tool_choice():
     assert result["tools"][0]["toolSpec"]["name"] == "search_tool"
     assert result["toolChoice"] == custom_tool_choice
 
+
 def test_tools_to_converse_tools_with_cache_enabled():
     """Test that cachePoint is configured when setting tool_caching=True"""
 
