@@ -13,7 +13,7 @@ from llama_index.core.vector_stores.types import (
     MetadataFilters,
 )
 
-from llama_index.vector_stores.azure_postgres.common import Algorithm, VectorType
+from llama_index.vector_stores.azure_postgres.common import Algorithm, VectorType, DiskANN
 from llama_index.vector_stores.azure_postgres import (
     AzurePGVectorStore,
 )
@@ -212,17 +212,18 @@ def filters(
 
 @pytest.fixture
 def vectorstore(connection_pool: ConnectionPool, table: Table) -> AzurePGVectorStore:
+    diskann = DiskANN(
+        op_class="vector_cosine_ops",
+        max_neighbors=32,
+        l_value_ib=100,
+        l_value_is=100
+    )
     vector_store = AzurePGVectorStore.from_params(
         connection_pool=connection_pool,
         schema_name=table.schema_name,
         table_name=table.table_name,
         embed_dim=table.embedding_dimension,
-        pg_diskann_kwargs={
-            "pg_diskann_operator_class": "vector_cosine_ops",
-            "pg_diskann_max_neighbors": 32,
-            "pg_diskann_l_value_ib": 100,
-            "pg_diskann_l_value_is": 100,
-        }
+        embedding_index=diskann,
     )
 
     # add several documents with deterministic embeddings for testing similarity

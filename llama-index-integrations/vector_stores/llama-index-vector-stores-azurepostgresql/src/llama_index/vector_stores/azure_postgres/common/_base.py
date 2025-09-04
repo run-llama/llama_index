@@ -40,7 +40,7 @@ class BaseAzurePGVectorStore(BaseModel):
     embedding_type: VectorType | None = None
     embedding_dimension: PositiveInt | None = None
     embedding_index: Algorithm | None = None
-    metadata_columns: list[str] | list[tuple[str, str]] | str | None = "metadata"
+    metadata_column: str | None = "metadata"
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,  # Allow arbitrary types like Embeddings and AzurePGConnectionPool
@@ -48,9 +48,9 @@ class BaseAzurePGVectorStore(BaseModel):
 
     @model_validator(mode="after")
     def verify_and_init_store(self) -> Self:
-        # verify that metadata_columns is not empty if provided
-        if self.metadata_columns is not None and len(self.metadata_columns) == 0:
-            raise ValueError("'metadata_columns' cannot be empty if provided.")
+        # verify that metadata_column is not empty if provided
+        if self.metadata_column is not None and len(self.metadata_column) == 0:
+            raise ValueError("'metadata_column' cannot be empty if provided.")
 
         _logger.debug(
             "checking if table '%s.%s' exists with the required columns",
@@ -156,26 +156,12 @@ class BaseAzurePGVectorStore(BaseModel):
                     f"Column '{self.embedding_column}' in table '{self.schema_name}.{self.table_name}' has a dimension of {parsed_dim}, but the specified embedding_dimension is {self.embedding_dimension}. They must match."
                 )
 
-            if self.metadata_columns is not None:
-                metadata_columns: list[tuple[str, str | None]]
-                if isinstance(self.metadata_columns, str):
-                    metadata_columns = [(self.metadata_columns, "jsonb")]
-                else:
-                    metadata_columns = [
-                        (col[0], col[1]) if isinstance(col, tuple) else (col, None)
-                        for col in self.metadata_columns
-                    ]
-
-                for col, col_type in metadata_columns:
-                    existing_type = existing_columns.get(col)
-                    if existing_type is None:
-                        raise ValueError(
-                            f"Column '{col}' does not exist in table '{self.schema_name}.{self.table_name}'."
-                        )
-                    elif col_type is not None and existing_type != col_type:
-                        raise ValueError(
-                            f"Column '{col}' in table '{self.schema_name}.{self.table_name}' must be of type '{col_type}', but found '{existing_type}'."
-                        )
+            if self.metadata_column is not None:
+                existing_type = existing_columns.get(self.metadata_column)
+                if existing_type is None:
+                    raise ValueError(
+                        f"Column '{self.metadata_column}' does not exist in table '{self.schema_name}.{self.table_name}'."
+                    )
 
             with (
                 self.connection_pool.connection() as conn,
@@ -273,7 +259,7 @@ class BaseAzurePGVectorStore(BaseModel):
                         "embedding_index is specified as '%s'; will try to find a matching index.",
                         self.embedding_index,
                     )
-
+                    print(resultset)
                     index_opclass = self.embedding_index.op_class.value  # type: ignore[assignment]
                     if isinstance(self.embedding_index, DiskANN):
                         index_type = "diskann"
@@ -291,14 +277,18 @@ class BaseAzurePGVectorStore(BaseModel):
                                 "found a matching index: %s. overriding embedding_index.",
                                 row,
                             )
+                            index_opts = {
+                                opts.split("=")[0]: opts.split("=")[1]
+                                for opts in row["index_opts"]
+                            }
                             index = (
-                                DiskANN(op_class=index_opclass, **row["index_opts"])
+                                DiskANN(op_class=index_opclass, **index_opts)
                                 if index_type == "diskann"
                                 else (
-                                    HNSW(op_class=index_opclass, **row["index_opts"])
+                                    HNSW(op_class=index_opclass, **index_opts)
                                     if index_type == "hnsw"
                                     else IVFFlat(
-                                        op_class=index_opclass, **row["index_opts"]
+                                        op_class=index_opclass, **index_opts
                                     )
                                 )
                             )
@@ -320,25 +310,6 @@ class BaseAzurePGVectorStore(BaseModel):
                 self.table_name,
             )
 
-            if self.metadata_columns is None:
-                _logger.warning(
-                    "Metadata columns are not specified, defaulting to 'metadata' of type 'jsonb'."
-                )
-                self.metadata_columns = [("metadata", "jsonb")]
-            elif isinstance(self.metadata_columns, str):
-                _logger.warning(
-                    "Metadata columns are specified as a string, defaulting to 'jsonb' type."
-                )
-                self.metadata_columns = [(self.metadata_columns, "jsonb")]
-            elif isinstance(self.metadata_columns, list):
-                _logger.warning(
-                    "Metadata columns are specified as a list; defaulting to 'text' when type is not defined."
-                )
-                self.metadata_columns = [
-                    (col[0], col[1]) if isinstance(col, tuple) else (col, "text")
-                    for col in self.metadata_columns
-                ]
-
             if self.embedding_type is None:
                 _logger.warning(
                     "Embedding type is not specified, defaulting to 'vector'."
@@ -358,6 +329,7 @@ class BaseAzurePGVectorStore(BaseModel):
                 self.embedding_index = DiskANN(op_class=VectorOpClass.vector_cosine_ops)
 
             with self.connection_pool.connection() as conn, conn.cursor() as cursor:
+                
                 cursor.execute(
                     sql.SQL(
                         """
@@ -365,7 +337,7 @@ class BaseAzurePGVectorStore(BaseModel):
                             {id_column} uuid primary key,
                             {content_column} text,
                             {embedding_column} {embedding_type}({embedding_dimension}),
-                            {metadata_columns}
+                            {metadata_column} jsonb
                         )
                         """
                     ).format(
@@ -375,12 +347,7 @@ class BaseAzurePGVectorStore(BaseModel):
                         embedding_column=sql.Identifier(self.embedding_column),
                         embedding_type=sql.Identifier(self.embedding_type.value),
                         embedding_dimension=sql.Literal(self.embedding_dimension),
-                        metadata_columns=sql.SQL(", ").join(
-                            sql.SQL("{col} {type}").format(
-                                col=sql.Identifier(col), type=sql.Identifier(type)
-                            )
-                            for col, type in self.metadata_columns
-                        ),
+                        metadata_column=sql.Identifier(self.metadata_column),
                     )
                 )
 
@@ -464,16 +431,16 @@ class BaseAzurePGVectorStore(BaseModel):
         with self.connection_pool.connection() as conn:
             register_vector(conn)
             with conn.cursor(row_factory=dict_row) as cursor:
-                metadata_columns: list[str]
-                if isinstance(self.metadata_columns, list):
-                    metadata_columns = [
+                metadata_column: list[str]
+                if isinstance(self.metadata_column, list):
+                    metadata_column = [
                         col if isinstance(col, str) else col[0]
-                        for col in self.metadata_columns
+                        for col in self.metadata_column
                     ]
-                elif isinstance(self.metadata_columns, str):
-                    metadata_columns = [self.metadata_columns]
+                elif isinstance(self.metadata_column, str):
+                    metadata_column = [self.metadata_column]
                 else:
-                    metadata_columns = []
+                    metadata_column = []
 
                 # do reranking for the following cases:
                 #   - binary or scalar quantizations (for HNSW and IVFFlat), or
@@ -512,7 +479,7 @@ class BaseAzurePGVectorStore(BaseModel):
                                 [
                                     self.id_column,
                                     self.content_column,
-                                    *metadata_columns,
+                                    *metadata_column,
                                 ],
                             )
                         ),
@@ -544,7 +511,7 @@ class BaseAzurePGVectorStore(BaseModel):
                                     self.id_column,
                                     self.content_column,
                                     self.embedding_column,
-                                    *metadata_columns,
+                                    *metadata_column,
                                 ],
                             )
                         ),
@@ -615,7 +582,7 @@ class BaseAzurePGVectorStore(BaseModel):
                                 [
                                     self.id_column,
                                     self.content_column,
-                                    *metadata_columns,
+                                    *metadata_column,
                                 ],
                             )
                         ),
@@ -646,9 +613,9 @@ class BaseAzurePGVectorStore(BaseModel):
                     "id": result[self.id_column],
                     "content": result[self.content_column],
                     "metadata": (
-                        result[metadata_columns[0]]
-                        if isinstance(self.metadata_columns, str)
-                        else {col: result[col] for col in metadata_columns}
+                        result[metadata_column[0]]
+                        if isinstance(self.metadata_column, str)
+                        else {col: result[col] for col in metadata_column}
                     ),
                 },
                 result["distance"],
@@ -670,16 +637,16 @@ class BaseAzurePGVectorStore(BaseModel):
             self.connection_pool.connection() as conn,
             conn.cursor(row_factory=dict_row) as cursor,
         ):
-            metadata_columns: list[str]
-            if isinstance(self.metadata_columns, list):
-                metadata_columns = [
+            metadata_column: list[str]
+            if isinstance(self.metadata_column, list):
+                metadata_column = [
                     col if isinstance(col, str) else col[0]
-                    for col in self.metadata_columns
+                    for col in self.metadata_column
                 ]
-            elif isinstance(self.metadata_columns, str):
-                metadata_columns = [self.metadata_columns]
+            elif isinstance(self.metadata_column, str):
+                metadata_column = [self.metadata_column]
             else:
-                metadata_columns = []
+                metadata_column = []
 
             if ids is not None:
                 where_clause = sql.SQL(" where {id_column} = any(%(id)s)").format(
@@ -702,7 +669,7 @@ class BaseAzurePGVectorStore(BaseModel):
                             self.id_column,
                             self.content_column,
                             self.embedding_column,
-                            *metadata_columns,
+                            *metadata_column,
                         ],
                     )
                 ),
@@ -721,9 +688,9 @@ class BaseAzurePGVectorStore(BaseModel):
                     "content": result[self.content_column],
                     "embedding": result[self.embedding_column],
                     "metadata": (
-                        result[metadata_columns[0]]
-                        if isinstance(self.metadata_columns, str)
-                        else {col: result[col] for col in metadata_columns}
+                        result[metadata_column[0]]
+                        if isinstance(self.metadata_column, str)
+                        else {col: result[col] for col in metadata_column}
                     ),
                 }
                 for result in resultset

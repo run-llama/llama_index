@@ -31,12 +31,7 @@ from llama_index.core.vector_stores.utils import (
 from .common import (
     AzurePGConnectionPool,
     BaseAzurePGVectorStore,
-    HNSW,
     Algorithm,
-    DiskANN,
-    IVFFlat,
-    VectorOpClass,
-    VectorType,
 )
 
 if sys.version_info < (3, 12):
@@ -172,7 +167,7 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
         schema_name: str = "public",
         table_name: str = "llamaindex_vectors",
         embed_dim: int = 1536,
-        embedding_index: Algorithm | None = DiskANN,
+        embedding_index: Algorithm | None = None,
     ) -> "AzurePGVectorStore":
         """Create an AzurePGVectorStore from connection and configuration parameters."""
         return cls(
@@ -207,16 +202,29 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
 
         return node
 
-    def _get_insert_sql_dict(self, node: BaseNode) -> tuple[sql.SQL, dict[str, Any]]:
+    def _get_insert_sql_dict(self, node: BaseNode, on_conflict_update: bool) -> tuple[sql.SQL, dict[str, Any]]:
         """Get the SQL command and dictionary for inserting a node."""
+        if on_conflict_update:
+            update=sql.SQL(
+                """
+                UPDATE SET
+                    {content_col} = EXCLUDED.{content_col},
+                    {embedding_col} = EXCLUDED.{embedding_col},
+                    {metadata_col} = EXCLUDED.{metadata_col}
+                """
+            ).format(
+                id_col=sql.Identifier(self.id_column),
+                content_col=sql.Identifier(self.content_column),
+                embedding_col=sql.Identifier(self.embedding_column),
+                metadata_col=sql.Identifier(self.metadata_columns),
+            )
+        else:
+            update = sql.SQL("nothing")
         insert_sql = sql.SQL(
             """
             INSERT INTO {schema}.{table} ({id_col}, {content_col}, {embedding_col}, {metadata_col})
             VALUES (%(id)s, %(content)s, %(embedding)s, %(metadata)s)
-            ON CONFLICT ({id_col}) DO UPDATE SET
-                {content_col} = EXCLUDED.{content_col},
-                {embedding_col} = EXCLUDED.{embedding_col},
-                {metadata_col} = EXCLUDED.{metadata_col}
+            ON CONFLICT ({id_col}) DO {update}
         """
         ).format(
             schema=sql.Identifier(self.schema_name),
@@ -225,6 +233,7 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
             content_col=sql.Identifier(self.content_column),
             embedding_col=sql.Identifier(self.embedding_column),
             metadata_col=sql.Identifier(self.metadata_columns),
+            update=update
         )
 
         return (insert_sql, {
@@ -246,12 +255,13 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
             List of node IDs added.
         """
         ids = []
+        on_conflict_update = bool(add_kwargs.pop("on_conflict_update", None))
         with self.connection_pool.connection() as conn:
             register_vector(conn)
             with conn.cursor(row_factory=dict_row) as cursor:
                 for node in nodes:
                     ids.append(node.node_id)
-                    insert_sql, insert_dict = self._get_insert_sql_dict(node)
+                    insert_sql, insert_dict = self._get_insert_sql_dict(node, on_conflict_update)
                     cursor.execute(
                         insert_sql,
                         insert_dict

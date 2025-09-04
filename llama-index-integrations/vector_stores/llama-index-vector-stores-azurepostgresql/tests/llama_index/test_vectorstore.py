@@ -23,6 +23,7 @@ from psycopg_pool import  ConnectionPool
 from pydantic import PositiveInt
 
 from llama_index.vector_stores.azure_postgres import AzurePGVectorStore
+from llama_index.vector_stores.azure_postgres.common import DiskANN
 
 from .conftest import Table
 
@@ -96,7 +97,7 @@ class TestAzurePGVectorStore:
     def test_table_creation_failure(self):
         assert False
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_table_creation_success(
         self, vectorstore: AzurePGVectorStore, table: Table
     ):
@@ -115,7 +116,7 @@ class TestAzurePGVectorStore:
         verify_table_created(table, resultset)
 
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_vectorstore_initialization_from_params(
         self,
         connection_pool: ConnectionPool,
@@ -124,24 +125,24 @@ class TestAzurePGVectorStore:
         table_name = "vs_init_from_params"
         embedding_dimension = 3
 
+        diskann = DiskANN(
+            op_class="vector_cosine_ops",
+            max_neighbors=32,
+            l_value_ib=100,
+            l_value_is=100
+        )
+
         vectorstore = AzurePGVectorStore.from_params(
             connection_pool=connection_pool,
             schema_name=schema,
             table_name=table_name,
             embed_dim=embedding_dimension,
-            pg_diskann_kwargs={
-                "pg_diskann_operator_class": "vector_cosine_ops",
-                "pg_diskann_max_neighbors": 32,
-                "pg_diskann_l_value_ib": 100,
-                "pg_diskann_l_value_is": 100,
-                "pg_diskann_iterative_search": "relaxed_order",
-            }
-
+            embedding_index=diskann,
         )
         assert isinstance(vectorstore, AzurePGVectorStore)
 
 
-    # @pytest.mark.skip
+    @pytest.mark.skip
     def test_get_nodes(
         self,
         vectorstore: AzurePGVectorStore,
@@ -151,7 +152,7 @@ class TestAzurePGVectorStore:
             "Retrieved node count does not match expected"
         )
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     @pytest.mark.parametrize(
         ["node_tuple", "expected"],
         [
@@ -179,7 +180,7 @@ class TestAzurePGVectorStore:
             )
     
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     @pytest.mark.parametrize(
         ["node_tuple", "expected"],
         [
@@ -205,7 +206,7 @@ class TestAzurePGVectorStore:
             assert returned_ids[0] == expected_node_id, "Inserted text IDs do not match"
 
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     @pytest.mark.parametrize(
         ["doc_id"],
         [
@@ -247,7 +248,7 @@ class TestAzurePGVectorStore:
         )
 
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     @pytest.mark.parametrize(
         ["node_tuple"],
         [
@@ -294,7 +295,7 @@ class TestAzurePGVectorStore:
         )
 
 
-    @pytest.mark.skip
+    # @pytest.mark.skip
     def test_clear(
         self,
         vectorstore: AzurePGVectorStore,
@@ -327,7 +328,7 @@ class TestAzurePGVectorStore:
         )
 
     
-    @pytest.mark.skip
+    # @pytest.mark.skip
     @pytest.mark.parametrize(
         ["query", "embedding", "k", "filters"],
         [
