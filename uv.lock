@@ -1301,7 +1301,7 @@ wheels = [
 
 [[package]]
 name = "llama-index"
-version = "0.13.4"
+version = "0.13.5"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-cli" },
@@ -1340,7 +1340,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "llama-index-cli", specifier = ">=0.5.0,<0.6" },
-    { name = "llama-index-core", specifier = ">=0.13.4,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.5,<0.14" },
     { name = "llama-index-embeddings-openai", specifier = ">=0.5.0,<0.6" },
     { name = "llama-index-indices-managed-llama-cloud", specifier = ">=0.4.0" },
     { name = "llama-index-llms-openai", specifier = ">=0.5.0,<0.6" },
@@ -1388,7 +1388,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.13.4"
+version = "0.13.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1422,9 +1422,9 @@ dependencies = [
     { name = "typing-inspect" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a6/77/dbd2f7263e2f409022a0fc6bcee5669ce5313c5dff35c131612a84cb1a68/llama_index_core-0.13.4.tar.gz", hash = "sha256:c71f4c1713ad7b2122b8fd2a894db78a0d08e26077d515fc5fc47c65a10c015f", size = 7231772, upload-time = "2025-09-02T04:38:47.917Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/8b/e4/8584f387bd161981fda2b65825c0b335636dd19dc29523682f60a4f1c3bc/llama_index_core-0.13.5.tar.gz", hash = "sha256:46d0151d6f621e78e7f390fce46dc2034b445e08fb4eb6aab4e2508f96bf983a", size = 7232259, upload-time = "2025-09-04T21:37:42.583Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/74/6f/b507ec3bf3319c23cd3049c0385509671bf1d4166d670b598372f97a5f22/llama_index_core-0.13.4-py3-none-any.whl", hash = "sha256:dd08d35c9049f0fe142c98cf96e78bd441e5f2355f398986397cd4d690f2b373", size = 7574953, upload-time = "2025-09-02T04:38:42.497Z" },
+    { url = "https://files.pythonhosted.org/packages/d0/47/0d6c3bd0e6707501254ad478c4dca1ed77ca2bedb56c2c252fda152e982e/llama_index_core-0.13.5-py3-none-any.whl", hash = "sha256:15b2e295507bfacaff9a5b8b3455c69638b842a2bacc9e57557d080f94c16fcc", size = 7575418, upload-time = "2025-09-04T21:37:35.109Z" },
 ]
 
 [[package]]
