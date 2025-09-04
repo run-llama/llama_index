@@ -4,15 +4,15 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "docker>=7.1.0,<8",
     "ipython==8.10.0",
     "jupyter>=1.0.0,<2",
     "mypy==0.991",
     "pre-commit==3.2.0",
     "pylint==2.15.10",
-    "pytest>=8.3.5,<9",
-    "pytest-asyncio==0.23.7",
+    "pytest==8.3.0",
+    "pytest-asyncio==0.21.0",
     "pytest-mock==3.11.1",
-    "respx>=0.22.0,<0.23",
     "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
@@ -27,16 +27,17 @@ dev = [
 ]
 
 [project]
-name = "llama-index-llms-litellm"
-version = "0.6.2"
-description = "llama-index llms litellm integration"
-authors = [{name = "Your Name", email = "you@example.com"}]
+name = "llama-index-storage-chat-store-yugabytedb"
+version = "0.1.0"
+description = "llama-index storage-chat-store yugabytedb integration"
+authors = [{name = "YugabyteDB", email = "pypi@yugabyte.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "litellm>=1.18.13,<2",
     "llama-index-core>=0.13.0,<0.14",
+    "psycopg2-yugabytedb>=2.9.3.5",
+    "sqlalchemy-yugabytedb>=1.0.0.1",
 ]
 
 [tool.codespell]
@@ -54,10 +55,10 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.llms.litellm"
+import_path = "llama_index.storage.chat_store.yugabytedb"
 
 [tool.llamahub.class_authors]
-LiteLLM = "llama-index"
+YugabyteDBChatStore = "llama-index"
 
 [tool.mypy]
 disallow_untyped_defs = true
