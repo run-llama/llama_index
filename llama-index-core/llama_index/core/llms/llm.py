@@ -653,7 +653,7 @@ class LLM(BaseLLM):
             from llama_index.core.prompts import PromptTemplate
 
             prompt = PromptTemplate("Please write a random name related to {topic}.")
-            gen = llm.stream_predict(prompt, topic="cats")
+            gen = llm.stream(prompt, topic="cats")
             for token in gen:
                 print(token, end="", flush=True)
             ```
@@ -747,7 +747,7 @@ class LLM(BaseLLM):
             from llama_index.core.prompts import PromptTemplate
 
             prompt = PromptTemplate("Please write a random name related to {topic}.")
-            gen = await llm.astream_predict(prompt, topic="cats")
+            gen = await llm.astream(prompt, topic="cats")
             async for token in gen:
                 print(token, end="", flush=True)
             ```
