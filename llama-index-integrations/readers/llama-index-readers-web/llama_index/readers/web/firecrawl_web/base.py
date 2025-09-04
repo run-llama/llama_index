@@ -44,7 +44,7 @@ class FireCrawlWebReader(BasePydanticReader):
             from firecrawl import Firecrawl  # type: ignore
         except Exception as exc:
             raise ImportError(
-                "firecrawl not found, please run `pip install 'firecrawl-py>=3.4.0'`"
+                "firecrawl not found, please run `pip install 'firecrawl-py>=4.3.3'`"
             ) from exc
         return Firecrawl
 
@@ -56,7 +56,8 @@ class FireCrawlWebReader(BasePydanticReader):
         return Firecrawl(**client_kwargs)
 
     def _params_copy(self) -> Dict[str, Any]:
-        return self.params.copy() if self.params else {}
+        params: Dict[str, Any] = self.params.copy() if self.params else {}
+        return params
 
     # --------------------
     # Aux helpers (common)
@@ -349,7 +350,7 @@ class FireCrawlWebReader(BasePydanticReader):
             from firecrawl import Firecrawl  # type: ignore
         except Exception as exc:
             raise ImportError(
-                "firecrawl not found, please run `pip install 'firecrawl-py>=3.4.0'`"
+                "firecrawl not found, please run `pip install 'firecrawl-py>=4.3.3'`"
             ) from exc
 
         # Instantiate the new Firecrawl client
@@ -546,15 +547,80 @@ class FireCrawlWebReader(BasePydanticReader):
             if "maxDepth" in crawl_params:
                 crawl_params.pop("maxDepth", None)
             firecrawl_docs = self.firecrawl.crawl(url, **crawl_params)
-            # Support both list and object with data
-            firecrawl_docs = firecrawl_docs.get("data", firecrawl_docs)
-            for doc in firecrawl_docs:
-                documents.append(
-                    Document(
-                        text=(doc.get("markdown") or doc.get("content") or ""),
-                        metadata=doc.get("metadata", {}),
+            # Normalize Crawl response across SDK versions
+            items: List[Any] = []
+            if isinstance(firecrawl_docs, dict):
+                data = firecrawl_docs.get("data", firecrawl_docs)
+                if isinstance(data, list):
+                    items = data
+            else:
+                # Try common list-bearing attributes first
+                for attr_name in ("data", "results", "documents", "items", "pages"):
+                    try:
+                        candidate = getattr(firecrawl_docs, attr_name, None)
+                    except Exception:
+                        candidate = None
+                    if isinstance(candidate, list) and candidate:
+                        items = candidate
+                        break
+                # Fallback to model dump reflection
+                if not items:
+                    try:
+                        if hasattr(firecrawl_docs, "model_dump") and callable(
+                            firecrawl_docs.model_dump
+                        ):
+                            dump_obj = firecrawl_docs.model_dump()  # type: ignore[attr-defined]
+                        elif hasattr(firecrawl_docs, "dict") and callable(
+                            firecrawl_docs.dict
+                        ):
+                            dump_obj = firecrawl_docs.dict()  # type: ignore[attr-defined]
+                        else:
+                            dump_obj = {}
+                    except Exception:
+                        dump_obj = {}
+                    if isinstance(dump_obj, dict):
+                        data = (
+                            dump_obj.get("data")
+                            or dump_obj.get("results")
+                            or dump_obj.get("documents")
+                        )
+                        if isinstance(data, list):
+                            items = data
+
+            for doc in items:
+                if isinstance(doc, dict):
+                    text_val = (
+                        doc.get("markdown")
+                        or doc.get("content")
+                        or doc.get("text")
+                        or ""
                     )
-                )
+                    metadata_val = doc.get("metadata", {})
+                else:
+                    text_val = (
+                        self._safe_get_attr(
+                            doc,
+                            "markdown",
+                            "content",
+                            "text",
+                            "html",
+                            "raw_html",
+                            "rawHtml",
+                            "summary",
+                        )
+                        or ""
+                    )
+                    meta_obj = getattr(doc, "metadata", None)
+                    if isinstance(meta_obj, dict):
+                        metadata_val = meta_obj
+                    elif meta_obj is not None:
+                        try:
+                            metadata_val = self._to_dict_best_effort(meta_obj)
+                        except Exception:
+                            metadata_val = {"metadata": str(meta_obj)}
+                    else:
+                        metadata_val = {}
+                documents.append(Document(text=text_val, metadata=metadata_val))
         elif self.mode == "map":
             # [MAP] params: https://docs.firecrawl.dev/api-reference/endpoint/map
             # Expected response: { "success": true, "links": [{"url":..., "title":..., "description":...}, ...] }
@@ -771,6 +837,7 @@ class FireCrawlWebReader(BasePydanticReader):
 
             # Prepare the payload according to the new API structure
             payload = {"prompt": extract_params.pop("prompt")}
+            payload["integration"] = "llamaindex"
 
             # Call the extract method with the urls and params
             extract_response = self.firecrawl.extract(urls=urls, **payload)

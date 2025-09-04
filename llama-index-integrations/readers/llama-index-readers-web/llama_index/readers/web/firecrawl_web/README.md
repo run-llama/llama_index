@@ -7,7 +7,7 @@
 1. **Install Firecrawl Package**: Ensure the `firecrawl-py` package is installed to use the Firecrawl Web Loader. Install it via pip with the following command:
 
 ```bash
-pip install 'firecrawl-py>=3.4.0'
+pip install 'firecrawl-py>=4.3.3'
 ```
 
 2. **API Key**: Secure an API key from [Firecrawl.dev](https://www.firecrawl.dev/) to access the Firecrawl services.
