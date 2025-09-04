@@ -335,6 +335,7 @@ nav:
           - ./examples/llm/clarifai.ipynb
           - ./examples/llm/cleanlab.ipynb
           - ./examples/llm/cohere.ipynb
+          - ./examples/llm/cometapi.ipynb
           - ./examples/llm/dashscope.ipynb
           - ./examples/llm/databricks.ipynb
           - ./examples/llm/deepinfra.ipynb
@@ -1039,6 +1040,7 @@ nav:
           - ./api_reference/llms/cleanlab.md
           - ./api_reference/llms/cloudflare_ai_gateway.md
           - ./api_reference/llms/cohere.md
+          - ./api_reference/llms/cometapi.md
           - ./api_reference/llms/contextual.md
           - ./api_reference/llms/cortex.md
           - ./api_reference/llms/custom_llm.md
@@ -2214,6 +2216,7 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-vercel-ai-gateway
             - ../llama-index-integrations/llms/llama-index-llms-openai
             - ../llama-index-integrations/llms/llama-index-llms-cerebras
+            - ../llama-index-integrations/llms/llama-index-llms-cometapi
             - ../llama-index-integrations/llms/llama-index-llms-gradient
             - ../llama-index-integrations/extractors/llama-index-extractors-entity
             - ../llama-index-integrations/extractors/llama-index-extractors-marvin
@@ -2781,6 +2784,7 @@ plugins:
         ./examples/llm/cerebras.html: https://docs.llamaindex.ai/en/stable/examples/llm/cerebras/
         ./examples/llm/clarifai.html: https://docs.llamaindex.ai/en/stable/examples/llm/clarifai/
         ./examples/llm/cohere.html: https://docs.llamaindex.ai/en/stable/examples/llm/cohere/
+        ./examples/llm/cometapi.html: https://docs.llamaindex.ai/en/stable/examples/llm/cometapi/
         ./examples/llm/dashscope.html: https://docs.llamaindex.ai/en/stable/examples/llm/dashscope/
         ./examples/llm/everlyai.html: https://docs.llamaindex.ai/en/stable/examples/llm/everlyai/
         ./examples/llm/fireworks.html: https://docs.llamaindex.ai/en/stable/examples/llm/fireworks/
