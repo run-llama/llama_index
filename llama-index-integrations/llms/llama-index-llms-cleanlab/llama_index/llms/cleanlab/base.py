@@ -13,11 +13,17 @@ from llama_index.core.llms.callbacks import llm_completion_callback, CallbackMan
 from llama_index.core.llms.custom import CustomLLM
 from llama_index.core.bridge.pydantic import PrivateAttr, Field
 
-from cleanlab_studio import Studio
+from cleanlab_tlm import TLM
+from cleanlab_tlm.utils.config import (
+    get_default_model,
+    get_default_quality_preset,
+    get_default_context_limit,
+    get_default_max_tokens,
+)
 
-DEFAULT_CONTEXT_WINDOW = 131072
-DEFAULT_MAX_TOKENS = 512
-DEFAULT_MODEL = "gpt-4o-mini"
+DEFAULT_MODEL = get_default_model()
+DEFAULT_QUALITY_PRESET = get_default_quality_preset()
+DEFAULT_MAX_TOKENS = get_default_max_tokens()
 
 
 class CleanlabTLM(CustomLLM):
@@ -30,33 +36,33 @@ class CleanlabTLM(CustomLLM):
         ```python
         from llama_index.llms.cleanlab import CleanlabTLM
 
-        llm = CleanlabTLM(quality_preset="best", api_key=api_key)
+        llm = CleanlabTLM(api_key=api_key, quality_preset="best", options={"log": ["explanation"]})
         resp = llm.complete("Who is Paul Graham?")
         print(resp)
         ```
+
+    Arguments:
+    `quality_preset` and `options` are configuration settings you can optionally specify to improve latency or accuracy.
+
+    More information can be found here:
+        https://help.cleanlab.ai/tlm/
+
     """
 
-    context_window: int = Field(
-        default=DEFAULT_CONTEXT_WINDOW,
-        description="The maximum number of context tokens for the model.",
+    model: str = Field(
+        default=DEFAULT_MODEL,
+        description="Base LLM to use with TLM.",
     )
     max_tokens: int = Field(
         default=DEFAULT_MAX_TOKENS,
         description="The maximum number of tokens to generate in TLM response.",
-    )
-    model: str = Field(default=DEFAULT_MODEL, description="The base model to use.")
-    quality_preset: str = Field(
-        default="medium", description="Pre-defined configuration to use for TLM."
-    )
-    log: dict = Field(
-        default_factory=dict, description="Metadata to log from TLM response."
     )
     _client: Any = PrivateAttr()
 
     def __init__(
         self,
         api_key: Optional[str] = None,
-        quality_preset: Optional[str] = "medium",
+        quality_preset: Optional[str] = DEFAULT_QUALITY_PRESET,
         options: Optional[Dict] = None,
         callback_manager: Optional[CallbackManager] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
@@ -66,51 +72,18 @@ class CleanlabTLM(CustomLLM):
             callback_manager=callback_manager,
         )
 
-        self.quality_preset = quality_preset
-        use_options = options is not None
-        # Check for user overrides in options dict
-        if use_options:
-            if options.get("model") is not None:
-                self.model = options.get("model")
-                if self.model == "gpt-4":
-                    self.context_window = 8192
-                elif self.model == "gpt-3.5-turbo-16k":
-                    self.context_window = 16385
-                elif self.model in ["gpt-4o-mini", "gpt-4o", "o1-preview"]:
-                    self.context_window = 131072
-                elif self.model in [
-                    "claude-3-haiku",
-                    "claude-3-sonnet",
-                    "claude-3.5-sonnet",
-                ]:
-                    self.context_window = 204800
-                else:
-                    # ValueError is raised by Studio object for non-supported models
-                    # Set context_window to dummy (default) value
-                    self.context_window = DEFAULT_CONTEXT_WINDOW
-            else:
-                self.context_window = DEFAULT_CONTEXT_WINDOW
-
-            if options.get("max_tokens") is not None:
-                self.max_tokens = options.get("max_tokens")
-            else:
-                self.max_tokens = DEFAULT_MAX_TOKENS
-
-            if options.get("log"):
-                if "explanation" in options["log"]:
-                    self.log["explanation"] = True
-
-        else:
-            self.model = DEFAULT_MODEL
-            self.context_window = DEFAULT_CONTEXT_WINDOW
-            self.max_tokens = DEFAULT_MAX_TOKENS
+        self.max_tokens = (
+            options.get("max_tokens")
+            if options and "max_tokens" in options
+            else DEFAULT_MAX_TOKENS
+        )
 
         api_key = get_from_param_or_env("api_key", api_key, "CLEANLAB_API_KEY")
 
-        studio = Studio(api_key=api_key)
-        self._client = studio.TLM(
-            quality_preset=self.quality_preset, options=options if use_options else None
+        self._client = TLM(
+            api_key=api_key, quality_preset=quality_preset, options=options
         )
+        self.model = self._client.get_model_name()
 
     @classmethod
     def class_name(cls) -> str:
@@ -120,27 +93,29 @@ class CleanlabTLM(CustomLLM):
     def metadata(self) -> LLMMetadata:
         """Get LLM metadata."""
         return LLMMetadata(
-            context_window=self.context_window,
+            context_window=get_default_context_limit(),
             num_output=self.max_tokens,
             model_name=self.model,
         )
 
+    def _parse_response(self, response: Dict) -> CompletionResponse:
+        """Parse the response from TLM and return a CompletionResponse object."""
+        try:
+            text = response["response"]
+            trust_score = response["trustworthiness_score"]
+        except KeyError as e:
+            raise ValueError(f"Missing expected key in response: {e}")
+
+        additional_data = {"trustworthiness_score": trust_score}
+        if "log" in response and "explanation" in response["log"]:
+            additional_data["explanation"] = response["log"]["explanation"]
+
+        return CompletionResponse(text=text, additional_kwargs=additional_data)
+
     @llm_completion_callback()
     def complete(self, prompt: str, **kwargs: Any) -> CompletionResponse:
-        # Prompt TLM for a response and trustworthiness score
-        response: Dict[str, str] = self._client.prompt(prompt)
-
-        return CompletionResponse(
-            text=response["response"],
-            additional_kwargs={
-                "trustworthiness_score": response["trustworthiness_score"],
-                **(
-                    {"explanation": response["log"]["explanation"]}
-                    if self.log.get("explanation")
-                    else {}
-                ),
-            },
-        )
+        response = self._client.prompt(prompt)
+        return self._parse_response(response)
 
     @llm_completion_callback()
     def stream_complete(self, prompt: str, **kwargs: Any) -> CompletionResponseGen:

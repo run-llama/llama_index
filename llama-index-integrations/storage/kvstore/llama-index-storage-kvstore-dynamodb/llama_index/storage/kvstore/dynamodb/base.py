@@ -52,7 +52,8 @@ def convert_decimal_to_int_or_float(obj: Any) -> Any:
 
 
 class DynamoDBKVStore(BaseKVStore):
-    """DynamoDB Key-Value store.
+    """
+    DynamoDB Key-Value store.
     Stores key-value pairs in a DynamoDB Table.
     The DynamoDB Table must have both a hash key and a range key,
         and their types must be string.
@@ -64,6 +65,7 @@ class DynamoDBKVStore(BaseKVStore):
 
     Args:
         table (Any): DynamoDB Table Service Resource
+
     """
 
     def __init__(self, table: Any):
@@ -74,10 +76,12 @@ class DynamoDBKVStore(BaseKVStore):
 
     @classmethod
     def from_table_name(cls, table_name: str) -> DynamoDBKVStore:
-        """Load a DynamoDBKVStore from a DynamoDB table name.
+        """
+        Load a DynamoDBKVStore from a DynamoDB table name.
 
         Args:
             table_name (str): DynamoDB table name
+
         """
         # Get the DynamoDB URL from environment variable
         dynamodb_url = os.getenv("DYNAMODB_URL")
@@ -94,12 +98,14 @@ class DynamoDBKVStore(BaseKVStore):
         return cls(table=ddb.Table(table_name))
 
     def put(self, key: str, val: dict, collection: str = DEFAULT_COLLECTION) -> None:
-        """Put a key-value pair into the store.
+        """
+        Put a key-value pair into the store.
 
         Args:
             key (str): key
             val (dict): value
             collection (str): collection name
+
         """
         item = {k: convert_float_to_decimal(v) for k, v in val.items()}
         item[self._key_hash] = collection
@@ -109,21 +115,25 @@ class DynamoDBKVStore(BaseKVStore):
     async def aput(
         self, key: str, val: dict, collection: str = DEFAULT_COLLECTION
     ) -> None:
-        """Put a key-value pair into the store.
+        """
+        Put a key-value pair into the store.
 
         Args:
             key (str): key
             val (dict): value
             collection (str): collection name
+
         """
         raise NotImplementedError
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> dict | None:
-        """Get a value from the store.
+        """
+        Get a value from the store.
 
         Args:
             key (str): key
             collection (str): collection name
+
         """
         resp = self._table.get_item(
             Key={self._key_hash: collection, self._key_range: key}
@@ -138,19 +148,23 @@ class DynamoDBKVStore(BaseKVStore):
             }
 
     async def aget(self, key: str, collection: str = DEFAULT_COLLECTION) -> dict | None:
-        """Get a value from the store.
+        """
+        Get a value from the store.
 
         Args:
             key (str): key
             collection (str): collection name
+
         """
         raise NotImplementedError
 
     def get_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
-        """Get all values from the store.
+        """
+        Get all values from the store.
 
         Args:
             collection (str): collection name
+
         """
         result = {}
         last_evaluated_key = None
@@ -174,19 +188,23 @@ class DynamoDBKVStore(BaseKVStore):
         return result
 
     async def aget_all(self, collection: str = DEFAULT_COLLECTION) -> Dict[str, dict]:
-        """Get all values from the store.
+        """
+        Get all values from the store.
 
         Args:
             collection (str): collection name
+
         """
         raise NotImplementedError
 
     def delete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        """Delete a value from the store.
+        """
+        Delete a value from the store.
 
         Args:
             key (str): key
             collection (str): collection name
+
         """
         resp = self._table.delete_item(
             Key={self._key_hash: collection, self._key_range: key},
@@ -199,10 +217,12 @@ class DynamoDBKVStore(BaseKVStore):
             return len(item) > 0
 
     async def adelete(self, key: str, collection: str = DEFAULT_COLLECTION) -> bool:
-        """Delete a value from the store.
+        """
+        Delete a value from the store.
 
         Args:
             key (str): key
             collection (str): collection name
+
         """
         raise NotImplementedError

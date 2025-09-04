@@ -1,5 +1,6 @@
 """Gemini embeddings file."""
 
+import deprecated
 from typing import Any, List, Optional
 
 from llama_index.core.base.embeddings.base import (
@@ -12,14 +13,22 @@ from llama_index.core.callbacks.base import CallbackManager
 import google.generativeai as gemini
 
 
+@deprecated.deprecated(
+    reason=(
+        "Should use `llama-index-embeddings-google-genai` instead, using Google's latest unified SDK. "
+        "See: https://docs.llamaindex.ai/en/stable/examples/embeddings/google_genai/"
+    )
+)
 class GeminiEmbedding(BaseEmbedding):
-    """Google Gemini embeddings.
+    """
+    Google Gemini embeddings.
 
     Args:
         model_name (str): Model for embedding.
             Defaults to "models/embedding-001".
 
         api_key (Optional[str]): API key to access the model. Defaults to None.
+
     """
 
     _model: Any = PrivateAttr()

@@ -39,6 +39,7 @@ class KalturaESearchReader(BaseReader):
             kaltura_api_endpoint (str): The Kaltura API endpoint. Default is "https://cdnapi-ev.kaltura.com/".
             request_timeout (int): API request timeout in seconds. Default is 500.
             should_log_api_calls (bool): Boolean value determining whether to log Kaltura requests. Default is False.
+
         """
         self.partner_id = partner_id
         self.api_secret = api_secret
@@ -87,7 +88,8 @@ class KalturaESearchReader(BaseReader):
     def _load_from_search_params(
         self, search_params, with_captions: bool = True, max_entries: int = 10
     ) -> List[Dict[str, Any]]:
-        """Load search parameters and returns a list of entries.
+        """
+        Load search parameters and returns a list of entries.
 
         Args:
             search_params: Search parameters for Kaltura eSearch.
@@ -98,6 +100,7 @@ class KalturaESearchReader(BaseReader):
             list: A list of entries as dictionaries,
             if captions required entry_info will include all metadata and text will include transcript,
             otherwise info is just entry_id and text is all metadata.
+
         """
         from KalturaClient.Plugins.Core import KalturaPager
 
@@ -156,13 +159,15 @@ class KalturaESearchReader(BaseReader):
             return []
 
     def _get_json_transcript(self, caption_asset_id):
-        """Fetch json transcript/captions from a given caption_asset_id.
+        """
+        Fetch json transcript/captions from a given caption_asset_id.
 
         Args:
             caption_asset_id: The ID of the caption asset that includes the captions to fetch json transcript for
 
         Returns:
             A JSON transcript of the captions, or an empty dictionary if none found or an error occurred.
+
         """
         # TODO: change this to fetch captions per language, or as for a specific language code
         try:
@@ -183,7 +188,8 @@ class KalturaESearchReader(BaseReader):
         with_captions: bool = True,
         max_entries: int = 5,
     ) -> List[Dict[str, Any]]:
-        """Load data from the Kaltura based on search parameters.
+        """
+        Load data from the Kaltura based on search parameters.
         The function returns a list of dictionaries.
         Each dictionary represents a media entry, where the keys are strings (field names) and the values can be of any type.
 
@@ -202,6 +208,7 @@ class KalturaESearchReader(BaseReader):
             entry_application:str, entry_tags:str, entry_reference_id:str.
             If with_captions is False, it sets entry_info to only include the entry_id and entry_dict to include all other entry information.
             If with_captions is True, it sets entry_info to include all entry information and entry_dict to only include the entry transcript fetched via self._get_captions(items_data).
+
         """
         from KalturaClient.Plugins.ElasticSearch import (
             KalturaCategoryEntryStatus,

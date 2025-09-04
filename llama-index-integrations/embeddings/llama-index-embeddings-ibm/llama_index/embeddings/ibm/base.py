@@ -34,17 +34,18 @@ class WatsonxEmbeddings(BaseEmbedding):
             project_id="*****",
         )
         ```
+
     """
 
     model_id: str = Field(
         default=DEFAULT_EMBED_MODEL,
-        description="""Type of model to use.""",
+        description="Type of model to use.",
         allow_mutation=False,
     )
 
     truncate_input_tokens: Optional[int] = Field(
         default=None,
-        description="""Represents the maximum number of input tokens accepted.""",
+        description="Represents the maximum number of input tokens accepted.",
     )
 
     project_id: Optional[str] = Field(
@@ -55,42 +56,51 @@ class WatsonxEmbeddings(BaseEmbedding):
 
     space_id: Optional[str] = Field(
         default=None,
-        description="""ID of the Watson Studio space.""",
+        description="ID of the Watson Studio space.",
         allow_mutation=False,
     )
 
     url: Optional[SecretStr] = Field(
         default=None,
-        description="""Url to Watson Machine Learning or CPD instance""",
+        description="Url to the IBM watsonx.ai for IBM Cloud or the IBM watsonx.ai software instance.",
         allow_mutation=False,
     )
 
     apikey: Optional[SecretStr] = Field(
         default=None,
-        description="""Apikey to Watson Machine Learning or CPD instance""",
+        description="API key to the IBM watsonx.ai for IBM Cloud or the IBM watsonx.ai software instance.",
         allow_mutation=False,
     )
 
     token: Optional[SecretStr] = Field(
-        default=None, description="""Token to CPD instance""", allow_mutation=False
+        default=None,
+        description="Token to the IBM watsonx.ai software instance.",
+        allow_mutation=False,
     )
 
     password: Optional[SecretStr] = Field(
-        default=None, description="""Password to CPD instance""", allow_mutation=False
+        default=None,
+        description="Password to the IBM watsonx.ai software instance.",
+        allow_mutation=False,
     )
 
     username: Optional[SecretStr] = Field(
-        default=None, description="""Username to CPD instance""", allow_mutation=False
+        default=None,
+        description="Username to the IBM watsonx.ai software instance.",
+        allow_mutation=False,
     )
 
     instance_id: Optional[SecretStr] = Field(
         default=None,
-        description="""Instance_id of CPD instance""",
+        description="Instance_id of the IBM watsonx.ai software instance.",
         allow_mutation=False,
+        deprecated="The `instance_id` parameter is deprecated and will no longer be utilized for logging to the IBM watsonx.ai software instance.",
     )
 
     version: Optional[SecretStr] = Field(
-        default=None, description="""Version of CPD instance""", allow_mutation=False
+        default=None,
+        description="Version of the IBM watsonx.ai software instance.",
+        allow_mutation=False,
     )
 
     verify: Union[str, bool, None] = Field(
@@ -101,6 +111,12 @@ class WatsonxEmbeddings(BaseEmbedding):
         True - default path to truststore will be taken
         False - no verification will be made""",
         allow_mutation=False,
+    )
+
+    # Enabled by default since IBM watsonx SDK 1.1.2 but it can cause problems
+    # in environments where long-running connections are not supported.
+    persistent_connection: bool = Field(
+        default=True, description="Use persistent connection"
     )
 
     _embed_model: Embeddings = PrivateAttr()
@@ -117,10 +133,10 @@ class WatsonxEmbeddings(BaseEmbedding):
         token: Optional[str] = None,
         password: Optional[str] = None,
         username: Optional[str] = None,
-        instance_id: Optional[str] = None,
         version: Optional[str] = None,
         verify: Union[str, bool, None] = None,
         api_client: Optional[APIClient] = None,
+        persistent_connection: bool = True,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ):
@@ -137,7 +153,6 @@ class WatsonxEmbeddings(BaseEmbedding):
                 token=token,
                 username=username,
                 password=password,
-                instance_id=instance_id,
             )
 
         url = creds.get("url").get_secret_value() if creds.get("url") else None
@@ -148,11 +163,6 @@ class WatsonxEmbeddings(BaseEmbedding):
         )
         username = (
             creds.get("username").get_secret_value() if creds.get("username") else None
-        )
-        instance_id = (
-            creds.get("instance_id").get_secret_value()
-            if creds.get("instance_id")
-            else None
         )
 
         super().__init__(
@@ -165,9 +175,9 @@ class WatsonxEmbeddings(BaseEmbedding):
             token=token,
             password=password,
             username=username,
-            instance_id=instance_id,
             version=version,
             verify=verify,
+            persistent_connection=persistent_connection,
             callback_manager=callback_manager,
             embed_batch_size=embed_batch_size,
             **kwargs,
@@ -190,6 +200,7 @@ class WatsonxEmbeddings(BaseEmbedding):
             project_id=self.project_id,
             space_id=self.space_id,
             api_client=api_client,
+            persistent_connection=self.persistent_connection,
         )
 
     class Config:
@@ -206,7 +217,6 @@ class WatsonxEmbeddings(BaseEmbedding):
             "token": self.token,
             "password": self.password,
             "username": self.username,
-            "instance_id": self.instance_id,
             "version": self.version,
         }
 

@@ -15,13 +15,14 @@ class Cerebras(OpenAILike):
         from llama_index.llms.cerebras import Cerebras
 
         # Set up the Cerebras class with the required model and API key
-        llm = Cerebras(model="llama3.1-70b", api_key="your_api_key")
+        llm = Cerebras(model="llama-3.3-70b", api_key="your_api_key")
 
         # Call the complete method with a query
         response = llm.complete("Why is fast inference important?")
 
         print(response)
         ```
+
     """
 
     def __init__(
@@ -35,9 +36,9 @@ class Cerebras(OpenAILike):
     ) -> None:
         api_key = api_key or os.environ.get("CEREBRAS_API_KEY", None)
 
-        assert (
-            api_key is not None
-        ), "API Key not specified! Please set `CEREBRAS_API_KEY`!"
+        assert api_key is not None, (
+            "API Key not specified! Please set `CEREBRAS_API_KEY`!"
+        )
 
         super().__init__(
             model=model,

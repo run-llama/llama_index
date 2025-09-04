@@ -1,4 +1,5 @@
-"""Docs parser.
+"""
+Docs parser.
 
 Contains parsers for docx, pdf files.
 
@@ -148,13 +149,15 @@ class HWPReader(BaseReader):
         extra_info: Optional[Dict] = None,
         fs: Optional[AbstractFileSystem] = None,
     ) -> List[Document]:
-        """Load data and extract table from Hwp file.
+        """
+        Load data and extract table from Hwp file.
 
         Args:
             file (Path): Path for the Hwp file.
 
         Returns:
             List[Document]
+
         """
         import olefile
 

@@ -19,7 +19,8 @@ DEFAULT_OG_TEXT_METADATA_KEY = "original_text"
 
 
 class SentenceWindowNodeParser(NodeParser):
-    """Sentence window node parser.
+    """
+    Sentence window node parser.
 
     Splits a document into Nodes, with each node being a sentence.
     Each node contains a window from the surrounding sentences in the metadata.
@@ -28,6 +29,7 @@ class SentenceWindowNodeParser(NodeParser):
         sentence_splitter (Optional[Callable]): splits text into sentences
         include_metadata (bool): whether to include metadata in nodes
         include_prev_next_rel (bool): whether to include prev/next relationships
+
     """
 
     sentence_splitter: Callable[[str], List[str]] = Field(

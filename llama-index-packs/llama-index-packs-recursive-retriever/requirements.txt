@@ -1,2 +1,0 @@
-lxml
-unstructured==0.10.18

@@ -16,7 +16,8 @@ from llama_index.core.utils import get_new_id
 
 
 def get_prompt_input_key(inputs: Dict[str, Any], memory_variables: List[str]) -> str:
-    """Get prompt input key.
+    """
+    Get prompt input key.
 
     Copied over from langchain.
 
@@ -30,7 +31,8 @@ def get_prompt_input_key(inputs: Dict[str, Any], memory_variables: List[str]) ->
 
 
 class GPTIndexMemory(Memory):
-    """Langchain memory wrapper (for LlamaIndex).
+    """
+    Langchain memory wrapper (for LlamaIndex).
 
     Args:
         human_prefix (str): Prefix for human input. Defaults to "Human".
@@ -99,7 +101,8 @@ class GPTIndexMemory(Memory):
 
 
 class GPTIndexChatMemory(BaseChatMemory):
-    """Langchain chat memory wrapper (for LlamaIndex).
+    """
+    Langchain chat memory wrapper (for LlamaIndex).
 
     Args:
         human_prefix (str): Prefix for human input. Defaults to "Human".

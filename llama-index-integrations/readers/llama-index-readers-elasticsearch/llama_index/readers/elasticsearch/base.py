@@ -1,9 +1,9 @@
-"""Elasticsearch (or Opensearch) reader over REST api.
+"""
+Elasticsearch (or Opensearch) reader over REST api.
 
 This only uses the basic search api, so it will work with Elasticsearch and Opensearch.
 
 """
-
 
 from typing import Any, List, Optional
 
@@ -22,6 +22,7 @@ class ElasticsearchReader(BasePydanticReader):
         endpoint (str): URL (http/https) of cluster
         index (str): Name of the index (required)
         httpx_client_args (dict): Optional additional args to pass to the `httpx.Client`
+
     """
 
     is_remote: bool = True
@@ -56,8 +57,10 @@ class ElasticsearchReader(BasePydanticReader):
         field: str,
         query: Optional[dict] = None,
         embedding_field: Optional[str] = None,
+        metadata_fields: Optional[List[str]] = None,
     ) -> List[Document]:
-        """Read data from the Elasticsearch index.
+        """
+        Read data from the Elasticsearch index.
 
         Args:
             field (str): Field in the document to retrieve text from
@@ -67,6 +70,9 @@ class ElasticsearchReader(BasePydanticReader):
             embedding_field (Optional[str]): If there are embeddings stored in
                 this index, this field can be used
                 to set the embedding field on the returned Document list.
+            metadata_fields (Optional[List[str]]): Fields used as metadata. Default
+                is all fields in the document except those specified by the
+                field and embedding_field parameters.
 
         Returns:
             List[Document]: A list of documents.
@@ -78,9 +84,15 @@ class ElasticsearchReader(BasePydanticReader):
             doc_id = hit["_id"]
             value = hit["_source"][field]
             embedding = hit["_source"].get(embedding_field or "", None)
+            if metadata_fields:
+                metadata = {
+                    k: v for k, v in hit["_source"].items() if k in metadata_fields
+                }
+            else:
+                hit["_source"].pop(field)
+                hit["_source"].pop(embedding_field or "", None)
+                metadata = hit["_source"]
             documents.append(
-                Document(
-                    id_=doc_id, text=value, metadata=hit["_source"], embedding=embedding
-                )
+                Document(id_=doc_id, text=value, metadata=metadata, embedding=embedding)
             )
         return documents

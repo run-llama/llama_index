@@ -15,9 +15,9 @@ from llama_index.embeddings.upstage.utils import (
 logger = logging.getLogger(__name__)
 
 UPSTAGE_EMBEDDING_MODELS = {
-    "solar-1-mini-embedding": {
-        "query": "solar-1-mini-embedding-query",
-        "passage": "solar-1-mini-embedding-passage",
+    "embedding": {
+        "query": "embedding-query",
+        "passage": "embedding-passage",
     },
     "solar-embedding-1-large": {
         "query": "solar-embedding-1-large-query",
@@ -30,7 +30,7 @@ MAX_EMBED_BATCH_SIZE = 100
 
 def get_engine(model) -> Tuple[Any, Any]:
     """
-    get query engine and passage engine for the model.
+    Get query engine and passage engine for the model.
     """
     if model not in UPSTAGE_EMBEDDING_MODELS:
         raise ValueError(
@@ -62,7 +62,7 @@ class UpstageEmbedding(OpenAIEmbedding):
 
     def __init__(
         self,
-        model: str = "solar-embedding-1-large",
+        model: str = "embedding",
         embed_batch_size: int = 100,
         dimensions: Optional[int] = None,
         additional_kwargs: Dict[str, Any] = None,
@@ -103,6 +103,8 @@ class UpstageEmbedding(OpenAIEmbedding):
                 f"Model name should not end with '-query' or '-passage'. The suffix has been removed. "
                 f"Model name: {model}"
             )
+
+        default_headers = (default_headers or {}) | {"x-upstage-client": "llamaindex"}
 
         super().__init__(
             embed_batch_size=embed_batch_size,

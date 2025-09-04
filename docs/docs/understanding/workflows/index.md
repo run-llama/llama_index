@@ -40,4 +40,4 @@ Let's build [a basic workflow](basic_flow.md). Follow the tutorial sequence step
 
 Once you're done, check out our [Workflows component guide](../../module_guides/workflow/index.md) as a reference guide + more practical examples on building RAG/agents.
 
-If you're done building and want to deploy your workflow to production, check out [our llama_deploy guide](../../module_guides/workflow/deployment.md) ([repo](https://github.com/run-llama/llama_deploy)).
+If you're done building and want to deploy your workflow to production, check out [our llama_deploy guide](../../module_guides/llama_deploy/) ([repo](https://github.com/run-llama/llama_deploy)).

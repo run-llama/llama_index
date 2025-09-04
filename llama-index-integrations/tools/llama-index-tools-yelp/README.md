@@ -10,14 +10,19 @@ Here's an example usage of the YelpToolSpec.
 
 ```python
 from llama_index.tools.yelp import YelpToolSpec
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 
 
 tool_spec = YelpToolSpec(api_key="your-key", client_id="your-id")
 
-agent = OpenAIAgent.from_tools(zapier_spec.to_tool_list(), verbose=True)
+agent = FunctionAgent(
+    tools=tool_spec.to_tool_list(),
+    llm=OpenAI(model="gpt-4.1"),
+)
 
-agent.chat("what good restaurants are in toronto")
-agent.chat("what are the details of lao lao bar")
+print(await agent.run("what good restaurants are in toronto"))
+print(await agent.run("what are the details of lao lao bar"))
 ```
 
 `business_search`: Use a natural language query to search for businesses

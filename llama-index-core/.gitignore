@@ -1,5 +1,3 @@
-llama_index/core/_static
-storage/
 .DS_Store
 # Byte-compiled / optimized / DLL files
 __pycache__/

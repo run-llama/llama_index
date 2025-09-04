@@ -1,9 +1,8 @@
 import json
 
-from llama_index.core.schema import Document as LIDocument
-
-from llama_index.node_parser.docling import DoclingNodeParser
 from llama_index.core.schema import BaseNode
+from llama_index.core.schema import Document as LIDocument
+from llama_index.node_parser.docling import DoclingNodeParser
 
 in_json_str = json.dumps(
     {
@@ -20,6 +19,7 @@ in_json_str = json.dumps(
         "text_template": "{metadata_str}\n\n{content}",
         "metadata_template": "{key}: {value}",
         "metadata_seperator": "\n",
+        "metadata_separator": "\n",
         "class_name": "Document",
     }
 )
@@ -34,6 +34,7 @@ out_get_nodes = {
                 "version": "1.0.0",
                 "doc_items": [
                     {
+                        "content_layer": "body",
                         "self_ref": "#/texts/0",
                         "parent": {"$ref": "#/body"},
                         "children": [],
@@ -64,7 +65,7 @@ out_get_nodes = {
                     "node_id": "123",
                     "node_type": "4",
                     "metadata": {},
-                    "hash": "95ee9366fededbecc38a68be8c58e87fb3cdf4e7fdfb83dbd00487489b941a4d",
+                    "hash": "097302ee643342cd2af2b9702175fc05d0d1d3648f8a60e6a7848fbcef9d7b62",
                     "class_name": "RelatedNodeInfo",
                 },
                 "3": {
@@ -75,6 +76,7 @@ out_get_nodes = {
                         "version": "1.0.0",
                         "doc_items": [
                             {
+                                "content_layer": "body",
                                 "self_ref": "#/texts/1",
                                 "parent": {"$ref": "#/body"},
                                 "children": [],
@@ -88,17 +90,18 @@ out_get_nodes = {
                             "filename": "sample.html",
                         },
                     },
-                    "hash": "0a8df027ead9e42831f12f8aa680afe5138436ecd58c32a6289212bc4d0a644a",
+                    "hash": "a6c3f2701d8f99dfe60b8fcfa3602c83412e92a234c747ea9b9554bf1894d484",
                     "class_name": "RelatedNodeInfo",
                 },
             },
+            "metadata_template": "{key}: {value}",
+            "metadata_separator": "\n",
             "text": "Some text",
             "mimetype": "text/plain",
             "start_char_idx": 529,
             "end_char_idx": 538,
-            "text_template": "{metadata_str}\n\n{content}",
-            "metadata_template": "{key}: {value}",
             "metadata_seperator": "\n",
+            "text_template": "{metadata_str}\n\n{content}",
             "class_name": "TextNode",
         },
         {
@@ -109,6 +112,7 @@ out_get_nodes = {
                 "version": "1.0.0",
                 "doc_items": [
                     {
+                        "content_layer": "body",
                         "self_ref": "#/texts/1",
                         "parent": {"$ref": "#/body"},
                         "children": [],
@@ -139,7 +143,7 @@ out_get_nodes = {
                     "node_id": "123",
                     "node_type": "4",
                     "metadata": {},
-                    "hash": "95ee9366fededbecc38a68be8c58e87fb3cdf4e7fdfb83dbd00487489b941a4d",
+                    "hash": "097302ee643342cd2af2b9702175fc05d0d1d3648f8a60e6a7848fbcef9d7b62",
                     "class_name": "RelatedNodeInfo",
                 },
                 "2": {
@@ -150,6 +154,7 @@ out_get_nodes = {
                         "version": "1.0.0",
                         "doc_items": [
                             {
+                                "content_layer": "body",
                                 "self_ref": "#/texts/0",
                                 "parent": {"$ref": "#/body"},
                                 "children": [],
@@ -163,17 +168,18 @@ out_get_nodes = {
                             "filename": "sample.html",
                         },
                     },
-                    "hash": "fbfaa945f53349cff0ee00b81a8d3926ca76874fdaf3eac7888f41c5f6a74f0c",
+                    "hash": "0cc445f97c4273fde805655dea71ac576eca74a8210b8589d43fd96a8f79100a",
                     "class_name": "RelatedNodeInfo",
                 },
             },
+            "metadata_template": "{key}: {value}",
+            "metadata_separator": "\n",
             "text": "Another paragraph",
             "mimetype": "text/plain",
             "start_char_idx": 678,
             "end_char_idx": 695,
-            "text_template": "{metadata_str}\n\n{content}",
-            "metadata_template": "{key}: {value}",
             "metadata_seperator": "\n",
+            "text_template": "{metadata_str}\n\n{content}",
             "class_name": "TextNode",
         },
     ]
@@ -190,6 +196,7 @@ out_parse_nodes = {
                 "version": "1.0.0",
                 "doc_items": [
                     {
+                        "content_layer": "body",
                         "self_ref": "#/texts/0",
                         "parent": {"$ref": "#/body"},
                         "children": [],
@@ -220,17 +227,18 @@ out_parse_nodes = {
                     "node_id": "123",
                     "node_type": "4",
                     "metadata": {},
-                    "hash": "95ee9366fededbecc38a68be8c58e87fb3cdf4e7fdfb83dbd00487489b941a4d",
+                    "hash": "097302ee643342cd2af2b9702175fc05d0d1d3648f8a60e6a7848fbcef9d7b62",
                     "class_name": "RelatedNodeInfo",
                 }
             },
+            "metadata_template": "{key}: {value}",
+            "metadata_separator": "\n",
             "text": "Some text",
             "mimetype": "text/plain",
             "start_char_idx": None,
             "end_char_idx": None,
-            "text_template": "{metadata_str}\n\n{content}",
-            "metadata_template": "{key}: {value}",
             "metadata_seperator": "\n",
+            "text_template": "{metadata_str}\n\n{content}",
             "class_name": "TextNode",
         },
         {
@@ -241,6 +249,7 @@ out_parse_nodes = {
                 "version": "1.0.0",
                 "doc_items": [
                     {
+                        "content_layer": "body",
                         "self_ref": "#/texts/1",
                         "parent": {"$ref": "#/body"},
                         "children": [],
@@ -271,17 +280,18 @@ out_parse_nodes = {
                     "node_id": "123",
                     "node_type": "4",
                     "metadata": {},
-                    "hash": "95ee9366fededbecc38a68be8c58e87fb3cdf4e7fdfb83dbd00487489b941a4d",
+                    "hash": "097302ee643342cd2af2b9702175fc05d0d1d3648f8a60e6a7848fbcef9d7b62",
                     "class_name": "RelatedNodeInfo",
                 }
             },
+            "metadata_template": "{key}: {value}",
+            "metadata_separator": "\n",
             "text": "Another paragraph",
             "mimetype": "text/plain",
             "start_char_idx": None,
             "end_char_idx": None,
-            "text_template": "{metadata_str}\n\n{content}",
-            "metadata_template": "{key}: {value}",
             "metadata_seperator": "\n",
+            "text_template": "{metadata_str}\n\n{content}",
             "class_name": "TextNode",
         },
     ]

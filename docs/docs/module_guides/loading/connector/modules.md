@@ -25,3 +25,5 @@
 - [Make Reader](../../../examples/data_connectors/MakeDemo.ipynb)
 - [Deplot Reader](../../../examples/data_connectors/deplot/DeplotReader.ipynb)
 - [Docling Reader](../../../examples/data_connectors/DoclingReaderDemo.ipynb)
+- [Google AlloyDB Reader](../../../examples/data_connectors/AlloyDBReaderDemo.ipynb)
+- [Google Cloud SQL for PostgreSQL Reader](../../../examples/data_connectors/CloudSQLPgReaderDemo.ipynb)

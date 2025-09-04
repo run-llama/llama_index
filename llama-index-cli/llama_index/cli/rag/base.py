@@ -1,10 +1,11 @@
 import asyncio
 import os
+import shlex
 import shutil
 from argparse import ArgumentParser
 from glob import iglob
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 from llama_index.core import (
     Settings,
@@ -13,17 +14,14 @@ from llama_index.core import (
 )
 from llama_index.core.base.embeddings.base import BaseEmbedding
 from llama_index.core.base.response.schema import (
-    RESPONSE_TYPE,
-    StreamingResponse,
     Response,
+    StreamingResponse,
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field, field_validator
 from llama_index.core.chat_engine import CondenseQuestionChatEngine
 from llama_index.core.ingestion import IngestionPipeline
 from llama_index.core.llms import LLM
-from llama_index.core.query_engine import CustomQueryEngine
-from llama_index.core.query_pipeline.components.function import FnComponent
-from llama_index.core.query_pipeline.query import QueryPipeline
+from llama_index.core.query_engine import RetrieverQueryEngine
 from llama_index.core.readers.base import BaseReader
 from llama_index.core.response_synthesizers import CompactAndRefine
 from llama_index.core.utils import get_cache_dir
@@ -52,21 +50,9 @@ def query_input(query_str: Optional[str] = None) -> str:
     return query_str or ""
 
 
-class QueryPipelineQueryEngine(CustomQueryEngine):
-    query_pipeline: QueryPipeline = Field(
-        description="Query Pipeline to use for Q&A.",
-    )
-
-    def custom_query(self, query_str: str) -> RESPONSE_TYPE:
-        return self.query_pipeline.run(query_str=query_str)
-
-    async def acustom_query(self, query_str: str) -> RESPONSE_TYPE:
-        return await self.query_pipeline.arun(query_str=query_str)
-
-
 class RagCLI(BaseModel):
     """
-    CLI tool for chatting with output of a IngestionPipeline via a QueryPipeline.
+    CLI tool for chatting with output of a IngestionPipeline via a RetrieverQueryEngine.
     """
 
     ingestion_pipeline: IngestionPipeline = Field(
@@ -84,10 +70,6 @@ class RagCLI(BaseModel):
         description="Language model to use for response generation.",
         default_factory=lambda: _try_load_openai_llm(),
     )
-    query_pipeline: Optional[QueryPipeline] = Field(
-        description="Query Pipeline to use for Q&A.",
-        default=None,
-    )
     chat_engine: Optional[CondenseQuestionChatEngine] = Field(
         description="Chat engine to use for chatting.",
         default=None,
@@ -100,23 +82,21 @@ class RagCLI(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-    @field_validator("query_pipeline", mode="before")
-    def query_pipeline_from_ingestion_pipeline(
-        cls, query_pipeline: Any, values: Dict[str, Any]
-    ) -> Optional[QueryPipeline]:
+    @field_validator("chat_engine", mode="before")
+    def chat_engine_from_ingestion_pipeline(
+        cls, chat_engine: Any, values: Dict[str, Any]
+    ) -> Optional[CondenseQuestionChatEngine]:
         """
-        If query_pipeline is not provided, create one from ingestion_pipeline.
+        If chat_engine is not provided, create one from ingestion_pipeline.
         """
-        if query_pipeline is not None:
-            return query_pipeline
+        if chat_engine is not None:
+            return chat_engine
 
         ingestion_pipeline = cast(IngestionPipeline, values["ingestion_pipeline"])
         if ingestion_pipeline.vector_store is None:
             return None
+
         verbose = cast(bool, values["verbose"])
-        query_component = FnComponent(
-            fn=query_input, output_key="output", req_params={"query_str"}
-        )
         llm = cast(LLM, values["llm"])
 
         # get embed_model from transformations if possible
@@ -131,52 +111,24 @@ class RagCLI(BaseModel):
         Settings.embed_model = embed_model
 
         retriever = VectorStoreIndex.from_vector_store(
-            ingestion_pipeline.vector_store,
+            ingestion_pipeline.vector_store, embed_model=embed_model
         ).as_retriever(similarity_top_k=8)
-        response_synthesizer = CompactAndRefine(streaming=True, verbose=verbose)
 
-        # define query pipeline
-        query_pipeline = QueryPipeline(verbose=verbose)
-        query_pipeline.add_modules(
-            {
-                "query": query_component,
-                "retriever": retriever,
-                "summarizer": response_synthesizer,
-            }
+        response_synthesizer = CompactAndRefine(
+            streaming=True, llm=llm, verbose=verbose
         )
-        query_pipeline.add_link("query", "retriever")
-        query_pipeline.add_link("retriever", "summarizer", dest_key="nodes")
-        query_pipeline.add_link("query", "summarizer", dest_key="query_str")
-        return query_pipeline
 
-    @field_validator("chat_engine", mode="before")
-    def chat_engine_from_query_pipeline(
-        cls, chat_engine: Any, values: Dict[str, Any]
-    ) -> Optional[CondenseQuestionChatEngine]:
-        """
-        If chat_engine is not provided, create one from query_pipeline.
-        """
-        if chat_engine is not None:
-            return chat_engine
+        query_engine = RetrieverQueryEngine(
+            retriever=retriever, response_synthesizer=response_synthesizer
+        )
 
-        if values.get("query_pipeline", None) is None:
-            values["query_pipeline"] = cls.query_pipeline_from_ingestion_pipeline(
-                query_pipeline=None, values=values
-            )
-
-        query_pipeline = cast(QueryPipeline, values["query_pipeline"])
-        if query_pipeline is None:
-            return None
-        query_engine = QueryPipelineQueryEngine(query_pipeline=query_pipeline)  # type: ignore
-        verbose = cast(bool, values["verbose"])
-        llm = cast(LLM, values["llm"])
         return CondenseQuestionChatEngine.from_defaults(
             query_engine=query_engine, llm=llm, verbose=verbose
         )
 
     async def handle_cli(
         self,
-        files: Optional[str] = None,
+        files: Optional[List[str]] = None,
         question: Optional[str] = None,
         chat: bool = False,
         verbose: bool = False,
@@ -197,7 +149,11 @@ class RagCLI(BaseModel):
                 if response.strip().lower() != "y":
                     print("Aborted.")
                     return
-                os.system(f"rm -rf {self.persist_dir}")
+                try:
+                    shutil.rmtree(self.persist_dir)
+                except Exception as e:
+                    print(f"Error clearing {self.persist_dir}: {e}")
+                    return
             print(f"Successfully cleared {self.persist_dir}")
 
         self.verbose = verbose
@@ -205,8 +161,11 @@ class RagCLI(BaseModel):
         if self.verbose:
             print("Saving/Loading from persist_dir: ", self.persist_dir)
         if files is not None:
+            expanded_files = []
+            for pattern in files:
+                expanded_files.extend(iglob(pattern, recursive=True))
             documents = []
-            for _file in iglob(files, recursive=True):
+            for _file in expanded_files:
                 _file = os.path.abspath(_file)
                 if os.path.isdir(_file):
                     reader = SimpleDirectoryReader(
@@ -228,7 +187,8 @@ class RagCLI(BaseModel):
 
             # Append the `--files` argument to the history file
             with open(f"{self.persist_dir}/{RAG_HISTORY_FILE_NAME}", "a") as f:
-                f.write(files + "\n")
+                for file in files:
+                    f.write(str(file) + "\n")
 
         if create_llama:
             if shutil.which("npx") is None:
@@ -286,7 +246,7 @@ class RagCLI(BaseModel):
                                 "none",
                                 "--engine",
                                 "context",
-                                f"--files {path}",
+                                f"--files {shlex.quote(path)}",
                             ]
                             os.system(" ".join(command_args))
 
@@ -296,10 +256,6 @@ class RagCLI(BaseModel):
             await self.start_chat_repl()
 
     async def handle_question(self, question: str) -> None:
-        if self.query_pipeline is None:
-            raise ValueError("query_pipeline is not defined.")
-        query_pipeline = cast(QueryPipeline, self.query_pipeline)
-        query_pipeline.verbose = self.verbose
         chat_engine = cast(CondenseQuestionChatEngine, self.chat_engine)
         response = chat_engine.chat(question)
 
@@ -313,8 +269,9 @@ class RagCLI(BaseModel):
         """
         Start a REPL for chatting with the agent.
         """
-        if self.query_pipeline is None:
-            raise ValueError("query_pipeline is not defined.")
+        if self.chat_engine is None:
+            raise ValueError("chat_engine is not defined.")
+
         chat_engine = cast(CondenseQuestionChatEngine, self.chat_engine)
         chat_engine.streaming_chat_repl()
 
@@ -337,9 +294,10 @@ class RagCLI(BaseModel):
                 "-f",
                 "--files",
                 type=str,
+                nargs="+",
                 help=(
-                    "The name of the file or directory you want to ask a question about,"
-                    'such as "file.pdf".'
+                    "The name of the file(s) or directory you want to ask a question about,"
+                    'such as "file.pdf". Supports globs like "*.py".'
                 ),
             )
             parser.add_argument(

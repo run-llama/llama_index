@@ -41,11 +41,7 @@ def test_give_response(
         text_chunks=[documents[0].get_content()], query_str=query_str
     )
     expected_answer = (
-        "What is?:"
-        "Hello world.:"
-        "This is a test.:"
-        "This is another test.:"
-        "This is a test v2."
+        "What is?:Hello world.:This is a test.:This is another test.:This is a test v2."
     )
     assert str(response) == expected_answer
 

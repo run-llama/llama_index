@@ -123,7 +123,7 @@ from llama_index.core.indices.property_graph import ImplicitPathExtractor
 kg_extractor = ImplicitPathExtractor()
 ```
 
-### `DynamicLLMPathExtractor`
+#### `DynamicLLMPathExtractor`
 
 Will extract paths (including entity types!) according to optional list of allowed entity types and relation types. If none are provided, then the LLM will assign types as it sees fit. If they are provided, it will help guide the LLM, but will not enforce exactly those types.
 
@@ -446,7 +446,7 @@ index = PropertyGraphIndex.from_existing(
 
 ### Using the Property Graph Store Directly
 
-The base storage class for property graphs is the `PropertyGraphStore`. These property graph stores are constructured using different types of `LabeledNode` objects, and connected using `Relation` objects.
+The base storage class for property graphs is the `PropertyGraphStore`. These property graph stores are constructed using different types of `LabeledNode` objects, and connected using `Relation` objects.
 
 We can create these ourselves, and also insert ourselves!
 

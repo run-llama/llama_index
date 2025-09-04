@@ -1,4 +1,5 @@
-"""Typesense Vector store index.
+"""
+Typesense Vector store index.
 
 An index that is built on top of an existing vector store.
 
@@ -36,7 +37,8 @@ DEFAULT_METADATA_KEY = "metadata"
 
 
 class TypesenseVectorStore(BasePydanticVectorStore):
-    """Typesense Vector Store.
+    """
+    Typesense Vector Store.
 
     In this vector store, embeddings and docs are stored within a
     Typesense index.
@@ -67,6 +69,7 @@ class TypesenseVectorStore(BasePydanticVectorStore):
         # Create an instance of TypesenseVectorStore
         vector_store = TypesenseVectorStore(typesense_client)
         ```
+
     """
 
     stores_text: bool = True
@@ -163,7 +166,8 @@ class TypesenseVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
@@ -198,7 +202,8 @@ class TypesenseVectorStore(BasePydanticVectorStore):
         collection.documents.delete({"filter_by": f"ref_doc_id:={ref_doc_id}"})
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query Typesense index for top k most similar nodes.
+        """
+        Query Typesense index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): Vector store query object.
@@ -217,7 +222,7 @@ class TypesenseVectorStore(BasePydanticVectorStore):
                         {
                             "collection": self._collection_name,
                             "q": "*",
-                            "vector_query": f'vec:([{",".join(embedded_query)}],'
+                            "vector_query": f"vec:([{','.join(embedded_query)}],"
                             + f"k:{query.similarity_top_k})",
                             "filter_by": typesense_filter,
                         }

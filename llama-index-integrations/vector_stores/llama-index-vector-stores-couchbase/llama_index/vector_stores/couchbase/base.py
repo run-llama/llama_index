@@ -2,22 +2,22 @@
 Couchbase Vector store interface.
 """
 
+import logging
+import warnings
 from typing import Any, Dict, List, Optional
 
-import logging
-
+from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import BaseNode, MetadataMode, TextNode
 from llama_index.core.vector_stores.types import (
     BasePydanticVectorStore,
+    MetadataFilters,
     VectorStoreQuery,
     VectorStoreQueryResult,
-    MetadataFilters,
 )
 from llama_index.core.vector_stores.utils import (
-    node_to_metadata_dict,
     metadata_dict_to_node,
+    node_to_metadata_dict,
 )
-from llama_index.core.bridge.pydantic import PrivateAttr
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +31,7 @@ def _transform_couchbase_filter_condition(condition: str) -> str:
 
     Returns:
         Couchbase specific condition
+
     """
     if condition == "and":
         return "conjuncts"
@@ -53,6 +54,7 @@ def _transform_couchbase_filter_operator(
 
     Returns:
         Dictionary with Couchbase specific search operation.
+
     """
     if operator == "!=":
         return {"must_not": {"disjuncts": [{"field": field, "match": value}]}}
@@ -81,6 +83,7 @@ def _to_couchbase_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
 
     Returns:
         Dictionary with Couchbase search query.
+
     """
     filters = {}
     filters_list = []
@@ -112,7 +115,7 @@ def _to_couchbase_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
     return {"query": filters}
 
 
-class CouchbaseVectorStore(BasePydanticVectorStore):
+class CouchbaseSearchVectorStore(BasePydanticVectorStore):
     """
     Couchbase Vector Store.
 
@@ -171,6 +174,7 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
 
         Returns:
             None
+
         """
         try:
             from couchbase.cluster import Cluster
@@ -254,6 +258,7 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[str]: List of document IDs for the added nodes.
+
         """
         from couchbase.exceptions import DocumentExistsException
 
@@ -310,12 +315,12 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
 
         Returns:
             None
+
         """
         try:
             document_field = self._metadata_key + ".ref_doc_id"
-            self._scope.query(
-                f"DELETE FROM `{self._collection_name}` WHERE {document_field} = '{ref_doc_id}'"
-            ).execute()
+            query = f"DELETE FROM `{self._collection_name}` WHERE {document_field} = $ref_doc_id"
+            self._scope.query(query, ref_doc_id=ref_doc_id).execute()
             logger.debug(f"Deleted document {ref_doc_id}")
         except Exception:
             logger.error(f"Error deleting document {ref_doc_id}")
@@ -332,6 +337,7 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
 
         Returns:
             VectorStoreQueryResult: The result of the query containing the top-k nodes, similarities, and ids.
+
         """
         import couchbase.search as search
         from couchbase.options import SearchOptions
@@ -434,10 +440,12 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
         return self._cluster
 
     def _check_bucket_exists(self) -> bool:
-        """Check if the bucket exists in the linked Couchbase cluster.
+        """
+        Check if the bucket exists in the linked Couchbase cluster.
 
         Returns:
             True if the bucket exists
+
         """
         bucket_manager = self._cluster.buckets()
         try:
@@ -448,7 +456,8 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
             return False
 
     def _check_scope_and_collection_exists(self) -> bool:
-        """Check if the scope and collection exists in the linked Couchbase bucket
+        """
+        Check if the scope and collection exists in the linked Couchbase bucket
         Returns:
             True if the scope and collection exist in the bucket
             Raises a ValueError if either is not found.
@@ -480,7 +489,8 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
         return True
 
     def _check_index_exists(self) -> bool:
-        """Check if the Search index exists in the linked Couchbase cluster
+        """
+        Check if the Search index exists in the linked Couchbase cluster
         Returns:
             bool: True if the index exists, False otherwise.
             Raises a ValueError if the index does not exist.
@@ -507,13 +517,15 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
         return True
 
     def _format_metadata(self, row_fields: Dict[str, Any]) -> Dict[str, Any]:
-        """Helper method to format the metadata from the Couchbase Search API.
+        """
+        Helper method to format the metadata from the Couchbase Search API.
 
         Args:
             row_fields (Dict[str, Any]): The fields to format.
 
         Returns:
             Dict[str, Any]: The formatted metadata.
+
         """
         metadata = {}
         for key, value in row_fields.items():
@@ -526,3 +538,45 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
                 metadata[key] = value
 
         return metadata
+
+
+class CouchbaseVectorStore(CouchbaseSearchVectorStore):
+    """
+    Couchbase Vector Store (deprecated).
+
+    This class is deprecated, please use CouchbaseSearchVectorStore instead.
+    """
+
+    def __init__(
+        self,
+        cluster: Any,
+        bucket_name: str,
+        scope_name: str,
+        collection_name: str,
+        index_name: str,
+        text_key: Optional[str] = "text",
+        embedding_key: Optional[str] = "embedding",
+        metadata_key: Optional[str] = "metadata",
+        scoped_index: bool = True,
+    ) -> None:
+        """
+        Initializes a connection to a Couchbase Vector Store.
+
+        This class is deprecated, please use CouchbaseSearchVectorStore instead.
+        """
+        warnings.warn(
+            "CouchbaseVectorStore is deprecated, please use CouchbaseSearchVectorStore instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(
+            cluster,
+            bucket_name,
+            scope_name,
+            collection_name,
+            index_name,
+            text_key,
+            embedding_key,
+            metadata_key,
+            scoped_index,
+        )

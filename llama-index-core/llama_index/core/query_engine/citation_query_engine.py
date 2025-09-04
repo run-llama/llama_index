@@ -81,7 +81,8 @@ DEFAULT_CITATION_CHUNK_OVERLAP = 20
 
 
 class CitationQueryEngine(BaseQueryEngine):
-    """Citation query engine.
+    """
+    Citation query engine.
 
     Args:
         retriever (BaseRetriever): A retriever object.
@@ -97,6 +98,7 @@ class CitationQueryEngine(BaseQueryEngine):
         callback_manager (Optional[CallbackManager]): A callback manager.
         metadata_mode (MetadataMode): A MetadataMode object that controls how
             metadata is included in the citation prompt.
+
     """
 
     def __init__(
@@ -122,7 +124,13 @@ class CitationQueryEngine(BaseQueryEngine):
         self._response_synthesizer = response_synthesizer or get_response_synthesizer(
             llm=llm,
             callback_manager=callback_manager,
+            text_qa_template=CITATION_QA_TEMPLATE,
+            refine_template=CITATION_REFINE_TEMPLATE,
+            response_mode=ResponseMode.COMPACT,
+            use_async=False,
+            streaming=False,
         )
+
         self._node_postprocessors = node_postprocessors or []
         self._metadata_mode = metadata_mode
 
@@ -152,7 +160,8 @@ class CitationQueryEngine(BaseQueryEngine):
         metadata_mode: MetadataMode = MetadataMode.NONE,
         **kwargs: Any,
     ) -> "CitationQueryEngine":
-        """Initialize a CitationQueryEngine object.".
+        """
+        Initialize a CitationQueryEngine object.".
 
         Args:
             index: (BastGPTIndex): index to use for querying
@@ -217,7 +226,8 @@ class CitationQueryEngine(BaseQueryEngine):
                 text = f"Source {len(new_nodes) + 1}:\n{text_chunk}\n"
 
                 new_node = NodeWithScore(
-                    node=TextNode.model_validate(node.node), score=node.score
+                    node=TextNode.model_validate(node.node.model_dump()),
+                    score=node.score,
                 )
                 new_node.node.set_content(text)
                 new_nodes.append(new_node)

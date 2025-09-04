@@ -58,7 +58,6 @@ We then launch a finetuning job, and get back a distilled model. We can evaluate
 
 - [GPT-3.5 Fine-tuning Notebook (Colab)](https://colab.research.google.com/drive/1NgyCJVyrC2xcZ5lxt2frTU862v6eJHlc?usp=sharing)
 - [GPT-3.5 Fine-tuning Notebook (Notebook link)](../../examples/finetuning/openai_fine_tuning.ipynb)
-  /examples/finetuning/react_agent/react_agent_finetune.ipynb
 - [[WIP] Function Calling Fine-tuning](../../examples/finetuning/openai_fine_tuning_functions.ipynb)
 
 **Old**
@@ -80,7 +79,6 @@ In this tutorial, we show you how you can finetune Llama 2 on a text-to-SQL data
 
 The stack includes `sql-create-context` as the training dataset, OpenLLaMa as the base model, PEFT for finetuning, Modal for cloud compute, LlamaIndex for inference abstractions.
 
-- [Llama 2 Text-to-SQL Fine-tuning (w/ Gradient.AI)](../../examples/finetuning/gradient/gradient_fine_tuning.ipynb)
 - [Llama 2 Text-to-SQL Fine-tuning (w/ Modal, Repo)](https://github.com/run-llama/modal_finetune_sql)
 - [Llama 2 Text-to-SQL Fine-tuning (w/ Modal, Notebook)](https://github.com/run-llama/modal_finetune_sql/blob/main/tutorial.ipynb)
 

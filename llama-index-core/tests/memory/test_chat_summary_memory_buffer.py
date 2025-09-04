@@ -72,12 +72,13 @@ class MockSummarizerLLM(MockLLM):
         super().__init__(max_tokens=max_tokens)
         self._i = 0  # call counter, determines which response to return
         self._responses = responses  # list of responses to return
-        self._role_counts: dict = {role: 0 for role in MessageRole}
+        self._role_counts: dict = dict.fromkeys(MessageRole, 0)
 
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         # Count how many messages are going to be summarized for each role
         for role in MessageRole:
-            self._role_counts[role] = messages[0].content.count(role + ": ")
+            for message in messages:
+                self._role_counts[role] += message.content.count(role + ": ")
         del messages
 
         # For this mockLLM, we assume tokens are separated by spaces

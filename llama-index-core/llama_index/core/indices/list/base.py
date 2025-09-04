@@ -1,4 +1,5 @@
-"""Summary index.
+"""
+Summary index.
 
 A simple data structure where LlamaIndex iterates through document chunks
 in sequence in order to answer a given query.
@@ -26,7 +27,8 @@ class ListRetrieverMode(str, Enum):
 
 
 class SummaryIndex(BaseIndex[IndexList]):
-    """Summary Index.
+    """
+    Summary Index.
 
     The summary index is a simple data structure where nodes are stored in
     a sequence. During index construction, the document texts are
@@ -97,13 +99,15 @@ class SummaryIndex(BaseIndex[IndexList]):
         show_progress: bool = False,
         **build_kwargs: Any,
     ) -> IndexList:
-        """Build the index from documents.
+        """
+        Build the index from documents.
 
         Args:
             documents (List[BaseDocument]): A list of documents.
 
         Returns:
             IndexList: The created summary index.
+
         """
         index_struct = IndexList()
         nodes_with_progress = get_tqdm_iterable(

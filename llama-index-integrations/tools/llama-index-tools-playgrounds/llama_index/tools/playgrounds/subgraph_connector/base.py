@@ -14,6 +14,7 @@ class PlaygroundsSubgraphConnectorToolSpec(GraphQLToolSpec):
         spec_functions (list): List of functions that specify the tool's capabilities.
         url (str): The endpoint URL for the GraphQL requests.
         headers (dict): Headers used for the GraphQL requests.
+
     """
 
     spec_functions = ["graphql_request"]
@@ -26,6 +27,7 @@ class PlaygroundsSubgraphConnectorToolSpec(GraphQLToolSpec):
             identifier (str): Subgraph identifier or Deployment ID.
             api_key (str): API key for the Playgrounds API.
             use_deployment_id (bool): Flag to indicate if the identifier is a deployment ID. Default is False.
+
         """
         endpoint = "deployments" if use_deployment_id else "subgraphs"
         self.url = (
@@ -53,6 +55,7 @@ class PlaygroundsSubgraphConnectorToolSpec(GraphQLToolSpec):
         Returns:
             dict: The response from the GraphQL server if successful.
             str: Error message if the request fails.
+
         """
         payload = {"query": query.strip()}
 

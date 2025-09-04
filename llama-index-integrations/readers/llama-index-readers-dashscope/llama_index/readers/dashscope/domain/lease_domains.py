@@ -165,6 +165,7 @@ class QueryFileResult(DictToObject):
 
         Returns:
             QueryFileResult: An instance of `QueryFileResult` populated with data from the input dictionary.
+
         """
         default_values = {
             "file_id": "",
@@ -216,6 +217,7 @@ class HttpDownloadParameter(DictToObject):
 
         Returns:
             QueryFileResult: An instance of `QueryFileResult` populated with data from the input dictionary.
+
         """
         default_values = {"url": "", "method": "GET", "headers": {}}
 
@@ -244,6 +246,7 @@ class DownloadFileLeaseResult(DictToObject):
 
         Returns:
             QueryFileResult: An instance of `QueryFileResult` populated with data from the input dictionary.
+
         """
         if "param" not in data:
             raise ValueError("download_lease result param is required")

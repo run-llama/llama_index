@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional, Sequence, Union, Tuple, List
+from typing import Any, Dict, Optional, Sequence, Union, Tuple, List, TYPE_CHECKING
 
 from ibm_watsonx_ai import Credentials, APIClient
 from ibm_watsonx_ai.foundation_models import ModelInference
@@ -35,6 +35,7 @@ from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_ca
 from llama_index.core.base.llms.generic_utils import (
     completion_to_chat_decorator,
     stream_completion_to_chat_decorator,
+    acompletion_to_chat_decorator,
 )
 
 from llama_index.core.llms.utils import parse_partial_json
@@ -45,6 +46,9 @@ from llama_index.llms.ibm.utils import (
     from_watsonx_message,
     update_tool_calls,
 )
+
+if TYPE_CHECKING:
+    from llama_index.core.tools import BaseTool
 
 # default max tokens determined by service
 DEFAULT_MAX_TOKENS = 20
@@ -67,6 +71,7 @@ class WatsonxLLM(FunctionCallingLLM):
             project_id="*****",
         )
         ```
+
     """
 
     model_id: Optional[str] = Field(
@@ -101,34 +106,45 @@ class WatsonxLLM(FunctionCallingLLM):
 
     url: Optional[SecretStr] = Field(
         default=None,
-        description="Url to Watson Machine Learning or CPD instance",
+        description="Url to the IBM watsonx.ai for IBM Cloud or the IBM watsonx.ai software instance.",
         frozen=True,
     )
 
     apikey: Optional[SecretStr] = Field(
         default=None,
-        description="Apikey to Watson Machine Learning or CPD instance",
+        description="API key to the IBM watsonx.ai for IBM Cloud or the IBM watsonx.ai software instance.",
         frozen=True,
     )
 
     token: Optional[SecretStr] = Field(
-        default=None, description="Token to CPD instance", frozen=True
+        default=None,
+        description="Token to the IBM watsonx.ai software instance.",
+        frozen=True,
     )
 
     password: Optional[SecretStr] = Field(
-        default=None, description="Password to CPD instance", frozen=True
+        default=None,
+        description="Password to the IBM watsonx.ai software instance.",
+        frozen=True,
     )
 
     username: Optional[SecretStr] = Field(
-        default=None, description="Username to CPD instance", frozen=True
+        default=None,
+        description="Username to the IBM watsonx.ai software instance.",
+        frozen=True,
     )
 
     instance_id: Optional[SecretStr] = Field(
-        default=None, description="Instance_id of CPD instance", frozen=True
+        default=None,
+        description="Instance_id of the IBM watsonx.ai software instance.",
+        frozen=True,
+        deprecated="The `instance_id` parameter is deprecated and will no longer be utilized for logging to the IBM watsonx.ai software instance.",
     )
 
     version: Optional[SecretStr] = Field(
-        default=None, description="Version of CPD instance", frozen=True
+        default=None,
+        description="Version of the IBM watsonx.ai software instance.",
+        frozen=True,
     )
 
     verify: Union[str, bool, None] = Field(
@@ -145,6 +161,12 @@ class WatsonxLLM(FunctionCallingLLM):
 
     validate_model: bool = Field(
         default=True, description="Model id validation", frozen=True
+    )
+
+    # Enabled by default since IBM watsonx SDK 1.1.2 but it can cause problems
+    # in environments where long-running connections are not supported.
+    persistent_connection: bool = Field(
+        default=True, description="Use persistent connection"
     )
 
     _model: ModelInference = PrivateAttr()
@@ -168,11 +190,11 @@ class WatsonxLLM(FunctionCallingLLM):
         token: Optional[str] = None,
         password: Optional[str] = None,
         username: Optional[str] = None,
-        instance_id: Optional[str] = None,
         version: Optional[str] = None,
         verify: Union[str, bool, None] = None,
         api_client: Optional[APIClient] = None,
         validate_model: bool = True,
+        persistent_connection: bool = True,
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
@@ -189,7 +211,6 @@ class WatsonxLLM(FunctionCallingLLM):
                 token=token,
                 username=username,
                 password=password,
-                instance_id=instance_id,
             )
             if not isinstance(api_client, APIClient)
             else {}
@@ -208,11 +229,11 @@ class WatsonxLLM(FunctionCallingLLM):
             token=creds.get("token"),
             password=creds.get("password"),
             username=creds.get("username"),
-            instance_id=creds.get("instance_id"),
             version=version,
             verify=verify,
             _client=api_client,
             validate_model=validate_model,
+            persistent_connection=persistent_connection,
             callback_manager=callback_manager,
             **kwargs,
         )
@@ -253,6 +274,7 @@ class WatsonxLLM(FunctionCallingLLM):
             space_id=self.space_id,
             api_client=api_client,
             validate=validate_model,
+            persistent_connection=persistent_connection,
         )
         self._model_info = None
         self._deployment_info = None
@@ -283,34 +305,32 @@ class WatsonxLLM(FunctionCallingLLM):
             "token": self.token,
             "password": self.password,
             "username": self.username,
-            "instance_id": self.instance_id,
             "version": self.version,
         }
 
     @property
     def metadata(self) -> LLMMetadata:
-        if self.model_id:
-            return LLMMetadata(
-                context_window=(
-                    self.model_info.get("model_limits", {}).get("max_sequence_length")
-                ),
-                num_output=(self.max_new_tokens or DEFAULT_MAX_TOKENS),
-                model_name=self.model_id,
+        if self.model_id and self._context_window is None:
+            model_id = self.model_id
+            self._context_window = self.model_info.get("model_limits", {}).get(
+                "max_sequence_length"
             )
-        else:
+        elif self._context_window is None:
             model_id = self.deployment_info.get("entity", {}).get("base_model_id")
-            context_window = (
+            self._context_window = (
                 self._model._client.foundation_models.get_model_specs(model_id=model_id)
                 .get("model_limits", {})
                 .get("max_sequence_length")
             )
-            return LLMMetadata(
-                context_window=context_window
-                or self._context_window
-                or DEFAULT_CONTEXT_WINDOW,
-                num_output=(self.max_new_tokens or DEFAULT_MAX_TOKENS),
-                model_name=model_id or self._model.deployment_id,
-            )
+
+        return LLMMetadata(
+            context_window=self._context_window or DEFAULT_CONTEXT_WINDOW,
+            num_output=self.max_new_tokens or DEFAULT_MAX_TOKENS,
+            model_name=self.model_id
+            or self.deployment_info.get("entity", {}).get(
+                "base_model_id", self._model.deployment_id
+            ),
+        )
 
     @property
     def sample_generation_text_params(self) -> Dict[str, Any]:
@@ -354,6 +374,8 @@ class WatsonxLLM(FunctionCallingLLM):
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
         params, generation_kwargs = self._split_generation_params(kwargs)
+        if "use_completions" in generation_kwargs:
+            del generation_kwargs["use_completions"]
         response = self._model.generate(
             prompt=prompt,
             params=self._text_generation_params or params,
@@ -369,7 +391,20 @@ class WatsonxLLM(FunctionCallingLLM):
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
-        return self.complete(prompt, formatted=formatted, **kwargs)
+        params, generation_kwargs = self._split_generation_params(kwargs)
+        if "use_completions" in generation_kwargs:
+            del generation_kwargs["use_completions"]
+
+        response = await self._model.agenerate(
+            prompt=prompt,
+            params=self._text_generation_params or params,
+            **generation_kwargs,
+        )
+
+        return CompletionResponse(
+            text=self._model._return_guardrails_stats(response).get("generated_text"),
+            raw=response,
+        )
 
     @llm_completion_callback()
     def stream_complete(
@@ -441,13 +476,40 @@ class WatsonxLLM(FunctionCallingLLM):
 
         return chat_fn(messages, **kwargs)
 
+    async def _achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponse:
+        message_dicts = [to_watsonx_message_dict(message) for message in messages]
+
+        params, generation_kwargs = self._split_chat_generation_params(kwargs)
+        response = await self._model.achat(
+            messages=message_dicts,
+            params=params,
+            tools=generation_kwargs.get("tools"),
+            tool_choice=generation_kwargs.get("tool_choice"),
+            tool_choice_option=generation_kwargs.get("tool_choice_option"),
+        )
+
+        wx_message = response["choices"][0]["message"]
+        message = from_watsonx_message(wx_message)
+
+        return ChatResponse(
+            message=message,
+            raw=response,
+        )
+
     @llm_chat_callback()
     async def achat(
         self,
         messages: Sequence[ChatMessage],
         **kwargs: Any,
     ) -> ChatResponse:
-        return self.chat(messages, **kwargs)
+        if kwargs.get("use_completions"):
+            achat_fn = acompletion_to_chat_decorator(self.acomplete)
+        else:
+            achat_fn = self._achat
+
+        return await achat_fn(messages, **kwargs)
 
     def _stream_chat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
@@ -470,20 +532,24 @@ class WatsonxLLM(FunctionCallingLLM):
 
             for response in stream_response:
                 tools_available = False
-                wx_message = response["choices"][0]["delta"]
-
-                role = wx_message.get("role") or role or MessageRole.ASSISTANT
-                delta = wx_message.get("content", "")
-                content += delta
-
-                if "tool_calls" in wx_message:
-                    tools_available = True
-
+                delta = ""
                 additional_kwargs = {}
-                if tools_available:
-                    tool_calls = update_tool_calls(tool_calls, wx_message["tool_calls"])
-                    if tool_calls:
-                        additional_kwargs["tool_calls"] = tool_calls
+                if response["choices"]:
+                    wx_message = response["choices"][0]["delta"]
+
+                    role = wx_message.get("role") or role or MessageRole.ASSISTANT
+                    delta = wx_message.get("content", "")
+                    content += delta
+
+                    if "tool_calls" in wx_message:
+                        tools_available = True
+
+                    if tools_available:
+                        tool_calls = update_tool_calls(
+                            tool_calls, wx_message["tool_calls"]
+                        )
+                        if tool_calls:
+                            additional_kwargs["tool_calls"] = tool_calls
 
                 yield ChatResponse(
                     message=ChatMessage(
@@ -527,6 +593,7 @@ class WatsonxLLM(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         tool_choice: Optional[str] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
@@ -546,6 +613,9 @@ class WatsonxLLM(FunctionCallingLLM):
             "tools": tool_specs or None,
             **kwargs,
         }
+        if tool_required and tool_choice is None:
+            # NOTE: watsonx can only require a single tool
+            tool_choice = tools[0].metadata.name if len(tools) > 0 else None
         if tool_choice is not None:
             chat_with_tools_payload.update(
                 {"tool_choice": {"type": "function", "function": {"name": tool_choice}}}
@@ -598,7 +668,7 @@ class WatsonxLLM(FunctionCallingLLM):
         """Get the token usage reported by the response."""
         if isinstance(raw_response, dict):
             usage = raw_response.get("usage", {})
-            if usage is None:
+            if not usage:
                 return {}
 
             prompt_tokens = usage.get("prompt_tokens", 0)

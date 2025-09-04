@@ -1,4 +1,10 @@
-# docs build
+.mkdocs.tmp.yml
+
+# external resources
+llama_deploy
 docs/api_reference/llama_deploy/*
 docs/module_guides/llama_deploy/*
-llama_deploy
+
+workflows-py
+docs/workflows
+!docs/workflows/v1/

@@ -16,15 +16,19 @@ as the storage backend for `VectorStoreIndex`.
 - Astra DB (`AstraDBVectorStore`). [Quickstart](https://docs.datastax.com/en/astra/home/astra.html).
 - AWS Document DB (`AWSDocDbVectorStore`). [Quickstart](https://docs.aws.amazon.com/documentdb/latest/developerguide/get-started-guide.html).
 - Azure AI Search (`AzureAISearchVectorStore`). [Quickstart](https://learn.microsoft.com/en-us/azure/search/search-get-started-vector)
+- Azure Cosmos DB Mongo vCore(`AzureCosmosDBMongoDBVectorSearch`). [Quickstart](https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/vcore/vector-search?tabs=diskann)
+- Azure Cosmos DB NoSql (`AzureCosmosDBNoSqlVectorSearch`). [Quickstart](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/vector-search)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
 - ClickHouse (`ClickHouseVectorStore`) [Installation](https://clickhouse.com/docs/en/install)
-- Couchbase (`CouchbaseVectorStore`) [Installation](https://www.couchbase.com/products/capella/)
+- Couchbase (`CouchbaseSearchVectorStore`) [Installation](https://www.couchbase.com/products/capella/)
 - DashVector (`DashVectorStore`). [Installation](https://help.aliyun.com/document_detail/2510230.html).
 - DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
 - DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
 - Elasticsearch (`ElasticsearchStore`) [Installation](https://www.elastic.co/guide/en/elasticsearch/reference/current/docker.html)
 - Epsilla (`EpsillaVectorStore`) [Installation/Quickstart](https://epsilla-inc.gitbook.io/epsilladb/quick-start)
 - Faiss (`FaissVectorStore`). [Installation](https://github.com/facebookresearch/faiss/blob/main/INSTALL.md).
+- Google AlloyDB for PostgreSQL (`AlloyDBVectorStore`). [QuickStart](https://github.com/googleapis/llama-index-alloydb-pg-python/blob/main/samples/llama_index_vector_store.ipynb).
+- Google Cloud SQL for PostgreSQL (`PostgresVectorStore`). [Quickstart](https://github.com/googleapis/llama-index-cloud-sql-pg-python/blob/main/samples/llama_index_vector_store.ipynb)
 - Hnswlib (`HnswlibVectorStore`). [Installation](https://github.com/nmslib/hnswlib?tab=readme-ov-file#bindings-installation).
 - txtai (`TxtaiVectorStore`). [Installation](https://neuml.github.io/txtai/install/).
 - Jaguar (`JaguarVectorStore`). [Installation](http://www.jaguardb.com/docsetup.html).
@@ -35,18 +39,20 @@ as the storage backend for `VectorStoreIndex`.
 - MyScale (`MyScaleVectorStore`). [Quickstart](https://docs.myscale.com/en/quickstart/). [Installation/Python Client](https://docs.myscale.com/en/python-client/).
 - Neo4j (`Neo4jVectorIndex`). [Installation](https://neo4j.com/docs/operations-manual/current/installation/).
 - OceanBase (`OceanBaseVectorStore`). [OceanBase Overview](https://github.com/oceanbase/oceanbase). [Quickstart](../../examples/vector_stores/OceanBaseVectorStore.ipynb). [Python Client](https://github.com/oceanbase/pyobvector)
+- Opensearch (`OpensearchVectorStore`) [Opensearch as vector database](https://opensearch.org/platform/search/vector-database.html). [QuickStart](https://opensearch.org/docs/latest/search-plugins/knn/index/)
 - Pinecone (`PineconeVectorStore`). [Installation/Quickstart](https://docs.pinecone.io/docs/quickstart).
 - Qdrant (`QdrantVectorStore`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
 - LanceDB (`LanceDBVectorStore`) [Installation/Quickstart](https://lancedb.github.io/lancedb/basic/)
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/latest/operate/oss_and_stack/install/install-stack/).
 - Relyt (`RelytVectorStore`). [Quickstart](https://docs.relyt.cn/docs/vector-engine/).
 - Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
-- Tablestore (`Tablestore`). [Installation](https://www.aliyun.com/product/ots).
+- Tablestore (`Tablestore`). [Tablestore Overview](https://www.aliyun.com/product/ots). [Quickstart](../../examples/vector_stores/TablestoreDemo.ipynb). [Python Client](https://github.com/aliyun/aliyun-tablestore-python-sdk).
 - TiDB (`TiDBVectorStore`). [Quickstart](../../examples/vector_stores/TiDBVector.ipynb). [Installation](https://tidb.cloud/ai). [Python Client](https://github.com/pingcap/tidb-vector-python).
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
 - Upstash (`UpstashVectorStore`). [Quickstart](https://upstash.com/docs/vector/overall/getstarted)
 - Vertex AI Vector Search (`VertexAIVectorStore`). [Quickstart](https://cloud.google.com/vertex-ai/docs/vector-search/quickstart)
 - Weaviate (`WeaviateVectorStore`). [Installation](https://weaviate.io/developers/weaviate/installation). [Python Client](https://weaviate.io/developers/weaviate/client-libraries/python).
+- WordLift (`WordliftVectorStore`). [Quickstart](https://docs.wordlift.io/llm-connectors/wordlift-vector-store/). [Python Client](https://pypi.org/project/wordlift-client/).
 - Zep (`ZepVectorStore`). [Installation](https://docs.getzep.com/deployment/quickstart/). [Python Client](https://docs.getzep.com/sdk/).
 - Zilliz (`MilvusVectorStore`). [Quickstart](https://zilliz.com/doc/quick_start)
 
@@ -123,6 +129,44 @@ config = AlibabaCloudOpenSearchConfig(
 vector_store = AlibabaCloudOpenSearchStore(config)
 ```
 
+**Google AlloyDB for PostgreSQL**
+
+```bash
+pip install llama-index
+pip install llama-index-alloydb-pg
+pip install llama-index-llms-vertex
+gcloud services enable aiplatform.googleapis.com
+```
+
+```python
+from llama_index_alloydb_pg import AlloyDBEngine, AlloyDBVectorStore
+from llama_index.core import Settings
+from llama_index.embeddings.vertex import VertexTextEmbedding
+from llama_index.llms.vertex import Vertex
+import google.auth
+
+# Replace with your own AlloyDB info
+engine = AlloyDBEngine.from_instance(
+    project_id=PROJECT_ID,
+    region=REGION,
+    cluster=CLUSTER,
+    instance=INSTANCE,
+    database=DATABASE,
+    user=USER,
+    password=PASSWORD,
+)
+
+engine.init_vector_store_table(
+    table_name=TABLE_NAME,
+    vector_size=768,  # Vector size for VertexAI model(textembedding-gecko@latest)
+)
+
+vector_store = AlloyDBVectorStore.create_sync(
+    engine=engine,
+    table_name=TABLE_NAME,
+)
+```
+
 **Amazon Neptune - Neptune Analytics**
 
 ```python
@@ -196,6 +240,75 @@ vector_store = AzureAISearchVectorStore(
 )
 ```
 
+**Azure CosmosDB Mongo vCore**
+
+```python
+import pymongo
+import os
+from llama_index.vector_stores.azurecosmosmongo import (
+    AzureCosmosDBMongoDBVectorSearch,
+)
+
+# Set up the connection string with your Azure CosmosDB MongoDB URI
+connection_string = os.getenv("YOUR_AZURE_COSMOSDB_MONGODB_URI")
+mongodb_client = pymongo.MongoClient(connection_string)
+
+# Create an instance of AzureCosmosDBMongoDBVectorSearch
+vector_store = AzureCosmosDBMongoDBVectorSearch(
+    mongodb_client=mongodb_client,
+    db_name="demo_vectordb",
+    collection_name="paul_graham_essay",
+)
+```
+
+**Azure CosmosDB NoSql**
+
+```python
+from azure.cosmos import CosmosClient, PartitionKey
+import os
+from llama_index.vector_stores.azurecosmosnosql import (
+    AzureCosmosDBNoSqlVectorSearch,
+)
+
+URL = os.getenv("AZURE_COSMOSDB_URI")
+KEY = os.getenv("AZURE_COSMOSDB_KEY")
+database_name = "test_database"
+container_name = "test_container"
+test_client = CosmosClient(URL, credential=KEY)
+
+indexing_policy = {
+    "indexingMode": "consistent",
+    "includedPaths": [{"path": "/*"}],
+    "excludedPaths": [{"path": '/"_etag"/?'}],
+    "vectorIndexes": [{"path": "/embedding", "type": "quantizedFlat"}],
+}
+
+vector_embedding_policy = {
+    "vectorEmbeddings": [
+        {
+            "path": "/embedding",
+            "dataType": "float32",
+            "distanceFunction": "cosine",
+            "dimensions": 1536,
+        }
+    ]
+}
+
+partition_key = PartitionKey(path="/id")
+cosmos_container_properties_test = {"partition_key": partition_key}
+cosmos_database_properties_test = {}
+
+vector_store = AzureCosmosDBNoSqlVectorSearch(
+    cosmos_client=test_client,
+    vector_embedding_policy=vector_embedding_policy,
+    indexing_policy=indexing_policy,
+    database_name=database_name,
+    container_name=container_name,
+    cosmos_database_properties=cosmos_database_properties_test,
+    cosmos_container_properties=cosmos_container_properties_test,
+)
+```
+
 **Chroma**
 
 ```python
@@ -249,7 +362,7 @@ cluster = Cluster("CLUSTER_CONNECTION_STRING", options)
 cluster.wait_until_ready(timedelta(seconds=5))
 
 # Create the Vector Store
-vector_store = CouchbaseVectorStore(
+vector_store = CouchbaseSearchVectorStore(
     cluster=cluster,
     bucket_name="BUCKET_NAME",
     scope_name="SCOPE_NAME",
@@ -372,12 +485,56 @@ faiss_index = faiss.IndexFlatL2(d)
 # construct vector store
 vector_store = FaissVectorStore(faiss_index)
 
+# if update/delete functionality is needed you can leverage the FaissMapVectorStore
+
+d = 1536
+faiss_index = faiss.IndexFlatL2(d)
+id_map_index = faiss.IndexIDMap2(faiss_index)
+vector_store = FaissMapVectorStore(id_map_index)
+
 ...
 
 # NOTE: since faiss index is in-memory, we need to explicitly call
 #       vector_store.persist() or storage_context.persist() to save it to disk.
 #       persist() takes in optional arg persist_path. If none give, will use default paths.
 storage_context.persist()
+```
+
+**Google Cloud SQL for PostgreSQL**
+
+```bash
+pip install llama-index
+pip install llama-index-cloud-sql-pg
+pip install llama-index-llms-vertex
+gcloud services enable aiplatform.googleapis.com
+```
+
+```python
+from llama_index_cloud_sql_pg import PostgresEngine, PostgresVectorStore
+from llama_index.core import Settings
+from llama_index.embeddings.vertex import VertexTextEmbedding
+from llama_index.llms.vertex import Vertex
+import google.auth
+
+# Replace with your own Cloud SQL info
+engine = PostgresEngine.from_instance(
+    project_id=PROJECT_ID,
+    region=REGION,
+    instance=INSTANCE,
+    database=DATABASE,
+    user=USER,
+    password=PASSWORD,
+)
+
+engine.init_vector_store_table(
+    table_name=TABLE_NAME,
+    vector_size=768,  # Vector size for VertexAI model(textembedding-gecko@latest)
+)
+
+vector_store = PostgresVectorStore.create_sync(
+    engine=engine,
+    table_name=TABLE_NAME,
+)
 ```
 
 **txtai**
@@ -667,27 +824,35 @@ vector_store = SingleStoreVectorStore(
 **Tablestore**
 
 ```python
-import os
 import tablestore
 from llama_index.vector_stores.tablestore import TablestoreVectorStore
 
-vector_store = TablestoreVectorStore(
-    endpoint=os.getenv("end_point"),
-    instance_name=os.getenv("instance_name"),
-    access_key_id=os.getenv("access_key_id"),
-    access_key_secret=os.getenv("access_key_secret"),
+# create a vector store that does not support filtering non-vector fields
+simple_vector_store = TablestoreVectorStore(
+    endpoint="<end_point>",
+    instance_name="<instance_name>",
+    access_key_id="<access_key_id>",
+    access_key_secret="<access_key_secret>",
     vector_dimension=512,
-    vector_metric_type=tablestore.VectorMetricType.VM_COSINE,
-    # metadata mapping is used to filter non-vector fields.
+)
+
+# create a vector store that support filtering non-vector fields
+vector_store_with_meta_data = TablestoreVectorStore(
+    endpoint="<end_point>",
+    instance_name="<instance_name>",
+    access_key_id="<access_key_id>",
+    access_key_secret="<access_key_secret>",
+    vector_dimension=512,
+    # optional: custom metadata mapping is used to filter non-vector fields.
     metadata_mappings=[
         tablestore.FieldSchema(
-            "type",
+            "type",  # non-vector fields
             tablestore.FieldType.KEYWORD,
             index=True,
             enable_sort_and_agg=True,
         ),
         tablestore.FieldSchema(
-            "time",
+            "time",  # non-vector fields
             tablestore.FieldType.LONG,
             index=True,
             enable_sort_and_agg=True,
@@ -814,6 +979,75 @@ vector_store = MilvusVectorStore(
 
 LlamaIndex supports loading data from a huge number of sources. See [Data Connectors](../../module_guides/loading/connector/modules.md) for more details and API documentation.
 
+AlloyDB stores both document and vectors.
+This tutorial demonstrates the synchronous interface. All synchronous methods have corresponding asynchronous methods.
+This is an example of how to use AlloyDB:
+
+```bash
+pip install llama-index
+pip install llama-index-alloydb-pg
+```
+
+```python
+from llama_index.core import SummaryIndex
+from llama_index_alloydb_pg import AlloyDBEngine, AlloyDBReader
+
+engine = AlloyDBEngine.from_instance(
+    project_id=PROJECT_ID,
+    region=REGION,
+    cluster=CLUSTER,
+    instance=INSTANCE,
+    database=DATABASE,
+    user=USER,
+    password=PASSWORD,
+)
+reader = AlloyDBReader.create_sync(
+    engine,
+    table_name=TABLE_NAME,
+)
+documents = reader.load_data()
+
+index = SummaryIndex.from_documents(documents)
+
+query_engine = index.as_query_engine()
+response = query_engine.query("<query_text>")
+display(Markdown(f"<b>{response}</b>"))
+```
+
+Google Cloud SQL for PostgreSQL stores both document and vectors.
+This tutorial demonstrates the synchronous interface. All synchronous methods have corresponding asynchronous methods.
+This is an example of how to use Cloud SQL for PostgreSQL:
+
+```bash
+pip install llama-index
+pip install llama-index-cloud-sql-pg
+```
+
+```python
+from llama_index.core import SummaryIndex
+from llama_index_cloud_sql_pg import PostgresEngine, PostgresReader
+
+engine = PostgresEngine.from_instance(
+    project_id=PROJECT_ID,
+    region=REGION,
+    instance=INSTANCE,
+    database=DATABASE,
+    user=USER,
+    password=PASSWORD,
+)
+reader = PostgresReader.create_sync(
+    engine,
+    table_name=TABLE_NAME,
+)
+documents = reader.load_data()
+
+index = SummaryIndex.from_documents(documents)
+
+query_engine = index.as_query_engine()
+response = query_engine.query("<query_text>")
+display(Markdown(f"<b>{response}</b>"))
+```
+
 Chroma stores both documents and vectors. This is an example of how to use Chroma:
 
 ```python
@@ -931,10 +1165,14 @@ documents = reader.load_data(
 - [DocArray HNSW](../../examples/vector_stores/DocArrayHnswIndexDemo.ipynb)
 - [DocArray in-Memory](../../examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb)
 - [Espilla](../../examples/vector_stores/EpsillaIndexDemo.ipynb)
+- [Google AlloyDB for PostgreSQL](../../examples/vector_stores/AlloyDBVectorStoreDemo.ipynb)
+- [Google Cloud SQL for PostgreSQL](../../examples/vector_stores/CloudSQLPgVectorStoreDemo.ipynb)
 - [LanceDB](../../examples/vector_stores/LanceDBIndexDemo.ipynb)
 - [Lantern](../../examples/vector_stores/LanternIndexDemo.ipynb)
 - [Metal](../../examples/vector_stores/MetalIndexDemo.ipynb)
 - [Milvus](../../examples/vector_stores/MilvusIndexDemo.ipynb)
+- [Milvus Async API](../../examples/vector_stores/MilvusAsyncAPIDemo.ipynb)
+- [Milvus Full-Text Search](../../examples/vector_stores/MilvusFullTextSearchDemo.ipynb)
 - [Milvus Hybrid Search](../../examples/vector_stores/MilvusHybridIndexDemo.ipynb)
 - [MyScale](../../examples/vector_stores/MyScaleIndexDemo.ipynb)
 - [ElsaticSearch](../../examples/vector_stores/ElasticsearchIndexDemo.ipynb)
@@ -959,4 +1197,5 @@ documents = reader.load_data(
 - [Upstash](../../examples/vector_stores/UpstashVectorDemo.ipynb)
 - [Weaviate](../../examples/vector_stores/WeaviateIndexDemo.ipynb)
 - [Weaviate Hybrid Search](../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb)
+- [WordLift](../../examples/vector_stores/WordLiftDemo.ipynb)
 - [Zep](../../examples/vector_stores/ZepIndexDemo.ipynb)

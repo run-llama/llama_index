@@ -105,21 +105,20 @@ In a notebook environment it can be helpful to run a workflow step by step. You 
 
 ```python
 w = ConcurrentFlow(timeout=10, verbose=True)
-handler = w.run()
+handler = w.run(stepwise=True)
 
-while not handler.is_done():
-    # run_step returns the step's output event
-    ev = await handler.run_step()
-    # can make modifications to the results before dispatching the event
-    # val = ev.get("some_key")
-    # ev.set("some_key", new_val)
-    # can also inspect context
-    # val = await handler.ctx.get("key")
-    handler.ctx.send_event(ev)
-    continue
+# Each time we call `run_step`, the workflow will advance and return all the events
+# that were produced in the last step. This events need to be manually propagated
+# for the workflow to keep going (we assign them to `produced_events` with the := operator).
+while produced_events := await handler.run_step():
+    # If we're here, it means there's at least an event we need to propagate,
+    # let's do it with `send_event`
+    for ev in produced_events:
+        handler.ctx.send_event(ev)
 
-# get the result
-result = handler.result()
+# If we're here, it means the workflow execution completed, and
+# we can now access the final result.
+result = await handler
 ```
 
 You can call `run_step` multiple times to step through the workflow one step at a time.
@@ -135,6 +134,29 @@ draw_most_recent_execution(w, filename="last_execution.html")
 ```
 
 Note that instead of passing the class name you are passing the instance of the workflow, `w`.
+
+## Checkpointing
+
+Full workflow executions may end up taking a lot of time, and its often the case that only a few steps at a time need to be debugged and observed. To help with speed up Workflow development cycles, the `WorkflowCheckpointer` object wraps a `Workflow` and creates and stores `Checkpoint`'s upon every step completion of a run. These checkpoints can be viewed, inspected and chosen as the starting point for future run's.
+
+```python
+from llama_index.core.workflow.checkpointer import WorkflowCheckpointer
+
+w = ConcurrentFlow()
+w_ckptr = WorkflowCheckpointer(workflow=w)
+
+# run the workflow via w_ckptr to get checkpoints
+handler = w_cptr.run()
+await handler
+
+# view checkpoints of the last run
+w_ckptr.checkpoints[handler.run_id]
+
+# run from a previous ckpt
+ckpt = w_ckptr.checkpoints[handler.run_id][0]
+handler = w_ckptr.run_from(checkpoint=ckpt)
+await handler
+```
 
 ## Third party tools
 

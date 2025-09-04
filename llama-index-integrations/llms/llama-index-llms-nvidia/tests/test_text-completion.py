@@ -7,7 +7,7 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
 )
 from llama_index.llms.nvidia import NVIDIA as Interface
-from llama_index.llms.nvidia.utils import COMPLETION_MODELS
+from llama_index.llms.nvidia.utils import COMPLETION_MODEL_TABLE
 from openai.types.completion import Completion, CompletionChoice, CompletionUsage
 
 
@@ -87,7 +87,7 @@ async def mock_async_completion_stream_v1(
 
 
 @patch("llama_index.llms.openai.base.SyncOpenAI")
-@pytest.mark.parametrize("model", COMPLETION_MODELS)
+@pytest.mark.parametrize("model", COMPLETION_MODEL_TABLE.keys())
 def test_model_completions(MockSyncOpenAI: MagicMock, model: str) -> None:
     with CachedNVIDIApiKeys(set_fake_key=True):
         mock_instance = MockSyncOpenAI.return_value
@@ -114,7 +114,7 @@ def test_metadata() -> None:
 
 
 @patch("llama_index.llms.openai.base.SyncOpenAI")
-@pytest.mark.parametrize("model", COMPLETION_MODELS)
+@pytest.mark.parametrize("model", COMPLETION_MODEL_TABLE.keys())
 def test_completions_model_streaming(MockSyncOpenAI: MagicMock, model: str) -> None:
     with CachedNVIDIApiKeys(set_fake_key=True):
         mock_instance = MockSyncOpenAI.return_value
@@ -130,9 +130,9 @@ def test_completions_model_streaming(MockSyncOpenAI: MagicMock, model: str) -> N
         assert responses[-1].text == "TestSecond Test"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
-@pytest.mark.parametrize("model", COMPLETION_MODELS)
+@pytest.mark.parametrize("model", COMPLETION_MODEL_TABLE.keys())
 async def test_async_model_completions(MockAsyncOpenAI: MagicMock, model: str) -> None:
     with CachedNVIDIApiKeys(set_fake_key=True):
         mock_instance = MockAsyncOpenAI.return_value
@@ -147,9 +147,9 @@ async def test_async_model_completions(MockAsyncOpenAI: MagicMock, model: str) -
         assert response.text == "Cool Test Message"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @patch("llama_index.llms.openai.base.AsyncOpenAI")
-@pytest.mark.parametrize("model", COMPLETION_MODELS)
+@pytest.mark.parametrize("model", COMPLETION_MODEL_TABLE.keys())
 async def test_async_streaming_completion_model(
     MockAsyncOpenAI: MagicMock, model: str
 ) -> None:

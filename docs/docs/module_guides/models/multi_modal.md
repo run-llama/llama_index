@@ -1,4 +1,4 @@
-# [Beta] Multi-modal models
+# Multi-modal models
 
 ## Concept
 
@@ -44,7 +44,7 @@ from llama_index.core import SimpleDirectoryReader
 client = qdrant_client.QdrantClient(path="qdrant_mm_db")
 
 # if you only need image_store for image retrieval,
-# you can remove text_sotre
+# you can remove text_store
 text_store = QdrantVectorStore(
     client=client, collection_name="text_collection"
 )

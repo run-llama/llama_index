@@ -1,4 +1,5 @@
 import time
+import warnings
 from typing import List, Optional
 
 from llama_index.core.readers.base import BaseReader
@@ -24,12 +25,15 @@ class WholeSiteReader(BaseReader):
     Args:
         prefix (str): URL prefix for scraping.
         max_depth (int, optional): Maximum depth for BFS. Defaults to 10.
+        uri_as_id (bool, optional): Whether to use the URI as the document ID. Defaults to False.
+
     """
 
     def __init__(
         self,
         prefix: str,
         max_depth: int = 10,
+        uri_as_id: bool = False,
         driver: Optional[webdriver.Chrome] = None,
     ) -> None:
         """
@@ -37,6 +41,7 @@ class WholeSiteReader(BaseReader):
         """
         self.prefix = prefix
         self.max_depth = max_depth
+        self.uri_as_id = uri_as_id
         self.driver = driver if driver else self.setup_driver()
 
     def setup_driver(self):
@@ -45,6 +50,7 @@ class WholeSiteReader(BaseReader):
 
         Returns:
             WebDriver: An instance of Chrome WebDriver.
+
         """
         try:
             import chromedriver_autoinstaller
@@ -85,7 +91,8 @@ class WholeSiteReader(BaseReader):
         return self.driver.execute_script(js_script)
 
     def load_data(self, base_url: str) -> List[Document]:
-        """Load data from the base URL using BFS algorithm.
+        """
+        Load data from the base URL using BFS algorithm.
 
         Args:
             base_url (str): Base URL to start scraping.
@@ -93,6 +100,7 @@ class WholeSiteReader(BaseReader):
 
         Returns:
             List[Document]: List of scraped documents.
+
         """
         added_urls = set()
         urls_to_visit = [(base_url, 0)]
@@ -125,9 +133,13 @@ class WholeSiteReader(BaseReader):
                         except Exception:
                             continue
 
-                documents.append(
-                    Document(text=page_content, extra_info={"URL": current_url})
-                )
+                doc = Document(text=page_content, extra_info={"URL": current_url})
+                if self.uri_as_id:
+                    warnings.warn(
+                        "Setting the URI as the id of the document might break the code execution downstream and should be avoided."
+                    )
+                    doc.id_ = current_url
+                documents.append(doc)
                 time.sleep(1)
 
             except WebDriverException:

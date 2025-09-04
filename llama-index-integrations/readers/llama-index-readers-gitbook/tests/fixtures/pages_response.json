@@ -1,0 +1,153 @@
+{
+  "object": "revision",
+  "id": "text",
+  "parents": ["text"],
+  "pages": [
+    {
+      "id": "text",
+      "title": "text",
+      "emoji": "🎉",
+      "icon": "gear",
+      "createdAt": "2024-11-11T01:17:45.601Z",
+      "updatedAt": "2024-11-11T01:17:45.601Z",
+      "markdown": "text",
+      "type": "document",
+      "urls": {
+        "app": "https://example.com"
+      },
+      "slug": "text",
+      "path": "/getting-started",
+      "description": "text",
+      "documentId": "text",
+      "pages": [],
+      "git": {
+        "oid": "text",
+        "path": "text"
+      },
+      "layout": {
+        "cover": false,
+        "coverSize": "hero",
+        "title": false,
+        "description": false,
+        "tableOfContents": false,
+        "outline": false,
+        "pagination": false
+      },
+      "cover": {
+        "ref": {
+          "kind": "file",
+          "file": "text"
+        },
+        "yPos": 0
+      },
+      "hidden": false,
+      "noIndex": false,
+      "noRobotsIndex": false,
+      "computed": {
+        "integration": "text",
+        "source": "text",
+        "props": {},
+        "dependsOn": [
+          {
+            "kind": "space",
+            "space": "text"
+          }
+        ]
+      }
+    },
+    {
+      "id": "text",
+      "title": "text",
+      "emoji": "🎉",
+      "icon": "gear",
+      "createdAt": "2024-11-11T01:17:45.601Z",
+      "updatedAt": "2024-11-11T01:17:45.601Z",
+      "markdown": "text",
+      "type": "document",
+      "urls": {
+        "app": "https://example.com"
+      },
+      "slug": "text",
+      "path": "/advanced",
+      "description": "text",
+      "documentId": "text",
+      "pages": [],
+      "git": {
+        "oid": "text",
+        "path": "text"
+      },
+      "layout": {
+        "cover": false,
+        "coverSize": "hero",
+        "title": false,
+        "description": false,
+        "tableOfContents": false,
+        "outline": false,
+        "pagination": false
+      },
+      "cover": {
+        "ref": {
+          "kind": "file",
+          "file": "text"
+        },
+        "yPos": 0
+      },
+      "hidden": false,
+      "noIndex": false,
+      "noRobotsIndex": false,
+      "computed": {
+        "integration": "text",
+        "source": "text",
+        "props": {},
+        "dependsOn": [
+          {
+            "kind": "space",
+            "space": "text"
+          }
+        ]
+      }
+    }
+  ],
+  "files": [
+    {
+      "id": "text",
+      "name": "text",
+      "contentType": "text",
+      "downloadURL": "text",
+      "size": 0,
+      "dimensions": {
+        "width": 0,
+        "height": 0
+      },
+      "git": {
+        "oid": "text",
+        "path": "text"
+      }
+    }
+  ],
+  "reusableContents": [
+    {
+      "id": "text",
+      "title": "text",
+      "document": "text",
+      "git": {
+        "oid": "text",
+        "path": "text"
+      }
+    }
+  ],
+  "createdAt": "2024-11-11T01:17:45.601Z",
+  "git": {
+    "oid": "text",
+    "message": "text",
+    "createdByGitBook": false,
+    "url": "text",
+    "ref": "text"
+  },
+  "urls": {
+    "app": "https://example.com",
+    "published": "https://example.com",
+    "public": "https://example.com"
+  },
+  "type": "edits"
+}

@@ -8,7 +8,8 @@ from sqlalchemy.exc import OperationalError, ProgrammingError
 
 
 class SQLDatabase:
-    """SQL Database.
+    """
+    SQL Database.
 
     This class provides a wrapper around the SQLAlchemy engine to interact with a SQL
     database.
@@ -168,8 +169,7 @@ class SQLDatabase:
         for column in self._inspector.get_columns(table_name, schema=self._schema):
             if column.get("comment"):
                 columns.append(
-                    f"{column['name']} ({column['type']!s}): "
-                    f"'{column.get('comment')}'"
+                    f"{column['name']} ({column['type']!s}): '{column.get('comment')}'"
                 )
             else:
                 columns.append(f"{column['name']} ({column['type']!s})")
@@ -213,7 +213,8 @@ class SQLDatabase:
         return content[: length - len(suffix)].rsplit(" ", 1)[0] + suffix
 
     def run_sql(self, command: str) -> Tuple[str, Dict]:
-        """Execute a SQL statement and return a string representing the results.
+        """
+        Execute a SQL statement and return a string representing the results.
 
         If the statement returns rows, a string of the results is returned.
         If the statement returns no rows, an empty string is returned.

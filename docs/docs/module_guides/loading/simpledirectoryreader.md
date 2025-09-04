@@ -104,17 +104,34 @@ SimpleDirectoryReader(input_dir="path/to/directory", encoding="latin-1")
 
 ### Extracting metadata
 
-You can specify a function that will read each file and extract metadata that gets attached to the resulting `Document` object for each file by passing the function as `file_metadata`:
+`SimpleDirectoryReader` will automatically attach a `metadata` dictionary to each `Document` object. By default, this dictionary has these items:
+
+- `file_path`: the full filesystem path to the file, including the file name (string)
+- `file_name`: the file name, including suffix (string)
+- `file_type`: the MIME type of the file, as guessed by [`mimetypes.guess_type()](https://docs.python.org/3/library/mimetypes.html#mimetypes.guess_type) (string)
+- `file_size`: the size of the file, in bytes (integer)
+- `creation_date`, `last_modified_date`, `last_accessed_date`: the creation, modification, and access dates for the file, normalized to the UTC timezone. See [Date and time metadata](#date-and-time-metadata) below (string)
+
+However, you can replace the logic used to create the metadata dictionary. Create a custom function which takes a file path string and returns a dictionary, then pass this function to the `SimpleDirectoryReader` constructor as `file_metadata`:
 
 ```python
 def get_meta(file_path):
     return {"foo": "bar", "file_path": file_path}
 
 
-SimpleDirectoryReader(input_dir="path/to/directory", file_metadata=get_meta)
+reader = SimpleDirectoryReader(
+    input_dir="path/to/directory", file_metadata=get_meta
+)
+
+docs = reader.load_data()
+print(docs[0].metadata["foo"])  # prints "bar"
 ```
 
-The function should take a single argument, the file path, and return a dictionary of metadata.
+#### Date and time metadata
+
+The default metadata function in `SimpleDirectoryReader` outputs dates as a string with the [format](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes) `%Y-%m-%d`.
+
+To ensure consistency, timestamps are normalized to the UTC timezone. If the output dates seem to be one day off from the real date, this may be explained by the offset with midnight UTC.
 
 ### Extending to other file types
 

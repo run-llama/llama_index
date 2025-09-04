@@ -47,6 +47,7 @@ print(result)
 This will simply print "Hello, World!" to the console.
 
 In this code we:
+
 * Define a class `MyWorkflow` that inherits from `Workflow`
 * Use the @step decorator to define a single step `my_step`
 * The step takes a single argument, `ev`, which is an instance of `StartEvent`
@@ -90,7 +91,13 @@ A great feature of workflows is the built-in visualizer, which we already instal
 ```python
 from llama_index.utils.workflow import draw_all_possible_flows
 
-draw_all_possible_flows(MyWorkflow, filename="basic_workflow.html")
+draw_all_possible_flows(
+    MyWorkflow,
+    filename="basic_workflow.html",
+    # Optional, can limit long event names in your workflow
+    # Can help with readability
+    # max_label_length=10,
+)
 ```
 
 This will create a file called `basic_workflow.html` in the current directory. Open it in your browser to see an interactive, visual representation of the workflow. It will look something like this:
@@ -130,6 +137,7 @@ class SecondEvent(Event):
 ## Defining the workflow
 
 Now we define the workflow itself. We do this by defining the input and output types on each step.
+
 * `step_one` takes a `StartEvent` and returns a `FirstEvent`
 * `step_two` takes a `FirstEvent` and returns a `SecondEvent`
 * `step_three` takes a `SecondEvent` and returns a `StopEvent`

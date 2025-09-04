@@ -335,6 +335,7 @@ class RedisChatStore(BaseChatStore):
                 redis_client = get_client(
                     redis_url="redis+sentinel://username:password@sentinelhost:26379/mymaster/0"
                 )
+
         """
         # Initialize with necessary components.
         redis_client: "Redis"
@@ -357,17 +358,17 @@ class RedisChatStore(BaseChatStore):
         return redis_client
 
     def _aget_client(self, redis_url: str, **kwargs: Any) -> "AsyncRedis":
-        redis_client: "AsyncRedis"
+        aredis_client: "AsyncRedis"
         # check if normal redis:// or redis+sentinel:// url
         if redis_url.startswith("redis+sentinel"):
-            redis_client = self._aredis_sentinel_client(redis_url, **kwargs)
+            aredis_client = self._aredis_sentinel_client(redis_url, **kwargs)
         elif redis_url.startswith(
             "rediss+sentinel"
         ):  # sentinel with TLS support enables
             kwargs["ssl"] = True
             if "ssl_cert_reqs" not in kwargs:
                 kwargs["ssl_cert_reqs"] = "none"
-            redis_client = self._aredis_sentinel_client(redis_url, **kwargs)
+            aredis_client = self._aredis_sentinel_client(redis_url, **kwargs)
         else:
             # connect to redis server from url, reconnect with cluster client if needed
             aredis_client = redis.asyncio.from_url(redis_url, **kwargs)
@@ -376,6 +377,6 @@ class RedisChatStore(BaseChatStore):
             redis_client.close()
 
             if is_cluster:
-                aredis_client.close()
+                asyncio.create_task(aredis_client.close())
                 aredis_client = self._aredis_cluster_client(redis_url, **kwargs)
         return aredis_client

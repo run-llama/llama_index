@@ -1,4 +1,5 @@
-from typing import List, _LiteralGenericAlias, get_args, Tuple
+from typing import List, Optional, Tuple, _LiteralGenericAlias, get_args
+
 import kuzu
 
 Triple = Tuple[str, str, str]
@@ -17,11 +18,14 @@ def get_list_from_literal(literal: _LiteralGenericAlias) -> List[str]:
     """
     Get a list of strings from a Literal type.
 
-    Parameters:
+    Parameters
+    ----------
     literal (_LiteralGenericAlias): The Literal type from which to extract the strings.
 
-    Returns:
+    Returns
+    -------
     List[str]: A list of strings extracted from the Literal type.
+
     """
     if not isinstance(literal, _LiteralGenericAlias):
         raise TypeError(
@@ -34,11 +38,14 @@ def remove_empty_values(input_dict):
     """
     Remove entries with empty values from the dictionary.
 
-    Parameters:
+    Parameters
+    ----------
     input_dict (dict): The dictionary from which empty values need to be removed.
 
-    Returns:
+    Returns
+    -------
     dict: A new dictionary with all empty values removed.
+
     """
     # Create a new dictionary excluding empty values and remove the `e.` prefix from the keys
     return {key.replace("e.", ""): value for key, value in input_dict.items() if value}
@@ -59,71 +66,89 @@ def lookup_relation(relation: str, triples: List[Triple]) -> Triple:
     return None
 
 
-def create_chunk_node_table(connection: kuzu.Connection) -> None:
+def create_chunk_node_table(
+    connection: kuzu.Connection, embedding_dimension: Optional[int] = None
+) -> None:
     # For now, the additional `properties` dict from LlamaIndex is stored as a string
     # TODO: See if it makes sense to add better support for property metadata as columns
-    if "Chunk" not in connection._get_node_table_names():
+
+    embedding_type = (
+        f"DOUBLE[{embedding_dimension}]" if embedding_dimension else "DOUBLE[]"
+    )
+
+    connection.execute(
+        f"""
+        CREATE NODE TABLE IF NOT EXISTS Chunk (
+            id STRING,
+            text STRING,
+            label STRING,
+            embedding {embedding_type},
+            creation_date DATE,
+            last_modified_date DATE,
+            file_name STRING,
+            file_path STRING,
+            file_size INT64,
+            file_type STRING,
+            ref_doc_id STRING,
+            PRIMARY KEY(id)
+        )
+        """
+    )
+
+
+def create_entity_node_tables(connection: kuzu.Connection, entities: List[str]) -> None:
+    for tbl_name in entities:
+        # Entity tables don't need embedding columns - only Chunk nodes have embeddings
+        # For now, the additional `properties` dict from LlamaIndex is stored as a string
+        # TODO: See if it makes sense to add better support for property metadata as columns
         connection.execute(
             f"""
-            CREATE NODE TABLE Chunk (
+            CREATE NODE TABLE IF NOT EXISTS {tbl_name} (
                 id STRING,
-                text STRING,
+                name STRING,
                 label STRING,
-                embedding DOUBLE[],
                 creation_date DATE,
                 last_modified_date DATE,
                 file_name STRING,
                 file_path STRING,
                 file_size INT64,
                 file_type STRING,
-                ref_doc_id STRING,
+                triplet_source_id STRING,
                 PRIMARY KEY(id)
             )
             """
         )
 
 
-def create_entity_node_tables(connection: kuzu.Connection, entities: List[str]) -> None:
-    for tbl_name in entities:
-        # For now, the additional `properties` dict from LlamaIndex is stored as a string
-        # TODO: See if it makes sense to add better support for property metadata as columns
-        if tbl_name not in connection._get_node_table_names():
-            connection.execute(
-                f"""
-                CREATE NODE TABLE {tbl_name} (
-                    id STRING,
-                    name STRING,
-                    label STRING,
-                    embedding DOUBLE[],
-                    creation_date DATE,
-                    last_modified_date DATE,
-                    file_name STRING,
-                    file_path STRING,
-                    file_size INT64,
-                    file_type STRING,
-                    triplet_source_id STRING,
-                    PRIMARY KEY(id)
-                )
-                """
-            )
+def create_entity_relationship_table(
+    connection: kuzu.Connection, label: str, src_id: str, dst_id: str
+) -> None:
+    connection.execute(
+        f"""
+        CREATE REL TABLE IF NOT EXISTS {label} (
+            FROM {src_id} TO {dst_id},
+            label STRING,
+            triplet_source_id STRING
+        );
+        """
+    )
 
 
 def create_relation_tables(
     connection: kuzu.Connection, entities: List[str], relationship_schema: List[Triple]
 ) -> None:
-    rel_tables = [tbl["name"] for tbl in connection._get_rel_table_names()]
-    # We use Kùzu relationship table group creation DDL commands to create relationship tables
-    ddl = ""
-    if not any("LINKS" in table for table in rel_tables):
-        ddl = "CREATE REL TABLE GROUP LINKS ("
-        table_names = []
-        for src, _, dst in relationship_schema:
-            table_names.append(f"FROM {src} TO {dst}")
-        for entity in entities:
-            table_names.append(f"FROM Chunk TO {entity}")
-        table_names = list(set(table_names))
-        ddl += ", ".join(table_names)
-        # Add common properties for all the tables here
-        ddl += ", label STRING, triplet_source_id STRING)"
+    # Create relationship tables for each entity
+    for src, rel_label, dst in relationship_schema:
+        create_entity_relationship_table(connection, rel_label, src, dst)
+
+    ddl = "CREATE REL TABLE IF NOT EXISTS MENTIONS ("
+    table_names = []
+    for entity in entities:
+        table_names.append(f"FROM Chunk TO {entity}")
+    table_names = list(set(table_names))
+    ddl += ", ".join(table_names)
+    # Add common properties for all the tables here
+    ddl += ", label STRING, triplet_source_id STRING)"
+
     if ddl:
         connection.execute(ddl)

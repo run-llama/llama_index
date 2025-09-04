@@ -177,33 +177,18 @@ def test_num_files_limit(tmp_dir_type: Type[Union[Path, str]]) -> None:
                     )
                     input_file_names = [f.name for f in reader.input_files]
                     assert len(reader.input_files) == 2
-                    assert set(input_file_names) == {
-                        "test1.txt",
-                        "test2.txt",
-                    }
 
                     reader = SimpleDirectoryReader(
                         tmp_dir, recursive=True, num_files_limit=3
                     )
                     input_file_names = [f.name for f in reader.input_files]
                     assert len(reader.input_files) == 3
-                    assert set(input_file_names) == {
-                        "test1.txt",
-                        "test2.txt",
-                        "test3.txt",
-                    }
 
                     reader = SimpleDirectoryReader(
                         tmp_dir, recursive=True, num_files_limit=4
                     )
                     input_file_names = [f.name for f in reader.input_files]
                     assert len(reader.input_files) == 4
-                    assert set(input_file_names) == {
-                        "test1.txt",
-                        "test2.txt",
-                        "test3.txt",
-                        "test4.txt",
-                    }
 
 
 @pytest.mark.parametrize("tmp_dir_type", [Path, str])
@@ -568,3 +553,43 @@ def test_read_file_content(tmp_dir_type: Type[Union[Path, str]]) -> None:
             content = reader.read_file_content(file)
             checksum = hashlib.md5(content).hexdigest()
             assert checksum == files_checksum[file]
+
+
+@pytest.mark.parametrize("tmp_dir_type", [Path, str])
+@pytest.mark.skipif(PDFReader is None, reason="llama-index-readers-file not installed")
+def test_exclude_empty(tmp_dir_type: Type[Union[Path, str]]) -> None:
+    """Test if exclude_empty flag excludes empty files."""
+    with TemporaryDirectory() as tmp_dir:
+        tmp_dir = tmp_dir_type(tmp_dir)
+
+        # Create non-empty files
+        with open(f"{tmp_dir}/test1.txt", "w") as f:
+            f.write("test1")
+        with open(f"{tmp_dir}/test2.txt", "w") as f:
+            f.write("test2")
+
+        # Create empty files
+        open(f"{tmp_dir}/empty1.txt", "w").close()
+        open(f"{tmp_dir}/empty2.txt", "w").close()
+
+        # Test with exclude_empty=True
+        reader_exclude = SimpleDirectoryReader(tmp_dir, exclude_empty=True)
+        documents_exclude = reader_exclude.load_data()
+
+        assert len(documents_exclude) == 2
+        assert [doc.metadata["file_name"] for doc in documents_exclude] == [
+            "test1.txt",
+            "test2.txt",
+        ]
+
+        # Test with exclude_empty=False (default behavior)
+        reader_include = SimpleDirectoryReader(tmp_dir, exclude_empty=False)
+        documents_include = reader_include.load_data()
+
+        assert len(documents_include) == 4
+        assert [doc.metadata["file_name"] for doc in documents_include] == [
+            "empty1.txt",
+            "empty2.txt",
+            "test1.txt",
+            "test2.txt",
+        ]

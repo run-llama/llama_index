@@ -39,3 +39,58 @@ See the following links for more details.
 
 - [Configuring settings in the Settings](../module_guides/supporting_modules/settings.md)
 - [Parsing Documents into Nodes](../module_guides/loading/node_parsers/index.md)
+
+## ServiceContext
+
+The `ServiceContext` object has been deprecated in favour of the `Settings` object.
+
+- [Configuring settings in the Settings](../module_guides/supporting_modules/settings.md)
+
+## llama-index-legacy
+
+The `llama-index-legacy` package has been deprecated and removed from the repository. Please see the latest getting started guide for the latest information and usage.
+
+- [Getting Started](../getting_started/installation.md)
+
+## AgentRunner/AgentWorker (and related classes)
+
+The `AgentRunner` and `AgentWorker` classes have been deprecated in favour of [AgentWorkflow](../module_guides/deploying/agents/index.md) and [Workflows](../module_guides/workflow/index.md).
+
+This includes the following deprecated classes:
+
+- `AgentRunner`
+- `FunctionCallingAgent`
+- `FunctionCallingAgentWorker`
+- `llama_index.core.agent.ReActAgent` (use [llama_index.core.agent.workflow.ReActAgent](../module_guides/deploying/agents/index.md))
+- `ReActAgentWorker`
+- `LATSAgentWorker`
+- `CoAAgentWorker`
+- `FnAgentWorker`
+- `QueryPipelineAgentWorker`
+- `MultiModalReActAgentWorker`
+- `IntrospectiveAgentWorker`
+- `SelfReflectiveAgentWorker`
+- `ToolInteractiveReflectionAgentWorker`
+- `LLMCompilerAgentWorker`
+- `QueryUnderstandAgentWorker`
+
+## QueryPipeline (and related classes)
+
+QueryPipeline has been deprecated in favour of [Workflows](../module_guides/workflow/index.md).
+
+This includes the following deprecated classes:
+
+- `AgentFnComponent`
+- `AgentInputComponent`
+- `BaseAgentComponent`
+- `CustomAgentComponent`
+- `ArgPackComponent`
+- `FnComponent`
+- `FunctionComponent`
+- `InputComponent`
+- `RouterComponent`
+- `SelectorComponent`
+- `ToolRunnerComponent`
+- `StatefulFnComponent`
+- `LoopComponent`
+- etc.

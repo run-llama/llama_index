@@ -22,14 +22,15 @@ After that, you can start using the tool:
 
 ```shell
 $ llamaindex-cli rag -h
-usage: llamaindex-cli rag [-h] [-q QUESTION] [-f FILES] [-c] [-v] [--clear] [--create-llama]
+usage: llamaindex-cli rag [-h] [-q QUESTION] [-f FILES [FILES ...]] [-c] [-v] [--clear] [--create-llama]
 
 options:
   -h, --help            show this help message and exit
   -q QUESTION, --question QUESTION
                         The question you want to ask.
-  -f FILES, --files FILES
-                        The name of the file or directory you want to ask a question about,such as "file.pdf".
+  -f, --files FILES [FILES ...]
+                        The name of the file(s) or directory you want to ask a question about,such
+                        as "file.pdf". Supports globs like "*.py".
   -c, --chat            If flag is present, opens a chat REPL.
   -v, --verbose         Whether to print out verbose information during execution.
   --clear               Clears out all currently embedded data.
@@ -63,7 +64,7 @@ Here are some high level steps to get you started:
 
 You can also create a full-stack chat application with a FastAPI backend and NextJS frontend based on the files that you have selected.
 
-To bootstrap the application, make sure you have NodeJS and npx installed on your machine. If not, please refer to the [LlamaIndex.TS](https://ts.llamaindex.ai/getting_started/installation) documentation for instructions.
+To bootstrap the application, make sure you have NodeJS and npx installed on your machine. If not, please refer to the [LlamaIndex.TS](https://ts.llamaindex.ai/docs/llamaindex/getting_started) documentation for instructions.
 
 Once you have everything set up, creating a new application is easy. Simply run the following command:
 
@@ -100,9 +101,9 @@ See the next section for information on how to add your own custom file readers 
 
 ## Customization
 
-The `rag` CLI tool is highly customizable! The tool is powered by combining the [`IngestionPipeline`](../../module_guides/loading/ingestion_pipeline/index.md) & [`QueryPipeline`](../../module_guides/querying/pipeline/index.md) modules within the [`RagCLI`](https://github.com/run-llama/llama_index/blob/main/llama-index-cli/llama_index/cli/rag/base.py) module.
+The `rag` CLI tool is highly customizable! The tool is powered by combining the [`IngestionPipeline`](../../module_guides/loading/ingestion_pipeline/index.md) module within the [`RagCLI`](https://github.com/run-llama/llama_index/blob/main/llama-index-cli/llama_index/cli/rag/base.py) module.
 
-To create your own custom rag CLI tool, you can simply create a script that instantiates the `RagCLI` class with a `IngestionPipeline` & `QueryPipeline` that you've configured yourself. From there, you can simply run `rag_cli_instance.cli()` in your script to run the same ingestion and Q&A commands against your own choice of embedding models, LLMs, vector DBs, etc.
+To create your own custom rag CLI tool, you can simply create a script that instantiates the `RagCLI` class with a `IngestionPipeline` that you've configured yourself. From there, you can simply run `rag_cli_instance.cli()` in your script to run the same ingestion and Q&A commands against your own choice of embedding models, LLMs, vector DBs, etc.
 
 Here's some high-level code to show the general setup:
 
@@ -110,7 +111,6 @@ Here's some high-level code to show the general setup:
 #!/path/to/your/virtualenv/bin/python
 import os
 from llama_index.core.ingestion import IngestionPipeline, IngestionCache
-from llama_index.core.query_pipeline import QueryPipeline
 from llama_index.core.storage.docstore import SimpleDocumentStore
 from llama_index.cli.rag import RagCLI
 
@@ -130,20 +130,12 @@ custom_ingestion_pipeline = IngestionPipeline(
     cache=IngestionCache(),
 )
 
-# Setting up the custom QueryPipeline is optional!
-# You can still customize the vector store, LLM, and ingestion transformations without
-# having to customize the QueryPipeline
-custom_query_pipeline = QueryPipeline()
-custom_query_pipeline.add_modules(...)
-custom_query_pipeline.add_link(...)
-
 # you can optionally specify your own custom readers to support additional file types.
 file_extractor = {".html": ...}
 
 rag_cli_instance = RagCLI(
     ingestion_pipeline=custom_ingestion_pipeline,
     llm=llm,  # optional
-    query_pipeline=custom_query_pipeline,  # optional
     file_extractor=file_extractor,  # optional
 )
 

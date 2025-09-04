@@ -1,18 +1,22 @@
 """General utils functions."""
 
 import asyncio
+import base64
 import os
 import random
 import sys
 import time
 import traceback
 import uuid
+from binascii import Error as BinasciiError
 from contextlib import contextmanager
 from dataclasses import dataclass
 from functools import partial, wraps
+from io import BytesIO
 from itertools import islice
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncGenerator,
     Callable,
@@ -28,62 +32,91 @@ from typing import (
     runtime_checkable,
 )
 
+import platformdirs
+import requests
+
+if TYPE_CHECKING:
+    from nltk.tokenize import PunktSentenceTokenizer
+
 
 class GlobalsHelper:
-    """Helper to retrieve globals.
-
-    Helpful for global caching of certain variables that can be expensive to load.
-    (e.g. tokenization)
-
-    """
+    """Helper to retrieve globals with asynchronous NLTK data loading."""
 
     _stopwords: Optional[List[str]] = None
+    _punkt_tokenizer: Optional["PunktSentenceTokenizer"] = None
     _nltk_data_dir: Optional[str] = None
 
-    def __init__(self) -> None:
-        """Initialize NLTK stopwords and punkt."""
-        import nltk
+    def wait_for_nltk_check(self) -> None:
+        """Initialize NLTK data download."""
+        from nltk.data import path as nltk_path
 
-        self._nltk_data_dir = os.environ.get(
-            "NLTK_DATA",
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "_static/nltk_cache",
-            ),
-        )
+        # Set up NLTK data directory
+        if "NLTK_DATA" in os.environ:
+            self._nltk_data_dir = str(Path(os.environ["NLTK_DATA"]))
+        else:
+            path = Path(platformdirs.user_cache_dir("llama_index"))
+            self._nltk_data_dir = str(path / "_static/nltk_cache")
 
-        if self._nltk_data_dir not in nltk.data.path:
-            nltk.data.path.append(self._nltk_data_dir)
+        # Ensure the directory exists
+        os.makedirs(self._nltk_data_dir, exist_ok=True)
 
-        # ensure access to data is there
+        # Add to NLTK path if not already present
+        if self._nltk_data_dir not in nltk_path:
+            nltk_path.append(self._nltk_data_dir)
+
+        # Start downloading NLTK data / confirming it's available
+        self._download_nltk_data()
+
+    def _download_nltk_data(self) -> None:
+        """Download NLTK data packages in the background."""
+        from nltk import download
+        from nltk.data import find as nltk_find
+
         try:
-            nltk.data.find("corpora/stopwords")
-        except LookupError:
-            nltk.download("stopwords", download_dir=self._nltk_data_dir)
+            # Download stopwords
+            try:
+                nltk_find("corpora/stopwords", paths=[self._nltk_data_dir])
+            except LookupError:
+                download("stopwords", download_dir=self._nltk_data_dir, quiet=True)
 
-        try:
-            nltk.data.find("tokenizers/punkt_tab")
-        except LookupError:
-            nltk.download("punkt_tab", download_dir=self._nltk_data_dir)
+            # Download punkt tokenizer
+            try:
+                nltk_find("tokenizers/punkt_tab", paths=[self._nltk_data_dir])
+            except LookupError:
+                download("punkt_tab", download_dir=self._nltk_data_dir, quiet=True)
+
+        except Exception as e:
+            print(f"NLTK download error: {e}")
 
     @property
     def stopwords(self) -> List[str]:
-        """Get stopwords."""
+        """Get stopwords, ensuring data is downloaded."""
         if self._stopwords is None:
-            try:
-                import nltk
-                from nltk.corpus import stopwords
-            except ImportError:
-                raise ImportError(
-                    "`nltk` package not found, please run `pip install nltk`"
-                )
+            # Wait for stopwords to be available
+            self.wait_for_nltk_check()
 
-            try:
-                nltk.data.find("corpora/stopwords", paths=[self._nltk_data_dir])
-            except LookupError:
-                nltk.download("stopwords", download_dir=self._nltk_data_dir)
+            from nltk.corpus import stopwords
+            from nltk.tokenize import PunktSentenceTokenizer
+
             self._stopwords = stopwords.words("english")
+            self._punkt_tokenizer = PunktSentenceTokenizer()
+
         return self._stopwords
+
+    @property
+    def punkt_tokenizer(self) -> "PunktSentenceTokenizer":
+        """Get punkt tokenizer, ensuring data is downloaded."""
+        if self._punkt_tokenizer is None:
+            # Wait for punkt to be available
+            self.wait_for_nltk_check()
+
+            from nltk.corpus import stopwords
+            from nltk.tokenize import PunktSentenceTokenizer
+
+            self._punkt_tokenizer = PunktSentenceTokenizer()
+            self._stopwords = stopwords.words("english")
+
+        return self._punkt_tokenizer
 
 
 globals_helper = GlobalsHelper()
@@ -92,8 +125,7 @@ globals_helper = GlobalsHelper()
 # Global Tokenizer
 @runtime_checkable
 class Tokenizer(Protocol):
-    def encode(self, text: str, *args: Any, **kwargs: Any) -> List[Any]:
-        ...
+    def encode(self, text: str, *args: Any, **kwargs: Any) -> List[Any]: ...
 
 
 def set_global_tokenizer(tokenizer: Union[Tokenizer, Callable[[str], list]]) -> None:
@@ -105,7 +137,7 @@ def set_global_tokenizer(tokenizer: Union[Tokenizer, Callable[[str], list]]) -> 
         llama_index.core.global_tokenizer = tokenizer
 
 
-def get_tokenizer() -> Callable[[str], List]:
+def get_tokenizer(model_name: str = "gpt-3.5-turbo") -> Callable[[str], List]:
     import llama_index.core
 
     if llama_index.core.global_tokenizer is None:
@@ -126,7 +158,7 @@ def get_tokenizer() -> Callable[[str], List]:
                 "_static/tiktoken_cache",
             )
 
-        enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        enc = tiktoken.encoding_for_model(model_name)
         tokenizer = partial(enc.encode, allowed_special="all")
         set_global_tokenizer(tokenizer)
 
@@ -157,7 +189,8 @@ def get_new_int_id(d: Set) -> int:
 
 @contextmanager
 def temp_set_attrs(obj: Any, **kwargs: Any) -> Generator:
-    """Temporary setter.
+    """
+    Temporary setter.
 
     Utility class for setting a temporary value for an attribute on a class.
     Taken from: https://tinyurl.com/2p89xymh
@@ -175,7 +208,8 @@ def temp_set_attrs(obj: Any, **kwargs: Any) -> Generator:
 
 @dataclass
 class ErrorToRetry:
-    """Exception types that should be retried.
+    """
+    Exception types that should be retried.
 
     Args:
         exception_cls (Type[Exception]): Class of exception.
@@ -196,7 +230,8 @@ def retry_on_exceptions_with_backoff(
     min_backoff_secs: float = 0.5,
     max_backoff_secs: float = 60.0,
 ) -> Any:
-    """Execute lambda function with retries and exponential backoff.
+    """
+    Execute lambda function with retries and exponential backoff.
 
     Args:
         lambda_fn (Callable): Function to be called and output we want.
@@ -243,7 +278,8 @@ async def aretry_on_exceptions_with_backoff(
     min_backoff_secs: float = 0.5,
     max_backoff_secs: float = 60.0,
 ) -> Any:
-    """Execute lambda function with retries and exponential backoff.
+    """
+    Execute lambda function with retries and exponential backoff.
 
     Args:
         async_fn (Callable): Async Function to be called and output we want.
@@ -317,7 +353,8 @@ def truncate_text(text: str, max_length: int) -> str:
 
 
 def iter_batch(iterable: Union[Iterable, Generator], size: int) -> Iterable:
-    """Iterate over an iterable in batches.
+    """
+    Iterate over an iterable in batches.
 
     >>> list(iter_batch([1,2,3,4,5], 3))
     [[1, 2, 3], [4, 5]]
@@ -367,6 +404,7 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
     Args:
         model_name(str): the model name of the tokenizer.
                         For instance, fxmarty/tiny-llama-fast-tokenizer.
+
     """
     try:
         from transformers import AutoTokenizer  # pants: no-infer-dep
@@ -379,41 +417,30 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
 
 
 def get_cache_dir() -> str:
-    """Locate a platform-appropriate cache directory for llama_index,
+    """
+    Locate a platform-appropriate cache directory for llama_index,
     and create it if it doesn't yet exist.
     """
     # User override
     if "LLAMA_INDEX_CACHE_DIR" in os.environ:
         path = Path(os.environ["LLAMA_INDEX_CACHE_DIR"])
-
-    # Linux, Unix, AIX, etc.
-    elif os.name == "posix" and sys.platform != "darwin":
-        path = Path("/tmp/llama_index")
-
-    # Mac OS
-    elif sys.platform == "darwin":
-        path = Path(os.path.expanduser("~"), "Library/Caches/llama_index")
-
-    # Windows (hopefully)
     else:
-        local = os.environ.get("LOCALAPPDATA", None) or os.path.expanduser(
-            "~\\AppData\\Local"
-        )
-        path = Path(local, "llama_index")
+        path = Path(platformdirs.user_cache_dir("llama_index"))
 
-    if not os.path.exists(path):
-        os.makedirs(
-            path, exist_ok=True
-        )  # prevents https://github.com/jerryjliu/llama_index/issues/7362
+    # Pass exist_ok and call makedirs directly, so we avoid TOCTOU issues
+    path.mkdir(parents=True, exist_ok=True)
+
     return str(path)
 
 
 def add_sync_version(func: Any) -> Any:
-    """Decorator for adding sync version of an async function. The sync version
+    """
+    Decorator for adding sync version of an async function. The sync version
     is added as a function attribute to the original function, func.
 
     Args:
         func(Any): the async function for which a sync variant will be built.
+
     """
     assert asyncio.iscoroutinefunction(func)
 
@@ -484,6 +511,7 @@ def get_color_mapping(
 
     Returns:
         Dict[str, str]: Mapping of items to colors.
+
     """
     if use_llama_index_colors:
         color_palette = _LLAMA_INDEX_COLORS
@@ -504,6 +532,7 @@ def _get_colored_text(text: str, color: str) -> str:
 
     Returns:
         str: Colored version of the input text.
+
     """
     all_colors = {**_LLAMA_INDEX_COLORS, **_ANSI_COLORS}
 
@@ -528,6 +557,7 @@ def print_text(text: str, color: Optional[str] = None, end: str = "") -> None:
 
     Returns:
         None
+
     """
     text_to_print = _get_colored_text(text, color) if color is not None else text
     print(text_to_print, end=end)
@@ -549,24 +579,90 @@ def infer_torch_device() -> str:
 
 
 def unit_generator(x: Any) -> Generator[Any, None, None]:
-    """A function that returns a generator of a single element.
+    """
+    A function that returns a generator of a single element.
 
     Args:
         x (Any): the element to build yield
 
     Yields:
         Any: the single element
+
     """
     yield x
 
 
 async def async_unit_generator(x: Any) -> AsyncGenerator[Any, None]:
-    """A function that returns a generator of a single element.
+    """
+    A function that returns a generator of a single element.
 
     Args:
         x (Any): the element to build yield
 
     Yields:
         Any: the single element
+
     """
     yield x
+
+
+def resolve_binary(
+    raw_bytes: Optional[bytes] = None,
+    path: Optional[Union[str, Path]] = None,
+    url: Optional[str] = None,
+    as_base64: bool = False,
+) -> BytesIO:
+    """
+    Resolve binary data from various sources into a BytesIO object.
+
+    Args:
+        raw_bytes: Raw bytes data
+        path: File path to read bytes from
+        url: URL to fetch bytes from
+        as_base64: Whether to base64 encode the output bytes
+
+    Returns:
+        BytesIO object containing the binary data
+
+    Raises:
+        ValueError: If no valid source is provided
+
+    """
+    if raw_bytes is not None:
+        # check if raw_bytes is base64 encoded
+        try:
+            decoded_bytes = base64.b64decode(raw_bytes)
+        except Exception:
+            decoded_bytes = raw_bytes
+
+        try:
+            # Check if raw_bytes is already base64 encoded.
+            # b64decode() can succeed on random binary data, so we
+            # pass verify=True to make sure it's not a false positive
+            decoded_bytes = base64.b64decode(raw_bytes, validate=True)
+        except BinasciiError:
+            # b64decode failed, leave as is
+            decoded_bytes = raw_bytes
+
+        if as_base64:
+            return BytesIO(base64.b64encode(decoded_bytes))
+        return BytesIO(decoded_bytes)
+
+    elif path is not None:
+        path = Path(path) if isinstance(path, str) else path
+        data = path.read_bytes()
+        if as_base64:
+            return BytesIO(base64.b64encode(data))
+        return BytesIO(data)
+
+    elif url is not None:
+        headers = {
+            "User-Agent": "LlamaIndex/0.0 (https://llamaindex.ai; info@llamaindex.ai) llama-index-core/0.0"
+        }
+        response = requests.get(url, headers=headers, timeout=(60, 60))
+        response.raise_for_status()
+        if as_base64:
+            return BytesIO(base64.b64encode(response.content))
+        return BytesIO(response.content)
+
+    raise ValueError("No valid source provided to resolve binary data!")

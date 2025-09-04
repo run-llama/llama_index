@@ -13,7 +13,8 @@ dispatcher = instrument.get_dispatcher(__name__)
 
 
 class ComposableGraphQueryEngine(BaseQueryEngine):
-    """Composable graph query engine.
+    """
+    Composable graph query engine.
 
     This query engine can operate over a ComposableGraph.
     It can take in custom query engines for its sub-indices.
@@ -109,7 +110,8 @@ class ComposableGraphQueryEngine(BaseQueryEngine):
         query_bundle: QueryBundle,
         level: int,
     ) -> Tuple[NodeWithScore, List[NodeWithScore]]:
-        """Fetch nodes.
+        """
+        Fetch nodes.
 
         Uses existing node if it's not an index node.
         Otherwise fetch response from corresponding index.

@@ -6,8 +6,7 @@ from llama_index.core.schema import NodeWithScore, Document
 from llama_index.core.node_parser import SentenceSplitter
 
 import faker
-
-from requests_mock import Mocker
+import respx
 
 
 @pytest.fixture()
@@ -16,16 +15,9 @@ def known_unknown() -> str:
 
 
 @pytest.fixture()
-def mock_local_models(requests_mock: Mocker, known_unknown) -> None:
-    requests_mock.get(
-        "http://localhost:8000/v1/models",
-        json={
-            "data": [
-                {
-                    "id": known_unknown,
-                },
-            ]
-        },
+def mock_local_models(respx_mock: respx.MockRouter, known_unknown: str) -> None:
+    respx_mock.get("http://localhost:8000/v1/models").respond(
+        json={"data": [{"id": known_unknown}]}
     )
 
 
@@ -52,7 +44,7 @@ def nodes(documents: List[Document]) -> List[NodeWithScore]:
     return [NodeWithScore(node=document) for document in documents]
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_basic(model: str, mode: dict) -> None:
     text = "Testing leads to failure, and failure leads to understanding."
     result = NVIDIARerank(model=model, **mode).postprocess_nodes(
@@ -68,7 +60,7 @@ def test_basic(model: str, mode: dict) -> None:
     assert all(node.node.text == text for node in result)
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_accuracy(model: str, mode: dict) -> None:
     texts = ["first", "last"]
     query = "last"
@@ -85,14 +77,14 @@ def test_accuracy(model: str, mode: dict) -> None:
     assert result[0].node.text == "last"
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_direct_empty_docs(query: str, model: str, mode: dict) -> None:
     ranker = NVIDIARerank(model=model, **mode)
     result_docs = ranker.postprocess_nodes(nodes=[], query_str=query)
     assert len(result_docs) == 0
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_direct_top_n_negative(
     query: str, nodes: List[NodeWithScore], model: str, mode: dict
 ) -> None:
@@ -105,7 +97,7 @@ def test_direct_top_n_negative(
     assert len(result) == 0
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_direct_top_n_zero(
     query: str, nodes: List[NodeWithScore], model: str, mode: dict
 ) -> None:
@@ -115,7 +107,7 @@ def test_direct_top_n_zero(
     assert len(result) == 0
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_direct_top_n_one(
     query: str, nodes: List[NodeWithScore], model: str, mode: dict
 ) -> None:
@@ -125,7 +117,7 @@ def test_direct_top_n_one(
     assert len(result) == 1
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_direct_top_n_equal_len_docs(
     query: str, nodes: List[NodeWithScore], model: str, mode: dict
 ) -> None:
@@ -135,7 +127,7 @@ def test_direct_top_n_equal_len_docs(
     assert len(result) == len(nodes)
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 def test_direct_top_n_greater_len_docs(
     query: str, nodes: List[NodeWithScore], model: str, mode: dict
 ) -> None:
@@ -158,7 +150,7 @@ def test_invalid_top_n(model: str, mode: dict) -> None:
         ranker.top_n = -10
 
 
-@pytest.mark.integration()
+@pytest.mark.integration
 @pytest.mark.parametrize(
     ("batch_size", "top_n"),
     (
@@ -213,11 +205,13 @@ def test_local_model_not_found(mock_local_models) -> None:
     assert err_msg == str(msg.value)
 
 
+# marking this as xfail as we do not return invalid error anymore
+@pytest.mark.xfail(reason="value error is not raised anymore")
 def test_model_incompatible_client() -> None:
     model_name = "x"
     err_msg = (
         f"Model {model_name} is incompatible with client NVIDIARerank. "
-        f"Please check `NVIDIARerank.available_models()`."
+        f"Please check `NVIDIARerank.available_models`."
     )
     with pytest.raises(ValueError) as msg:
         NVIDIARerank(api_key="BOGUS", model=model_name)
@@ -226,8 +220,6 @@ def test_model_incompatible_client() -> None:
 
 def test_model_incompatible_client_known_model() -> None:
     model_name = "google/deplot"
-    warn_msg = f"Unable to determine validity"
-    with pytest.warns(UserWarning) as msg:
-        NVIDIARerank(api_key="BOGUS", model=model_name)
-    assert len(msg) == 1
-    assert warn_msg in str(msg[0].message)
+    with pytest.warns(UserWarning) as warning:
+        model = NVIDIARerank(api_key="BOGUS", model=model_name)
+    assert "Unable to determine validity" in str(warning[0].message)

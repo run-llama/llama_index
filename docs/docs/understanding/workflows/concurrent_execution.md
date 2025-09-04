@@ -9,7 +9,7 @@ In our examples so far, we've only emitted one event from each step. But there a
 ```python
 class ParallelFlow(Workflow):
     @step
-    async def start(self, ctx: Context, ev: StartEvent) -> StepTwoEvent:
+    async def start(self, ctx: Context, ev: StartEvent) -> StepTwoEvent | None:
         ctx.send_event(StepTwoEvent(query="Query 1"))
         ctx.send_event(StepTwoEvent(query="Query 2"))
         ctx.send_event(StepTwoEvent(query="Query 3"))
@@ -31,7 +31,7 @@ If you execute the previous example, you'll note that the workflow stops after w
 ```python
 class ConcurrentFlow(Workflow):
     @step
-    async def start(self, ctx: Context, ev: StartEvent) -> StepTwoEvent:
+    async def start(self, ctx: Context, ev: StartEvent) -> StepTwoEvent | None:
         ctx.send_event(StepTwoEvent(query="Query 1"))
         ctx.send_event(StepTwoEvent(query="Query 2"))
         ctx.send_event(StepTwoEvent(query="Query 3"))
@@ -43,7 +43,9 @@ class ConcurrentFlow(Workflow):
         return StepThreeEvent(result=ev.query)
 
     @step
-    async def step_three(self, ctx: Context, ev: StepThreeEvent) -> StopEvent:
+    async def step_three(
+        self, ctx: Context, ev: StepThreeEvent
+    ) -> StopEvent | None:
         # wait until we receive 3 events
         result = ctx.collect_events(ev, [StepThreeEvent] * 3)
         if result is None:
@@ -69,7 +71,7 @@ class ConcurrentFlow(Workflow):
     @step
     async def start(
         self, ctx: Context, ev: StartEvent
-    ) -> StepAEvent | StepBEvent | StepCEvent:
+    ) -> StepAEvent | StepBEvent | StepCEvent | None:
         ctx.send_event(StepAEvent(query="Query 1"))
         ctx.send_event(StepBEvent(query="Query 2"))
         ctx.send_event(StepCEvent(query="Query 3"))
@@ -112,6 +114,7 @@ class ConcurrentFlow(Workflow):
 ```
 
 There are several changes we've made to handle multiple event types:
+
 * `start` is now declared as emitting 3 different event types
 * `step_three` is now declared as accepting 3 different event types
 * `collect_events` now takes an array of the event types to wait for

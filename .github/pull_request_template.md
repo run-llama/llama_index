@@ -43,4 +43,4 @@ Your pull-request will likely not be merged unless it is covered by some form of
 - [ ] My changes generate no new warnings
 - [ ] I have added tests that prove my fix is effective or that my feature works
 - [ ] New and existing unit tests pass locally with my changes
-- [ ] I ran `make format; make lint` to appease the lint gods
+- [ ] I ran `uv run make format; uv run make lint` to appease the lint gods

@@ -3,6 +3,7 @@
 import pytest
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.output_parsers.pydantic import PydanticOutputParser
+from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock
 
 
 class AttrDict(BaseModel):
@@ -50,3 +51,22 @@ def test_pydantic_format() -> None:
     parser = PydanticOutputParser(output_cls=AttrDict)
     formatted_query = parser.format(query)
     assert "hello world" in formatted_query
+
+
+def test_pydantic_format_with_blocks() -> None:
+    """Test pydantic format with blocks."""
+    parser = PydanticOutputParser(output_cls=AttrDict)
+    messages = [
+        ChatMessage(
+            role="user",
+            blocks=[
+                TextBlock(text="hello world"),
+                ImageBlock(
+                    url="https://pbs.twimg.com/media/GVhGD1PXkAANfPV?format=jpg&name=4096x4096"
+                ),
+                TextBlock(text="hello world"),
+            ],
+        )
+    ]
+    formatted_messages = parser.format_messages(messages)
+    assert "hello world" in formatted_messages[0].blocks[-1].text
