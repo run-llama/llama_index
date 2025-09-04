@@ -24,14 +24,14 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-vearch"
-version = "0.3.0"
+version = "0.4.0"
 description = "llama-index vector_stores vearch integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.10.0,<0.11",
+    "llama-index-core>=0.10.0,<0.13",
     "vearch>=3.3.2,<4",
     "vearch-cluster>=0.0.2,<0.0.3",
 ]

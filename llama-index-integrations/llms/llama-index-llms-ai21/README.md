@@ -173,7 +173,7 @@ async def main():
 ## Tool Calling
 
 ```python
-from llama_index.core.agent import FunctionCallingAgentWorker
+from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.llms.ai21 import AI21
 from llama_index.core.tools import FunctionTool
 
@@ -207,15 +207,12 @@ api_key = "your_api_key"
 
 llm = AI21(model="jamba-1.5-mini", api_key=api_key)
 
-agent_worker = FunctionCallingAgentWorker.from_tools(
-    [multiply_tool, add_tool, subtract_tool, divide_tool],
+agent = FunctionAgent(
+    tools=[multiply_tool, add_tool, subtract_tool, divide_tool],
     llm=llm,
-    verbose=True,
-    allow_parallel_tool_calls=True,
 )
-agent = agent_worker.as_agent()
 
-response = agent.chat(
+response = await agent.run(
     "My friend Moses had 10 apples. He ate 5 apples in the morning. Then he found a box with 25 apples."
     "He divided all his apples between his 5 friends. How many apples did each friend get?"
 )

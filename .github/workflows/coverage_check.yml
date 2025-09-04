@@ -1,0 +1,45 @@
+name: Unit Testing
+
+on:
+  pull_request:
+
+env:
+  # How many concurrent processes running pytest in a single CI job
+  NUM_WORKERS: 8
+  # Tests will fail if coverage percentage is below this number
+  COV_FAIL_UNDER: 50
+
+jobs:
+  test:
+    runs-on: ubuntu-latest-unit-tester
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y portaudio19-dev
+
+      - name: Install uv and set the python version
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+
+      - name: Run tests with coverage
+        shell: bash
+        working-directory: llama-dev
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }}:${{ github.event.pull_request.base.ref }}
+          uv run -- llama-dev \
+            --repo-root ".." ${{ runner.debug && '--debug' || '' }} test \
+            --workers ${{ env.NUM_WORKERS }} \
+            --base-ref=${{ github.event.pull_request.base.ref }} \
+            --cov \
+            --cov-fail-under=${{ env.COV_FAIL_UNDER }}

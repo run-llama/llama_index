@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-google-genai"
-version = "0.2.1"
+version = "0.3.0"
 description = "llama-index llms google genai integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -35,8 +35,8 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "pillow>=10.2.0",
-    "google-genai>=1.4.0",
-    "llama-index-core>=0.12.36,<0.13",
+    "google-genai>=1.24.0,<2",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

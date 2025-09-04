@@ -24,6 +24,9 @@ from llama_index.core.base.llms.types import (
     AudioBlock,
     ImageBlock,
     DocumentBlock,
+    CachePoint,
+    CitableBlock,
+    CitationBlock,
 )
 from llama_index.core.bridge.pydantic import (
     BaseModel,
@@ -280,6 +283,7 @@ class Memory(BaseMemory):
         table_name: str = "llama_index_memory",
         async_database_uri: Optional[str] = None,
         async_engine: Optional[AsyncEngine] = None,
+        db_schema: Optional[str] = None,
     ) -> "Memory":
         """Initialize Memory."""
         session_id = session_id or generate_chat_store_key()
@@ -289,6 +293,7 @@ class Memory(BaseMemory):
             table_name=table_name,
             async_database_uri=async_database_uri,
             async_engine=async_engine,
+            db_schema=db_schema,
         )
 
         if chat_history is not None:
@@ -322,7 +327,20 @@ class Memory(BaseMemory):
 
         # Normalize the input to a list of ContentBlocks
         if isinstance(message_or_blocks, ChatMessage):
-            blocks = message_or_blocks.blocks
+            blocks: List[
+                Union[
+                    TextBlock,
+                    ImageBlock,
+                    AudioBlock,
+                    DocumentBlock,
+                    CitableBlock,
+                    CitationBlock,
+                ]
+            ] = []
+
+            for block in message_or_blocks.blocks:
+                if not isinstance(block, CachePoint):
+                    blocks.append(block)
 
             # Estimate the token count for the additional kwargs
             if message_or_blocks.additional_kwargs:
@@ -332,16 +350,15 @@ class Memory(BaseMemory):
         elif isinstance(message_or_blocks, List):
             # Type narrow the list
             messages: List[ChatMessage] = []
-            content_blocks: List[
-                Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock]
-            ] = []
 
             if all(isinstance(item, ChatMessage) for item in message_or_blocks):
                 messages = cast(List[ChatMessage], message_or_blocks)
 
                 blocks = []
                 for msg in messages:
-                    blocks.extend(msg.blocks)
+                    for block in msg.blocks:
+                        if not isinstance(block, CachePoint):
+                            blocks.append(block)
 
                 # Estimate the token count for the additional kwargs
                 token_count += sum(
@@ -350,14 +367,20 @@ class Memory(BaseMemory):
                     if msg.additional_kwargs
                 )
             elif all(
-                isinstance(item, (TextBlock, ImageBlock, AudioBlock, DocumentBlock))
+                isinstance(
+                    item, (TextBlock, ImageBlock, AudioBlock, DocumentBlock, CachePoint)
+                )
                 for item in message_or_blocks
             ):
-                content_blocks = cast(
-                    List[Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock]],
-                    message_or_blocks,
-                )
-                blocks = content_blocks
+                blocks = []
+                for item in message_or_blocks:
+                    if not isinstance(item, CachePoint):
+                        blocks.append(
+                            cast(
+                                Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock],
+                                item,
+                            )
+                        )
             else:
                 raise ValueError(f"Invalid message type: {type(message_or_blocks)}")
         elif isinstance(message_or_blocks, str):
@@ -377,15 +400,22 @@ class Memory(BaseMemory):
         return token_count
 
     async def _get_memory_blocks_content(
-        self, chat_history: List[ChatMessage], **block_kwargs: Any
+        self,
+        chat_history: List[ChatMessage],
+        input: Optional[Union[str, ChatMessage]] = None,
+        **block_kwargs: Any,
     ) -> Dict[str, Any]:
         """Get content from memory blocks in priority order."""
         content_per_memory_block: Dict[str, Any] = {}
 
+        block_input = chat_history
+        if isinstance(input, str):
+            block_input = [*chat_history, ChatMessage(role="user", content=input)]
+
         # Process memory blocks in priority order
         for memory_block in sorted(self.memory_blocks, key=lambda x: -x.priority):
             content = await memory_block.aget(
-                chat_history, session_id=self.session_id, **block_kwargs
+                block_input, session_id=self.session_id, **block_kwargs
             )
 
             # Handle different return types from memory blocks
@@ -547,7 +577,9 @@ class Memory(BaseMemory):
 
         return result
 
-    async def aget(self, **block_kwargs: Any) -> List[ChatMessage]:  # type: ignore[override]
+    async def aget(
+        self, input: Optional[Union[str, ChatMessage]] = None, **block_kwargs: Any
+    ) -> List[ChatMessage]:  # type: ignore[override]
         """Get messages with memory blocks included (async)."""
         # Get chat history efficiently
         chat_history = await self.sql_store.get_messages(
@@ -559,7 +591,7 @@ class Memory(BaseMemory):
 
         # Get memory blocks content
         content_per_memory_block = await self._get_memory_blocks_content(
-            chat_history, **block_kwargs
+            chat_history, input=input, **block_kwargs
         )
 
         # Calculate memory blocks tokens
@@ -762,9 +794,11 @@ class Memory(BaseMemory):
 
     # ---- Sync method wrappers ----
 
-    def get(self, **block_kwargs: Any) -> List[ChatMessage]:  # type: ignore[override]
+    def get(
+        self, input: Optional[Union[str, ChatMessage]] = None, **block_kwargs: Any
+    ) -> List[ChatMessage]:  # type: ignore[override]
         """Get messages with memory blocks included."""
-        return asyncio_run(self.aget(**block_kwargs))
+        return asyncio_run(self.aget(input=input, **block_kwargs))
 
     def get_all(self, status: Optional[MessageStatus] = None) -> List[ChatMessage]:
         """Get all messages."""
@@ -773,6 +807,10 @@ class Memory(BaseMemory):
     def put(self, message: ChatMessage) -> None:
         """Add a message to the chat store and process waterfall logic if needed."""
         return asyncio_run(self.aput(message))
+
+    def put_messages(self, messages: List[ChatMessage]) -> None:
+        """Add a list of messages to the chat store and process waterfall logic if needed."""
+        return asyncio_run(self.aput_messages(messages))
 
     def set(self, messages: List[ChatMessage]) -> None:
         """Set the chat history."""

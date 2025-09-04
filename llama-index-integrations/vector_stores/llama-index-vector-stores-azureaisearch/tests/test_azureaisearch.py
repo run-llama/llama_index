@@ -329,3 +329,66 @@ def test_azureaisearch_semantic_query() -> None:
     assert len(result.nodes) == 2
     assert len(result.ids) == 2
     assert len(result.similarities) == 2
+
+
+@pytest.mark.skipif(
+    not azureaisearch_installed, reason="azure-search-documents package not installed"
+)
+def test_azureaisearch_query_ignores_conflicting_kwargs_and_forwards_extras_for_all_modes() -> (
+    None
+):
+    """
+    Ensure extra SDK kwargs are forwarded, and explicit params cannot be overridden.
+
+    1) extra SDK kwargs (e.g. scoring_profile, order_by) get forwarded.
+    2) explicit params (top, select, filter) cannot be overridden by user kwargs.
+    """
+    search_client = mock_client_with_user_agent("search")
+    search_client.search.return_value = []
+    vector_store = create_mock_vector_store(search_client)
+
+    # Extras including both valid SDK args and attempts to override our explicit params
+    extras = {
+        "scoring_profile": "myCustomProfile",
+        "order_by": ["title asc"],
+        "top": 999,  # malicious override
+        "filter": "name eq 'override'",  # malicious override
+        "select": ["test"],  # malicious override
+    }
+
+    modes = [
+        VectorStoreQueryMode.DEFAULT,
+        VectorStoreQueryMode.SPARSE,
+        VectorStoreQueryMode.HYBRID,
+        VectorStoreQueryMode.SEMANTIC_HYBRID,
+    ]
+
+    expected_top = 1
+    expected_select = ["id", "content", "metadata", "doc_id"]
+    expected_filter = None
+
+    for mode in modes:
+        search_client.search.reset_mock()
+
+        query = VectorStoreQuery(
+            query_embedding=[0.1, 0.2],
+            similarity_top_k=expected_top,
+            mode=mode,
+            query_str="test_query",
+        )
+
+        vector_store.query(query, **extras)
+        called = search_client.search.call_args[1]
+
+        # 1) Legitimate extras still forwarded
+        assert called["scoring_profile"] == "myCustomProfile"
+        assert called["order_by"] == ["title asc"]
+
+        # 2) Explicit defaults remain intact despite conflict attempts
+        assert called["top"] == expected_top
+        assert called["select"] == expected_select
+        assert called["filter"] is expected_filter
+        # And that our explicit values differ from the overridden one's
+        assert called["top"] != extras["top"]
+        assert called["select"] != extras["select"]
+        assert called["filter"] != extras["filter"]

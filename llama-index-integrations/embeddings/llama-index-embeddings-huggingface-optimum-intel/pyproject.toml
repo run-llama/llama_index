@@ -26,17 +26,17 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-huggingface-optimum-intel"
-version = "0.3.0"
+version = "0.4.0"
 description = "llama-index embeddings Optimum Intel integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-embeddings-huggingface>=0.4.0,<0.5",
-    "llama-index-utils-huggingface>=0.3.0,<0.4",
+    "llama-index-embeddings-huggingface>=0.6.0,<0.7",
+    "llama-index-utils-huggingface>=0.4.0,<0.5",
     "optimum-intel>=1.18.0,<2",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
     "optimum[exporters]>=1.16.2,<2",
 ]
 

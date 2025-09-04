@@ -27,13 +27,13 @@ dev = [
 
 [project]
 name = "llama-index-callbacks-literalai"
-version = "1.2.0"
+version = "1.3.0"
 description = "llama-index callbacks literalai integration"
 authors = [{name = "Damien BUTY", email = "damien@chainlit.io"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
-dependencies = ["llama-index-core>=0.12.0,<0.13"]
+dependencies = ["llama-index-core>=0.13.0,<0.14"]
 
 [tool.codespell]
 check-filenames = true

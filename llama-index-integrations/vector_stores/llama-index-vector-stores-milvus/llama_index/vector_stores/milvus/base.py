@@ -12,7 +12,7 @@ from enum import Enum
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.indices.query.embedding_utils import get_top_k_mmr_embeddings
-from llama_index.core.schema import BaseNode
+from llama_index.core.schema import BaseNode, TextNode
 from llama_index.core.utils import iter_batch
 from llama_index.vector_stores.milvus.utils import (
     get_default_sparse_embedding_function,
@@ -137,6 +137,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             stored. Defaults to "llamalection".
         overwrite (bool, optional): Whether to overwrite existing collection with same
             name. Defaults to False.
+        upsert_mode (bool, optional): Whether to upsert documents into existing collection with same node id. Defaults to False.
         doc_id_field (str, optional): The name of the doc_id field for the collection,
             defaults to DEFAULT_DOC_ID_KEY.
         text_key (str, optional): What key text is stored in in the passed collection.
@@ -230,6 +231,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
     similarity_metric: str = "IP"
     consistency_level: str = "Session"
     overwrite: bool = False
+    upsert_mode: bool = False
     text_key: str = DEFAULT_TEXT_KEY
     output_fields: List[str] = Field(default_factory=list)
     index_config: Optional[dict]
@@ -259,6 +261,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
         token: str = "",
         collection_name: str = "llamacollection",
         overwrite: bool = False,
+        upsert_mode: bool = False,
         collection_properties: Optional[dict] = None,
         doc_id_field: str = DEFAULT_DOC_ID_KEY,
         text_key: str = DEFAULT_TEXT_KEY,
@@ -291,6 +294,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             doc_id_field=doc_id_field,
             consistency_level=consistency_level,
             overwrite=overwrite,
+            upsert_mode=upsert_mode,
             text_key=text_key,
             output_fields=output_fields or [],
             index_config=index_config if index_config else {},
@@ -313,6 +317,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
             token=token,
             **kwargs,  # pass additional arguments such as server_pem_path
         )
+
+        # As of writing, milvus sets alias internally in the async client.
+        # This will cause an error if not removed.
+        kwargs.pop("alias", None)
+
         self._async_milvusclient = AsyncMilvusClient(
             uri=uri,
             token=token,
@@ -393,6 +402,11 @@ class MilvusVectorStore(BasePydanticVectorStore):
             f"Successfully set properties for collection: {self.collection_name}"
         )
 
+    @classmethod
+    def class_name(cls) -> str:
+        """Class name."""
+        return "MilvusVectorStore"
+
     @property
     def client(self) -> MilvusClient:
         """Get client."""
@@ -448,9 +462,14 @@ class MilvusVectorStore(BasePydanticVectorStore):
             insert_ids.append(node.node_id)
             insert_list.append(entry)
 
-        # Insert the data into milvus
+        if self.upsert_mode:
+            executor_wrapper = self.client.upsert
+        else:
+            executor_wrapper = self.client.insert
+
+        # Insert or Upsert the data into milvus
         for insert_batch in iter_batch(insert_list, self.batch_size):
-            self.client.insert(self.collection_name, insert_batch)
+            executor_wrapper(self.collection_name, insert_batch)
         if add_kwargs.get("force_flush", False):
             self.client.flush(self.collection_name)
         logger.debug(
@@ -495,9 +514,14 @@ class MilvusVectorStore(BasePydanticVectorStore):
             insert_ids.append(node.node_id)
             insert_list.append(entry)
 
-        # Insert the data into milvus
+        if self.upsert_mode:
+            executor_wrapper = self.aclient.upsert
+        else:
+            executor_wrapper = self.aclient.insert
+
+        # Insert or Upsert the data into milvus
         for insert_batch in iter_batch(insert_list, self.batch_size):
-            await self.aclient.insert(self.collection_name, insert_batch)
+            await executor_wrapper(self.collection_name, insert_batch)
         if add_kwargs.get("force_flush", False):
             raise NotImplementedError("force_flush is not supported in async mode.")
             # await self.aclient.flush(self.collection_name)
@@ -664,7 +688,17 @@ class MilvusVectorStore(BasePydanticVectorStore):
                     "The passed in text_key value does not exist "
                     "in the retrieved entity."
                 )
-            node = metadata_dict_to_node(item, text=text_content)
+            if "_node_content" in item:
+                node = metadata_dict_to_node(item, text=text_content)
+            elif text_content:
+                node = TextNode(
+                    text=text_content,
+                    metadata={key: item.get(key) for key in self.output_fields},
+                )
+            else:
+                raise ValueError(
+                    "Node content not found in metadata dict and no text content found."
+                )
             node.embedding = item.get(self.embedding_field, None)
             nodes.append(node)
         return nodes
@@ -697,7 +731,17 @@ class MilvusVectorStore(BasePydanticVectorStore):
                     "The passed in text_key value does not exist "
                     "in the retrieved entity."
                 )
-            node = metadata_dict_to_node(item, text=text_content)
+            if "_node_content" in item:
+                node = metadata_dict_to_node(item, text=text_content)
+            elif text_content:
+                node = TextNode(
+                    text=text_content,
+                    metadata={key: item.get(key) for key in self.output_fields},
+                )
+            else:
+                raise ValueError(
+                    "Node content not found in metadata dict and no text content found."
+                )
             node.embedding = item.get(self.embedding_field, None)
             nodes.append(node)
         return nodes
@@ -871,6 +915,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
             output_fields=output_fields,
             search_params=kwargs.get("milvus_search_config", self.search_config),
             anns_field=self.embedding_field,
+            partition_names=kwargs.get("milvus_partition_names"),
         )
         logger.debug(
             f"Successfully searched embedding in collection: {self.collection_name}"
@@ -1387,13 +1432,18 @@ class MilvusVectorStore(BasePydanticVectorStore):
         ids = []
         # Parse the results
         for hit in results[0]:
-            metadata = {
-                "_node_content": hit["entity"].get("_node_content", None),
-                "_node_type": hit["entity"].get("_node_type", None),
-            }
-            for key in self.output_fields:
-                metadata[key] = hit["entity"].get(key)
-            node = metadata_dict_to_node(metadata)
+            if "_node_content" in hit["entity"]:
+                metadata = {
+                    "_node_content": hit["entity"].get("_node_content", None),
+                    "_node_type": hit["entity"].get("_node_type", None),
+                }
+                for key in self.output_fields:
+                    metadata[key] = hit["entity"].get(key)
+                node = metadata_dict_to_node(metadata)
+            else:
+                node = TextNode(
+                    metadata={key: hit["entity"].get(key) for key in self.output_fields}
+                )
 
             # Set the text field if it exists
             if self.text_key in hit["entity"]:

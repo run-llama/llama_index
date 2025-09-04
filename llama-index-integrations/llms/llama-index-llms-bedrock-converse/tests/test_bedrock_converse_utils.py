@@ -11,6 +11,8 @@ from llama_index.core.base.llms.types import (
     ImageBlock,
     MessageRole,
     TextBlock,
+    CacheControl,
+    CachePoint,
 )
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.bedrock_converse.utils import (
@@ -68,6 +70,15 @@ def test_content_block_to_bedrock_format_text():
     text_block = TextBlock(text="Hello, world!")
     result = _content_block_to_bedrock_format(text_block, MessageRole.USER)
     assert result == {"text": "Hello, world!"}
+
+
+def test_cache_point_block():
+    cache_point = CachePoint(cache_control=CacheControl(type="default"))
+    result = _content_block_to_bedrock_format(cache_point, MessageRole.USER)
+    assert result == {"cachePoint": {"type": "default"}}
+    cache_point1 = CachePoint(cache_control=CacheControl(type="persistent"))
+    result1 = _content_block_to_bedrock_format(cache_point1, MessageRole.USER)
+    assert result1 == {"cachePoint": {"type": "default"}}
 
 
 @patch("llama_index.core.base.llms.types.ImageBlock.resolve_image")

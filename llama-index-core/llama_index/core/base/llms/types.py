@@ -10,6 +10,7 @@ from typing import (
     Annotated,
     Any,
     AsyncGenerator,
+    Dict,
     Generator,
     List,
     Literal,
@@ -50,11 +51,15 @@ class MessageRole(str, Enum):
 
 
 class TextBlock(BaseModel):
+    """A representation of text data to directly pass to/from the LLM."""
+
     block_type: Literal["text"] = "text"
     text: str
 
 
 class ImageBlock(BaseModel):
+    """A representation of image data to directly pass to/from the LLM."""
+
     block_type: Literal["image"] = "image"
     image: bytes | None = None
     path: FilePath | None = None
@@ -136,6 +141,8 @@ class ImageBlock(BaseModel):
 
 
 class AudioBlock(BaseModel):
+    """A representation of audio data to directly pass to/from the LLM."""
+
     block_type: Literal["audio"] = "audio"
     audio: bytes | None = None
     path: FilePath | None = None
@@ -204,6 +211,8 @@ class AudioBlock(BaseModel):
 
 
 class DocumentBlock(BaseModel):
+    """A representation of a document to directly pass to the LLM."""
+
     block_type: Literal["document"] = "document"
     data: Optional[bytes] = None
     path: Optional[Union[FilePath | str]] = None
@@ -282,8 +291,72 @@ class DocumentBlock(BaseModel):
         return str(guess.mime) if guess else None
 
 
+class CacheControl(BaseModel):
+    type: str
+    ttl: str = Field(default="5m")
+
+
+class CachePoint(BaseModel):
+    """Used to set the point to cache up to, if the LLM supports caching."""
+
+    block_type: Literal["cache"] = "cache"
+    cache_control: CacheControl
+
+
+class CitableBlock(BaseModel):
+    """Supports providing citable content to LLMs that have built-in citation support."""
+
+    block_type: Literal["citable"] = "citable"
+    title: str
+    source: str
+    # TODO: We could maybe expand the types here,
+    # limiting for now to known use cases
+    content: List[
+        Annotated[
+            Union[TextBlock, ImageBlock, DocumentBlock],
+            Field(discriminator="block_type"),
+        ]
+    ]
+
+    @field_validator("content", mode="before")
+    @classmethod
+    def validate_content(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            return [TextBlock(text=v)]
+
+        return v
+
+
+class CitationBlock(BaseModel):
+    """A representation of cited content from past messages."""
+
+    block_type: Literal["citation"] = "citation"
+    cited_content: Annotated[
+        Union[TextBlock, ImageBlock], Field(discriminator="block_type")
+    ]
+    source: str
+    title: str
+    additional_location_info: Dict[str, int]
+
+    @field_validator("cited_content", mode="before")
+    @classmethod
+    def validate_cited_content(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            return TextBlock(text=v)
+
+        return v
+
+
 ContentBlock = Annotated[
-    Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock],
+    Union[
+        TextBlock,
+        ImageBlock,
+        AudioBlock,
+        DocumentBlock,
+        CachePoint,
+        CitableBlock,
+        CitationBlock,
+    ],
     Field(discriminator="block_type"),
 ]
 
@@ -339,7 +412,10 @@ class ChatMessage(BaseModel):
             if isinstance(block, TextBlock):
                 content_strs.append(block.text)
 
-        return "\n".join(content_strs) or None
+        ct = "\n".join(content_strs) or None
+        if ct is None and len(content_strs) == 1:
+            return ""
+        return ct
 
     @content.setter
     def content(self, content: str) -> None:

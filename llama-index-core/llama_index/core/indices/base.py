@@ -110,7 +110,7 @@ class BaseIndex(Generic[IS], ABC):
 
         with callback_manager.as_trace("index_construction"):
             for doc in documents:
-                docstore.set_document_hash(doc.get_doc_id(), doc.hash)
+                docstore.set_document_hash(doc.id_, doc.hash)
 
             nodes = run_transformations(
                 documents,  # type: ignore
@@ -547,19 +547,11 @@ class BaseIndex(Generic[IS], ABC):
         query_engine = self.as_query_engine(llm=llm, **kwargs)
 
         # resolve chat mode
-        if chat_mode in [ChatMode.REACT, ChatMode.OPENAI, ChatMode.BEST]:
-            # use an agent with query engine tool in these chat modes
-            # NOTE: lazy import
-            from llama_index.core.agent import AgentRunner
-            from llama_index.core.tools.query_engine import QueryEngineTool
-
-            # convert query engine to tool
-            query_engine_tool = QueryEngineTool.from_defaults(query_engine=query_engine)
-
-            return AgentRunner.from_llm(
-                tools=[query_engine_tool],
-                llm=llm,
-                **kwargs,
+        if chat_mode in [ChatMode.REACT, ChatMode.OPENAI]:
+            raise ValueError(
+                "ChatMode.REACT and ChatMode.OPENAI are now deprecated and removed. "
+                "Please use the ReActAgent or FunctionAgent classes from llama_index.core.agent.workflow "
+                "to create an agent with a query engine tool."
             )
 
         if chat_mode == ChatMode.CONDENSE_QUESTION:
@@ -571,6 +563,7 @@ class BaseIndex(Generic[IS], ABC):
                 llm=llm,
                 **kwargs,
             )
+
         elif chat_mode == ChatMode.CONTEXT:
             from llama_index.core.chat_engine import ContextChatEngine
 
@@ -580,7 +573,7 @@ class BaseIndex(Generic[IS], ABC):
                 **kwargs,
             )
 
-        elif chat_mode == ChatMode.CONDENSE_PLUS_CONTEXT:
+        elif chat_mode in [ChatMode.CONDENSE_PLUS_CONTEXT, ChatMode.BEST]:
             from llama_index.core.chat_engine import CondensePlusContextChatEngine
 
             return CondensePlusContextChatEngine.from_defaults(

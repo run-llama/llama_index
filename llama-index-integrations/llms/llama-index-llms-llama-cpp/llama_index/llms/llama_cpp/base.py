@@ -242,6 +242,7 @@ class LlamaCPP(CustomLLM):
                     for chunk in tqdm(
                         r.iter_content(chunk_size=chunk_size),
                         total=int(total_size / chunk_size),
+                        unit="MB",
                     ):
                         file.write(chunk)
             completed = True

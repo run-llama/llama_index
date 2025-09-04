@@ -3,7 +3,7 @@
 import asyncio
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 
-from llama_index.core.schema import BaseNode, Document, TextNode
+from llama_index.core.schema import BaseNode
 from llama_index.core.storage.docstore.types import BaseDocumentStore, RefDocInfo
 from llama_index.core.storage.docstore.utils import doc_to_json, json_to_doc
 from llama_index.core.storage.kvstore.types import DEFAULT_BATCH_SIZE, BaseKVStore
@@ -178,8 +178,8 @@ class KVDocumentStore(BaseDocumentStore):
                     "Set allow_update to True to overwrite."
                 )
             ref_doc_info = None
-            if isinstance(node, (TextNode, Document)) and node.ref_doc_id is not None:
-                ref_doc_info = self.get_ref_doc_info(node.ref_doc_id) or RefDocInfo()
+            if node.source_node is not None:
+                ref_doc_info = self.get_ref_doc_info(node.source_node.node_id) or RefDocInfo()
 
             (
                 node_kv_pair,
@@ -279,9 +279,9 @@ class KVDocumentStore(BaseDocumentStore):
                     "Set allow_update to True to overwrite."
                 )
             ref_doc_info = None
-            if isinstance(node, TextNode) and node.ref_doc_id is not None:
+            if node.source_node is not None:
                 ref_doc_info = (
-                    await self.aget_ref_doc_info(node.ref_doc_id) or RefDocInfo()
+                    await self.aget_ref_doc_info(node.source_node.node_id) or RefDocInfo()
                 )
 
             (
@@ -642,22 +642,19 @@ class KVDocumentStore(BaseDocumentStore):
         else:
             return None
 
+
     def get_all_document_hashes(self) -> Dict[str, str]:
         """Get the stored hash for all documents."""
-        hashes = {}
-        for doc_id in self._kvstore.get_all(collection=self._metadata_collection):
-            hash = self.get_document_hash(doc_id)
-            if hash is not None:
-                hashes[hash] = doc_id
-        return hashes
+        return {
+            doc_hash: doc_id
+            for doc_id, doc in (self._kvstore.get_all(collection=self._metadata_collection)).items()
+            if (doc_hash := doc.get("doc_hash"))
+        }
 
     async def aget_all_document_hashes(self) -> Dict[str, str]:
         """Get the stored hash for all documents."""
-        hashes = {}
-        for doc_id in await self._kvstore.aget_all(
-            collection=self._metadata_collection
-        ):
-            hash = await self.aget_document_hash(doc_id)
-            if hash is not None:
-                hashes[hash] = doc_id
-        return hashes
+        return {
+            doc_hash: doc_id
+            for doc_id, doc in (await self._kvstore.aget_all(collection=self._metadata_collection)).items()
+            if (doc_hash := doc.get("doc_hash"))
+        }

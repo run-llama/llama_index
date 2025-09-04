@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-gigachat"
-version = "0.3.0"
+version = "0.4.0"
 description = "llama-index embeddings gigachat integration"
 authors = [{name = "Kirill Kukharev", email = "lepeshokoff200@mail.ru"}]
 requires-python = ">=3.9,<4.0"
@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "gigachat==0.1.28",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

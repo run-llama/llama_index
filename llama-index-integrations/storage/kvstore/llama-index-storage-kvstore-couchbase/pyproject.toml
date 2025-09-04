@@ -26,14 +26,14 @@ dev = [
 
 [project]
 name = "llama-index-kvstore-couchbase"
-version = "0.2.0"
+version = "0.3.0"
 description = "llama-index kvstore couchbase integration"
 authors = [{name = "Couchbase", email = "devadvocates@couchbase.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
     "couchbase>=4.3.0,<5",
 ]
 

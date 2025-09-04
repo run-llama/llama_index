@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-tools-google"
-version = "0.3.1"
+version = "0.6.0"
 description = "llama-index tools google integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -42,7 +42,7 @@ dependencies = [
     "google-auth-httplib2>=0.2.0,<0.3",
     "google-auth-oauthlib>=1.2.0,<2",
     "beautifulsoup4>=4.12.3,<5",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

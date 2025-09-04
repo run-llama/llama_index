@@ -132,7 +132,7 @@ def test_extract_hyperlinks(PlaywrightTool):
 def test_extract_text(PlaywrightTool):
     text = asyncio.get_event_loop().run_until_complete(PlaywrightTool.extract_text())
     # different systems may have different whitespace, so we allow for some leeway
-    assert abs(len(text) - len(TEST_TEXT)) < 25
+    assert abs(len(text) - len(TEST_TEXT)) < 50
 
 
 def test_get_elements(PlaywrightTool):

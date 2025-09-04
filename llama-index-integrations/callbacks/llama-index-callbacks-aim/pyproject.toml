@@ -27,14 +27,14 @@ dev = [
 
 [project]
 name = "llama-index-callbacks-aim"
-version = "0.3.0"
+version = "0.4.0"
 description = "llama-index callbacks aim integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.10.1,<0.11",
+    "llama-index-core>=0.10.1,<0.13",
     "aim>=3.17.5,<4",
     "jwt>=1.3.1,<2",
 ]

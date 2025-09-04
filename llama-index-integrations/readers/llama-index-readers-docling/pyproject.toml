@@ -26,14 +26,14 @@ dev = [
 
 [project]
 name = "llama-index-readers-docling"
-version = "0.3.3"
+version = "0.4.0"
 description = "llama-index readers docling integration"
 authors = [{name = "Panos Vagenas", email = "pva@zurich.ibm.com"}]
 requires-python = ">=3.10,<3.13"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
     "docling-core>=2.2.0,<3",
     "docling>=2.2.0,<3",
     "numpy>=2.0",
