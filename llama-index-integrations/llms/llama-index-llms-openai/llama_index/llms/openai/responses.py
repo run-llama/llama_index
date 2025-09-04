@@ -831,7 +831,10 @@ class OpenAIResponses(FunctionCallingLLM):
 
         # openai responses api has a slightly different tool spec format
         tool_specs = [
-            {"type": "function", **tool.metadata.to_openai_tool()["function"]}
+            {
+                "type": "function",
+                **tool.metadata.to_openai_tool(skip_length_check=True)["function"],
+            }
             for tool in tools
         ]
 

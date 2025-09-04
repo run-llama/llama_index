@@ -27,14 +27,15 @@ dev = [
 
 [project]
 name = "llama-index-multi-modal-llms-reka"
-version = "0.2.0"
+version = "0.3.0"
 description = "llama-index multi_modal_llms reka integration"
 authors = [{name = "Alex Li", email = "alexli@reka.ai"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-llms-reka>=0.2.0,<1",
     "reka-api>=3.0.8,<4",
 ]
 

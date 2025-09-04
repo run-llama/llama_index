@@ -1,6 +1,7 @@
 """Test utils."""
 
 from typing import List, Annotated
+import datetime
 
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.tools.utils import create_schema_from_function
@@ -95,3 +96,34 @@ def test_create_schema_from_function_with_field_annotated() -> None:
 
     instance = schema(x=5)
     assert instance.x == 5  # type: ignore
+
+
+def test_create_schema_with_date_and_metadata():
+    def sample_func(
+        birth_date: Annotated[
+            datetime.date,
+            Field(
+                description="The birth date",
+                json_schema_extra={"example": "2000-01-01"},
+            ),
+        ],
+        timestamp: Annotated[
+            datetime.datetime,
+            Field(
+                description="Timestamp",
+                json_schema_extra={"example": "2023-05-12T08:00:00"},
+            ),
+        ],
+    ):
+        pass
+
+    schema = create_schema_from_function("TestSchema", sample_func)
+
+    properties = schema.model_json_schema()["properties"]
+
+    assert properties["birth_date"]["format"] == "date"
+    assert properties["birth_date"]["description"] == "The birth date"
+    assert properties["birth_date"]["example"] == "2000-01-01"
+
+    assert properties["timestamp"]["format"] == "date-time"
+    assert properties["timestamp"]["example"] == "2023-05-12T08:00:00"

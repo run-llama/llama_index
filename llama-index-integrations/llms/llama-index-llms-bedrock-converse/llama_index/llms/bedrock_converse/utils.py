@@ -19,6 +19,7 @@ from llama_index.core.base.llms.types import (
     ContentBlock,
     AudioBlock,
     DocumentBlock,
+    CachePoint,
 )
 
 
@@ -28,6 +29,7 @@ HUMAN_PREFIX = "\n\nHuman:"
 ASSISTANT_PREFIX = "\n\nAssistant:"
 
 BEDROCK_MODELS = {
+    "amazon.nova-premier-v1:0": 1000000,
     "amazon.nova-pro-v1:0": 300000,
     "amazon.nova-lite-v1:0": 300000,
     "amazon.nova-micro-v1:0": 128000,
@@ -64,17 +66,22 @@ BEDROCK_MODELS = {
     "meta.llama3-2-11b-instruct-v1:0": 128000,
     "meta.llama3-2-90b-instruct-v1:0": 128000,
     "meta.llama3-3-70b-instruct-v1:0": 128000,
+    "meta.llama4-maverick-17b-instruct-v1:0": 1000000,
+    "meta.llama4-scout-17b-instruct-v1:0": 3500000,
     "mistral.mistral-7b-instruct-v0:2": 32000,
     "mistral.mixtral-8x7b-instruct-v0:1": 32000,
     "mistral.mistral-large-2402-v1:0": 32000,
     "mistral.mistral-small-2402-v1:0": 32000,
     "mistral.mistral-large-2407-v1:0": 32000,
+    "openai.gpt-oss-120b-1:0": 128000,
+    "openai.gpt-oss-20b-1:0": 128000,
     "ai21.jamba-1-5-mini-v1:0": 256000,
     "ai21.jamba-1-5-large-v1:0": 256000,
     "deepseek.r1-v1:0": 128000,
 }
 
 BEDROCK_FUNCTION_CALLING_MODELS = (
+    "amazon.nova-premier-v1:0",
     "amazon.nova-pro-v1:0",
     "amazon.nova-lite-v1:0",
     "amazon.nova-micro-v1:0",
@@ -93,14 +100,17 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "mistral.mistral-large-2407-v1:0",
     "meta.llama3-1-8b-instruct-v1:0",
     "meta.llama3-1-70b-instruct-v1:0",
-    "meta.llama3-2-1b-instruct-v1:0",
-    "meta.llama3-2-3b-instruct-v1:0",
     "meta.llama3-2-11b-instruct-v1:0",
     "meta.llama3-2-90b-instruct-v1:0",
     "meta.llama3-3-70b-instruct-v1:0",
+    "meta.llama4-maverick-17b-instruct-v1:0",
+    "meta.llama4-scout-17b-instruct-v1:0",
+    "openai.gpt-oss-120b-1:0",
+    "openai.gpt-oss-20b-1:0",
 )
 
 BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
+    "amazon.nova-premier-v1:0",
     "amazon.nova-pro-v1:0",
     "amazon.nova-lite-v1:0",
     "amazon.nova-micro-v1:0",
@@ -120,6 +130,8 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "meta.llama3-2-11b-instruct-v1:0",
     "meta.llama3-2-90b-instruct-v1:0",
     "meta.llama3-3-70b-instruct-v1:0",
+    "meta.llama4-maverick-17b-instruct-v1:0",
+    "meta.llama4-scout-17b-instruct-v1:0",
     "deepseek.r1-v1:0",
 )
 
@@ -211,6 +223,13 @@ def _content_block_to_bedrock_format(
         img_format = __get_img_format_from_image_mimetype(block.image_mimetype)
         raw_image_bytes = block.resolve_image(as_base64=False).read()
         return {"image": {"format": img_format, "source": {"bytes": raw_image_bytes}}}
+    elif isinstance(block, CachePoint):
+        if block.cache_control.type != "default":
+            logger.warning(
+                "The only allowed caching strategy for Bedrock Converse is 'default', falling back to that..."
+            )
+            block.cache_control.type = "default"
+        return {"cachePoint": {"type": block.cache_control.type}}
     elif isinstance(block, AudioBlock):
         logger.warning("Audio blocks are not supported in Bedrock Converse API.")
         return None
@@ -302,7 +321,11 @@ def messages_to_converse_messages(
             assert "name" in tool_call, f"`name` not found in {tool_call}"
             tool_input = tool_call["input"] if tool_call["input"] else {}
             if isinstance(tool_input, str):
-                tool_input = json.loads(tool_input)
+                try:
+                    tool_input = json.loads(tool_input or "{}")
+                except json.JSONDecodeError:
+                    tool_input = {}
+
             content.append(
                 {
                     "toolUse": {

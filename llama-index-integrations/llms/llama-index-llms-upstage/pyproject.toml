@@ -13,6 +13,7 @@ dev = [
     "pre-commit==3.2.0",
     "pylint==2.15.10",
     "pytest==7.2.1",
+    "pytest-asyncio>=0.23.8",
     "pytest-cov>=6.1.1",
     "pytest-mock==3.11.1",
     "ruff==0.11.11",
@@ -26,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-upstage"
-version = "0.4.1"
+version = "0.6.2"
 description = "llama-index llms upstage integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -35,9 +36,9 @@ license = "AGPL-3.0"
 dependencies = [
     "openai>=1.21.2,<2",
     "tokenizers>=0.19.1,<0.20",
-    "llama-index-core>=0.12.0,<0.13",
-    "llama-index-llms-openai>=0.4.0,<0.5",
-    "llama-index-readers-upstage>=0.3.0,<0.4",
+    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-llms-openai>=0.5.0,<0.6",
+    "llama-index-readers-upstage>=0.4.0,<0.5",
 ]
 
 [tool.codespell]

@@ -129,10 +129,10 @@ class BGEM3Index(BaseIndex[IndexDict]):
 
         self._storage_context.persist(persist_dir=persist_dir)
         # Save _multi_embed_store
-        pickle.dump(
-            self._multi_embed_store,
-            open(Path(persist_dir) / "multi_embed_store.pkl", "wb"),
-        )
+        # Use pickle protocol 4 which supports large objects better
+        with open(Path(persist_dir) / "multi_embed_store.pkl", "wb") as f:
+            pickler = pickle.Pickler(f, protocol=pickle.HIGHEST_PROTOCOL)
+            pickler.dump(self._multi_embed_store)
 
     @classmethod
     def load_from_disk(

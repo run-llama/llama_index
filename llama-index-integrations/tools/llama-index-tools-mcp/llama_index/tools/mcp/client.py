@@ -1,4 +1,7 @@
 import warnings
+import logging
+import io
+
 from contextlib import asynccontextmanager
 from datetime import timedelta
 from typing import (
@@ -23,6 +26,27 @@ from mcp import types
 
 
 from llama_index.core.llms import ChatMessage, TextBlock, ImageBlock
+
+
+class StreamingHandler(logging.Handler):
+    def __init__(
+        self, callback: Callable, events: Optional[List[types.TextContent]]
+    ) -> None:
+        super().__init__()
+        self.callback = callback
+        self.events = events
+
+    def emit(self, record) -> None:
+        log_entry = self.format(record)
+        self.callback(message=log_entry, events=self.events)  # Stream the message
+
+
+def streaming_handler_callback(
+    message: str, events: Optional[List[types.TextContent]]
+) -> None:
+    if not events:
+        return
+    events.append(types.TextContent(type="text", text=message))
 
 
 def enable_sse(command_or_url: str) -> bool:
@@ -84,6 +108,7 @@ class BasicMCPClient(ClientSession):
         auth: Optional OAuth client provider for authentication.
         sampling_callback: Optional callback for handling sampling messages.
         headers: Optional headers to pass by sse client or streamable http client
+        tool_call_logs_callback: Async function to store the logs deriving from an MCP tool call: logs are provided as a list of strings, representing log messages. Defaults to None.
 
     """
 
@@ -100,6 +125,7 @@ class BasicMCPClient(ClientSession):
             ]
         ] = None,
         headers: Optional[Dict[str, Any]] = None,
+        tool_call_logs_callback: Optional[Callable[[List[str]], Awaitable[Any]]] = None,
     ):
         self.command_or_url = command_or_url
         self.args = args or []
@@ -108,6 +134,7 @@ class BasicMCPClient(ClientSession):
         self.auth = auth
         self.sampling_callback = sampling_callback
         self.headers = headers
+        self.tool_call_logs_callback = tool_call_logs_callback
 
     @classmethod
     def with_oauth(
@@ -121,6 +148,7 @@ class BasicMCPClient(ClientSession):
         env: Optional[Dict[str, str]] = None,
         timeout: int = 30,
         token_storage: Optional[TokenStorage] = None,
+        tool_call_logs_callback: Optional[Callable[[List[str]], Awaitable[Any]]] = None,
     ) -> "BasicMCPClient":
         """
         Create a client with OAuth authentication.
@@ -136,6 +164,7 @@ class BasicMCPClient(ClientSession):
             args: The arguments to pass to StdioServerParameters.
             env: The environment variables to set for StdioServerParameters.
             timeout: The timeout for the command in seconds.
+            tool_call_logs_callback: Async function to store the logs deriving from an MCP tool call: logs are provided as a list of strings, representing log messages. Defaults to None.
 
         Returns:
             An authenticated MCP client
@@ -162,7 +191,14 @@ class BasicMCPClient(ClientSession):
             storage=token_storage,
         )
 
-        return cls(command_or_url, auth=oauth_auth, args=args, env=env, timeout=timeout)
+        return cls(
+            command_or_url,
+            auth=oauth_auth,
+            args=args,
+            env=env,
+            timeout=timeout,
+            tool_call_logs_callback=tool_call_logs_callback,
+        )
 
     @asynccontextmanager
     async def _run_session(self) -> AsyncIterator[ClientSession]:
@@ -211,6 +247,28 @@ class BasicMCPClient(ClientSession):
                     await session.initialize()
                     yield session
 
+    def _configure_tool_call_logs_callback(self) -> io.StringIO:
+        handler = io.StringIO()
+        stream_handler = logging.StreamHandler(handler)
+
+        # Configure logging to capture all events
+        logging.basicConfig(
+            level=logging.DEBUG,  # Capture all log levels
+            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s\n",
+            handlers=[
+                stream_handler,
+            ],
+        )
+        # Also enable logging for specific FastMCP components
+        fastmcp_logger = logging.getLogger("fastmcp")
+        fastmcp_logger.setLevel(logging.DEBUG)
+
+        # Enable HTTP transport logging to see network details
+        http_logger = logging.getLogger("httpx")
+        http_logger.setLevel(logging.DEBUG)
+
+        return handler
+
     # Tool methods
     async def call_tool(
         self,
@@ -219,10 +277,27 @@ class BasicMCPClient(ClientSession):
         progress_callback: Optional[ProgressFnT] = None,
     ) -> types.CallToolResult:
         """Call a tool on the MCP server."""
-        async with self._run_session() as session:
-            return await session.call_tool(
-                tool_name, arguments=arguments, progress_callback=progress_callback
-            )
+        if self.tool_call_logs_callback is not None:
+            # we use a string stream so that we can recover all logs at the end of the session
+            handler = self._configure_tool_call_logs_callback()
+
+            async with self._run_session() as session:
+                result = await session.call_tool(
+                    tool_name, arguments=arguments, progress_callback=progress_callback
+                )
+
+                # get all logs by dividing the string with \n, since the format of the log has an \n at the end of the log message
+                extra_values = handler.getvalue().split("\n")
+
+                # pipe the logs list into tool_call_logs_callback
+                await self.tool_call_logs_callback(extra_values)
+
+                return result
+        else:
+            async with self._run_session() as session:
+                return await session.call_tool(
+                    tool_name, arguments=arguments, progress_callback=progress_callback
+                )
 
     async def list_tools(self) -> types.ListToolsResult:
         """List all available tools on the MCP server."""
@@ -234,6 +309,11 @@ class BasicMCPClient(ClientSession):
         """List all available resources on the MCP server."""
         async with self._run_session() as session:
             return await session.list_resources()
+
+    async def list_resource_templates(self) -> types.ListToolsRequest:
+        """List all dynamic available resources on the MCP server."""
+        async with self._run_session() as session:
+            return await session.list_resource_templates()
 
     async def read_resource(self, resource_name: str) -> types.ReadResourceResult:
         """

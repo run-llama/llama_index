@@ -66,7 +66,8 @@ class TokenCounter:
                 tokens += 3  # Additional tokens for function call
 
             if "tool_calls" in additional_kwargs:
-                for tool_call in additional_kwargs["tool_calls"]:
+                tool_calls = additional_kwargs.get("tool_calls", []) or []
+                for tool_call in tool_calls:
                     if (
                         hasattr(tool_call, "function")
                         and tool_call.function is not None

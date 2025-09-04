@@ -1,4 +1,4 @@
-::: llama_index.core.workflow.decorators
+::: workflows.decorators
     options:
       members:
         - step

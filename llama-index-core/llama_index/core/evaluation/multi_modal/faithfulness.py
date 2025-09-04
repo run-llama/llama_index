@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, List, Optional, Sequence, Union
 
 from llama_index.core.evaluation.base import BaseEvaluator, EvaluationResult
-from llama_index.core.multi_modal_llms.base import MultiModalLLM
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
+from llama_index.core.llms import ImageBlock, LLM, TextBlock, ChatMessage
 from llama_index.core.prompts.mixin import PromptDictType
-from llama_index.core.schema import ImageNode
 
 DEFAULT_EVAL_TEMPLATE = PromptTemplate(
     "Please tell if a given piece of information "
@@ -66,8 +66,8 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
     This evaluator only considers the response string and the list of context strings.
 
     Args:
-        multi_modal_llm(Optional[MultiModalLLM]):
-            The Multi-Modal LLM Judge to use for evaluations.
+        multi_modal_llm(Optional[LLM]):
+            The LLM Judge to use for evaluations.
         raise_error(bool): Whether to raise an error when the response is invalid.
             Defaults to False.
         eval_template(Optional[Union[str, BasePromptTemplate]]):
@@ -79,7 +79,7 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
 
     def __init__(
         self,
-        multi_modal_llm: Optional[MultiModalLLM] = None,
+        multi_modal_llm: Optional[LLM] = None,
         raise_error: bool = False,
         eval_template: Union[str, BasePromptTemplate, None] = None,
         refine_template: Union[str, BasePromptTemplate, None] = None,
@@ -87,17 +87,17 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
         """Init params."""
         if multi_modal_llm is None:
             try:
-                from llama_index.multi_modal_llms.openai import (
-                    OpenAIMultiModal,
+                from llama_index.llms.openai import (
+                    OpenAIResponses,
                 )  # pants: no-infer-dep
             except ImportError:
                 raise ImportError(
-                    "OpenAIMultiModal is not installed. "
+                    "llama-index-llms-openai is not installed. "
                     "Please install it using `pip install llama-index-multi-modal-llms-openai`"
                 )
 
-            self._multi_modal_llm: MultiModalLLM = OpenAIMultiModal(
-                model="gpt-4-vision-preview", max_new_tokens=1000
+            self._multi_modal_llm: LLM = OpenAIResponses(
+                model="gpt-4.1", max_output_tokens=1000
             )
         else:
             self._multi_modal_llm = multi_modal_llm
@@ -150,19 +150,22 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
             context_str=context_str, query_str=response
         )
 
-        if image_paths:
-            image_nodes = [
-                ImageNode(image_path=image_path) for image_path in image_paths
-            ]
-        if image_urls:
-            image_nodes = [ImageNode(image_url=image_url) for image_url in image_urls]
+        image_nodes: List[Union[ImageBlock, TextBlock]] = []
 
-        response_obj = self._multi_modal_llm.complete(
-            prompt=fmt_prompt,
-            image_documents=image_nodes,
+        if image_paths:
+            image_nodes.extend(
+                [ImageBlock(path=Path(image_path)) for image_path in image_paths]
+            )
+        if image_urls:
+            image_nodes.extend([ImageBlock(url=image_url) for image_url in image_urls])
+
+        image_nodes.append(TextBlock(text=fmt_prompt))
+
+        response_obj = self._multi_modal_llm.chat(
+            messages=[ChatMessage(role="user", blocks=image_nodes)],
         )
 
-        raw_response_txt = str(response_obj)
+        raw_response_txt: str = response_obj.message.content or ""
 
         if "yes" in raw_response_txt.lower():
             passing = True
@@ -199,19 +202,22 @@ class MultiModalFaithfulnessEvaluator(BaseEvaluator):
             context_str=context_str, query_str=response
         )
 
-        if image_paths:
-            image_nodes = [
-                ImageNode(image_path=image_path) for image_path in image_paths
-            ]
-        if image_urls:
-            image_nodes = [ImageNode(image_url=image_url) for image_url in image_urls]
+        blocks: List[Union[ImageBlock, TextBlock]] = []
 
-        response_obj = await self._multi_modal_llm.acomplete(
-            prompt=fmt_prompt,
-            image_documents=image_nodes,
+        if image_paths:
+            blocks.extend(
+                [ImageBlock(path=Path(image_path)) for image_path in image_paths]
+            )
+        if image_urls:
+            blocks.extend([ImageBlock(url=image_url) for image_url in image_urls])
+
+        blocks.append(TextBlock(text=fmt_prompt))
+
+        response_obj = await self._multi_modal_llm.achat(
+            messages=[ChatMessage(role="user", blocks=blocks)],
         )
 
-        raw_response_txt = str(response_obj)
+        raw_response_txt: str = response_obj.message.content or ""
 
         if "yes" in raw_response_txt.lower():
             passing = True

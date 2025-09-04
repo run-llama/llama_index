@@ -11,6 +11,7 @@ from llama_cloud import (
     ProjectCreate,
     CompositeRetrievalMode,
     LlamaParseParameters,
+    ReRankConfig,
 )
 from llama_cloud.client import LlamaCloud
 from llama_index.core.bridge.pydantic import BaseModel
@@ -21,11 +22,9 @@ from llama_index.indices.managed.llama_cloud import (
     LlamaCloudIndex,
     LlamaCloudCompositeRetriever,
 )
-from llama_index.embeddings.openai import OpenAIEmbedding
 
 base_url = os.environ.get("LLAMA_CLOUD_BASE_URL", DEFAULT_BASE_URL)
 api_key = os.environ.get("LLAMA_CLOUD_API_KEY", None)
-openai_api_key = os.environ.get("OPENAI_API_KEY", None)
 organization_id = os.environ.get("LLAMA_CLOUD_ORGANIZATION_ID", None)
 project_name = os.environ.get("LLAMA_CLOUD_PROJECT_NAME", "framework_integration_test")
 
@@ -55,6 +54,12 @@ def local_file() -> str:
     return os.path.join(os.path.dirname(__file__), "data", file_name)
 
 
+@pytest.fixture()
+def local_figures_file() -> str:
+    file_name = "image_figure_slides.pdf"
+    return os.path.join(os.path.dirname(__file__), "data", file_name)
+
+
 def _setup_index_with_file(
     client: LlamaCloud, index_name: str, remote_file: Tuple[str, str]
 ) -> LlamaCloudIndex:
@@ -67,7 +72,6 @@ def _setup_index_with_file(
     # create pipeline
     pipeline_create = PipelineCreate(
         name=index_name,
-        embedding_config={"type": "OPENAI_EMBEDDING", "component": OpenAIEmbedding()},
         transform_config=AutoTransformConfig(),
     )
     pipeline = client.pipelines.upsert_pipeline(
@@ -102,7 +106,6 @@ def test_conflicting_index_identifiers():
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 def test_resolve_index_with_id(remote_file: Tuple[str, str], index_name: str):
     """Test that we can instantiate an index with a given id."""
     client = LlamaCloud(token=api_key, base_url=base_url)
@@ -125,7 +128,6 @@ def test_resolve_index_with_id(remote_file: Tuple[str, str], index_name: str):
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 def test_resolve_index_with_name(remote_file: Tuple[str, str], index_name: str):
     """Test that we can instantiate an index with a given name."""
     client = LlamaCloud(token=api_key, base_url=base_url)
@@ -150,7 +152,6 @@ def test_resolve_index_with_name(remote_file: Tuple[str, str], index_name: str):
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 def test_upload_file(index_name: str):
     index = LlamaCloudIndex.create_index(
         name=index_name,
@@ -185,7 +186,6 @@ def test_upload_file(index_name: str):
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 def test_upload_file_from_url(remote_file: Tuple[str, str], index_name: str):
     index = LlamaCloudIndex.create_index(
         name=index_name,
@@ -212,7 +212,6 @@ def test_upload_file_from_url(remote_file: Tuple[str, str], index_name: str):
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 def test_index_from_documents(index_name: str):
     documents = [
         Document(text="Hello world.", doc_id="1", metadata={"source": "test"}),
@@ -275,9 +274,9 @@ def test_index_from_documents(index_name: str):
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
-def test_image_retrieval(index_name: str, local_file: str):
-    index = LlamaCloudIndex.create_index(
+@pytest.mark.asyncio
+async def test_page_screenshot_retrieval(index_name: str, local_file: str):
+    index = await LlamaCloudIndex.acreate_index(
         name=index_name,
         project_name=project_name,
         organization_id=organization_id,
@@ -290,7 +289,7 @@ def test_image_retrieval(index_name: str, local_file: str):
 
     file_id = index.upload_file(local_file, wait_for_ingestion=True)
 
-    retriever = index.as_retriever(retrieve_image_nodes=True)
+    retriever = index.as_retriever(retrieve_page_screenshot_nodes=True)
     nodes = retriever.retrieve("1")
     assert len(nodes) > 0
 
@@ -299,14 +298,73 @@ def test_image_retrieval(index_name: str, local_file: str):
     assert all(n.metadata["file_id"] == file_id for n in image_nodes)
     assert all(n.metadata["page_index"] >= 0 for n in image_nodes)
     # ensure metadata is added from the image node
-    assert all(n.metadata["file_name"] == local_file for n in image_nodes)
+    # local_figures_file has the full absolute path, so just check the file name is in that absolute path
+    assert all(local_file.endswith(n.metadata["file_name"]) for n in image_nodes)
+
+    nodes = await retriever.aretrieve("1")
+    assert len(nodes) > 0
+
+    image_nodes = [n.node for n in nodes if isinstance(n.node, ImageNode)]
+    assert len(image_nodes) > 0
+    assert all(n.metadata["file_id"] == file_id for n in image_nodes)
+    assert all(n.metadata["page_index"] >= 0 for n in image_nodes)
+    # ensure metadata is added from the image node
+    # local_figures_file has the full absolute path, so just check the file name is in that absolute path
+    assert all(local_file.endswith(n.metadata["file_name"]) for n in image_nodes)
 
 
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
-def test_composite_retriever(index_name: str):
+@pytest.mark.asyncio
+async def test_page_figure_retrieval(index_name: str, local_figures_file: str):
+    index = await LlamaCloudIndex.acreate_index(
+        name=index_name,
+        project_name=project_name,
+        organization_id=organization_id,
+        api_key=api_key,
+        base_url=base_url,
+        llama_parse_parameters=LlamaParseParameters(
+            take_screenshot=True,
+            extract_layout=True,
+        ),
+    )
+
+    file_id = index.upload_file(local_figures_file, wait_for_ingestion=True)
+
+    retriever = index.as_retriever(retrieve_page_figure_nodes=True)
+    nodes = retriever.retrieve("1")
+    assert len(nodes) > 0
+
+    image_nodes = [n.node for n in nodes if isinstance(n.node, ImageNode)]
+    assert len(image_nodes) > 0
+    assert all(n.metadata["file_id"] == file_id for n in image_nodes)
+    assert all(n.metadata["page_index"] >= 0 for n in image_nodes)
+    # ensure metadata is added from the image node
+    # local_figures_file has the full absolute path, so just check the file name is in that absolute path
+    assert all(
+        local_figures_file.endswith(n.metadata["file_name"]) for n in image_nodes
+    )
+
+    nodes = await retriever.aretrieve("1")
+    assert len(nodes) > 0
+
+    image_nodes = [n.node for n in nodes if isinstance(n.node, ImageNode)]
+    assert len(image_nodes) > 0
+    assert all(n.metadata["file_id"] == file_id for n in image_nodes)
+    assert all(n.metadata["page_index"] >= 0 for n in image_nodes)
+    # ensure metadata is added from the image node
+    # local_figures_file has the full absolute path, so just check the file name is in that absolute path
+    assert all(
+        local_figures_file.endswith(n.metadata["file_name"]) for n in image_nodes
+    )
+
+
+@pytest.mark.skipif(
+    not base_url or not api_key, reason="No platform base url or api key set"
+)
+@pytest.mark.asyncio
+async def test_composite_retriever(index_name: str):
     """Test the LlamaCloudCompositeRetriever with multiple indices."""
     # Create first index with documents
     documents1 = [
@@ -349,6 +407,9 @@ def test_composite_retriever(index_name: str):
         create_if_not_exists=True,
         mode=CompositeRetrievalMode.FULL,
         rerank_top_n=5,
+        rerank_config=ReRankConfig(
+            top_n=5,
+        ),
     )
 
     # Attach indices to the composite retriever
@@ -363,11 +424,60 @@ def test_composite_retriever(index_name: str):
     assert any(n.node.metadata["pipeline_id"] == index1.id for n in nodes)
     assert any(n.node.metadata["pipeline_id"] == index1.id for n in nodes)
 
+    # Test additional rerank_top_n configurations to cover the injection logic
+
+    # Test retriever with only rerank_top_n=1 (no existing rerank_config)
+    retriever_with_rerank_top_n = LlamaCloudCompositeRetriever(
+        name="composite_retriever_test_2",
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+        create_if_not_exists=True,
+        mode=CompositeRetrievalMode.FULL,
+        rerank_top_n=1,
+    )
+    retriever_with_rerank_top_n.add_index(index1)
+    retriever_with_rerank_top_n.add_index(index2)
+    nodes = retriever_with_rerank_top_n.retrieve("Hello world.")
+    assert len(nodes) <= 1  # Should be limited to 1 result by rerank_top_n
+
+    # Test retriever with both rerank_top_n and custom rerank_config
+    custom_config = ReRankConfig(top_n=10, model="test-model")
+    retriever_with_both = LlamaCloudCompositeRetriever(
+        name="composite_retriever_test_3",
+        project_name=project_name,
+        api_key=api_key,
+        base_url=base_url,
+        create_if_not_exists=True,
+        mode=CompositeRetrievalMode.FULL,
+        rerank_top_n=2,
+        rerank_config=custom_config,
+    )
+    retriever_with_both.add_index(index1)
+    retriever_with_both.add_index(index2)
+    nodes = retriever_with_both.retrieve("Hello world.")
+    assert len(nodes) >= 2  # Should have results from both indices
+
+    # Retrieve nodes using the composite retriever
+    nodes = await retriever.aretrieve("Hello world.")
+
+    # Assertions to verify the retrieval
+    assert len(nodes) >= 2
+    assert any(n.node.metadata["pipeline_id"] == index1.id for n in nodes)
+    assert any(n.node.metadata["pipeline_id"] == index1.id for n in nodes)
+
+    # Test async retrieve with the rerank_top_n only retriever
+    nodes = await retriever_with_rerank_top_n.aretrieve("Hello world.")
+    assert len(nodes) >= 1
+
+    # Test async retrieve with the both rerank_top_n and rerank_config retriever
+    nodes = await retriever_with_both.aretrieve("Hello world.")
+    assert len(nodes) >= 2
+
 
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 @pytest.mark.asyncio
 async def test_async_index_from_documents(index_name: str):
     documents = [
@@ -388,7 +498,6 @@ async def test_async_index_from_documents(index_name: str):
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 @pytest.mark.asyncio
 async def test_async_upload_file_from_url(
     remote_file: Tuple[str, str], index_name: str
@@ -412,7 +521,6 @@ async def test_async_upload_file_from_url(
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
 @pytest.mark.asyncio
 async def test_async_index_from_file(index_name: str, local_file: str):
     index = await LlamaCloudIndex.acreate_index(
@@ -435,11 +543,11 @@ class DummySchema(BaseModel):
 @pytest.mark.skipif(
     not base_url or not api_key, reason="No platform base url or api key set"
 )
-@pytest.mark.skipif(not openai_api_key, reason="No openai api key set")
-def test_search_filters_inference_schema(index_name: str):
+@pytest.mark.asyncio
+async def test_search_filters_inference_schema(index_name: str):
     """Test the use of search_filters_inference_schema in retrieval."""
     # Define a dummy schema
-    schema = DummySchema(field="test")
+    schema = DummySchema(source="test")
 
     # Create documents
     documents = [
@@ -460,6 +568,15 @@ def test_search_filters_inference_schema(index_name: str):
     # Use the retriever with the schema
     retriever = index.as_retriever(search_filters_inference_schema=schema)
     nodes = retriever.retrieve(
+        'Search for documents where the metadata has source="test"'
+    )
+
+    # Verify that nodes are retrieved
+    assert len(nodes) > 0
+    assert all(n.node.ref_doc_id == "1" for n in nodes)
+    assert all(n.node.metadata["source"] == "test" for n in nodes)
+
+    nodes = await retriever.aretrieve(
         'Search for documents where the metadata has source="test"'
     )
 

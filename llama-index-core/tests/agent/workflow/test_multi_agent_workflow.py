@@ -379,7 +379,7 @@ async def test_workflow_with_state():
     response = await handler
     assert response is not None
 
-    state = await handler.ctx.get("state")
+    state = await handler.ctx.store.get("state")
     assert state["counter"] == 1
 
 
@@ -439,3 +439,97 @@ async def test_agent_with_hitl():
 
     assert response is not None
     assert "HITL successful" in str(response)
+
+
+@pytest.mark.asyncio
+async def test_max_iterations():
+    """Test max iterations."""
+
+    def random_tool() -> str:
+        return "random"
+
+    agent = FunctionAgent(
+        name="agent",
+        description="test",
+        tools=[random_tool],
+        llm=MockLLM(
+            responses=[
+                ChatMessage(
+                    role=MessageRole.ASSISTANT,
+                    content="handing off",
+                    additional_kwargs={
+                        "tool_calls": [
+                            ToolSelection(
+                                tool_id="one",
+                                tool_name="random_tool",
+                                tool_kwargs={},
+                            )
+                        ]
+                    },
+                ),
+            ]
+            * 100
+        ),
+    )
+
+    workflow = AgentWorkflow(
+        agents=[agent],
+    )
+
+    # Default max iterations is 20
+    with pytest.raises(WorkflowRuntimeError, match="Either something went wrong"):
+        _ = await workflow.run(user_msg="test")
+
+    # Set max iterations to 101 to avoid error
+    _ = workflow.run(user_msg="test", max_iterations=101)
+
+
+@pytest.mark.asyncio
+async def test_retry():
+    """Test retry."""
+
+    def add_tool(a: int, b: int) -> int:
+        return a + b
+
+    agent = ReActAgent(
+        name="agent",
+        description="test",
+        tools=[add_tool],
+        llm=MockLLM(
+            responses=[
+                ChatMessage(
+                    role=MessageRole.ASSISTANT,
+                    content='Thought: I need to add these numbers\nAction: add\n{"a": 5 "b": 3}\n',
+                ),
+                ChatMessage(
+                    role=MessageRole.ASSISTANT,
+                    content='Thought: I need to add these numbers\nAction: add\nAction Input: {"a": 5, "b": 3}\n',
+                ),
+                ChatMessage(
+                    role=MessageRole.ASSISTANT,
+                    content=r"Thought: The result is 8\Answer: The sum is 8",
+                ),
+            ]
+        ),
+    )
+
+    workflow = AgentWorkflow(
+        agents=[agent],
+    )
+
+    memory = ChatMemoryBuffer.from_defaults()
+    handler = workflow.run(user_msg="Can you add 5 and 3?", memory=memory)
+
+    events = []
+    contains_error_message = False
+    async for event in handler.stream_events():
+        events.append(event)
+        if isinstance(event, AgentInput):
+            if "Error while parsing the output" in event.input[-1].content:
+                contains_error_message = True
+
+    assert contains_error_message
+
+    response = await handler
+
+    assert "8" in str(response.response)

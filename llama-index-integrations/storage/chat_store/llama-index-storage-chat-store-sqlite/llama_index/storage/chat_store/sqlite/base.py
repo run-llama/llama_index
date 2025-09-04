@@ -1,59 +1,128 @@
-from typing import Any, Optional
+from typing import Optional
 from urllib.parse import urlparse
 
+import sqlalchemy
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store.base import BaseChatStore
-from sqlalchemy import (
-    JSON,
-    Integer,
-    String,
-    create_engine,
-    delete,
-    insert,
-    select,
-)
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import (
-    DeclarativeBase,
-    Mapped,
-    declarative_base,
-    mapped_column,
-    sessionmaker,
-)
+from packaging import version
 
+SQLALCHEMY_VERSION = version.parse(sqlalchemy.__version__).release
+SQLALCHEMY_1_4_0_PLUS = (1, 4, 0) <= SQLALCHEMY_VERSION < (2, 0, 0)
+SQLALCHEMY_2_0_0_PLUS = SQLALCHEMY_VERSION >= (2, 0, 0)
 
-def get_data_model(
-    base: type[DeclarativeBase],
-    index_name: str,
-) -> Any:
-    """
-    This part create a dynamic sqlalchemy model with a new table.
-    """
-    class_name = f"Data{index_name}"  # dynamic class name
+if SQLALCHEMY_1_4_0_PLUS:
+    from sqlalchemy.engine.create import create_engine
+    from sqlalchemy.ext.asyncio.engine import create_async_engine
+    from sqlalchemy.ext.asyncio.session import AsyncSession
+    from sqlalchemy.orm import DeclarativeMeta as DeclarativeBase
+    from sqlalchemy.orm import declarative_base
+    from sqlalchemy.orm.session import sessionmaker
+    from sqlalchemy.orm.session import sessionmaker as async_sessionmaker
+    from sqlalchemy.sql.expression import delete, insert, select
+    from sqlalchemy.sql.schema import Column, Table
+    from sqlalchemy.types import JSON, Integer, String
 
-    class AbstractData(base):  # type: ignore
-        __tablename__ = f"data_{index_name}"  # dynamic table name
-        __abstract__ = True  # this line is necessary
-
-        id: Mapped[int] = mapped_column(
-            Integer(),
-            primary_key=True,
-            autoincrement=True,
-            index=True,
-        )  # Add primary key
-        key: Mapped[str] = mapped_column(
-            String(),
-            nullable=False,
-            index=True,
-        )
-        value: Mapped[str] = mapped_column(JSON())
-
-    return type(
-        class_name,
-        (AbstractData,),
-        {},
+elif SQLALCHEMY_2_0_0_PLUS:
+    from sqlalchemy import (
+        JSON,
+        Column,
+        Integer,
+        String,
+        Table,
+        create_engine,
+        delete,
+        insert,
+        select,
     )
+    from sqlalchemy.ext.asyncio import (
+        AsyncSession,
+        async_sessionmaker,
+        create_async_engine,
+    )
+    from sqlalchemy.orm import DeclarativeBase, declarative_base, sessionmaker
+
+else:
+    raise ImportError(f"Unsupported version of sqlalchemy: {SQLALCHEMY_VERSION}")
+
+
+class TableProtocol(Table):
+    """A table protocol class for typing."""
+
+    id: Column
+    key: Column  # type: ignore
+    value: Column
+
+
+if SQLALCHEMY_1_4_0_PLUS:
+
+    def get_data_model(
+        base: DeclarativeBase,
+        index_name: str,
+    ) -> TableProtocol:
+        """
+        This part create a dynamic sqlalchemy model with a new table.
+        """
+        class_name = f"Data{index_name}"  # dynamic class name
+
+        class AbstractData(base):  # type: ignore
+            __tablename__ = f"data_{index_name}"  # dynamic table name
+            __abstract__ = True  # this line is necessary
+
+            id = Column(
+                Integer(),
+                primary_key=True,
+                autoincrement=True,
+                index=True,
+            )  # Add primary key
+            key = Column(
+                String(),
+                nullable=False,
+                index=True,
+            )
+            value = Column(JSON())
+
+        return type(
+            class_name,
+            (AbstractData,),
+            {},
+        )  # type: ignore
+
+
+elif SQLALCHEMY_2_0_0_PLUS:
+    from sqlalchemy.orm import Mapped, mapped_column
+
+    def get_data_model(
+        base: DeclarativeBase,
+        index_name: str,
+    ) -> TableProtocol:
+        """
+        This part create a dynamic sqlalchemy model with a new table.
+        """
+        class_name = f"Data{index_name}"  # dynamic class name
+
+        class AbstractData(base):  # type: ignore
+            __tablename__ = f"data_{index_name}"  # dynamic table name
+            __abstract__ = True  # this line is necessary
+
+            id: Mapped[int] = mapped_column(
+                Integer(),
+                primary_key=True,
+                autoincrement=True,
+                index=True,
+            )  # Add primary key
+            key: Mapped[str] = mapped_column(
+                String(),
+                nullable=False,
+                index=True,
+            )
+            value: Mapped[str] = mapped_column(JSON())
+
+        return type(
+            class_name,
+            (AbstractData,),
+            {},
+        )  # type: ignore
 
 
 class SQLiteChatStore(BaseChatStore):
@@ -61,14 +130,14 @@ class SQLiteChatStore(BaseChatStore):
         default="chatstore", description="SQLite table name."
     )
 
-    _table_class: Optional[Any] = PrivateAttr()
-    _session: Optional[sessionmaker] = PrivateAttr()
-    _async_session: Optional[sessionmaker] = PrivateAttr()
+    _table_class: TableProtocol = PrivateAttr()  # type: ignore
+    _session: sessionmaker = PrivateAttr()  # type: ignore
+    _async_session: async_sessionmaker = PrivateAttr()  # type: ignore
 
     def __init__(
         self,
         session: sessionmaker,
-        async_session: sessionmaker,
+        async_session: async_sessionmaker,
         table_name: str,
     ):
         super().__init__(
@@ -122,12 +191,12 @@ class SQLiteChatStore(BaseChatStore):
     @classmethod
     def _connect(
         cls, connection_string: str, async_connection_string: str, debug: bool
-    ) -> tuple[sessionmaker, sessionmaker]:
+    ) -> tuple[sessionmaker, async_sessionmaker]:
         _engine = create_engine(connection_string, echo=debug)
         session = sessionmaker(_engine)
 
         _async_engine = create_async_engine(async_connection_string)
-        async_session = sessionmaker(_async_engine, class_=AsyncSession)
+        async_session = async_sessionmaker(_async_engine, class_=AsyncSession)
         return session, async_session
 
     def _create_tables_if_not_exists(self, base) -> None:

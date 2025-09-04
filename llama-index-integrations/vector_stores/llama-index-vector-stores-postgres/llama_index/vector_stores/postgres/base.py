@@ -644,6 +644,10 @@ class PGVectorStore(BasePydanticVectorStore):
             return "ILIKE"
         elif operator == FilterOperator.IS_EMPTY:
             return "IS NULL"
+        elif operator == FilterOperator.ANY:
+            return "?|"
+        elif operator == FilterOperator.ALL:
+            return "?&"
         else:
             _logger.warning(f"Unknown operator: {operator}, fallback to '='")
             return "="
@@ -662,6 +666,17 @@ class PGVectorStore(BasePydanticVectorStore):
                 f"metadata_->>'{filter_.key}' "
                 f"{self._to_postgres_operator(filter_.operator)} "
                 f"({filter_value})"
+            )
+        elif filter_.operator in [FilterOperator.ANY, FilterOperator.ALL]:
+            # Expects a list stored in the metadata, and a single value to compare
+
+            # We apply same logic as above, but as an array
+            filter_value = ", ".join(f"'{e}'" for e in filter_.value)
+
+            return text(
+                f"metadata_::jsonb->'{filter_.key}' "
+                f"{self._to_postgres_operator(filter_.operator)} "
+                f"array[{filter_value}]"
             )
         elif filter_.operator == FilterOperator.CONTAINS:
             # Expects a list stored in the metadata, and a single value to compare
@@ -858,17 +873,18 @@ class PGVectorStore(BasePydanticVectorStore):
         if query_str is None:
             raise ValueError("query_str must be specified for a sparse vector query.")
 
-        # Replace '&' with '|' to perform an OR search for higher recall
+        # Remove special characters used by ts_query
+        query_str = re.sub(r"[&|!:*()'<>]", " ", query_str)
+
+        # Collapse multiple spaces
+        query_str = re.sub(r"\s+", " ", query_str).strip()
+
+        # Replace space with "|" to perform an OR search for higher recall
+        query_str = query_str.replace(" ", "|")
+
         ts_query = func.to_tsquery(
-            func.replace(
-                func.text(
-                    func.plainto_tsquery(
-                        type_coerce(self.text_search_config, REGCONFIG), query_str
-                    )
-                ),
-                "&",
-                "|",
-            )
+            type_coerce(self.text_search_config, REGCONFIG),
+            query_str,
         )
         stmt = (
             select(  # type: ignore
@@ -1054,7 +1070,7 @@ class PGVectorStore(BasePydanticVectorStore):
         self._initialize()
         with self._session() as session, session.begin():
             stmt = delete(self._table_class).where(
-                self._table_class.metadata_["doc_id"].astext == ref_doc_id
+                self._table_class.metadata_["ref_doc_id"].astext == ref_doc_id
             )
 
             session.execute(stmt)
@@ -1066,7 +1082,7 @@ class PGVectorStore(BasePydanticVectorStore):
         self._initialize()
         async with self._async_session() as session, session.begin():
             stmt = delete(self._table_class).where(
-                self._table_class.metadata_["doc_id"].astext == ref_doc_id
+                self._table_class.metadata_["ref_doc_id"].astext == ref_doc_id
             )
 
             await session.execute(stmt)

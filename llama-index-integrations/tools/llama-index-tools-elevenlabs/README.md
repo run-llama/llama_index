@@ -8,16 +8,17 @@ This tool has a more extensive example usage documented in a Jupyter notebook [h
 
 ```python
 from llama_index.tools.elevenlabs import ElevenLabsToolSpec
-from llama_index.agent.openai import OpenAIAgent
+from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.llms.openai import OpenAI
 
 speech_tool = ElevenLabsToolSpec(api_key="your-key")
 
-agent = OpenAIAgent.from_tools(
-    speech_tool.to_tool_list(),
-    verbose=True,
+agent = FunctionAgent(
+    tools=speech_tool.to_tool_list(),
+    llm=OpenAI(model="gpt-4.1"),
 )
 print(
-    agent.chat(
+    await agent.run(
         'Create speech from the following text "Hello world!" and output the file to "speech.wav"'
     )
 )

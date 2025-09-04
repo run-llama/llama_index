@@ -4,6 +4,9 @@ In real-world use, agents can take a long time to run. Providing feedback to the
 
 `AgentWorkflow` provides a set of pre-built events that you can use to stream output to the user. Let's take a look at how that's done.
 
+!!! tip
+    Some models might not support streaming LLM output. While streaming is enabled by default, if you encounter an error, you can always set `FunctionAgent(..., streaming=False)` to disable streaming.
+
 First, we're going to introduce a new tool that takes some time to execute. In this case we'll use a web search tool called [Tavily](https://llamahub.ai/l/tools/llama-index-tools-tavily-research), which is available in LlamaHub.
 
 ```bash

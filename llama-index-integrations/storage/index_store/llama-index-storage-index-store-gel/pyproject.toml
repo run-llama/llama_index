@@ -26,15 +26,15 @@ dev = [
 
 [project]
 name = "llama-index-storage-index-store-gel"
-version = "0.1.0"
+version = "0.2.0"
 description = "llama-index index_store gel integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-storage-kvstore-gel>=0.1.0,<0.2",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-storage-kvstore-gel>=0.2.0,<0.3",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

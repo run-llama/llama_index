@@ -16,7 +16,6 @@ from typing import (
     Type,
     Union,
     cast,
-    get_args,
     runtime_checkable,
 )
 
@@ -65,7 +64,6 @@ from llama_index.core.program.utils import FlexibleModel
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.openai.utils import (
     O1_MODELS,
-    OpenAIToolCall,
     create_retry_decorator,
     from_openai_completion_logprobs,
     from_openai_message,
@@ -77,8 +75,9 @@ from llama_index.llms.openai.utils import (
     resolve_tool_choice,
     to_openai_message_dicts,
     update_tool_calls,
+    is_json_schema_supported,
 )
-from openai import AsyncOpenAI, AzureOpenAI, AsyncAzureOpenAI
+from openai import AsyncOpenAI
 from openai import OpenAI as SyncOpenAI
 from openai.types.chat.chat_completion_chunk import (
     ChatCompletionChunk,
@@ -227,7 +226,7 @@ class OpenAI(FunctionCallingLLM):
         default=False,
         description="Whether to use strict mode for invoking tools/using schemas.",
     )
-    reasoning_effort: Optional[Literal["low", "medium", "high"]] = Field(
+    reasoning_effort: Optional[Literal["low", "medium", "high", "minimal"]] = Field(
         default=None,
         description="The effort to use for reasoning models.",
     )
@@ -533,10 +532,7 @@ class OpenAI(FunctionCallingLLM):
                 if len(response.choices) > 0:
                     delta = response.choices[0].delta
                 else:
-                    if isinstance(client, AzureOpenAI):
-                        continue
-                    else:
-                        delta = ChoiceDelta()
+                    delta = ChoiceDelta()
 
                 if delta is None:
                     continue
@@ -802,10 +798,7 @@ class OpenAI(FunctionCallingLLM):
                         continue
                     delta = response.choices[0].delta
                 else:
-                    if isinstance(aclient, AsyncAzureOpenAI):
-                        continue
-                    else:
-                        delta = ChoiceDelta()
+                    delta = ChoiceDelta()
                 first_chat_chunk = False
 
                 if delta is None:
@@ -979,10 +972,8 @@ class OpenAI(FunctionCallingLLM):
 
         tool_selections = []
         for tool_call in tool_calls:
-            if not isinstance(tool_call, get_args(OpenAIToolCall)):
-                raise ValueError("Invalid tool_call object")
             if tool_call.type != "function":
-                raise ValueError("Invalid tool type. Unsupported by OpenAI")
+                raise ValueError("Invalid tool type. Unsupported by OpenAI llm")
 
             # this should handle both complete and partial jsons
             try:
@@ -1000,6 +991,23 @@ class OpenAI(FunctionCallingLLM):
 
         return tool_selections
 
+    def _prepare_schema(
+        self, llm_kwargs: Optional[Dict[str, Any]], output_cls: Type[Model]
+    ) -> Dict[str, Any]:
+        from openai.resources.beta.chat.completions import _type_to_response_format
+
+        llm_kwargs = llm_kwargs or {}
+        llm_kwargs["response_format"] = _type_to_response_format(output_cls)
+        if "tool_choice" in llm_kwargs:
+            del llm_kwargs["tool_choice"]
+        return llm_kwargs
+
+    def _should_use_structure_outputs(self):
+        return (
+            self.pydantic_program_mode == PydanticProgramMode.DEFAULT
+            and is_json_schema_supported(self.model)
+        )
+
     @dispatcher.span
     def structured_predict(
         self,
@@ -1011,11 +1019,17 @@ class OpenAI(FunctionCallingLLM):
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
 
+        if self._should_use_structure_outputs():
+            messages = self._extend_messages(prompt.format_messages(**prompt_args))
+            llm_kwargs = self._prepare_schema(llm_kwargs, output_cls)
+            response = self.chat(messages, **llm_kwargs)
+            return output_cls.model_validate_json(str(response.message.content))
+
+        # when uses function calling to extract structured outputs
+        # here we force tool_choice to be required
         llm_kwargs["tool_choice"] = (
             "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
         )
-        # by default structured prediction uses function calling to extract structured outputs
-        # here we force tool_choice to be required
         return super().structured_predict(
             output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
         )
@@ -1031,14 +1045,90 @@ class OpenAI(FunctionCallingLLM):
         """Structured predict."""
         llm_kwargs = llm_kwargs or {}
 
+        if self._should_use_structure_outputs():
+            messages = self._extend_messages(prompt.format_messages(**prompt_args))
+            llm_kwargs = self._prepare_schema(llm_kwargs, output_cls)
+            response = await self.achat(messages, **llm_kwargs)
+            return output_cls.model_validate_json(str(response.message.content))
+
+        # when uses function calling to extract structured outputs
+        # here we force tool_choice to be required
         llm_kwargs["tool_choice"] = (
             "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
         )
-        # by default structured prediction uses function calling to extract structured outputs
-        # here we force tool_choice to be required
         return await super().astructured_predict(
             output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
         )
+
+    def _structured_stream_call(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Generator[
+        Union[Model, List[Model], "FlexibleModel", List["FlexibleModel"]], None, None
+    ]:
+        if self._should_use_structure_outputs():
+            from llama_index.core.program.streaming_utils import (
+                process_streaming_content_incremental,
+            )
+
+            messages = self._extend_messages(prompt.format_messages(**prompt_args))
+            llm_kwargs = self._prepare_schema(llm_kwargs, output_cls)
+            curr = None
+            for response in self.stream_chat(messages, **llm_kwargs):
+                curr = process_streaming_content_incremental(response, output_cls, curr)
+                yield curr
+        else:
+            llm_kwargs["tool_choice"] = (
+                "required"
+                if "tool_choice" not in llm_kwargs
+                else llm_kwargs["tool_choice"]
+            )
+            yield from super()._structured_stream_call(
+                output_cls, prompt, llm_kwargs, **prompt_args
+            )
+
+    async def _structured_astream_call(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> AsyncGenerator[
+        Union[Model, List[Model], "FlexibleModel", List["FlexibleModel"]], None
+    ]:
+        if self._should_use_structure_outputs():
+
+            async def gen(
+                llm_kwargs=llm_kwargs,
+            ) -> AsyncGenerator[
+                Union[Model, List[Model], FlexibleModel, List[FlexibleModel]], None
+            ]:
+                from llama_index.core.program.streaming_utils import (
+                    process_streaming_content_incremental,
+                )
+
+                messages = self._extend_messages(prompt.format_messages(**prompt_args))
+                llm_kwargs = self._prepare_schema(llm_kwargs, output_cls)
+                curr = None
+                async for response in await self.astream_chat(messages, **llm_kwargs):
+                    curr = process_streaming_content_incremental(
+                        response, output_cls, curr
+                    )
+                    yield curr
+
+            return gen()
+        else:
+            llm_kwargs["tool_choice"] = (
+                "required"
+                if "tool_choice" not in llm_kwargs
+                else llm_kwargs["tool_choice"]
+            )
+            return await super()._structured_astream_call(
+                output_cls, prompt, llm_kwargs, **prompt_args
+            )
 
     @dispatcher.span
     def stream_structured_predict(
@@ -1051,11 +1141,6 @@ class OpenAI(FunctionCallingLLM):
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
 
-        llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
-        )
-        # by default structured prediction uses function calling to extract structured outputs
-        # here we force tool_choice to be required
         return super().stream_structured_predict(
             output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
         )
@@ -1070,12 +1155,6 @@ class OpenAI(FunctionCallingLLM):
     ) -> AsyncGenerator[Union[Model, FlexibleModel], None]:
         """Stream structured predict."""
         llm_kwargs = llm_kwargs or {}
-
-        llm_kwargs["tool_choice"] = (
-            "required" if "tool_choice" not in llm_kwargs else llm_kwargs["tool_choice"]
-        )
-        # by default structured prediction uses function calling to extract structured outputs
-        # here we force tool_choice to be required
         return await super().astream_structured_predict(
             output_cls, prompt, llm_kwargs=llm_kwargs, **prompt_args
         )

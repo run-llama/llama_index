@@ -14,6 +14,7 @@ from functools import reduce
 from itertools import repeat
 from pathlib import Path, PurePosixPath
 from typing import (
+    Optional,
     Any,
     Callable,
     Generator,
@@ -233,7 +234,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
             to text. If not specified, use default from DEFAULT_FILE_READER_CLS.
         num_files_limit (Optional[int]): Maximum number of files to read.
             Default is None.
-        file_metadata (Optional[Callable[str, Dict]]): A function that takes
+        file_metadata (Optional[Callable[[str], Dict]]): A function that takes
             in a filename and returns a Dict of metadata for the Document.
             Default is None.
         raise_on_error (bool): Whether to raise an error if a file cannot be read.
@@ -247,19 +248,19 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
     def __init__(
         self,
-        input_dir: Path | str | None = None,
-        input_files: list | None = None,
-        exclude: list | None = None,
+        input_dir: Optional[Union[Path, str]] = None,
+        input_files: Optional[list] = None,
+        exclude: Optional[list] = None,
         exclude_hidden: bool = True,
         exclude_empty: bool = False,
         errors: str = "ignore",
         recursive: bool = False,
         encoding: str = "utf-8",
         filename_as_id: bool = False,
-        required_exts: list[str] | None = None,
-        file_extractor: dict[str, BaseReader] | None = None,
-        num_files_limit: int | None = None,
-        file_metadata: Callable[[str], dict] | None = None,
+        required_exts: Optional[list[str]] = None,
+        file_extractor: Optional[dict[str, BaseReader]] = None,
+        num_files_limit: Optional[int] = None,
+        file_metadata: Optional[Callable[[str], dict]] = None,
         raise_on_error: bool = False,
         fs: fsspec.AbstractFileSystem | None = None,
     ) -> None:
@@ -333,10 +334,21 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                         rejected_files.add(_Path(str(file)))
 
         file_refs: list[str] = []
-        if self.recursive:
-            file_refs = cast(list[str], self.fs.glob(str(input_dir) + "/**/*"))
-        else:
-            file_refs = cast(list[str], self.fs.glob(str(input_dir) + "/*"))
+        limit = (
+            self.num_files_limit
+            if self.num_files_limit is not None and self.num_files_limit > 0
+            else None
+        )
+        c = 0
+        depth = 1000 if self.recursive else 1
+        for root, _, files in self.fs.walk(
+            str(input_dir), topdown=True, maxdepth=depth
+        ):
+            for file in files:
+                c += 1
+                if limit and c > limit:
+                    break
+                file_refs.append(os.path.join(root, file))
 
         for _ref in file_refs:
             # Manually check if file is hidden or directory instead of
@@ -380,9 +392,6 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
 
         if len(new_input_files) == 0:
             raise ValueError(f"No files found in {input_dir}.")
-
-        if self.num_files_limit is not None and self.num_files_limit > 0:
-            new_input_files = new_input_files[0 : self.num_files_limit]
 
         # print total number of files added
         logger.debug(
@@ -527,28 +536,20 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         NOTE: necessarily as a static method for parallel processing.
 
         Args:
-            input_file (Path): _description_
-            file_metadata (Callable[[str], Dict]): _description_
-            file_extractor (Dict[str, BaseReader]): _description_
-            filename_as_id (bool, optional): _description_. Defaults to False.
-            encoding (str, optional): _description_. Defaults to "utf-8".
-            errors (str, optional): _description_. Defaults to "ignore".
-            fs (Optional[fsspec.AbstractFileSystem], optional): _description_. Defaults to None.
-
-        input_file (Path): File path to read
-        file_metadata ([Callable[str, Dict]]): A function that takes
-            in a filename and returns a Dict of metadata for the Document.
-        file_extractor (Dict[str, BaseReader]): A mapping of file
-            extension to a BaseReader class that specifies how to convert that file
-            to text.
-        filename_as_id (bool): Whether to use the filename as the document id.
-        encoding (str): Encoding of the files.
-            Default is utf-8.
-        errors (str): how encoding and decoding errors are to be handled,
-              see https://docs.python.org/3/library/functions.html#open
-        raise_on_error (bool): Whether to raise an error if a file cannot be read.
-        fs (Optional[fsspec.AbstractFileSystem]): File system to use. Defaults
-            to using the local file system. Can be changed to use any remote file system
+            input_file (Path): File path to read
+            file_metadata ([Callable[[str], Dict]]): A function that takes
+                in a filename and returns a Dict of metadata for the Document.
+            file_extractor (Dict[str, BaseReader]): A mapping of file
+                extension to a BaseReader class that specifies how to convert that file
+                to text.
+            filename_as_id (bool): Whether to use the filename as the document id.
+            encoding (str): Encoding of the files.
+                Default is utf-8.
+            errors (str): how encoding and decoding errors are to be handled,
+                see https://docs.python.org/3/library/functions.html#open
+            raise_on_error (bool): Whether to raise an error if a file cannot be read.
+            fs (Optional[fsspec.AbstractFileSystem]): File system to use. Defaults
+                to using the local file system. Can be changed to use any remote file system
 
         Returns:
             List[Document]: loaded documents

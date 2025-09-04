@@ -26,15 +26,15 @@ dev = [
 
 [project]
 name = "llama-index-multi-modal-llms-nebius"
-version = "0.4.0"
+version = "0.5.0"
 description = "llama-index multi-modal-llms nebius ai studio integration"
 authors = [{name = "Akim Tsvigun", email = "aktsvigun@nebius.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-multi-modal-llms-openai>=0.5.0,<0.6",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-embeddings-huggingface>=0.6.0,<0.7",
+    "llama-index-core>=0.13.0,<0.14",
 ]
 
 [tool.codespell]

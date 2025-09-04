@@ -29,6 +29,12 @@ Install all dependencies required for building docs (mainly `mkdocs` and its ext
 - [Install poetry](https://python-poetry.org/docs/#installation) - this will help you manage package dependencies
 - `poetry install` - this will install all dependencies needed for building docs
 
+To pull external docs:
+
+```
+poetry run python scripts/merge_external_docs.py
+```
+
 To build the docs and browse them locally run:
 
 ```
@@ -40,6 +46,18 @@ working on the "Examples" section of the documentation, you can run the same com
 
 ```
 poetry run serve --skip-notebooks
+```
+
+Another way to save build time is to skip generating the API reference:
+
+```
+poetry run serve --skip-reference
+```
+
+The two options can go together for a minimal build
+
+```
+poetry run serve --skip-notebooks --skip-reference
 ```
 
 > [!IMPORTANT]
