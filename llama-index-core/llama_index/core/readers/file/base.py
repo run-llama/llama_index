@@ -365,7 +365,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                     else:
                         rejected_files.add(_Path(str(file)))
 
-        file_refs: list[str] = []
+        file_refs: list[Union[Path, PurePosixPath]] = []
         limit = (
             self.num_files_limit
             if self.num_files_limit is not None and self.num_files_limit > 0
