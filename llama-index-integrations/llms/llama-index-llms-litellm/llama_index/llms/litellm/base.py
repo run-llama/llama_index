@@ -263,11 +263,14 @@ class LiteLLM(FunctionCallingLLM):
 
             # this should handle both complete and partial jsons
             try:
-                argument_dict = json.loads(arguments) if arguments else None
+                if arguments:  # If arguments is not empty/None
+                    argument_dict = json.loads(arguments)
+                else:  # If arguments is None or empty string
+                    argument_dict = {}
             except (ValueError, TypeError, JSONDecodeError):
-                argument_dict = None
+                argument_dict = {}
 
-            if tool_name and argument_dict is not None:
+            if tool_name:  # Only require tool_name, not arguments
                 tool_selections.append(
                     ToolSelection(
                         tool_id=tool_call.get("id") or str(uuid.uuid4()),
