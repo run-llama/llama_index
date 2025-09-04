@@ -693,6 +693,7 @@ nav:
           - ./examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
           - ./examples/vector_stores/PineconeIndexDemo.ipynb
           - ./examples/vector_stores/QdrantIndexDemo.ipynb
+          - ./examples/vector_stores/Qdrant_hybrid_rag_multitenant_sharding.ipynb
           - ./examples/vector_stores/Qdrant_metadata_filter.ipynb
           - ./examples/vector_stores/Qdrant_using_qdrant_filters.ipynb
           - ./examples/vector_stores/RedisIndexDemo.ipynb
@@ -1558,6 +1559,7 @@ nav:
               - ./api_reference/storage/chat_store/sqlite.md
               - ./api_reference/storage/chat_store/tablestore.md
               - ./api_reference/storage/chat_store/upstash.md
+              - ./api_reference/storage/chat_store/yugabytedb.md
           - Docstore:
               - ./api_reference/storage/docstore/azure.md
               - ./api_reference/storage/docstore/azurecosmosnosql.md
@@ -2505,6 +2507,7 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-heroku
             - ../llama-index-integrations/embeddings/llama-index-embeddings-baseten
             - ../llama-index-integrations/llms/llama-index-llms-baseten
+            - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-yugabytedb
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
