@@ -51,7 +51,6 @@ from llama_index.llms.litellm.utils import (
     validate_litellm_api_key,
     update_tool_calls,
 )
-import uuid
 
 DEFAULT_LITELLM_MODEL = "gpt-3.5-turbo"
 
