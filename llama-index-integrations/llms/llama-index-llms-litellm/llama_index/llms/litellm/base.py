@@ -1,4 +1,5 @@
 import json
+import uuid
 from json import JSONDecodeError
 from typing import (
     Any,
@@ -50,7 +51,6 @@ from llama_index.llms.litellm.utils import (
     validate_litellm_api_key,
     update_tool_calls,
 )
-
 
 DEFAULT_LITELLM_MODEL = "gpt-3.5-turbo"
 
@@ -256,21 +256,30 @@ class LiteLLM(FunctionCallingLLM):
         for tool_call in tool_calls:
             if tool_call["type"] != "function" or "function" not in tool_call:
                 raise ValueError(f"Invalid tool call of type {tool_call['type']}")
-            function = tool_call["function"]
+
+            function = tool_call.get("function", {})
+            tool_name = function.get("name")
+            arguments = function.get("arguments")
 
             # this should handle both complete and partial jsons
             try:
-                argument_dict = json.loads(function["arguments"])
+                if arguments:  # If arguments is not empty/None
+                    argument_dict = json.loads(arguments)
+                else:  # If arguments is None or empty string
+                    argument_dict = {}
             except (ValueError, TypeError, JSONDecodeError):
                 argument_dict = {}
 
-            tool_selections.append(
-                ToolSelection(
-                    tool_id=tool_call["id"],
-                    tool_name=function["name"],
-                    tool_kwargs=argument_dict,
+            if tool_name:  # Only require tool_name, not arguments
+                tool_selections.append(
+                    ToolSelection(
+                        tool_id=tool_call.get("id") or str(uuid.uuid4()),
+                        tool_name=tool_name,
+                        tool_kwargs=argument_dict,
+                    )
                 )
-            )
+        if len(tool_selections) == 0 and error_on_no_tool_call:
+            raise ValueError("No valid tool calls found.")
 
         return tool_selections
 

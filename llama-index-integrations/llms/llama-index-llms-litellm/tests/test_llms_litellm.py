@@ -167,8 +167,36 @@ def test_get_tool_calls_from_response_returns_empty_arguments_with_non_dict_json
     message = "what's 1+1?"
     chat_response = llm.chat_with_tools(tools=[add_tool], user_msg=message)
     tools = llm.get_tool_calls_from_response(chat_response)
+    assert len(tools) == 1  # Should still work, just with empty kwargs
+    assert tools[0].tool_kwargs == {}
+
+
+def test_get_tool_calls_from_response_handles_empty_json_arguments(
+    respx_mock: respx.MockRouter, llm: LiteLLM
+) -> None:
+    """Test that empty JSON object '{}' is handled correctly."""
+    mock_tool_response(respx_mock, "{}")
+    message = "what's 1+1?"
+    chat_response = llm.chat_with_tools(tools=[add_tool], user_msg=message)
+    tools = llm.get_tool_calls_from_response(chat_response)
     assert len(tools) == 1
     assert tools[0].tool_kwargs == {}
+
+
+def test_get_tool_calls_from_response_handles_missing_tool_id(
+    respx_mock: respx.MockRouter, llm: LiteLLM
+) -> None:
+    """Test that missing tool ID generates UUID fallback."""
+    mock_tool_response_no_id(respx_mock)
+    message = "what's 1+1?"
+    chat_response = llm.chat_with_tools(tools=[add_tool], user_msg=message)
+    tools = llm.get_tool_calls_from_response(chat_response)
+    assert len(tools) == 1
+    assert tools[0].tool_name == "add"
+    assert tools[0].tool_kwargs == {"x": 1, "y": 1}
+    # Should have a UUID-like tool_id
+    assert len(tools[0].tool_id) > 0
+    assert tools[0].tool_id != "call_123"  # Should be different from normal ID
 
 
 def test_get_tool_calls_from_response_returns_arguments_with_dict_json_input(
@@ -296,6 +324,44 @@ def mock_tool_response(
             },
         )
     )
+
+
+def mock_tool_response_no_id(
+    respx_mock: respx.MockRouter, arguments: str = '{"x": 1, "y": 1}'
+):
+    """Mock tool response without tool call ID to test UUID fallback."""
+    respx_mock.post("https://api.openai.com/v1/chat/completions").mock(
+        return_value=httpx.Response(
+            status_code=200,
+            json={
+                "choices": [
+                    {
+                        "message": {
+                            "content": "Let me calculate that for you.",
+                            "tool_calls": [
+                                {
+                                    # No "id" field to test UUID fallback
+                                    "type": "function",
+                                    "function": {
+                                        "name": "add",
+                                        "arguments": arguments,
+                                    },
+                                }
+                            ],
+                        }
+                    }
+                ]
+            },
+        )
+    )
+
+
+@pytest.fixture(autouse=True)
+def setup_openai_api_key(monkeypatch):
+    """Fixture to set up and tear down OPENAI_API_KEY for all tests."""
+    monkeypatch.setenv("OPENAI_API_KEY", "fake-api-key")
+    yield
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
 
 @pytest.fixture()
