@@ -24,10 +24,10 @@ pip uninstall llama-index  # run this if upgrading from v0.9.x or older
 pip install -U llama-index --upgrade --no-cache-dir --force-reinstall
 ```
 
-The `llama-index-indices-managed-llama-cloud` package is included with the above install, but you can also install directly
+The `llama-cloud-services` package is included with the above install, but you can also install directly
 
 ```
-pip install -U llama-index-indices-managed-llama-cloud
+pip install -U llama-cloud-services
 ```
 
 ## Usage
@@ -42,7 +42,7 @@ os.environ[
 ] = "llx-..."  # can provide API-key in env or in the constructor later on
 
 from llama_index.core import SimpleDirectoryReader
-from llama_index.indices.managed.llama_cloud import LlamaCloudIndex
+from llama_cloud_services import LlamaCloudIndex
 
 # create a new index
 index = LlamaCloudIndex.from_documents(
@@ -64,7 +64,7 @@ You can also configure a retriever for managed retrieval:
 index.as_retriever()
 
 # from scratch
-from llama_index.indices.managed.llama_cloud import LlamaCloudRetriever
+from llama_cloud_services import LlamaCloudRetriever
 
 retriever = LlamaCloudRetriever("my_first_index", project_name="default")
 ```
@@ -97,7 +97,7 @@ This is where you can use the `LlamaCloudCompositeRetriever` class. The followin
 ```python
 import os
 from llama_cloud import CompositeRetrievalMode, RetrieverPipeline
-from llama_index.indices.managed.llama_cloud import (
+from llama_cloud_services import (
     LlamaCloudIndex,
     LlamaCloudCompositeRetriever,
 )

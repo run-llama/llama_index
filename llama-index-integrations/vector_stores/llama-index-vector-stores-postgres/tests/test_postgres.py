@@ -729,6 +729,22 @@ async def test_sparse_query(
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio
+async def test_sparse_query_special_character_parsing(
+    pg_hybrid: PGVectorStore,
+    use_async: bool,
+) -> None:
+    built_query = pg_hybrid._build_sparse_query(
+        query_str="   who' &..s |     (the): <-> **fox**?!!! lazy.hound lazy..dog ?jumped,over?",
+        limit=5,
+    )
+    assert (
+        built_query.compile().params["to_tsquery_1"]
+        == "who|s|the|fox|lazy.hound|lazy|dog|jumped|over"
+    )
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_sparse_query_with_special_characters(
     pg_hybrid: PGVectorStore,
@@ -745,7 +761,7 @@ async def test_sparse_query_with_special_characters(
     # text search should work with special characters
     q = VectorStoreQuery(
         query_embedding=_get_sample_vector(0.1),
-        query_str="   who' & s |     (the): <-> **fox**?!!!  ",
+        query_str="   who' &..s |     (the): <-> **fox**?!!!",
         sparse_top_k=2,
         mode=VectorStoreQueryMode.SPARSE,
     )

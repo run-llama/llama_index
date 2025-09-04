@@ -1,5 +1,7 @@
 # LlamaCloud Index + Retriever
 
+**NOTE:** This package has been deprecated and is no longer maintained. Please use the [llama-cloud-services package](https://github.com/run-llama/llama_cloud_services) instead.
+
 LlamaCloud is a new generation of managed parsing, ingestion, and retrieval services, designed to bring production-grade context-augmentation to your LLM and RAG applications.
 
 Currently, LlamaCloud supports

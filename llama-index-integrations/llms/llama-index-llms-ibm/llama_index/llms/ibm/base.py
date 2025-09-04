@@ -106,34 +106,45 @@ class WatsonxLLM(FunctionCallingLLM):
 
     url: Optional[SecretStr] = Field(
         default=None,
-        description="Url to Watson Machine Learning or CPD instance",
+        description="Url to the IBM watsonx.ai for IBM Cloud or the IBM watsonx.ai software instance.",
         frozen=True,
     )
 
     apikey: Optional[SecretStr] = Field(
         default=None,
-        description="Apikey to Watson Machine Learning or CPD instance",
+        description="API key to the IBM watsonx.ai for IBM Cloud or the IBM watsonx.ai software instance.",
         frozen=True,
     )
 
     token: Optional[SecretStr] = Field(
-        default=None, description="Token to CPD instance", frozen=True
+        default=None,
+        description="Token to the IBM watsonx.ai software instance.",
+        frozen=True,
     )
 
     password: Optional[SecretStr] = Field(
-        default=None, description="Password to CPD instance", frozen=True
+        default=None,
+        description="Password to the IBM watsonx.ai software instance.",
+        frozen=True,
     )
 
     username: Optional[SecretStr] = Field(
-        default=None, description="Username to CPD instance", frozen=True
+        default=None,
+        description="Username to the IBM watsonx.ai software instance.",
+        frozen=True,
     )
 
     instance_id: Optional[SecretStr] = Field(
-        default=None, description="Instance_id of CPD instance", frozen=True
+        default=None,
+        description="Instance_id of the IBM watsonx.ai software instance.",
+        frozen=True,
+        deprecated="The `instance_id` parameter is deprecated and will no longer be utilized for logging to the IBM watsonx.ai software instance.",
     )
 
     version: Optional[SecretStr] = Field(
-        default=None, description="Version of CPD instance", frozen=True
+        default=None,
+        description="Version of the IBM watsonx.ai software instance.",
+        frozen=True,
     )
 
     verify: Union[str, bool, None] = Field(
@@ -179,7 +190,6 @@ class WatsonxLLM(FunctionCallingLLM):
         token: Optional[str] = None,
         password: Optional[str] = None,
         username: Optional[str] = None,
-        instance_id: Optional[str] = None,
         version: Optional[str] = None,
         verify: Union[str, bool, None] = None,
         api_client: Optional[APIClient] = None,
@@ -201,7 +211,6 @@ class WatsonxLLM(FunctionCallingLLM):
                 token=token,
                 username=username,
                 password=password,
-                instance_id=instance_id,
             )
             if not isinstance(api_client, APIClient)
             else {}
@@ -220,7 +229,6 @@ class WatsonxLLM(FunctionCallingLLM):
             token=creds.get("token"),
             password=creds.get("password"),
             username=creds.get("username"),
-            instance_id=creds.get("instance_id"),
             version=version,
             verify=verify,
             _client=api_client,
@@ -297,7 +305,6 @@ class WatsonxLLM(FunctionCallingLLM):
             "token": self.token,
             "password": self.password,
             "username": self.username,
-            "instance_id": self.instance_id,
             "version": self.version,
         }
 

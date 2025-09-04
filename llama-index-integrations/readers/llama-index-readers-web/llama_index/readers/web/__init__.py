@@ -53,6 +53,7 @@ from llama_index.readers.web.whole_site.base import (
 from llama_index.readers.web.zyte_web.base import (
     ZyteWebReader,
 )
+from llama_index.readers.web.zenrows_web.base import ZenRowsWebReader
 
 
 __all__ = [
@@ -76,5 +77,6 @@ __all__ = [
     "TrafilaturaWebReader",
     "UnstructuredURLLoader",
     "WholeSiteReader",
+    "ZenRowsWebReader",
     "ZyteWebReader",
 ]

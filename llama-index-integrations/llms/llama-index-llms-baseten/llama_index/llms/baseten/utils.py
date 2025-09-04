@@ -8,6 +8,11 @@ SUPPORTED_MODEL_SLUGS = [
     "deepseek-ai/DeepSeek-V3-0324",
     "meta-llama/Llama-4-Maverick-17B-128E-Instruct",
     "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+    "moonshotai/Kimi-K2-Instruct",
+    "Qwen/Qwen3-235B-A22B-Instruct-2507",
+    "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+    "openai/gpt-oss-120b",
+    "deepseek-ai/DeepSeek-V3.1",
 ]
 
 

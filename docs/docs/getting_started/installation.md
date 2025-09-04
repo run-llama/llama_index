@@ -19,11 +19,7 @@ This is a starter bundle of packages, containing
 - `llama-index-core`
 - `llama-index-llms-openai`
 - `llama-index-embeddings-openai`
-- `llama-index-program-openai`
-- `llama-index-question-gen-openai`
-- `llama-index-agent-openai`
 - `llama-index-readers-file`
-- `llama-index-multi-modal-llms-openai`
 
 **NOTE:** LlamaIndex may download and store local files for various packages (NLTK, HuggingFace, ...). Use the environment variable "LLAMA_INDEX_CACHE_DIR" to control where these files are saved.
 

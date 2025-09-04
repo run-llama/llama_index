@@ -13,6 +13,7 @@ from sqlalchemy import (
     select,
     insert,
     update,
+    text,
 )
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -49,6 +50,10 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         default=DEFAULT_ASYNC_DATABASE_URI,
         description="SQLAlchemy async connection URI",
     )
+    db_schema: Optional[str] = Field(
+        default=None,
+        description="Database schema name (for PostgreSQL and other databases that support schemas)",
+    )
 
     _async_engine: Optional[AsyncEngine] = PrivateAttr(default=None)
     _async_session_factory: Optional[sessionmaker] = PrivateAttr(default=None)
@@ -62,11 +67,13 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         async_database_uri: Optional[str] = DEFAULT_ASYNC_DATABASE_URI,
         async_engine: Optional[AsyncEngine] = None,
         db_data: Optional[List[Dict[str, Any]]] = None,
+        db_schema: Optional[str] = None,
     ):
         """Initialize the SQLAlchemy chat store."""
         super().__init__(
             table_name=table_name,
             async_database_uri=async_database_uri or DEFAULT_ASYNC_DATABASE_URI,
+            db_schema=db_schema,
         )
         self._async_engine = async_engine
         self._db_data = db_data
@@ -76,6 +83,10 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         """Check if the URI points to an in-memory SQLite database."""
         # Handles both :memory: and empty path which also means in-memory for sqlite
         return uri == "sqlite+aiosqlite:///:memory:" or uri == "sqlite+aiosqlite://"
+
+    def _is_sqlite_database(self) -> bool:
+        """Check if the database is SQLite (which doesn't support schemas)."""
+        return self.async_database_uri.startswith("sqlite")
 
     async def _initialize(self) -> Tuple[sessionmaker, Table]:
         """Initialize the chat store. Used to avoid HTTP connections in constructor."""
@@ -122,6 +133,17 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
 
     async def _setup_tables(self, async_engine: AsyncEngine) -> Table:
         """Set up database tables."""
+        # Create metadata with schema
+        if self.db_schema is not None and not self._is_sqlite_database():
+            # Only set schema for databases that support it
+            self._metadata = MetaData(schema=self.db_schema)
+
+            # Create schema if it doesn't exist (PostgreSQL, SQL Server, etc.)
+            async with async_engine.begin() as conn:
+                await conn.execute(
+                    text(f'CREATE SCHEMA IF NOT EXISTS "{self.db_schema}"')
+                )
+
         # Create messages table with status column
         self._table = Table(
             f"{self.table_name}",
@@ -419,6 +441,7 @@ class SQLAlchemyChatStore(AsyncDBChatStore):
         dump_data = {
             "table_name": self.table_name,
             "async_database_uri": self.async_database_uri,
+            "db_schema": self.db_schema,
         }
 
         if self._is_in_memory_uri(self.async_database_uri):

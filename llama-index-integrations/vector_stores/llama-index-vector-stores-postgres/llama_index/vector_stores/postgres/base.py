@@ -873,11 +873,9 @@ class PGVectorStore(BasePydanticVectorStore):
         if query_str is None:
             raise ValueError("query_str must be specified for a sparse vector query.")
 
-        # Remove special characters used by ts_query
-        query_str = re.sub(r"[&|!:*()'<>]", " ", query_str)
-
-        # Collapse multiple spaces
-        query_str = re.sub(r"\s+", " ", query_str).strip()
+        # Remove special characters used by ts_query (essentially, all punctuation except single periods within words)
+        # and collapse multiple spaces
+        query_str = re.sub(r"(?!\b\.\b)\W+", " ", query_str).strip()
 
         # Replace space with "|" to perform an OR search for higher recall
         query_str = query_str.replace(" ", "|")
@@ -1070,7 +1068,7 @@ class PGVectorStore(BasePydanticVectorStore):
         self._initialize()
         with self._session() as session, session.begin():
             stmt = delete(self._table_class).where(
-                self._table_class.metadata_["doc_id"].astext == ref_doc_id
+                self._table_class.metadata_["ref_doc_id"].astext == ref_doc_id
             )
 
             session.execute(stmt)
@@ -1082,7 +1080,7 @@ class PGVectorStore(BasePydanticVectorStore):
         self._initialize()
         async with self._async_session() as session, session.begin():
             stmt = delete(self._table_class).where(
-                self._table_class.metadata_["doc_id"].astext == ref_doc_id
+                self._table_class.metadata_["ref_doc_id"].astext == ref_doc_id
             )
 
             await session.execute(stmt)

@@ -250,6 +250,9 @@ class CodeActAgent(BaseWorkflowAgent):
                     tool_calls=[],
                     raw=raw,
                     current_agent_name=self.name,
+                    thinking_delta=last_chat_response.additional_kwargs.get(
+                        "thinking_delta", ""
+                    ),
                 )
             )
 

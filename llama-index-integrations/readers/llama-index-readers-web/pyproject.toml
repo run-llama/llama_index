@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-web"
-version = "0.5.0"
+version = "0.5.1"
 description = "llama-index readers web integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -125,6 +125,7 @@ SpiderReader = "WilliamEspegren"
 TrafilaturaWebReader = "NA"
 UnstructuredURLLoader = "kravetsmic"
 WholeSiteReader = "an-bluecat"
+ZenRowsWebReader = "Yuvrajchandra"
 
 [tool.mypy]
 disallow_untyped_defs = true
