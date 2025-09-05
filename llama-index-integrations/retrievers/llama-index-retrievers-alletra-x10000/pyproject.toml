@@ -31,6 +31,10 @@ include = ["llama_index/"]
 [tool.hatch.build.targets.wheel]
 include = ["llama_index/"]
 
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.retrievers.alletra_x10000_retriever"
+
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
