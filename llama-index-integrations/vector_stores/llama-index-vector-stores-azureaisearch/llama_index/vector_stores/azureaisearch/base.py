@@ -1491,6 +1491,9 @@ class AzureQueryResultSearchBase:
 
         search_params = {**self._search_kwargs, **params}
 
+        search_params.pop("odata_filter", None)
+        search_params.pop("odata_filters", None)
+
         results = self._search_client.search(**search_params)
 
         id_result = []
@@ -1548,6 +1551,9 @@ class AzureQueryResultSearchBase:
         }
 
         search_params = {**self._search_kwargs, **params}
+
+        search_params.pop("odata_filter", None)
+        search_params.pop("odata_filters", None)
 
         results = await self._async_search_client.search(**search_params)
 
@@ -1678,6 +1684,9 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
 
         search_params = {**self._search_kwargs, **params}
 
+        search_params.pop("odata_filter", None)
+        search_params.pop("odata_filters", None)
+
         results = self._search_client.search(**search_params)
 
         id_result = []
@@ -1737,6 +1746,9 @@ class AzureQueryResultSearchSemanticHybrid(AzureQueryResultSearchHybrid):
         }
 
         search_params = {**self._search_kwargs, **params}
+
+        search_params.pop("odata_filter", None)
+        search_params.pop("odata_filters", None)
 
         results = await self._async_search_client.search(**search_params)
         id_result = []
