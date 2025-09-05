@@ -19,7 +19,7 @@ draw_all_possible_flows(MyWorkflow, filename="some_filename.html")
 
 This will output an interactive visualization of your flow to `some_filename.html` that you can view in any browser.
 
-![A concurrent workflow](./different_events.png)
+![A concurrent workflow](/python/framework/understanding/workflows/different_events.png)
 
 ## Verbose mode
 
@@ -167,8 +167,8 @@ await handler
 
 You can also use any of the third-party tools for visualizing and debugging that we support, such as [Arize](https://docs.arize.com/arize/large-language-models/tracing/auto-instrumentation/llamaindex).
 
-![Arize flow](./arize.png)
+![Arize flow](/python/framework/understanding/workflows/arize.png)
 
 ## One more thing
 
-Our last step in this tutorial is an alternative syntax for defining workflows using [unbound functions](unbound_functions.md) instead of classes.
+Our last step in this tutorial is an alternative syntax for defining workflows using [unbound functions](/python/framework/understanding/workflows/unbound_functions) instead of classes.

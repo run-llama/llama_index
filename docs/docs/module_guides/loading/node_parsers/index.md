@@ -1,6 +1,6 @@
 # Node Parser Usage Pattern
 
-Node parsers are a simple abstraction that take a list of documents, and chunk them into `Node` objects, such that each node is a specific chunk of the parent document. When a document is broken into nodes, all of it's attributes are inherited to the children nodes (i.e. `metadata`, text and metadata templates, etc.). You can read more about `Node` and `Document` properties [here](../documents_and_nodes/index.md).
+Node parsers are a simple abstraction that take a list of documents, and chunk them into `Node` objects, such that each node is a specific chunk of the parent document. When a document is broken into nodes, all of it's attributes are inherited to the children nodes (i.e. `metadata`, text and metadata templates, etc.). You can read more about `Node` and `Document` properties [here](/python/framework/module_guides/loading/documents_and_nodes/index).
 
 ## Getting Started
 
@@ -59,4 +59,4 @@ index = VectorStoreIndex.from_documents(
 
 ## Modules
 
-See the full [modules guide](./modules.md).
+See the full [modules guide](/python/framework/module_guides/loading/node_parsers/modules).

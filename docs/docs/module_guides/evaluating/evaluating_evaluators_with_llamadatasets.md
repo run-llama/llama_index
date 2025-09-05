@@ -59,5 +59,5 @@ equipped to perform the pairwise evaluation task — i.e., should be a `Pairwise
 To see these datasets in action, be sure to checkout the notebooks listed below
 that benchmark LLM evaluators on slightly adapted versions of the MT-Bench dataset.
 
-- [MTBench Single Grading](../../examples/evaluation/mt_bench_single_grading.ipynb)
-- [MTBench Human Judge](../../examples/evaluation/mt_bench_human_judgement.ipynb)
+- [MTBench Single Grading](/python/examples/evaluation/mt_bench_single_grading)
+- [MTBench Human Judge](/python/examples/evaluation/mt_bench_human_judgement)

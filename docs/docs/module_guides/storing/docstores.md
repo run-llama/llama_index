@@ -2,14 +2,14 @@
 
 Document stores contain ingested document chunks, which we call `Node` objects.
 
-See the [API Reference](../../api_reference/storage/docstore/index.md) for more details.
+See the [API Reference](/python/framework/api_reference/storage/docstore/index) for more details.
 
 ### Simple Document Store
 
 By default, the `SimpleDocumentStore` stores `Node` objects in-memory.
 They can be persisted to (and loaded from) disk by calling `docstore.persist()` (and `SimpleDocumentStore.from_persist_path(...)` respectively).
 
-A more complete example can be found [here](../../examples/docstore/DocstoreDemo.ipynb)
+A more complete example can be found [here](/python/examples/docstore/docstoredemo)
 
 ### MongoDB Document Store
 
@@ -43,7 +43,7 @@ since data is persisted by default.
 
 You can easily reconnect to your MongoDB collection and reload the index by re-initializing a `MongoDocumentStore` with an existing `db_name` and `collection_name`.
 
-A more complete example can be found [here](../../examples/docstore/MongoDocstoreDemo.ipynb)
+A more complete example can be found [here](/python/examples/docstore/mongodocstoredemo)
 
 ### Redis Document Store
 
@@ -76,7 +76,7 @@ Under the hood, `RedisDocumentStore` connects to a redis database and adds your 
 
 You can easily reconnect to your Redis client and reload the index by re-initializing a `RedisDocumentStore` with an existing `host`, `port`, and `namespace`.
 
-A more complete example can be found [here](../../examples/docstore/RedisDocstoreIndexStoreDemo.ipynb)
+A more complete example can be found [here](/python/examples/docstore/redisdocstoreindexstoredemo)
 
 ### Firestore Document Store
 
@@ -110,7 +110,7 @@ Under the hood, `FirestoreDocumentStore` connects to a firestore database in Goo
 
 You can easily reconnect to your Firestore database and reload the index by re-initializing a `FirestoreDocumentStore` with an existing `project`, `database`, and `namespace`.
 
-A more complete example can be found [here](../../examples/docstore/FirestoreDemo.ipynb)
+A more complete example can be found [here](/python/examples/docstore/firestoredemo)
 
 ### Couchbase Document Store
 
@@ -201,7 +201,7 @@ Under the hood, `TablestoreDocumentStore` connects to a Tablestore database and 
 
 You can easily reconnect to your Tablestore database and reload the index by re-initializing a `TablestoreDocumentStore` with an existing `endpoint`, `instance_name`, `access_key_id` and `access_key_secret`.
 
-A more complete example can be found [here](../../examples/docstore/TablestoreDocstoreDemo.ipynb)
+A more complete example can be found [here](/python/examples/docstore/tablestoredocstoredemo)
 
 
 ### Google AlloyDB Document Store
@@ -259,7 +259,7 @@ Under the hood, `AlloyDBDocumentStore` connects to the alloydb database in Googl
 
 You can easily reconnect to your AlloyDB database and reload the index by re-initializing a `AlloyDBDocumentStore` with an `AlloyDBEngine` without initializing a new table.
 
-A more detailed guide can be found [here](../../examples/docstore/AlloyDBDocstoreDemo.ipynb)
+A more detailed guide can be found [here](/python/examples/docstore/alloydbdocstoredemo)
 
 ### Google Cloud SQL for PostgreSQL Document Store
 
@@ -314,4 +314,4 @@ Under the hood, `PostgresDocumentStore` connects to the cloud sql for pg databas
 
 You can easily reconnect to your Postgres database and reload the index by re-initializing a `PostgresDocumentStore` with an `PostgresEngine` without initializing a new table.
 
-A more detailed guide can be found [here](../../examples/docstore/CloudSQLPgDocstoreDemo.ipynb)
+A more detailed guide can be found [here](/python/examples/docstore/cloudsqlpgdocstoredemo)

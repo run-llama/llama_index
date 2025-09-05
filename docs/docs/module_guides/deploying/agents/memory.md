@@ -289,7 +289,7 @@ In other cases, like when using `FunctionAgent`, `AgentWorkflow`, or `ReActAgent
 response = await agent.run("Hello!", memory=memory)
 ```
 
-Lastly, there are cases ([like human-in-the-loop](../../../understanding/agent/human_in_the_loop.md)) where you will need to provide both the `Context` (to resume the workflow) and the `Memory` (to store the chat history).
+Lastly, there are cases ([like human-in-the-loop](/python/framework/understanding/agent/human_in_the_loop)) where you will need to provide both the `Context` (to resume the workflow) and the `Memory` (to store the chat history).
 
 ```python
 response = await agent.run("Hello!", ctx=ctx, memory=memory)
@@ -308,13 +308,13 @@ In `llama_index.core.memory`, we offer a few different memory types:
 
 You can find a few examples of memory in action below:
 
-- [Memory](../../../examples/memory/memory.ipynb)
-- [Manipulating Memory at Runtime](../../../examples/memory/custom_memory.ipynb)
-- [Limiting Multi-Turn Confusion with Custom Memory](../../../examples/memory/custom_multi_turn_memory.ipynb)
+- [Memory](/python/examples/memory/memory)
+- [Manipulating Memory at Runtime](/python/examples/memory/custom_memory)
+- [Limiting Multi-Turn Confusion with Custom Memory](/python/examples/memory/custom_multi_turn_memory)
 
 **NOTE:** Deprecated examples:
-- [Chat Memory Buffer](../../../examples/agent/memory/chat_memory_buffer.ipynb)
-- [Chat Summary Memory Buffer](../../../examples/agent/memory/summary_memory_buffer.ipynb)
-- [Composable Memory](../../../examples/agent/memory/composable_memory.ipynb)
-- [Vector Memory](../../../examples/agent/memory/vector_memory.ipynb)
-- [Mem0 Memory](../../../examples/memory/Mem0Memory.ipynb)
+- [Chat Memory Buffer](/python/examples/agent/memory/chat_memory_buffer)
+- [Chat Summary Memory Buffer](/python/examples/agent/memory/summary_memory_buffer)
+- [Composable Memory](/python/examples/agent/memory/composable_memory)
+- [Vector Memory](/python/examples/agent/memory/vector_memory)
+- [Mem0 Memory](/python/examples/memory/mem0memory)

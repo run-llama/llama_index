@@ -140,7 +140,7 @@ Since LlamaIndex is a multi-step pipeline, it's important to identify the operat
 
 For instance, prompts are used in response synthesizer, retrievers, index construction, etc; some of these modules are nested in other modules (synthesizer is nested in query engine).
 
-See [this guide](../../../examples/prompts/prompt_mixin.ipynb) for full details on accessing/customizing prompts.
+See [this guide](/python/examples/prompts/prompt_mixin) for full details on accessing/customizing prompts.
 
 ### Commonly Used Prompts
 
@@ -222,9 +222,9 @@ query_engine = RetrieverQueryEngine(retriever, response_synthesizer)
 The two approaches above are equivalent, where 1 is essentially syntactic sugar for 2 and hides away the underlying complexity. You might want to use 1 to quickly modify some common parameters, and use 2 to have more granular control.
 
 For more details on which classes use which prompts, please visit
-[Query class references](../../../api_reference/response_synthesizers/index.md).
+[Query class references](/python/framework/api_reference/response_synthesizers/index).
 
-Check out the [reference documentation](../../../api_reference/prompts/index.md) for a full set of all prompts and their methods/parameters.
+Check out the [reference documentation](/python/framework/api_reference/prompts/index) for a full set of all prompts and their methods/parameters.
 
 ## [Advanced] Advanced Prompt Capabilities
 
@@ -232,8 +232,8 @@ In this section we show some advanced prompt capabilities in LlamaIndex.
 
 Related Guides:
 
-- [Advanced Prompts](../../../examples/prompts/advanced_prompts.ipynb)
-- [RichPromptTemplate Features](../../../examples/prompts/rich_prompt_template_features.ipynb)
+- [Advanced Prompts](/python/examples/prompts/advanced_prompts)
+- [RichPromptTemplate Features](/python/examples/prompts/rich_prompt_template_features)
 
 ### Function Mappings
 

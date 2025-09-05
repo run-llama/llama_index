@@ -9,7 +9,7 @@ query_engine = index.as_query_engine()
 ```
 
 !!! tip
-    To learn how to build an index, see [Indexing](../../indexing/index.md)
+    To learn how to build an index, see [Indexing](/python/framework/module_guides/indexing/index)
 
 Ask a question over your data
 
@@ -32,7 +32,7 @@ query_engine = index.as_query_engine(
 
 > Note: While the high-level API optimizes for ease-of-use, it does _NOT_ expose full range of configurability.
 
-See [**Response Modes**](./response_modes.md) for a full list of response modes and what they do.
+See [**Response Modes**](/python/framework/module_guides/deploying/query_engine/response_modes) for a full list of response modes and what they do.
 
 ### Low-Level Composition API
 
@@ -85,8 +85,8 @@ streaming_response = query_engine.query(
 streaming_response.print_response_stream()
 ```
 
-- Read the full [streaming guide](streaming.md)
-- See an [end-to-end example](../../../examples/customization/streaming/SimpleIndexDemo-streaming.ipynb)
+- Read the full [streaming guide](/python/framework/module_guides/deploying/query_engine/streaming)
+- See an [end-to-end example](/python/examples/customization/streaming/simpleindexdemo-streaming)
 
 ## Defining a Custom Query Engine
 
@@ -111,4 +111,4 @@ class RAGQueryEngine(CustomQueryEngine):
         return response_obj
 ```
 
-See the [Custom Query Engine guide](../../../examples/query_engine/custom_query_engine.ipynb) for more details.
+See the [Custom Query Engine guide](/python/examples/query_engine/custom_query_engine) for more details.

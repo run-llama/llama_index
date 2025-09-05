@@ -99,6 +99,6 @@ We can visualize the subclassed workflow and it will show all the steps, like th
 draw_all_possible_flows(CustomWorkflow, "custom_workflow.html")
 ```
 
-![Custom workflow](subclass.png)
+![Custom workflow](/python/framework/understanding/workflows/subclass.png)
 
-Next, let's look at another way to extend a workflow: [resources](resources.md).
+Next, let's look at another way to extend a workflow: [resources](/python/framework/understanding/workflows/resources).

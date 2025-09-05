@@ -105,4 +105,4 @@ textCompletion = LLMTextCompletionProgram.from_defaults(
 
 This is useful if you are using a low-powered LLM that needs help with the parsing.
 
-In the final section we will take a look at even [lower-level calls to the extract structured data](lower_level.md), including extracting multiple structures in the same call.
+In the final section we will take a look at even [lower-level calls to the extract structured data](/python/framework/understanding/extraction/lower_level), including extracting multiple structures in the same call.

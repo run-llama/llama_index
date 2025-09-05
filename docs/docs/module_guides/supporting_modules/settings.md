@@ -110,7 +110,7 @@ Settings.num_output = 256
 ```
 
 !!! tip
-    Learn how to configure specific modules: - [LLM](../models/llms/usage_custom.md) - [Embedding Model](../models/embeddings.md) - [Node Parser/Text Splitters](../loading/node_parsers/index.md) - [Callbacks](../observability/callbacks/index.md)
+    Learn how to configure specific modules: - [LLM](/python/framework/module_guides/models/llms/usage_custom) - [Embedding Model](/python/framework/module_guides/models/embeddings) - [Node Parser/Text Splitters](/python/framework/module_guides/loading/node_parsers/index) - [Callbacks](/python/framework/module_guides/observability/callbacks/index)
 
 ## Setting local configurations
 

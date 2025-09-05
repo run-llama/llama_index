@@ -26,7 +26,7 @@ documents = SimpleDirectoryReader("./data").load_data()
 
 ### Using Readers from LlamaHub
 
-Because there are so many possible places to get data, they are not all built-in. Instead, you download them from our registry of data connectors, [LlamaHub](llamahub.md).
+Because there are so many possible places to get data, they are not all built-in. Instead, you download them from our registry of data connectors, [LlamaHub](/python/framework/understanding/rag/loading/llamahub).
 
 In this example LlamaIndex downloads and installs the connector called [DatabaseReader](https://llamahub.ai/l/readers/llama-index-readers-database), which runs a query against a SQL database and returns every row of the results as a `Document`:
 

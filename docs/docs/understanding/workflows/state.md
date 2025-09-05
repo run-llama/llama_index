@@ -161,4 +161,4 @@ print(state)
 ```
 
 
-Up next we'll learn how to [stream events](stream.md) from an in-progress workflow.
+Up next we'll learn how to [stream events](/python/framework/understanding/workflows/stream) from an in-progress workflow.

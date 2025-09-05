@@ -7,7 +7,7 @@ sidebar:
 
 # Welcome to LlamaIndex 🦙 !
 
-LlamaIndex is the leading framework for building LLM-powered agents over your data with [LLMs](https://en.wikipedia.org/wiki/Large_language_model) and [workflows](./understanding/workflows/index.md).
+LlamaIndex is the leading framework for building LLM-powered agents over your data with [LLMs](https://en.wikipedia.org/wiki/Large_language_model) and [workflows](/python/framework/understanding/workflows/index).
 
 <div class="grid cards" markdown>
 
@@ -41,13 +41,13 @@ LlamaIndex is the leading framework for building LLM-powered agents over your da
 
 ### What are agents?
 
-[Agents](./understanding/agent/index.md) are LLM-powered knowledge assistants that use tools to perform tasks like research, data extraction, and more. Agents range from simple question-answering to being able to sense, decide and take actions in order to complete tasks.
+[Agents](/python/framework/understanding/agent/index) are LLM-powered knowledge assistants that use tools to perform tasks like research, data extraction, and more. Agents range from simple question-answering to being able to sense, decide and take actions in order to complete tasks.
 
 LlamaIndex provides a framework for building agents including the ability to use RAG pipelines as one of many tools to complete a task.
 
 ### What are workflows?
 
-[Workflows](./understanding/workflows/index.md) are multi-step processes that combine one or more agents, data connectors, and other tools to complete a task. They are event-driven software that allows you to combine RAG data sources and multiple agents to create a complex application that can perform a wide variety of tasks with reflection, error-correction, and other hallmarks of advanced LLM applications. You can then [deploy these agentic workflows](/python/workflows/deployment/) as production microservices.
+[Workflows](/python/framework/understanding/workflows/index) are multi-step processes that combine one or more agents, data connectors, and other tools to complete a task. They are event-driven software that allows you to combine RAG data sources and multiple agents to create a complex application that can perform a wide variety of tasks with reflection, error-correction, and other hallmarks of advanced LLM applications. You can then [deploy these agentic workflows](/python/workflows/deployment/) as production microservices.
 
 ### What is context augmentation?
 
@@ -55,7 +55,7 @@ LLMs offer a natural language interface between humans and data. LLMs come pre-t
 
 Context augmentation makes your data available to the LLM to solve the problem at hand. LlamaIndex provides the tools to build any of context-augmentation use case, from prototype to production. Our tools allow you to ingest, parse, index and process your data and quickly implement complex query workflows combining data access with LLM prompting.
 
-The most popular example of context-augmentation is [Retrieval-Augmented Generation or RAG](./getting_started/concepts.md), which combines context with LLMs at inference time.
+The most popular example of context-augmentation is [Retrieval-Augmented Generation or RAG](/python/framework/getting_started/concepts), which combines context with LLMs at inference time.
 
 ### LlamaIndex is the framework for Context-Augmented LLM Applications
 
@@ -74,14 +74,14 @@ LlamaIndex imposes no restriction on how you use LLMs. You can use LLMs as auto-
 
 Some popular use cases for LlamaIndex and context augmentation in general include:
 
-- [Question-Answering](./use_cases/q_and_a/index.md) (Retrieval-Augmented Generation aka RAG)
-- [Chatbots](./use_cases/chatbots.md)
-- [Document Understanding and Data Extraction](./use_cases/extraction.md)
-- [Autonomous Agents](./use_cases/agents.md) that can perform research and take actions
-- [Multi-modal applications](./use_cases/multimodal.md) that combine text, images, and other data types
-- [Fine-tuning](./use_cases/fine_tuning.md) models on data to improve performance
+- [Question-Answering](/python/framework/use_cases/q_and_a) (Retrieval-Augmented Generation aka RAG)
+- [Chatbots](/python/framework/use_cases/chatbots)
+- [Document Understanding and Data Extraction](/python/framework/use_cases/extraction)
+- [Autonomous Agents](/python/framework/use_cases/agents) that can perform research and take actions
+- [Multi-modal applications](/python/framework/use_cases/multimodal) that combine text, images, and other data types
+- [Fine-tuning](/python/framework/use_cases/fine_tuning) models on data to improve performance
 
-Check out our [use cases](./use_cases/index.md) documentation for more examples and links to tutorials.
+Check out our [use cases](/python/framework/use_cases/index) documentation for more examples and links to tutorials.
 
 ### 👨‍👩‍👧‍👦 Who is LlamaIndex for?
 
@@ -93,7 +93,7 @@ For more complex applications, our lower-level APIs allow advanced users to cust
 
 ## Getting Started
 
-LlamaIndex is available in Python (these docs) and [Typescript](https://ts.llamaindex.ai/). If you're not sure where to start, we recommend reading [how to read these docs](./getting_started/reading.md) which will point you to the right place based on your experience level.
+LlamaIndex is available in Python (these docs) and [Typescript](https://ts.llamaindex.ai/). If you're not sure where to start, we recommend reading [how to read these docs](/python/framework/getting_started/reading) which will point you to the right place based on your experience level.
 
 ### 30 second quickstart
 
@@ -115,7 +115,7 @@ response = query_engine.query("Some question about the data should go here")
 print(response)
 ```
 
-If any part of this trips you up, don't worry! Check out our more comprehensive starter tutorials using [remote APIs like OpenAI](./getting_started/starter_example.md) or [any model that runs on your laptop](./getting_started/starter_example_local.md).
+If any part of this trips you up, don't worry! Check out our more comprehensive starter tutorials using [remote APIs like OpenAI](/python/framework/getting_started/starter_example) or [any model that runs on your laptop](/python/framework/getting_started/starter_example_local).
 
 ## LlamaCloud
 

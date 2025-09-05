@@ -5,14 +5,14 @@
 A data connector (aka `Reader`) ingest data from different data sources and data formats into a simple `Document` representation (text and simple metadata).
 
 !!! tip
-    Once you've ingested your data, you can build an [Index](../../indexing/index.md) on top, ask questions using a [Query Engine](../../deploying/query_engine/index.md), and have a conversation using a [Chat Engine](../../deploying/chat_engines/index.md).
+    Once you've ingested your data, you can build an [Index](/python/framework/module_guides/indexing/index) on top, ask questions using a [Query Engine](/python/framework/module_guides/deploying/query_engine/index), and have a conversation using a [Chat Engine](/python/framework/module_guides/deploying/chat_engines/index).
 
 ## LlamaHub
 
 Our data connectors are offered through [LlamaHub](https://llamahub.ai/) 🦙.
 LlamaHub is an open-source repository containing data loaders that you can easily plug and play into any LlamaIndex application.
 
-![](../../../_static/data_connectors/llamahub.png)
+![](/python/framework/_static/data_connectors/llamahub.png)
 
 ## Usage Pattern
 
@@ -27,7 +27,7 @@ loader = GoogleDocsReader()
 documents = loader.load_data(document_ids=[...])
 ```
 
-See the full [usage pattern guide](./usage_pattern.md) for more details.
+See the full [usage pattern guide](/python/framework/module_guides/loading/connector/usage_pattern) for more details.
 
 ## Modules
 
@@ -40,4 +40,4 @@ Some sample data connectors:
 - [Discord](https://discord.com/developers/docs/intro) (`DiscordReader`)
 - [Apify Actors](https://llamahub.ai/l/readers/llama-index-readers-apify) (`ApifyActor`). Can crawl the web, scrape webpages, extract text content, download files including `.pdf`, `.jpg`, `.png`, `.docx`, etc.
 
-See the [modules guide](./modules.md) for more details.
+See the [modules guide](/python/framework/module_guides/loading/connector/modules) for more details.

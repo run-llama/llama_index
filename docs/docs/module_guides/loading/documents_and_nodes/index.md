@@ -51,6 +51,6 @@ index = VectorStoreIndex(nodes)
 
 Take a look at our in-depth guides for more details on how to use Documents/Nodes.
 
-- [Using Documents](usage_documents.md)
-- [Using Nodes](usage_nodes.md)
-- [Ingestion Pipeline](../ingestion_pipeline/index.md)
+- [Using Documents](/python/framework/module_guides/loading/documents_and_nodes/usage_documents)
+- [Using Nodes](/python/framework/module_guides/loading/documents_and_nodes/usage_nodes)
+- [Ingestion Pipeline](/python/framework/module_guides/loading/ingestion_pipeline/index)

@@ -97,4 +97,4 @@ if __name__ == "__main__":
 `run` runs the workflow in the background, while `stream_events` will provide any event that gets written to the stream. It stops when the stream delivers a `StopEvent`, after which you can get the final result of the workflow as you normally would.
 
 
-Next let's look at [concurrent execution](concurrent_execution.md).
+Next let's look at [concurrent execution](/python/framework/understanding/workflows/concurrent_execution).

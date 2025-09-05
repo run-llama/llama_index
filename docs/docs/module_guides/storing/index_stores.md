@@ -2,7 +2,7 @@
 
 Index stores contains lightweight index metadata (i.e. additional state information created when building an index).
 
-See the [API Reference](../../api_reference/storage/index_store/index.md) for more details.
+See the [API Reference](/python/framework/api_reference/storage/index_store/index) for more details.
 
 ### Simple Index Store
 
@@ -41,7 +41,7 @@ since data is persisted by default.
 
 You can easily reconnect to your MongoDB collection and reload the index by re-initializing a `MongoIndexStore` with an existing `db_name` and `collection_name`.
 
-A more complete example can be found [here](../../examples/docstore/MongoDocstoreDemo.ipynb)
+A more complete example can be found [here](/python/examples/docstore/mongodocstoredemo)
 
 ### Redis Index Store
 
@@ -74,7 +74,7 @@ Under the hood, `RedisIndexStore` connects to a redis database and adds your nod
 
 You can easily reconnect to your Redis client and reload the index by re-initializing a `RedisIndexStore` with an existing `host`, `port`, and `namespace`.
 
-A more complete example can be found [here](../../examples/docstore/RedisDocstoreIndexStoreDemo.ipynb)
+A more complete example can be found [here](/python/examples/docstore/redisdocstoreindexstoredemo)
 
 ### Couchbase Index Store
 
@@ -159,7 +159,7 @@ Under the hood, `TablestoreIndexStore` connects to a Tablestore database and add
 
 You can easily reconnect to your Tablestore database and reload the index by re-initializing a `TablestoreIndexStore` with an existing `endpoint`, `instance_name`, `access_key_id` and `access_key_secret`.
 
-A more complete example can be found [here](../../examples/docstore/TablestoreDocstoreDemo.ipynb)
+A more complete example can be found [here](/python/examples/docstore/tablestoredocstoredemo)
 
 ### Google AlloyDB Index Store
 
@@ -215,7 +215,7 @@ Under the hood, `AlloyDBIndexStore` connects to the alloydb database in Google C
 
 You can easily reconnect to your AlloyDB database and reload the index by re-initializing a `AlloyDBIndexStore` with an `AlloyDBEngine` without initializing a new table.
 
-A more detailed guide can be found [here](../../examples/docstore/AlloyDBDocstoreDemo.ipynb)
+A more detailed guide can be found [here](/python/examples/docstore/alloydbdocstoredemo)
 
 ### Google Cloud SQL for PostgreSQL Index Store
 
@@ -269,4 +269,4 @@ Under the hood, `PostgresIndexStore` connects to the cloud sql postgres database
 
 You can easily reconnect to your cloud sql postgres database and reload the index by re-initializing a `PostgresIndexStore` with an `PostgresEngine` without initializing a new table.
 
-A more detailed guide can be found [here](../../examples/docstore/CloudSQLPgDocstoreDemo.ipynb)
+A more detailed guide can be found [here](/python/examples/docstore/cloudsqlpgdocstoredemo)

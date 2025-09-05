@@ -83,4 +83,4 @@ Settings.embed_model = MockEmbedding(embed_dim=1536)
 
 ## Usage Pattern
 
-Read about the [full usage pattern](./usage_pattern.md) for more details!
+Read about the [full usage pattern](/python/framework/understanding/evaluating/cost_analysis/usage_pattern) for more details!

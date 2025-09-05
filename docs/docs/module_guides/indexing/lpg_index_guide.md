@@ -52,7 +52,7 @@ index = PropertyGraphIndex.from_existing(
 
 Property graph construction in LlamaIndex works by performing a series of `kg_extractors` on each chunk, and attaching entities and relations as metadata to each llama-index node. You can use as many as you like here, and they will all get applied.
 
-If you've used transformations or metadata extractors with the [ingestion pipeline](../loading/ingestion_pipeline/index.md), then this will be very familiar (and these `kg_extractors` are compatible with the ingestion pipeline)!
+If you've used transformations or metadata extractors with the [ingestion pipeline](/python/framework/module_guides/loading/ingestion_pipeline/index), then this will be very familiar (and these `kg_extractors` are compatible with the ingestion pipeline)!
 
 Extractors are set using the appropriate kwarg:
 
@@ -621,10 +621,10 @@ For more complicated customization and use-cases, it is recommended to check out
 
 Below, you can find some example notebooks showcasing the `PropertyGraphIndex`
 
-- [Basic Usage](../../examples/property_graph/property_graph_basic.ipynb)
-- [Using Neo4j](../../examples/property_graph/property_graph_neo4j.ipynb)
-- [Using Nebula](../../examples/property_graph/property_graph_nebula.ipynb)
-- [Advanced Usage with Neo4j and local models](../../examples/property_graph/property_graph_advanced.ipynb)
-- [Using a Property Graph Store](../../examples/property_graph/graph_store.ipynb)
-- [Creating a Custom Graph Retriever](../../examples/property_graph/property_graph_custom_retriever.ipynb)
-- [Comparing KG Extractors](../../examples/property_graph/Dynamic_KG_Extraction.ipynb)
+- [Basic Usage](/python/examples/property_graph/property_graph_basic)
+- [Using Neo4j](/python/examples/property_graph/property_graph_neo4j)
+- [Using Nebula](/python/examples/property_graph/property_graph_nebula)
+- [Advanced Usage with Neo4j and local models](/python/examples/property_graph/property_graph_advanced)
+- [Using a Property Graph Store](/python/examples/property_graph/graph_store)
+- [Creating a Custom Graph Retriever](/python/examples/property_graph/property_graph_custom_retriever)
+- [Comparing KG Extractors](/python/examples/property_graph/dynamic_kg_extraction)

@@ -6,15 +6,15 @@ LlamaIndex gives you the tools to build knowledge-augmented chatbots and agents.
 
 ## Resources
 
-The central module guide you'll want to check out is our [Chat Engines](../module_guides/deploying/chat_engines/index.md).
+The central module guide you'll want to check out is our [Chat Engines](/python/framework/module_guides/deploying/chat_engines/index).
 
 Here are some additional relevant resources to build full-stack chatbot apps:
 
-- [Building a chatbot](../understanding/putting_it_all_together/chatbots/building_a_chatbot.md) tutorial
+- [Building a chatbot](/python/framework/understanding/putting_it_all_together/chatbots/building_a_chatbot) tutorial
 - [create-llama](https://blog.llamaindex.ai/create-llama-a-command-line-tool-to-generate-llamaindex-apps-8f7683021191), a command line tool that generates a full-stack chatbot application for you
 - [SECinsights.ai](https://www.secinsights.ai/), an open-source application that uses LlamaIndex to build a chatbot that answers questions about SEC filings
 - [RAGs](https://blog.llamaindex.ai/introducing-rags-your-personalized-chatgpt-experience-over-your-data-2b9d140769b1), a project inspired by OpenAI's GPTs that lets you build a low-code chatbot over your data using Streamlit
-- Our [OpenAI agents](../module_guides/deploying/agents/modules.md) are all chat bots in nature
+- Our [OpenAI agents](/python/framework/module_guides/deploying/agents/modules) are all chat bots in nature
 
 ## External sources
 

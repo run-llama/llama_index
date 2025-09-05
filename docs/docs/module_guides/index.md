@@ -5,63 +5,60 @@ Welcome to the LlamaIndex component guides! This section provides detailed docum
 ## Core Components
 
 ### Models
-- [Introduction to Models](./models/index.md) - Overview of model components
-- [LLMs](./models/llms.md) - Language models for text generation and reasoning
-- [Embeddings](./models/embeddings.md) - Convert text to vector representations
-- [Multi Modal](./models/multi_modal.md) - Work with images, audio, and other non-text data
+- [Introduction to Models](/python/framework/module_guides/models/index) - Overview of model components
+- [LLMs](/python/framework/module_guides/models/llms) - Language models for text generation and reasoning
+- [Embeddings](/python/framework/module_guides/models/embeddings) - Convert text to vector representations
+- [Multi Modal](/python/framework/module_guides/models/multi_modal) - Work with images, audio, and other non-text data
 
 ### Prompts
-- [Introduction to Prompts](./models/prompts/index.md) - Overview of prompt engineering
-- [Usage Patterns](./models/prompts/usage_pattern.md) - Learn how to effectively use prompts
+- [Introduction to Prompts](/python/framework/module_guides/models/prompts/index) - Overview of prompt engineering
+- [Usage Patterns](/python/framework/module_guides/models/prompts/usage_pattern) - Learn how to effectively use prompts
 
 ### Loading
-- [Introduction to Loading](./loading/index.md) - Overview of data loading capabilities
-- [Documents and Nodes](./loading/documents_and_nodes/index.md) - Core data structures
-- [SimpleDirectoryReader](./loading/simpledirectoryreader.md) - Easy document loading
-- [Data Connectors](./loading/connector/index.md) - Connect to external data sources
-- [Node Parsers / Text Splitters](./loading/node_parsers/index.md) - Split documents into chunks
-- [Ingestion Pipeline](./loading/ingestion_pipeline/index.md) - End-to-end document processing
+- [Introduction to Loading](/python/framework/module_guides/loading/index) - Overview of data loading capabilities
+- [Documents and Nodes](/python/framework/module_guides/loading/documents_and_nodes/index) - Core data structures
+- [SimpleDirectoryReader](/python/framework/module_guides/loading/simpledirectoryreader) - Easy document loading
+- [Data Connectors](/python/framework/module_guides/loading/connector/index) - Connect to external data sources
+- [Node Parsers / Text Splitters](/python/framework/module_guides/loading/node_parsers/index) - Split documents into chunks
+- [Ingestion Pipeline](/python/framework/module_guides/loading/ingestion_pipeline/index) - End-to-end document processing
 
 ### Indexing
-- [Introduction to Indexing](./indexing/index.md) - Overview of indexing approaches
-- [Index Guide](./indexing/index_guide.md) - Comprehensive guide to indices
-- [Vector Store Index](./indexing/vector_store_index.md) - Semantic search with vectors
-- [Property Graph Index](./indexing/lpg_index_guide.md) - Graph-based indexing
+- [Introduction to Indexing](/python/framework/module_guides/indexing/index) - Overview of indexing approaches
+- [Index Guide](/python/framework/module_guides/indexing/index_guide) - Comprehensive guide to indices
+- [Vector Store Index](/python/framework/module_guides/indexing/vector_store_index) - Semantic search with vectors
+- [Property Graph Index](/python/framework/module_guides/indexing/lpg_index_guide) - Graph-based indexing
 
 ### Storing
-- [Introduction to Storing](./storing/index.md) - Overview of storage components
-- [Vector Stores](./storing/vector_stores.md) - Store embeddings for retrieval
-- [Document Stores](./storing/docstores.md) - Persist document collections
-- [Index Stores](./storing/index_stores.md) - Store index metadata
+- [Introduction to Storing](/python/framework/module_guides/storing/index) - Overview of storage components
+- [Vector Stores](/python/framework/module_guides/storing/vector_stores) - Store embeddings for retrieval
+- [Document Stores](/python/framework/module_guides/storing/docstores) - Persist document collections
+- [Index Stores](/python/framework/module_guides/storing/index_stores) - Store index metadata
 
 ### Querying
-- [Introduction to Querying](./querying/index.md) - Overview of query components
-- [Query Engines](./deploying/query_engine/index.md) - Process and answer queries
-- [Chat Engines](./deploying/chat_engines/index.md) - Build conversational interfaces
-- [Retrieval](./querying/retriever/index.md) - Retrieve relevant context
-- [Response Synthesis](./querying/response_synthesizers/index.md) - Generate coherent answers
+- [Introduction to Querying](/python/framework/module_guides/querying/index) - Overview of query components
+- [Query Engines](/python/framework/module_guides/deploying/query_engine/index) - Process and answer queries
+- [Chat Engines](/python/framework/module_guides/deploying/chat_engines/index) - Build conversational interfaces
+- [Retrieval](/python/framework/module_guides/querying/retriever/index) - Retrieve relevant context
+- [Response Synthesis](/python/framework/module_guides/querying/response_synthesizers/index) - Generate coherent answers
 
 ## Advanced Components
 
 ### Agents
-- [Introduction to Agents](./deploying/agents/index.md) - Overview of agent capabilities
-- [Memory](./deploying/agents/memory.md) - Add conversational memory to agents
-- [Tools](./deploying/agents/tools.md) - Extend capabilities with external tools
+- [Introduction to Agents](/python/framework/module_guides/deploying/agents/index) - Overview of agent capabilities
+- [Memory](/python/framework/module_guides/deploying/agents/memory) - Add conversational memory to agents
+- [Tools](/python/framework/module_guides/deploying/agents/tools) - Extend capabilities with external tools
 
 ### Workflows
-- [Introduction to Workflows](./workflow/index.md) - Build complex, multi-step AI workflows
+- [Introduction to Workflows](/python/framework/module_guides/workflow/index) - Build complex, multi-step AI workflows
 
 ### Evaluation
-- [Introduction to Evaluation](./evaluating/index.md) - Overview of evaluation frameworks
-- [Usage Patterns](./evaluating/usage_pattern.md) - Test and improve your applications
-- [LlamaDatasets](./evaluating/contributing_llamadatasets.md) - Standardized evaluation datasets
+- [Introduction to Evaluation](/python/framework/module_guides/evaluating/index) - Overview of evaluation frameworks
+- [Usage Patterns](/python/framework/module_guides/evaluating/usage_pattern) - Test and improve your applications
+- [LlamaDatasets](/python/framework/module_guides/evaluating/contributing_llamadatasets) - Standardized evaluation datasets
 
 ### Observability
-- [Introduction to Observability](./observability/index.md) - Overview of monitoring capabilities
-- [Instrumentation](./observability/instrumentation.md) - Monitor and debug your applications
+- [Introduction to Observability](/python/framework/module_guides/observability/index) - Overview of monitoring capabilities
+- [Instrumentation](/python/framework/module_guides/observability/instrumentation) - Monitor and debug your applications
 
 ### Settings
-- [Settings Configuration](./supporting_modules/settings.md) - Configure global LlamaIndex settings
-
-### Llama Deploy
-- [Introduction to Llama Deploy](./llama_deploy) - Deploy LlamaIndex applications to production
+- [Settings Configuration](/python/framework/module_guides/supporting_modules/settings) - Configure global LlamaIndex settings

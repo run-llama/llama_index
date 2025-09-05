@@ -75,4 +75,4 @@ We love open source contributions of new tools! You can see an example of [what 
 
 Once you've got a tool working, follow our [contributing guide](https://github.com/run-llama/llama_index/blob/main/CONTRIBUTING.md#2--contribute-a-pack-reader-tool-or-dataset-formerly-from-llama-hub) for instructions on correctly setting metadata and submitting a pull request.
 
-Next we'll look at [how to maintain state](./state.md) in your agents.
+Next we'll look at [how to maintain state](/python/framework/understanding/agent/state) in your agents.

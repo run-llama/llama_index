@@ -18,7 +18,7 @@ See the sections below for an overview of output parsers and Pydantic programs.
 
 Here we describe the different components of an LLM-powered structured output function. The pipeline depends on whether you're using a **generic LLM text completion API** or an **LLM function calling API**.
 
-![](../../../_static/structured_output/diagram1.png)
+![](/python/framework/_static/structured_output/diagram1.png)
 
 With generic completion APIs, the inputs and outputs are handled by text prompts. The output parser plays a role before and after the LLM call in ensuring structured outputs. Before the LLM call, the output parser can
 append format instructions to the prompt. After the LLM call, the output parser can parse the output to the specified instructions.
@@ -26,11 +26,11 @@ append format instructions to the prompt. After the LLM call, the output parser 
 With function calling APIs, the output is inherently in a structured format, and the input can take in the signature of the desired object. The structured output just needs to be cast in the right object format (e.g. Pydantic).
 
 ## Starter Guides
-- [Structured data extraction tutorial](../../../understanding/extraction/index.md)
-- [Examples of Structured Outputs](../../../examples/structured_outputs/structured_outputs.ipynb)
+- [Structured data extraction tutorial](/python/framework/understanding/extraction/index)
+- [Examples of Structured Outputs](/python/examples/structured_outputs/structured_outputs)
 
 ## Other Resources
 
-- [Pydantic Programs](./pydantic_program.md)
-- [Structured Outputs + Query Engines](./query_engine.md)
-- [Output Parsers](./output_parser.md)
+- [Pydantic Programs](/python/framework/module_guides/querying/structured_outputs/pydantic_program)
+- [Structured Outputs + Query Engines](/python/framework/module_guides/querying/structured_outputs/query_engine)
+- [Output Parsers](/python/framework/module_guides/querying/structured_outputs/output_parser)

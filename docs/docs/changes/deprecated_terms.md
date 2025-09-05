@@ -10,24 +10,24 @@ This has been renamed to `VectorStoreIndex`, as well as unifying all vector inde
 
 Please see the following links for more details on usage.
 
-- [Index Usage Pattern](../module_guides/evaluating/usage_pattern.md)
-- [Vector Store Guide](../module_guides/indexing/vector_store_guide.ipynb)
-- [Vector Store Integrations](../community/integrations/vector_stores.md)
+- [Index Usage Pattern](/python/framework/module_guides/evaluating/usage_pattern)
+- [Vector Store Guide](/python/framework/module_guides/indexing/vector_store_guide)
+- [Vector Store Integrations](/python/framework/community/integrations/vector_stores)
 
 ## GPTVectorStoreIndex
 
 This has been renamed to `VectorStoreIndex`, but it is only a cosmetic change. Please see the following links for more details on usage.
 
-- [Index Usage Pattern](../module_guides/evaluating/usage_pattern.md)
-- [Vector Store Guide](../module_guides/indexing/vector_store_guide.ipynb)
-- [Vector Store Integrations](../community/integrations/vector_stores.md)
+- [Index Usage Pattern](/python/framework/module_guides/evaluating/usage_pattern)
+- [Vector Store Guide](/python/framework/module_guides/indexing/vector_store_guide)
+- [Vector Store Integrations](/python/framework/community/integrations/vector_stores)
 
 ## LLMPredictor
 
 The `LLMPredictor` object is no longer intended to be used by users. Instead, you can setup an LLM directly and pass it into the `Settings` or the interface using the LLM. The `LLM` class itself has similar attributes and methods as the `LLMPredictor`.
 
-- [LLMs in LlamaIndex](../module_guides/models/llms.md)
-- [Setting LLMs in the Settings](../module_guides/supporting_modules/settings.md)
+- [LLMs in LlamaIndex](/python/framework/module_guides/models/llms)
+- [Setting LLMs in the Settings](/python/framework/module_guides/supporting_modules/settings)
 
 ## PromptHelper and max_input_size/
 
@@ -37,31 +37,31 @@ The `PromptHelper` in general has been deprecated in favour of specifying parame
 
 See the following links for more details.
 
-- [Configuring settings in the Settings](../module_guides/supporting_modules/settings.md)
-- [Parsing Documents into Nodes](../module_guides/loading/node_parsers/index.md)
+- [Configuring settings in the Settings](/python/framework/module_guides/supporting_modules/settings)
+- [Parsing Documents into Nodes](/python/framework/module_guides/loading/node_parsers/index)
 
 ## ServiceContext
 
 The `ServiceContext` object has been deprecated in favour of the `Settings` object.
 
-- [Configuring settings in the Settings](../module_guides/supporting_modules/settings.md)
+- [Configuring settings in the Settings](/python/framework/module_guides/supporting_modules/settings)
 
 ## llama-index-legacy
 
 The `llama-index-legacy` package has been deprecated and removed from the repository. Please see the latest getting started guide for the latest information and usage.
 
-- [Getting Started](../getting_started/installation.md)
+- [Getting Started](/python/framework/getting_started/installation)
 
 ## AgentRunner/AgentWorker (and related classes)
 
-The `AgentRunner` and `AgentWorker` classes have been deprecated in favour of [AgentWorkflow](../module_guides/deploying/agents/index.md) and [Workflows](../module_guides/workflow/index.md).
+The `AgentRunner` and `AgentWorker` classes have been deprecated in favour of [AgentWorkflow](/python/framework/module_guides/deploying/agents/index) and [Workflows](/python/framework/module_guides/workflow/index).
 
 This includes the following deprecated classes:
 
 - `AgentRunner`
 - `FunctionCallingAgent`
 - `FunctionCallingAgentWorker`
-- `llama_index.core.agent.ReActAgent` (use [llama_index.core.agent.workflow.ReActAgent](../module_guides/deploying/agents/index.md))
+- `llama_index.core.agent.ReActAgent` (use [llama_index.core.agent.workflow.ReActAgent](/python/framework/module_guides/deploying/agents/index))
 - `ReActAgentWorker`
 - `LATSAgentWorker`
 - `CoAAgentWorker`
@@ -76,7 +76,7 @@ This includes the following deprecated classes:
 
 ## QueryPipeline (and related classes)
 
-QueryPipeline has been deprecated in favour of [Workflows](../module_guides/workflow/index.md).
+QueryPipeline has been deprecated in favour of [Workflows](/python/framework/module_guides/workflow/index).
 
 This includes the following deprecated classes:
 

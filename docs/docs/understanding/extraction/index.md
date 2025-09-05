@@ -165,4 +165,4 @@ This expands to a much more complex JSON schema:
 }
 ```
 
-Now that you have a basic understanding of Pydantic and the schemas it generates, you can move on to using Pydantic classes for structured data extraction in LlamaIndex, starting with [Structured LLMs](structured_llms.md).
+Now that you have a basic understanding of Pydantic and the schemas it generates, you can move on to using Pydantic classes for structured data extraction in LlamaIndex, starting with [Structured LLMs](/python/framework/understanding/extraction/structured_llms).

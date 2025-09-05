@@ -44,9 +44,9 @@ Calling this agent kicks off a specific loop of actions:
     - The tool call results are added to the chat history
     - The Agent is invoked again with updated history, and either responds directly or selects more calls
 
-The `FunctionAgent` is a type of agent that uses an LLM provider's function/tool calling capabilities to execute tools. Other types of agents, such as [`ReActAgent`](../../../examples/agent/react_agent.ipynb) and [`CodeActAgent`](../../../examples/agent/code_act_agent.ipynb), use different prompting strategies to execute tools.
+The `FunctionAgent` is a type of agent that uses an LLM provider's function/tool calling capabilities to execute tools. Other types of agents, such as [`ReActAgent`](/python/examples/agent/react_agent) and [`CodeActAgent`](/python/examples/agent/code_act_agent), use different prompting strategies to execute tools.
 
-You can visit [the agents guide](../../../understanding/agent/index.md) to learn more about agents and their capabilities.
+You can visit [the agents guide](/python/framework/understanding/agent/index) to learn more about agents and their capabilities.
 
 !!! tip
     Some models might not support streaming LLM output. While streaming is enabled by default, if you encounter an error, you can always set `FunctionAgent(..., streaming=False)` to disable streaming.
@@ -55,7 +55,7 @@ You can visit [the agents guide](../../../understanding/agent/index.md) to learn
 
 Tools can be defined simply as python functions, or further customized using classes like `FunctionTool` and `QueryEngineTool`. LlamaIndex also provides sets of pre-defined tools for common APIs using something called `Tool Specs`.
 
-You can read more about configuring tools in the [tools guide](./tools.md)
+You can read more about configuring tools in the [tools guide](/python/framework/module_guides/deploying/agents/tools)
 
 ## Memory
 
@@ -71,7 +71,7 @@ memory = ChatMemoryBuffer.from_defaults(token_limit=40000)
 response = await agent.run(..., memory=memory)
 ```
 
-You can read more about configuring memory in the [memory guide](./memory.md)
+You can read more about configuring memory in the [memory guide](/python/framework/module_guides/deploying/agents/memory)
 
 ## Multi-Modal Agents
 
@@ -123,7 +123,7 @@ multi_agent = AgentWorkflow(agents=[FunctionAgent(...), FunctionAgent(...)])
 resp = await agent.run("query")
 ```
 
-This is only one way to build multi-agent systems. Read on to learn more about [multi-agent systems](../../../understanding/agent/multi_agent.md).
+This is only one way to build multi-agent systems. Read on to learn more about [multi-agent systems](/python/framework/understanding/agent/multi_agent).
 
 ## Manual Agents
 
@@ -187,4 +187,4 @@ print(resp.message.content)
 
 ## Examples / Module Guides
 
-You can find a more complete list of examples and module guides in the [module guides page](./modules.md).
+You can find a more complete list of examples and module guides in the [module guides page](/python/framework/module_guides/deploying/agents/modules).

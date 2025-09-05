@@ -253,4 +253,4 @@ If we disable caching with `Annotated[Memory, Resource(get_memory, cache=False)]
 to be called multiple times but the resource instance will be always the same. Such a resource should be considered
 stateful not regarding its caching behaviour.
 
-Now that we've mastered resources, let's take a look at [observability and debugging](./observability.md) in workflows.
+Now that we've mastered resources, let's take a look at [observability and debugging](/python/framework/understanding/workflows/observability) in workflows.

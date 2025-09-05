@@ -2,7 +2,7 @@
 
 An `IngestionPipeline` uses a concept of `Transformations` that are applied to input data. These `Transformations` are applied to your input data, and the resulting nodes are either returned or inserted into a vector database (if given). Each node+transformation pair is cached, so that subsequent runs (if the cache is persisted) with the same node+transformation combination can use the cached result and save you time.
 
-To see an interactive example of `IngestionPipeline` being put in use, check out the [RAG CLI](../../../getting_started/starter_tools/rag_cli.md).
+To see an interactive example of `IngestionPipeline` being put in use, check out the [RAG CLI](/python/framework/getting_started/starter_tools/rag_cli).
 
 ## Usage Pattern
 
@@ -182,9 +182,9 @@ pipeline = IngestionPipeline(
 )
 ```
 
-A full walkthrough is found in our [demo notebook](../../../examples/ingestion/document_management_pipeline.ipynb).
+A full walkthrough is found in our [demo notebook](/python/examples/ingestion/document_management_pipeline).
 
-Also check out another guide using [Redis as our entire ingestion stack](../../../examples/ingestion/redis_ingestion_pipeline.ipynb).
+Also check out another guide using [Redis as our entire ingestion stack](/python/examples/ingestion/redis_ingestion_pipeline).
 
 ## Parallel Processing
 
@@ -206,10 +206,10 @@ pipeline.run(documents=[...], num_workers=4)
 
 ## Modules
 
-- [Transformations Guide](transformations.md)
-- [Advanced Ingestion Pipeline](../../../examples/ingestion/advanced_ingestion_pipeline.ipynb)
-- [Async Ingestion Pipeline](../../../examples/ingestion/async_ingestion_pipeline.ipynb)
-- [Document Management Pipeline](../../../examples/ingestion/document_management_pipeline.ipynb)
-- [Redis Ingestion Pipeline](../../../examples/ingestion/redis_ingestion_pipeline.ipynb)
-- [Google Drive Ingestion Pipeline](../../../examples/ingestion/ingestion_gdrive.ipynb)
-- [Parallel Execution Pipeline](../../../examples/ingestion/parallel_execution_ingestion_pipeline.ipynb)
+- [Transformations Guide](/python/framework/module_guides/loading/ingestion_pipeline/transformations)
+- [Advanced Ingestion Pipeline](/python/examples/ingestion/advanced_ingestion_pipeline)
+- [Async Ingestion Pipeline](/python/examples/ingestion/async_ingestion_pipeline)
+- [Document Management Pipeline](/python/examples/ingestion/document_management_pipeline)
+- [Redis Ingestion Pipeline](/python/examples/ingestion/redis_ingestion_pipeline)
+- [Google Drive Ingestion Pipeline](/python/examples/ingestion/ingestion_gdrive)
+- [Parallel Execution Pipeline](/python/examples/ingestion/parallel_execution_ingestion_pipeline)

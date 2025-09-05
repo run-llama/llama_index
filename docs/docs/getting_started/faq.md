@@ -5,9 +5,9 @@ sidebar:
 # Frequently Asked Questions (FAQ)
 
 !!! tip
-    If you haven't already, [install LlamaIndex](installation.md) and complete the [starter tutorial](starter_example.md). If you run into terms you don't recognize, check out the [high-level concepts](concepts.md).
+    If you haven't already, [install LlamaIndex](/python/framework/getting_started/installation) and complete the [starter tutorial](/python/framework/getting_started/starter_example). If you run into terms you don't recognize, check out the [high-level concepts](/python/framework/getting_started/concepts).
 
-In this section, we start with the code you wrote for the [starter example](starter_example.md) and show you the most common ways you might want to customize it for your use case:
+In this section, we start with the code you wrote for the [starter example](/python/framework/getting_started/starter_example) and show you the most common ways you might want to customize it for your use case:
 
 ```python
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
@@ -62,7 +62,7 @@ vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
 ```
 
-`StorageContext` defines the storage backend for where the documents, embeddings, and indexes are stored. You can learn more about [storage](../module_guides/storing/index.md) and [how to customize it](../module_guides/storing/customization.md).
+`StorageContext` defines the storage backend for where the documents, embeddings, and indexes are stored. You can learn more about [storage](/python/framework/module_guides/storing/index) and [how to customize it](/python/framework/module_guides/storing/customization).
 
 ```python
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
@@ -90,7 +90,7 @@ response = query_engine.query("What did the author do growing up?")
 print(response)
 ```
 
-`as_query_engine` builds a default `retriever` and `query engine` on top of the index. You can configure the retriever and query engine by passing in keyword arguments. Here, we configure the retriever to return the top 5 most similar documents (instead of the default of 2). You can learn more about [retrievers](../module_guides/querying/retriever/retrievers.md) and [query engines](../module_guides/querying/retriever/index.md).
+`as_query_engine` builds a default `retriever` and `query engine` on top of the index. You can configure the retriever and query engine by passing in keyword arguments. Here, we configure the retriever to return the top 5 most similar documents (instead of the default of 2). You can learn more about [retrievers](/python/framework/module_guides/querying/retriever/retrievers) and [query engines](/python/framework/module_guides/querying/retriever/index).
 
 ---
 
@@ -118,7 +118,7 @@ index.as_query_engine(
     )
 )
 ```
-You can learn more about [customizing LLMs](../module_guides/models/llms.md).
+You can learn more about [customizing LLMs](/python/framework/module_guides/models/llms).
 
 ---
 
@@ -134,7 +134,7 @@ response = query_engine.query("What did the author do growing up?")
 print(response)
 ```
 
-You can learn more about [query engines](../module_guides/querying/index.md) and [response modes](../module_guides/deploying/query_engine/response_modes.md).
+You can learn more about [query engines](/python/framework/module_guides/querying/index) and [response modes](/python/framework/module_guides/deploying/query_engine/response_modes).
 
 ---
 
@@ -150,7 +150,7 @@ response = query_engine.query("What did the author do growing up?")
 response.print_response_stream()
 ```
 
-You can learn more about [streaming responses](../module_guides/deploying/query_engine/streaming.md).
+You can learn more about [streaming responses](/python/framework/module_guides/deploying/query_engine/streaming).
 
 ---
 
@@ -169,11 +169,11 @@ response = query_engine.chat("Oh interesting, tell me more.")
 print(response)
 ```
 
-Learn more about the [chat engine](../module_guides/deploying/chat_engines/usage_pattern.md).
+Learn more about the [chat engine](/python/framework/module_guides/deploying/chat_engines/usage_pattern).
 
 ---
 
 ## Next Steps
 
-- Want a thorough walkthrough of (almost) everything you can configure? Get started with [Understanding LlamaIndex](../understanding/index.md).
-- Want more in-depth understanding of specific modules? Check out the [component guides](../module_guides/index.md).
+- Want a thorough walkthrough of (almost) everything you can configure? Get started with [Understanding LlamaIndex](/python/framework/understanding/index).
+- Want more in-depth understanding of specific modules? Check out the [component guides](/python/framework/module_guides/index).

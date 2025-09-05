@@ -2,7 +2,7 @@
 
 Vector Stores are a key component of retrieval-augmented generation (RAG) and so you will end up using them in nearly every application you make using LlamaIndex, either directly or indirectly.
 
-Vector stores accept a list of [`Node` objects](../loading/documents_and_nodes/index.md) and build an index from them
+Vector stores accept a list of [`Node` objects](/python/framework/module_guides/loading/documents_and_nodes/index) and build an index from them
 
 ## Loading data into the index
 
@@ -23,9 +23,9 @@ index = VectorStoreIndex.from_documents(documents)
 !!! tip
     If you are using `from_documents` on the command line, it can be convenient to pass `show_progress=True` to display a progress bar during index construction.
 
-When you use `from_documents`, your Documents are split into chunks and parsed into [`Node` objects](../loading/documents_and_nodes/index.md), lightweight abstractions over text strings that keep track of metadata and relationships.
+When you use `from_documents`, your Documents are split into chunks and parsed into [`Node` objects](/python/framework/module_guides/loading/documents_and_nodes/index), lightweight abstractions over text strings that keep track of metadata and relationships.
 
-For more on how to load documents, see [Understanding Loading](../loading/index.md).
+For more on how to load documents, see [Understanding Loading](/python/framework/module_guides/loading/index).
 
 By default, VectorStoreIndex stores everything in memory. See [Using Vector Stores](#using-vector-stores) below for more on how to use persistent vector stores.
 
@@ -59,11 +59,11 @@ nodes = pipeline.run(documents=[Document.example()])
 ```
 
 !!! tip
-    You can learn more about [how to use the ingestion pipeline](../loading/ingestion_pipeline/index.md).
+    You can learn more about [how to use the ingestion pipeline](/python/framework/module_guides/loading/ingestion_pipeline/index).
 
 ### Creating and managing nodes directly
 
-If you want total control over your index you can [create and define nodes manually](../loading/documents_and_nodes/usage_nodes.md) and pass them directly to the index constructor:
+If you want total control over your index you can [create and define nodes manually](/python/framework/module_guides/loading/documents_and_nodes/usage_nodes) and pass them directly to the index constructor:
 
 ```python
 from llama_index.core.schema import TextNode
@@ -78,12 +78,12 @@ index = VectorStoreIndex(nodes)
 
 When managing your index directly, you will want to deal with data sources that change over time. `Index` classes have **insertion**, **deletion**, **update**, and **refresh** operations and you can learn more about them below:
 
-- [Metadata Extraction](metadata_extraction.md)
-- [Document Management](document_management.md)
+- [Metadata Extraction](/python/framework/module_guides/indexing/metadata_extraction)
+- [Document Management](/python/framework/module_guides/indexing/document_management)
 
 ## Storing the vector index
 
-LlamaIndex supports [dozens of vector stores](../storing/vector_stores.md). You can specify which one to use by passing in a `StorageContext`, on which in turn you specify the `vector_store` argument, as in this example using Pinecone:
+LlamaIndex supports [dozens of vector stores](/python/framework/module_guides/storing/vector_stores). You can specify which one to use by passing in a `StorageContext`, on which in turn you specify the `vector_store` argument, as in this example using Pinecone:
 
 ```python
 import pinecone
@@ -114,9 +114,9 @@ index = VectorStoreIndex.from_documents(
 )
 ```
 
-For more examples of how to use VectorStoreIndex, see our [vector store index usage examples notebook](./vector_store_guide.ipynb).
+For more examples of how to use VectorStoreIndex, see our [vector store index usage examples notebook](/python/framework/module_guides/indexing/vector_store_guide).
 
-For examples of how to use VectorStoreIndex with specific vector stores, check out [vector stores](../storing/vector_stores.md) under the Storing section.
+For examples of how to use VectorStoreIndex with specific vector stores, check out [vector stores](/python/framework/module_guides/storing/vector_stores) under the Storing section.
 
 ## Composable Retrieval
 
@@ -147,4 +147,4 @@ retriever = index.as_retriever(verbose=True)
 
 If the index node containing the query engine is retrieved, the query engine will be ran and the resulting response returned as a node.
 
-For more details, checkout [the guide](../../examples/retrievers/composable_retrievers.ipynb)
+For more details, checkout [the guide](/python/examples/retrievers/composable_retrievers)

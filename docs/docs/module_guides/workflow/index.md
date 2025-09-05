@@ -5,7 +5,7 @@ of `steps`, with each step responsible for handling certain event types and emit
 
 You can create a `Workflow` to do anything! Build an agent, a RAG flow, an extraction flow, or anything else you want.
 
-Workflows are also automatically instrumented, so you get observability into each step using tools like [Arize Pheonix](../observability/index.md#arize-phoenix-local). (**NOTE:** Observability works for integrations that take advantage of the newer instrumentation system. Usage may vary.)
+Workflows are also automatically instrumented, so you get observability into each step using tools like [Arize Pheonix](/python/framework/module_guides/observability/index#arize-phoenix-local). (**NOTE:** Observability works for integrations that take advantage of the newer instrumentation system. Usage may vary.)
 
 
 !!! important
