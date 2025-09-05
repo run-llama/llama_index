@@ -9,7 +9,7 @@ query_engine = index.as_query_engine()
 ```
 
 !!! tip
-    To learn how to build an index, see [Indexing](/python/framework/module_guides/indexing/index)
+    To learn how to build an index, see [Indexing](/python/framework/module_guides/indexing)
 
 Ask a question over your data
 

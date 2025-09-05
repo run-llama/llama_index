@@ -7,7 +7,7 @@ sidebar:
 
 In LlamaIndex, an agent is a semi-autonomous piece of software powered by an LLM that is given a task and executes a series of steps towards solving that task. It is given a set of tools, which can be anything from arbitrary functions up to full LlamaIndex query engines, and it selects the best available tool to complete each step. When each step is completed, the agent judges whether the task is now complete, in which case it returns a result to the user, or whether it needs to take another step, in which case it loops back to the start.
 
-In LlamaIndex, you can either [build your own agentic workflows from scratch](/python/framework/understanding/workflows/index), covered in the "Building Workflows" section, or you can use our pre-built agentic workflows like `FunctionAgent` (a simple function/tool calling agent) or `AgentWorkflow` (an agent capable of managing multiple agents). This tutorial covers building a function calling agent using `FunctionAgent`.
+In LlamaIndex, you can either [build your own agentic workflows from scratch](/python/framework/understanding/workflows), covered in the "Building Workflows" section, or you can use our pre-built agentic workflows like `FunctionAgent` (a simple function/tool calling agent) or `AgentWorkflow` (an agent capable of managing multiple agents). This tutorial covers building a function calling agent using `FunctionAgent`.
 
 To learn about the various ways to build multi-agent systems, go to ["Multi-agent systems"](/python/framework/understanding/agent/multi_agent).
 
@@ -40,7 +40,7 @@ Our agent will be powered by OpenAI's `gpt-4o-mini` LLM, so you'll need an [API 
 OPENAI_API_KEY=sk-proj-xxxx
 ```
 
-If you don't want to use OpenAI, you can use [any other LLM](../using_llms/using_llms.md) including local models. Agents require capable models, so smaller models may be less reliable.
+If you don't want to use OpenAI, you can use [any other LLM](/python/framework/understanding/using_llms) including local models. Agents require capable models, so smaller models may be less reliable.
 
 ## Bring in dependencies
 

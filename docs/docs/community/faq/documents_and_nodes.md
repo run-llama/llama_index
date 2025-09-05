@@ -10,7 +10,7 @@
 
 ##### 1. What is the default `chunk_size` of a Node object?
 
-It's 1024 by default. If you want to customize the `chunk_size`, You can follow [Customizing Node](/python/framework/module_guides/loading/node_parsers/index#customization)
+It's 1024 by default. If you want to customize the `chunk_size`, You can follow [Customizing Node](/python/framework/module_guides/loading/node_parsers#customization)
 
 ---
 

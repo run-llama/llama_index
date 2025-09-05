@@ -21,7 +21,7 @@ The analogy with software testing is integration tests and unit tests. You shoul
 
 Here is an overview of the existing modules for evaluation. We will be adding more modules and support over time.
 
-- [Evaluation Overview](/python/framework/module_guides/evaluating/index)
+- [Evaluation Overview](/python/framework/module_guides/evaluating)
 
 ### E2E or Component-Wise - Which Do I Start With?
 

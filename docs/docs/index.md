@@ -7,7 +7,7 @@ sidebar:
 
 # Welcome to LlamaIndex 🦙 !
 
-LlamaIndex is the leading framework for building LLM-powered agents over your data with [LLMs](https://en.wikipedia.org/wiki/Large_language_model) and [workflows](/python/framework/understanding/workflows/index).
+LlamaIndex is the leading framework for building LLM-powered agents over your data with [LLMs](https://en.wikipedia.org/wiki/Large_language_model) and [workflows](/python/framework/understanding/workflows).
 
 <div class="grid cards" markdown>
 
@@ -41,13 +41,13 @@ LlamaIndex is the leading framework for building LLM-powered agents over your da
 
 ### What are agents?
 
-[Agents](/python/framework/understanding/agent/index) are LLM-powered knowledge assistants that use tools to perform tasks like research, data extraction, and more. Agents range from simple question-answering to being able to sense, decide and take actions in order to complete tasks.
+[Agents](/python/framework/understanding/agent) are LLM-powered knowledge assistants that use tools to perform tasks like research, data extraction, and more. Agents range from simple question-answering to being able to sense, decide and take actions in order to complete tasks.
 
 LlamaIndex provides a framework for building agents including the ability to use RAG pipelines as one of many tools to complete a task.
 
 ### What are workflows?
 
-[Workflows](/python/framework/understanding/workflows/index) are multi-step processes that combine one or more agents, data connectors, and other tools to complete a task. They are event-driven software that allows you to combine RAG data sources and multiple agents to create a complex application that can perform a wide variety of tasks with reflection, error-correction, and other hallmarks of advanced LLM applications. You can then [deploy these agentic workflows](/python/workflows/deployment/) as production microservices.
+[Workflows](/python/framework/understanding/workflows) are multi-step processes that combine one or more agents, data connectors, and other tools to complete a task. They are event-driven software that allows you to combine RAG data sources and multiple agents to create a complex application that can perform a wide variety of tasks with reflection, error-correction, and other hallmarks of advanced LLM applications. You can then [deploy these agentic workflows](/python/workflows/deployment/) as production microservices.
 
 ### What is context augmentation?
 
@@ -81,7 +81,7 @@ Some popular use cases for LlamaIndex and context augmentation in general includ
 - [Multi-modal applications](/python/framework/use_cases/multimodal) that combine text, images, and other data types
 - [Fine-tuning](/python/framework/use_cases/fine_tuning) models on data to improve performance
 
-Check out our [use cases](/python/framework/use_cases/index) documentation for more examples and links to tutorials.
+Check out our [use cases](/python/framework/use_cases) documentation for more examples and links to tutorials.
 
 ### 👨‍👩‍👧‍👦 Who is LlamaIndex for?
 

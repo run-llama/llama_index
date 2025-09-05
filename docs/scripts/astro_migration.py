@@ -185,10 +185,28 @@ def check_file_for_broken_links(file_path: str, docs_dir: Path) -> List[Tuple[st
         if clean_url.startswith('/python/') and clean_url != clean_url.lower():
             needs_lowercasing = True
         
-        if is_broken_link(clean_url, docs_dir) or needs_lowercasing:
+        # Check if absolute URL points to .md file directly (should be cleaned)
+        needs_md_removal = False
+        if clean_url.startswith('/python/') and clean_url.endswith('.md'):
+            clean_without_md = clean_url[:-3]
+            if not is_broken_link(clean_without_md, docs_dir):
+                needs_md_removal = True
+        
+        # Check if absolute URL ends with /index (should be cleaned to just the directory)
+        needs_index_removal = False
+        if clean_url.startswith('/python/') and clean_url.endswith('/index'):
+            clean_without_index = clean_url[:-6]  # Remove '/index'
+            if clean_without_index and not is_broken_link(clean_without_index, docs_dir):
+                needs_index_removal = True
+        
+        if is_broken_link(clean_url, docs_dir) or needs_lowercasing or needs_md_removal or needs_index_removal:
             # Determine the reason why it's broken
             reason = "unknown"
-            if needs_lowercasing and not is_broken_link(clean_url.lower(), docs_dir):
+            if needs_index_removal:
+                reason = "needs_index_removal"
+            elif needs_md_removal:
+                reason = "needs_md_removal"
+            elif needs_lowercasing and not is_broken_link(clean_url.lower(), docs_dir):
                 reason = "needs_lowercase"
             elif is_external_link(clean_url):
                 reason = "external"  # This shouldn't happen since external links are not broken
@@ -219,21 +237,21 @@ def convert_relative_to_absolute(url: str, current_file_path: Path, docs_dir: Pa
         url: The relative URL to convert
         current_file_path: Path to the file containing the link
         docs_dir: Path to the docs directory
-    
+
     Returns:
         The converted absolute URL, or None if conversion not possible
     """
     if not url or url.startswith('/') or is_external_link(url) or url.startswith('#'):
         return None
-    
+
     # Get the directory containing the current file, relative to docs_dir
     try:
         current_file_rel = current_file_path.relative_to(docs_dir)
         current_dir = current_file_rel.parent
     except ValueError:
         return None
-    
-    # Resolve the relative path from the current file's directory
+
+    # First try the original path resolution method
     try:
         # Create a Path object from the relative URL
         relative_path = Path(url)
@@ -267,7 +285,11 @@ def convert_relative_to_absolute(url: str, current_file_path: Path, docs_dir: Pa
             elif examples_part.endswith('.ipynb'):
                 examples_part = examples_part[:-6]
             
-            return f"/python/examples/{examples_part}"
+            candidate_url = f"/python/examples/{examples_part}"
+            
+            # Validate that this URL actually works before returning it
+            if not is_broken_link(candidate_url, docs_dir):
+                return candidate_url
         
         # Check if this resolves to workflows (different repo)
         elif resolved_str.startswith('workflows/'):
@@ -281,7 +303,11 @@ def convert_relative_to_absolute(url: str, current_file_path: Path, docs_dir: Pa
             elif workflows_part.endswith('.ipynb'):
                 workflows_part = workflows_part[:-6]
             
-            return f"/python/workflows/{workflows_part}"
+            candidate_url = f"/python/workflows/{workflows_part}"
+            
+            # Validate that this URL actually works before returning it
+            if not is_broken_link(candidate_url, docs_dir):
+                return candidate_url
         
         # Check if this resolves to something that should be in the framework
         else:
@@ -292,8 +318,185 @@ def convert_relative_to_absolute(url: str, current_file_path: Path, docs_dir: Pa
             elif resolved_str.endswith('.ipynb'):
                 resolved_str = resolved_str[:-6]
             
-            return f"/python/framework/{resolved_str}"
+            candidate_url = f"/python/framework/{resolved_str}"
             
+            # Validate that this URL actually works before returning it
+            if not is_broken_link(candidate_url, docs_dir):
+                return candidate_url
+            
+    except Exception:
+        pass
+    
+    # If original method failed or produced a broken link, try the enhanced folder discovery method
+    return convert_relative_with_folder_discovery(url, docs_dir)
+
+
+def convert_relative_with_folder_discovery(url: str, docs_dir: Path) -> Optional[str]:
+    """
+    Convert a relative URL using folder discovery with find command.
+    
+    For URLs like ../../community/integrations/vector_stores.md:
+    1. Extract first element (community)
+    2. Use find to locate matching folder
+    3. Check if remainder of path exists in that folder
+    4. Convert to appropriate absolute URL
+    
+    Args:
+        url: The relative URL to convert
+        docs_dir: Path to the docs directory
+    
+    Returns:
+        The converted absolute URL, or None if conversion not possible
+    """
+    import subprocess
+    
+    try:
+        # Parse the relative path to extract components
+        url_path = Path(url)
+        parts = url_path.parts
+        
+        if not parts:
+            return None
+        
+        # Skip .. and . components to find the first real directory name
+        first_dir = None
+        remaining_parts = []
+        found_first = False
+        
+        for part in parts:
+            if part in ('..', '.'):
+                continue
+            elif not found_first:
+                first_dir = part
+                found_first = True
+            else:
+                remaining_parts.append(part)
+        
+        if not first_dir:
+            return None
+        
+        # Use find to search for directories with the first_dir name
+        # Search within the docs directory and parent directories
+        search_paths = [docs_dir, docs_dir.parent]
+        
+        for search_path in search_paths:
+            try:
+                # Run find command to locate matching directories
+                result = subprocess.run(
+                    ['find', str(search_path), '-type', 'd', '-name', first_dir, '-not', '-path', '*/.*'],
+                    capture_output=True,
+                    text=True,
+                    timeout=5
+                )
+                
+                if result.returncode == 0 and result.stdout.strip():
+                    found_dirs = result.stdout.strip().split('\n')
+                    
+                    # Sort directories by preference: prefer docs_dir paths over parent paths
+                    # and prefer shorter relative paths (closer matches)
+                    def sort_key(dir_path):
+                        path_obj = Path(dir_path)
+                        try:
+                            # Prefer paths within docs_dir
+                            rel_path = path_obj.relative_to(docs_dir)
+                            return (0, len(rel_path.parts), str(rel_path))
+                        except ValueError:
+                            # Paths outside docs_dir get lower priority
+                            return (1, len(path_obj.parts), str(path_obj))
+                    
+                    found_dirs.sort(key=sort_key)
+                    
+                    for found_dir in found_dirs:
+                        found_path = Path(found_dir)
+                        
+                        # Construct the full path with remaining parts
+                        if remaining_parts:
+                            target_file = found_path / Path(*remaining_parts)
+                        else:
+                            target_file = found_path
+                        
+                        # Check if the target file exists, or if it's a directory with index.md
+                        target_exists = False
+                        actual_target = target_file
+                        
+                        if target_file.exists():
+                            target_exists = True
+                        elif target_file.is_dir() or (not target_file.exists() and remaining_parts and remaining_parts[-1].endswith(('.md', '.ipynb'))):
+                            # Try looking for index.md in the directory
+                            if remaining_parts and remaining_parts[-1].endswith(('.md', '.ipynb')):
+                                # Remove the filename and look for index.md in that directory
+                                dir_path = found_path / Path(*remaining_parts[:-1])
+                                index_file = dir_path / 'index.md'
+                                if index_file.exists():
+                                    target_exists = True
+                                    actual_target = index_file
+                                    # Update remaining_parts to remove the non-existent filename
+                                    remaining_parts = remaining_parts[:-1]
+                        
+                        if target_exists:
+                            # Determine the appropriate URL prefix based on the found location
+                            try:
+                                rel_to_docs = found_path.relative_to(docs_dir)
+                                
+                                # Build the URL path
+                                if remaining_parts:
+                                    url_parts = list(rel_to_docs.parts) + remaining_parts
+                                else:
+                                    url_parts = list(rel_to_docs.parts)
+                                
+                                url_path_str = '/'.join(url_parts)
+                                
+                                # Apply URL normalization rules
+                                if url_path_str.endswith('.md'):
+                                    url_path_str = url_path_str[:-3]
+                                elif url_path_str.endswith('.ipynb'):
+                                    url_path_str = url_path_str[:-6]
+                                
+                                # Handle index files
+                                if url_path_str.endswith('/index'):
+                                    url_path_str = url_path_str[:-6]
+                                
+                                # Determine prefix based on location
+                                if url_path_str.startswith('examples/'):
+                                    examples_part = url_path_str[len('examples/'):]
+                                    return f"/python/examples/{examples_part}" if examples_part else "/python/examples"
+                                elif first_dir == 'workflows':
+                                    workflows_part = url_path_str[len('workflows/'):] if url_path_str.startswith('workflows/') else url_path_str
+                                    return f"/python/workflows/{workflows_part}" if workflows_part else "/python/workflows"
+                                else:
+                                    return f"/python/framework/{url_path_str}"
+                                    
+                            except ValueError:
+                                # found_path is not relative to docs_dir, might be in parent
+                                # Try to determine if it's a special case
+                                if first_dir == 'community':
+                                    # Community docs might be in a different location
+                                    if remaining_parts:
+                                        community_path = '/'.join(remaining_parts)
+                                        if community_path.endswith('.md'):
+                                            community_path = community_path[:-3]
+                                        elif community_path.endswith('.ipynb'):
+                                            community_path = community_path[:-6]
+                                        return f"/python/framework/community/{community_path}"
+                                    else:
+                                        return "/python/framework/community"
+                                
+                                # Default to framework for other cases
+                                if remaining_parts:
+                                    path_str = '/'.join([first_dir] + remaining_parts)
+                                    if path_str.endswith('.md'):
+                                        path_str = path_str[:-3]
+                                    elif path_str.endswith('.ipynb'):
+                                        path_str = path_str[:-6]
+                                    return f"/python/framework/{path_str}"
+                                else:
+                                    return f"/python/framework/{first_dir}"
+                
+            except (subprocess.TimeoutExpired, subprocess.SubprocessError, OSError):
+                continue
+        
+        return None
+        
     except Exception:
         return None
 
@@ -327,7 +530,10 @@ def fix_links_in_file(file_path: str, docs_dir: Path, dry_run: bool = False) -> 
         "examples_converted": 0,
         "framework_converted": 0,
         "workflows_converted": 0,
+        "enhanced_converted": 0,
         "lowercased": 0,
+        "md_removed": 0,
+        "index_removed": 0,
         "failed_conversions": 0
     }
     
@@ -340,8 +546,24 @@ def fix_links_in_file(file_path: str, docs_dir: Path, dry_run: bool = False) -> 
                            clean_url != clean_url.lower() and 
                            not is_broken_link(clean_url.lower(), docs_dir))
         
-        if is_broken_link(clean_url, docs_dir) or needs_lowercasing:
-            if needs_lowercasing:
+        # Check if this is an absolute URL that needs .md removal
+        needs_md_removal = (clean_url.startswith('/python/') and 
+                          clean_url.endswith('.md') and 
+                          not is_broken_link(clean_url[:-3], docs_dir))
+        
+        # Check if this is an absolute URL that needs /index removal
+        needs_index_removal = (clean_url.startswith('/python/') and 
+                             clean_url.endswith('/index') and 
+                             not is_broken_link(clean_url[:-6], docs_dir))
+        
+        if is_broken_link(clean_url, docs_dir) or needs_lowercasing or needs_md_removal or needs_index_removal:
+            if needs_index_removal:
+                # Remove /index from absolute URL
+                new_clean_url = clean_url[:-6]
+            elif needs_md_removal:
+                # Remove .md extension from absolute URL
+                new_clean_url = clean_url[:-3]
+            elif needs_lowercasing:
                 # Just lowercase the URL
                 new_clean_url = clean_url.lower()
             else:
@@ -349,8 +571,8 @@ def fix_links_in_file(file_path: str, docs_dir: Path, dry_run: bool = False) -> 
                 new_clean_url = convert_relative_to_absolute(clean_url, current_file_path, docs_dir)
             
             if new_clean_url:
-                # Verify the new URL is not broken (unless it's just lowercasing)
-                if needs_lowercasing or not is_broken_link(new_clean_url, docs_dir):
+                # Verify the new URL is not broken (unless it's just lowercasing, md removal, or index removal)
+                if needs_lowercasing or needs_md_removal or needs_index_removal or not is_broken_link(new_clean_url, docs_dir):
                     # Preserve any fragment from the original URL
                     if '#' in original_url:
                         fragment = original_url.split('#', 1)[1]
@@ -371,7 +593,11 @@ def fix_links_in_file(file_path: str, docs_dir: Path, dry_run: bool = False) -> 
                         
                         if new_line != line:
                             lines[line_idx] = new_line
-                            if needs_lowercasing:
+                            if needs_index_removal:
+                                fixes["index_removed"] += 1
+                            elif needs_md_removal:
+                                fixes["md_removed"] += 1
+                            elif needs_lowercasing:
                                 fixes["lowercased"] += 1
                             elif new_url.startswith('/python/examples/'):
                                 fixes["examples_converted"] += 1
@@ -387,7 +613,7 @@ def fix_links_in_file(file_path: str, docs_dir: Path, dry_run: bool = False) -> 
                 fixes["failed_conversions"] += 1
     
     # Write the modified content back to the file
-    if not dry_run and (fixes["examples_converted"] > 0 or fixes["framework_converted"] > 0 or fixes["workflows_converted"] > 0 or fixes["lowercased"] > 0):
+    if not dry_run and (fixes["examples_converted"] > 0 or fixes["framework_converted"] > 0 or fixes["workflows_converted"] > 0 or fixes["enhanced_converted"] > 0 or fixes["lowercased"] > 0 or fixes["md_removed"] > 0 or fixes["index_removed"] > 0):
         new_content = '\n'.join(lines)
         if new_content != original_content:
             try:
@@ -433,6 +659,8 @@ def main():
         "wrong_prefix": 0, 
         "file_not_found": 0,
         "needs_lowercase": 0,
+        "needs_md_removal": 0,
+        "needs_index_removal": 0,
         "unknown": 0
     }
     
@@ -441,7 +669,10 @@ def main():
         "examples_converted": 0,
         "framework_converted": 0,
         "workflows_converted": 0,
+        "enhanced_converted": 0,
         "lowercased": 0,
+        "md_removed": 0,
+        "index_removed": 0,
         "failed_conversions": 0
     }
     
@@ -467,9 +698,21 @@ def main():
                     print(f"  ✅ Fixed {fixes['workflows_converted']} workflows links")
                     total_fixes["workflows_converted"] += fixes["workflows_converted"]
                 
+                if fixes["enhanced_converted"] > 0:
+                    print(f"  ✅ Fixed {fixes['enhanced_converted']} links using enhanced discovery")
+                    total_fixes["enhanced_converted"] += fixes["enhanced_converted"]
+                
                 if fixes["lowercased"] > 0:
                     print(f"  ✅ Lowercased {fixes['lowercased']} URLs")
                     total_fixes["lowercased"] += fixes["lowercased"]
+                
+                if fixes["md_removed"] > 0:
+                    print(f"  ✅ Removed .md from {fixes['md_removed']} URLs")
+                    total_fixes["md_removed"] += fixes["md_removed"]
+                
+                if fixes["index_removed"] > 0:
+                    print(f"  ✅ Removed /index from {fixes['index_removed']} URLs")
+                    total_fixes["index_removed"] += fixes["index_removed"]
                 
                 if fixes["failed_conversions"] > 0:
                     print(f"  ❌ Failed to fix {fixes['failed_conversions']} links")
@@ -491,6 +734,8 @@ def main():
                         "wrong_prefix": "❌", 
                         "file_not_found": "📄",
                         "needs_lowercase": "🔤",
+                        "needs_md_removal": "📝",
+                        "needs_index_removal": "📂",
                         "unknown": "❓"
                     }.get(reason, "❓")
                     
@@ -506,9 +751,12 @@ def main():
         print(f"  Examples links fixed: {total_fixes['examples_converted']}")
         print(f"  Framework links fixed: {total_fixes['framework_converted']}")
         print(f"  Workflows links fixed: {total_fixes['workflows_converted']}")
+        print(f"  Enhanced discovery fixes: {total_fixes['enhanced_converted']}")
         print(f"  URLs lowercased: {total_fixes['lowercased']}")
+        print(f"  .md extensions removed: {total_fixes['md_removed']}")
+        print(f"  /index suffixes removed: {total_fixes['index_removed']}")
         print(f"  Failed conversions: {total_fixes['failed_conversions']}")
-        total_fixed = total_fixes['examples_converted'] + total_fixes['framework_converted'] + total_fixes['workflows_converted'] + total_fixes['lowercased']
+        total_fixed = total_fixes['examples_converted'] + total_fixes['framework_converted'] + total_fixes['workflows_converted'] + total_fixes['enhanced_converted'] + total_fixes['lowercased'] + total_fixes['md_removed'] + total_fixes['index_removed']
         print(f"  Total links fixed: {total_fixed}")
     else:
         print(f"Scan Summary:")
@@ -520,6 +768,8 @@ def main():
         print(f"  ❌ Wrong URL prefix: {reason_counts['wrong_prefix']}")
         print(f"  📄 File not found: {reason_counts['file_not_found']}")
         print(f"  🔤 Needs lowercase: {reason_counts['needs_lowercase']}")
+        print(f"  📝 Needs .md removal: {reason_counts['needs_md_removal']}")
+        print(f"  📂 Needs /index removal: {reason_counts['needs_index_removal']}")
         print(f"  ❓ Unknown: {reason_counts['unknown']}")
         
         if reason_counts['relative_path'] > 0:

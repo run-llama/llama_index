@@ -45,4 +45,4 @@ agent = FunctionAgent(
 )
 ```
 
-You can learn more in our [Agent Module Guide](/python/framework/module_guides/deploying/agents/index) or in our [end-to-end agent tutorial](/python/framework/understanding/agent/index).
+You can learn more in our [Agent Module Guide](/python/framework/module_guides/deploying/agents) or in our [end-to-end agent tutorial](/python/framework/understanding/agent).

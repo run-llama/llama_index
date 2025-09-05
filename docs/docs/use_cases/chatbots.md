@@ -6,7 +6,7 @@ LlamaIndex gives you the tools to build knowledge-augmented chatbots and agents.
 
 ## Resources
 
-The central module guide you'll want to check out is our [Chat Engines](/python/framework/module_guides/deploying/chat_engines/index).
+The central module guide you'll want to check out is our [Chat Engines](/python/framework/module_guides/deploying/chat_engines).
 
 Here are some additional relevant resources to build full-stack chatbot apps:
 

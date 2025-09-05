@@ -11,7 +11,7 @@ Currently, the following components are `Transformation` objects:
 
 ## Usage Pattern
 
-While transformations are best used with with an [`IngestionPipeline`](/python/framework/module_guides/loading/ingestion_pipeline/index), they can also be used directly.
+While transformations are best used with with an [`IngestionPipeline`](/python/framework/module_guides/loading/ingestion_pipeline), they can also be used directly.
 
 ```python
 from llama_index.core.node_parser import SentenceSplitter

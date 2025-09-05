@@ -96,7 +96,7 @@ Congratulations! You have learned everything there is to know about structured d
 
 For a deeper look at structured data extraction with LlamaIndex, check out the following guides:
 
-- [Structured Outputs](/python/framework/module_guides/querying/structured_outputs/index)
+- [Structured Outputs](/python/framework/module_guides/querying/structured_outputs)
 - [Pydantic Programs](/python/framework/module_guides/querying/structured_outputs/pydantic_program)
 - [Output Parsing](/python/framework/module_guides/querying/structured_outputs/output_parser)
 

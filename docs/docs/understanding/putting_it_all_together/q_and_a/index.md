@@ -2,7 +2,7 @@
 
 ## Semantic Search
 
-The most basic example usage of LlamaIndex is through semantic search. We provide a simple in-memory vector store for you to get started, but you can also choose to use any one of our [vector store integrations](../../community/integrations/vector_stores.md):
+The most basic example usage of LlamaIndex is through semantic search. We provide a simple in-memory vector store for you to get started, but you can also choose to use any one of our [vector store integrations](/python/framework/community/integrations/vector_stores):
 
 ```python
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
@@ -17,7 +17,7 @@ print(response)
 **Tutorials**
 
 - [Starter Tutorial](/python/framework/getting_started/starter_example)
-- [Basic Usage Pattern](../querying/querying.md)
+- [Basic Usage Pattern](/python/framework/module_guides/querying)
 
 **Guides**
 
@@ -50,12 +50,12 @@ Here are some relevant resources:
 
 **Tutorials**
 
-- [Guide on Text-to-SQL](structured_data.md)
+- [Guide on Text-to-SQL](/python/framework/understanding/putting_it_all_together/structured_data)
 
 **Guides**
 
-- [SQL Guide (Core)](../../examples/index_structs/struct_indices/SQLIndexDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs../../examples/index_structs/struct_indices/SQLIndexDemo.ipynb))
-- [Pandas Demo](../../examples/query_engine/pandas_query_engine.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs../../examples/query_engine/pandas_query_engine.ipynb))
+- [SQL Guide (Core)](/python/examples/index_structs/struct_indices/sqlindexdemo) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs../../examples/index_structs/struct_indices/SQLIndexDemo.ipynb))
+- [Pandas Demo](/python/examples/query_engine/pandas_query_engine) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs../../examples/query_engine/pandas_query_engine.ipynb))
 
 ## Routing over Heterogeneous Data
 

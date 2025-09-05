@@ -78,6 +78,6 @@ See the full [list of modules](/python/framework/module_guides/models/llms/modul
 ## Further reading
 
 - [Embeddings](/python/framework/module_guides/models/embeddings)
-- [Prompts](/python/framework/module_guides/models/prompts/index)
+- [Prompts](/python/framework/module_guides/models/prompts)
 - [Local LLMs](/python/framework/module_guides/models/llms/local)
 - [Running Llama2 Locally](https://replicate.com/blog/run-llama-locally)

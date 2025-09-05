@@ -5,7 +5,7 @@
 A data connector (aka `Reader`) ingest data from different data sources and data formats into a simple `Document` representation (text and simple metadata).
 
 !!! tip
-    Once you've ingested your data, you can build an [Index](/python/framework/module_guides/indexing/index) on top, ask questions using a [Query Engine](/python/framework/module_guides/deploying/query_engine/index), and have a conversation using a [Chat Engine](/python/framework/module_guides/deploying/chat_engines/index).
+    Once you've ingested your data, you can build an [Index](/python/framework/module_guides/indexing) on top, ask questions using a [Query Engine](/python/framework/module_guides/deploying/query_engine), and have a conversation using a [Chat Engine](/python/framework/module_guides/deploying/chat_engines).
 
 ## LlamaHub
 

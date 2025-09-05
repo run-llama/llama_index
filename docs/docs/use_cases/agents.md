@@ -10,8 +10,8 @@ that query in order to return the correct result. The key agent components can i
 
 LlamaIndex provides a comprehensive framework for building agentic systems with varying degrees of complexity:
 
-- **If you want to build agents quickly**: Use our prebuilt [agent](/python/framework/module_guides/deploying/agents/index) and [tool](/python/framework/module_guides/deploying/agents/tools) architectures to rapidly setup agentic systems.
-- **If you want full control over your agentic system**: Build and deploy custom agentic workflows from scratch using our [Workflows](/python/framework/module_guides/workflow/index).
+- **If you want to build agents quickly**: Use our prebuilt [agent](/python/framework/module_guides/deploying/agents) and [tool](/python/framework/module_guides/deploying/agents/tools) architectures to rapidly setup agentic systems.
+- **If you want full control over your agentic system**: Build and deploy custom agentic workflows from scratch using our [Workflows](/python/framework/module_guides/workflow).
 
 
 ## Use Cases
@@ -36,7 +36,7 @@ Others:
 
 The following component guides are the central hubs for getting started in building with agents:
 
-- [Agents](/python/framework/module_guides/deploying/agents/index)
+- [Agents](/python/framework/module_guides/deploying/agents)
 - [Tools](/python/framework/module_guides/deploying/agents/tools)
 
 
@@ -44,16 +44,16 @@ The following component guides are the central hubs for getting started in build
 
 LlamaIndex Workflows allow you to build very custom, agentic workflows through a core event-driven orchestration foundation.
 
-- [Workflows Tutorial Sequence](/python/framework/understanding/workflows/index)
-- [Workflows Component Guide](/python/framework/module_guides/workflow/index)
+- [Workflows Tutorial Sequence](/python/framework/understanding/workflows)
+- [Workflows Component Guide](/python/framework/module_guides/workflow)
 - [Building a ReAct agent workflow](/python/examples/workflow/react_agent)
-- [Deploying Workflows](/python/framework/module_guides/workflow/index#deploying-a-workflow)
+- [Deploying Workflows](/python/framework/module_guides/workflow#deploying-a-workflow)
 
 **Building with Agentic Ingredients**
 
 If you want to leverage core agentic ingredients in your workflow, LlamaIndex has robust abstractions for every agent sub-ingredient.
 
-- **Query Planning**: [Routing](/python/framework/module_guides/querying/router/index), [Sub-Questions](/python/examples/query_engine/sub_question_query_engine), [Query Transformations](/python/framework/optimizing/advanced_retrieval/query_transformations).
+- **Query Planning**: [Routing](/python/framework/module_guides/querying/router), [Sub-Questions](/python/examples/query_engine/sub_question_query_engine), [Query Transformations](/python/framework/optimizing/advanced_retrieval/query_transformations).
 - **Function Calling and Tool Use**: Check out our [OpenAI](/python/examples/llm/openai), [Mistral](/python/examples/llm/mistralai) guides as examples.
 
 ## Ecosystem

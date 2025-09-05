@@ -37,28 +37,28 @@ There are also some terms you'll encounter that refer to steps within each of th
 
 #### Loading stage
 
-[**Nodes and Documents**](/python/framework/module_guides/loading/documents_and_nodes/index): A `Document` is a container around any data source - for instance, a PDF, an API output, or retrieve data from a database. A `Node` is the atomic unit of data in LlamaIndex and represents a "chunk" of a source `Document`. Nodes have metadata that relate them to the document they are in and to other nodes.
+[**Nodes and Documents**](/python/framework/module_guides/loading/documents_and_nodes): A `Document` is a container around any data source - for instance, a PDF, an API output, or retrieve data from a database. A `Node` is the atomic unit of data in LlamaIndex and represents a "chunk" of a source `Document`. Nodes have metadata that relate them to the document they are in and to other nodes.
 
-[**Connectors**](/python/framework/module_guides/loading/connector/index):
+[**Connectors**](/python/framework/module_guides/loading/connector):
 A data connector (often called a `Reader`) ingests data from different data sources and data formats into `Documents` and `Nodes`.
 
 #### Indexing Stage
 
-[**Indexes**](/python/framework/module_guides/indexing/index):
+[**Indexes**](/python/framework/module_guides/indexing):
 Once you've ingested your data, LlamaIndex will help you index the data into a structure that's easy to retrieve. This usually involves generating `vector embeddings` which are stored in a specialized database called a `vector store`. Indexes can also store a variety of metadata about your data.
 
 [**Embeddings**](/python/framework/module_guides/models/embeddings): LLMs generate numerical representations of data called `embeddings`. When filtering your data for relevance, LlamaIndex will convert queries into embeddings, and your vector store will find data that is numerically similar to the embedding of your query.
 
 #### Querying Stage
 
-[**Retrievers**](/python/framework/module_guides/querying/retriever/index):
+[**Retrievers**](/python/framework/module_guides/querying/retriever):
 A retriever defines how to efficiently retrieve relevant context from an index when given a query. Your retrieval strategy is key to the relevancy of the data retrieved and the efficiency with which it's done.
 
-[**Routers**](/python/framework/module_guides/querying/router/index):
+[**Routers**](/python/framework/module_guides/querying/router):
 A router determines which retriever will be used to retrieve relevant context from the knowledge base. More specifically, the `RouterRetriever` class, is responsible for selecting one or multiple candidate retrievers to execute a query. They use a selector to choose the best option based on each candidate's metadata and the query.
 
-[**Node Postprocessors**](/python/framework/module_guides/querying/node_postprocessors/index):
+[**Node Postprocessors**](/python/framework/module_guides/querying/node_postprocessors):
 A node postprocessor takes in a set of retrieved nodes and applies transformations, filtering, or re-ranking logic to them.
 
-[**Response Synthesizers**](/python/framework/module_guides/querying/response_synthesizers/index):
+[**Response Synthesizers**](/python/framework/module_guides/querying/response_synthesizers):
 A response synthesizer generates a response from an LLM, using a user query and a given set of retrieved text chunks.

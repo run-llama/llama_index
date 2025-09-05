@@ -53,7 +53,7 @@ LlamaIndex offers token **predictors** to predict token usage of LLM and embeddi
 This allows you to estimate your costs during 1) index construction, and 2) index querying, before
 any respective LLM calls are made.
 
-Tokens are counted using the `TokenCountingHandler` callback. See the [example notebook](../../../examples/callbacks/TokenCountingHandler.ipynb) for details on the setup.
+Tokens are counted using the `TokenCountingHandler` callback. See the [example notebook](/python/examples/observability/tokencountinghandler) for details on the setup.
 
 ### Using MockLLM
 

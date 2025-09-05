@@ -25,7 +25,7 @@ Listed below are the core classes as well as their brief description of the
 
 A core use case for instrumentation is observability. Our native instrumentation integrations with third-party partners allow you to get detailed traces across the entire call stack.
 
-Check out our [observability guide](/python/framework/module_guides/observability/index) for more details on supported partners.
+Check out our [observability guide](/python/framework/module_guides/observability) for more details on supported partners.
 
 
 ## Usage
@@ -84,7 +84,7 @@ class ExampleEventHandler(BaseEventHandler):
         print("-----------------------")
 ```
 
-See the [full guide](/python/examples/instrumentation/instrumentation_observability_rundown) on all events logged in LlamaIndex, or visit the [api reference](/python/framework/api_reference/instrumentation/index) for more details.
+See the [full guide](/python/examples/instrumentation/instrumentation_observability_rundown) on all events logged in LlamaIndex, or visit the [api reference](/python/framework/api_reference/instrumentation) for more details.
 
 ### Defining a custom `EventHandler`
 
@@ -307,4 +307,4 @@ project
 
 ## API Reference
 
-- [Instrumentation API Reference](/python/framework/api_reference/instrumentation/index)
+- [Instrumentation API Reference](/python/framework/api_reference/instrumentation)

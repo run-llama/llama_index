@@ -7,7 +7,7 @@ A lot of modules (routing, query transformations, and more) are already agentic 
 
 These include routing and query transformations.
 
-- [Routing](/python/framework/module_guides/querying/router/index)
+- [Routing](/python/framework/module_guides/querying/router)
 - [Query Transformations](/python/framework/optimizing/advanced_retrieval/query_transformations)
 - [Sub Question Query Engine (Intro)](/python/examples/query_engine/sub_question_query_engine)
 
@@ -15,9 +15,9 @@ These include routing and query transformations.
 
 This guides below show you how to deploy a full agent loop, capable of chain-of-thought and query planning, on top of existing RAG query engines as tools for more advanced decision making.
 
-Make sure to check out our [full module guide on Data Agents](/python/framework/module_guides/deploying/agents/index), which highlight these use cases and much more.
+Make sure to check out our [full module guide on Data Agents](/python/framework/module_guides/deploying/agents), which highlight these use cases and much more.
 
-Our [lower-level agent API](/python/framework/module_guides/deploying/agents/index#manual-agents) shows you the internals of how an agent works (with step-wise execution).
+Our [lower-level agent API](/python/framework/module_guides/deploying/agents#manual-agents) shows you the internals of how an agent works (with step-wise execution).
 
 Example guides below (using LLM-provider-specific function calling):
 

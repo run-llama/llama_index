@@ -26,7 +26,7 @@ append format instructions to the prompt. After the LLM call, the output parser 
 With function calling APIs, the output is inherently in a structured format, and the input can take in the signature of the desired object. The structured output just needs to be cast in the right object format (e.g. Pydantic).
 
 ## Starter Guides
-- [Structured data extraction tutorial](/python/framework/understanding/extraction/index)
+- [Structured data extraction tutorial](/python/framework/understanding/extraction)
 - [Examples of Structured Outputs](/python/examples/structured_outputs/structured_outputs)
 
 ## Other Resources

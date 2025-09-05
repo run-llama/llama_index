@@ -18,7 +18,7 @@ When more than one specialist is required to solve a task you have several optio
 
 **When to use** – you want multi-agent behaviour out-of-the-box with almost no extra code, and you are happy with the default hand-off heuristics that ship with `AgentWorkflow`.
 
-`AgentWorkflow` is itself a [Workflow](/python/framework/understanding/workflows/index) pre-configured to understand agents, state and tool-calling.  You supply an *array* of one or more agents, tell it which one should start, and it will:
+`AgentWorkflow` is itself a [Workflow](/python/framework/understanding/workflows) pre-configured to understand agents, state and tool-calling.  You supply an *array* of one or more agents, tell it which one should start, and it will:
 
 1. Give the *root* agent the user message.
 2. Execute whatever tools that agent selects.

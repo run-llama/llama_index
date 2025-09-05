@@ -2,7 +2,7 @@
 
 Evaluation and benchmarking are crucial concepts in LLM development. To improve the performance of an LLM app (RAG, agents), you must have a way to measure it.
 
-LlamaIndex offers key modules to measure the quality of generated results. We also offer key modules to measure retrieval quality. You can learn more about how evaluation works in LlamaIndex in our [module guides](/python/framework/module_guides/evaluating/index).
+LlamaIndex offers key modules to measure the quality of generated results. We also offer key modules to measure retrieval quality. You can learn more about how evaluation works in LlamaIndex in our [module guides](/python/framework/module_guides/evaluating).
 
 ## Response Evaluation
 
@@ -62,4 +62,4 @@ In reality you would want to evaluate a whole batch of retrievals; you can learn
 
 ## Related concepts
 
-You may be interested in [analyzing the cost of your application](/python/framework/understanding/evaluating/cost_analysis/index) if you are making calls to a hosted, remote LLM.
+You may be interested in [analyzing the cost of your application](/python/framework/understanding/evaluating/cost_analysis) if you are making calls to a hosted, remote LLM.

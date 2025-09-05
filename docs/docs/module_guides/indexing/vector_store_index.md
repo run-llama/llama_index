@@ -2,7 +2,7 @@
 
 Vector Stores are a key component of retrieval-augmented generation (RAG) and so you will end up using them in nearly every application you make using LlamaIndex, either directly or indirectly.
 
-Vector stores accept a list of [`Node` objects](/python/framework/module_guides/loading/documents_and_nodes/index) and build an index from them
+Vector stores accept a list of [`Node` objects](/python/framework/module_guides/loading/documents_and_nodes) and build an index from them
 
 ## Loading data into the index
 
@@ -23,9 +23,9 @@ index = VectorStoreIndex.from_documents(documents)
 !!! tip
     If you are using `from_documents` on the command line, it can be convenient to pass `show_progress=True` to display a progress bar during index construction.
 
-When you use `from_documents`, your Documents are split into chunks and parsed into [`Node` objects](/python/framework/module_guides/loading/documents_and_nodes/index), lightweight abstractions over text strings that keep track of metadata and relationships.
+When you use `from_documents`, your Documents are split into chunks and parsed into [`Node` objects](/python/framework/module_guides/loading/documents_and_nodes), lightweight abstractions over text strings that keep track of metadata and relationships.
 
-For more on how to load documents, see [Understanding Loading](/python/framework/module_guides/loading/index).
+For more on how to load documents, see [Understanding Loading](/python/framework/module_guides/loading).
 
 By default, VectorStoreIndex stores everything in memory. See [Using Vector Stores](#using-vector-stores) below for more on how to use persistent vector stores.
 
@@ -59,7 +59,7 @@ nodes = pipeline.run(documents=[Document.example()])
 ```
 
 !!! tip
-    You can learn more about [how to use the ingestion pipeline](/python/framework/module_guides/loading/ingestion_pipeline/index).
+    You can learn more about [how to use the ingestion pipeline](/python/framework/module_guides/loading/ingestion_pipeline).
 
 ### Creating and managing nodes directly
 

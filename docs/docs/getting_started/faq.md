@@ -62,7 +62,7 @@ vector_store = ChromaVectorStore(chroma_collection=chroma_collection)
 storage_context = StorageContext.from_defaults(vector_store=vector_store)
 ```
 
-`StorageContext` defines the storage backend for where the documents, embeddings, and indexes are stored. You can learn more about [storage](/python/framework/module_guides/storing/index) and [how to customize it](/python/framework/module_guides/storing/customization).
+`StorageContext` defines the storage backend for where the documents, embeddings, and indexes are stored. You can learn more about [storage](/python/framework/module_guides/storing) and [how to customize it](/python/framework/module_guides/storing/customization).
 
 ```python
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
@@ -90,7 +90,7 @@ response = query_engine.query("What did the author do growing up?")
 print(response)
 ```
 
-`as_query_engine` builds a default `retriever` and `query engine` on top of the index. You can configure the retriever and query engine by passing in keyword arguments. Here, we configure the retriever to return the top 5 most similar documents (instead of the default of 2). You can learn more about [retrievers](/python/framework/module_guides/querying/retriever/retrievers) and [query engines](/python/framework/module_guides/querying/retriever/index).
+`as_query_engine` builds a default `retriever` and `query engine` on top of the index. You can configure the retriever and query engine by passing in keyword arguments. Here, we configure the retriever to return the top 5 most similar documents (instead of the default of 2). You can learn more about [retrievers](/python/framework/module_guides/querying/retriever/retrievers) and [query engines](/python/framework/module_guides/querying/retriever).
 
 ---
 
@@ -134,7 +134,7 @@ response = query_engine.query("What did the author do growing up?")
 print(response)
 ```
 
-You can learn more about [query engines](/python/framework/module_guides/querying/index) and [response modes](/python/framework/module_guides/deploying/query_engine/response_modes).
+You can learn more about [query engines](/python/framework/module_guides/querying) and [response modes](/python/framework/module_guides/deploying/query_engine/response_modes).
 
 ---
 
@@ -175,5 +175,5 @@ Learn more about the [chat engine](/python/framework/module_guides/deploying/cha
 
 ## Next Steps
 
-- Want a thorough walkthrough of (almost) everything you can configure? Get started with [Understanding LlamaIndex](/python/framework/understanding/index).
-- Want more in-depth understanding of specific modules? Check out the [component guides](/python/framework/module_guides/index).
+- Want a thorough walkthrough of (almost) everything you can configure? Get started with [Understanding LlamaIndex](/python/framework/understanding).
+- Want more in-depth understanding of specific modules? Check out the [component guides](/python/framework/module_guides).

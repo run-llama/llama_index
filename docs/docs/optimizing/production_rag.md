@@ -99,7 +99,7 @@ RAG isn't just about question-answering about specific facts, which top-k simila
 
 #### Key Techniques
 
-LlamaIndex provides some core abstractions to help you do task-specific retrieval. This includes our [router](/python/framework/module_guides/querying/router/index) module as well as our [data agent](/python/framework/module_guides/deploying/agents/index) module.
+LlamaIndex provides some core abstractions to help you do task-specific retrieval. This includes our [router](/python/framework/module_guides/querying/router) module as well as our [data agent](/python/framework/module_guides/deploying/agents) module.
 This also includes some advanced query engine modules.
 This also include other modules that join structured and unstructured data.
 
@@ -107,9 +107,9 @@ You can use these modules to do joint question-answering and summarization, or e
 
 **Core Module Resources**
 
-- [Query engine](/python/framework/module_guides/deploying/query_engine/index)
-- [Agents](/python/framework/module_guides/deploying/agents/index)
-- [Router](/python/framework/module_guides/querying/router/index)
+- [Query engine](/python/framework/module_guides/deploying/query_engine)
+- [Agents](/python/framework/module_guides/deploying/agents)
+- [Router](/python/framework/module_guides/querying/router)
 
 **Detailed Guide Resources**
 

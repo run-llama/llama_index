@@ -10,7 +10,7 @@ Once you have structured data you can send them to a database, or you can parse 
 
 ## Full tutorial
 
-Our Learn section has a [full tutorial on structured data extraction](/python/framework/understanding/extraction/index). We recommend starting out there.
+Our Learn section has a [full tutorial on structured data extraction](/python/framework/understanding/extraction). We recommend starting out there.
 
 There is also an [example notebook](/python/examples/structured_outputs/structured_outputs) demonstrating some of the techniques from the tutorial.
 
@@ -18,7 +18,7 @@ There is also an [example notebook](/python/examples/structured_outputs/structur
 
 For a more comprehensive overview of structured data extraction with LlamaIndex, including lower-level modules, check out the following guides:
 
-- [Structured Outputs](/python/framework/module_guides/querying/structured_outputs/index)
+- [Structured Outputs](/python/framework/module_guides/querying/structured_outputs)
 - [Pydantic Programs](/python/framework/module_guides/querying/structured_outputs/pydantic_program)
 - [Output Parsing](/python/framework/module_guides/querying/structured_outputs/output_parser)
 

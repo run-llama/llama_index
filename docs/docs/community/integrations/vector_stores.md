@@ -56,7 +56,7 @@ as the storage backend for `VectorStoreIndex`.
 - Zep (`ZepVectorStore`). [Installation](https://docs.getzep.com/deployment/quickstart/). [Python Client](https://docs.getzep.com/sdk/).
 - Zilliz (`MilvusVectorStore`). [Quickstart](https://zilliz.com/doc/quick_start)
 
-A detailed API reference is [found here](/python/framework/api_reference/storage/vector_store/index).
+A detailed API reference is [found here](/python/framework/api_reference/storage/vector_store).
 
 Similar to any other index within LlamaIndex (tree, keyword table, list), `VectorStoreIndex` can be constructed upon any collection
 of documents. We use the vector store within the index to store embeddings for the input text chunks.

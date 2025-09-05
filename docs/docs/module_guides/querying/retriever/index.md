@@ -4,8 +4,8 @@
 
 Retrievers are responsible for fetching the most relevant context given a user query (or chat message).
 
-It can be built on top of [indexes](/python/framework/module_guides/indexing/index), but can also be defined independently.
-It is used as a key building block in [query engines](/python/framework/module_guides/deploying/query_engine/index) (and [Chat Engines](/python/framework/module_guides/deploying/chat_engines/index)) for retrieving relevant context.
+It can be built on top of [indexes](/python/framework/module_guides/indexing), but can also be defined independently.
+It is used as a key building block in [query engines](/python/framework/module_guides/deploying/query_engine) (and [Chat Engines](/python/framework/module_guides/deploying/chat_engines)) for retrieving relevant context.
 
 !!! tip
     Confused about where retriever fits in the RAG workflow? Read about [high-level concepts](/python/framework/getting_started/concepts)
@@ -33,7 +33,7 @@ Retrieve relevant context for a question:
 nodes = retriever.retrieve("Who is Paul Graham?")
 ```
 
-> Note: To learn how to build an index, see [Indexing](/python/framework/module_guides/indexing/index)
+> Note: To learn how to build an index, see [Indexing](/python/framework/module_guides/indexing)
 
 ## High-Level API
 

@@ -4,7 +4,7 @@ sidebar:
 ---
 # Discover LlamaIndex Video Series
 
-If you like learning from videos, now's a good time to check out our "Discover LlamaIndex" series. If not, we recommend heading on to our [Understanding LlamaIndex](/python/framework/understanding/index) tutorial.
+If you like learning from videos, now's a good time to check out our "Discover LlamaIndex" series. If not, we recommend heading on to our [Understanding LlamaIndex](/python/framework/understanding) tutorial.
 
 ## Bottoms-Up Development (Llama Docs Bot)
 

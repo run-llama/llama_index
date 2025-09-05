@@ -53,4 +53,4 @@ Take a look at our in-depth guides for more details on how to use Documents/Node
 
 - [Using Documents](/python/framework/module_guides/loading/documents_and_nodes/usage_documents)
 - [Using Nodes](/python/framework/module_guides/loading/documents_and_nodes/usage_nodes)
-- [Ingestion Pipeline](/python/framework/module_guides/loading/ingestion_pipeline/index)
+- [Ingestion Pipeline](/python/framework/module_guides/loading/ingestion_pipeline)

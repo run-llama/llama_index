@@ -240,7 +240,7 @@ This is just the beginning of what you can do with LlamaIndex agents! You can:
 
 Some helpful next links:
 
-- See more advanced agent examples in our [Agent documentation](/python/framework/understanding/agent/index)
+- See more advanced agent examples in our [Agent documentation](/python/framework/understanding/agent)
 - Learn more about [high-level concepts](/python/framework/getting_started/concepts)
 - Explore how to [customize things](/python/framework/getting_started/faq)
-- Check out the [component guides](/python/framework/module_guides/index)
+- Check out the [component guides](/python/framework/module_guides)

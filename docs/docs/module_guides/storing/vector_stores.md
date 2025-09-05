@@ -40,7 +40,6 @@ We are actively adding more integrations and improving feature coverage for each
 | Jaguar                     | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
 | LanceDB                    | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | Lantern                    | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               | ✓     |
-| Metal                      | cloud                   | ✓                  |               | ✓      | ✓               |       |
 | MongoDB Atlas              | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
 | MyScale                    | cloud                   | ✓                  | ✓             | ✓      | ✓               |       |
 | Milvus / Zilliz            | self-hosted / cloud     | ✓                  | ✓             | ✓      | ✓               |       |
@@ -94,7 +93,6 @@ For more details, see [Vector Store Integrations](/python/framework/community/in
 - [Jaguar](/python/examples/vector_stores/jaguarindexdemo)
 - [LanceDB](/python/examples/vector_stores/lancedbindexdemo)
 - [Lantern](/python/examples/vector_stores/lanternindexdemo)
-- [Metal](../../examples/vector_stores/MetalIndexDemo.ipynb)
 - [Milvus](/python/examples/vector_stores/milvusindexdemo)
 - [Milvus Async API](/python/examples/vector_stores/milvusasyncapidemo)
 - [Milvus Full-Text Search](/python/examples/vector_stores/milvusfulltextsearchdemo)

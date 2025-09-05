@@ -52,7 +52,7 @@ index = PropertyGraphIndex.from_existing(
 
 Property graph construction in LlamaIndex works by performing a series of `kg_extractors` on each chunk, and attaching entities and relations as metadata to each llama-index node. You can use as many as you like here, and they will all get applied.
 
-If you've used transformations or metadata extractors with the [ingestion pipeline](/python/framework/module_guides/loading/ingestion_pipeline/index), then this will be very familiar (and these `kg_extractors` are compatible with the ingestion pipeline)!
+If you've used transformations or metadata extractors with the [ingestion pipeline](/python/framework/module_guides/loading/ingestion_pipeline), then this will be very familiar (and these `kg_extractors` are compatible with the ingestion pipeline)!
 
 Extractors are set using the appropriate kwarg:
 

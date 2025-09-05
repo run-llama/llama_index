@@ -13,7 +13,7 @@ Build powerful AI assistants with LlamaIndex's agent capabilities:
 - [Code Act Agent](/python/examples/agent/code_act_agent) - Agents that can write and execute code
 - [Multi-Agent Workflow](/python/examples/agent/agent_workflow_multi) - Build a multi-agent workflow with `AgentWorkflow`
 
-You might also be interested in the [general introduction to agents](/python/framework/understanding/agent/index).
+You might also be interested in the [general introduction to agents](/python/framework/understanding/agent).
 
 ## Agentic Workflows
 
@@ -25,7 +25,7 @@ Use LlamaIndex Workflows to build agentic systems:
 - [Basic RAG](/python/examples/workflow/rag) - Simple RAG workflow implementation
 - [Advanced Text-to-SQL](/python/examples/workflow/advanced_text_to_sql) - Use LlamaIndex to generate SQL queries and execute them
 
-You might also be interested in the [general introduction to agentic workflows](/python/framework/understanding/workflows/index).
+You might also be interested in the [general introduction to agentic workflows](/python/framework/understanding/workflows).
 
 ## LLM Integrations
 
@@ -64,4 +64,4 @@ Store and retrieve vector embeddings:
 - [Milvus](/python/examples/vector_stores/milvusindexdemo) - Milvus vector database
 - [Azure AI Search](/python/examples/vector_stores/azureaisearchindexdemo) - Azure AI Search vector database
 
-You might also be interested in the [general introduction to vector stores and retrieval](/python/framework/understanding/rag/index).
+You might also be interested in the [general introduction to vector stores and retrieval](/python/framework/understanding/rag).

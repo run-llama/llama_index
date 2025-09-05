@@ -44,7 +44,7 @@ Check out our guides below:
 
 Here are some initial works demonstrating agentic capabilities with GPT-4V.
 
-- [Multi-Modal Agents](/python/framework/module_guides/deploying/agents/index#multi-modal-agents)
+- [Multi-Modal Agents](/python/framework/module_guides/deploying/agents#multi-modal-agents)
 - [GPT-4V Experiments](/python/examples/multi_modal/gpt4v_experiments_cot)
 
 ## Evaluations and Comparisons

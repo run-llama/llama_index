@@ -2,7 +2,7 @@
 
 Document stores contain ingested document chunks, which we call `Node` objects.
 
-See the [API Reference](/python/framework/api_reference/storage/docstore/index) for more details.
+See the [API Reference](/python/framework/api_reference/storage/docstore) for more details.
 
 ### Simple Document Store
 

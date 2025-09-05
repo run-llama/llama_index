@@ -40,7 +40,7 @@ agent = FunctionAgent(
 response = await agent.run("Your query here")
 ```
 
-You can read more about agents in the [Agents Guide](/python/framework/understanding/agent/index).
+You can read more about agents in the [Agents Guide](/python/framework/understanding/agent).
 
 ## Connection Types
 

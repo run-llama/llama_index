@@ -64,7 +64,7 @@ response = query_engine.query("query_text")
 ```
 
 !!! tip
-    To learn how to build an index, see [Indexing](/python/framework/module_guides/indexing/index)
+    To learn how to build an index, see [Indexing](/python/framework/module_guides/indexing)
 
 ## Configuring the Response Mode
 

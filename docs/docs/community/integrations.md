@@ -6,7 +6,7 @@ LlamaIndex has a number of community integrations, from vector stores, to prompt
 
 LlamaHub hosts a full suite of LlamaPacks -- templates for features that you can download, edit, and try out! This offers a quick way to learn about new features and try new techniques.
 
-The full set of LlamaPacks is available on [LlamaHub](https://llamahub.ai/). Check out our [dedicated page](/python/framework/community/llama_packs/index).
+The full set of LlamaPacks is available on [LlamaHub](https://llamahub.ai/). Check out our [dedicated page](/python/framework/community/llama_packs).
 
 ## Data Loaders
 
@@ -24,7 +24,7 @@ We support [a huge number of LLMs](/python/framework/module_guides/models/llms/m
 
 ## Observability/Tracing/Evaluation
 
-Check out our [one-click observability](/python/framework/module_guides/observability/index) page
+Check out our [one-click observability](/python/framework/module_guides/observability) page
 for full tracing integrations.
 
 ## Experiment Tracking

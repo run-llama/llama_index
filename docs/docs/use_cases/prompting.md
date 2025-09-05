@@ -14,7 +14,7 @@ Here's the [full module guide for LLMs](/python/framework/module_guides/models/l
 
 LlamaIndex has robust prompt abstractions that capture all the common interaction patterns with LLMs.
 
-Here's the [full module guide for prompts](/python/framework/module_guides/models/prompts/index).
+Here's the [full module guide for prompts](/python/framework/module_guides/models/prompts).
 
 ### Table Stakes
 - [Text Completion Prompts](/python/examples/customization/prompts/completion_prompts)
@@ -28,6 +28,6 @@ Here's the [full module guide for prompts](/python/framework/module_guides/model
 
 LlamaIndex has robust abstractions for creating sequential prompt chains, as well as general DAGs to orchestrate prompts with any other component. This allows you to build complex workflows, including RAG with multi-hop query understanding layers, as well as agents.
 
-These pipelines are integrated with [observability partners](/python/framework/module_guides/observability/index) out of the box.
+These pipelines are integrated with [observability partners](/python/framework/module_guides/observability) out of the box.
 
 The central guide for prompt chains and pipelines is through our [Query Pipelines](../module_guides/querying/pipeline/index.md).

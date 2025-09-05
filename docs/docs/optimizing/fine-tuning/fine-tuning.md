@@ -71,7 +71,6 @@ Another use case for fine-tuning is to make the model better at outputting struc
 We can do this for both OpenAI and Llama2.
 
 - [OpenAI Function Calling Fine-tuning](/python/examples/finetuning/openai_fine_tuning_functions)
-- [Llama2 Structured Output Fine-tuning](../../examples/finetuning/gradient/gradient_structured.ipynb)
 
 ### Fine-tuning Llama 2 for Better Text-to-SQL
 

@@ -8,6 +8,6 @@ We provide the following key-value stores:
 - **MongoDB Key-Value Store**: A MongoDB KV store.
 - **Tablestore Key-Value Store**: A Tablestore KV store.
 
-See the [API Reference](/python/framework/api_reference/storage/kvstore/index) for more details.
+See the [API Reference](/python/framework/api_reference/storage/kvstore) for more details.
 
 Note: At the moment, these storage abstractions are not externally facing.

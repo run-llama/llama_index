@@ -885,4 +885,4 @@ llama_index.core.set_global_handler("simple")
 
 ## More observability
 
-- [Callbacks Guide](/python/framework/module_guides/observability/callbacks/index)
+- [Callbacks Guide](/python/framework/module_guides/observability/callbacks)

@@ -38,7 +38,7 @@ The `PromptHelper` in general has been deprecated in favour of specifying parame
 See the following links for more details.
 
 - [Configuring settings in the Settings](/python/framework/module_guides/supporting_modules/settings)
-- [Parsing Documents into Nodes](/python/framework/module_guides/loading/node_parsers/index)
+- [Parsing Documents into Nodes](/python/framework/module_guides/loading/node_parsers)
 
 ## ServiceContext
 
@@ -54,14 +54,14 @@ The `llama-index-legacy` package has been deprecated and removed from the reposi
 
 ## AgentRunner/AgentWorker (and related classes)
 
-The `AgentRunner` and `AgentWorker` classes have been deprecated in favour of [AgentWorkflow](/python/framework/module_guides/deploying/agents/index) and [Workflows](/python/framework/module_guides/workflow/index).
+The `AgentRunner` and `AgentWorker` classes have been deprecated in favour of [AgentWorkflow](/python/framework/module_guides/deploying/agents) and [Workflows](/python/framework/module_guides/workflow).
 
 This includes the following deprecated classes:
 
 - `AgentRunner`
 - `FunctionCallingAgent`
 - `FunctionCallingAgentWorker`
-- `llama_index.core.agent.ReActAgent` (use [llama_index.core.agent.workflow.ReActAgent](/python/framework/module_guides/deploying/agents/index))
+- `llama_index.core.agent.ReActAgent` (use [llama_index.core.agent.workflow.ReActAgent](/python/framework/module_guides/deploying/agents))
 - `ReActAgentWorker`
 - `LATSAgentWorker`
 - `CoAAgentWorker`
@@ -76,7 +76,7 @@ This includes the following deprecated classes:
 
 ## QueryPipeline (and related classes)
 
-QueryPipeline has been deprecated in favour of [Workflows](/python/framework/module_guides/workflow/index).
+QueryPipeline has been deprecated in favour of [Workflows](/python/framework/module_guides/workflow).
 
 This includes the following deprecated classes:
 
