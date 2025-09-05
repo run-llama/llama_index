@@ -1,5 +1,37 @@
 # ChangeLog
 
+## [2025-09-04]
+
+### `llama-index-core` [0.13.5]
+
+- feat: add thinking delta field to AgentStream events to expose from LLM responses (#19785)
+- fix: fix path handling in SimpleDirectoryReader and PDFReader path fix (#19794)
+
+### `llama-index-llms-bedrock-converse` [0.9.0]
+
+- feat: add system prompt and tool caching config kwargs to BedrockConverse (#19737)
+
+### `llama-index-llms-litellm` [0.6.2]
+
+- fix: Handle missing tool call IDs with UUID fallback (#19789)
+- fix: Fix critical context window calculation (#19787)
+
+### `llama-index-readers-file` [0.5.3]
+
+- fix: fix path handling in SimpleDirectoryReader and PDFReader path fix (#19794)
+
+### `llama-index-storage-chat-store-yugabytedb` [0.1.0]
+
+- feat: add Yugabytedb chat store (#19768)
+
+### `llama-index-vector-stores-milvus` [0.9.1]
+
+- fix: create TextNode if no '_node_content' set (#19772)
+
+### `llama-index-vector-stores-postgres` [0.6.5]
+
+- fix: make postgres regex punctuation handling consistent with plainto_tsquery (#19781)
+
 ## [2025-09-01]
 
 ### `llama-index-core` [0.13.4]

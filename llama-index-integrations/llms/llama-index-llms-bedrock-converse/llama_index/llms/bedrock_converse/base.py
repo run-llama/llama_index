@@ -138,6 +138,14 @@ class BedrockConverse(FunctionCallingLLM):
         default=60.0,
         description="The timeout for the Bedrock API request in seconds. It will be used for both connect and read timeouts.",
     )
+    system_prompt_caching: bool = Field(
+        default=False,
+        description="Whether to cache the system prompt. If you are using a system prompt, you should set this to True.",
+    )
+    tool_caching: bool = Field(
+        default=False,
+        description="Whether to cache the tools. If you are using tools, you should set this to True.",
+    )
     guardrail_identifier: Optional[str] = Field(
         description="The unique identifier of the guardrail that you want to use. If you don't provide a value, no guardrail is applied to the invocation."
     )
@@ -182,6 +190,8 @@ class BedrockConverse(FunctionCallingLLM):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
+        system_prompt_caching: Optional[bool] = False,
+        tool_caching: Optional[bool] = False,
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
@@ -212,6 +222,8 @@ class BedrockConverse(FunctionCallingLLM):
             model=model,
             callback_manager=callback_manager,
             system_prompt=system_prompt,
+            system_prompt_caching=system_prompt_caching,
+            tool_caching=tool_caching,
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
@@ -362,6 +374,8 @@ class BedrockConverse(FunctionCallingLLM):
             client=self._client,
             messages=converse_messages,
             system_prompt=system_prompt,
+            system_prompt_caching=self.system_prompt_caching,
+            tool_caching=self.tool_caching,
             max_retries=self.max_retries,
             stream=False,
             guardrail_identifier=self.guardrail_identifier,
@@ -408,6 +422,8 @@ class BedrockConverse(FunctionCallingLLM):
             client=self._client,
             messages=converse_messages,
             system_prompt=system_prompt,
+            system_prompt_caching=self.system_prompt_caching,
+            tool_caching=self.tool_caching,
             max_retries=self.max_retries,
             stream=True,
             guardrail_identifier=self.guardrail_identifier,
@@ -544,6 +560,8 @@ class BedrockConverse(FunctionCallingLLM):
             config=self._config,
             messages=converse_messages,
             system_prompt=system_prompt,
+            system_prompt_caching=self.system_prompt_caching,
+            tool_caching=self.tool_caching,
             max_retries=self.max_retries,
             stream=False,
             guardrail_identifier=self.guardrail_identifier,
@@ -592,6 +610,8 @@ class BedrockConverse(FunctionCallingLLM):
             config=self._config,
             messages=converse_messages,
             system_prompt=system_prompt,
+            system_prompt_caching=self.system_prompt_caching,
+            tool_caching=self.tool_caching,
             max_retries=self.max_retries,
             stream=True,
             guardrail_identifier=self.guardrail_identifier,
@@ -723,6 +743,7 @@ class BedrockConverse(FunctionCallingLLM):
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
         tool_required: bool = False,
+        tool_caching: bool = False,
         tool_choice: Optional[dict] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
@@ -737,7 +758,10 @@ class BedrockConverse(FunctionCallingLLM):
 
         # convert Llama Index tools to AWS Bedrock Converse tools
         tool_config = tools_to_converse_tools(
-            tools, tool_choice=tool_choice, tool_required=tool_required
+            tools,
+            tool_choice=tool_choice,
+            tool_required=tool_required,
+            tool_caching=tool_caching,
         )
 
         return {
