@@ -1,6 +1,6 @@
-# DataIntelligence-llamaindex-sdk
+# llama-index-retrievers-alletra-x10000
 
-### Data Intelligence SDK will provide interfaces for the user applications to do semantic similarity search on the embeddings. 
+### This llama-index retriever will provide interfaces for the user applications to do semantic similarity search on the embeddings for Data Intelligence solution of HPE AlletraMP X10000
 
 ## How to use SDK
 
