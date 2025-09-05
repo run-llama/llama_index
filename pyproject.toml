@@ -226,9 +226,3 @@ default-groups = [
 [[tool.uv.index]]
 name = "nvidia-pypi"
 url = "https://pypi.nvidia.com"
-
-[tool.uv.sources]
-
-[tool.uv.workspace]
-members = [
-]
