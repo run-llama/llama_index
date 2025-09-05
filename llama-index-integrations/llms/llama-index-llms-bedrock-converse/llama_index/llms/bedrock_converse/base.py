@@ -162,6 +162,14 @@ class BedrockConverse(FunctionCallingLLM):
         default_factory=dict,
         description="Additional kwargs for the bedrock invokeModel request.",
     )
+    cache_idx: Optional[int] = Field(
+        default=None,
+        description=(
+            "Set the cache_control for every message up to and including this index. "
+            "Set to -1 to cache all messages. "
+            "Set to None to disable caching."
+        ),
+    )
 
     _config: Any = PrivateAttr()
     _client: Any = PrivateAttr()
@@ -188,6 +196,7 @@ class BedrockConverse(FunctionCallingLLM):
         max_retries: Optional[int] = 10,
         botocore_config: Optional[Any] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
+        cache_idx: Optional[int] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
         system_prompt_caching: Optional[bool] = False,
@@ -220,6 +229,7 @@ class BedrockConverse(FunctionCallingLLM):
             timeout=timeout,
             max_retries=max_retries,
             model=model,
+            cache_idx=cache_idx,
             callback_manager=callback_manager,
             system_prompt=system_prompt,
             system_prompt_caching=system_prompt_caching,
@@ -366,7 +376,10 @@ class BedrockConverse(FunctionCallingLLM):
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         # convert Llama Index messages to AWS Bedrock Converse messages
-        converse_messages, system_prompt = messages_to_converse_messages(messages)
+        converse_messages, system_prompt = messages_to_converse_messages(
+            messages=messages,
+            cache_idx=self.cache_idx,
+        )
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         # invoke LLM in AWS Bedrock Converse with retry
@@ -414,7 +427,10 @@ class BedrockConverse(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         # convert Llama Index messages to AWS Bedrock Converse messages
-        converse_messages, system_prompt = messages_to_converse_messages(messages)
+        converse_messages, system_prompt = messages_to_converse_messages(
+            messages=messages,
+            cache_idx=self.cache_idx,
+        )
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         # invoke LLM in AWS Bedrock Converse with retry
@@ -551,7 +567,10 @@ class BedrockConverse(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         # convert Llama Index messages to AWS Bedrock Converse messages
-        converse_messages, system_prompt = messages_to_converse_messages(messages)
+        converse_messages, system_prompt = messages_to_converse_messages(
+            messages=messages,
+            cache_idx=self.cache_idx,
+        )
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         # invoke LLM in AWS Bedrock Converse with retry
@@ -601,7 +620,10 @@ class BedrockConverse(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         # convert Llama Index messages to AWS Bedrock Converse messages
-        converse_messages, system_prompt = messages_to_converse_messages(messages)
+        converse_messages, system_prompt = messages_to_converse_messages(
+            messages=messages,
+            cache_idx=self.cache_idx,
+        )
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         # invoke LLM in AWS Bedrock Converse with retry
