@@ -44,5 +44,3 @@ For simple RAG pipelines and linear demos we do not expect you will need Workflo
 Let's build [a basic workflow](/python/framework/understanding/workflows/basic_flow). Follow the tutorial sequence step-by-step to learn the core concepts.
 
 Once you're done, check out our [Workflows component guide](/python/framework/module_guides/workflow) as a reference guide + more practical examples on building RAG/agents.
-
-If you're done building and want to deploy your workflow to production, check out [our llama_deploy guide](../../module_guides/llama_deploy/) ([repo](https://github.com/run-llama/llama_deploy)).

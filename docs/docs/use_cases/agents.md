@@ -58,5 +58,4 @@ If you want to leverage core agentic ingredients in your workflow, LlamaIndex ha
 
 ## Ecosystem
 
-- **Deploy Agents as Microservices**: Deploy your agentic workflows as microservices with [llama_deploy](../../module_guides/workflow/deployment.md) ([repo](https://github.com/run-llama/llama_deploy))
 - **Community-Built Agents**: We offer a collection of 40+ agent tools for use with your agent in [LlamaHub](https://llamahub.ai/) 🦙.

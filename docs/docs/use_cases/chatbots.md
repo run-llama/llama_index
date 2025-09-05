@@ -2,7 +2,7 @@
 
 Chatbots are another extremely popular use case for LLMs. Instead of single-shot question-answering, a chatbot can handle multiple back-and-forth queries and answers, getting clarification or answering follow-up questions.
 
-LlamaIndex gives you the tools to build knowledge-augmented chatbots and agents. This use case builds upon the [QA](q_and_a/index.md) use case, make sure to check that out first!
+LlamaIndex gives you the tools to build knowledge-augmented chatbots and agents. This use case builds upon the [Q&A](/python/framework/use_cases/q_and_a) use case, make sure to check that out first!
 
 ## Resources
 

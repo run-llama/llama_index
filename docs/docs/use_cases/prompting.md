@@ -29,5 +29,3 @@ Here's the [full module guide for prompts](/python/framework/module_guides/model
 LlamaIndex has robust abstractions for creating sequential prompt chains, as well as general DAGs to orchestrate prompts with any other component. This allows you to build complex workflows, including RAG with multi-hop query understanding layers, as well as agents.
 
 These pipelines are integrated with [observability partners](/python/framework/module_guides/observability) out of the box.
-
-The central guide for prompt chains and pipelines is through our [Query Pipelines](../module_guides/querying/pipeline/index.md).

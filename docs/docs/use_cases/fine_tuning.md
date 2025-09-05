@@ -71,7 +71,6 @@ Another use case for fine-tuning is to make the model better at outputting struc
 We can do this for both OpenAI and Llama2.
 
 - [OpenAI Function Calling Fine-tuning](/python/examples/finetuning/openai_fine_tuning_functions)
-- [Llama2 Structured Output Fine-tuning](../examples/finetuning/gradient/gradient_structured.ipynb)
 
 ### Fine-tuning Llama 2 for Better Text-to-SQL
 
@@ -79,7 +78,6 @@ In this tutorial, we show you how you can finetune Llama 2 on a text-to-SQL data
 
 The stack includes `sql-create-context` as the training dataset, OpenLLaMa as the base model, PEFT for finetuning, Modal for cloud compute, LlamaIndex for inference abstractions.
 
-- [Llama 2 Text-to-SQL Fine-tuning (w/ Gradient.AI)](../examples/finetuning/gradient/gradient_fine_tuning.ipynb)
 - [Llama 2 Text-to-SQL Fine-tuning (w/ Modal, Repo)](https://github.com/run-llama/modal_finetune_sql)
 - [Llama 2 Text-to-SQL Fine-tuning (w/ Modal, Notebook)](https://github.com/run-llama/modal_finetune_sql/blob/main/tutorial.ipynb)
 
