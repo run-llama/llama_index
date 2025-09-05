@@ -700,6 +700,7 @@ plugins:
             - ../llama-index-integrations/readers/llama-index-readers-legacy-office
             - ../llama-index-integrations/retrievers/llama-index-retrievers-vectorize
             - ../llama-index-integrations/tools/llama-index-tools-brightdata
+            - ../llama-index-integrations/llms/llama-index-llms-cometapi
 site_name: LlamaIndex API Reference
 site_url: https://developers.llamaindex.ai/docs/python-api-reference
 docs_dir: docs/api_reference
