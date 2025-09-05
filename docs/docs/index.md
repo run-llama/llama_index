@@ -47,7 +47,7 @@ LlamaIndex provides a framework for building agents including the ability to use
 
 ### What are workflows?
 
-[Workflows](./understanding/workflows/index.md) are multi-step processes that combine one or more agents, data connectors, and other tools to complete a task. They are event-driven software that allows you to combine RAG data sources and multiple agents to create a complex application that can perform a wide variety of tasks with reflection, error-correction, and other hallmarks of advanced LLM applications. You can then [deploy these agentic workflows](./module_guides/workflow/deployment.md) as production microservices.
+[Workflows](./understanding/workflows/index.md) are multi-step processes that combine one or more agents, data connectors, and other tools to complete a task. They are event-driven software that allows you to combine RAG data sources and multiple agents to create a complex application that can perform a wide variety of tasks with reflection, error-correction, and other hallmarks of advanced LLM applications. You can then [deploy these agentic workflows](/python/workflows/deployment/) as production microservices.
 
 ### What is context augmentation?
 
@@ -150,7 +150,7 @@ Need help? Have a feature suggestion? Join the LlamaIndex community:
 
 ### Contributing
 
-We are open-source and always welcome contributions to the project! Check out our [contributing guide](./CONTRIBUTING.md) for full details on how to extend the core library or add an integration to a third party like an LLM, a vector store, an agent tool and more.
+We are open-source and always welcome contributions to the project! Check out our [contributing guide](https://github.com/run-llama/llama_index/blob/main/CONTRIBUTING.md) for full details on how to extend the core library or add an integration to a third party like an LLM, a vector store, an agent tool and more.
 
 ## LlamaIndex Ecosystem
 
