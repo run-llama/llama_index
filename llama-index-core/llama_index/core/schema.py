@@ -587,26 +587,29 @@ class MediaResource(BaseModel):
         """
         Generate a hash to uniquely identify the media resource.
 
-        The hash is generated based on the available content (data, path, text or url).
-        Returns an empty string if no content is available.
+        The hash is generated based on the complete state of the resource,
+        distinguishing between None, empty, and content values.
+        Always returns a hash string.
         """
-        bits: list[str] = []
-        if self.text is not None:
-            bits.append(self.text)
-        if self.data is not None:
-            # Hash the binary data if available
-            bits.append(str(sha256(self.data).hexdigest()))
-        if self.path is not None:
-            # Hash the file path if provided
-            bits.append(str(sha256(str(self.path).encode("utf-8")).hexdigest()))
-        if self.url is not None:
-            # Use the URL string as basis for hash
-            bits.append(str(sha256(str(self.url).encode("utf-8")).hexdigest()))
+        # Create state dictionary that preserves None vs empty distinctions
+        state = {
+            "text": self.text,  # Could be None, "", or content
+            "data": self.data.hex()
+            if self.data is not None
+            else None,  # Convert bytes to hex or None
+            "path": str(self.path)
+            if self.path is not None
+            else None,  # Convert Path to string or None
+            "url": str(self.url)
+            if self.url is not None
+            else None,  # Convert URL to string or None
+        }
 
-        doc_identity = "".join(bits)
-        if not doc_identity:
-            return ""
-        return str(sha256(doc_identity.encode("utf-8", "surrogatepass")).hexdigest())
+        # Create deterministic JSON representation
+        state_json = json.dumps(state, sort_keys=True, separators=(",", ":"))
+
+        # Generate hash from the JSON representation
+        return str(sha256(state_json.encode("utf-8")).hexdigest())
 
 
 class Node(BaseNode):
@@ -675,6 +678,8 @@ class Node(BaseNode):
         metadata_str = self.get_metadata_str(mode=MetadataMode.ALL)
         if metadata_str:
             doc_identities.append(metadata_str)
+
+        # Always add resource hashes since they now always return strings
         if self.audio_resource is not None:
             doc_identities.append(self.audio_resource.hash)
         if self.image_resource is not None:
