@@ -1,5 +1,15 @@
 # ChangeLog
 
+## [2025-09-06]
+
+### `llama-index-core` [0.13.6]
+
+- chore: remove openai selector from core utils function (#19803)
+
+### `llama-index-llms-cometapi` [0.1.0]
+
+- feat: Add CometAPI LLM integration (#19793)
+
 ## [2025-09-04]
 
 ### `llama-index-core` [0.13.5]
@@ -26,7 +36,7 @@
 
 ### `llama-index-vector-stores-milvus` [0.9.1]
 
-- fix: create TextNode if no '_node_content' set (#19772)
+- fix: create TextNode if no '\_node_content' set (#19772)
 
 ### `llama-index-vector-stores-postgres` [0.6.5]
 

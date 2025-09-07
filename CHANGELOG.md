@@ -1,5 +1,15 @@
 # ChangeLog
 
+## [2025-09-06]
+
+### `llama-index-core` [0.13.6]
+
+- chore: remove openai selector from core utils function (#19803)
+
+### `llama-index-llms-cometapi` [0.1.0]
+
+- feat: Add CometAPI LLM integration (#19793)
+
 ## [2025-09-04]
 
 ### `llama-index-core` [0.13.5]
