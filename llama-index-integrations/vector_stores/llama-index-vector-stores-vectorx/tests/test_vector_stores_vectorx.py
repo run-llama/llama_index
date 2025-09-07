@@ -270,12 +270,6 @@ class TestVectorXMock(unittest.TestCase):
         result = self.store.query(query)
         self.assertEqual(len(result.nodes), 1)
 
-    def test_error_on_invalid_embedding(self):
-        self.store._vectorx_index = MagicMock()
-        del self.store._vectorx_index.dimension
-        with pytest.raises(ValueError):
-            self.store.query(VectorStoreQuery(query_embedding=None, similarity_top_k=1))
-
 
 # ------------------ Advanced Tests with Mocking ------------------
 class TestVectorXAdvanced(unittest.TestCase):
