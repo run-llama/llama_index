@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [0.7.0] - 2025-07-22
+
+- Add support for custom file readers via `custom_parsers` and `custom_folder` arguments.
+- Add event system for page/document processing (see `event.py` for event classes).
+- Add `process_document_callback` for filtering/skipping documents.
+- Add support for SharePoint page reading (`sharepoint_type="page"` and `page_name`).
+- Improve error handling with `fail_on_error` option.
+- Refactor and document all new features in README.
+- Add comprehensive tests for all new features.
+- BREAKING: Some constructor arguments and behaviors have changed to support new features.
+
 ## [0.5.1] - 2025-04-02
 
 - Fix issue with folder path encoding when a file path contains special characters

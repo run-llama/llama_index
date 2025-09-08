@@ -4,6 +4,16 @@ import tempfile
 
 from llama_index.core.readers.base import BaseReader
 from llama_index.readers.microsoft_sharepoint import SharePointReader
+from llama_index.readers.microsoft_sharepoint.event import (
+    FileType,
+    PageDataFetchStartedEvent,
+    PageDataFetchCompletedEvent,
+    PageSkippedEvent,
+    PageFailedEvent,
+)
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.event_handlers import BaseEventHandler
+from llama_index.core.schema import Document
 
 from unittest.mock import patch, MagicMock
 from pathlib import Path
@@ -256,3 +266,228 @@ def test_required_exts():
         assert len(documents) == 1
         assert documents[0].metadata["file_name"] == "readme.md"
         assert documents[0].text == "Readme content"
+
+
+def test_custom_parsers_and_custom_folder(tmp_path):
+    """Test that custom_parsers and custom_folder work together."""
+    mock_parser = MagicMock()
+    custom_parsers = {FileType.PDF: mock_parser}
+
+    reader = SharePointReader(
+        client_id="dummy_client_id",
+        client_secret="dummy_client_secret",
+        tenant_id="dummy_tenant_id",
+        sharepoint_site_name="dummy_site_name",
+        sharepoint_folder_path="dummy_folder_path",
+        custom_parsers=custom_parsers,
+        custom_folder=str(tmp_path),
+    )
+
+    assert reader.custom_parsers == custom_parsers
+    assert reader.custom_folder == str(tmp_path)
+    assert reader.custom_parser_manager is not None
+
+
+def test_custom_parser_usage(tmp_path):
+    """Test that custom parser is used for supported file types."""
+    mock_parser = MagicMock()
+    mock_parser.load_data.return_value = [Document(text="custom content")]
+
+    reader = SharePointReader(
+        client_id="dummy_client_id",
+        client_secret="dummy_client_secret",
+        tenant_id="dummy_tenant_id",
+        sharepoint_site_name="dummy_site_name",
+        sharepoint_folder_path="dummy_folder_path",
+        custom_parsers={FileType.PDF: mock_parser},
+        custom_folder=str(tmp_path),
+    )
+
+    # Simulate a PDF file in metadata
+    file_path = tmp_path / "file.pdf"
+    file_path.write_bytes(b"dummy")
+    files_metadata = {str(file_path): {"file_name": "file.pdf", "file_path": str(file_path)}}
+
+    docs = reader._load_documents_with_metadata(files_metadata, str(tmp_path), recursive=False)
+    assert docs[0].text == "custom content"
+
+
+def test_document_callback_functionality():
+    """Test that document callback is properly stored and functional."""
+    excluded_files = ["file1", "file2"]
+
+    def document_filter(file_id: str) -> bool:
+        return file_id not in excluded_files
+
+    reader = SharePointReader(
+        client_id="dummy_client_id",
+        client_secret="dummy_client_secret",
+        tenant_id="dummy_tenant_id",
+        sharepoint_site_name="dummy_site_name",
+        sharepoint_folder_path="dummy_folder_path",
+        process_document_callback=document_filter,
+    )
+
+    assert reader.process_document_callback == document_filter
+    assert document_filter("normal_file") is True
+    assert document_filter("file1") is False
+    assert document_filter("file2") is False
+
+
+def test_event_system_page_events():
+    """Test event system with page events."""
+    reader = SharePointReader(
+        client_id="dummy_client_id",
+        client_secret="dummy_client_secret",
+        tenant_id="dummy_tenant_id",
+        sharepoint_site_name="dummy_site_name",
+        sharepoint_folder_path="dummy_folder_path",
+    )
+
+    page_events = []
+
+    class PageEventHandler(BaseEventHandler):
+        def handle(self, event):
+            if isinstance(
+                event,
+                (
+                    PageDataFetchStartedEvent,
+                    PageDataFetchCompletedEvent,
+                    PageSkippedEvent,
+                ),
+            ):
+                page_events.append(event)
+
+    dispatcher = get_dispatcher("llama_index.readers.microsoft_sharepoint.base")
+    page_handler = PageEventHandler()
+    dispatcher.add_event_handler(page_handler)
+
+    # Simulate event flow
+    dispatcher.event(PageDataFetchStartedEvent(page_id="page1"))
+    dispatcher.event(
+        PageDataFetchCompletedEvent(
+            page_id="page1", document=Document(text="content1", doc_id="page1")
+        )
+    )
+    dispatcher.event(PageSkippedEvent(page_id="page2"))
+
+    assert len(page_events) == 3
+    event_types = [type(event).__name__ for event in page_events]
+    assert "PageDataFetchStartedEvent" in event_types
+    assert "PageDataFetchCompletedEvent" in event_types
+    assert "PageSkippedEvent" in event_types
+
+    # Clean up
+    if page_handler in dispatcher.event_handlers:
+        dispatcher.event_handlers.remove(page_handler)
+
+
+def test_event_system_page_failed_event():
+    """Test event system with page failed event."""
+    reader = SharePointReader(
+        client_id="dummy_client_id",
+        client_secret="dummy_client_secret",
+        tenant_id="dummy_tenant_id",
+        sharepoint_site_name="dummy_site_name",
+        sharepoint_folder_path="dummy_folder_path",
+    )
+
+    error_events = []
+
+    class ErrorEventHandler(BaseEventHandler):
+        def handle(self, event):
+            if isinstance(event, PageFailedEvent):
+                error_events.append(event)
+
+    dispatcher = get_dispatcher("llama_index.readers.microsoft_sharepoint.base")
+    error_handler = ErrorEventHandler()
+    dispatcher.add_event_handler(error_handler)
+
+    dispatcher.event(PageFailedEvent(page_id="page3", error="Network timeout"))
+
+    assert len(error_events) == 1
+    assert error_events[0].page_id == "page3"
+    assert error_events[0].error == "Network timeout"
+
+    # Clean up
+    if error_handler in dispatcher.event_handlers:
+        dispatcher.event_handlers.remove(error_handler)
+
+
+def test_fail_on_error_default_true():
+    """Test that fail_on_error defaults to True."""
+    reader = SharePointReader(
+        client_id="dummy_client_id",
+        client_secret="dummy_client_secret",
+        tenant_id="dummy_tenant_id",
+        sharepoint_site_name="dummy_site_name",
+        sharepoint_folder_path="dummy_folder_path",
+    )
+    assert reader.fail_on_error is True
+
+
+def test_fail_on_error_explicit_false():
+    """Test that fail_on_error can be set to False."""
+    reader = SharePointReader(
+        client_id="dummy_client_id",
+        client_secret="dummy_client_secret",
+        tenant_id="dummy_tenant_id",
+        sharepoint_site_name="dummy_site_name",
+        sharepoint_folder_path="dummy_folder_path",
+        fail_on_error=False,
+    )
+    assert reader.fail_on_error is False
+
+
+def test_fail_on_error_explicit_true():
+    """Test that fail_on_error can be explicitly set to True."""
+    reader = SharePointReader(
+        client_id="dummy_client_id",
+        client_secret="dummy_client_secret",
+        tenant_id="dummy_tenant_id",
+        sharepoint_site_name="dummy_site_name",
+        sharepoint_folder_path="dummy_folder_path",
+        fail_on_error=True,
+    )
+    assert reader.fail_on_error is True
+
+
+# (Optional) If you support page reading, add a test for it:
+def test_page_reading(monkeypatch, tmp_path):
+    """Test page reading support if sharepoint_type='page'."""
+    # Setup
+    called = {}
+
+    def document_filter(page_name: str) -> bool:
+        called[page_name] = True
+        return page_name != "skip_page"
+
+    reader = SharePointReader(
+        client_id="dummy_client_id",
+        client_secret="dummy_client_secret",
+        tenant_id="dummy_tenant_id",
+        sharepoint_site_name="dummy_site_name",
+        sharepoint_type="page",
+        process_document_callback=document_filter,
+        custom_folder=str(tmp_path),
+    )
+
+    # Monkeypatch list_pages and get_page_text to simulate page reading
+    monkeypatch.setattr(reader, "list_pages", lambda site_id, token: [
+        {"id": "1", "name": "normal_page"},
+        {"id": "2", "name": "skip_page"},
+    ])
+    monkeypatch.setattr(reader, "get_site_pages_list_id", lambda site_id, token=None: "list_id")
+    monkeypatch.setattr(reader, "get_page_text", lambda site_id, list_id, page_id, token: {
+        "id": f"{list_id}_{page_id}",
+        "name": "normal_page" if page_id == "1" else "skip_page",
+        "lastModifiedDateTime": "2024-01-01T00:00:00Z",
+        "textContent": "content",
+        "rawHtml": "<p>content</p>",
+    })
+
+    docs = reader.load_data()
+    assert len(docs) == 1
+    assert docs[0].metadata["page_name"] == "normal_page"
+    assert "normal_page" in called
+    assert "skip_page" in called
