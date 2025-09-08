@@ -1719,7 +1719,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-langchain"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "." }
 dependencies = [
     { name = "langchain" },
@@ -1752,7 +1752,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "langchain", specifier = ">=0.1.7" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

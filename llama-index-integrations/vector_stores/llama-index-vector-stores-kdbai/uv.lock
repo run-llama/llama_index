@@ -1666,7 +1666,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-kdbai"
-version = "0.6.0"
+version = "0.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "kdbai-client" },
@@ -1699,7 +1699,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "kdbai-client", specifier = ">=1.4.0" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "pandas" },
     { name = "pykx", specifier = ">=2.1.1,<3" },
 ]

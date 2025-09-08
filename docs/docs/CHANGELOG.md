@@ -1,5 +1,23 @@
 # ChangeLog
 
+## [2025-09-08]
+
+**NOTE:** All packages have been bumped to handle the latest llama-index-core version.
+
+### `llama-index-core` [0.14.0]
+
+- breaking: bumped `llama-index-workflows` dependency to 2.0
+  - Improve stacktraces clarity by avoiding wrapping errors in WorkflowRuntimeError
+  - Remove deprecated checkpointer feature
+  - Remove deprecated sub-workflows feature
+  - Remove deprecated `send_event` method from Workflow class (still existing on the Context class)
+  - Remove deprecated `stream_events()` methods from Workflow class (still existing on the Context class)
+  - Remove deprecated support for stepwise execution
+
+### `llama-index-llms-openai` [0.5.6]
+
+- feat: add support for document blocks in openai chat completions (#19809)
+
 ## [2025-09-06]
 
 ### `llama-index-core` [0.13.6]

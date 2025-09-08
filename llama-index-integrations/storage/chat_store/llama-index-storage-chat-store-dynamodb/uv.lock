@@ -1781,7 +1781,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-storage-chat-store-dynamodb"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "aioboto3" },
@@ -1819,7 +1819,7 @@ requires-dist = [
     { name = "aioboto3", specifier = ">=13.1.1,<14" },
     { name = "boto3", specifier = ">=1.34.120,<2" },
     { name = "boto3-stubs", extras = ["dynamodb"], specifier = ">=1.35.14,<2" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

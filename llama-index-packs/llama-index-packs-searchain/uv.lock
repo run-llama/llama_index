@@ -1813,7 +1813,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-packs-searchain"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-cpp-python" },
@@ -1848,7 +1848,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "llama-cpp-python", specifier = ">=0.2.39,<0.3" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-llms-openai", specifier = ">=0.5.0,<0.6" },
     { name = "sentence-transformers", specifier = ">=2.5.1" },
     { name = "transformers", specifier = ">=4.38.1" },

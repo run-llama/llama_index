@@ -28,7 +28,7 @@ dev = [
 
 [project]
 name = "llama-index-selectors-notdiamond"
-version = "0.3.0"
+version = "0.3.1"
 description = "llama-index selectors Not Diamond integration"
 authors = [{name = "Not Diamond", email = "support@notdiamond.ai"}]
 requires-python = ">=3.10,<4"

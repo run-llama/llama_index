@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-service-now"
-version = "0.2.0"
+version = "0.2.1"
 description = "llama-index readers service-now integration"
 authors = [{name = "Ameetpal Singh", email = "ameetpal.singh@maersk.com"}]
 requires-python = ">=3.9,<4.0"
@@ -37,7 +37,7 @@ maintainers = [{name = "ameetpal.singh"}]
 dependencies = [
     "pysnc>=1.0.0,<2",
     "requests>=2.25.0,<3",
-    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-core>=0.13.0,<0.15",
 ]
 
 [tool.codespell]

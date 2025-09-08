@@ -1704,7 +1704,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-packs-zephyr-query-engine"
-version = "0.5.0"
+version = "0.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "accelerate" },
@@ -1742,7 +1742,7 @@ dev = [
 requires-dist = [
     { name = "accelerate", specifier = ">=0.26.1,<0.27" },
     { name = "bitsandbytes", specifier = ">=0.42.0,<0.43" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-llms-huggingface", specifier = ">=0.6.0,<0.7" },
     { name = "torch", specifier = ">=2.1.2,<3" },
     { name = "transformers", specifier = ">=4.37.1,<5" },

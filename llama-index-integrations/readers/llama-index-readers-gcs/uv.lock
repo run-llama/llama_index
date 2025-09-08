@@ -1824,7 +1824,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-gcs"
-version = "0.5.0"
+version = "0.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "gcsfs" },
@@ -1858,7 +1858,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "gcsfs", specifier = ">=2024.0.0,<2026" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-readers-file", specifier = ">=0.5.0,<0.6" },
 ]
 

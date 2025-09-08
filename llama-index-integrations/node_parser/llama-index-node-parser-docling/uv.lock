@@ -1535,7 +1535,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-node-parser-docling"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "docling-core" },
@@ -1567,7 +1567,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "docling-core", specifier = ">=2.18.0,<3" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

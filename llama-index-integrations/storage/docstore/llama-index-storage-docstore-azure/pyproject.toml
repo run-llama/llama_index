@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-storage-docstore-azure"
-version = "0.4.0"
+version = "0.4.1"
 description = "llama-index docstore Azure integration"
 authors = [{name = "Fran Aguilera", email = "falven2000@hotmail.com"}]
 requires-python = ">=3.9,<4.0"
@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "llama-index-storage-kvstore-azure>=0.4.0,<0.5",
-    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-core>=0.13.0,<0.15",
 ]
 
 [tool.codespell]

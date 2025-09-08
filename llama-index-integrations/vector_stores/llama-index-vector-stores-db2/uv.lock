@@ -1560,7 +1560,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-db2"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "ibm-db" },
@@ -1592,7 +1592,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "ibm-db", specifier = ">=3.2.6" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

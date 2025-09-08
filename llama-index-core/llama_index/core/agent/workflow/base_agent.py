@@ -37,7 +37,6 @@ from llama_index.core.tools import (
 from llama_index.core.workflow import Context
 from llama_index.core.objects import ObjectRetriever
 from llama_index.core.settings import Settings
-from llama_index.core.workflow.checkpointer import CheckpointCallback
 from llama_index.core.workflow.context import Context
 from llama_index.core.workflow.decorators import step
 from llama_index.core.workflow.events import StopEvent
@@ -603,7 +602,6 @@ class BaseWorkflowAgent(
         memory: Optional[BaseMemory] = None,
         ctx: Optional[Context] = None,
         stepwise: bool = False,
-        checkpoint_callback: Optional[CheckpointCallback] = None,
         max_iterations: Optional[int] = None,
         start_event: Optional[AgentWorkflowStartEvent] = None,
         **kwargs: Any,
@@ -613,7 +611,6 @@ class BaseWorkflowAgent(
             return super().run(
                 ctx=ctx,
                 stepwise=stepwise,
-                checkpoint_callback=checkpoint_callback,
                 **kwargs,
             )
         else:
@@ -628,5 +625,4 @@ class BaseWorkflowAgent(
                 start_event=start_event,
                 ctx=ctx,
                 stepwise=stepwise,
-                checkpoint_callback=checkpoint_callback,
             )

@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-tools-aws-bedrock-agentcore"
-version = "0.1.0"
+version = "0.1.1"
 description = "llama-index tools AWS Bedrock AgentCore integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.10,<4.0"

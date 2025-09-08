@@ -2262,7 +2262,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-pandas-ai"
-version = "0.5.0"
+version = "0.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -2299,7 +2299,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-readers-file", specifier = ">=0.5.0,<0.6" },
     { name = "numpy", specifier = "<2.0" },
     { name = "pandas" },
