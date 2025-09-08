@@ -1638,7 +1638,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-stackoverflow"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1670,7 +1670,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "requests", specifier = ">=2.31.0,<3" },
 ]
 

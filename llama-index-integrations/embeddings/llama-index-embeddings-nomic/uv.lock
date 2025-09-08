@@ -1685,7 +1685,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-nomic"
-version = "0.7.0"
+version = "0.7.1"
 source = { editable = "." }
 dependencies = [
     { name = "einops" },
@@ -1720,7 +1720,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "einops", specifier = ">=0.7.0,<0.8" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-embeddings-huggingface", specifier = ">=0.6.0,<0.7" },
     { name = "nomic", specifier = ">=3.0.30,<4" },
 ]

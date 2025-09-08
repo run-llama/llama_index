@@ -2171,7 +2171,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-openvino"
-version = "0.6.0"
+version = "0.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "huggingface-hub" },
@@ -2207,7 +2207,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "huggingface-hub", specifier = ">=0.23.0" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-embeddings-huggingface", specifier = ">=0.6.0,<0.7" },
     { name = "optimum-intel", extras = ["openvino"], specifier = ">=1.22.0,<2" },
 ]

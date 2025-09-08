@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-embeddings-nomic"
-version = "0.7.0"
+version = "0.7.1"
 description = "llama-index embeddings nomic integration"
 authors = [
     {name = "Jared Van Bortel", email = "jared@nomic.ai"},
@@ -39,7 +39,7 @@ dependencies = [
     "llama-index-embeddings-huggingface>=0.6.0,<0.7",
     "einops>=0.7.0,<0.8",
     "nomic>=3.0.30,<4",
-    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-core>=0.13.0,<0.15",
 ]
 
 [tool.codespell]

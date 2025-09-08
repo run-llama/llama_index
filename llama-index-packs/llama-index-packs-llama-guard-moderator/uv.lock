@@ -1677,7 +1677,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-packs-llama-guard-moderator"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "accelerate" },
@@ -1712,7 +1712,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "accelerate", specifier = ">=0.26.1,<0.27" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "torch", specifier = ">=2.1.2,<3" },
     { name = "transformers", specifier = ">=4.37.1,<5" },
 ]

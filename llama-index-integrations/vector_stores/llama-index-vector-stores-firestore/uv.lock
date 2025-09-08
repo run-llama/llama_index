@@ -1798,7 +1798,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-store-firestore"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "google-cloud-firestore" },
@@ -1832,7 +1832,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "google-cloud-firestore", specifier = ">=2.16.0,<3.0.0" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "more-itertools", specifier = ">=10.2.0,<11.0.0" },
 ]
 

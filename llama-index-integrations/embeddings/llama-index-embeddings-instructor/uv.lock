@@ -1654,7 +1654,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-instructor"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "instructorembedding" },
@@ -1690,7 +1690,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "instructorembedding", specifier = ">=1.0.1,<2" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "sentence-transformers", specifier = ">=2.2.2,<3" },
     { name = "torch", specifier = ">=2.1.2,<3" },
 ]

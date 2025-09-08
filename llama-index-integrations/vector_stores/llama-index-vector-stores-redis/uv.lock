@@ -1677,7 +1677,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-redis"
-version = "0.6.0"
+version = "0.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1712,7 +1712,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "redisvl", specifier = ">=0.4.1,<0.5" },
 ]
 

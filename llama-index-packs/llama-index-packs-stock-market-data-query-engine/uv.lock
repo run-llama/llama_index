@@ -1760,7 +1760,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-packs-stock-market-data-query-engine"
-version = "0.5.0"
+version = "0.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1793,7 +1793,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-llms-openai", specifier = ">=0.5.0,<0.6" },
     { name = "yfinance", specifier = ">=0.2.36,<0.3" },
 ]

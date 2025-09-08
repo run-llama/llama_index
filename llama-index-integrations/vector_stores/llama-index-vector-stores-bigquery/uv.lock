@@ -1867,7 +1867,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-bigquery"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "google-cloud-bigquery" },
@@ -1900,7 +1900,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "google-cloud-bigquery", specifier = ">=3.34.0,<4" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

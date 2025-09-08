@@ -1678,7 +1678,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-azure-inference"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -1715,7 +1715,7 @@ requires-dist = [
     { name = "aiohttp", specifier = ">=3.10.0,<4" },
     { name = "azure-ai-inference", specifier = ">=1.0.0b5" },
     { name = "azure-identity", specifier = ">=1.15.0,<2" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

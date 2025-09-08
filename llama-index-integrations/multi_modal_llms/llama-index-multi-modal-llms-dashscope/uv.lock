@@ -1664,7 +1664,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-multi-modal-llms-dashscope"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "dashscope" },
@@ -1698,7 +1698,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "dashscope", specifier = ">=1.14.1,<2" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-llms-dashscope", specifier = ">=0.4.0,<2" },
 ]
 
