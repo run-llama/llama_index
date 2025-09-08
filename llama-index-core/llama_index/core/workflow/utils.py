@@ -4,7 +4,6 @@ from workflows.context.utils import (  # noqa
 )
 from workflows.utils import (
     BUSY_WAIT_DELAY,  # noqa
-    ServiceDefinition,  # noqa
     StepSignatureSpec,  # noqa
     get_steps_from_class,  # noqa
     get_steps_from_instance,  # noqa
