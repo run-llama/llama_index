@@ -12,6 +12,7 @@ We support integrations with OpenAI, Anthropic, Google, Hugging Face, and more.
 - [Clarifai](../../../examples/llm/clarifai.ipynb)
 - [Cleanlab](../../../examples/llm/cleanlab.ipynb)
 - [Cohere](../../../examples/llm/cohere.ipynb)
+- [CometAPI](../../../examples/llm/cometapi.ipynb)
 - [Dashscope](../../../examples/llm/dashscope.ipynb)
 - [Dashscope Multi-Modal](../../../examples/multi_modal/dashscope_multi_modal.ipynb)
 - [EverlyAI](../../../examples/llm/everlyai.ipynb)
