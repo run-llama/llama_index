@@ -1,0 +1,25 @@
+name: Safe Quote Demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_ref:
+        description: 'Ref name to simulate (safe string)'
+        required: true
+
+jobs:
+  quote_demo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Show raw and quoted ref (no execution)
+        env:
+          TEST_REF: ${{ github.event.inputs.test_ref }}
+        run: |
+          set -eu
+          printf 'TEST_REF raw: [%s]\n' "$TEST_REF"
+          printf 'Shell-escaped via printf %%q: [%s]\n' "$(printf '%q' "$TEST_REF")"
+          UNQUOTED_CMD="git fetch origin $TEST_REF:$TEST_REF"
+          QUOTED_CMD="git fetch origin -- \"$TEST_REF:$TEST_REF\""
+          echo "Would run (unquoted): $UNQUOTED_CMD"
+          echo "Would run (quoted)  : $QUOTED_CMD"
+          # Show how a command would be constructed without ever executing it
