@@ -375,8 +375,10 @@ def tools_to_converse_tools(
             "inputSchema": {"json": tool.metadata.get_parameters_dict()},
         }
         converse_tools.append({"toolSpec": tool_dict})
-        if tool_caching:
-            converse_tools.append({"cachePoint": {"type": "default"}})
+
+    if tool_caching:
+        converse_tools.append({"cachePoint": {"type": "default"}})
+
     return {
         "tools": converse_tools,
         # https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolChoice.html
@@ -468,18 +470,17 @@ def converse_with_retry(
         if system_prompt_caching:
             system_messages.append({"cachePoint": {"type": "default"}})
         converse_kwargs["system"] = system_messages
+
     if tool_config := kwargs.get("tools"):
         converse_kwargs["toolConfig"] = tool_config
-        if tool_caching and "tools" in converse_kwargs["toolConfig"]:
-            converse_kwargs["toolConfig"]["tools"].append(
-                {"cachePoint": {"type": "default"}}
-            )
+
     if guardrail_identifier and guardrail_version:
         converse_kwargs["guardrailConfig"] = {}
         converse_kwargs["guardrailConfig"]["guardrailIdentifier"] = guardrail_identifier
         converse_kwargs["guardrailConfig"]["guardrailVersion"] = guardrail_version
         if trace:
             converse_kwargs["guardrailConfig"]["trace"] = trace
+
     converse_kwargs = join_two_dicts(
         converse_kwargs,
         {
