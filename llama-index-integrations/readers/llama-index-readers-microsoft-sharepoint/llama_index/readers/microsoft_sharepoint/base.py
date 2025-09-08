@@ -1,4 +1,3 @@
-# from sharepoint_llama import SharePointReader
 """SharePoint files reader."""
 
 import html
