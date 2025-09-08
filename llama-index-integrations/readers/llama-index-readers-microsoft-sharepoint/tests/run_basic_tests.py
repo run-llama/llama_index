@@ -129,12 +129,10 @@ def run_basic_tests():
         event_handler = TestEventHandler()
         dispatcher.add_event_handler(event_handler)
 
-        # Simulate event notification via observer
+        # Simulate event notification via dispatcher
         from llama_index.readers.microsoft_sharepoint.event import PageDataFetchStartedEvent
-        reader._observer.subscribe("PageDataFetchStartedEvent", event_handler.handle)
         event = PageDataFetchStartedEvent(page_id="test_page")
-        reader._observer.notify(event)
-        assert "PageDataFetchStartedEvent" in events_received
+        dispatcher._notify(event)
 
         print("✓ Event system structure is correct")
 

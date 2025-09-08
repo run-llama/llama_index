@@ -30,20 +30,6 @@ from .event import (
 logger = logging.getLogger(__name__)
 
 
-
-class FileType(Enum):
-    IMAGE = "image"
-    DOCUMENT = "document"
-    TEXT = "text"
-    HTML = "html"
-    CSV = "csv"
-    MARKDOWN = "md"
-    SPREADSHEET = "spreadsheet"
-    PRESENTATION = "presentation"
-    PDF = "pdf"
-    UNKNOWN = "unknown"
-
-
 class SharePointType(Enum):
     DRIVE = "drive"
     PAGE = "page"
