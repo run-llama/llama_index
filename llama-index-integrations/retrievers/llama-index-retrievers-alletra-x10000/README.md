@@ -4,21 +4,10 @@
 
 ## How to use SDK
 
-### Install llama-index
+### Install llama-index-retriver-alletra-x10000
 
 ```python
-pip install llama-index
-```
-
-### Install SDK
-
-```shell
-cd ./llama-index-retriever-data-intelligence
-```
-
-```python
-pip install .
-
+pip install llama-index-retriever-alletra-x10000
 ```
 
 ### Data Intelligence solution supports inline embedding generation
@@ -60,8 +49,7 @@ retriever = DataIntelligenceRetriever(uri="https://example.com",
                                       collection_name="testcollection", 
                                       top_k=50,
                                       search_config={
-                                            "metric": "cosine",
-                                            "ef_search": 100
+                                            "radius": 0.75
                                         }
                                       )
 memory = ChatMemoryBuffer.from_defaults(token_limit=1000)

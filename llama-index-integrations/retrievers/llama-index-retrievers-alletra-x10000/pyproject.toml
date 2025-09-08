@@ -3,9 +3,9 @@ build-backend = "hatchling.build"
 requires = ["hatchling"]
 
 [project]
-name = "llama-index-retriever-data-intelligence"
+name = "llama-index-retriever-alletra-x10000"
 version = "0.0.1"
-description = "llama-index retriever data intelligence integration"
+description = "llama-index retriever for AlletraMP X10000"
 readme = "README.md"
 requires-python = ">=3.11.2,<4.0"
 authors = [{name = "HPE"}]

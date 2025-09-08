@@ -531,7 +531,7 @@ wheels = [
 ]
 
 [[package]]
-name = "llama-index-retriever-data-intelligence"
+name = "llama-index-retriever-alletra-x10000"
 version = "0.0.1"
 source = { editable = "." }
 dependencies = [
