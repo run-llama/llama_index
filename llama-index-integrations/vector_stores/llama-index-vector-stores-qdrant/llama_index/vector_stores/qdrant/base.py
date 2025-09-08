@@ -52,6 +52,7 @@ from qdrant_client.http.models import (
     IsEmptyCondition,
 )
 from qdrant_client.qdrant_fastembed import IDF_EMBEDDING_MODELS
+from qdrant_client.http.exceptions import UnexpectedResponse
 
 logger = logging.getLogger(__name__)
 import_err_msg = (
@@ -103,6 +104,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         write_consistency_factor (Optional[int]): Write consistency factor for the collection
         shard_key_selector_fn (Optional[Callable[..., rest.ShardKeySelector]]): Function to select shard keys
         shard_keys (Optional[list[rest.ShardKey]]): List of shard keys
+        payload_indexes: Optional[list[dict[str, rest.PayloadSchemaType]]]: List of payload field indexes
 
     Notes:
         For backward compatibility, the vector store will automatically detect the vector format
@@ -163,6 +165,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
     _sharding_method: Optional[rest.ShardingMethod] = PrivateAttr()
     _replication_factor: Optional[int] = PrivateAttr()
     _write_consistency_factor: Optional[int] = PrivateAttr()
+    _payload_indexes: Optional[list[dict[str, rest.PayloadSchemaType]]] = PrivateAttr()
 
     def __init__(
         self,
@@ -193,6 +196,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
         shard_keys: Optional[list[rest.ShardKey]] = None,
         replication_factor: Optional[int] = None,
         write_consistency_factor: Optional[int] = None,
+        payload_indexes: Optional[list[dict[str, rest.PayloadSchemaType]]] = None,
         **kwargs: Any,
     ) -> None:
         """Init params."""
@@ -250,12 +254,16 @@ class QdrantVectorStore(BasePydanticVectorStore):
             self._client = client
             self._aclient = aclient
 
+        self._payload_indexes = payload_indexes
+
         # Check if collection exists and detect vector format
         self._legacy_vector_format = None
         if self._client is not None:
             self._collection_initialized = self._collection_exists(collection_name)
             if self._collection_initialized:
                 self._detect_vector_format(collection_name)
+                if self._payload_indexes:
+                    self._create_payload_indexes()
         else:
             # Need to do lazy init for async clients
             self._collection_initialized = False
@@ -568,8 +576,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
             ValueError: If trying to using async methods without aclient
 
         """
-        from qdrant_client.http.exceptions import UnexpectedResponse
-
         self._ensure_async_client()
 
         collection_initialized = await self._acollection_exists(self.collection_name)
@@ -792,9 +798,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
     def _create_collection(self, collection_name: str, vector_size: int) -> None:
         """Create a Qdrant collection."""
-        from qdrant_client.http import models as rest
-        from qdrant_client.http.exceptions import UnexpectedResponse
-
         dense_config = self._dense_config or rest.VectorParams(
             size=vector_size,
             distance=rest.Distance.COSINE,
@@ -836,11 +839,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 )
 
             if self._shard_keys:
-                for shard_key in self._shard_keys:
-                    self._client.create_shard_key(
-                        collection_name=collection_name,
-                        shard_key=shard_key,
-                    )
+                self._create_shard_keys()
 
             # To improve search performance Qdrant recommends setting up
             # a payload index for fields used in filters.
@@ -851,6 +850,9 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     field_name=DOCUMENT_ID_KEY,
                     field_schema=rest.PayloadSchemaType.KEYWORD,
                 )
+
+            if self._payload_indexes:
+                self._create_payload_indexes()
         except (RpcError, ValueError, UnexpectedResponse) as exc:
             if "already exists" not in str(exc):
                 raise exc  # noqa: TRY201
@@ -860,28 +862,15 @@ class QdrantVectorStore(BasePydanticVectorStore):
             )
 
             if self._shard_keys:
-                for shard_key in self._shard_keys:
-                    try:
-                        self._client.create_shard_key(
-                            collection_name=collection_name,
-                            shard_key=shard_key,
-                        )
-                    except (RpcError, ValueError, UnexpectedResponse) as exc:
-                        if "already exists" not in str(exc):
-                            raise exc  # noqa: TRY201
-                        logger.warning(
-                            "Shard key %s already exists, skipping creation.",
-                            shard_key,
-                        )
-                        continue
+                self._create_shard_keys()
+
+            if self._payload_indexes:
+                self._create_payload_indexes()
 
         self._collection_initialized = True
 
     async def _acreate_collection(self, collection_name: str, vector_size: int) -> None:
         """Asynchronous method to create a Qdrant collection."""
-        from qdrant_client.http import models as rest
-        from qdrant_client.http.exceptions import UnexpectedResponse
-
         dense_config = self._dense_config or rest.VectorParams(
             size=vector_size,
             distance=rest.Distance.COSINE,
@@ -920,11 +909,7 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 )
 
             if self._shard_keys:
-                for shard_key in self._shard_keys:
-                    await self._aclient.create_shard_key(
-                        collection_name=collection_name,
-                        shard_key=shard_key,
-                    )
+                await self._acreate_shard_keys()
 
             # To improve search performance Qdrant recommends setting up
             # a payload index for fields used in filters.
@@ -935,6 +920,9 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     field_name=DOCUMENT_ID_KEY,
                     field_schema=rest.PayloadSchemaType.KEYWORD,
                 )
+
+            if self._payload_indexes:
+                await self._acreate_payload_indexes()
         except (RpcError, ValueError, UnexpectedResponse) as exc:
             if "already exists" not in str(exc):
                 raise exc  # noqa: TRY201
@@ -944,20 +932,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
             )
 
             if self._shard_keys:
-                for shard_key in self._shard_keys:
-                    try:
-                        await self._client.create_shard_key(
-                            collection_name=collection_name,
-                            shard_key=shard_key,
-                        )
-                    except (RpcError, ValueError, UnexpectedResponse) as exc:
-                        if "already exists" not in str(exc):
-                            raise exc  # noqa: TRY201
-                        logger.warning(
-                            "Shard key %s already exists, skipping creation.",
-                            shard_key,
-                        )
-                        continue
+                await self._acreate_shard_keys()
+
+            if self._payload_indexes:
+                await self._acreate_payload_indexes()
 
         self._collection_initialized = True
 
@@ -968,6 +946,68 @@ class QdrantVectorStore(BasePydanticVectorStore):
     async def _acollection_exists(self, collection_name: str) -> bool:
         """Asynchronous method to check if a collection exists."""
         return await self._aclient.collection_exists(collection_name)
+
+    def _create_shard_keys(self) -> None:
+        """Create shard keys in Qdrant collection."""
+        if not self._shard_keys:
+            return
+
+        for shard_key in self._shard_keys:
+            try:
+                self._client.create_shard_key(
+                    collection_name=self.collection_name,
+                    shard_key=shard_key,
+                )
+            except (RpcError, ValueError, UnexpectedResponse) as exc:
+                if "already exists" not in str(exc):
+                    raise exc  # noqa: TRY201
+                logger.warning(
+                    "Shard key %s already exists, skipping creation.",
+                    shard_key,
+                )
+                continue
+
+    async def _acreate_shard_keys(self) -> None:
+        """Asynchronous method to create shard keys in Qdrant collection."""
+        if not self._shard_keys:
+            return
+
+        for shard_key in self._shard_keys:
+            try:
+                await self._aclient.create_shard_key(
+                    collection_name=self.collection_name,
+                    shard_key=shard_key,
+                )
+            except (RpcError, ValueError, UnexpectedResponse) as exc:
+                if "already exists" not in str(exc):
+                    raise exc  # noqa: TRY201
+                logger.warning(
+                    "Shard key %s already exists, skipping creation.",
+                    shard_key,
+                )
+                continue
+
+    def _create_payload_indexes(self) -> None:
+        """Create payload indexes in Qdrant collection."""
+        if not self._payload_indexes:
+            return
+        for payload_index in self._payload_indexes:
+            self._client.create_payload_index(
+                collection_name=self.collection_name,
+                field_name=payload_index["field_name"],
+                field_schema=payload_index["field_schema"],
+            )
+
+    async def _acreate_payload_indexes(self) -> None:
+        """Create payload indexes in Qdrant collection."""
+        if not self._payload_indexes:
+            return
+        for payload_index in self._payload_indexes:
+            await self._aclient.create_payload_index(
+                collection_name=self.collection_name,
+                field_name=payload_index["field_name"],
+                field_schema=payload_index["field_schema"],
+            )
 
     def query(
         self,

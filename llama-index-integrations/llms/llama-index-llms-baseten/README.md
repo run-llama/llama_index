@@ -23,7 +23,7 @@ By default, we set the `model_apis` parameter to `True`. If you want to use a de
 
 ## Usage
 
-### Basic Usage (Dedicated Deployment)
+### Basic Usage
 
 To use Baseten models with LlamaIndex, first initialize the LLM:
 

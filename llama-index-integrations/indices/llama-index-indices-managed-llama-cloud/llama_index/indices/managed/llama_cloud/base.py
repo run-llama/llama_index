@@ -64,6 +64,7 @@ logger = logging.getLogger(__name__)
 @deprecated(
     reason=DEPRECATION_REASON,
     version="0.9.1",
+    action="once",
 )
 class LlamaCloudIndex(BaseManagedIndex):
     """

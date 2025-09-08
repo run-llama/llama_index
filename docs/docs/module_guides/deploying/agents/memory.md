@@ -143,7 +143,7 @@ blocks = [
 Here, we've setup three memory blocks:
 
 - `core_info`: A static memory block that stores some core information about the user. The static content can either be a string or a list of `ContentBlock` objects like `TextBlock`, `ImageBlock`, etc. This information will always be inserted into the memory.
-- `extracted_info`: An extracted memory block that will extract information from the chat history. Here we've passed in the `llm` to use to extarct facts from the flushed chat history, and set the `max_facts` to 50. If the number of extracted facts exceeds this limit, the `max_facts` will be automatically summarized and reduced to leave room for new information.
+- `extracted_info`: An extracted memory block that will extract information from the chat history. Here we've passed in the `llm` to use to extract facts from the flushed chat history, and set the `max_facts` to 50. If the number of extracted facts exceeds this limit, the `max_facts` will be automatically summarized and reduced to leave room for new information.
 - `vector_memory`: A vector memory block that will store and retrieve batches of chat messages from a vector database. Each batch is a list of the flushed chat messages. Here we've passed in the `vector_store` and `embed_model` to use to store and retrieve the chat messages.
 
 You'll also notice that we've set the `priority` for each block. This is used to determine the handling when the memory blocks content (i.e. long-term memory) + short-term memory exceeds the token limit on the `Memory` object.
