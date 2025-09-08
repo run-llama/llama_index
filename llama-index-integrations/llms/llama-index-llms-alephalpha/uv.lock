@@ -1702,7 +1702,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-alephalpha"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "aleph-alpha-client" },
@@ -1735,7 +1735,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "aleph-alpha-client", specifier = ">=7.0.1,<8" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

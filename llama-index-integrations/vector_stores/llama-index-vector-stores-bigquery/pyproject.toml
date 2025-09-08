@@ -27,14 +27,14 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-bigquery"
-version = "0.1.0"
+version = "0.1.1"
 description = "llama-index vector_stores bigquery vector search integration"
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
     "google-cloud-bigquery>=3.34.0,<4",
-    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-core>=0.13.0,<0.15",
 ]
 
 [tool.codespell]

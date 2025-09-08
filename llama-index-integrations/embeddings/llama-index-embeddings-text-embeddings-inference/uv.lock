@@ -1648,7 +1648,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-text-embeddings-inference"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
@@ -1682,7 +1682,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "httpx", specifier = ">=0.26.0" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-utils-huggingface", specifier = ">=0.4.0,<0.5" },
 ]
 

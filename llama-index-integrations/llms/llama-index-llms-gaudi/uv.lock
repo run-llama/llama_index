@@ -1694,7 +1694,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-gaudi"
-version = "0.3.0"
+version = "0.3.1"
 source = { editable = "." }
 dependencies = [
     { name = "huggingface-hub" },
@@ -1732,7 +1732,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "huggingface-hub", specifier = ">=0.23.0" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-llms-huggingface", specifier = ">=0.6.0,<0.7" },
     { name = "optimum", extras = ["habana"], specifier = ">=1.21.2" },
     { name = "torch", specifier = ">=2.1.2,<3" },

@@ -1681,7 +1681,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-storage-docstore-azurecosmosnosql"
-version = "1.2.0"
+version = "1.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "azure-cosmos" },
@@ -1717,7 +1717,7 @@ dev = [
 requires-dist = [
     { name = "azure-cosmos", specifier = ">=4.9.0,<5" },
     { name = "azure-identity", specifier = ">=1.19.0,<2" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-storage-kv-store-azurecosmosnosql", specifier = ">=1.2.0" },
 ]
 

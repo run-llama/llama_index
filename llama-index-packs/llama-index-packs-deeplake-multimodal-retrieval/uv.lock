@@ -772,23 +772,18 @@ dependencies = [
     { name = "numpy", version = "2.2.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/95/58/a10170aecf6380450a21b81519f31cf8c7d4266509d7f4b295acf38c668c/deeplake-4.2.1-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:6f2f3642169e900c04287be39fe087819f80daae1100125db29c63a27474e58c", size = 16549854, upload-time = "2025-04-22T23:07:49.66Z" },
     { url = "https://files.pythonhosted.org/packages/09/ec/8abf2fcfa31654fb3c7cde6cc4e5f6a7b586ee7258399e07480a8452479b/deeplake-4.2.1-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:23881fc225e4144bfd6af8403bcd2a355e67e312e1077e4b9fc9f81082414497", size = 15731085, upload-time = "2025-04-22T23:08:06.642Z" },
     { url = "https://files.pythonhosted.org/packages/7d/cc/52315b9975bfb88715d5f9ae61885bf70e77c9537125d033bc2c6d2e8890/deeplake-4.2.1-cp310-cp310-manylinux2014_aarch64.whl", hash = "sha256:8df71350031905e952b20b98e349bc943c172149bc47c6dd4297972642389c74", size = 18364328, upload-time = "2025-04-22T23:08:12.353Z" },
     { url = "https://files.pythonhosted.org/packages/69/e8/edf5d1cad2f23b14e38da9ff6fa2fe0e40b46d60c09aecd75298bd2dc091/deeplake-4.2.1-cp310-cp310-manylinux2014_x86_64.whl", hash = "sha256:6347f637c4a8a6dc502378f93aee1622dce243668ddf47ba8a1f521955e82c04", size = 19286904, upload-time = "2025-04-22T23:08:16.384Z" },
-    { url = "https://files.pythonhosted.org/packages/0a/76/68236a391f96493e1797df45965ccc9555e9aab868f420f8391e0ba5601b/deeplake-4.2.1-cp311-cp311-macosx_10_12_x86_64.whl", hash = "sha256:c70741ccb6fb0204947e177aa4329b3c556e1a301de504fcd2568a7417068d85", size = 16551701, upload-time = "2025-04-22T23:08:20.399Z" },
     { url = "https://files.pythonhosted.org/packages/5b/96/d818f335a23707f1301d721830f26f942eb4a4d8162b1905f1cc80576ae0/deeplake-4.2.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:8ac22c6faf81974ea7e08d41346a839cc13e137f0098d84dc23a99fe8c108636", size = 15732807, upload-time = "2025-04-22T23:08:23.735Z" },
     { url = "https://files.pythonhosted.org/packages/11/19/b7a476e43661bfd4bd1a2885d5f143b21b7f7a4cd7f92ee3c784541a1999/deeplake-4.2.1-cp311-cp311-manylinux2014_aarch64.whl", hash = "sha256:72a0c0af0d1a5df0c94323e64b0a823c0e234321e3a53a67f20e933c7a6a1ed5", size = 18367277, upload-time = "2025-04-22T23:08:28.433Z" },
     { url = "https://files.pythonhosted.org/packages/30/48/1a1b387e10c861853cba9c9e5e66e8af0da0704692bd43e79e5aa1ef2530/deeplake-4.2.1-cp311-cp311-manylinux2014_x86_64.whl", hash = "sha256:d0545d6cf9ba513984a64188fd6ed95f848b5516b1a0d2136ee528c20be03647", size = 19284292, upload-time = "2025-04-22T23:08:32.015Z" },
-    { url = "https://files.pythonhosted.org/packages/3c/7b/646f0be0d60d7ed6c977cad6b8d5098b6eb68918e5ea952f607b75e0600a/deeplake-4.2.1-cp312-cp312-macosx_10_12_x86_64.whl", hash = "sha256:d846ce7f5a94c8da0763227d65f24df5fe476a3af460e5cb7f468edc7e3260a2", size = 16559053, upload-time = "2025-04-22T23:08:35.368Z" },
     { url = "https://files.pythonhosted.org/packages/a7/ff/6b6511ecaed9dab79bd5ec635bb2ccc71174b6e367711c22b060c3f9cf61/deeplake-4.2.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:bb73e2b5d10fc1dc1e0296f4bf3db752c9532ddb9dd25c4e33bf90c38603b528", size = 15737571, upload-time = "2025-04-22T23:08:39.296Z" },
     { url = "https://files.pythonhosted.org/packages/33/6a/930d9f4e2d381ddf39767c33e6f95dc110376f4906f2c826c2dcf8bafce9/deeplake-4.2.1-cp312-cp312-manylinux2014_aarch64.whl", hash = "sha256:38dfcc9aab6d5bac8783b5c8b6b98781d6030f9c2dc7da343e784a54cbdc5828", size = 18367748, upload-time = "2025-04-22T23:08:44.351Z" },
     { url = "https://files.pythonhosted.org/packages/bb/56/de84d298bf2615e9d722eaf1b9b27a2215a05e349b91523c8781582fa5a6/deeplake-4.2.1-cp312-cp312-manylinux2014_x86_64.whl", hash = "sha256:03ddd25a93f84dd381fe0a330ea642b6802b76abbed9af8a19dcad6c5eac1871", size = 19286628, upload-time = "2025-04-22T23:09:01.489Z" },
-    { url = "https://files.pythonhosted.org/packages/f8/10/bf6d10aa8ca60844e50848fec6dafeadb4b0b1de27e3f2501dabbd9e66e0/deeplake-4.2.1-cp313-cp313-macosx_10_12_x86_64.whl", hash = "sha256:5b73b67298fafbc70ed309b709b7e3cd7591cc45bf6a899a9630869693cdafa2", size = 16558806, upload-time = "2025-04-22T23:09:07.977Z" },
     { url = "https://files.pythonhosted.org/packages/e8/70/7c3db0ef4ceda751c7c04e3f4d754dd0f69c89e681527a9c2475b00ab7c4/deeplake-4.2.1-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:be03413018996e79f04485a47d6445cd2f95ebc4b3046898df07f03beba7f800", size = 15737104, upload-time = "2025-04-22T23:09:14.189Z" },
     { url = "https://files.pythonhosted.org/packages/8f/ba/d852672c0aeaae3028808196694149aa660946d9c6163f743b9b9e95cc0a/deeplake-4.2.1-cp313-cp313-manylinux2014_aarch64.whl", hash = "sha256:f968748bbeb71375869cd2ea4ac2078b3e6cdc4ab78583623b0a9cd1089f5fce", size = 18366379, upload-time = "2025-04-22T23:09:20.039Z" },
     { url = "https://files.pythonhosted.org/packages/3c/f4/895fb5084e3030b80c67363d0155a037a7ccddfca8aa1a71afde14bd6541/deeplake-4.2.1-cp313-cp313-manylinux2014_x86_64.whl", hash = "sha256:7f4b302bb5533cb4b7c59f09dbcf02d005ea2b7ceb197d3324058d0a2adca2cb", size = 19287409, upload-time = "2025-04-22T23:09:25.762Z" },
-    { url = "https://files.pythonhosted.org/packages/10/63/a2589b3edd8fdf50db72aad0fd407b4b09e17f201d68c95a09d707032687/deeplake-4.2.1-cp39-cp39-macosx_10_12_x86_64.whl", hash = "sha256:103f1b0d522ef8f289aabdaa5d0713bfc69a9a9985531e0b48de41c7c05cdc27", size = 16549581, upload-time = "2025-04-22T23:11:40.62Z" },
     { url = "https://files.pythonhosted.org/packages/ae/9f/7e758d6654998a3d918f5f2755f7b6c3d5e3111dc98402ffd7fe29f1b321/deeplake-4.2.1-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:b743ec0d0dbb4dd20d225636ad98435069142c69f3fee70cc1e2167feb2b49aa", size = 15730792, upload-time = "2025-04-22T23:11:44.838Z" },
     { url = "https://files.pythonhosted.org/packages/9f/45/c8310580d01afc5f1df7d69ec74da54aabc56c013290c676572f287888a5/deeplake-4.2.1-cp39-cp39-manylinux2014_aarch64.whl", hash = "sha256:13906955d76b5a8763ce6f5ca361002df5c17002a26e49f25482921339a0a1ef", size = 18370525, upload-time = "2025-04-22T23:11:48.823Z" },
     { url = "https://files.pythonhosted.org/packages/af/ef/f4d08b15b106b140cdeec056dbf02ccde7d68cb695c40fdf880d46ccda0f/deeplake-4.2.1-cp39-cp39-manylinux2014_x86_64.whl", hash = "sha256:41fe2e3bce229f048648be4584c9e5be6acb932bdd0f273879e9ac5b83ae568c", size = 19286600, upload-time = "2025-04-22T23:11:53.338Z" },
@@ -1669,7 +1664,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-packs-deeplake-multimodal-retrieval"
-version = "0.3.0"
+version = "0.3.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1701,7 +1696,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-vector-stores-deeplake", specifier = ">=0.4.0,<0.5" },
 ]
 

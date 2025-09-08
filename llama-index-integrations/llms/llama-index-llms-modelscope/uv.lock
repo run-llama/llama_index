@@ -2483,7 +2483,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-modelscope"
-version = "0.5.0"
+version = "0.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -2520,7 +2520,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "modelscope", extras = ["framework"], specifier = ">=1.12.0" },
     { name = "ms-swift" },
     { name = "pip" },

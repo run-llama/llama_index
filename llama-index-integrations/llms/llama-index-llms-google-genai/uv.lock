@@ -1706,7 +1706,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-google-genai"
-version = "0.3.0"
+version = "0.3.1"
 source = { editable = "." }
 dependencies = [
     { name = "google-genai" },
@@ -1741,7 +1741,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "google-genai", specifier = ">=1.24.0,<2" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "pillow", specifier = ">=10.2.0" },
 ]
 

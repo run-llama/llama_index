@@ -1709,7 +1709,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-indices-managed-lancedb"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "lancedb" },
@@ -1750,7 +1750,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "lancedb", specifier = ">=0.24.0,<1" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "open-clip-torch", specifier = ">=2.32.0,<3" },
     { name = "polars", specifier = ">=1.31.0,<2" },
     { name = "pyarrow", specifier = ">=20.0.0,<21" },

@@ -1706,7 +1706,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-nvidia"
-version = "0.4.1"
+version = "0.4.2"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1746,7 +1746,7 @@ test-integration = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "llama-index-core", specifier = ">=0.13.0,<0.14" }]
+requires-dist = [{ name = "llama-index-core", specifier = ">=0.13.0,<0.15" }]
 
 [package.metadata.requires-dev]
 dev = [

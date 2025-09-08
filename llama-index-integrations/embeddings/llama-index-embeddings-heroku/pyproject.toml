@@ -34,14 +34,14 @@ test_integration = [
 
 [project]
 name = "llama-index-embeddings-heroku"
-version = "0.1.0"
+version = "0.1.1"
 description = "llama-index embeddings heroku managed inference integration"
 authors = [{name = "LlamaIndex", email = "dev@llamaindex.ai"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-core>=0.13.0,<0.15",
     "httpx>=0.24.0",
 ]
 

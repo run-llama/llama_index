@@ -1446,7 +1446,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-vearch"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },

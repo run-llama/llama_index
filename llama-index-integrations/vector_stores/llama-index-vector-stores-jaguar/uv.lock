@@ -1647,7 +1647,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-jaguar"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "jaguardb-http-client" },
@@ -1680,7 +1680,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "jaguardb-http-client", specifier = ">=3.4.2,<4" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]
