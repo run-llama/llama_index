@@ -16,7 +16,7 @@ from llama_index.core.readers import (FileSystemReaderMixin,
                                       SimpleDirectoryReader)
 from llama_index.core.readers.base import (BasePydanticReader, BaseReader,
                                            ResourcesReaderMixin)
-from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation import DispatcherSpanMixin, get_dispatcher
 from llama_index.core.schema import Document
 from .event import (
         FileType,
@@ -67,7 +67,7 @@ class CustomParserManager:
         return markdown_text
 
 
-class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin):
+class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin, DispatcherSpanMixin):
     """
     SharePoint reader.
 
@@ -180,7 +180,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         else:
             self.custom_folder = None
             self.custom_parser_manager = None
-        self.sharepoint_type = sharepoint_type
+        self.sharepoint_type = sharepoint_type or SharePointType.DRIVE
         self.page_name = page_name
 
     @classmethod
@@ -404,6 +404,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             logger.error("Error retrieving folder ID: %s", error_message)
             raise ValueError(f"Error retrieving folder ID: {error_message}")
 
+    @dispatcher.span
     def _download_files_and_extract_metadata(
         self,
         folder_id: str,
@@ -1207,6 +1208,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             logger.error(f"Error getting page text for page {page_id}: {e}", exc_info=True)
             raise
     
+    @dispatcher.span
     def load_pages_data(self, download_dir: Optional[str] = None) -> List[Document]:
         """
         Loads SharePoint pages as Documents.

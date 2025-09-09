@@ -13,6 +13,8 @@ class FileType(Enum):
     SPREADSHEET = "spreadsheet"
     PRESENTATION = "presentation"
     PDF = "pdf"
+    JSON = "json"
+    TXT = "txt"
     UNKNOWN = "unknown"
 
 

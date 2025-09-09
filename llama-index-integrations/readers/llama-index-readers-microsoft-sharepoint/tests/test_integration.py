@@ -26,7 +26,7 @@ class TestIntegration:
         # Setup custom parser
         mock_parser = MagicMock()
         mock_parser.load_data.return_value = [
-            Document(text="custom parsed content", doc_id="custom")
+            Document(text="custom parsed content", id_="custom")
         ]
 
         # Setup callback
@@ -70,7 +70,7 @@ class TestIntegration:
 
             # Simulate event flow for a normal file
             dispatcher.event(PageDataFetchStartedEvent(page_id=normal_file_id))
-            dispatcher.event(PageDataFetchCompletedEvent(page_id=normal_file_id, document=Document(text="content", doc_id=normal_file_id)))
+            dispatcher.event(PageDataFetchCompletedEvent(page_id=normal_file_id, document=Document(text="content", id_=normal_file_id)))
 
             # Simulate event flow for a draft file (should be skipped by callback)
             dispatcher.event(PageDataFetchStartedEvent(page_id=draft_file_id))
@@ -144,7 +144,7 @@ class TestIntegration:
         dispatcher.event(PageDataFetchStartedEvent(page_id="page1"))
         dispatcher.event(
             PageDataFetchCompletedEvent(
-                page_id="page1", document=Document(text="content1", doc_id="page1")
+                page_id="page1", document=Document(text="content1", id_="page1")
             )
         )
 

@@ -8,6 +8,15 @@ The loader loads files from a folder in a SharePoint site.
 
 It also supports traversing recursively through sub-folders.
 
+## ✨ New Features
+
+- **📄 SharePoint Page Reading**: Load SharePoint site pages as documents
+- **🔧 Custom File Parsers**: Use specialized parsers for different file types (PDF, DOCX, HTML, etc.)
+- **📊 Event System**: Monitor document processing with real-time events
+- **🎯 Document Callbacks**: Filter and process documents with custom logic
+- **⚙️ Error Handling**: Configurable error handling behavior
+- **🚀 Enhanced Performance**: Optimized loading with parallel processing support
+
 ---
 
 ## Prerequisites
@@ -83,7 +92,7 @@ documents = loader.load_data(
 
 ## Advanced Features
 
-### Custom File Readers
+### 🔧 Custom File Parsers
 
 You can use custom file readers for specific file types (e.g., PDF, DOCX, HTML, etc.) by passing the `custom_parsers` argument. This allows you to control how different file types are parsed.
 
@@ -112,24 +121,143 @@ loader = SharePointReader(
 )
 ```
 
-### Page Reading Support
+### 📄 SharePoint Page Reading
 
-You can also load SharePoint pages (not just files) by setting `sharepoint_type="page"` and providing a `page_name` if you want to load a specific page.
+You can load SharePoint pages (not just files) by setting `sharepoint_type="page"` and providing a `page_name` if you want to load a specific page.
 
 ```python
+from llama_index.readers.microsoft_sharepoint.base import SharePointType
+
+# Load all pages from a site
 loader = SharePointReader(
     client_id="...",
     client_secret="...",
     tenant_id="...",
-    sharepoint_type="page",
-    page_name="<Page Name>",  # Optional: load a specific page
+    sharepoint_type=SharePointType.PAGE,
 )
 
 documents = loader.load_data(
     sharepoint_site_name="<Sharepoint Site Name>",
-    # No need for sharepoint_folder_path when loading pages
+    download_dir="/tmp/pages"  # Required for page content processing
+)
+
+# Load a specific page
+loader = SharePointReader(
+    client_id="...",
+    client_secret="...",
+    tenant_id="...",
+    sharepoint_type=SharePointType.PAGE,
+    page_name="<Page Name>",
 )
 ```
+
+### 🎯 Document Filtering with Callbacks
+
+Use callbacks to filter or modify documents during processing:
+
+```python
+def should_process_document(file_name: str) -> bool:
+    """Filter out certain files based on name patterns."""
+    return not file_name.startswith('temp_') and not file_name.endswith('.tmp')
+
+loader = SharePointReader(
+    client_id="...",
+    client_secret="...",
+    tenant_id="...",
+    process_document_callback=should_process_document,
+)
+```
+
+### 📊 Event System for Monitoring
+
+Monitor document processing with real-time events:
+
+```python
+from llama_index.core.instrumentation import get_dispatcher
+from llama_index.core.instrumentation.event_handlers import BaseEventHandler
+from llama_index.readers.microsoft_sharepoint.event import (
+    PageDataFetchStartedEvent,
+    PageDataFetchCompletedEvent,
+    PageSkippedEvent,
+    PageFailedEvent,
+)
+
+class SharePointEventHandler(BaseEventHandler):
+    def handle(self, event):
+        if isinstance(event, PageDataFetchStartedEvent):
+            print(f"Started processing: {event.page_id}")
+        elif isinstance(event, PageDataFetchCompletedEvent):
+            print(f"Completed processing: {event.page_id}")
+        elif isinstance(event, PageSkippedEvent):
+            print(f"Skipped: {event.page_id}")
+        elif isinstance(event, PageFailedEvent):
+            print(f"Failed: {event.page_id} - {event.error}")
+
+# Register event handler
+dispatcher = get_dispatcher("llama_index.readers.microsoft_sharepoint.base")
+dispatcher.add_event_handler(SharePointEventHandler())
+
+# Now load data with event monitoring
+documents = loader.load_data(sharepoint_site_name="YourSite")
+```
+
+### ⚙️ Error Handling
+
+Configure how the reader handles errors:
+
+```python
+# Fail immediately on any error (default)
+loader = SharePointReader(
+    client_id="...",
+    client_secret="...",
+    tenant_id="...",
+    fail_on_error=True,
+)
+
+# Continue processing even if some files fail
+loader = SharePointReader(
+    client_id="...",
+    client_secret="...",
+    tenant_id="...",
+    fail_on_error=False,  # Skip failed files and continue
+)
+```
+
+---
+
+## 📋 Installation Options
+
+### Basic Installation
+```bash
+pip install llama-index-readers-microsoft-sharepoint
+```
+
+### With File Parser Support
+For enhanced file parsing capabilities (PDF, DOCX, images, etc.):
+```bash
+pip install "llama-index-readers-microsoft-sharepoint[file_parsers]"
+```
+
+This includes additional dependencies:
+- `pytesseract` - For OCR in images
+- `pdf2image` - For PDF processing  
+- `python-pptx` - For PowerPoint files
+- `docx2txt` - For Word documents
+- `pandas` - For Excel/CSV files
+- `beautifulsoup4` - For HTML parsing
+- `Pillow` - For image processing
+
+---
+
+## 🔧 Configuration Options
+
+| Parameter | Type | Description | Default |
+|-----------|------|-------------|---------|
+| `sharepoint_type` | `SharePointType` | Type of SharePoint content (`DRIVE` or `PAGE`) | `DRIVE` |
+| `custom_parsers` | `Dict[FileType, Any]` | Custom parsers for specific file types | `{}` |
+| `custom_folder` | `str` | Directory for temporary files (required with custom_parsers) | `None` |
+| `process_document_callback` | `Callable` | Function to filter/process documents | `None` |
+| `fail_on_error` | `bool` | Whether to stop on first error or continue | `True` |
 
 ---
 
@@ -137,4 +265,6 @@ documents = loader.load_data(
 
 - The loader does not access other components of the SharePoint Site.
 - If you use `custom_parsers`, you must also provide `custom_folder` (a directory for temporary files).
-- For more advanced usage, see the docstrings in the code and the [examples](examples/) directory if available.
+- SharePoint page reading requires a download directory for content processing.
+- Event monitoring is optional but provides valuable insights into processing status.
+- For more advanced usage, see the docstrings in the code and the test files for examples.
