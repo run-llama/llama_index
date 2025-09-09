@@ -1843,7 +1843,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-gemini"
-version = "0.6.0"
+version = "0.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "google-generativeai" },
@@ -1877,7 +1877,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "google-generativeai", specifier = ">=0.5.2" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "pillow", specifier = ">=10.2.0,<11" },
 ]
 

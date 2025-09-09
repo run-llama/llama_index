@@ -1693,7 +1693,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-duckdb"
-version = "0.5.0"
+version = "0.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "duckdb" },
@@ -1727,7 +1727,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "duckdb", specifier = ">=0.10.1,<1.4.0" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "pyarrow", specifier = ">=20.0.0" },
 ]
 

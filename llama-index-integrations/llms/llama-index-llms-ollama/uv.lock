@@ -1638,7 +1638,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-ollama"
-version = "0.7.1"
+version = "0.7.2"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1671,7 +1671,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "ollama", specifier = ">=0.5.1" },
 ]
 

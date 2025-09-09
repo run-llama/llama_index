@@ -1653,7 +1653,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-retrievers-bm25"
-version = "0.6.2"
+version = "0.6.4"
 source = { editable = "." }
 dependencies = [
     { name = "bm25s" },

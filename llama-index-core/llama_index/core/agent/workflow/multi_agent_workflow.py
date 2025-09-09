@@ -48,7 +48,6 @@ from llama_index.core.workflow import (
     step,
     WorkflowRuntimeError,
 )
-from llama_index.core.workflow.checkpointer import CheckpointCallback
 from llama_index.core.workflow.handler import WorkflowHandler
 from llama_index.core.workflow.workflow import WorkflowMeta
 from llama_index.core.settings import Settings
@@ -641,7 +640,6 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         memory: Optional[BaseMemory] = None,
         ctx: Optional[Context] = None,
         stepwise: bool = False,
-        checkpoint_callback: Optional[CheckpointCallback] = None,
         max_iterations: Optional[int] = None,
         start_event: Optional[AgentWorkflowStartEvent] = None,
         **kwargs: Any,
@@ -651,7 +649,6 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             return super().run(
                 ctx=ctx,
                 stepwise=stepwise,
-                checkpoint_callback=checkpoint_callback,
                 **kwargs,
             )
         else:
@@ -666,7 +663,6 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
                 start_event=start_event,
                 ctx=ctx,
                 stepwise=stepwise,
-                checkpoint_callback=checkpoint_callback,
             )
 
     @classmethod

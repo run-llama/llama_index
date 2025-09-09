@@ -1938,7 +1938,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-vertex"
-version = "0.6.0"
+version = "0.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "google-cloud-aiplatform" },
@@ -1971,7 +1971,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "google-cloud-aiplatform", specifier = ">=1.39.0,<2" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

@@ -1685,7 +1685,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-tools-ionic-shopping"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "ionic-api-sdk" },
@@ -1718,7 +1718,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "ionic-api-sdk", specifier = ">=0.9.1,<0.10" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

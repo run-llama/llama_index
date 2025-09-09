@@ -49,7 +49,7 @@ keywords = [
 dependencies = [
     "requests>=2.31.0,<3",
     "llama-index-readers-file>=0.5.0,<0.6",
-    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-core>=0.13.0,<0.15",
 ]
 
 [project.optional-dependencies]

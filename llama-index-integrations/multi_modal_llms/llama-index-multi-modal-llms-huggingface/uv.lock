@@ -1591,7 +1591,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-multi-modal-llms-huggingface"
-version = "0.5.0"
+version = "0.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1627,7 +1627,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-llms-huggingface", specifier = ">=0.5.0,<1" },
     { name = "pillow", specifier = ">=10.0.0" },
     { name = "qwen-vl-utils", specifier = ">=0.0.8" },

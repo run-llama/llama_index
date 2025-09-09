@@ -1434,7 +1434,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-packs-koda-retriever"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1467,7 +1467,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-readers-wikipedia", specifier = ">=0.4.0,<0.5" },
     { name = "wikipedia", specifier = ">=1.4.0,<2" },
 ]
