@@ -16,6 +16,7 @@ from llama_index.core.readers import (FileSystemReaderMixin,
                                       SimpleDirectoryReader)
 from llama_index.core.readers.base import (BasePydanticReader, BaseReader,
                                            ResourcesReaderMixin)
+from llama_index.core.instrumentation import get_dispatcher
 from llama_index.core.schema import Document
 from .event import (
         FileType,
@@ -27,39 +28,11 @@ from .event import (
     )
 
 logger = logging.getLogger(__name__)
-
+dispatcher = get_dispatcher(__name__)
 
 class SharePointType(Enum):
     DRIVE = "drive"
     PAGE = "page"
-
-class Observer:
-    def __init__(self):
-        self._listeners: Dict[str, List[Callable[[Any], None]]] = {}
-
-    def subscribe(self, event_name: str, callback: Callable[[Any], None]):
-        if event_name not in self._listeners:
-            self._listeners[event_name] = []
-        self._listeners[event_name].append(callback)
-
-    def subscribe_all(self, callback: Callable[[Any], None]):
-        for event_name in self._listeners:
-            self._listeners[event_name].append(callback)
-
-    def unsubscribe(self, event_name: str, callback: Callable[[Any], None]):
-        if event_name in self._listeners:
-            self._listeners[event_name].remove(callback)
-            if not self._listeners[event_name]:
-                del self._listeners[event_name]
-
-    def notify(self, event: Any):
-        if hasattr(event, "class_name"):
-            event_name = event.class_name()
-        else:
-            event_name = getattr(event, "name", None)
-        if event_name in self._listeners:
-            for callback in self._listeners[event_name]:
-                callback(event)
 
 class CustomParserManager:
     def __init__(self, custom_parsers: Optional[Dict[FileType, BaseReader]], custom_folder: str):
@@ -151,7 +124,6 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
     _site_id_with_host_name = PrivateAttr()
     _drive_id_endpoint = PrivateAttr()
     _drive_id = PrivateAttr()
-    _observer: Observer = PrivateAttr()
 
     def __init__(
         self,
@@ -208,7 +180,6 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         else:
             self.custom_folder = None
             self.custom_parser_manager = None
-        self._observer = Observer()
         self.sharepoint_type = sharepoint_type
         self.page_name = page_name
 
@@ -460,7 +431,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             files_path = [file_path]
         metadata = {}
 
-        self._observer.notify(
+        dispatcher.event(
             TotalPagesToProcessEvent(total_pages=len(files_path))
         )
 
@@ -468,12 +439,12 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             try:
                 item = self._get_item_from_path(file_path)
                 file_id = item.get("id")
-                self._observer.notify(PageDataFetchStartedEvent(page_id=file_id))
+                dispatcher.event(PageDataFetchStartedEvent(page_id=file_id))
                 file_metadata = self._download_file(item, download_dir)
                 metadata.update(file_metadata)
-                self._observer.notify(PageDataFetchCompletedEvent(page_id=file_id, document=None))
+                dispatcher.event(PageDataFetchCompletedEvent(page_id=file_id, document=None))
             except Exception as e:
-                self._observer.notify(PageFailedEvent(page_id=str(file_path), error=str(e)))
+                dispatcher.event(PageFailedEvent(page_id=str(file_path), error=str(e)))
                 logger.error(f"Error processing {file_path}: {e}", exc_info=True)
                 if self.fail_on_error:
                     raise
@@ -747,7 +718,6 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                     recursive=recursive,
                 )
                 docs.extend(simple_loader.load_data())
-                break
         else:
             simple_loader = SimpleDirectoryReader(
                 download_dir,
@@ -762,6 +732,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             docs = self._exclude_access_control_metadata(docs)
         return docs
 
+    @dispatcher.span
     def load_data(
         self,
         sharepoint_site_name: Optional[str] = None,
@@ -859,7 +830,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         except Exception as exp:
             logger.error(f"Error accessing SharePoint: {exp}", exc_info=True)
-            self._observer.notify(PageFailedEvent(page_id=str(sharepoint_folder_path or sharepoint_folder_id), error=str(exp)))
+            dispatcher.event(PageFailedEvent(page_id=str(sharepoint_folder_path or sharepoint_folder_id), error=str(exp)))
             if self.fail_on_error:
                 raise
             return []
@@ -1285,11 +1256,11 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                     }
                     text = page_info.get("textContent", "")
                     document = Document(text=text, metadata=metadata, doc_id=combined_id)
-                    self._observer.notify(PageDataFetchStartedEvent(page_id=combined_id))
-                    self._observer.notify(PageDataFetchCompletedEvent(page_id=combined_id, document=document))
+                    dispatcher.event(PageDataFetchStartedEvent(page_id=combined_id))
+                    dispatcher.event(PageDataFetchCompletedEvent(page_id=combined_id, document=document))
                     documents.append(document)
                 except Exception as e:
-                    self._observer.notify(PageFailedEvent(page_id=self.sharepoint_file_id, error=str(e)))
+                    dispatcher.event(PageFailedEvent(page_id=self.sharepoint_file_id, error=str(e)))
                     logger.error(f"Error loading SharePoint page {self.sharepoint_file_id}: {e}", exc_info=True)
                     if self.fail_on_error:
                         raise
@@ -1297,7 +1268,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
             # All pages
             pages = self.list_pages(site_id, access_token)
-            self._observer.notify(TotalPagesToProcessEvent(total_pages=len(pages)))
+            dispatcher.event(TotalPagesToProcessEvent(total_pages=len(pages)))
             for page in pages:
                 raw_page_id = page['id']
                 combined_id = f"{list_id}_{raw_page_id}"
@@ -1305,7 +1276,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                 last_modified_date_time = page.get("lastModifiedDateTime", "")
                 try:
                     if self.process_document_callback and not self.process_document_callback(page_name):
-                        self._observer.notify(PageSkippedEvent(page_id=combined_id))
+                        dispatcher.event(PageSkippedEvent(page_id=combined_id))
                         continue
                     url_with_id = f"https://{self.sharepoint_host_name}/{self.sharepoint_relative_url}/SitePages/{page_name}?id={raw_page_id}"
                     metadata = {
@@ -1320,15 +1291,15 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                         "file_name": page_name,
                         "sharepoint_type": SharePointType.PAGE.value,
                     }
-                    self._observer.notify(PageDataFetchStartedEvent(page_id=combined_id))
+                    dispatcher.event(PageDataFetchStartedEvent(page_id=combined_id))
                     page_content = self.get_page_text(site_id=site_id, list_id=list_id, page_id=raw_page_id, token=access_token)
                     text = page_content.get("textContent", "")
                     metadata["lastModifiedDateTime"] = page_content.get("lastModifiedDateTime", last_modified_date_time)
                     document = Document(text=text, metadata=metadata, doc_id=combined_id)
-                    self._observer.notify(PageDataFetchCompletedEvent(page_id=combined_id, document=document))
+                    dispatcher.event(PageDataFetchCompletedEvent(page_id=combined_id, document=document))
                     documents.append(document)
                 except Exception as e:
-                    self._observer.notify(PageFailedEvent(page_id=combined_id, error=str(e)))
+                    dispatcher.event(PageFailedEvent(page_id=combined_id, error=str(e)))
                     logger.error(f"Error loading SharePoint page {combined_id}: {e}", exc_info=True)
                     if self.fail_on_error:
                         raise
