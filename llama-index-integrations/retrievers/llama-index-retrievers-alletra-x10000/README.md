@@ -1,13 +1,13 @@
-# llama-index-retrievers-alletra-x10000
+# llama-index-alletra-x10000-retriever
 
 ### This llama-index retriever will provide interfaces for the user applications to do semantic similarity search on the embeddings for Data Intelligence solution of HPE AlletraMP X10000
 
 ## How to use SDK
 
-### Install llama-index-retriver-alletra-x10000
+### Install llama-index-alletra-x10000-retriever
 
 ```python
-pip install llama-index-retriever-alletra-x10000
+pip install llama-index-alletra-x10000-retriever
 ```
 
 ### Data Intelligence solution supports inline embedding generation
@@ -23,12 +23,13 @@ pip install llama-index-retriever-alletra-x10000
 - Feel free to change embedding and llm models.
 
 ```python
-from llama_index.retrievers.data_intelligence import DataIntelligenceRetriever
+from llama_index.retrievers.alletra_x10000_retriever import DataIntelligenceRetriever
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.llms.huggingface import HuggingFaceLLM
 from llama_index.core.chat_engine import CondensePlusContextChatEngine
 from llama_index.core import Settings
-# TODO import python data intelligence client library
+
+import pydi_client
 
 
 # Settings.llm = None
