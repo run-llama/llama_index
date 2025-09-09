@@ -25,6 +25,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     DocumentBlock,
+    VideoBlock,
 )
 from llama_index.core.program.utils import _repair_incomplete_json
 from tenacity import (
@@ -213,6 +214,18 @@ def chat_message_to_gemini(message: ChatMessage) -> types.Content:
 
             part = types.Part.from_bytes(
                 data=base64_bytes, mime_type=block.image_mimetype
+            )
+        elif isinstance(block, VideoBlock):
+            file_buffer = block.resolve_video(as_base64=False)
+            file_bytes = file_buffer.read()
+            mimetype = (
+                block.video_mimetype
+                if block.video_mimetype is not None
+                else "video/mp4"
+            )
+            part = types.Part(
+                inline_data=types.Blob(data=file_bytes, mime_type=mimetype),
+                video_metadata=types.VideoMetadata(fps=block.fps),
             )
         elif isinstance(block, DocumentBlock):
             file_buffer = block.resolve_document()
