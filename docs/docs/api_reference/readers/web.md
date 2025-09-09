@@ -10,6 +10,7 @@
         - KnowledgeBaseWebReader
         - MainContentExtractorReader
         - NewsArticleReader
+        - OlostepWebReader
         - OxylabsWebReader
         - ReadabilityWebPageReader
         - RssNewsReader
