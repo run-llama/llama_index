@@ -1,7 +1,7 @@
 """Olostep Web Reader."""
 
 import requests
-from typing import Any, List, Optional, Dict, Callable
+from typing import List, Optional, Dict, Callable
 
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.readers.base import BasePydanticReader
@@ -17,6 +17,7 @@ class OlostepWebReader(BasePydanticReader):
         mode (str): The mode to run the loader in. One of "scrape" or "search".
                     Default is "scrape".
         params (Optional[dict]): Additional parameters for the API call.
+
     """
 
     api_key: str
@@ -58,6 +59,7 @@ class OlostepWebReader(BasePydanticReader):
 
         Returns:
             List[Document]: List of documents.
+
         """
         if self.mode == "scrape":
             if not url:
@@ -80,6 +82,7 @@ class OlostepWebReader(BasePydanticReader):
 
         Returns:
             List[Document]: A list containing a single document with the search results.
+
         """
         import json
 
@@ -110,11 +113,10 @@ class OlostepWebReader(BasePydanticReader):
         metadata = {
             "source": search_url,
             "query": query,
-            "page_metadata": result.get("page_metadata", {})
+            "page_metadata": result.get("page_metadata", {}),
         }
 
         return [Document(text=json.dumps(json_content, indent=4), metadata=metadata)]
-
 
     def _scrape(self, url: str, params: Optional[dict] = None) -> List[Document]:
         """
@@ -126,6 +128,7 @@ class OlostepWebReader(BasePydanticReader):
 
         Returns:
             List[Document]: A list containing a single document with the scraped content.
+
         """
         api_url = "https://api.olostep.com/v1/scrapes"
         headers = {
@@ -159,9 +162,6 @@ class OlostepWebReader(BasePydanticReader):
 
         content = "\n\n".join(content_parts)
 
-        metadata = {
-            "source": url,
-            "page_metadata": result.get("page_metadata", {})
-        }
+        metadata = {"source": url, "page_metadata": result.get("page_metadata", {})}
 
         return [Document(text=content, metadata=metadata)]

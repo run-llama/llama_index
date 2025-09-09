@@ -30,8 +30,7 @@ documents = reader.load_data(url="https://en.wikipedia.org/wiki/Earth")
 
 # You can also pass additional parameters to the API
 documents_with_params = reader.load_data(
-    url="https://en.wikipedia.org/wiki/Earth",
-    params={"formats": ["markdown"]}
+    url="https://en.wikipedia.org/wiki/Earth", params={"formats": ["markdown"]}
 )
 
 # Create a summary index
@@ -59,8 +58,7 @@ documents = reader.load_data(query="What are the latest advancements in AI?")
 
 # You can also pass additional parameters, for example, to specify the country for the search
 documents_with_params = reader.load_data(
-    query="What are the latest advancements in AI?",
-    params={"country": "US"}
+    query="What are the latest advancements in AI?", params={"country": "US"}
 )
 
 # The result is a JSON object with the search results
