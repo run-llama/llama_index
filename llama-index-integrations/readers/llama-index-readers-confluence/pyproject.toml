@@ -34,7 +34,7 @@ readme = "README.md"
 license = "GPL-3.0-or-later"
 maintainers = [{name = "zywilliamli"}]
 dependencies = [
-    "atlassian-python-api>=3.41.9,<4",
+    "atlassian-python-api>=3.41.9,<5",
     "html2text>=2024.2.26,<2025",
     "pytesseract>=0.3.10,<0.4",
     "pdf2image>=1.17.0,<2",
