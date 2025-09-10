@@ -44,7 +44,7 @@ class CustomParserManager:
             if os.path.exists(file_path):
                 os.remove(file_path)
         except Exception as e:
-            print(f"Error removing file {file_path}: {e}")
+            logger.error(f"Error removing file {file_path}: {e}")
 
     def process_with_custom_parser(self, file_type: FileType, file_content: bytes, extension: str) -> Optional[str]:
         if file_type not in self.custom_parsers:
@@ -139,7 +139,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         drive_name: Optional[str] = None,
         drive_id: Optional[str] = None,
         sharepoint_host_name: Optional[str] = None,
-        sharepoint_type: Optional[SharePointType] = None,
+        sharepoint_type: Optional[SharePointType] = SharePointType.DRIVE,
         page_name: Optional[str] = None,
         custom_parsers: Optional[Dict[FileType, Any]] = None,
         process_document_callback: Optional[Callable[[str], bool]] = None,
