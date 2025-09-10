@@ -102,7 +102,7 @@ class ReActAgent(BaseWorkflowAgent):
                     raw=raw,
                     current_agent_name=self.name,
                     thinking_delta=last_chat_response.additional_kwargs.get(
-                        "thinking_delta", ""
+                        "thinking_delta", None
                     ),
                 )
             )
