@@ -107,15 +107,21 @@ def test_agent_stream_with_thinking_delta():
     assert stream.thinking_delta == "I'm thinking about this response..."
     assert stream.current_agent_name == "test_agent"
 
+
 def test_agent_stream_default_thinking_delta_none():
-    """Test AgentStream with thinking_delta value of None does not cause Pydantic validation error.  
+    """
+    Test AgentStream with thinking_delta value of None does not cause Pydantic validation error.
     For Ollama, thinking_delta comes from the message's thinking field, which can be None.
     """
     stream = AgentStream(
-        delta="Hello", response="Hello there", current_agent_name="test_agent", thinking_delta=None
+        delta="Hello",
+        response="Hello there",
+        current_agent_name="test_agent",
+        thinking_delta=None,
     )
 
-    assert stream.thinking_delta == None
+    assert stream.thinking_delta is None
+
 
 def test_agent_stream_default_thinking_delta():
     """Test AgentStream defaults thinking_delta to None."""
@@ -123,7 +129,7 @@ def test_agent_stream_default_thinking_delta():
         delta="Hello", response="Hello there", current_agent_name="test_agent"
     )
 
-    assert stream.thinking_delta == None
+    assert stream.thinking_delta is None
 
 
 def test_thinking_delta_extraction():
@@ -150,7 +156,8 @@ def test_thinking_delta_extraction():
     thinking_delta = response_without_thinking.additional_kwargs.get(
         "thinking_delta", None
     )
-    assert thinking_delta == None
+    assert thinking_delta is None
+
 
 @pytest.mark.asyncio
 async def test_streaming_an_agent_with_thinking_delta_none():
@@ -177,7 +184,8 @@ async def test_streaming_an_agent_with_thinking_delta_none():
     assert len(agent_streams) == 1  # 1 deltas from mock
 
     # Check that thinking deltas are passed through correctly
-    assert agent_streams[0].thinking_delta == None
+    assert agent_streams[0].thinking_delta is None
+
 
 @pytest.mark.asyncio
 async def test_function_agent_comprehensive_thinking_streaming():
@@ -322,4 +330,4 @@ async def test_agents_handle_missing_thinking_delta():
     )
     agent_streams = [event for event in stream_events if isinstance(event, AgentStream)]
     assert len(agent_streams) == 1
-    assert agent_streams[0].thinking_delta == None  # Should default to None
+    assert agent_streams[0].thinking_delta is None  # Should default to None
