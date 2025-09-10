@@ -107,7 +107,7 @@ def test_agent_stream_with_thinking_delta():
     assert stream.thinking_delta == "I'm thinking about this response..."
     assert stream.current_agent_name == "test_agent"
 
-def test_agent_stream_default_thinking_delta():
+def test_agent_stream_default_thinking_delta_none():
     """Test AgentStream with thinking_delta value of None does not cause Pydantic validation error.  
     For Ollama, thinking_delta comes from the message's thinking field, which can be None.
     """
@@ -118,12 +118,12 @@ def test_agent_stream_default_thinking_delta():
     assert stream.thinking_delta == None
 
 def test_agent_stream_default_thinking_delta():
-    """Test AgentStream defaults thinking_delta to empty string."""
+    """Test AgentStream defaults thinking_delta to None."""
     stream = AgentStream(
         delta="Hello", response="Hello there", current_agent_name="test_agent"
     )
 
-    assert stream.thinking_delta == ""
+    assert stream.thinking_delta == None
 
 
 def test_thinking_delta_extraction():
@@ -140,7 +140,7 @@ def test_thinking_delta_extraction():
     thinking_delta = response_with_thinking.additional_kwargs.get("thinking_delta", "")
     assert thinking_delta == "I'm thinking..."
 
-    # should default to empty string
+    # should default to None
     response_without_thinking = ChatResponse(
         message=ChatMessage(role="assistant", content="Hello"),
         delta="Hello",
@@ -148,9 +148,9 @@ def test_thinking_delta_extraction():
     )
 
     thinking_delta = response_without_thinking.additional_kwargs.get(
-        "thinking_delta", ""
+        "thinking_delta", None
     )
-    assert thinking_delta == ""
+    assert thinking_delta == None
 
 @pytest.mark.asyncio
 async def test_streaming_an_agent_with_thinking_delta_none():
@@ -322,4 +322,4 @@ async def test_agents_handle_missing_thinking_delta():
     )
     agent_streams = [event for event in stream_events if isinstance(event, AgentStream)]
     assert len(agent_streams) == 1
-    assert agent_streams[0].thinking_delta == ""  # Should default to empty string
+    assert agent_streams[0].thinking_delta == None  # Should default to None
