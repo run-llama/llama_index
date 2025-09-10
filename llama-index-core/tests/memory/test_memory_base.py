@@ -1,6 +1,11 @@
 import pytest
 
-from llama_index.core.base.llms.types import ChatMessage, ImageBlock, AudioBlock
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ImageBlock,
+    AudioBlock,
+    VideoBlock,
+)
 from llama_index.core.memory.memory import Memory
 from llama_index.core.storage.chat_store.sql import MessageStatus
 
@@ -39,6 +44,15 @@ async def test_estimate_token_count_image(memory):
     message = ChatMessage(role="user", blocks=[block])
     count = memory._estimate_token_count(message)
     assert count == memory.image_token_size_estimate
+
+
+@pytest.mark.asyncio
+async def test_estimate_token_count_video(memory):
+    """Test token counting for images."""
+    block = VideoBlock(url="http://example.com/video.mp4")
+    message = ChatMessage(role="user", blocks=[block])
+    count = memory._estimate_token_count(message)
+    assert count == memory.video_token_size_estimate
 
 
 @pytest.mark.asyncio
