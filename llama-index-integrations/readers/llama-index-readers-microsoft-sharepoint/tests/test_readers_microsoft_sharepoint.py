@@ -372,7 +372,7 @@ def test_event_system_page_events():
     dispatcher.event(PageDataFetchStartedEvent(page_id="page1"))
     dispatcher.event(
         PageDataFetchCompletedEvent(
-            page_id="page1", document=Document(text="content1", doc_id="page1")
+            page_id="page1", document=Document(text="content1", id_="page1")
         )
     )
     dispatcher.event(PageSkippedEvent(page_id="page2"))

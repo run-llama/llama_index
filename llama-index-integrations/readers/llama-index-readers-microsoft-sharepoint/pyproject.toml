@@ -38,13 +38,6 @@ keywords = [
     "microsoft365", 
     "sharepoint",
     "sharepoint-pages",
-    "custom-parsers",
-    "event-system",
-    "page-reader",
-    "document-processing",
-    "file-parsers",
-    "callbacks",
-    "instrumentation",
 ]
 dependencies = [
     "requests>=2.31.0,<3",
@@ -89,13 +82,6 @@ import_path = "llama_index.readers.microsoft_sharepoint"
 
 [tool.llamahub.class_authors]
 SharePointReader = "arun-soliton"
-
-[tool.llamahub.features]
-page_reading = "Load SharePoint site pages as documents"
-custom_parsers = "Support for specialized file type parsers"
-event_system = "Real-time processing monitoring with events"
-callbacks = "Document filtering and processing callbacks"
-error_handling = "Configurable error handling strategies"
 
 [tool.mypy]
 disallow_untyped_defs = true

@@ -131,7 +131,6 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         client_secret: str,
         tenant_id: str,
         sharepoint_site_name: Optional[str] = None,
-        sharepoint_host_name: Optional[str] = None,
         sharepoint_relative_url: Optional[str] = None,
         sharepoint_folder_path: Optional[str] = None,
         sharepoint_folder_id: Optional[str] = None,
@@ -139,6 +138,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
         drive_name: Optional[str] = None,
         drive_id: Optional[str] = None,
+        sharepoint_host_name: Optional[str] = None,
         sharepoint_type: Optional[SharePointType] = None,
         page_name: Optional[str] = None,
         custom_parsers: Optional[Dict[FileType, Any]] = None,
@@ -413,6 +413,23 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         download_dir: str,
         include_subfolders: bool = False,
     ) -> Dict[str, str]:
+        """
+        Downloads files from the specified folder ID and extracts metadata.
+
+        Args:
+            folder_id (str): The ID of the folder from which the files should be downloaded.
+            folder_path (Optional[str]): The path of the folder in SharePoint (used for resource listing).
+            file_id_to_process (Optional[str]): The ID of a specific file to download (if provided, only this file is processed).
+            download_dir (str): The directory where the files should be downloaded.
+            include_subfolders (bool): If True, files from all subfolders are downloaded.
+
+        Returns:
+            Dict[str, str]: A dictionary containing the metadata of the downloaded files.
+
+        Raises:
+            ValueError: If there is an error in downloading the files.
+
+        """
         logger.info(f"Downloading files from folder_id={folder_id}, folder_path={folder_path}, include_subfolders={include_subfolders}")
 
         if not file_id_to_process:
@@ -486,7 +503,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         Returns:
             str: The path of the downloaded file in the temporary directory.
         """
-        
+        # Get the download URL for the file.
         file_name = item["name"]
 
         content = self._get_file_content_by_url(item)
@@ -686,39 +703,10 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         def get_metadata(filename: str) -> Any:
             return files_metadata[filename]
 
-        docs: List[Document] = []
-
-        # If custom_parser_manager is present, try to use custom parser for each file
         if self.custom_parser_manager:
-            for file_path in files_metadata:
-                file_name = Path(file_path).name
-                ext = Path(file_name).suffix.lower().lstrip(".")
-                file_type = None
-                for ft in FileType:
-                    if ft.value == ext:
-                        file_type = ft
-                        break
-                if file_type and file_type in self.custom_parser_manager.custom_parsers:
-                    with open(file_path, "rb") as f:
-                        file_content = f.read()
-                    markdown = self.custom_parser_manager.process_with_custom_parser(
-                        file_type, file_content, ext
-                    )
-                    if markdown:
-                        doc = Document(
-                            text=markdown,
-                            metadata=files_metadata[file_path]
-                        )
-                        docs.append(doc)
-                        continue
-                simple_loader = SimpleDirectoryReader(
-                    download_dir,
-                    required_exts=self.required_exts,
-                    file_extractor=self.file_extractor,
-                    file_metadata=get_metadata,
-                    recursive=recursive,
-                )
-                docs.extend(simple_loader.load_data())
+            docs = self._load_with_custom_parser_manager(
+                files_metadata, download_dir, recursive, get_metadata
+            )
         else:
             simple_loader = SimpleDirectoryReader(
                 download_dir,
@@ -733,14 +721,65 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             docs = self._exclude_access_control_metadata(docs)
         return docs
 
+    def _load_with_custom_parser_manager(
+        self,
+        files_metadata: Dict[str, Any],
+        download_dir: str,
+        recursive: bool,
+        get_metadata: Callable[[str], Any],
+    ) -> List[Document]:
+        """
+        Loads documents using the custom parser manager if available.
+
+        Args:
+            files_metadata (Dict[str,Any]): A dictionary containing the metadata of the downloaded files.
+            download_dir (str): The directory where the files should be downloaded.
+            recursive (bool): If True, files from all subfolders are downloaded.
+            get_metadata (Callable): Function to get metadata for a file.
+
+        Returns:
+            List[Document]: A list containing the documents with metadata.
+        """
+        docs: List[Document] = []
+        for file_path in files_metadata:
+            file_name = Path(file_path).name
+            ext = Path(file_name).suffix.lower().lstrip(".")
+            file_type = None
+            for ft in FileType:
+                if ft.value == ext:
+                    file_type = ft
+                    break
+            if file_type and file_type in self.custom_parser_manager.custom_parsers:
+                with open(file_path, "rb") as f:
+                    file_content = f.read()
+                markdown = self.custom_parser_manager.process_with_custom_parser(
+                    file_type, file_content, ext
+                )
+                if markdown:
+                    doc = Document(
+                        text=markdown,
+                        metadata=files_metadata[file_path]
+                    )
+                    docs.append(doc)
+                    continue
+            simple_loader = SimpleDirectoryReader(
+                download_dir,
+                required_exts=self.required_exts,
+                file_extractor=self.file_extractor,
+                file_metadata=get_metadata,
+                recursive=recursive,
+            )
+            docs.extend(simple_loader.load_data())
+        return docs
+
     @dispatcher.span
     def load_data(
         self,
         sharepoint_site_name: Optional[str] = None,
         sharepoint_folder_path: Optional[str] = None,
         sharepoint_folder_id: Optional[str] = None,
-        sharepoint_file_id: Optional[str] = None,
         recursive: bool = True,
+        sharepoint_file_id: Optional[str] = None,
         download_dir: Optional[str] = None,
     ) -> List[Document]:
         """
@@ -871,6 +910,26 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         return file_paths
 
     def get_file_details_by_id(self, file_id: str, sharepoint_site_name: str):
+        """
+        Retrieve file details and metadata from a SharePoint site by file ID.
+
+        Args:
+            file_id (str): The unique identifier of the file in SharePoint.
+            sharepoint_site_name (str): The name of the SharePoint site.
+
+        Returns:
+            Tuple[Path, dict] or Tuple[None, None]: 
+                - A tuple containing the file's path (as a pathlib.Path object) and its metadata dictionary if found.
+                - (None, None) if the file details could not be retrieved.
+
+        Raises:
+            ValueError: If there is an error retrieving file details from SharePoint.
+
+        Notes:
+            - The function retrieves the access token, site ID, and drive ID before making the request.
+            - The file path is constructed based on the parent reference and file name.
+            - Metadata is extracted and augmented with the file's name.
+        """
         access_token = self._get_access_token()
 
         self._site_id_with_host_name = self._get_site_id_with_host_name(
@@ -1257,7 +1316,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                         "sharepoint_type": SharePointType.PAGE.value,
                     }
                     text = page_info.get("textContent", "")
-                    document = Document(text=text, metadata=metadata, doc_id=combined_id)
+                    document = Document(text=text, metadata=metadata, id_=combined_id)
                     dispatcher.event(PageDataFetchStartedEvent(page_id=combined_id))
                     dispatcher.event(PageDataFetchCompletedEvent(page_id=combined_id, document=document))
                     documents.append(document)
@@ -1297,7 +1356,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                     page_content = self.get_page_text(site_id=site_id, list_id=list_id, page_id=raw_page_id, token=access_token)
                     text = page_content.get("textContent", "")
                     metadata["lastModifiedDateTime"] = page_content.get("lastModifiedDateTime", last_modified_date_time)
-                    document = Document(text=text, metadata=metadata, doc_id=combined_id)
+                    document = Document(text=text, metadata=metadata, id_=combined_id)
                     dispatcher.event(PageDataFetchCompletedEvent(page_id=combined_id, document=document))
                     documents.append(document)
                 except Exception as e:
