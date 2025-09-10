@@ -96,7 +96,7 @@ urllib3 = "2.5.0"
 watchdog = "4.0.0"
 wcwidth = "0.2.13"
 webencodings = "0.5.1"
-llama-index-workflows = "^0.2.2"
+llama-index-workflows = {path = "./workflows-py"}
 
 [tool.poetry.scripts]
 merge-external-docs = "scripts.merge_external_docs:main"
