@@ -1,6 +1,14 @@
-# LlamaIndex Superlinked Retriever
+# Llamaindex Superlinked Retriever
+
+<img width="640" height="400" alt="image" src="https://github.com/user-attachments/assets/06f3e1a7-b5a7-485e-b8f1-56b534c90045" />
+
+
 
 A LlamaIndex retriever integration for [Superlinked](https://github.com/superlinked/superlinked), mirroring the structure of official LlamaIndex retriever packages.
+
+Superlinked is a Python framework that let's you build full stack scalable AI search and recommendation apps by creating metadata aware embeddings and getting better use of your vector dbs. Superlinked uses an approach of mixture of encoders, where specalised encoders are used for different data types leading to more accurate retrieval.
+
+ 
 
 ## Installation
 
