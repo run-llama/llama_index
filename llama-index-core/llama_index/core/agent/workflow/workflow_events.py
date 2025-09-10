@@ -43,7 +43,7 @@ class AgentStream(Event):
     current_agent_name: str
     tool_calls: list[ToolSelection] = Field(default_factory=list)
     raw: Optional[Any] = Field(default=None, exclude=True)
-    thinking_delta: str = Field(default_factory=str)
+    thinking_delta: Optional[str] = Field(default_factory=str)
 
 
 class AgentStreamStructuredOutput(Event):
