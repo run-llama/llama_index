@@ -23,7 +23,7 @@ pip install llama-index-retrievers-alletra-x10000-retriever
 - Feel free to change embedding and llm models.
 
 ```python
-from llama_index.retrievers.alletra_x10000_retriever import DataIntelligenceRetriever
+from llama_index.retrievers.alletra_x10000_retriever import AlletraX10000Retriever
 from llama_index.core.memory import ChatMemoryBuffer
 from llama_index.llms.huggingface import HuggingFaceLLM
 from llama_index.core.chat_engine import CondensePlusContextChatEngine
@@ -44,7 +44,7 @@ Settings.llm = HuggingFaceLLM(
     device_map="auto",
 )
 
-retriever = DataIntelligenceRetriever(uri="https://example.com",
+retriever = AlletraX10000Retriever(uri="https://example.com",
                                       s3_access_key="",
                                       s3_secret_key="",
                                       collection_name="testcollection", 

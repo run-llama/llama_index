@@ -6,7 +6,7 @@ from typing import Any, Dict, Union
 from pydi_client import DIClient
 
 
-class DataIntelligenceRetriever(BaseRetriever):
+class AlletraX10000Retriever(BaseRetriever):
     def __init__(
         self,
         uri: str,

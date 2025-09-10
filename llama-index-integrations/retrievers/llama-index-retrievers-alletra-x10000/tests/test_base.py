@@ -1,11 +1,11 @@
 import pytest
 from unittest.mock import MagicMock
-from llama_index.core.schema import QueryBundle, NodeWithScore, TextNode
-from llama_index.retrievers.data_intelligence.base import DataIntelligenceRetriever
+from llama_index.core.schema import QueryBundle, NodeWithScore
+from llama_index.retrievers.alletra_x10000_retriever import AlletraX10000Retriever
 
 
-def test_data_intelligence_retriever_initialization():
-    retriever = DataIntelligenceRetriever(
+def test_alletra_x10000_retriever_initialization():
+    retriever = AlletraX10000Retriever(
         uri="http://example.com",
         s3_access_key="test_access_key",
         s3_secret_key="test_secret_key",
@@ -21,9 +21,9 @@ def test_data_intelligence_retriever_initialization():
     assert retriever.top_k == 5
 
 
-def test_data_intelligence_retriever_retrieve(mocker):
+def test_alletra_x10000_retriever_retrieve(mocker):
     mock_client = mocker.patch(
-        "llama_index.retrievers.data_intelligence.base.DIClient")
+        "llama_index.retrievers.alletra_x10000_retriever.base.DIClient")
 
     mock_response = MagicMock()
     mock_response = [
@@ -54,7 +54,7 @@ def test_data_intelligence_retriever_retrieve(mocker):
     ]
     mock_client.return_value.similarity_search.return_value = mock_response
 
-    retriever = DataIntelligenceRetriever(
+    retriever = AlletraX10000Retriever(
         uri="http://example.com",
         s3_access_key="test_access_key",
         s3_secret_key="test_secret_key",
@@ -75,9 +75,9 @@ def test_data_intelligence_retriever_retrieve(mocker):
     assert result[1].node.metadata["objectKey"] == "value"
 
 
-def test_data_intelligence_retriever_retrieve_empty_response(mocker):
+def test_alletra_x10000_retriever_retrieve_empty_response(mocker):
 
-    retriever = DataIntelligenceRetriever(
+    retriever = AlletraX10000Retriever(
         uri="http://example.com",
         s3_access_key="test_access_key",
         s3_secret_key="test_secret_key",
@@ -88,7 +88,7 @@ def test_data_intelligence_retriever_retrieve_empty_response(mocker):
 
     # Mock the DIClient to return an empty response
     mock_client = mocker.patch(
-        "llama_index.retrievers.data_intelligence.base.DIClient")
+        "llama_index.retrievers.alletra_x10000_retriever.base.DIClient")
     mock_client.return_value.similarity_search.return_value.json.return_value = []
 
     # Call the method
@@ -99,13 +99,13 @@ def test_data_intelligence_retriever_retrieve_empty_response(mocker):
     assert result == []
 
 
-def test_data_intelligence_retriever_retrieve_error_handling(mocker):
+def test_alletra_x10000_retriever_retrieve_error_handling(mocker):
     mock_client = mocker.patch(
-        "llama_index.retrievers.data_intelligence.base.DIClient")
+        "llama_index.retrievers.alletra_x10000_retriever.base.DIClient")
     mock_client.return_value.similarity_search.side_effect = Exception(
         "Test exception")
 
-    retriever = DataIntelligenceRetriever(
+    retriever = AlletraX10000Retriever(
         uri="http://example.com",
         s3_access_key="test_access_key",
         s3_secret_key="test_secret_key",
