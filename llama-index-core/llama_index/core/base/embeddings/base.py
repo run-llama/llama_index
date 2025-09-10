@@ -492,7 +492,10 @@ class BaseEmbedding(TransformComponent, DispatcherSpanMixin):
 
     @dispatcher.span
     async def aget_text_embedding_batch(
-        self, texts: List[str], show_progress: bool = False
+        self,
+        texts: List[str],
+        show_progress: bool = False,
+        **kwargs: Any,
     ) -> List[Embedding]:
         """Asynchronously get a list of text embeddings, with batching."""
         num_workers = self.num_workers

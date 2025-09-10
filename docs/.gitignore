@@ -7,4 +7,5 @@ docs/module_guides/llama_deploy/*
 
 workflows-py
 docs/workflows
+docs/api_reference/workflow
 !docs/workflows/v1/

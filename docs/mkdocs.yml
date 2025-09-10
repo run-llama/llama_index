@@ -1833,6 +1833,7 @@ plugins:
             show_signature_annotations: true
             signature_crossrefs: true
           paths:
+            - ./workflows-py
             - ../llama-index-core
             - ../llama-index-instrumentation
             - ../llama-index-experimental
