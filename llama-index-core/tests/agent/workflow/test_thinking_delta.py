@@ -154,7 +154,7 @@ def test_thinking_delta_extraction():
 
 @pytest.mark.asyncio
 async def test_streaming_an_agent_with_thinking_delta_none():
-    """Comprehensive test: FunctionAgent streams thinking_delta correctly."""
+    """Test an agent runs properly with thinking_delta value of None"""
     mock_llm = MockThinkingLLM(thinking_deltas=[None], response_deltas=[None])
     agent = FunctionAgent(llm=mock_llm, streaming=True)
 
