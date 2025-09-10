@@ -28,11 +28,23 @@ dev = [
 name = "llama-index-readers-solr"
 version = "0.1.0"
 description = "llama-index readers solr integration"
-authors = [{name = "Xiaoyu Ouyang", email = "xouyang1@bloomberg.net"}]
+authors = [
+    {name = "Xiaoyu Ouyang", email = "xouyang1@bloomberg.net"},
+    {name = "Atharva Tendle", email = "atendle@bloomberg.net"},
+    {name = "Steven Butler", email = "sbutler81@bloomberg.net"},
+    {name = "Vikramjeet Das", email = "vdas22@bloomberg.net"},
+    {name = "Yong Zhuang", email = "yzhuang52@bloomberg.net"},
+]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
-maintainers = [{name = "xiaoyuouyang"}]
+maintainers = [
+    {name = "Xiaoyu Ouyang", email = "xouyang1@bloomberg.net"},
+    {name = "Atharva Tendle", email = "atendle@bloomberg.net"},
+    {name = "Steven Butler", email = "sbutler81@bloomberg.net"},
+    {name = "Vikramjeet Das", email = "vdas22@bloomberg.net"},
+    {name = "Yong Zhuang", email = "yzhuang52@bloomberg.net"},
+]
 dependencies = ["llama-index-core>=0.12.0,<0.13"]
 
 [tool.codespell]
@@ -51,9 +63,6 @@ exclude = ["**/BUILD"]
 [tool.llamahub]
 contains_example = false
 import_path = "llama_index.readers.solr"
-
-[tool.llamahub.class_authors]
-SolrReader = "xiaoyuouyang"
 
 [tool.mypy]
 disallow_untyped_defs = true
