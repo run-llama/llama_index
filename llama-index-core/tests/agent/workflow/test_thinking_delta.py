@@ -107,6 +107,15 @@ def test_agent_stream_with_thinking_delta():
     assert stream.thinking_delta == "I'm thinking about this response..."
     assert stream.current_agent_name == "test_agent"
 
+def test_agent_stream_default_thinking_delta():
+    """Test AgentStream with thinking_delta value of None does not cause Pydantic validation error.  
+    For Ollama, thinking_delta comes from the message's thinking which can be None.
+    """
+    stream = AgentStream(
+        delta="Hello", response="Hello there", current_agent_name="test_agent", thinking_delta=None
+    )
+
+    assert stream.thinking_delta == None
 
 def test_agent_stream_default_thinking_delta():
     """Test AgentStream defaults thinking_delta to empty string."""
@@ -143,6 +152,32 @@ def test_thinking_delta_extraction():
     )
     assert thinking_delta == ""
 
+@pytest.mark.asyncio
+async def test_streaming_an_agent_with_thinking_delta_none():
+    """Comprehensive test: FunctionAgent streams thinking_delta correctly."""
+    mock_llm = MockThinkingLLM(thinking_deltas=[None], response_deltas=[None])
+    agent = FunctionAgent(llm=mock_llm, streaming=True)
+
+    # Mock context to capture stream events
+    mock_context = AsyncMock(spec=Context)
+    stream_events = []
+
+    def capture_event(event):
+        stream_events.append(event)
+
+    mock_context.write_event_to_stream.side_effect = capture_event
+
+    # Call the streaming method
+    await agent._get_streaming_response(
+        mock_context, [ChatMessage(role="user", content="test")], []
+    )
+
+    # Verify AgentStream events contain thinking_delta
+    agent_streams = [event for event in stream_events if isinstance(event, AgentStream)]
+    assert len(agent_streams) == 1  # 1 deltas from mock
+
+    # Check that thinking deltas are passed through correctly
+    assert agent_streams[0].thinking_delta == None
 
 @pytest.mark.asyncio
 async def test_function_agent_comprehensive_thinking_streaming():
