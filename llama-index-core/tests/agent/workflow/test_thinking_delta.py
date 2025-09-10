@@ -109,7 +109,7 @@ def test_agent_stream_with_thinking_delta():
 
 def test_agent_stream_default_thinking_delta():
     """Test AgentStream with thinking_delta value of None does not cause Pydantic validation error.  
-    For Ollama, thinking_delta comes from the message's thinking which can be None.
+    For Ollama, thinking_delta comes from the message's thinking field, which can be None.
     """
     stream = AgentStream(
         delta="Hello", response="Hello there", current_agent_name="test_agent", thinking_delta=None
