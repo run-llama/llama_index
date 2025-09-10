@@ -26,7 +26,6 @@ class AlletraX10000Retriever(BaseRetriever):
     def _retrieve(self, query_bundle: QueryBundle) -> list[NodeWithScore]:
         query = query_bundle.query_str
 
-        # TODO # Error handling
         client = DIClient(uri=self.uri)
         data = client.similarity_search(
             collection_name=self.collection_name,
