@@ -3,6 +3,11 @@ name: Publish llama-index-core
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
 jobs:
   publish-core:
     if: github.repository == 'run-llama/llama_index'
