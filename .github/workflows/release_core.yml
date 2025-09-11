@@ -3,6 +3,11 @@ name: Publish llama-index-core
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
 jobs:
   publish-core:
     if: github.repository == 'run-llama/llama_index'
@@ -28,7 +33,7 @@ jobs:
           uv run python -c "from llama_index.core.utils import get_tokenizer; print(get_tokenizer('gpt-5-mini'))"
 
       - name: Generate build provenance attestations
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v3
         id: attest
         with:
           subject-path: "llama-index-core/llama_index/core/_static/**/*"
