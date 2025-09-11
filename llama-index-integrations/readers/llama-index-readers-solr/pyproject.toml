@@ -45,7 +45,7 @@ maintainers = [
     {name = "Vikramjeet Das", email = "vdas22@bloomberg.net"},
     {name = "Yong Zhuang", email = "yzhuang52@bloomberg.net"},
 ]
-dependencies = ["llama-index-core>=0.12.0,<0.13"]
+dependencies = ["llama-index-core>=0.14.0,<0.15"]
 
 [tool.codespell]
 check-filenames = true
