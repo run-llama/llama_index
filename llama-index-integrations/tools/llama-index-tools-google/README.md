@@ -30,6 +30,20 @@ google_spec = GoogleSearchToolSpec(key="your-key", engine="your-engine")
 - store oAuth`credentials.json` in the same directory as the runnable agent.
 - you will need to manually approve the Oath every time this tool is invoked
 
+**Multi-calendar support:**
+
+```python
+from llama_index.tools.google import GoogleCalendarToolSpec, all_calendars
+
+# List all available calendars
+calendar_ids = all_calendars(creds)
+
+# Create tool spec with specific allowed calendars
+calendar_spec = GoogleCalendarToolSpec(
+    creds=creds, allowed_calendar_ids=calendar_ids
+)
+```
+
 #### [gmail read, create]()
 
 - same as calendar

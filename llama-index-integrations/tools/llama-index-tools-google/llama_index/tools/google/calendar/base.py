@@ -23,6 +23,8 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
+PRIMARY_CALENDAR_ID = "primary"
+
 
 class GoogleCalendarToolSpec(BaseToolSpec):
     """
@@ -35,7 +37,11 @@ class GoogleCalendarToolSpec(BaseToolSpec):
 
     spec_functions = ["load_data", "create_event", "get_date"]
 
-    def __init__(self, creds: Optional[Any] = None):
+    def __init__(
+        self,
+        creds: Optional[Any] = None,
+        allowed_calendar_ids: Optional[List[str]] = None,
+    ):
         """
         Initialize the GoogleCalendarToolSpec.
 
@@ -45,11 +51,13 @@ class GoogleCalendarToolSpec(BaseToolSpec):
 
         """
         self.creds = creds
+        self.allowed_calendar_ids = allowed_calendar_ids or [PRIMARY_CALENDAR_ID]
 
     def load_data(
         self,
         number_of_results: Optional[int] = 100,
         start_date: Optional[Union[str, datetime.date]] = None,
+        calendar_id: Optional[str] = PRIMARY_CALENDAR_ID,
     ) -> List[Document]:
         """
         Load data from user's calendar.
@@ -57,8 +65,13 @@ class GoogleCalendarToolSpec(BaseToolSpec):
         Args:
             number_of_results (Optional[int]): the number of events to return. Defaults to 100.
             start_date (Optional[Union[str, datetime.date]]): the start date to return events from in date isoformat. Defaults to today.
+            calendar_id (Optional[str]): the calendar ID to load events from. Defaults to PRIMARY_CALENDAR_ID.
 
         """
+        validation_error = self._validate_calendar_id(calendar_id)
+        if validation_error:
+            return validation_error
+
         from googleapiclient.discovery import build
 
         credentials = self._get_credentials()
@@ -75,7 +88,7 @@ class GoogleCalendarToolSpec(BaseToolSpec):
         events_result = (
             service.events()
             .list(
-                calendarId="primary",
+                calendarId=calendar_id,
                 timeMin=start_datetime_utc,
                 maxResults=number_of_results,
                 singleEvents=True,
@@ -164,6 +177,7 @@ class GoogleCalendarToolSpec(BaseToolSpec):
         start_datetime: Optional[Union[str, datetime.datetime]] = None,
         end_datetime: Optional[Union[str, datetime.datetime]] = None,
         attendees: Optional[List[str]] = None,
+        calendar_id: Optional[str] = PRIMARY_CALENDAR_ID,
     ) -> str:
         """
             Create an event on the users calendar.
@@ -175,8 +189,13 @@ class GoogleCalendarToolSpec(BaseToolSpec):
             start_datetime Optional[Union[str, datetime.datetime]]: The start datetime for the event
             end_datetime Optional[Union[str, datetime.datetime]]: The end datetime for the event
             attendees Optional[List[str]]: A list of email address to invite to the event
+            calendar_id (Optional[str]): The calendar ID to create the event in. Defaults to PRIMARY_CALENDAR_ID.
 
         """
+        validation_error = self._validate_calendar_id(calendar_id)
+        if validation_error:
+            return validation_error
+
         from googleapiclient.discovery import build
 
         credentials = self._get_credentials()
@@ -209,14 +228,37 @@ class GoogleCalendarToolSpec(BaseToolSpec):
             },
             "attendees": attendees_list,
         }
-        event = service.events().insert(calendarId="primary", body=event).execute()
+        event = service.events().insert(calendarId=calendar_id, body=event).execute()
         return (
             "Your calendar event has been created successfully! You can move on to the"
             " next step."
         )
+
+    def _validate_calendar_id(self, calendar_id: str) -> dict:
+        if calendar_id not in self.allowed_calendar_ids:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.error(
+                f"Invalid calendar ID '{calendar_id}' attempted. Valid IDs: {self.allowed_calendar_ids}"
+            )
+            return {
+                "error": "Invalid calendar_id",
+                "allowed_values": list(self.allowed_calendar_ids),
+            }
+        return None
 
     def get_date(self):
         """
         A function to return todays date. Call this before any other functions if you are unaware of the date.
         """
         return datetime.date.today()
+
+
+def all_calendars(creds) -> List[str]:
+    """List all accessible calendar IDs for configuration purposes."""
+    from googleapiclient.discovery import build
+
+    service = build("calendar", "v3", credentials=creds)
+    calendar_list = service.calendarList().list().execute()
+    return [cal["id"] for cal in calendar_list.get("items", [])]
