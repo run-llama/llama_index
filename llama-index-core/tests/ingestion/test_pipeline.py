@@ -1,12 +1,14 @@
 from multiprocessing import cpu_count
+from typing import Sequence, Any
 
+import pytest
 from llama_index.core.embeddings.mock_embed_model import MockEmbedding
 from llama_index.core.extractors import KeywordExtractor
 from llama_index.core.ingestion.pipeline import IngestionPipeline
 from llama_index.core.llms.mock import MockLLM
 from llama_index.core.node_parser import SentenceSplitter, MarkdownElementNodeParser
 from llama_index.core.readers import ReaderConfig, StringIterableReader
-from llama_index.core.schema import Document
+from llama_index.core.schema import Document, TransformComponent, BaseNode
 from llama_index.core.storage.docstore import SimpleDocumentStore
 
 
@@ -260,3 +262,27 @@ def test_pipeline_parallel() -> None:
     assert len(nodes) == 20
     assert pipeline.docstore is not None
     assert len(pipeline.docstore.docs) == 2
+
+
+def test_pipeline_with_transform_error() -> None:
+    class RaisingTransform(TransformComponent):
+        def __call__(
+            self, nodes: Sequence[BaseNode], **kwargs: Any
+        ) -> Sequence[BaseNode]:
+            raise RuntimeError
+
+    document1 = Document.example()
+    document1.id_ = "1"
+
+    pipeline = IngestionPipeline(
+        transformations=[
+            SentenceSplitter(chunk_size=25, chunk_overlap=0),
+            RaisingTransform(),
+        ],
+        docstore=SimpleDocumentStore(),
+    )
+
+    with pytest.raises(RuntimeError):
+        pipeline.run(documents=[document1])
+
+    assert pipeline.docstore.get_node("1", raise_error=False) is None
