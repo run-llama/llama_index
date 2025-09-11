@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.12'",
@@ -1306,7 +1306,6 @@ source = { editable = "." }
 dependencies = [
     { name = "llama-index-cli" },
     { name = "llama-index-core" },
-    { name = "llama-index-embeddings-openai" },
     { name = "llama-index-indices-managed-llama-cloud" },
     { name = "llama-index-llms-openai" },
     { name = "llama-index-readers-file" },
@@ -1341,7 +1340,6 @@ dev = [
 requires-dist = [
     { name = "llama-index-cli", specifier = ">=0.5.0,<0.6" },
     { name = "llama-index-core", specifier = ">=0.13.6,<0.15" },
-    { name = "llama-index-embeddings-openai", specifier = ">=0.5.0,<0.6" },
     { name = "llama-index-indices-managed-llama-cloud", specifier = ">=0.4.0" },
     { name = "llama-index-llms-openai", specifier = ">=0.5.0,<0.6" },
     { name = "llama-index-readers-file", specifier = ">=0.5.0,<0.6" },
