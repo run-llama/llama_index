@@ -444,7 +444,9 @@ class IngestionPipeline(BaseModel):
         for i in range(0, len(nodes), batch_size):
             yield nodes[i : i + batch_size]
 
-    def _update_docstore(self, nodes: Sequence[BaseNode], store_doc_text: bool = True):
+    def _update_docstore(
+        self, nodes: Sequence[BaseNode], store_doc_text: bool = True
+    ) -> None:
         """Update the document store with the given nodes."""
         assert self.docstore is not None
 
