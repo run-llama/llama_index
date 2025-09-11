@@ -23,7 +23,7 @@ import pytest
 import wrapt
 from llama_index_instrumentation import DispatcherSpanMixin
 from llama_index_instrumentation.base import BaseEvent
-from llama_index_instrumentation.dispatcher import Dispatcher, instrument_tags
+from llama_index_instrumentation.dispatcher import Dispatcher, Manager, instrument_tags
 from llama_index_instrumentation.event_handlers import BaseEventHandler
 from llama_index_instrumentation.span import BaseSpan
 from llama_index_instrumentation.span_handlers import BaseSpanHandler
@@ -56,6 +56,24 @@ class _TestEventHandler(BaseEventHandler):
 
     def handle(self, e: BaseEvent):  # type:ignore
         self.events.append(e)
+
+
+class _TestAsyncEventHandler(BaseEventHandler):
+    events: List[BaseEvent] = []
+    async_calls: int = 0
+
+    @classmethod
+    def class_name(cls):
+        return "_TestAsyncEventHandler"
+
+    def handle(self, e: BaseEvent):  # type:ignore
+        self.events.append(e)
+
+    async def ahandle(self, e: BaseEvent, **kwargs: Any) -> Any:
+        self.async_calls += 1
+        await asyncio.sleep(0.01)  # Simulate async work
+        self.events.append(e)
+        return None
 
 
 @dispatcher.span
@@ -1055,3 +1073,150 @@ def test_span_naming_with_nested_classes(mock_uuid, mock_span_enter, mock_span_e
     # Should use the simple class names (not qualified names)
     assert calls[0][1]["id_"] == "Outer.outer_method-mock"
     assert calls[1][1]["id_"] == "Inner.inner_method-mock"
+
+
+def test_aevent_with_sync_handlers():
+    """Test that aevent works with sync handlers via default ahandle implementation."""
+    # arrange
+    event_handler = _TestEventHandler()
+    test_dispatcher = Dispatcher(event_handlers=[event_handler], propagate=False)
+    event = _TestStartEvent()
+
+    # act
+    asyncio.run(test_dispatcher.aevent(event))
+
+    # assert
+    assert len(event_handler.events) == 1
+    assert event_handler.events[0] == event
+
+
+@pytest.mark.asyncio
+async def test_aevent_with_async_handlers():
+    """Test that aevent works with async handlers."""
+    # arrange
+    event_handler = _TestAsyncEventHandler()
+    test_dispatcher = Dispatcher(event_handlers=[event_handler], propagate=False)
+    event = _TestStartEvent()
+
+    # act
+    await test_dispatcher.aevent(event)
+
+    # assert
+    assert len(event_handler.events) == 1
+    assert event_handler.events[0] == event
+    assert event_handler.async_calls == 1
+
+
+@pytest.mark.asyncio
+async def test_aevent_concurrent_handlers():
+    """Test that aevent runs handlers concurrently."""
+    # arrange
+    handler1 = _TestAsyncEventHandler()
+    handler2 = _TestAsyncEventHandler()
+    test_dispatcher = Dispatcher(event_handlers=[handler1, handler2], propagate=False)
+    event = _TestStartEvent()
+
+    # act
+    start_time = time.time()
+    await test_dispatcher.aevent(event)
+    end_time = time.time()
+
+    # assert
+    # Should take ~0.01s (concurrent) not ~0.02s (sequential)
+    assert end_time - start_time < 0.015
+    assert len(handler1.events) == 1
+    assert len(handler2.events) == 1
+    assert handler1.async_calls == 1
+    assert handler2.async_calls == 1
+
+
+@pytest.mark.asyncio
+async def test_aevent_error_isolation():
+    """Test that handler errors don't affect other handlers."""
+
+    # arrange
+    class FailingHandler(BaseEventHandler):
+        def handle(self, e: BaseEvent, **kwargs: Any) -> Any:
+            raise ValueError("Handler failed")
+
+    handler1 = _TestAsyncEventHandler()
+    handler2 = FailingHandler()
+    handler3 = _TestAsyncEventHandler()
+    test_dispatcher = Dispatcher(
+        event_handlers=[handler1, handler2, handler3], propagate=False
+    )
+    event = _TestStartEvent()
+
+    # act
+    await test_dispatcher.aevent(event)
+
+    # assert
+    # Both working handlers should have processed the event
+    assert len(handler1.events) == 1
+    assert len(handler3.events) == 1
+    assert handler1.async_calls == 1
+    assert handler3.async_calls == 1
+
+
+@pytest.mark.asyncio
+async def test_aevent_propagation():
+    """Test that aevent respects propagation settings."""
+    # arrange
+    child_handler = _TestAsyncEventHandler()
+    parent_handler = _TestAsyncEventHandler()
+
+    child_dispatcher = Dispatcher(
+        name="child", event_handlers=[child_handler], propagate=True
+    )
+    parent_dispatcher = Dispatcher(
+        name="parent", event_handlers=[parent_handler], propagate=False
+    )
+
+    manager = Manager(parent_dispatcher)
+    manager.add_dispatcher(child_dispatcher)
+    child_dispatcher.manager = manager
+    child_dispatcher.parent_name = "parent"
+
+    event = _TestStartEvent()
+
+    # act
+    await child_dispatcher.aevent(event)
+
+    # assert
+    # Both handlers should have processed the event due to propagation
+    assert len(child_handler.events) == 1
+    assert len(parent_handler.events) == 1
+    assert child_handler.async_calls == 1
+    assert parent_handler.async_calls == 1
+
+
+@pytest.mark.asyncio
+async def test_aevent_no_propagation():
+    """Test that aevent respects no-propagation settings."""
+    # arrange
+    child_handler = _TestAsyncEventHandler()
+    parent_handler = _TestAsyncEventHandler()
+
+    child_dispatcher = Dispatcher(
+        name="child", event_handlers=[child_handler], propagate=False
+    )
+    parent_dispatcher = Dispatcher(
+        name="parent", event_handlers=[parent_handler], propagate=False
+    )
+
+    manager = Manager(parent_dispatcher)
+    manager.add_dispatcher(child_dispatcher)
+    child_dispatcher.manager = manager
+    child_dispatcher.parent_name = "parent"
+
+    event = _TestStartEvent()
+
+    # act
+    await child_dispatcher.aevent(event)
+
+    # assert
+    # Only child handler should have processed the event
+    assert len(child_handler.events) == 1
+    assert len(parent_handler.events) == 0
+    assert child_handler.async_calls == 1
+    assert parent_handler.async_calls == 0

@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.11'",
@@ -1730,7 +1730,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "atlassian-python-api", specifier = ">=3.41.9,<4" },
+    { name = "atlassian-python-api", specifier = ">=3.41.9,<5" },
     { name = "docx2txt", specifier = ">=0.8,<0.9" },
     { name = "html2text", specifier = ">=2024.2.26,<2025" },
     { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
