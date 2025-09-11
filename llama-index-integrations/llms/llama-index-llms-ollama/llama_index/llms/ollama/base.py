@@ -308,7 +308,7 @@ class Ollama(FunctionCallingLLM):
         error_on_no_tool_call: bool = True,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
-        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+        tool_calls = response.message.additional_kwargs.get("tool_calls", []) or []
         if len(tool_calls) < 1:
             if error_on_no_tool_call:
                 raise ValueError(
@@ -353,7 +353,7 @@ class Ollama(FunctionCallingLLM):
 
         response = dict(response)
 
-        tool_calls = response["message"].get("tool_calls", [])
+        tool_calls = response["message"].get("tool_calls", []) or []
         thinking = response["message"].get("thinking", None)
         token_counts = self._get_response_token_counts(response)
         if token_counts:
@@ -535,7 +535,7 @@ class Ollama(FunctionCallingLLM):
 
         response = dict(response)
 
-        tool_calls = response["message"].get("tool_calls", [])
+        tool_calls = response["message"].get("tool_calls", []) or []
         thinking = response["message"].get("thinking", None)
         token_counts = self._get_response_token_counts(response)
         if token_counts:
