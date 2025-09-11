@@ -208,3 +208,23 @@ async def test_async_chat_with_think() -> None:
     think = response.message.additional_kwargs.get("thinking", None)
     assert think is not None
     assert str(think).strip() != ""
+
+
+@pytest.mark.skipif(
+    client is None, reason="Ollama client is not available or test model is missing"
+)
+def test_get_tool_calls_from_response_with_llm_not_calling_any_tools() -> None:
+    """Make sure get_tool_calls_from_response can gracefully handle no tools in response"""
+    llm = Ollama(model=test_model, context_window=8000)
+    response = llm.chat_with_tools(
+        [tool],
+        chat_history=[
+            ChatMessage(
+                role="system",
+                content="You are an agent that can generate songs.  Never use tools.",
+            ),
+            ChatMessage(role="user", content="Hello, how are you?"),
+        ],
+    )
+    tool_calls = llm.get_tool_calls_from_response(response, error_on_no_tool_call=False)
+    assert len(tool_calls) == 0
