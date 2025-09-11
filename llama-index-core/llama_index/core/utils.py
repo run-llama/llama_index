@@ -54,11 +54,12 @@ class GlobalsHelper:
         if "NLTK_DATA" in os.environ:
             self._nltk_data_dir = str(Path(os.environ["NLTK_DATA"]))
         else:
-            path = Path(platformdirs.user_cache_dir("llama_index"))
+            path = Path(os.path.dirname(os.path.abspath(__file__)))
             self._nltk_data_dir = str(path / "_static/nltk_cache")
 
         # Ensure the directory exists
-        os.makedirs(self._nltk_data_dir, exist_ok=True)
+        if not os.path.exists(self._nltk_data_dir):
+            os.makedirs(self._nltk_data_dir, exist_ok=True)
 
         # Add to NLTK path if not already present
         if self._nltk_data_dir not in nltk_path:
@@ -659,7 +660,7 @@ def resolve_binary(
         headers = {
             "User-Agent": "LlamaIndex/0.0 (https://llamaindex.ai; info@llamaindex.ai) llama-index-core/0.0"
         }
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=(60, 60))
         response.raise_for_status()
         if as_base64:
             return BytesIO(base64.b64encode(response.content))

@@ -1688,7 +1688,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-storage-kvstore-gel"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "gel" },
@@ -1725,7 +1725,7 @@ dev = [
 requires-dist = [
     { name = "gel", specifier = ">=3.0.1" },
     { name = "jinja2", specifier = ">=3.1.4" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

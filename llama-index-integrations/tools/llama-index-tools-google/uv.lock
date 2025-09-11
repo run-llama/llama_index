@@ -1745,7 +1745,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-tools-google"
-version = "0.6.0"
+version = "0.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
@@ -1784,7 +1784,7 @@ requires-dist = [
     { name = "google-api-python-client", specifier = ">=2.115.0,<3" },
     { name = "google-auth-httplib2", specifier = ">=0.2.0,<0.3" },
     { name = "google-auth-oauthlib", specifier = ">=1.2.0,<2" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

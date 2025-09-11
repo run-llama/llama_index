@@ -9,6 +9,7 @@ from llama_index.core.base.llms.types import (
     ImageBlock,
     MessageRole,
     TextBlock,
+    VideoBlock,
 )
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.program.function_program import get_function_tool
@@ -385,6 +386,25 @@ def test_structured_predict_multiple_block(llm: GoogleGenAI) -> None:
     )
     assert isinstance(support, Response)
     assert "wiki" in support.answer.lower()
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_predict_with_video(llm: GoogleGenAI) -> None:
+    chat_messages = [
+        ChatMessage(
+            content=[
+                TextBlock(text="where is this scene happening?"),
+                VideoBlock(
+                    url="https://upload.wikimedia.org/wikipedia/commons/transcoded/2/28/"
+                    "TikTok_and_YouTube_Shorts_example.webm/TikTok_and_YouTube_Shorts_example.webm.720p.vp9.webm"
+                ),
+            ],
+            role=MessageRole.USER,
+        ),
+    ]
+
+    answer = llm.predict(prompt=ChatPromptTemplate(message_templates=chat_messages))
+    assert "space" in answer.lower()
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")

@@ -160,7 +160,7 @@ class OpenAI(FunctionCallingLLM):
 
         llm = OpenAI(model="gpt-3.5-turbo")
 
-        stream = llm.stream("Hi, write a short story")
+        stream = llm.stream_complete("Hi, write a short story")
 
         for r in stream:
             print(r.delta, end="")

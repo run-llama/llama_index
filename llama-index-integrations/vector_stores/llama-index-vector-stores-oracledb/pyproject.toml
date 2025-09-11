@@ -33,7 +33,7 @@ requires-python = ">=3.9,<3.13"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-core>=0.13.0,<0.15",
     "oracledb>=2.2",
 ]
 

@@ -337,6 +337,15 @@ css = [
 ]
 
 [[package]]
+name = "cachetools"
+version = "6.2.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/9d/61/e4fad8155db4a04bfb4734c7c8ff0882f078f24294d42798b3568eb63bff/cachetools-6.2.0.tar.gz", hash = "sha256:38b328c0889450f05f5e120f56ab68c8abaf424e1275522b138ffc93253f7e32", size = 30988, upload-time = "2025-08-25T18:57:30.924Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6c/56/3124f61d37a7a4e7cc96afc5492c78ba0cb551151e530b54669ddd1436ef/cachetools-6.2.0-py3-none-any.whl", hash = "sha256:1c76a8960c0041fcc21097e357f882197c79da0dbff766e7317890a65d7d8ba6", size = 11276, upload-time = "2025-08-25T18:57:29.684Z" },
+]
+
+[[package]]
 name = "certifi"
 version = "2025.4.26"
 source = { registry = "https://pypi.org/simple" }
@@ -941,9 +950,10 @@ sdist = { url = "https://files.pythonhosted.org/packages/41/b0/8fc26017341f62046
 
 [[package]]
 name = "ibm-watsonx-ai"
-version = "1.3.11"
+version = "1.3.36"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "cachetools" },
     { name = "certifi" },
     { name = "httpx" },
     { name = "ibm-cos-sdk" },
@@ -954,9 +964,9 @@ dependencies = [
     { name = "tabulate" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/10/fd/f7ff11c084ff2af39214dd79531c63b4c798b98266e58126d999ff1fdeb9/ibm_watsonx_ai-1.3.11.tar.gz", hash = "sha256:36d4bf38af6795e3113d9e58d0d47d08fe8bc55347bfe9546820a4a09064981c", size = 714156, upload-time = "2025-04-23T07:39:32.703Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/df/21/1a6161d46cdd8d7d9b7aa8a881a21c7f0feeb335c2ada33d9e63d6b8c41f/ibm_watsonx_ai-1.3.36.tar.gz", hash = "sha256:a6b3878fa73925dd3c59e0c495bdb89cd3a6ac1294800caeeb877e18dc19ce7a", size = 767322, upload-time = "2025-08-28T08:07:40.221Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/40/af/28627792e9694403b0abb1823e2f17214c3cecd63d642535a1a5d9bef028/ibm_watsonx_ai-1.3.11-py3-none-any.whl", hash = "sha256:7d6571069d241856b6fa7854a786b5f13d5e769c3bc82681594b4ee3bc1c6577", size = 1115138, upload-time = "2025-04-23T07:39:31.007Z" },
+    { url = "https://files.pythonhosted.org/packages/d6/bc/f757224cb02dd899d7e4fcae9581dfac83a07662183bde7abb2c5e871cd8/ibm_watsonx_ai-1.3.36-py3-none-any.whl", hash = "sha256:63156858634e218e42bea1d3954d29a891303e4a2044a8c696d2b2e7c6e5e59b", size = 1183595, upload-time = "2025-08-28T08:07:38.212Z" },
 ]
 
 [[package]]
@@ -1438,7 +1448,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-postprocessor-ibm"
-version = "0.2.0"
+version = "0.3.1"
 source = { editable = "." }
 dependencies = [
     { name = "ibm-watsonx-ai" },
@@ -1471,8 +1481,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ibm-watsonx-ai", specifier = ">=1.1.16" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "ibm-watsonx-ai", specifier = ">=1.3.36" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "pyarrow" },
 ]
 

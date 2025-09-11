@@ -96,9 +96,8 @@ urllib3 = "2.5.0"
 watchdog = "4.0.0"
 wcwidth = "0.2.13"
 webencodings = "0.5.1"
-llama-index-workflows = "^0.2.2"
 
 [tool.poetry.scripts]
-merge-llama-deploy-docs = "scripts.merge_llama_deploy_docs:main"
+merge-external-docs = "scripts.merge_external_docs:main"
 prepare-for-build = "scripts.prepare_for_build:main"
 serve = "scripts.serve:main"

@@ -1663,7 +1663,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-papers"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "arxiv" },
@@ -1698,7 +1698,7 @@ dev = [
 requires-dist = [
     { name = "arxiv", specifier = ">=2.1.0,<3" },
     { name = "defusedxml", specifier = ">=0.7.1,<0.8" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

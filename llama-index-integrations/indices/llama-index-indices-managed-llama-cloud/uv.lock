@@ -1639,7 +1639,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-indices-managed-llama-cloud"
-version = "0.9.1"
+version = "0.9.4"
 source = { editable = "." }
 dependencies = [
     { name = "deprecated" },
@@ -1675,7 +1675,7 @@ dev = [
 requires-dist = [
     { name = "deprecated", specifier = "==1.2.18" },
     { name = "llama-cloud", specifier = "==0.1.35" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

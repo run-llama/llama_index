@@ -1991,7 +1991,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-retrievers-vertexai-search"
-version = "0.3.0"
+version = "0.3.1"
 source = { editable = "." }
 dependencies = [
     { name = "google-auth-httplib2" },
@@ -2030,7 +2030,7 @@ requires-dist = [
     { name = "google-auth-oauthlib", specifier = ">=1.2.0,<2" },
     { name = "google-cloud-aiplatform", specifier = ">=1.53.0,<2" },
     { name = "google-cloud-discoveryengine", specifier = ">=0.11.13,<0.12" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

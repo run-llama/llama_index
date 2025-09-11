@@ -1590,7 +1590,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-graph-stores-tidb"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1615,7 +1615,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "pymysql", specifier = ">=1.1.1,<2" },
     { name = "sqlalchemy", specifier = ">=2.0.30,<3" },
     { name = "tidb-vector", specifier = ">=0.0.9,<0.0.10" },

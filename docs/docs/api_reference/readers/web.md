@@ -21,3 +21,4 @@
         - TrafilaturaWebReader
         - UnstructuredURLLoader
         - WholeSiteReader
+        - ZenRowsWebReader

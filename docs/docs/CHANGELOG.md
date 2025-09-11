@@ -1,5 +1,172 @@
 # ChangeLog
 
+## [2025-09-08]
+
+**NOTE:** All packages have been bumped to handle the latest llama-index-core version.
+
+### `llama-index-core` [0.14.0]
+
+- breaking: bumped `llama-index-workflows` dependency to 2.0
+  - Improve stacktraces clarity by avoiding wrapping errors in WorkflowRuntimeError
+  - Remove deprecated checkpointer feature
+  - Remove deprecated sub-workflows feature
+  - Remove deprecated `send_event` method from Workflow class (still existing on the Context class)
+  - Remove deprecated `stream_events()` methods from Workflow class (still existing on the Context class)
+  - Remove deprecated support for stepwise execution
+
+### `llama-index-llms-openai` [0.5.6]
+
+- feat: add support for document blocks in openai chat completions (#19809)
+
+## [2025-09-06]
+
+### `llama-index-core` [0.13.6]
+
+- chore: remove openai selector from core utils function (#19803)
+
+### `llama-index-llms-cometapi` [0.1.0]
+
+- feat: Add CometAPI LLM integration (#19793)
+
+## [2025-09-04]
+
+### `llama-index-core` [0.13.5]
+
+- feat: add thinking delta field to AgentStream events to expose from LLM responses (#19785)
+- fix: fix path handling in SimpleDirectoryReader and PDFReader path fix (#19794)
+
+### `llama-index-llms-bedrock-converse` [0.9.0]
+
+- feat: add system prompt and tool caching config kwargs to BedrockConverse (#19737)
+
+### `llama-index-llms-litellm` [0.6.2]
+
+- fix: Handle missing tool call IDs with UUID fallback (#19789)
+- fix: Fix critical context window calculation (#19787)
+
+### `llama-index-readers-file` [0.5.3]
+
+- fix: fix path handling in SimpleDirectoryReader and PDFReader path fix (#19794)
+
+### `llama-index-storage-chat-store-yugabytedb` [0.1.0]
+
+- feat: add Yugabytedb chat store (#19768)
+
+### `llama-index-vector-stores-milvus` [0.9.1]
+
+- fix: create TextNode if no '\_node_content' set (#19772)
+
+### `llama-index-vector-stores-postgres` [0.6.5]
+
+- fix: make postgres regex punctuation handling consistent with plainto_tsquery (#19781)
+
+## [2025-09-01]
+
+### `llama-index-core` [0.13.4]
+
+- feat: Add PostgreSQL schema support to Memory and SQLAlchemyChatStore (#19741)
+- feat: add missing sync wrapper of put_messages in memory (#19746)
+- feat: add option for an initial tool choice in FunctionAgent (#19738)
+- fix: Calling ContextChatEngine with a QueryBundle (instead of a string) (#19714)
+
+### `llama-index-embeddings-baseten` [0.1.0]
+
+- feat: baseten integration (#19710)
+
+### `llama-index-embeddings-ibm` [0.5.0]
+
+- feat: Support for additional/external urls, make instance_id deprecated (#19749)
+
+### `llama-index-llms-baseten` [0.1.0]
+
+- feat: baseten integration (#19710)
+
+### `llama-index-llms-bedrock-converse` [0.8.3]
+
+- feat: add `amazon.nova-premier-v1:0` to BEDROCK_MODELS (#19728)
+
+### `llama-index-llms-ibm` [0.6.0]
+
+- feat: Support for additional/external urls, make instance_id deprecated (#19749)
+
+### `llama-index-postprocessor-ibm` [0.3.0]
+
+- feat: Support for additional/external urls, make instance_id deprecated (#19749)
+
+### `llama-index-postprocessor-sbert-rerank` [0.4.1]
+
+- fix: fix SentenceTransformerRerank init device (#19756)
+
+### `llama-index-readers-google` [0.7.1]
+
+- feat: raise google drive errors (#19752)
+
+### `llama-index-readers-web` [0.5.1]
+
+- feat: Add ZenRows web reader (#19699)
+
+### `llama-index-vector-stores-chroma` [0.5.2]
+
+- feat: add mmr search to chroma (#19731)
+
+### `llama-index-vector-stores-postgres` [0.6.4]
+
+- fix: Use the indexed metadata field 'ref_doc_id' instead of 'doc_id' during deletion (#19759)
+
+### `llama-index-vector-stores-qdrant` [0.8.2]
+
+feat: Payload indexes support to QdrantVectorStore (#19743)
+
+## [2025-08-22]
+
+### `llama-index-core` [0.13.3]
+
+- fix: add timeouts on image `.get()` requests (#19723)
+- fix: fix StreamingAgentChatResponse losses message bug (#19674)
+- fix: Fixing crashing when retrieving from empty vector store index (#19706)
+- fix: Calling ContextChatEngine with a QueryBundle (instead of a string) (#19714)
+- fix: Fix faithfulness evaluate crash when no images provided (#19686)
+
+### `llama-index-embeddings-heroku` [0.1.0]
+
+- feat: Adds support for HerokuEmbeddings (#19685)
+
+### `llama-index-embeddings-ollama` [0.8.2]
+
+- feat: enhance OllamaEmbedding with instruction support (#19721)
+
+### `llama-index-llms-anthropic` [0.8.5]
+
+- fix: Fix prompt caching with CachePoint (#19711)
+
+### `llama-index-llms-openai` [0.5.4]
+
+- feat: add gpt-5-chat-latest model support (#19687)
+
+### `llama-index-llms-sagemaker-endpoint` [0.4.1]
+
+- fix: fix constructor region read to not read region_name before is popped from kwargs, and fix assign to super (#19705)
+
+### `llama-index-llms-upstage` [0.6.2]
+
+- chore: remove deprecated model(solar-pro) (#19704)
+
+### `llama-index-readers-confluence` [0.4.1]
+
+- fix: Support concurrent use of multiple ConfluenceReader instances (#19698)
+
+### `llama-index-vector-stores-chroma` [0.5.1]
+
+- fix: fix `get_nodes()` with empty node ids (#19711)
+
+### `llama-index-vector-stores-qdrant` [0.8.1]
+
+- feat: support qdrant sharding (#19652)
+
+### `llama-index-vector-stores-tencentvectordb` [0.4.1]
+
+- fix: Resolve AttributeError in CollectionParams.filter_fields access (#19695)
+
 ## [2025-08-14]
 
 ### `llama-index-core` [0.13.2]
@@ -57,7 +224,6 @@
 ### `llama-index-vector-stores-postgres` [0.6.3]
 
 - fix: Add other special characters in `ts_query` normalization (#19637)
-
 
 ## [2025-08-08]
 

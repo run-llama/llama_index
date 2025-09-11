@@ -1726,7 +1726,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-program-lmformatenforcer"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1759,7 +1759,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-llms-huggingface", specifier = ">=0.6.0,<0.7" },
     { name = "llama-index-llms-llama-cpp", specifier = ">=0.5.0,<0.6" },
 ]

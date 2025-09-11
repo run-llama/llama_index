@@ -228,6 +228,7 @@ nav:
           - ./examples/embeddings/Langchain.ipynb
           - ./examples/embeddings/OpenAI.ipynb
           - ./examples/embeddings/alephalpha.ipynb
+          - ./examples/embeddings/baseten.ipynb
           - ./examples/embeddings/bedrock.ipynb
           - ./examples/embeddings/clarifai.ipynb
           - ./examples/embeddings/cloudflare_workersai.ipynb
@@ -243,6 +244,7 @@ nav:
           - ./examples/embeddings/gigachat.ipynb
           - ./examples/embeddings/google_genai.ipynb
           - ./examples/embeddings/google_palm.ipynb
+          - ./examples/embeddings/heroku.ipynb
           - ./examples/embeddings/huggingface.ipynb
           - ./examples/embeddings/ibm_watsonx.ipynb
           - ./examples/embeddings/ipex_llm.ipynb
@@ -326,12 +328,14 @@ nav:
           - ./examples/llm/asi1.ipynb
           - ./examples/llm/azure_inference.ipynb
           - ./examples/llm/azure_openai.ipynb
+          - ./examples/llm/baseten.ipynb
           - ./examples/llm/bedrock.ipynb
           - ./examples/llm/bedrock_converse.ipynb
           - ./examples/llm/cerebras.ipynb
           - ./examples/llm/clarifai.ipynb
           - ./examples/llm/cleanlab.ipynb
           - ./examples/llm/cohere.ipynb
+          - ./examples/llm/cometapi.ipynb
           - ./examples/llm/dashscope.ipynb
           - ./examples/llm/databricks.ipynb
           - ./examples/llm/deepinfra.ipynb
@@ -510,13 +514,14 @@ nav:
           - ./examples/objects/object_index.ipynb
       - Observability:
           - ./examples/observability/AimCallback.ipynb
+          - ./examples/observability/Deepeval.ipynb
           - ./examples/observability/HoneyHiveLlamaIndexTracer.ipynb
           - ./examples/observability/Langfuse-Instrumentation.ipynb
           - ./examples/observability/LangfuseCallbackHandler.ipynb
           - ./examples/observability/LangfuseMistralPostHog.ipynb
           - ./examples/observability/LlamaDebugHandler.ipynb
-          - ./examples/observability/Deepeval.ipynb
           - ./examples/observability/MLflow.ipynb
+          - ./examples/observability/Maxim-Instrumentation.ipynb
           - ./examples/observability/OpenInferenceCallback.ipynb
           - ./examples/observability/OpenLLMetry.ipynb
           - ./examples/observability/OpikCallback.ipynb
@@ -689,6 +694,7 @@ nav:
           - ./examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb
           - ./examples/vector_stores/PineconeIndexDemo.ipynb
           - ./examples/vector_stores/QdrantIndexDemo.ipynb
+          - ./examples/vector_stores/Qdrant_hybrid_rag_multitenant_sharding.ipynb
           - ./examples/vector_stores/Qdrant_metadata_filter.ipynb
           - ./examples/vector_stores/Qdrant_using_qdrant_filters.ipynb
           - ./examples/vector_stores/RedisIndexDemo.ipynb
@@ -843,7 +849,7 @@ nav:
           - ./module_guides/deploying/agents/memory.md
           - ./module_guides/deploying/agents/tools.md
       - Workflows:
-          - workflows
+          - ./module_guides/workflow/index.md
       - MCP:
           - ./module_guides/mcp/index.md
           - ./module_guides/mcp/llamaindex_mcp.md
@@ -884,7 +890,6 @@ nav:
           - ./api_reference/callbacks/aim.md
           - ./api_reference/callbacks/argilla.md
           - ./api_reference/callbacks/arize_phoenix.md
-          - ./api_reference/callbacks/deepeval.md
           - ./api_reference/callbacks/honeyhive.md
           - ./api_reference/callbacks/index.md
           - ./api_reference/callbacks/langfuse.md
@@ -911,6 +916,7 @@ nav:
           - ./api_reference/embeddings/autoembeddings.md
           - ./api_reference/embeddings/azure_inference.md
           - ./api_reference/embeddings/azure_openai.md
+          - ./api_reference/embeddings/baseten.md
           - ./api_reference/embeddings/bedrock.md
           - ./api_reference/embeddings/clarifai.md
           - ./api_reference/embeddings/clip.md
@@ -928,6 +934,7 @@ nav:
           - ./api_reference/embeddings/google.md
           - ./api_reference/embeddings/google_genai.md
           - ./api_reference/embeddings/gradient.md
+          - ./api_reference/embeddings/heroku.md
           - ./api_reference/embeddings/huggingface.md
           - ./api_reference/embeddings/huggingface_api.md
           - ./api_reference/embeddings/huggingface_openvino.md
@@ -1026,6 +1033,7 @@ nav:
           - ./api_reference/llms/asi.md
           - ./api_reference/llms/azure_inference.md
           - ./api_reference/llms/azure_openai.md
+          - ./api_reference/llms/baseten.md
           - ./api_reference/llms/bedrock.md
           - ./api_reference/llms/bedrock_converse.md
           - ./api_reference/llms/cerebras.md
@@ -1033,6 +1041,7 @@ nav:
           - ./api_reference/llms/cleanlab.md
           - ./api_reference/llms/cloudflare_ai_gateway.md
           - ./api_reference/llms/cohere.md
+          - ./api_reference/llms/cometapi.md
           - ./api_reference/llms/contextual.md
           - ./api_reference/llms/cortex.md
           - ./api_reference/llms/custom_llm.md
@@ -1552,6 +1561,7 @@ nav:
               - ./api_reference/storage/chat_store/sqlite.md
               - ./api_reference/storage/chat_store/tablestore.md
               - ./api_reference/storage/chat_store/upstash.md
+              - ./api_reference/storage/chat_store/yugabytedb.md
           - Docstore:
               - ./api_reference/storage/docstore/azure.md
               - ./api_reference/storage/docstore/azurecosmosnosql.md
@@ -1780,6 +1790,8 @@ nav:
       - Deprecated Terms: ./changes/deprecated_terms.md
   - Workflows:
       - ./workflows/index.md
+      - ./workflows/durable_workflows.md
+      - ./workflows/deployment.md
       - v1:
           - ./workflows/v1/index.md
           - ./workflows/v1/customizing_entry_exit_points.md
@@ -1789,7 +1801,9 @@ nav:
           - ./workflows/v1/retry_steps.md
           - ./workflows/v1/resources.md
           - ./workflows/v1/stepwise.md
-          - ./workflows/v1/deployment.md
+      - v2:
+          - ./workflows/v2/index.md
+          - ./workflows/v2
   - LlamaCloud: https://docs.cloud.llamaindex.ai/
 plugins:
   - search
@@ -1819,6 +1833,7 @@ plugins:
             show_signature_annotations: true
             signature_crossrefs: true
           paths:
+            - ./workflows-py
             - ../llama-index-core
             - ../llama-index-instrumentation
             - ../llama-index-experimental
@@ -2204,6 +2219,7 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-vercel-ai-gateway
             - ../llama-index-integrations/llms/llama-index-llms-openai
             - ../llama-index-integrations/llms/llama-index-llms-cerebras
+            - ../llama-index-integrations/llms/llama-index-llms-cometapi
             - ../llama-index-integrations/llms/llama-index-llms-gradient
             - ../llama-index-integrations/extractors/llama-index-extractors-entity
             - ../llama-index-integrations/extractors/llama-index-extractors-marvin
@@ -2492,6 +2508,10 @@ plugins:
             - ../llama-index-integrations/tools/llama-index-tools-aws-bedrock-agentcore
             - ../llama-index-integrations/llms/llama-index-llms-heroku
             - ../llama-index-integrations/retrievers/llama-index-retrievers-superlinked
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-heroku
+            - ../llama-index-integrations/embeddings/llama-index-embeddings-baseten
+            - ../llama-index-integrations/llms/llama-index-llms-baseten
+            - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-yugabytedb
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
@@ -2768,6 +2788,7 @@ plugins:
         ./examples/llm/cerebras.html: https://docs.llamaindex.ai/en/stable/examples/llm/cerebras/
         ./examples/llm/clarifai.html: https://docs.llamaindex.ai/en/stable/examples/llm/clarifai/
         ./examples/llm/cohere.html: https://docs.llamaindex.ai/en/stable/examples/llm/cohere/
+        ./examples/llm/cometapi.html: https://docs.llamaindex.ai/en/stable/examples/llm/cometapi/
         ./examples/llm/dashscope.html: https://docs.llamaindex.ai/en/stable/examples/llm/dashscope/
         ./examples/llm/everlyai.html: https://docs.llamaindex.ai/en/stable/examples/llm/everlyai/
         ./examples/llm/fireworks.html: https://docs.llamaindex.ai/en/stable/examples/llm/fireworks/
@@ -3120,7 +3141,6 @@ plugins:
         ./module_guides/supporting_modules/service_context_migration.html: https://docs.llamaindex.ai/en/stable/module_guides/supporting_modules/service_context_migration/
         ./module_guides/supporting_modules/settings.html: https://docs.llamaindex.ai/en/stable/module_guides/supporting_modules/settings/
         ./module_guides/supporting_modules/supporting_modules.html: https://docs.llamaindex.ai/en/stable/module_guides/supporting_modules/supporting_modules/
-        ./module_guides/workflow/index.html: https://docs.llamaindex.ai/en/stable/workflows/
         ./optimizing/advanced_retrieval/advanced_retrieval.html: https://docs.llamaindex.ai/en/stable/optimizing/advanced_retrieval/advanced_retrieval/
         ./optimizing/advanced_retrieval/query_transformations.html: https://docs.llamaindex.ai/en/stable/optimizing/advanced_retrieval/query_transformations/
         ./optimizing/agentic_strategies/agentic_strategies.html: https://docs.llamaindex.ai/en/stable/optimizing/agentic_strategies/agentic_strategies/

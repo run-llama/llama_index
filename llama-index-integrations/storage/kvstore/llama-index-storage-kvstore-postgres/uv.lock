@@ -1729,7 +1729,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-storage-kvstore-postgres"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "asyncpg" },
@@ -1765,7 +1765,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "asyncpg" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "psycopg2-binary" },
 ]
 

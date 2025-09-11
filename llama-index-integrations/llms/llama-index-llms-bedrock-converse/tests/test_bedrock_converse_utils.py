@@ -182,3 +182,22 @@ def test_tools_to_converse_tools_with_custom_tool_choice():
     assert len(result["tools"]) == 1
     assert result["tools"][0]["toolSpec"]["name"] == "search_tool"
     assert result["toolChoice"] == custom_tool_choice
+
+
+def test_tools_to_converse_tools_with_cache_enabled():
+    """Test that cachePoint is configured when setting tool_caching=True"""
+
+    def search(query: str) -> str:
+        """Search for information about a query."""
+        return f"Results for {query}"
+
+    tool = FunctionTool.from_defaults(
+        fn=search, name="search_tool", description="A tool for searching information"
+    )
+
+    result = tools_to_converse_tools([tool], tool_caching=True)
+
+    assert "tools" in result
+    assert len(result["tools"]) == 2
+    assert result["tools"][0]["toolSpec"]["name"] == "search_tool"
+    assert result["tools"][1]["cachePoint"]["type"] == "default"

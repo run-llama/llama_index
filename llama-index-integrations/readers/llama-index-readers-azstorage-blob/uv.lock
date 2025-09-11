@@ -1692,7 +1692,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-azstorage-blob"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "azure-identity" },
@@ -1727,7 +1727,7 @@ dev = [
 requires-dist = [
     { name = "azure-identity", specifier = ">=1.15.0,<2" },
     { name = "azure-storage-blob", specifier = ">=12.19.0,<13" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

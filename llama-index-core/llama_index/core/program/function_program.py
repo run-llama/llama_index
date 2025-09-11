@@ -40,8 +40,10 @@ def get_function_tool(output_cls: Type[Model]) -> FunctionTool:
 
     # NOTE: this does not specify the schema in the function signature,
     # so instead we'll directly provide it in the fn_schema in the ToolMetadata
-    def model_fn(**kwargs: Any) -> Model:
+    def model_fn(*args: Any, **kwargs: Any) -> Model:
         """Model function."""
+        if len(args) == 1 and isinstance(args[0], dict) and not kwargs:
+            kwargs = args[0]
         return output_cls(**kwargs)
 
     return FunctionTool.from_defaults(
