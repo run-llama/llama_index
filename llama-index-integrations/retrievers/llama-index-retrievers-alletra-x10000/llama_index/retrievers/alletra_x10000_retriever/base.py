@@ -1,9 +1,10 @@
-from llama_index.core.retrievers import BaseRetriever
-from llama_index.core.schema import QueryBundle, NodeWithScore, TextNode
-
-from typing import Any, Dict, Union
+# Copyright Hewlett Packard Enterprise Development LP.
 
 from pydi_client import DIClient
+from typing import Any, Dict, Union
+
+from llama_index.core.retrievers import BaseRetriever
+from llama_index.core.schema import QueryBundle, NodeWithScore, TextNode
 
 
 class AlletraX10000Retriever(BaseRetriever):
@@ -40,7 +41,10 @@ class AlletraX10000Retriever(BaseRetriever):
         for item in data:
             nodes.append(
                 NodeWithScore(
-                    node=TextNode(text=item["dataChunk"], metadata=item["chunkMetadata"]), score=item["score"]
+                    node=TextNode(
+                        text=item["dataChunk"], metadata=item["chunkMetadata"]
+                    ),
+                    score=item["score"],
                 )
             )
         return nodes

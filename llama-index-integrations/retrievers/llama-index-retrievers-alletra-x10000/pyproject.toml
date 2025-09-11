@@ -2,9 +2,17 @@
 build-backend = "hatchling.build"
 requires = ["hatchling"]
 
+[dependency-groups]
+dev = [
+    "pytest==7.2.1",
+    "pytest-mock==3.11.1",
+    "pre-commit==3.2.0",
+    "pytest-cov>=6.1.1",
+]
+
 [project]
 name = "llama-index-retrievers-alletra-x10000-retriever"
-version = "0.0.1"
+version = "0.1.0"
 description = "llama-index retriever for AlletraMP X10000"
 readme = "README.md"
 requires-python = ">=3.11.2,<4.0"
@@ -12,12 +20,6 @@ authors = [{name = "HPE"}]
 dependencies = [
     "pydi-client>=1.0.0",
     "llama-index-core>=0.12.35",
-]
-
-[dependency-groups]
-dev = [
-    "pytest==7.2.1",
-    "pytest-mock==3.11.1"
 ]
 
 [tool.codespell]
@@ -34,6 +36,9 @@ include = ["llama_index/"]
 [tool.llamahub]
 contains_example = false
 import_path = "llama_index.retrievers.alletra_x10000_retriever"
+
+[tool.llamahub.class_authors]
+AlletraX10000Retriever = "HPE"
 
 [tool.mypy]
 disallow_untyped_defs = true

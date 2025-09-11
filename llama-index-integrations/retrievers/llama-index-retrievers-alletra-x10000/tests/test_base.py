@@ -1,5 +1,9 @@
+# Copyright Hewlett Packard Enterprise Development LP.
+
 import pytest
+
 from unittest.mock import MagicMock
+
 from llama_index.core.schema import QueryBundle, NodeWithScore
 from llama_index.retrievers.alletra_x10000_retriever import AlletraX10000Retriever
 
@@ -23,7 +27,8 @@ def test_alletra_x10000_retriever_initialization():
 
 def test_alletra_x10000_retriever_retrieve(mocker):
     mock_client = mocker.patch(
-        "llama_index.retrievers.alletra_x10000_retriever.base.DIClient")
+        "llama_index.retrievers.alletra_x10000_retriever.base.DIClient"
+    )
 
     mock_response = MagicMock()
     mock_response = [
@@ -37,7 +42,7 @@ def test_alletra_x10000_retriever_retrieve(mocker):
                 "bucketName": "string",
                 "pageLabel": "string",
                 "versionId": "string",
-            }
+            },
         },
         {
             "dataChunk": "chunk2",
@@ -49,7 +54,7 @@ def test_alletra_x10000_retriever_retrieve(mocker):
                 "bucketName": "string",
                 "pageLabel": "string",
                 "versionId": "string",
-            }
+            },
         },
     ]
     mock_client.return_value.similarity_search.return_value = mock_response
@@ -76,7 +81,6 @@ def test_alletra_x10000_retriever_retrieve(mocker):
 
 
 def test_alletra_x10000_retriever_retrieve_empty_response(mocker):
-
     retriever = AlletraX10000Retriever(
         uri="http://example.com",
         s3_access_key="test_access_key",
@@ -88,7 +92,8 @@ def test_alletra_x10000_retriever_retrieve_empty_response(mocker):
 
     # Mock the DIClient to return an empty response
     mock_client = mocker.patch(
-        "llama_index.retrievers.alletra_x10000_retriever.base.DIClient")
+        "llama_index.retrievers.alletra_x10000_retriever.base.DIClient"
+    )
     mock_client.return_value.similarity_search.return_value.json.return_value = []
 
     # Call the method
@@ -101,9 +106,9 @@ def test_alletra_x10000_retriever_retrieve_empty_response(mocker):
 
 def test_alletra_x10000_retriever_retrieve_error_handling(mocker):
     mock_client = mocker.patch(
-        "llama_index.retrievers.alletra_x10000_retriever.base.DIClient")
-    mock_client.return_value.similarity_search.side_effect = Exception(
-        "Test exception")
+        "llama_index.retrievers.alletra_x10000_retriever.base.DIClient"
+    )
+    mock_client.return_value.similarity_search.side_effect = Exception("Test exception")
 
     retriever = AlletraX10000Retriever(
         uri="http://example.com",

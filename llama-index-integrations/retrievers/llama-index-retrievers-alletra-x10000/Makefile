@@ -1,3 +1,5 @@
+# Copyright Hewlett Packard Enterprise Development LP.
+
 GIT_ROOT ?= $(shell git rev-parse --show-toplevel)
 
 help:	## Show all Makefile targets.
