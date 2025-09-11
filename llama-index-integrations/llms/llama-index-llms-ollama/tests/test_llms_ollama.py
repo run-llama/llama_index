@@ -47,6 +47,15 @@ def generate_song(
 tool = FunctionTool.from_defaults(fn=generate_song)
 
 
+def add(a: float, b: float) -> float:
+    """Add two numbers and returns the sum"""
+    print(f"{a} + {b}")
+    return a + b
+
+
+math_tool = FunctionTool.from_defaults(fn=add)
+
+
 def test_embedding_class() -> None:
     names_of_base_classes = [b.__name__ for b in Ollama.__mro__]
     assert BaseLLM.__name__ in names_of_base_classes
@@ -215,16 +224,64 @@ async def test_async_chat_with_think() -> None:
 )
 def test_get_tool_calls_from_response_with_llm_not_calling_any_tools() -> None:
     """Make sure get_tool_calls_from_response can gracefully handle no tools in response"""
-    llm = Ollama(model=test_model, context_window=8000)
+    llm = Ollama(model=test_model, context_window=1000)
     response = llm.chat_with_tools(
-        [tool],
+        [math_tool],
         chat_history=[
             ChatMessage(
                 role="system",
-                content="You are an agent that can generate songs.  Never use tools.",
+                content="You are a useful agent.  Only use tools for math.",
             ),
             ChatMessage(role="user", content="Hello, how are you?"),
         ],
     )
     tool_calls = llm.get_tool_calls_from_response(response, error_on_no_tool_call=False)
     assert len(tool_calls) == 0
+
+
+@pytest.mark.skipif(
+    client is None, reason="Ollama client is not available or test model is missing"
+)
+def test_chat_with_tools_returns_empty_array_if_no_tools_were_called() -> None:
+    """Make sure get_tool_calls_from_response can gracefully handle no tools in response"""
+    llm = Ollama(model=test_model, context_window=1000)
+    response = llm.chat(
+        tools=[],
+        messages=[
+            ChatMessage(
+                role="system",
+                content="You are a useful tool calling agent.",
+            ),
+            ChatMessage(role="user", content="Hello, how are you?"),
+        ],
+    )
+
+    assert response.message.additional_kwargs.get("tool_calls", []) == []
+
+    tool_calls = llm.get_tool_calls_from_response(response, error_on_no_tool_call=False)
+    assert len(tool_calls) == 0
+
+
+@pytest.mark.skipif(
+    client is None, reason="Ollama client is not available or test model is missing"
+)
+@pytest.mark.asyncio
+async def test_async_chat_with_tools_returns_empty_array_if_no_tools_were_called() -> (
+    None
+):
+    """
+    Test that achat returns [] for no tool calls since subsequent processes expect []
+    instead of None
+    """
+    llm = Ollama(model=test_model, context_window=1000)
+    response = await llm.achat(
+        tools=[],
+        messages=[
+            ChatMessage(
+                role="system",
+                content="You are a useful tool calling agent.",
+            ),
+            ChatMessage(role="user", content="Hello, how are you?"),
+        ],
+    )
+    assert response.message.additional_kwargs.get("tool_calls", []) == []
