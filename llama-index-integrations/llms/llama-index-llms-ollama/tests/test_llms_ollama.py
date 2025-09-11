@@ -213,26 +213,6 @@ async def test_async_chat_with_think() -> None:
 @pytest.mark.skipif(
     client is None, reason="Ollama client is not available or test model is missing"
 )
-def test_get_tool_calls_from_response_with_llm_not_calling_any_tools() -> None:
-    """Make sure get_tool_calls_from_response can gracefully handle no tools in response"""
-    llm = Ollama(model=test_model, context_window=1000)
-    response = llm.chat_with_tools(
-        [math_tool],
-        chat_history=[
-            ChatMessage(
-                role="system",
-                content="You are a useful agent.  Only use tools for math.",
-            ),
-            ChatMessage(role="user", content="Hello, how are you?"),
-        ],
-    )
-    tool_calls = llm.get_tool_calls_from_response(response, error_on_no_tool_call=False)
-    assert len(tool_calls) == 0
-
-
-@pytest.mark.skipif(
-    client is None, reason="Ollama client is not available or test model is missing"
-)
 def test_chat_with_tools_returns_empty_array_if_no_tools_were_called() -> None:
     """Make sure get_tool_calls_from_response can gracefully handle no tools in response"""
     llm = Ollama(model=test_model, context_window=1000)
