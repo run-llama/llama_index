@@ -1622,7 +1622,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.12.52.post1"
+version = "0.14.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1658,9 +1658,9 @@ dependencies = [
     { name = "typing-inspect" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9e/3b/3937a1756a02e549a776272371dd6ec3a4541833b2dbb8ef58e61167f9c9/llama_index_core-0.12.52.post1.tar.gz", hash = "sha256:ac6f447271e5ac4c12e1901373ec4b5ac7814ea33bd1ad3c3c8e9ac9771834ab", size = 7279221, upload-time = "2025-07-23T17:32:33.961Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ec/d4/cf8a3372f4cb71c67c9804c7aa0eb8770c1fad93f34c9c599824eecd9872/llama_index_core-0.14.1.tar.gz", hash = "sha256:b9a68d8f848f22dad0e3ea17539d72a6d01f99ad4e2ba8dca074bbabb2f4fcc2", size = 11577266, upload-time = "2025-09-10T21:59:05.943Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/51/48/8f6ea9f2a2f5a080166f0a45a252609df32cc1ad626836aaad2424e2c7ec/llama_index_core-0.12.52.post1-py3-none-any.whl", hash = "sha256:3e28d65d238bad8ec5ce372659ae0a3878851c6ba9c9447d6ddb4de138694b1f", size = 7649855, upload-time = "2025-07-23T17:32:28.271Z" },
+    { url = "https://files.pythonhosted.org/packages/84/fb/b4d8f58ffee6cca1356206cbbbeb8fe6ea1728126f8b5a8f7bd1a798f4d2/llama_index_core-0.14.1-py3-none-any.whl", hash = "sha256:bf471b12d963563dc6ef1d9c1a65c5d924c8cb827dd41532af192aaf94f18fe4", size = 11918358, upload-time = "2025-09-10T21:59:02.642Z" },
 ]
 
 [[package]]
@@ -1682,6 +1682,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
+    { name = "pysolr" },
 ]
 
 [package.dev-dependencies]
@@ -1707,7 +1708,10 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "llama-index-core", specifier = ">=0.12.0,<0.13" }]
+requires-dist = [
+    { name = "llama-index-core", specifier = ">=0.14.0,<0.15" },
+    { name = "pysolr", specifier = ">=3.10.0" },
+]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1733,16 +1737,17 @@ dev = [
 
 [[package]]
 name = "llama-index-workflows"
-version = "1.2.0"
+version = "2.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "eval-type-backport", marker = "python_full_version < '3.10'" },
     { name = "llama-index-instrumentation" },
     { name = "pydantic" },
+    { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/26/9d/9dc7adc10d9976582bf50b074883986cb36b46f2fe45cf60550767300a29/llama_index_workflows-1.2.0.tar.gz", hash = "sha256:f6b19f01a340a1afb1d2fd2285c9dce346e304a3aae519e6103059f5afb2609f", size = 1019113, upload-time = "2025-07-23T18:32:47.86Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d5/a5/cb6ea8f83aceb81c07793096fa483f5332ebc2a5a96ddc27a747526bb4f3/llama_index_workflows-2.1.0.tar.gz", hash = "sha256:a6dd771b249ddb1225653aa9ede636fd134d805e7368cf7df7d4e350ab04d8e0", size = 1269221, upload-time = "2025-09-10T21:31:05.774Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/36/c1/5190f102a042d36a6a495de27510c2d6e3aca98f892895bfacdcf9109c1d/llama_index_workflows-1.2.0-py3-none-any.whl", hash = "sha256:5722a7ce137e00361025768789e7e77720cd66f855791050183a3c540b6e5b8c", size = 37463, upload-time = "2025-07-23T18:32:46.294Z" },
+    { url = "https://files.pythonhosted.org/packages/63/8f/7490700ffbfd6e12efef659e49d2a9eec5c9955a64a51f2aab96ed22905c/llama_index_workflows-2.1.0-py3-none-any.whl", hash = "sha256:4b6751516768d1eb2d785d7be8ad19cc51d3b0beba1ddea687d6a72473a79c10", size = 44906, upload-time = "2025-09-10T21:31:04.537Z" },
 ]
 
 [[package]]
@@ -2923,6 +2928,16 @@ sdist = { url = "https://files.pythonhosted.org/packages/84/c8/6d7d7910699518b51
 wheels = [
     { url = "https://files.pythonhosted.org/packages/6e/25/9b0182245b148d7d48fcb9009364f73618d517bd74947a94c17bf799c4a0/pylint-2.15.10-py3-none-any.whl", hash = "sha256:9df0d07e8948a1c3ffa3b6e2d7e6e63d9fb457c5da5b961ed63106594780cc7e", size = 509858, upload-time = "2023-01-09T10:58:58.732Z" },
 ]
+
+[[package]]
+name = "pysolr"
+version = "3.10.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+    { name = "setuptools" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/6d/f5/59f3375b12172651c02615ed54b9ca8e5ca7cbf6d89a8506a5daec4ed813/pysolr-3.10.0.tar.gz", hash = "sha256:127b4a2dd169234acb1586643a6cd1e3e94b917921e69bf569d7b2a2aa0ef409", size = 59110, upload-time = "2024-09-18T22:49:01.395Z" }
 
 [[package]]
 name = "pytest"

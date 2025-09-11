@@ -45,7 +45,10 @@ maintainers = [
     {name = "Vikramjeet Das", email = "vdas22@bloomberg.net"},
     {name = "Yong Zhuang", email = "yzhuang52@bloomberg.net"},
 ]
-dependencies = ["llama-index-core>=0.14.0,<0.15"]
+dependencies = [
+    "llama-index-core>=0.14.0,<0.15",
+    "pysolr>=3.10.0",
+]
 
 [tool.codespell]
 check-filenames = true

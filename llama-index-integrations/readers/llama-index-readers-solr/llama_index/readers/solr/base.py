@@ -3,6 +3,9 @@ Solr reader over REST api.
 """
 
 from typing import Any
+
+import pysolr
+
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
@@ -24,14 +27,6 @@ class SolrReader(BasePydanticReader):
     ):
         """Initialize with parameters."""
         super().__init__(endpoint=endpoint)
-
-        try:
-            import pysolr
-        except ImportError as e:  # pragma: no cover
-            raise ImportError(
-                "`pysolr` package not found. Install via `pip install pysolr`."
-            ) from e
-
         self._client = pysolr.Solr(endpoint)
 
     def load_data(
@@ -76,7 +71,7 @@ class SolrReader(BasePydanticReader):
             }
             results = self._client.search(**query_params)
         except Exception as e:  # pragma: no cover
-            raise ValueError(f"Failed to query Solr endpoint: {e!s}")
+            raise ValueError(f"Failed to query Solr endpoint: {e!s}") from e
 
         documents: list[Document] = []
         for doc in results.docs:
@@ -88,7 +83,7 @@ class SolrReader(BasePydanticReader):
                 "text": doc[field],
                 "embedding": doc.get(embedding),
                 "metadata": {
-                    metadata_field: doc.get(metadata_field, {})
+                    metadata_field: doc[metadata_field]
                     for metadata_field in (metadata_fields or [])
                     if metadata_field in doc
                 },
