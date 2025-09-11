@@ -47,15 +47,6 @@ def generate_song(
 tool = FunctionTool.from_defaults(fn=generate_song)
 
 
-def add(a: float, b: float) -> float:
-    """Add two numbers and returns the sum"""
-    print(f"{a} + {b}")
-    return a + b
-
-
-math_tool = FunctionTool.from_defaults(fn=add)
-
-
 def test_embedding_class() -> None:
     names_of_base_classes = [b.__name__ for b in Ollama.__mro__]
     assert BaseLLM.__name__ in names_of_base_classes
