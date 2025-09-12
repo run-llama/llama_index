@@ -77,7 +77,9 @@ def test_scrape_mode_with_dict_response_includes_text_and_metadata():
     assert docs[0].metadata.get("a") == 1
     assert docs[0].metadata.get("success") is True
     assert scrape_called["url"] == "https://site"
-    assert scrape_called["kwargs"] == {"formats": ["markdown"]}
+    # Allow additional kwargs (e.g., integration flag) but ensure formats are passed through
+    assert scrape_called["kwargs"].get("formats") == ["markdown"]
+    assert scrape_called["kwargs"].get("integration") == "llamaindex"
 
 
 def test_scrape_mode_with_object_response_includes_text_and_metadata():
@@ -255,7 +257,8 @@ def test_extract_mode_success_with_sources_and_status():
             pass
 
         def extract(self, *, urls, **payload):
-            assert payload == {"prompt": "Do it"}
+            # Accept additional fields such as integration while verifying prompt
+            assert payload.get("prompt") == "Do it"
             assert urls == ["https://a", "https://b"]
             return {
                 "success": True,

@@ -1,6 +1,7 @@
 import os
 
 import pytest
+from typing import Optional
 
 from llama_index.readers.web.firecrawl_web.base import FireCrawlWebReader
 
@@ -26,7 +27,7 @@ def _require_api_key() -> str:
     return api_key
 
 
-def _api_url() -> str | None:
+def _api_url() -> Optional[str]:
     return os.getenv("FIRECRAWL_API_URL") or os.getenv("FIRECRAWL_BASE_URL")
 
 
