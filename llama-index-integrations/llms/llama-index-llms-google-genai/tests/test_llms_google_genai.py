@@ -408,6 +408,34 @@ def test_predict_with_video(llm: GoogleGenAI) -> None:
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_predict_with_large_video(llm: GoogleGenAI) -> None:
+    client = llm._client
+
+    before_file_names = {file.name for file in client.files.list()}
+
+    chat_messages = [
+        ChatMessage(
+            content=[
+                TextBlock(text="what is this video about?"),
+                VideoBlock(
+                    url="https://upload.wikimedia.org/wikipedia/commons/transcoded/f/f0/Die_Franz%C3%B6sische_"
+                    "Revolution_und_Napoleon_-_Planet_Wissen.webm/Die_Franz%C3%B6sische_Revolution_und_Napoleon"
+                    "_-_Planet_Wissen.webm.720p.vp9.webm"
+                ),
+            ],
+            role=MessageRole.USER,
+        ),
+    ]
+
+    answer = llm.predict(prompt=ChatPromptTemplate(message_templates=chat_messages))
+    assert "revolution" in answer.lower()
+
+    # Unsure the file has been deleted
+    after_file_names = {file.name for file in client.files.list()}
+    assert before_file_names == after_file_names
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
 def test_get_tool_calls_from_response(llm: GoogleGenAI) -> None:
     def add(a: int, b: int) -> int:
         """Add two integers and returns the result integer."""
@@ -686,7 +714,8 @@ def test_optional_lists_nested_gemini(llm: GoogleGenAI) -> None:
     assert len(blogpost.contents) >= 3
 
 
-def test_prepare_chat_params_more_than_2_tool_calls():
+@pytest.mark.asyncio
+async def test_prepare_chat_params_more_than_2_tool_calls():
     expected_generation_config = types.GenerateContentConfig()
     expected_model_name = "models/gemini-foo"
     test_messages = [
@@ -720,7 +749,9 @@ def test_prepare_chat_params_more_than_2_tool_calls():
         ChatMessage(content="Here is a list of puppies.", role=MessageRole.ASSISTANT),
     ]
 
-    next_msg, chat_kwargs = prepare_chat_params(expected_model_name, test_messages)
+    next_msg, chat_kwargs = await prepare_chat_params(
+        expected_model_name, test_messages
+    )
 
     assert chat_kwargs["model"] == expected_model_name
     assert chat_kwargs["config"] == expected_generation_config
@@ -757,7 +788,8 @@ def test_prepare_chat_params_more_than_2_tool_calls():
     ]
 
 
-def test_prepare_chat_params_with_system_message():
+@pytest.mark.asyncio
+async def test_prepare_chat_params_with_system_message():
     # Setup a conversation starting with a SYSTEM message
     model_name = "models/gemini-test"
     system_prompt = "You are a test system."
@@ -772,7 +804,7 @@ def test_prepare_chat_params_with_system_message():
     ]
 
     # Execute prepare_chat_params
-    next_msg, chat_kwargs = prepare_chat_params(model_name, messages)
+    next_msg, chat_kwargs = await prepare_chat_params(model_name, messages)
 
     # Verify system_prompt is forwarded to system_instruction
     cfg = chat_kwargs["config"]
@@ -939,7 +971,8 @@ def test_cached_content_with_generation_config() -> None:
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-def test_cached_content_in_chat_params() -> None:
+@pytest.mark.asyncio
+async def test_cached_content_in_chat_params() -> None:
     """Test that cached_content is properly included in generation config."""
     cached_content_value = (
         "projects/test-project/locations/us-central1/cachedContents/test-cache"
@@ -958,7 +991,7 @@ def test_cached_content_in_chat_params() -> None:
     messages = [ChatMessage(content="Test message", role=MessageRole.USER)]
 
     # Prepare chat params with the LLM's generation config
-    next_msg, chat_kwargs = prepare_chat_params(
+    next_msg, chat_kwargs = await prepare_chat_params(
         llm.model, messages, generation_config=llm._generation_config
     )
 
@@ -1101,7 +1134,8 @@ def test_built_in_tool_with_generation_config() -> None:
         assert tool_obj == grounding_tool
 
 
-def test_built_in_tool_in_chat_params() -> None:
+@pytest.mark.asyncio
+async def test_built_in_tool_in_chat_params() -> None:
     """Test that built_in_tool is properly included in chat parameters."""
     grounding_tool = types.Tool(google_search=types.GoogleSearch())
 
@@ -1125,7 +1159,7 @@ def test_built_in_tool_in_chat_params() -> None:
         )
 
         # Prepare chat params
-        next_msg, chat_kwargs = prepare_chat_params(
+        next_msg, chat_kwargs = await prepare_chat_params(
             llm.model, messages, generation_config=llm._generation_config
         )
 
