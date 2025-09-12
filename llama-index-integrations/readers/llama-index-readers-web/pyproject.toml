@@ -85,6 +85,7 @@ dependencies = [
     "lxml-html-clean>=0.4.2",
     "markdownify>=1.1.0",
     "oxylabs>=2.0.0",
+    "firecrawl-py>=4.3.3",
 ]
 
 [tool.codespell]
