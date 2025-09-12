@@ -657,6 +657,14 @@ def resolve_binary(
         return BytesIO(data)
 
     elif url is not None:
+        if url.startswith("data:"):
+            if as_base64 and "base64," in url:
+                return BytesIO(bytes(url.split(",")[1], "utf-8"))
+            elif as_base64:
+                return BytesIO(base64.b64decode(url.split(",")[1]))
+            else:
+                return BytesIO(bytes(url.split(",")[1], "utf-8"))
+
         headers = {
             "User-Agent": "LlamaIndex/0.0 (https://llamaindex.ai; info@llamaindex.ai) llama-index-core/0.0"
         }
