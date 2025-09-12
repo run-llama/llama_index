@@ -46,8 +46,9 @@ class SolrReader(BasePydanticReader):
                 - "rows" should be specified or will default to 10 by Solr.
                 - If "fl" is provided, it is respected exactly as given.
                   If "fl" is NOT provided, a default `fl` is constructed from
-                  {"id", field, embedding?, metadata_fields?}.
+                  {id_field, field, embedding?, metadata_fields?}.
             field (str): Field in Solr to retrieve as document text.
+            id_field (str): Field in Solr to retrieve as the document identifier. Defaults to "id".
             metadata_fields (list[str], optional): Fields to include as metadata. Defaults to None.
             embedding (str, optional): Field to use for embeddings. Defaults to None.
 
