@@ -79,7 +79,7 @@ class SolrReader(BasePydanticReader):
                 continue
 
             doc_kwargs: dict[str, Any] = {
-                "id_": doc[SOLR_ID_FIELD],
+                "id_": str(doc[SOLR_ID_FIELD]),
                 "text": doc[field],
                 "embedding": doc.get(embedding),
                 "metadata": {
