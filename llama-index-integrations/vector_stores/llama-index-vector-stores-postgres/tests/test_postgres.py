@@ -1606,9 +1606,9 @@ async def test_custom_query(
     expected_values = {"aaa": 1, "bbb": 2, "ccc": 3, "ddd": 4}
 
     for node in nodes:
-        assert "extra_fields" in node.metadata
-        assert "field1" in node.metadata["extra_fields"]
-        assert node.metadata["extra_fields"]["field1"] == expected_values[node.node_id]
+        assert "custom_fields" in node.metadata
+        assert "field1" in node.metadata["custom_fields"]
+        assert node.metadata["custom_fields"]["field1"] == expected_values[node.node_id]
 
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
@@ -1632,6 +1632,6 @@ async def test_custom_sparse_query(
     expected_values = {"aaa": 1, "bbb": 2, "ccc": 3, "ddd": 4}
 
     for node in nodes:
-        assert "extra_fields" in node.metadata
-        assert "field1" in node.metadata["extra_fields"]
-        assert node.metadata["extra_fields"]["field1"] == expected_values[node.node_id]
+        assert "custom_fields" in node.metadata
+        assert "field1" in node.metadata["custom_fields"]
+        assert node.metadata["custom_fields"]["field1"] == expected_values[node.node_id]
