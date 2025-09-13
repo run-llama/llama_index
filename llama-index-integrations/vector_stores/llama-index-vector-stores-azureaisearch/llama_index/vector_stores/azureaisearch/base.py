@@ -1211,7 +1211,9 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         semantic_configuration_name = None
 
         # NOTE: users can provide odata_filters directly to the query and any other search parameters like scoring_profile etc .
-        odata_filters = kwargs.get("odata_filters") or kwargs.get("odata_filter")
+        odata_filters = kwargs.pop("odata_filters", None) or kwargs.pop(
+            "odata_filter", None
+        )
         if odata_filters is not None:
             odata_filter = odata_filters
         elif query.filters is not None:
@@ -1267,9 +1269,11 @@ class AzureAISearchVectorStore(BasePydanticVectorStore):
         odata_filter = None
 
         # NOTE: users can provide odata_filters directly to the query
-        odata_filters = kwargs.get("odata_filters")
+        odata_filters = kwargs.pop("odata_filters", None) or kwargs.pop(
+            "odata_filter", None
+        )
         if odata_filters is not None:
-            odata_filter = odata_filter
+            odata_filter = odata_filters
         else:
             if query.filters is not None:
                 odata_filter = self._create_odata_filter(query.filters)
