@@ -6,9 +6,7 @@ from llama_index.core.storage.kvstore.types import (
     BaseKVStore,
 )
 
-IMPORT_ERROR_MSG = (
-    "`pymongo` package not found, please run `pip install pymongo`"
-)
+IMPORT_ERROR_MSG = "`pymongo` package not found, please run `pip install pymongo`"
 
 APP_NAME = "Llama-Index-KVStore-Python"
 
@@ -42,9 +40,7 @@ class MongoDBKVStore(BaseKVStore):
             raise ImportError(IMPORT_ERROR_MSG)
 
         self._client = cast(MongoClient, mongo_client)
-        self._aclient = (
-            cast(AsyncMongoClient, mongo_aclient) if mongo_aclient else None
-        )
+        self._aclient = cast(AsyncMongoClient, mongo_aclient) if mongo_aclient else None
 
         self._uri = uri
         self._host = host
@@ -104,9 +100,7 @@ class MongoDBKVStore(BaseKVStore):
             raise ImportError(IMPORT_ERROR_MSG)
 
         mongo_client: MongoClient = MongoClient(host, port, appname=APP_NAME)
-        mongo_aclient: AsyncMongoClient = AsyncMongoClient(
-            host, port, appname=APP_NAME
-        )
+        mongo_aclient: AsyncMongoClient = AsyncMongoClient(host, port, appname=APP_NAME)
         return cls(
             mongo_client=mongo_client,
             mongo_aclient=mongo_aclient,
