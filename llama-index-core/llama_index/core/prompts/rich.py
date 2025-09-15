@@ -2,6 +2,8 @@ from banks import Prompt
 from banks.types import ContentBlockType as BanksContentBlockType
 from copy import deepcopy
 from typing import Any, Callable, Dict, List, Optional, Sequence
+from urllib.parse import urlparse
+import base64
 
 from llama_index.core.bridge.pydantic import Field
 from llama_index.core.base.llms.base import BaseLLM
@@ -104,7 +106,7 @@ class RichPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
                     if bank_block.type == BanksContentBlockType.text:
                         llama_blocks.append(TextBlock(text=bank_block.text))
                     elif bank_block.type == BanksContentBlockType.image_url:
-                        llama_blocks.append(ImageBlock(url=bank_block.image_url.url))
+                        llama_blocks.append(self.make_image_block(bank_block.image_url.url))
                     elif bank_block.type == BanksContentBlockType.audio:
                         llama_blocks.append(
                             AudioBlock(audio=bank_block.input_audio.data)
@@ -129,3 +131,27 @@ class RichPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
 
     def get_template(self, llm: Optional[BaseLLM] = None) -> str:
         return self.template_str
+
+    def make_image_block(self, image_url: str):
+        """
+        Create an ImageBlock from either:
+        1. A web URL (http/https)
+        2. A data URL (local file converted to base64 by banks)
+        """
+        parsed = urlparse(image_url)
+        scheme = parsed.scheme.lower()
+
+        if scheme in ("http", "https"):
+            # Web image
+            return ImageBlock(url=image_url)
+
+        elif scheme == "data":
+            # Local file encoded as data URL
+            header, b64data = image_url.split(",", 1)
+            media_type = header.split(";")[0][5:]
+            image_bytes = base64.b64decode(b64data)
+            return ImageBlock(image=image_bytes, image_mimetype=media_type)
+
+        else:
+            # Fallback (should not happen with banks, but safe)
+            raise ValueError(f"Unsupported image scheme: {scheme}")
