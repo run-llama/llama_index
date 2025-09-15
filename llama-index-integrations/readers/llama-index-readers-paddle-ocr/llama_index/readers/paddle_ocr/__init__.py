@@ -1,3 +1,3 @@
-from llama_index.readers.paddle_ocr.base import PDFPaddleOCR
+from llama_index.readers.paddle_ocr.base import PDFPaddleOCRReader
 
-__all__ = ["PDFPaddleOCR"]
+__all__ = ["PDFPaddleOCRReader"]

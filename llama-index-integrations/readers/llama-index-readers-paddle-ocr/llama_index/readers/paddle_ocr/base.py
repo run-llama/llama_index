@@ -14,8 +14,8 @@ from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
 
-class PDFPaddleOCR(BaseReader):
-    def __init__(self, use_angle_cls: bool = True, lang: str = "ch"):
+class PDFPaddleOCRReader(BaseReader):
+    def __init__(self, use_angle_cls: bool = True, lang: str = "en"):
         """Initialize PaddleOCR with given parameters"""
         self.ocr = PaddleOCR(use_angle_cls=use_angle_cls, lang=lang)
 
@@ -62,7 +62,7 @@ class PDFPaddleOCR(BaseReader):
             return False
 
         # Filter out cases that are likely just headers or footers
-        common_footers = ["第", "页", "共", "copyright", "版权所有"]
+        common_footers = ["page", "of", "total", "copyright", "all rights reserved"]
         if any(footer in text.lower() for footer in common_footers):
             return len(text.strip()) > 10
 

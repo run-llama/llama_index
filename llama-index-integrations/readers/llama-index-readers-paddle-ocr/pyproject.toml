@@ -26,12 +26,12 @@ dev = [
 
 [project]
 name = "llama-index-readers-paddle-ocr"
-version = "0.0.1"
+version = "0.1.0"
 description = "llama-index readers paddle_ocr integration"
-authors = [{name = "Your Name", email = "you@example.com"}]
+authors = [{name = "Michael M L Ye", email = "1156961988@qq.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
-license = "GPL-2.0-or-later"
+license = "MIT"
 maintainers = [{name = "mdarshad1000"}]
 keywords = [
     "academic papers",
@@ -43,7 +43,9 @@ dependencies = [
     "pdfplumber==0.11.7",
     "PyMuPDF==1.26.4",
     "pillow==10.4.0",
+    "paddlepaddle==3.2.0",
     "llama-index-core>=0.13.0,<0.15",
+    "requests>=2.0.0",
 ]
 
 [tool.codespell]
@@ -64,7 +66,7 @@ contains_example = false
 import_path = "llama_index.readers.paddle_ocr"
 
 [tool.llamahub.class_authors]
-PDFPaddleOCR = "mdarshad1000"
+PDFPaddleOcrReader = "Michael M L Ye"
 
 [tool.mypy]
 disallow_untyped_defs = true
