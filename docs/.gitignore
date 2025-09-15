@@ -6,6 +6,6 @@ docs/api_reference/llama_deploy/*
 docs/module_guides/llama_deploy/*
 
 workflows-py
-docs/workflows
+docs/workflows/*
+!docs/workflows/.gitkeep
 docs/api_reference/workflow
-!docs/workflows/v1/

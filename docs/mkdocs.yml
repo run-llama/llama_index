@@ -1790,21 +1790,7 @@ nav:
       - Presentations: ./presentations/past_presentations.md
       - Deprecated Terms: ./changes/deprecated_terms.md
   - Workflows:
-      - ./workflows/index.md
-      - ./workflows/durable_workflows.md
-      - ./workflows/deployment.md
-      - v1:
-          - ./workflows/v1/index.md
-          - ./workflows/v1/customizing_entry_exit_points.md
-          - ./workflows/v1/drawing.md
-          - ./workflows/v1/managing_events.md
-          - ./workflows/v1/managing_state.md
-          - ./workflows/v1/retry_steps.md
-          - ./workflows/v1/resources.md
-          - ./workflows/v1/stepwise.md
-      - v2:
-          - ./workflows/v2/index.md
-          - ./workflows/v2
+      - ./workflows/
   - LlamaCloud: https://docs.cloud.llamaindex.ai/
 plugins:
   - search
