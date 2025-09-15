@@ -1,5 +1,51 @@
 # ChangeLog
 
+## [2025-09-14]
+
+### `llama-index-core` [0.14.1]
+
+- feat: add verbose option to RetrieverQueryEngine for detailed output (#19807)
+- feat: feat: add support for additional kwargs in `aget_text_embedding_batch` method (#19808)
+- feat: add `thinking_delta` field to AgentStream events to expose llm reasoning (#19785)
+- fix: Bug fix agent streaming thinking delta pydantic validation (#19828)
+- fix: handle positional args and kwargs both in tool calling (#19822)
+
+### `llama-index-instrumentation` [0.4.1]
+
+- feat: add sync event/handler support (#19825)
+
+### `llama-index-llms-google-genai` [0.4.0]
+
+- feat: Add VideoBlock and GoogleGenAI video input support (#19823)
+
+### `llama-index-llms-ollama` [0.7.3]
+
+- fix: Fix bug using Ollama with Agents and None tool_calls in final message (#19844)
+
+### `llama-index-llms-vertex` [0.6.1]
+
+- fix: align complete/acomplete responses (#19806)
+
+### `llama-index-readers-confluence` [0.4.3]
+
+- chore: Bump version constraint for atlassian-python-api to include 4.x (#19824)
+
+### `llama-index-readers-github` [0.6.2]
+
+- fix: Make url optional (#19851)
+
+### `llama-index-readers-web` [0.5.3]
+
+- feat: Add OlostepWebReader Integration (#19821)
+
+### `llama-index-tools-google` [0.6.2]
+
+- feat: Add optional creds argument to GoogleCalendarToolSpec (#19826)
+
+### `llama-index-vector-stores-vectorx` [0.1.0]
+
+- feat: Add vectorx vectorstore (#19758)
+
 ## [2025-09-08]
 
 **NOTE:** All packages have been bumped to handle the latest llama-index-core version.
