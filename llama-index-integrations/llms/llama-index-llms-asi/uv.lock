@@ -1736,7 +1736,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-asi"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1770,7 +1770,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-llms-openai-like", specifier = ">=0.5.0,<0.6" },
     { name = "requests", specifier = ">=2.31.0" },
 ]

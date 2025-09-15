@@ -1664,7 +1664,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-wordlift"
-version = "0.6.0"
+version = "0.6.1"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
@@ -1708,7 +1708,7 @@ requires-dist = [
     { name = "aiohttp", specifier = ">=3.7.4" },
     { name = "aiohttp-retry", specifier = ">=1.2" },
     { name = "docker", specifier = ">=7.1.0,<8" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "pydantic", specifier = ">=2.0,<3.0" },
     { name = "python-dateutil", specifier = ">=2.8.2" },
     { name = "urllib3", specifier = ">=1.21.1,<3" },

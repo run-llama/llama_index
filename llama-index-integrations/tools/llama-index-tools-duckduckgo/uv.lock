@@ -1651,7 +1651,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-tools-duckduckgo"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "duckduckgo-search" },
@@ -1684,7 +1684,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "duckduckgo-search", specifier = ">=6.1.0,<7" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

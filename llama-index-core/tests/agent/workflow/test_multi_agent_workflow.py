@@ -255,7 +255,7 @@ async def test_workflow_execution_empty(empty_calculator_agent, retriever_agent)
     async for event in handler.stream_events():
         events.append(event)
 
-    with pytest.raises(WorkflowRuntimeError, match="Got empty message"):
+    with pytest.raises(ValueError, match="Got empty message"):
         await handler
 
 
@@ -331,9 +331,9 @@ async def test_workflow_with_state():
     """Test workflow with state management."""
 
     async def modify_state(random_arg: str, ctx_val: Context):
-        state = await ctx_val.get("state")
+        state = await ctx_val.store.get("state")
         state["counter"] += 1
-        await ctx_val.set("state", state)
+        await ctx_val.store.set("state", state)
         return f"State updated to {state}"
 
     agent = FunctionAgent(

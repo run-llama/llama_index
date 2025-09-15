@@ -1661,7 +1661,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-tools-dappier"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "dappier" },
@@ -1694,7 +1694,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "dappier", specifier = ">=0.3.4,<0.4" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

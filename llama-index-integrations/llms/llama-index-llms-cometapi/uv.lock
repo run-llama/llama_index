@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.9, <4.0"
 resolution-markers = [
     "python_full_version >= '3.14'",
@@ -1883,7 +1883,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-cometapi"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1914,8 +1914,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
-    { name = "llama-index-llms-openai-like", specifier = "==0.5.0" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
+    { name = "llama-index-llms-openai-like", specifier = ">=0.5.0,<0.6" },
 ]
 
 [package.metadata.requires-dev]

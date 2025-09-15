@@ -34,7 +34,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "azure-search-documents>=11.5.1,<12",
-    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-core>=0.13.0,<0.15",
 ]
 
 [tool.codespell]

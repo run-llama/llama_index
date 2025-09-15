@@ -1655,7 +1655,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-tools-elevenlabs"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "elevenlabs" },
@@ -1688,7 +1688,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "elevenlabs", specifier = ">=1.12.1,<2" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

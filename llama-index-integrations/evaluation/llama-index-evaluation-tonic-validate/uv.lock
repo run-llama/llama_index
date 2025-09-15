@@ -2038,7 +2038,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-evaluation-tonic-validate"
-version = "0.5.0"
+version = "0.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "aioboto3" },
@@ -2072,7 +2072,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "aioboto3", specifier = ">=12.4.0,<13.0.0" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "tonic-validate", specifier = ">=6.1.0,<7" },
 ]
 

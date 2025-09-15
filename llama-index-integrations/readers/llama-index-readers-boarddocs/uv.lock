@@ -1647,7 +1647,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-boarddocs"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
@@ -1684,7 +1684,7 @@ dev = [
 requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.12.3,<5.0.0" },
     { name = "html2text", specifier = ">=2020.1.16,<2021" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "requests", specifier = ">=2.31.0,<3" },
 ]
 

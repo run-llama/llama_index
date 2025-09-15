@@ -1764,7 +1764,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-wordlift"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "bs4" },
@@ -1801,7 +1801,7 @@ requires-dist = [
     { name = "bs4" },
     { name = "graphql-core", specifier = ">=3.2.3,<4" },
     { name = "langchain", specifier = ">=0.1.4,<0.2" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

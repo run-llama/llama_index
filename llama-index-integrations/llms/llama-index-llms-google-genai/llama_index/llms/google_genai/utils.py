@@ -1,5 +1,7 @@
+import asyncio
 import logging
 from collections.abc import Sequence
+from io import BytesIO
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -14,7 +16,7 @@ import typing
 import google.genai.types as types
 import google.genai
 import httpx
-from google.genai import _transformers
+from google.genai import _transformers, Client
 from google.genai import errors
 
 from llama_index.core.bridge.pydantic import BaseModel, ValidationError
@@ -25,6 +27,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     DocumentBlock,
+    VideoBlock,
 )
 from llama_index.core.program.utils import _repair_incomplete_json
 from tenacity import (
@@ -197,7 +200,55 @@ def chat_from_gemini_response(
     )
 
 
-def chat_message_to_gemini(message: ChatMessage) -> types.Content:
+async def create_file_part(
+    file_bytes: bytes, mime_type: str, use_file_api: bool, client: Optional[Client]
+) -> types.PartUnion:
+    """Create a part object for the given file."""
+    if (
+        not use_file_api
+        or len(file_bytes)
+        < 20 * 1024 * 1024  # 20MB is the Gemini inline data size limit
+    ):
+        return types.Part.from_bytes(
+            data=file_bytes,
+            mime_type=mime_type,
+        )
+
+    if client is None:
+        raise ValueError("A Google GenAI client must be provided for use with FileAPI.")
+
+    buffer = BytesIO(file_bytes)
+    file = await client.aio.files.upload(
+        file=buffer, config=types.UploadFileConfig(mime_type=mime_type)
+    )
+
+    # Wait for file processing
+    while file.state.name == "PROCESSING":
+        await asyncio.sleep(2)
+        file = client.files.get(name=file.name)
+
+    if file.state.name == "FAILED":
+        raise ValueError("Failed to upload the file with FileAPI")
+
+    return file
+
+
+async def delete_uploaded_files(
+    contents: list[Union[types.Content, types.File]], client: Client
+) -> None:
+    """Delete files uploaded with File API."""
+    await asyncio.gather(
+        *[
+            client.aio.files.delete(name=content.name)
+            for content in contents
+            if isinstance(content, types.File)
+        ]
+    )
+
+
+async def chat_message_to_gemini(
+    message: ChatMessage, use_file_api: bool = False, client: Optional[Client] = None
+) -> Union[types.Content, types.File]:
     """Convert ChatMessages to Gemini-specific history, including ImageDocuments."""
     parts = []
     part = None
@@ -206,14 +257,35 @@ def chat_message_to_gemini(message: ChatMessage) -> types.Content:
             if block.text:
                 part = types.Part.from_text(text=block.text)
         elif isinstance(block, ImageBlock):
-            base64_bytes = block.resolve_image(as_base64=False).read()
-            if not block.image_mimetype:
-                # TODO: fail ?
-                block.image_mimetype = "image/png"
+            file_bytes = block.resolve_image(as_base64=False).read()
 
-            part = types.Part.from_bytes(
-                data=base64_bytes, mime_type=block.image_mimetype
+            mime_type = (
+                block.image_mimetype
+                if block.image_mimetype is not None
+                else "image/jpeg"  # TODO: Fail?
             )
+
+            part = await create_file_part(file_bytes, mime_type, use_file_api, client)
+
+            if isinstance(part, types.File):
+                return part  # Return the file as it is a message content and not a part
+        elif isinstance(block, VideoBlock):
+            file_buffer = block.resolve_video(as_base64=False)
+            file_bytes = file_buffer.read()
+
+            mime_type = (
+                block.video_mimetype
+                if block.video_mimetype is not None
+                else "video/mp4"  # TODO: Fail?
+            )
+
+            part = await create_file_part(file_bytes, mime_type, use_file_api, client)
+
+            if isinstance(part, types.File):
+                return part  # Return the file as it is a message content and not a part
+
+            part.video_metadata = types.VideoMetadata(fps=block.fps)
+
         elif isinstance(block, DocumentBlock):
             file_buffer = block.resolve_document()
             file_bytes = file_buffer.read()
@@ -300,14 +372,20 @@ class ChatParams(typing.TypedDict):
     config: types.GenerateContentConfig
 
 
-def prepare_chat_params(
-    model: str, messages: Sequence[ChatMessage], **kwargs: Any
-) -> tuple[types.Content, ChatParams]:
+async def prepare_chat_params(
+    model: str,
+    messages: Sequence[ChatMessage],
+    use_file_api: bool = False,
+    client: Optional[Client] = None,
+    **kwargs: Any,
+) -> tuple[Union[types.Content, types.File], ChatParams]:
     """
     Prepare common parameters for chat creation.
 
     Args:
         messages: Sequence of chat messages
+        use_file_api: Whether to use File API or not for large files.
+        client: Google Genai client used for uploading large files.
         **kwargs: Additional keyword arguments
 
     Returns:
@@ -325,7 +403,12 @@ def prepare_chat_params(
 
     # Merge messages with the same role
     merged_messages = merge_neighboring_same_role_messages(messages)
-    initial_history = list(map(chat_message_to_gemini, merged_messages))
+    initial_history = await asyncio.gather(
+        *[
+            chat_message_to_gemini(message, use_file_api, client)
+            for message in merged_messages
+        ]
+    )
 
     # merge tool messages into a single tool message
     # while maintaining the tool names

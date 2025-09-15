@@ -1734,7 +1734,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-vector-stores-databricks"
-version = "0.5.0"
+version = "0.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "databricks-vectorsearch" },
@@ -1768,7 +1768,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "databricks-vectorsearch", specifier = ">=0.21,<0.22" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

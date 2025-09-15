@@ -1638,7 +1638,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-mangoapps-guides"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "beautifulsoup4" },
@@ -1672,7 +1672,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "beautifulsoup4", specifier = ">=4.11.1" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "requests", specifier = ">=2.28.1" },
 ]
 
