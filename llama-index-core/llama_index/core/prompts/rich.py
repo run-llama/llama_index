@@ -106,7 +106,9 @@ class RichPromptTemplate(BasePromptTemplate):  # type: ignore[no-redef]
                     if bank_block.type == BanksContentBlockType.text:
                         llama_blocks.append(TextBlock(text=bank_block.text))
                     elif bank_block.type == BanksContentBlockType.image_url:
-                        llama_blocks.append(self.make_image_block(bank_block.image_url.url))
+                        llama_blocks.append(
+                            self.make_image_block(bank_block.image_url.url)
+                        )
                     elif bank_block.type == BanksContentBlockType.audio:
                         llama_blocks.append(
                             AudioBlock(audio=bank_block.input_audio.data)
