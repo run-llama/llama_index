@@ -1,12 +1,7 @@
-import pytest
 import unittest
-from unittest.mock import Mock, patch, MagicMock, ANY
-import tempfile
+from unittest.mock import Mock, patch, ANY
 import io
 from pathlib import Path
-import logging
-from PIL import Image
-import numpy as np
 
 from llama_index.readers.paddle_ocr import PDFPaddleOCRReader
 from llama_index.core.schema import Document
@@ -24,10 +19,12 @@ class TestPDFPaddleOcrReader(unittest.TestCase):
         names_of_base_classes = [b.__name__ for b in PDFPaddleOCRReader.__mro__]
         assert BaseReader.__name__ in names_of_base_classes
 
-    @patch('PIL.Image.open')
-    @patch('tempfile.NamedTemporaryFile')
-    @patch('pathlib.Path.unlink')
-    def test_extract_text_from_image_success(self, mock_unlink, mock_tempfile, mock_image_open):
+    @patch("PIL.Image.open")
+    @patch("tempfile.NamedTemporaryFile")
+    @patch("pathlib.Path.unlink")
+    def test_extract_text_from_image_success(
+        self, mock_unlink, mock_tempfile, mock_image_open
+    ):
         """Test successful text extraction from image"""
         # Mock image data
         mock_image = Mock()
@@ -43,7 +40,7 @@ class TestPDFPaddleOcrReader(unittest.TestCase):
         # Mock PaddleOCR result
         mock_ocr_result = [
             {"rec_texts": ["Hello", "World"]},
-            {"rec_texts": ["Test", "Text"]}
+            {"rec_texts": ["Test", "Text"]},
         ]
         self.reader.ocr.predict = Mock(return_value=mock_ocr_result)
 
@@ -54,7 +51,7 @@ class TestPDFPaddleOcrReader(unittest.TestCase):
         # Assertions
         print(f"Result: '{result}'")
         print(f"Expected: 'Hello World Test Text'")
-        self.assertEqual(result, 'Hello World Test Text')
+        self.assertEqual(result, "Hello World Test Text")
 
         # Check if mock_image_open was called once with a BytesIO type argument
         mock_image_open.assert_called_once_with(ANY)
@@ -69,7 +66,7 @@ class TestPDFPaddleOcrReader(unittest.TestCase):
         self.reader.ocr.predict.assert_called_once_with("/tmp/temp.png")
         mock_unlink.assert_called_once()
 
-    @patch('PIL.Image.open')
+    @patch("PIL.Image.open")
     def test_extract_text_from_image_failure(self, mock_image_open):
         """Test text extraction from image when an exception occurs"""
         # Mock an exception
@@ -117,16 +114,16 @@ class TestPDFPaddleOcrReader(unittest.TestCase):
         assert self.reader.is_text_meaningful("Deep learning models")
         assert self.reader.is_text_meaningful("Variational autoencoder")
 
-    @patch('pdfplumber.open')
-    @patch('fitz.open')
+    @patch("pdfplumber.open")
+    @patch("fitz.open")
     def test_extract_page_elements_success(self, mock_fitz_open, mock_pdfplumber_open):
         """Test successful extraction of page elements"""
         # Mock pdfplumber
         mock_pdf = Mock()
         mock_page = Mock()
         mock_page.extract_words.return_value = [
-            {'text': 'Hello', 'top': 100},
-            {'text': 'World', 'top': 120}
+            {"text": "Hello", "top": 100},
+            {"text": "World", "top": 120},
         ]
         mock_pdf.pages = [mock_page]
         mock_pdfplumber_open.return_value.__enter__ = Mock(return_value=mock_pdf)
@@ -138,7 +135,7 @@ class TestPDFPaddleOcrReader(unittest.TestCase):
         mock_pdf_page.get_images.return_value = [(1,)]
         mock_pdf_page.get_image_rects.return_value = [Mock(y0=150)]
         mock_doc.load_page.return_value = mock_pdf_page
-        mock_doc.extract_image.return_value = {'image': b'fake_image_data'}
+        mock_doc.extract_image.return_value = {"image": b"fake_image_data"}
         mock_fitz_open.return_value = mock_doc
 
         # Call method
@@ -147,10 +144,10 @@ class TestPDFPaddleOcrReader(unittest.TestCase):
 
         # Assertions
         assert len(result) == 3  # 2 text elements + 1 image element
-        assert result[0] == ('text', 'Hello', 100)
-        assert result[1] == ('text', 'World', 120)
-        assert result[2][0] == 'image'
-        assert result[2][1] == b'fake_image_data'
+        assert result[0] == ("text", "Hello", 100)
+        assert result[1] == ("text", "World", 120)
+        assert result[2][0] == "image"
+        assert result[2][1] == b"fake_image_data"
         assert result[2][2] == 150
 
         # Verify mocks were called correctly
@@ -159,9 +156,11 @@ class TestPDFPaddleOcrReader(unittest.TestCase):
         mock_page.extract_words.assert_called_once_with(keep_blank_chars=True)
         mock_pdf_page.get_images.assert_called_once_with(full=True)
 
-    @patch('pdfplumber.open')
-    @patch('fitz.open')
-    def test_extract_page_elements_exception(self, mock_fitz_open, mock_pdfplumber_open):
+    @patch("pdfplumber.open")
+    @patch("fitz.open")
+    def test_extract_page_elements_exception(
+        self, mock_fitz_open, mock_pdfplumber_open
+    ):
         """Test extract_page_elements when an exception occurs"""
         # Mock an exception
         mock_pdfplumber_open.side_effect = Exception("PDF open failed")
@@ -173,16 +172,18 @@ class TestPDFPaddleOcrReader(unittest.TestCase):
         # Assertions
         assert result == []
 
-    @patch('pdfplumber.open')
-    @patch('fitz.open')
-    def test_extract_page_elements_no_images(self, mock_fitz_open, mock_pdfplumber_open):
+    @patch("pdfplumber.open")
+    @patch("fitz.open")
+    def test_extract_page_elements_no_images(
+        self, mock_fitz_open, mock_pdfplumber_open
+    ):
         """Test extract_page_elements when there are no images"""
         # Mock pdfplumber
         mock_pdf = Mock()
         mock_page = Mock()
         mock_page.extract_words.return_value = [
-            {'text': 'Hello', 'top': 100},
-            {'text': 'World', 'top': 120}
+            {"text": "Hello", "top": 100},
+            {"text": "World", "top": 120},
         ]
         mock_pdf.pages = [mock_page]
         mock_pdfplumber_open.return_value.__enter__ = Mock(return_value=mock_pdf)
@@ -201,11 +202,11 @@ class TestPDFPaddleOcrReader(unittest.TestCase):
 
         # Assertions
         assert len(result) == 2  # Only text elements
-        assert result[0] == ('text', 'Hello', 100)
-        assert result[1] == ('text', 'World', 120)
+        assert result[0] == ("text", "Hello", 100)
+        assert result[1] == ("text", "World", 120)
 
-    @patch.object(PDFPaddleOCRReader, 'extract_page_elements')
-    @patch('fitz.open')
+    @patch.object(PDFPaddleOCRReader, "extract_page_elements")
+    @patch("fitz.open")
     def test_load_data_success(self, mock_fitz_open, mock_extract_page_elements):
         """Test successful loading of data from PDF"""
         # Mock PyMuPDF
@@ -215,8 +216,8 @@ class TestPDFPaddleOcrReader(unittest.TestCase):
 
         # Mock extract_page_elements to return meaningful elements
         mock_extract_page_elements.return_value = [
-            ('text', 'Hello', 100),
-            ('image', b'fake_image_data', 150)
+            ("text", "Hello", 100),
+            ("image", b"fake_image_data", 150),
         ]
 
         # Mock extract_text_from_image and is_text_meaningful
@@ -254,11 +255,13 @@ class TestPDFPaddleOcrReader(unittest.TestCase):
         path_str = str(args[0])
         self.assertTrue(path_str.replace("\\", "/").endswith("/fake/path.pdf"))
 
-        self.reader.extract_text_from_image.assert_called_once_with(b'fake_image_data')
+        self.reader.extract_text_from_image.assert_called_once_with(b"fake_image_data")
 
-    @patch.object(PDFPaddleOCRReader, 'extract_page_elements')
-    @patch('fitz.open')
-    def test_load_data_no_meaningful_text(self, mock_fitz_open, mock_extract_page_elements):
+    @patch.object(PDFPaddleOCRReader, "extract_page_elements")
+    @patch("fitz.open")
+    def test_load_data_no_meaningful_text(
+        self, mock_fitz_open, mock_extract_page_elements
+    ):
         """Test load_data when no meaningful text is found"""
         # Mock PyMuPDF
         mock_doc = Mock()
@@ -267,8 +270,8 @@ class TestPDFPaddleOcrReader(unittest.TestCase):
 
         # Mock extract_page_elements to return only non-meaningful elements
         mock_extract_page_elements.return_value = [
-            ('text', '1', 100),  # Page number (not meaningful)
-            ('text', 'copyright', 150)  # Footer (not meaningful)
+            ("text", "1", 100),  # Page number (not meaningful)
+            ("text", "copyright", 150),  # Footer (not meaningful)
         ]
 
         # Mock is_text_meaningful to return False for all text
@@ -281,7 +284,7 @@ class TestPDFPaddleOcrReader(unittest.TestCase):
         # Assertions
         assert len(result) == 0  # No documents created
 
-    @patch('fitz.open')
+    @patch("fitz.open")
     def test_load_data_exception(self, mock_fitz_open):
         """Test load_data when an exception occurs"""
         # Mock an exception
@@ -297,7 +300,7 @@ class TestPDFPaddleOcrReader(unittest.TestCase):
         assert "Error occurred while reading PDF" in result[0].text
         assert result[0].metadata["error"] is True
 
-    @patch('fitz.open')
+    @patch("fitz.open")
     def test_load_data_with_extra_info(self, mock_fitz_open):
         """Test load_data with extra_info parameter"""
         # Mock PyMuPDF
@@ -306,7 +309,7 @@ class TestPDFPaddleOcrReader(unittest.TestCase):
         mock_fitz_open.return_value = mock_doc
 
         # Mock extract_page_elements to return meaningful text
-        self.reader.extract_page_elements = Mock(return_value=[('text', 'Hello', 100)])
+        self.reader.extract_page_elements = Mock(return_value=[("text", "Hello", 100)])
         self.reader.is_text_meaningful = Mock(return_value=True)
 
         # Call method with extra_info

@@ -28,7 +28,7 @@ class PDFPaddleOCRReader(BaseReader):
             image = Image.open(io.BytesIO(image_data))
 
             # Save temporary image file for PaddleOCR
-            with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
                 image.save(temp_file.name)
                 temp_file_path = temp_file.name
 
@@ -47,7 +47,7 @@ class PDFPaddleOCRReader(BaseReader):
             return extracted_text.strip()
 
         except Exception as e:
-            logging.error(f"Error in image OCR recognition: {str(e)}")
+            logging.error(f"Error in image OCR recognition: {e!s}")
             return ""
 
     def is_text_meaningful(self, text):
@@ -58,7 +58,7 @@ class PDFPaddleOCRReader(BaseReader):
             return False
 
         # Filter out cases that are likely just page numbers
-        if re.match(r'^\d{1,3}$', text.strip()):
+        if re.match(r"^\d{1,3}$", text.strip()):
             return False
 
         # Filter out cases that are likely just headers or footers
@@ -83,7 +83,7 @@ class PDFPaddleOCRReader(BaseReader):
                     # Extract text and their positions
                     words = page.extract_words(keep_blank_chars=True)
                     for word in words:
-                        elements.append(('text', word['text'], word['top']))
+                        elements.append(("text", word["text"], word["top"]))
 
             # Use PyMuPDF to extract images and their positions
             doc = fitz.open(pdf_path)
@@ -105,7 +105,7 @@ class PDFPaddleOCRReader(BaseReader):
                 else:
                     position = 0
 
-                elements.append(('image', image_bytes, position))
+                elements.append(("image", image_bytes, position))
 
             doc.close()
 
@@ -113,12 +113,12 @@ class PDFPaddleOCRReader(BaseReader):
             elements.sort(key=lambda x: x[2])
 
         except Exception as e:
-            logging.error(f"Error occurred while extracting page elements: {str(e)}")
+            logging.error(f"Error occurred while extracting page elements: {e!s}")
 
         return elements
 
     def load_data(
-            self, file_path: Path, extra_info: Optional[Dict] = None
+        self, file_path: Path, extra_info: Optional[Dict] = None
     ) -> List[Document]:
         """Load data from PDF using PaddleOCR for image content"""
         documents = []
@@ -139,11 +139,11 @@ class PDFPaddleOCRReader(BaseReader):
 
                 page_text = ""
                 for element_type, content, position in elements:
-                    if element_type == 'text':
+                    if element_type == "text":
                         # Directly add text
                         if self.is_text_meaningful(content):
                             page_text += f"[Text Content]: {content} "
-                    elif element_type == 'image':
+                    elif element_type == "image":
                         # Perform OCR on the image
                         ocr_text = self.extract_text_from_image(content)
                         if ocr_text and self.is_text_meaningful(ocr_text):
@@ -155,18 +155,15 @@ class PDFPaddleOCRReader(BaseReader):
                     if extra_info:
                         metadata.update(extra_info)
 
-                    document = Document(
-                        text=page_text.strip(),
-                        metadata=metadata
-                    )
+                    document = Document(text=page_text.strip(), metadata=metadata)
                     documents.append(document)
 
         except Exception as e:
-            logging.error(f"Error occurred while reading PDF: {str(e)}")
+            logging.error(f"Error occurred while reading PDF: {e!s}")
             # Return a Document containing error information
             error_doc = Document(
-                text=f"Error occurred while reading PDF: {str(e)}",
-                metadata={"source": str(file_path), "error": True}
+                text=f"Error occurred while reading PDF: {e!s}",
+                metadata={"source": str(file_path), "error": True},
             )
             return [error_doc]
 
