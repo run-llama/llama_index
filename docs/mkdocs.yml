@@ -1693,6 +1693,7 @@ nav:
               - ./api_reference/storage/vector_store/typesense.md
               - ./api_reference/storage/vector_store/upstash.md
               - ./api_reference/storage/vector_store/vearch.md
+              - ./api_reference/storage/vector_store/vectorx.md
               - ./api_reference/storage/vector_store/vertexaivectorsearch.md
               - ./api_reference/storage/vector_store/vespa.md
               - ./api_reference/storage/vector_store/weaviate.md
@@ -2512,6 +2513,7 @@ plugins:
             - ../llama-index-integrations/embeddings/llama-index-embeddings-baseten
             - ../llama-index-integrations/llms/llama-index-llms-baseten
             - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-yugabytedb
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-vectorx
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
