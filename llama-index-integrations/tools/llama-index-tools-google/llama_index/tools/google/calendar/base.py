@@ -35,6 +35,17 @@ class GoogleCalendarToolSpec(BaseToolSpec):
 
     spec_functions = ["load_data", "create_event", "get_date"]
 
+    def __init__(self, creds: Optional[Any] = None):
+        """
+        Initialize the GoogleCalendarToolSpec.
+
+        Args:
+            creds (Optional[Any]): Pre-configured credentials to use for authentication.
+                                 If provided, these will be used instead of the OAuth flow.
+
+        """
+        self.creds = creds
+
     def load_data(
         self,
         number_of_results: Optional[int] = 100,
@@ -119,6 +130,9 @@ class GoogleCalendarToolSpec(BaseToolSpec):
             Credentials, the obtained credential.
 
         """
+        if self.creds is not None:
+            return self.creds
+
         from google_auth_oauthlib.flow import InstalledAppFlow
 
         from google.auth.transport.requests import Request
