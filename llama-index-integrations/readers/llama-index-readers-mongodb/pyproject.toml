@@ -34,8 +34,7 @@ readme = "README.md"
 license = "MIT"
 maintainers = [{name = "jerryjliu"}]
 dependencies = [
-    "pymongo>=4.6.1,<5",
-    "motor",
+    "pymongo>=4.13.0,<5",
     "llama-index-core>=0.13.0,<0.15",
 ]
 

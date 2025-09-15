@@ -7,7 +7,7 @@ from llama_index.core.storage.kvstore.types import (
 )
 
 IMPORT_ERROR_MSG = (
-    "`pymongo` or `motor` package not found, please run `pip install pymongo motor`"
+    "`pymongo` package not found, please run `pip install pymongo`"
 )
 
 APP_NAME = "Llama-Index-KVStore-Python"
@@ -37,14 +37,13 @@ class MongoDBKVStore(BaseKVStore):
     ) -> None:
         """Init a MongoDBKVStore."""
         try:
-            from motor.motor_asyncio import AsyncIOMotorClient
-            from pymongo import MongoClient
+            from pymongo import MongoClient, AsyncMongoClient
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
         self._client = cast(MongoClient, mongo_client)
         self._aclient = (
-            cast(AsyncIOMotorClient, mongo_aclient) if mongo_aclient else None
+            cast(AsyncMongoClient, mongo_aclient) if mongo_aclient else None
         )
 
         self._uri = uri
@@ -70,13 +69,12 @@ class MongoDBKVStore(BaseKVStore):
 
         """
         try:
-            from motor.motor_asyncio import AsyncIOMotorClient
-            from pymongo import MongoClient
+            from pymongo import MongoClient, AsyncMongoClient
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
         mongo_client: MongoClient = MongoClient(uri, appname=APP_NAME)
-        mongo_aclient: AsyncIOMotorClient = AsyncIOMotorClient(uri)
+        mongo_aclient: AsyncMongoClient = AsyncMongoClient(uri)
         return cls(
             mongo_client=mongo_client,
             mongo_aclient=mongo_aclient,
@@ -101,13 +99,12 @@ class MongoDBKVStore(BaseKVStore):
 
         """
         try:
-            from motor.motor_asyncio import AsyncIOMotorClient
-            from pymongo import MongoClient
+            from pymongo import MongoClient, AsyncMongoClient
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
         mongo_client: MongoClient = MongoClient(host, port, appname=APP_NAME)
-        mongo_aclient: AsyncIOMotorClient = AsyncIOMotorClient(
+        mongo_aclient: AsyncMongoClient = AsyncMongoClient(
             host, port, appname=APP_NAME
         )
         return cls(

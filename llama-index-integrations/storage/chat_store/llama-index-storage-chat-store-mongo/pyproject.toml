@@ -36,8 +36,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "llama-index-core>=0.13.0,<0.15",
-    "pymongo>=4.11.1,<5",
-    "motor>=3.7.0,<4",
+    "pymongo>=4.13.0,<5",
 ]
 
 [tool.codespell]

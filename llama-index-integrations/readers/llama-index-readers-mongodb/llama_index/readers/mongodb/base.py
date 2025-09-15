@@ -27,11 +27,10 @@ class SimpleMongoReader(BaseReader):
     ) -> None:
         """Initialize with parameters."""
         try:
-            from motor.motor_asyncio import AsyncIOMotorClient
-            from pymongo import MongoClient
+            from pymongo import MongoClient, AsyncMongoClient
         except ImportError as err:
             raise ImportError(
-                "`pymongo / motor` package not found, please run `pip install pymongo motor`"
+                "`pymongo` package not found, please run `pip install pymongo`"
             ) from err
 
         if uri:
@@ -42,7 +41,7 @@ class SimpleMongoReader(BaseReader):
             raise ValueError("Either `host` and `port` or `uri` must be provided.")
 
         self.client = MongoClient(*client_args)
-        self.async_client = AsyncIOMotorClient(*client_args)
+        self.async_client = AsyncMongoClient(*client_args)
 
     def lazy_load_data(
         self,

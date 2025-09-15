@@ -4,9 +4,9 @@ from datetime import datetime
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store.base import BaseChatStore
-from pymongo import MongoClient
+from pymongo import MongoClient, AsyncMongoClient
 from pymongo.collection import Collection
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
+from pymongo.asynchronous.collection import AsyncCollection
 
 
 def _message_to_dict(message: ChatMessage) -> dict:
@@ -33,7 +33,7 @@ class MongoChatStore(BaseChatStore):
         default=None, description="Time to live in seconds."
     )
     _mongo_client: Optional[MongoClient] = PrivateAttr()
-    _async_client: Optional[AsyncIOMotorClient] = PrivateAttr()
+    _async_client: Optional[AsyncMongoClient] = PrivateAttr()
 
     def __init__(
         self,
@@ -41,10 +41,10 @@ class MongoChatStore(BaseChatStore):
         db_name: str = "default",
         collection_name: str = "sessions",
         mongo_client: Optional[MongoClient] = None,
-        amongo_client: Optional[AsyncIOMotorClient] = None,
+        amongo_client: Optional[AsyncMongoClient] = None,
         ttl_seconds: Optional[int] = None,
         collection: Optional[Collection] = None,
-        async_collection: Optional[AsyncIOMotorCollection] = None,
+        async_collection: Optional[AsyncCollection] = None,
         **kwargs: Any,
     ) -> None:
         """
@@ -63,7 +63,7 @@ class MongoChatStore(BaseChatStore):
         super().__init__(ttl=ttl_seconds)
 
         self._mongo_client = mongo_client or MongoClient(mongo_uri, **kwargs)
-        self._async_client = amongo_client or AsyncIOMotorClient(mongo_uri, **kwargs)
+        self._async_client = amongo_client or AsyncMongoClient(mongo_uri, **kwargs)
 
         if collection:
             self._collection = collection
