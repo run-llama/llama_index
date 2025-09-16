@@ -639,7 +639,6 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         chat_history: Optional[List[ChatMessage]] = None,
         memory: Optional[BaseMemory] = None,
         ctx: Optional[Context] = None,
-        stepwise: bool = False,
         max_iterations: Optional[int] = None,
         start_event: Optional[AgentWorkflowStartEvent] = None,
         **kwargs: Any,
@@ -648,7 +647,6 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
         if ctx is not None and ctx.is_running:
             return super().run(
                 ctx=ctx,
-                stepwise=stepwise,
                 **kwargs,
             )
         else:
@@ -662,7 +660,6 @@ class AgentWorkflow(Workflow, PromptMixin, metaclass=AgentWorkflowMeta):
             return super().run(
                 start_event=start_event,
                 ctx=ctx,
-                stepwise=stepwise,
             )
 
     @classmethod
