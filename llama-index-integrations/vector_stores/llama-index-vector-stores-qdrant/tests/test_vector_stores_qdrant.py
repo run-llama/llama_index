@@ -694,3 +694,53 @@ def test_create_payload_indexes_returns_early_when_no_payload_indexes(
     vector_store: QdrantVectorStore,
 ):
     vector_store._create_payload_indexes()
+
+
+def test_sparse_vector_name_detection_switches_to_legacy() -> None:
+    """If only legacy sparse name exists in collection, switch to it."""
+    mock_client = MagicMock(spec=QdrantClient)
+
+    class DummyParams:
+        def __init__(self):
+            self.vectors = {"text-dense": object()}
+            self.sparse_vectors = {"text-sparse": object()}
+
+    class DummyConfig:
+        def __init__(self):
+            self.params = DummyParams()
+
+    class DummyCollection:
+        def __init__(self):
+            self.config = DummyConfig()
+
+    mock_client.collection_exists.return_value = True
+    mock_client.get_collection.return_value = DummyCollection()
+
+    vs = QdrantVectorStore(collection_name="test_collection", client=mock_client)
+
+    assert vs.sparse_vector_name == "text-sparse"
+
+
+def test_sparse_vector_name_detection_keeps_new() -> None:
+    """If only new sparse name exists in collection, keep the default new name."""
+    mock_client = MagicMock(spec=QdrantClient)
+
+    class DummyParams:
+        def __init__(self):
+            self.vectors = {"text-dense": object()}
+            self.sparse_vectors = {"text-sparse-new": object()}
+
+    class DummyConfig:
+        def __init__(self):
+            self.params = DummyParams()
+
+    class DummyCollection:
+        def __init__(self):
+            self.config = DummyConfig()
+
+    mock_client.collection_exists.return_value = True
+    mock_client.get_collection.return_value = DummyCollection()
+
+    vs = QdrantVectorStore(collection_name="test_collection", client=mock_client)
+
+    assert vs.sparse_vector_name == "text-sparse-new"
