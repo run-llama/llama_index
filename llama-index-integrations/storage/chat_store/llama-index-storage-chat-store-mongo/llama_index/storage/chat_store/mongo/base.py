@@ -5,7 +5,8 @@ from datetime import datetime
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store.base import BaseChatStore
-from pymongo import MongoClient, AsyncMongoClient, DriverInfo
+from pymongo import MongoClient, AsyncMongoClient
+from pymongo.driver_info import DriverInfo
 from pymongo.collection import Collection
 from pymongo.asynchronous.collection import AsyncCollection
 

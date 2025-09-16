@@ -36,7 +36,8 @@ class MongoDBKVStore(BaseKVStore):
     ) -> None:
         """Init a MongoDBKVStore."""
         try:
-            from pymongo import MongoClient, AsyncMongoClient, DriverInfo
+            from pymongo import MongoClient, AsyncMongoClient
+            from pymongo.driver_info import DriverInfo
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
@@ -76,7 +77,8 @@ class MongoDBKVStore(BaseKVStore):
 
         """
         try:
-            from pymongo import MongoClient, AsyncMongoClient, DriverInfo
+            from pymongo import MongoClient, AsyncMongoClient
+            from pymongo.driver_info import DriverInfo
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 
@@ -117,7 +119,8 @@ class MongoDBKVStore(BaseKVStore):
 
         """
         try:
-            from pymongo import MongoClient, AsyncMongoClient, DriverInfo
+            from pymongo import MongoClient, AsyncMongoClient
+            from pymongo.driver_info import DriverInfo
         except ImportError:
             raise ImportError(IMPORT_ERROR_MSG)
 

@@ -28,7 +28,8 @@ class SimpleMongoReader(BaseReader):
     ) -> None:
         """Initialize with parameters."""
         try:
-            from pymongo import MongoClient, AsyncMongoClient, DriverInfo
+            from pymongo import MongoClient, AsyncMongoClient
+            from pymongo.driver_info import DriverInfo
         except ImportError as err:
             raise ImportError(
                 "`pymongo` package not found, please run `pip install pymongo`"
