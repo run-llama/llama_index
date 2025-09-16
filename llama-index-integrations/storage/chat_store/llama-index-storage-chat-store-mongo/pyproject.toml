@@ -24,6 +24,7 @@ dev = [
     "black[jupyter]<=23.9.1,>=23.7.0",
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
+    "llama-index>=0.13.0,<0.15",
 ]
 
 [project]
