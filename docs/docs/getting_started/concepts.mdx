@@ -62,7 +62,8 @@ A query engine is an end-to-end flow that allows you to ask questions over your 
 [**Chat Engines**](/python/framework/module_guides/deploying/chat_engines):
 A chat engine is an end-to-end flow for having a conversation with your data (multiple back-and-forth instead of a single question-and-answer).
 
-!!! tip
-    * Tell me how to [customize things](/python/framework/getting_started/faq)
-    * Continue learning with our [understanding LlamaIndex](/python/framework/understanding) guide
-    * Ready to dig deep? Check out the [component guides](/python/framework/module_guides)
+<Aside type="tip">
+* Tell me how to [customize things](/python/framework/getting_started/faq)
+* Continue learning with our [understanding LlamaIndex](/python/framework/understanding) guide
+* Ready to dig deep? Check out the [component guides](/python/framework/module_guides)
+</Aside>

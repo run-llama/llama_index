@@ -20,8 +20,9 @@ documents = SimpleDirectoryReader(
 index = VectorStoreIndex.from_documents(documents)
 ```
 
-!!! tip
-    If you are using `from_documents` on the command line, it can be convenient to pass `show_progress=True` to display a progress bar during index construction.
+<Aside type="tip">
+If you are using `from_documents` on the command line, it can be convenient to pass `show_progress=True` to display a progress bar during index construction.
+</Aside>
 
 When you use `from_documents`, your Documents are split into chunks and parsed into [`Node` objects](/python/framework/module_guides/loading/documents_and_nodes), lightweight abstractions over text strings that keep track of metadata and relationships.
 
@@ -29,8 +30,9 @@ For more on how to load documents, see [Understanding Loading](/python/framework
 
 By default, VectorStoreIndex stores everything in memory. See [Using Vector Stores](#using-vector-stores) below for more on how to use persistent vector stores.
 
-!!! tip
-    By default, the `VectorStoreIndex` will generate and insert vectors in batches of 2048 nodes. If you are memory constrained (or have a surplus of memory), you can modify this by passing `insert_batch_size=2048` with your desired batch size.
+<Aside type="tip">
+By default, the `VectorStoreIndex` will generate and insert vectors in batches of 2048 nodes. If you are memory constrained (or have a surplus of memory), you can modify this by passing `insert_batch_size=2048` with your desired batch size.
+</Aside>
 
     This is especially helpful when you are inserting into a remotely hosted vector database.
 
@@ -58,8 +60,9 @@ pipeline = IngestionPipeline(
 nodes = pipeline.run(documents=[Document.example()])
 ```
 
-!!! tip
-    You can learn more about [how to use the ingestion pipeline](/python/framework/module_guides/loading/ingestion_pipeline).
+<Aside type="tip">
+You can learn more about [how to use the ingestion pipeline](/python/framework/module_guides/loading/ingestion_pipeline).
+</Aside>
 
 ### Creating and managing nodes directly
 

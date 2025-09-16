@@ -4,8 +4,9 @@ sidebar:
 ---
 # Frequently Asked Questions (FAQ)
 
-!!! tip
-    If you haven't already, [install LlamaIndex](/python/framework/getting_started/installation) and complete the [starter tutorial](/python/framework/getting_started/starter_example). If you run into terms you don't recognize, check out the [high-level concepts](/python/framework/getting_started/concepts).
+<Aside type="tip">
+If you haven't already, [install LlamaIndex](/python/framework/getting_started/installation) and complete the [starter tutorial](/python/framework/getting_started/starter_example). If you run into terms you don't recognize, check out the [high-level concepts](/python/framework/getting_started/concepts).
+</Aside>
 
 In this section, we start with the code you wrote for the [starter example](/python/framework/getting_started/starter_example) and show you the most common ways you might want to customize it for your use case:
 

@@ -28,8 +28,9 @@ storage_context = StorageContext.from_defaults(persist_dir="<persist_dir>")
 index = load_index_from_storage(storage_context)
 ```
 
-!!! tip
-    Important: if you had initialized your index with a custom `transformations`, `embed_model`, etc., you will need to pass in the same options during `load_index_from_storage`, or have it set as the [global settings](/python/framework/module_guides/supporting_modules/settings).
+<Aside type="tip">
+Important: if you had initialized your index with a custom `transformations`, `embed_model`, etc., you will need to pass in the same options during `load_index_from_storage`, or have it set as the [global settings](/python/framework/module_guides/supporting_modules/settings).
+</Aside>
 
 ## Using Vector Stores
 
@@ -111,8 +112,9 @@ response = query_engine.query("What is llama2?")
 print(response)
 ```
 
-!!! tip
-    We have a [more thorough example of using Chroma](/python/examples/vector_stores/chromaindexdemo) if you want to go deeper on this store.
+<Aside type="tip">
+We have a [more thorough example of using Chroma](/python/examples/vector_stores/chromaindexdemo) if you want to go deeper on this store.
+</Aside>
 
 ### You're ready to query!
 

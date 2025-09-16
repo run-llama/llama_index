@@ -9,8 +9,9 @@ Think ChatGPT, but augmented with your knowledge base.
 Conceptually, it is a **stateful** analogy of a [Query Engine](/python/framework/module_guides/deploying/query_engine).
 By keeping track of the conversation history, it can answer questions with past context in mind.
 
-!!! tip
-    If you want to ask standalone question over your data (i.e. without keeping track of conversation history), use [Query Engine](/python/framework/module_guides/deploying/query_engine) instead.
+<Aside type="tip">
+If you want to ask standalone question over your data (i.e. without keeping track of conversation history), use [Query Engine](/python/framework/module_guides/deploying/query_engine) instead.
+</Aside>
 
 ## Usage Pattern
 

@@ -4,8 +4,9 @@ sidebar:
 ---
 # Using LLMs
 
-!!! tip
-    For a list of our supported LLMs and a comparison of their functionality, check out our [LLM module guide](/python/framework/module_guides/models/llms).
+<Aside type="tip">
+For a list of our supported LLMs and a comparison of their functionality, check out our [LLM module guide](/python/framework/module_guides/models/llms).
+</Aside>
 
 One of the first steps when building an LLM-based application is which LLM to use; they have different strengths and price points and you may wish to use more than one.
 
@@ -121,8 +122,9 @@ You can learn more about tools and agents in the [tools guide](/python/framework
 
 We support integrations with OpenAI, Anthropic, Mistral, DeepSeek, Hugging Face, and dozens more. Check out our [module guide to LLMs](/python/framework/module_guides/models/llms) for a full list, including how to run a local model.
 
-!!! tip
-    A general note on privacy and LLM usage can be found on the [privacy page](/python/framework/understanding/privacy).
+<Aside type="tip">
+A general note on privacy and LLM usage can be found on the [privacy page](/python/framework/understanding/privacy).
+</Aside>
 
 ### Using a local LLM
 

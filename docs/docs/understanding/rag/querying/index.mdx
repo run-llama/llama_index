@@ -26,8 +26,9 @@ However, there is more to querying than initially meets the eye. Querying consis
 - **Postprocessing** is when the `Node`s retrieved are optionally reranked, transformed, or filtered, for instance by requiring that they have specific metadata such as keywords attached.
 - **Response synthesis** is when your query, your most-relevant data and your prompt are combined and sent to your LLM to return a response.
 
-!!! tip
-    You can find out about [how to attach metadata to documents](/python/framework/module_guides/loading/documents_and_nodes/usage_documents) and [nodes](/python/framework/module_guides/loading/documents_and_nodes/usage_nodes).
+<Aside type="tip">
+You can find out about [how to attach metadata to documents](/python/framework/module_guides/loading/documents_and_nodes/usage_documents) and [nodes](/python/framework/module_guides/loading/documents_and_nodes/usage_nodes).
+</Aside>
 
 ## Customizing the stages of querying
 

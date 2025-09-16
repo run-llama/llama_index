@@ -44,8 +44,9 @@ from llama_index.core import VectorStoreIndex
 index = VectorStoreIndex.from_documents(documents)
 ```
 
-!!! tip
-    `from_documents` also takes an optional argument `show_progress`. Set it to `True` to display a progress bar during index construction.
+<Aside type="tip">
+`from_documents` also takes an optional argument `show_progress`. Set it to `True` to display a progress bar during index construction.
+</Aside>
 
 You can also choose to build an index over a list of Node objects directly:
 

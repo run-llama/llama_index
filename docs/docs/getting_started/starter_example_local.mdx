@@ -9,8 +9,9 @@ This tutorial will show you how to get started building agents with LlamaIndex. 
 
 We will use [`BAAI/bge-base-en-v1.5`](https://huggingface.co/BAAI/bge-base-en-v1.5) as our embedding model and `llama3.1 8B` served through `Ollama`.
 
-!!! tip
-    Make sure you've followed the [installation](/python/framework/getting_started/installation) steps first.
+<Aside type="tip">
+Make sure you've followed the [installation](/python/framework/getting_started/installation) steps first.
+</Aside>
 
 ## Setup
 
@@ -86,8 +87,9 @@ What happened is:
 - The agent selected the `multiply` tool and wrote the arguments to the tool
 - The agent received the result from the tool and interpolated it into the final response
 
-!!! tip
-    As you can see, we are using `async` python functions. Many LLMs and models support async calls, and using async code is recommended to improve performance of your application. To learn more about async code and python, we recommend this [short section on async + python](/python/framework/getting_started/async_python).
+<Aside type="tip">
+As you can see, we are using `async` python functions. Many LLMs and models support async calls, and using async code is recommended to improve performance of your application. To learn more about async code and python, we recommend this [short section on async + python](/python/framework/getting_started/async_python).
+</Aside>
 
 ## Adding Chat History
 
@@ -216,8 +218,9 @@ query_engine = index.as_query_engine(
 )
 ```
 
-!!! tip
-    If you used a [vector store integration](/python/framework/module_guides/storing/vector_stores) besides the default, chances are you can just reload from the vector store:
+<Aside type="tip">
+If you used a [vector store integration](/python/framework/module_guides/storing/vector_stores) besides the default, chances are you can just reload from the vector store:
+</Aside>
 
     ```python
     index = VectorStoreIndex.from_vector_store(

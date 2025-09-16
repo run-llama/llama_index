@@ -48,8 +48,9 @@ The `FunctionAgent` is a type of agent that uses an LLM provider's function/tool
 
 You can visit [the agents guide](/python/framework/understanding/agent) to learn more about agents and their capabilities.
 
-!!! tip
-    Some models might not support streaming LLM output. While streaming is enabled by default, if you encounter an error, you can always set `FunctionAgent(..., streaming=False)` to disable streaming.
+<Aside type="tip">
+Some models might not support streaming LLM output. While streaming is enabled by default, if you encounter an error, you can always set `FunctionAgent(..., streaming=False)` to disable streaming.
+</Aside>
 
 ## Tools
 

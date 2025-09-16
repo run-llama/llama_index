@@ -8,8 +8,9 @@ Welcome to Understanding LlamaIndex. This is a series of short, bite-sized tutor
 
 ## Key steps in building an agentic LLM application
 
-!!! tip
-    You might want to read our [high-level concepts](/python/framework/getting_started/concepts) if these terms are unfamiliar.
+<Aside type="tip">
+You might want to read our [high-level concepts](/python/framework/getting_started/concepts) if these terms are unfamiliar.
+</Aside>
 
 This tutorial has three main parts: **Building a RAG pipeline**, **Building an agent**, and **Building Workflows**, with some smaller sections before and after. Here's what to expect:
 

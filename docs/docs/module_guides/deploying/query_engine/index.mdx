@@ -8,8 +8,9 @@ A query engine takes in a natural language query, and returns a rich response.
 It is most often (but not always) built on one or many [indexes](/python/framework/module_guides/indexing) via [retrievers](/python/framework/module_guides/querying/retriever).
 You can compose multiple query engines to achieve more advanced capability.
 
-!!! tip
-    If you want to have a conversation with your data (multiple back-and-forth instead of a single question & answer), take a look at [Chat Engine](/python/framework/module_guides/deploying/chat_engines)
+<Aside type="tip">
+If you want to have a conversation with your data (multiple back-and-forth instead of a single question & answer), take a look at [Chat Engine](/python/framework/module_guides/deploying/chat_engines)
+</Aside>
 
 ## Usage Pattern
 
