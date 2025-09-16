@@ -183,7 +183,7 @@ print(selector_result.selections)
 
 More examples:
 
-- [Router Query Engine](../../../examples/query_engine/RouterQueryEngine.ipynb)
-- [Retriever Router Query Engine](../../../examples/query_engine/RetrieverRouterQueryEngine.ipynb)
-- [SQL Router Query Engine](../../../examples/query_engine/SQLRouterQueryEngine.ipynb)
-- [Router Retriever](../../../examples/retrievers/router_retriever.ipynb)
+- [Router Query Engine](/python/examples/query_engine/routerqueryengine)
+- [Retriever Router Query Engine](/python/examples/query_engine/retrieverrouterqueryengine)
+- [SQL Router Query Engine](/python/examples/query_engine/sqlrouterqueryengine)
+- [Router Retriever](/python/examples/retrievers/router_retriever)

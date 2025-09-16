@@ -4,14 +4,14 @@ A transformation is something that takes a list of nodes as an input, and return
 
 Currently, the following components are `Transformation` objects:
 
-- [`TextSplitter`](../../../module_guides/loading/node_parsers/modules.md#text-splitters)
-- [`NodeParser`](../node_parsers/modules.md)
-- [`MetadataExtractor`](../documents_and_nodes/usage_metadata_extractor.md)
-- `Embeddings`model (check our [list of supported embeddings](../../models/embeddings.md#list-of-supported-embeddings))
+- [`TextSplitter`](/python/framework/module_guides/loading/node_parsers/modules#text-splitters)
+- [`NodeParser`](/python/framework/module_guides/loading/node_parsers/modules)
+- [`MetadataExtractor`](/python/framework/module_guides/loading/documents_and_nodes/usage_metadata_extractor)
+- `Embeddings`model (check our [list of supported embeddings](/python/framework/module_guides/models/embeddings#list-of-supported-embeddings))
 
 ## Usage Pattern
 
-While transformations are best used with with an [`IngestionPipeline`](./index.md), they can also be used directly.
+While transformations are best used with with an [`IngestionPipeline`](/python/framework/module_guides/loading/ingestion_pipeline), they can also be used directly.
 
 ```python
 from llama_index.core.node_parser import SentenceSplitter

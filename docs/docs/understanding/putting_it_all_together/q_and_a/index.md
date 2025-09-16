@@ -2,7 +2,7 @@
 
 ## Semantic Search
 
-The most basic example usage of LlamaIndex is through semantic search. We provide a simple in-memory vector store for you to get started, but you can also choose to use any one of our [vector store integrations](../../community/integrations/vector_stores.md):
+The most basic example usage of LlamaIndex is through semantic search. We provide a simple in-memory vector store for you to get started, but you can also choose to use any one of our [vector store integrations](/python/framework/community/integrations/vector_stores):
 
 ```python
 from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
@@ -16,12 +16,12 @@ print(response)
 
 **Tutorials**
 
-- [Starter Tutorial](../../../getting_started/starter_example.md)
-- [Basic Usage Pattern](../querying/querying.md)
+- [Starter Tutorial](/python/framework/getting_started/starter_example)
+- [Basic Usage Pattern](/python/framework/module_guides/querying)
 
 **Guides**
 
-- [Example Notebook](../../../examples/vector_stores/SimpleIndexDemo.ipynb))
+- [Example Notebook](/python/examples/vector_stores/simpleindexdemo))
 
 ## Summarization
 
@@ -50,12 +50,12 @@ Here are some relevant resources:
 
 **Tutorials**
 
-- [Guide on Text-to-SQL](structured_data.md)
+- [Guide on Text-to-SQL](/python/framework/understanding/putting_it_all_together/structured_data)
 
 **Guides**
 
-- [SQL Guide (Core)](../../examples/index_structs/struct_indices/SQLIndexDemo.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs../../examples/index_structs/struct_indices/SQLIndexDemo.ipynb))
-- [Pandas Demo](../../examples/query_engine/pandas_query_engine.ipynb) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs../../examples/query_engine/pandas_query_engine.ipynb))
+- [SQL Guide (Core)](/python/examples/index_structs/struct_indices/sqlindexdemo) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs../../examples/index_structs/struct_indices/SQLIndexDemo.ipynb))
+- [Pandas Demo](/python/examples/query_engine/pandas_query_engine) ([Notebook](https://github.com/jerryjliu/llama_index/blob/main/docs../../examples/query_engine/pandas_query_engine.ipynb))
 
 ## Routing over Heterogeneous Data
 
@@ -103,7 +103,7 @@ response = query_engine.query(
 
 **Guides**
 
-- [Router Query Engine Guide](../../../examples/query_engine/RetrieverRouterQueryEngine.ipynb)
+- [Router Query Engine Guide](/python/examples/query_engine/retrieverrouterqueryengine)
 
 ## Compare/Contrast Queries
 
@@ -121,7 +121,7 @@ This module will help break down a complex query into a simpler one over your ex
 
 **Guides**
 
-- [Query Transformations](../../../optimizing/advanced_retrieval/query_transformations.md)
+- [Query Transformations](/python/framework/optimizing/advanced_retrieval/query_transformations)
 
 You can also rely on the LLM to _infer_ whether to perform compare/contrast queries (see Multi Document Queries below).
 
@@ -170,9 +170,9 @@ This makes it especially well-suited for compare/contrast queries across documen
 
 **Guides**
 
-- [Sub Question Query Engine (Intro)](../../../examples/query_engine/sub_question_query_engine.ipynb)
-- [10Q Analysis (Uber)](../../../examples/usecases/10k_sub_question.ipynb)
-- [10K Analysis (Uber and Lyft)](../../../examples/usecases/10k_sub_question.ipynb)
+- [Sub Question Query Engine (Intro)](/python/examples/query_engine/sub_question_query_engine)
+- [10Q Analysis (Uber)](/python/examples/usecases/10k_sub_question)
+- [10K Analysis (Uber and Lyft)](/python/examples/usecases/10k_sub_question)
 
 ## Multi-Step Queries
 
@@ -185,8 +185,8 @@ query the index, and then ask followup questions.
 
 **Guides**
 
-- [Query Transformations](../../../optimizing/advanced_retrieval/query_transformations.md)
-- [Multi-Step Query Decomposition](../../../examples/query_transformations/HyDEQueryTransformDemo.ipynb)
+- [Query Transformations](/python/framework/optimizing/advanced_retrieval/query_transformations)
+- [Multi-Step Query Decomposition](/python/examples/query_transformations/hydequerytransformdemo)
 
 ## Temporal Queries
 
@@ -197,11 +197,11 @@ LlamaIndex can support queries that require an understanding of time. It can do 
 
 **Guides**
 
-- [Postprocessing Guide](../../../module_guides/querying/node_postprocessors/node_postprocessors.md)
-- [Prev/Next Postprocessing](../../../examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb)
-- [Recency Postprocessing](../../../examples/node_postprocessor/RecencyPostprocessorDemo.ipynb)
+- [Postprocessing Guide](/python/framework/module_guides/querying/node_postprocessors/node_postprocessors)
+- [Prev/Next Postprocessing](/python/examples/node_postprocessor/prevnextpostprocessordemo)
+- [Recency Postprocessing](/python/examples/node_postprocessor/recencypostprocessordemo)
 
 ## Additional Resources
 
-- [A Guide to Extracting Terms and Definitions](terms_definitions_tutorial.md)
+- [A Guide to Extracting Terms and Definitions](/python/framework/understanding/putting_it_all_together/q_and_a/terms_definitions_tutorial)
 - [SEC 10k Analysis](https://medium.com/@jerryjliu98/how-unstructured-and-llamaindex-can-help-bring-the-power-of-llms-to-your-own-data-3657d063e30d)

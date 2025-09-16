@@ -85,8 +85,8 @@ In a more advanced example, it can also make use of an `llm` to extract features
 
 Below you will find guides and tutorials for various metadata extractors.
 
-- [SEC Documents Metadata Extraction](../../examples/metadata_extraction/MetadataExtractionSEC.ipynb)
-- [LLM Survey Extraction](../../examples/metadata_extraction/MetadataExtraction_LLMSurvey.ipynb)
-- [Entity Extraction](../../examples/metadata_extraction/EntityExtractionClimate.ipynb)
-- [Marvin Metadata Extraction](../../examples/metadata_extraction/MarvinMetadataExtractorDemo.ipynb)
-- [Pydantic Metadata Extraction](../../examples/metadata_extraction/PydanticExtractor.ipynb)
+- [SEC Documents Metadata Extraction](/python/examples/metadata_extraction/metadataextractionsec)
+- [LLM Survey Extraction](/python/examples/metadata_extraction/metadataextraction_llmsurvey)
+- [Entity Extraction](/python/examples/metadata_extraction/entityextractionclimate)
+- [Marvin Metadata Extraction](/python/examples/metadata_extraction/marvinmetadataextractordemo)
+- [Pydantic Metadata Extraction](/python/examples/metadata_extraction/pydanticextractor)

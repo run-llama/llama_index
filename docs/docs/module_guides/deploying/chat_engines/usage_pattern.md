@@ -9,7 +9,7 @@ chat_engine = index.as_chat_engine()
 ```
 
 !!! tip
-    To learn how to build an index, see [Indexing](../../indexing/index_guide.md)
+    To learn how to build an index, see [Indexing](/python/framework/module_guides/indexing/index_guide)
 
 Have a conversation with your data:
 
@@ -121,4 +121,4 @@ for token in streaming_response.response_gen:
     print(token, end="")
 ```
 
-See an [end-to-end tutorial](../../../examples/customization/streaming/chat_engine_condense_question_stream_response.ipynb)
+See an [end-to-end tutorial](/python/examples/customization/streaming/chat_engine_condense_question_stream_response)

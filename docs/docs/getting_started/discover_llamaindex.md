@@ -1,6 +1,10 @@
+---
+sidebar:
+  order: 7
+---
 # Discover LlamaIndex Video Series
 
-If you like learning from videos, now's a good time to check out our "Discover LlamaIndex" series. If not, we recommend heading on to our [Understanding LlamaIndex](../understanding/index.md) tutorial.
+If you like learning from videos, now's a good time to check out our "Discover LlamaIndex" series. If not, we recommend heading on to our [Understanding LlamaIndex](/python/framework/understanding) tutorial.
 
 ## Bottoms-Up Development (Llama Docs Bot)
 
@@ -21,7 +25,7 @@ This video covers the `SubQuestionQueryEngine` and how it can be applied to fina
 
 [Youtube](https://www.youtube.com/watch?v=GT_Lsj3xj1o)
 
-[Notebook](../examples/usecases/10k_sub_question.ipynb)
+[Notebook](/python/examples/usecases/10k_sub_question)
 
 ## Discord Document Management
 
@@ -31,7 +35,7 @@ This video covers managing documents from a source that is constantly updating (
 
 [Notebook and Supplementary Material](https://github.com/jerryjliu/llama_index/tree/main/docs/docs/examples/discover_llamaindex/document_management/)
 
-[Reference Docs](../module_guides/indexing/document_management.md)
+[Reference Docs](/python/framework/module_guides/indexing/document_management)
 
 ## Joint Text to SQL and Semantic Search
 
@@ -39,4 +43,4 @@ This video covers the tools built into LlamaIndex for combining SQL and semantic
 
 [Youtube](https://www.youtube.com/watch?v=ZIvcVJGtCrY)
 
-[Notebook](../examples/query_engine/SQLAutoVectorQueryEngine.ipynb)
+[Notebook](/python/examples/query_engine/sqlautovectorqueryengine)

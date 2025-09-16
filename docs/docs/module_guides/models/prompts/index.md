@@ -38,21 +38,21 @@ prompt = qa_template.format(context_str=..., query_str=...)
 messages = qa_template.format_messages(context_str=..., query_str=...)
 ```
 
-See our [Usage Pattern Guide](./usage_pattern.md) for more details on taking full advantage of the `RichPromptTemplate` and details on the other prompt templates.
+See our [Usage Pattern Guide](/python/framework/module_guides/models/prompts/usage_pattern) for more details on taking full advantage of the `RichPromptTemplate` and details on the other prompt templates.
 
 ## Example Guides
 
 Prompt Engineering Guides
 
-- [Advanced Prompts](../../../examples/prompts/advanced_prompts.ipynb)
-- [RichPromptTemplate Features](../../../examples/prompts/rich_prompt_template_features.ipynb)
+- [Advanced Prompts](/python/examples/prompts/advanced_prompts)
+- [RichPromptTemplate Features](/python/examples/prompts/rich_prompt_template_features)
 
 Simple Customization Examples
 
-- [Completion prompts](../../../examples/customization/prompts/completion_prompts.ipynb)
-- [Chat prompts](../../../examples/customization/prompts/chat_prompts.ipynb)
-- [Prompt Mixin](../../../examples/prompts/prompt_mixin.ipynb)
+- [Completion prompts](/python/examples/customization/prompts/completion_prompts)
+- [Chat prompts](/python/examples/customization/prompts/chat_prompts)
+- [Prompt Mixin](/python/examples/prompts/prompt_mixin)
 
 Experimental
 
-- [Emotion Prompting](../../../examples/prompts/emotion_prompt.ipynb)
+- [Emotion Prompting](/python/examples/prompts/emotion_prompt)

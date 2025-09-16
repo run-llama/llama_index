@@ -1,7 +1,11 @@
+---
+sidebar:
+  order: 2
+---
 # Using LLMs
 
 !!! tip
-    For a list of our supported LLMs and a comparison of their functionality, check out our [LLM module guide](../../module_guides/models/llms.md).
+    For a list of our supported LLMs and a comparison of their functionality, check out our [LLM module guide](/python/framework/module_guides/models/llms).
 
 One of the first steps when building an LLM-based application is which LLM to use; they have different strengths and price points and you may wish to use more than one.
 
@@ -20,7 +24,7 @@ response = OpenAI().complete("William Shakespeare is ")
 print(response)
 ```
 
-Note that this requires an API key called `OPENAI_API_KEY` in your environment; see the [starter tutorial](../../getting_started/starter_example.md) for more details.
+Note that this requires an API key called `OPENAI_API_KEY` in your environment; see the [starter tutorial](/python/framework/getting_started/starter_example) for more details.
 
 `complete` is also available as an async method, `acomplete`.
 
@@ -109,16 +113,16 @@ response = llm.predict_and_call(
 print(str(response))
 ```
 
-For more details on even more advanced tool calling, check out the in-depth guide using [OpenAI](../../examples/llm/openai.ipynb). The same approaches work for any LLM that supports tools/functions (e.g. Anthropic, Gemini, Ollama, etc.).
+For more details on even more advanced tool calling, check out the in-depth guide using [OpenAI](/python/examples/llm/openai). The same approaches work for any LLM that supports tools/functions (e.g. Anthropic, Gemini, Ollama, etc.).
 
-You can learn more about tools and agents in the [tools guide](../../understanding/agent/tools.md).
+You can learn more about tools and agents in the [tools guide](/python/framework/understanding/agent/tools).
 
 ## Available LLMs
 
-We support integrations with OpenAI, Anthropic, Mistral, DeepSeek, Hugging Face, and dozens more. Check out our [module guide to LLMs](../../module_guides/models/llms.md) for a full list, including how to run a local model.
+We support integrations with OpenAI, Anthropic, Mistral, DeepSeek, Hugging Face, and dozens more. Check out our [module guide to LLMs](/python/framework/module_guides/models/llms) for a full list, including how to run a local model.
 
 !!! tip
-    A general note on privacy and LLM usage can be found on the [privacy page](./privacy.md).
+    A general note on privacy and LLM usage can be found on the [privacy page](/python/framework/understanding/privacy).
 
 ### Using a local LLM
 
@@ -135,4 +139,4 @@ llm = Ollama(
 )
 ```
 
-See the [custom LLM's How-To](../../module_guides/models/llms/usage_custom.md) for more details on using and configuring LLM models.
+See the [custom LLM's How-To](/python/framework/module_guides/models/llms/usage_custom) for more details on using and configuring LLM models.

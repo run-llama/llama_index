@@ -199,59 +199,59 @@ async def critique_joke(ev: JokeEvent) -> StopEvent:
 
 ## Learn More
 
-- [Customizing Entry/Exit Points](./customizing_entry_exit_points.md)
-- [Drawing Workflows](./drawing.md)
-- [Managing Events](./managing_events.md)
-- [Managing State](./managing_state.md)
-- [Injecting External Resources](./resources.md)
-- [Handling Errors](./retry_steps.md)
-- [Stepwise Execution](./stepwise.md)
-- [Deploying with LlamaDeploy](./deployment.md)
+- [Customizing Entry/Exit Points](/python/framework/workflows/v1/customizing_entry_exit_points)
+- [Drawing Workflows](/python/framework/workflows/v1/drawing)
+- [Managing Events](/python/framework/workflows/v1/managing_events)
+- [Managing State](/python/framework/workflows/v1/managing_state)
+- [Injecting External Resources](/python/framework/workflows/v1/resources)
+- [Handling Errors](/python/framework/workflows/v1/retry_steps)
+- [Stepwise Execution](/python/framework/workflows/v1/stepwise)
+- [Deploying with LlamaDeploy](/python/workflows/v1/deployment)
 
 ## Examples
 
 To help you become more familiar with the workflow concept and its features, LlamaIndex documentation offers example
 notebooks that you can run for hands-on learning:
 
-- [Common Workflow Patterns](../../examples/workflow/workflows_cookbook.ipynb) walks you through common usage patterns
+- [Common Workflow Patterns](/python/examples/workflow/workflows_cookbook) walks you through common usage patterns
 like looping and state management using simple workflows. It's usually a great place to start.
-- [RAG + Reranking](../../examples/workflow/rag.ipynb) shows how to implement a real-world use case with a fairly
+- [RAG + Reranking](/python/examples/workflow/rag) shows how to implement a real-world use case with a fairly
 simple workflow that performs both ingestion and querying.
-- [Citation Query Engine](../../examples/workflow/citation_query_engine.ipynb) similar to RAG + Reranking, the
+- [Citation Query Engine](/python/examples/workflow/citation_query_engine) similar to RAG + Reranking, the
 notebook focuses on how to implement intermediate steps in between retrieval and generation. A good example of how to
-use the [`Context`](./managing_state.md#maintaining-context-across-runs) object in a workflow.
-- [Corrective RAG](../../examples/workflow/corrective_rag_pack.ipynb) adds some more complexity on top of a RAG
+use the [`Context`](/python/workflows/v1/managing_state#maintaining-context-across-runs) object in a workflow.
+- [Corrective RAG](/python/examples/workflow/corrective_rag_pack) adds some more complexity on top of a RAG
 workflow, showcasing how to query a web search engine after an evaluation step.
-- [Utilizing Concurrency](../../examples/workflow/parallel_execution.ipynb) explains how to manage the parallel
+- [Utilizing Concurrency](/python/examples/workflow/parallel_execution) explains how to manage the parallel
 execution of steps in a workflow, something that's important to know as your workflows grow in complexity.
 
 RAG applications are easy to understand and offer a great opportunity to learn the basics of workflows. However, more complex agentic scenarios involving tool calling, memory, and routing are where workflows excel.
 
 The examples below highlight some of these use-cases.
 
-- [ReAct Agent](../../examples/workflow/react_agent.ipynb) is obviously the perfect example to show how to implement
+- [ReAct Agent](/python/examples/workflow/react_agent) is obviously the perfect example to show how to implement
 tools in a workflow.
-- [Function Calling Agent](../../examples/workflow/function_calling_agent.ipynb) is a great example of how to use the
+- [Function Calling Agent](/python/examples/workflow/function_calling_agent) is a great example of how to use the
 LlamaIndex framework primitives in a workflow, keeping it small and tidy even in complex scenarios like function
 calling.
-- [CodeAct Agent](../../examples/agent/from_scratch_code_act_agent.ipynb) is a great example of how to create a CodeAct Agent from scratch.
-- [Human In The Loop: Story Crafting](../../examples/workflow/human_in_the_loop_story_crafting.ipynb) is a powerful
+- [CodeAct Agent](/python/examples/agent/from_scratch_code_act_agent) is a great example of how to create a CodeAct Agent from scratch.
+- [Human In The Loop: Story Crafting](/python/examples/workflow/human_in_the_loop_story_crafting) is a powerful
 example showing how workflow runs can be interactive and stateful. In this case, to collect input from a human.
-- [Reliable Structured Generation](../../examples/workflow/reflection.ipynb) shows how to implement loops in a
+- [Reliable Structured Generation](/python/examples/workflow/reflection) shows how to implement loops in a
 workflow, in this case to improve structured output through reflection.
-- [Query Planning with Workflows](../../examples/workflow/planning_workflow.ipynb) is an example of a workflow
+- [Query Planning with Workflows](/python/examples/workflow/planning_workflow) is an example of a workflow
 that plans a query by breaking it down into smaller items, and executing those smaller items. It highlights how
 to stream events from a workflow, execute steps in parallel, and looping until a condition is met.
-- [Checkpointing Workflows](../../examples/workflow/checkpointing_workflows.ipynb) is a more exhaustive demonstration of how to make full use of `WorkflowCheckpointer` to checkpoint Workflow runs.
+- [Checkpointing Workflows](/python/examples/workflow/checkpointing_workflows) is a more exhaustive demonstration of how to make full use of `WorkflowCheckpointer` to checkpoint Workflow runs.
 
 Last but not least, a few more advanced use cases that demonstrate how workflows can be extremely handy if you need
 to quickly implement prototypes, for example from literature:
 
-- [Advanced Text-to-SQL](../../examples/workflow/advanced_text_to_sql.ipynb)
-- [JSON Query Engine](../../examples/workflow/JSONalyze_query_engine.ipynb)
-- [Long RAG](../../examples/workflow/long_rag_pack.ipynb)
-- [Multi-Step Query Engine](../../examples/workflow/multi_step_query_engine.ipynb)
-- [Multi-Strategy Workflow](../../examples/workflow/multi_strategy_workflow.ipynb)
-- [Router Query Engine](../../examples/workflow/router_query_engine.ipynb)
-- [Self Discover Workflow](../../examples/workflow/self_discover_workflow.ipynb)
-- [Sub-Question Query Engine](../../examples/workflow/sub_question_query_engine.ipynb)
+- [Advanced Text-to-SQL](/python/examples/workflow/advanced_text_to_sql)
+- [JSON Query Engine](/python/examples/workflow/jsonalyze_query_engine)
+- [Long RAG](/python/examples/workflow/long_rag_pack)
+- [Multi-Step Query Engine](/python/examples/workflow/multi_step_query_engine)
+- [Multi-Strategy Workflow](/python/examples/workflow/multi_strategy_workflow)
+- [Router Query Engine](/python/examples/workflow/router_query_engine)
+- [Self Discover Workflow](/python/examples/workflow/self_discover_workflow)
+- [Sub-Question Query Engine](/python/examples/workflow/sub_question_query_engine)

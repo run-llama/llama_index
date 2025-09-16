@@ -1,3 +1,7 @@
+---
+sidebar:
+  order: 1
+---
 # Building an LLM application
 
 Welcome to Understanding LlamaIndex. This is a series of short, bite-sized tutorials on every stage of building an agentic LLM application to get you acquainted with how to use LlamaIndex before diving into more advanced and subtle strategies. If you're an experienced programmer new to LlamaIndex, this is the place to start.
@@ -5,56 +9,56 @@ Welcome to Understanding LlamaIndex. This is a series of short, bite-sized tutor
 ## Key steps in building an agentic LLM application
 
 !!! tip
-    You might want to read our [high-level concepts](../getting_started/concepts.md) if these terms are unfamiliar.
+    You might want to read our [high-level concepts](/python/framework/getting_started/concepts) if these terms are unfamiliar.
 
 This tutorial has three main parts: **Building a RAG pipeline**, **Building an agent**, and **Building Workflows**, with some smaller sections before and after. Here's what to expect:
 
-- **[Using LLMs](./using_llms/using_llms.md)**: hit the ground running by getting started working with LLMs. We'll show you how to use any of our [dozens of supported LLMs](../module_guides/models/llms/modules.md), whether via remote API calls or running locally on your machine.
+- **[Using LLMs](/python/framework/understanding/using_llms)**: hit the ground running by getting started working with LLMs. We'll show you how to use any of our [dozens of supported LLMs](/python/framework/module_guides/models/llms/modules), whether via remote API calls or running locally on your machine.
 
-- **[Building agents](./agent/index.md)**: agents are LLM-powered knowledge workers that can interact with the world via a set of tools. Those tools can retrieve information (such as RAG, see below) or take action. This tutorial includes:
+- **[Building agents](/python/framework/understanding/agent)**: agents are LLM-powered knowledge workers that can interact with the world via a set of tools. Those tools can retrieve information (such as RAG, see below) or take action. This tutorial includes:
 
-    - **[Building a single agent](./agent/index.md)**: We show you how to build a simple agent that can interact with the world via a set of tools.
+    - **[Building a single agent](/python/framework/understanding/agent)**: We show you how to build a simple agent that can interact with the world via a set of tools.
 
-    - **[Using existing tools](./agent/tools.md)**: LlamaIndex provides a registry of pre-built agent tools at [LlamaHub](https://llamahub.ai/) that you can incorporate into your agents.
+    - **[Using existing tools](/python/framework/understanding/agent/tools)**: LlamaIndex provides a registry of pre-built agent tools at [LlamaHub](https://llamahub.ai/) that you can incorporate into your agents.
 
-    - **[Maintaining state](./agent/state.md)**: agents can maintain state, which is important for building more complex applications.
+    - **[Maintaining state](/python/framework/understanding/agent/state)**: agents can maintain state, which is important for building more complex applications.
 
-    - **[Streaming output and events](./agent/streaming.md)**: providing visibility and feedback to the user is important, and streaming allows you to do that.
+    - **[Streaming output and events](/python/framework/understanding/agent/streaming)**: providing visibility and feedback to the user is important, and streaming allows you to do that.
 
-    - **[Human in the loop](./agent/human_in_the_loop.md)**: getting human feedback to your agent can be critical.
+    - **[Human in the loop](/python/framework/understanding/agent/human_in_the_loop)**: getting human feedback to your agent can be critical.
 
-    - **[Multi-agent systems with AgentWorkflow](./agent/multi_agent.md)**: combining multiple agents to collaborate is a powerful technique for building more complex systems; this section shows you how to do so.
+    - **[Multi-agent systems with AgentWorkflow](/python/framework/understanding/agent/multi_agent)**: combining multiple agents to collaborate is a powerful technique for building more complex systems; this section shows you how to do so.
 
-- **[Workflows](./workflows/index.md)**: Workflows are a lower-level, event-driven abstraction for building agentic applications. They're the base layer you should be using to build any advanced agentic application. You can use the pre-built abstractions you learned above, or build agents completely from scratch. This tutorial covers:
+- **[Workflows](/python/framework/understanding/workflows)**: Workflows are a lower-level, event-driven abstraction for building agentic applications. They're the base layer you should be using to build any advanced agentic application. You can use the pre-built abstractions you learned above, or build agents completely from scratch. This tutorial covers:
 
-    - **[Building a simple workflow](./workflows/index.md)**: a simple workflow that shows you how to use the `Workflow` class to build a basic agentic application.
+    - **[Building a simple workflow](/python/framework/understanding/workflows)**: a simple workflow that shows you how to use the `Workflow` class to build a basic agentic application.
 
-    - **[Looping and branching](./workflows/branches_and_loops.md)**: these core control flow patterns are the building blocks of more complex workflows.
+    - **[Looping and branching](/python/framework/understanding/workflows/branches_and_loops)**: these core control flow patterns are the building blocks of more complex workflows.
 
-    - **[Concurrent execution](./workflows/concurrent_execution.md)**: you can run steps in parallel to split up work efficiently.
+    - **[Concurrent execution](/python/framework/understanding/workflows/concurrent_execution)**: you can run steps in parallel to split up work efficiently.
 
-    - **[Streaming events](./workflows/stream.md)**: your agents can emit user-facing events just like the agents you built above.
+    - **[Streaming events](/python/framework/understanding/workflows/stream)**: your agents can emit user-facing events just like the agents you built above.
 
-    - **[Stateful workflows](./workflows/state.md)**: workflows can maintain state, which is important for building more complex applications.
+    - **[Stateful workflows](/python/framework/understanding/workflows/state)**: workflows can maintain state, which is important for building more complex applications.
 
-    - **[Observability](./workflows/observability.md)**: workflows can be traced and debugged using various integrations like Arize Pheonix, OpenTelemetry, and more.
+    - **[Observability](/python/framework/understanding/workflows/observability)**: workflows can be traced and debugged using various integrations like Arize Pheonix, OpenTelemetry, and more.
 
-- **[Adding RAG to your agents](./rag/index.md)**: Retrieval-Augmented Generation (RAG) is a key technique for getting your data to an LLM, and a component of more sophisticated agentic systems. We'll show you how to enhance your agents with a full-featured RAG pipeline that can answer questions about your data. This includes:
+- **[Adding RAG to your agents](/python/framework/understanding/rag)**: Retrieval-Augmented Generation (RAG) is a key technique for getting your data to an LLM, and a component of more sophisticated agentic systems. We'll show you how to enhance your agents with a full-featured RAG pipeline that can answer questions about your data. This includes:
 
-    - **[Loading & Ingestion](./loading/loading.md)**: Getting your data from wherever it lives, whether that's unstructured text, PDFs, databases, or APIs to other applications. LlamaIndex has hundreds of connectors to every data source over at [LlamaHub](https://llamahub.ai/).
+    - **[Loading & Ingestion](/python/framework/understanding/rag/loading)**: Getting your data from wherever it lives, whether that's unstructured text, PDFs, databases, or APIs to other applications. LlamaIndex has hundreds of connectors to every data source over at [LlamaHub](https://llamahub.ai/).
 
-    - **[Indexing and Embedding](./indexing/indexing.md)**: Once you've got your data there are an infinite number of ways to structure access to that data to ensure your applications is always working with the most relevant data. LlamaIndex has a huge number of these strategies built-in and can help you select the best ones.
+    - **[Indexing and Embedding](/python/framework/understanding/rag/indexing)**: Once you've got your data there are an infinite number of ways to structure access to that data to ensure your applications is always working with the most relevant data. LlamaIndex has a huge number of these strategies built-in and can help you select the best ones.
 
-    - **[Storing](./storing/storing.md)**: You will probably find it more efficient to store your data in indexed form, or pre-processed summaries provided by an LLM, often in a specialized database known as a `Vector Store` (see below). You can also store your indexes, metadata and more.
+    - **[Storing](/python/framework/understanding/rag/storing)**: You will probably find it more efficient to store your data in indexed form, or pre-processed summaries provided by an LLM, often in a specialized database known as a `Vector Store` (see below). You can also store your indexes, metadata and more.
 
-    - **[Querying](./querying/querying.md)**: Every indexing strategy has a corresponding querying strategy and there are lots of ways to improve the relevance, speed and accuracy of what you retrieve and what the LLM does with it before returning it to you, including turning it into structured responses such as an API.
+    - **[Querying](/python/framework/understanding/rag/querying)**: Every indexing strategy has a corresponding querying strategy and there are lots of ways to improve the relevance, speed and accuracy of what you retrieve and what the LLM does with it before returning it to you, including turning it into structured responses such as an API.
 
-- **[Putting it all together](./putting_it_all_together/index.md)**: whether you are building question & answering, chatbots, an API, or an autonomous agent, we show you how to get your application into production.
+- **[Putting it all together](/python/framework/understanding/putting_it_all_together)**: whether you are building question & answering, chatbots, an API, or an autonomous agent, we show you how to get your application into production.
 
-- **[Tracing and debugging](./tracing_and_debugging/tracing_and_debugging.md)**: also called **observability**, it's especially important with LLM applications to be able to look into the inner workings of what's going on to help you debug problems and spot places to improve.
+- **[Tracing and debugging](/python/framework/understanding/tracing_and_debugging/tracing_and_debugging)**: also called **observability**, it's especially important with LLM applications to be able to look into the inner workings of what's going on to help you debug problems and spot places to improve.
 
-- **[Evaluating](./evaluating/evaluating.md)**: every strategy has pros and cons and a key part of building, shipping and evolving your application is evaluating whether your change has improved your application in terms of accuracy, performance, clarity, cost and more. Reliably evaluating your changes is a crucial part of LLM application development.
+- **[Evaluating](/python/framework/understanding/evaluating/evaluating)**: every strategy has pros and cons and a key part of building, shipping and evolving your application is evaluating whether your change has improved your application in terms of accuracy, performance, clarity, cost and more. Reliably evaluating your changes is a crucial part of LLM application development.
 
 ## Let's get started!
 
-Ready to dive in? Head to [using LLMs](./using_llms/using_llms.md).
+Ready to dive in? Head to [using LLMs](/python/framework/understanding/using_llms).

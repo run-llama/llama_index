@@ -13,7 +13,7 @@ response = query_engine.query("Summarize the documents.")
 
 Under the hood, LlamaIndex also supports a swappable **storage layer** that allows you to customize where ingested documents (i.e., `Node` objects), embedding vectors, and index metadata are stored.
 
-![](../../_static/storage/storage.png)
+![](/python/framework/_static/storage/storage.png)
 
 ### Low-Level API
 
@@ -74,7 +74,7 @@ loaded_indicies = load_index_from_storage(
 ```
 
 You can customize the underlying storage with a one-line change to instantiate different document stores, index stores, and vector stores.
-See [Document Stores](./docstores.md), [Vector Stores](./vector_stores.md), [Index Stores](./index_stores.md) guides for more details.
+See [Document Stores](/python/framework/module_guides/storing/docstores), [Vector Stores](/python/framework/module_guides/storing/vector_stores), [Index Stores](/python/framework/module_guides/storing/index_stores) guides for more details.
 
 ### Vector Store Integrations and Storage
 

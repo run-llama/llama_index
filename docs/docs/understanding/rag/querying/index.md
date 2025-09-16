@@ -22,12 +22,12 @@ print(response)
 
 However, there is more to querying than initially meets the eye. Querying consists of three distinct stages:
 
-- **Retrieval** is when you find and return the most relevant documents for your query from your `Index`. As previously discussed in [indexing](../indexing/indexing.md), the most common type of retrieval is "top-k" semantic retrieval, but there are many other retrieval strategies.
+- **Retrieval** is when you find and return the most relevant documents for your query from your `Index`. As previously discussed in [indexing](/python/framework/module_guides/indexing), the most common type of retrieval is "top-k" semantic retrieval, but there are many other retrieval strategies.
 - **Postprocessing** is when the `Node`s retrieved are optionally reranked, transformed, or filtered, for instance by requiring that they have specific metadata such as keywords attached.
 - **Response synthesis** is when your query, your most-relevant data and your prompt are combined and sent to your LLM to return a response.
 
 !!! tip
-    You can find out about [how to attach metadata to documents](../../module_guides/loading/documents_and_nodes/usage_documents.md) and [nodes](../../module_guides/loading/documents_and_nodes/usage_nodes.md).
+    You can find out about [how to attach metadata to documents](/python/framework/module_guides/loading/documents_and_nodes/usage_documents) and [nodes](/python/framework/module_guides/loading/documents_and_nodes/usage_nodes).
 
 ## Customizing the stages of querying
 
@@ -67,7 +67,7 @@ print(response)
 
 You can also add your own retrieval, response synthesis, and overall query logic, by implementing the corresponding interfaces.
 
-For a full list of implemented components and the supported configurations, check out our [reference docs](../../api_reference/index.md).
+For a full list of implemented components and the supported configurations, check out our [reference docs](/python/framework/api_reference).
 
 Let's go into more detail about customizing each step:
 
@@ -80,7 +80,7 @@ retriever = VectorIndexRetriever(
 )
 ```
 
-There are a huge variety of retrievers that you can learn about in our [module guide on retrievers](../../module_guides/querying/retriever/index.md).
+There are a huge variety of retrievers that you can learn about in our [module guide on retrievers](/python/framework/module_guides/querying/retriever).
 
 ### Configuring node postprocessors
 
@@ -93,7 +93,7 @@ For example:
 - `SimilarityPostprocessor`: filters nodes by setting a threshold on the similarity score (thus only supported by embedding-based retrievers)
 - `PrevNextNodePostprocessor`: augments retrieved `Node` objects with additional relevant context based on `Node` relationships.
 
-The full list of node postprocessors is documented in the [Node Postprocessor Reference](../../api_reference/postprocessor/index.md).
+The full list of node postprocessors is documented in the [Node Postprocessor Reference](/python/framework/api_reference/postprocessor).
 
 To configure the desired node postprocessors:
 
@@ -141,12 +141,12 @@ Right now, we support the following options:
 
 ## Structured Outputs
 
-You may want to ensure your output is structured. See our [Query Engines + Pydantic Outputs](../../module_guides/querying/structured_outputs/query_engine.md) to see how to extract a Pydantic object from a query engine class.
+You may want to ensure your output is structured. See our [Query Engines + Pydantic Outputs](/python/framework/module_guides/querying/structured_outputs/query_engine) to see how to extract a Pydantic object from a query engine class.
 
-Also make sure to check out our entire [Structured Outputs](../../module_guides/querying/structured_outputs/index.md) guide.
+Also make sure to check out our entire [Structured Outputs](/python/framework/module_guides/querying/structured_outputs) guide.
 
 ## Creating your own Query Workflow
 
 If you want to design complex query flows, you can compose your own query workflow across many different modules, from prompts/LLMs/output parsers to retrievers to response synthesizers to your own custom components.
 
-Take a look at our [Workflow Guide](../../module_guides/workflow/index.md) for more details.
+Take a look at our [Workflow Guide](/python/framework/module_guides/workflow) for more details.

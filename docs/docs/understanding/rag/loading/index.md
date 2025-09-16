@@ -8,7 +8,7 @@ This ingestion pipeline typically consists of three main stages:
 2. Transform the data
 3. Index and store the data
 
-We cover indexing/storage in [future](../indexing/indexing.md) [sections](../storing/storing.md). In this guide we'll mostly talk about loaders and transformations.
+We cover indexing/storage in [future](/python/framework/understanding/rag/indexing) [sections](/python/framework/understanding/rag/storing). In this guide we'll mostly talk about loaders and transformations.
 
 ## Loaders
 
@@ -26,7 +26,7 @@ documents = SimpleDirectoryReader("./data").load_data()
 
 ### Using Readers from LlamaHub
 
-Because there are so many possible places to get data, they are not all built-in. Instead, you download them from our registry of data connectors, [LlamaHub](llamahub.md).
+Because there are so many possible places to get data, they are not all built-in. Instead, you download them from our registry of data connectors, [LlamaHub](/python/framework/understanding/rag/loading/llamahub).
 
 In this example LlamaIndex downloads and installs the connector called [DatabaseReader](https://llamahub.ai/l/readers/llama-index-readers-database), which runs a query against a SQL database and returns every row of the results as a `Document`:
 
@@ -103,7 +103,7 @@ index = VectorStoreIndex.from_documents(
 
 You can also define these steps explicitly.
 
-You can do this by either using our transformation modules (text splitters, metadata extractors, etc.) as standalone components, or compose them in our declarative [Transformation Pipeline interface](../../module_guides/loading/ingestion_pipeline/index.md).
+You can do this by either using our transformation modules (text splitters, metadata extractors, etc.) as standalone components, or compose them in our declarative [Transformation Pipeline interface](/python/framework/module_guides/loading/ingestion_pipeline).
 
 Let's walk through the steps below.
 
@@ -111,9 +111,9 @@ Let's walk through the steps below.
 
 A key step to process your documents is to split them into "chunks"/Node objects. The key idea is to process your data into bite-sized pieces that can be retrieved / fed to the LLM.
 
-LlamaIndex has support for a wide range of [text splitters](../../module_guides/loading/node_parsers/modules.md), ranging from paragraph/sentence/token based splitters to file-based splitters like HTML, JSON.
+LlamaIndex has support for a wide range of [text splitters](/python/framework/module_guides/loading/node_parsers/modules), ranging from paragraph/sentence/token based splitters to file-based splitters like HTML, JSON.
 
-These can be [used on their own or as part of an ingestion pipeline](../../module_guides/loading/node_parsers/index.md).
+These can be [used on their own or as part of an ingestion pipeline](/python/framework/module_guides/loading/node_parsers).
 
 ```python
 from llama_index.core import SimpleDirectoryReader
@@ -129,9 +129,9 @@ nodes = pipeline.run(documents=documents)
 
 ### Adding Metadata
 
-You can also choose to add metadata to your documents and nodes. This can be done either manually or with [automatic metadata extractors](../../module_guides/loading/documents_and_nodes/usage_metadata_extractor.md).
+You can also choose to add metadata to your documents and nodes. This can be done either manually or with [automatic metadata extractors](/python/framework/module_guides/loading/documents_and_nodes/usage_metadata_extractor).
 
-Here are guides on 1) [how to customize Documents](../../module_guides/loading/documents_and_nodes/usage_documents.md), and 2) [how to customize Nodes](../../module_guides/loading/documents_and_nodes/usage_nodes.md).
+Here are guides on 1) [how to customize Documents](/python/framework/module_guides/loading/documents_and_nodes/usage_documents), and 2) [how to customize Nodes](/python/framework/module_guides/loading/documents_and_nodes/usage_nodes).
 
 ```python
 document = Document(
@@ -142,7 +142,7 @@ document = Document(
 
 ### Adding Embeddings
 
-To insert a node into a vector index, it should have an embedding. See our [ingestion pipeline](../../module_guides/loading/ingestion_pipeline/index.md) or our [embeddings guide](../../module_guides/models/embeddings.md) for more details.
+To insert a node into a vector index, it should have an embedding. See our [ingestion pipeline](/python/framework/module_guides/loading/ingestion_pipeline) or our [embeddings guide](/python/framework/module_guides/models/embeddings) for more details.
 
 ### Creating and passing Nodes directly
 

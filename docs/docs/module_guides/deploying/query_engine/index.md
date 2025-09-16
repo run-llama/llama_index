@@ -5,11 +5,11 @@
 Query engine is a generic interface that allows you to ask question over your data.
 
 A query engine takes in a natural language query, and returns a rich response.
-It is most often (but not always) built on one or many [indexes](../../indexing/index.md) via [retrievers](../../querying/retriever/index.md).
+It is most often (but not always) built on one or many [indexes](/python/framework/module_guides/indexing) via [retrievers](/python/framework/module_guides/querying/retriever).
 You can compose multiple query engines to achieve more advanced capability.
 
 !!! tip
-    If you want to have a conversation with your data (multiple back-and-forth instead of a single question & answer), take a look at [Chat Engine](../chat_engines/index.md)
+    If you want to have a conversation with your data (multiple back-and-forth instead of a single question & answer), take a look at [Chat Engine](/python/framework/module_guides/deploying/chat_engines)
 
 ## Usage Pattern
 
@@ -28,12 +28,12 @@ streaming_response = query_engine.query("Who is Paul Graham.")
 streaming_response.print_response_stream()
 ```
 
-See the full [usage pattern](./usage_pattern.md) for more details.
+See the full [usage pattern](/python/framework/module_guides/deploying/query_engine/usage_pattern) for more details.
 
 ## Modules
 
-Find all the modules in the [modules guide](./modules.md).
+Find all the modules in the [modules guide](/python/framework/module_guides/deploying/query_engine/modules).
 
 ## Supporting Modules
 
-There are also [supporting modules](./supporting_modules.md).
+There are also [supporting modules](/python/framework/module_guides/deploying/query_engine/supporting_modules).

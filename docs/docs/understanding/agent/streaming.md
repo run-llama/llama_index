@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 4
+---
+
 # Streaming output and events
 
 In real-world use, agents can take a long time to run. Providing feedback to the user about the progress of the agent is critical, and streaming allows you to do that.
@@ -76,4 +81,4 @@ For more details, you can check the full report [here](https://www.weatherapi.co
 
 You can see us filtering for more of these events in the [full code of this example](https://github.com/run-llama/python-agents-tutorial/blob/main/4_streaming.py).
 
-Next you'll learn about how to get a [human in the loop](./human_in_the_loop.md) to provide feedback to your agents.
+Next you'll learn about how to get a [human in the loop](/python/framework/understanding/agent/human_in_the_loop) to provide feedback to your agents.

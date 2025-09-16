@@ -125,7 +125,7 @@ node_parser = SentenceWindowNodeParser.from_defaults(
 )
 ```
 
-A full example can be found [here in combination with the `MetadataReplacementNodePostProcessor`](../../../examples/node_postprocessor/MetadataReplacementDemo.ipynb).
+A full example can be found [here in combination with the `MetadataReplacementNodePostProcessor`](/python/examples/node_postprocessor/metadatareplacementdemo).
 
 ### SemanticSplitterNodeParser
 
@@ -152,7 +152,7 @@ splitter = SemanticSplitterNodeParser(
 )
 ```
 
-A full example can be found in our [guide on using the `SemanticSplitterNodeParser`](../../../examples/node_parsers/semantic_chunking.ipynb).
+A full example can be found in our [guide on using the `SemanticSplitterNodeParser`](/python/examples/node_parsers/semantic_chunking).
 
 ### TokenTextSplitter
 
@@ -185,4 +185,4 @@ node_parser = HierarchicalNodeParser.from_defaults(
 )
 ```
 
-A full example can be found [here in combination with the `AutoMergingRetriever`](../../../examples/retrievers/auto_merging_retriever.ipynb).
+A full example can be found [here in combination with the `AutoMergingRetriever`](/python/examples/retrievers/auto_merging_retriever).

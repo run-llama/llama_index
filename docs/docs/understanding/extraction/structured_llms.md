@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 2
+---
+
 # Using Structured LLMs
 
 The highest-level way to extract structured data in LlamaIndex is to instantiate a Structured LLM. First, let’s instantiate our Pydantic class as previously:
@@ -104,4 +109,4 @@ Note that Pydantic is creating a full `datetime` object and not just translating
 
 A structured LLM works exactly like a regular LLM class: you can call `chat`, `stream`, `achat`, `astream` etc. and it will respond with Pydantic objects in all cases. You can also pass in your Structured LLM as a parameter to `VectorStoreIndex.as_query_engine(llm=sllm)` and it will automatically respond to your RAG queries with structured objects.
 
-The Structured LLM takes care of all the prompting for you. If you want more control over the prompt, move on to [Structured Prediction](structured_prediction.md).
+The Structured LLM takes care of all the prompting for you. If you want more control over the prompt, move on to [Structured Prediction](/python/framework/understanding/extraction/structured_prediction).

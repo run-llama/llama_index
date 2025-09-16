@@ -30,6 +30,6 @@ With LlamaIndex, there are a number of ways you can use MCP servers, which allow
 
 ## Next Steps
 
-- [Using MCP Tools with LlamaIndex](./llamaindex_mcp.md)
-- [Use LlamaCloud APIs as MCP Tools/Servers](./llamacloud_mcp.md)
-- [Use any existing LlamaIndex workflow/tool as an MCP Tool/Server](./convert_existing.md)
+- [Using MCP Tools with LlamaIndex](/python/framework/module_guides/mcp/llamaindex_mcp)
+- [Use LlamaCloud APIs as MCP Tools/Servers](/python/framework/module_guides/mcp/llamacloud_mcp)
+- [Use any existing LlamaIndex workflow/tool as an MCP Tool/Server](/python/framework/module_guides/mcp/convert_existing)
