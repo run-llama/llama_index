@@ -21,6 +21,8 @@ from llama_index.core.vector_stores.types import (
     FilterCondition,
     FilterOperator,
 )
+from qdrant_client import AsyncQdrantClient
+from qdrant_client.http import models as qmodels
 
 requires_qdrant_cluster = pytest.mark.skipif(
     not os.getenv("QDRANT_CLUSTER_URL"),
@@ -744,3 +746,75 @@ def test_sparse_vector_name_detection_keeps_new() -> None:
     vs = QdrantVectorStore(collection_name="test_collection", client=mock_client)
 
     assert vs.sparse_vector_name == "text-sparse-new"
+
+
+def test_sparse_vector_name_respects_user_specified() -> None:
+    """If a user specifies a sparse vector name present in the collection, don't override it."""
+    mock_client = MagicMock(spec=QdrantClient)
+
+    class DummyParams:
+        def __init__(self):
+            self.vectors = {"text-dense": object()}
+            self.sparse_vectors = {
+                "custom-sparse": object(),
+                "text-sparse-new": object(),
+            }
+
+    class DummyConfig:
+        def __init__(self):
+            self.params = DummyParams()
+
+    class DummyCollection:
+        def __init__(self):
+            self.config = DummyConfig()
+
+    mock_client.collection_exists.return_value = True
+    mock_client.get_collection.return_value = DummyCollection()
+
+    vs = QdrantVectorStore(
+        collection_name="test_collection",
+        client=mock_client,
+        sparse_vector_name="custom-sparse",
+    )
+
+    assert vs.sparse_vector_name == "custom-sparse"
+
+
+@pytest.mark.asyncio
+async def test_async_query_initializes_with_async_client_only() -> None:
+    """
+    When only an async client is provided and the collection already exists,
+    aquery should lazily detect vector format and successfully return results.
+    """
+    collection_name = "async_init_test"
+    aclient = AsyncQdrantClient(":memory:")
+
+    # Create collection with named dense vector
+    await aclient.create_collection(
+        collection_name=collection_name,
+        vectors_config={
+            "text-dense": qmodels.VectorParams(size=2, distance=qmodels.Distance.COSINE)
+        },
+    )
+
+    # Insert a single point
+    await aclient.upsert(
+        collection_name=collection_name,
+        points=[
+            qmodels.PointStruct(
+                id="11111111-1111-1111-1111-111111111111",
+                vector={"text-dense": [1.0, 0.0]},
+                payload={"text": "hello"},
+            )
+        ],
+    )
+
+    # Initialize store with async client only
+    store = QdrantVectorStore(collection_name=collection_name, aclient=aclient)
+
+    query = VectorStoreQuery(query_embedding=[1.0, 0.0], similarity_top_k=1)
+    result = await store.aquery(query)
+
+    assert result is not None
+    assert len(result.nodes) == 1
+    assert getattr(result.nodes[0], "text", None) == "hello"
