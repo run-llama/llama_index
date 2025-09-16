@@ -9,7 +9,7 @@ def test_class():
     assert BaseEmbedding.__name__ in names_of_base_classes
 
 
-@patch("llama_index.embeddings.fastembed.base.TextEmbedding")
+@patch("fastembed.TextEmbedding")
 def test_create_fastembed_embedding(mock_text_embedding):
     cache = Path("./test_cache_2")
 
