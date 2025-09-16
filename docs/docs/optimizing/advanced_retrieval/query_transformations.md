@@ -56,7 +56,7 @@ Given the response (along with prior responses) and the query, follow-up questio
 
 An example image is shown below.
 
-![](../../_static/query_transformations/multi_step_diagram.png)
+![](/python/framework/_static/query_transformations/multi_step_diagram.png)
 
 Here's a corresponding example code snippet.
 
@@ -81,5 +81,5 @@ print(str(response))
 
 Check out our [example notebook](https://github.com/jerryjliu/llama_index/blob/main/examples/vector_indices/SimpleIndexDemo-multistep.ipynb) for a full walkthrough.
 
-- [HyDE Query Transform](../../examples/query_transformations/HyDEQueryTransformDemo.ipynb)
-- [Multistep Query](../../examples/query_transformations/SimpleIndexDemo-multistep.ipynb)
+- [HyDE Query Transform](/python/examples/query_transformations/hydequerytransformdemo)
+- [Multistep Query](/python/examples/query_transformations/simpleindexdemo-multistep)

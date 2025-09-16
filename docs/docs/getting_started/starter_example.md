@@ -1,13 +1,17 @@
+---
+sidebar:
+  order: 5
+---
 # Starter Tutorial (Using OpenAI)
 
 This tutorial will show you how to get started building agents with LlamaIndex. We'll start with a basic example and then show how to add RAG (Retrieval-Augmented Generation) capabilities.
 
 !!! tip
-    Make sure you've followed the [installation](installation.md) steps first.
+    Make sure you've followed the [installation](/python/framework/getting_started/installation) steps first.
 
 !!! tip
     Want to use local models?
-    If you want to do our starter tutorial using only local models, [check out this tutorial instead](starter_example_local.md).
+    If you want to do our starter tutorial using only local models, [check out this tutorial instead](/python/framework/getting_started/starter_example_local).
 
 ## Set your OpenAI API key
 
@@ -69,7 +73,7 @@ What happened is:
 - The agent received the result from the tool and interpolated it into the final response
 
 !!! tip
-    As you can see, we are using `async` python functions. Many LLMs and models support async calls, and using async code is recommended to improve performance of your application. To learn more about async code and python, we recommend this [short section on async + python](./async_python.md).
+    As you can see, we are using `async` python functions. Many LLMs and models support async calls, and using async code is recommended to improve performance of your application. To learn more about async code and python, we recommend this [short section on async + python](/python/framework/getting_started/async_python).
 
 ## Adding Chat History
 
@@ -174,7 +178,7 @@ query_engine = index.as_query_engine()
 ```
 
 !!! tip
-    If you used a [vector store integration](../module_guides/storing/vector_stores.md) besides the default, chances are you can just reload from the vector store:
+    If you used a [vector store integration](/python/framework/module_guides/storing/vector_stores) besides the default, chances are you can just reload from the vector store:
 
     ```python
     index = VectorStoreIndex.from_vector_store(vector_store)
@@ -193,7 +197,7 @@ This is just the beginning of what you can do with LlamaIndex agents! You can:
 
 Some helpful next links:
 
-- See more advanced agent examples in our [Agent documentation](../understanding/agent/index.md)
-- Learn more about [high-level concepts](./concepts.md)
-- Explore how to [customize things](./customization.md)
-- Check out the [component guides](../module_guides/index.md)
+- See more advanced agent examples in our [Agent documentation](/python/framework/understanding/agent)
+- Learn more about [high-level concepts](/python/framework/getting_started/concepts)
+- Explore how to [customize things](/python/framework/getting_started/faq)
+- Check out the [component guides](/python/framework/module_guides)

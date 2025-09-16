@@ -245,7 +245,6 @@ class PGVectorStore(BasePydanticVectorStore):
     create_engine_kwargs: Dict
     initialization_fail_on_error: bool = False
     indexed_metadata_keys: Optional[Set[Tuple[str, PGType]]] = None
-    customize_query_fn: Optional[Callable[[Select, Any, Any], Select]] = None
 
     hnsw_kwargs: Optional[Dict[str, Any]]
 
@@ -260,6 +259,9 @@ class PGVectorStore(BasePydanticVectorStore):
     )
     _async_session: sqlalchemy.ext.asyncio.AsyncSession = PrivateAttr()
     _is_initialized: bool = PrivateAttr(default=False)
+    _customize_query_fn: Optional[Callable[[Select, Any, Any], Select]] = PrivateAttr(
+        default=None
+    )
 
     def __init__(
         self,
@@ -337,7 +339,6 @@ class PGVectorStore(BasePydanticVectorStore):
             initialization_fail_on_error=initialization_fail_on_error,
             use_halfvec=use_halfvec,
             indexed_metadata_keys=indexed_metadata_keys,
-            customize_query_fn=customize_query_fn,
         )
 
         # sqlalchemy model
@@ -365,6 +366,8 @@ class PGVectorStore(BasePydanticVectorStore):
             raise ValueError(
                 "Both engine and async_engine must be provided, or both must be None"
             )
+
+        self._customize_query_fn = customize_query_fn
 
     async def close(self) -> None:
         if not self._is_initialized:
@@ -781,8 +784,8 @@ class PGVectorStore(BasePydanticVectorStore):
             self._table_class.embedding.cosine_distance(embedding).label("distance"),
         ).order_by(text("distance asc"))
 
-        if self.customize_query_fn is not None:
-            stmt = self.customize_query_fn(stmt, self._table_class, **kwargs)
+        if self._customize_query_fn is not None:
+            stmt = self._customize_query_fn(stmt, self._table_class, **kwargs)
 
         return self._apply_filters_and_limit(stmt, limit, metadata_filters)
 
@@ -918,8 +921,8 @@ class PGVectorStore(BasePydanticVectorStore):
             .order_by(text("rank desc"))
         )
 
-        if self.customize_query_fn is not None:
-            stmt = self.customize_query_fn(stmt, self._table_class, **kwargs)
+        if self._customize_query_fn is not None:
+            stmt = self._customize_query_fn(stmt, self._table_class, **kwargs)
 
         # type: ignore
         return self._apply_filters_and_limit(stmt, limit, metadata_filters)

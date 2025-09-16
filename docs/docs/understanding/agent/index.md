@@ -1,12 +1,17 @@
+---
+sidebar:
+  order: 1
+---
+
 # Building an agent
 
 In LlamaIndex, an agent is a semi-autonomous piece of software powered by an LLM that is given a task and executes a series of steps towards solving that task. It is given a set of tools, which can be anything from arbitrary functions up to full LlamaIndex query engines, and it selects the best available tool to complete each step. When each step is completed, the agent judges whether the task is now complete, in which case it returns a result to the user, or whether it needs to take another step, in which case it loops back to the start.
 
-In LlamaIndex, you can either [build your own agentic workflows from scratch](../workflows/index.md), covered in the "Building Workflows" section, or you can use our pre-built agentic workflows like `FunctionAgent` (a simple function/tool calling agent) or `AgentWorkflow` (an agent capable of managing multiple agents). This tutorial covers building a function calling agent using `FunctionAgent`.
+In LlamaIndex, you can either [build your own agentic workflows from scratch](/python/framework/understanding/workflows), covered in the "Building Workflows" section, or you can use our pre-built agentic workflows like `FunctionAgent` (a simple function/tool calling agent) or `AgentWorkflow` (an agent capable of managing multiple agents). This tutorial covers building a function calling agent using `FunctionAgent`.
 
-To learn about the various ways to build multi-agent systems, go to ["Multi-agent systems"](./multi_agent.md).
+To learn about the various ways to build multi-agent systems, go to ["Multi-agent systems"](/python/framework/understanding/agent/multi_agent).
 
-![agent flow](./agent_flow.png)
+![agent flow](/python/framework/understanding/agent/agent_flow.png)
 
 ## Getting started
 
@@ -25,7 +30,7 @@ And then we'll install the LlamaIndex library and some other dependencies that w
 pip install llama-index-core llama-index-llms-openai python-dotenv
 ```
 
-If any of this gives you trouble, check out our more detailed [installation guide](../../getting_started/installation.md).
+If any of this gives you trouble, check out our more detailed [installation guide](/python/framework/getting_started/installation).
 
 ## OpenAI Key
 
@@ -35,7 +40,7 @@ Our agent will be powered by OpenAI's `gpt-4o-mini` LLM, so you'll need an [API 
 OPENAI_API_KEY=sk-proj-xxxx
 ```
 
-If you don't want to use OpenAI, you can use [any other LLM](../using_llms/using_llms.md) including local models. Agents require capable models, so smaller models may be less reliable.
+If you don't want to use OpenAI, you can use [any other LLM](/python/framework/understanding/using_llms) including local models. Agents require capable models, so smaller models may be less reliable.
 
 ## Bring in dependencies
 
@@ -75,7 +80,7 @@ As you can see, these are regular Python functions. When deciding what tool to u
 llm = OpenAI(model="gpt-4o-mini")
 ```
 
-You could also pick another popular model accessible via API, such as those from [Mistral](../../examples/llm/mistralai.ipynb), [Claude from Anthropic](../../examples/llm/anthropic.ipynb) or [Gemini from Google](../../examples/llm/google_genai.ipynb).
+You could also pick another popular model accessible via API, such as those from [Mistral](/python/examples/llm/mistralai), [Claude from Anthropic](/python/examples/llm/anthropic) or [Gemini from Google](/python/examples/llm/google_genai).
 
 ## Initialize the agent
 
@@ -91,7 +96,7 @@ workflow = FunctionAgent(
 
 GPT-4o-mini is actually smart enough to not need tools to do such simple math, which is why we specified that it should use tools in the prompt.
 
-Beyond `FunctionAgent`, there are other agents available in LlamaIndex, such as [`ReActAgent`](../../examples/agent/react_agent.ipynb) and [`CodeActAgent`](../../examples/agent/code_act_agent.ipynb), which use different prompting strategies to execute tools.
+Beyond `FunctionAgent`, there are other agents available in LlamaIndex, such as [`ReActAgent`](/python/examples/agent/react_agent) and [`CodeActAgent`](/python/examples/agent/code_act_agent), which use different prompting strategies to execute tools.
 
 ## Ask a question
 
@@ -127,4 +132,4 @@ The result of (20 + (2 times 4)) is 28.
 
 Check the [repo](https://github.com/run-llama/python-agents-tutorial/blob/main/1_basic_agent.py) to see what the final code should look like.
 
-Congratulations! You've built the most basic kind of agent. Next let's learn how to use [pre-built tools](./tools.md).
+Congratulations! You've built the most basic kind of agent. Next let's learn how to use [pre-built tools](/python/framework/understanding/agent/tools).

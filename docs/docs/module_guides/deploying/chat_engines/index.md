@@ -6,11 +6,11 @@ Chat engine is a high-level interface for having a conversation with your data
 (multiple back-and-forth instead of a single question & answer).
 Think ChatGPT, but augmented with your knowledge base.
 
-Conceptually, it is a **stateful** analogy of a [Query Engine](../query_engine/index.md).
+Conceptually, it is a **stateful** analogy of a [Query Engine](/python/framework/module_guides/deploying/query_engine).
 By keeping track of the conversation history, it can answer questions with past context in mind.
 
 !!! tip
-    If you want to ask standalone question over your data (i.e. without keeping track of conversation history), use [Query Engine](../query_engine/index.md) instead.
+    If you want to ask standalone question over your data (i.e. without keeping track of conversation history), use [Query Engine](/python/framework/module_guides/deploying/query_engine) instead.
 
 ## Usage Pattern
 
@@ -30,8 +30,8 @@ for token in streaming_response.response_gen:
     print(token, end="")
 ```
 
-More details in the complete [usage pattern guide](./usage_pattern.md).
+More details in the complete [usage pattern guide](/python/framework/module_guides/deploying/chat_engines/usage_pattern).
 
 ## Modules
 
-In our [modules section](./modules.md), you can find corresponding tutorials to see the available chat engines in action.
+In our [modules section](/python/framework/module_guides/deploying/chat_engines/modules), you can find corresponding tutorials to see the available chat engines in action.

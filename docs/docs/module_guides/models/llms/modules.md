@@ -57,7 +57,6 @@ We support integrations with OpenAI, Anthropic, Google, Hugging Face, and more.
 - [SageMaker](../../../examples/llm/sagemaker_endpoint_llm.ipynb)
 - [SambaNova Systems](../../../examples/llm/sambanovasystems.ipynb)
 - [Together.ai](../../../examples/llm/together.ipynb)
-- [Unify AI](../../../examples/llm/unify.ipynb)
 - [Upstage](../../../examples/llm/upstage.ipynb)
 - [Vercel AI Gateway](../../../examples/llm/vercel-ai-gateway.ipynb)
 - [vLLM](../../../examples/llm/vllm.ipynb)

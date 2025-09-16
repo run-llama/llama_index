@@ -4,7 +4,7 @@
 
 Documents can either be created automatically via data loaders, or constructed manually.
 
-By default, all of our [data loaders](../connector/index.md) (including those offered on LlamaHub) return `Document` objects through the `load_data` function.
+By default, all of our [data loaders](/python/framework/module_guides/loading/connector) (including those offered on LlamaHub) return `Document` objects through the `load_data` function.
 
 ```python
 from llama_index.core import SimpleDirectoryReader
@@ -69,7 +69,7 @@ documents = SimpleDirectoryReader(
 
 ### Customizing the id
 
-As detailed in the section [Document Management](../../indexing/document_management.md), the `doc_id` is used to enable efficient refreshing of documents in the index. When using the `SimpleDirectoryReader`, you can automatically set the doc `doc_id` to be the full path to each document:
+As detailed in the section [Document Management](/python/framework/module_guides/indexing/document_management), the `doc_id` is used to enable efficient refreshing of documents in the index. When using the `SimpleDirectoryReader`, you can automatically set the doc `doc_id` to be the full path to each document:
 
 ```python
 from llama_index.core import SimpleDirectoryReader
@@ -173,4 +173,4 @@ print(
 
 ### Advanced - Automatic Metadata Extraction
 
-We have [initial examples](./usage_metadata_extractor.md) of using LLMs themselves to perform metadata extraction.
+We have [initial examples](/python/framework/module_guides/loading/documents_and_nodes/usage_metadata_extractor) of using LLMs themselves to perform metadata extraction.

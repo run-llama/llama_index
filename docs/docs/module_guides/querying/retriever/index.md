@@ -4,11 +4,11 @@
 
 Retrievers are responsible for fetching the most relevant context given a user query (or chat message).
 
-It can be built on top of [indexes](../../indexing/index.md), but can also be defined independently.
-It is used as a key building block in [query engines](../../deploying/query_engine/index.md) (and [Chat Engines](../../deploying/chat_engines/index.md)) for retrieving relevant context.
+It can be built on top of [indexes](/python/framework/module_guides/indexing), but can also be defined independently.
+It is used as a key building block in [query engines](/python/framework/module_guides/deploying/query_engine) (and [Chat Engines](/python/framework/module_guides/deploying/chat_engines)) for retrieving relevant context.
 
 !!! tip
-    Confused about where retriever fits in the RAG workflow? Read about [high-level concepts](../../../getting_started/concepts.md)
+    Confused about where retriever fits in the RAG workflow? Read about [high-level concepts](/python/framework/getting_started/concepts)
 
 ## Usage Pattern
 
@@ -33,7 +33,7 @@ Retrieve relevant context for a question:
 nodes = retriever.retrieve("Who is Paul Graham?")
 ```
 
-> Note: To learn how to build an index, see [Indexing](../../indexing/index.md)
+> Note: To learn how to build an index, see [Indexing](/python/framework/module_guides/indexing)
 
 ## High-Level API
 
@@ -48,9 +48,9 @@ retriever = summary_index.as_retriever(
 )
 ```
 
-This creates a [SummaryIndexLLMRetriever](../../../api_reference/retrievers/summary.md) on top of the summary index.
+This creates a [SummaryIndexLLMRetriever](/python/framework/api_reference/retrievers/summary) on top of the summary index.
 
-See [**Retriever Modes**](retriever_modes.md) for a full list of (index-specific) retriever modes
+See [**Retriever Modes**](/python/framework/module_guides/querying/retriever/retriever_modes) for a full list of (index-specific) retriever modes
 and the retriever classes they map to.
 
 ### Configuring a Retriever
@@ -85,4 +85,4 @@ retriever = SummaryIndexLLMRetriever(
 
 ## Examples
 
-See more examples in the [retrievers guide](./retrievers.md).
+See more examples in the [retrievers guide](/python/framework/module_guides/querying/retriever/retrievers).

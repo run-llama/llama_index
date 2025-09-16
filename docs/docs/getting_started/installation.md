@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 3
+---
+
 # Installation and Setup
 
 The LlamaIndex ecosystem is structured using a collection of namespaced python packages.
@@ -29,9 +34,9 @@ By default, we use the OpenAI `gpt-3.5-turbo` model for text generation and `tex
 You can obtain an API key by logging into your OpenAI account and [creating a new API key](https://platform.openai.com/account/api-keys).
 
 !!! tip
-    You can also [use one of many other available LLMs](../module_guides/models/llms/usage_custom.md). You may need additional environment keys + tokens setup depending on the LLM provider.
+    You can also [use one of many other available LLMs](/python/framework/module_guides/models/llms/usage_custom). You may need additional environment keys + tokens setup depending on the LLM provider.
 
-[Check out our OpenAI Starter Example](starter_example.md)
+[Check out our OpenAI Starter Example](/python/framework/getting_started/starter_example)
 
 ## Custom Installation from Pip
 
@@ -43,11 +48,11 @@ For example, for a local setup with Ollama and HuggingFace embeddings, the insta
 pip install llama-index-core llama-index-readers-file llama-index-llms-ollama llama-index-embeddings-huggingface
 ```
 
-[Check out our Starter Example with Local Models](starter_example_local.md)
+[Check out our Starter Example with Local Models](/python/framework/getting_started/starter_example_local)
 
-A full guide to using and configuring LLMs is available [here](../module_guides/models/llms.md).
+A full guide to using and configuring LLMs is available [here](/python/framework/module_guides/models/llms).
 
-A full guide to using and configuring embedding models is available [here](../module_guides/models/embeddings.md).
+A full guide to using and configuring embedding models is available [here](/python/framework/module_guides/models/embeddings).
 
 ## Installation from Source
 

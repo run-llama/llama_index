@@ -18,7 +18,7 @@ This guide helps walk through each of these capabilities. Specifically, we cover
 - **Using natural language SQL queries**: How to query our SQL database using natural language.
 
 We will walk through a toy example table which contains city/population/country information.
-A notebook for this tutorial is [available here](../../examples/index_structs/struct_indices/SQLIndexDemo.ipynb).
+A notebook for this tutorial is [available here](/python/examples/index_structs/struct_indices/sqlindexdemo).
 
 ## Setup
 
@@ -180,7 +180,3 @@ and synthesize a SQL query and a response from the results of that query.
 
 This is it for now! We're constantly looking for ways to improve our structured data support.
 If you have any questions let us know in [our Discord](https://discord.gg/dGcwcsnxhU).
-
-Relevant Resources:
-
-- [Airbyte SQL Index Guide](./structured_data/Airbyte_demo.ipynb)

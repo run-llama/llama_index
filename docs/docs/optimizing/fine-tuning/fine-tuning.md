@@ -37,9 +37,9 @@ We've created comprehensive guides showing you how to finetune embeddings in dif
 
 Finetuning gives you a 5-10% increase in retrieval evaluation metrics. You can then plug this fine-tuned model into your RAG application with LlamaIndex.
 
-- [Fine-tuning an Adapter](../../examples/finetuning/embeddings/finetune_embedding_adapter.ipynb)
-- [Embedding Fine-tuning Guide](../../examples/finetuning/embeddings/finetune_embedding.ipynb)
-- [Router Fine-tuning](../../examples/finetuning/router/router_finetune.ipynb)
+- [Fine-tuning an Adapter](/python/examples/finetuning/embeddings/finetune_embedding_adapter)
+- [Embedding Fine-tuning Guide](/python/examples/finetuning/embeddings/finetune_embedding)
+- [Router Fine-tuning](/python/examples/finetuning/router/router_finetune)
 
 **Old**
 
@@ -57,7 +57,7 @@ We use GPT-4 to automatically generate questions from any unstructured context, 
 We then launch a finetuning job, and get back a distilled model. We can evaluate this model with [Ragas](https://github.com/explodinggradients/ragas) to benchmark against a naive GPT-3.5 workflow.
 
 - [GPT-3.5 Fine-tuning Notebook (Colab)](https://colab.research.google.com/drive/1NgyCJVyrC2xcZ5lxt2frTU862v6eJHlc?usp=sharing)
-- [GPT-3.5 Fine-tuning Notebook (Notebook link)](../../examples/finetuning/openai_fine_tuning.ipynb)
+- [GPT-3.5 Fine-tuning Notebook (Notebook link)](/python/examples/finetuning/openai_fine_tuning)
 - [[WIP] Function Calling Fine-tuning](../../examples/finetuning/openai_fine_tuning_functions.ipynb)
 
 **Old**
@@ -70,8 +70,7 @@ We then launch a finetuning job, and get back a distilled model. We can evaluate
 Another use case for fine-tuning is to make the model better at outputting structured data.
 We can do this for both OpenAI and Llama2.
 
-- [OpenAI Function Calling Fine-tuning](../../examples/finetuning/openai_fine_tuning_functions.ipynb)
-- [Llama2 Structured Output Fine-tuning](../../examples/finetuning/gradient/gradient_structured.ipynb)
+- [OpenAI Function Calling Fine-tuning](/python/examples/finetuning/openai_fine_tuning_functions)
 
 ### Fine-tuning Llama 2 for Better Text-to-SQL
 
@@ -91,8 +90,8 @@ see https://arxiv.org/pdf/2306.05685.pdf).
 Thus, by fine-tuning a GPT-3.5 judge, we may be able to reach GPT-4 levels (and
 by proxy, agreement with humans) at a lower cost.
 
-- [Finetune Correctness Judge](../../examples/finetuning/llm_judge/correctness/finetune_llm_judge_single_grading_correctness.ipynb)
-- [Finetune LLM Judge](../../examples/finetuning/llm_judge/pairwise/finetune_llm_judge.ipynb)
+- [Finetune Correctness Judge](/python/examples/finetuning/llm_judge/correctness/finetune_llm_judge_single_grading_correctness)
+- [Finetune LLM Judge](/python/examples/finetuning/llm_judge/pairwise/finetune_llm_judge)
 
 ## Fine-tuning Cross-Encoders for Re-Ranking
 
@@ -103,7 +102,7 @@ are first.
 
 In this example, we use the `sentence-transformers` package to help finetune a crossencoder model, using a dataset that is generated based on the `QASPER` dataset.
 
-- [Cross-Encoder Finetuning](../../examples/finetuning/cross_encoder_finetuning/cross_encoder_finetuning.ipynb)
+- [Cross-Encoder Finetuning](/python/examples/finetuning/cross_encoder_finetuning/cross_encoder_finetuning)
 - [Finetuning Llama 2 for Text-to-SQL](https://medium.com/llamaindex-blog/easily-finetune-llama-2-for-your-text-to-sql-applications-ecd53640e10d)
 - [Finetuning GPT-3.5 to Distill GPT-4](https://colab.research.google.com/drive/1vWeJBXdFEObuihO7Z8ui2CAYkdHQORqo?usp=sharing)
 
@@ -115,4 +114,4 @@ Re-ranking is a crucial step in advanced retrieval processes. This step involves
 
 In this example, we use the `cohere` custom reranker training module to create a reranker on your domain or specific dataset to improve retrieval performance.
 
-- [Cohere Custom Reranker](../../examples/finetuning/rerankers/cohere_custom_reranker.ipynb)
+- [Cohere Custom Reranker](/python/examples/finetuning/rerankers/cohere_custom_reranker)

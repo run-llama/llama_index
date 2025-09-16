@@ -1,7 +1,7 @@
 # (Deprecated) Query Engines + Pydantic Outputs
 
 !!! tip
-    This guide references a deprecated method of extracting structured outputs in a RAG workflow. Check out our [structured output starter guide](../../../examples/structured_outputs/structured_outputs.ipynb) for more details.
+    This guide references a deprecated method of extracting structured outputs in a RAG workflow. Check out our [structured output starter guide](/python/examples/structured_outputs/structured_outputs) for more details.
 
 Using `index.as_query_engine()` and it's underlying `RetrieverQueryEngine`, we can support structured pydantic outputs without an additional LLM calls (in contrast to a typical output parser.)
 
@@ -57,5 +57,5 @@ print(response.extra_info)
 
 Detailed usage is available in the notebooks below:
 
-- [Structured Outputs with a Query Engine](../../../examples/query_engine/pydantic_query_engine.ipynb)
-- [Structured Outputs with a Tree Summarize](../../../examples/response_synthesizers/pydantic_tree_summarize.ipynb)
+- [Structured Outputs with a Query Engine](/python/examples/query_engine/pydantic_query_engine)
+- [Structured Outputs with a Tree Summarize](/python/examples/response_synthesizers/pydantic_tree_summarize)

@@ -36,4 +36,4 @@ resp = OpenAI().chat(messages)
 print(resp)
 ```
 
-Check out our [modules section](modules.md) for usage guides for each LLM.
+Check out our [modules section](/python/framework/module_guides/models/llms/modules) for usage guides for each LLM.

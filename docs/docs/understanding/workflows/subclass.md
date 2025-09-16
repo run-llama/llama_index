@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 7
+---
+
 # Subclassing workflows
 
 Another great feature of workflows is their extensibility. You can take workflows written by others or built-ins from LlamaIndex and extend them to customize them to your needs. We'll look at two ways to do that.
@@ -94,6 +99,6 @@ We can visualize the subclassed workflow and it will show all the steps, like th
 draw_all_possible_flows(CustomWorkflow, "custom_workflow.html")
 ```
 
-![Custom workflow](subclass.png)
+![Custom workflow](/python/framework/understanding/workflows/subclass.png)
 
-Next, let's look at another way to extend a workflow: [resources](resources.md).
+Next, let's look at another way to extend a workflow: [resources](/python/framework/understanding/workflows/resources).

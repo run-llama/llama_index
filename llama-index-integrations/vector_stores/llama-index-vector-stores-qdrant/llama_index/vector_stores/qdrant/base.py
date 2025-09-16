@@ -1578,13 +1578,14 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
     def _detect_vector_format(self, collection_name: str) -> None:
         """
-        Detect the vector format of an existing collection.
-        This allows backward compatibility with collections that were created before
-        the refactoring to use named vectors consistently.
+        Detect and handle old vector formats from existing collections.
+        - named vs non-named vectors
+        - new sparse vector field name vs old sparse vector field name
         """
         try:
             collection_info = self._client.get_collection(collection_name)
             vectors_config = collection_info.config.params.vectors
+            sparse_vectors = collection_info.config.params.sparse_vectors or {}
 
             # Check if we have an unnamed vector format (where name is empty string)
             if isinstance(vectors_config, dict):
@@ -1596,6 +1597,13 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 # Using unnamed vector format from earlier versions
                 self._legacy_vector_format = True
                 self.dense_vector_name = LEGACY_UNNAMED_VECTOR
+
+            # Detect sparse vector name if any sparse vectors configured
+            if isinstance(sparse_vectors, dict) and len(sparse_vectors) > 0:
+                if self.sparse_vector_name in sparse_vectors:
+                    pass
+                elif DEFAULT_SPARSE_VECTOR_NAME_OLD in sparse_vectors:
+                    self.sparse_vector_name = DEFAULT_SPARSE_VECTOR_NAME_OLD
 
         except Exception as e:
             logger.warning(
@@ -1604,11 +1612,14 @@ class QdrantVectorStore(BasePydanticVectorStore):
 
     async def _adetect_vector_format(self, collection_name: str) -> None:
         """
-        Asynchronous method to detect the vector format of an existing collection.
+        Asynchronous method to detect and handle old vector formats from existing collections.
+        - named vs non-named vectors
+        - new sparse vector field name vs old sparse vector field name
         """
         try:
             collection_info = await self._aclient.get_collection(collection_name)
             vectors_config = collection_info.config.params.vectors
+            sparse_vectors = collection_info.config.params.sparse_vectors or {}
 
             # Check if we have an unnamed vector format (where name is empty string)
             if isinstance(vectors_config, dict):
@@ -1620,6 +1631,13 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 # Using unnamed vector format from earlier versions
                 self._legacy_vector_format = True
                 self.dense_vector_name = LEGACY_UNNAMED_VECTOR
+
+            # Detect sparse vector name if any sparse vectors configured
+            if isinstance(sparse_vectors, dict) and len(sparse_vectors) > 0:
+                if self.sparse_vector_name in sparse_vectors:
+                    pass
+                elif DEFAULT_SPARSE_VECTOR_NAME_OLD in sparse_vectors:
+                    self.sparse_vector_name = DEFAULT_SPARSE_VECTOR_NAME_OLD
 
         except Exception as e:
             logger.warning(

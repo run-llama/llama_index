@@ -34,7 +34,7 @@ retriever = index.as_retriever()
 source_nodes = retriever.retrieve("What did the author do growing up?")
 ```
 
-See the [notebook guide](../../examples/managed/GoogleDemo.ipynb) for full details.
+See the [notebook guide](/python/examples/managed/googledemo) for full details.
 
 ## Vectara
 
@@ -96,8 +96,8 @@ Chat works as you expect where subsequent `chat` calls maintain a conversation h
 
 For more examples - please see below:
 
-- [Vectara Demo](../../examples/managed/vectaraDemo.ipynb)
-- [Vectara AutoRetriever](../../examples/retrievers/vectara_auto_retriever.ipynb)
+- [Vectara Demo](/python/examples/managed/vectarademo)
+- [Vectara AutoRetriever](/python/examples/retrievers/vectara_auto_retriever)
 
 ## Vertex AI RAG (LlamaIndex on Vertex AI)
 
@@ -150,4 +150,4 @@ retriever = index.as_retriever()
 nodes = retriever.retrieve("What is RAG and why it is helpful?")
 ```
 
-See the [notebook guide](../../examples/managed/VertexAIDemo.ipynb) for full details.
+See the [notebook guide](/python/examples/managed/vertexaidemo) for full details.

@@ -1,3 +1,3 @@
 # Supporting Modules
 
-- [Query Transformations](../../../optimizing/advanced_retrieval/query_transformations.md)
+- [Query Transformations](/python/framework/optimizing/advanced_retrieval/query_transformations)

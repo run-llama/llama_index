@@ -11,12 +11,12 @@ Some tasks are listed below, from simple to advanced.
 
 1. Try inspecting the prompts used in your RAG workflow (e.g. the question–answering prompt) and customizing it.
 
-- [Customizing Prompts](../../examples/prompts/prompt_mixin.ipynb)
-- [Advanced Prompts](../../examples/prompts/advanced_prompts.ipynb)
+- [Customizing Prompts](/python/examples/prompts/prompt_mixin)
+- [Advanced Prompts](/python/examples/prompts/advanced_prompts)
 
 2. Try adding **prompt functions**, allowing you to dynamically inject few-shot examples or process the injected inputs.
 
-- [Advanced Prompts](../../examples/prompts/advanced_prompts.ipynb)
+- [Advanced Prompts](/python/examples/prompts/advanced_prompts)
 
 ## Embeddings
 
@@ -32,7 +32,7 @@ A great resource to check on the current best overall embeddings models is the [
 
 **NOTE:** Unlike an LLM (which you can change at any time), if you change your embedding model, you must re-index your data. Furthermore, you should ensure the same embedding model is used for both indexing and querying.
 
-We have a list of [all supported embedding model integrations](../../module_guides/models/embeddings.md).
+We have a list of [all supported embedding model integrations](/python/framework/module_guides/models/embeddings).
 
 ## Chunk Sizes
 
@@ -74,16 +74,16 @@ Embeddings are not perfect, and may fail to return text chunks with matching key
 
 The solution to this issue is often hybrid search. In LlamaIndex, there are two main ways to achieve this:
 
-1. Use a vector database that has a hybrid search functionality (see [our complete list of supported vector stores](../../module_guides/storing/vector_stores.md)).
+1. Use a vector database that has a hybrid search functionality (see [our complete list of supported vector stores](/python/framework/module_guides/storing/vector_stores)).
 2. Set up a local hybrid search mechanism with BM25.
 
 Relevant guides with both approaches can be found below:
 
-- [BM25 Retriever](../../examples/retrievers/bm25_retriever.ipynb)
-- [Reciprocal Rerank Query Fusion](../../examples/retrievers/reciprocal_rerank_fusion.ipynb)
-- [Weaviate Hybrid Search](../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb)
-- [Pinecone Hybrid Search](../../examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb)
-- [Milvus Hybrid Search](../../examples/vector_stores/MilvusHybridIndexDemo.ipynb)
+- [BM25 Retriever](/python/examples/retrievers/bm25_retriever)
+- [Reciprocal Rerank Query Fusion](/python/examples/retrievers/reciprocal_rerank_fusion)
+- [Weaviate Hybrid Search](/python/examples/vector_stores/weaviateindexdemo-hybrid)
+- [Pinecone Hybrid Search](/python/examples/vector_stores/pineconeindexdemo-hybrid)
+- [Milvus Hybrid Search](/python/examples/vector_stores/milvushybridindexdemo)
 
 ## Metadata Filters
 
@@ -108,17 +108,17 @@ index = VectorStoreIndex.from_documents(documents)
 query_engine = index.as_query_engine(filters=filters)
 ```
 
-If you are using an advanced LLM like GPT-4, and your [vector database supports filtering](../../module_guides/storing/vector_stores.md), you can get the LLM to write filters automatically at query time, using an `AutoVectorRetriever`.
+If you are using an advanced LLM like GPT-4, and your [vector database supports filtering](/python/framework/module_guides/storing/vector_stores), you can get the LLM to write filters automatically at query time, using an `AutoVectorRetriever`.
 
-- [Vector Store Guide](../../module_guides/indexing/vector_store_guide.ipynb)
+- [Vector Store Guide](/python/framework/module_guides/indexing/vector_store_guide)
 
 ## Document/Node Usage
 
 Take a look at our in-depth guides for more details on how to use Documents/Nodes.
 
-- [Documents Usage](../../module_guides/loading/documents_and_nodes/usage_documents.md)
-- [Nodes Usage](../../module_guides/loading/documents_and_nodes/usage_nodes.md)
-- [Metadata Extraction](../../module_guides/loading/documents_and_nodes/usage_metadata_extractor.md)
+- [Documents Usage](/python/framework/module_guides/loading/documents_and_nodes/usage_documents)
+- [Nodes Usage](/python/framework/module_guides/loading/documents_and_nodes/usage_nodes)
+- [Metadata Extraction](/python/framework/module_guides/loading/documents_and_nodes/usage_metadata_extractor)
 
 ## Multi-Tenancy RAG
 
@@ -126,6 +126,6 @@ Multi-Tenancy in RAG systems is crucial for ensuring data security. It enables u
 
 Refer the guides below for more details.
 
-- [Multi Tenancy RAG](../../examples/multi_tenancy/multi_tenancy_rag.ipynb)
+- [Multi Tenancy RAG](/python/examples/multi_tenancy/multi_tenancy_rag)
 
 For detailed guidance on implementing Multi-Tenancy RAG with LlamaIndex and Qdrant, refer to the [blog post](https://qdrant.tech/documentation/tutorials/llama-index-multitenancy/) released by Qdrant.
