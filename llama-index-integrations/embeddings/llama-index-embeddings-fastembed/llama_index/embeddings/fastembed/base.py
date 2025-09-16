@@ -59,7 +59,7 @@ class FastEmbedEmbedding(BaseEmbedding):
         default=None, description="The ONNX providers to use for the embedding model."
     )
 
-    _model: TextEmbedding = PrivateAttr()
+    _model: "TextEmbedding" = PrivateAttr()
 
     def __init__(
         self,
