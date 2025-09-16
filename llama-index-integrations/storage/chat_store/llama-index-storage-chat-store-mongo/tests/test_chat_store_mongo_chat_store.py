@@ -10,6 +10,7 @@ from llama_index.core.llms import ChatMessage
 
 try:
     import pymongo  # noqa: F401
+    import llama_index  # noqa: F401
 
     no_packages = False
 except ImportError:
