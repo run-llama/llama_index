@@ -668,12 +668,12 @@ def resolve_binary(
             if "," not in data_part:
                 raise ValueError("Invalid data URL format: missing comma separator")
 
-            metadata, data = data_part.split(",", 1)
+            metadata, url_data = data_part.split(",", 1)
             is_base64_encoded = metadata.endswith(";base64")
 
             if is_base64_encoded:
                 # Data is base64 encoded in the URL
-                decoded_data = base64.b64decode(data)
+                decoded_data = base64.b64decode(url_data)
                 if as_base64:
                     # Return as base64 bytes
                     return BytesIO(base64.b64encode(decoded_data))
@@ -684,10 +684,10 @@ def resolve_binary(
                 # Data is not base64 encoded in the URL (URL-encoded text)
                 if as_base64:
                     # Encode the text data as base64
-                    return BytesIO(base64.b64encode(data.encode("utf-8")))
+                    return BytesIO(base64.b64encode(url_data.encode("utf-8")))
                 else:
                     # Return as text bytes
-                    return BytesIO(data.encode("utf-8"))
+                    return BytesIO(url_data.encode("utf-8"))
 
         headers = {
             "User-Agent": "LlamaIndex/0.0 (https://llamaindex.ai; info@llamaindex.ai) llama-index-core/0.0"
