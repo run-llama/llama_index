@@ -68,8 +68,9 @@ class MyWorkflow(Workflow):
         return StopEvent(result="Workflow complete.")
 ```
 
-!!! tip
-    `OpenAI()` here assumes you have an `OPENAI_API_KEY` set in your environment. You could also pass one in using the `api_key` parameter.
+<Aside type="tip">
+`OpenAI()` here assumes you have an `OPENAI_API_KEY` set in your environment. You could also pass one in using the `api_key` parameter.
+</Aside>
 
 In `step_one` and `step_three` we write individual events to the event stream. In `step_two` we use `astream_complete` to produce an iterable generator of the LLM's response, then we produce an event for each chunk of data the LLM sends back to us -- roughly one per word -- before returning the final response to `step_three`.
 

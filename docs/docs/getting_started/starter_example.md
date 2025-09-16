@@ -6,12 +6,14 @@ sidebar:
 
 This tutorial will show you how to get started building agents with LlamaIndex. We'll start with a basic example and then show how to add RAG (Retrieval-Augmented Generation) capabilities.
 
-!!! tip
-    Make sure you've followed the [installation](/python/framework/getting_started/installation) steps first.
+<Aside type="tip">
+Make sure you've followed the [installation](/python/framework/getting_started/installation) steps first.
+</Aside>
 
-!!! tip
-    Want to use local models?
-    If you want to do our starter tutorial using only local models, [check out this tutorial instead](/python/framework/getting_started/starter_example_local).
+<Aside type="tip">
+Want to use local models?
+If you want to do our starter tutorial using only local models, [check out this tutorial instead](/python/framework/getting_started/starter_example_local).
+</Aside>
 
 ## Set your OpenAI API key
 
@@ -25,8 +27,9 @@ export OPENAI_API_KEY=XXXXX
 set OPENAI_API_KEY=XXXXX
 ```
 
-!!! tip
-    If you are using an OpenAI-Compatible API, you can use the `OpenAILike` LLM class. You can find more information in the [OpenAILike LLM](https://docs.llamaindex.ai/en/stable/api_reference/llms/openai_like/) integration and [OpenAILike Embeddings](https://docs.llamaindex.ai/en/stable/api_reference/embeddings/openai_like/) integration.
+<Aside type="tip">
+If you are using an OpenAI-Compatible API, you can use the `OpenAILike` LLM class. You can find more information in the [OpenAILike LLM](https://docs.llamaindex.ai/en/stable/api_reference/llms/openai_like/) integration and [OpenAILike Embeddings](https://docs.llamaindex.ai/en/stable/api_reference/embeddings/openai_like/) integration.
+</Aside>
 
 ## Basic Agent Example
 
@@ -72,8 +75,9 @@ What happened is:
 - The agent selected the `multiply` tool and wrote the arguments to the tool
 - The agent received the result from the tool and interpolated it into the final response
 
-!!! tip
-    As you can see, we are using `async` python functions. Many LLMs and models support async calls, and using async code is recommended to improve performance of your application. To learn more about async code and python, we recommend this [short section on async + python](/python/framework/getting_started/async_python).
+<Aside type="tip">
+As you can see, we are using `async` python functions. Many LLMs and models support async calls, and using async code is recommended to improve performance of your application. To learn more about async code and python, we recommend this [short section on async + python](/python/framework/getting_started/async_python).
+</Aside>
 
 ## Adding Chat History
 
@@ -177,8 +181,9 @@ index = load_index_from_storage(storage_context)
 query_engine = index.as_query_engine()
 ```
 
-!!! tip
-    If you used a [vector store integration](/python/framework/module_guides/storing/vector_stores) besides the default, chances are you can just reload from the vector store:
+<Aside type="tip">
+If you used a [vector store integration](/python/framework/module_guides/storing/vector_stores) besides the default, chances are you can just reload from the vector store:
+</Aside>
 
     ```python
     index = VectorStoreIndex.from_vector_store(vector_store)

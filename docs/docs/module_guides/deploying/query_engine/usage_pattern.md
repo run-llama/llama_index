@@ -8,8 +8,9 @@ Build a query engine from index:
 query_engine = index.as_query_engine()
 ```
 
-!!! tip
-    To learn how to build an index, see [Indexing](/python/framework/module_guides/indexing)
+<Aside type="tip">
+To learn how to build an index, see [Indexing](/python/framework/module_guides/indexing)
+</Aside>
 
 Ask a question over your data
 

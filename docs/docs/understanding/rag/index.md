@@ -4,8 +4,9 @@ sidebar:
 title: Introduction to RAG
 ---
 
-!!! tip
-    If you haven't, [install LlamaIndex](/python/framework/getting_started/installation) and complete the [starter tutorial](/python/framework/getting_started/starter_example) before you read this. It will help ground these steps in your experience.
+<Aside type="tip">
+If you haven't, [install LlamaIndex](/python/framework/getting_started/installation) and complete the [starter tutorial](/python/framework/getting_started/starter_example) before you read this. It will help ground these steps in your experience.
+</Aside>
 
 LLMs are trained on enormous bodies of data but they aren't trained on **your** data. Retrieval-Augmented Generation (RAG) solves this problem by adding your data to the data LLMs already have access to. You will see references to RAG frequently in this documentation. Query engines, chat engines and agents often use RAG to complete their tasks.
 

@@ -1,7 +1,8 @@
 # Pydantic Programs
 
-!!! tip
-    Pydantic Programs are a lower-level abstraction for structured output extraction. The default way to perform structured output extraction is with our LLM classes, which lets you plug these LLMs easily into higher-level workflows. Check out our [structured data extraction tutorial](/python/framework/understanding/extraction).
+<Aside type="tip">
+Pydantic Programs are a lower-level abstraction for structured output extraction. The default way to perform structured output extraction is with our LLM classes, which lets you plug these LLMs easily into higher-level workflows. Check out our [structured data extraction tutorial](/python/framework/understanding/extraction).
+</Aside>
 
 A pydantic program is a generic abstraction that takes in an input string and converts it to a structured Pydantic object type.
 

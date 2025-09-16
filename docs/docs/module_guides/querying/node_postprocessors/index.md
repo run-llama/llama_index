@@ -8,8 +8,9 @@ In LlamaIndex, node postprocessors are most commonly applied within a query engi
 
 LlamaIndex offers several node postprocessors for immediate use, while also providing a simple API for adding your own custom postprocessors.
 
-!!! tip
-    Confused about where node postprocessor fits in the RAG workflow? Read about [high-level concepts](/python/framework/getting_started/concepts)
+<Aside type="tip">
+Confused about where node postprocessor fits in the RAG workflow? Read about [high-level concepts](/python/framework/getting_started/concepts)
+</Aside>
 
 ## Usage Pattern
 

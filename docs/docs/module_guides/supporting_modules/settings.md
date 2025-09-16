@@ -109,8 +109,9 @@ Settings.context_window = 4096
 Settings.num_output = 256
 ```
 
-!!! tip
-    Learn how to configure specific modules: - [LLM](/python/framework/module_guides/models/llms/usage_custom) - [Embedding Model](/python/framework/module_guides/models/embeddings) - [Node Parser/Text Splitters](/python/framework/module_guides/loading/node_parsers) - [Callbacks](/python/framework/module_guides/observability/callbacks)
+<Aside type="tip">
+Learn how to configure specific modules: - [LLM](/python/framework/module_guides/models/llms/usage_custom) - [Embedding Model](/python/framework/module_guides/models/embeddings) - [Node Parser/Text Splitters](/python/framework/module_guides/loading/node_parsers) - [Callbacks](/python/framework/module_guides/observability/callbacks)
+</Aside>
 
 ## Setting local configurations
 

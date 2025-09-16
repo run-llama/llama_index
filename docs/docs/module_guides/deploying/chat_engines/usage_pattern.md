@@ -8,8 +8,9 @@ Build a chat engine from index:
 chat_engine = index.as_chat_engine()
 ```
 
-!!! tip
-    To learn how to build an index, see [Indexing](/python/framework/module_guides/indexing/index_guide)
+<Aside type="tip">
+To learn how to build an index, see [Indexing](/python/framework/module_guides/indexing/index_guide)
+</Aside>
 
 Have a conversation with your data:
 

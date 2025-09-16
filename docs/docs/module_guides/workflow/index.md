@@ -8,9 +8,10 @@ You can create a `Workflow` to do anything! Build an agent, a RAG flow, an extra
 Workflows are also automatically instrumented, so you get observability into each step using tools like [Arize Pheonix](/python/framework/module_guides/observability#arize-phoenix-local). (**NOTE:** Observability works for integrations that take advantage of the newer instrumentation system. Usage may vary.)
 
 
-!!! important
-    The Workflows library can be installed standalone, via `pip install llama-index-workflows`. However,
-    `llama-index-core` comes with a stable version of Workflows included.
+<Aside>
+The Workflows library can be installed standalone, via `pip install llama-index-workflows`. However,
+`llama-index-core` comes with a stable version of Workflows included.
+</Aside>
 
     When installing `llama-index-core` or the `llama-index` umbrella package, Workflows can be accessed with the import
     path `llama_index.core.workflow`. In order to maintain the `llama_index` API stable and avoid breaking changes,

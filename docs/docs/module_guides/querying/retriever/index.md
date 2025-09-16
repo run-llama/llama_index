@@ -7,8 +7,9 @@ Retrievers are responsible for fetching the most relevant context given a user q
 It can be built on top of [indexes](/python/framework/module_guides/indexing), but can also be defined independently.
 It is used as a key building block in [query engines](/python/framework/module_guides/deploying/query_engine) (and [Chat Engines](/python/framework/module_guides/deploying/chat_engines)) for retrieving relevant context.
 
-!!! tip
-    Confused about where retriever fits in the RAG workflow? Read about [high-level concepts](/python/framework/getting_started/concepts)
+<Aside type="tip">
+Confused about where retriever fits in the RAG workflow? Read about [high-level concepts](/python/framework/getting_started/concepts)
+</Aside>
 
 ## Usage Pattern
 

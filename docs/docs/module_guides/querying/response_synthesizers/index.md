@@ -8,8 +8,9 @@ The method for doing this can take many forms, from as simple as iterating over 
 
 When used in a query engine, the response synthesizer is used after nodes are retrieved from a retriever, and after any node-postprocessors are ran.
 
-!!! tip
-    Confused about where response synthesizer fits in the RAG workflow? Read the [high-level concepts](/python/framework/getting_started/concepts)
+<Aside type="tip">
+Confused about where response synthesizer fits in the RAG workflow? Read the [high-level concepts](/python/framework/getting_started/concepts)
+</Aside>
 
 ## Usage Pattern
 
@@ -63,8 +64,9 @@ query_engine = index.as_query_engine(response_synthesizer=response_synthesizer)
 response = query_engine.query("query_text")
 ```
 
-!!! tip
-    To learn how to build an index, see [Indexing](/python/framework/module_guides/indexing)
+<Aside type="tip">
+To learn how to build an index, see [Indexing](/python/framework/module_guides/indexing)
+</Aside>
 
 ## Configuring the Response Mode
 
