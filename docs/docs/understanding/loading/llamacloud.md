@@ -8,7 +8,7 @@ You can use LlamaCloud to connect to your data stores and automatically index th
 
 ```python
 import os
-from llama_index.indices.managed.llama_cloud import LlamaCloudIndex
+from llama_cloud_services import LlamaCloudIndex
 
 os.environ["LLAMA_CLOUD_API_KEY"] = "llx-..."
 

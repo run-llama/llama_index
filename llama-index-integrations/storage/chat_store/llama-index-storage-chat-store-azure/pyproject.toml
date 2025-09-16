@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-storage-chat-store-azure"
-version = "0.4.0"
+version = "0.4.1"
 description = "llama-index storage-chat-store azure integration"
 authors = [{name = "Fran Aguilera", email = "falven2000@hotmail.com"}]
 requires-python = ">=3.9,<4.0"
@@ -36,7 +36,7 @@ license = "MIT"
 dependencies = [
     "azure-data-tables>=12.5.0,<13",
     "llama-index-utils-azure>=0.4.0,<0.5",
-    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-core>=0.13.0,<0.15",
 ]
 
 [tool.codespell]

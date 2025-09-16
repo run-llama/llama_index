@@ -2165,7 +2165,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-postprocessor-openvino-rerank"
-version = "0.5.0"
+version = "0.5.1"
 source = { editable = "." }
 dependencies = [
     { name = "huggingface-hub" },
@@ -2200,7 +2200,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "huggingface-hub", specifier = ">=0.23.0" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "optimum", extras = ["openvino"], specifier = ">=1.21.2,<2" },
 ]
 

@@ -1742,7 +1742,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-docling"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "docling", version = "2.15.1", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine == 'x86_64' and sys_platform == 'darwin'" },
@@ -1778,7 +1778,7 @@ dev = [
 requires-dist = [
     { name = "docling", specifier = ">=2.2.0,<3" },
     { name = "docling-core", specifier = ">=2.2.0,<3" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "numpy", specifier = ">=2.0" },
 ]
 

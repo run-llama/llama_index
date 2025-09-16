@@ -1,0 +1,51 @@
+name: Publish llama-index-core
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  publish-core:
+    if: github.repository == 'run-llama/llama_index'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv and set python version
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.10"
+
+      - name: Install core dependencies
+        working-directory: llama-index-core
+        run: |
+          uv sync
+
+      - name: Populate nltk/tiktoken cache
+        working-directory: llama-index-core
+        run: |
+          uv run python -c "from llama_index.core.utils import globals_helper; print(globals_helper.stopwords); print(globals_helper.punkt_tokenizer)"
+          uv run python -c "from llama_index.core.utils import get_tokenizer; print(get_tokenizer())"
+          uv run python -c "from llama_index.core.utils import get_tokenizer; print(get_tokenizer('gpt-5-mini'))"
+
+      - name: Generate build provenance attestations
+        uses: actions/attest-build-provenance@v3
+        id: attest
+        with:
+          subject-path: "llama-index-core/llama_index/core/_static/**/*"
+
+      - name: Ensure tests pass
+        working-directory: llama-index-core
+        run: |
+          uv run pytest tests
+
+      - name: Build and publish llama-index-core
+        working-directory: llama-index-core
+        run: |
+          uv sync
+          uv build
+          uv publish --token ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}

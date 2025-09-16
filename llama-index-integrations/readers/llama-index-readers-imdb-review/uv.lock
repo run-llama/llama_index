@@ -1665,7 +1665,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-imdb-review"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "imdbpy" },
@@ -1701,7 +1701,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "imdbpy", specifier = "==2022.7.9" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "pandas" },
     { name = "selenium", specifier = "==4.8.3" },
     { name = "webdriver-manager", specifier = "==4.0.1" },

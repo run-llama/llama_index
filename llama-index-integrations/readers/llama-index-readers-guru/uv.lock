@@ -1652,7 +1652,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-guru"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "bs4" },
@@ -1686,7 +1686,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "bs4" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "pandas" },
 ]
 

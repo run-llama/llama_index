@@ -1812,7 +1812,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-postprocessor-alibabacloud-aisearch-rerank"
-version = "0.3.0"
+version = "0.3.1"
 source = { editable = "." }
 dependencies = [
     { name = "alibabacloud-searchplat20240529" },
@@ -1845,7 +1845,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "alibabacloud-searchplat20240529", specifier = ">=1.1.0,<2" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

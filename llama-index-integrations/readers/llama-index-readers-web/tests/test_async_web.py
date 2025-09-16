@@ -5,7 +5,7 @@ from llama_index.readers.web import AsyncWebPageReader
 
 @pytest.fixture()
 def url() -> str:
-    return "https://docs.llamaindex.ai/en/stable/module_guides/workflow/"
+    return "https://llamaindex.ai/"
 
 
 def test_async_web_reader(url: str) -> None:

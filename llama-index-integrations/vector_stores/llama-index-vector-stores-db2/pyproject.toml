@@ -26,14 +26,14 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-db2"
-version = "0.2.0"
+version = "0.2.1"
 description = "llama-index vector_stores db2 database integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<3.13"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.13.0,<0.14",
+    "llama-index-core>=0.13.0,<0.15",
     "ibm-db>=3.2.6",
 ]
 

@@ -1718,7 +1718,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-extractors-entity"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "huggingface-hub" },
@@ -1752,7 +1752,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "huggingface-hub", specifier = ">=0.23.0" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "span-marker", specifier = ">=1.5.0" },
 ]
 

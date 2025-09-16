@@ -1,5 +1,205 @@
 # ChangeLog
 
+## [2025-09-15]
+
+### `llama-index-core` [0.14.2]
+
+- fix: handle data urls in ImageBlock (#19856)
+- fix: Move IngestionPipeline docstore document insertion after transformations (#19849)
+- fix: Update IngestionPipeline async document store insertion (#19868)
+- chore: remove stepwise usage of workflows from code (#19877)
+
+### `llama-index-embeddings-fastembed` [0.5.0]
+
+- feat: make fastembed cpu or gpu optional (#19878)
+
+### `llama-index-llms-deepseek` [0.2.2]
+
+- feat: pass context_window to super in deepseek llm (#19876)
+
+### `llama-index-llms-google-genai` [0.5.0]
+
+- feat: Add GoogleGenAI FileAPI support for large files (#19853)
+
+### `llama-index-readers-solr` [0.1.0]
+
+- feat: Add Solr reader integration (#19843)
+
+### `llama-index-retrievers-alletra-x10000-retriever` [0.1.0]
+
+- feat: add AlletraX10000Retriever integration (#19798)
+
+### `llama-index-vector-stores-oracledb` [0.3.2]
+
+- feat: OraLlamaVS Connection Pool Support + Filtering (#19412)
+
+### `llama-index-vector-stores-postgres` [0.6.8]
+
+- feat: Add `customize_query_fn` to PGVectorStore (#19847)
+
+## [2025-09-14]
+
+### `llama-index-core` [0.14.1]
+
+- feat: add verbose option to RetrieverQueryEngine for detailed output (#19807)
+- feat: feat: add support for additional kwargs in `aget_text_embedding_batch` method (#19808)
+- feat: add `thinking_delta` field to AgentStream events to expose llm reasoning (#19785)
+- fix: Bug fix agent streaming thinking delta pydantic validation (#19828)
+- fix: handle positional args and kwargs both in tool calling (#19822)
+
+### `llama-index-instrumentation` [0.4.1]
+
+- feat: add sync event/handler support (#19825)
+
+### `llama-index-llms-google-genai` [0.4.0]
+
+- feat: Add VideoBlock and GoogleGenAI video input support (#19823)
+
+### `llama-index-llms-ollama` [0.7.3]
+
+- fix: Fix bug using Ollama with Agents and None tool_calls in final message (#19844)
+
+### `llama-index-llms-vertex` [0.6.1]
+
+- fix: align complete/acomplete responses (#19806)
+
+### `llama-index-readers-confluence` [0.4.3]
+
+- chore: Bump version constraint for atlassian-python-api to include 4.x (#19824)
+
+### `llama-index-readers-github` [0.6.2]
+
+- fix: Make url optional (#19851)
+
+### `llama-index-readers-web` [0.5.3]
+
+- feat: Add OlostepWebReader Integration (#19821)
+
+### `llama-index-tools-google` [0.6.2]
+
+- feat: Add optional creds argument to GoogleCalendarToolSpec (#19826)
+
+### `llama-index-vector-stores-vectorx` [0.1.0]
+
+- feat: Add vectorx vectorstore (#19758)
+
+## [2025-09-08]
+
+**NOTE:** All packages have been bumped to handle the latest llama-index-core version.
+
+### `llama-index-core` [0.14.0]
+
+- breaking: bumped `llama-index-workflows` dependency to 2.0
+  - Improve stacktraces clarity by avoiding wrapping errors in WorkflowRuntimeError
+  - Remove deprecated checkpointer feature
+  - Remove deprecated sub-workflows feature
+  - Remove deprecated `send_event` method from Workflow class (still existing on the Context class)
+  - Remove deprecated `stream_events()` methods from Workflow class (still existing on the Context class)
+  - Remove deprecated support for stepwise execution
+
+### `llama-index-llms-openai` [0.5.6]
+
+- feat: add support for document blocks in openai chat completions (#19809)
+
+## [2025-09-06]
+
+### `llama-index-core` [0.13.6]
+
+- chore: remove openai selector from core utils function (#19803)
+
+### `llama-index-llms-cometapi` [0.1.0]
+
+- feat: Add CometAPI LLM integration (#19793)
+
+## [2025-09-04]
+
+### `llama-index-core` [0.13.5]
+
+- feat: add thinking delta field to AgentStream events to expose from LLM responses (#19785)
+- fix: fix path handling in SimpleDirectoryReader and PDFReader path fix (#19794)
+
+### `llama-index-llms-bedrock-converse` [0.9.0]
+
+- feat: add system prompt and tool caching config kwargs to BedrockConverse (#19737)
+
+### `llama-index-llms-litellm` [0.6.2]
+
+- fix: Handle missing tool call IDs with UUID fallback (#19789)
+- fix: Fix critical context window calculation (#19787)
+
+### `llama-index-readers-file` [0.5.3]
+
+- fix: fix path handling in SimpleDirectoryReader and PDFReader path fix (#19794)
+
+### `llama-index-storage-chat-store-yugabytedb` [0.1.0]
+
+- feat: add Yugabytedb chat store (#19768)
+
+### `llama-index-vector-stores-milvus` [0.9.1]
+
+- fix: create TextNode if no '\_node_content' set (#19772)
+
+### `llama-index-vector-stores-postgres` [0.6.5]
+
+- fix: make postgres regex punctuation handling consistent with plainto_tsquery (#19781)
+
+## [2025-09-01]
+
+### `llama-index-core` [0.13.4]
+
+- feat: Add PostgreSQL schema support to Memory and SQLAlchemyChatStore (#19741)
+- feat: add missing sync wrapper of put_messages in memory (#19746)
+- feat: add option for an initial tool choice in FunctionAgent (#19738)
+- fix: Calling ContextChatEngine with a QueryBundle (instead of a string) (#19714)
+
+### `llama-index-embeddings-baseten` [0.1.0]
+
+- feat: baseten integration (#19710)
+
+### `llama-index-embeddings-ibm` [0.5.0]
+
+- feat: Support for additional/external urls, make instance_id deprecated (#19749)
+
+### `llama-index-llms-baseten` [0.1.0]
+
+- feat: baseten integration (#19710)
+
+### `llama-index-llms-bedrock-converse` [0.8.3]
+
+- feat: add `amazon.nova-premier-v1:0` to BEDROCK_MODELS (#19728)
+
+### `llama-index-llms-ibm` [0.6.0]
+
+- feat: Support for additional/external urls, make instance_id deprecated (#19749)
+
+### `llama-index-postprocessor-ibm` [0.3.0]
+
+- feat: Support for additional/external urls, make instance_id deprecated (#19749)
+
+### `llama-index-postprocessor-sbert-rerank` [0.4.1]
+
+- fix: fix SentenceTransformerRerank init device (#19756)
+
+### `llama-index-readers-google` [0.7.1]
+
+- feat: raise google drive errors (#19752)
+
+### `llama-index-readers-web` [0.5.1]
+
+- feat: Add ZenRows web reader (#19699)
+
+### `llama-index-vector-stores-chroma` [0.5.2]
+
+- feat: add mmr search to chroma (#19731)
+
+### `llama-index-vector-stores-postgres` [0.6.4]
+
+- fix: Use the indexed metadata field 'ref_doc_id' instead of 'doc_id' during deletion (#19759)
+
+### `llama-index-vector-stores-qdrant` [0.8.2]
+
+feat: Payload indexes support to QdrantVectorStore (#19743)
+
 ## [2025-08-22]
 
 ### `llama-index-core` [0.13.3]

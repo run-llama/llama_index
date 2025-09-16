@@ -1648,7 +1648,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-graph-stores-falkordb"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "falkordb" },
@@ -1682,7 +1682,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "falkordb", specifier = ">=1.0.8,<2" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

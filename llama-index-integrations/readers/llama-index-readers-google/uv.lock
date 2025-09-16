@@ -1637,7 +1637,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-google"
-version = "0.7.0"
+version = "0.7.2"
 source = { editable = "." }
 dependencies = [
     { name = "gkeepapi" },
@@ -1677,7 +1677,7 @@ requires-dist = [
     { name = "google-api-python-client", specifier = ">=2.115.0,<3" },
     { name = "google-auth-httplib2", specifier = ">=0.2.0,<0.3" },
     { name = "google-auth-oauthlib", specifier = ">=1.2.0,<2" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "pandas" },
     { name = "pydrive", specifier = ">=1.3.1,<2" },
 ]

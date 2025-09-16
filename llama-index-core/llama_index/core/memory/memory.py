@@ -23,6 +23,7 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     AudioBlock,
     ImageBlock,
+    VideoBlock,
     DocumentBlock,
     CachePoint,
     CitableBlock,
@@ -222,6 +223,10 @@ class Memory(BaseMemory):
         default=256,
         description="The token size estimate for audio.",
     )
+    video_token_size_estimate: int = Field(
+        default=256,
+        description="The token size estimate for video.",
+    )
     tokenizer_fn: Callable[[str], List] = Field(
         default_factory=get_tokenizer,
         exclude=True,
@@ -279,6 +284,7 @@ class Memory(BaseMemory):
         insert_method: InsertMethod = InsertMethod.SYSTEM,
         image_token_size_estimate: int = 256,
         audio_token_size_estimate: int = 256,
+        video_token_size_estimate: int = 256,
         # SQLAlchemyChatStore parameters
         table_name: str = "llama_index_memory",
         async_database_uri: Optional[str] = None,
@@ -314,6 +320,7 @@ class Memory(BaseMemory):
             insert_method=insert_method,
             image_token_size_estimate=image_token_size_estimate,
             audio_token_size_estimate=audio_token_size_estimate,
+            video_token_size_estimate=video_token_size_estimate,
         )
 
     def _estimate_token_count(
@@ -331,6 +338,7 @@ class Memory(BaseMemory):
                 Union[
                     TextBlock,
                     ImageBlock,
+                    VideoBlock,
                     AudioBlock,
                     DocumentBlock,
                     CitableBlock,
@@ -368,7 +376,15 @@ class Memory(BaseMemory):
                 )
             elif all(
                 isinstance(
-                    item, (TextBlock, ImageBlock, AudioBlock, DocumentBlock, CachePoint)
+                    item,
+                    (
+                        TextBlock,
+                        ImageBlock,
+                        AudioBlock,
+                        VideoBlock,
+                        DocumentBlock,
+                        CachePoint,
+                    ),
                 )
                 for item in message_or_blocks
             ):
@@ -377,7 +393,13 @@ class Memory(BaseMemory):
                     if not isinstance(item, CachePoint):
                         blocks.append(
                             cast(
-                                Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock],
+                                Union[
+                                    TextBlock,
+                                    ImageBlock,
+                                    AudioBlock,
+                                    VideoBlock,
+                                    DocumentBlock,
+                                ],
                                 item,
                             )
                         )
@@ -394,6 +416,8 @@ class Memory(BaseMemory):
                 token_count += len(self.tokenizer_fn(block.text))
             elif isinstance(block, ImageBlock):
                 token_count += self.image_token_size_estimate
+            elif isinstance(block, VideoBlock):
+                token_count += self.video_token_size_estimate
             elif isinstance(block, AudioBlock):
                 token_count += self.audio_token_size_estimate
 
