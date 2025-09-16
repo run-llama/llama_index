@@ -201,6 +201,46 @@ def test_image_block_resolve_image_url(png_1px_b64: bytes, png_1px: bytes):
         assert img.read() == png_1px_b64
 
 
+def test_image_block_resolve_image_data_url_base64(png_1px_b64: bytes, png_1px: bytes):
+    # Test data URL with base64 encoding
+    data_url = f"data:image/png;base64,{png_1px_b64.decode('utf-8')}"
+    b = ImageBlock(url=AnyUrl(url=data_url))
+
+    img = b.resolve_image()
+    assert isinstance(img, BytesIO)
+    assert img.read() == png_1px
+
+    img = b.resolve_image(as_base64=True)
+    assert isinstance(img, BytesIO)
+    assert img.read() == png_1px_b64
+
+
+def test_image_block_resolve_image_data_url_plain_text():
+    # Test data URL with plain text (no base64)
+    test_text = "Hello, World!"
+    data_url = f"data:text/plain,{test_text}"
+    b = ImageBlock(url=AnyUrl(url=data_url))
+
+    img = b.resolve_image()
+    assert isinstance(img, BytesIO)
+    assert img.read() == test_text.encode("utf-8")
+
+    img = b.resolve_image(as_base64=True)
+    assert isinstance(img, BytesIO)
+    assert img.read() == base64.b64encode(test_text.encode("utf-8"))
+
+
+def test_image_block_resolve_image_data_url_invalid():
+    # Test invalid data URL format (missing comma)
+    invalid_data_url = "data:image/png;base64"
+    b = ImageBlock(url=AnyUrl(url=invalid_data_url))
+
+    with pytest.raises(
+        ValueError, match="Invalid data URL format: missing comma separator"
+    ):
+        b.resolve_image()
+
+
 def test_image_block_resolve_error():
     with pytest.raises(
         ValueError, match="No valid source provided to resolve binary data!"
@@ -381,6 +421,20 @@ def test_video_block_resolve_video_url(mp4_bytes: bytes, mp4_base64: bytes):
         vid = b.resolve_video(as_base64=True)
         assert isinstance(vid, BytesIO)
         assert vid.read() == mp4_base64
+
+
+def test_video_block_resolve_video_data_url_base64(mp4_bytes: bytes, mp4_base64: bytes):
+    # Test data URL with base64 encoding
+    data_url = f"data:video/mp4;base64,{mp4_base64.decode('utf-8')}"
+    b = VideoBlock(url=AnyUrl(url=data_url))
+
+    vid = b.resolve_video()
+    assert isinstance(vid, BytesIO)
+    assert vid.read() == mp4_bytes
+
+    vid = b.resolve_video(as_base64=True)
+    assert isinstance(vid, BytesIO)
+    assert vid.read() == mp4_base64
 
 
 def test_video_block_resolve_error():
