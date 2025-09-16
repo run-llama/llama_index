@@ -12,7 +12,6 @@ dev = [
     "pytest==7.2.1",
     "pytest-mock==3.11.1",
     "ruff==0.11.11",
-    "tree-sitter-languages>=1.8.0,<2",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-protobuf>=4.24.0.4,<5",
@@ -21,21 +20,32 @@ dev = [
     "types-setuptools==67.1.0.0",
     "black[jupyter]<=23.9.1,>=23.7.0",
     "codespell[toml]>=v2.2.6",
-    "pytest-cov>=6.1.1",
     "diff-cover>=9.2.0",
+    "pytest-cov>=6.1.1",
 ]
 
 [project]
-name = "llama-index-callbacks-deepeval"
-version = "0.4.1"
-description = "llama-index callbacks deepeval integration"
-authors = [{name = "Your Name", email = "you@example.com"}]
+name = "llama-index-readers-paddle-ocr"
+version = "0.1.0"
+description = "llama-index readers paddle_ocr integration"
+authors = [{name = "Michael M L Ye", email = "1156961988@qq.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
+maintainers = [{name = "mdarshad1000"}]
+keywords = [
+    "academic papers",
+    "ocr",
+    "pdf",
+]
 dependencies = [
-    "deepeval",
+    "paddleocr>=2.7.0",
+    "pdfplumber==0.11.7",
+    "PyMuPDF==1.26.4",
+    "pillow==10.4.0",
+    "paddlepaddle==3.2.0",
     "llama-index-core>=0.13.0,<0.15",
+    "requests>=2.0.0",
 ]
 
 [tool.codespell]
@@ -53,10 +63,10 @@ exclude = ["**/BUILD"]
 
 [tool.llamahub]
 contains_example = false
-import_path = "llama_index.callbacks.deepeval"
+import_path = "llama_index.readers.paddle_ocr"
 
 [tool.llamahub.class_authors]
-deepeval_callback_handler = "llama-index"
+PDFPaddleOcrReader = "Michael M L Ye"
 
 [tool.mypy]
 disallow_untyped_defs = true
