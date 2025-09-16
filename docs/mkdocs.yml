@@ -890,6 +890,7 @@ nav:
           - ./api_reference/callbacks/aim.md
           - ./api_reference/callbacks/argilla.md
           - ./api_reference/callbacks/arize_phoenix.md
+          - ./api_reference/callbacks/deepeval.md
           - ./api_reference/callbacks/honeyhive.md
           - ./api_reference/callbacks/index.md
           - ./api_reference/callbacks/langfuse.md
@@ -1477,6 +1478,7 @@ nav:
           - ./api_reference/readers/slack.md
           - ./api_reference/readers/smart_pdf_loader.md
           - ./api_reference/readers/snowflake.md
+          - ./api_reference/readers/solr.md
           - ./api_reference/readers/spotify.md
           - ./api_reference/readers/stackoverflow.md
           - ./api_reference/readers/steamship.md
@@ -1514,6 +1516,7 @@ nav:
           - ./api_reference/response_synthesizers/simple_summarize.md
           - ./api_reference/response_synthesizers/tree_summarize.md
       - Retrievers:
+          - ./api_reference/retrievers/alletra_x10000_retriever.md
           - ./api_reference/retrievers/auto_merging.md
           - ./api_reference/retrievers/bedrock.md
           - ./api_reference/retrievers/bm25.md
@@ -2514,6 +2517,8 @@ plugins:
             - ../llama-index-integrations/llms/llama-index-llms-baseten
             - ../llama-index-integrations/storage/chat_store/llama-index-storage-chat-store-yugabytedb
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-vectorx
+            - ../llama-index-integrations/retrievers/llama-index-retrievers-alletra-x10000
+            - ../llama-index-integrations/readers/llama-index-readers-solr
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md
