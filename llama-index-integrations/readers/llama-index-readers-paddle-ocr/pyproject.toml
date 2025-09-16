@@ -32,7 +32,7 @@ authors = [{name = "Michael M L Ye", email = "1156961988@qq.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
-maintainers = [{name = "mdarshad1000"}]
+maintainers = [{name = "Michael M L Ye"}]
 keywords = [
     "academic papers",
     "ocr",
