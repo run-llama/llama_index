@@ -1604,8 +1604,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     pass
                 elif DEFAULT_SPARSE_VECTOR_NAME_OLD in sparse_vectors:
                     self.sparse_vector_name = DEFAULT_SPARSE_VECTOR_NAME_OLD
-                else:
-                    self.sparse_vector_name = next(iter(sparse_vectors.keys()))
 
         except Exception as e:
             logger.warning(
@@ -1640,8 +1638,6 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     pass
                 elif DEFAULT_SPARSE_VECTOR_NAME_OLD in sparse_vectors:
                     self.sparse_vector_name = DEFAULT_SPARSE_VECTOR_NAME_OLD
-                else:
-                    self.sparse_vector_name = next(iter(sparse_vectors.keys()))
 
         except Exception as e:
             logger.warning(
