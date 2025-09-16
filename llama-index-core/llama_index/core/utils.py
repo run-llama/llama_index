@@ -34,6 +34,7 @@ from typing import (
 
 import platformdirs
 import requests
+from urllib.parse import urlparse
 
 if TYPE_CHECKING:
     from nltk.tokenize import PunktSentenceTokenizer
@@ -657,13 +658,36 @@ def resolve_binary(
         return BytesIO(data)
 
     elif url is not None:
-        if url.startswith("data:"):
-            if as_base64 and "base64," in url:
-                return BytesIO(bytes(url.split(",")[1], "utf-8"))
-            elif as_base64:
-                return BytesIO(base64.b64decode(url.split(",")[1]))
+        parsed_url = urlparse(url)
+        if parsed_url.scheme == "data":
+            # Parse data URL: data:[<mediatype>][;base64],<data>
+            # The path contains everything after "data:"
+            data_part = parsed_url.path
+
+            # Split on the first comma to separate metadata from data
+            if "," not in data_part:
+                raise ValueError("Invalid data URL format: missing comma separator")
+
+            metadata, data = data_part.split(",", 1)
+            is_base64_encoded = metadata.endswith(";base64")
+
+            if is_base64_encoded:
+                # Data is base64 encoded in the URL
+                decoded_data = base64.b64decode(data)
+                if as_base64:
+                    # Return as base64 bytes
+                    return BytesIO(base64.b64encode(decoded_data))
+                else:
+                    # Return decoded binary data
+                    return BytesIO(decoded_data)
             else:
-                return BytesIO(bytes(url.split(",")[1], "utf-8"))
+                # Data is not base64 encoded in the URL (URL-encoded text)
+                if as_base64:
+                    # Encode the text data as base64
+                    return BytesIO(base64.b64encode(data.encode("utf-8")))
+                else:
+                    # Return as text bytes
+                    return BytesIO(data.encode("utf-8"))
 
         headers = {
             "User-Agent": "LlamaIndex/0.0 (https://llamaindex.ai; info@llamaindex.ai) llama-index-core/0.0"
