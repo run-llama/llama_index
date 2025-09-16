@@ -1,10 +1,11 @@
+from importlib.metadata import version
 from typing import Any, List, Optional
 from datetime import datetime
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store.base import BaseChatStore
-from pymongo import MongoClient, AsyncMongoClient
+from pymongo import MongoClient, AsyncMongoClient, DriverInfo
 from pymongo.collection import Collection
 from pymongo.asynchronous.collection import AsyncCollection
 
@@ -64,6 +65,16 @@ class MongoChatStore(BaseChatStore):
 
         self._mongo_client = mongo_client or MongoClient(mongo_uri, **kwargs)
         self._async_client = amongo_client or AsyncMongoClient(mongo_uri, **kwargs)
+
+        # append_metadata was added in PyMongo 4.14.0, but is a valid database name on earlier versions
+        if callable(self._mongo_client.append_metadata):
+            self._mongo_client.append_metadata(
+                DriverInfo(name="llama-index", version=version("llama-index"))
+            )
+        if callable(self._async_client.append_metadata):
+            self._async_client.append_metadata(
+                DriverInfo(name="llama-index", version=version("llama-index"))
+            )
 
         if collection:
             self._collection = collection
