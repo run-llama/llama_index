@@ -1797,7 +1797,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-clarifai"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "clarifai" },
@@ -1831,7 +1831,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "clarifai", specifier = ">=10.0.1,<11" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

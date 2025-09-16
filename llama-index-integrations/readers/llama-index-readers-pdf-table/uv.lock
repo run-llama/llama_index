@@ -1701,7 +1701,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-pdf-table"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "camelot-py" },
@@ -1738,7 +1738,7 @@ dev = [
 requires-dist = [
     { name = "camelot-py", specifier = ">=0.11.0,<0.12" },
     { name = "ghostscript", specifier = ">=0.7,<0.8" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "opencv-python", specifier = ">=4.9.0.80,<5" },
     { name = "pandas" },
 ]

@@ -18,6 +18,7 @@ from llama_index.core.vector_stores.types import (
     VectorStoreQueryMode,
 )
 from llama_index.vector_stores.postgres import PGVectorStore
+from sqlalchemy import Select, MetaData, Table, Column, String, Integer, insert
 
 # from testing find install here https://github.com/pgvector/pgvector#installation-notes
 
@@ -375,6 +376,67 @@ def pg_fixture(request):
         raise ValueError(f"Unknown param: {request.param}")
 
 
+@pytest.fixture()
+def second_table(db):
+    from sqlalchemy import create_engine
+
+    engine = create_engine(
+        f"postgresql+psycopg2://{PARAMS['user']}:{PARAMS['password']}@{PARAMS['host']}:{PARAMS['port']}/{TEST_DB}",
+        echo=False,
+    )
+
+    metadata = MetaData()
+
+    second_table = Table(
+        "second_table",
+        metadata,
+        Column("id", String, primary_key=True),
+        Column("field1", Integer, nullable=False),
+    )
+
+    second_table.create(engine)
+
+    rows = [
+        {"id": "aaa", "field1": 1},
+        {"id": "bbb", "field1": 2},
+        {"id": "ccc", "field1": 3},
+        {"id": "ddd", "field1": 4},
+    ]
+
+    with engine.connect() as conn:
+        stmt = insert(second_table)
+        conn.execute(stmt, rows)
+        conn.commit()
+
+    yield second_table
+
+    second_table.drop(engine)
+
+    engine.dispose()
+
+
+@pytest.fixture()
+def pg_custom_query(db: None, second_table: Table) -> Any:
+    def customize_query(query: Select, table_class: Any, **kwargs: Any) -> Select:
+        return query.add_columns(second_table.c.field1).join(
+            second_table, second_table.c.id == table_class.node_id
+        )
+
+    pg = PGVectorStore.from_params(
+        **PARAMS,  # type: ignore
+        database=TEST_DB,
+        table_name=TEST_TABLE_NAME,
+        schema_name=TEST_SCHEMA_NAME,
+        hybrid_search=True,
+        embed_dim=TEST_EMBED_DIM,
+        customize_query_fn=customize_query,
+    )
+
+    yield pg
+
+    asyncio.run(pg.close())
+
+
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio
 @pytest.mark.parametrize("pg_fixture", ["pg", "pg_halfvec"], indirect=True)
@@ -729,6 +791,21 @@ async def test_sparse_query(
 
 @pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
 @pytest.mark.asyncio
+async def test_sparse_query_special_character_parsing(
+    pg_hybrid: PGVectorStore,
+) -> None:
+    built_query = pg_hybrid._build_sparse_query(
+        query_str="   who' &..s |     (the): <-> **fox**?!!! lazy.hound lazy..dog ?jumped,over?",
+        limit=5,
+    )
+    assert (
+        built_query.compile().params["to_tsquery_1"]
+        == "who|s|the|fox|lazy.hound|lazy|dog|jumped|over"
+    )
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_sparse_query_with_special_characters(
     pg_hybrid: PGVectorStore,
@@ -745,7 +822,7 @@ async def test_sparse_query_with_special_characters(
     # text search should work with special characters
     q = VectorStoreQuery(
         query_embedding=_get_sample_vector(0.1),
-        query_str="   who' & s |     (the): <-> **fox**?!!!  ",
+        query_str="   who' &..s |     (the): <-> **fox**?!!!",
         sparse_top_k=2,
         mode=VectorStoreQueryMode.SPARSE,
     )
@@ -1508,3 +1585,53 @@ async def test_indexed_metadata(
         explain_output = result.fetchall()
         for row in explain_output:
             print(row[0])
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_custom_query(
+    use_async: bool, pg_custom_query: PGVectorStore, node_embeddings: List[TextNode]
+) -> None:
+    pg_custom_query.add(node_embeddings)
+
+    q = VectorStoreQuery(query_embedding=_get_sample_vector(0.5), similarity_top_k=10)
+    if use_async:
+        results = await pg_custom_query.aquery(q)
+    else:
+        results = pg_custom_query.query(q)
+
+    nodes = results.nodes
+
+    expected_values = {"aaa": 1, "bbb": 2, "ccc": 3, "ddd": 4}
+
+    for node in nodes:
+        assert "custom_fields" in node.metadata
+        assert "field1" in node.metadata["custom_fields"]
+        assert node.metadata["custom_fields"]["field1"] == expected_values[node.node_id]
+
+
+@pytest.mark.skipif(postgres_not_available, reason="postgres db is not available")
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_custom_sparse_query(
+    use_async: bool,
+    pg_custom_query: PGVectorStore,
+    hybrid_node_embeddings: List[TextNode],
+) -> None:
+    pg_custom_query.add(hybrid_node_embeddings)
+
+    q = VectorStoreQuery(query_str="who is the fox?", sparse_top_k=10)
+    if use_async:
+        results = await pg_custom_query.aquery(q)
+    else:
+        results = pg_custom_query.query(q)
+
+    nodes = results.nodes
+
+    expected_values = {"aaa": 1, "bbb": 2, "ccc": 3, "ddd": 4}
+
+    for node in nodes:
+        assert "custom_fields" in node.metadata
+        assert "field1" in node.metadata["custom_fields"]
+        assert node.metadata["custom_fields"]["field1"] == expected_values[node.node_id]

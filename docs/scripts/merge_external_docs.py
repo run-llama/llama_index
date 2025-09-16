@@ -101,6 +101,12 @@ def main():
     print(f"New destination files:\n{new_destination}")
     print("Copied in latest workflows-py docs")
 
+    # copy the Workflows API reference
+    os.system(
+        "cp -r workflows-py/docs/docs/api_reference/workflow ./docs/api_reference/"
+    )
+    print("Copied in latest workflows-py API reference")
+
 
 if __name__ == "__main__":
     main()

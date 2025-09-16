@@ -1593,7 +1593,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.15.0"
+version = "0.14.0"
 source = { directory = "../../../llama-index-core" }
 dependencies = [
     { name = "aiohttp" },
@@ -1642,7 +1642,7 @@ requires-dist = [
     { name = "filetype", specifier = ">=1.2.0,<2" },
     { name = "fsspec", specifier = ">=2023.5.0" },
     { name = "httpx" },
-    { name = "llama-index-workflows", specifier = ">=1.0.1,<2" },
+    { name = "llama-index-workflows", specifier = ">=2,<3" },
     { name = "nest-asyncio", specifier = ">=1.5.8,<2" },
     { name = "networkx", specifier = ">=3.0" },
     { name = "nltk", specifier = ">3.8.1" },
@@ -1670,7 +1670,6 @@ dev = [
     { name = "codespell", extras = ["toml"], specifier = ">=2.2.6" },
     { name = "diff-cover", specifier = ">=9.2.0" },
     { name = "llama-cloud", specifier = ">=0.0.6" },
-    { name = "llama-index-llms-openai", specifier = ">=0.5.0" },
     { name = "mypy", specifier = "==1.11.0" },
     { name = "openai" },
     { name = "pandas" },
@@ -1705,7 +1704,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-voice-agents-openai"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1766,16 +1765,17 @@ dev = [
 
 [[package]]
 name = "llama-index-workflows"
-version = "1.2.0"
+version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "eval-type-backport", marker = "python_full_version < '3.10'" },
     { name = "llama-index-instrumentation" },
     { name = "pydantic" },
+    { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/26/9d/9dc7adc10d9976582bf50b074883986cb36b46f2fe45cf60550767300a29/llama_index_workflows-1.2.0.tar.gz", hash = "sha256:f6b19f01a340a1afb1d2fd2285c9dce346e304a3aae519e6103059f5afb2609f", size = 1019113, upload-time = "2025-07-23T18:32:47.86Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/2c/91/1584aee9fa5433d876a1142284d380ca599ab6ecfb83f1c4522d84d596e3/llama_index_workflows-2.0.0.tar.gz", hash = "sha256:489b988e0eda07c1b57ccf5e0c971c37548936557e8ea51ee4a163acaf13ee82", size = 1228608, upload-time = "2025-08-29T16:07:27.31Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/36/c1/5190f102a042d36a6a495de27510c2d6e3aca98f892895bfacdcf9109c1d/llama_index_workflows-1.2.0-py3-none-any.whl", hash = "sha256:5722a7ce137e00361025768789e7e77720cd66f855791050183a3c540b6e5b8c", size = 37463, upload-time = "2025-07-23T18:32:46.294Z" },
+    { url = "https://files.pythonhosted.org/packages/68/22/2fc9c52acf3a35414284730d234fc4082774510938044eb2e5a6cac487d6/llama_index_workflows-2.0.0-py3-none-any.whl", hash = "sha256:d2b0761e859f44bedbb1244488a866aa5561b11e9108280b1663934a8757414e", size = 42451, upload-time = "2025-08-29T16:07:25.681Z" },
 ]
 
 [[package]]

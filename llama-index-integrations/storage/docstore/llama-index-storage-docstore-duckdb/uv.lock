@@ -1645,7 +1645,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-storage-docstore-duckdb"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1675,7 +1675,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-storage-kvstore-duckdb", directory = "../../kvstore/llama-index-storage-kvstore-duckdb" },
 ]
 
@@ -1702,7 +1702,7 @@ dev = [
 
 [[package]]
 name = "llama-index-storage-kvstore-duckdb"
-version = "0.2.0"
+version = "0.2.1"
 source = { directory = "../../kvstore/llama-index-storage-kvstore-duckdb" }
 dependencies = [
     { name = "duckdb" },
@@ -1714,7 +1714,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "duckdb", specifier = ">=0.10.1,<1.4.0" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-vector-stores-duckdb", specifier = ">=0.4.2" },
     { name = "pyarrow", specifier = ">=20.0.0" },
 ]

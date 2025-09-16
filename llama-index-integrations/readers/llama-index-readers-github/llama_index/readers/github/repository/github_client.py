@@ -50,7 +50,7 @@ class GitTreeResponseModel(DataClassJsonMixin):
         mode: str
         type: str
         sha: str
-        url: str
+        url: Optional[str] = None
         size: Optional[int] = None
 
     sha: str

@@ -1007,7 +1007,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-retrievers-superlinked"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },

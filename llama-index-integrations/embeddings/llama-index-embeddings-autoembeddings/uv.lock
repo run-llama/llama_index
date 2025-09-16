@@ -1923,7 +1923,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-autoembeddings"
-version = "0.2.0"
+version = "0.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "chonkie", extra = ["all"] },
@@ -1956,7 +1956,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "chonkie", extras = ["all"] },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

@@ -1647,7 +1647,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-storage-chat-store-azurecosmosmongovcore"
-version = "1.2.0"
+version = "1.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "llama-index-core" },
@@ -1679,7 +1679,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "pymongo", specifier = ">=4.9.1,<5" },
 ]
 

@@ -1661,7 +1661,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-utils-huggingface"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "huggingface-hub", extra = ["inference"] },
@@ -1695,7 +1695,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "huggingface-hub", extras = ["inference"], specifier = ">=0.19.0" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]

@@ -10,6 +10,7 @@
         - KnowledgeBaseWebReader
         - MainContentExtractorReader
         - NewsArticleReader
+        - OlostepWebReader
         - OxylabsWebReader
         - ReadabilityWebPageReader
         - RssNewsReader
@@ -21,3 +22,4 @@
         - TrafilaturaWebReader
         - UnstructuredURLLoader
         - WholeSiteReader
+        - ZenRowsWebReader

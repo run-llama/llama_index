@@ -1830,7 +1830,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-embeddings-google"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "google-generativeai" },
@@ -1868,7 +1868,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "google-generativeai", specifier = ">=0.5.2,<0.6" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "tensorflow-hub", marker = "extra == 'tensorflow'", specifier = ">=0.15.0,<0.16" },
 ]
 provides-extras = ["tensorflow"]

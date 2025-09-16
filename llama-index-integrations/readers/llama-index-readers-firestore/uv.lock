@@ -1798,7 +1798,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-readers-firestore"
-version = "0.4.0"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "google-cloud-firestore" },
@@ -1831,7 +1831,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "google-cloud-firestore", specifier = ">=2.14.0,<3" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.14" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
 ]
 
 [package.metadata.requires-dev]
