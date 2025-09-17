@@ -1,4 +1,46 @@
+---
+sidebar:
+  order: 7
+---
+
 # ChangeLog
+
+## [2025-09-15]
+
+### `llama-index-core` [0.14.2]
+
+- fix: handle data urls in ImageBlock (#19856)
+- fix: Move IngestionPipeline docstore document insertion after transformations (#19849)
+- fix: Update IngestionPipeline async document store insertion (#19868)
+- chore: remove stepwise usage of workflows from code (#19877)
+
+### `llama-index-embeddings-fastembed` [0.5.0]
+
+- feat: make fastembed cpu or gpu optional (#19878)
+
+### `llama-index-llms-deepseek` [0.2.2]
+
+- feat: pass context_window to super in deepseek llm (#19876)
+
+### `llama-index-llms-google-genai` [0.5.0]
+
+- feat: Add GoogleGenAI FileAPI support for large files (#19853)
+
+### `llama-index-readers-solr` [0.1.0]
+
+- feat: Add Solr reader integration (#19843)
+
+### `llama-index-retrievers-alletra-x10000-retriever` [0.1.0]
+
+- feat: add AlletraX10000Retriever integration (#19798)
+
+### `llama-index-vector-stores-oracledb` [0.3.2]
+
+- feat: OraLlamaVS Connection Pool Support + Filtering (#19412)
+
+### `llama-index-vector-stores-postgres` [0.6.8]
+
+- feat: Add `customize_query_fn` to PGVectorStore (#19847)
 
 ## [2025-09-14]
 
@@ -9787,8 +9829,8 @@ Last patch before v0.10!
 
 - Change `BaseOpenAIAgent` to use `llama_index.llms.OpenAI`. Adjust `chat_history` to use `List[ChatMessage]]` as type.
 - Remove (previously deprecated) `llama_index.langchain_helpers.chain_wrapper` module.
-- Remove (previously deprecated) `llama_index.token_counter.token_counter` module. See [migration guide](/how_to/callbacks/token_counting_migration.html) for more details on new callback based token counting.
-- Remove `ChatGPTLLMPredictor` and `HuggingFaceLLMPredictor`. See [migration guide](/how_to/customization/llms_migration_guide.html) for more details on replacements.
+- Remove (previously deprecated) `llama_index.token_counter.token_counter` module. See [migration guide](/python/framework/module_guides/observability/callbacks/token_counting_migration/) for more details on new callback based token counting.
+- Remove `ChatGPTLLMPredictor` and `HuggingFaceLLMPredictor`.
 - Remove support for setting `cache` via `LLMPredictor` constructor.
 - Update `BaseChatEngine` interface:
   - adjust `chat_history` to use `List[ChatMessage]]` as type

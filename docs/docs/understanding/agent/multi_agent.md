@@ -1,10 +1,15 @@
+---
+sidebar:
+  order: 6
+---
+
 # Multi-agent patterns in LlamaIndex
 
 When more than one specialist is required to solve a task you have several options in LlamaIndex, each trading off convenience for flexibility.  This page walks through the three most common patterns, when to choose each one, and provides a minimal code sketch for every approach.
 
-1. **AgentWorkflow (built-in)** – declare a set of agents and let `AgentWorkflow` manage the hand-offs. [Section](#pattern-1--agentworkflow-ie-linear-swarm-pattern) [Full Notebook](../../examples/agent/agent_workflow_multi.ipynb)
-2. **Orchestrator pattern (built-in)** – an "orchestrator" agent chooses which sub-agent to call next; those sub-agents are exposed to it as **tools**. [Section](#pattern-2--orchestrator-agent-sub-agents-as-tools) [Full Notebook](../../examples/agent/agents_as_tools.ipynb)
-3. **Custom planner (DIY)** – you write the LLM prompt (often XML / JSON) that plans the sequence yourself and imperatively invoke the agents in code. [Section](#pattern-3--custom-planner-diy-prompting--parsing) [Full Notebook](../../examples/agent/custom_multi_agent.ipynb)
+1. **AgentWorkflow (built-in)** – declare a set of agents and let `AgentWorkflow` manage the hand-offs. [Section](#pattern-1--agentworkflow-ie-linear-swarm-pattern) [Full Notebook](/python/examples/agent/agent_workflow_multi)
+2. **Orchestrator pattern (built-in)** – an "orchestrator" agent chooses which sub-agent to call next; those sub-agents are exposed to it as **tools**. [Section](#pattern-2--orchestrator-agent-sub-agents-as-tools) [Full Notebook](/python/examples/agent/agents_as_tools)
+3. **Custom planner (DIY)** – you write the LLM prompt (often XML / JSON) that plans the sequence yourself and imperatively invoke the agents in code. [Section](#pattern-3--custom-planner-diy-prompting--parsing) [Full Notebook](/python/examples/agent/custom_multi_agent)
 
 ---
 
@@ -13,7 +18,7 @@ When more than one specialist is required to solve a task you have several optio
 
 **When to use** – you want multi-agent behaviour out-of-the-box with almost no extra code, and you are happy with the default hand-off heuristics that ship with `AgentWorkflow`.
 
-`AgentWorkflow` is itself a [Workflow](../workflows/index.md) pre-configured to understand agents, state and tool-calling.  You supply an *array* of one or more agents, tell it which one should start, and it will:
+`AgentWorkflow` is itself a [Workflow](/python/framework/understanding/workflows) pre-configured to understand agents, state and tool-calling.  You supply an *array* of one or more agents, tell it which one should start, and it will:
 
 1. Give the *root* agent the user message.
 2. Execute whatever tools that agent selects.
@@ -22,7 +27,7 @@ When more than one specialist is required to solve a task you have several optio
 
 **NOTE:** At any point, the current active agent can choose to return control back to the user.
 
-Below is the condensed version of the [multi-agent report generation example](../../examples/agent/agent_workflow_multi.ipynb).  Three agents collaborate to research, write and review a report.  (`…` indicates code omitted for brevity.)
+Below is the condensed version of the [multi-agent report generation example](/python/examples/agent/agent_workflow_multi).  Three agents collaborate to research, write and review a report.  (`…` indicates code omitted for brevity.)
 
 ```python
 from llama_index.core.agent.workflow import AgentWorkflow, FunctionAgent
@@ -83,7 +88,7 @@ print(resp)
 
 In this pattern you still build specialist agents (`ResearchAgent`, `WriteAgent`, `ReviewAgent`), **but** you do **not** ask them to hand off to one another.  Instead you expose each agent's `run` method as a tool and give those tools to a new top-level agent – the *Orchestrator*.
 
-You can see the full example in the [agents_as_tools notebook](../../examples/agent/agents_as_tools.ipynb).
+You can see the full example in the [agents_as_tools notebook](/python/examples/agent/agents_as_tools).
 
 ```python
 import re
@@ -186,7 +191,7 @@ Because the orchestrator is just another `FunctionAgent` you get streaming, tool
 
 Here, the idea is that you write a prompt that instructs the LLM to output a structured plan (XML / JSON / YAML).  Your own Python code parses that plan and imperatively executes it.  The subordinate agents can be anything – `FunctionAgent`s, RAG pipelines, or other services.
 
-Below is a *minimal* sketch of a workflow that can plan, execute a plan, and see if any further steps are needed. You can see the full example in the [custom_multi_agent notebook](../../examples/agent/custom_multi_agent.ipynb).
+Below is a *minimal* sketch of a workflow that can plan, execute a plan, and see if any further steps are needed. You can see the full example in the [custom_multi_agent notebook](/python/examples/agent/custom_multi_agent).
 
 ```python
 import re
@@ -403,4 +408,4 @@ This approach means *you* own the orchestration loop, so you can insert whatever
 
 If you are prototyping quickly, start with `AgentWorkflow`.  Move to an *Orchestrator agent* when you need more control over the sequence.  Reach for a *Custom planner* only when the first two patterns cannot express the flow you need.
 
-Next you will learn how to use [structured output in single and multi-agent workflows](./structured_output.md)
+Next you will learn how to use [structured output in single and multi-agent workflows](/python/framework/understanding/agent/structured_output)

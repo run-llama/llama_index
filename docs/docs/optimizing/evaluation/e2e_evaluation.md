@@ -10,7 +10,7 @@ It is helpful to start off with a small but diverse set of queries, and build up
 
 We've created some tools that automatically generate a dataset for you given a set of documents to query. (See example below).
 
-- [Question Generation](../../examples/evaluation/QuestionGeneration.ipynb)
+- [Question Generation](/python/examples/evaluation/questiongeneration)
 
 In the future, we will also be able to create datasets automatically against tools.
 
@@ -22,15 +22,15 @@ Qualitative eval is more useful when generating long-form responses that are mea
 
 There is a spectrum of evaluation options ranging from metrics, cheaper models, more expensive models (GPT4), and human evaluation.
 
-Below is some example usage of the [evaluation modules](evaluation.md):
+Below is some example usage of the [evaluation modules](/python/framework/optimizing/evaluation/evaluation):
 
-- [Batch Eval Runner](../../examples/evaluation/batch_eval.ipynb)
-- [Correctness Eval](../../examples/evaluation/correctness_eval.ipynb)
-- [Faithfulness Eval](../../examples/evaluation/faithfulness_eval.ipynb)
-- [Guideline Eval](../../examples/evaluation/guideline_eval.ipynb)
-- [Pairwise Eval](../../examples/evaluation/pairwise_eval.ipynb)
-- [Relevancy Eval](../../examples/evaluation/relevancy_eval.ipynb)
-- [Semantic Similarity Eval](../../examples/evaluation/semantic_similarity_eval.ipynb)
+- [Batch Eval Runner](/python/examples/evaluation/batch_eval)
+- [Correctness Eval](/python/examples/evaluation/correctness_eval)
+- [Faithfulness Eval](/python/examples/evaluation/faithfulness_eval)
+- [Guideline Eval](/python/examples/evaluation/guideline_eval)
+- [Pairwise Eval](/python/examples/evaluation/pairwise_eval)
+- [Relevancy Eval](/python/examples/evaluation/relevancy_eval)
+- [Semantic Similarity Eval](/python/examples/evaluation/semantic_similarity_eval)
 
 ## Discovery - Sensitivity Testing
 

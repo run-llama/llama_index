@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 6
+---
+
 # Concurrent execution of workflows
 
 In addition to looping and branching, workflows can run steps concurrently. This is useful when you have multiple steps that can be run independently of each other and they have time-consuming operations that they `await`, allowing other steps to run in parallel.
@@ -123,6 +128,6 @@ Note that the order of the event types in the array passed to `collect_events` i
 
 The visualization of this workflow is quite pleasing:
 
-![A concurrent workflow](./different_events.png)
+![A concurrent workflow](/python/framework/understanding/workflows/different_events.png)
 
-Now let's look at how we can extend workflows with [subclassing](subclass.md) and other techniques.
+Now let's look at how we can extend workflows with [subclassing](/python/framework/understanding/workflows/subclass) and other techniques.

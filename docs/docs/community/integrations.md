@@ -6,7 +6,7 @@ LlamaIndex has a number of community integrations, from vector stores, to prompt
 
 LlamaHub hosts a full suite of LlamaPacks -- templates for features that you can download, edit, and try out! This offers a quick way to learn about new features and try new techniques.
 
-The full set of LlamaPacks is available on [LlamaHub](https://llamahub.ai/). Check out our [dedicated page](llama_packs/index.md).
+The full set of LlamaPacks is available on [LlamaHub](https://llamahub.ai/). Check out our [dedicated page](/python/framework/community/llama_packs).
 
 ## Data Loaders
 
@@ -16,32 +16,32 @@ The full set of data loaders are found on [LlamaHub](https://llamahub.ai/)
 
 The full set of agent tools are found on [LlamaHub](https://llamahub.ai/)
 
-- [MCP Toolbox](../examples/tools/mcp_toolbox.ipynb)
+- [MCP Toolbox](/python/examples/tools/mcp_toolbox)
 
 ## LLMs
 
-We support [a huge number of LLMs](../module_guides/models/llms/modules.md).
+We support [a huge number of LLMs](/python/framework/module_guides/models/llms/modules).
 
 ## Observability/Tracing/Evaluation
 
-Check out our [one-click observability](../module_guides/observability/index.md) page
+Check out our [one-click observability](/python/framework/module_guides/observability) page
 for full tracing integrations.
 
 ## Experiment Tracking
 
-- [MLflow](../../examples/observability/mlflow)
+- [MLflow](/python/examples/observability/mlflow)
 
 ## Structured Outputs
 
-- [Guidance](integrations/guidance.md)
-- [LLM Format Enforcer](integrations/lmformatenforcer.md)
-- [Guardrails](../examples/output_parsing/GuardrailsDemo.ipynb)
-- [OpenAI Function Calling](../examples/output_parsing/openai_pydantic_program.ipynb)
+- [Guidance](/python/framework/community/integrations/guidance)
+- [LLM Format Enforcer](/python/framework/community/integrations/lmformatenforcer)
+- [Guardrails](/python/examples/output_parsing/guardrailsdemo)
+- [OpenAI Function Calling](/python/examples/output_parsing/openai_pydantic_program)
 
 ## Storage and Managed Indexes
 
-- [Vector Stores](integrations/vector_stores.md)
-- [Managed Indices](integrations/managed_indices.md)
+- [Vector Stores](/python/framework/community/integrations/vector_stores)
+- [Managed Indices](/python/framework/community/integrations/managed_indices)
 
 ## Application Frameworks
 
@@ -54,7 +54,7 @@ for full tracing integrations.
 
 ## Other
 
-- [ChatGPT Plugins](integrations/chatgpt_plugins.md)
+- [ChatGPT Plugins](/python/framework/community/integrations/chatgpt_plugins)
 - [Poe](https://github.com/poe-platform/poe-protocol/tree/main/llama_poe)
 - [Airbyte](https://airbyte.com/tutorials/airbyte-and-llamaindex-elt-and-chat-with-your-data-warehouse-without-writing-sql)
-- [Fleet](integrations/fleet_libraries_context.md)
+- [Fleet](/python/framework/community/integrations/fleet_libraries_context)

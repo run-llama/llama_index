@@ -22,7 +22,7 @@ For instance, after fine-tuning an embedding model on your dataset, it may be he
 
 Here is a notebook showing how the BEIR dataset can be used with your retrieval flow.
 
-- [BEIR Evaluation](../../examples/evaluation/BeirEvaluation.ipynb)
+- [BEIR Evaluation](/python/examples/evaluation/beirevaluation)
 
 We will be adding more methods to evaluate retrieval soon. This includes evaluating retrieval on your own dataset.
 
@@ -36,7 +36,7 @@ The HotpotQA dataset is useful for evaluating queries that require multiple retr
 
 Example:
 
-- [HotpotQA Eval](../../examples/evaluation/HotpotQADistractor.ipynb)
+- [HotpotQA Eval](/python/examples/evaluation/hotpotqadistractor)
 
 Limitations:
 

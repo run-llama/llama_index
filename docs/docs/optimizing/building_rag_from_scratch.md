@@ -16,20 +16,20 @@ We show how to build an app from scratch, component by component. For the sake o
 
 This tutorial shows how you can define an ingestion pipeline into a vector store.
 
-- [Ingestion from scratch](../examples/low_level/ingestion.ipynb)
+- [Ingestion from scratch](/python/examples/low_level/ingestion)
 
 ## Building Vector Retrieval from Scratch
 
 This tutorial shows you how to build a retriever to query a vector store.
 
-- [Vector Retrieval from Scratch](../examples/low_level/retrieval.ipynb)
+- [Vector Retrieval from Scratch](/python/examples/low_level/retrieval)
 
 ## Building Ingestion/Retrieval from Scratch (Open-Source/Local Components)
 
 This tutoral shows you how to build an ingestion/retrieval pipeline using only
 open-source components.
 
-- [Open Source RAG](../examples/low_level/oss_ingestion_retrieval.ipynb)
+- [Open Source RAG](/python/examples/low_level/oss_ingestion_retrieval)
 
 ## Building a (Very Simple) Vector Store from Scratch
 
@@ -37,19 +37,19 @@ If you want to learn more about how vector stores work, here's a tutorial showin
 
 Obviously not a replacement for production databases.
 
-- [Vector Store from Scratch](../examples/low_level/vector_store.ipynb)
+- [Vector Store from Scratch](/python/examples/low_level/vector_store)
 
 ## Building Response Synthesis from Scratch
 
 This tutorial shows you how to use the LLM to synthesize results given a set of retrieved context. Deals with context overflows, async calls, and source citations!
 
-- [Response Synthesis from Scratch](../examples/low_level/response_synthesis.ipynb)
+- [Response Synthesis from Scratch](/python/examples/low_level/response_synthesis)
 
 ## Building Evaluation from Scratch
 
 Learn how to build common LLM-based eval modules (correctness, faithfulness) using LLMs and prompt modules; this will help you define your own custom evals!
 
-- [Evaluation from Scratch](../examples/low_level/evaluation.ipynb)
+- [Evaluation from Scratch](/python/examples/low_level/evaluation)
 
 ## Building Advanced RAG from Scratch
 
@@ -59,19 +59,19 @@ These tutorials will show you how to build advanced functionality beyond the bas
 
 Hybrid search is an advanced retrieval feature supported by many vector databases. It allows you to combine **dense** retrieval with **sparse** retrieval with matching keywords.
 
-- [Building Hybrid Search from Scratch](../examples/vector_stores/qdrant_hybrid.ipynb)
+- [Building Hybrid Search from Scratch](/python/examples/vector_stores/qdrant_hybrid)
 
 ### Building a Router from Scratch
 
 Beyond the standard RAG workflow, this takes you one step towards automated decision making with LLMs by showing you how to build a router module from scratch.
 
-- [Router from Scratch](../examples/low_level/router.ipynb)
+- [Router from Scratch](/python/examples/low_level/router)
 
 ### Building RAG Fusion Retriever from Scratch
 
 Here we show you how to build an advanced retriever capable of query-rewriting, ensembling, dynamic retrieval.
 
-- [Fusion Retrieval from Scratch](../examples/low_level/fusion_retriever.ipynb)
+- [Fusion Retrieval from Scratch](/python/examples/low_level/fusion_retriever)
 
 ## Building QA over Structured Data from Scratch
 
@@ -79,4 +79,4 @@ RAG as a framework is primarily focused on unstructured data. LlamaIndex also ha
 
 Take a look at our guides below to see how to build text-to-SQL from scratch (using our Workflows library).
 
-- [Text-to-SQL from Scratch](../examples/workflow/advanced_text_to_sql.ipynb)
+- [Text-to-SQL from Scratch](/python/examples/workflow/advanced_text_to_sql)
