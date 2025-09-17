@@ -1,27 +1,22 @@
-from typing import Any, List
-from llama_index.core.schema import (
-    TextNode,
-)
-from llama_index.core.vector_stores.types import VectorStoreQuery
-from llama_index.core.vector_stores.types import (
-    MetadataFilter,
-    MetadataFilters,
-)
-
+"""VectorStore integration tests for Azure Database for PostgreSQL using LlamaIndex."""
 
 import re
 from contextlib import nullcontext
+from typing import Any
 
 import pytest
-from pgvector.psycopg import (  # type: ignore[import-untyped]
-    register_vector,
-    register_vector_async,
-)
 from psycopg import sql
 from psycopg.rows import dict_row
-from psycopg_pool import  ConnectionPool
+from psycopg_pool import ConnectionPool
 from pydantic import PositiveInt
 
+from llama_index.core.schema import (
+    TextNode,
+)
+from llama_index.core.vector_stores.types import (
+    MetadataFilters,
+    VectorStoreQuery,
+)
 from llama_index.vector_stores.azure_postgres import AzurePGVectorStore
 from llama_index.vector_stores.azure_postgres.common import DiskANN
 
@@ -42,6 +37,7 @@ _GET_TABLE_COLUMNS_AND_TYPES = sql.SQL(
     order by  a.attnum asc
     """
 )
+
 
 # Utility/assertion functions to be used in tests
 def verify_table_created(table: Table, resultset: list[dict[str, Any]]) -> None:
@@ -84,23 +80,25 @@ def verify_table_created(table: Table, resultset: list[dict[str, Any]]) -> None:
     )
 
     # Verify that metadata column have been created correctly
-    result = next((r for r in resultset if r["column_name"] == table.metadata_column), None)
+    result = next(
+        (r for r in resultset if r["column_name"] == table.metadata_column), None
+    )
     assert result is not None, (
         f"Metadata column '{table.metadata_column}' was not created in the table."
     )
 
-class TestAzurePGVectorStore:
-    @pytest.mark.xfail(
-        reason="Table creation failure tests not yet implemented",
-        raises=AssertionError,
-    )
-    def test_table_creation_failure(self):
-        assert False
 
-    # @pytest.mark.skip
+class TestAzurePGVectorStore:
+    """Integration tests for the AzurePGVectorStore implementation.
+
+    Covers table creation, initialization via parameters, CRUD operations,
+    and similarity queries against seeded data in the test database.
+    """
+
     def test_table_creation_success(
         self, vectorstore: AzurePGVectorStore, table: Table
     ):
+        """Verify the database table is created with the expected columns."""
         with (
             vectorstore.connection_pool.connection() as conn,
             conn.cursor(row_factory=dict_row) as cursor,
@@ -115,13 +113,12 @@ class TestAzurePGVectorStore:
             resultset = cursor.fetchall()
         verify_table_created(table, resultset)
 
-
-    # @pytest.mark.skip
     def test_vectorstore_initialization_from_params(
         self,
         connection_pool: ConnectionPool,
         schema: str,
     ):
+        """Create a store using class factory `from_params` and assert type."""
         table_name = "vs_init_from_params"
         embedding_dimension = 3
 
@@ -129,7 +126,7 @@ class TestAzurePGVectorStore:
             op_class="vector_cosine_ops",
             max_neighbors=32,
             l_value_ib=100,
-            l_value_is=100
+            l_value_is=100,
         )
 
         vectorstore = AzurePGVectorStore.from_params(
@@ -141,18 +138,14 @@ class TestAzurePGVectorStore:
         )
         assert isinstance(vectorstore, AzurePGVectorStore)
 
-
-    @pytest.mark.skip
     def test_get_nodes(
         self,
         vectorstore: AzurePGVectorStore,
     ):
+        """Retrieve all nodes and assert expected seeded node count."""
         in_nodes = vectorstore.get_nodes()
-        assert len(in_nodes) == 4, (
-            "Retrieved node count does not match expected"
-        )
+        assert len(in_nodes) == 4, "Retrieved node count does not match expected"
 
-    # @pytest.mark.skip
     @pytest.mark.parametrize(
         ["node_tuple", "expected"],
         [
@@ -171,6 +164,7 @@ class TestAzurePGVectorStore:
         node_tuple: tuple[TextNode, str | None],
         expected: nullcontext[AzurePGVectorStore] | pytest.RaisesExc,
     ):
+        """Retrieve nodes by ID and validate returned node matches expected."""
         node, expected_node_id = node_tuple
         in_nodes = vectorstore.get_nodes([node.node_id])
 
@@ -178,9 +172,7 @@ class TestAzurePGVectorStore:
             assert expected_node_id == in_nodes[0].node_id, (
                 "Retrieved node ID does not match expected"
             )
-    
 
-    # @pytest.mark.skip
     @pytest.mark.parametrize(
         ["node_tuple", "expected"],
         [
@@ -189,7 +181,7 @@ class TestAzurePGVectorStore:
         ],
         indirect=["node_tuple"],
         ids=[
-            "success", 
+            "success",
             # "failure",
         ],
     )
@@ -199,14 +191,13 @@ class TestAzurePGVectorStore:
         node_tuple: tuple[TextNode, str | None],
         expected: nullcontext[AzurePGVectorStore] | pytest.RaisesExc,
     ):
+        """Add a node to the store and assert the returned ID matches."""
         node, expected_node_id = node_tuple
         with expected:
             assert node.node_id is not None, "Node ID must be provided for this test"
             returned_ids = vectorstore.add([node])
             assert returned_ids[0] == expected_node_id, "Inserted text IDs do not match"
 
-
-    # @pytest.mark.skip
     @pytest.mark.parametrize(
         ["doc_id"],
         [
@@ -220,6 +211,7 @@ class TestAzurePGVectorStore:
         vectorstore: AzurePGVectorStore,
         doc_id: str,
     ):
+        """Delete a node by reference doc id and assert it was removed."""
         vectorstore.delete(doc_id)
 
         with (
@@ -247,8 +239,6 @@ class TestAzurePGVectorStore:
             "Deleted document IDs should not exist in the remaining set"
         )
 
-
-    # @pytest.mark.skip
     @pytest.mark.parametrize(
         ["node_tuple"],
         [
@@ -266,6 +256,7 @@ class TestAzurePGVectorStore:
         vectorstore: AzurePGVectorStore,
         node_tuple: tuple[TextNode, str | None],
     ):
+        """Delete a list of node IDs and assert they are removed from the table."""
         node, expected_node_id = node_tuple
         vectorstore.delete_nodes([node.node_id])
 
@@ -294,12 +285,11 @@ class TestAzurePGVectorStore:
             "Deleted document IDs should not exist in the remaining set"
         )
 
-
-    # @pytest.mark.skip
     def test_clear(
         self,
         vectorstore: AzurePGVectorStore,
     ):
+        """Clear all nodes from the underlying table and verify none remain."""
         vectorstore.clear()
 
         with (
@@ -323,12 +313,8 @@ class TestAzurePGVectorStore:
 
         remaining_set = set(str(r["node_id"]) for r in resultset)
 
-        assert not remaining_set, (
-            "All document IDs should have been deleted"
-        )
+        assert not remaining_set, "All document IDs should have been deleted"
 
-    
-    # @pytest.mark.skip
     @pytest.mark.parametrize(
         ["query", "embedding", "k", "filters"],
         [
@@ -339,18 +325,33 @@ class TestAzurePGVectorStore:
         ],
         indirect=["filters"],
         ids=[
-            "search-cats", 
-            "search-animals", 
+            "search-cats",
+            "search-animals",
             "search-cats-filtered",
-            "search-cats-multifiltered"],
+            "search-cats-multifiltered",
+        ],
     )
     def test_query(
-        self, vectorstore: AzurePGVectorStore, query: str, embedding: list[float], k: int, filters: MetadataFilters | None
+        self,
+        vectorstore: AzurePGVectorStore,
+        query: str,
+        embedding: list[float],
+        k: int,
+        filters: MetadataFilters | None,
     ):
-        vsquery = VectorStoreQuery(query_str=query, query_embedding=embedding, similarity_top_k=k, filters=filters)
-        results = vectorstore.query(
-            query=vsquery
+        """Run a similarity query and assert returned documents match expectations.
+
+        Tests multiple query types (cats/animals) and optional metadata
+        filters to ensure the vector search returns relevant documents and
+        that filtering works as intended.
+        """
+        vsquery = VectorStoreQuery(
+            query_str=query,
+            query_embedding=embedding,
+            similarity_top_k=k,
+            filters=filters,
         )
+        results = vectorstore.query(query=vsquery)
 
         results = results.nodes
         contents = [row.get_content() for row in results]

@@ -5,6 +5,7 @@ Azure PostgreSQL Vector Store integration for [LlamaIndex](https://github.com/ru
 This package provides an integration for using Azure Database for PostgreSQL as a vector store backend with LlamaIndex, supporting advanced vector search capabilities (including pgvector, DiskANN, and hybrid search).
 
 ## Features
+
 - Store and query vector embeddings in Azure PostgreSQL
 - Support for pgvector and DiskANN extensions
 - Metadata filtering
@@ -23,6 +24,7 @@ poetry install
 ```
 
 **Dependencies:**
+
 - `llama-index`
 - `psycopg` (PostgreSQL driver)
 - `azure-identity` (for Azure authentication)

@@ -31,6 +31,15 @@ _logger = logging.getLogger(__name__)
 
 
 class BaseAzurePGVectorStore(BaseModel):
+    """Base Pydantic model for an Azure PostgreSQL-backed vector store.
+
+    This class encapsulates configuration (connection pool, table/column
+    names, embedding type/dimension, index configuration and metadata
+    column) and performs runtime verification that the target table
+    exists with expected columns and index configuration. If the table
+    does not exist, ``verify_and_init_store`` will create it.
+    """
+
     connection_pool: AzurePGConnectionPool
     schema_name: str = "public"
     table_name: str = "vector_store"
@@ -48,6 +57,18 @@ class BaseAzurePGVectorStore(BaseModel):
 
     @model_validator(mode="after")
     def verify_and_init_store(self) -> Self:
+        """Validate the store configuration and initialize DB schema and index.
+
+        This validator runs after Pydantic model initialization. It queries
+        the database to detect an existing table and its columns/indexes,
+        performs type and dimension checks for the embedding column, and
+        sets inferred properties (like embedding_type and embedding_dimension)
+        when they are not explicitly provided. If the table does not exist,
+        it will create the table with sensible defaults.
+
+        Returns:
+            Self: The same model instance, possibly updated with inferred values.
+        """
         # verify that metadata_column is not empty if provided
         if self.metadata_column is not None and len(self.metadata_column) == 0:
             raise ValueError("'metadata_column' cannot be empty if provided.")
@@ -287,9 +308,7 @@ class BaseAzurePGVectorStore(BaseModel):
                                 else (
                                     HNSW(op_class=index_opclass, **index_opts)
                                     if index_type == "hnsw"
-                                    else IVFFlat(
-                                        op_class=index_opclass, **index_opts
-                                    )
+                                    else IVFFlat(op_class=index_opclass, **index_opts)
                                 )
                             )
                             self.embedding_index = index
@@ -329,7 +348,6 @@ class BaseAzurePGVectorStore(BaseModel):
                 self.embedding_index = DiskANN(op_class=VectorOpClass.vector_cosine_ops)
 
             with self.connection_pool.connection() as conn, conn.cursor() as cursor:
-                
                 cursor.execute(
                     sql.SQL(
                         """
@@ -422,9 +440,9 @@ class BaseAzurePGVectorStore(BaseModel):
         Returns:
             list[tuple[dict, float, np.ndarray | None]]: List of tuples containing document dict, distance, and optionally the embedding.
         """
-        assert (
-            self.embedding_index is not None
-        ), "embedding_index should have already been set"
+        assert self.embedding_index is not None, (
+            "embedding_index should have already been set"
+        )
         return_embeddings = bool(kwargs.pop("return_embeddings", None))
         top_m = int(kwargs.pop("top_m", 5 * k))
         filter_expression: sql.SQL = kwargs.pop("filter_expression", sql.SQL("true"))

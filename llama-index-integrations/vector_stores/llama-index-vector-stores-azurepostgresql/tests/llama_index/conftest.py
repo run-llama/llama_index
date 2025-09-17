@@ -1,3 +1,4 @@
+"""Pytest fixtures and Pydantic models used for Azure PostgreSQL vector store integration tests."""
 
 from collections.abc import Generator
 from typing import Any
@@ -12,10 +13,13 @@ from llama_index.core.vector_stores.types import (
     MetadataFilter,
     MetadataFilters,
 )
-
-from llama_index.vector_stores.azure_postgres.common import Algorithm, VectorType, DiskANN
 from llama_index.vector_stores.azure_postgres import (
     AzurePGVectorStore,
+)
+from llama_index.vector_stores.azure_postgres.common import (
+    Algorithm,
+    DiskANN,
+    VectorType,
 )
 
 _FIXTURE_PARAMS_TABLE: dict[str, Any] = {
@@ -39,6 +43,7 @@ _FIXTURE_PARAMS_TABLE: dict[str, Any] = {
     ],
 }
 
+
 @pytest.fixture(
     params=[
         "node-success",
@@ -58,17 +63,16 @@ def node_tuple(
     :rtype: Generator[Node, Any, None]
     """
     assert isinstance(request.param, str), "Request param must be a str"
-    
+
     if request.param == "node-success":
-        
         n = Node()
-        n.node_id = '00000000-0000-0000-0000-000000000001'
+        n.node_id = "00000000-0000-0000-0000-000000000001"
         n.set_content("Text 1 about cats")
         n.embedding = [1.0] * 1536
         n.metadata = {"metadata_column1": "text1", "metadata_column2": 1}
     elif request.param == "node-not-found":
         n = Node()
-        n.node_id = '00000000-0000-0000-0000-000000000010'
+        n.node_id = "00000000-0000-0000-0000-000000000010"
         n.set_content("Text 10 about cats")
         n.embedding = [10.0] * 1536
         n.metadata = {"metadata_column1": "text1", "metadata_column2": 10}
@@ -76,6 +80,7 @@ def node_tuple(
         raise ValueError(f"Unknown node parameter: {request.param}")
 
     return (n, n.node_id)
+
 
 class Table(BaseModel):
     """Table configuration for test parameterization.
@@ -101,6 +106,7 @@ class Table(BaseModel):
     embedding_dimension: PositiveInt
     embedding_index: Algorithm | None
     metadata_column: str
+
 
 @pytest.fixture(**_FIXTURE_PARAMS_TABLE)
 def table(
@@ -180,31 +186,34 @@ def table(
 def filters(
     request: pytest.FixtureRequest,
 ) -> MetadataFilters | None:
+    """Define filters for various queries."""
     if request.param == "filter1":
         vsfilters = MetadataFilters(
-                    filters=[
-                        MetadataFilter(key="metadata_column2", value="3", operator="!=")
-                    ],
-                    condition="and",
-                )
+            filters=[MetadataFilter(key="metadata_column2", value="3", operator="!=")],
+            condition="and",
+        )
     elif request.param == "filter2":
         vsfilters = MetadataFilters(
+            filters=[
+                MetadataFilters(
                     filters=[
-                        MetadataFilters(
-                            filters=[
-                                MetadataFilter(key="metadata_column1", value="not-text", operator="!="),
-                            ],
-                            condition="or",
+                        MetadataFilter(
+                            key="metadata_column1", value="not-text", operator="!="
                         ),
-                        MetadataFilters(
-                            filters=[
-                                MetadataFilter(key="metadata_column2", value="3", operator="!="),
-                            ],
-                            condition="and",
-                        )
+                    ],
+                    condition="or",
+                ),
+                MetadataFilters(
+                    filters=[
+                        MetadataFilter(
+                            key="metadata_column2", value="3", operator="!="
+                        ),
                     ],
                     condition="and",
-                )
+                ),
+            ],
+            condition="and",
+        )
     else:
         return None
     return vsfilters
@@ -212,11 +221,9 @@ def filters(
 
 @pytest.fixture
 def vectorstore(connection_pool: ConnectionPool, table: Table) -> AzurePGVectorStore:
+    """Define vectorstore with DiskANN."""
     diskann = DiskANN(
-        op_class="vector_cosine_ops",
-        max_neighbors=32,
-        l_value_ib=100,
-        l_value_is=100
+        op_class="vector_cosine_ops", max_neighbors=32, l_value_ib=100, l_value_is=100
     )
     vector_store = AzurePGVectorStore.from_params(
         connection_pool=connection_pool,
@@ -232,14 +239,14 @@ def vectorstore(connection_pool: ConnectionPool, table: Table) -> AzurePGVectorS
     nodes = []
 
     n1 = Node()
-    n1.node_id = '00000000-0000-0000-0000-000000000001'
+    n1.node_id = "00000000-0000-0000-0000-000000000001"
     n1.set_content("Text 1 about cats")
     n1.embedding = [1.0] * dim
     n1.metadata = {"metadata_column1": "text1", "metadata_column2": 1}
     nodes.append(n1)
 
     n2 = Node()
-    n2.node_id = '00000000-0000-0000-0000-000000000002'
+    n2.node_id = "00000000-0000-0000-0000-000000000002"
     n2.set_content("Text 2 about tigers")
     # tigers should be close to cats
     n2.embedding = [0.95] * dim
@@ -247,14 +254,14 @@ def vectorstore(connection_pool: ConnectionPool, table: Table) -> AzurePGVectorS
     nodes.append(n2)
 
     n3 = Node()
-    n3.node_id = '00000000-0000-0000-0000-000000000003'
+    n3.node_id = "00000000-0000-0000-0000-000000000003"
     n3.set_content("Text 3 about dogs")
     n3.embedding = [0.3] * dim
     n3.metadata = {"metadata_column1": "text3", "metadata_column2": 3}
     nodes.append(n3)
 
     n4 = Node()
-    n4.node_id = '00000000-0000-0000-0000-000000000004'
+    n4.node_id = "00000000-0000-0000-0000-000000000004"
     n4.set_content("Text 4 about plants")
     n4.embedding = [-1.0] * dim
     n4.metadata = {"metadata_column1": "text4", "metadata_column2": 4}

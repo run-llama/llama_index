@@ -6,19 +6,16 @@ basic authentication and Azure AD authentication, allowing for flexible
 testing configurations.
 """
 
-from operator import index
 import os
-from collections.abc import AsyncGenerator, Generator
+from collections.abc import Generator
 from typing import Any
 
 import pytest
 from azure.core.credentials import TokenCredential
-from azure.core.credentials_async import AsyncTokenCredential
 from azure.identity import DefaultAzureCredential
-from azure.identity.aio import DefaultAzureCredential as AsyncDefaultAzureCredential
-from psycopg import AsyncConnection, Connection, sql
+from psycopg import Connection, sql
 from psycopg.rows import dict_row
-from psycopg_pool import AsyncConnectionPool, ConnectionPool
+from psycopg_pool import ConnectionPool
 
 from llama_index.vector_stores.azure_postgres.common import (
     AzurePGConnectionPool,
@@ -26,7 +23,9 @@ from llama_index.vector_stores.azure_postgres.common import (
     ConnectionInfo,
     SSLMode,
 )
-from llama_index.vector_stores.azure_postgres.common._shared import TOKEN_CREDENTIAL_SCOPE
+from llama_index.vector_stores.azure_postgres.common._shared import (
+    TOKEN_CREDENTIAL_SCOPE,
+)
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -149,11 +148,7 @@ def connection_pool(
         yield pool
 
 
-@pytest.fixture(scope="session", 
-                params=[
-                    "azure-ad", 
-                    "basic-auth"
-                ])
+@pytest.fixture(scope="session", params=["azure-ad", "basic-auth"])
 def credentials(
     pytestconfig: pytest.Config, request: pytest.FixtureRequest
 ) -> BasicAuth | TokenCredential:

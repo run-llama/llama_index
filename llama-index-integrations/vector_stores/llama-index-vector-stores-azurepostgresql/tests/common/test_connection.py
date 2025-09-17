@@ -1,9 +1,11 @@
-from collections.abc import AsyncGenerator, Generator
-from contextlib import asynccontextmanager, contextmanager, nullcontext
+"""Synchronous connection handling tests for Azure Database for PostgreSQL."""
+
+from collections.abc import Generator
+from contextlib import contextmanager, nullcontext
 from typing import Any
 
 import pytest
-from psycopg import AsyncConnection, Connection, sql
+from psycopg import Connection, sql
 from pydantic import BaseModel, ConfigDict
 
 from llama_index.vector_stores.azure_postgres.common import (
@@ -14,6 +16,14 @@ from llama_index.vector_stores.azure_postgres.common import (
 
 
 class MockCursorBase(BaseModel):
+    """A minimal mock cursor base model used for testing DB interactions.
+
+    Attributes:
+        broken (bool): If True, simulates a broken cursor that fails queries.
+        last_query (str | sql.SQL | None): Stores the last executed query for inspection.
+        response (dict | None): Value to return from fetchone() when appropriate.
+    """
+
     broken: bool = False
     last_query: str | sql.SQL | None = None
     response: dict | None = None
@@ -24,10 +34,19 @@ class MockCursorBase(BaseModel):
 
 
 class MockCursor(MockCursorBase):
+    """A mock cursor implementing execute and fetchone for tests.
+
+    The mock cursor records the last executed query and returns canned
+    responses from the ``response`` attribute. When ``broken`` is True,
+    ``fetchone`` returns None to simulate failures.
+    """
+
     def execute(self, query: str | sql.SQL, _params=None) -> None:
+        """Execute a SQL query and record it for later inspection."""
         self.last_query = query
 
     def fetchone(self) -> None | dict:
+        """Return a single-row result dict."""
         assert self.last_query is not None, "No query executed."
 
         # We either give `"select 1"` or `sql.SQL(...)` as the last query.
@@ -43,7 +62,13 @@ def mock_cursor(
     monkeypatch: pytest.MonkeyPatch,
     request: pytest.FixtureRequest,
 ):
-    """Fixture to mock `connection` to return `MockCursor` as a cursor."""
+    """Pytest fixture that replaces a real DB cursor with a MockCursor.
+
+    Expects the parameterization to pass an instance of ``MockCursor``
+    via ``request.param``. The fixture monkeypatches the connection's
+    ``cursor`` method to return the supplied mock cursor as a context
+    manager.
+    """
     assert isinstance(request.param, MockCursor), "Expected a MockCursor instance."
 
     @contextmanager
@@ -54,8 +79,15 @@ def mock_cursor(
 
 
 class TestCheckConnection:
-   
+    """Tests for verifying the database connection and required extensions.
+
+    These tests exercise ``check_connection`` with various mocked cursor
+    responses to validate behavior for installed extensions, missing
+    extensions, version mismatches, and broken cursors.
+    """
+
     def test_it_works(self, connection: Connection) -> None:
+        """Ensure ``check_connection`` returns None on a healthy connection."""
         assert check_connection(connection) is None
 
     @pytest.mark.parametrize(
@@ -122,6 +154,11 @@ class TestCheckConnection:
         mock_cursor,
         expected_result: nullcontext | pytest.RaisesExc,
     ) -> None:
+        """Run parameterized checks of ``check_connection`` using mocked cursors.
+
+        Parameterization covers installed extension, broken cursor,
+        missing extension, version mismatch, and schema mismatch cases.
+        """
         with expected_result as e:
             assert check_connection(connection, required_extensions=[extension]) == e
 
@@ -130,7 +167,12 @@ class TestCheckConnection:
 def extension_creatable(
     connection: Connection, request: pytest.FixtureRequest
 ) -> Generator[Extension, Any, None]:
-    """Fixture to check if an extension can be created."""
+    """Fixture that attempts to create (and later drop) a DB extension.
+
+    Uses the provided ``Extension`` instance via ``request.param`` and
+    will skip the test if creation fails. After the test, the extension
+    is dropped if it was not previously installed.
+    """
     assert isinstance(request.param, Extension), "Expected an Extension instance."
 
     ext_already_installed = False
@@ -196,6 +238,12 @@ def extension_creatable(
 
 
 class TestCreateExtensions:
+    """Tests that validate creating and handling of Postgres extensions.
+
+    - ``test_it_works`` verifies that a valid extension can be created.
+    - ``test_it_fails`` ensures that attempting to create a non-existent
+      extension raises an informative exception.
+    """
 
     @pytest.mark.parametrize(
         "extension_creatable",
@@ -204,6 +252,7 @@ class TestCreateExtensions:
         indirect=True,
     )
     def test_it_works(self, connection: Connection, extension_creatable: Extension):
+        """Assert that creating a valid extension returns None (no error)."""
         assert (
             create_extensions(
                 connection,
@@ -213,6 +262,7 @@ class TestCreateExtensions:
         )
 
     def test_it_fails(self, connection: Connection):
+        """Verify that creating a missing extension raises an exception."""
         extension = Extension(
             ext_name="non_existent_ext",
             ext_version="1.0",
