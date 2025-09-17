@@ -195,42 +195,58 @@ def test_baseten_class():
         with patch(
             "llama_index.llms.baseten.base.validate_model_dynamic"
         ) as mock_validate:
-            mock_models = [Model(id="model-1"), Model(id="model-2")]
-            mock_get_models.return_value = mock_models
+            with patch(
+                "llama_index.llms.baseten.base.get_from_param_or_env"
+            ) as mock_get_key:
+                mock_get_key.return_value = "fake-api-key"
+                mock_models = [Model(id="model-1"), Model(id="model-2")]
+                mock_get_models.return_value = mock_models
 
-            llm = Baseten(model_id="test-model", model_apis=True)
-            llm._get_client = Mock()
+                llm = Baseten(model_id="test-model", model_apis=True)
+                llm._get_client = Mock()
 
-            result = llm.available_models
+                result = llm.available_models
 
-            assert result == mock_models
-            mock_get_models.assert_called_once()
+                assert result == mock_models
+                mock_get_models.assert_called_once()
 
     # Test available_models property with model_apis=False
-    llm = Baseten(model_id="test-model", model_apis=False)
-    result = llm.available_models
-    assert len(result) == 1
-    assert result[0].id == "test-model"
+    with patch("llama_index.llms.baseten.base.get_from_param_or_env") as mock_get_key:
+        mock_get_key.return_value = "fake-api-key"
+        llm = Baseten(model_id="test-model", model_apis=False)
+        result = llm.available_models
+        assert len(result) == 1
+        assert result[0].id == "test-model"
 
     # Test available_models property with dedicated deployment but no model attribute
-    llm = Baseten(model_id="test-model", model_apis=False)
-    delattr(llm, "model")
-    result = llm.available_models
-    assert result == []
+    with patch("llama_index.llms.baseten.base.get_from_param_or_env") as mock_get_key:
+        mock_get_key.return_value = "fake-api-key"
+        llm = Baseten(model_id="test-model", model_apis=False)
+        delattr(llm, "model")
+        result = llm.available_models
+        assert result == []
 
     # Test dynamic validation in constructor
     with patch("llama_index.llms.baseten.base.validate_model_dynamic") as mock_validate:
         with patch("openai.OpenAI") as mock_client_class:
-            mock_client = Mock()
-            mock_client_class.return_value = mock_client
+            with patch(
+                "llama_index.llms.baseten.base.get_from_param_or_env"
+            ) as mock_get_key:
+                mock_get_key.return_value = "fake-api-key"
+                mock_client = Mock()
+                mock_client_class.return_value = mock_client
 
-            llm = Baseten(model_id="test-model", model_apis=True)
-            mock_validate.assert_called_once_with(mock_client, "test-model")
+                llm = Baseten(model_id="test-model", model_apis=True)
+                mock_validate.assert_called_once_with(mock_client, "test-model")
 
     # Test no validation for dedicated deployment
     with patch("llama_index.llms.baseten.base.validate_model_dynamic") as mock_validate:
-        llm = Baseten(model_id="test-model", model_apis=False)
-        mock_validate.assert_not_called()
+        with patch(
+            "llama_index.llms.baseten.base.get_from_param_or_env"
+        ) as mock_get_key:
+            mock_get_key.return_value = "fake-api-key"
+            llm = Baseten(model_id="test-model", model_apis=False)
+            mock_validate.assert_not_called()
 
     print("✅ Baseten class tests passed")
 
