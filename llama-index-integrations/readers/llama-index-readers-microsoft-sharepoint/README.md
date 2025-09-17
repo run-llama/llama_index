@@ -25,16 +25,16 @@ It also supports traversing recursively through sub-folders.
 
 1. You need to create an App Registration in Microsoft Entra ID. Refer [here](https://learn.microsoft.com/en-us/azure/healthcare-apis/register-application)
 2. API Permissions for the created app:
-   - Microsoft Graph → Application Permissions → **Sites.Read.All** (**Grant Admin Consent**)  
-     *(Allows access to all sites in the tenant)*
-   - **OR**  
-     Microsoft Graph → Application Permissions → **Sites.Selected** (**Grant Admin Consent**)  
-     *(Allows access only to specific sites you select and grant permissions for)*
+   - Microsoft Graph → Application Permissions → **Sites.Read.All** (**Grant Admin Consent**)
+     _(Allows access to all sites in the tenant)_
+   - **OR**
+     Microsoft Graph → Application Permissions → **Sites.Selected** (**Grant Admin Consent**)
+     _(Allows access only to specific sites you select and grant permissions for)_
    - Microsoft Graph → Application Permissions → Files.Read.All (**Grant Admin Consent**)
    - Microsoft Graph → Application Permissions → BrowserSiteLists.Read.All (**Grant Admin Consent**)
 
-> **Note:**  
-> If you use `Sites.Selected`, you must grant your app access to the specific SharePoint site(s) via the SharePoint admin center.  
+> **Note:**
+> If you use `Sites.Selected`, you must grant your app access to the specific SharePoint site(s) via the SharePoint admin center.
 > See [Grant access to a specific site](https://learn.microsoft.com/en-us/sharepoint/dev/solution-guidance/security-apponly-azuread#grant-access-to-a-specific-site) for details.
 
 More info on Microsoft Graph APIs - [Refer here](https://learn.microsoft.com/en-us/graph/permissions-reference)
@@ -98,7 +98,13 @@ You can use custom file readers for specific file types (e.g., PDF, DOCX, HTML, 
 
 ```python
 from llama_index.readers.microsoft_sharepoint.file_parsers import (
-    PDFReader, HTMLReader, DocxReader, PptxReader, CSVReader, ExcelReader, ImageReader
+    PDFReader,
+    HTMLReader,
+    DocxReader,
+    PptxReader,
+    CSVReader,
+    ExcelReader,
+    ImageReader,
 )
 from llama_index.readers.microsoft_sharepoint.event import FileType
 
@@ -138,7 +144,7 @@ loader = SharePointReader(
 
 documents = loader.load_data(
     sharepoint_site_name="<Sharepoint Site Name>",
-    download_dir="/tmp/pages"  # Required for page content processing
+    download_dir="/tmp/pages",  # Required for page content processing
 )
 
 # Load a specific page
@@ -158,7 +164,8 @@ Use callbacks to filter or modify documents during processing:
 ```python
 def should_process_document(file_name: str) -> bool:
     """Filter out certain files based on name patterns."""
-    return not file_name.startswith('temp_') and not file_name.endswith('.tmp')
+    return not file_name.startswith("temp_") and not file_name.endswith(".tmp")
+
 
 loader = SharePointReader(
     client_id="...",
@@ -182,6 +189,7 @@ from llama_index.readers.microsoft_sharepoint.event import (
     PageFailedEvent,
 )
 
+
 class SharePointEventHandler(BaseEventHandler):
     def handle(self, event):
         if isinstance(event, PageDataFetchStartedEvent):
@@ -192,6 +200,7 @@ class SharePointEventHandler(BaseEventHandler):
             print(f"Skipped: {event.page_id}")
         elif isinstance(event, PageFailedEvent):
             print(f"Failed: {event.page_id} - {event.error}")
+
 
 # Register event handler
 dispatcher = get_dispatcher("llama_index.readers.microsoft_sharepoint.base")
@@ -228,19 +237,23 @@ loader = SharePointReader(
 ## 📋 Installation Options
 
 ### Basic Installation
+
 ```bash
 pip install llama-index-readers-microsoft-sharepoint
 ```
 
 ### With File Parser Support
+
 For enhanced file parsing capabilities (PDF, DOCX, images, etc.):
+
 ```bash
 pip install "llama-index-readers-microsoft-sharepoint[file_parsers]"
 ```
 
 This includes additional dependencies:
+
 - `pytesseract` - For OCR in images
-- `pdf2image` - For PDF processing  
+- `pdf2image` - For PDF processing
 - `python-pptx` - For PowerPoint files
 - `docx2txt` - For Word documents
 - `pandas` - For Excel/CSV files
@@ -251,13 +264,13 @@ This includes additional dependencies:
 
 ## 🔧 Configuration Options
 
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|---------|
-| `sharepoint_type` | `SharePointType` | Type of SharePoint content (`DRIVE` or `PAGE`) | `DRIVE` |
-| `custom_parsers` | `Dict[FileType, Any]` | Custom parsers for specific file types | `{}` |
-| `custom_folder` | `str` | Directory for temporary files (required with custom_parsers) | `None` |
-| `process_document_callback` | `Callable` | Function to filter/process documents | `None` |
-| `fail_on_error` | `bool` | Whether to stop on first error or continue | `True` |
+| Parameter                   | Type                  | Description                                                  | Default |
+| --------------------------- | --------------------- | ------------------------------------------------------------ | ------- |
+| `sharepoint_type`           | `SharePointType`      | Type of SharePoint content (`DRIVE` or `PAGE`)               | `DRIVE` |
+| `custom_parsers`            | `Dict[FileType, Any]` | Custom parsers for specific file types                       | `{}`    |
+| `custom_folder`             | `str`                 | Directory for temporary files (required with custom_parsers) | `None`  |
+| `process_document_callback` | `Callable`            | Function to filter/process documents                         | `None`  |
+| `fail_on_error`             | `bool`                | Whether to stop on first error or continue                   | `True`  |
 
 ---
 
