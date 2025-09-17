@@ -6,7 +6,6 @@ Run this script to test the new functionality without requiring pytest installat
 
 import sys
 import os
-import uuid
 import tempfile
 import traceback
 from unittest.mock import MagicMock
@@ -33,13 +32,13 @@ def run_basic_tests():
         return False
 
     # Dummy credentials for testing
-    dummy_kwargs = dict(
-        client_id="dummy_client_id",
-        client_secret="dummy_client_secret",
-        tenant_id="dummy_tenant_id",
-        sharepoint_site_name="dummy_site_name",
-        sharepoint_folder_path="dummy_folder_path",
-    )
+    dummy_kwargs = {
+        "client_id": "dummy_client_id",
+        "client_secret": "dummy_client_secret",
+        "tenant_id": "dummy_tenant_id",
+        "sharepoint_site_name": "dummy_site_name",
+        "sharepoint_folder_path": "dummy_folder_path",
+    }
 
     # Test 1: Basic class inheritance
     print("\n1. Testing SharePointReader inheritance...")
@@ -50,7 +49,7 @@ def run_basic_tests():
         from llama_index.core.instrumentation import DispatcherSpanMixin
 
         reader = SharePointReader(**dummy_kwargs)
-        
+
         # Test inheritance using __mro__ pattern like other tests
         names_of_base_classes = [b.__name__ for b in SharePointReader.__mro__]
         assert BasePydanticReader.__name__ in names_of_base_classes
@@ -123,6 +122,7 @@ def run_basic_tests():
     # Test 5: Callbacks functionality
     print("\n5. Testing callback functionality...")
     try:
+
         def document_filter(file_id: str) -> bool:
             return file_id != "skip_me"
 
@@ -139,11 +139,11 @@ def run_basic_tests():
 
         assert reader.process_document_callback == document_filter
         assert reader.process_attachment_callback == attachment_filter
-        
+
         # Test callbacks
         assert document_filter("normal_file") is True
         assert document_filter("skip_me") is False
-        
+
         should_process, reason = attachment_filter("application/pdf", 2000000)
         assert should_process is False
         assert reason == "File too large"
@@ -175,18 +175,18 @@ def run_basic_tests():
             PageDataFetchCompletedEvent,
             PageFailedEvent,
             PageSkippedEvent,
-            TotalPagesToProcessEvent
+            TotalPagesToProcessEvent,
         )
-        
+
         # Simulate events - create a proper Document instance for PageDataFetchCompletedEvent
         test_document = Document(text="Test document content", id_="test_doc_1")
-        
+
         test_events = [
             TotalPagesToProcessEvent(total_pages=5),
             PageDataFetchStartedEvent(page_id="test_page_1"),
             PageDataFetchCompletedEvent(page_id="test_page_1", document=test_document),
             PageSkippedEvent(page_id="test_page_2"),
-            PageFailedEvent(page_id="test_page_3", error="Test error")
+            PageFailedEvent(page_id="test_page_3", error="Test error"),
         ]
 
         for event in test_events:
@@ -195,12 +195,12 @@ def run_basic_tests():
         # Verify events were received
         expected_event_names = [
             "TotalPagesToProcessEvent",
-            "PageDataFetchStartedEvent", 
+            "PageDataFetchStartedEvent",
             "PageDataFetchCompletedEvent",
             "PageSkippedEvent",
-            "PageFailedEvent"
+            "PageFailedEvent",
         ]
-        
+
         assert len(events_received) == len(expected_event_names)
         for expected_name in expected_event_names:
             assert expected_name in events_received
@@ -234,7 +234,7 @@ def run_basic_tests():
     print("\n8. Testing SharePoint type configuration...")
     try:
         from llama_index.readers.microsoft_sharepoint.base import SharePointType
-        
+
         # Test default type
         reader1 = SharePointReader(**dummy_kwargs)
         assert reader1.sharepoint_type == SharePointType.DRIVE
@@ -264,14 +264,21 @@ def run_basic_tests():
     try:
         # Test that all expected file types exist
         expected_types = [
-            FileType.PDF, FileType.HTML, FileType.DOCUMENT,
-            FileType.PRESENTATION, FileType.CSV, FileType.SPREADSHEET,
-            FileType.IMAGE, FileType.JSON, FileType.TEXT, FileType.TXT
+            FileType.PDF,
+            FileType.HTML,
+            FileType.DOCUMENT,
+            FileType.PRESENTATION,
+            FileType.CSV,
+            FileType.SPREADSHEET,
+            FileType.IMAGE,
+            FileType.JSON,
+            FileType.TEXT,
+            FileType.TXT,
         ]
-        
+
         for file_type in expected_types:
             assert isinstance(file_type, FileType)
-        
+
         print("✓ FileType enum contains all expected types")
     except Exception as e:
         print(f"✗ Failed: {e}")
@@ -282,25 +289,24 @@ def run_basic_tests():
     print("\n11. Testing CustomParserManager...")
     try:
         from llama_index.readers.microsoft_sharepoint.base import CustomParserManager
-        
+
         mock_parser = MagicMock(spec=BaseReader)
         mock_parser.load_data.return_value = [MagicMock(text="test content")]
-        
+
         with tempfile.TemporaryDirectory() as temp_dir:
             manager = CustomParserManager(
-                custom_parsers={FileType.PDF: mock_parser},
-                custom_folder=temp_dir
+                custom_parsers={FileType.PDF: mock_parser}, custom_folder=temp_dir
             )
-            
+
             # Test processing with custom parser
             test_content = b"fake pdf content"
             result = manager.process_with_custom_parser(
                 FileType.PDF, test_content, "pdf"
             )
-            
+
             assert result == "test content"
             mock_parser.load_data.assert_called_once()
-            
+
         print("✓ CustomParserManager works correctly")
     except Exception as e:
         print(f"✗ Failed: {e}")

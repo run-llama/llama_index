@@ -159,16 +159,19 @@ class TestSharePointCore:
         assert reader.client_id == test_client_id
         assert reader.client_secret == test_client_secret
         assert reader.tenant_id == test_tenant_id
-        
+
         # Test that the reader can be created with basic serialization
-        json_data = reader.model_dump_json(exclude_unset=True, exclude={'process_document_callback', 'process_attachment_callback'})
+        json_data = reader.model_dump_json(
+            exclude_unset=True,
+            exclude={"process_document_callback", "process_attachment_callback"},
+        )
         assert json_data is not None
-        
+
         # Test that a new reader can be created with the same basic attributes
         new_reader = SharePointReader(
             client_id=reader.client_id,
-            client_secret=reader.client_secret, 
-            tenant_id=reader.tenant_id
+            client_secret=reader.client_secret,
+            tenant_id=reader.tenant_id,
         )
         assert new_reader.client_id == reader.client_id
         assert new_reader.client_secret == reader.client_secret
@@ -312,9 +315,13 @@ class TestSharePointCustomParsers:
         # Simulate a PDF file in metadata
         file_path = tmp_path / "file.pdf"
         file_path.write_bytes(b"dummy")
-        files_metadata = {str(file_path): {"file_name": "file.pdf", "file_path": str(file_path)}}
+        files_metadata = {
+            str(file_path): {"file_name": "file.pdf", "file_path": str(file_path)}
+        }
 
-        docs = reader._load_documents_with_metadata(files_metadata, str(tmp_path), recursive=False)
+        docs = reader._load_documents_with_metadata(
+            files_metadata, str(tmp_path), recursive=False
+        )
         assert docs[0].text == "custom content"
 
     def test_custom_parsers_with_default_folder(self):
@@ -562,13 +569,13 @@ class TestSharePointPages:
         # For page reading, we'll manually set custom_folder after creation to avoid validation
         reader = SharePointReader(
             client_id="dummy_client_id",
-            client_secret="dummy_client_secret", 
+            client_secret="dummy_client_secret",
             tenant_id="dummy_tenant_id",
             sharepoint_site_name="dummy_site_name",
             sharepoint_type=SharePointType.PAGE,  # Use enum instead of string
             process_document_callback=document_filter,
         )
-        
+
         # Manually set custom_folder after creation
         reader.custom_folder = str(tmp_path)
 
@@ -598,16 +605,24 @@ class TestSharePointPages:
             }
 
         # Monkeypatch methods on the class
-        monkeypatch.setattr(SharePointReader, "_get_access_token", mock_get_access_token)
-        monkeypatch.setattr(SharePointReader, "_get_site_id_with_host_name", mock_get_site_id_with_host_name)
+        monkeypatch.setattr(
+            SharePointReader, "_get_access_token", mock_get_access_token
+        )
+        monkeypatch.setattr(
+            SharePointReader,
+            "_get_site_id_with_host_name",
+            mock_get_site_id_with_host_name,
+        )
         monkeypatch.setattr(SharePointReader, "list_pages", mock_list_pages)
-        monkeypatch.setattr(SharePointReader, "get_site_pages_list_id", mock_get_site_pages_list_id)
+        monkeypatch.setattr(
+            SharePointReader, "get_site_pages_list_id", mock_get_site_pages_list_id
+        )
         monkeypatch.setattr(SharePointReader, "get_page_text", mock_get_page_text)
 
         # Call load_data without download_dir - should use custom_folder via PAGE logic
         docs = reader.load_data()
         assert len(docs) == 1
-        assert docs[0].metadata["page_name"] == "normal_page" 
+        assert docs[0].metadata["page_name"] == "normal_page"
         assert "normal_page" in called
         assert "skip_page" in called
 
@@ -663,7 +678,12 @@ class TestSharePointIntegration:
             draft_file_id = "draft_file_001"
 
             dispatcher.event(PageDataFetchStartedEvent(page_id=normal_file_id))
-            dispatcher.event(PageDataFetchCompletedEvent(page_id=normal_file_id, document=Document(text="content", id_=normal_file_id)))
+            dispatcher.event(
+                PageDataFetchCompletedEvent(
+                    page_id=normal_file_id,
+                    document=Document(text="content", id_=normal_file_id),
+                )
+            )
             dispatcher.event(PageDataFetchStartedEvent(page_id=draft_file_id))
             dispatcher.event(PageSkippedEvent(page_id=draft_file_id))
 

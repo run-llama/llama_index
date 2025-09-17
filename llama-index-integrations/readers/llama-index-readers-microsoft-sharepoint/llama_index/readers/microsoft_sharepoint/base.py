@@ -12,30 +12,36 @@ from enum import Enum
 from urllib.parse import quote
 import requests
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
-from llama_index.core.readers import (FileSystemReaderMixin,
-                                      SimpleDirectoryReader)
-from llama_index.core.readers.base import (BasePydanticReader, BaseReader,
-                                           ResourcesReaderMixin)
+from llama_index.core.readers import FileSystemReaderMixin, SimpleDirectoryReader
+from llama_index.core.readers.base import (
+    BasePydanticReader,
+    BaseReader,
+    ResourcesReaderMixin,
+)
 from llama_index.core.instrumentation import DispatcherSpanMixin, get_dispatcher
 from llama_index.core.schema import Document
 from .event import (
-        FileType,
-        TotalPagesToProcessEvent,
-        PageDataFetchStartedEvent,
-        PageDataFetchCompletedEvent,
-        PageSkippedEvent,
-        PageFailedEvent,
-    )
+    FileType,
+    TotalPagesToProcessEvent,
+    PageDataFetchStartedEvent,
+    PageDataFetchCompletedEvent,
+    PageSkippedEvent,
+    PageFailedEvent,
+)
 
 logger = logging.getLogger(__name__)
 dispatcher = get_dispatcher(__name__)
+
 
 class SharePointType(Enum):
     DRIVE = "drive"
     PAGE = "page"
 
+
 class CustomParserManager:
-    def __init__(self, custom_parsers: Optional[Dict[FileType, BaseReader]], custom_folder: str):
+    def __init__(
+        self, custom_parsers: Optional[Dict[FileType, BaseReader]], custom_folder: str
+    ):
         self.custom_parsers = custom_parsers or {}
         self.custom_folder = custom_folder
 
@@ -46,7 +52,9 @@ class CustomParserManager:
         except Exception as e:
             logger.error(f"Error removing file {file_path}: {e}")
 
-    def process_with_custom_parser(self, file_type: FileType, file_content: bytes, extension: str) -> Optional[str]:
+    def process_with_custom_parser(
+        self, file_type: FileType, file_content: bytes, extension: str
+    ) -> Optional[str]:
         if file_type not in self.custom_parsers:
             return None
 
@@ -67,7 +75,9 @@ class CustomParserManager:
         return markdown_text
 
 
-class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin, DispatcherSpanMixin):
+class SharePointReader(
+    BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin, DispatcherSpanMixin
+):
     """
     SharePoint reader.
 
@@ -89,6 +99,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                                                           file to text. See `SimpleDirectoryReader` for more details.
         attach_permission_metadata (bool): If True, the reader will attach permission metadata to the documents. Set to False if your vector store
                                            only supports flat metadata (i.e. no nested fields or lists), or to avoid the additional API calls.
+
     """
 
     client_id: str = None
@@ -99,10 +110,10 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
     sharepoint_relative_url: Optional[str] = None
     sharepoint_site_id: Optional[str] = None
     sharepoint_folder_path: Optional[str] = None
-    sharepoint_folder_id: Optional[str] = None 
+    sharepoint_folder_id: Optional[str] = None
 
-    sharepoint_file_name: Optional[str] = None  
-    sharepoint_file_id: Optional[str] = None 
+    sharepoint_file_name: Optional[str] = None
+    sharepoint_file_id: Optional[str] = None
 
     required_exts: Optional[List[str]] = None
     file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
@@ -119,7 +130,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
     custom_parsers: Optional[Dict[FileType, Any]] = None
     sharepoint_type: Optional[SharePointType] = SharePointType.DRIVE
     page_name: Optional[str] = None
-    
+
     _authorization_headers = PrivateAttr()
     _site_id_with_host_name = PrivateAttr()
     _drive_id_endpoint = PrivateAttr()
@@ -143,9 +154,11 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         page_name: Optional[str] = None,
         custom_parsers: Optional[Dict[FileType, Any]] = None,
         process_document_callback: Optional[Callable[[str], bool]] = None,
-        process_attachment_callback: Optional[Callable[[str, int], tuple[bool, str]]] = None,
+        process_attachment_callback: Optional[
+            Callable[[str, int], tuple[bool, str]]
+        ] = None,
         fail_on_error: bool = True,
-        custom_folder: Optional[str] = None,  
+        custom_folder: Optional[str] = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -171,12 +184,18 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         self.custom_parsers = custom_parsers or {}
         if custom_parsers and custom_folder:
             self.custom_folder = custom_folder
-            self.custom_parser_manager = CustomParserManager(custom_parsers, custom_folder)
+            self.custom_parser_manager = CustomParserManager(
+                custom_parsers, custom_folder
+            )
         elif custom_parsers:
             self.custom_folder = os.getcwd()
-            self.custom_parser_manager = CustomParserManager(custom_parsers, self.custom_folder)
+            self.custom_parser_manager = CustomParserManager(
+                custom_parsers, self.custom_folder
+            )
         elif custom_folder:
-            raise ValueError("custom_folder can only be used when custom_parsers are provided")
+            raise ValueError(
+                "custom_folder can only be used when custom_parsers are provided"
+            )
         else:
             self.custom_folder = None
             self.custom_parser_manager = None
@@ -223,7 +242,6 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             )
             logger.error("Error retrieving access token: %s", json_response["error"])
             raise ValueError(f"Error retrieving access token: {error_message}")
-
 
     def _send_request_with_retry(self, request: requests.Request) -> requests.Response:
         """
@@ -274,6 +292,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Raises:
             Exception: If the specified SharePoint site is not found.
+
         """
         if hasattr(self, "_site_id_with_host_name"):
             return self._site_id_with_host_name
@@ -295,13 +314,15 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                     self.sharepoint_site_id = json_response["id"]
                 return json_response["id"]
             else:
-                error_message = json_response.get("error_description") or json_response.get("error", "Unknown error")
+                error_message = json_response.get(
+                    "error_description"
+                ) or json_response.get("error", "Unknown error")
                 logger.error("Error retrieving site ID: %s", error_message)
                 raise ValueError(f"Error retrieving site ID: {error_message}")
-        
+
         if not (sharepoint_site_name):
             raise ValueError("The SharePoint site name or ID must be provided.")
-        
+
         site_information_endpoint = f"https://graph.microsoft.com/v1.0/sites"
 
         while site_information_endpoint:
@@ -347,6 +368,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Raises:
             ValueError: If there is an error in obtaining the drive ID.
+
         """
         if hasattr(self, "_drive_id"):
             return self._drive_id
@@ -364,7 +386,10 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                 for drive in json_response["value"]:
                     if drive["name"].lower() == self.drive_name.lower():
                         return drive["id"]
-                    elif self.drive_name.lower() == 'shared documents' and drive["name"].lower() == 'documents':
+                    elif (
+                        self.drive_name.lower() == "shared documents"
+                        and drive["name"].lower() == "documents"
+                    ):
                         return drive["id"]
                 raise ValueError(f"The specified drive {self.drive_name} is not found.")
 
@@ -390,6 +415,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Returns:
             str: The ID of the SharePoint site folder.
+
         """
         folder_id_endpoint = (
             f"{self._drive_id_endpoint}/{self._drive_id}/root:/{folder_path}"
@@ -430,7 +456,9 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             ValueError: If there is an error in downloading the files.
 
         """
-        logger.info(f"Downloading files from folder_id={folder_id}, folder_path={folder_path}, include_subfolders={include_subfolders}")
+        logger.info(
+            f"Downloading files from folder_id={folder_id}, folder_path={folder_path}, include_subfolders={include_subfolders}"
+        )
 
         if not file_id_to_process:
             files_path = self.list_resources(
@@ -449,9 +477,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             files_path = [file_path]
         metadata = {}
 
-        dispatcher.event(
-            TotalPagesToProcessEvent(total_pages=len(files_path))
-        )
+        dispatcher.event(TotalPagesToProcessEvent(total_pages=len(files_path)))
 
         for file_path in files_path:
             try:
@@ -460,7 +486,9 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                 dispatcher.event(PageDataFetchStartedEvent(page_id=file_id))
                 file_metadata = self._download_file(item, download_dir)
                 metadata.update(file_metadata)
-                dispatcher.event(PageDataFetchCompletedEvent(page_id=file_id, document=None))
+                dispatcher.event(
+                    PageDataFetchCompletedEvent(page_id=file_id, document=None)
+                )
             except Exception as e:
                 dispatcher.event(PageFailedEvent(page_id=str(file_path), error=str(e)))
                 logger.error(f"Error processing {file_path}: {e}", exc_info=True)
@@ -478,6 +506,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Returns:
             bytes: The content of the file.
+
         """
         file_download_url = item["@microsoft.graph.downloadUrl"]
         response = requests.get(file_download_url)
@@ -502,12 +531,13 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Returns:
             str: The path of the downloaded file in the temporary directory.
+
         """
         # Get the download URL for the file.
         file_name = item["name"]
 
         content = self._get_file_content_by_url(item)
-       
+
         # Create the directory if it does not exist and save the file.
         if not os.path.exists(download_dir):
             os.makedirs(download_dir)
@@ -527,6 +557,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Returns:
             Dict[str, str]: A dictionary containing the extracted permissions information.
+
         """
         item_id = item.get("id")
         permissions_info_endpoint = (
@@ -579,11 +610,14 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         """
         Extracts metadata related to the file.
 
-        Parameters:
+        Parameters
+        ----------
         - item (Dict[str, str]): Dictionary containing file metadata.
 
-        Returns:
+        Returns
+        -------
         - Dict[str, str]: A dictionary containing the extracted metadata.
+
         """
         # Extract the required metadata for file.
         if self.attach_permission_metadata:
@@ -593,12 +627,14 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         metadata.update(
             {
-            "file_id": item.get("id"),
-            "file_name": item.get("name"),
-            "url": item.get("webUrl"),
-            "file_path": item.get("file_path"),
-            "lastModifiedDateTime": item.get("fileSystemInfo", {}).get("lastModifiedDateTime"),
-            "createdBy": item.get("createdBy", {}).get("user", {}).get("email", ""),
+                "file_id": item.get("id"),
+                "file_name": item.get("name"),
+                "url": item.get("webUrl"),
+                "file_path": item.get("file_path"),
+                "lastModifiedDateTime": item.get("fileSystemInfo", {}).get(
+                    "lastModifiedDateTime"
+                ),
+                "createdBy": item.get("createdBy", {}).get("user", {}).get("email", ""),
             }
         )
 
@@ -638,6 +674,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Returns:
             Dict[str, str]: A dictionary containing the metadata of the downloaded files.
+
         """
         access_token = self._get_access_token()
 
@@ -671,6 +708,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Returns:
             List[Document]: A list of documents with access control metadata excluded.
+
         """
         for doc in documents:
             access_control_keys = [
@@ -698,6 +736,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Returns:
             List[Document]: A list containing the documents with metadata.
+
         """
 
         def get_metadata(filename: str) -> Any:
@@ -739,6 +778,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Returns:
             List[Document]: A list containing the documents with metadata.
+
         """
         docs: List[Document] = []
         for file_path in files_metadata:
@@ -756,10 +796,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                     file_type, file_content, ext
                 )
                 if markdown:
-                    doc = Document(
-                        text=markdown,
-                        metadata=files_metadata[file_path]
-                    )
+                    doc = Document(text=markdown, metadata=files_metadata[file_path])
                     docs.append(doc)
                     continue
             simple_loader = SimpleDirectoryReader(
@@ -801,6 +838,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Raises:
             Exception: If an error occurs while accessing SharePoint site.
+
         """
         # If sharepoint_type is 'page', use the page loading functionality
         if self.sharepoint_type == SharePointType.PAGE:
@@ -808,7 +846,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             if not download_dir:
                 download_dir = self.custom_folder
             return self.load_pages_data(download_dir=download_dir)
-        
+
         # If no arguments are provided to load_data, default to the object attributes
         if not sharepoint_site_name:
             sharepoint_site_name = self.sharepoint_site_name
@@ -850,7 +888,9 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                             sharepoint_file_id,
                             recursive,
                         )
-                        logger.info(f"Successfully downloaded {len(files_metadata) if files_metadata else 0} files")
+                        logger.info(
+                            f"Successfully downloaded {len(files_metadata) if files_metadata else 0} files"
+                        )
                         return self._load_documents_with_metadata(
                             files_metadata, temp_dir, recursive
                         )
@@ -863,14 +903,21 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                 sharepoint_file_id,
                 recursive,
             )
-            logger.info(f"Successfully downloaded {len(files_metadata) if files_metadata else 0} files")
+            logger.info(
+                f"Successfully downloaded {len(files_metadata) if files_metadata else 0} files"
+            )
             return self._load_documents_with_metadata(
                 files_metadata, download_dir, recursive
             )
 
         except Exception as exp:
             logger.error(f"Error accessing SharePoint: {exp}", exc_info=True)
-            dispatcher.event(PageFailedEvent(page_id=str(sharepoint_folder_path or sharepoint_folder_id), error=str(exp)))
+            dispatcher.event(
+                PageFailedEvent(
+                    page_id=str(sharepoint_folder_path or sharepoint_folder_id),
+                    error=str(exp),
+                )
+            )
             if self.fail_on_error:
                 raise
             return []
@@ -887,6 +934,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Returns:
             List[Path]: List of file paths.
+
         """
         folder_contents_endpoint = (
             f"{self._drive_id_endpoint}/{self._drive_id}/items/{folder_id}/children"
@@ -918,7 +966,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             sharepoint_site_name (str): The name of the SharePoint site.
 
         Returns:
-            Tuple[Path, dict] or Tuple[None, None]: 
+            Tuple[Path, dict] or Tuple[None, None]:
                 - A tuple containing the file's path (as a pathlib.Path object) and its metadata dictionary if found.
                 - (None, None) if the file details could not be retrieved.
 
@@ -929,6 +977,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             - The function retrieves the access token, site ID, and drive ID before making the request.
             - The file path is constructed based on the parent reference and file name.
             - Metadata is extracted and augmented with the file's name.
+
         """
         access_token = self._get_access_token()
 
@@ -949,22 +998,22 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         file_details = response.json()
         metadata = self._extract_metadata_for_file(file_details)
-        metadata['name'] = file_details.get('name', '')
-        parent_path = file_details.get('parentReference', {}).get('path', '')
-        file_name = file_details.get('name', '')
+        metadata["name"] = file_details.get("name", "")
+        parent_path = file_details.get("parentReference", {}).get("path", "")
+        file_name = file_details.get("name", "")
         from pathlib import Path
-        if parent_path and file_name:
-            if 'root:' in parent_path:
-                base_path = parent_path.split('root:')[-1].rstrip('/')
-                full_path = f"{base_path}/{file_name}" if base_path else f"/{file_name}"
-                return Path(full_path.lstrip('/')),metadata
-            else:
-                return Path(f"{parent_path}/{file_name}".lstrip('/')),metadata
-        elif file_name:
-            return Path(file_name),metadata
-        else:
-            return None,None
 
+        if parent_path and file_name:
+            if "root:" in parent_path:
+                base_path = parent_path.split("root:")[-1].rstrip("/")
+                full_path = f"{base_path}/{file_name}" if base_path else f"/{file_name}"
+                return Path(full_path.lstrip("/")), metadata
+            else:
+                return Path(f"{parent_path}/{file_name}".lstrip("/")), metadata
+        elif file_name:
+            return Path(file_name), metadata
+        else:
+            return None, None
 
     def _list_drive_contents(self) -> List[Path]:
         """
@@ -972,6 +1021,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Returns:
             List[Path]: List of file paths.
+
         """
         drive_contents_endpoint = (
             f"{self._drive_id_endpoint}/{self._drive_id}/root/children"
@@ -1015,6 +1065,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Raises:
             Exception: If an error occurs while accessing SharePoint site.
+
         """
         # If no arguments are provided to load_data, default to the object attributes
         if not sharepoint_site_name:
@@ -1029,7 +1080,11 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         if not sharepoint_site_id:
             sharepoint_site_id = self.sharepoint_site_id
 
-        if not (sharepoint_site_name or sharepoint_site_id or (sharepoint_host_name and sharepoint_relative_url)):
+        if not (
+            sharepoint_site_name
+            or sharepoint_site_id
+            or (sharepoint_host_name and sharepoint_relative_url)
+        ):
             raise ValueError(
                 "sharepoint_site_name or sharepoint_site_id or (sharepoint_host_name and sharepoint_relative_url) must be provided."
             )
@@ -1074,6 +1129,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Returns:
             Dict[str, Any]: Dictionary containing the item details.
+
         """
         # Get the file ID
         # remove the site_name prefix
@@ -1108,6 +1164,7 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
         Args:
             input_file (Path): The path of the file in SharePoint. The path should include
                 the SharePoint site name and the folder path. e.g. "site_name/folder_path/file_name".
+
         """
         try:
             item = self._get_item_from_path(Path(resource_id))
@@ -1210,13 +1267,21 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                 page_name = fields.get("FileLeafRef")
                 last_modified = item.get("lastModifiedDateTime")
                 if page_id and page_name:
-                    pages.append({"id": page_id, "name": page_name, "lastModifiedDateTime": last_modified})
+                    pages.append(
+                        {
+                            "id": page_id,
+                            "name": page_name,
+                            "lastModifiedDateTime": last_modified,
+                        }
+                    )
             return pages
         except Exception as e:
             logger.error(f"Error listing SharePoint pages: {e}", exc_info=True)
             raise
 
-    def get_page_id_by_name(self, site_id: str, page_name: str, token: Optional[str] = None) -> Optional[str]:
+    def get_page_id_by_name(
+        self, site_id: str, page_name: str, token: Optional[str] = None
+    ) -> Optional[str]:
         """
         Get the ID of a SharePoint page by its name.
         Returns None if the page is not found.
@@ -1226,12 +1291,18 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             endpoint = f"https://graph.microsoft.com/v1.0/sites/{site_id}/lists/{list_id}/items?expand=fields"
             response = self._send_get_with_retry(endpoint)
             items = response.json().get("value", [])
-            matches = [item for item in items if item.get("fields", {}).get("FileLeafRef") == page_name]
+            matches = [
+                item
+                for item in items
+                if item.get("fields", {}).get("FileLeafRef") == page_name
+            ]
             if matches:
                 return matches[0].get("id")
             return None
         except Exception as e:
-            logger.error(f"Error getting page ID by name {page_name}: {e}", exc_info=True)
+            logger.error(
+                f"Error getting page ID by name {page_name}: {e}", exc_info=True
+            )
             raise
 
     def get_page_text(self, site_id, list_id, page_id, token):
@@ -1264,9 +1335,11 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                 "rawHtml": raw_html,
             }
         except Exception as e:
-            logger.error(f"Error getting page text for page {page_id}: {e}", exc_info=True)
+            logger.error(
+                f"Error getting page text for page {page_id}: {e}", exc_info=True
+            )
             raise
-    
+
     @dispatcher.span
     def load_pages_data(self, download_dir: Optional[str] = None) -> List[Document]:
         """
@@ -1279,18 +1352,25 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
 
         Returns:
             List[Document]: A list of Document objects.
+
         """
         if not download_dir and self.custom_folder:
             download_dir = self.custom_folder
         if not download_dir:
-            raise ValueError("No download directory specified for loading SharePoint pages")
+            raise ValueError(
+                "No download directory specified for loading SharePoint pages"
+            )
 
-        logger.info(f"Loading page data for site {self.sharepoint_site_name} "
-                    f"(single_page={bool(self.sharepoint_file_id)})")
+        logger.info(
+            f"Loading page data for site {self.sharepoint_site_name} "
+            f"(single_page={bool(self.sharepoint_file_id)})"
+        )
 
         try:
             access_token = self._get_access_token()
-            site_id = self._get_site_id_with_host_name(access_token, self.sharepoint_site_name)
+            site_id = self._get_site_id_with_host_name(
+                access_token, self.sharepoint_site_name
+            )
             list_id = self.get_site_pages_list_id(site_id, access_token)
 
             documents: List[Document] = []
@@ -1298,7 +1378,12 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             if self.sharepoint_file_id:
                 # Specific page
                 try:
-                    page_info = self.get_page_text(site_id=site_id, list_id=list_id, page_id=self.sharepoint_file_id, token=access_token)
+                    page_info = self.get_page_text(
+                        site_id=site_id,
+                        list_id=list_id,
+                        page_id=self.sharepoint_file_id,
+                        token=access_token,
+                    )
                     combined_id = page_info["id"]
                     page_name = page_info["name"]
                     last_modified_date_time = page_info.get("lastModifiedDateTime", "")
@@ -1318,11 +1403,20 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                     text = page_info.get("textContent", "")
                     document = Document(text=text, metadata=metadata, id_=combined_id)
                     dispatcher.event(PageDataFetchStartedEvent(page_id=combined_id))
-                    dispatcher.event(PageDataFetchCompletedEvent(page_id=combined_id, document=document))
+                    dispatcher.event(
+                        PageDataFetchCompletedEvent(
+                            page_id=combined_id, document=document
+                        )
+                    )
                     documents.append(document)
                 except Exception as e:
-                    dispatcher.event(PageFailedEvent(page_id=self.sharepoint_file_id, error=str(e)))
-                    logger.error(f"Error loading SharePoint page {self.sharepoint_file_id}: {e}", exc_info=True)
+                    dispatcher.event(
+                        PageFailedEvent(page_id=self.sharepoint_file_id, error=str(e))
+                    )
+                    logger.error(
+                        f"Error loading SharePoint page {self.sharepoint_file_id}: {e}",
+                        exc_info=True,
+                    )
                     if self.fail_on_error:
                         raise
                 return documents
@@ -1331,12 +1425,15 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
             pages = self.list_pages(site_id, access_token)
             dispatcher.event(TotalPagesToProcessEvent(total_pages=len(pages)))
             for page in pages:
-                raw_page_id = page['id']
+                raw_page_id = page["id"]
                 combined_id = f"{list_id}_{raw_page_id}"
                 page_name = page["name"]
                 last_modified_date_time = page.get("lastModifiedDateTime", "")
                 try:
-                    if self.process_document_callback and not self.process_document_callback(page_name):
+                    if (
+                        self.process_document_callback
+                        and not self.process_document_callback(page_name)
+                    ):
                         dispatcher.event(PageSkippedEvent(page_id=combined_id))
                         continue
                     url_with_id = f"https://{self.sharepoint_host_name}/{self.sharepoint_relative_url}/SitePages/{page_name}?id={raw_page_id}"
@@ -1353,15 +1450,29 @@ class SharePointReader(BasePydanticReader, ResourcesReaderMixin, FileSystemReade
                         "sharepoint_type": SharePointType.PAGE.value,
                     }
                     dispatcher.event(PageDataFetchStartedEvent(page_id=combined_id))
-                    page_content = self.get_page_text(site_id=site_id, list_id=list_id, page_id=raw_page_id, token=access_token)
+                    page_content = self.get_page_text(
+                        site_id=site_id,
+                        list_id=list_id,
+                        page_id=raw_page_id,
+                        token=access_token,
+                    )
                     text = page_content.get("textContent", "")
-                    metadata["lastModifiedDateTime"] = page_content.get("lastModifiedDateTime", last_modified_date_time)
+                    metadata["lastModifiedDateTime"] = page_content.get(
+                        "lastModifiedDateTime", last_modified_date_time
+                    )
                     document = Document(text=text, metadata=metadata, id_=combined_id)
-                    dispatcher.event(PageDataFetchCompletedEvent(page_id=combined_id, document=document))
+                    dispatcher.event(
+                        PageDataFetchCompletedEvent(
+                            page_id=combined_id, document=document
+                        )
+                    )
                     documents.append(document)
                 except Exception as e:
                     dispatcher.event(PageFailedEvent(page_id=combined_id, error=str(e)))
-                    logger.error(f"Error loading SharePoint page {combined_id}: {e}", exc_info=True)
+                    logger.error(
+                        f"Error loading SharePoint page {combined_id}: {e}",
+                        exc_info=True,
+                    )
                     if self.fail_on_error:
                         raise
             return documents
