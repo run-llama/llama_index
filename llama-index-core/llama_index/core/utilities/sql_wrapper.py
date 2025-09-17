@@ -1,5 +1,6 @@
 """SQL wrapper around SQLDatabase in langchain."""
 
+import re
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from sqlalchemy import MetaData, create_engine, insert, inspect, text
@@ -212,6 +213,88 @@ class SQLDatabase:
 
         return content[: length - len(suffix)].rsplit(" ", 1)[0] + suffix
 
+    def _extract_cte_names(self, command: str) -> set[str]:
+        """
+        Extract CTE names from a SQL command.
+
+        Returns a set of CTE names that should not be schema-prefixed.
+        """
+        cte_names = set()
+
+        # Pattern to match CTE definitions: WITH name AS (...), name2 AS (...)
+        # This handles both single and multiple CTEs
+        cte_pattern = r"\bWITH\s+(.+?)\s+AS\s*\("
+
+        # Find the WITH clause
+        with_match = re.search(cte_pattern, command, re.IGNORECASE | re.DOTALL)
+        if not with_match:
+            return cte_names
+
+        # Extract everything between WITH and the first AS (
+        with_clause_start = with_match.start()
+
+        # Find all CTE definitions by looking for patterns like "name AS ("
+        # This is more complex because we need to handle nested parentheses
+        remaining_sql = command[with_clause_start:]
+
+        # Simple approach: find all patterns like "identifier AS (" at the beginning or after commas
+        cte_def_pattern = r"(?:WITH\s+|,\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s+AS\s*\("
+
+        for match in re.finditer(cte_def_pattern, remaining_sql, re.IGNORECASE):
+            cte_name = match.group(1).strip()
+            cte_names.add(cte_name)
+
+        return cte_names
+
+    def _add_schema_prefix_smart(self, command: str) -> str:
+        """
+        Add schema prefix to table names while preserving CTE names.
+
+        This method:
+        1. Identifies CTE names in the query
+        2. Only adds schema prefixes to actual table names, not CTE names
+        3. Handles both FROM and JOIN clauses properly
+        """
+        if not self._schema:
+            return command
+
+        # Extract CTE names that should not be prefixed
+        cte_names = self._extract_cte_names(command)
+
+        # Create a modified command
+        modified_command = command
+
+        # Pattern to find FROM/JOIN clauses followed by table names
+        # This pattern captures: FROM/JOIN + whitespace + table_name
+        from_join_pattern = (
+            r"\b(FROM|JOIN)\s+([a-zA-Z_][a-zA-Z0-9_]*(?:\.[a-zA-Z_][a-zA-Z0-9_]*)?)\b"
+        )
+
+        def replace_table_reference(match):
+            clause_type = match.group(1)  # FROM or JOIN
+            table_ref = match.group(2)  # table name or schema.table
+
+            # Skip if this is a CTE name
+            if table_ref in cte_names:
+                return match.group(0)  # Return original match unchanged
+
+            # Skip if already schema-qualified (contains a dot)
+            if "." in table_ref:
+                return match.group(0)  # Return original match unchanged
+
+            # Add schema prefix
+            return f"{clause_type} {self._schema}.{table_ref}"
+
+        # Apply the replacement
+        modified_command = re.sub(
+            from_join_pattern,
+            replace_table_reference,
+            modified_command,
+            flags=re.IGNORECASE,
+        )
+
+        return modified_command
+
     def run_sql(self, command: str) -> Tuple[str, Dict]:
         """
         Execute a SQL statement and return a string representing the results.
@@ -221,10 +304,9 @@ class SQLDatabase:
         """
         with self._engine.begin() as connection:
             try:
-                if self._schema:
-                    command = command.replace("FROM ", f"FROM {self._schema}.")
-                    command = command.replace("JOIN ", f"JOIN {self._schema}.")
-                cursor = connection.execute(text(command))
+                # Use smart schema prefixing that handles CTEs properly
+                modified_command = self._add_schema_prefix_smart(command)
+                cursor = connection.execute(text(modified_command))
             except (ProgrammingError, OperationalError) as exc:
                 raise NotImplementedError(
                     f"Statement {command!r} is invalid SQL.\nError: {exc.orig}"
