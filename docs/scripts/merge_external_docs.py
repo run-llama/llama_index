@@ -66,10 +66,7 @@ def main():
         print("Updated llama_deploy to latest main branch")
 
     # Get the latest version tag and checkout for workflows-py
-    # FIXME: temporarily hardcoding 'latest_tag' until Workflows 2.0
-    # is released, uncomment the following line when ready.
-    # latest_tag = get_latest_version_tag("workflows-py")
-    latest_tag = "main"
+    latest_tag = get_latest_version_tag("workflows-py")
     print(f"Checking out workflows-py latest version tag: {latest_tag}")
 
     if latest_tag != "main":
@@ -91,14 +88,13 @@ def main():
     )
     print("Copied in latest llama-deploy docs")
 
-    # copy the Workflows v2 section
+    # copy the Workflows section
     docs_to_copy = os.listdir("workflows-py/docs/docs/workflows")
-    destination = os.listdir("./docs/workflows/")
-    print(f"Copying\n{docs_to_copy}\n\nto\n{destination}")
+    print(f"Copying\n{docs_to_copy}\n\nto\n./docs/workflows/")
     os.system("cp -r workflows-py/docs/docs/workflows/* ./docs/workflows/")
 
     new_destination = os.listdir("./docs/workflows/")
-    print(f"New destination files:\n{new_destination}")
+    print(f"Destination folder content after copying:\n{new_destination}")
     print("Copied in latest workflows-py docs")
 
     # copy the Workflows API reference

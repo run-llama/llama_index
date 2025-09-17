@@ -41,7 +41,7 @@ query_engine = index.as_query_engine(..., llm=llm)
 chat_engine = index.as_chat_engine(..., llm=llm)
 ```
 
-Find more details on [standalone usage](./llms/usage_standalone.md) or [custom usage](./llms/usage_custom.md).
+Find more details on [standalone usage](/python/framework/module_guides/models/llms/usage_standalone) or [custom usage](/python/framework/module_guides/models/llms/usage_custom).
 
 ## A Note on Tokenization
 
@@ -73,11 +73,11 @@ Settings.tokenizer = AutoTokenizer.from_pretrained(
 
 We support integrations with OpenAI, HuggingFace, Anthropic, and more.
 
-See the full [list of modules](./llms/modules.md).
+See the full [list of modules](/python/framework/module_guides/models/llms/modules).
 
 ## Further reading
 
-- [Embeddings](./embeddings.md)
-- [Prompts](./prompts/index.md)
-- [Local LLMs](./llms/local.md)
+- [Embeddings](/python/framework/module_guides/models/embeddings)
+- [Prompts](/python/framework/module_guides/models/prompts)
+- [Local LLMs](/python/framework/module_guides/models/llms/local)
 - [Running Llama2 Locally](https://replicate.com/blog/run-llama-locally)

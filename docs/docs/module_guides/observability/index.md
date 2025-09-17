@@ -16,7 +16,7 @@ Each provider has similarities and differences. Take a look below for the full s
 
 **NOTE:**
 
-Observability is now being handled via the [`instrumentation` module](./instrumentation.md) (available in v0.10.20 and later.)
+Observability is now being handled via the [`instrumentation` module](/python/framework/module_guides/observability/instrumentation) (available in v0.10.20 and later.)
 
 A lot of the tooling and integrations mentioned in this page use our legacy `CallbackManager` or don't use `set_global_handler`. We've marked these integrations as such!
 
@@ -150,7 +150,7 @@ llama_index.core.set_global_handler(
 
 - [LlamaCloud Agent with LlamaTrace](https://github.com/run-llama/llamacloud-demo/blob/main/examples/tracing/llamacloud_tracing_phoenix.ipynb)
 
-![](../../_static/integrations/arize_phoenix.png)
+![](/python/framework/_static/integrations/arize_phoenix.png)
 
 ### Weights and Biases (W&B) Weave
 
@@ -158,7 +158,7 @@ llama_index.core.set_global_handler(
 
 #### Usage Pattern
 
-The integration leverages LlamaIndex's [`instrumentation` module](./instrumentation.md) to register spans/events as Weave calls. By default, Weave automatically patches and tracks calls to [common LLM libraries and frameworks](https://weave-docs.wandb.ai/guides/integrations/).
+The integration leverages LlamaIndex's [`instrumentation` module](/python/framework/module_guides/observability/instrumentation) to register spans/events as Weave calls. By default, Weave automatically patches and tracks calls to [common LLM libraries and frameworks](https://weave-docs.wandb.ai/guides/integrations/).
 
 Install the `weave` library:
 
@@ -182,7 +182,7 @@ response = llm.complete("William Shakespeare is ")
 print(response)
 ```
 
-![weave quickstart](../../_static/integrations/weave/weave_quickstart.png)
+![weave quickstart](/python/framework/_static/integrations/weave/weave_quickstart.png)
 
 Traces include execution time, token usage, cost, inputs/outputs, errors, nested operations, and streaming data. If you are new to Weave tracing, learn more about how to navigate it [here](https://weave-docs.wandb.ai/guides/tracking/trace-tree).
 
@@ -216,7 +216,7 @@ import mlflow
 mlflow.llama_index.autolog()  # Enable mlflow tracing
 ```
 
-![](../../_static/integrations/mlflow/mlflow.gif)
+![](/python/framework/_static/integrations/mlflow/mlflow.gif)
 
 #### Guides
 
@@ -246,9 +246,9 @@ Traceloop.init()
 
 #### Guides
 
-- [OpenLLMetry](../../examples/observability/OpenLLMetry.ipynb)
+- [OpenLLMetry](/python/examples/observability/openllmetry)
 
-![](../../_static/integrations/openllmetry.png)
+![](/python/framework/_static/integrations/openllmetry.png)
 
 ### Arize Phoenix (local)
 
@@ -424,7 +424,7 @@ for question in questions:
 
 You will see the following traces in Opik:
 
-![Opik integration with LlamaIndex](../../_static/integrations/opik.png)
+![Opik integration with LlamaIndex](/python/framework/_static/integrations/opik.png)
 
 #### Example Guides
 
@@ -463,7 +463,7 @@ root_dispatcher.add_event_handler(argilla_handler)
 - [Getting started with Argilla's LlamaIndex Integration](https://github.com/argilla-io/argilla-llama-index/blob/main/docs/tutorials/getting_started.ipynb)
 - [Other example tutorials](https://github.com/argilla-io/argilla-llama-index/tree/main/docs/tutorials)
 
-![Argilla integration with LlamaIndex](../../_static/integrations/argilla.png)
+![Argilla integration with LlamaIndex](/python/framework/_static/integrations/argilla.png)
 
 ### Agenta
 
@@ -523,7 +523,7 @@ def document_search_app(user_query: str):
 
 Once this is set up, Agenta will automatically capture all execution steps. You can then view the traces in Agenta to debug your application, link them to specific configurations and prompts, evaluate their performance, query the data, and monitor key metrics.
 
-![Agenta integration with LlamaIndex](../../_static/integrations/agenta.png)
+![Agenta integration with LlamaIndex](/python/framework/_static/integrations/agenta.png)
 
 #### Example Guides
 
@@ -643,7 +643,7 @@ print(f"Response: {response}")
 
 #### Guides
 
-- [Maxim Instrumentation Cookbook](../../examples/observability/Maxim-Instrumentation.ipynb)
+- [Maxim Instrumentation Cookbook](/python/examples/observability/maxim-instrumentation)
 - [Maxim AI Documentation](https://www.getmaxim.ai/docs/sdk/python/integrations/llamaindex/llamaindex)
 
 ![tracing](https://cdn.getmaxim.ai/public/images/llamaindex.gif)
@@ -672,8 +672,8 @@ set_global_handler("langfuse")
 
 #### Guides
 
-- [Langfuse Callback Handler](../../examples/observability/LangfuseCallbackHandler.ipynb)
-- [Langfuse Tracing with PostHog](../../examples/observability/LangfuseMistralPostHog.ipynb)
+- [Langfuse Callback Handler](/python/examples/observability/langfusecallbackhandler)
+- [Langfuse Tracing with PostHog](/python/examples/observability/langfusemistralposthog)
 
 ![langfuse-tracing](https://static.langfuse.com/llamaindex-langfuse-docs.gif)
 
@@ -711,7 +711,7 @@ query_dataframe = as_dataframe(query_data_buffer)
 
 #### Guides
 
-- [OpenInference Callback Handler](../../examples/callbacks/OpenInferenceCallback.ipynb)
+- [OpenInference Callback Handler](/python/examples/observability/openinferencecallback)
 - [Evaluating Search and Retrieval with Arize Phoenix](https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/llama_index_search_and_retrieval_tutorial.ipynb)
 
 ### TruEra TruLens
@@ -730,11 +730,11 @@ tru_query_engine = TruLlama(query_engine)
 tru_query_engine.query("What did the author do growing up?")
 ```
 
-![](../../_static/integrations/trulens.png)
+![](/python/framework/_static/integrations/trulens.png)
 
 #### Guides
 
-- [Trulens Guide](../../community/integrations/trulens.md)
+- [Trulens Guide](/python/framework/community/integrations/trulens)
 - [Quickstart Guide with LlamaIndex + TruLens](https://github.com/truera/trulens/blob/trulens-eval-0.20.3/trulens_eval/examples/quickstart/llama_index_quickstart.ipynb)
 - [Google Colab](https://colab.research.google.com/github/truera/trulens/blob/trulens-eval-0.20.3/trulens_eval/examples/quickstart/llama_index_quickstart.ipynb)
 
@@ -768,13 +768,13 @@ from llama_index.core import Settings
 # Settings.callback_manager = CallbackManager([hh_tracer])
 ```
 
-![](../../_static/integrations/honeyhive.png)
-![](../../_static/integrations/perfetto.png)
+![](/python/framework/_static/integrations/honeyhive.png)
+![](/python/framework/_static/integrations/perfetto.png)
 _Use Perfetto to debug and analyze your HoneyHive traces_
 
 #### Guides
 
-- [HoneyHive Callback Handler](../../examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb)
+- [HoneyHive Callback Handler](/python/examples/observability/honeyhivellamaindextracer)
 
 ### PromptLayer
 
@@ -795,7 +795,7 @@ set_global_handler("promptlayer", pl_tags=["paul graham", "essay"])
 
 #### Guides
 
-- [PromptLayer](../../examples/callbacks/PromptLayerHandler.ipynb)
+- [PromptLayer](/python/examples/observability/promptlayerhandler)
 
 ### Langtrace
 
@@ -885,4 +885,4 @@ llama_index.core.set_global_handler("simple")
 
 ## More observability
 
-- [Callbacks Guide](./callbacks/index.md)
+- [Callbacks Guide](/python/framework/module_guides/observability/callbacks)

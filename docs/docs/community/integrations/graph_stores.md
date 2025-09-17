@@ -8,7 +8,7 @@ If you've never used Neo4j before, you can download the desktop client [here](ht
 
 Once you open the client, create a new project and install the `apoc` integration. Full instructions [here](https://neo4j.com/labs/apoc/4.1/installation/). Just click on your project, select `Plugins` on the left side menu, install APOC and restart your server.
 
-See the example of using the [Neo4j Graph Store](../../examples/index_structs/knowledge_graph/Neo4jKGIndexDemo.ipynb).
+See the example of using the [Neo4j Graph Store](/python/examples/index_structs/knowledge_graph/neo4jkgindexdemo).
 
 ## `NebulaGraphStore`
 
@@ -16,8 +16,8 @@ We support a `NebulaGraphStore` integration, for persisting graphs directly in N
 
 See the associated guides below:
 
-- [Nebula Graph Store](../../examples/index_structs/knowledge_graph/NebulaGraphKGIndexDemo.ipynb)
-- [Knowledge Graph Query Engine](../../examples/query_engine/knowledge_graph_query_engine.ipynb)
+- [Nebula Graph Store](/python/examples/index_structs/knowledge_graph/nebulagraphkgindexdemo)
+- [Knowledge Graph Query Engine](/python/examples/query_engine/knowledge_graph_query_engine)
 
 ## `KuzuGraphStore`
 
@@ -27,8 +27,8 @@ using a Kuzu backend.
 
 See the associated guides below:
 
-- [Kuzu Graph Store](../../examples/index_structs/knowledge_graph/KuzuGraphDemo.ipynb)
-- [Kuzu Graph Store](../../examples/property_graph/property_graph_kuzu.ipynb)
+- [Kuzu Graph Store](/python/examples/index_structs/knowledge_graph/kuzugraphdemo)
+- [Kuzu Graph Store](/python/examples/property_graph/property_graph_kuzu)
 
 ## `FalkorDBGraphStore`
 
@@ -36,7 +36,7 @@ We support a `FalkorDBGraphStore` integration, for persisting graphs directly in
 
 See the associated guides below:
 
-- [FalkorDB Graph Store](../../examples/index_structs/knowledge_graph/FalkorDBGraphDemo.ipynb)
+- [FalkorDB Graph Store](/python/examples/index_structs/knowledge_graph/falkordbgraphdemo)
 
 ## `Amazon Neptune Graph Stores`
 
@@ -44,7 +44,7 @@ We support `Amazon Neptune` integrations for both [Neptune Database](https://doc
 
 See the associated guides below:
 
-- [Amazon Neptune Graph Store](../../examples/index_structs/knowledge_graph/NeptuneDatabaseKGIndexDemo).
+- [Amazon Neptune Graph Store](/python/examples/index_structs/knowledge_graph/neptunedatabasekgindexdemo).
 
 
 ## `TiDB Graph Store`
@@ -53,4 +53,4 @@ We support a `TiDBGraphStore` integration, for persisting graphs directly in [Ti
 
 See the associated guides below:
 
-- [TiDB Graph Store](../../examples/index_structs/knowledge_graph/TiDBKGIndexDemo.ipynb)
+- [TiDB Graph Store](/python/examples/index_structs/knowledge_graph/tidbkgindexdemo)

@@ -1,4 +1,9 @@
-# Adding other tools
+---
+sidebar:
+  order: 2
+---
+
+# Using existing tools
 
 Now that you've built a capable agent, we hope you're excited about all it can do. The core of expanding agent capabilities is the tools available, and we have good news: [LlamaHub](https://llamahub.ai) from LlamaIndex has hundreds of integrations, including [dozens of existing agent tools](https://llamahub.ai/?tab=tools) that you can use right away. We'll show you how to use one of the existing tools, and also how to build and contribute your own.
 
@@ -70,4 +75,4 @@ We love open source contributions of new tools! You can see an example of [what 
 
 Once you've got a tool working, follow our [contributing guide](https://github.com/run-llama/llama_index/blob/main/CONTRIBUTING.md#2--contribute-a-pack-reader-tool-or-dataset-formerly-from-llama-hub) for instructions on correctly setting metadata and submitting a pull request.
 
-Next we'll look at [how to maintain state](./state.md) in your agents.
+Next we'll look at [how to maintain state](/python/framework/understanding/agent/state) in your agents.

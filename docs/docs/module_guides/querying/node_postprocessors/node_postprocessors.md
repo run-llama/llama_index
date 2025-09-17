@@ -74,7 +74,7 @@ postprocessor = SentenceEmbeddingOptimizer(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-A full notebook guide can be found [here](../../../examples/node_postprocessor/OptimizerDemo.ipynb)
+A full notebook guide can be found [here](/python/examples/node_postprocessor/optimizerdemo)
 
 ## CohereRerank
 
@@ -90,7 +90,7 @@ postprocessor = CohereRerank(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-Full notebook guide is available [here](../../../examples/node_postprocessor/CohereRerank.ipynb).
+Full notebook guide is available [here](/python/examples/node_postprocessor/coherererank).
 
 ## SentenceTransformerRerank
 
@@ -107,7 +107,7 @@ postprocessor = SentenceTransformerRerank(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-Full notebook guide is available [here](../../../examples/node_postprocessor/SentenceTransformerRerank.ipynb).
+Full notebook guide is available [here](/python/examples/node_postprocessor/sentencetransformerrerank).
 
 Please also refer to the [`sentence-transformer` docs](https://www.sbert.net/docs/pretrained-models/ce-msmarco.html) for a more complete list of models (and also shows tradeoffs in speed/accuracy). The default model is `cross-encoder/ms-marco-TinyBERT-L-2-v2`, which provides the most speed.
 
@@ -123,7 +123,7 @@ postprocessor = LLMRerank(top_n=2, service_context=service_context)
 postprocessor.postprocess_nodes(nodes)
 ```
 
-Full notebook guide is available [her for Gatsby](../../../examples/node_postprocessor/LLMReranker-Gatsby.ipynb) and [here for Lyft 10K documents](../../../examples/node_postprocessor/LLMReranker-Lyft-10k.ipynb).
+Full notebook guide is available [her for Gatsby](/python/examples/node_postprocessor/llmreranker-gatsby) and [here for Lyft 10K documents](/python/examples/node_postprocessor/llmreranker-lyft-10k).
 
 ## JinaRerank
 
@@ -139,7 +139,7 @@ postprocessor = JinaRerank(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-Full notebook guide is available [here](../../../examples/node_postprocessor/JinaRerank.ipynb).
+Full notebook guide is available [here](/python/examples/node_postprocessor/jinarerank).
 
 ## FixedRecencyPostprocessor
 
@@ -155,9 +155,9 @@ postprocessor = FixedRecencyPostprocessor(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-![](../../../_static/node_postprocessors/recency.png)
+![](/python/framework/_static/node_postprocessors/recency.png)
 
-A full notebook guide is available [here](../../..../../../examples/node_postprocessor/RecencyPostprocessorDemo.ipynb).
+A full notebook guide is available [here](/python/examples/node_postprocessor/recencypostprocessordemo).
 
 ## EmbeddingRecencyPostprocessor
 
@@ -173,7 +173,7 @@ postprocessor = EmbeddingRecencyPostprocessor(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-A full notebook guide is available [here](../../..../../../examples/node_postprocessor/RecencyPostprocessorDemo.ipynb).
+A full notebook guide is available [here](/python/examples/node_postprocessor/recencypostprocessordemo).
 
 ## TimeWeightedPostprocessor
 
@@ -187,7 +187,7 @@ postprocessor = TimeWeightedPostprocessor(time_decay=0.99, top_k=1)
 postprocessor.postprocess_nodes(nodes)
 ```
 
-A full notebook guide is available [here](../../../examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb).
+A full notebook guide is available [here](/python/examples/node_postprocessor/timeweightedpostprocessordemo).
 
 ## (Beta) PIINodePostprocessor
 
@@ -217,7 +217,7 @@ postprocessor = NERPIINodePostprocessor()
 postprocessor.postprocess_nodes(nodes)
 ```
 
-A full notebook guide for both can be found [here](../../../examples/node_postprocessor/PII.ipynb).
+A full notebook guide for both can be found [here](/python/examples/node_postprocessor/pii).
 
 ## (Beta) PrevNextNodePostprocessor
 
@@ -237,7 +237,7 @@ postprocessor = PrevNextNodePostprocessor(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-![](../../../_static/node_postprocessors/prev_next.png)
+![](/python/framework/_static/node_postprocessors/prev_next.png)
 
 ## (Beta) AutoPrevNextNodePostprocessor
 
@@ -254,7 +254,7 @@ postprocessor = AutoPrevNextNodePostprocessor(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-A full example notebook is available [here](../../../examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb).
+A full example notebook is available [here](/python/examples/node_postprocessor/prevnextpostprocessordemo).
 
 ## (Beta) RankGPT
 
@@ -268,7 +268,7 @@ postprocessor = RankGPTRerank(top_n=3, llm=OpenAI(model="gpt-3.5-turbo-16k"))
 postprocessor.postprocess_nodes(nodes)
 ```
 
-Full notebook guide is available [here](../../../examples/node_postprocessor/rankGPT.ipynb).
+Full notebook guide is available [here](/python/examples/node_postprocessor/rankgpt).
 
 ## Colbert Reranker
 
@@ -293,7 +293,7 @@ response = query_engine.query(
 )
 ```
 
-Full notebook guide is available [here](../../../examples/node_postprocessor/ColbertRerank.ipynb).
+Full notebook guide is available [here](/python/examples/node_postprocessor/colbertrerank).
 
 ## rankLLM
 
@@ -307,22 +307,22 @@ reranker = RankLLMRerank(model="rank_zephyr", top_n=5)
 reranker.postprocess_nodes(nodes)
 ```
 
-A full [notebook example is available](../../../examples/node_postprocessor/rankLLM.ipynb).
+A full [notebook example is available](/python/examples/node_postprocessor/rankllm).
 
 ## All Notebooks
 
-- [Sentence Optimizer](../../../examples/node_postprocessor/OptimizerDemo.ipynb)
-- [Cohere Rerank](../../../examples/node_postprocessor/CohereRerank.ipynb)
-- [LLM Reranker Lyft 10k](../../../examples/node_postprocessor/LLMReranker-Lyft-10k.ipynb)
-- [LLM Reranker Gatsby](../../../examples/node_postprocessor/LLMReranker-Gatsby.ipynb)
-- [Recency](../../../examples/node_postprocessor/RecencyPostprocessorDemo.ipynb)
-- [Time Weighted](../../../examples/node_postprocessor/TimeWeightedPostprocessorDemo.ipynb)
-- [PII](../../../examples/node_postprocessor/PII.ipynb)
-- [PrevNext](../../../examples/node_postprocessor/PrevNextPostprocessorDemo.ipynb)
-- [Metadata Replacement](../../../examples/node_postprocessor/MetadataReplacementDemo.ipynb)
-- [Long Context Reorder](../../../examples/node_postprocessor/LongContextReorder.ipynb)
-- [RankGPT](../../../examples/node_postprocessor/rankGPT.ipynb)
-- [Colbert Rerank](../../../examples/node_postprocessor/ColbertRerank.ipynb)
-- [JinaAI Rerank](../../../examples/node_postprocessor/JinaRerank.ipynb)
-- [MixedBread Rerank](../../../examples/cookbooks/mixedbread_reranker.ipynb)
-- [RankLLM](../../../examples/node_postprocessor/rankLLM.ipynb)
+- [Sentence Optimizer](/python/examples/node_postprocessor/optimizerdemo)
+- [Cohere Rerank](/python/examples/node_postprocessor/coherererank)
+- [LLM Reranker Lyft 10k](/python/examples/node_postprocessor/llmreranker-lyft-10k)
+- [LLM Reranker Gatsby](/python/examples/node_postprocessor/llmreranker-gatsby)
+- [Recency](/python/examples/node_postprocessor/recencypostprocessordemo)
+- [Time Weighted](/python/examples/node_postprocessor/timeweightedpostprocessordemo)
+- [PII](/python/examples/node_postprocessor/pii)
+- [PrevNext](/python/examples/node_postprocessor/prevnextpostprocessordemo)
+- [Metadata Replacement](/python/examples/node_postprocessor/metadatareplacementdemo)
+- [Long Context Reorder](/python/examples/node_postprocessor/longcontextreorder)
+- [RankGPT](/python/examples/node_postprocessor/rankgpt)
+- [Colbert Rerank](/python/examples/node_postprocessor/colbertrerank)
+- [JinaAI Rerank](/python/examples/node_postprocessor/jinarerank)
+- [MixedBread Rerank](/python/examples/cookbooks/mixedbread_reranker)
+- [RankLLM](/python/examples/node_postprocessor/rankllm)

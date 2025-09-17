@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 1
+---
+
 # Workflows introduction
 
 ## What is a workflow?
@@ -18,7 +23,7 @@ In this visualization, you can see a moderately complex workflow designed to tak
 * Each of the query steps generates a `ResponseEvent`. A `ResponseEvent` triggers a step called `judge_response` which will wait until it has received all 3 responses.
 * `judge_response` will then pick the "best" response and return it to the user via a `StopEvent`.
 
-![A complex workflow](./complex_flow.png)
+![A complex workflow](/python/framework/understanding/workflows/complex_flow.png)
 
 ## Why workflows?
 
@@ -36,8 +41,6 @@ For simple RAG pipelines and linear demos we do not expect you will need Workflo
 
 ## Next steps
 
-Let's build [a basic workflow](basic_flow.md). Follow the tutorial sequence step-by-step to learn the core concepts.
+Let's build [a basic workflow](/python/framework/understanding/workflows/basic_flow). Follow the tutorial sequence step-by-step to learn the core concepts.
 
-Once you're done, check out our [Workflows component guide](../../module_guides/workflow/index.md) as a reference guide + more practical examples on building RAG/agents.
-
-If you're done building and want to deploy your workflow to production, check out [our llama_deploy guide](../../module_guides/llama_deploy/) ([repo](https://github.com/run-llama/llama_deploy)).
+Once you're done, check out our [Workflows component guide](/python/framework/module_guides/workflow) as a reference guide + more practical examples on building RAG/agents.

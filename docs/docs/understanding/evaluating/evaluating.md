@@ -2,7 +2,7 @@
 
 Evaluation and benchmarking are crucial concepts in LLM development. To improve the performance of an LLM app (RAG, agents), you must have a way to measure it.
 
-LlamaIndex offers key modules to measure the quality of generated results. We also offer key modules to measure retrieval quality. You can learn more about how evaluation works in LlamaIndex in our [module guides](../../module_guides/evaluating/index.md).
+LlamaIndex offers key modules to measure the quality of generated results. We also offer key modules to measure retrieval quality. You can learn more about how evaluation works in LlamaIndex in our [module guides](/python/framework/module_guides/evaluating).
 
 ## Response Evaluation
 
@@ -34,7 +34,7 @@ print(str(eval_result.passing))
 
 The response contains both the response and the source from which the response was generated; the evaluator compares them and determines if the response is faithful to the source.
 
-You can learn more in our module guides about [response evaluation](../../module_guides/evaluating/usage_pattern.md).
+You can learn more in our module guides about [response evaluation](/python/framework/module_guides/evaluating/usage_pattern).
 
 ## Retrieval Evaluation
 
@@ -58,8 +58,8 @@ retriever_evaluator.evaluate(
 
 This compares what was retrieved for the query to a set of nodes that were expected to be retrieved.
 
-In reality you would want to evaluate a whole batch of retrievals; you can learn how do this in our module guide on [retrieval evaluation](../../module_guides/evaluating/usage_pattern_retrieval.md).
+In reality you would want to evaluate a whole batch of retrievals; you can learn how do this in our module guide on [retrieval evaluation](/python/framework/module_guides/evaluating/usage_pattern_retrieval).
 
 ## Related concepts
 
-You may be interested in [analyzing the cost of your application](cost_analysis/index.md) if you are making calls to a hosted, remote LLM.
+You may be interested in [analyzing the cost of your application](/python/framework/understanding/evaluating/cost_analysis) if you are making calls to a hosted, remote LLM.
