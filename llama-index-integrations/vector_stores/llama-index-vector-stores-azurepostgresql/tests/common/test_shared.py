@@ -1,3 +1,5 @@
+"""Unit tests for shared utilities related to credential parsing (get_username_password)."""
+
 import base64
 import hashlib
 import hmac
@@ -15,7 +17,10 @@ from llama_index.vector_stores.azure_postgres.common._shared import (
 
 
 class TestGetUsernamePassword:
+    """Test suite for get_username_password covering BasicAuth, TokenCredential, invalid inputs, and JWT-like token payload extraction."""
+
     def test_it_works(self, credentials: BasicAuth | TokenCredential) -> None:
+        """Ensure username/password extraction works for both credential types."""
         if isinstance(credentials, BasicAuth):
             username, password = get_username_password(credentials)
             assert username == credentials.username, (
@@ -33,6 +38,7 @@ class TestGetUsernamePassword:
             )
 
     def test_invalid_credentials_type(self) -> None:
+        """Assert passing an invalid type raises a TypeError."""
         with pytest.raises(TypeError, match="Invalid credentials type"):
             get_username_password("invalid_credentials_type")  # type: ignore[arg-type]
 
@@ -62,6 +68,7 @@ class TestGetUsernamePassword:
     def test_mock_it_works(
         self, payload: dict, username: nullcontext | pytest.RaisesExc
     ) -> None:
+        """Validate extraction from JWT-like access token payloads."""
         _header = {"alg": "HS256", "typ": "JWT"}
         _header_encoded = base64.urlsafe_b64encode(
             json.dumps(_header).encode()

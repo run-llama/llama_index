@@ -6,8 +6,10 @@ basic authentication and Azure AD authentication, allowing for flexible
 testing configurations.
 """
 
+import logging
 import os
 from collections.abc import Generator
+from time import sleep
 from typing import Any
 
 import pytest
@@ -15,7 +17,7 @@ from azure.core.credentials import TokenCredential
 from azure.identity import DefaultAzureCredential
 from psycopg import Connection, sql
 from psycopg.rows import dict_row
-from psycopg_pool import ConnectionPool
+from psycopg_pool import ConnectionPool, PoolTimeout
 
 from llama_index.vector_stores.azure_postgres.common import (
     AzurePGConnectionPool,
@@ -26,6 +28,9 @@ from llama_index.vector_stores.azure_postgres.common import (
 from llama_index.vector_stores.azure_postgres.common._shared import (
     TOKEN_CREDENTIAL_SCOPE,
 )
+
+logger = logging.getLogger(__name__)
+postgres_not_available = False
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
@@ -92,8 +97,25 @@ def connection(connection_pool: ConnectionPool) -> Generator[Connection, Any, No
     :return: A PostgreSQL connection.
     :rtype: Connection
     """
-    with connection_pool.connection() as conn:
-        yield conn
+    global postgres_not_available
+    if postgres_not_available:
+        pytest.skip("Could not reach the database")
+    max_retries = 3
+    backoff = 0.5
+    for attempt in range(1, max_retries + 1):
+        try:
+            with connection_pool.connection() as conn:
+                yield conn
+        except PoolTimeout as exc:
+            logger.warning(
+                "PoolTimeout on attempt %d/%d: %s", attempt, max_retries, exc
+            )
+            if attempt == max_retries:
+                logger.error("Exhausted retries acquiring DB connection")
+
+                postgres_not_available = True
+                pytest.skip("Could not reach the database")
+            sleep(backoff * attempt)
 
 
 @pytest.fixture(scope="session")
@@ -194,20 +216,36 @@ def schema(connection_pool: ConnectionPool) -> Generator[str, Any, None]:
     :return: The name of the created schema.
     :rtype: str
     """
-    with (
-        connection_pool.connection() as conn,
-        conn.cursor(row_factory=dict_row) as cursor,
-    ):
-        cursor.execute(
-            sql.SQL(
-                """
-                select  oid as schema_id, nspname as schema_name
-                  from  pg_namespace
-                """
+    global postgres_not_available
+    if postgres_not_available:
+        pytest.skip("Could not reach the database")
+    max_retries = 3
+    backoff = 0.5
+    for attempt in range(1, max_retries + 1):
+        try:
+            with (
+                connection_pool.connection() as conn,
+                conn.cursor(row_factory=dict_row) as cursor,
+            ):
+                cursor.execute(
+                    sql.SQL(
+                        """
+                        select  oid as schema_id, nspname as schema_name
+                        from  pg_namespace
+                        """
+                    )
+                )
+                resultset = cursor.fetchall()
+                schema_names = [row["schema_name"] for row in resultset]
+        except PoolTimeout as exc:
+            logger.warning(
+                "PoolTimeout on attempt %d/%d: %s", attempt, max_retries, exc
             )
-        )
-        resultset = cursor.fetchall()
-        schema_names = [row["schema_name"] for row in resultset]
+            if attempt == max_retries:
+                logger.error("Exhausted retries acquiring DB connection")
+                postgres_not_available = True
+                pytest.skip("Could not reach the database")
+            sleep(backoff * attempt)
 
     _schema: str | None = None
     for idx in range(100_000):
