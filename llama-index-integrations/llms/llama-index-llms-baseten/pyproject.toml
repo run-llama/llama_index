@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-baseten"
-version = "0.1.3"
+version = "0.1.4"
 description = "llama-index llms baseten integration"
 authors = [{name = "alexker"}]
 requires-python = ">=3.9,<4.0"
