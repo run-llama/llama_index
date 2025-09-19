@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence
 import aiohttp
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -11,7 +11,7 @@ from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.llms.openai import OpenAI
 from llama_index.core.bridge.pydantic import Field
-from .utils import validate_model_slug
+from .utils import validate_model_dynamic, get_available_models_dynamic, Model
 
 DEFAULT_SYNC_API_BASE = (
     "https://model-{model_id}.api.baseten.co/environments/production/sync/v1"
@@ -28,11 +28,8 @@ class Baseten(OpenAI):
 
     Args:
         model_id (str): The Baseten model ID (e.g., "12a3b4c5") or model name (e.g., "deepseek-ai/DeepSeek-V3-0324").
-                       When using model_apis=True, only supported model slugs are allowed:
-                       - deepseek-ai/DeepSeek-R1-0528
-                       - deepseek-ai/DeepSeek-V3-0324
-                       - meta-llama/Llama-4-Maverick-17B-128E-Instruct
-                       - meta-llama/Llama-4-Scout-17B-16E-Instruct
+                       When using model_apis=True, model availability is validated dynamically against the API
+                       with fallback to static validation if the API call fails.
         model_apis (bool): If True (default), uses the model apis endpoint. If False, uses the dedicated endpoint.
         webhook_endpoint (Optional[str]): Webhook endpoint for async operations. If provided, uses async API.
         temperature (float): The temperature to use for generation
@@ -80,6 +77,12 @@ class Baseten(OpenAI):
         response = await async_llm.acomplete("Hello, world!")
         request_id = response.text  # Track this ID for webhook response
 
+        # Get available models dynamically (Model APIs only)
+        llm = Baseten(model_id="deepseek-ai/DeepSeek-V3-0324", model_apis=True)
+        available = llm.available_models  # List[Model] - fetched dynamically
+        model_ids = [model.id for model in available]
+        print(f"Available models: {model_ids}")
+
         ```
 
     """
@@ -115,7 +118,18 @@ class Baseten(OpenAI):
 
         # Validate model_id if using model apis endpoint
         if model_apis:
-            validate_model_slug(model_id)
+            # Use dynamic validation with fallback to static validation
+            # We need to create a temporary client for validation
+            api_key_temp = get_from_param_or_env("api_key", api_key, "BASETEN_API_KEY")
+
+            # Import OpenAI here to avoid circular imports
+            from openai import OpenAI as OpenAIClient
+
+            temp_client = OpenAIClient(
+                api_key=api_key_temp,
+                base_url=MODEL_APIS_BASE,
+            )
+            validate_model_dynamic(temp_client, model_id)
 
         # Determine API base URL based on endpoint type
         if model_apis:
@@ -144,6 +158,16 @@ class Baseten(OpenAI):
         # Set webhook endpoint after parent initialization to avoid errors
         self.webhook_endpoint = webhook_endpoint
         self.model_apis = model_apis
+
+    @property
+    def available_models(self) -> List[Model]:
+        """Get available models from Baseten Model APIs."""
+        if not self.model_apis:
+            # For dedicated deployments, return current model or empty list
+            return [Model(id=self.model)] if hasattr(self, "model") else []
+
+        # For Model APIs, fetch from the API dynamically
+        return get_available_models_dynamic(self._get_client())
 
     @classmethod
     def class_name(cls) -> str:
