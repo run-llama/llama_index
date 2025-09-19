@@ -43,13 +43,10 @@ from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 from llama_index.core.llms.function_calling import FunctionCallingLLM
 from llama_index.llms.mistralai.utils import (
-    is_mistralai_function_calling_model,
-    is_mistralai_code_model,
-    mistralai_modelname_to_contextsize,
-    MISTRAL_AI_REASONING_MODELS,
     THINKING_REGEX,
     THINKING_START_REGEX,
 )
+from llama_index.llms.mistralai.helper import MistralHelper
 
 from mistralai import Mistral
 from mistralai.models import ToolCall
@@ -218,6 +215,7 @@ class MistralAI(FunctionCallingLLM):
         callback_manager = callback_manager or CallbackManager([])
 
         api_key = get_from_param_or_env("api_key", api_key, "MISTRAL_API_KEY", "")
+        self.helper = MistralHelper(api_key=api_key)
 
         if not api_key:
             raise ValueError(
@@ -260,12 +258,12 @@ class MistralAI(FunctionCallingLLM):
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=mistralai_modelname_to_contextsize(self.model),
+            context_window=self.helper.modelname_to_contextsize(self.model),
             num_output=self.max_tokens,
             is_chat_model=True,
             model_name=self.model,
             random_seed=self.random_seed,
-            is_function_calling_model=is_mistralai_function_calling_model(self.model),
+            is_function_calling_model=self.helper.is_function_calling_model(self.model),
         )
 
     @property
@@ -310,7 +308,7 @@ class MistralAI(FunctionCallingLLM):
         response = self._client.chat.complete(messages=messages, **all_kwargs)
 
         additional_kwargs = {}
-        if self.model in MISTRAL_AI_REASONING_MODELS:
+        if self.model in self.helper.get_reasoning_models():
             thinking_txt, response_txt = self._separate_thinking(
                 response.choices[0].message.content
             )
@@ -371,7 +369,7 @@ class MistralAI(FunctionCallingLLM):
                 content += content_delta
 
                 # decide whether to include thinking in deltas/responses
-                if self.model in MISTRAL_AI_REASONING_MODELS:
+                if self.model in self.helper.get_reasoning_models():
                     thinking_txt, response_txt = self._separate_thinking(content)
 
                     if thinking_txt:
@@ -415,7 +413,7 @@ class MistralAI(FunctionCallingLLM):
         )
 
         additional_kwargs = {}
-        if self.model in MISTRAL_AI_REASONING_MODELS:
+        if self.model in self.helper.get_reasoning_models():
             thinking_txt, response_txt = self._separate_thinking(
                 response.choices[0].message.content
             )
@@ -475,7 +473,7 @@ class MistralAI(FunctionCallingLLM):
                 content += content_delta
 
                 # decide whether to include thinking in deltas/responses
-                if self.model in MISTRAL_AI_REASONING_MODELS:
+                if self.model in self.helper.get_reasoning_models():
                     thinking_txt, response_txt = self._separate_thinking(content)
                     if thinking_txt:
                         additional_kwargs["thinking"] = thinking_txt
@@ -583,7 +581,7 @@ class MistralAI(FunctionCallingLLM):
     def fill_in_middle(
         self, prompt: str, suffix: str, stop: Optional[List[str]] = None
     ) -> CompletionResponse:
-        if not is_mistralai_code_model(self.model):
+        if not self.helper.is_code_model(self.model):
             raise ValueError(
                 "Please provide code model from MistralAI. Currently supported code model is 'codestral-latest'."
             )

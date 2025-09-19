@@ -186,3 +186,26 @@ def test_to_mistral_chunks(tmp_path: Path, image_url: str) -> None:
     assert isinstance(chunks_with_path[1], ImageURLChunk)
     assert isinstance(chunks_with_path[1].image_url, str)
     assert chunks_with_path[1].image_url == f"data:image/png;base64,{expected_b64}"
+
+
+@pytest.mark.skipif(
+    os.environ.get("MISTRAL_API_KEY") is None, reason="MISTRAL_API_KEY not set"
+)
+def helper_sanity():
+    from llama_index.llms.mistralai.helper import MistralHelper
+
+    helper = MistralHelper(api_key=os.environ.get("MISTRAL_API_KEY"))
+    assert isinstance(helper.get_mistralai_models(), dict)
+    assert isinstance(helper.get_function_calling_models(), list)
+    assert isinstance(helper.get_coding_models(), list)
+    assert isinstance(helper.get_reasoning_models(), list)
+    models = helper.get_mistralai_models()
+    for model in models:
+        context_size = helper.modelname_to_contextsize(model)
+        assert context_size == models[model]
+        is_fc = helper.is_function_calling_model(model)
+        if model in helper.get_function_calling_models():
+            assert is_fc
+        is_code = helper.is_code_model(model)
+        if model in helper.get_coding_models():
+            assert is_code
