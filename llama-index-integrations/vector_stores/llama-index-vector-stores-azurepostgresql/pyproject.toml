@@ -48,7 +48,7 @@ dependencies = [
     "pydantic~=2.0",
     # Needed for typing.Self in 3.10 and typing.override in 3.11
     "typing-extensions~=4.0; python_version < '3.12'",
-    "llama-index-core~=0.13.0",
+    "llama-index-core>=0.13,<0.15",
 ]
 
 [tool.coverage.run]
