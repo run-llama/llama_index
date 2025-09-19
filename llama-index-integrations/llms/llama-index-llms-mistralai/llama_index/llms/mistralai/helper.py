@@ -27,25 +27,36 @@ class MistralHelper:
         response.raise_for_status()
         model_data: List[Dict[str, Any]] = response.json()["data"]
 
-        self.mistralai_models = {model["id"]: model["max_context_length"] for model in model_data}
+        self.mistralai_models = {
+            model["id"]: model["max_context_length"] for model in model_data
+        }
         self.function_calling_models = list(
             map(
                 extract_model_name,
-                filter(lambda m: m.get("capabilities", {}).get("function_calling"), model_data)
+                filter(
+                    lambda m: m.get("capabilities", {}).get("function_calling"),
+                    model_data,
+                ),
             )
         )
         self.coding_models = list(
             map(
                 extract_model_name,
-                filter(lambda m: m.get("capabilities", {}).get("completion_chat") and
-                                "coding" in m.get("description", "").lower(), model_data)
+                filter(
+                    lambda m: m.get("capabilities", {}).get("completion_chat")
+                    and "coding" in m.get("description", "").lower(),
+                    model_data,
+                ),
             )
         )
         self.reasoning_models = list(
             map(
                 extract_model_name,
-                filter(lambda m: m.get("capabilities", {}).get("completion_chat") and
-                                "reasoning" in m.get("description", "").lower(), model_data)
+                filter(
+                    lambda m: m.get("capabilities", {}).get("completion_chat")
+                    and "reasoning" in m.get("description", "").lower(),
+                    model_data,
+                ),
             )
         )
 
@@ -79,7 +90,6 @@ class MistralHelper:
         """
         return self.coding_models
 
-
     def get_reasoning_models(self) -> List[str]:
         """
         Get the list of available MistralAI models that are designed for reasoning tasks.
@@ -89,7 +99,6 @@ class MistralHelper:
 
         """
         return self.reasoning_models
-
 
     def modelname_to_contextsize(self, modelname: str) -> int:
         """
