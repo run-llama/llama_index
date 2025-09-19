@@ -13,6 +13,7 @@ class MistralHelper:
 
         Args:
             api_key: API key for MistralAI.
+
         """
         self.api_key = api_key
         self.refresh_models()
@@ -54,6 +55,7 @@ class MistralHelper:
 
         Returns:
             A dictionary mapping model names to their max_context_length.
+
         """
         return self.mistralai_models
 
@@ -63,6 +65,7 @@ class MistralHelper:
 
         Returns:
             A list of model names that support function calling.
+
         """
         return self.function_calling_models
 
@@ -72,6 +75,7 @@ class MistralHelper:
 
         Returns:
             A list of model names that are coding models.
+
         """
         return self.coding_models
 
@@ -82,6 +86,7 @@ class MistralHelper:
 
         Returns:
             A list of model names that are reasoning models.
+
         """
         return self.reasoning_models
 
@@ -98,6 +103,7 @@ class MistralHelper:
 
         Raises:
             ValueError: If the model is not found in the available models
+
         """
         if modelname.startswith("ft:"):
             modelname = modelname.split(":")[1]
@@ -119,6 +125,7 @@ class MistralHelper:
 
         Returns:
             True if the model supports function calling, False otherwise
+
         """
         return modelname in self.function_calling_models
 
@@ -131,5 +138,6 @@ class MistralHelper:
 
         Returns:
             True if the model is a coding model, False otherwise
+
         """
         return modelname in self.coding_models
