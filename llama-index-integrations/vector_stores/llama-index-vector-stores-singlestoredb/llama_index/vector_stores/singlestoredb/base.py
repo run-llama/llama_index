@@ -293,7 +293,11 @@ class SingleStoreVectorStore(BasePydanticVectorStore):
                     )
                     cur.execute(
                         query,
-                        (formatted_vector, *tuple(where_clause_values), similarity_top_k),
+                        (
+                            formatted_vector,
+                            *tuple(where_clause_values),
+                            similarity_top_k,
+                        ),
                     )
                     results = cur.fetchall()
                 finally:
