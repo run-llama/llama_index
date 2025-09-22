@@ -1,6 +1,6 @@
 """Valyu tool spec."""
 
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Dict, Any
 
 from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
@@ -11,6 +11,7 @@ class ValyuToolSpec(BaseToolSpec):
 
     spec_functions = [
         "search",
+        "get_contents",
     ]
 
     def __init__(
@@ -18,6 +19,11 @@ class ValyuToolSpec(BaseToolSpec):
         api_key: str,
         verbose: bool = False,
         max_price: Optional[float] = 100,
+        fast_mode: bool = False,
+        # Contents API parameters
+        contents_summary: Optional[Union[bool, str, Dict[str, Any]]] = None,
+        contents_extract_effort: Optional[str] = "normal",
+        contents_response_length: Optional[Union[str, int]] = "short",
     ) -> None:
         """Initialize with parameters."""
         from valyu import Valyu
@@ -25,6 +31,11 @@ class ValyuToolSpec(BaseToolSpec):
         self.client = Valyu(api_key=api_key)
         self._verbose = verbose
         self._max_price = max_price
+        self._fast_mode = fast_mode
+        # Contents API defaults
+        self._contents_summary = contents_summary
+        self._contents_extract_effort = contents_extract_effort
+        self._contents_response_length = contents_response_length
 
     def search(
         self,
@@ -39,6 +50,7 @@ class ValyuToolSpec(BaseToolSpec):
         excluded_sources: Optional[List[str]] = None,
         response_length: Optional[Union[int, str]] = None,
         country_code: Optional[str] = None,
+        fast_mode: Optional[bool] = None,
     ) -> List[Document]:
         """
         Search and retrieve relevant content from proprietary and public sources using Valyu's deep search.
@@ -55,6 +67,7 @@ class ValyuToolSpec(BaseToolSpec):
             excluded_sources (Optional[List[str]]): List of URLs, domains or datasets to exclude from search results
             response_length (Optional[Union[int, str]]): Number of characters to return per item or preset values: "short" (25k chars), "medium" (50k chars), "large" (100k chars), "max" (full content)
             country_code (Optional[str]): 2-letter ISO country code (e.g., "GB", "US") to bias search results to a specific country
+            fast_mode (Optional[bool]): Enable fast mode for faster but shorter results. Good for general purpose queries. If None, uses the default set during initialization. Defaults to None
 
         Returns:
             List[Document]: List of Document objects containing the search results
@@ -62,6 +75,9 @@ class ValyuToolSpec(BaseToolSpec):
         """
         if max_price is None:
             max_price = self._max_price
+
+        if fast_mode is None:
+            fast_mode = self._fast_mode
 
         response = self.client.search(
             query=query,
@@ -75,6 +91,7 @@ class ValyuToolSpec(BaseToolSpec):
             excluded_sources=excluded_sources,
             response_length=response_length,
             country_code=country_code,
+            fast_mode=fast_mode,
         )
 
         if self._verbose:
@@ -98,5 +115,67 @@ class ValyuToolSpec(BaseToolSpec):
                     metadata=metadata,
                 )
             )
+
+        return documents
+
+    def get_contents(
+        self,
+        urls: List[str],
+    ) -> List[Document]:
+        """
+        Extract clean, structured content from web pages.
+
+        This method fetches the content from the provided URLs using Valyu's content extraction API.
+        The extraction parameters (summary, extract_effort, response_length, max_price) are set
+        during tool initialization and cannot be modified by the model - only the URLs can be specified.
+
+        Args:
+            urls (List[str]): List of URLs to extract content from (maximum 10 URLs per request)
+
+        Returns:
+            List[Document]: List of Document objects containing the extracted content
+
+        """
+        response = self.client.contents(
+            urls=urls,
+            summary=self._contents_summary,
+            extract_effort=self._contents_extract_effort,
+            response_length=self._contents_response_length,
+        )
+
+        if self._verbose:
+            print(f"[Valyu Tool] Contents Response: {response}")
+
+        documents = []
+        if response and response.results:
+            for result in response.results:
+                metadata = {
+                    "url": result.url,
+                    "title": result.title,
+                    "source": result.source,
+                    "length": result.length,
+                    "data_type": result.data_type,
+                    "citation": result.citation,
+                }
+
+                # Add summary info if available
+                if hasattr(result, "summary") and result.summary:
+                    metadata["summary"] = result.summary
+                if (
+                    hasattr(result, "summary_success")
+                    and result.summary_success is not None
+                ):
+                    metadata["summary_success"] = result.summary_success
+
+                # Add image URL if available
+                if hasattr(result, "image_url") and result.image_url:
+                    metadata["image_url"] = result.image_url
+
+                documents.append(
+                    Document(
+                        text=str(result.content),
+                        metadata=metadata,
+                    )
+                )
 
         return documents
