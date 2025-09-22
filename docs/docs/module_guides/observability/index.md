@@ -16,7 +16,7 @@ Each provider has similarities and differences. Take a look below for the full s
 
 **NOTE:**
 
-Observability is now being handled via the [`instrumentation` module](./instrumentation.md) (available in v0.10.20 and later.)
+Observability is now being handled via the [`instrumentation` module](/python/framework/module_guides/observability/instrumentation) (available in v0.10.20 and later.)
 
 A lot of the tooling and integrations mentioned in this page use our legacy `CallbackManager` or don't use `set_global_handler`. We've marked these integrations as such!
 
@@ -150,7 +150,55 @@ llama_index.core.set_global_handler(
 
 - [LlamaCloud Agent with LlamaTrace](https://github.com/run-llama/llamacloud-demo/blob/main/examples/tracing/llamacloud_tracing_phoenix.ipynb)
 
-![](../../_static/integrations/arize_phoenix.png)
+![](/python/framework/_static/integrations/arize_phoenix.png)
+
+### Weights and Biases (W&B) Weave
+
+[W&B Weave](https://weave-docs.wandb.ai/) is a framework for tracking, experimenting with, evaluating, deploying, and improving LLM applications. Designed for scalability and flexibility, Weave supports every stage of your application development workflow.
+
+#### Usage Pattern
+
+The integration leverages LlamaIndex's [`instrumentation` module](/python/framework/module_guides/observability/instrumentation) to register spans/events as Weave calls. By default, Weave automatically patches and tracks calls to [common LLM libraries and frameworks](https://weave-docs.wandb.ai/guides/integrations/).
+
+Install the `weave` library:
+
+```bash
+pip install weave
+```
+Get a W&B API Key:
+
+If you don't already have a W&B account, create one by visiting [https://wandb.ai](https://wandb.ai) and copy your API key from [https://wandb.ai/authorize](https://wandb.ai/authorize). When prompted to authenticate, enter the API key.
+
+```python
+import weave
+from llama_index.llms.openai import OpenAI
+
+# Initialize Weave with your project name
+weave.init("llamaindex-demo")
+
+# All LlamaIndex operations are now automatically traced
+llm = OpenAI(model="gpt-4o-mini")
+response = llm.complete("William Shakespeare is ")
+print(response)
+```
+
+![weave quickstart](/python/framework/_static/integrations/weave/weave_quickstart.png)
+
+Traces include execution time, token usage, cost, inputs/outputs, errors, nested operations, and streaming data. If you are new to Weave tracing, learn more about how to navigate it [here](https://weave-docs.wandb.ai/guides/tracking/trace-tree).
+
+If you have a custom function which is not traced, decorate it with [`@weave.op()`](https://weave-docs.wandb.ai/guides/tracking/ops).
+
+You can also control the patching behavior using the `autopatch_settings` argument in `weave.init`. For example if you don't want to trace a library/framework you can turn it off like this:
+
+```python
+weave.init(..., autopatch_settings={"openai": {"enabled": False}})
+```
+
+No additional LlamaIndex configuration is required; tracing begins once `weave.init()` is called.
+
+#### Guides
+
+The integration with LlamaIndex supports almost every component of LlamaIndex -- streaming/async, completions, chat, tool calling, agents, workflows, and RAG support. Learn more about them in the official [W&B Weave × LlamaIndex](https://weave-docs.wandb.ai/guides/integrations/llamaindex) documentation.
 
 
 ### MLflow
@@ -168,7 +216,7 @@ import mlflow
 mlflow.llama_index.autolog()  # Enable mlflow tracing
 ```
 
-![](../../_static/integrations/mlflow/mlflow.gif)
+![](/python/framework/_static/integrations/mlflow/mlflow.gif)
 
 #### Guides
 
@@ -198,9 +246,9 @@ Traceloop.init()
 
 #### Guides
 
-- [OpenLLMetry](../../examples/observability/OpenLLMetry.ipynb)
+- [OpenLLMetry](/python/examples/observability/openllmetry)
 
-![](../../_static/integrations/openllmetry.png)
+![](/python/framework/_static/integrations/openllmetry.png)
 
 ### Arize Phoenix (local)
 
@@ -376,7 +424,7 @@ for question in questions:
 
 You will see the following traces in Opik:
 
-![Opik integration with LlamaIndex](../../_static/integrations/opik.png)
+![Opik integration with LlamaIndex](/python/framework/_static/integrations/opik.png)
 
 #### Example Guides
 
@@ -415,7 +463,7 @@ root_dispatcher.add_event_handler(argilla_handler)
 - [Getting started with Argilla's LlamaIndex Integration](https://github.com/argilla-io/argilla-llama-index/blob/main/docs/tutorials/getting_started.ipynb)
 - [Other example tutorials](https://github.com/argilla-io/argilla-llama-index/tree/main/docs/tutorials)
 
-![Argilla integration with LlamaIndex](../../_static/integrations/argilla.png)
+![Argilla integration with LlamaIndex](/python/framework/_static/integrations/argilla.png)
 
 ### Agenta
 
@@ -475,12 +523,130 @@ def document_search_app(user_query: str):
 
 Once this is set up, Agenta will automatically capture all execution steps. You can then view the traces in Agenta to debug your application, link them to specific configurations and prompts, evaluate their performance, query the data, and monitor key metrics.
 
-![Agenta integration with LlamaIndex](../../_static/integrations/agenta.png)
+![Agenta integration with LlamaIndex](/python/framework/_static/integrations/agenta.png)
 
 #### Example Guides
 
 - [Documentation Observability for LlamaIndex with Agenta](https://docs.agenta.ai/observability/integrations/llamaindex)
 - [Notebook Observability for LlamaIndex with Agenta](https://github.com/agenta-ai/agenta/blob/main/examples/jupyter/integrations/observability-openinference-llamaindex.ipynb)
+
+### Deepeval
+
+[DeepEval (by Confident AI)](https://github.com/confident-ai/deepeval) is an open-source evaluation framework for LLM applications. As you "unit test" your LLM app using DeepEval's 14+ default metrics it currently offers (summarization, hallucination, answer relevancy, faithfulness, RAGAS, etc.), you can debug failing test cases through this tracing integration with LlamaIndex, or debug unsatisfactory evaluations in **production** through DeepEval's hosted evaluation platform, [Confident AI](https://documentation.confident-ai.com/docs), that runs referenceless evaluations in production.
+
+#### Usage Pattern
+
+```bash
+pip install -U deepeval llama-index
+```
+
+```python
+import deepeval
+from deepeval.integrations.llama_index import instrument_llama_index
+
+import llama_index.core.instrumentation as instrument
+
+# Login
+deepeval.login("<your-confident-api-key>")
+
+# Let DeepEval collect traces
+instrument_llama_index(instrument.get_dispatcher())
+```
+
+![tracing](https://confident-bucket.s3.us-east-1.amazonaws.com/llama-index%3Atrace.gif)
+
+#### Guides
+
+- [Evaluate Llama Index Agents](https://deepeval.com/integrations/frameworks/langchain)
+- [Tracing Llama Index Agents](https://documentation.confident-ai.com/docs/llm-tracing/integrations/llamaindex)
+
+### Maxim AI
+
+[Maxim AI](https://www.getmaxim.ai/) is an Agent Simulation, Evaluation & Observability platform that helps developers build, monitor, and improve their LLM applications. The Maxim integration with LlamaIndex provides comprehensive tracing, monitoring, and evaluation capabilities for your RAG systems, agents, and other LLM workflows.
+
+#### Usage Pattern
+
+Install the required packages:
+
+```bash
+pip install maxim-py
+```
+
+Set up your environment variables:
+
+```python
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Get environment variables
+MAXIM_API_KEY = os.getenv("MAXIM_API_KEY")
+MAXIM_LOG_REPO_ID = os.getenv("MAXIM_LOG_REPO_ID")
+
+# Verify required environment variables are set
+if not MAXIM_API_KEY:
+    raise ValueError("MAXIM_API_KEY environment variable is required")
+if not MAXIM_LOG_REPO_ID:
+    raise ValueError("MAXIM_LOG_REPO_ID environment variable is required")
+```
+
+Initialize Maxim and instrument LlamaIndex:
+
+```python
+from maxim import Config, Maxim
+from maxim.logger import LoggerConfig
+from maxim.logger.llamaindex import instrument_llamaindex
+
+# Initialize Maxim logger
+maxim = Maxim(Config(api_key=os.getenv("MAXIM_API_KEY")))
+logger = maxim.logger(LoggerConfig(id=os.getenv("MAXIM_LOG_REPO_ID")))
+
+# Instrument LlamaIndex with Maxim observability
+# Set debug=True to see detailed logs during development
+instrument_llamaindex(logger, debug=True)
+
+print("✅ Maxim instrumentation enabled for LlamaIndex")
+```
+
+Now your LlamaIndex applications will automatically send traces to Maxim:
+
+```python
+from llama_index.core.agent import FunctionAgent
+from llama_index.core.tools import FunctionTool
+from llama_index.llms.openai import OpenAI
+
+
+# Define tools and create agent
+def add_numbers(a: float, b: float) -> float:
+    """Add two numbers together."""
+    return a + b
+
+
+add_tool = FunctionTool.from_defaults(fn=add_numbers)
+llm = OpenAI(model="gpt-4o-mini", temperature=0)
+
+agent = FunctionAgent(
+    tools=[add_tool],
+    llm=llm,
+    verbose=True,
+    system_prompt="You are a helpful calculator assistant.",
+)
+
+# This will be automatically logged by Maxim instrumentation
+import asyncio
+
+response = await agent.run("What is 15 + 25?")
+print(f"Response: {response}")
+```
+
+#### Guides
+
+- [Maxim Instrumentation Cookbook](/python/examples/observability/maxim-instrumentation)
+- [Maxim AI Documentation](https://www.getmaxim.ai/docs/sdk/python/integrations/llamaindex/llamaindex)
+
+![tracing](https://cdn.getmaxim.ai/public/images/llamaindex.gif)
 
 
 ## Other Partner `One-Click` Integrations (Legacy Modules)
@@ -506,65 +672,10 @@ set_global_handler("langfuse")
 
 #### Guides
 
-- [Langfuse Callback Handler](../../examples/observability/LangfuseCallbackHandler.ipynb)
-- [Langfuse Tracing with PostHog](../../examples/observability/LangfuseMistralPostHog.ipynb)
+- [Langfuse Callback Handler](/python/examples/observability/langfusecallbackhandler)
+- [Langfuse Tracing with PostHog](/python/examples/observability/langfusemistralposthog)
 
 ![langfuse-tracing](https://static.langfuse.com/llamaindex-langfuse-docs.gif)
-
-### DeepEval
-
-[DeepEval (by Confident AI)](https://github.com/confident-ai/deepeval) is an open-source evaluation framework for LLM applications. As you "unit test" your LLM app using DeepEval's 14+ default metrics it currently offers (summarization, hallucination, answer relevancy, faithfulness, RAGAS, etc.), you can debug failing test cases through this tracing integration with LlamaIndex, or debug unsatisfactory evaluations in **production** through DeepEval's hosted evaluation platform, [Confident AI](https://confident-ai.com), that runs referenceless evaluations in production.
-
-#### Usage Pattern
-
-```python
-from llama_index.core import set_global_handler
-
-set_global_handler("deepeval")
-
-# NOTE: Run 'deepeval login' in the CLI to log traces on Confident AI, DeepEval's hosted evaluation platform.
-# Run all of your LlamaIndex applications as usual and traces
-# will be collected and displayed on Confident AI whenever evaluations are ran.
-...
-```
-
-![tracing](https://d2lsxfc3p6r9rv.cloudfront.net/confident-tracing.gif)
-
-### Weights and Biases Prompts
-
-Prompts allows users to log/trace/inspect the execution flow of LlamaIndex during index construction and querying. It also allows users to version-control their indices.
-
-#### Usage Pattern
-
-```python
-from llama_index.core import set_global_handler
-
-set_global_handler("wandb", run_args={"project": "llamaindex"})
-
-# NOTE: No need to do the following
-from llama_index.callbacks.wandb import WandbCallbackHandler
-from llama_index.core.callbacks import CallbackManager
-from llama_index.core import Settings
-
-# wandb_callback = WandbCallbackHandler(run_args={"project": "llamaindex"})
-# Settings.callback_manager = CallbackManager([wandb_callback])
-
-# access additional methods on handler to persist index + load index
-import llama_index.core
-
-# persist index
-llama_index.core.global_handler.persist_index(graph, index_name="my_index")
-# load storage context
-storage_context = llama_index.core.global_handler.load_storage_context(
-    artifact_url="ayut/llamaindex/my_index:v0"
-)
-```
-
-![](../../_static/integrations/wandb.png)
-
-#### Guides
-
-- [Wandb Callback Handler](../../examples/callbacks/WandbCallbackHandler.ipynb)
 
 ### OpenInference
 
@@ -600,7 +711,7 @@ query_dataframe = as_dataframe(query_data_buffer)
 
 #### Guides
 
-- [OpenInference Callback Handler](../../examples/callbacks/OpenInferenceCallback.ipynb)
+- [OpenInference Callback Handler](/python/examples/observability/openinferencecallback)
 - [Evaluating Search and Retrieval with Arize Phoenix](https://colab.research.google.com/github/Arize-ai/phoenix/blob/main/tutorials/llama_index_search_and_retrieval_tutorial.ipynb)
 
 ### TruEra TruLens
@@ -619,11 +730,11 @@ tru_query_engine = TruLlama(query_engine)
 tru_query_engine.query("What did the author do growing up?")
 ```
 
-![](../../_static/integrations/trulens.png)
+![](/python/framework/_static/integrations/trulens.png)
 
 #### Guides
 
-- [Trulens Guide](../../community/integrations/trulens.md)
+- [Trulens Guide](/python/framework/community/integrations/trulens)
 - [Quickstart Guide with LlamaIndex + TruLens](https://github.com/truera/trulens/blob/trulens-eval-0.20.3/trulens_eval/examples/quickstart/llama_index_quickstart.ipynb)
 - [Google Colab](https://colab.research.google.com/github/truera/trulens/blob/trulens-eval-0.20.3/trulens_eval/examples/quickstart/llama_index_quickstart.ipynb)
 
@@ -657,13 +768,13 @@ from llama_index.core import Settings
 # Settings.callback_manager = CallbackManager([hh_tracer])
 ```
 
-![](../../_static/integrations/honeyhive.png)
-![](../../_static/integrations/perfetto.png)
+![](/python/framework/_static/integrations/honeyhive.png)
+![](/python/framework/_static/integrations/perfetto.png)
 _Use Perfetto to debug and analyze your HoneyHive traces_
 
 #### Guides
 
-- [HoneyHive Callback Handler](../../examples/callbacks/HoneyHiveLlamaIndexTracer.ipynb)
+- [HoneyHive Callback Handler](/python/examples/observability/honeyhivellamaindextracer)
 
 ### PromptLayer
 
@@ -684,7 +795,7 @@ set_global_handler("promptlayer", pl_tags=["paul graham", "essay"])
 
 #### Guides
 
-- [PromptLayer](../../examples/callbacks/PromptLayerHandler.ipynb)
+- [PromptLayer](/python/examples/observability/promptlayerhandler)
 
 ### Langtrace
 
@@ -774,4 +885,4 @@ llama_index.core.set_global_handler("simple")
 
 ## More observability
 
-- [Callbacks Guide](./callbacks/index.md)
+- [Callbacks Guide](/python/framework/module_guides/observability/callbacks)

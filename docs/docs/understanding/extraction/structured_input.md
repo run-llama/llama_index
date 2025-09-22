@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 5
+---
+
 # Structured Input
 
 The other side of structured data, beyond the output, is the input: many prompting guides and best practices, indeed, include some techniques such as XML tagging of the input prompt to boost the LLM's understanding of the input.
@@ -12,6 +17,7 @@ Here is a simple example of how to use structured inputs with Pydantic models:
 from pydantic import BaseModel
 from llama_index.core.prompts import RichPromptTemplate
 from llama_index.llms.openai import OpenAI
+from typing import Dict
 
 template_str = "Please extract from the following XML code the contact details of the user:\n\n```xml\n{{ user | to_xml }}\n```\n\n"
 prompt = RichPromptTemplate(template_str)

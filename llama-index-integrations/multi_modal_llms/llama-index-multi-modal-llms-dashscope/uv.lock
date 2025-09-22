@@ -291,7 +291,7 @@ wheels = [
 
 [[package]]
 name = "banks"
-version = "2.1.2"
+version = "2.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "deprecated" },
@@ -301,9 +301,9 @@ dependencies = [
     { name = "platformdirs" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/77/34/2b6697f02ffb68bee50e5fd37d6c64432244d3245603fd62950169dfed7e/banks-2.1.2.tar.gz", hash = "sha256:a0651db9d14b57fa2e115e78f68dbb1b36fe226ad6eef96192542908b1d20c1f", size = 173332, upload-time = "2025-04-20T07:09:21.674Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7d/f8/25ef24814f77f3fd7f0fd3bd1ef3749e38a9dbd23502fbb53034de49900c/banks-2.2.0.tar.gz", hash = "sha256:d1446280ce6e00301e3e952dd754fd8cee23ff277d29ed160994a84d0d7ffe62", size = 179052, upload-time = "2025-07-18T16:28:26.892Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/04/4a/7fdca29d1db62f5f5c3446bf8f668beacdb0b5a8aff4247574ddfddc6bcd/banks-2.1.2-py3-none-any.whl", hash = "sha256:7fba451069f6bea376483b8136a0f29cb1e6883133626d00e077e20a3d102c0e", size = 28064, upload-time = "2025-04-20T07:09:20.201Z" },
+    { url = "https://files.pythonhosted.org/packages/b4/d6/f9168956276934162ec8d48232f9920f2985ee45aa7602e3c6b4bc203613/banks-2.2.0-py3-none-any.whl", hash = "sha256:963cd5c85a587b122abde4f4064078def35c50c688c1b9d36f43c92503854e7d", size = 29244, upload-time = "2025-07-18T16:28:27.835Z" },
 ]
 
 [[package]]
@@ -1597,7 +1597,7 @@ wheels = [
 
 [[package]]
 name = "llama-index-core"
-version = "0.12.47"
+version = "0.13.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -1618,6 +1618,7 @@ dependencies = [
     { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "numpy", version = "2.2.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "pillow" },
+    { name = "platformdirs" },
     { name = "pydantic" },
     { name = "pyyaml" },
     { name = "requests" },
@@ -1630,9 +1631,9 @@ dependencies = [
     { name = "typing-inspect" },
     { name = "wrapt" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a5/97/8d70d20d8a2e3a7b35f35630c6e4e266324b617d382e5cbfed360f52d2f5/llama_index_core-0.12.47.tar.gz", hash = "sha256:983f623c771a1cbdbfbf9276987f05e350c315344a94404a1c6f843b50916ec6", size = 7274961, upload-time = "2025-07-07T04:31:16.633Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1a/0d/29865c82de51c2c1f263a61c267c336d35b14839fded66061a999dba1d40/llama_index_core-0.13.0.tar.gz", hash = "sha256:01fec50d3d807e3c3bc17a62ed1f5b93dad2205cda52f7d0c2d34cc6a6ab2b92", size = 7230599, upload-time = "2025-07-30T17:24:00.398Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/ff/02/e66ced16ab94d1fe9a2510596514feae4d80f4f514812ef052b4b90939a2/llama_index_core-0.12.47-py3-none-any.whl", hash = "sha256:a61602c1d2c8214c2ecf60c0d5f278f4fa317c9212f5b44e3ed68e5d02ff8f8b", size = 7645577, upload-time = "2025-07-07T04:31:12.025Z" },
+    { url = "https://files.pythonhosted.org/packages/f3/27/36a3ad19c8e2e7967ca1c9e469e5205901d2b6d299420e9aba4eafd90d8d/llama_index_core-0.13.0-py3-none-any.whl", hash = "sha256:46c14fc2a26b8f7618c2dd2daf6e430e3f94b1908474baee539f705c9c638348", size = 7573714, upload-time = "2025-07-30T17:23:52.355Z" },
 ]
 
 [[package]]
@@ -1650,20 +1651,20 @@ wheels = [
 
 [[package]]
 name = "llama-index-llms-dashscope"
-version = "0.4.1"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "dashscope" },
     { name = "llama-index-core" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2f/6f/36887a3a91223e5e353df95a44d377208d9d45626b5e677165af06e85055/llama_index_llms_dashscope-0.4.1.tar.gz", hash = "sha256:32159ea4ecd07a62730d400558a06d08abf003e229b9b39175a4ea3ac9beb8d3", size = 8041, upload-time = "2025-06-30T23:58:55.556Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/25/da/02622175542cac4311dc8d00db42ddef268256224acf5317be0083dfd562/llama_index_llms_dashscope-0.5.0.tar.gz", hash = "sha256:4b0064c70cc56c6a3593b78de25e25a3d974eab5936e852ae321048ae99829f8", size = 8040, upload-time = "2025-07-30T21:06:17.176Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/58/f0/e6483403c5677527c7b92b6d752af7302d4e7ab381a0ff9952795e52daad/llama_index_llms_dashscope-0.4.1-py3-none-any.whl", hash = "sha256:337a7fb289547cafa42afb41e3c067508f86d3cd63d7e89659f07db5a185249b", size = 8224, upload-time = "2025-06-30T23:58:54.523Z" },
+    { url = "https://files.pythonhosted.org/packages/30/4e/c951d7007eb186d1a2574956b7a4a5da6d32ae9b0bab22301a695c50ee83/llama_index_llms_dashscope-0.5.0-py3-none-any.whl", hash = "sha256:304df27af36bf0017e2e7220b37ce27e2766dc1fe954110f812cc83c398d0c5e", size = 8224, upload-time = "2025-07-30T21:06:16.474Z" },
 ]
 
 [[package]]
 name = "llama-index-multi-modal-llms-dashscope"
-version = "0.3.2"
+version = "0.4.1"
 source = { editable = "." }
 dependencies = [
     { name = "dashscope" },
@@ -1697,7 +1698,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "dashscope", specifier = ">=1.14.1,<2" },
-    { name = "llama-index-core", specifier = ">=0.12.47,<0.13" },
+    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
     { name = "llama-index-llms-dashscope", specifier = ">=0.4.0,<2" },
 ]
 

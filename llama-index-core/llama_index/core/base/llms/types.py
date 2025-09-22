@@ -210,6 +210,84 @@ class AudioBlock(BaseModel):
         return data_buffer
 
 
+class VideoBlock(BaseModel):
+    """A representation of video data to directly pass to/from the LLM."""
+
+    block_type: Literal["video"] = "video"
+    video: bytes | None = None
+    path: FilePath | None = None
+    url: AnyUrl | str | None = None
+    video_mimetype: str | None = None
+    detail: str | None = None
+    fps: int | None = None
+
+    @field_validator("url", mode="after")
+    @classmethod
+    def urlstr_to_anyurl(cls, url: str | AnyUrl | None) -> AnyUrl | None:
+        """Store the url as AnyUrl."""
+        if isinstance(url, AnyUrl):
+            return url
+        if url is None:
+            return None
+        return AnyUrl(url=url)
+
+    @model_validator(mode="after")
+    def video_to_base64(self) -> "VideoBlock":
+        """
+        Store the video as base64 and guess the mimetype when possible.
+
+        If video data is passed but no mimetype is provided, try to infer it.
+        """
+        if not self.video:
+            if not self.video_mimetype:
+                path = self.path or self.url
+                if path:
+                    suffix = Path(str(path)).suffix.replace(".", "") or None
+                    mimetype = filetype.get_type(ext=suffix)
+                    if mimetype and str(mimetype.mime).startswith("video/"):
+                        self.video_mimetype = str(mimetype.mime)
+            return self
+
+        try:
+            decoded_vid = base64.b64decode(self.video, validate=True)
+        except BinasciiError:
+            decoded_vid = self.video
+            self.video = base64.b64encode(self.video)
+
+        self._guess_mimetype(decoded_vid)
+        return self
+
+    def _guess_mimetype(self, vid_data: bytes) -> None:
+        if not self.video_mimetype:
+            guess = filetype.guess(vid_data)
+            if guess and guess.mime.startswith("video/"):
+                self.video_mimetype = guess.mime
+
+    def resolve_video(self, as_base64: bool = False) -> BytesIO:
+        """
+        Resolve a video file to a BytesIO buffer.
+
+        Args:
+            as_base64 (bool): whether to return the video as base64-encoded bytes
+
+        """
+        data_buffer = resolve_binary(
+            raw_bytes=self.video,
+            path=self.path,
+            url=str(self.url) if self.url else None,
+            as_base64=as_base64,
+        )
+
+        # Check size by seeking to end and getting position
+        data_buffer.seek(0, 2)  # Seek to end
+        size = data_buffer.tell()
+        data_buffer.seek(0)  # Reset to beginning
+
+        if size == 0:
+            raise ValueError("resolve_video returned zero bytes")
+        return data_buffer
+
+
 class DocumentBlock(BaseModel):
     """A representation of a document to directly pass to the LLM."""
 
@@ -352,6 +430,7 @@ ContentBlock = Annotated[
         TextBlock,
         ImageBlock,
         AudioBlock,
+        VideoBlock,
         DocumentBlock,
         CachePoint,
         CitableBlock,
@@ -460,6 +539,10 @@ class ChatMessage(BaseModel):
             }
         if isinstance(value, list):
             return [self._recursive_serialization(item) for item in value]
+
+        if isinstance(value, bytes):
+            return base64.b64encode(value).decode("utf-8")
+
         return value
 
     @field_serializer("additional_kwargs", check_fields=False)

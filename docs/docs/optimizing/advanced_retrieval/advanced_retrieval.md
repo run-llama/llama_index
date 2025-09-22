@@ -4,12 +4,12 @@
 
 There are a variety of more advanced retrieval strategies you may wish to try, each with different benefits:
 
-- [Reranking](../../examples/node_postprocessor/CohereRerank.ipynb)
-- [Recursive retrieval](../../examples/query_engine/pdf_tables/recursive_retriever.ipynb)
-- [Embedded tables](../../examples/query_engine/sec_tables/tesla_10q_table.ipynb)
-- [Small-to-big retrieval](../../examples/node_postprocessor/MetadataReplacementDemo.ipynb)
+- [Reranking](/python/examples/node_postprocessor/coherererank)
+- [Recursive retrieval](/python/examples/query_engine/pdf_tables/recursive_retriever)
+- [Embedded tables](/python/examples/query_engine/sec_tables/tesla_10q_table)
+- [Small-to-big retrieval](/python/examples/node_postprocessor/metadatareplacementdemo)
 
-See our full [retrievers module guide](../../module_guides/querying/retriever/retrievers.md) for a comprehensive list of all retrieval strategies, broken down into different categories.
+See our full [retrievers module guide](/python/framework/module_guides/querying/retriever/retrievers) for a comprehensive list of all retrieval strategies, broken down into different categories.
 
 - Basic retrieval from each index
 - Advanced retrieval and search
@@ -24,8 +24,8 @@ More resources are below.
 
 A user query can be transformed before it enters a flow (query engine, agent, and more). See resources below on query transformations:
 
-- [Query Transform Cookbook](../../examples/query_transformations/query_transform_cookbook.ipynb)
-- [Query Transformations Docs](../../optimizing/advanced_retrieval/query_transformations.md)
+- [Query Transform Cookbook](/python/examples/query_transformations/query_transform_cookbook)
+- [Query Transformations Docs](/python/framework/optimizing/advanced_retrieval/query_transformations)
 
 ## Composable Retrievers
 
@@ -38,13 +38,13 @@ Every retriever is capable of retrieving and running other objects, including
 
 For more details, check out the guide below.
 
-- [Composable Retrievers](../../examples/retrievers/composable_retrievers.ipynb)
+- [Composable Retrievers](/python/examples/retrievers/composable_retrievers)
 
 ## Third-Party Resources
 
 Here are some third-party resources on advanced retrieval strategies.
 
-- [DeepMemory (Activeloop)](../../examples/retrievers/deep_memory.ipynb)
-- [Weaviate Hybrid Search](../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb)
-- [Pinecone Hybrid Search](../../examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb)
-- [Milvus Hybrid Search](../../examples/vector_stores/MilvusHybridIndexDemo.ipynb)
+- [DeepMemory (Activeloop)](/python/examples/retrievers/deep_memory)
+- [Weaviate Hybrid Search](/python/examples/vector_stores/weaviateindexdemo-hybrid)
+- [Pinecone Hybrid Search](/python/examples/vector_stores/pineconeindexdemo-hybrid)
+- [Milvus Hybrid Search](/python/examples/vector_stores/milvushybridindexdemo)

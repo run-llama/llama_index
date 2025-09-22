@@ -141,6 +141,24 @@ class Dispatcher(BaseModel):
             else:
                 c = c.parent
 
+    async def aevent(self, event: BaseEvent, **kwargs: Any) -> None:
+        """Asynchronously dispatch event to all registered handlers."""
+        c: Optional[Dispatcher] = self
+        event.tags.update(active_instrument_tags.get())
+        tasks: List[asyncio.Task] = []
+        while c:
+            for h in c.event_handlers:
+                try:
+                    tasks.append(asyncio.create_task(h.ahandle(event, **kwargs)))
+                except BaseException:
+                    pass
+            if not c.propagate:
+                c = None
+            else:
+                c = c.parent
+        if tasks:
+            await asyncio.gather(*tasks, return_exceptions=True)
+
     @deprecated(
         version="0.10.41",
         reason=(
@@ -287,14 +305,7 @@ class Dispatcher(BaseModel):
                 context: Context,
             ) -> None:
                 try:
-                    exception = future.exception()
-                    if exception is not None:
-                        if exception.__class__.__name__ == "WorkflowCancelledByUser":
-                            result = None
-                        else:
-                            raise exception
-                    else:
-                        result = future.result()
+                    result = None if future.exception() else future.result()
 
                     self.span_exit(
                         id_=span_id,

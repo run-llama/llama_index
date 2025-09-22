@@ -30,6 +30,7 @@ from llama_index.core.base.llms.types import (
 from llama_index.core.bridge.pydantic import BaseModel, FieldInfo
 from llama_index.core.tools.types import AsyncBaseTool, ToolMetadata, ToolOutput
 from llama_index.core.tools.utils import create_schema_from_function
+from llama_index.core.schema import BaseNode, Document
 from llama_index.core.workflow.context import Context
 
 AsyncCallable = Callable[..., Awaitable[Any]]
@@ -295,6 +296,12 @@ class FunctionTool(AsyncBaseTool):
             for item in raw_output
         ):
             return raw_output
+        elif isinstance(raw_output, (BaseNode, Document)):
+            return [TextBlock(text=raw_output.get_content())]
+        elif isinstance(raw_output, list) and all(
+            isinstance(item, (BaseNode, Document)) for item in raw_output
+        ):
+            return [TextBlock(text=item.get_content()) for item in raw_output]
         else:
             return [TextBlock(text=str(raw_output))]
 

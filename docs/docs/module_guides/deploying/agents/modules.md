@@ -2,36 +2,35 @@
 
 These guide provide an overview of how to use our agent classes.
 
-For more detailed guides on how to use specific tools, check out our [tools module guides](./tools.md).
+For more detailed guides on how to use specific tools, check out our [tools module guides](/python/framework/module_guides/deploying/agents/tools).
 
 ## Agent with OpenAI Models
 
-- [OpenAI Agent](../../../examples/workflow/function_calling_agent.ipynb)
-- [OpenAI Agent with Query Engine Tools](../../../examples/agent/openai_agent_with_query_engine.ipynb)
-- [Retrieval Augmented Agent](../../../examples/agent/openai_agent_retrieval.ipynb)
-- [OpenAI Agent Cookbook](../../../examples/agent/openai_agent_query_cookbook.ipynb)
-- [Context Retrieval Agent](../../../examples/agent/openai_agent_context_retrieval.ipynb)
-- [Recursive Retriever Agents](../../../examples/query_engine/recursive_retriever_agents.ipynb)
-- [Multi Document Agents](../../../examples/agent/multi_document_agents-v1.ipynb)
-- [Agent Builder](../../../examples/agent/agent_builder.ipynb)
+- [OpenAI Agent](/python/examples/workflow/function_calling_agent)
+- [OpenAI Agent with Query Engine Tools](/python/examples/agent/openai_agent_with_query_engine)
+- [Retrieval Augmented Agent](/python/examples/agent/openai_agent_retrieval)
+- [OpenAI Agent Cookbook](/python/examples/agent/openai_agent_query_cookbook)
+- [Context Retrieval Agent](/python/examples/agent/openai_agent_context_retrieval)
+- [Multi Document Agents](/python/examples/agent/multi_document_agents-v1)
+- [Agent Builder](/python/examples/agent/agent_builder)
 
 ## Other Function Calling Agents
 
-- [Anthropic Agent](../../../examples/agent/anthropic_agent.ipynb)
-- [Mistral Agent](../../../examples/agent/mistral_agent.ipynb)
+- [Anthropic Agent](/python/examples/agent/anthropic_agent)
+- [Mistral Agent](/python/examples/agent/mistral_agent)
 
 ## ReAct Agent
 
-- [ReAct Agent](../../../examples/agent/react_agent.ipynb)
-- [ReAct Agent with Query Engine Tools](../../../examples/agent/react_agent_with_query_engine.ipynb)
+- [ReAct Agent](/python/examples/agent/react_agent)
+- [ReAct Agent with Query Engine Tools](/python/examples/agent/react_agent_with_query_engine)
 
 ## CodeAct Agent
 
-- [CodeAct Agent](../../../examples/agent/code_act_agent.ipynb)
-- [CodeAct Agent from-scratch](../../../examples/agent/from_scratch_code_act_agent.ipynb)
+- [CodeAct Agent](/python/examples/agent/code_act_agent)
+- [CodeAct Agent from-scratch](/python/examples/agent/from_scratch_code_act_agent)
 
 ## Custom Agents
 
-- [Manual Function Calling](../../../understanding//using_llms/using_llms.md#tool-calling)
-- [Function Calling Agent from-scratch](../../../examples/workflow/function_calling_agent.ipynb)
-- [ReAct Agent from-scratch](../../../examples/workflow/react_agent.ipynb)
+- [Manual Function Calling](/python/framework/understanding/using_llms/#tool-calling)
+- [Function Calling Agent from-scratch](/python/examples/workflow/function_calling_agent)
+- [ReAct Agent from-scratch](/python/examples/workflow/react_agent)

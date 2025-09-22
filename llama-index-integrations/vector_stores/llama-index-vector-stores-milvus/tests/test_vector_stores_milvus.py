@@ -1,5 +1,6 @@
 from typing import List, Dict
 
+import pymilvus
 import pytest
 
 from llama_index.core.schema import TextNode, NodeRelationship, RelatedNodeInfo
@@ -765,3 +766,56 @@ def test_query_hybrid_mode():
     assert len(result.nodes) == 1
     assert result.nodes[0].id_ == "n1"
     assert result.nodes[0].text == "n1_text"
+
+
+def test_custom_node_format():
+    milvus_db_uri = "./milvus_llamaindex_custom_format.db"
+    client = pymilvus.MilvusClient(
+        uri=milvus_db_uri,
+    )
+    if COLLECTION_NAME in client.list_collections():
+        client.drop_collection(COLLECTION_NAME)
+    client.create_collection(
+        collection_name=COLLECTION_NAME,
+        dimension=DIM,
+        primary_field_name="id",
+        vector_field_name="embedding",
+        metric_type="COSINE",
+        auto_id=True,
+    )
+    vector_store = MilvusVectorStore(
+        uri=milvus_db_uri,
+        collection_name=COLLECTION_NAME,
+        dim=DIM,
+        doc_id_field="id",
+        embedding_field="embedding",
+        text_key="custom_text",
+        output_fields=["custom_meta"],
+    )
+    vector_store.client.insert(
+        COLLECTION_NAME,
+        data=[
+            {
+                "embedding": [0.5] * DIM,
+                "custom_text": "n1_text",
+                "custom_meta": "n1_meta",
+            },
+            {
+                "embedding": [-0.5] * DIM,
+                "custom_text": "n2_text",
+                "custom_meta": "n2_meta",
+            },
+        ],
+    )
+
+    query = VectorStoreQuery(query_embedding=[0.5] * DIM, similarity_top_k=1)
+    result = vector_store.query(query=query)
+    assert len(result.nodes) == 1
+    assert result.nodes[0].text == "n1_text"
+    assert result.nodes[0].metadata.get("custom_meta") == "n1_meta"
+
+    query = VectorStoreQuery(query_embedding=[-0.5] * DIM, similarity_top_k=1)
+    result = vector_store.query(query=query)
+    assert len(result.nodes) == 1
+    assert result.nodes[0].text == "n2_text"
+    assert result.nodes[0].metadata.get("custom_meta") == "n2_meta"

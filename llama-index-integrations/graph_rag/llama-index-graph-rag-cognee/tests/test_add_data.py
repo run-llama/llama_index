@@ -1,5 +1,6 @@
 import asyncio
 import sys
+import os
 
 import pytest
 from llama_index.core import Document
@@ -13,20 +14,24 @@ def test_smoke():
 @pytest.mark.skipif(
     sys.version_info < (3, 10), reason="mock strategy requires python3.10 or higher"
 )
+@pytest.mark.skipif(
+    os.getenv("OPENAI_API_KEY") is None,
+    reason="OPENAI_API_KEY not available to test Cognee integration",
+)
 @pytest.mark.asyncio
 async def test_add_data(monkeypatch):
     # Instantiate cognee GraphRAG
     cogneeGraphRAG = CogneeGraphRAG(
-        llm_api_key="",
+        llm_api_key=os.getenv("OPENAI_API_KEY", "your-api-key"),
         llm_provider="openai",
         llm_model="gpt-4o-mini",
-        graph_db_provider="networkx",
+        graph_db_provider="kuzu",
         vector_db_provider="lancedb",
         relational_db_provider="sqlite",
         relational_db_name="cognee_db",
     )
 
-    async def mock_add_return(add, dataset_name):
+    async def mock_add_return(add, dataset_name, node_set=None):
         return True
 
     import cognee

@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 3
+---
+
 # Maintaining state
 
 By default, the `AgentWorkflow` is stateless between runs. This means that the agent will not have any memory of previous runs.
@@ -141,4 +146,4 @@ Name as stored in state: Laurie
 
 You can see the [full code of this example](https://github.com/run-llama/python-agents-tutorial/blob/main/3a_tools_and_state.py).
 
-Next we'll learn about [streaming output and events](./streaming.md).
+Next we'll learn about [streaming output and events](/python/framework/understanding/agent/streaming).

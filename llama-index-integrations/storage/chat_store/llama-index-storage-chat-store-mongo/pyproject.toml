@@ -24,20 +24,20 @@ dev = [
     "black[jupyter]<=23.9.1,>=23.7.0",
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
+    "llama-index>=0.13.0,<0.15",
 ]
 
 [project]
 name = "llama-index-storage-chat-store-mongo"
-version = "0.1.0"
+version = "0.3.0"
 description = "llama-index storage-chat-store mongo integration"
 authors = [{name = "Vrushab Ghodke", email = "vrushab.ghodke@gmail.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.12.0,<0.13",
-    "pymongo>=4.11.1,<5",
-    "motor>=3.7.0,<4",
+    "llama-index-core>=0.13.0,<0.15",
+    "pymongo>=4.13.0,<5",
 ]
 
 [tool.codespell]

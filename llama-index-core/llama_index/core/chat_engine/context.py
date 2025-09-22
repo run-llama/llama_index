@@ -217,7 +217,7 @@ class ContextChatEngine(BaseChatEngine):
         synthesizer = self._get_response_synthesizer(chat_history)
 
         response = synthesizer.synthesize(message, nodes)
-        user_message = ChatMessage(content=message, role=MessageRole.USER)
+        user_message = ChatMessage(content=str(message), role=MessageRole.USER)
         ai_message = ChatMessage(content=str(response), role=MessageRole.ASSISTANT)
 
         self._memory.put(user_message)
@@ -271,7 +271,7 @@ class ContextChatEngine(BaseChatEngine):
                     delta=token,
                 )
 
-            user_message = ChatMessage(content=message, role=MessageRole.USER)
+            user_message = ChatMessage(content=str(message), role=MessageRole.USER)
             ai_message = ChatMessage(content=full_response, role=MessageRole.ASSISTANT)
             self._memory.put(user_message)
             self._memory.put(ai_message)
@@ -312,7 +312,7 @@ class ContextChatEngine(BaseChatEngine):
         synthesizer = self._get_response_synthesizer(chat_history)
 
         response = await synthesizer.asynthesize(message, nodes)
-        user_message = ChatMessage(content=message, role=MessageRole.USER)
+        user_message = ChatMessage(content=str(message), role=MessageRole.USER)
         ai_message = ChatMessage(content=str(response), role=MessageRole.ASSISTANT)
 
         await self._memory.aput(user_message)
@@ -365,7 +365,7 @@ class ContextChatEngine(BaseChatEngine):
                     delta=token,
                 )
 
-            user_message = ChatMessage(content=message, role=MessageRole.USER)
+            user_message = ChatMessage(content=str(message), role=MessageRole.USER)
             ai_message = ChatMessage(content=full_response, role=MessageRole.ASSISTANT)
             await self._memory.aput(user_message)
             await self._memory.aput(ai_message)

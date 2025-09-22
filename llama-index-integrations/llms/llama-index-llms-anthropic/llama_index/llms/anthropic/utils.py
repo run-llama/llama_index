@@ -48,7 +48,8 @@ BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS: Dict[str, int] = {
     "anthropic.claude-3-5-haiku-20241022-v1:0": 200000,
     "anthropic.claude-3-7-sonnet-20250219-v1:0": 200000,
     "anthropic.claude-opus-4-20250514-v1:0": 200000,
-    "anthropic.claude-sonnet-4-20250514-v1:0": 200000,
+    "anthropic.claude-sonnet-4-20250514-v1:0": 1000000,
+    "anthropic.claude-opus-4-1-20250805-v1:0": 200000,
 }
 BEDROCK_CLAUDE_MODELS: Dict[str, int] = {
     "anthropic.claude-instant-v1": 100000,
@@ -67,6 +68,7 @@ VERTEX_CLAUDE_MODELS: Dict[str, int] = {
     "claude-3-7-sonnet@20250219": 200000,
     "claude-opus-4@20250514": 200000,
     "claude-sonnet-4@20250514": 200000,
+    "claude-opus-4-1@20250805": 200000,
 }
 
 # Anthropic API/SDK identifiers
@@ -92,9 +94,10 @@ ANTHROPIC_MODELS: Dict[str, int] = {
     "claude-opus-4-0": 200000,
     "claude-opus-4-20250514": 200000,
     "claude-4-opus-20250514": 200000,
-    "claude-sonnet-4-0": 200000,
-    "claude-sonnet-4-20250514": 200000,
-    "claude-4-sonnet-20250514": 200000,
+    "claude-sonnet-4-0": 1000000,
+    "claude-sonnet-4-20250514": 1000000,
+    "claude-4-sonnet-20250514": 1000000,
+    "claude-opus-4-1-20250805": 200000,
 }
 
 # All provider Anthropic identifiers
@@ -251,7 +254,7 @@ def blocks_to_anthropic_blocks(
         elif isinstance(block, CachePoint):
             if len(anthropic_blocks) > 0:
                 anthropic_blocks[-1]["cache_control"] = CacheControlEphemeralParam(
-                    **block.model_dump(exclude="block_type")
+                    **block.cache_control.model_dump()
                 )
             else:
                 raise ValueError("Cache point must be after at least one block")

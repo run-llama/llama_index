@@ -183,7 +183,7 @@ async def test_async_chat_with_tools() -> None:
     client is None, reason="Ollama client is not available or test model is missing"
 )
 def test_chat_with_think() -> None:
-    llm = Ollama(model=thinking_test_model, thinking=True)
+    llm = Ollama(model=thinking_test_model, thinking=True, request_timeout=360)
     response = llm.chat(
         [ChatMessage(role="user", content="Hello! What is 32 * 4?")], think=False
     )
@@ -208,3 +208,51 @@ async def test_async_chat_with_think() -> None:
     think = response.message.additional_kwargs.get("thinking", None)
     assert think is not None
     assert str(think).strip() != ""
+
+
+@pytest.mark.skipif(
+    client is None, reason="Ollama client is not available or test model is missing"
+)
+def test_chat_with_tools_returns_empty_array_if_no_tools_were_called() -> None:
+    """Make sure get_tool_calls_from_response can gracefully handle no tools in response"""
+    llm = Ollama(model=test_model, context_window=1000)
+    response = llm.chat(
+        tools=[],
+        messages=[
+            ChatMessage(
+                role="system",
+                content="You are a useful tool calling agent.",
+            ),
+            ChatMessage(role="user", content="Hello, how are you?"),
+        ],
+    )
+
+    assert response.message.additional_kwargs.get("tool_calls", []) == []
+
+    tool_calls = llm.get_tool_calls_from_response(response, error_on_no_tool_call=False)
+    assert len(tool_calls) == 0
+
+
+@pytest.mark.skipif(
+    client is None, reason="Ollama client is not available or test model is missing"
+)
+@pytest.mark.asyncio
+async def test_async_chat_with_tools_returns_empty_array_if_no_tools_were_called() -> (
+    None
+):
+    """
+    Test that achat returns [] for no tool calls since subsequent processes expect []
+    instead of None
+    """
+    llm = Ollama(model=test_model, context_window=1000)
+    response = await llm.achat(
+        tools=[],
+        messages=[
+            ChatMessage(
+                role="system",
+                content="You are a useful tool calling agent.",
+            ),
+            ChatMessage(role="user", content="Hello, how are you?"),
+        ],
+    )
+    assert response.message.additional_kwargs.get("tool_calls", []) == []

@@ -31,7 +31,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-cloudflare-ai-gateway"
-version = "0.1.0"
+version = "0.2.1"
 description = "llama-index llms cloudflare ai gateway integration"
 authors = [{name = "Chojan Shang", email = "psiace@outlook.com"}]
 maintainers = [{name = "psiace"}]
@@ -45,7 +45,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "httpx>=0.24.0,<1",
-    "llama-index-core>=0.12.41,<0.13",
+    "llama-index-core>=0.13.0,<0.15",
 ]
 
 [tool.codespell]

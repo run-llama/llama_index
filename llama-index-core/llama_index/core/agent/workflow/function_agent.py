@@ -1,4 +1,4 @@
-from typing import List, Sequence
+from typing import List, Optional, Sequence
 
 from llama_index.core.agent.workflow.base_agent import BaseWorkflowAgent
 from llama_index.core.agent.workflow.workflow_events import (
@@ -19,10 +19,82 @@ class FunctionAgent(BaseWorkflowAgent):
     """Function calling agent implementation."""
 
     scratchpad_key: str = "scratchpad"
+    initial_tool_choice: Optional[str] = Field(
+        default=None,
+        description="The tool to try and force to call on the first iteration of the agent.",
+    )
     allow_parallel_tool_calls: bool = Field(
         default=True,
         description="If True, the agent will call multiple tools in parallel. If False, the agent will call tools sequentially.",
     )
+
+    async def _get_response(
+        self, current_llm_input: List[ChatMessage], tools: Sequence[AsyncBaseTool]
+    ) -> ChatResponse:
+        chat_kwargs = {
+            "chat_history": current_llm_input,
+            "tools": tools,
+        }
+
+        # Only add tool choice if set and if its the first response
+        if (
+            self.initial_tool_choice is not None
+            and current_llm_input[-1].role == "user"
+        ):
+            chat_kwargs["tool_choice"] = self.initial_tool_choice
+
+        return await self.llm.achat_with_tools(  # type: ignore
+            **chat_kwargs
+        )
+
+    async def _get_streaming_response(
+        self,
+        ctx: Context,
+        current_llm_input: List[ChatMessage],
+        tools: Sequence[AsyncBaseTool],
+    ) -> ChatResponse:
+        chat_kwargs = {
+            "chat_history": current_llm_input,
+            "tools": tools,
+            "allow_parallel_tool_calls": self.allow_parallel_tool_calls,
+        }
+
+        # Only add tool choice if set and if its the first response
+        if (
+            self.initial_tool_choice is not None
+            and current_llm_input[-1].role == "user"
+        ):
+            chat_kwargs["tool_choice"] = self.initial_tool_choice
+
+        response = await self.llm.astream_chat_with_tools(  # type: ignore
+            **chat_kwargs
+        )
+        # last_chat_response will be used later, after the loop.
+        # We initialize it so it's valid even when 'response' is empty
+        last_chat_response = ChatResponse(message=ChatMessage())
+        async for last_chat_response in response:
+            tool_calls = self.llm.get_tool_calls_from_response(  # type: ignore
+                last_chat_response, error_on_no_tool_call=False
+            )
+            raw = (
+                last_chat_response.raw.model_dump()
+                if isinstance(last_chat_response.raw, BaseModel)
+                else last_chat_response.raw
+            )
+            ctx.write_event_to_stream(
+                AgentStream(
+                    delta=last_chat_response.delta or "",
+                    response=last_chat_response.message.content or "",
+                    tool_calls=tool_calls or [],
+                    raw=raw,
+                    current_agent_name=self.name,
+                    thinking_delta=last_chat_response.additional_kwargs.get(
+                        "thinking_delta", None
+                    ),
+                )
+            )
+
+        return last_chat_response
 
     async def take_step(
         self,
@@ -44,32 +116,12 @@ class FunctionAgent(BaseWorkflowAgent):
             AgentInput(input=current_llm_input, current_agent_name=self.name)
         )
 
-        response = await self.llm.astream_chat_with_tools(  # type: ignore
-            tools=tools,
-            chat_history=current_llm_input,
-            allow_parallel_tool_calls=self.allow_parallel_tool_calls,
-        )
-        # last_chat_response will be used later, after the loop.
-        # We initialize it so it's valid even when 'response' is empty
-        last_chat_response = ChatResponse(message=ChatMessage())
-        async for last_chat_response in response:
-            tool_calls = self.llm.get_tool_calls_from_response(  # type: ignore
-                last_chat_response, error_on_no_tool_call=False
+        if self.streaming:
+            last_chat_response = await self._get_streaming_response(
+                ctx, current_llm_input, tools
             )
-            raw = (
-                last_chat_response.raw.model_dump()
-                if isinstance(last_chat_response.raw, BaseModel)
-                else last_chat_response.raw
-            )
-            ctx.write_event_to_stream(
-                AgentStream(
-                    delta=last_chat_response.delta or "",
-                    response=last_chat_response.message.content or "",
-                    tool_calls=tool_calls or [],
-                    raw=raw,
-                    current_agent_name=self.name,
-                )
-            )
+        else:
+            last_chat_response = await self._get_response(current_llm_input, tools)
 
         tool_calls = self.llm.get_tool_calls_from_response(  # type: ignore
             last_chat_response, error_on_no_tool_call=False

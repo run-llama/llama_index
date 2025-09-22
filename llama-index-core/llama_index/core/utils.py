@@ -34,6 +34,7 @@ from typing import (
 
 import platformdirs
 import requests
+from urllib.parse import urlparse
 
 if TYPE_CHECKING:
     from nltk.tokenize import PunktSentenceTokenizer
@@ -52,14 +53,14 @@ class GlobalsHelper:
 
         # Set up NLTK data directory
         if "NLTK_DATA" in os.environ:
-            path = Path(os.environ["NLTK_DATA"])
+            self._nltk_data_dir = str(Path(os.environ["NLTK_DATA"]))
         else:
-            path = Path(platformdirs.user_cache_dir("llama_index"))
-
-        self._nltk_data_dir = str(path / "_static/nltk_cache")
+            path = Path(os.path.dirname(os.path.abspath(__file__)))
+            self._nltk_data_dir = str(path / "_static/nltk_cache")
 
         # Ensure the directory exists
-        os.makedirs(self._nltk_data_dir, exist_ok=True)
+        if not os.path.exists(self._nltk_data_dir):
+            os.makedirs(self._nltk_data_dir, exist_ok=True)
 
         # Add to NLTK path if not already present
         if self._nltk_data_dir not in nltk_path:
@@ -657,10 +658,41 @@ def resolve_binary(
         return BytesIO(data)
 
     elif url is not None:
+        parsed_url = urlparse(url)
+        if parsed_url.scheme == "data":
+            # Parse data URL: data:[<mediatype>][;base64],<data>
+            # The path contains everything after "data:"
+            data_part = parsed_url.path
+
+            # Split on the first comma to separate metadata from data
+            if "," not in data_part:
+                raise ValueError("Invalid data URL format: missing comma separator")
+
+            metadata, url_data = data_part.split(",", 1)
+            is_base64_encoded = metadata.endswith(";base64")
+
+            if is_base64_encoded:
+                # Data is base64 encoded in the URL
+                decoded_data = base64.b64decode(url_data)
+                if as_base64:
+                    # Return as base64 bytes
+                    return BytesIO(base64.b64encode(decoded_data))
+                else:
+                    # Return decoded binary data
+                    return BytesIO(decoded_data)
+            else:
+                # Data is not base64 encoded in the URL (URL-encoded text)
+                if as_base64:
+                    # Encode the text data as base64
+                    return BytesIO(base64.b64encode(url_data.encode("utf-8")))
+                else:
+                    # Return as text bytes
+                    return BytesIO(url_data.encode("utf-8"))
+
         headers = {
             "User-Agent": "LlamaIndex/0.0 (https://llamaindex.ai; info@llamaindex.ai) llama-index-core/0.0"
         }
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=(60, 60))
         response.raise_for_status()
         if as_base64:
             return BytesIO(base64.b64encode(response.content))

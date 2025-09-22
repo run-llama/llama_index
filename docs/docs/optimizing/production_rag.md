@@ -26,7 +26,7 @@ Check out [this Tweet thread](https://twitter.com/jerryjliu0/status/169293102896
 
 A key technique for better retrieval is to decouple chunks used for retrieval with those that are used for synthesis.
 
-![](../_static/production_rag/decouple_chunks.png)
+![](/python/framework/_static/production_rag/decouple_chunks.png)
 
 #### Motivation
 
@@ -45,8 +45,8 @@ This can help retrieve relevant documents at a high-level before retrieving chun
 
 Resources:
 
-- [Table Recursive Retrieval](../examples/query_engine/pdf_tables/recursive_retriever.ipynb)
-- [Document Summary Index](../examples/index_structs/doc_summary/DocSummary.ipynb)
+- [Table Recursive Retrieval](/python/examples/query_engine/pdf_tables/recursive_retriever)
+- [Document Summary Index](/python/examples/index_structs/doc_summary/docsummary)
 
 **2. Embed a sentence, which then links to a window around the sentence.**
 
@@ -54,11 +54,11 @@ This allows for finer-grained retrieval of relevant context (embedding giant chu
 
 Resources:
 
-- [Metadata Replacement Postprocessor](../examples/node_postprocessor/MetadataReplacementDemo.ipynb)
+- [Metadata Replacement Postprocessor](/python/examples/node_postprocessor/metadatareplacementdemo)
 
 ## Structured Retrieval for Larger Document Sets
 
-![](../_static/production_rag/structured_retrieval.png)
+![](/python/framework/_static/production_rag/structured_retrieval.png)
 
 #### Motivation
 
@@ -85,14 +85,13 @@ Embed document summaries and map to chunks per document. Fetch at the document-l
 
 **Resources**
 
-- [Chroma Auto-Retrieval](../examples/vector_stores/chroma_auto_retriever.ipynb)
-- [Document Summary Index](../examples/index_structs/doc_summary/DocSummary.ipynb)
-- [Recursive Retriever](../examples/query_engine/recursive_retriever_agents.ipynb)
-- [Auto-Retriever vs. Recursive Retriever](../examples/retrievers/auto_vs_recursive_retriever.ipynb)
+- [Chroma Auto-Retrieval](/python/examples/vector_stores/chroma_auto_retriever)
+- [Document Summary Index](/python/examples/index_structs/doc_summary/docsummary)
+- [Auto-Retriever vs. Recursive Retriever](/python/examples/retrievers/auto_vs_recursive_retriever)
 
 ## Dynamically Retrieve Chunks Depending on your Task
 
-![](../_static/production_rag/joint_qa_summary.png)
+![](/python/framework/_static/production_rag/joint_qa_summary.png)
 
 #### Motivation
 
@@ -100,7 +99,7 @@ RAG isn't just about question-answering about specific facts, which top-k simila
 
 #### Key Techniques
 
-LlamaIndex provides some core abstractions to help you do task-specific retrieval. This includes our [router](../module_guides/querying/router/index.md) module as well as our [data agent](../module_guides/deploying/agents/index.md) module.
+LlamaIndex provides some core abstractions to help you do task-specific retrieval. This includes our [router](/python/framework/module_guides/querying/router) module as well as our [data agent](/python/framework/module_guides/deploying/agents) module.
 This also includes some advanced query engine modules.
 This also include other modules that join structured and unstructured data.
 
@@ -108,17 +107,16 @@ You can use these modules to do joint question-answering and summarization, or e
 
 **Core Module Resources**
 
-- [Query engine](../module_guides/deploying/query_engine/index.md)
-- [Agents](../module_guides/deploying/agents/index.md)
-- [Router](../module_guides/querying/router/index.md)
+- [Query engine](/python/framework/module_guides/deploying/query_engine)
+- [Agents](/python/framework/module_guides/deploying/agents)
+- [Router](/python/framework/module_guides/querying/router)
 
 **Detailed Guide Resources**
 
-- [Sub-Question Query Engine](../examples/query_engine/sub_question_query_engine.ipynb)
-- [Joint QA-Summary](../examples/query_engine/JointQASummary.ipynb)
-- [Recursive Retriever Agents](../examples/query_engine/recursive_retriever_agents.ipynb)
-- [Router Query Engine](../examples/query_engine/RouterQueryEngine.ipynb)
-- [OpenAI Agent Cookbook](../examples/agent/openai_agent_query_cookbook.ipynb)
+- [Sub-Question Query Engine](/python/examples/query_engine/sub_question_query_engine)
+- [Joint QA-Summary](/python/examples/query_engine/jointqasummary)
+- [Router Query Engine](/python/examples/query_engine/routerqueryengine)
+- [OpenAI Agent Cookbook](/python/examples/agent/openai_agent_query_cookbook)
 
 ## Optimize Context Embeddings
 
@@ -135,4 +133,4 @@ We can actually do this over an unstructured text corpus, in a label-free way.
 
 Check out our guides here:
 
-- [Embedding Fine-tuning Guide](../examples/finetuning/embeddings/finetune_embedding.ipynb)
+- [Embedding Fine-tuning Guide](/python/examples/finetuning/embeddings/finetune_embedding)

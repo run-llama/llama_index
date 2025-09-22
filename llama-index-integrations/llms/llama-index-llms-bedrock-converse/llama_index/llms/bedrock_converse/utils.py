@@ -29,6 +29,7 @@ HUMAN_PREFIX = "\n\nHuman:"
 ASSISTANT_PREFIX = "\n\nAssistant:"
 
 BEDROCK_MODELS = {
+    "amazon.nova-premier-v1:0": 1000000,
     "amazon.nova-pro-v1:0": 300000,
     "amazon.nova-lite-v1:0": 300000,
     "amazon.nova-micro-v1:0": 128000,
@@ -72,12 +73,15 @@ BEDROCK_MODELS = {
     "mistral.mistral-large-2402-v1:0": 32000,
     "mistral.mistral-small-2402-v1:0": 32000,
     "mistral.mistral-large-2407-v1:0": 32000,
+    "openai.gpt-oss-120b-1:0": 128000,
+    "openai.gpt-oss-20b-1:0": 128000,
     "ai21.jamba-1-5-mini-v1:0": 256000,
     "ai21.jamba-1-5-large-v1:0": 256000,
     "deepseek.r1-v1:0": 128000,
 }
 
 BEDROCK_FUNCTION_CALLING_MODELS = (
+    "amazon.nova-premier-v1:0",
     "amazon.nova-pro-v1:0",
     "amazon.nova-lite-v1:0",
     "amazon.nova-micro-v1:0",
@@ -101,9 +105,12 @@ BEDROCK_FUNCTION_CALLING_MODELS = (
     "meta.llama3-3-70b-instruct-v1:0",
     "meta.llama4-maverick-17b-instruct-v1:0",
     "meta.llama4-scout-17b-instruct-v1:0",
+    "openai.gpt-oss-120b-1:0",
+    "openai.gpt-oss-20b-1:0",
 )
 
 BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
+    "amazon.nova-premier-v1:0",
     "amazon.nova-pro-v1:0",
     "amazon.nova-lite-v1:0",
     "amazon.nova-micro-v1:0",
@@ -343,6 +350,7 @@ def tools_to_converse_tools(
     tools: List["BaseTool"],
     tool_choice: Optional[dict] = None,
     tool_required: bool = False,
+    tool_caching: bool = False,
 ) -> Dict[str, Any]:
     """
     Converts a list of tools to AWS Bedrock Converse tools.
@@ -367,6 +375,10 @@ def tools_to_converse_tools(
             "inputSchema": {"json": tool.metadata.get_parameters_dict()},
         }
         converse_tools.append({"toolSpec": tool_dict})
+
+    if tool_caching:
+        converse_tools.append({"cachePoint": {"type": "default"}})
+
     return {
         "tools": converse_tools,
         # https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolChoice.html
@@ -433,6 +445,8 @@ def converse_with_retry(
     messages: Sequence[Dict[str, Any]],
     max_retries: int = 3,
     system_prompt: Optional[str] = None,
+    system_prompt_caching: bool = False,
+    tool_caching: bool = False,
     max_tokens: int = 1000,
     temperature: float = 0.1,
     stream: bool = False,
@@ -452,15 +466,21 @@ def converse_with_retry(
         },
     }
     if system_prompt:
-        converse_kwargs["system"] = [{"text": system_prompt}]
+        system_messages: list[dict[str, Any]] = [{"text": system_prompt}]
+        if system_prompt_caching:
+            system_messages.append({"cachePoint": {"type": "default"}})
+        converse_kwargs["system"] = system_messages
+
     if tool_config := kwargs.get("tools"):
         converse_kwargs["toolConfig"] = tool_config
+
     if guardrail_identifier and guardrail_version:
         converse_kwargs["guardrailConfig"] = {}
         converse_kwargs["guardrailConfig"]["guardrailIdentifier"] = guardrail_identifier
         converse_kwargs["guardrailConfig"]["guardrailVersion"] = guardrail_version
         if trace:
             converse_kwargs["guardrailConfig"]["trace"] = trace
+
     converse_kwargs = join_two_dicts(
         converse_kwargs,
         {
@@ -486,6 +506,8 @@ async def converse_with_retry_async(
     messages: Sequence[Dict[str, Any]],
     max_retries: int = 3,
     system_prompt: Optional[str] = None,
+    system_prompt_caching: bool = False,
+    tool_caching: bool = False,
     max_tokens: int = 1000,
     temperature: float = 0.1,
     stream: bool = False,
@@ -506,9 +528,16 @@ async def converse_with_retry_async(
         },
     }
     if system_prompt:
-        converse_kwargs["system"] = [{"text": system_prompt}]
+        system_messages: list[dict[str, Any]] = [{"text": system_prompt}]
+        if system_prompt_caching:
+            system_messages.append({"cachePoint": {"type": "default"}})
+        converse_kwargs["system"] = system_messages
     if tool_config := kwargs.get("tools"):
         converse_kwargs["toolConfig"] = tool_config
+        if tool_caching and "tools" in converse_kwargs["toolConfig"]:
+            converse_kwargs["toolConfig"]["tools"].append(
+                {"cachePoint": {"type": "default"}}
+            )
     if guardrail_identifier and guardrail_version:
         converse_kwargs["guardrailConfig"] = {}
         converse_kwargs["guardrailConfig"]["guardrailIdentifier"] = guardrail_identifier

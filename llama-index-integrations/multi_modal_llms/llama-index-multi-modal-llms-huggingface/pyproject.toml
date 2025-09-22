@@ -27,14 +27,14 @@ dev = [
 
 [project]
 name = "llama-index-multi-modal-llms-huggingface"
-version = "0.4.4"
+version = "0.5.1"
 description = "llama-index multi_modal_llms HuggingFace integration by [Cihan Yalçın](https://www.linkedin.com/in/chanyalcin/)"
 authors = [{name = "M.Cihan Yalçın", email = "mcihan.yalcin@outlook.com"}]
 requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-core>=0.12.47,<0.13",
+    "llama-index-core>=0.13.0,<0.15",
     "transformers[torch]>=4.45",
     "qwen-vl-utils>=0.0.8",
     "torchvision>=0.19.1",

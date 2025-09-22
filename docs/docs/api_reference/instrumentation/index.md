@@ -3,7 +3,7 @@
 LlamaIndex contains a simple instrumentation framework that allows you to
 observe events and spans happening in the framework.
 
-- [Event Handlers](./event_handlers.md)
-- [Event Types](./event_types.md)
-- [Span Handlers](./span_handlers.md)
-- [Span Types](./span_types.md)
+- [Event Handlers](/python/framework/api_reference/instrumentation/event_handlers)
+- [Event Types](/python/framework/api_reference/instrumentation/event_types)
+- [Span Handlers](/python/framework/api_reference/instrumentation/span_handlers)
+- [Span Types](/python/framework/api_reference/instrumentation/span_types)
