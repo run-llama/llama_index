@@ -33,7 +33,7 @@ authors = [{name = "llama-index"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
-dependencies = ["openai>=1.81.0,<2", "llama-index-core>=0.13.0,<0.15"]
+dependencies = ["openai>=1.108.1,<2", "llama-index-core>=0.13.0,<0.15"]
 
 [tool.codespell]
 check-filenames = true

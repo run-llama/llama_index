@@ -858,6 +858,7 @@ def test_cached_content_in_response() -> None:
     mock_response.candidates[0].content.role = "model"
     mock_response.candidates[0].content.parts = [MagicMock()]
     mock_response.candidates[0].content.parts[0].text = "Test response"
+    mock_response.candidates[0].content.parts[0].thought = False
     mock_response.candidates[0].content.parts[0].inline_data = None
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = None
@@ -884,6 +885,7 @@ def test_cached_content_without_cached_content() -> None:
     mock_response.candidates[0].content.role = "model"
     mock_response.candidates[0].content.parts = [MagicMock()]
     mock_response.candidates[0].content.parts[0].text = "Test response"
+    mock_response.candidates[0].content.parts[0].thought = False
     mock_response.candidates[0].content.parts[0].inline_data = None
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = None
@@ -912,6 +914,8 @@ def test_thoughts_in_response() -> None:
     mock_response.candidates[0].content.parts[1].text = "This is not a thought."
     mock_response.candidates[0].content.parts[1].inline_data = None
     mock_response.candidates[0].content.parts[1].thought = None
+    mock_response.candidates[0].content.parts[0].model_dump = MagicMock(return_value={})
+    mock_response.candidates[0].content.parts[1].model_dump = MagicMock(return_value={})
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = None
     mock_response.function_calls = None
@@ -922,8 +926,21 @@ def test_thoughts_in_response() -> None:
     chat_response = chat_from_gemini_response(mock_response)
 
     # Verify thoughts in raw response
-    assert "thoughts" in chat_response.message.additional_kwargs
-    assert chat_response.message.additional_kwargs["thoughts"] == "This is a thought."
+    assert (
+        len(
+            [
+                block
+                for block in chat_response.message.blocks
+                if isinstance(block, ThinkingBlock)
+            ]
+        )
+        == 1
+    )
+    assert [  # noqa: RUF015
+        block
+        for block in chat_response.message.blocks
+        if isinstance(block, ThinkingBlock)
+    ][0].content == "This is a thought."
     assert chat_response.message.content == "This is not a thought."
 
 
@@ -941,6 +958,7 @@ def test_thoughts_without_thought_response() -> None:
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = None
     mock_response.function_calls = None
+    mock_response.candidates[0].content.parts[0].model_dump = MagicMock(return_value={})
     # No cached_content attribute
     del mock_response.cached_content
 
@@ -948,7 +966,16 @@ def test_thoughts_without_thought_response() -> None:
     chat_response = chat_from_gemini_response(mock_response)
 
     # Verify no cached_content key in raw response
-    assert "thoughts" not in chat_response.message.additional_kwargs
+    assert (
+        len(
+            [
+                block
+                for block in chat_response.message.blocks
+                if isinstance(block, ThinkingBlock)
+            ]
+        )
+        == 0
+    )
     assert chat_response.message.content == "This is not a thought."
 
 

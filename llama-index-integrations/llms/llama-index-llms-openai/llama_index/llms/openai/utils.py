@@ -29,6 +29,7 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     AudioBlock,
     DocumentBlock,
+    ThinkingBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 
@@ -204,7 +205,7 @@ JSON_SCHEMA_MODELS = [
 
 def is_json_schema_supported(model: str) -> bool:
     try:
-        from openai.resources.beta.chat import completions
+        from openai.resources.chat.completions import completions
 
         if not hasattr(completions, "_type_to_response_format"):
             return False
@@ -505,6 +506,22 @@ def to_openai_responses_message_dict(
                         "detail": block.detail or "auto",
                     }
                 )
+        elif isinstance(block, ThinkingBlock):
+            # handle OpenAI thinking blocks
+            if block.additional_information.get("id"):
+                content.append(
+                    {
+                        "id": block.additional_information.get("id"),
+                        "type": "reasoning",
+                        "summary": block.additional_information.get("summary", None)
+                        or [],
+                    }
+                )
+            else:
+                # handle thinking blocks coming from other LLM providers as text messages
+                if block.content:
+                    content.append({"type": "input_text", "text": block.content})
+                    content_txt += block.content
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)

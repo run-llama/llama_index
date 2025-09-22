@@ -317,6 +317,13 @@ async def chat_message_to_gemini(
 
             if isinstance(part, types.File):
                 return part  # Return the file as it is a message content and not a part
+        elif isinstance(block, ThinkingBlock):
+            if block.content:
+                part = types.Part.from_text(text=block.content)
+                part.thought = True
+                part.thought_signature = block.additional_information.get(
+                    "thought_signature", None
+                )
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)

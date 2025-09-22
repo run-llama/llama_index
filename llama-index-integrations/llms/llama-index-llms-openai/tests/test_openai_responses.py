@@ -139,6 +139,7 @@ def test_process_response_event():
         delta="Hello",
         type="response.output_text.delta",
         sequence_number=1,
+        logprobs=[],
     )
 
     result = OpenAIResponses.process_response_event(
@@ -224,7 +225,7 @@ def test_process_response_event_with_text_annotation():
         output_index=0,
         content_index=0,
         annotation_index=0,
-        type="response.output_text_annotation.added",
+        type="response.output_text.annotation.added",
         annotation={"type": "test_annotation", "value": 42},
         sequence_number=1,
     )

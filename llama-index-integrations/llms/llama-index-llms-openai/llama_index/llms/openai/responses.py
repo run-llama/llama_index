@@ -253,7 +253,7 @@ class OpenAIResponses(FunctionCallingLLM):
     default_headers: Optional[Dict[str, str]] = Field(
         default=None, description="The default headers for API requests."
     )
-    api_key: str = Field(default=None, description="The OpenAI API key.")
+    api_key: Optional[str] = Field(default=None, description="The OpenAI API key.")
     api_base: str = Field(description="The base URL for OpenAI API.")
     api_version: str = Field(description="The API version for OpenAI API.")
     context_window: Optional[int] = Field(
@@ -383,7 +383,7 @@ class OpenAIResponses(FunctionCallingLLM):
         return model_name
 
     def _is_azure_client(self) -> bool:
-        return isinstance(self._get_client(), AzureOpenAI)
+        return isinstance(self._client, AzureOpenAI)
 
     def _get_credential_kwargs(self, is_async: bool = False) -> Dict[str, Any]:
         return {
