@@ -207,6 +207,55 @@ resp = await llm.acomplete("Paul Graham is ")
 print(resp)
 ```
 
+### Prompt Caching System and regular messages
+
+You can cache normal and system messages by placing cache points strategically:
+
+```py
+from llama_index.core.llms import ChatMessage
+from llama_index.core.base.llms.types import (
+    TextBlock,
+    CacheControl,
+    CachePoint,
+    MessageRole,
+)
+
+# Cache expensive context but keep dynamic instructions uncached
+cached_context = (
+    """[Large context about company policies, knowledge base, etc...]"""
+)
+dynamic_instructions = (
+    "Today's date is 2024-01-15. Focus on recent developments."
+)
+document_text = "[Long document]"
+messages = [
+    ChatMessage(
+        role=MessageRole.SYSTEM,
+        blocks=[
+            TextBlock(text=cached_context),
+            CachePoint(cache_control=CacheControl(type="default")),
+        ],
+    ),
+    ChatMessage(role=MessageRole.SYSTEM, content=dynamic_instructions),
+    ChatMessage(
+        role=MessageRole.USER,
+        blocks=[
+            TextBlock(
+                text=f"{document_text}",
+                type="text",
+            ),
+            CachePoint(cache_control=CacheControl(type="default")),
+            TextBlock(
+                text="What's our current policy on remote work?",
+                type="text",
+            ),
+        ],
+    ),
+]
+
+response = llm.chat(messages)
+```
+
 ### LLM Implementation example
 
 https://docs.llamaindex.ai/en/stable/examples/llm/bedrock_converse/

@@ -36,8 +36,8 @@ requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "boto3>=1.34.122,<2",
-    "aioboto3>=13.1.1,<16",
+    "boto3>=1.38.27,<2",
+    "aioboto3>=15.0.0,<16",
     "llama-index-core>=0.13.0,<0.15",
 ]
 
