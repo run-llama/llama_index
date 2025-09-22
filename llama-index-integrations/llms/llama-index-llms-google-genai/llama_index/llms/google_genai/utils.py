@@ -198,14 +198,14 @@ def chat_from_gemini_response(
                 )
     if thought_tokens:
         thinking_blocks = [
-            (i, block)
+            i
             for i, block in enumerate(content_blocks)
             if isinstance(block, ThinkingBlock)
         ]
         if len(thinking_blocks) == 1:
-            content_blocks[thinking_blocks[0][0]].num_tokens = thought_tokens
+            content_blocks[thinking_blocks[0]].num_tokens = thought_tokens
         elif len(thinking_blocks) > 1:
-            content_blocks[thinking_blocks[-1][0]].additional_information.update(
+            content_blocks[thinking_blocks[-1]].additional_information.update(
                 {"total_thinking_tokens": thought_tokens}
             )
 

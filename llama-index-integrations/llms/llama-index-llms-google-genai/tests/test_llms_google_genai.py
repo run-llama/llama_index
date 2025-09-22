@@ -10,6 +10,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     VideoBlock,
+    ThinkingBlock,
 )
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.program.function_program import get_function_tool
@@ -1661,8 +1662,21 @@ def test_thoughts_with_streaming() -> None:
     assert final_response is not None
     assert final_response.message is not None
     assert len(final_response.message.content) != 0
-    assert "thoughts" in final_response.message.additional_kwargs
-    assert len(final_response.message.additional_kwargs["thoughts"]) != 0
+    assert any(
+        isinstance(block, ThinkingBlock) for block in final_response.message.blocks
+    )
+    assert (
+        len(
+            "".join(
+                [
+                    block.content or ""
+                    for block in final_response.message.blocks
+                    if isinstance(block, ThinkingBlock)
+                ]
+            )
+        )
+        != 0
+    )
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
@@ -1695,8 +1709,21 @@ async def test_thoughts_with_async_streaming() -> None:
     assert final_response is not None
     assert final_response.message is not None
     assert len(final_response.message.content) != 0
-    assert "thoughts" in final_response.message.additional_kwargs
-    assert len(final_response.message.additional_kwargs["thoughts"]) != 0
+    assert any(
+        isinstance(block, ThinkingBlock) for block in final_response.message.blocks
+    )
+    assert (
+        len(
+            "".join(
+                [
+                    block.content or ""
+                    for block in final_response.message.blocks
+                    if isinstance(block, ThinkingBlock)
+                ]
+            )
+        )
+        != 0
+    )
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
@@ -1721,8 +1748,21 @@ def test_thoughts_with_chat() -> None:
     assert final_response is not None
     assert final_response.message is not None
     assert len(final_response.message.content) != 0
-    assert "thoughts" in final_response.message.additional_kwargs
-    assert len(final_response.message.additional_kwargs["thoughts"]) != 0
+    assert any(
+        isinstance(block, ThinkingBlock) for block in final_response.message.blocks
+    )
+    assert (
+        len(
+            "".join(
+                [
+                    block.content or ""
+                    for block in final_response.message.blocks
+                    if isinstance(block, ThinkingBlock)
+                ]
+            )
+        )
+        != 0
+    )
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
@@ -1748,5 +1788,18 @@ async def test_thoughts_with_async_chat() -> None:
     assert final_response is not None
     assert final_response.message is not None
     assert len(final_response.message.content) != 0
-    assert "thoughts" in final_response.message.additional_kwargs
-    assert len(final_response.message.additional_kwargs["thoughts"]) != 0
+    assert any(
+        isinstance(block, ThinkingBlock) for block in final_response.message.blocks
+    )
+    assert (
+        len(
+            "".join(
+                [
+                    block.content or ""
+                    for block in final_response.message.blocks
+                    if isinstance(block, ThinkingBlock)
+                ]
+            )
+        )
+        != 0
+    )

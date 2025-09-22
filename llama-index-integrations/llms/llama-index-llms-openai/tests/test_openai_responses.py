@@ -4,23 +4,29 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from pathlib import Path
+from typing import List
 from llama_index.core.base.llms.types import (
     ChatMessage,
     MessageRole,
     TextBlock,
     DocumentBlock,
     ChatResponse,
+    ThinkingBlock,
 )
 from llama_index.llms.openai.responses import OpenAIResponses, ResponseFunctionToolCall
 from llama_index.llms.openai.utils import to_openai_message_dicts
 from llama_index.core.tools import FunctionTool
 from llama_index.core.prompts import PromptTemplate
+from openai.types.responses.response_reasoning_item import Content
 from openai.types.responses import (
     ResponseOutputMessage,
     ResponseTextDeltaEvent,
     ResponseFunctionCallArgumentsDeltaEvent,
     ResponseOutputTextAnnotationAddedEvent,
     ResponseFunctionCallArgumentsDoneEvent,
+    ResponseReasoningItem,
+    ResponseOutputItem,
+    ResponseOutputText,
 )
 from pydantic import BaseModel, Field
 
@@ -577,3 +583,66 @@ def test_messages_to_openai_responses_messages():
     assert openai_messages[2]["content"] == "Paris"
     assert openai_messages[3]["role"] == "user"
     assert openai_messages[3]["content"] == "What is the capital of Germany?"
+
+
+@pytest.fixture()
+def response_output() -> List[ResponseOutputItem]:
+    return [
+        ResponseReasoningItem(
+            id="1",
+            summary=[],
+            type="reasoning",
+            content=[
+                Content(text="hello world", type="reasoning_text"),
+                Content(text="this is a test", type="reasoning_text"),
+            ],
+            encrypted_content=None,
+            status=None,
+        ),
+        ResponseReasoningItem(
+            id="1",
+            summary=[],
+            type="reasoning",
+            content=[Content(text="another test", type="reasoning_text")],
+            encrypted_content=None,
+            status=None,
+        ),
+        ResponseOutputMessage(
+            id="1",
+            content=[
+                ResponseOutputText(annotations=[], text="hey there", type="output_text")
+            ],
+            role="assistant",
+            status="completed",
+            type="message",
+        ),
+    ]
+
+
+class OpenAIResponsesMock(OpenAIResponses):
+    def __init__(self):
+        pass
+
+
+def test__parse_response_output(response_output: List[ResponseOutputItem]):
+    result = OpenAIResponsesMock()._parse_response_output(output=response_output)
+    assert (
+        len(
+            [
+                block
+                for block in result.message.blocks
+                if isinstance(block, ThinkingBlock)
+            ]
+        )
+        == 2
+    )
+    assert (
+        len([block for block in result.message.blocks if isinstance(block, TextBlock)])
+        == 1
+    )
+    assert [
+        block for block in result.message.blocks if isinstance(block, ThinkingBlock)
+    ][0].content == "hello world\nthis is a test"
+    assert [
+        block for block in result.message.blocks if isinstance(block, ThinkingBlock)
+    ][1].content == "another test"

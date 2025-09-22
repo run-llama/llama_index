@@ -17,6 +17,7 @@ from llama_index.core.llms import (
     CachePoint,
     CacheControl,
 )
+from llama_index.core.base.llms.types import ThinkingBlock
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.anthropic import Anthropic
 from llama_index.llms.anthropic.base import AnthropicChatResponse
@@ -382,6 +383,41 @@ def test_cache_point_to_cache_control() -> None:
     ant_messages, _ = messages_to_anthropic_messages(messages)
     assert ant_messages[0]["content"][-1]["cache_control"]["type"] == "ephemeral"
     assert ant_messages[0]["content"][-1]["cache_control"]["ttl"] == "5m"
+
+
+@pytest.mark.skipif(
+    os.getenv("ANTHROPIC_API_KEY") is None,
+    reason="Anthropic API key not available to test Anthropic document uploading ",
+)
+def test_thinking():
+    llm = Anthropic(
+        model="claude-sonnet-4-0",
+        # max_tokens must be greater than budget_tokens
+        max_tokens=64000,
+        # temperature must be 1.0 for thinking to work
+        temperature=1.0,
+        thinking_dict={"type": "enabled", "budget_tokens": 1600},
+    )
+    res = llm.chat(
+        messages=[
+            ChatMessage(
+                content="Please solve the following equation for x: x^2+12x+7=0. Please think before providing a response."
+            )
+        ]
+    )
+    assert any(isinstance(block, ThinkingBlock) for block in res.message.blocks)
+    assert (
+        len(
+            "".join(
+                [
+                    block.content or ""
+                    for block in res.message.blocks
+                    if isinstance(block, ThinkingBlock)
+                ]
+            )
+        )
+        > 0
+    )
 
 
 @pytest.mark.skipif(

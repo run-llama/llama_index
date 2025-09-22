@@ -9,6 +9,7 @@ import pytest
 
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.llms import ChatMessage, ImageBlock, TextBlock
+from llama_index.core.base.llms.types import ThinkingBlock
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.mistralai import MistralAI
 from llama_index.llms.mistralai.base import to_mistral_chunks
@@ -94,30 +95,16 @@ def test_thinking():
     llm = MistralAI(model="magistral-small-latest", show_thinking=True)
 
     # It will sometimes not think, so we need to guard
-    result = llm.complete("What is the capital of France?")
-    if "thinking" in result.additional_kwargs:
-        assert result.additional_kwargs["thinking"] is not None
-        assert result.additional_kwargs["thinking"] != ""
-        assert "<think>" in result.text
-
     result = llm.chat(
         [ChatMessage(role="user", content="What is the capital of France?")]
     )
-    if "thinking" in result.message.additional_kwargs:
-        assert result.message.additional_kwargs["thinking"] is not None
-        assert result.message.additional_kwargs["thinking"] != ""
-        assert "<think>" in result.message.content
-
-    result = llm.stream_complete("What is the capital of France?")
-    resp = None
-    for resp in result:
-        pass
-
-    assert resp is not None
-    if "thinking" in resp.additional_kwargs:
-        assert resp.additional_kwargs["thinking"] is not None
-        assert resp.additional_kwargs["thinking"] != ""
-        assert "<think>" in resp.text
+    if any(isinstance(block, ThinkingBlock) for block in result.message.blocks):
+        for block in result.message.blocks:
+            if isinstance(block, ThinkingBlock):
+                assert block.content is not None
+                assert block.content != ""
+                assert result.message.content is not None
+                assert "<think>" in result.message.content
 
     result = llm.stream_chat(
         [ChatMessage(role="user", content="What is the capital of France?")]
@@ -127,10 +114,13 @@ def test_thinking():
         pass
 
     assert resp is not None
-    if "thinking" in resp.message.additional_kwargs:
-        assert resp.message.additional_kwargs["thinking"] is not None
-        assert resp.message.additional_kwargs["thinking"] != ""
-        assert "<think>" in resp.message.content
+    if any(isinstance(block, ThinkingBlock) for block in resp.message.blocks):
+        for block in resp.message.blocks:
+            if isinstance(block, ThinkingBlock):
+                assert block.content is not None
+                assert block.content != ""
+                assert resp.message.content is not None
+                assert "<think>" in resp.message.content
 
 
 @pytest.mark.skipif(
