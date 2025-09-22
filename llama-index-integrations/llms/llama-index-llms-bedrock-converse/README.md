@@ -234,9 +234,9 @@ messages = [
         blocks=[
             TextBlock(text=cached_context),
             CachePoint(cache_control=CacheControl(type="default")),
+            TextBlock(text=dynamic_instructions),
         ],
     ),
-    ChatMessage(role=MessageRole.SYSTEM, content=dynamic_instructions),
     ChatMessage(
         role=MessageRole.USER,
         blocks=[
