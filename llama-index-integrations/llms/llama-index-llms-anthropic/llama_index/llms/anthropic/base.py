@@ -341,9 +341,7 @@ class Anthropic(FunctionCallingLLM):
 
     def _get_blocks_and_tool_calls_and_thinking(
         self, response: Any
-    ) -> Tuple[
-        List[ContentBlock], List[Dict[str, Any]], List[Dict[str, Any]]
-    ]:
+    ) -> Tuple[List[ContentBlock], List[Dict[str, Any]], List[Dict[str, Any]]]:
         tool_calls = []
         blocks: List[ContentBlock] = []
         citations: List[TextCitation] = []
@@ -375,7 +373,14 @@ class Anthropic(FunctionCallingLLM):
                     citations.extend(content_block.citations)
             # this assumes a single thinking block, which as of 2025-03-06, is always true
             elif isinstance(content_block, ThinkingBlock):
-                blocks.append(LIThinkingBlock(content=content_block.thinking, additional_information=content_block.model_dump(exclude={"thinking"})))
+                blocks.append(
+                    LIThinkingBlock(
+                        content=content_block.thinking,
+                        additional_information=content_block.model_dump(
+                            exclude={"thinking"}
+                        ),
+                    )
+                )
             elif isinstance(content_block, ToolUseBlock):
                 tool_calls.append(content_block.model_dump())
 
@@ -397,8 +402,8 @@ class Anthropic(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        blocks, tool_calls, citations = (
-            self._get_blocks_and_tool_calls_and_thinking(response)
+        blocks, tool_calls, citations = self._get_blocks_and_tool_calls_and_thinking(
+            response
         )
 
         return AnthropicChatResponse(
@@ -569,8 +574,8 @@ class Anthropic(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        blocks, tool_calls, citations = (
-            self._get_blocks_and_tool_calls_and_thinking(response)
+        blocks, tool_calls, citations = self._get_blocks_and_tool_calls_and_thinking(
+            response
         )
 
         return AnthropicChatResponse(

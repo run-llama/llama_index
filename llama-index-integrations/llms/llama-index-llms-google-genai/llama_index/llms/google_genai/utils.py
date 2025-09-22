@@ -28,7 +28,7 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     DocumentBlock,
     VideoBlock,
-    ThinkingBlock
+    ThinkingBlock,
 )
 from llama_index.core.program.utils import _repair_incomplete_json
 from tenacity import (
@@ -168,7 +168,12 @@ def chat_from_gemini_response(
         for part in parts:
             if part.text:
                 if part.thought:
-                    content_blocks.append(ThinkingBlock(content=part.text, additional_information=part.model_dump(exclude={"text"})))
+                    content_blocks.append(
+                        ThinkingBlock(
+                            content=part.text,
+                            additional_information=part.model_dump(exclude={"text"}),
+                        )
+                    )
                 else:
                     content_blocks.append(TextBlock(text=part.text))
                 additional_kwargs["thought_signatures"].append(part.thought_signature)
@@ -192,12 +197,17 @@ def chat_from_gemini_response(
                     }
                 )
     if thought_tokens:
-        thinking_blocks = [(i, block) for i,block in enumerate(content_blocks) if isinstance(block, ThinkingBlock)]
+        thinking_blocks = [
+            (i, block)
+            for i, block in enumerate(content_blocks)
+            if isinstance(block, ThinkingBlock)
+        ]
         if len(thinking_blocks) == 1:
             content_blocks[thinking_blocks[0][0]].num_tokens = thought_tokens
         elif len(thinking_blocks) > 1:
-            content_blocks[thinking_blocks[-1][0]].additional_information.update({"total_thinking_tokens": thought_tokens})
-
+            content_blocks[thinking_blocks[-1][0]].additional_information.update(
+                {"total_thinking_tokens": thought_tokens}
+            )
 
     role = ROLES_FROM_GEMINI[top_candidate.content.role]
     return ChatResponse(

@@ -65,7 +65,7 @@ from llama_index.core.base.llms.types import (
     ContentBlock,
     TextBlock,
     ImageBlock,
-    ThinkingBlock
+    ThinkingBlock,
 )
 from llama_index.core.bridge.pydantic import (
     Field,
@@ -488,7 +488,12 @@ class OpenAIResponses(FunctionCallingLLM):
                 content: Optional[str] = None
                 if item.content:
                     content = "\n".join([i.text for i in item.content])
-                message.blocks.append(ThinkingBlock(content=content, additional_information=item.model_dump(exclude={"content"})))
+                message.blocks.append(
+                    ThinkingBlock(
+                        content=content,
+                        additional_information=item.model_dump(exclude={"content"}),
+                    )
+                )
 
         if tool_calls and message:
             message.additional_kwargs["tool_calls"] = tool_calls
@@ -519,7 +524,9 @@ class OpenAIResponses(FunctionCallingLLM):
         if hasattr(response.usage.output_tokens_details, "reasoning_tokens"):
             for block in chat_response.message.blocks:
                 if isinstance(block, ThinkingBlock):
-                    block.num_tokens = response.usage.output_tokens_details.reasoning_tokens
+                    block.num_tokens = (
+                        response.usage.output_tokens_details.reasoning_tokens
+                    )
 
         return chat_response
 

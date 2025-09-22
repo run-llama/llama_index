@@ -424,12 +424,24 @@ class CitationBlock(BaseModel):
 
         return v
 
+
 class ThinkingBlock(BaseModel):
     """A representation of the content streamed from reasoning/thinking processes by LLMs"""
+
     block_type: Literal["thinking"] = "thinking"
-    content: Optional[str] = Field(description="Content of the reasoning/thinking process, if available", default=None)
-    num_tokens: Optional[int] = Field(description="Number of token used for reasoning/thinking, if available", default=None)
-    additional_information: Dict[str, Any] = Field(description="Additional information related to the thiking/reasoning process, if available", default_factory=dict)
+    content: Optional[str] = Field(
+        description="Content of the reasoning/thinking process, if available",
+        default=None,
+    )
+    num_tokens: Optional[int] = Field(
+        description="Number of token used for reasoning/thinking, if available",
+        default=None,
+    )
+    additional_information: Dict[str, Any] = Field(
+        description="Additional information related to the thinking/reasoning process, if available",
+        default_factory=dict,
+    )
+
 
 ContentBlock = Annotated[
     Union[
