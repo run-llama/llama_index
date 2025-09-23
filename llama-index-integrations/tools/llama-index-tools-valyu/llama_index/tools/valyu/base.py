@@ -18,9 +18,10 @@ class ValyuToolSpec(BaseToolSpec):
         self,
         api_key: str,
         verbose: bool = False,
-        max_price: Optional[float] = 100,
-        fast_mode: Optional[bool] = None,
         # Search API parameters
+        max_price: Optional[float] = 100,
+        relevance_threshold: float = 0.5,
+        fast_mode: Optional[bool] = None,
         included_sources: Optional[List[str]] = None,
         excluded_sources: Optional[List[str]] = None,
         response_length: Optional[Union[int, str]] = None,
@@ -37,7 +38,12 @@ class ValyuToolSpec(BaseToolSpec):
             api_key (str): Valyu API key
             verbose (bool): Enable verbose logging. Defaults to False
             max_price (Optional[float]): Maximum cost in dollars for search operations. Defaults to 100
-            fast_mode (bool): Enable fast mode for faster but shorter results. Good for general purpose queries. Defaults to False
+            relevance_threshold (float): Minimum relevance score required for results (0.0-1.0). Defaults to 0.5
+            fast_mode (Optional[bool]): Enable fast mode for faster but shorter results. If None, model can decide per search. Defaults to None
+            included_sources (Optional[List[str]]): List of URLs, domains or datasets to only search over and return in results. Defaults to None
+            excluded_sources (Optional[List[str]]): List of URLs, domains or datasets to exclude from search results. Defaults to None
+            response_length (Optional[Union[int, str]]): Number of characters to return per item or preset values: "short" (25k chars), "medium" (50k chars), "large" (100k chars), "max" (full content). Defaults to None
+            country_code (Optional[str]): 2-letter ISO country code (e.g., "GB", "US") to bias search results to a specific country. Defaults to None
             contents_summary (Optional[Union[bool, str, Dict[str, Any]]]): AI summary configuration:
                 - False/None: No AI processing (raw content)
                 - True: Basic automatic summarization
@@ -66,11 +72,60 @@ class ValyuToolSpec(BaseToolSpec):
         ):
             raise ValueError("max_price must be a non-negative number or None")
 
+        if (
+            not isinstance(relevance_threshold, (int, float))
+            or relevance_threshold < 0.0
+            or relevance_threshold > 1.0
+        ):
+            raise ValueError("relevance_threshold must be a number between 0.0 and 1.0")
+
         if not isinstance(verbose, bool):
             raise ValueError("verbose must be a boolean")
 
-        if not isinstance(fast_mode, bool):
-            raise ValueError("fast_mode must be a boolean")
+        if fast_mode is not None and not isinstance(fast_mode, bool):
+            raise ValueError("fast_mode must be a boolean or None")
+
+        # Validate search parameters
+        if included_sources is not None:
+            if not isinstance(included_sources, list) or not all(
+                isinstance(s, str) for s in included_sources
+            ):
+                raise ValueError("included_sources must be a list of strings or None")
+
+        if excluded_sources is not None:
+            if not isinstance(excluded_sources, list) or not all(
+                isinstance(s, str) for s in excluded_sources
+            ):
+                raise ValueError("excluded_sources must be a list of strings or None")
+
+        # Validate response_length
+        if response_length is not None:
+            valid_preset_lengths = ["short", "medium", "large", "max"]
+            if isinstance(response_length, str):
+                if response_length not in valid_preset_lengths:
+                    raise ValueError(
+                        f"response_length string must be one of {valid_preset_lengths}"
+                    )
+            elif isinstance(response_length, int):
+                if response_length < 1:
+                    raise ValueError(
+                        "response_length must be a positive integer when using custom length"
+                    )
+            else:
+                raise ValueError(
+                    "response_length must be a string preset, positive integer, or None"
+                )
+
+        # Validate country_code
+        if country_code is not None:
+            if (
+                not isinstance(country_code, str)
+                or len(country_code) != 2
+                or not country_code.isalpha()
+            ):
+                raise ValueError(
+                    "country_code must be a 2-letter ISO country code (e.g., 'GB', 'US') or None"
+                )
 
         # Validate contents_summary
         if contents_summary is not None:
@@ -116,7 +171,13 @@ class ValyuToolSpec(BaseToolSpec):
         self.client = Valyu(api_key=api_key)
         self._verbose = verbose
         self._max_price = max_price
+        self._relevance_threshold = relevance_threshold
         self._fast_mode = fast_mode
+        # Search API defaults
+        self._included_sources = included_sources
+        self._excluded_sources = excluded_sources
+        self._response_length = response_length
+        self._country_code = country_code
         # Contents API defaults
         self._contents_summary = contents_summary
         self._contents_extract_effort = contents_extract_effort
@@ -127,14 +188,8 @@ class ValyuToolSpec(BaseToolSpec):
         query: str,
         search_type: str = "all",
         max_num_results: int = 5,
-        relevance_threshold: float = 0.5,
-        max_price: Optional[float] = None,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
-        included_sources: Optional[List[str]] = None,
-        excluded_sources: Optional[List[str]] = None,
-        response_length: Optional[Union[int, str]] = None,
-        country_code: Optional[str] = None,
         fast_mode: Optional[bool] = None,
     ) -> List[Document]:
         """
@@ -144,38 +199,39 @@ class ValyuToolSpec(BaseToolSpec):
             query (str): The input query to be processed
             search_type (str): Type of search - "all" (both proprietary and web), "proprietary" (Valyu indices only), or "web" (web search only). Defaults to "all"
             max_num_results (int): Maximum number of results to return (1-20). Defaults to 5
-            relevance_threshold (float): Minimum relevance score required for results (0.0-1.0). Defaults to 0.5
-            max_price (Optional[float]): Maximum cost in dollars for this search. Defaults to 20.0
             start_date (Optional[str]): Start date for time filtering in YYYY-MM-DD format
             end_date (Optional[str]): End date for time filtering in YYYY-MM-DD format
-            included_sources (Optional[List[str]]): List of URLs, domains or datasets to only search over and return in results
-            excluded_sources (Optional[List[str]]): List of URLs, domains or datasets to exclude from search results
-            response_length (Optional[Union[int, str]]): Number of characters to return per item or preset values: "short" (25k chars), "medium" (50k chars), "large" (100k chars), "max" (full content)
-            country_code (Optional[str]): 2-letter ISO country code (e.g., "GB", "US") to bias search results to a specific country
-            fast_mode (Optional[bool]): Enable fast mode for faster but shorter results. Good for general purpose queries. If None, uses the default set during initialization. Defaults to False
+            fast_mode (Optional[bool]): Enable fast mode for faster but shorter results. If None, uses the default set during initialization, or model can decide if no default was set
 
         Returns:
             List[Document]: List of Document objects containing the search results
 
-        """
-        if max_price is None:
-            max_price = self._max_price
+        Note:
+            The following parameters are set during tool initialization and cannot be modified per search:
+            - max_price: Maximum cost limit for search operations
+            - relevance_threshold: Minimum relevance score required for results
+            - included_sources: List of sources to include in search
+            - excluded_sources: List of sources to exclude from search
+            - response_length: Response length configuration
+            - country_code: Country bias for search results
 
+        """
+        # Handle fast_mode: use user default if set, otherwise let model decide
         if fast_mode is None:
-            fast_mode = self._fast_mode
+            fast_mode = self._fast_mode  # This could be None, which lets model decide
 
         response = self.client.search(
             query=query,
             search_type=search_type,
             max_num_results=max_num_results,
-            relevance_threshold=relevance_threshold,
-            max_price=max_price,
+            relevance_threshold=self._relevance_threshold,
+            max_price=self._max_price,
             start_date=start_date,
             end_date=end_date,
-            included_sources=included_sources,
-            excluded_sources=excluded_sources,
-            response_length=response_length,
-            country_code=country_code,
+            included_sources=self._included_sources,
+            excluded_sources=self._excluded_sources,
+            response_length=self._response_length,
+            country_code=self._country_code,
             fast_mode=fast_mode,
         )
 
