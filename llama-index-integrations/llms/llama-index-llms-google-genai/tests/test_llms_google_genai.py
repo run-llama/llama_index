@@ -722,6 +722,14 @@ async def test_prepare_chat_params_more_than_2_tool_calls():
     test_messages = [
         ChatMessage(content="Find me a puppy.", role=MessageRole.USER),
         ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                ThinkingBlock(
+                    content="The user is asking me for a puppy, so I should search for puppies using the available tools."
+                )
+            ],
+        ),
+        ChatMessage(
             content="Let me search for puppies.",
             role=MessageRole.ASSISTANT,
             additional_kwargs={
@@ -765,6 +773,10 @@ async def test_prepare_chat_params_more_than_2_tool_calls():
         ),
         types.Content(
             parts=[
+                types.Part(
+                    text="The user is asking me for a puppy, so I should search for puppies using the available tools.",
+                    thought=True,
+                ),
                 types.Part(text="Let me search for puppies."),
                 types.Part.from_function_call(name="tool_1", args=None),
                 types.Part.from_function_call(name="tool_2", args=None),

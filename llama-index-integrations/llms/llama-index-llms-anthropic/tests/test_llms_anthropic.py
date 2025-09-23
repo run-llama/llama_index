@@ -385,6 +385,24 @@ def test_cache_point_to_cache_control() -> None:
     assert ant_messages[0]["content"][-1]["cache_control"]["ttl"] == "5m"
 
 
+def test_thinking_input():
+    messages = [
+        ChatMessage(
+            role="assistant",
+            blocks=[
+                ThinkingBlock(content="Hello"),
+                TextBlock(text="World"),
+            ],
+        ),
+    ]
+    ant_messages, _ = messages_to_anthropic_messages(messages)
+    assert ant_messages[0]["role"] == "assistant"
+    assert ant_messages[0]["content"][0]["type"] == "thinking"
+    assert ant_messages[0]["content"][0]["thinking"] == "Hello"
+    assert ant_messages[0]["content"][1]["type"] == "text"
+    assert ant_messages[0]["content"][1]["text"] == "World"
+
+
 @pytest.mark.skipif(
     os.getenv("ANTHROPIC_API_KEY") is None,
     reason="Anthropic API key not available to test Anthropic document uploading ",

@@ -17,7 +17,7 @@ from llama_index.llms.openai.responses import OpenAIResponses, ResponseFunctionT
 from llama_index.llms.openai.utils import to_openai_message_dicts
 from llama_index.core.tools import FunctionTool
 from llama_index.core.prompts import PromptTemplate
-from openai.types.responses.response_reasoning_item import Content
+from openai.types.responses.response_reasoning_item import Content, Summary
 from openai.types.responses import (
     ResponseOutputMessage,
     ResponseTextDeltaEvent,
@@ -573,9 +573,18 @@ def test_messages_to_openai_responses_messages():
         ChatMessage(role=MessageRole.USER, content="What is the capital of France?"),
         ChatMessage(role=MessageRole.ASSISTANT, content="Paris"),
         ChatMessage(role=MessageRole.USER, content="What is the capital of Germany?"),
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                ThinkingBlock(
+                    content="The user is asking a simple question related to the capital of Germany, I should answer it concisely"
+                ),
+                TextBlock(text="Berlin"),
+            ],
+        ),
     ]
     openai_messages = to_openai_message_dicts(messages, is_responses_api=True)
-    assert len(openai_messages) == 4
+    assert len(openai_messages) == 5
     assert openai_messages[0]["role"] == "developer"
     assert openai_messages[0]["content"] == "You are a helpful assistant."
     assert openai_messages[1]["role"] == "user"
@@ -584,6 +593,10 @@ def test_messages_to_openai_responses_messages():
     assert openai_messages[2]["content"] == "Paris"
     assert openai_messages[3]["role"] == "user"
     assert openai_messages[3]["content"] == "What is the capital of Germany?"
+    assert openai_messages[4]["role"] == "assistant"
+    assert len(openai_messages[4]["content"]) == 2
+    assert openai_messages[4]["content"][0]["text"] == messages[4].blocks[0].content
+    assert openai_messages[4]["content"][1]["text"] == messages[4].blocks[1].text
 
 
 @pytest.fixture()
@@ -605,6 +618,25 @@ def response_output() -> List[ResponseOutputItem]:
             summary=[],
             type="reasoning",
             content=[Content(text="another test", type="reasoning_text")],
+            encrypted_content=None,
+            status=None,
+        ),
+        ResponseReasoningItem(
+            id="1",
+            summary=[Summary(text="hello", type="summary_text")],
+            type="reasoning",
+            content=[Content(text="another test", type="reasoning_text")],
+            encrypted_content=None,
+            status=None,
+        ),
+        ResponseReasoningItem(
+            id="1",
+            summary=[
+                Summary(text="hello", type="summary_text"),
+                Summary(text="world", type="summary_text"),
+            ],
+            type="reasoning",
+            content=None,
             encrypted_content=None,
             status=None,
         ),
@@ -635,7 +667,7 @@ def test__parse_response_output(response_output: List[ResponseOutputItem]):
                 if isinstance(block, ThinkingBlock)
             ]
         )
-        == 2
+        == 4
     )
     assert (
         len([block for block in result.message.blocks if isinstance(block, TextBlock)])
@@ -647,3 +679,9 @@ def test__parse_response_output(response_output: List[ResponseOutputItem]):
     assert [
         block for block in result.message.blocks if isinstance(block, ThinkingBlock)
     ][1].content == "another test"
+    assert [
+        block for block in result.message.blocks if isinstance(block, ThinkingBlock)
+    ][2].content == "another test\nhello"
+    assert [
+        block for block in result.message.blocks if isinstance(block, ThinkingBlock)
+    ][3].content == "hello\nworld"

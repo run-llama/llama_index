@@ -470,7 +470,10 @@ def to_openai_responses_message_dict(
 
     for block in message.blocks:
         if isinstance(block, TextBlock):
-            content.append({"type": "input_text", "text": block.text})
+            if message.role.value == "user":
+                content.append({"type": "input_text", "text": block.text})
+            else:
+                content.append({"type": "output_text", "text": block.text})
             content_txt += block.text
         elif isinstance(block, DocumentBlock):
             if not block.data:
@@ -507,21 +510,9 @@ def to_openai_responses_message_dict(
                     }
                 )
         elif isinstance(block, ThinkingBlock):
-            # handle OpenAI thinking blocks
-            if block.additional_information.get("id"):
-                content.append(
-                    {
-                        "id": block.additional_information.get("id"),
-                        "type": "reasoning",
-                        "summary": block.additional_information.get("summary", None)
-                        or [],
-                    }
-                )
-            else:
-                # handle thinking blocks coming from other LLM providers as text messages
-                if block.content:
-                    content.append({"type": "input_text", "text": block.content})
-                    content_txt += block.content
+            if block.content:
+                content.append({"type": "output_text", "text": block.content})
+                content_txt += block.content
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
@@ -565,9 +556,6 @@ def to_openai_responses_message_dict(
             tool_call if isinstance(tool_call, dict) else tool_call.model_dump()
             for tool_call in message.additional_kwargs["tool_calls"]
         ]
-
-        if "reasoning" in message.additional_kwargs:  # and if it is reasoning model
-            message_dicts = [message.additional_kwargs["reasoning"]] + message_dicts
 
         return message_dicts
 

@@ -488,10 +488,17 @@ class OpenAIResponses(FunctionCallingLLM):
                 content: Optional[str] = None
                 if item.content:
                     content = "\n".join([i.text for i in item.content])
+                if item.summary:
+                    if content:
+                        content += "\n" + "\n".join([i.text for i in item.summary])
+                    else:
+                        content = "\n".join([i.text for i in item.summary])
                 message.blocks.append(
                     ThinkingBlock(
                         content=content,
-                        additional_information=item.model_dump(exclude={"content"}),
+                        additional_information=item.model_dump(
+                            exclude={"content", "summary"}
+                        ),
                     )
                 )
 

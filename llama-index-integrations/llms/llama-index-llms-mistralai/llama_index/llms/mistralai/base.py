@@ -63,6 +63,7 @@ from mistralai.models import (
     TextChunk,
     ImageURLChunk,
     ContentChunk,
+    ThinkChunk,
 )
 
 if TYPE_CHECKING:
@@ -78,6 +79,11 @@ def to_mistral_chunks(content_blocks: Sequence[ContentBlock]) -> Sequence[Conten
     for content_block in content_blocks:
         if isinstance(content_block, TextBlock):
             content_chunks.append(TextChunk(text=content_block.text))
+        elif isinstance(content_block, ThinkingBlock):
+            if content_block.content:
+                content_chunks.append(
+                    ThinkChunk(thinking=[TextChunk(text=content_block.content)])
+                )
         elif isinstance(content_block, ImageBlock):
             if content_block.url:
                 content_chunks.append(ImageURLChunk(image_url=str(content_block.url)))
