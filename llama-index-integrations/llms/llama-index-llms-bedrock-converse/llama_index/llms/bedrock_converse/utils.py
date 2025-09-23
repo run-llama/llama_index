@@ -1,7 +1,7 @@
 import base64
 import json
 import logging
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 from tenacity import (
     before_sleep_log,
     retry,
@@ -493,7 +493,7 @@ def converse_with_retry(
     model: str,
     messages: Sequence[Dict[str, Any]],
     max_retries: int = 3,
-    system_prompt: Optional[str | Sequence[Dict[str, Any]]] = None,
+    system_prompt: Optional[Union[str, Sequence[Dict[str, Any]]]] = None,
     tool_caching: bool = False,
     max_tokens: int = 1000,
     temperature: float = 0.1,
@@ -556,7 +556,7 @@ async def converse_with_retry_async(
     model: str,
     messages: Sequence[Dict[str, Any]],
     max_retries: int = 3,
-    system_prompt: Optional[str] = None,
+    system_prompt: Optional[Union[str, Sequence[Dict[str, Any]]]] = None,
     tool_caching: bool = False,
     max_tokens: int = 1000,
     temperature: float = 0.1,
