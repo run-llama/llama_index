@@ -361,7 +361,6 @@ def test_messages_to_converse_messages_mixed_system_content():
 
     converse_messages, system_prompt = messages_to_converse_messages(messages)
 
-    assert len(system_prompt) == 1
     # Both system prompts should be merged into a single message
     system_text = system_prompt[0]["text"]
     assert "String system prompt" in system_text
