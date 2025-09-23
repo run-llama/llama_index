@@ -263,6 +263,7 @@ def test_messages_to_converse_messages_with_cache_point_supported_model():
 
     assert len(converse_messages) == 1
     assert converse_messages[0]["role"] == "user"
+    # Should produce 3 parts: text + cache_point + text
     assert len(system_prompt) == 3
     assert "System context part 1" in system_prompt[0]["text"]
     assert system_prompt[1]["cachePoint"]["type"] == "default"
@@ -275,8 +276,6 @@ def test_messages_to_converse_messages_with_cache_point_supported_model():
     # Verify total input vs output consistency
     input_system_messages = [msg for msg in messages if msg.role == MessageRole.SYSTEM]
     assert len(input_system_messages) == 1  # We provided 1 system message
-    # Should produce 3 parts: text + cache_point + text
-    assert len(system_prompt) == 3
 
 
 def test_messages_to_converse_messages_with_cache_point_unsupported_model(caplog):
@@ -315,8 +314,6 @@ def test_messages_to_converse_messages_with_cache_point_unsupported_model(caplog
     # Verify total input vs output consistency
     input_system_messages = [msg for msg in messages if msg.role == MessageRole.SYSTEM]
     assert len(input_system_messages) == 1  # We provided 1 system message
-    # Should produce 2 parts (cache point omitted): text + text
-    assert len(system_prompt) == 2
 
 
 def test_messages_to_converse_messages_with_cache_point_no_model():
