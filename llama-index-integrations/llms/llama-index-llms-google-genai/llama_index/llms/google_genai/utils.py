@@ -203,7 +203,7 @@ def chat_from_gemini_response(
 async def create_file_part(
     file_bytes: bytes, mime_type: str, use_file_api: bool, client: Optional[Client]
 ) -> types.PartUnion:
-    """Create a part object for the given file."""
+    """Create a Part or File object for the given file depending on its size."""
     if (
         not use_file_api
         or len(file_bytes)
@@ -289,12 +289,15 @@ async def chat_message_to_gemini(
         elif isinstance(block, DocumentBlock):
             file_buffer = block.resolve_document()
             file_bytes = file_buffer.read()
-            mimetype = (
+            mime_type = (
                 block.document_mimetype
                 if block.document_mimetype is not None
                 else "application/pdf"
             )
-            part = types.Part.from_bytes(data=file_bytes, mime_type=mimetype)
+            part = await create_file_part(file_bytes, mime_type, use_file_api, client)
+
+            if isinstance(part, types.File):
+                return part  # Return the file as it is a message content and not a part
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)

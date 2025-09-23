@@ -284,13 +284,20 @@ class SingleStoreVectorStore(BasePydanticVectorStore):
                 try:
                     logger.debug("vector field: %s", formatted_vector)
                     logger.debug("similarity_top_k: %s", similarity_top_k)
-                    cur.execute(
+                    query = (
                         f"SELECT {self.content_field}, {self.metadata_field}, "
                         f"DOT_PRODUCT({self.vector_field}, "
                         "JSON_ARRAY_PACK(%s)) as similarity_score "
                         f"FROM {self.table_name} {where_clause} "
-                        f"ORDER BY similarity_score DESC LIMIT {similarity_top_k}",
-                        (formatted_vector, *tuple(where_clause_values)),
+                        "ORDER BY similarity_score DESC LIMIT %s"
+                    )
+                    cur.execute(
+                        query,
+                        (
+                            formatted_vector,
+                            *tuple(where_clause_values),
+                            similarity_top_k,
+                        ),
                     )
                     results = cur.fetchall()
                 finally:

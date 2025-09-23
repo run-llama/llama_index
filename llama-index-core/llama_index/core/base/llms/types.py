@@ -539,6 +539,10 @@ class ChatMessage(BaseModel):
             }
         if isinstance(value, list):
             return [self._recursive_serialization(item) for item in value]
+
+        if isinstance(value, bytes):
+            return base64.b64encode(value).decode("utf-8")
+
         return value
 
     @field_serializer("additional_kwargs", check_fields=False)
