@@ -46,6 +46,54 @@ class ValyuRetriever(BaseRetriever):
         """
         from valyu import Valyu
 
+        # Validate parameters
+        if not api_key or not isinstance(api_key, str) or not api_key.strip():
+            raise ValueError("api_key must be a non-empty string")
+
+        if not isinstance(verbose, bool):
+            raise ValueError("verbose must be a boolean")
+
+        # Validate contents_summary
+        if contents_summary is not None:
+            if isinstance(contents_summary, str):
+                if len(contents_summary) > 500:
+                    raise ValueError(
+                        f"contents_summary string must be 500 characters or less. "
+                        f"Current length: {len(contents_summary)} characters."
+                    )
+            elif not isinstance(contents_summary, (bool, dict)):
+                raise ValueError(
+                    "contents_summary must be a boolean, string, dict, or None"
+                )
+
+        # Validate contents_extract_effort
+        valid_extract_efforts = ["normal", "high", "auto"]
+        if (
+            contents_extract_effort is not None
+            and contents_extract_effort not in valid_extract_efforts
+        ):
+            raise ValueError(
+                f"contents_extract_effort must be one of {valid_extract_efforts}"
+            )
+
+        # Validate contents_response_length
+        if contents_response_length is not None:
+            valid_preset_lengths = ["short", "medium", "large", "max"]
+            if isinstance(contents_response_length, str):
+                if contents_response_length not in valid_preset_lengths:
+                    raise ValueError(
+                        f"contents_response_length string must be one of {valid_preset_lengths}"
+                    )
+            elif isinstance(contents_response_length, int):
+                if contents_response_length < 1:
+                    raise ValueError(
+                        "contents_response_length must be a positive integer when using custom length"
+                    )
+            else:
+                raise ValueError(
+                    "contents_response_length must be a string preset, positive integer, or None"
+                )
+
         self.client = Valyu(api_key=api_key)
         self._verbose = verbose
         self._contents_summary = contents_summary

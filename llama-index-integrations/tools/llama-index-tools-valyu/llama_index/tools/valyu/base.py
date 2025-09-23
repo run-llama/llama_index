@@ -19,14 +19,99 @@ class ValyuToolSpec(BaseToolSpec):
         api_key: str,
         verbose: bool = False,
         max_price: Optional[float] = 100,
-        fast_mode: bool = False,
+        fast_mode: Optional[bool] = None,
+        # Search API parameters
+        included_sources: Optional[List[str]] = None,
+        excluded_sources: Optional[List[str]] = None,
+        response_length: Optional[Union[int, str]] = None,
+        country_code: Optional[str] = None,
         # Contents API parameters
         contents_summary: Optional[Union[bool, str, Dict[str, Any]]] = None,
         contents_extract_effort: Optional[str] = "normal",
         contents_response_length: Optional[Union[str, int]] = "short",
     ) -> None:
-        """Initialize with parameters."""
+        """
+        Initialize with parameters.
+
+        Args:
+            api_key (str): Valyu API key
+            verbose (bool): Enable verbose logging. Defaults to False
+            max_price (Optional[float]): Maximum cost in dollars for search operations. Defaults to 100
+            fast_mode (bool): Enable fast mode for faster but shorter results. Good for general purpose queries. Defaults to False
+            contents_summary (Optional[Union[bool, str, Dict[str, Any]]]): AI summary configuration:
+                - False/None: No AI processing (raw content)
+                - True: Basic automatic summarization
+                - str: Custom instructions (max 500 chars)
+                - dict: JSON schema for structured extraction
+            contents_extract_effort (Optional[str]): Extraction thoroughness:
+                - "normal": Fast extraction (default)
+                - "high": More thorough but slower
+                - "auto": Automatically determine extraction effort but slowest
+            contents_response_length (Optional[Union[str, int]]): Content length per URL:
+                - "short": 25,000 characters (default)
+                - "medium": 50,000 characters
+                - "large": 100,000 characters
+                - "max": No limit
+                - int: Custom character limit
+
+        """
         from valyu import Valyu
+
+        # Validate parameters
+        if not api_key or not isinstance(api_key, str) or not api_key.strip():
+            raise ValueError("api_key must be a non-empty string")
+
+        if max_price is not None and (
+            not isinstance(max_price, (int, float)) or max_price < 0
+        ):
+            raise ValueError("max_price must be a non-negative number or None")
+
+        if not isinstance(verbose, bool):
+            raise ValueError("verbose must be a boolean")
+
+        if not isinstance(fast_mode, bool):
+            raise ValueError("fast_mode must be a boolean")
+
+        # Validate contents_summary
+        if contents_summary is not None:
+            if isinstance(contents_summary, str):
+                if len(contents_summary) > 500:
+                    raise ValueError(
+                        f"contents_summary string must be 500 characters or less. "
+                        f"Current length: {len(contents_summary)} characters."
+                    )
+            elif not isinstance(contents_summary, (bool, dict)):
+                raise ValueError(
+                    "contents_summary must be a boolean, string, dict, or None"
+                )
+
+        # Validate contents_extract_effort
+        valid_extract_efforts = ["normal", "high", "auto"]
+        if (
+            contents_extract_effort is not None
+            and contents_extract_effort not in valid_extract_efforts
+        ):
+            raise ValueError(
+                f"contents_extract_effort must be one of {valid_extract_efforts}"
+            )
+
+        # Validate contents_response_length
+        if contents_response_length is not None:
+            valid_preset_lengths = ["short", "medium", "large", "max"]
+            if isinstance(contents_response_length, str):
+                if contents_response_length not in valid_preset_lengths:
+                    raise ValueError(
+                        f"contents_response_length string must be one of {valid_preset_lengths}"
+                    )
+            elif isinstance(contents_response_length, int):
+                if contents_response_length < 1:
+                    raise ValueError(
+                        "contents_response_length must be a positive integer when using custom length"
+                    )
+            else:
+                raise ValueError(
+                    "contents_response_length must be a string preset, positive integer, or None"
+                )
 
         self.client = Valyu(api_key=api_key)
         self._verbose = verbose
@@ -67,7 +152,7 @@ class ValyuToolSpec(BaseToolSpec):
             excluded_sources (Optional[List[str]]): List of URLs, domains or datasets to exclude from search results
             response_length (Optional[Union[int, str]]): Number of characters to return per item or preset values: "short" (25k chars), "medium" (50k chars), "large" (100k chars), "max" (full content)
             country_code (Optional[str]): 2-letter ISO country code (e.g., "GB", "US") to bias search results to a specific country
-            fast_mode (Optional[bool]): Enable fast mode for faster but shorter results. Good for general purpose queries. If None, uses the default set during initialization. Defaults to None
+            fast_mode (Optional[bool]): Enable fast mode for faster but shorter results. Good for general purpose queries. If None, uses the default set during initialization. Defaults to False
 
         Returns:
             List[Document]: List of Document objects containing the search results
