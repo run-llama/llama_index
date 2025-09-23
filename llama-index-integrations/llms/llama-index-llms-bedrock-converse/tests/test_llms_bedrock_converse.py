@@ -73,6 +73,19 @@ def bedrock_converse_integration():
         aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
         max_tokens=EXP_MAX_TOKENS,
+        system_prompt_caching=True,
+    )
+
+
+@pytest.fixture(scope="module")
+def bedrock_converse_integration_no_system_prompt_caching_param():
+    """Create a BedrockConverse instance for integration tests with proper credentials."""
+    return BedrockConverse(
+        model=EXP_MODEL,
+        region_name=os.getenv("AWS_REGION", "us-east-1"),
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        max_tokens=EXP_MAX_TOKENS,
     )
 
 
@@ -821,7 +834,7 @@ async def test_bedrock_converse_agent_with_void_tool_and_continued_conversation(
 @needs_aws_creds
 @pytest.mark.asyncio
 async def test_bedrock_converse_integration_system_prompt_cache_points(
-    bedrock_converse_integration,
+    bedrock_converse_integration_no_system_prompt_caching_param,
 ):
     """
     Test system prompt cache point functionality with BedrockConverse integration.
@@ -834,7 +847,7 @@ async def test_bedrock_converse_integration_system_prompt_cache_points(
     Uses a system prompt with 1026+ tokens to exceed the 1024 token minimum for caching.
     Each test run uses a unique random identifier to ensure fresh cache creation.
     """
-    llm = bedrock_converse_integration
+    llm = bedrock_converse_integration_no_system_prompt_caching_param
 
     # Generate a unique random string for this test run to ensure fresh cache
     # Use fixed length to ensure consistent token counting
@@ -916,3 +929,69 @@ async def test_bedrock_converse_integration_system_prompt_cache_points(
         f"Cache efficiency seems off. Write: {cache_write_tokens_1}, "
         f"Read: {cache_read_tokens_2}, Ratio: {cache_efficiency_ratio:.2f}"
     )
+
+
+@needs_aws_creds
+@pytest.mark.asyncio
+async def test_bedrock_converse_integration_system_prompt_caching_auto_write(
+    bedrock_converse_integration,
+):
+    """
+    Test automatic system prompt cache writing when system_prompt_caching=True.
+
+    This test verifies:
+    1. Cache write tokens are properly recorded on first call
+
+
+    Uses the bedrock_converse_integration fixture which has system_prompt_caching=True.
+    Each test run uses a unique random identifier to ensure fresh cache creation.
+    """
+    llm = bedrock_converse_integration
+
+    # Generate a unique random string for this test run to ensure fresh cache
+    # Use fixed length to ensure consistent token counting
+    random_id = "".join(random.choices(string.ascii_letters + string.digits, k=8))
+
+    # Create a system prompt with enough tokens for automatic caching
+    # The system_prompt_caching=True should automatically cache system prompts >= 1024 tokens
+    base_text = (
+        f"You are an AI assistant specialized in {random_id} analysis and research. "
+    )
+
+    # Calculate repetitions needed to exceed 1024 tokens (using conservative estimate of 12 tokens per repetition)
+    target_tokens = 1100  # Target slightly above minimum to ensure we exceed 1024
+    estimated_tokens_per_repetition = 12
+    repetitions = target_tokens // estimated_tokens_per_repetition
+
+    # Create system prompt that will be automatically cached
+    large_system_prompt = base_text * repetitions + (
+        "Please provide detailed, helpful, and accurate responses. "
+        "Focus on delivering high-quality information with proper context and examples."
+    )
+
+    # First call - should trigger automatic cache write for system prompt
+    messages = [
+        ChatMessage(
+            role=MessageRole.SYSTEM,
+            content=large_system_prompt,
+        ),
+        ChatMessage(
+            role=MessageRole.USER,
+            content="What are the key benefits of renewable energy?",
+        ),
+    ]
+
+    response = await llm.achat(messages=messages)
+
+    # Verify cache write tokens are present (first call should write to cache automatically)
+    additional_kwargs = getattr(response, "additional_kwargs", {})
+    assert "cache_creation_input_tokens" in additional_kwargs, (
+        "First call should show cache creation tokens when system_prompt_caching=True"
+    )
+    cache_write_tokens = additional_kwargs.get("cache_creation_input_tokens", 0)
+    assert cache_write_tokens > 0, (
+        f"Expected cache write tokens > 0 with automatic caching, got {cache_write_tokens}"
+    )
+
+    # Verify response is meaningful
+    assert len(str(response.message.content)) > 50, "Response should be substantial"

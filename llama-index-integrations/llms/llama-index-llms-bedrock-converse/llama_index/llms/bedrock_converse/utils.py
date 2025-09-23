@@ -494,6 +494,7 @@ def converse_with_retry(
     messages: Sequence[Dict[str, Any]],
     max_retries: int = 3,
     system_prompt: Optional[Union[str, Sequence[Dict[str, Any]]]] = None,
+    system_prompt_caching: bool = False,
     tool_caching: bool = False,
     max_tokens: int = 1000,
     temperature: float = 0.1,
@@ -513,14 +514,20 @@ def converse_with_retry(
             "temperature": temperature,
         },
     }
-    if isinstance(system_prompt, str):
-        # if the system prompt is a simple text (for retro compatibility)
-        system_messages: list[dict[str, Any]] = [{"text": system_prompt}]
+    if system_prompt:
+        if isinstance(system_prompt, str):
+            # if the system prompt is a simple text (for retro compatibility)
+            system_messages: list[dict[str, Any]] = [{"text": system_prompt}]
+        else:
+            system_messages: list[dict[str, Any]] = system_prompt
+        if (
+            system_prompt_caching
+            and len(system_messages) > 0
+            and system_messages[-1].get("cachePoint", None) is None
+        ):
+            # "Adding cache point to system prompt if not present"
+            system_messages.append({"cachePoint": {"type": "default"}})
         converse_kwargs["system"] = system_messages
-    elif system_prompt:
-        system_messages: list[dict[str, Any]] = system_prompt
-        converse_kwargs["system"] = system_messages
-
     if tool_config := kwargs.get("tools"):
         converse_kwargs["toolConfig"] = tool_config
 
@@ -557,6 +564,7 @@ async def converse_with_retry_async(
     messages: Sequence[Dict[str, Any]],
     max_retries: int = 3,
     system_prompt: Optional[Union[str, Sequence[Dict[str, Any]]]] = None,
+    system_prompt_caching: bool = False,
     tool_caching: bool = False,
     max_tokens: int = 1000,
     temperature: float = 0.1,
@@ -578,12 +586,19 @@ async def converse_with_retry_async(
         },
     }
 
-    if isinstance(system_prompt, str):
-        # if the system prompt is a simple text (for retro compatibility)
-        system_messages: list[dict[str, Any]] = [{"text": system_prompt}]
-        converse_kwargs["system"] = system_messages
-    elif system_prompt:
-        system_messages: list[dict[str, Any]] = system_prompt
+    if system_prompt:
+        if isinstance(system_prompt, str):
+            # if the system prompt is a simple text (for retro compatibility)
+            system_messages: list[dict[str, Any]] = [{"text": system_prompt}]
+        else:
+            system_messages: list[dict[str, Any]] = system_prompt
+        if (
+            system_prompt_caching
+            and len(system_messages) > 0
+            and system_messages[-1].get("cachePoint", None) is None
+        ):
+            # "Adding cache point to system prompt if not present"
+            system_messages.append({"cachePoint": {"type": "default"}})
         converse_kwargs["system"] = system_messages
 
     if tool_config := kwargs.get("tools"):
