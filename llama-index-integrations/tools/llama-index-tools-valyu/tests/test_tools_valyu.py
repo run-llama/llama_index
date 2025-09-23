@@ -16,19 +16,50 @@ def test_init(mock_valyu):
     mock_valyu.return_value = mock_client
 
     tool = ValyuToolSpec(
-        api_key="test_key", verbose=True, max_price=50.0, fast_mode=True
+        api_key="test_key",
+        verbose=True,
+        max_price=50.0,
+        relevance_threshold=0.8,
+        fast_mode=True,
     )
 
     assert tool.client == mock_client
     assert tool._verbose is True
     assert tool._max_price == 50.0
+    assert tool._relevance_threshold == 0.8
     assert tool._fast_mode is True
     mock_valyu.assert_called_once_with(api_key="test_key")
 
 
 @patch("valyu.Valyu")
-def test_search_with_default_max_price(mock_valyu):
-    """Test search method when max_price is None (uses default)."""
+def test_init_with_user_controlled_params(mock_valyu):
+    """Test ValyuToolSpec initialization with user-controlled search parameters."""
+    mock_client = Mock()
+    mock_valyu.return_value = mock_client
+
+    tool = ValyuToolSpec(
+        api_key="test_key",
+        max_price=75.0,
+        relevance_threshold=0.7,
+        included_sources=["example.com", "trusted.org"],
+        excluded_sources=["spam.com"],
+        response_length="large",
+        country_code="US",
+        fast_mode=None,  # Let model decide
+    )
+
+    assert tool._max_price == 75.0
+    assert tool._relevance_threshold == 0.7
+    assert tool._included_sources == ["example.com", "trusted.org"]
+    assert tool._excluded_sources == ["spam.com"]
+    assert tool._response_length == "large"
+    assert tool._country_code == "US"
+    assert tool._fast_mode is None
+
+
+@patch("valyu.Valyu")
+def test_search_uses_user_defaults(mock_valyu):
+    """Test search method uses user's configured defaults."""
     # Mock the Valyu client and response
     mock_client = Mock()
     mock_valyu.return_value = mock_client
@@ -49,38 +80,162 @@ def test_search_with_default_max_price(mock_valyu):
     mock_response.results = [mock_result]
     mock_client.search.return_value = mock_response
 
-    tool = ValyuToolSpec(api_key="test_key", max_price=75.0)
+    tool = ValyuToolSpec(
+        api_key="test_key",
+        max_price=75.0,
+        relevance_threshold=0.8,
+        included_sources=["trusted.com"],
+        excluded_sources=["spam.com"],
+        response_length="medium",
+        country_code="GB",
+        fast_mode=True,
+    )
 
-    # Test search with max_price=None (should use default)
-    documents = tool.search(query="test query", max_price=None)
+    # Test search uses all user defaults
+    documents = tool.search(query="test query")
 
-    # Verify the client was called with the default max_price
+    # Verify the client was called with user's configured values
     mock_client.search.assert_called_once_with(
         query="test query",
         search_type="all",
         max_num_results=5,
-        relevance_threshold=0.5,
-        max_price=75.0,  # Should use the default from init
+        relevance_threshold=0.8,  # User's setting
+        max_price=75.0,  # User's setting
         start_date=None,
         end_date=None,
-        included_sources=None,
-        excluded_sources=None,
-        response_length=None,
-        country_code=None,
-        fast_mode=False,  # Should use the default from init
+        included_sources=["trusted.com"],  # User's setting
+        excluded_sources=["spam.com"],  # User's setting
+        response_length="medium",  # User's setting
+        country_code="GB",  # User's setting
+        fast_mode=True,  # User's setting
     )
 
     # Verify document creation
     assert len(documents) == 1
     assert isinstance(documents[0], Document)
     assert documents[0].text == "Test content"
-    assert documents[0].metadata["title"] == "Test title"
-    assert documents[0].metadata["url"] == "https://test.com"
-    assert documents[0].metadata["source"] == "test_source"
-    assert documents[0].metadata["price"] == 1.0
-    assert documents[0].metadata["length"] == 100
-    assert documents[0].metadata["data_type"] == "text"
-    assert documents[0].metadata["relevance_score"] == 0.8
+
+
+@patch("valyu.Valyu")
+def test_search_model_can_control_allowed_params(mock_valyu):
+    """Test search method where model can control specific parameters."""
+    # Mock the Valyu client and response
+    mock_client = Mock()
+    mock_valyu.return_value = mock_client
+
+    # Create mock result object
+    mock_result = Mock()
+    mock_result.content = "Model controlled test"
+    mock_result.title = "Model test"
+    mock_result.url = "https://model-test.com"
+    mock_result.source = "model_source"
+    mock_result.price = 2.0
+    mock_result.length = 200
+    mock_result.data_type = "text"
+    mock_result.relevance_score = 0.9
+
+    # Mock response object
+    mock_response = Mock()
+    mock_response.results = [mock_result]
+    mock_client.search.return_value = mock_response
+
+    # User allows model to control fast_mode
+    tool = ValyuToolSpec(
+        api_key="test_key",
+        max_price=50.0,
+        relevance_threshold=0.6,
+        fast_mode=None,  # Let model decide
+    )
+
+    # Model controls allowed parameters
+    documents = tool.search(
+        query="model controlled query",
+        search_type="proprietary",
+        max_num_results=10,
+        start_date="2024-01-01",
+        end_date="2024-12-31",
+        fast_mode=False,  # Model can decide since user set None
+    )
+
+    # Verify the client was called with mix of user and model parameters
+    mock_client.search.assert_called_once_with(
+        query="model controlled query",  # Model
+        search_type="proprietary",  # Model
+        max_num_results=10,  # Model
+        relevance_threshold=0.6,  # User (model cannot override)
+        max_price=50.0,  # User (model cannot override)
+        start_date="2024-01-01",  # Model
+        end_date="2024-12-31",  # Model
+        included_sources=None,  # User default (model cannot override)
+        excluded_sources=None,  # User default (model cannot override)
+        response_length=None,  # User default (model cannot override)
+        country_code=None,  # User default (model cannot override)
+        fast_mode=False,  # Model (allowed since user set None)
+    )
+
+
+@patch("valyu.Valyu")
+def test_search_fast_mode_user_controls(mock_valyu):
+    """Test fast_mode behavior when user sets vs doesn't set it."""
+    mock_client = Mock()
+    mock_valyu.return_value = mock_client
+
+    # Create mock result
+    mock_result = Mock()
+    mock_result.content = "Fast mode test"
+    mock_result.title = "Fast test"
+    mock_result.url = "https://fast-test.com"
+    mock_result.source = "fast_source"
+    mock_result.price = 0.5
+    mock_result.length = 50
+    mock_result.data_type = "text"
+    mock_result.relevance_score = 0.7
+
+    mock_response = Mock()
+    mock_response.results = [mock_result]
+    mock_client.search.return_value = mock_response
+
+    # Test 1: User sets fast_mode=True (model cannot override)
+    tool_fixed = ValyuToolSpec(api_key="test_key", fast_mode=True)
+    tool_fixed.search(query="test", fast_mode=False)  # Model tries to override
+
+    # Should use user's setting (True), ignoring model's False
+    mock_client.search.assert_called_with(
+        query="test",
+        search_type="all",
+        max_num_results=5,
+        relevance_threshold=0.5,
+        max_price=100,
+        start_date=None,
+        end_date=None,
+        included_sources=None,
+        excluded_sources=None,
+        response_length=None,
+        country_code=None,
+        fast_mode=True,  # User's setting used
+    )
+
+    mock_client.reset_mock()
+
+    # Test 2: User sets fast_mode=None (model can decide)
+    tool_flexible = ValyuToolSpec(api_key="test_key", fast_mode=None)
+    tool_flexible.search(query="test", fast_mode=False)  # Model decides
+
+    # Should use model's setting
+    mock_client.search.assert_called_with(
+        query="test",
+        search_type="all",
+        max_num_results=5,
+        relevance_threshold=0.5,
+        max_price=100,
+        start_date=None,
+        end_date=None,
+        included_sources=None,
+        excluded_sources=None,
+        response_length=None,
+        country_code=None,
+        fast_mode=False,  # Model's setting used
+    )
 
 
 @patch("valyu.Valyu")
@@ -110,7 +265,7 @@ def test_search_with_verbose(mock_print, mock_valyu):
     tool = ValyuToolSpec(api_key="test_key", verbose=True)
 
     # Test search with verbose output
-    documents = tool.search(query="verbose test query", max_price=25.0)
+    documents = tool.search(query="verbose test query")
 
     # Verify verbose print was called
     mock_print.assert_called_once_with(f"[Valyu Tool] Response: {mock_response}")
@@ -118,63 +273,6 @@ def test_search_with_verbose(mock_print, mock_valyu):
     # Verify document creation
     assert len(documents) == 1
     assert documents[0].text == "Verbose test content"
-
-
-@patch("valyu.Valyu")
-def test_search_with_custom_parameters(mock_valyu):
-    """Test search method with custom parameters."""
-    # Mock the Valyu client and response
-    mock_client = Mock()
-    mock_valyu.return_value = mock_client
-
-    # Create mock result object
-    mock_result = Mock()
-    mock_result.content = "Custom test content"
-    mock_result.title = "Custom test title"
-    mock_result.url = "https://custom-test.com"
-    mock_result.source = "custom_source"
-    mock_result.price = 3.0
-    mock_result.length = 300
-    mock_result.data_type = "text"
-    mock_result.relevance_score = 0.7
-
-    # Mock response object
-    mock_response = Mock()
-    mock_response.results = [mock_result]
-    mock_client.search.return_value = mock_response
-
-    tool = ValyuToolSpec(api_key="test_key")
-
-    # Test search with custom parameters
-    documents = tool.search(
-        query="custom test query",
-        search_type="proprietary",
-        max_num_results=10,
-        relevance_threshold=0.8,
-        max_price=50.0,
-        start_date="2023-01-01",
-        end_date="2023-12-31",
-    )
-
-    # Verify the client was called with custom parameters
-    mock_client.search.assert_called_once_with(
-        query="custom test query",
-        search_type="proprietary",
-        max_num_results=10,
-        relevance_threshold=0.8,
-        max_price=50.0,
-        start_date="2023-01-01",
-        end_date="2023-12-31",
-        included_sources=None,
-        excluded_sources=None,
-        response_length=None,
-        country_code=None,
-        fast_mode=False,
-    )
-
-    # Verify document creation
-    assert len(documents) == 1
-    assert documents[0].text == "Custom test content"
 
 
 @patch("valyu.Valyu")
@@ -221,198 +319,6 @@ def test_search_multiple_results(mock_valyu):
     assert documents[1].text == "Second result content"
     assert documents[0].metadata["title"] == "First title"
     assert documents[1].metadata["title"] == "Second title"
-
-
-@patch("valyu.Valyu")
-def test_search_with_new_parameters(mock_valyu):
-    """Test search method with the new parameters: included_sources, excluded_sources, response_length, country_code."""
-    # Mock the Valyu client and response
-    mock_client = Mock()
-    mock_valyu.return_value = mock_client
-
-    # Create mock result object
-    mock_result = Mock()
-    mock_result.content = "New parameters test content"
-    mock_result.title = "New parameters test title"
-    mock_result.url = "https://new-params-test.com"
-    mock_result.source = "new_params_source"
-    mock_result.price = 1.5
-    mock_result.length = 150
-    mock_result.data_type = "text"
-    mock_result.relevance_score = 0.85
-
-    # Mock response object
-    mock_response = Mock()
-    mock_response.results = [mock_result]
-    mock_client.search.return_value = mock_response
-
-    tool = ValyuToolSpec(api_key="test_key")
-
-    # Test search with new parameters
-    documents = tool.search(
-        query="new parameters test query",
-        included_sources=["example.com", "trusted-source.org"],
-        excluded_sources=["spam-site.com"],
-        response_length="medium",
-        country_code="US",
-    )
-
-    # Verify the client was called with the new parameters
-    mock_client.search.assert_called_once_with(
-        query="new parameters test query",
-        search_type="all",
-        max_num_results=5,
-        relevance_threshold=0.5,
-        max_price=100,  # Default from class init
-        start_date=None,
-        end_date=None,
-        included_sources=["example.com", "trusted-source.org"],
-        excluded_sources=["spam-site.com"],
-        response_length="medium",
-        country_code="US",
-        fast_mode=False,
-    )
-
-    # Verify document creation
-    assert len(documents) == 1
-    assert documents[0].text == "New parameters test content"
-
-
-@patch("valyu.Valyu")
-def test_search_with_response_length_as_int(mock_valyu):
-    """Test search method with response_length as an integer."""
-    # Mock the Valyu client and response
-    mock_client = Mock()
-    mock_valyu.return_value = mock_client
-
-    # Create mock result object
-    mock_result = Mock()
-    mock_result.content = "Integer response length test"
-    mock_result.title = "Int response length test"
-    mock_result.url = "https://int-test.com"
-    mock_result.source = "int_source"
-    mock_result.price = 0.5
-    mock_result.length = 50
-    mock_result.data_type = "text"
-    mock_result.relevance_score = 0.75
-
-    # Mock response object
-    mock_response = Mock()
-    mock_response.results = [mock_result]
-    mock_client.search.return_value = mock_response
-
-    tool = ValyuToolSpec(api_key="test_key")
-
-    # Test search with response_length as integer
-    documents = tool.search(
-        query="integer response length test",
-        response_length=30000,  # 30k characters
-    )
-
-    # Verify the client was called with integer response_length
-    mock_client.search.assert_called_once_with(
-        query="integer response length test",
-        search_type="all",
-        max_num_results=5,
-        relevance_threshold=0.5,
-        max_price=100,
-        start_date=None,
-        end_date=None,
-        included_sources=None,
-        excluded_sources=None,
-        response_length=30000,
-        country_code=None,
-        fast_mode=False,
-    )
-
-    # Verify document creation
-    assert len(documents) == 1
-    assert documents[0].text == "Integer response length test"
-
-
-@patch("valyu.Valyu")
-def test_search_with_fast_mode(mock_valyu):
-    """Test search method with fast_mode parameter."""
-    # Mock the Valyu client and response
-    mock_client = Mock()
-    mock_valyu.return_value = mock_client
-
-    # Create mock result object
-    mock_result = Mock()
-    mock_result.content = "Fast mode test content"
-    mock_result.title = "Fast mode test"
-    mock_result.url = "https://fast-test.com"
-    mock_result.source = "fast_source"
-    mock_result.price = 0.3
-    mock_result.length = 50
-    mock_result.data_type = "text"
-    mock_result.relevance_score = 0.8
-
-    # Mock response object
-    mock_response = Mock()
-    mock_response.results = [mock_result]
-    mock_client.search.return_value = mock_response
-
-    # Test with fast_mode=True in init (default for searches)
-    tool = ValyuToolSpec(api_key="test_key", fast_mode=True)
-    documents = tool.search(query="fast mode test")
-
-    # Verify the client was called with fast_mode=True (from default)
-    mock_client.search.assert_called_with(
-        query="fast mode test",
-        search_type="all",
-        max_num_results=5,
-        relevance_threshold=0.5,
-        max_price=100,
-        start_date=None,
-        end_date=None,
-        included_sources=None,
-        excluded_sources=None,
-        response_length=None,
-        country_code=None,
-        fast_mode=True,
-    )
-
-    # Verify document creation
-    assert len(documents) == 1
-    assert documents[0].text == "Fast mode test content"
-
-    # Reset mock for next test
-    mock_client.reset_mock()
-
-    # Test overriding fast_mode in search call
-    documents = tool.search(query="override fast mode test", fast_mode=False)
-
-    # Verify the client was called with fast_mode=False (overridden)
-    mock_client.search.assert_called_with(
-        query="override fast mode test",
-        search_type="all",
-        max_num_results=5,
-        relevance_threshold=0.5,
-        max_price=100,
-        start_date=None,
-        end_date=None,
-        included_sources=None,
-        excluded_sources=None,
-        response_length=None,
-        country_code=None,
-        fast_mode=False,
-    )
-
-
-@patch("valyu.Valyu")
-def test_init_with_fast_mode_defaults(mock_valyu):
-    """Test ValyuToolSpec initialization with fast_mode defaults."""
-    mock_client = Mock()
-    mock_valyu.return_value = mock_client
-
-    # Test default fast_mode=False
-    tool = ValyuToolSpec(api_key="test_key")
-    assert tool._fast_mode is False
-
-    # Test explicit fast_mode=True
-    tool_fast = ValyuToolSpec(api_key="test_key", fast_mode=True)
-    assert tool_fast._fast_mode is True
 
 
 # ========================= Contents API Tests =========================

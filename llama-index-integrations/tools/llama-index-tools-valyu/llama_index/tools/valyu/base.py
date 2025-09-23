@@ -21,7 +21,7 @@ class ValyuToolSpec(BaseToolSpec):
         # Search API parameters
         max_price: Optional[float] = 100,
         relevance_threshold: float = 0.5,
-        fast_mode: Optional[bool] = None,
+        fast_mode: Optional[bool] = False,
         included_sources: Optional[List[str]] = None,
         excluded_sources: Optional[List[str]] = None,
         response_length: Optional[Union[int, str]] = None,
@@ -39,7 +39,7 @@ class ValyuToolSpec(BaseToolSpec):
             verbose (bool): Enable verbose logging. Defaults to False
             max_price (Optional[float]): Maximum cost in dollars for search operations. Defaults to 100
             relevance_threshold (float): Minimum relevance score required for results (0.0-1.0). Defaults to 0.5
-            fast_mode (Optional[bool]): Enable fast mode for faster but shorter results. If None, model can decide per search. Defaults to None
+            fast_mode (Optional[bool]): Enable fast mode for faster but shorter results. If None, model can decide per search (defaults to False if not specified). Defaults to None
             included_sources (Optional[List[str]]): List of URLs, domains or datasets to only search over and return in results. Defaults to None
             excluded_sources (Optional[List[str]]): List of URLs, domains or datasets to exclude from search results. Defaults to None
             response_length (Optional[Union[int, str]]): Number of characters to return per item or preset values: "short" (25k chars), "medium" (50k chars), "large" (100k chars), "max" (full content). Defaults to None
@@ -201,7 +201,7 @@ class ValyuToolSpec(BaseToolSpec):
             max_num_results (int): Maximum number of results to return (1-20). Defaults to 5
             start_date (Optional[str]): Start date for time filtering in YYYY-MM-DD format
             end_date (Optional[str]): End date for time filtering in YYYY-MM-DD format
-            fast_mode (Optional[bool]): Enable fast mode for faster but shorter results. If None, uses the default set during initialization, or model can decide if no default was set
+            fast_mode (Optional[bool]): Enable fast mode for faster but shorter results. If None, uses the default set during initialization, or defaults to False if no user default was set
 
         Returns:
             List[Document]: List of Document objects containing the search results
@@ -216,9 +216,13 @@ class ValyuToolSpec(BaseToolSpec):
             - country_code: Country bias for search results
 
         """
-        # Handle fast_mode: use user default if set, otherwise let model decide
-        if fast_mode is None:
-            fast_mode = self._fast_mode  # This could be None, which lets model decide
+        # Handle fast_mode: if user set a specific value (not None), always use it
+        # If user set None, then model can decide, but we need to provide a boolean to the SDK
+        if self._fast_mode is not None:
+            fast_mode = self._fast_mode  # User controls fast_mode
+        elif fast_mode is None:
+            # Both user and model didn't specify, use SDK default (False)
+            fast_mode = False
 
         response = self.client.search(
             query=query,
