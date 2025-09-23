@@ -897,7 +897,6 @@ async def test_bedrock_converse_integration_system_prompt_cache_points(
         ),
     ]
 
-    print("Making second call to test cache reading...")
     response_2 = await llm.achat(messages=cache_test_messages_2)
 
     # Verify cache read tokens are present (second call should read from cache)
@@ -908,11 +907,6 @@ async def test_bedrock_converse_integration_system_prompt_cache_points(
     cache_read_tokens_2 = additional_kwargs_2.get("cache_read_input_tokens", 0)
     assert cache_read_tokens_2 > 0, (
         f"Expected cache read tokens > 0, got {cache_read_tokens_2}"
-    )
-
-    print(f"Second call - Cache read tokens: {cache_read_tokens_2}")
-    print(
-        f"Second call - Total input tokens: {additional_kwargs_2.get('prompt_tokens', 0)}"
     )
 
     # Verify cache efficiency - cache read tokens should be close to cache write tokens
