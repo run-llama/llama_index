@@ -95,7 +95,7 @@ def changelog(obj: dict) -> None:
             click.echo(f"\n### {group_name}\n")
             prs = sorted(groups[group_name], key=lambda p: p["number"])
             for pr in prs:
-                click.echo(f"* [#{pr['number']}]({pr['url']}) {pr['title']}")
+                click.echo(f"- {pr['title']} ([#{pr['number']}]({pr['url']}))")
 
     except RuntimeError as e:
         click.echo(f"Error: {e}", err=True)
