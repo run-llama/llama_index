@@ -228,9 +228,19 @@ def docker_setup():
 
 def is_responsive(url: str) -> bool:
     try:
+        # Test basic connectivity first
         response = requests.get(url)
-        return response.status_code == 200
-    except ConnectionError:
+        if response.status_code != 200:
+            return False
+
+        # Test Solr admin API to ensure it's fully ready
+        admin_response = requests.get(f"{url}/solr/admin/cores?action=STATUS")
+        return admin_response.status_code == 200
+    except (
+        ConnectionError,
+        requests.exceptions.Timeout,
+        requests.exceptions.RequestException,
+    ):
         return False
 
 
@@ -317,6 +327,51 @@ def function_unique_solr_collection_url(docker_solr_url: str) -> Iterator[str]:
 
     # remove the collection
     delete_collection(docker_solr_url, collection_name)
+
+
+@pytest.fixture()
+def function_unique_solr_with_knn_collection_url(
+    function_unique_solr_collection_url: str,
+) -> str:
+    """
+    Add KNN schema to an existing Solr collection for vector search testing.
+    """
+    base_url, collection_name = function_unique_solr_collection_url.rsplit(
+        "/", maxsplit=1
+    )
+    schema_url = f"{base_url}/{collection_name}/schema"
+
+    # Check if vector field already exists
+    field_check = requests.get(f"{schema_url}/fields/vector_field")
+
+    if field_check.status_code != 200:
+        # Field doesn't exist, add the schema
+        schema_update = {
+            "add-field-type": {
+                "name": "knn_vector_64",
+                "class": "solr.DenseVectorField",
+                "vectorDimension": 64,
+                "similarityFunction": "cosine",
+                "knnAlgorithm": "hnsw",
+            },
+            "add-field": {
+                "name": "vector_field",
+                "type": "knn_vector_64",
+                "indexed": True,
+                "stored": True,
+            },
+        }
+
+        resp = requests.post(
+            schema_url, json=schema_update, headers={"Content-Type": "application/json"}
+        )
+        assert resp.status_code == 200, (
+            f"Failed to add KNN schema, code={resp.status_code}: {resp.text}"
+        )
+
+    return function_unique_solr_collection_url
+
+    # The collection cleanup is handled by the parent fixture
 
 
 def compare_documents(

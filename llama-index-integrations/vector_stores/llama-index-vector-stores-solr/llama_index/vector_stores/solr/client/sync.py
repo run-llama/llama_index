@@ -47,6 +47,14 @@ class SyncSolrClient(_BaseSolrClient):
             )
         return client
 
+    def close(self) -> None:
+        """Close the underlying Solr client session."""
+        if self._client:
+            logger.debug("Closing the Solr client session")
+            # pysolr doesn't expose a close method, so we directly close the underlying session
+            self._client.get_session().close()
+            self._client = None
+
     def search(
         self, query_params: Mapping[str, Any], **kwargs: Any
     ) -> SolrSelectResponse:
