@@ -1,9 +1,10 @@
 import json
 import re
 import subprocess
-from collections import defaultdict
 
 import click
+
+from llama_dev.utils import find_all_packages, get_changed_packages, load_pyproject
 
 
 def run_command(command: str) -> str:
@@ -28,6 +29,7 @@ def changelog(obj: dict) -> None:
     """  # noqa
     console = obj["console"]
     repo_root = obj["repo_root"]
+    all_packages = find_all_packages(repo_root)
 
     try:
         # Get the latest git tag
@@ -46,8 +48,8 @@ def changelog(obj: dict) -> None:
         if not pr_numbers:
             raise click.ClickException("No pull requests found since the last tag.")
 
-        groups = defaultdict(list)
-        integration_pattern = re.compile(r"^llama-index-integrations/[^/]+/([^/]+)")
+        package_prs = {}
+        package_versions = {}
 
         with click.progressbar(sorted(pr_numbers), label="Fetching PR details") as bar:
             for pr_number in bar:
@@ -56,44 +58,35 @@ def changelog(obj: dict) -> None:
                         f"gh pr view {pr_number} --json number,title,url,files"
                     )
                     pr_data = json.loads(pr_json_str)
-                    files = [f["path"] for f in pr_data.get("files", [])]
+                    files = [repo_root / f["path"] for f in pr_data.get("files", [])]
 
-                    assigned_group = None
-                    for file_path in files:
-                        if file_path.startswith("llama-index-core/"):
-                            assigned_group = "llama-index-core"
-                            break
-                        elif file_path.startswith("llama-dev/"):
-                            assigned_group = "llama-dev"
-                            break
-                        elif file_path.startswith("llama-index-integrations/"):
-                            match = integration_pattern.match(file_path)
-                            if match:
-                                integration_name = match.group(1)
-                                assigned_group = integration_name
-                                break
+                    changed_packages = get_changed_packages(files, all_packages)
+                    for pkg in changed_packages:
+                        pkg_name = pkg.name
+                        if pkg_name not in package_prs:
+                            package_prs[pkg_name] = []
+                            package_data = load_pyproject(pkg)
+                            ver = package_data["project"]["version"]
+                            package_versions[pkg_name] = ver
 
-                    if assigned_group:
-                        groups[assigned_group].append(pr_data)
+                        package_prs[pkg_name].append(pr_data)
 
-                except RuntimeError as e:
-                    click.echo(
-                        f"\nWarning: Could not fetch details for PR #{pr_number}. {e}",
-                        err=True,
-                    )
-                except FileNotFoundError:
-                    click.ClickException(
-                        "Error: 'gh' command not found. "
-                        "Please ensure it's installed and in your PATH."
+                except Exception as e:
+                    console.print(
+                        f"Warning: Could not fetch details for PR #{pr_number}. {e}",
+                        style="error",
                     )
 
         # Generate the markdown output
-        sorted_groups = sorted(groups.keys())
-        for group_name in sorted_groups:
-            click.echo(f"\n### {group_name}\n")
-            prs = sorted(groups[group_name], key=lambda p: p["number"])
+        sorted_pkgs = sorted(package_prs.keys())
+        for pkg in sorted_pkgs:
+            click.echo(f"\n### {pkg} [{package_versions[pkg]}]\n")
+            prs = sorted(package_prs[pkg], key=lambda p: p["number"])
             for pr in prs:
                 click.echo(f"- {pr['title']} ([#{pr['number']}]({pr['url']}))")
 
-    except RuntimeError as e:
-        click.echo(f"Error: {e}", err=True)
+    except FileNotFoundError:
+        click.ClickException(
+            "Error: 'gh' command not found. "
+            "Please ensure it's installed and in your PATH."
+        )
