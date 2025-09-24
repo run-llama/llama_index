@@ -722,6 +722,7 @@ nav:
           - ./examples/vector_stores/WeaviateIndex_metadata_filter.ipynb
           - ./examples/vector_stores/WordLiftDemo.ipynb
           - ./examples/vector_stores/ZepIndexDemo.ipynb
+          - ./examples/vector_stores/azurepostgresql.ipynb
           - ./examples/vector_stores/chroma_auto_retriever.ipynb
           - ./examples/vector_stores/chroma_metadata_filter.ipynb
           - ./examples/vector_stores/db2llamavs.ipynb
@@ -888,7 +889,6 @@ nav:
           - ./api_reference/callbacks/aim.md
           - ./api_reference/callbacks/argilla.md
           - ./api_reference/callbacks/arize_phoenix.md
-          - ./api_reference/callbacks/deepeval.md
           - ./api_reference/callbacks/honeyhive.md
           - ./api_reference/callbacks/index.md
           - ./api_reference/callbacks/langfuse.md
@@ -1448,6 +1448,7 @@ nav:
           - ./api_reference/readers/opensearch.md
           - ./api_reference/readers/oracleai.md
           - ./api_reference/readers/oxylabs.md
+          - ./api_reference/readers/paddle_ocr.md
           - ./api_reference/readers/pandas_ai.md
           - ./api_reference/readers/papers.md
           - ./api_reference/readers/patentsview.md
@@ -1629,6 +1630,7 @@ nav:
               - ./api_reference/storage/vector_store/astra_db.md
               - ./api_reference/storage/vector_store/awadb.md
               - ./api_reference/storage/vector_store/awsdocdb.md
+              - ./api_reference/storage/vector_store/azure_postgres.md
               - ./api_reference/storage/vector_store/azureaisearch.md
               - ./api_reference/storage/vector_store/azurecosmosmongo.md
               - ./api_reference/storage/vector_store/azurecosmosnosql.md
@@ -2503,6 +2505,8 @@ plugins:
             - ../llama-index-integrations/vector_stores/llama-index-vector-stores-vectorx
             - ../llama-index-integrations/retrievers/llama-index-retrievers-alletra-x10000
             - ../llama-index-integrations/readers/llama-index-readers-solr
+            - ../llama-index-integrations/vector_stores/llama-index-vector-stores-azurepostgresql
+            - ../llama-index-integrations/readers/llama-index-readers-paddle-ocr
   - redirects:
       redirect_maps:
         ./api/llama_index.vector_stores.MongoDBAtlasVectorSearch.html: api_reference/storage/vector_store/mongodb.md

@@ -64,6 +64,9 @@ only-include = ["llama_index/"]
 contains_example = false
 import_path = "llama_index.vector_stores.azure_postgres"
 
+[tool.llamahub.class_authors]
+AzurePostgreSQLVectorStore = "llama-index"
+
 # Configuration for pytest, the testing framework used in the project.
 [tool.pytest]
 
