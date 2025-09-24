@@ -4,11 +4,12 @@ import base64
 from pathlib import Path
 from unittest.mock import patch
 
-from mistralai import ToolCall, ImageURLChunk, TextChunk
+from mistralai import ToolCall, ImageURLChunk, TextChunk, ThinkChunk
 import pytest
 
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.llms import ChatMessage, ImageBlock, TextBlock
+from llama_index.core.base.llms.types import ThinkingBlock
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.mistralai import MistralAI
 from llama_index.llms.mistralai.base import to_mistral_chunks
@@ -94,30 +95,16 @@ def test_thinking():
     llm = MistralAI(model="magistral-small-latest", show_thinking=True)
 
     # It will sometimes not think, so we need to guard
-    result = llm.complete("What is the capital of France?")
-    if "thinking" in result.additional_kwargs:
-        assert result.additional_kwargs["thinking"] is not None
-        assert result.additional_kwargs["thinking"] != ""
-        assert "<think>" in result.text
-
     result = llm.chat(
         [ChatMessage(role="user", content="What is the capital of France?")]
     )
-    if "thinking" in result.message.additional_kwargs:
-        assert result.message.additional_kwargs["thinking"] is not None
-        assert result.message.additional_kwargs["thinking"] != ""
-        assert "<think>" in result.message.content
-
-    result = llm.stream_complete("What is the capital of France?")
-    resp = None
-    for resp in result:
-        pass
-
-    assert resp is not None
-    if "thinking" in resp.additional_kwargs:
-        assert resp.additional_kwargs["thinking"] is not None
-        assert resp.additional_kwargs["thinking"] != ""
-        assert "<think>" in resp.text
+    if any(isinstance(block, ThinkingBlock) for block in result.message.blocks):
+        for block in result.message.blocks:
+            if isinstance(block, ThinkingBlock):
+                assert block.content is not None
+                assert block.content != ""
+                assert result.message.content is not None
+                assert "<think>" in result.message.content
 
     result = llm.stream_chat(
         [ChatMessage(role="user", content="What is the capital of France?")]
@@ -127,10 +114,13 @@ def test_thinking():
         pass
 
     assert resp is not None
-    if "thinking" in resp.message.additional_kwargs:
-        assert resp.message.additional_kwargs["thinking"] is not None
-        assert resp.message.additional_kwargs["thinking"] != ""
-        assert "<think>" in resp.message.content
+    if any(isinstance(block, ThinkingBlock) for block in resp.message.blocks):
+        for block in resp.message.blocks:
+            if isinstance(block, ThinkingBlock):
+                assert block.content is not None
+                assert block.content != ""
+                assert resp.message.content is not None
+                assert "<think>" in resp.message.content
 
 
 @pytest.mark.skipif(
@@ -141,18 +131,11 @@ def test_thinking_not_shown():
 
     result = llm.complete("What is the capital of France?")
 
-    if "thinking" in result.additional_kwargs:
-        assert result.additional_kwargs["thinking"] is None
-        assert result.additional_kwargs["thinking"] is None
-        assert "<think>" not in result.text
+    assert "<think>" not in result.text
 
     response_gen = llm.stream_complete("What is the capital of France?")
     resp = None
     for resp in response_gen:
-        assert "<think>" not in resp.text
-
-    if "thinking" in resp.additional_kwargs:
-        assert resp.additional_kwargs["thinking"] is None
         assert "<think>" not in resp.text
 
 
@@ -186,3 +169,18 @@ def test_to_mistral_chunks(tmp_path: Path, image_url: str) -> None:
     assert isinstance(chunks_with_path[1], ImageURLChunk)
     assert isinstance(chunks_with_path[1].image_url, str)
     assert chunks_with_path[1].image_url == f"data:image/png;base64,{expected_b64}"
+    thinking_blocks = [
+        ThinkingBlock(),  # content is None, so should be skipped
+        ThinkingBlock(content="This is a thought"),
+        TextBlock(text="This is some text"),
+    ]
+    thinking_chunks = to_mistral_chunks(thinking_blocks)
+    assert len(thinking_chunks) == 2
+    assert isinstance(thinking_chunks[0], ThinkChunk)
+    assert (
+        len(thinking_chunks[0].thinking) == 1
+        and isinstance(thinking_chunks[0].thinking[0], TextChunk)
+        and thinking_chunks[0].thinking[0].text == "This is a thought"
+    )
+    assert isinstance(thinking_chunks[1], TextChunk)
+    assert thinking_chunks[1].text == "This is some text"

@@ -10,6 +10,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     VideoBlock,
+    ThinkingBlock,
 )
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.program.function_program import get_function_tool
@@ -721,6 +722,14 @@ async def test_prepare_chat_params_more_than_2_tool_calls():
     test_messages = [
         ChatMessage(content="Find me a puppy.", role=MessageRole.USER),
         ChatMessage(
+            role=MessageRole.ASSISTANT,
+            blocks=[
+                ThinkingBlock(
+                    content="The user is asking me for a puppy, so I should search for puppies using the available tools."
+                )
+            ],
+        ),
+        ChatMessage(
             content="Let me search for puppies.",
             role=MessageRole.ASSISTANT,
             additional_kwargs={
@@ -764,6 +773,10 @@ async def test_prepare_chat_params_more_than_2_tool_calls():
         ),
         types.Content(
             parts=[
+                types.Part(
+                    text="The user is asking me for a puppy, so I should search for puppies using the available tools.",
+                    thought=True,
+                ),
                 types.Part(text="Let me search for puppies."),
                 types.Part.from_function_call(name="tool_1", args=None),
                 types.Part.from_function_call(name="tool_2", args=None),
@@ -857,6 +870,7 @@ def test_cached_content_in_response() -> None:
     mock_response.candidates[0].content.role = "model"
     mock_response.candidates[0].content.parts = [MagicMock()]
     mock_response.candidates[0].content.parts[0].text = "Test response"
+    mock_response.candidates[0].content.parts[0].thought = False
     mock_response.candidates[0].content.parts[0].inline_data = None
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = None
@@ -883,6 +897,7 @@ def test_cached_content_without_cached_content() -> None:
     mock_response.candidates[0].content.role = "model"
     mock_response.candidates[0].content.parts = [MagicMock()]
     mock_response.candidates[0].content.parts[0].text = "Test response"
+    mock_response.candidates[0].content.parts[0].thought = False
     mock_response.candidates[0].content.parts[0].inline_data = None
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = None
@@ -911,6 +926,8 @@ def test_thoughts_in_response() -> None:
     mock_response.candidates[0].content.parts[1].text = "This is not a thought."
     mock_response.candidates[0].content.parts[1].inline_data = None
     mock_response.candidates[0].content.parts[1].thought = None
+    mock_response.candidates[0].content.parts[0].model_dump = MagicMock(return_value={})
+    mock_response.candidates[0].content.parts[1].model_dump = MagicMock(return_value={})
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = None
     mock_response.function_calls = None
@@ -921,8 +938,21 @@ def test_thoughts_in_response() -> None:
     chat_response = chat_from_gemini_response(mock_response)
 
     # Verify thoughts in raw response
-    assert "thoughts" in chat_response.message.additional_kwargs
-    assert chat_response.message.additional_kwargs["thoughts"] == "This is a thought."
+    assert (
+        len(
+            [
+                block
+                for block in chat_response.message.blocks
+                if isinstance(block, ThinkingBlock)
+            ]
+        )
+        == 1
+    )
+    assert [  # noqa: RUF015
+        block
+        for block in chat_response.message.blocks
+        if isinstance(block, ThinkingBlock)
+    ][0].content == "This is a thought."
     assert chat_response.message.content == "This is not a thought."
 
 
@@ -940,6 +970,7 @@ def test_thoughts_without_thought_response() -> None:
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = None
     mock_response.function_calls = None
+    mock_response.candidates[0].content.parts[0].model_dump = MagicMock(return_value={})
     # No cached_content attribute
     del mock_response.cached_content
 
@@ -947,7 +978,16 @@ def test_thoughts_without_thought_response() -> None:
     chat_response = chat_from_gemini_response(mock_response)
 
     # Verify no cached_content key in raw response
-    assert "thoughts" not in chat_response.message.additional_kwargs
+    assert (
+        len(
+            [
+                block
+                for block in chat_response.message.blocks
+                if isinstance(block, ThinkingBlock)
+            ]
+        )
+        == 0
+    )
     assert chat_response.message.content == "This is not a thought."
 
 
@@ -1661,8 +1701,21 @@ def test_thoughts_with_streaming() -> None:
     assert final_response is not None
     assert final_response.message is not None
     assert len(final_response.message.content) != 0
-    assert "thoughts" in final_response.message.additional_kwargs
-    assert len(final_response.message.additional_kwargs["thoughts"]) != 0
+    assert any(
+        isinstance(block, ThinkingBlock) for block in final_response.message.blocks
+    )
+    assert (
+        len(
+            "".join(
+                [
+                    block.content or ""
+                    for block in final_response.message.blocks
+                    if isinstance(block, ThinkingBlock)
+                ]
+            )
+        )
+        != 0
+    )
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
@@ -1695,8 +1748,21 @@ async def test_thoughts_with_async_streaming() -> None:
     assert final_response is not None
     assert final_response.message is not None
     assert len(final_response.message.content) != 0
-    assert "thoughts" in final_response.message.additional_kwargs
-    assert len(final_response.message.additional_kwargs["thoughts"]) != 0
+    assert any(
+        isinstance(block, ThinkingBlock) for block in final_response.message.blocks
+    )
+    assert (
+        len(
+            "".join(
+                [
+                    block.content or ""
+                    for block in final_response.message.blocks
+                    if isinstance(block, ThinkingBlock)
+                ]
+            )
+        )
+        != 0
+    )
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
@@ -1721,8 +1787,21 @@ def test_thoughts_with_chat() -> None:
     assert final_response is not None
     assert final_response.message is not None
     assert len(final_response.message.content) != 0
-    assert "thoughts" in final_response.message.additional_kwargs
-    assert len(final_response.message.additional_kwargs["thoughts"]) != 0
+    assert any(
+        isinstance(block, ThinkingBlock) for block in final_response.message.blocks
+    )
+    assert (
+        len(
+            "".join(
+                [
+                    block.content or ""
+                    for block in final_response.message.blocks
+                    if isinstance(block, ThinkingBlock)
+                ]
+            )
+        )
+        != 0
+    )
 
 
 @pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
@@ -1748,5 +1827,18 @@ async def test_thoughts_with_async_chat() -> None:
     assert final_response is not None
     assert final_response.message is not None
     assert len(final_response.message.content) != 0
-    assert "thoughts" in final_response.message.additional_kwargs
-    assert len(final_response.message.additional_kwargs["thoughts"]) != 0
+    assert any(
+        isinstance(block, ThinkingBlock) for block in final_response.message.blocks
+    )
+    assert (
+        len(
+            "".join(
+                [
+                    block.content or ""
+                    for block in final_response.message.blocks
+                    if isinstance(block, ThinkingBlock)
+                ]
+            )
+        )
+        != 0
+    )
