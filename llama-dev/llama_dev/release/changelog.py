@@ -20,14 +20,12 @@ def changelog(obj: dict) -> None:
     """
     Generate the changelog in markdown syntax.
 
+    \b
     This command will:
-        - get the list of GitHub Pull Requests that happened since the last tag `v1.2.3`
+        - get the list of GitHub PRs that happened since the last release tag
         - create a bullet list in Markdown syntax using the PR titles
-        - group the changes depending on the path that changed according to the format:
-           - `llama_index/llama-index-core`
-           - `llama_index/llama-index-integrations/<INTEGRATION_NAME>`
-           - `llama_index/llama-dev`
-    """
+        - group the changes per package, depending on the path that changed
+    """  # noqa
     console = obj["console"]
     repo_root = obj["repo_root"]
 
