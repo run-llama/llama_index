@@ -101,13 +101,16 @@ def resolve_llm(
 
     assert isinstance(llm, LLM)
 
-    llm.callback_manager = callback_manager or Settings.callback_manager
+    llm.callback_manager = (
+        callback_manager or llm.callback_manager or Settings.callback_manager
+    )
 
     return llm
 
 
 def parse_partial_json(s: str) -> Dict:
-    """Parse an incomplete JSON string into a valid python dictionary.
+    """
+    Parse an incomplete JSON string into a valid python dictionary.
 
     NOTE: This is adapted from
     https://github.com/OpenInterpreter/open-interpreter/blob/5b6080fae1f8c68938a1e4fa8667e3744084ee21/interpreter/utils/parse_partial_json.py

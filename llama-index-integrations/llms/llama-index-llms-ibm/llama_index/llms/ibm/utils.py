@@ -1,6 +1,6 @@
 import os
-import urllib.parse
 from typing import Dict, Union, Optional, List, Any
+from ibm_watsonx_ai import APIClient
 
 
 from llama_index.core.base.llms.generic_utils import (
@@ -20,7 +20,6 @@ def resolve_watsonx_credentials(
     token: Optional[str] = None,
     username: Optional[str] = None,
     password: Optional[str] = None,
-    instance_id: Optional[str] = None
 ) -> Dict[str, SecretStr]:
     """
     Resolve watsonx.ai credentials. If the value of given param is None
@@ -31,13 +30,11 @@ def resolve_watsonx_credentials(
     :return: Dictionary with resolved credentials items
     :rtype: Dict[str, SecretStr]
     """
-    creds = {}
-    creds["url"] = convert_to_secret_str(
-        get_from_param_or_env("url", url, "WATSONX_URL")
-    )
+    creds = {
+        "url": convert_to_secret_str(get_from_param_or_env("url", url, "WATSONX_URL"))
+    }
 
-    parsed_url = urllib.parse.urlparse(creds["url"].get_secret_value())
-    if parsed_url.netloc.endswith("cloud.ibm.com"):
+    if creds["url"].get_secret_value() in APIClient.PLATFORM_URLS_MAP:
         if not (apikey or "WATSONX_APIKEY" in os.environ) and not (
             token or "WATSONX_TOKEN" in os.environ
         ):
@@ -97,11 +94,6 @@ def resolve_watsonx_credentials(
                 get_from_param_or_env("username", username, "WATSONX_USERNAME")
             )
 
-        if not instance_id or "WATSONX_INSTANCE_ID" not in os.environ:
-            creds["instance_id"] = convert_to_secret_str(
-                get_from_param_or_env("instance_id", instance_id, "WATSONX_INSTANCE_ID")
-            )
-
     return creds
 
 
@@ -138,7 +130,8 @@ def from_watsonx_message(message: dict) -> ChatMessage:
 
 
 def update_tool_calls(tool_calls: list, tool_calls_update: list):
-    """Use the tool_calls_update objects received from stream chunks
+    """
+    Use the tool_calls_update objects received from stream chunks
     to update the running tool_calls object.
     """
     if tool_calls_update is None:

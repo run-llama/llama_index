@@ -28,6 +28,7 @@ class OPEAEmbedding(OpenAIEmbedding):
             api_base="http://localhost:8080",
         )
         ```
+
     """
 
     def __init__(

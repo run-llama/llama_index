@@ -1,4 +1,5 @@
-"""Tair Vector store index.
+"""
+Tair Vector store index.
 
 An index that is built on top of Alibaba Cloud's Tair database.
 """
@@ -38,7 +39,8 @@ def _to_filter_expr(filters: MetadataFilters) -> str:
 
 
 class TairVectorStore(BasePydanticVectorStore):
-    """Initialize TairVectorStore.
+    """
+    Initialize TairVectorStore.
 
     Two index types are available: FLAT & HNSW.
 
@@ -78,6 +80,7 @@ class TairVectorStore(BasePydanticVectorStore):
             overwrite=True
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -139,13 +142,15 @@ class TairVectorStore(BasePydanticVectorStore):
         return self._tair_client
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add nodes to the index.
+        """
+        Add nodes to the index.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings
 
         Returns:
             List[str]: List of ids of the documents added to the index.
+
         """
         # check to see if empty document list was passed
         if len(nodes) == 0:
@@ -188,7 +193,8 @@ class TairVectorStore(BasePydanticVectorStore):
         return ids
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        """Delete a document.
+        """
+        Delete a document.
 
         Args:
             doc_id (str): document id
@@ -204,7 +210,8 @@ class TairVectorStore(BasePydanticVectorStore):
         self._tair_client.tvs_del_index(self._index_name)
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Query the index.
+        """
+        Query the index.
 
         Args:
             query (VectorStoreQuery): query object
@@ -214,6 +221,7 @@ class TairVectorStore(BasePydanticVectorStore):
 
         Raises:
             ValueError: If query.query_embedding is None.
+
         """
         filter_expr = None
         if query.filters is not None:

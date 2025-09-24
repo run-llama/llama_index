@@ -28,7 +28,8 @@ import atexit
 
 
 class Vllm(LLM):
-    r"""Vllm LLM.
+    r"""
+    Vllm LLM.
 
     This class runs a vLLM model locally.
 
@@ -60,6 +61,7 @@ class Vllm(LLM):
             "What is a black hole?"
         )
         ```
+
     """
 
     model: Optional[str] = Field(description="The HuggingFace Model to use.")
@@ -143,6 +145,11 @@ class Vllm(LLM):
 
     api_url: str = Field(description="The api url for vllm server")
 
+    is_chat_model: bool = Field(
+        default=False,
+        description=LLMMetadata.model_fields["is_chat_model"].description,
+    )
+
     _client: Any = PrivateAttr()
 
     def __init__(
@@ -171,6 +178,7 @@ class Vllm(LLM):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        is_chat_model: Optional[bool] = False,
     ) -> None:
         callback_manager = callback_manager or CallbackManager([])
         super().__init__(
@@ -196,6 +204,7 @@ class Vllm(LLM):
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
+            is_chat_model=is_chat_model,
         )
         if not api_url:
             try:
@@ -211,7 +220,7 @@ class Vllm(LLM):
                 trust_remote_code=trust_remote_code,
                 dtype=dtype,
                 download_dir=download_dir,
-                **vllm_kwargs
+                **vllm_kwargs,
             )
         else:
             self._client = None
@@ -222,7 +231,7 @@ class Vllm(LLM):
 
     @property
     def metadata(self) -> LLMMetadata:
-        return LLMMetadata(model_name=self.model)
+        return LLMMetadata(model_name=self.model, is_chat_model=self.is_chat_model)
 
     @property
     def _model_kwargs(self) -> Dict[str, Any]:
@@ -318,7 +327,8 @@ class Vllm(LLM):
 
 
 class VllmServer(Vllm):
-    r"""Vllm LLM.
+    r"""
+    Vllm LLM.
 
     This class connects to a vLLM server (non-openai versions).
 
@@ -351,6 +361,7 @@ class VllmServer(Vllm):
             "What is a black hole?"
         )
         ```
+
     """
 
     def __init__(
@@ -410,8 +421,7 @@ class VllmServer(Vllm):
     def class_name(cls) -> str:
         return "VllmServer"
 
-    def __del__(self) -> None:
-        ...
+    def __del__(self) -> None: ...
 
     @llm_completion_callback()
     def complete(

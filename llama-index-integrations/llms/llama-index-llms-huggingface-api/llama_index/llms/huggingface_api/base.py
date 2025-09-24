@@ -15,6 +15,9 @@ from llama_index.core.base.llms.generic_utils import (
     completion_response_to_chat_response,
     stream_completion_response_to_chat_response,
     astream_completion_response_to_chat_response,
+    chat_response_to_completion_response,
+    stream_chat_response_to_completion_response,
+    astream_chat_response_to_completion_response,
 )
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -81,6 +84,16 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
             " Face Hub, e.g. bigcode/starcoder or a URL to a deployed Inference"
             " Endpoint. Defaults to None, in which case a recommended model is"
             " automatically selected for the task (see Field below)."
+        ),
+    )
+    provider: str = Field(
+        default="hf-inference",
+        description=(
+            "Name of the provider to use for inference. Can be 'black-forest-labs',"
+            " 'cerebras', 'cohere', 'fal-ai', 'fireworks-ai', 'hf-inference',"
+            " 'hyperbolic', 'nebius', 'novita', 'openai', 'replicate', 'sambanova'"
+            " or 'together'. defaults to hf-inference (Hugging Face Serverless Inference API)."
+            " If model is a URL or `base_url` is passed, then `provider` is not used."
         ),
     )
     token: Union[str, bool, None] = Field(
@@ -160,6 +173,7 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
 
         if kwargs.get("task") is None:
             task = "conversational"
+            kwargs["task"] = task
         else:
             task = kwargs["task"].lower()
 
@@ -185,6 +199,7 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
         """Extract the Hugging Face InferenceClient construction parameters."""
         return {
             "model": self.model_name or self.model,
+            "provider": self.provider,
             "token": self.token,
             "timeout": self.timeout,
             "headers": self.headers,
@@ -295,6 +310,12 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
+        if self.task == "conversational":
+            chat_resp = self.chat(
+                messages=[ChatMessage(role=MessageRole.USER, content=prompt)], **kwargs
+            )
+            return chat_response_to_completion_response(chat_resp)
+
         model_kwargs = self._get_model_kwargs(**kwargs)
         model_kwargs["max_new_tokens"] = model_kwargs["max_tokens"]
         del model_kwargs["max_tokens"]
@@ -331,9 +352,9 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
                             cur_index = tool_call_delta.index
                             tool_call_strs.append(tool_call_delta.function.arguments)
                         else:
-                            tool_call_strs[
-                                cur_index
-                            ] += tool_call_delta.function.arguments
+                            tool_call_strs[cur_index] += (
+                                tool_call_delta.function.arguments
+                            )
 
                     tool_calls = self._parse_streaming_tool_calls(tool_call_strs)
                     additional_kwargs = {"tool_calls": tool_calls} if tool_calls else {}
@@ -356,6 +377,12 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
     def stream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseGen:
+        if self.task == "conversational":
+            chat_gen = self.stream_chat(
+                messages=[ChatMessage(role=MessageRole.USER, content=prompt)], **kwargs
+            )
+            return stream_chat_response_to_completion_response(chat_gen)
+
         model_kwargs = self._get_model_kwargs(**kwargs)
         model_kwargs["max_new_tokens"] = model_kwargs["max_tokens"]
         del model_kwargs["max_tokens"]
@@ -405,6 +432,12 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
     async def acomplete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponse:
+        if self.task == "conversational":
+            chat_resp = await self.achat(
+                messages=[ChatMessage(role=MessageRole.USER, content=prompt)], **kwargs
+            )
+            return chat_response_to_completion_response(chat_resp)
+
         model_kwargs = self._get_model_kwargs(**kwargs)
         model_kwargs["max_new_tokens"] = model_kwargs["max_tokens"]
         del model_kwargs["max_tokens"]
@@ -444,9 +477,9 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
                             cur_index = tool_call_delta.index
                             tool_call_strs.append(tool_call_delta.function.arguments)
                         else:
-                            tool_call_strs[
-                                cur_index
-                            ] += tool_call_delta.function.arguments
+                            tool_call_strs[cur_index] += (
+                                tool_call_delta.function.arguments
+                            )
 
                     tool_calls = self._parse_streaming_tool_calls(tool_call_strs)
 
@@ -475,6 +508,12 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
     async def astream_complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
     ) -> CompletionResponseAsyncGen:
+        if self.task == "conversational":
+            chat_gen = await self.astream_chat(
+                messages=[ChatMessage(role=MessageRole.USER, content=prompt)], **kwargs
+            )
+            return astream_chat_response_to_completion_response(chat_gen)
+
         model_kwargs = self._get_model_kwargs(**kwargs)
         model_kwargs["max_new_tokens"] = model_kwargs["max_tokens"]
         del model_kwargs["max_tokens"]
@@ -501,6 +540,7 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         tool_specs = [
@@ -517,6 +557,7 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
         return {
             "messages": messages,
             "tools": tool_specs or None,
+            "tool_choice": "required" if tool_required else "auto",
         }
 
     def _validate_chat_with_tools_response(
@@ -530,9 +571,9 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
         if not allow_parallel_tool_calls and response.message.additional_kwargs.get(
             "tool_calls", []
         ):
-            response.additional_kwargs[
-                "tool_calls"
-            ] = response.message.additional_kwargs["tool_calls"][0]
+            response.additional_kwargs["tool_calls"] = (
+                response.message.additional_kwargs["tool_calls"][0]
+            )
 
         return response
 
@@ -542,9 +583,9 @@ class HuggingFaceInferenceAPI(FunctionCallingLLM):
         error_on_no_tool_call: bool = True,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
-        tool_calls: List[
-            ChatCompletionOutputToolCall
-        ] = response.message.additional_kwargs.get("tool_calls", [])
+        tool_calls: List[ChatCompletionOutputToolCall] = (
+            response.message.additional_kwargs.get("tool_calls", [])
+        )
         if len(tool_calls) < 1:
             if error_on_no_tool_call:
                 raise ValueError(

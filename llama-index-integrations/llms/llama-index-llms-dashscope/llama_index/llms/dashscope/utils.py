@@ -30,8 +30,12 @@ def dashscope_response_to_chat_response(
         if not content:
             content = ""
         role = response["output"]["choices"][0]["message"]["role"]
+        additional_kwargs = response["output"]["choices"][0]["message"]
         return ChatResponse(
-            message=ChatMessage(role=role, content=content), raw=response
+            message=ChatMessage(
+                role=role, content=content, additional_kwargs=additional_kwargs
+            ),
+            raw=response,
         )
     else:
         return ChatResponse(message=ChatMessage(), raw=response)
@@ -42,5 +46,24 @@ def chat_message_to_dashscope_messages(
 ) -> List[Dict]:
     messages = []
     for msg in chat_messages:
-        messages.append({"role": msg.role.value, "content": msg.content})
+        additional_kwargs = msg.additional_kwargs
+        if msg.role == "assistant":
+            messages.append(
+                {
+                    "role": msg.role.value,
+                    "content": msg.content,
+                    "tool_calls": additional_kwargs.get("tool_calls", []),
+                }
+            )
+        elif msg.role == "tool":
+            messages.append(
+                {
+                    "role": msg.role.value,
+                    "content": msg.content,
+                    "tool_call_id": additional_kwargs.get("tool_call_id", ""),
+                    "name": additional_kwargs.get("name", ""),
+                }
+            )
+        else:
+            messages.append({"role": msg.role.value, "content": msg.content})
     return messages

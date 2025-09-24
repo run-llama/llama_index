@@ -1,4 +1,6 @@
 import json
+import uuid
+from json import JSONDecodeError
 from typing import (
     Any,
     Awaitable,
@@ -50,7 +52,6 @@ from llama_index.llms.litellm.utils import (
     update_tool_calls,
 )
 
-
 DEFAULT_LITELLM_MODEL = "gpt-3.5-turbo"
 
 
@@ -61,7 +62,8 @@ def force_single_tool_call(response: ChatResponse) -> None:
 
 
 class LiteLLM(FunctionCallingLLM):
-    """LiteLLM.
+    """
+    LiteLLM.
 
     Examples:
         `pip install llama-index-llms-litellm`
@@ -87,6 +89,7 @@ class LiteLLM(FunctionCallingLLM):
         # Print the response
         print(chat_response)
         ```
+
     """
 
     model: str = Field(
@@ -167,7 +170,7 @@ class LiteLLM(FunctionCallingLLM):
             **kwargs,
         )
 
-        self._custom_llm_provider = kwargs.get("custom_llm_provider", None)
+        self._custom_llm_provider = kwargs.get("custom_llm_provider")
 
     def _get_model_name(self) -> str:
         model_name = self.model
@@ -201,6 +204,7 @@ class LiteLLM(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         tool_specs = [
@@ -217,6 +221,7 @@ class LiteLLM(FunctionCallingLLM):
             "messages": messages,
             "tools": tool_specs or None,
             "parallel_tool_calls": allow_parallel_tool_calls,
+            "tool_choice": "required" if tool_required else "auto",
             **kwargs,
         }
 
@@ -251,15 +256,30 @@ class LiteLLM(FunctionCallingLLM):
         for tool_call in tool_calls:
             if tool_call["type"] != "function" or "function" not in tool_call:
                 raise ValueError(f"Invalid tool call of type {tool_call['type']}")
-            function = tool_call["function"]
-            argument_dict = json.loads(function["arguments"])
-            tool_selections.append(
-                ToolSelection(
-                    tool_id=tool_call["id"],
-                    tool_name=function["name"],
-                    tool_kwargs=argument_dict,
+
+            function = tool_call.get("function", {})
+            tool_name = function.get("name")
+            arguments = function.get("arguments")
+
+            # this should handle both complete and partial jsons
+            try:
+                if arguments:  # If arguments is not empty/None
+                    argument_dict = json.loads(arguments)
+                else:  # If arguments is None or empty string
+                    argument_dict = {}
+            except (ValueError, TypeError, JSONDecodeError):
+                argument_dict = {}
+
+            if tool_name:  # Only require tool_name, not arguments
+                tool_selections.append(
+                    ToolSelection(
+                        tool_id=tool_call.get("id") or str(uuid.uuid4()),
+                        tool_name=tool_name,
+                        tool_kwargs=argument_dict,
+                    )
                 )
-            )
+        if len(tool_selections) == 0 and error_on_no_tool_call:
+            raise ValueError("No valid tool calls found.")
 
         return tool_selections
 

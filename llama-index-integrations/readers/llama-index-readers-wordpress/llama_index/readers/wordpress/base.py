@@ -1,4 +1,5 @@
 """Wordpress reader."""
+
 import warnings
 from typing import List, Optional
 
@@ -7,7 +8,8 @@ from llama_index.core.schema import Document
 
 
 class WordpressReader(BaseReader):
-    """Wordpress reader. Reads data from a Wordpress workspace.
+    """
+    Wordpress reader. Reads data from a Wordpress workspace.
 
     Args:
         url (str): Base URL of the WordPress site.
@@ -17,6 +19,7 @@ class WordpressReader(BaseReader):
         get_posts (bool): Retrieve WordPress 'posts' (blog entries). Default True.
         additional_post_types (Optional[str]): Comma-separated list of additional post types to retrieve
                                                (e.g., 'my-custom-page,webinars'). Default is None.
+
     """
 
     def __init__(
@@ -52,10 +55,12 @@ class WordpressReader(BaseReader):
         self.post_types = list(self.post_types)
 
     def load_data(self) -> List[Document]:
-        """Load data from the specified post types.
+        """
+        Load data from the specified post types.
 
         Returns:
             List[Document]: List of documents.
+
         """
         from bs4 import BeautifulSoup, GuessedAtParserWarning
 

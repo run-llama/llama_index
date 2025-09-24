@@ -5,7 +5,8 @@ from llama_index.llms.openai_like import OpenAILike
 
 
 class Databricks(OpenAILike):
-    """Databricks LLM.
+    """
+    Databricks LLM.
 
     Examples:
         `pip install llama-index-llms-databricks`
@@ -21,6 +22,7 @@ class Databricks(OpenAILike):
 
         print(response)
         ```
+
     """
 
     def __init__(

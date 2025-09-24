@@ -23,13 +23,15 @@ dispatcher = instrument.get_dispatcher(__name__)
 
 
 class RetrieverQueryEngine(BaseQueryEngine):
-    """Retriever query engine.
+    """
+    Retriever query engine.
 
     Args:
         retriever (BaseRetriever): A retriever object.
         response_synthesizer (Optional[BaseSynthesizer]): A BaseSynthesizer
             object.
         callback_manager (Optional[CallbackManager]): A callback manager.
+
     """
 
     def __init__(
@@ -74,9 +76,11 @@ class RetrieverQueryEngine(BaseQueryEngine):
         output_cls: Optional[Type[BaseModel]] = None,
         use_async: bool = False,
         streaming: bool = False,
+        verbose: bool = False,
         **kwargs: Any,
     ) -> "RetrieverQueryEngine":
-        """Initialize a RetrieverQueryEngine object.".
+        """
+        Initialize a RetrieverQueryEngine object.".
 
         Args:
             retriever (BaseRetriever): A retriever object.
@@ -96,6 +100,8 @@ class RetrieverQueryEngine(BaseQueryEngine):
                 response synthesizer.
             use_async (bool): Whether to use async.
             streaming (bool): Whether to use streaming.
+            verbose (bool): Whether to print verbose output.
+
         """
         llm = llm or Settings.llm
 
@@ -109,6 +115,7 @@ class RetrieverQueryEngine(BaseQueryEngine):
             output_cls=output_cls,
             use_async=use_async,
             streaming=streaming,
+            verbose=verbose,
         )
 
         callback_manager = callback_manager or Settings.callback_manager
@@ -129,13 +136,24 @@ class RetrieverQueryEngine(BaseQueryEngine):
             )
         return nodes
 
+    async def _async_apply_node_postprocessors(
+        self, nodes: List[NodeWithScore], query_bundle: QueryBundle
+    ) -> List[NodeWithScore]:
+        for node_postprocessor in self._node_postprocessors:
+            nodes = await node_postprocessor.apostprocess_nodes(
+                nodes, query_bundle=query_bundle
+            )
+        return nodes
+
     def retrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         nodes = self._retriever.retrieve(query_bundle)
         return self._apply_node_postprocessors(nodes, query_bundle=query_bundle)
 
     async def aretrieve(self, query_bundle: QueryBundle) -> List[NodeWithScore]:
         nodes = await self._retriever.aretrieve(query_bundle)
-        return self._apply_node_postprocessors(nodes, query_bundle=query_bundle)
+        return await self._async_apply_node_postprocessors(
+            nodes, query_bundle=query_bundle
+        )
 
     def with_retriever(self, retriever: BaseRetriever) -> "RetrieverQueryEngine":
         return RetrieverQueryEngine(

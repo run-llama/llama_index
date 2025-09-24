@@ -1,4 +1,5 @@
 """Markdown node parser."""
+
 import re
 from typing import Any, List, Optional, Sequence
 
@@ -11,7 +12,8 @@ from llama_index.core.utils import get_tqdm_iterable
 
 
 class MarkdownNodeParser(NodeParser):
-    """Markdown node parser.
+    """
+    Markdown node parser.
 
     Splits a document into Nodes using Markdown header-based splitting logic.
     Each node contains its text content and the path of headers leading to it.
@@ -20,6 +22,7 @@ class MarkdownNodeParser(NodeParser):
         include_metadata (bool): whether to include metadata in nodes
         include_prev_next_rel (bool): whether to include prev/next relationships
         header_path_separator (str): separator char used for section header path metadata
+
     """
 
     header_path_separator: str = Field(
@@ -116,9 +119,7 @@ class MarkdownNodeParser(NodeParser):
             separator = self.header_path_separator
             node.metadata["header_path"] = (
                 # ex: "/header1/header2/" || "/"
-                separator + header_path + separator
-                if header_path
-                else separator
+                separator + header_path + separator if header_path else separator
             )
 
         return node

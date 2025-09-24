@@ -1,12 +1,14 @@
+from importlib.metadata import version
 from typing import Any, List, Optional
 from datetime import datetime
 
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.llms import ChatMessage
 from llama_index.core.storage.chat_store.base import BaseChatStore
-from pymongo import MongoClient
+from pymongo import MongoClient, AsyncMongoClient
+from pymongo.driver_info import DriverInfo
 from pymongo.collection import Collection
-from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
+from pymongo.asynchronous.collection import AsyncCollection
 
 
 def _message_to_dict(message: ChatMessage) -> dict:
@@ -33,7 +35,7 @@ class MongoChatStore(BaseChatStore):
         default=None, description="Time to live in seconds."
     )
     _mongo_client: Optional[MongoClient] = PrivateAttr()
-    _async_client: Optional[AsyncIOMotorClient] = PrivateAttr()
+    _async_client: Optional[AsyncMongoClient] = PrivateAttr()
 
     def __init__(
         self,
@@ -41,10 +43,10 @@ class MongoChatStore(BaseChatStore):
         db_name: str = "default",
         collection_name: str = "sessions",
         mongo_client: Optional[MongoClient] = None,
-        amongo_client: Optional[AsyncIOMotorClient] = None,
+        amongo_client: Optional[AsyncMongoClient] = None,
         ttl_seconds: Optional[int] = None,
         collection: Optional[Collection] = None,
-        async_collection: Optional[AsyncIOMotorCollection] = None,
+        async_collection: Optional[AsyncCollection] = None,
         **kwargs: Any,
     ) -> None:
         """
@@ -58,11 +60,22 @@ class MongoChatStore(BaseChatStore):
             amongo_client: Optional pre-configured async MongoDB client
             ttl_seconds: Optional time-to-live for messages in seconds
             **kwargs: Additional arguments to pass to MongoDB client
+
         """
         super().__init__(ttl=ttl_seconds)
 
         self._mongo_client = mongo_client or MongoClient(mongo_uri, **kwargs)
-        self._async_client = amongo_client or AsyncIOMotorClient(mongo_uri, **kwargs)
+        self._async_client = amongo_client or AsyncMongoClient(mongo_uri, **kwargs)
+
+        # append_metadata was added in PyMongo 4.14.0, but is a valid database name on earlier versions
+        if callable(self._mongo_client.append_metadata):
+            self._mongo_client.append_metadata(
+                DriverInfo(name="llama-index", version=version("llama-index"))
+            )
+        if callable(self._async_client.append_metadata):
+            self._async_client.append_metadata(
+                DriverInfo(name="llama-index", version=version("llama-index"))
+            )
 
         if collection:
             self._collection = collection
@@ -90,6 +103,7 @@ class MongoChatStore(BaseChatStore):
         Args:
             key: Key to set messages for
             messages: List of ChatMessage objects
+
         """
         # Delete existing messages for this key
         self._collection.delete_many({"session_id": key})
@@ -115,6 +129,7 @@ class MongoChatStore(BaseChatStore):
         Args:
             key: Key to set messages for
             messages: List of ChatMessage objects
+
         """
         # Delete existing messages for this key
         await self._async_collection.delete_many({"session_id": key})
@@ -139,6 +154,7 @@ class MongoChatStore(BaseChatStore):
 
         Args:
             key: Key to get messages for
+
         """
         # Find all messages for this key, sorted by index
         docs = list(self._collection.find({"session_id": key}, sort=[("index", 1)]))
@@ -152,6 +168,7 @@ class MongoChatStore(BaseChatStore):
 
         Args:
             key: Key to get messages for
+
         """
         # Find all messages for this key, sorted by index
         cursor = self._async_collection.find({"session_id": key}).sort("index", 1)
@@ -169,6 +186,7 @@ class MongoChatStore(BaseChatStore):
         Args:
             key: Key to add message for
             message: ChatMessage object to add
+
         """
         if idx is None:
             # Get the current highest index
@@ -196,6 +214,7 @@ class MongoChatStore(BaseChatStore):
         Args:
             key: Key to add message for
             message: ChatMessage object to add
+
         """
         if idx is None:
             # Get the current highest index
@@ -220,6 +239,7 @@ class MongoChatStore(BaseChatStore):
 
         Args:
             key: Key to delete messages for
+
         """
         # Get messages before deleting
         messages = self.get_messages(key)
@@ -235,6 +255,7 @@ class MongoChatStore(BaseChatStore):
 
         Args:
             key: Key to delete messages for
+
         """
         # Get messages before deleting
         messages = await self.aget_messages(key)
@@ -251,6 +272,7 @@ class MongoChatStore(BaseChatStore):
         Args:
             key: Key to delete message for
             idx: Index of message to delete
+
         """
         # Find the message to delete
         doc = self._collection.find_one({"session_id": key, "index": idx})
@@ -274,6 +296,7 @@ class MongoChatStore(BaseChatStore):
         Args:
             key: Key to delete message for
             idx: Index of message to delete
+
         """
         # Find the message to delete
         doc = await self._async_collection.find_one({"session_id": key, "index": idx})
@@ -296,6 +319,7 @@ class MongoChatStore(BaseChatStore):
 
         Args:
             key: Key to delete last message for
+
         """
         # Find the last message
         last_msg_doc = self._collection.find_one(
@@ -316,6 +340,7 @@ class MongoChatStore(BaseChatStore):
 
         Args:
             key: Key to delete last message for
+
         """
         # Find the last message
         last_msg_doc = await self._async_collection.find_one(
@@ -336,6 +361,7 @@ class MongoChatStore(BaseChatStore):
 
         Returns:
             List of session IDs
+
         """
         # Get distinct session IDs
         return self._collection.distinct("session_id")
@@ -346,6 +372,7 @@ class MongoChatStore(BaseChatStore):
 
         Returns:
             List of session IDs
+
         """
         # Get distinct session IDs
         return await self._async_collection.distinct("session_id")

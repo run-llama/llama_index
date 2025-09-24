@@ -23,4 +23,4 @@ described. Submission templates for these other datasets are coming soon!
 
 ## Submission Example
 
-Read the full [submission example Notebook](../../examples/llama_dataset/ragdataset_submission_template.ipynb).
+Read the full [submission example Notebook](/python/examples/llama_dataset/ragdataset_submission_template).

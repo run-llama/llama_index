@@ -5,7 +5,8 @@ from llama_index.llms.openai_like import OpenAILike
 
 
 class NetmindLLM(OpenAILike):
-    """Netmind LLM.
+    """
+    Netmind LLM.
 
     Examples:
         `pip install llama-index-llms-netmind`
@@ -24,6 +25,7 @@ class NetmindLLM(OpenAILike):
         resp = llm.complete("Who is Paul Graham?")
         print(resp)
         ```
+
     """
 
     def __init__(

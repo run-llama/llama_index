@@ -8,7 +8,8 @@ from llama_index.embeddings.openai import OpenAIEmbedding
 
 
 class OpenAILikeEmbedding(OpenAIEmbedding):
-    """OpenAI-Like class for embeddings.
+    """
+    OpenAI-Like class for embeddings.
 
     Args:
         model_name (str):
@@ -49,6 +50,7 @@ class OpenAILikeEmbedding(OpenAIEmbedding):
             embed_batch_size=10,
         )
         ```
+
     """
 
     def __init__(
@@ -89,6 +91,8 @@ class OpenAILikeEmbedding(OpenAIEmbedding):
             reuse_client=reuse_client,
             timeout=timeout,
             default_headers=default_headers,
+            http_client=http_client,
+            async_http_client=async_http_client,
             num_workers=num_workers,
             **kwargs,
         )

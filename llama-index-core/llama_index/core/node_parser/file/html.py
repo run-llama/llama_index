@@ -1,4 +1,5 @@
 """HTML node parser."""
+
 from typing import TYPE_CHECKING, Any, List, Optional, Sequence, Union
 
 from llama_index.core.bridge.pydantic import Field
@@ -15,7 +16,8 @@ DEFAULT_TAGS = ["p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "b", "i", "u", "s
 
 
 class HTMLNodeParser(NodeParser):
-    """HTML node parser.
+    """
+    HTML node parser.
 
     Splits a document into Nodes using custom HTML splitting logic.
 

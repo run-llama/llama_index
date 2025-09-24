@@ -220,24 +220,31 @@ class TestWasonxLLMInference:
     ]
 
     def test_initialization(self) -> None:
-        with pytest.raises(ValueError, match=r"^Did not find") as e_info:
+        with pytest.raises(ValueError, match=r"^Did not find"):
             _ = WatsonxLLM(model=self.TEST_MODEL, project_id=self.TEST_PROJECT_ID)
 
         # Cloud scenario
-        with pytest.raises(
-            ValueError, match=r"^Did not find 'apikey' or 'token',"
-        ) as e_info:
+        with pytest.raises(ValueError, match=r"^Did not find 'apikey' or 'token',"):
             _ = WatsonxLLM(
                 model_id=self.TEST_MODEL,
                 url=self.TEST_URL,
                 project_id=self.TEST_PROJECT_ID,
             )
 
-        # CPD scenario
-        with pytest.raises(ValueError, match=r"^Did not find instance_id") as e_info:
+        # CPD scenario with password and missing username
+        with pytest.raises(ValueError, match=r"^Did not find username"):
             _ = WatsonxLLM(
                 model_id=self.TEST_MODEL,
-                token="123",
+                password="123",
+                url="cpd-instance",
+                project_id=self.TEST_PROJECT_ID,
+            )
+
+        # CPD scenario with apikey and missing username
+        with pytest.raises(ValueError, match=r"^Did not find username"):
+            _ = WatsonxLLM(
+                model_id=self.TEST_MODEL,
+                apikey="123",
                 url="cpd-instance",
                 project_id=self.TEST_PROJECT_ID,
             )
@@ -332,7 +339,7 @@ class TestWasonxLLMInference:
         assert chat_responses[-1].additional_kwargs["completion_tokens"] == 6
         assert chat_responses[-1].additional_kwargs["total_tokens"] == 16
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     @patch("llama_index.llms.ibm.base.ModelInference")
     async def test_complete_async(self, MockModelInference: MagicMock) -> None:
         mock_instance = MockModelInference.return_value
@@ -355,7 +362,7 @@ class TestWasonxLLMInference:
         chat_response = await watsonxllm.achat([message])
         assert chat_response.message.content == "\n\nTEST"
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     @patch("llama_index.llms.ibm.base.ModelInference")
     async def test_stream_async(self, MockModelInference: MagicMock) -> None:
         mock_instance = MockModelInference.return_value

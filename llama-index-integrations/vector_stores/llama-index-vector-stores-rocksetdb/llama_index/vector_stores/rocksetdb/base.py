@@ -24,21 +24,25 @@ T = TypeVar("T", bound="RocksetVectorStore")
 
 
 def _get_rockset() -> ModuleType:
-    """Gets the rockset module and raises an ImportError if
+    """
+    Gets the rockset module and raises an ImportError if
     the rockset package hasn't been installed.
 
     Returns:
         rockset module (ModuleType)
+
     """
     return rockset
 
 
 def _get_client(api_key: str | None, api_server: str | None, client: Any | None) -> Any:
-    """Returns the passed in client object if valid, else
+    """
+    Returns the passed in client object if valid, else
     constructs and returns one.
 
     Returns:
         The rockset client object (rockset.RocksetClient)
+
     """
     rockset = _get_rockset()
     if client:
@@ -57,7 +61,8 @@ def _get_client(api_key: str | None, api_server: str | None, client: Any | None)
 
 
 class RocksetVectorStore(BasePydanticVectorStore):
-    """Rockset Vector Store.
+    """
+    Rockset Vector Store.
 
     Examples:
         `pip install llama-index-vector-stores-rocksetdb`
@@ -75,6 +80,7 @@ class RocksetVectorStore(BasePydanticVectorStore):
             distance_func=RocksetVectorStore.DistanceFunc.DOT_PRODUCT
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -108,7 +114,8 @@ class RocksetVectorStore(BasePydanticVectorStore):
         api_key: str | None = None,
         distance_func: DistanceFunc = DistanceFunc.COSINE_SIM,
     ) -> None:
-        """Rockset Vector Store Data container.
+        """
+        Rockset Vector Store Data container.
 
         Args:
             collection (str): The name of the collection of vectors
@@ -126,6 +133,7 @@ class RocksetVectorStore(BasePydanticVectorStore):
             distance_func (RocksetVectorStore.DistanceFunc): The metric to measure
                 vector relationship
                 (default: RocksetVectorStore.DistanceFunc.COSINE_SIM)
+
         """
         super().__init__(
             rockset=_get_rockset(),
@@ -157,13 +165,15 @@ class RocksetVectorStore(BasePydanticVectorStore):
         return self.rs
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Stores vectors in the collection.
+        """
+        Stores vectors in the collection.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings
 
         Returns:
             Stored node IDs (List[str])
+
         """
         return [
             row["_id"]
@@ -184,11 +194,13 @@ class RocksetVectorStore(BasePydanticVectorStore):
         ]
 
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
-        """Deletes nodes stored in the collection by their ref_doc_id.
+        """
+        Deletes nodes stored in the collection by their ref_doc_id.
 
         Args:
             ref_doc_id (str): The ref_doc_id of the document
                 whose nodes are to be deleted
+
         """
         self.rs.Documents.delete_documents(
             collection=self.collection,
@@ -210,7 +222,8 @@ class RocksetVectorStore(BasePydanticVectorStore):
         )
 
     def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Gets nodes relevant to a query.
+        """
+        Gets nodes relevant to a query.
 
         Args:
             query (llama_index.core.vector_stores.types.VectorStoreQuery): The query
@@ -219,6 +232,7 @@ class RocksetVectorStore(BasePydanticVectorStore):
 
         Returns:
             query results (llama_index.core.vector_stores.types.VectorStoreQueryResult)
+
         """
         similarity_col = kwargs.get("similarity_col", "_similarity")
         res = self.rs.sql(
@@ -227,31 +241,39 @@ class RocksetVectorStore(BasePydanticVectorStore):
                     _id,
                     {self.metadata_col}
                     {
-                        f''', {self.distance_func.value}(
+                f''', {self.distance_func.value}(
                             {query.query_embedding},
                             {self.embedding_col}
                         )
                             AS {similarity_col}'''
-                        if query.query_embedding
-                        else ''
-                    }
+                if query.query_embedding
+                else ""
+            }
                 FROM
                     "{self.workspace}"."{self.collection}" x
-                {"WHERE" if query.node_ids or (query.filters and len(query.filters.legacy_filters()) > 0) else ""} {
-                    f'''({
-                        ' OR '.join([
-                            f"_id='{node_id}'" for node_id in query.node_ids
-                        ])
-                    })''' if query.node_ids else ""
-                } {
-                    f''' {'AND' if query.node_ids else ''} ({
-                        ' AND '.join([
+                {
+                "WHERE"
+                if query.node_ids
+                or (query.filters and len(query.filters.legacy_filters()) > 0)
+                else ""
+            } {
+                f'''({
+                    " OR ".join([f"_id='{node_id}'" for node_id in query.node_ids])
+                })'''
+                if query.node_ids
+                else ""
+            } {
+                f''' {"AND" if query.node_ids else ""} ({
+                    " AND ".join(
+                        [
                             f"x.{self.metadata_col}.{filter.key}=:{filter.key}"
-                            for filter
-                            in query.filters.legacy_filters()
-                        ])
-                    })''' if query.filters else ""
-                }
+                            for filter in query.filters.legacy_filters()
+                        ]
+                    )
+                })'''
+                if query.filters
+                else ""
+            }
                 ORDER BY
                     {similarity_col} {self.distance_order}
                 LIMIT
@@ -278,7 +300,8 @@ class RocksetVectorStore(BasePydanticVectorStore):
     def with_new_collection(
         cls: Type[T], dimensions: int | None = None, **rockset_vector_store_args: Any
     ) -> RocksetVectorStore:
-        """Creates a new collection and returns its RocksetVectorStore.
+        """
+        Creates a new collection and returns its RocksetVectorStore.
 
         Args:
             dimensions (Optional[int]): The length of the vectors to enforce
@@ -299,6 +322,7 @@ class RocksetVectorStore(BasePydanticVectorStore):
             distance_func (RocksetVectorStore.DistanceFunc): The metric to measure
                 vector relationship
                 (default: RocksetVectorStore.DistanceFunc.COSINE_SIM)
+
         """
         client = rockset_vector_store_args["client"] = _get_client(
             api_key=rockset_vector_store_args.get("api_key"),
@@ -313,10 +337,9 @@ class RocksetVectorStore(BasePydanticVectorStore):
             "embeddings_col", DEFAULT_EMBEDDING_KEY
         )
         if dimensions:
-            collection_args[
-                "field_mapping_query"
-            ] = _get_rockset().model.field_mapping_query.FieldMappingQuery(
-                sql=f"""
+            collection_args["field_mapping_query"] = (
+                _get_rockset().model.field_mapping_query.FieldMappingQuery(
+                    sql=f"""
                     SELECT
                         *, VECTOR_ENFORCE(
                             {embeddings_col},
@@ -326,6 +349,7 @@ class RocksetVectorStore(BasePydanticVectorStore):
                     FROM
                         _input
                 """
+                )
             )
 
         client.Collections.create_s3_collection(**collection_args)  # create collection

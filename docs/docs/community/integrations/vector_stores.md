@@ -16,9 +16,11 @@ as the storage backend for `VectorStoreIndex`.
 - Astra DB (`AstraDBVectorStore`). [Quickstart](https://docs.datastax.com/en/astra/home/astra.html).
 - AWS Document DB (`AWSDocDbVectorStore`). [Quickstart](https://docs.aws.amazon.com/documentdb/latest/developerguide/get-started-guide.html).
 - Azure AI Search (`AzureAISearchVectorStore`). [Quickstart](https://learn.microsoft.com/en-us/azure/search/search-get-started-vector)
+- Azure Cosmos DB Mongo vCore(`AzureCosmosDBMongoDBVectorSearch`). [Quickstart](https://learn.microsoft.com/en-us/azure/cosmos-db/mongodb/vcore/vector-search?tabs=diskann)
+- Azure Cosmos DB NoSql (`AzureCosmosDBNoSqlVectorSearch`). [Quickstart](https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/vector-search)
 - Chroma (`ChromaVectorStore`) [Installation](https://docs.trychroma.com/getting-started)
 - ClickHouse (`ClickHouseVectorStore`) [Installation](https://clickhouse.com/docs/en/install)
-- Couchbase (`CouchbaseVectorStore`) [Installation](https://www.couchbase.com/products/capella/)
+- Couchbase (`CouchbaseSearchVectorStore`) [Installation](https://www.couchbase.com/products/capella/)
 - DashVector (`DashVectorStore`). [Installation](https://help.aliyun.com/document_detail/2510230.html).
 - DeepLake (`DeepLakeVectorStore`) [Installation](https://docs.deeplake.ai/en/latest/Installation.html)
 - DocArray (`DocArrayHnswVectorStore`, `DocArrayInMemoryVectorStore`). [Installation/Python Client](https://github.com/docarray/docarray#installation).
@@ -36,7 +38,7 @@ as the storage backend for `VectorStoreIndex`.
 - MongoDB Atlas (`MongoDBAtlasVectorSearch`). [Installation/Quickstart](https://www.mongodb.com/atlas/database).
 - MyScale (`MyScaleVectorStore`). [Quickstart](https://docs.myscale.com/en/quickstart/). [Installation/Python Client](https://docs.myscale.com/en/python-client/).
 - Neo4j (`Neo4jVectorIndex`). [Installation](https://neo4j.com/docs/operations-manual/current/installation/).
-- OceanBase (`OceanBaseVectorStore`). [OceanBase Overview](https://github.com/oceanbase/oceanbase). [Quickstart](../../examples/vector_stores/OceanBaseVectorStore.ipynb). [Python Client](https://github.com/oceanbase/pyobvector)
+- OceanBase (`OceanBaseVectorStore`). [OceanBase Overview](https://github.com/oceanbase/oceanbase). [Quickstart](/python/examples/vector_stores/oceanbasevectorstore). [Python Client](https://github.com/oceanbase/pyobvector)
 - Opensearch (`OpensearchVectorStore`) [Opensearch as vector database](https://opensearch.org/platform/search/vector-database.html). [QuickStart](https://opensearch.org/docs/latest/search-plugins/knn/index/)
 - Pinecone (`PineconeVectorStore`). [Installation/Quickstart](https://docs.pinecone.io/docs/quickstart).
 - Qdrant (`QdrantVectorStore`) [Installation](https://qdrant.tech/documentation/install/) [Python Client](https://qdrant.tech/documentation/install/#python-client)
@@ -44,8 +46,8 @@ as the storage backend for `VectorStoreIndex`.
 - Redis (`RedisVectorStore`). [Installation](https://redis.io/docs/latest/operate/oss_and_stack/install/install-stack/).
 - Relyt (`RelytVectorStore`). [Quickstart](https://docs.relyt.cn/docs/vector-engine/).
 - Supabase (`SupabaseVectorStore`). [Quickstart](https://supabase.github.io/vecs/api/).
-- Tablestore (`Tablestore`). [Tablestore Overview](https://www.aliyun.com/product/ots). [Quickstart](../../examples/vector_stores/TablestoreDemo.ipynb). [Python Client](https://github.com/aliyun/aliyun-tablestore-python-sdk).
-- TiDB (`TiDBVectorStore`). [Quickstart](../../examples/vector_stores/TiDBVector.ipynb). [Installation](https://tidb.cloud/ai). [Python Client](https://github.com/pingcap/tidb-vector-python).
+- Tablestore (`Tablestore`). [Tablestore Overview](https://www.aliyun.com/product/ots). [Quickstart](/python/examples/vector_stores/tablestoredemo). [Python Client](https://github.com/aliyun/aliyun-tablestore-python-sdk).
+- TiDB (`TiDBVectorStore`). [Quickstart](/python/examples/vector_stores/tidbvector). [Installation](https://tidb.cloud/ai). [Python Client](https://github.com/pingcap/tidb-vector-python).
 - TimeScale (`TimescaleVectorStore`). [Installation](https://github.com/timescale/python-vector).
 - Upstash (`UpstashVectorStore`). [Quickstart](https://upstash.com/docs/vector/overall/getstarted)
 - Vertex AI Vector Search (`VertexAIVectorStore`). [Quickstart](https://cloud.google.com/vertex-ai/docs/vector-search/quickstart)
@@ -54,7 +56,7 @@ as the storage backend for `VectorStoreIndex`.
 - Zep (`ZepVectorStore`). [Installation](https://docs.getzep.com/deployment/quickstart/). [Python Client](https://docs.getzep.com/sdk/).
 - Zilliz (`MilvusVectorStore`). [Quickstart](https://zilliz.com/doc/quick_start)
 
-A detailed API reference is [found here](../../api_reference/storage/vector_store/index.md).
+A detailed API reference is [found here](/python/framework/api_reference/storage/vector_store).
 
 Similar to any other index within LlamaIndex (tree, keyword table, list), `VectorStoreIndex` can be constructed upon any collection
 of documents. We use the vector store within the index to store embeddings for the input text chunks.
@@ -238,6 +240,75 @@ vector_store = AzureAISearchVectorStore(
 )
 ```
 
+**Azure CosmosDB Mongo vCore**
+
+```python
+import pymongo
+import os
+from llama_index.vector_stores.azurecosmosmongo import (
+    AzureCosmosDBMongoDBVectorSearch,
+)
+
+# Set up the connection string with your Azure CosmosDB MongoDB URI
+connection_string = os.getenv("YOUR_AZURE_COSMOSDB_MONGODB_URI")
+mongodb_client = pymongo.MongoClient(connection_string)
+
+# Create an instance of AzureCosmosDBMongoDBVectorSearch
+vector_store = AzureCosmosDBMongoDBVectorSearch(
+    mongodb_client=mongodb_client,
+    db_name="demo_vectordb",
+    collection_name="paul_graham_essay",
+)
+```
+
+**Azure CosmosDB NoSql**
+
+```python
+from azure.cosmos import CosmosClient, PartitionKey
+import os
+from llama_index.vector_stores.azurecosmosnosql import (
+    AzureCosmosDBNoSqlVectorSearch,
+)
+
+URL = os.getenv("AZURE_COSMOSDB_URI")
+KEY = os.getenv("AZURE_COSMOSDB_KEY")
+database_name = "test_database"
+container_name = "test_container"
+test_client = CosmosClient(URL, credential=KEY)
+
+indexing_policy = {
+    "indexingMode": "consistent",
+    "includedPaths": [{"path": "/*"}],
+    "excludedPaths": [{"path": '/"_etag"/?'}],
+    "vectorIndexes": [{"path": "/embedding", "type": "quantizedFlat"}],
+}
+
+vector_embedding_policy = {
+    "vectorEmbeddings": [
+        {
+            "path": "/embedding",
+            "dataType": "float32",
+            "distanceFunction": "cosine",
+            "dimensions": 1536,
+        }
+    ]
+}
+
+partition_key = PartitionKey(path="/id")
+cosmos_container_properties_test = {"partition_key": partition_key}
+cosmos_database_properties_test = {}
+
+vector_store = AzureCosmosDBNoSqlVectorSearch(
+    cosmos_client=test_client,
+    vector_embedding_policy=vector_embedding_policy,
+    indexing_policy=indexing_policy,
+    database_name=database_name,
+    container_name=container_name,
+    cosmos_database_properties=cosmos_database_properties_test,
+    cosmos_container_properties=cosmos_container_properties_test,
+)
+```
+
 **Chroma**
 
 ```python
@@ -291,7 +362,7 @@ cluster = Cluster("CLUSTER_CONNECTION_STRING", options)
 cluster.wait_until_ready(timedelta(seconds=5))
 
 # Create the Vector Store
-vector_store = CouchbaseVectorStore(
+vector_store = CouchbaseSearchVectorStore(
     cluster=cluster,
     bucket_name="BUCKET_NAME",
     scope_name="SCOPE_NAME",
@@ -413,6 +484,13 @@ faiss_index = faiss.IndexFlatL2(d)
 
 # construct vector store
 vector_store = FaissVectorStore(faiss_index)
+
+# if update/delete functionality is needed you can leverage the FaissMapVectorStore
+
+d = 1536
+faiss_index = faiss.IndexFlatL2(d)
+id_map_index = faiss.IndexIDMap2(faiss_index)
+vector_store = FaissMapVectorStore(id_map_index)
 
 ...
 
@@ -899,7 +977,7 @@ vector_store = MilvusVectorStore(
 
 ## Loading Data from Vector Stores using Data Connector
 
-LlamaIndex supports loading data from a huge number of sources. See [Data Connectors](../../module_guides/loading/connector/modules.md) for more details and API documentation.
+LlamaIndex supports loading data from a huge number of sources. See [Data Connectors](/python/framework/module_guides/loading/connector/modules) for more details and API documentation.
 
 AlloyDB stores both document and vectors.
 This tutorial demonstrates the synchronous interface. All synchronous methods have corresponding asynchronous methods.
@@ -1073,51 +1151,50 @@ documents = reader.load_data(
 
 ## Vector Store Examples
 
-- [Alibaba Cloud OpenSearch](../../examples/vector_stores/AlibabaCloudOpenSearchIndexDemo.ipynb)
-- [Amazon Neptune - Neptune Analytics](../../examples/vector_stores/AmazonNeptuneVectorDemo.ipynb)
-- [Astra DB](../../examples/vector_stores/AstraDBIndexDemo.ipynb)
-- [Async Index Creation](../../examples/vector_stores/AsyncIndexCreationDemo.ipynb)
-- [Azure AI Search](../../examples/vector_stores/AzureAISearchIndexDemo.ipynb)
-- [Azure Cosmos DB](../../examples/vector_stores/AzureCosmosDBMongoDBvCoreDemo.ipynb)
-- [Caasandra](../../examples/vector_stores/CassandraIndexDemo.ipynb)
-- [Chromadb](../../examples/vector_stores/ChromaIndexDemo.ipynb)
-- [Couchbase](../../examples/vector_stores/CouchbaseVectorStoreDemo.ipynb)
-- [Dash](../../examples/vector_stores/DashvectorIndexDemo.ipynb)
-- [Deeplake](../../examples/vector_stores/DeepLakeIndexDemo.ipynb)
-- [DocArray HNSW](../../examples/vector_stores/DocArrayHnswIndexDemo.ipynb)
-- [DocArray in-Memory](../../examples/vector_stores/DocArrayInMemoryIndexDemo.ipynb)
-- [Espilla](../../examples/vector_stores/EpsillaIndexDemo.ipynb)
-- [Google AlloyDB for PostgreSQL](../../examples/vector_stores/AlloyDBVectorStoreDemo.ipynb)
-- [Google Cloud SQL for PostgreSQL](../../examples/vector_stores/CloudSQLPgVectorStoreDemo.ipynb)
-- [LanceDB](../../examples/vector_stores/LanceDBIndexDemo.ipynb)
-- [Lantern](../../examples/vector_stores/LanternIndexDemo.ipynb)
-- [Metal](../../examples/vector_stores/MetalIndexDemo.ipynb)
-- [Milvus](../../examples/vector_stores/MilvusIndexDemo.ipynb)
-- [Milvus Async API](../../examples/vector_stores/MilvusAsyncAPIDemo.ipynb)
-- [Milvus Full-Text Search](../../examples/vector_stores/MilvusFullTextSearchDemo.ipynb)
-- [Milvus Hybrid Search](../../examples/vector_stores/MilvusHybridIndexDemo.ipynb)
-- [MyScale](../../examples/vector_stores/MyScaleIndexDemo.ipynb)
-- [ElsaticSearch](../../examples/vector_stores/ElasticsearchIndexDemo.ipynb)
-- [FAISS](../../examples/vector_stores/FaissIndexDemo.ipynb)
-- [MongoDB Atlas](../../examples/vector_stores/MongoDBAtlasVectorSearch.ipynb)
-- [Neo4j](../../examples/vector_stores/Neo4jVectorDemo.ipynb)
-- [OpenSearch](../../examples/vector_stores/OpensearchDemo.ipynb)
-- [Pinecone](../../examples/vector_stores/PineconeIndexDemo.ipynb)
-- [Pinecone Hybrid Search](../../examples/vector_stores/PineconeIndexDemo-Hybrid.ipynb)
-- [PGvectoRS](../../examples/vector_stores/PGVectoRsDemo.ipynb)
-- [Postgres](../../examples/vector_stores/postgres.ipynb)
-- [Redis](../../examples/vector_stores/RedisIndexDemo.ipynb)
-- [Qdrant](../../examples/vector_stores/QdrantIndexDemo.ipynb)
-- [Qdrant Hybrid Search](../../examples/vector_stores/qdrant_hybrid.ipynb)
-- [Rockset](../../examples/vector_stores/RocksetIndexDemo.ipynb)
-- [Simple](../../examples/vector_stores/SimpleIndexDemo.ipynb)
-- [Supabase](../../examples/vector_stores/SupabaseVectorIndexDemo.ipynb)
-- [Tablestore](../../examples/vector_stores/TablestoreDemo.ipynb)
-- [Tair](../../examples/vector_stores/TairIndexDemo.ipynb)
-- [Tencent](../../examples/vector_stores/TencentVectorDBIndexDemo.ipynb)
-- [Timesacle](../../examples/vector_stores/Timescalevector.ipynb)
-- [Upstash](../../examples/vector_stores/UpstashVectorDemo.ipynb)
-- [Weaviate](../../examples/vector_stores/WeaviateIndexDemo.ipynb)
-- [Weaviate Hybrid Search](../../examples/vector_stores/WeaviateIndexDemo-Hybrid.ipynb)
-- [WordLift](../../examples/vector_stores/WordLiftDemo.ipynb)
-- [Zep](../../examples/vector_stores/ZepIndexDemo.ipynb)
+- [Alibaba Cloud OpenSearch](/python/examples/vector_stores/alibabacloudopensearchindexdemo)
+- [Amazon Neptune - Neptune Analytics](/python/examples/vector_stores/amazonneptunevectordemo)
+- [Astra DB](/python/examples/vector_stores/astradbindexdemo)
+- [Async Index Creation](/python/examples/vector_stores/asyncindexcreationdemo)
+- [Azure AI Search](/python/examples/vector_stores/azureaisearchindexdemo)
+- [Azure Cosmos DB](/python/examples/vector_stores/azurecosmosdbmongodbvcoredemo)
+- [Caasandra](/python/examples/vector_stores/cassandraindexdemo)
+- [Chromadb](/python/examples/vector_stores/chromaindexdemo)
+- [Couchbase](/python/examples/vector_stores/couchbasevectorstoredemo)
+- [Dash](/python/examples/vector_stores/dashvectorindexdemo)
+- [Deeplake](/python/examples/vector_stores/deeplakeindexdemo)
+- [DocArray HNSW](/python/examples/vector_stores/docarrayhnswindexdemo)
+- [DocArray in-Memory](/python/examples/vector_stores/docarrayinmemoryindexdemo)
+- [Espilla](/python/examples/vector_stores/epsillaindexdemo)
+- [Google AlloyDB for PostgreSQL](/python/examples/vector_stores/alloydbvectorstoredemo)
+- [Google Cloud SQL for PostgreSQL](/python/examples/vector_stores/cloudsqlpgvectorstoredemo)
+- [LanceDB](/python/examples/vector_stores/lancedbindexdemo)
+- [Lantern](/python/examples/vector_stores/lanternindexdemo)
+- [Milvus](/python/examples/vector_stores/milvusindexdemo)
+- [Milvus Async API](/python/examples/vector_stores/milvusasyncapidemo)
+- [Milvus Full-Text Search](/python/examples/vector_stores/milvusfulltextsearchdemo)
+- [Milvus Hybrid Search](/python/examples/vector_stores/milvushybridindexdemo)
+- [MyScale](/python/examples/vector_stores/myscaleindexdemo)
+- [ElsaticSearch](/python/examples/vector_stores/elasticsearchindexdemo)
+- [FAISS](/python/examples/vector_stores/faissindexdemo)
+- [MongoDB Atlas](/python/examples/vector_stores/mongodbatlasvectorsearch)
+- [Neo4j](/python/examples/vector_stores/neo4jvectordemo)
+- [OpenSearch](/python/examples/vector_stores/opensearchdemo)
+- [Pinecone](/python/examples/vector_stores/pineconeindexdemo)
+- [Pinecone Hybrid Search](/python/examples/vector_stores/pineconeindexdemo-hybrid)
+- [PGvectoRS](/python/examples/vector_stores/pgvectorsdemo)
+- [Postgres](/python/examples/vector_stores/postgres)
+- [Redis](/python/examples/vector_stores/redisindexdemo)
+- [Qdrant](/python/examples/vector_stores/qdrantindexdemo)
+- [Qdrant Hybrid Search](/python/examples/vector_stores/qdrant_hybrid)
+- [Rockset](/python/examples/vector_stores/rocksetindexdemo)
+- [Simple](/python/examples/vector_stores/simpleindexdemo)
+- [Supabase](/python/examples/vector_stores/supabasevectorindexdemo)
+- [Tablestore](/python/examples/vector_stores/tablestoredemo)
+- [Tair](/python/examples/vector_stores/tairindexdemo)
+- [Tencent](/python/examples/vector_stores/tencentvectordbindexdemo)
+- [Timesacle](/python/examples/vector_stores/timescalevector)
+- [Upstash](/python/examples/vector_stores/upstashvectordemo)
+- [Weaviate](/python/examples/vector_stores/weaviateindexdemo)
+- [Weaviate Hybrid Search](/python/examples/vector_stores/weaviateindexdemo-hybrid)
+- [WordLift](/python/examples/vector_stores/wordliftdemo)
+- [Zep](/python/examples/vector_stores/zepindexdemo)

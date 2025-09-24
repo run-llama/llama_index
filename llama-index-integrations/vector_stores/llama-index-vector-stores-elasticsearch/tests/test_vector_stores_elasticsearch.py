@@ -267,7 +267,7 @@ def es_bm25_store(
         store.close()
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_and_query(
     es_store: ElasticsearchStore,
@@ -288,7 +288,7 @@ async def test_add_to_es_and_query(
     assert res.nodes[0].get_content() == "lorem ipsum"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_and_text_query(
     es_bm25_store: ElasticsearchStore,
@@ -317,7 +317,7 @@ async def test_add_to_es_and_text_query(
     assert res.nodes[0].get_content() == "lorem ipsum"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_and_hybrid_query(
     es_client: AsyncElasticsearch,
@@ -352,7 +352,7 @@ async def test_add_to_es_and_hybrid_query(
     assert res.nodes[0].get_content() == "lorem ipsum"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_query_with_filters(
     es_store: ElasticsearchStore,
@@ -376,7 +376,7 @@ async def test_add_to_es_query_with_filters(
     assert res.nodes[0].node_id == "c330d77f-90bd-4c51-9ed2-57d8d693b3b0"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_query_with_es_filters(
     es_store: ElasticsearchStore,
@@ -399,7 +399,7 @@ async def test_add_to_es_query_with_es_filters(
     assert res.nodes[0].node_id == "c330d77f-90bd-4c51-9ed2-57d8d693b3b0"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_query_and_delete(
     es_store: ElasticsearchStore,
@@ -429,7 +429,7 @@ async def test_add_to_es_query_and_delete(
     assert res.nodes[0].node_id == "f658de3b-8cef-4d1c-8bed-9a263c907251"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_and_embed_query_ranked(
     es_store: ElasticsearchStore,
@@ -449,7 +449,7 @@ async def test_add_to_es_and_embed_query_ranked(
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_and_text_query_ranked(
     es_bm25_store: ElasticsearchStore,
@@ -474,7 +474,7 @@ async def test_add_to_es_and_text_query_ranked(
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_and_text_query_ranked_hybrid(
     es_hybrid_store: ElasticsearchStore,
@@ -495,7 +495,7 @@ async def test_add_to_es_and_text_query_ranked_hybrid(
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_add_to_es_and_text_query_ranked_hybrid_large_top_k(
     es_hybrid_store: ElasticsearchStore,
@@ -519,9 +519,9 @@ async def test_add_to_es_and_text_query_ranked_hybrid_large_top_k(
 def test_check_user_agent(es_store: ElasticsearchStore) -> None:
     user_agent = es_store._store.client._headers["User-Agent"]
     pattern = r"^llama_index-py-vs/\d+\.\d+\.\d+(\.post\d+)?$"
-    assert (
-        re.match(pattern, user_agent) is not None
-    ), f"The string '{user_agent}' does not match the expected user-agent."
+    assert re.match(pattern, user_agent) is not None, (
+        f"The string '{user_agent}' does not match the expected user-agent."
+    )
 
 
 async def check_top_match(
@@ -592,7 +592,7 @@ def test_metadata_filter_to_es_filter() -> None:
     }
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 @pytest.mark.parametrize("use_async", [True, False])
 async def test_delete_nodes(
     es_store: ElasticsearchStore,
@@ -647,3 +647,92 @@ async def test_delete_nodes(
     assert any(
         node.metadata.get("director") == "Christopher Nolan" for node in res.nodes
     )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_get_nodes(
+    es_store: ElasticsearchStore,
+    node_embeddings: List[TextNode],
+    use_async: bool,
+) -> None:
+    """Test the get_nodes method with node_ids and filters."""
+    if use_async:
+        await es_store.async_add(node_embeddings)
+    else:
+        es_store.add(node_embeddings)
+
+    node_ids = [node_embeddings[0].node_id, node_embeddings[1].node_id]
+    if use_async:
+        nodes = await es_store.aget_nodes(node_ids=node_ids)
+    else:
+        nodes = es_store.get_nodes(node_ids=node_ids)
+
+    assert len(nodes) == 2
+    retrieved_node_ids = [node.node_id for node in nodes]
+    assert all(node_id in retrieved_node_ids for node_id in node_ids)
+
+    filters = MetadataFilters(
+        filters=[ExactMatchFilter(key="author", value="Stephen King")]
+    )
+    if use_async:
+        nodes = await es_store.aget_nodes(filters=filters)
+    else:
+        nodes = es_store.get_nodes(filters=filters)
+
+    assert len(nodes) == 1
+    assert nodes[0].metadata["author"] == "Stephen King"
+
+    assert nodes[0].get_content() == "lorem ipsum"
+
+    filters = MetadataFilters(
+        filters=[ExactMatchFilter(key="author", value="Non-existent Author")]
+    )
+    if use_async:
+        nodes = await es_store.aget_nodes(filters=filters)
+    else:
+        nodes = es_store.get_nodes(filters=filters)
+
+    assert len(nodes) == 0
+
+    with pytest.raises(ValueError):
+        if use_async:
+            await es_store.aget_nodes()
+        else:
+            es_store.get_nodes()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("use_async", [True, False])
+async def test_clear(
+    es_store: ElasticsearchStore,
+    node_embeddings: List[TextNode],
+    use_async: bool,
+) -> None:
+    """Test that clear/aclear methods properly delete all data from the index."""
+    if use_async:
+        await es_store.async_add(node_embeddings)
+    else:
+        es_store.add(node_embeddings)
+
+    q = VectorStoreQuery(query_embedding=[1.0, 0.0, 0.0], similarity_top_k=10)
+    if use_async:
+        res = await es_store.aquery(q)
+    else:
+        res = es_store.query(q)
+    assert len(res.nodes) > 0
+
+    if use_async:
+        await es_store.aclear()
+    else:
+        es_store.clear()
+
+    if use_async:
+        await es_store.async_add([node_embeddings[0]])
+        res = await es_store.aquery(q)
+    else:
+        es_store.add([node_embeddings[0]])
+        res = es_store.query(q)
+
+    assert len(res.nodes) == 1
+    assert res.nodes[0].node_id == node_embeddings[0].node_id

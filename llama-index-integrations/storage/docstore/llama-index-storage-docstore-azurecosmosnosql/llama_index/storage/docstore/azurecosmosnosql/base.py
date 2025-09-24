@@ -1,13 +1,13 @@
 from typing import Any, Dict, Optional
 
-from llama_index.core.storage.docstore.keyval_docstore import KVDocumentStore
+from llama_index.core.storage.kvstore.types import BaseKVStore
 from llama_index.storage.kvstore.azurecosmosnosql import AzureCosmosNoSqlKVStore
 
 DEFAULT_DOCUMENT_DATABASE = "DocumentStoreDB"
 DEFAULT_DOCUMENT_CONTAINER = "DocumentStoreContainer"
 
 
-class AzureCosmosNoSqlDocumentStore(KVDocumentStore):
+class AzureCosmosNoSqlDocumentStore(BaseKVStore):
     """Creates an AzureCosmosNoSqlDocumentStore."""
 
     def __init__(

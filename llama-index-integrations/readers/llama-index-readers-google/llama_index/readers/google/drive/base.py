@@ -30,7 +30,8 @@ SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 class GoogleDriveReader(
     BasePydanticReader, ResourcesReaderMixin, FileSystemReaderMixin
 ):
-    """Google Drive Reader.
+    """
+    Google Drive Reader.
 
     Reads files from Google Drive. Credentials passed directly to the constructor
     will take precedence over those passed as file paths.
@@ -59,6 +60,8 @@ class GoogleDriveReader(
         file_extractor (Optional[Dict[str, BaseReader]]): A mapping of file
             extension to a BaseReader class that specifies how to convert that
             file to text. See `SimpleDirectoryReader` for more details.
+        raise_errors: (bool): Whether to raise errors when encountered. Defaults to False.
+
     """
 
     drive_id: Optional[str] = None
@@ -72,6 +75,7 @@ class GoogleDriveReader(
     file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = Field(
         default=None, exclude=True
     )
+    raise_errors: bool = Field(default=False)
 
     _is_cloud: bool = PrivateAttr(default=False)
     _creds: Credentials = PrivateAttr()
@@ -91,6 +95,7 @@ class GoogleDriveReader(
         authorized_user_info: Optional[dict] = None,
         service_account_key: Optional[dict] = None,
         file_extractor: Optional[Dict[str, Union[str, BaseReader]]] = None,
+        raise_errors: bool = False,
         **kwargs: Any,
     ) -> None:
         """Initialize with parameters."""
@@ -126,6 +131,7 @@ class GoogleDriveReader(
             service_account_key=service_account_key,
             token_path=token_path,
             file_extractor=file_extractor,
+            raise_errors=raise_errors,
             **kwargs,
         )
 
@@ -155,13 +161,15 @@ class GoogleDriveReader(
         return "GoogleDriveReader"
 
     def _get_credentials(self) -> Tuple[Credentials]:
-        """Authenticate with Google and save credentials.
+        """
+        Authenticate with Google and save credentials.
         Download the service_account_key.json file with these instructions: https://cloud.google.com/iam/docs/keys-create-delete.
 
         IMPORTANT: Make sure to share the folders / files with the service account. Otherwise it will fail to read the docs
 
         Returns:
             credentials
+
         """
         # First, we need the Google API credentials for the app
         creds = None
@@ -252,7 +260,8 @@ class GoogleDriveReader(
         query_string: Optional[str] = None,
         current_path: Optional[str] = None,
     ) -> List[List[str]]:
-        """Get file ids present in folder/ file id
+        """
+        Get file ids present in folder/ file id
         Args:
             drive_id: Drive id of the shared drive in google drive.
             folder_id: folder id of the folder in google drive.
@@ -262,12 +271,13 @@ class GoogleDriveReader(
 
         Returns:
             metadata: List of metadata of filde ids.
+
         """
         from googleapiclient.discovery import build
 
+        fileids_meta = []
         try:
             service = build("drive", "v3", credentials=self._creds)
-            fileids_meta = []
 
             if folder_id and not file_id:
                 try:
@@ -418,17 +428,23 @@ class GoogleDriveReader(
             return fileids_meta
 
         except Exception as e:
-            logger.error(
-                f"An error occurred while getting fileids metadata: {e}", exc_info=True
-            )
+            if self.raise_errors:
+                raise
+            else:
+                logger.error(
+                    f"An error occurred while getting fileids metadata: {e}",
+                    exc_info=True,
+                )
+            return fileids_meta
 
     def _download_file(self, fileid: str, filename: str) -> str:
-        """Download the file with fileid and filename
+        """
+        Download the file with fileid and filename
         Args:
             fileid: file id of the file in google drive
             filename: filename with which it will be downloaded
         Returns:
-            The downloaded filename, which which may have a new extension.
+            The downloaded filename, which may have a new extension.
         """
         from io import BytesIO
 
@@ -471,17 +487,22 @@ class GoogleDriveReader(
 
             return new_file_name
         except Exception as e:
-            logger.error(
-                f"An error occurred while downloading file: {e}", exc_info=True
-            )
+            if self.raise_errors:
+                raise
+            else:
+                logger.error(
+                    f"An error occurred while downloading file: {e}", exc_info=True
+                )
 
     def _load_data_fileids_meta(self, fileids_meta: List[List[str]]) -> List[Document]:
-        """Load data from fileids metadata
+        """
+        Load data from fileids metadata
         Args:
             fileids_meta: metadata of fileids in google drive.
 
         Returns:
             Lis[Document]: List of Document of data present in fileids.
+
         """
         try:
             with tempfile.TemporaryDirectory() as temp_dir:
@@ -518,10 +539,13 @@ class GoogleDriveReader(
 
             return documents
         except Exception as e:
-            logger.error(
-                f"An error occurred while loading data from fileids meta: {e}",
-                exc_info=True,
-            )
+            if self.raise_errors:
+                raise
+            else:
+                logger.error(
+                    f"An error occurred while loading data from fileids meta: {e}",
+                    exc_info=True,
+                )
 
     def _load_from_file_ids(
         self,
@@ -530,7 +554,8 @@ class GoogleDriveReader(
         mime_types: Optional[List[str]],
         query_string: Optional[str],
     ) -> List[Document]:
-        """Load data from file ids
+        """
+        Load data from file ids
         Args:
             file_ids: File ids of the files in google drive.
             mime_types: The mimeTypes you want to allow e.g.: "application/vnd.google-apps.document"
@@ -538,6 +563,7 @@ class GoogleDriveReader(
 
         Returns:
             Document: List of Documents of text.
+
         """
         try:
             fileids_meta = []
@@ -552,9 +578,12 @@ class GoogleDriveReader(
                 )
             return self._load_data_fileids_meta(fileids_meta)
         except Exception as e:
-            logger.error(
-                f"An error occurred while loading with fileid: {e}", exc_info=True
-            )
+            if self.raise_errors:
+                raise
+            else:
+                logger.error(
+                    f"An error occurred while loading with fileid: {e}", exc_info=True
+                )
 
     def _load_from_folder(
         self,
@@ -563,7 +592,8 @@ class GoogleDriveReader(
         mime_types: Optional[List[str]],
         query_string: Optional[str],
     ) -> List[Document]:
-        """Load data from folder_id.
+        """
+        Load data from folder_id.
 
         Args:
             drive_id: Drive id of the shared drive in google drive.
@@ -573,6 +603,7 @@ class GoogleDriveReader(
 
         Returns:
             Document: List of Documents of text.
+
         """
         try:
             fileids_meta = self._get_fileids_meta(
@@ -583,9 +614,12 @@ class GoogleDriveReader(
             )
             return self._load_data_fileids_meta(fileids_meta)
         except Exception as e:
-            logger.error(
-                f"An error occurred while loading from folder: {e}", exc_info=True
-            )
+            if self.raise_errors:
+                raise
+            else:
+                logger.error(
+                    f"An error occurred while loading from folder: {e}", exc_info=True
+                )
 
     def load_data(
         self,
@@ -595,7 +629,8 @@ class GoogleDriveReader(
         mime_types: Optional[List[str]] = None,  # Deprecated
         query_string: Optional[str] = None,
     ) -> List[Document]:
-        """Load data from the folder id or file ids.
+        """
+        Load data from the folder id or file ids.
 
         Args:
             drive_id: Drive id of the shared drive in google drive.
@@ -607,6 +642,7 @@ class GoogleDriveReader(
 
         Returns:
             List[Document]: A list of documents.
+
         """
         self._creds = self._get_credentials()
 

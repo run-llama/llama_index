@@ -1,3 +1,8 @@
+---
+sidebar:
+  order: 9
+---
+
 # Observability
 
 Debugging is essential to any application development, and Workflows provide you a number of ways to do that.
@@ -14,7 +19,7 @@ draw_all_possible_flows(MyWorkflow, filename="some_filename.html")
 
 This will output an interactive visualization of your flow to `some_filename.html` that you can view in any browser.
 
-![A concurrent workflow](./different_events.png)
+![A concurrent workflow](/python/framework/understanding/workflows/different_events.png)
 
 ## Verbose mode
 
@@ -99,30 +104,6 @@ Received event  Query 3
 Step step_three produced event StopEvent
 ```
 
-## Stepwise execution
-
-In a notebook environment it can be helpful to run a workflow step by step. You can do this by calling `run_step` on the handler object:
-
-```python
-w = ConcurrentFlow(timeout=10, verbose=True)
-handler = w.run(stepwise=True)
-
-# Each time we call `run_step`, the workflow will advance and return all the events
-# that were produced in the last step. This events need to be manually propagated
-# for the workflow to keep going (we assign them to `produced_events` with the := operator).
-while produced_events := await handler.run_step():
-    # If we're here, it means there's at least an event we need to propagate,
-    # let's do it with `send_event`
-    for ev in produced_events:
-        handler.ctx.send_event(ev)
-
-# If we're here, it means the workflow execution completed, and
-# we can now access the final result.
-result = await handler
-```
-
-You can call `run_step` multiple times to step through the workflow one step at a time.
-
 ## Visualizing most recent execution
 
 If you're running a workflow step by step, or you have just executed a workflow with branching, you can get the visualizer to draw only exactly which steps just executed using `draw_most_recent_execution`:
@@ -162,8 +143,8 @@ await handler
 
 You can also use any of the third-party tools for visualizing and debugging that we support, such as [Arize](https://docs.arize.com/arize/large-language-models/tracing/auto-instrumentation/llamaindex).
 
-![Arize flow](./arize.png)
+![Arize flow](/python/framework/understanding/workflows/arize.png)
 
 ## One more thing
 
-Our last step in this tutorial is an alternative syntax for defining workflows using [unbound functions](unbound_functions.md) instead of classes.
+Our last step in this tutorial is an alternative syntax for defining workflows using [unbound functions](/python/framework/understanding/workflows/unbound_functions) instead of classes.

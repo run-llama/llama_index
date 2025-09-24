@@ -147,6 +147,7 @@ class BedrockEmbedding(BaseEmbedding):
                     retries={"max_attempts": max_retries, "mode": "standard"},
                     connect_timeout=timeout,
                     read_timeout=timeout,
+                    user_agent_extra="x-client-framework:llama_index",
                 )
                 if botocore_config is None
                 else botocore_config
@@ -239,15 +240,17 @@ class BedrockEmbedding(BaseEmbedding):
 
         try:
             import boto3
+            from botocore.config import Config
 
             session = boto3.Session(**session_kwargs)
         except ImportError:
             raise ImportError(
-                "boto3 package not found, install with" "'pip install boto3'"
+                "boto3 package not found, install with'pip install boto3'"
             )
 
         if "bedrock-runtime" in session.get_available_services():
-            self._client = session.client("bedrock-runtime")
+            config = Config(user_agent_extra="x-client-framework:llama_index")
+            self._client = session.client("bedrock-runtime", config=config)
         else:
             self._client = session.client("bedrock")
 
@@ -311,15 +314,17 @@ class BedrockEmbedding(BaseEmbedding):
 
         try:
             import boto3
+            from botocore.config import Config
 
             session = boto3.Session(**session_kwargs)
         except ImportError:
             raise ImportError(
-                "boto3 package not found, install with" "'pip install boto3'"
+                "boto3 package not found, install with'pip install boto3'"
             )
 
         if "bedrock-runtime" in session.get_available_services():
-            client = session.client("bedrock-runtime")
+            config = Config(user_agent_extra="x-client-framework:llama_index")
+            client = session.client("bedrock-runtime", config=config)
         else:
             client = session.client("bedrock")
         return cls(
@@ -333,7 +338,8 @@ class BedrockEmbedding(BaseEmbedding):
     def _get_embedding(
         self, payload: Union[str, List[str]], type: Literal["text", "query"]
     ) -> Union[Embedding, List[Embedding]]:
-        """Get the embedding for the given payload.
+        """
+        Get the embedding for the given payload.
 
         Args:
             payload (Union[str, List[str]]): The text or list of texts for which the embeddings are to be obtained.
@@ -341,6 +347,7 @@ class BedrockEmbedding(BaseEmbedding):
 
         Returns:
             Union[Embedding, List[Embedding]]: The embedding or list of embeddings for the given payload. If the payload is a list of strings, then the response will be a list of embeddings.
+
         """
         if self._client is None:
             self.set_credentials()
@@ -359,7 +366,7 @@ class BedrockEmbedding(BaseEmbedding):
         )
 
         resp = json.loads(response.get("body").read().decode("utf-8"))
-        identifiers = PROVIDER_SPECIFIC_IDENTIFIERS.get(provider, None)
+        identifiers = PROVIDER_SPECIFIC_IDENTIFIERS.get(provider)
         if identifiers is None:
             raise ValueError("Provider not supported")
         return identifiers["get_embeddings_func"](resp, isinstance(payload, list))
@@ -382,7 +389,8 @@ class BedrockEmbedding(BaseEmbedding):
         payload: Union[str, List[str]],
         input_type: Literal["text", "query"],
     ) -> Any:
-        """Build the request body as per the provider.
+        """
+        Build the request body as per the provider.
         Currently supported providers are amazon, cohere.
 
         amazon:
@@ -445,7 +453,8 @@ class BedrockEmbedding(BaseEmbedding):
     async def _aget_embedding(
         self, payload: Union[str, List[str]], type: Literal["text", "query"]
     ) -> Union[Embedding, List[Embedding]]:
-        """Get the embedding asynchronously for the given payload.
+        """
+        Get the embedding asynchronously for the given payload.
 
         Args:
             payload (Union[str, List[str]]): The text or list of texts for which the embeddings are to be obtained.
@@ -453,6 +462,7 @@ class BedrockEmbedding(BaseEmbedding):
 
         Returns:
             Union[Embedding, List[Embedding]]: The embedding or list of embeddings for the given payload. If the payload is a list of strings, then the response will be a list of embeddings.
+
         """
         if self._asession is None:
             raise ValueError("Client not set")
@@ -472,7 +482,7 @@ class BedrockEmbedding(BaseEmbedding):
             streaming_body = await response.get("body").read()
             resp = json.loads(streaming_body.decode("utf-8"))
 
-        identifiers = PROVIDER_SPECIFIC_IDENTIFIERS.get(provider, None)
+        identifiers = PROVIDER_SPECIFIC_IDENTIFIERS.get(provider)
         if identifiers is None:
             raise ValueError("Provider not supported")
         return identifiers["get_embeddings_func"](resp, isinstance(payload, list))

@@ -1,5 +1,8 @@
 import pytest
-from llama_index.llms.bedrock_converse.utils import get_model_name
+from llama_index.llms.bedrock_converse.utils import (
+    get_model_name,
+    tools_to_converse_tools,
+)
 from io import BytesIO
 from unittest.mock import MagicMock, patch
 
@@ -8,7 +11,10 @@ from llama_index.core.base.llms.types import (
     ImageBlock,
     MessageRole,
     TextBlock,
+    CacheControl,
+    CachePoint,
 )
+from llama_index.core.tools import FunctionTool
 from llama_index.llms.bedrock_converse.utils import (
     __get_img_format_from_image_mimetype,
     _content_block_to_bedrock_format,
@@ -66,6 +72,15 @@ def test_content_block_to_bedrock_format_text():
     assert result == {"text": "Hello, world!"}
 
 
+def test_cache_point_block():
+    cache_point = CachePoint(cache_control=CacheControl(type="default"))
+    result = _content_block_to_bedrock_format(cache_point, MessageRole.USER)
+    assert result == {"cachePoint": {"type": "default"}}
+    cache_point1 = CachePoint(cache_control=CacheControl(type="persistent"))
+    result1 = _content_block_to_bedrock_format(cache_point1, MessageRole.USER)
+    assert result1 == {"cachePoint": {"type": "default"}}
+
+
 @patch("llama_index.core.base.llms.types.ImageBlock.resolve_image")
 def test_content_block_to_bedrock_format_image_user(mock_resolve):
     mock_bytes = BytesIO(b"fake_image_data")
@@ -107,3 +122,82 @@ def test_content_block_to_bedrock_format_unsupported(caplog):
     assert result is None
     assert "Unsupported block type" in caplog.text
     assert str(type(unsupported_block)) in caplog.text
+
+
+def test_tools_to_converse_tools_with_tool_required():
+    """Test that tool_required=True sets toolChoice to {"any": {}}."""
+
+    def search(query: str) -> str:
+        """Search for information about a query."""
+        return f"Results for {query}"
+
+    tool = FunctionTool.from_defaults(
+        fn=search, name="search_tool", description="A tool for searching information"
+    )
+
+    result = tools_to_converse_tools([tool], tool_required=True)
+
+    assert "tools" in result
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["toolSpec"]["name"] == "search_tool"
+    assert result["toolChoice"] == {"any": {}}
+
+
+def test_tools_to_converse_tools_without_tool_required():
+    """Test that tool_required=False sets toolChoice to {"auto": {}}."""
+
+    def search(query: str) -> str:
+        """Search for information about a query."""
+        return f"Results for {query}"
+
+    tool = FunctionTool.from_defaults(
+        fn=search, name="search_tool", description="A tool for searching information"
+    )
+
+    result = tools_to_converse_tools([tool], tool_required=False)
+
+    assert "tools" in result
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["toolSpec"]["name"] == "search_tool"
+    assert result["toolChoice"] == {"auto": {}}
+
+
+def test_tools_to_converse_tools_with_custom_tool_choice():
+    """Test that a custom tool_choice overrides tool_required."""
+
+    def search(query: str) -> str:
+        """Search for information about a query."""
+        return f"Results for {query}"
+
+    tool = FunctionTool.from_defaults(
+        fn=search, name="search_tool", description="A tool for searching information"
+    )
+
+    custom_tool_choice = {"specific": {"name": "search_tool"}}
+    result = tools_to_converse_tools(
+        [tool], tool_choice=custom_tool_choice, tool_required=True
+    )
+
+    assert "tools" in result
+    assert len(result["tools"]) == 1
+    assert result["tools"][0]["toolSpec"]["name"] == "search_tool"
+    assert result["toolChoice"] == custom_tool_choice
+
+
+def test_tools_to_converse_tools_with_cache_enabled():
+    """Test that cachePoint is configured when setting tool_caching=True"""
+
+    def search(query: str) -> str:
+        """Search for information about a query."""
+        return f"Results for {query}"
+
+    tool = FunctionTool.from_defaults(
+        fn=search, name="search_tool", description="A tool for searching information"
+    )
+
+    result = tools_to_converse_tools([tool], tool_caching=True)
+
+    assert "tools" in result
+    assert len(result["tools"]) == 2
+    assert result["tools"][0]["toolSpec"]["name"] == "search_tool"
+    assert result["tools"][1]["cachePoint"]["type"] == "default"

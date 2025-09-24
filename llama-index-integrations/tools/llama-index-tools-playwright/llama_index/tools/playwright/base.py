@@ -88,6 +88,7 @@ class PlaywrightToolSpec(BaseToolSpec):
 
         Returns:
             AsyncBrowser: The playwright browser.
+
         """
         from playwright.async_api import async_playwright
 
@@ -103,6 +104,7 @@ class PlaywrightToolSpec(BaseToolSpec):
 
         Returns:
             AsyncPage: The current page.
+
         """
         if not browser.contexts:
             context = await browser.new_context()
@@ -127,6 +129,7 @@ class PlaywrightToolSpec(BaseToolSpec):
 
         Args:
             selector: The CSS selector for the web element to click on.
+
         """
         if self.async_browser is None:
             raise ValueError("Async browser is not initialized")
@@ -160,6 +163,7 @@ class PlaywrightToolSpec(BaseToolSpec):
         Args:
             selector: The CSS selector for the web input field to fill.
             value: The value to fill in.
+
         """
         if self.async_browser is None:
             raise ValueError("Async browser is not initialized")
@@ -270,6 +274,7 @@ class PlaywrightToolSpec(BaseToolSpec):
         Args:
             selector: CSS selector, such as '*', 'div', 'p', 'a', #id, .classname
             attribute: Set of attributes to retrieve for each element
+
         """
         if self.async_browser is None:
             raise ValueError("Async browser is not initialized")
@@ -298,6 +303,7 @@ class PlaywrightToolSpec(BaseToolSpec):
 
         Args:
             url: The url to navigate to.
+
         """
         if self.async_browser is None:
             raise ValueError("Async browser is not initialized")

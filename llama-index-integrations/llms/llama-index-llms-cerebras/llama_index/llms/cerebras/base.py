@@ -22,6 +22,7 @@ class Cerebras(OpenAILike):
 
         print(response)
         ```
+
     """
 
     def __init__(
@@ -35,9 +36,9 @@ class Cerebras(OpenAILike):
     ) -> None:
         api_key = api_key or os.environ.get("CEREBRAS_API_KEY", None)
 
-        assert (
-            api_key is not None
-        ), "API Key not specified! Please set `CEREBRAS_API_KEY`!"
+        assert api_key is not None, (
+            "API Key not specified! Please set `CEREBRAS_API_KEY`!"
+        )
 
         super().__init__(
             model=model,

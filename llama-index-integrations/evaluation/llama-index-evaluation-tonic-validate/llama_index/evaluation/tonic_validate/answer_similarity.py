@@ -10,7 +10,8 @@ from tonic_validate.services.openai_service import OpenAIService
 
 
 class AnswerSimilarityEvaluator(BaseEvaluator):
-    """Tonic Validate's answer similarity metric.
+    """
+    Tonic Validate's answer similarity metric.
 
     The output score is a float between 0.0 and 5.0.
 
@@ -19,6 +20,7 @@ class AnswerSimilarityEvaluator(BaseEvaluator):
     Args:
         openai_service(OpenAIService): The OpenAI service to use. Specifies the chat
             completion model to use as the LLM evaluator. Defaults to "gpt-4".
+
     """
 
     def __init__(self, openai_service: Optional[Any] = None):
@@ -33,7 +35,7 @@ class AnswerSimilarityEvaluator(BaseEvaluator):
         response: Optional[str] = None,
         contexts: Optional[Sequence[str]] = None,
         reference_response: Optional[str] = None,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> EvaluationResult:
         from tonic_validate.classes.benchmark import BenchmarkItem
         from tonic_validate.classes.llm_response import LLMResponse

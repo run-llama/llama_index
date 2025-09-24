@@ -25,7 +25,7 @@ def messages():
     ]
 
 
-@pytest.mark.complete()
+@pytest.mark.complete
 def test_modelscope_complete(modelscope_llm, prompt):
     response = modelscope_llm.complete(prompt)
     assert response is not None
@@ -33,7 +33,7 @@ def test_modelscope_complete(modelscope_llm, prompt):
     print(response)
 
 
-@pytest.mark.complete()
+@pytest.mark.complete
 def test_modelscope_stream_complete(modelscope_llm, prompt):
     response = modelscope_llm.stream_complete(prompt)
     assert response is not None
@@ -51,7 +51,7 @@ def test_modelscope_chat_clear(modelscope_llm, messages):
     print(response)
 
 
-@pytest.mark.chat()
+@pytest.mark.chat
 def test_modelscope_chat(modelscope_llm, messages):
     response = modelscope_llm.chat(messages, max_new_tokens=100)
     assert response is not None
@@ -59,7 +59,7 @@ def test_modelscope_chat(modelscope_llm, messages):
     print(response)
 
 
-@pytest.mark.chat()
+@pytest.mark.chat
 def test_modelscope_stream_chat(modelscope_llm, messages):
     gen = modelscope_llm.stream_chat(messages, max_new_tokens=100)
     assert gen is not None

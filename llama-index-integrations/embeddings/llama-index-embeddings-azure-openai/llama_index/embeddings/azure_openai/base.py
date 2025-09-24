@@ -1,6 +1,7 @@
 from typing import Annotated, Any, Dict, Optional
 
 import httpx
+from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.core.bridge.pydantic import (
     Field,
     PrivateAttr,
@@ -9,7 +10,6 @@ from llama_index.core.bridge.pydantic import (
 )
 from llama_index.core.callbacks.base import CallbackManager
 from llama_index.core.constants import DEFAULT_EMBED_BATCH_SIZE
-from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.embeddings.openai import (
     OpenAIEmbedding,
     OpenAIEmbeddingMode,
@@ -17,8 +17,8 @@ from llama_index.embeddings.openai import (
 )
 from llama_index.embeddings.openai.utils import DEFAULT_OPENAI_API_BASE
 from llama_index.llms.azure_openai.utils import (
-    resolve_from_aliases,
     refresh_openai_azuread_token,
+    resolve_from_aliases,
 )
 from openai import AsyncAzureOpenAI, AzureOpenAI
 from openai.lib.azure import AzureADTokenProvider
@@ -68,6 +68,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         mode: str = OpenAIEmbeddingMode.TEXT_SEARCH_MODE,
         model: str = OpenAIEmbeddingModelType.TEXT_EMBED_ADA_002,
         embed_batch_size: int = DEFAULT_EMBED_BATCH_SIZE,
+        dimensions: Optional[int] = None,
         additional_kwargs: Optional[Dict[str, Any]] = None,
         api_key: Optional[str] = None,
         api_version: Optional[str] = None,
@@ -87,13 +88,16 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         async_http_client: Optional[httpx.AsyncClient] = None,
         **kwargs: Any,
     ):
-        azure_endpoint = get_from_param_or_env(
-            "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", ""
-        )
+        # OpenAI base_url (api_base) and azure_endpoint are mutually exclusive
+        if api_base is None:
+            azure_endpoint = get_from_param_or_env(
+                "azure_endpoint", azure_endpoint, "AZURE_OPENAI_ENDPOINT", None
+            )
 
-        # OpenAI base_url and azure_endpoint are mutually exclusive
-        if api_base:
-            azure_endpoint = None
+        if not use_azure_ad:
+            api_key = get_from_param_or_env(
+                "api_key", api_key, "AZURE_OPENAI_API_KEY", None
+            )
 
         azure_deployment = resolve_from_aliases(
             azure_deployment,
@@ -104,6 +108,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
             mode=mode,
             model=model,
             embed_batch_size=embed_batch_size,
+            dimensions=dimensions,
             additional_kwargs=additional_kwargs,
             api_key=api_key,
             api_version=api_version,
@@ -122,7 +127,7 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
         )
 
         # reset api_base to None if it is the default
-        if self.api_base == DEFAULT_OPENAI_API_BASE:
+        if self.api_base == DEFAULT_OPENAI_API_BASE or self.azure_endpoint:
             self.api_base = None
 
     @model_validator(mode="before")
@@ -162,8 +167,13 @@ class AzureOpenAIEmbedding(OpenAIEmbedding):
 
     def _get_credential_kwargs(self, is_async: bool = False) -> Dict[str, Any]:
         if self.use_azure_ad:
-            self._azure_ad_token = refresh_openai_azuread_token(self._azure_ad_token)
-            self.api_key = self._azure_ad_token.token
+            if self.azure_ad_token_provider:
+                self.api_key = self.azure_ad_token_provider()
+            else:
+                self._azure_ad_token = refresh_openai_azuread_token(
+                    self._azure_ad_token
+                )
+                self.api_key = self._azure_ad_token.token
         else:
             self.api_key = get_from_param_or_env(
                 "api_key", self.api_key, "AZURE_OPENAI_API_KEY"

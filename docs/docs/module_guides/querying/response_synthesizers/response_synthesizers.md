@@ -60,7 +60,7 @@ response_str = response_synthesizer.get_response(
 
 ## Example Notebooks
 
-- [Refine](../../../examples/response_synthesizers/refine.ipynb)
-- [Structured Refine](../../../examples/response_synthesizers/structured_refine.ipynb)
-- [Tree Summarize](../../../examples/response_synthesizers/tree_summarize.ipynb)
-- [Custom Prompting](../../../examples/response_synthesizers/custom_prompt_synthesizer.ipynb)
+- [Refine](/python/examples/response_synthesizers/refine)
+- [Structured Refine](/python/examples/response_synthesizers/structured_refine)
+- [Tree Summarize](/python/examples/response_synthesizers/tree_summarize)
+- [Custom Prompting](/python/examples/response_synthesizers/custom_prompt_synthesizer)

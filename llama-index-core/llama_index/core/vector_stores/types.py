@@ -92,9 +92,10 @@ class FilterCondition(str, Enum):
 
 
 class MetadataFilter(BaseModel):
-    r"""Comprehensive metadata filter for vector stores to support more operators.
+    r"""
+    Comprehensive metadata filter for vector stores to support more operators.
 
-    Value uses Strict* types, as int, float and str are compatible types and were all
+    Value uses Strict types, as int, float and str are compatible types and were all
     converted to string before.
 
     See: https://docs.pydantic.dev/latest/usage/types/#strict-types
@@ -118,7 +119,8 @@ class MetadataFilter(BaseModel):
         cls,
         filter_dict: Dict,
     ) -> "MetadataFilter":
-        """Create MetadataFilter from dictionary.
+        """
+        Create MetadataFilter from dictionary.
 
         Args:
             filter_dict: Dict with key, value and operator.
@@ -164,7 +166,8 @@ class MetadataFilters(BaseModel):
         filter_dicts: List[Dict],
         condition: Optional[FilterCondition] = FilterCondition.AND,
     ) -> "MetadataFilters":
-        """Create MetadataFilters from dicts.
+        """
+        Create MetadataFilters from dicts.
 
         This takes in a list of individual MetadataFilter objects, along
         with the condition.
@@ -198,7 +201,8 @@ class MetadataFilters(BaseModel):
 
 
 class VectorStoreQuerySpec(BaseModel):
-    """Schema for a structured request for vector store
+    """
+    Schema for a structured request for vector store
     (i.e. to be converted to a VectorStoreQuery).
 
     Currently only used by VectorIndexAutoRetriever.
@@ -210,7 +214,8 @@ class VectorStoreQuerySpec(BaseModel):
 
 
 class MetadataInfo(BaseModel):
-    """Information about a metadata filter supported by a vector store.
+    """
+    Information about a metadata filter supported by a vector store.
 
     Currently only used by VectorIndexAutoRetriever.
     """
@@ -221,7 +226,8 @@ class MetadataInfo(BaseModel):
 
 
 class VectorStoreInfo(BaseModel):
-    """Information about a vector store (content and supported metadata filters).
+    """
+    Information about a vector store (content and supported metadata filters).
 
     Currently only used by VectorIndexAutoRetriever.
     """

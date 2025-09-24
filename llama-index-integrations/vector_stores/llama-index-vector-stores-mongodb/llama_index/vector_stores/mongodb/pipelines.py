@@ -1,6 +1,8 @@
-"""Aggregation pipeline components used in Atlas Full-Text, Vector, and Hybrid Search.
+"""
+Aggregation pipeline components used in Atlas Full-Text, Vector, and Hybrid Search.
 
 """
+
 from typing import Any, Dict, List, Optional, TypeVar
 
 from llama_index.core.vector_stores.types import (
@@ -25,7 +27,8 @@ def fulltext_search_stage(
     limit: int = 10,
     **kwargs: Any,
 ) -> List[Dict[str, Any]]:
-    """Full-Text search.
+    """
+    Full-Text search.
 
     Args:
         query: Input text to search for
@@ -39,6 +42,7 @@ def fulltext_search_stage(
     See Also:
         - MongoDB Full-Text Search <https://www.mongodb.com/docs/atlas/atlas-search/aggregation-stages/search/#mongodb-pipeline-pipe.-search>
         - MongoDB Operators <https://www.mongodb.com/docs/atlas/atlas-search/operators-and-collectors/#std-label-operators-ref>
+
     """
     pipeline = [
         {
@@ -57,7 +61,8 @@ def fulltext_search_stage(
 def filters_to_mql(
     filters: MetadataFilters, metadata_key: str = "metadata"
 ) -> Dict[str, Any]:
-    """Converts Llama-index's MetadataFilters into the MQL expected by $vectorSearch query.
+    """
+    Converts Llama-index's MetadataFilters into the MQL expected by $vectorSearch query.
 
     We are looking for something like
 
@@ -76,6 +81,7 @@ def filters_to_mql(
 
     Returns:
         MQL version of the filter.
+
     """
     if filters is None:
         return {}
@@ -128,7 +134,8 @@ def vector_search_stage(
     oversampling_factor: int = 10,
     **kwargs: Any,
 ) -> Dict[str, Any]:
-    """Vector Search Stage without Scores.
+    """
+    Vector Search Stage without Scores.
 
     Scoring is applied later depending on strategy.
     vector search includes a vectorSearchScore that is typically used.
@@ -144,6 +151,7 @@ def vector_search_stage(
 
     Returns:
         Dictionary defining the $vectorSearch
+
     """
     if filter is None:
         filter = {}
@@ -192,7 +200,8 @@ def map_lc_mql_filter_operators(operator: FilterOperator) -> str:
 
 
 def reciprocal_rank_stage(score_field: str, penalty: float = 0) -> List[Dict[str, Any]]:
-    r"""Stage adds Reciprocal Rank Fusion weighting.
+    r"""
+    Stage adds Reciprocal Rank Fusion weighting.
 
         First, it pushes documents retrieved from previous stage
         into a temporary sub-document. It then unwinds to establish
@@ -204,6 +213,7 @@ def reciprocal_rank_stage(score_field: str, penalty: float = 0) -> List[Dict[str
 
     Returns:
         RRF score := \frac{1}{rank + penalty} with rank in [1,2,..,n]
+
     """
     return [
         {"$group": {"_id": None, "docs": {"$push": "$$ROOT"}}},
@@ -224,7 +234,8 @@ def reciprocal_rank_stage(score_field: str, penalty: float = 0) -> List[Dict[str
 def final_hybrid_stage(
     scores_fields: List[str], limit: int, alpha: float = 0.5
 ) -> List[Dict[str, Any]]:
-    """Sum weighted scores, sort, and apply limit.
+    """
+    Sum weighted scores, sort, and apply limit.
 
     Args:
         scores_fields: List of fields given to scores of vector and text searches
@@ -232,6 +243,7 @@ def final_hybrid_stage(
 
     Returns:
         Final aggregation stages
+
     """
     assert set(scores_fields) == {"vector_score", "fulltext_score"}
 

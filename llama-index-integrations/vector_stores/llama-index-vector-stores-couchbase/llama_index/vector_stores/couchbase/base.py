@@ -3,6 +3,7 @@ Couchbase Vector store interface.
 """
 
 import logging
+import warnings
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.bridge.pydantic import PrivateAttr
@@ -30,6 +31,7 @@ def _transform_couchbase_filter_condition(condition: str) -> str:
 
     Returns:
         Couchbase specific condition
+
     """
     if condition == "and":
         return "conjuncts"
@@ -52,6 +54,7 @@ def _transform_couchbase_filter_operator(
 
     Returns:
         Dictionary with Couchbase specific search operation.
+
     """
     if operator == "!=":
         return {"must_not": {"disjuncts": [{"field": field, "match": value}]}}
@@ -80,6 +83,7 @@ def _to_couchbase_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
 
     Returns:
         Dictionary with Couchbase search query.
+
     """
     filters = {}
     filters_list = []
@@ -111,7 +115,7 @@ def _to_couchbase_filter(standard_filters: MetadataFilters) -> Dict[str, Any]:
     return {"query": filters}
 
 
-class CouchbaseVectorStore(BasePydanticVectorStore):
+class CouchbaseSearchVectorStore(BasePydanticVectorStore):
     """
     Couchbase Vector Store.
 
@@ -170,6 +174,7 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
 
         Returns:
             None
+
         """
         try:
             from couchbase.cluster import Cluster
@@ -253,6 +258,7 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
 
         Returns:
             List[str]: List of document IDs for the added nodes.
+
         """
         from couchbase.exceptions import DocumentExistsException
 
@@ -309,6 +315,7 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
 
         Returns:
             None
+
         """
         try:
             document_field = self._metadata_key + ".ref_doc_id"
@@ -330,6 +337,7 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
 
         Returns:
             VectorStoreQueryResult: The result of the query containing the top-k nodes, similarities, and ids.
+
         """
         import couchbase.search as search
         from couchbase.options import SearchOptions
@@ -437,6 +445,7 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
 
         Returns:
             True if the bucket exists
+
         """
         bucket_manager = self._cluster.buckets()
         try:
@@ -516,6 +525,7 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
 
         Returns:
             Dict[str, Any]: The formatted metadata.
+
         """
         metadata = {}
         for key, value in row_fields.items():
@@ -528,3 +538,45 @@ class CouchbaseVectorStore(BasePydanticVectorStore):
                 metadata[key] = value
 
         return metadata
+
+
+class CouchbaseVectorStore(CouchbaseSearchVectorStore):
+    """
+    Couchbase Vector Store (deprecated).
+
+    This class is deprecated, please use CouchbaseSearchVectorStore instead.
+    """
+
+    def __init__(
+        self,
+        cluster: Any,
+        bucket_name: str,
+        scope_name: str,
+        collection_name: str,
+        index_name: str,
+        text_key: Optional[str] = "text",
+        embedding_key: Optional[str] = "embedding",
+        metadata_key: Optional[str] = "metadata",
+        scoped_index: bool = True,
+    ) -> None:
+        """
+        Initializes a connection to a Couchbase Vector Store.
+
+        This class is deprecated, please use CouchbaseSearchVectorStore instead.
+        """
+        warnings.warn(
+            "CouchbaseVectorStore is deprecated, please use CouchbaseSearchVectorStore instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        super().__init__(
+            cluster,
+            bucket_name,
+            scope_name,
+            collection_name,
+            index_name,
+            text_key,
+            embedding_key,
+            metadata_key,
+            scoped_index,
+        )

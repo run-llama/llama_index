@@ -10,7 +10,7 @@ from llama_index.core.llms import ChatMessage
 
 try:
     import pymongo  # noqa: F401
-    import motor.motor_asyncio  # noqa: F401
+    import llama_index  # noqa: F401
 
     no_packages = False
 except ImportError:
@@ -54,7 +54,7 @@ def mongo_container() -> Generator[Dict[str, Union[str, Container]], None, None]
 
 
 @pytest.fixture()
-@pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
+@pytest.mark.skipif(no_packages, reason="pymongo not installed")
 def mongo_chat_store(
     mongo_container: Dict[str, Union[str, Container]],
 ) -> Generator[MongoChatStore, None, None]:
@@ -73,7 +73,7 @@ def mongo_chat_store(
             chat_store._collection.drop()
 
 
-@pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
+@pytest.mark.skipif(no_packages, reason="pymongo not installed")
 def test_create_chat(mongo_chat_store: MongoChatStore):
     """Test creating a chat session."""
     # Create a chat with metadata
@@ -89,7 +89,7 @@ def test_create_chat(mongo_chat_store: MongoChatStore):
     assert key in keys
 
 
-@pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
+@pytest.mark.skipif(no_packages, reason="pymongo not installed")
 def test_get_messages(mongo_chat_store: MongoChatStore):
     """Test retrieving messages from a chat session."""
     # Create a chat with messages
@@ -114,7 +114,7 @@ def test_get_messages(mongo_chat_store: MongoChatStore):
     assert retrieved_messages[2].content == "I need information about databases."
 
 
-@pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
+@pytest.mark.skipif(no_packages, reason="pymongo not installed")
 def test_add_message(mongo_chat_store: MongoChatStore):
     """Test adding a message to an existing chat session."""
     # Create a chat with initial messages
@@ -137,7 +137,7 @@ def test_add_message(mongo_chat_store: MongoChatStore):
     assert messages[1].content == "Response to initial message"
 
 
-@pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
+@pytest.mark.skipif(no_packages, reason="pymongo not installed")
 def test_delete_messages(mongo_chat_store: MongoChatStore):
     """Test deleting all messages from a chat session."""
     # Create a chat with messages
@@ -164,7 +164,7 @@ def test_delete_messages(mongo_chat_store: MongoChatStore):
     assert key not in keys
 
 
-@pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
+@pytest.mark.skipif(no_packages, reason="pymongo not installed")
 def test_delete_message(mongo_chat_store: MongoChatStore):
     """Test deleting a specific message from a chat session."""
     # Create a chat with multiple messages
@@ -190,7 +190,7 @@ def test_delete_message(mongo_chat_store: MongoChatStore):
     assert remaining[1].content == "Last message"
 
 
-@pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
+@pytest.mark.skipif(no_packages, reason="pymongo not installed")
 def test_delete_last_message(mongo_chat_store: MongoChatStore):
     """Test deleting the last message from a chat session."""
     # Create a chat with messages
@@ -214,8 +214,8 @@ def test_delete_last_message(mongo_chat_store: MongoChatStore):
     assert remaining[0].content == "First message"
 
 
-@pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
-@pytest.mark.asyncio()
+@pytest.mark.skipif(no_packages, reason="pymongo not installed")
+@pytest.mark.asyncio
 async def test_async_get_messages(mongo_chat_store: MongoChatStore):
     """Test retrieving messages asynchronously."""
     # Create a chat with messages
@@ -235,8 +235,8 @@ async def test_async_get_messages(mongo_chat_store: MongoChatStore):
     assert retrieved[1].content == "Async response"
 
 
-@pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
-@pytest.mark.asyncio()
+@pytest.mark.skipif(no_packages, reason="pymongo not installed")
+@pytest.mark.asyncio
 async def test_async_add_message(mongo_chat_store: MongoChatStore):
     """Test adding a message asynchronously."""
     key = "test_async_add"
@@ -253,8 +253,8 @@ async def test_async_add_message(mongo_chat_store: MongoChatStore):
     assert messages[1].content == "Async response"
 
 
-@pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
-@pytest.mark.asyncio()
+@pytest.mark.skipif(no_packages, reason="pymongo not installed")
+@pytest.mark.asyncio
 async def test_async_set_messages(mongo_chat_store: MongoChatStore):
     """Test setting messages asynchronously."""
     key = "test_async_set"
@@ -273,8 +273,8 @@ async def test_async_set_messages(mongo_chat_store: MongoChatStore):
     assert retrieved[1].content == "Second async set message"
 
 
-@pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
-@pytest.mark.asyncio()
+@pytest.mark.skipif(no_packages, reason="pymongo not installed")
+@pytest.mark.asyncio
 async def test_async_delete_messages(mongo_chat_store: MongoChatStore):
     """Test deleting all messages asynchronously."""
     key = "test_async_delete_all"
@@ -300,8 +300,8 @@ async def test_async_delete_messages(mongo_chat_store: MongoChatStore):
     assert key not in keys
 
 
-@pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
-@pytest.mark.asyncio()
+@pytest.mark.skipif(no_packages, reason="pymongo not installed")
+@pytest.mark.asyncio
 async def test_async_delete_message(mongo_chat_store: MongoChatStore):
     """Test deleting a specific message asynchronously."""
     key = "test_async_delete_specific"
@@ -326,8 +326,8 @@ async def test_async_delete_message(mongo_chat_store: MongoChatStore):
     assert remaining[1].content == "Async last message"
 
 
-@pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
-@pytest.mark.asyncio()
+@pytest.mark.skipif(no_packages, reason="pymongo not installed")
+@pytest.mark.asyncio
 async def test_async_delete_last_message(mongo_chat_store: MongoChatStore):
     """Test deleting the last message asynchronously."""
     key = "test_async_delete_last"
@@ -350,8 +350,8 @@ async def test_async_delete_last_message(mongo_chat_store: MongoChatStore):
     assert remaining[0].content == "Async first message"
 
 
-@pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
-@pytest.mark.asyncio()
+@pytest.mark.skipif(no_packages, reason="pymongo not installed")
+@pytest.mark.asyncio
 async def test_async_get_keys(mongo_chat_store: MongoChatStore):
     """Test getting all keys asynchronously."""
     # Create multiple chats
@@ -372,7 +372,7 @@ async def test_async_get_keys(mongo_chat_store: MongoChatStore):
     assert "async_keys_test2" in keys
 
 
-@pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
+@pytest.mark.skipif(no_packages, reason="pymongo not installed")
 def test_nonexistent_key(mongo_chat_store: MongoChatStore):
     """Test behavior with nonexistent keys."""
     # Try to get messages for nonexistent key
@@ -394,7 +394,7 @@ def test_nonexistent_key(mongo_chat_store: MongoChatStore):
     assert deleted is None
 
 
-@pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
+@pytest.mark.skipif(no_packages, reason="pymongo not installed")
 def test_ttl_configuration(mongo_container):
     """Test TTL configuration is applied correctly."""
     # Create chat store with TTL
@@ -416,7 +416,7 @@ def test_ttl_configuration(mongo_container):
     chat_store._collection.drop()
 
 
-@pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
+@pytest.mark.skipif(no_packages, reason="pymongo not installed")
 def test_invalid_message_index(mongo_chat_store: MongoChatStore):
     """Test behavior when trying to delete a message with invalid index."""
     key = "test_invalid_index"
@@ -435,7 +435,7 @@ def test_invalid_message_index(mongo_chat_store: MongoChatStore):
     assert remaining[0].content == "Only message"
 
 
-@pytest.mark.skipif(no_packages, reason="pymongo and motor not installed")
+@pytest.mark.skipif(no_packages, reason="pymongo not installed")
 def test_multiple_clients(mongo_container):
     """Test using multiple chat store instances with the same database."""
     # Create two chat store instances

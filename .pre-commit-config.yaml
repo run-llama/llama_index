@@ -22,19 +22,21 @@ repos:
         exclude: llama-index-core/llama_index/core/_static
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.1.5
+    rev: v0.11.8
     hooks:
       - id: ruff
-        args: [--fix, --exit-non-zero-on-fix]
+        args: [--exit-non-zero-on-fix, --fix]
         exclude: ".*poetry.lock|.*_static"
+      - id: ruff-format
+        exclude: ".*poetry.lock|.*_static|.*uv.lock|.*ipynb|.*docs.*"
 
-  - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 23.10.1
-    hooks:
-      - id: black-jupyter
-        name: black-src
-        alias: black
-        exclude: "^docs|.*poetry.lock|.*_static"
+  # - repo: https://github.com/psf/black-pre-commit-mirror
+  #   rev: 23.10.1
+  #   hooks:
+  #     - id: black-jupyter
+  #       name: black-src
+  #       alias: black
+  #       exclude: "^docs|.*poetry.lock|.*_static"
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.0.1

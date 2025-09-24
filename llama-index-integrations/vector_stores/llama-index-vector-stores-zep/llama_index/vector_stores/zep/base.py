@@ -22,7 +22,8 @@ logger = logging.getLogger(__name__)
 
 
 class ZepVectorStore(BasePydanticVectorStore):
-    """Zep Vector Store for storing and retrieving embeddings.
+    """
+    Zep Vector Store for storing and retrieving embeddings.
 
     Zep supports both normalized and non-normalized embeddings. Cosine similarity is
     used to compute distance and the returned score is normalized to be between 0 and 1.
@@ -53,6 +54,7 @@ class ZepVectorStore(BasePydanticVectorStore):
             embedding_dimensions=1536,  # Optional, required if creating a new collection
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -138,13 +140,15 @@ class ZepVectorStore(BasePydanticVectorStore):
         return docs, ids
 
     def add(self, nodes: List[BaseNode], **add_kwargs: Any) -> List[str]:
-        """Add nodes to the collection.
+        """
+        Add nodes to the collection.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings.
 
         Returns:
             List[str]: List of IDs of the added documents.
+
         """
         if not isinstance(self._collection, DocumentCollection):
             raise ValueError("Collection not initialized")
@@ -163,13 +167,15 @@ class ZepVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Asynchronously add nodes to the collection.
+        """
+        Asynchronously add nodes to the collection.
 
         Args:
             nodes (List[BaseNode]): List of nodes with embeddings.
 
         Returns:
             List[str]: List of IDs of the added documents.
+
         """
         if not isinstance(self._collection, DocumentCollection):
             raise ValueError("Collection not initialized")
@@ -183,15 +189,15 @@ class ZepVectorStore(BasePydanticVectorStore):
 
         return ids
 
-    def delete(
-        self, ref_doc_id: Optional[str] = None, **delete_kwargs: Any
-    ) -> None:  # type: ignore
-        """Delete a document from the collection.
+    def delete(self, ref_doc_id: Optional[str] = None, **delete_kwargs: Any) -> None:  # type: ignore
+        """
+        Delete a document from the collection.
 
         Args:
             ref_doc_id (Optional[str]): ID of the document to delete.
                 Not currently supported.
             delete_kwargs: Must contain "uuid" key with UUID of the document to delete.
+
         """
         if not isinstance(self._collection, DocumentCollection):
             raise ValueError("Collection not initialized")
@@ -209,12 +215,14 @@ class ZepVectorStore(BasePydanticVectorStore):
     async def adelete(
         self, ref_doc_id: Optional[str] = None, **delete_kwargs: Any
     ) -> None:  # type: ignore
-        """Asynchronously delete a document from the collection.
+        """
+        Asynchronously delete a document from the collection.
 
         Args:
             ref_doc_id (Optional[str]): ID of the document to delete.
                 Not currently supported.
             delete_kwargs: Must contain "uuid" key with UUID of the document to delete.
+
         """
         if not isinstance(self._collection, DocumentCollection):
             raise ValueError("Collection not initialized")
@@ -266,7 +274,8 @@ class ZepVectorStore(BasePydanticVectorStore):
         query: VectorStoreQuery,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """Query the index for the top k most similar nodes to the given query.
+        """
+        Query the index for the top k most similar nodes to the given query.
 
         Args:
             query (VectorStoreQuery): Query object containing either a query string
@@ -275,6 +284,7 @@ class ZepVectorStore(BasePydanticVectorStore):
         Returns:
             VectorStoreQueryResult: Result of the query, containing the most similar
                 nodes, their similarities, and their IDs.
+
         """
         if not isinstance(self._collection, DocumentCollection):
             raise ValueError("Collection not initialized")
@@ -305,7 +315,8 @@ class ZepVectorStore(BasePydanticVectorStore):
         query: VectorStoreQuery,
         **kwargs: Any,
     ) -> VectorStoreQueryResult:
-        """Asynchronously query the index for the top k most similar nodes to the
+        """
+        Asynchronously query the index for the top k most similar nodes to the
             given query.
 
         Args:
@@ -315,6 +326,7 @@ class ZepVectorStore(BasePydanticVectorStore):
         Returns:
             VectorStoreQueryResult: Result of the query, containing the most similar
                 nodes, their similarities, and their IDs.
+
         """
         if not isinstance(self._collection, DocumentCollection):
             raise ValueError("Collection not initialized")

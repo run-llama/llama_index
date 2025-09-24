@@ -4,7 +4,7 @@ import pandas as pd
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.program.llm_prompt_program import BaseLLMFunctionProgram
 from llama_index.core.types import BasePydanticProgram
-from llama_index.program.openai import OpenAIPydanticProgram
+from llama_index.core.program.function_program import FunctionCallingProgram
 
 
 class DataFrameRow(BaseModel):
@@ -24,7 +24,8 @@ class DataFrameColumn(BaseModel):
 
 
 class DataFrame(BaseModel):
-    """Data-frame class.
+    """
+    Data-frame class.
 
     Consists of a `rows` field which is a list of dictionaries,
     as well as a `columns` field which is a list of column names.
@@ -65,7 +66,8 @@ class DataFrameRowsOnly(BaseModel):
 
 
 class DataFrameValuesPerColumn(BaseModel):
-    """Data-frame as a list of column objects.
+    """
+    Data-frame as a list of column objects.
 
     Each column object contains a list of values. Note that they can be
     of variable length, and so may not be able to be converted to a dataframe.
@@ -89,7 +91,8 @@ The column schema is the following: {column_schema}.
 
 
 class DFFullProgram(BasePydanticProgram[DataFrame]):
-    """Data-frame program.
+    """
+    Data-frame program.
 
     Extracts text into a schema + datapoints.
 
@@ -118,7 +121,7 @@ class DFFullProgram(BasePydanticProgram[DataFrame]):
         input_key: str = "input_str",
     ) -> "DFFullProgram":
         """Full DF output parser."""
-        pydantic_program_cls = pydantic_program_cls or OpenAIPydanticProgram
+        pydantic_program_cls = pydantic_program_cls or FunctionCallingProgram
 
         return cls(
             pydantic_program_cls,
@@ -144,7 +147,8 @@ class DFFullProgram(BasePydanticProgram[DataFrame]):
 
 
 class DFRowsProgram(BasePydanticProgram[DataFrameRowsOnly]):
-    """DF Rows output parser.
+    """
+    DF Rows output parser.
 
     Given DF schema, extract text into a set of rows.
 
@@ -188,7 +192,7 @@ class DFRowsProgram(BasePydanticProgram[DataFrameRowsOnly]):
         **kwargs: Any,
     ) -> "DFRowsProgram":
         """Rows DF output parser."""
-        pydantic_program_cls = pydantic_program_cls or OpenAIPydanticProgram
+        pydantic_program_cls = pydantic_program_cls or FunctionCallingProgram
 
         # either one of df or column_schema needs to be specified
         if df is None and column_schema is None:

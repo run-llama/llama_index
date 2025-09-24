@@ -4,7 +4,6 @@ import asyncio
 import base64
 import os
 import random
-import requests
 import sys
 import time
 import traceback
@@ -17,6 +16,7 @@ from io import BytesIO
 from itertools import islice
 from pathlib import Path
 from typing import (
+    TYPE_CHECKING,
     Any,
     AsyncGenerator,
     Callable,
@@ -30,8 +30,11 @@ from typing import (
     Type,
     Union,
     runtime_checkable,
-    TYPE_CHECKING,
 )
+
+import platformdirs
+import requests
+from urllib.parse import urlparse
 
 if TYPE_CHECKING:
     from nltk.tokenize import PunktSentenceTokenizer
@@ -49,16 +52,15 @@ class GlobalsHelper:
         from nltk.data import path as nltk_path
 
         # Set up NLTK data directory
-        self._nltk_data_dir = os.environ.get(
-            "NLTK_DATA",
-            os.path.join(
-                os.path.dirname(os.path.abspath(__file__)),
-                "_static/nltk_cache",
-            ),
-        )
+        if "NLTK_DATA" in os.environ:
+            self._nltk_data_dir = str(Path(os.environ["NLTK_DATA"]))
+        else:
+            path = Path(os.path.dirname(os.path.abspath(__file__)))
+            self._nltk_data_dir = str(path / "_static/nltk_cache")
 
         # Ensure the directory exists
-        os.makedirs(self._nltk_data_dir, exist_ok=True)
+        if not os.path.exists(self._nltk_data_dir):
+            os.makedirs(self._nltk_data_dir, exist_ok=True)
 
         # Add to NLTK path if not already present
         if self._nltk_data_dir not in nltk_path:
@@ -69,8 +71,8 @@ class GlobalsHelper:
 
     def _download_nltk_data(self) -> None:
         """Download NLTK data packages in the background."""
-        from nltk.data import find as nltk_find
         from nltk import download
+        from nltk.data import find as nltk_find
 
         try:
             # Download stopwords
@@ -125,8 +127,7 @@ globals_helper = GlobalsHelper()
 # Global Tokenizer
 @runtime_checkable
 class Tokenizer(Protocol):
-    def encode(self, text: str, *args: Any, **kwargs: Any) -> List[Any]:
-        ...
+    def encode(self, text: str, *args: Any, **kwargs: Any) -> List[Any]: ...
 
 
 def set_global_tokenizer(tokenizer: Union[Tokenizer, Callable[[str], list]]) -> None:
@@ -138,7 +139,7 @@ def set_global_tokenizer(tokenizer: Union[Tokenizer, Callable[[str], list]]) -> 
         llama_index.core.global_tokenizer = tokenizer
 
 
-def get_tokenizer() -> Callable[[str], List]:
+def get_tokenizer(model_name: str = "gpt-3.5-turbo") -> Callable[[str], List]:
     import llama_index.core
 
     if llama_index.core.global_tokenizer is None:
@@ -159,7 +160,7 @@ def get_tokenizer() -> Callable[[str], List]:
                 "_static/tiktoken_cache",
             )
 
-        enc = tiktoken.encoding_for_model("gpt-3.5-turbo")
+        enc = tiktoken.encoding_for_model(model_name)
         tokenizer = partial(enc.encode, allowed_special="all")
         set_global_tokenizer(tokenizer)
 
@@ -190,7 +191,8 @@ def get_new_int_id(d: Set) -> int:
 
 @contextmanager
 def temp_set_attrs(obj: Any, **kwargs: Any) -> Generator:
-    """Temporary setter.
+    """
+    Temporary setter.
 
     Utility class for setting a temporary value for an attribute on a class.
     Taken from: https://tinyurl.com/2p89xymh
@@ -208,7 +210,8 @@ def temp_set_attrs(obj: Any, **kwargs: Any) -> Generator:
 
 @dataclass
 class ErrorToRetry:
-    """Exception types that should be retried.
+    """
+    Exception types that should be retried.
 
     Args:
         exception_cls (Type[Exception]): Class of exception.
@@ -229,7 +232,8 @@ def retry_on_exceptions_with_backoff(
     min_backoff_secs: float = 0.5,
     max_backoff_secs: float = 60.0,
 ) -> Any:
-    """Execute lambda function with retries and exponential backoff.
+    """
+    Execute lambda function with retries and exponential backoff.
 
     Args:
         lambda_fn (Callable): Function to be called and output we want.
@@ -276,7 +280,8 @@ async def aretry_on_exceptions_with_backoff(
     min_backoff_secs: float = 0.5,
     max_backoff_secs: float = 60.0,
 ) -> Any:
-    """Execute lambda function with retries and exponential backoff.
+    """
+    Execute lambda function with retries and exponential backoff.
 
     Args:
         async_fn (Callable): Async Function to be called and output we want.
@@ -350,7 +355,8 @@ def truncate_text(text: str, max_length: int) -> str:
 
 
 def iter_batch(iterable: Union[Iterable, Generator], size: int) -> Iterable:
-    """Iterate over an iterable in batches.
+    """
+    Iterate over an iterable in batches.
 
     >>> list(iter_batch([1,2,3,4,5], 3))
     [[1, 2, 3], [4, 5]]
@@ -400,6 +406,7 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
     Args:
         model_name(str): the model name of the tokenizer.
                         For instance, fxmarty/tiny-llama-fast-tokenizer.
+
     """
     try:
         from transformers import AutoTokenizer  # pants: no-infer-dep
@@ -412,41 +419,30 @@ def get_transformer_tokenizer_fn(model_name: str) -> Callable[[str], List[str]]:
 
 
 def get_cache_dir() -> str:
-    """Locate a platform-appropriate cache directory for llama_index,
+    """
+    Locate a platform-appropriate cache directory for llama_index,
     and create it if it doesn't yet exist.
     """
     # User override
     if "LLAMA_INDEX_CACHE_DIR" in os.environ:
         path = Path(os.environ["LLAMA_INDEX_CACHE_DIR"])
-
-    # Linux, Unix, AIX, etc.
-    elif os.name == "posix" and sys.platform != "darwin":
-        path = Path("/tmp/llama_index")
-
-    # Mac OS
-    elif sys.platform == "darwin":
-        path = Path(os.path.expanduser("~"), "Library/Caches/llama_index")
-
-    # Windows (hopefully)
     else:
-        local = os.environ.get("LOCALAPPDATA", None) or os.path.expanduser(
-            "~\\AppData\\Local"
-        )
-        path = Path(local, "llama_index")
+        path = Path(platformdirs.user_cache_dir("llama_index"))
 
-    if not os.path.exists(path):
-        os.makedirs(
-            path, exist_ok=True
-        )  # prevents https://github.com/jerryjliu/llama_index/issues/7362
+    # Pass exist_ok and call makedirs directly, so we avoid TOCTOU issues
+    path.mkdir(parents=True, exist_ok=True)
+
     return str(path)
 
 
 def add_sync_version(func: Any) -> Any:
-    """Decorator for adding sync version of an async function. The sync version
+    """
+    Decorator for adding sync version of an async function. The sync version
     is added as a function attribute to the original function, func.
 
     Args:
         func(Any): the async function for which a sync variant will be built.
+
     """
     assert asyncio.iscoroutinefunction(func)
 
@@ -517,6 +513,7 @@ def get_color_mapping(
 
     Returns:
         Dict[str, str]: Mapping of items to colors.
+
     """
     if use_llama_index_colors:
         color_palette = _LLAMA_INDEX_COLORS
@@ -537,6 +534,7 @@ def _get_colored_text(text: str, color: str) -> str:
 
     Returns:
         str: Colored version of the input text.
+
     """
     all_colors = {**_LLAMA_INDEX_COLORS, **_ANSI_COLORS}
 
@@ -561,6 +559,7 @@ def print_text(text: str, color: Optional[str] = None, end: str = "") -> None:
 
     Returns:
         None
+
     """
     text_to_print = _get_colored_text(text, color) if color is not None else text
     print(text_to_print, end=end)
@@ -582,25 +581,29 @@ def infer_torch_device() -> str:
 
 
 def unit_generator(x: Any) -> Generator[Any, None, None]:
-    """A function that returns a generator of a single element.
+    """
+    A function that returns a generator of a single element.
 
     Args:
         x (Any): the element to build yield
 
     Yields:
         Any: the single element
+
     """
     yield x
 
 
 async def async_unit_generator(x: Any) -> AsyncGenerator[Any, None]:
-    """A function that returns a generator of a single element.
+    """
+    A function that returns a generator of a single element.
 
     Args:
         x (Any): the element to build yield
 
     Yields:
         Any: the single element
+
     """
     yield x
 
@@ -611,7 +614,8 @@ def resolve_binary(
     url: Optional[str] = None,
     as_base64: bool = False,
 ) -> BytesIO:
-    """Resolve binary data from various sources into a BytesIO object.
+    """
+    Resolve binary data from various sources into a BytesIO object.
 
     Args:
         raw_bytes: Raw bytes data
@@ -624,6 +628,7 @@ def resolve_binary(
 
     Raises:
         ValueError: If no valid source is provided
+
     """
     if raw_bytes is not None:
         # check if raw_bytes is base64 encoded
@@ -653,10 +658,41 @@ def resolve_binary(
         return BytesIO(data)
 
     elif url is not None:
+        parsed_url = urlparse(url)
+        if parsed_url.scheme == "data":
+            # Parse data URL: data:[<mediatype>][;base64],<data>
+            # The path contains everything after "data:"
+            data_part = parsed_url.path
+
+            # Split on the first comma to separate metadata from data
+            if "," not in data_part:
+                raise ValueError("Invalid data URL format: missing comma separator")
+
+            metadata, url_data = data_part.split(",", 1)
+            is_base64_encoded = metadata.endswith(";base64")
+
+            if is_base64_encoded:
+                # Data is base64 encoded in the URL
+                decoded_data = base64.b64decode(url_data)
+                if as_base64:
+                    # Return as base64 bytes
+                    return BytesIO(base64.b64encode(decoded_data))
+                else:
+                    # Return decoded binary data
+                    return BytesIO(decoded_data)
+            else:
+                # Data is not base64 encoded in the URL (URL-encoded text)
+                if as_base64:
+                    # Encode the text data as base64
+                    return BytesIO(base64.b64encode(url_data.encode("utf-8")))
+                else:
+                    # Return as text bytes
+                    return BytesIO(url_data.encode("utf-8"))
+
         headers = {
             "User-Agent": "LlamaIndex/0.0 (https://llamaindex.ai; info@llamaindex.ai) llama-index-core/0.0"
         }
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, timeout=(60, 60))
         response.raise_for_status()
         if as_base64:
             return BytesIO(base64.b64encode(response.content))

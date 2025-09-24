@@ -48,9 +48,11 @@ class VectaraQueryToolSpec(BaseToolSpec):
         callback_manager: Optional[CallbackManager] = None,
         **kwargs: Any,
     ) -> None:
-        """Initializes the Vectara API and query parameters.
+        """
+        Initializes the Vectara API and query parameters.
 
-        Parameters:
+        Parameters
+        ----------
         - vectara_corpus_key (str): The corpus key for the corpus you want to search for information.
             If not specified, reads for environment variable "VECTARA_CORPUS_KEY".
         - vectara_api_key (str): An API key that has query permissions for the given corpus.
@@ -103,6 +105,7 @@ class VectaraQueryToolSpec(BaseToolSpec):
         - citations_text_pattern (str): The displayed text for citations.
             If not specified, numeric citations are displayed.
         - save_history (bool): Whether to save the query in history. Defaults to False.
+
         """
         self.index = VectaraIndex(
             vectara_corpus_key=vectara_corpus_key,
@@ -173,11 +176,14 @@ class VectaraQueryToolSpec(BaseToolSpec):
         """
         Makes a query to a Vectara corpus and returns the top search results from the retrieved documents.
 
-        Parameters:
+        Parameters
+        ----------
             query (str): The input query from the user.
 
-        Returns:
+        Returns
+        -------
             List[Dict]: A list of retrieved documents with their associated metadata
+
         """
         response = self.retriever._retrieve(query_bundle=QueryBundle(query_str=query))
 
@@ -199,11 +205,14 @@ class VectaraQueryToolSpec(BaseToolSpec):
         """
         Makes a query to a Vectara corpus and returns the generated summary, the citation metadata, and the factual consistency score.
 
-        Parameters:
+        Parameters
+        ----------
             query (str): The input query from the user.
 
-        Returns:
+        Returns
+        -------
             Dict: A dictionary containing the generated summary, citation metadata, and the factual consistency score.
+
         """
         response = self.query_engine._query(query_bundle=QueryBundle(query_str=query))
 

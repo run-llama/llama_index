@@ -21,7 +21,7 @@ We have confirmed support for the following storage backends:
 - AWS S3
 - Cloudflare R2
 
-![](../../_static/storage/storage.png)
+![](/python/framework/_static/storage/storage.png)
 
 ## Usage Pattern
 
@@ -45,7 +45,7 @@ index = VectorStoreIndex.from_documents(
 index = VectorStoreIndex.from_vector_store(vector_store=vector_store)
 ```
 
-See our [Vector Store Module Guide](vector_stores.md) below for more details.
+See our [Vector Store Module Guide](/python/framework/module_guides/storing/vector_stores) below for more details.
 
 Note that in general to use storage abstractions, you need to define a `StorageContext` object:
 
@@ -65,16 +65,16 @@ storage_context = StorageContext.from_defaults(
 
 More details on customization/persistence can be found in the guides below.
 
-- [Customization](./customization.md)
-- [Save/Load](./save_load.md)
+- [Customization](/python/framework/module_guides/storing/customization)
+- [Save/Load](/python/framework/module_guides/storing/save_load)
 
 ## Modules
 
 We offer in-depth guides on the different storage components.
 
-- [Vector Stores](./vector_stores.md)
-- [Docstores](./docstores.md)
-- [Index Stores](./index_stores.md)
-- [Key-Val Stores](./kv_stores.md)
-- [Property Graph Stores](../indexing/lpg_index_guide.md#storage)
-- [ChatStores](./chat_stores.md)
+- [Vector Stores](/python/framework/module_guides/storing/vector_stores)
+- [Docstores](/python/framework/module_guides/storing/docstores)
+- [Index Stores](/python/framework/module_guides/storing/index_stores)
+- [Key-Val Stores](/python/framework/module_guides/storing/kv_stores)
+- [Property Graph Stores](/python/framework/module_guides/indexing/lpg_index_guide#storage)
+- [ChatStores](/python/framework/module_guides/storing/chat_stores)

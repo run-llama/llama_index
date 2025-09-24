@@ -21,6 +21,7 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     ImageBlock,
     AudioBlock,
+    DocumentBlock,
 )
 
 
@@ -114,7 +115,22 @@ def openai_modelname_to_contextsize(modelname: str) -> int:
         modelname = modelname.split(":")[0]
 
     try:
-        context_size = int(litellm.get_max_tokens(modelname))
+        model_info = litellm.get_model_info(modelname)
+
+        max_input_tokens = model_info.get("max_input_tokens")
+        max_tokens = model_info.get("max_tokens")
+        max_output_tokens = model_info.get("max_output_tokens")
+
+        if max_input_tokens is not None:
+            context_size = int(max_input_tokens)
+        elif max_tokens is not None:
+            context_size = int(max_tokens)
+        elif max_output_tokens is not None:
+            # Fallback to old behavior for compatibility
+            context_size = int(max_output_tokens)
+        else:
+            raise ValueError("No token limit information available")
+
     except Exception:
         context_size = 2048  # by default assume models have at least 2048 tokens
 
@@ -195,6 +211,22 @@ def to_openailike_message_dict(message: ChatMessage) -> dict:
                     },
                 }
             )
+        elif isinstance(block, DocumentBlock):
+            if not block.data:
+                file_buffer = block.resolve_document()
+                b64_string = block._get_b64_string(file_buffer)
+                mimetype = block.document_mimetype or block._guess_mimetype()
+            else:
+                b64_string = block.data.decode("utf-8")
+                mimetype = block.document_mimetype or block._guess_mimetype()
+            content.append(
+                {
+                    "type": "file",
+                    "file": {
+                        "file_data": f"data:{mimetype};base64,{b64_string}",
+                    },
+                }
+            )
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
@@ -223,7 +255,7 @@ def from_openai_message_dict(message_dict: dict) -> ChatMessage:
     """Convert openai message dict to generic message."""
     role = message_dict["role"]
     # NOTE: Azure OpenAI returns function calling messages without a content key
-    content = message_dict.get("content", None)
+    content = message_dict.get("content")
 
     additional_kwargs = message_dict.copy()
     additional_kwargs.pop("role")
@@ -283,6 +315,7 @@ def update_tool_calls(
 
     Returns:
         List[dict]: The updated tool calls
+
     """
     if not tool_call_deltas:
         return tool_calls

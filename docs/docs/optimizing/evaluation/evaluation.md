@@ -16,12 +16,12 @@ When developing your LLM application, it could help to first define an end-to-en
 
 The analogy with software testing is integration tests and unit tests. You should probably start writing unit tests once you start fiddling with individual components. Equally, your gold standard on whether things are working well together are integration tests. Both are equally important.
 
-- [End-to-end Evaluation](./e2e_evaluation.md)
-- [Component-Wise Evaluation](./component_wise_evaluation.md)
+- [End-to-end Evaluation](/python/framework/optimizing/evaluation/e2e_evaluation)
+- [Component-Wise Evaluation](/python/framework/optimizing/evaluation/component_wise_evaluation)
 
 Here is an overview of the existing modules for evaluation. We will be adding more modules and support over time.
 
-- [Evaluation Overview](../../module_guides/evaluating/index.md)
+- [Evaluation Overview](/python/framework/module_guides/evaluating)
 
 ### E2E or Component-Wise - Which Do I Start With?
 
@@ -56,5 +56,5 @@ This [towardsdatascience article](https://towardsdatascience.com/ranking-evaluat
 
 ## Resources
 
-- [Component-Wise Evaluation](./component_wise_evaluation.md)
-- [End-to-end Evaluation](./e2e_evaluation.md)
+- [Component-Wise Evaluation](/python/framework/optimizing/evaluation/component_wise_evaluation)
+- [End-to-end Evaluation](/python/framework/optimizing/evaluation/e2e_evaluation)

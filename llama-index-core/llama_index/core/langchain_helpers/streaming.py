@@ -37,11 +37,13 @@ class StreamingGeneratorCallbackHandler(BaseCallbackHandler):
         self._done.set()
 
     def get_response_gen(self, timeout: float = 120.0) -> Generator:
-        """Get response generator with timeout.
+        """
+        Get response generator with timeout.
 
         Args:
             timeout (float): Maximum time in seconds to wait for the complete response.
                             Defaults to 120 seconds.
+
         """
         start_time = time.time()
         while True:

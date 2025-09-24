@@ -12,7 +12,8 @@ class DappierRealTimeSearchToolSpec(BaseToolSpec):
     spec_functions = ["search_real_time_data", "search_stock_market_data"]
 
     def __init__(self, api_key: Optional[str] = None) -> None:
-        """Initialize the Dappier Real Time Search tool spec.
+        """
+        Initialize the Dappier Real Time Search tool spec.
 
         To obtain an API key, visit: https://platform.dappier.com/profile/api-keys
         """
@@ -38,6 +39,7 @@ class DappierRealTimeSearchToolSpec(BaseToolSpec):
 
         Returns:
             str: A response message containing the real-time data results.
+
         """
         ai_model_id = "am_01j0rzq4tvfscrgzwac7jv1p4c"
         response = self.client.search_real_time_data(
@@ -57,6 +59,7 @@ class DappierRealTimeSearchToolSpec(BaseToolSpec):
 
         Returns:
             str: A response message containing the stock market data results.
+
         """
         ai_model_id = "am_01j749h8pbf7ns8r1bq9s2evrh"
         response = self.client.search_real_time_data(

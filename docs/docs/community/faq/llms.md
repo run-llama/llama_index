@@ -13,19 +13,19 @@
 
 ##### 1. How to define a custom LLM?
 
-You can access [Usage Custom](../../module_guides/models/llms/usage_custom.md#example-using-a-custom-llm-model---advanced) to define a custom LLM.
+You can access [Usage Custom](/python/framework/module_guides/models/llms/usage_custom#example-using-a-custom-llm-model---advanced) to define a custom LLM.
 
 ---
 
 ##### 2. How to use a different OpenAI model?
 
-To use a different OpenAI model you can access [Configure Model](../../examples/llm/openai.ipynb) to set your own custom model.
+To use a different OpenAI model you can access [Configure Model](/python/examples/llm/openai) to set your own custom model.
 
 ---
 
 ##### 3. How can I customize my prompt?
 
-You can access [Prompts](../../module_guides/models/prompts/index.md) to learn how to customize your prompts.
+You can access [Prompts](/python/framework/module_guides/models/prompts) to learn how to customize your prompts.
 
 ---
 
@@ -63,6 +63,6 @@ query_engine = load_index_from_storage(
 
 ##### 6. Is LlamaIndex GPU accelerated?
 
-Yes, you can run a language model (LLM) on a GPU when running it locally. You can find an example of setting up LLMs with GPU support in the [llama2 setup](../../examples/vector_stores/SimpleIndexDemoLlama-Local.ipynb) documentation.
+Yes, you can run a language model (LLM) on a GPU when running it locally. You can find an example of setting up LLMs with GPU support in the [llama2 setup](/python/examples/vector_stores/simpleindexdemollama-local) documentation.
 
 ---

@@ -4,19 +4,20 @@ Notebooks with usage of these components can be found below.
 
 ## Response Evaluation
 
-- [Faithfulness](../../examples/evaluation/faithfulness_eval.ipynb)
-- [Relevancy](../../examples/evaluation/relevancy_eval.ipynb)
-- [Answer and Context Relevancy](../../examples/evaluation/answer_and_context_relevancy.ipynb)
-- [Deepeval Integration](../../examples/evaluation/Deepeval.ipynb)
-- [Guideline Eval](../../examples/evaluation/guideline_eval.ipynb)
-- [Correctness Eval](../../examples/evaluation/correctness_eval.ipynb)
-- [Semantic Eval](../../examples/evaluation/semantic_similarity_eval.ipynb)
-- [Question Generation](../../examples/evaluation/QuestionGeneration.ipynb)
-- [Batch Eval](../../examples/evaluation/batch_eval.ipynb)
-- [Multi-Modal RAG eval](../../examples/evaluation/multi_modal/multi_modal_rag_evaluation.ipynb)
-- [Uptrain Integration](../../examples/evaluation/UpTrain.ipynb)
-- [RAGChecker Integration](../../examples/evaluation/RAGChecker.ipynb)
+- [Faithfulness](/python/examples/evaluation/faithfulness_eval)
+- [Relevancy](/python/examples/evaluation/relevancy_eval)
+- [Answer and Context Relevancy](/python/examples/evaluation/answer_and_context_relevancy)
+- [Deepeval Integration](/python/examples/evaluation/deepeval)
+- [Guideline Eval](/python/examples/evaluation/guideline_eval)
+- [Correctness Eval](/python/examples/evaluation/correctness_eval)
+- [Semantic Eval](/python/examples/evaluation/semantic_similarity_eval)
+- [Question Generation](/python/examples/evaluation/questiongeneration)
+- [Batch Eval](/python/examples/evaluation/batch_eval)
+- [Multi-Modal RAG eval](/python/examples/evaluation/multi_modal/multi_modal_rag_evaluation)
+- [Uptrain Integration](/python/examples/evaluation/uptrain)
+- [RAGChecker Integration](/python/examples/evaluation/ragchecker)
+- [Cleanlab](/python/examples/evaluation/cleanlab)
 
 ## Retrieval Evaluation
 
-- [Retriever Eval](../../examples/evaluation/retrieval/retriever_eval.ipynb)
+- [Retriever Eval](/python/examples/evaluation/retrieval/retriever_eval)

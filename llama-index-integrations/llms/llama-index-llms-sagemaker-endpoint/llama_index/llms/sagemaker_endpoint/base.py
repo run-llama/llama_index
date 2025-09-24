@@ -37,7 +37,8 @@ LLAMA_COMPLETION_TO_PROMPT = completion_to_prompt
 
 
 class SageMakerLLM(LLM):
-    r"""SageMaker LLM.
+    r"""
+    SageMaker LLM.
 
     Examples:
         `pip install llama-index-llms-sagemaker-endpoint`
@@ -82,6 +83,7 @@ class SageMakerLLM(LLM):
             completion_to_prompt=completion_to_prompt,
         )
         ```
+
     """
 
     endpoint_name: str = Field(description="SageMaker LLM endpoint name")
@@ -159,13 +161,24 @@ class SageMakerLLM(LLM):
         content_handler = content_handler
         callback_manager = callback_manager or CallbackManager([])
 
+        region_name = kwargs.pop("region_name", None)
+
+        if region_name is not None:
+            warnings.warn(
+                "Kwarg `region_name` is deprecated and will be removed in a future version. "
+                "Please use `aws_region_name` instead.",
+                DeprecationWarning,
+            )
+            if not aws_region_name:
+                aws_region_name = region_name
+
         super().__init__(
             endpoint_name=endpoint_name,
             endpoint_kwargs=endpoint_kwargs,
             model_kwargs=model_kwargs,
             content_handler=content_handler,
             profile_name=profile_name,
-            region_name=region_name,
+            region_name=aws_region_name,
             aws_access_key_id=aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key,
             aws_session_token=aws_session_token,
@@ -177,17 +190,8 @@ class SageMakerLLM(LLM):
             pydantic_program_mode=pydantic_program_mode,
             output_parser=output_parser,
         )
-        self._completion_to_prompt = completion_to_prompt
 
-        region_name = kwargs.pop("region_name", None)
-        if region_name is not None:
-            warnings.warn(
-                "Kwarg `region_name` is deprecated and will be removed in a future version. "
-                "Please use `aws_region_name` instead.",
-                DeprecationWarning,
-            )
-            if not aws_region_name:
-                aws_region_name = region_name
+        self._completion_to_prompt = completion_to_prompt
 
         self._client = get_aws_service_client(
             service_name="sagemaker-runtime",

@@ -23,6 +23,7 @@ class ContextualRerank(BaseNodePostprocessor):
         model: str = Field(description="Contextual Reranking model name. Default is 'ctxl-rerank-en-v1-instruct'.")
         top_n: int = Field(description="Top N nodes to return.")
         base_url: Optional[str] = Field(description="Contextual base url.", default=None)
+
     """
 
     model: str = Field(description="Contextual Reranking model name.")

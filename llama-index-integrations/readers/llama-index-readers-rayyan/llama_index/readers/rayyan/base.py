@@ -1,4 +1,5 @@
 """Rayyan review reader."""
+
 import logging
 from typing import List
 
@@ -7,12 +8,14 @@ from llama_index.core.schema import Document
 
 
 class RayyanReader(BaseReader):
-    """Rayyan reader. Reads articles from a Rayyan review.
+    """
+    Rayyan reader. Reads articles from a Rayyan review.
 
     Args:
         credentials_path (str): Rayyan credentials path.
         rayyan_url (str, optional): Rayyan URL. Defaults to https://rayyan.ai.
             Set to an alternative URL if you are using a non-production Rayyan instance.
+
     """
 
     def __init__(
@@ -28,7 +31,8 @@ class RayyanReader(BaseReader):
         logging.info(f"Signed in successfully to Rayyan as: {user['displayName']}!")
 
     def load_data(self, review_id: str, filters: dict = {}) -> List[Document]:
-        """Load articles from a review.
+        """
+        Load articles from a review.
 
         Args:
             review_id (int): Rayyan review ID.
@@ -38,6 +42,7 @@ class RayyanReader(BaseReader):
 
         Returns:
             List[Document]: List of documents.
+
         """
         from tenacity import (
             retry,

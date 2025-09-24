@@ -16,7 +16,8 @@ DEFAULT_MODEL = "asi1-mini"
 
 
 class ASI(OpenAILike):
-    """ASI LLM - Integration for ASI models.
+    """
+    ASI LLM - Integration for ASI models.
 
     Currently supported models:
     - asi1-mini
@@ -35,6 +36,7 @@ class ASI(OpenAILike):
 
         print(response)
         ```
+
     """
 
     def __init__(
@@ -58,11 +60,12 @@ class ASI(OpenAILike):
                 function calling.
             **kwargs (Any): Additional arguments to pass to the OpenAILike
                 constructor.
+
         """
         api_key = api_key or os.environ.get("ASI_API_KEY", None)
         if api_key is None:
             raise ValueError(
-                "Must specify `api_key` or set environment variable " "`ASI_API_KEY`."
+                "Must specify `api_key` or set environment variable `ASI_API_KEY`."
             )
 
         super().__init__(

@@ -35,7 +35,8 @@ class NeptuneAnalyticsPropertyGraphStore(NeptuneBasePropertyGraph):
         self.graph_identifier = graph_identifier
 
     def structured_query(self, query: str, param_map: Dict[str, Any] = None) -> Any:
-        """Run the structured query.
+        """
+        Run the structured query.
 
         Args:
             query (str): The query to run
@@ -46,6 +47,7 @@ class NeptuneAnalyticsPropertyGraphStore(NeptuneBasePropertyGraph):
 
         Returns:
             Any: The results of the query
+
         """
         param_map = param_map or {}
 
@@ -71,10 +73,12 @@ class NeptuneAnalyticsPropertyGraphStore(NeptuneBasePropertyGraph):
             )
 
     def vector_query(self, query: VectorStoreQuery, **kwargs: Any) -> Tuple[List[Any]]:
-        """Query the graph store with a vector store query.
+        """
+        Query the graph store with a vector store query.
 
         Returns:
             (nodes, score): The nodes and their associated score
+
         """
         conditions = None
         if query.filters:
@@ -124,10 +128,12 @@ class NeptuneAnalyticsPropertyGraphStore(NeptuneBasePropertyGraph):
         return (nodes, scores)
 
     def upsert_nodes(self, nodes: List[LabelledNode]) -> None:
-        """Upsert the nodes in the graph.
+        """
+        Upsert the nodes in the graph.
 
         Args:
             nodes (List[LabelledNode]): The list of nodes to upsert
+
         """
         # Lists to hold separated types
         entity_dicts: List[dict] = []
@@ -168,7 +174,7 @@ class NeptuneAnalyticsPropertyGraphStore(NeptuneBasePropertyGraph):
                     MERGE (e:`{BASE_NODE_LABEL}` {{id: row.id}})
                     SET e += removeKeyFromMap(row.properties, '')
                     SET e.name = row.name, e:`{BASE_ENTITY_LABEL}`
-                    SET e:`{d['label']}`
+                    SET e:`{d["label"]}`
                     WITH e, row
                     WHERE removeKeyFromMap(row.properties, '').triplet_source_id IS NOT NULL
                     MERGE (c:Chunk {{id: removeKeyFromMap(row.properties, '').triplet_source_id}})
@@ -181,10 +187,12 @@ class NeptuneAnalyticsPropertyGraphStore(NeptuneBasePropertyGraph):
                 )
 
     def _get_summary(self) -> Dict:
-        """Get the Summary of the graph topology.
+        """
+        Get the Summary of the graph topology.
 
         Returns:
             Dict: The graph summary
+
         """
         try:
             response = self.client.get_graph_summary(

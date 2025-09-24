@@ -25,7 +25,8 @@ SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
 
 class GoogleCalendarToolSpec(BaseToolSpec):
-    """Google Calendar tool spec.
+    """
+    Google Calendar tool spec.
 
     Currently a simple wrapper around the data loader.
     TODO: add more methods to the Google Calendar spec.
@@ -34,16 +35,29 @@ class GoogleCalendarToolSpec(BaseToolSpec):
 
     spec_functions = ["load_data", "create_event", "get_date"]
 
+    def __init__(self, creds: Optional[Any] = None):
+        """
+        Initialize the GoogleCalendarToolSpec.
+
+        Args:
+            creds (Optional[Any]): Pre-configured credentials to use for authentication.
+                                 If provided, these will be used instead of the OAuth flow.
+
+        """
+        self.creds = creds
+
     def load_data(
         self,
         number_of_results: Optional[int] = 100,
         start_date: Optional[Union[str, datetime.date]] = None,
     ) -> List[Document]:
-        """Load data from user's calendar.
+        """
+        Load data from user's calendar.
 
         Args:
             number_of_results (Optional[int]): the number of events to return. Defaults to 100.
             start_date (Optional[Union[str, datetime.date]]): the start date to return events from in date isoformat. Defaults to today.
+
         """
         from googleapiclient.discovery import build
 
@@ -105,7 +119,8 @@ class GoogleCalendarToolSpec(BaseToolSpec):
         return results
 
     def _get_credentials(self) -> Any:
-        """Get valid user credentials from storage.
+        """
+        Get valid user credentials from storage.
 
         The file token.json stores the user's access and refresh tokens, and is
         created automatically when the authorization flow completes for the first
@@ -113,7 +128,11 @@ class GoogleCalendarToolSpec(BaseToolSpec):
 
         Returns:
             Credentials, the obtained credential.
+
         """
+        if self.creds is not None:
+            return self.creds
+
         from google_auth_oauthlib.flow import InstalledAppFlow
 
         from google.auth.transport.requests import Request
@@ -156,6 +175,7 @@ class GoogleCalendarToolSpec(BaseToolSpec):
             start_datetime Optional[Union[str, datetime.datetime]]: The start datetime for the event
             end_datetime Optional[Union[str, datetime.datetime]]: The end datetime for the event
             attendees Optional[List[str]]: A list of email address to invite to the event
+
         """
         from googleapiclient.discovery import build
 

@@ -11,13 +11,13 @@
 
 ##### 1. How to use a custom/local embedding model?
 
-To create your customized embedding class you can follow [Custom Embeddings](../../examples/embeddings/custom_embeddings.ipynb) guide.
+To create your customized embedding class you can follow [Custom Embeddings](/python/examples/embeddings/custom_embeddings) guide.
 
 ---
 
 ##### 2. How to use a local hugging face embedding model?
 
-To use a local HuggingFace embedding model you can follow [Local Embeddings with HuggingFace](../../examples/embeddings/huggingface.ipynb) guide.
+To use a local HuggingFace embedding model you can follow [Local Embeddings with HuggingFace](/python/examples/embeddings/huggingface) guide.
 
 ---
 
@@ -33,4 +33,4 @@ text_embedding = embed_model.get_text_embedding("YOUR_TEXT")
 
 ##### 4. How to use Huggingface Text-Embedding Inference with LlamaIndex?
 
-To use HuggingFace Text-Embedding Inference you can follow [Text-Embedding-Inference](../../examples/embeddings/text_embedding_inference.ipynb) tutorial.
+To use HuggingFace Text-Embedding Inference you can follow [Text-Embedding-Inference](/python/examples/embeddings/text_embedding_inference) tutorial.

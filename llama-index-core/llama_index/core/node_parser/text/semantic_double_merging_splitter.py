@@ -60,7 +60,8 @@ class LanguageConfig:
 
 
 class SemanticDoubleMergingSplitterNodeParser(NodeParser):
-    """Semantic double merging text splitter.
+    """
+    Semantic double merging text splitter.
 
     Splits a document into Nodes, with each node being a group of semantically related sentences.
 
@@ -73,6 +74,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
         merging_range (int): How many chunks 'ahead' beyond the nearest neighbor to be merged if similar (1 or 2 available)
         merging_separator (str): The separator to use when merging chunks. Defaults to a single space.
         sentence_splitter (Optional[Callable]): splits text into sentences
+
     """
 
     language_config: LanguageConfig = Field(
@@ -223,12 +225,12 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
             previous_node: Optional[BaseNode] = None
             for split_node in split_nodes:
                 if previous_node:
-                    split_node.relationships[
-                        NodeRelationship.PREVIOUS
-                    ] = previous_node.as_related_node_info()
-                    previous_node.relationships[
-                        NodeRelationship.NEXT
-                    ] = split_node.as_related_node_info()
+                    split_node.relationships[NodeRelationship.PREVIOUS] = (
+                        previous_node.as_related_node_info()
+                    )
+                    previous_node.relationships[NodeRelationship.NEXT] = (
+                        split_node.as_related_node_info()
+                    )
                 previous_node = split_node
             all_nodes.extend(split_nodes)
 
@@ -279,8 +281,7 @@ class SemanticDoubleMergingSplitterNodeParser(NodeParser):
                     self.language_config.nlp(self._clean_text_advanced(sentence))
                 )
                 > self.appending_threshold
-                and len(last_sentences) + len(sentence) + 1 <= self.max_chunk_size
-                # and not len(chunk) > self.max_chunk_size
+                and len(chunk) + len(sentence) + 1 <= self.max_chunk_size
             ):
                 # elif nlp(last_sentences).similarity(nlp(sentence)) > self.threshold:
                 chunk_sentences.append(sentence)

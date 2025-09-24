@@ -1,4 +1,5 @@
-"""KDB.AI vector store index.
+"""
+KDB.AI vector store index.
 
 An index that is built within KDB.AI.
 
@@ -30,7 +31,8 @@ logger = logging.getLogger(__name__)
 
 
 class KDBAIVectorStore(BasePydanticVectorStore):
-    """The KDBAI Vector Store.
+    """
+    The KDBAI Vector Store.
 
     In this vector store we store the text, its embedding and
     its metadata in a KDBAI vector store table. This implementation
@@ -43,6 +45,7 @@ class KDBAIVectorStore(BasePydanticVectorStore):
 
     Returns:
         KDBAIVectorStore: Vectorstore that supports add and query.
+
     """
 
     stores_text: bool = True
@@ -101,13 +104,15 @@ class KDBAIVectorStore(BasePydanticVectorStore):
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to the KDBAI Vector Store.
+        """
+        Add nodes to the KDBAI Vector Store.
 
         Args:
             nodes (List[BaseNode]): List of nodes to be added.
 
         Returns:
             List[str]: List of document IDs that were added.
+
         """
         try:
             import kdbai_client as kdbai
@@ -208,7 +213,7 @@ class KDBAIVectorStore(BasePydanticVectorStore):
                     )
         else:
             raise ValueError(
-                "Could not run the search. " "Please provide KDBAI index name."
+                "Could not run the search. Please provide KDBAI index name."
             )
 
         if self.hybrid_search:

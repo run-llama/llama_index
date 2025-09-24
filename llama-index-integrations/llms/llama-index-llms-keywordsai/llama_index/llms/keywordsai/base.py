@@ -105,6 +105,7 @@ class KeywordsAI(OpenAI):
         for r in stream:
             print(r.delta, end="")
         ```
+
     """
 
     model: str = Field(

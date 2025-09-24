@@ -81,7 +81,7 @@ def test_retriever_tool() -> None:
     )
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_retriever_tool_async() -> None:
     """Test retriever tool async call."""
     # Test async retrieval

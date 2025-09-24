@@ -474,3 +474,73 @@ def test_ensure_chat_message_is_serializable(MockSyncOpenAI: MagicMock) -> None:
             data["additional_kwargs"]["test"]["choices"][0]["delta"]["content"]
             == "test"
         )
+
+
+@patch("llama_index.llms.openai.base.SyncOpenAI")
+def test_structured_chat_simple(MockSyncOpenAI: MagicMock):
+    """Simple test for structured output using as_structured_llm."""
+    from pydantic import BaseModel, Field
+    from llama_index.core.base.llms.types import ChatMessage
+
+    class Person(BaseModel):
+        name: str = Field(description="The person's name")
+        age: int = Field(description="The person's age")
+
+    # Mock OpenAI response structure
+    mock_choice = MagicMock()
+    mock_choice.message.role = "assistant"
+    mock_choice.message.content = '{"name": "Alice", "age": 25}'
+
+    mock_response = MagicMock()
+    mock_response.choices = [mock_choice]
+
+    # Mock OpenAI client
+    mock_client = MagicMock()
+    mock_client.chat.completions.create.return_value = mock_response
+    MockSyncOpenAI.return_value = mock_client
+
+    llm = OpenAI(model="gpt-4o", api_key="test-key")
+    structured_llm = llm.as_structured_llm(Person)
+    messages = [
+        ChatMessage(role="user", content="Create a person named Alice who is 25")
+    ]
+
+    result = structured_llm.chat(messages)
+    # Verify the result has the expected structure
+    assert isinstance(result.raw, Person)
+
+
+@pytest.mark.asyncio()
+@patch("llama_index.llms.openai.base.AsyncOpenAI")
+async def test_structured_chat_simple_async(MockAsyncOpenAI: MagicMock):
+    """Simple async test for structured output using as_structured_llm."""
+    from pydantic import BaseModel, Field
+    from llama_index.core.base.llms.types import ChatMessage
+
+    class Person(BaseModel):
+        name: str = Field(description="The person's name")
+        age: int = Field(description="The person's age")
+
+    # Mock OpenAI response structure
+    mock_choice = MagicMock()
+    mock_choice.message.role = "assistant"
+    mock_choice.message.content = '{"name": "Bob", "age": 30}'
+
+    mock_response = MagicMock()
+    mock_response.choices = [mock_choice]
+
+    # Mock async OpenAI client
+    mock_client = MagicMock()
+    create_fn = AsyncMock()
+    create_fn.return_value = mock_response
+    mock_client.chat.completions.create = create_fn
+    MockAsyncOpenAI.return_value = mock_client
+
+    # Instantiate OpenAI class
+    llm = OpenAI(model="gpt-4o", api_key="test-key")
+    structured_llm = llm.as_structured_llm(Person)
+    messages = [ChatMessage(role="user", content="Create a person named Bob who is 30")]
+    result = await structured_llm.achat(messages)
+
+    # Verify the result has the expected structure
+    assert isinstance(result.raw, Person)

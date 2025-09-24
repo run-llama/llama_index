@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Union
 import uuid
 import sys
 import logging
@@ -81,7 +81,8 @@ class ScalarMetadataFilter(BaseModel):
         cls,
         filter_dict: Dict,
     ) -> "ScalarMetadataFilter":
-        """Create ScalarMetadataFilter from dictionary.
+        """
+        Create ScalarMetadataFilter from dictionary.
 
         Args:
             filter_dict: Dict with key, value and FilterOperatorFunction.
@@ -243,10 +244,6 @@ class BGEM3SparseEmbeddingFunction(BaseSparseEmbeddingFunction):
         return result
 
 
-def get_default_sparse_embedding_function() -> BGEM3SparseEmbeddingFunction:
-    return BGEM3SparseEmbeddingFunction()
-
-
 class BM25BuiltInFunction(BaseMilvusBuiltInFunction):
     """BM25 function built in Milvus."""
 
@@ -258,6 +255,7 @@ class BM25BuiltInFunction(BaseMilvusBuiltInFunction):
         function_description: str = "",
         function_params: Optional[Dict] = None,
         analyzer_params: Optional[Dict[Any, Any]] = None,
+        multi_analyzer_params: Optional[Dict[Any, Any]] = None,
         enable_match: bool = False,
     ):
         if not function_name:
@@ -272,6 +270,7 @@ class BM25BuiltInFunction(BaseMilvusBuiltInFunction):
         )
         self.analyzer_params = analyzer_params
         self.enable_match = enable_match
+        self.multi_analyzer_params = multi_analyzer_params
 
     def get_field_kwargs(self) -> dict:
         field_schema_kwargs: Dict[Any, Any] = {
@@ -280,4 +279,24 @@ class BM25BuiltInFunction(BaseMilvusBuiltInFunction):
         }
         if self.analyzer_params is not None:
             field_schema_kwargs["analyzer_params"] = self.analyzer_params
+        if self.multi_analyzer_params is not None:
+            field_schema_kwargs["multi_analyzer_params"] = self.multi_analyzer_params
         return field_schema_kwargs
+
+
+def get_default_sparse_embedding_function(
+    input_field_names: Union[str, List[str]] = DEFAULT_TEXT_KEY,
+    output_field_names: Union[str, List[str]] = DEFAULT_SPARSE_EMBEDDING_KEY,
+    collection: Optional["MilvusCollection"] = None,
+) -> Union[BM25BuiltInFunction, BGEM3SparseEmbeddingFunction]:
+    if collection is not None and len(collection.schema.functions) == 0:
+        logger.warning(
+            "No built-in function detected, using BGEM3SparseEmbeddingFunction()."
+        )
+        return BGEM3SparseEmbeddingFunction()
+    else:
+        logger.warning(
+            f"Default sparse embedding function: BM25BuiltInFunction(input_field_names='{input_field_names}', "
+            f"output_field_names='{output_field_names}')."
+        )
+        return BM25BuiltInFunction(input_field_names, output_field_names)

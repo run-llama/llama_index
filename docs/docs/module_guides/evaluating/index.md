@@ -50,26 +50,27 @@ The core retrieval evaluation steps revolve around the following:
 We also integrate with community evaluation tools.
 
 - [UpTrain](https://github.com/uptrain-ai/uptrain)
-- [Tonic Validate](../../community/integrations/tonicvalidate.md)(Includes Web UI for visualizing results)
+- [Tonic Validate](/python/framework/community/integrations/tonicvalidate)(Includes Web UI for visualizing results)
 - [DeepEval](https://github.com/confident-ai/deepeval)
 - [Ragas](https://github.com/explodinggradients/ragas/blob/main/docs/howtos/integrations/llamaindex.ipynb)
 - [RAGChecker](https://github.com/amazon-science/RAGChecker)
+- [Cleanlab](/python/examples/evaluation/cleanlab)
 
 ## Usage Pattern
 
 For full usage details, see the usage pattern below.
 
-- [Query Eval Usage Pattern](usage_pattern.md)
-- [Retrieval Eval Usage Pattern](usage_pattern_retrieval.md)
+- [Query Eval Usage Pattern](/python/framework/module_guides/evaluating/usage_pattern)
+- [Retrieval Eval Usage Pattern](/python/framework/module_guides/evaluating/usage_pattern_retrieval)
 
 ## Modules
 
-Notebooks with usage of these components can be found in the [module guides](./modules.md).
+Notebooks with usage of these components can be found in the [module guides](/python/framework/module_guides/evaluating/modules).
 
 ## Evaluating with `LabelledRagDataset`'s
 
 For details on how to perform evaluation of a RAG system with various evaluation
 datasets, called `LabelledRagDataset`'s see below:
 
-- [Evaluating](evaluating_with_llamadatasets.md)
-- [Contributing](contributing_llamadatasets.md)
+- [Evaluating](/python/framework/module_guides/evaluating/evaluating_with_llamadatasets)
+- [Contributing](/python/framework/module_guides/evaluating/contributing_llamadatasets)

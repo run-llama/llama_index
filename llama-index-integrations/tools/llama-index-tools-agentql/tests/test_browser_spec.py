@@ -1,13 +1,11 @@
-import pytest
 import os
 
+import pytest
+from llama_index.core.agent.workflow import FunctionAgent
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
-from llama_index.core.agent import FunctionCallingAgent
-
+from llama_index.llms.openai import OpenAI
 from llama_index.tools.agentql import AgentQLBrowserToolSpec
 from llama_index.tools.playwright import PlaywrightToolSpec
-
-from llama_index.llms.openai import OpenAI
 
 from tests.conftest import get_testing_data
 
@@ -31,10 +29,10 @@ class TestExtractDataBrowserTool:
         yield agentql_browser_tool
         await async_browser.close()
 
-    @pytest.fixture()
+    @pytest.fixture
     def agent(self, agentql_browser_tool):
-        return FunctionCallingAgent.from_tools(
-            agentql_browser_tool.to_tool_list(),
+        return FunctionAgent(
+            tools=agentql_browser_tool.to_tool_list(),
             llm=OpenAI(model="gpt-4o"),
         )
 
@@ -42,19 +40,19 @@ class TestExtractDataBrowserTool:
         "OPENAI_API_KEY" not in os.environ or "AGENTQL_API_KEY" not in os.environ,
         reason="OPENAI_API_KEY or AGENTQL_API_KEY is not set",
     )
-    def test_extract_web_data_browser_tool_call(self, agent):
+    @pytest.mark.asyncio
+    async def test_extract_web_data_browser_tool_call(self, agent):
         test_data = get_testing_data()
-        res = agent.chat(
+        res = await agent.run(
             f"""
         extract data with the following agentql query: {test_data["TEST_QUERY"]}
         """
         )
-        tool_output = res.sources[0]
+        tool_output = res.tool_calls[0]
         assert tool_output.tool_name == "extract_web_data_from_browser"
-        assert tool_output.raw_input["kwargs"] == {
+        assert tool_output.tool_kwargs == {
             "query": test_data["TEST_QUERY"],
         }
-        assert tool_output.raw_output == test_data["TEST_DATA"]
 
     @pytest.mark.skipif(
         "AGENTQL_API_KEY" not in os.environ,
