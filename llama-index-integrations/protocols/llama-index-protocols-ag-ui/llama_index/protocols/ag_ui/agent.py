@@ -12,6 +12,7 @@ from llama_index.core.workflow import Context, Workflow, step
 from llama_index.core.workflow.events import Event, StartEvent, StopEvent
 from llama_index.protocols.ag_ui.events import (
     MessagesSnapshotWorkflowEvent,
+    StateSnapshotWorkflowEvent,
     TextMessageChunkWorkflowEvent,
     ToolCallChunkWorkflowEvent,
 )
@@ -134,6 +135,7 @@ class AGUIChatWorkflow(Workflow):
 
             # Save state to context for tools to use
             await ctx.store.set("state", state)
+            ctx.write_event_to_stream(StateSnapshotWorkflowEvent(snapshot=state))
 
             if state:
                 for msg in chat_history[::-1]:
@@ -250,6 +252,13 @@ class AGUIChatWorkflow(Workflow):
                 kwargs[tool.ctx_param_name] = ctx
 
             tool_output = await tool.acall(**kwargs)
+
+            # Update the state snapshot
+            current_state = await ctx.store.get("state", default={})
+            ctx.write_event_to_stream(
+                StateSnapshotWorkflowEvent(snapshot=current_state)
+            )
+
             return ToolCallResultEvent(
                 tool_call_id=ev.tool_call_id,
                 tool_name=ev.tool_name,
