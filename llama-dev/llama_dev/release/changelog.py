@@ -1,6 +1,7 @@
 import json
 import re
 import subprocess
+from datetime import date
 
 import click
 
@@ -16,8 +17,13 @@ def run_command(command: str) -> str:
 
 
 @click.command(short_help="Generate the changelog from the previous release tag")
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Show the changelog text without altering the CHANGELOG.md file",
+)
 @click.pass_obj
-def changelog(obj: dict) -> None:
+def changelog(obj: dict, dry_run: bool) -> None:
     """
     Generate the changelog in markdown syntax.
 
@@ -78,12 +84,24 @@ def changelog(obj: dict) -> None:
                     )
 
         # Generate the markdown output
+        changelog_text = f"<!--- generated changelog --->\n\n## [{date.today().strftime('%Y-%m-%d')}]"
         sorted_pkgs = sorted(package_prs.keys())
         for pkg in sorted_pkgs:
-            click.echo(f"\n### {pkg} [{package_versions[pkg]}]\n")
+            changelog_text += f"\n\n### {pkg} [{package_versions[pkg]}]\n"
             prs = sorted(package_prs[pkg], key=lambda p: p["number"])
             for pr in prs:
-                click.echo(f"- {pr['title']} ([#{pr['number']}]({pr['url']}))")
+                changelog_text += f"- {pr['title']} ([#{pr['number']}]({pr['url']}))"
+
+        if dry_run:
+            click.echo(changelog_text)
+        else:
+            with open(repo_root / "CHANGELOG.md", "r+") as f:
+                content = f.read()
+                f.seek(0)
+                f.truncate()
+                f.write(
+                    content.replace("<!--- generated changelog --->", changelog_text)
+                )
 
     except FileNotFoundError:
         click.ClickException(
