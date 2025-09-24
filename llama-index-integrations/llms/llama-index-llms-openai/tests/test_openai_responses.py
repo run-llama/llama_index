@@ -27,6 +27,7 @@ from openai.types.responses import (
     ResponseReasoningItem,
     ResponseOutputItem,
     ResponseOutputText,
+    ResponseOutputItemDoneEvent,
 )
 from pydantic import BaseModel, Field
 
@@ -156,16 +157,21 @@ def test_process_response_event():
     assert delta == "Hello"
     assert updated_tool_calls == []
 
-    event = ResponseReasoningItem(
-        id="1",
-        summary=[],
-        type="reasoning",
-        content=[
-            Content(text="hello world", type="reasoning_text"),
-            Content(text="this is a test", type="reasoning_text"),
-        ],
-        encrypted_content=None,
-        status=None,
+    event = ResponseOutputItemDoneEvent(
+        item=ResponseReasoningItem(
+            id="1",
+            summary=[],
+            type="reasoning",
+            content=[
+                Content(text="hello world", type="reasoning_text"),
+                Content(text="this is a test", type="reasoning_text"),
+            ],
+            encrypted_content=None,
+            status=None,
+        ),
+        output_index=1,
+        sequence_number=1,
+        type="response.output_item.done",
     )
 
     result = OpenAIResponses.process_response_event(

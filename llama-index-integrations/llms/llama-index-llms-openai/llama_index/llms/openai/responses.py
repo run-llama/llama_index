@@ -633,7 +633,7 @@ class OpenAIResponses(FunctionCallingLLM):
             if isinstance(event.item, ResponseReasoningItem):
                 content: Optional[str] = None
                 if event.item.content:
-                    content = "\n".join([i.text for i in event.content])
+                    content = "\n".join([i.text for i in event.item.content])
                 if event.item.summary:
                     if content:
                         content += "\n" + "\n".join(
