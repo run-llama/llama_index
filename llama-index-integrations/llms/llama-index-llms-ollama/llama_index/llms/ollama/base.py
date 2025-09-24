@@ -32,6 +32,7 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
     TextBlock,
+    ThinkingBlock,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -236,6 +237,9 @@ class Ollama(FunctionCallingLLM):
                     cur_ollama_message["images"].append(
                         block.resolve_image(as_base64=True).read().decode("utf-8")
                     )
+                elif isinstance(block, ThinkingBlock):
+                    if block.content:
+                        cur_ollama_message["thinking"] = block.content
                 else:
                     raise ValueError(f"Unsupported block type: {type(block)}")
 
@@ -353,17 +357,23 @@ class Ollama(FunctionCallingLLM):
 
         response = dict(response)
 
+        blocks: List[TextBlock | ThinkingBlock] = []
+
         tool_calls = response["message"].get("tool_calls", []) or []
         thinking = response["message"].get("thinking", None)
+        if thinking:
+            blocks.append(ThinkingBlock(content=thinking))
+        blocks.append(TextBlock(text=response["message"].get("content", "")))
+
         token_counts = self._get_response_token_counts(response)
         if token_counts:
             response["usage"] = token_counts
 
         return ChatResponse(
             message=ChatMessage(
-                content=response["message"].get("content", ""),
+                blocks=blocks,
                 role=response["message"].get("role", MessageRole.ASSISTANT),
-                additional_kwargs={"tool_calls": tool_calls, "thinking": thinking},
+                additional_kwargs={"tool_calls": tool_calls},
             ),
             raw=response,
         )
@@ -424,18 +434,17 @@ class Ollama(FunctionCallingLLM):
 
                 yield ChatResponse(
                     message=ChatMessage(
-                        content=response_txt,
+                        blocks=[
+                            ThinkingBlock(content=thinking_txt),
+                            TextBlock(text=response_txt),
+                        ],
                         role=r["message"].get("role", MessageRole.ASSISTANT),
                         additional_kwargs={
                             "tool_calls": list(set(all_tool_calls)),
-                            "thinking": thinking_txt,
                         },
                     ),
                     delta=r["message"].get("content", ""),
                     raw=r,
-                    additional_kwargs={
-                        "thinking_delta": r["message"].get("thinking", None),
-                    },
                 )
 
         return gen()
@@ -496,18 +505,17 @@ class Ollama(FunctionCallingLLM):
 
                 yield ChatResponse(
                     message=ChatMessage(
-                        content=response_txt,
+                        blocks=[
+                            ThinkingBlock(content=thinking_txt),
+                            TextBlock(text=response_txt),
+                        ],
                         role=r["message"].get("role", MessageRole.ASSISTANT),
                         additional_kwargs={
                             "tool_calls": all_tool_calls,
-                            "thinking": thinking_txt,
                         },
                     ),
                     delta=r["message"].get("content", ""),
                     raw=r,
-                    additional_kwargs={
-                        "thinking_delta": r["message"].get("thinking", None),
-                    },
                 )
 
         return gen()
@@ -535,17 +543,22 @@ class Ollama(FunctionCallingLLM):
 
         response = dict(response)
 
+        blocks: List[TextBlock | ThinkingBlock] = []
+
         tool_calls = response["message"].get("tool_calls", []) or []
         thinking = response["message"].get("thinking", None)
+        if thinking:
+            blocks.append(ThinkingBlock(content=thinking))
+        blocks.append(TextBlock(text=response["message"].get("content", "")))
         token_counts = self._get_response_token_counts(response)
         if token_counts:
             response["usage"] = token_counts
 
         return ChatResponse(
             message=ChatMessage(
-                content=response["message"].get("content", ""),
+                blocks=blocks,
                 role=response["message"].get("role", MessageRole.ASSISTANT),
-                additional_kwargs={"tool_calls": tool_calls, "thinking": thinking},
+                additional_kwargs={"tool_calls": tool_calls},
             ),
             raw=response,
         )
