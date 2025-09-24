@@ -26,6 +26,7 @@ from openai.types.responses import (
     ResponseReasoningItem,
     ResponseCodeInterpreterToolCall,
     ResponseImageGenCallPartialImageEvent,
+    ResponseOutputItemDoneEvent,
 )
 from openai.types.responses.response_output_item import ImageGenerationCall, McpCall
 from typing import (
@@ -627,24 +628,27 @@ class OpenAIResponses(FunctionCallingLLM):
         elif isinstance(event, ResponseWebSearchCallCompletedEvent):
             # Web search tool call completed
             built_in_tool_calls.append(event)
-        elif isinstance(event, ResponseReasoningItem):
+        elif isinstance(event, ResponseOutputItemDoneEvent):
             # Reasoning information
-            content: Optional[str] = None
-            if event.content:
-                content = "\n".join([i.text for i in event.content])
-            if event.summary:
-                if content:
-                    content += "\n" + "\n".join([i.text for i in event.summary])
-                else:
-                    content = "\n".join([i.text for i in event.summary])
-            blocks.append(
-                ThinkingBlock(
-                    content=content,
-                    additional_information=event.model_dump(
-                        exclude={"content", "summary"}
-                    ),
+            if isinstance(event.item, ResponseReasoningItem):
+                content: Optional[str] = None
+                if event.item.content:
+                    content = "\n".join([i.text for i in event.content])
+                if event.item.summary:
+                    if content:
+                        content += "\n" + "\n".join(
+                            [i.text for i in event.item.summary]
+                        )
+                    else:
+                        content = "\n".join([i.text for i in event.item.summary])
+                blocks.append(
+                    ThinkingBlock(
+                        content=content,
+                        additional_information=event.item.model_dump(
+                            exclude={"content", "summary"}
+                        ),
+                    )
                 )
-            )
         elif isinstance(event, ResponseCompletedEvent):
             # Response is complete
             if hasattr(event, "response") and hasattr(event.response, "usage"):
