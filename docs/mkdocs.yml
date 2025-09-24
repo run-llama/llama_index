@@ -4,10 +4,8 @@ extra:
     provider: google
 extra_css:
   - css/style.css
-  - css/algolia.css
 extra_javascript:
   - javascript/runllm.js
-  - javascript/algolia.js
 markdown_extensions:
   - attr_list
   - admonition
