@@ -4,7 +4,7 @@ import asyncio
 import logging
 import time
 from collections.abc import Sequence
-from typing import Annotated, Any, ClassVar, Optional
+from typing import Annotated, Any, ClassVar, Optional, Union
 
 from annotated_types import MinLen
 from pydantic import (
@@ -164,6 +164,21 @@ class ApacheSolrVectorStore(BasePydanticVectorStore):
             result.append("score")
         return result
 
+    @field_validator("text_search_fields", mode="before")
+    def _validate_text_search_fields(
+        cls, v: Optional[list[Union[str, BoostedTextField]]]
+    ) -> Optional[list[BoostedTextField]]:
+        """Validate and convert text search fields to BoostedTextField instances."""
+        if v is None:
+            return None
+
+        def to_boosted(item: Union[str, BoostedTextField]) -> BoostedTextField:
+            if isinstance(item, str):
+                return BoostedTextField(field=item)
+            return item
+
+        return [to_boosted(item) for item in v]
+
     @property
     def client(self) -> Any:
         """Return synchronous Solr client."""
@@ -280,12 +295,10 @@ class ApacheSolrVectorStore(BasePydanticVectorStore):
             solr_query["fq"].append(
                 f"{self.docid_field}:({' OR '.join(query.doc_ids)})"
             )
-
-        if query.node_ids is not None:
+        if query.node_ids is not None and len(query.node_ids) > 0:
             solr_query["fq"].append(
                 f"{self.nodeid_field}:({' OR '.join(query.node_ids)})"
             )
-
         if query.output_fields is not None:
             # Use output fields from query, ensuring score is always included
             output_fields = self._validate_output_fields(query.output_fields)
