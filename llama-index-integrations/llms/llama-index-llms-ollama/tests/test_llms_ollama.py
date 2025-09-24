@@ -160,6 +160,7 @@ def test_chat_with_tools() -> None:
     assert tool_result.raw_output is not None
     assert isinstance(tool_result.raw_output, Song)
 
+
 @pytest.mark.skipif(
     client is None, reason="Ollama client is not available or test model is missing"
 )
