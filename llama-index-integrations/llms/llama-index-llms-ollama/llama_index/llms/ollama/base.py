@@ -427,7 +427,7 @@ class Ollama(FunctionCallingLLM):
                         content=response_txt,
                         role=r["message"].get("role", MessageRole.ASSISTANT),
                         additional_kwargs={
-                            "tool_calls": list(set(all_tool_calls)),
+                            "tool_calls": all_tool_calls,
                             "thinking": thinking_txt,
                         },
                     ),

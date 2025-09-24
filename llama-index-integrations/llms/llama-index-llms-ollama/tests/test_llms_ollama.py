@@ -160,6 +160,25 @@ def test_chat_with_tools() -> None:
     assert tool_result.raw_output is not None
     assert isinstance(tool_result.raw_output, Song)
 
+@pytest.mark.skipif(
+    client is None, reason="Ollama client is not available or test model is missing"
+)
+def test_stream_chat_with_tools() -> None:
+    """Makes sure that stream chat with tools returns tool call message without any errors"""
+    llm = Ollama(model=test_model, context_window=8000)
+    response = llm.stream_chat_with_tools(
+        [tool], user_msg="Hello! Generate a random artist and song."
+    )
+
+    for r in response:
+        tool_calls = llm.get_tool_calls_from_response(r)
+        assert len(tool_calls) == 1
+        assert tool_calls[0].tool_name == tool.metadata.name
+
+        tool_result = tool(**tool_calls[0].tool_kwargs)
+        assert tool_result.raw_output is not None
+        assert isinstance(tool_result.raw_output, Song)
+
 
 @pytest.mark.skipif(
     client is None, reason="Ollama client is not available or test model is missing"
