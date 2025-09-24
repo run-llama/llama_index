@@ -1,17 +1,17 @@
-# LlamaIndex Llms Integration: Servam
+# LlamaIndex Llms Integration: Sarvam
 
-This is the Servam integration for LlamaIndex. Visit [Servam](https://docs.sarvam.ai/api-reference-docs/chat/completions) for information on how to get an API key and which models are supported.
+This is the Sarvam integration for LlamaIndex. Visit [Sarvam](https://docs.sarvam.ai/api-reference-docs/chat/completions) for information on how to get an API key and which models are supported.
 
 ## Installation
 
 ```bash
-pip install llama-index-llms-servam
+pip install llama-index-llms-sarvam
 ```
 
 ## Usage
 
 ```python
-from llama_index.llms.servam import Servam
+from llama_index.llms.sarvam import Sarvam
 
-llm = Servam(model="servam-m", api_key="your-api-key")
+llm = Sarvam(model="sarvam-m", api_key="your-api-key")
 ```

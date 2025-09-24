@@ -1,3 +1,3 @@
-from llama_index.llms.servam.base import Servam
+from llama_index.llms.sarvam.base import Sarvam
 
-__all__ = ["Servam"]
+__all__ = ["Sarvam"]
