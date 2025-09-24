@@ -1,5 +1,11 @@
 from collections.abc import Iterator
-from datetime import UTC, date, datetime
+from datetime import date, datetime, timezone
+
+try:
+    from datetime import UTC
+except ImportError:
+    UTC = timezone.utc
+
 from typing import Any, Optional, Union
 from uuid import uuid4
 from zoneinfo import ZoneInfo

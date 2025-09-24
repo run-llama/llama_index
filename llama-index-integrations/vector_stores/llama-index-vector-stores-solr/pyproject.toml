@@ -45,7 +45,8 @@ requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "aiosolr>=5.0.0",
+    'aiosolr<5; python_version < "3.10"',
+    'aiosolr>=5.0.0; python_version >= "3.10"',
     "llama-index-core>=0.14.0,<0.15",
     "numpy>=2.0.2",
     "pydantic>=2.11.7",

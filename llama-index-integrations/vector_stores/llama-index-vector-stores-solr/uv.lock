@@ -135,14 +135,18 @@ wheels = [
 
 [[package]]
 name = "aiosolr"
-version = "5.0.0"
+version = "4.4.0"
 source = { registry = "https://pypi.org/simple" }
 resolution-markers = [
     "python_full_version < '3.10'",
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2a/65/55fb76dc844d08771b679d8ea66f5f8a7b469966424de2db63a992a8c5ea/aiosolr-5.0.0.tar.gz", hash = "sha256:a2c50cdd6c9c957e87226b75415df5d4a0d5b018d8f2c337cb02aeb34bf916dd", size = 17507, upload-time = "2024-04-04T16:05:39.831Z" }
+dependencies = [
+    { name = "aiohttp", marker = "python_full_version < '3.10'" },
+    { name = "bleach", marker = "python_full_version < '3.10'" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/55/9e/ce43cafa408774e72b94870b9600744430c19bfd112d2f6c61facffac289/aiosolr-4.4.0.tar.gz", hash = "sha256:851f8bc91506a9274fc3287b189c404f9a25a04e017683c9c88bee10979ab554", size = 9188, upload-time = "2023-10-13T18:33:48.714Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/75/70/b288841d5c42115f8f38f106d5a021740605f3739f9fd772b3d4a3a03be5/aiosolr-5.0.0-py2.py3-none-any.whl", hash = "sha256:7121432aff55ec67960e58866a9f222a276f2f964e9e1be037f06e9bff75aab2", size = 7707, upload-time = "2024-04-04T16:05:35.245Z" },
+    { url = "https://files.pythonhosted.org/packages/b7/d1/16d4aa49c30f8d6af0c5fa37a6967afecf57ffbb7c73449a614f401432a3/aiosolr-4.4.0-py3-none-any.whl", hash = "sha256:c3f3a9a11a57e9cf624a711b1b1415ac9827f66395aed0c43764dc2785f51a51", size = 9377, upload-time = "2023-10-13T18:33:46.828Z" },
 ]
 
 [[package]]
@@ -1784,7 +1788,7 @@ name = "llama-index-vector-stores-solr"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "aiosolr", version = "5.0.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
+    { name = "aiosolr", version = "4.4.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
     { name = "aiosolr", version = "5.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.10'" },
     { name = "llama-index-core" },
     { name = "numpy", version = "2.0.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.10'" },
@@ -1824,7 +1828,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiosolr", specifier = ">=5.0.0" },
+    { name = "aiosolr", marker = "python_full_version < '3.10'", specifier = "<5" },
+    { name = "aiosolr", marker = "python_full_version >= '3.10'", specifier = ">=5.0.0" },
     { name = "llama-index-core", specifier = ">=0.14.0,<0.15" },
     { name = "numpy", specifier = ">=2.0.2" },
     { name = "pydantic", specifier = ">=2.11.7" },

@@ -1,5 +1,7 @@
 """Testing solr vector store utils."""
 
+from typing import Union
+
 import pytest
 
 from llama_index.core.vector_stores.types import (
@@ -228,7 +230,7 @@ def test_recursively_unpack_filters_invalid_operators(
 )
 def test_recursively_unpack_filters_invalid_list_value_with_non_list_operator(
     input_operator: FilterOperator,
-    input_value: list[str] | list[int] | list[float],
+    input_value: Union[list[str], list[int], list[float]],
 ) -> None:
     input_filters = MetadataFilters(
         filters=[

@@ -1,8 +1,9 @@
 """Shared type declarations for the Apache Solr vector store integration."""
 
-from typing import NotRequired, TypedDict
+from typing import TypedDict
 
 from pydantic import BaseModel
+from typing_extensions import NotRequired
 
 
 class BoostedTextField(BaseModel):

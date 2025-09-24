@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import sys
 import time
 from asyncio import Task
 from collections.abc import Mapping, Sequence
@@ -43,17 +44,19 @@ class AsyncSolrClient(_BaseSolrClient):
                     "port": parsed_url.port,
                     "scheme": parsed_url.scheme,
                     "collection": collection,
-                    "read_timeout": self._request_timeout_sec,
-                    "write_timeout": self._request_timeout_sec,
                     **self._client_kwargs,
                 }
             else:
                 args = {
                     "connection_url": self._base_url,
-                    "read_timeout": self._request_timeout_sec,
-                    "write_timeout": self._request_timeout_sec,
                     **self._client_kwargs,
                 }
+
+            if sys.version_info < (3, 10):
+                args["timeout"] = self._request_timeout_sec
+            else:
+                args["read_timeout"] = self._request_timeout_sec
+                args["write_timeout"] = self._request_timeout_sec
 
             logger.debug("Initializing AIOSolr client with args: %s", self._base_url)
             client = aiosolr.Client(**args)

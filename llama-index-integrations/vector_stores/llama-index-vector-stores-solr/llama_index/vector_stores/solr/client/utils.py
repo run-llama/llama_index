@@ -1,6 +1,12 @@
 """Utilities for use with Solr clients, particularly for preparing data for ingestion."""
 
-import datetime
+from datetime import date, datetime, timezone
+
+try:
+    from datetime import UTC
+except ImportError:
+    UTC = timezone.utc
+
 from collections.abc import Mapping
 from typing import Any, Union, cast
 
@@ -9,7 +15,7 @@ import numpy as np
 from llama_index.vector_stores.solr.constants import SolrConstants
 
 
-def format_datetime_for_solr(dt: Union[datetime.datetime, datetime.date]) -> str:
+def format_datetime_for_solr(dt: Union[datetime, date]) -> str:
     """
     Format an input :py:class:`datetime.datetime` or :py:class:`datetime.date` into a Solr-compatible date string.
 
@@ -35,13 +41,13 @@ def format_datetime_for_solr(dt: Union[datetime.datetime, datetime.date]) -> str
 
     """
     # dates don't have timezones
-    if isinstance(dt, datetime.datetime):
+    if isinstance(dt, datetime):
         if dt.tzinfo is not None:
             # convert other timezone to UTC
-            dt = dt.astimezone(datetime.UTC)
+            dt = dt.astimezone(UTC)
         else:
             # treat naive datetimes as UTC
-            dt = dt.replace(tzinfo=datetime.UTC)
+            dt = dt.replace(tzinfo=UTC)
 
     return dt.strftime(SolrConstants.SOLR_ISO8601_DATE_FORMAT)
 
@@ -69,7 +75,7 @@ def prepare_document_for_solr(document: Mapping[str, Any]) -> dict[str, Any]:
     """
     out_doc: dict[str, Any] = {}
     for key, value in document.items():
-        if isinstance(value, (datetime.datetime, datetime.date)):
+        if isinstance(value, (datetime, date)):
             out_doc[key] = format_datetime_for_solr(value)
         elif isinstance(value, np.ndarray):
             out_doc[key] = cast(list, value.tolist())
