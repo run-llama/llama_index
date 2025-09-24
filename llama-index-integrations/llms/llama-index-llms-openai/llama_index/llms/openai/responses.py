@@ -26,6 +26,7 @@ from openai.types.responses import (
     ResponseReasoningItem,
     ResponseCodeInterpreterToolCall,
     ResponseImageGenCallPartialImageEvent,
+    ResponseOutputItemDoneEvent,
 )
 from openai.types.responses.response_output_item import ImageGenerationCall, McpCall
 from typing import (
@@ -65,6 +66,7 @@ from llama_index.core.base.llms.types import (
     ContentBlock,
     TextBlock,
     ImageBlock,
+    ThinkingBlock,
 )
 from llama_index.core.bridge.pydantic import (
     Field,
@@ -252,7 +254,7 @@ class OpenAIResponses(FunctionCallingLLM):
     default_headers: Optional[Dict[str, str]] = Field(
         default=None, description="The default headers for API requests."
     )
-    api_key: str = Field(default=None, description="The OpenAI API key.")
+    api_key: Optional[str] = Field(default=None, description="The OpenAI API key.")
     api_base: str = Field(description="The base URL for OpenAI API.")
     api_version: str = Field(description="The API version for OpenAI API.")
     context_window: Optional[int] = Field(
@@ -382,7 +384,7 @@ class OpenAIResponses(FunctionCallingLLM):
         return model_name
 
     def _is_azure_client(self) -> bool:
-        return isinstance(self._get_client(), AzureOpenAI)
+        return isinstance(self._client, AzureOpenAI)
 
     def _get_credential_kwargs(self, is_async: bool = False) -> Dict[str, Any]:
         return {
@@ -484,7 +486,22 @@ class OpenAIResponses(FunctionCallingLLM):
             elif isinstance(item, ResponseComputerToolCall):
                 additional_kwargs["built_in_tool_calls"].append(item)
             elif isinstance(item, ResponseReasoningItem):
-                additional_kwargs["reasoning"] = item
+                content: Optional[str] = None
+                if item.content:
+                    content = "\n".join([i.text for i in item.content])
+                if item.summary:
+                    if content:
+                        content += "\n" + "\n".join([i.text for i in item.summary])
+                    else:
+                        content = "\n".join([i.text for i in item.summary])
+                message.blocks.append(
+                    ThinkingBlock(
+                        content=content,
+                        additional_information=item.model_dump(
+                            exclude={"content", "summary"}
+                        ),
+                    )
+                )
 
         if tool_calls and message:
             message.additional_kwargs["tool_calls"] = tool_calls
@@ -512,6 +529,12 @@ class OpenAIResponses(FunctionCallingLLM):
         chat_response = self._parse_response_output(response.output)
         chat_response.raw = response
         chat_response.additional_kwargs["usage"] = response.usage
+        if hasattr(response.usage.output_tokens_details, "reasoning_tokens"):
+            for block in chat_response.message.blocks:
+                if isinstance(block, ThinkingBlock):
+                    block.num_tokens = (
+                        response.usage.output_tokens_details.reasoning_tokens
+                    )
 
         return chat_response
 
@@ -605,9 +628,27 @@ class OpenAIResponses(FunctionCallingLLM):
         elif isinstance(event, ResponseWebSearchCallCompletedEvent):
             # Web search tool call completed
             built_in_tool_calls.append(event)
-        elif isinstance(event, ResponseReasoningItem):
+        elif isinstance(event, ResponseOutputItemDoneEvent):
             # Reasoning information
-            additional_kwargs["reasoning"] = event
+            if isinstance(event.item, ResponseReasoningItem):
+                content: Optional[str] = None
+                if event.item.content:
+                    content = "\n".join([i.text for i in event.item.content])
+                if event.item.summary:
+                    if content:
+                        content += "\n" + "\n".join(
+                            [i.text for i in event.item.summary]
+                        )
+                    else:
+                        content = "\n".join([i.text for i in event.item.summary])
+                blocks.append(
+                    ThinkingBlock(
+                        content=content,
+                        additional_information=event.item.model_dump(
+                            exclude={"content", "summary"}
+                        ),
+                    )
+                )
         elif isinstance(event, ResponseCompletedEvent):
             # Response is complete
             if hasattr(event, "response") and hasattr(event.response, "usage"):

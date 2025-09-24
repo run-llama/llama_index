@@ -29,6 +29,7 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     AudioBlock,
     DocumentBlock,
+    ThinkingBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 
@@ -204,7 +205,7 @@ JSON_SCHEMA_MODELS = [
 
 def is_json_schema_supported(model: str) -> bool:
     try:
-        from openai.resources.beta.chat import completions
+        from openai.resources.chat.completions import completions
 
         if not hasattr(completions, "_type_to_response_format"):
             return False
@@ -469,7 +470,10 @@ def to_openai_responses_message_dict(
 
     for block in message.blocks:
         if isinstance(block, TextBlock):
-            content.append({"type": "input_text", "text": block.text})
+            if message.role.value == "user":
+                content.append({"type": "input_text", "text": block.text})
+            else:
+                content.append({"type": "output_text", "text": block.text})
             content_txt += block.text
         elif isinstance(block, DocumentBlock):
             if not block.data:
@@ -505,6 +509,10 @@ def to_openai_responses_message_dict(
                         "detail": block.detail or "auto",
                     }
                 )
+        elif isinstance(block, ThinkingBlock):
+            if block.content:
+                content.append({"type": "output_text", "text": block.content})
+                content_txt += block.content
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
@@ -548,9 +556,6 @@ def to_openai_responses_message_dict(
             tool_call if isinstance(tool_call, dict) else tool_call.model_dump()
             for tool_call in message.additional_kwargs["tool_calls"]
         ]
-
-        if "reasoning" in message.additional_kwargs:  # and if it is reasoning model
-            message_dicts = [message.additional_kwargs["reasoning"]] + message_dicts
 
         return message_dicts
 

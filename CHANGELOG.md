@@ -1,5 +1,7 @@
 # ChangeLog
 
+<!--- generated changelog --->
+
 ## [2025-09-15]
 
 ### `llama-index-core` [0.14.2]

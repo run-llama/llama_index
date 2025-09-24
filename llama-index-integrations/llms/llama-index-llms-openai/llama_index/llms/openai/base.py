@@ -994,7 +994,9 @@ class OpenAI(FunctionCallingLLM):
     def _prepare_schema(
         self, llm_kwargs: Optional[Dict[str, Any]], output_cls: Type[Model]
     ) -> Dict[str, Any]:
-        from openai.resources.beta.chat.completions import _type_to_response_format
+        from openai.resources.chat.completions.completions import (
+            _type_to_response_format,
+        )
 
         llm_kwargs = llm_kwargs or {}
         llm_kwargs["response_format"] = _type_to_response_format(output_cls)
