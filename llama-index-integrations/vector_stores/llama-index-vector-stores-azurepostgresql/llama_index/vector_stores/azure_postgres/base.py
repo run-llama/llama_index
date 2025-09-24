@@ -16,6 +16,7 @@ from llama_index.core.vector_stores.types import (
     MetadataFilter,
     MetadataFilters,
     VectorStoreQuery,
+    VectorStoreQueryMode,
     VectorStoreQueryResult,
 )
 from llama_index.core.vector_stores.utils import (
@@ -284,6 +285,13 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
             filter_expression=metadata_filters_to_sql(query.filters),
             **kwargs,
         )
+        if query.mode == VectorStoreQueryMode.HYBRID:
+            text_results = self._full_text_search(
+                query_str=query.query_str,
+                **kwargs,
+            )
+            results = self._dedup_results(results + text_results)
+
         nodes = []
         similarities = []
         ids = []
