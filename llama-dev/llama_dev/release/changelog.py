@@ -87,10 +87,10 @@ def changelog(obj: dict, dry_run: bool) -> None:
         changelog_text = f"<!--- generated changelog --->\n\n## [{date.today().strftime('%Y-%m-%d')}]"
         sorted_pkgs = sorted(package_prs.keys())
         for pkg in sorted_pkgs:
-            changelog_text += f"\n\n### {pkg} [{package_versions[pkg]}]\n"
+            changelog_text += f"\n\n### {pkg} [{package_versions[pkg]}]"
             prs = sorted(package_prs[pkg], key=lambda p: p["number"])
             for pr in prs:
-                changelog_text += f"- {pr['title']} ([#{pr['number']}]({pr['url']}))"
+                changelog_text += f"\n- {pr['title']} ([#{pr['number']}]({pr['url']}))"
 
         if dry_run:
             click.echo(changelog_text)
