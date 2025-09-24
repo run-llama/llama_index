@@ -156,6 +156,42 @@ def test_process_response_event():
     assert delta == "Hello"
     assert updated_tool_calls == []
 
+    event = ResponseReasoningItem(
+        id="1",
+        summary=[],
+        type="reasoning",
+        content=[
+            Content(text="hello world", type="reasoning_text"),
+            Content(text="this is a test", type="reasoning_text"),
+        ],
+        encrypted_content=None,
+        status=None,
+    )
+
+    result = OpenAIResponses.process_response_event(
+        event=event,
+        tool_calls=tool_calls,
+        built_in_tool_calls=built_in_tool_calls,
+        additional_kwargs=additional_kwargs,
+        current_tool_call=current_tool_call,
+        track_previous_responses=False,
+    )
+
+    updated_blocks, _, _, _, _, _, _ = result
+    assert updated_blocks == [
+        ThinkingBlock(
+            block_type="thinking",
+            content="hello world\nthis is a test",
+            num_tokens=None,
+            additional_information={
+                "id": "1",
+                "type": "reasoning",
+                "encrypted_content": None,
+                "status": None,
+            },
+        )
+    ]
+
     # Test function call arguments delta
     current_tool_call = ResponseFunctionToolCall(
         id="call_123",

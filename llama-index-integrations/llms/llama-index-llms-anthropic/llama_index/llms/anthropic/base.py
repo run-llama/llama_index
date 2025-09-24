@@ -205,6 +205,9 @@ class Anthropic(FunctionCallingLLM):
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
+        # set the temperature to 1 when thinking is enabled, as per: https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking#important-considerations-when-using-extended-thinking
+        if thinking_dict and thinking_dict.get("type") == "enabled":
+            temperature = 1
 
         super().__init__(
             temperature=temperature,

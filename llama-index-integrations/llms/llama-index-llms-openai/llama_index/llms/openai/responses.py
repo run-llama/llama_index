@@ -629,7 +629,22 @@ class OpenAIResponses(FunctionCallingLLM):
             built_in_tool_calls.append(event)
         elif isinstance(event, ResponseReasoningItem):
             # Reasoning information
-            additional_kwargs["reasoning"] = event
+            content: Optional[str] = None
+            if event.content:
+                content = "\n".join([i.text for i in event.content])
+            if event.summary:
+                if content:
+                    content += "\n" + "\n".join([i.text for i in event.summary])
+                else:
+                    content = "\n".join([i.text for i in event.summary])
+            blocks.append(
+                ThinkingBlock(
+                    content=content,
+                    additional_information=event.model_dump(
+                        exclude={"content", "summary"}
+                    ),
+                )
+            )
         elif isinstance(event, ResponseCompletedEvent):
             # Response is complete
             if hasattr(event, "response") and hasattr(event.response, "usage"):
