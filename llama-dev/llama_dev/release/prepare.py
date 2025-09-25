@@ -53,7 +53,7 @@ def prepare(
     current_version = root_package_data["project"]["version"]
     new_version = bump_version(current_version, bump_enum)
     new_dep_string = (
-        f"llama-index-core<={new_version},<{bump_version(new_version, BumpType.MINOR)}"
+        f"llama-index-core>={new_version},<{bump_version(new_version, BumpType.MINOR)}"
     )
 
     if dry_run:
