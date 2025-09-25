@@ -348,7 +348,9 @@ class BedrockConverse(FunctionCallingLLM):
 
     def _get_content_and_tool_calls(
         self, response: Optional[Dict[str, Any]] = None, content: Dict[str, Any] = None
-    ) -> Tuple[List[TextBlock | ThinkingBlock], Dict[str, Any], List[str], List[str]]:
+    ) -> Tuple[
+        List[Union[TextBlock, ThinkingBlock]], Dict[str, Any], List[str], List[str]
+    ]:
         assert response is not None or content is not None, (
             f"Either response or content must be provided. Got response: {response}, content: {content}"
         )
@@ -511,7 +513,7 @@ class BedrockConverse(FunctionCallingLLM):
                                 current_tool_call = join_two_dicts(
                                     current_tool_call, tool_use_delta
                                 )
-                    blocks: List[TextBlock | ThinkingBlock] = [
+                    blocks: List[Union[TextBlock, ThinkingBlock]] = [
                         TextBlock(text=content.get("text", ""))
                     ]
                     if thinking != "":
@@ -714,7 +716,7 @@ class BedrockConverse(FunctionCallingLLM):
                                 current_tool_call = join_two_dicts(
                                     current_tool_call, tool_use_delta
                                 )
-                    blocks: List[TextBlock | ThinkingBlock] = [
+                    blocks: List[Union[TextBlock, ThinkingBlock]] = [
                         TextBlock(text=content.get("text", ""))
                     ]
                     if thinking != "":
