@@ -1,7 +1,17 @@
 import base64
 import json
 import logging
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    TypedDict,
+    Literal,
+)
 from tenacity import (
     before_sleep_log,
     retry,
@@ -20,6 +30,7 @@ from llama_index.core.base.llms.types import (
     AudioBlock,
     DocumentBlock,
     CachePoint,
+    ThinkingBlock,
 )
 
 
@@ -135,6 +146,18 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "deepseek.r1-v1:0",
 )
 
+BEDROCK_REASONING_MODELS = (
+    "anthropic.claude-3-7-sonnet-20250219-v1:0",
+    "anthropic.claude-opus-4-20250514-v1:0",
+    "anthropic.claude-sonnet-4-20250514-v1:0",
+    "deepseek.r1-v1:0",
+)
+
+
+def is_reasoning(model_name: str) -> bool:
+    model_name = get_model_name(model_name)
+    return model_name in BEDROCK_REASONING_MODELS
+
 
 def get_model_name(model_name: str) -> str:
     """Extract base model name from region-prefixed model identifier."""
@@ -200,6 +223,13 @@ def _content_block_to_bedrock_format(
         return {
             "text": block.text,
         }
+    elif isinstance(block, ThinkingBlock):
+        if block.content:
+            return {
+                "text": block.content,
+            }
+        else:
+            return None
     elif isinstance(block, DocumentBlock):
         if not block.data:
             file_buffer = block.resolve_document()
@@ -465,6 +495,10 @@ def converse_with_retry(
             "temperature": temperature,
         },
     }
+    if "thinking" in kwargs:
+        converse_kwargs["additionalModelRequestFields"] = {
+            "thinking": kwargs["thinking"]
+        }
     if system_prompt:
         system_messages: list[dict[str, Any]] = [{"text": system_prompt}]
         if system_prompt_caching:
@@ -486,7 +520,14 @@ def converse_with_retry(
         {
             k: v
             for k, v in kwargs.items()
-            if k not in ["tools", "guardrail_identifier", "guardrail_version", "trace"]
+            if k
+            not in [
+                "tools",
+                "guardrail_identifier",
+                "guardrail_version",
+                "trace",
+                "thinking",
+            ]
         },
     )
 
@@ -615,3 +656,8 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
             else:
                 new_dict[key] += value
     return new_dict
+
+
+class ThinkingDict(TypedDict):
+    type: Literal["enabled"]
+    budget_tokens: int
