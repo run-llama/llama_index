@@ -33,6 +33,8 @@ jobs:
       - name: Prepare
         shell: bash
         working-directory: llama-dev
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           uv run -- llama-dev --repo-root .. release prepare --version-type ${{ github.event.inputs.version-type }}
           uv run -- llama-dev --repo-root .. release changelog
