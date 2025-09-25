@@ -31,7 +31,7 @@ async def step_one(self, ev: StartEvent | LoopEvent) -> FirstEvent | LoopEvent:
 
 Let's visualize this:
 
-![A simple loop](/python/framework/understanding/workflows/loop.png)
+![A simple loop](./loop.png)
 
 You can create a loop from any step to any other step by defining the appropriate event types and return types.
 
@@ -89,7 +89,7 @@ class BranchWorkflow(Workflow):
 
 Our imports are the same as before, but we've created 4 new event types. `start` randomly decides to take one branch or another, and then multiple steps in each branch complete the workflow. Let's visualize this:
 
-![A simple branch](/python/framework/understanding/workflows/branching.png)
+![A simple branch](./branching.png)
 
 You can of course combine branches and loops in any order to fulfill the needs of your application. Later in this tutorial you'll learn how to run multiple branches in parallel using `send_event` and synchronize them using `collect_events`.
 
