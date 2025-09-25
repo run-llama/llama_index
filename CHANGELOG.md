@@ -2,6 +2,104 @@
 
 <!--- generated changelog --->
 
+## [2025-09-25]
+
+### llama-index-core [0.14.4]
+- chore: get `__version__` dynamically instead of hardcoding the value ([#19940](https://github.com/run-llama/llama_index/pull/19940))
+
+### llama-index-embeddings-anyscale [0.4.2]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-embeddings-baseten [0.1.2]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-embeddings-fireworks [0.4.2]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-embeddings-opea [0.2.2]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-llms-anthropic [0.9.1]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-llms-anyscale [0.4.2]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-llms-azure-openai [0.4.2]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-llms-baseten [0.1.5]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-llms-deepinfra [0.5.2]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-llms-everlyai [0.4.2]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-llms-fireworks [0.4.2]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-llms-google-genai [0.6.1]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-llms-keywordsai [1.1.2]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-llms-localai [0.5.2]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-llms-mistralai [0.8.1]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-llms-monsterapi [0.4.2]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-llms-nvidia [0.4.4]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-llms-ollama [0.7.4]
+- Fix `TypeError: unhashable type: 'dict'` in Ollama stream chat with tools ([#19938](https://github.com/run-llama/llama_index/pull/19938))
+
+### llama-index-llms-openai [0.6.1]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-llms-openai-like [0.5.2]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-llms-perplexity [0.4.2]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-llms-portkey [0.4.2]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-llms-sarvam [0.2.1]
+- fixed Sarvam Integration and Typos (Fixes #19931) ([#19932](https://github.com/run-llama/llama_index/pull/19932))
+
+### llama-index-llms-upstage [0.6.4]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-llms-yi [0.4.2]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-multi-modal-llms-openai [0.6.2]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-selectors-notdiamond [0.4.0]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-tools-agentql [1.2.0]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-tools-playwright [0.3.1]
+- chore: fix playwright tests ([#19946](https://github.com/run-llama/llama_index/pull/19946))
+
+### llama-index-vector-stores-mongodb [0.8.1]
+- fix llm deps for openai ([#19944](https://github.com/run-llama/llama_index/pull/19944))
+
+### llama-index-vector-stores-solr [0.1.0]
+- Add ApacheSolrVectorStore Integration ([#19933](https://github.com/run-llama/llama_index/pull/19933))
+
 ## [2025-09-24]
 
 ### llama-index-core [0.14.3]
