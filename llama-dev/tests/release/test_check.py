@@ -6,7 +6,6 @@ import pytest
 from llama_dev.cli import cli
 from llama_dev.release.check import (
     _get_current_branch_name,
-    _get_version_from_init,
     _get_version_from_pypi,
     _get_version_from_pyproject,
     check,
@@ -27,22 +26,6 @@ version = \"1.2.3\"
 """
     (core_path / "pyproject.toml").write_text(pyproject_content)
     assert _get_version_from_pyproject(tmp_path) == "1.2.3"
-
-
-def test_get_version_from_init(tmp_path):
-    core_init_path = tmp_path / "llama-index-core" / "llama_index" / "core"
-    core_init_path.mkdir(parents=True)
-    init_content = '__version__ = "1.2.3"'
-    (core_init_path / "__init__.py").write_text(init_content)
-    assert _get_version_from_init(tmp_path) == "1.2.3"
-
-
-def test_get_version_from_init_no_version(tmp_path):
-    core_init_path = tmp_path / "llama-index-core" / "llama_index" / "core"
-    core_init_path.mkdir(parents=True)
-    (core_init_path / "__init__.py").write_text("foo = 'bar'")
-    with pytest.raises(click.ClickException):
-        _get_version_from_init(tmp_path)
 
 
 def test_get_version_from_pypi():
@@ -81,7 +64,6 @@ def test_get_version_from_pypi_error():
             True,
             [
                 "✅ You are not on the `main` branch.",
-                "✅ Versions in 'pyproject.toml' and '__init__.py' are consistent (0.1.1)",
                 "✅ Version 0.1.1 is newer than the latest on PyPI (0.1.0).",
             ],
         ),
@@ -94,18 +76,6 @@ def test_get_version_from_pypi_error():
             False,
             [
                 "❌ You are on the `main` branch. Please create a new branch to release.",
-            ],
-        ),
-        (
-            "version_mismatch",
-            "my-release-branch",
-            "0.1.2",
-            "0.1.1",
-            "0.1.0",
-            False,
-            [
-                "❌ Version mismatch between 'pyproject.toml' (0.1.2) and "
-                "'__init__.py' (0.1.1)",
             ],
         ),
         (
@@ -138,9 +108,6 @@ def test_check_command(
         mock.patch(
             "llama_dev.release.check._get_version_from_pyproject",
             return_value=pyproject_version,
-        ),
-        mock.patch(
-            "llama_dev.release.check._get_version_from_init", return_value=init_version
         ),
         mock.patch(
             "llama_dev.release.check._get_version_from_pypi", return_value=pypi_version
