@@ -106,44 +106,36 @@ def changelog(obj: dict, dry_run: bool) -> None:
     console = obj["console"]
     repo_root = obj["repo_root"]
     all_packages = find_all_packages(repo_root)
+    latest_tag = _get_latest_tag()
 
-    try:
-        # Get the latest git tag
-        latest_tag = _get_latest_tag()
-        console.print(f"Generating changelog since tag '{latest_tag}'...")
+    console.print(f"Generating changelog since tag '{latest_tag}'...")
 
-        # Get commits since the last tag and extract PR numbers
-        pr_numbers = _get_pr_numbers(latest_tag)
-        if not pr_numbers:
-            raise click.ClickException("No pull requests found since the last tag.")
+    # Get commits since the last tag and extract PR numbers
+    pr_numbers = _get_pr_numbers(latest_tag)
+    if not pr_numbers:
+        raise click.ClickException("No pull requests found since the last tag.")
 
-        package_prs = {}
-        package_versions = {}
+    package_prs = {}
+    package_versions = {}
 
-        with click.progressbar(sorted(pr_numbers), label="Fetching PR details") as bar:
-            for pr_number in bar:
-                try:
-                    prs, versions = _extract_pr_data(repo_root, all_packages, pr_number)
-                    package_prs |= prs
-                    package_versions |= versions
+    with click.progressbar(sorted(pr_numbers), label="Fetching PR details") as bar:
+        for pr_number in bar:
+            try:
+                prs, versions = _extract_pr_data(repo_root, all_packages, pr_number)
+                package_prs |= prs
+                package_versions |= versions
 
-                except Exception as e:
-                    console.print(
-                        f"Warning: Could not fetch details for PR #{pr_number}. {e}",
-                        style="error",
-                    )
+            except Exception as e:
+                console.print(
+                    f"Warning: Could not fetch details for PR #{pr_number}. {e}",
+                    style="error",
+                )
 
-        # Generate the markdown output
-        changelog_text = _get_changelog_text(package_prs, package_versions)
+    # Generate the markdown output
+    changelog_text = _get_changelog_text(package_prs, package_versions)
 
-        if dry_run:
-            console.print(changelog_text)
-        else:
-            _update_changelog_file(repo_root, changelog_text)
-            console.print("CHANGELOG.md file updated.")
-
-    except FileNotFoundError:
-        click.ClickException(
-            "Error: 'gh' command not found. "
-            "Please ensure it's installed and in your PATH."
-        )
+    if dry_run:
+        console.print(changelog_text)
+    else:
+        _update_changelog_file(repo_root, changelog_text)
+        console.print("CHANGELOG.md file updated.")

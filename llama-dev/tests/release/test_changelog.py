@@ -1,10 +1,11 @@
 import json
 from datetime import date
 from pathlib import Path
-from unittest.mock import MagicMock, mock_open, patch
+from unittest import mock
 
 import pytest
-
+from click.testing import CliRunner
+from llama_dev.cli import cli
 from llama_dev.release.changelog import (
     CHANGELOG_PLACEHOLDER,
     _extract_pr_data,
@@ -16,9 +17,116 @@ from llama_dev.release.changelog import (
 )
 
 
+@mock.patch("llama_dev.release.changelog._run_command")
+@mock.patch("llama_dev.release.changelog._get_latest_tag")
+@mock.patch("llama_dev.release.changelog._get_pr_numbers")
+@mock.patch("llama_dev.release.changelog._extract_pr_data")
+@mock.patch("llama_dev.release.changelog._get_changelog_text")
+@mock.patch("llama_dev.release.changelog._update_changelog_file")
+def test_command_nothing_changed(
+    mock_update_changelog_file,
+    mock_get_changelog_text,
+    mock_extract_pr_data,
+    mock_get_pr_numbers,
+    mock_get_latest_tag,
+    mock_run_command,
+    data_path,
+):
+    mock_get_pr_numbers.return_value = []
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["--repo-root", data_path, "release", "changelog"],
+    )
+    assert result.exit_code == 1
+    assert "No pull requests found since the last tag" in result.stdout
+
+
+@mock.patch("llama_dev.release.changelog._run_command")
+@mock.patch("llama_dev.release.changelog._get_latest_tag")
+@mock.patch("llama_dev.release.changelog._get_pr_numbers")
+@mock.patch("llama_dev.release.changelog._extract_pr_data")
+@mock.patch("llama_dev.release.changelog._get_changelog_text")
+@mock.patch("llama_dev.release.changelog._update_changelog_file")
+def test_command_pr_fetch_failed(
+    mock_update_changelog_file,
+    mock_get_changelog_text,
+    mock_extract_pr_data,
+    mock_get_pr_numbers,
+    mock_get_latest_tag,
+    mock_run_command,
+    data_path,
+):
+    mock_get_pr_numbers.return_value = ["42"]
+    mock_extract_pr_data.side_effect = FileNotFoundError()
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["--repo-root", data_path, "release", "changelog"],
+    )
+    assert result.exit_code == 0
+    assert "Could not fetch details for PR #42" in result.stdout
+
+
+@mock.patch("llama_dev.release.changelog._run_command")
+@mock.patch("llama_dev.release.changelog._get_latest_tag")
+@mock.patch("llama_dev.release.changelog._get_pr_numbers")
+@mock.patch("llama_dev.release.changelog._extract_pr_data")
+@mock.patch("llama_dev.release.changelog._get_changelog_text")
+@mock.patch("llama_dev.release.changelog._update_changelog_file")
+def test_command_dry_run(
+    mock_update_changelog_file,
+    mock_get_changelog_text,
+    mock_extract_pr_data,
+    mock_get_pr_numbers,
+    mock_get_latest_tag,
+    mock_run_command,
+    data_path,
+):
+    mock_get_changelog_text.return_value = "Fake Changelog Here"
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["--repo-root", data_path, "release", "changelog", "--dry-run"],
+    )
+    assert result.exit_code == 0
+    mock_update_changelog_file.assert_not_called()
+    assert "Fake Changelog Here" in result.stdout
+
+
+@mock.patch("llama_dev.release.changelog._run_command")
+@mock.patch("llama_dev.release.changelog._get_latest_tag")
+@mock.patch("llama_dev.release.changelog._get_pr_numbers")
+@mock.patch("llama_dev.release.changelog._extract_pr_data")
+@mock.patch("llama_dev.release.changelog._get_changelog_text")
+@mock.patch("llama_dev.release.changelog._update_changelog_file")
+def test_command_success(
+    mock_update_changelog_file,
+    mock_get_changelog_text,
+    mock_extract_pr_data,
+    mock_get_pr_numbers,
+    mock_get_latest_tag,
+    mock_run_command,
+    data_path,
+):
+    mock_get_pr_numbers.return_value = ["42"]
+    mock_extract_pr_data.return_value = ({"foo": {}}, {"foo": "v1.2.3"})
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["--repo-root", data_path, "release", "changelog"],
+    )
+    assert result.exit_code == 0
+    mock_update_changelog_file.assert_called_once()
+
+
 def test_run_command_success():
-    with patch("subprocess.run") as mock_run:
-        mock_result = MagicMock()
+    with mock.patch("subprocess.run") as mock_run:
+        mock_result = mock.MagicMock()
         mock_result.returncode = 0
         mock_result.stdout = "Success"
         mock_run.return_value = mock_result
@@ -26,8 +134,8 @@ def test_run_command_success():
 
 
 def test_run_command_failure():
-    with patch("subprocess.run") as mock_run:
-        mock_result = MagicMock()
+    with mock.patch("subprocess.run") as mock_run:
+        mock_result = mock.MagicMock()
         mock_result.returncode = 1
         mock_result.stderr = "Error"
         mock_run.return_value = mock_result
@@ -35,7 +143,7 @@ def test_run_command_failure():
             _run_command("false")
 
 
-@patch("llama_dev.release.changelog._run_command")
+@mock.patch("llama_dev.release.changelog._run_command")
 def test_get_latest_tag(mock_run_command):
     mock_run_command.return_value = "v1.2.3"
     assert _get_latest_tag() == "v1.2.3"
@@ -44,7 +152,7 @@ def test_get_latest_tag(mock_run_command):
     )
 
 
-@patch("llama_dev.release.changelog._run_command")
+@mock.patch("llama_dev.release.changelog._run_command")
 def test_get_pr_numbers(mock_run_command):
     log_output = """
     commit 123 (HEAD -> main)
@@ -62,9 +170,9 @@ def test_get_pr_numbers(mock_run_command):
     )
 
 
-@patch("llama_dev.release.changelog._run_command")
-@patch("llama_dev.release.changelog.load_pyproject")
-@patch("llama_dev.release.changelog.get_changed_packages")
+@mock.patch("llama_dev.release.changelog._run_command")
+@mock.patch("llama_dev.release.changelog.load_pyproject")
+@mock.patch("llama_dev.release.changelog.get_changed_packages")
 def test_extract_pr_data(
     mock_get_changed_packages, mock_load_pyproject, mock_run_command
 ):
@@ -136,8 +244,8 @@ def test_update_changelog_file():
     )
     expected_content = f"Some initial content\n{changelog_text}\nSome other content"
 
-    m = mock_open(read_data=initial_content)
-    with patch("builtins.open", m):
+    m = mock.mock_open(read_data=initial_content)
+    with mock.patch("builtins.open", m):
         _update_changelog_file(repo_root, changelog_text)
 
     m.assert_called_once_with(repo_root / "CHANGELOG.md", "r+")
