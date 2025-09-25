@@ -2,9 +2,15 @@ name: Pre-release for llama-index
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - massi/bump
+    inputs:
+      version-type:
+        description: "The type of release to prepare"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
 
 permissions:
   contents: write
@@ -28,7 +34,7 @@ jobs:
         shell: bash
         working-directory: llama-dev
         run: |
-          uv run -- llama-dev --repo-root .. release prepare
+          uv run -- llama-dev --repo-root .. release prepare --version-type ${{ github.event.inputs.version-type }}
           uv run -- llama-dev --repo-root .. release changelog
 
       - name: Create Release PR
