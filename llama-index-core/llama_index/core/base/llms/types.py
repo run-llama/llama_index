@@ -449,11 +449,8 @@ class ToolCallBlock(BaseModel):
         default=None, description="ID of the tool call, if provided"
     )
     tool_name: str = Field(description="Name of the called tool")
-    tool_kwargs: dict[str, Any] = Field(
+    tool_kwargs: dict[str, Any] | object = Field(
         default_factory=dict, description="Arguments provided to the tool, if available"
-    )
-    tool_result: Optional[Any] = Field(
-        default=None, description="Result from the tool, if available"
     )
 
 

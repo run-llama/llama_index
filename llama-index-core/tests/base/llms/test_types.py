@@ -482,14 +482,11 @@ def test_tool_call_block():
     assert default_block.tool_call_id is None
     assert default_block.tool_name == "hello_world"
     assert default_block.tool_kwargs == {}
-    assert default_block.tool_result is None
     custom_block = ToolCallBlock(
         tool_name="hello_world",
         tool_call_id="1",
         tool_kwargs={"test": 1},
-        tool_result="Hello world: test 1!",
     )
     assert custom_block.tool_call_id == "1"
     assert custom_block.tool_name == "hello_world"
     assert custom_block.tool_kwargs == {"test": 1}
-    assert custom_block.tool_result == "Hello world: test 1!"
