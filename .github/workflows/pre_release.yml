@@ -2,6 +2,9 @@ name: Pre-release for llama-index
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - massi/bump
 
 permissions:
   contents: write
