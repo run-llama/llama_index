@@ -8,8 +8,6 @@ import tomli
 from packaging import specifiers, version
 from packaging.version import Version
 
-from llama_dev.utils import find_all_packages, is_llama_index_package, load_pyproject
-
 DEP_NAME_REGEX = re.compile(r"([^<>=\[\];\s]+)")
 
 
