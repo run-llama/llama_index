@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-cli"
-version = "0.5.1"
+version = "0.5.2"
 description = "llama-index cli"
 authors = [{name = "llamaindex"}]
 requires-python = ">=3.9,<4.0"
@@ -43,7 +43,7 @@ maintainers = [
 dependencies = [
     "llama-index-core>=0.13.0,<0.15",
     "llama-index-embeddings-openai>=0.5.0,<0.6",
-    "llama-index-llms-openai>=0.5.0,<0.6",
+    "llama-index-llms-openai>=0.6.0,<0.7",
 ]
 
 [project.scripts]
