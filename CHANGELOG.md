@@ -2,6 +2,8 @@
 
 <!--- generated changelog --->
 
+## [2025-09-25]
+
 ## [2025-09-24]
 
 ### llama-index-core [0.14.3]
