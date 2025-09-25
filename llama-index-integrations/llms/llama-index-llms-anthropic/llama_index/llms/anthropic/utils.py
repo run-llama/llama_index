@@ -14,6 +14,7 @@ from llama_index.core.base.llms.types import (
     CachePoint,
     CitableBlock,
     CitationBlock,
+    ThinkingBlock,
     ContentBlock,
 )
 
@@ -26,7 +27,7 @@ from anthropic.types import (
     CacheControlEphemeralParam,
     Base64PDFSourceParam,
 )
-from anthropic.types import ContentBlock as AnthropicContentBlock
+from anthropic.types import ContentBlockParam as AnthropicContentBlock
 from anthropic.types.beta import (
     BetaSearchResultBlockParam,
     BetaTextBlockParam,
@@ -201,9 +202,6 @@ def blocks_to_anthropic_blocks(
     if kwargs.get("cache_control"):
         global_cache_control = CacheControlEphemeralParam(**kwargs["cache_control"])
 
-    if kwargs.get("thinking"):
-        anthropic_blocks.append(ThinkingBlockParam(**kwargs["thinking"]))
-
     for block in blocks:
         if isinstance(block, TextBlock):
             if block.text:
@@ -250,6 +248,17 @@ def blocks_to_anthropic_blocks(
             )
             if global_cache_control:
                 anthropic_blocks[-1]["cache_control"] = global_cache_control
+
+        elif isinstance(block, ThinkingBlock):
+            if block.content:
+                signature = block.additional_information.get("signature", "")
+                anthropic_blocks.append(
+                    ThinkingBlockParam(
+                        signature=signature, thinking=block.content, type="thinking"
+                    )
+                )
+                if global_cache_control:
+                    anthropic_blocks[-1]["cache_control"] = global_cache_control
 
         elif isinstance(block, CachePoint):
             if len(anthropic_blocks) > 0:

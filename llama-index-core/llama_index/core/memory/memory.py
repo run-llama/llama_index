@@ -28,6 +28,7 @@ from llama_index.core.base.llms.types import (
     CachePoint,
     CitableBlock,
     CitationBlock,
+    ThinkingBlock,
 )
 from llama_index.core.bridge.pydantic import (
     BaseModel,
@@ -343,6 +344,7 @@ class Memory(BaseMemory):
                     DocumentBlock,
                     CitableBlock,
                     CitationBlock,
+                    ThinkingBlock,
                 ]
             ] = []
 

@@ -24,6 +24,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     ImageBlock,
+    ThinkingBlock,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
@@ -62,6 +63,7 @@ from mistralai.models import (
     TextChunk,
     ImageURLChunk,
     ContentChunk,
+    ThinkChunk,
 )
 
 if TYPE_CHECKING:
@@ -77,6 +79,11 @@ def to_mistral_chunks(content_blocks: Sequence[ContentBlock]) -> Sequence[Conten
     for content_block in content_blocks:
         if isinstance(content_block, TextBlock):
             content_chunks.append(TextChunk(text=content_block.text))
+        elif isinstance(content_block, ThinkingBlock):
+            if content_block.content:
+                content_chunks.append(
+                    ThinkChunk(thinking=[TextChunk(text=content_block.content)])
+                )
         elif isinstance(content_block, ImageBlock):
             if content_block.url:
                 content_chunks.append(ImageURLChunk(image_url=str(content_block.url)))
@@ -308,6 +315,7 @@ class MistralAI(FunctionCallingLLM):
         messages = to_mistral_chatmessage(messages)
         all_kwargs = self._get_all_kwargs(**kwargs)
         response = self._client.chat.complete(messages=messages, **all_kwargs)
+        blocks: List[TextBlock | ThinkingBlock] = []
 
         additional_kwargs = {}
         if self.model in MISTRAL_AI_REASONING_MODELS:
@@ -315,7 +323,7 @@ class MistralAI(FunctionCallingLLM):
                 response.choices[0].message.content
             )
             if thinking_txt:
-                additional_kwargs["thinking"] = thinking_txt
+                blocks.append(ThinkingBlock(content=thinking_txt))
 
             response_txt = (
                 response_txt
@@ -325,6 +333,7 @@ class MistralAI(FunctionCallingLLM):
         else:
             response_txt = response.choices[0].message.content
 
+        blocks.append(TextBlock(text=response_txt))
         tool_calls = response.choices[0].message.tool_calls
         if tool_calls is not None:
             additional_kwargs["tool_calls"] = tool_calls
@@ -332,7 +341,7 @@ class MistralAI(FunctionCallingLLM):
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
-                content=response_txt,
+                blocks=blocks,
                 additional_kwargs=additional_kwargs,
             ),
             raw=dict(response),
@@ -358,6 +367,7 @@ class MistralAI(FunctionCallingLLM):
 
         def gen() -> ChatResponseGen:
             content = ""
+            blocks: List[TextBlock | ThinkingBlock] = []
             for chunk in response:
                 delta = chunk.data.choices[0].delta
                 role = delta.role or MessageRole.ASSISTANT
@@ -375,18 +385,19 @@ class MistralAI(FunctionCallingLLM):
                     thinking_txt, response_txt = self._separate_thinking(content)
 
                     if thinking_txt:
-                        additional_kwargs["thinking"] = thinking_txt
+                        blocks.append(ThinkingBlock(content=thinking_txt))
 
                     content = response_txt if not self.show_thinking else content
 
                     # If thinking hasn't ended, don't include it in the delta
                     if thinking_txt is None and not self.show_thinking:
                         content_delta = ""
+                    blocks.append(TextBlock(text=content))
 
                 yield ChatResponse(
                     message=ChatMessage(
                         role=role,
-                        content=content,
+                        blocks=blocks,
                         additional_kwargs=additional_kwargs,
                     ),
                     delta=content_delta,
@@ -414,13 +425,14 @@ class MistralAI(FunctionCallingLLM):
             messages=messages, **all_kwargs
         )
 
+        blocks: List[TextBlock | ThinkingBlock] = []
         additional_kwargs = {}
         if self.model in MISTRAL_AI_REASONING_MODELS:
             thinking_txt, response_txt = self._separate_thinking(
                 response.choices[0].message.content
             )
             if thinking_txt:
-                additional_kwargs["thinking"] = thinking_txt
+                blocks.append(ThinkingBlock(content=thinking_txt))
 
             response_txt = (
                 response_txt
@@ -430,6 +442,8 @@ class MistralAI(FunctionCallingLLM):
         else:
             response_txt = response.choices[0].message.content
 
+        blocks.append(TextBlock(text=response_txt))
+
         tool_calls = response.choices[0].message.tool_calls
         if tool_calls is not None:
             additional_kwargs["tool_calls"] = tool_calls
@@ -437,7 +451,7 @@ class MistralAI(FunctionCallingLLM):
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
-                content=response_txt,
+                blocks=blocks,
                 additional_kwargs=additional_kwargs,
             ),
             raw=dict(response),
@@ -463,6 +477,7 @@ class MistralAI(FunctionCallingLLM):
 
         async def gen() -> ChatResponseAsyncGen:
             content = ""
+            blocks: List[ThinkingBlock | TextBlock] = []
             async for chunk in response:
                 delta = chunk.data.choices[0].delta
                 role = delta.role or MessageRole.ASSISTANT
@@ -478,7 +493,7 @@ class MistralAI(FunctionCallingLLM):
                 if self.model in MISTRAL_AI_REASONING_MODELS:
                     thinking_txt, response_txt = self._separate_thinking(content)
                     if thinking_txt:
-                        additional_kwargs["thinking"] = thinking_txt
+                        blocks.append(ThinkingBlock(content=thinking_txt))
 
                     content = response_txt if not self.show_thinking else content
 
@@ -486,10 +501,12 @@ class MistralAI(FunctionCallingLLM):
                     if thinking_txt is None and not self.show_thinking:
                         content_delta = ""
 
+                    blocks.append(TextBlock(text=content))
+
                 yield ChatResponse(
                     message=ChatMessage(
                         role=role,
-                        content=content,
+                        blocks=blocks,
                         additional_kwargs=additional_kwargs,
                     ),
                     delta=content_delta,

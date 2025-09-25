@@ -1,5 +1,6 @@
 import click
 
+from .changelog import changelog
 from .check import check
 
 
@@ -9,3 +10,4 @@ def release():
 
 
 release.add_command(check)
+release.add_command(changelog)

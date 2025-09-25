@@ -379,9 +379,7 @@ def test_is_json_schema_supported_supported_models() -> None:
     ]
 
     for model in supported_models:
-        assert is_json_schema_supported(model) is True, (
-            f"Model {model} should be supported"
-        )
+        assert is_json_schema_supported(model), f"Model {model} should be supported"
 
 
 def test_is_json_schema_supported_o1_mini_excluded() -> None:
