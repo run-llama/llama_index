@@ -28,7 +28,7 @@ dev = [
 name = "llama-index-llms-sarvam"
 version = "0.2.1"
 description = "llama-index llms sarvam integration"
-authors = [{name = "Yash Parmar", email = "yashp3020@gmail.com"}
+authors = [{name = "Yash Parmar", email = "yashp3020@gmail.com"},
             {name="Advik sharma", email="scince5678@gmail.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
