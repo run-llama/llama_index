@@ -2,6 +2,79 @@
 
 <!--- generated changelog --->
 
+## [2025-09-24]
+
+### llama-index-core [0.14.3]
+
+- Fix Gemini thought signature serialization ([#19891](https://github.com/run-llama/llama_index/pull/19891))
+- Adding a ThinkingBlock among content blocks ([#19919](https://github.com/run-llama/llama_index/pull/19919))
+
+### llama-index-llms-anthropic [0.9.0]
+
+- Adding a ThinkingBlock among content blocks ([#19919](https://github.com/run-llama/llama_index/pull/19919))
+
+### llama-index-llms-baseten [0.1.4]
+
+- added kimik2 0905 and reordered list for validation ([#19892](https://github.com/run-llama/llama_index/pull/19892))
+- Baseten Dynamic Model APIs Validation ([#19893](https://github.com/run-llama/llama_index/pull/19893))
+
+### llama-index-llms-google-genai [0.6.0]
+
+- Add missing FileAPI support for documents ([#19897](https://github.com/run-llama/llama_index/pull/19897))
+- Adding a ThinkingBlock among content blocks ([#19919](https://github.com/run-llama/llama_index/pull/19919))
+
+### llama-index-llms-mistralai [0.8.0]
+
+- Adding a ThinkingBlock among content blocks ([#19919](https://github.com/run-llama/llama_index/pull/19919))
+
+### llama-index-llms-openai [0.6.0]
+
+- Adding a ThinkingBlock among content blocks ([#19919](https://github.com/run-llama/llama_index/pull/19919))
+
+### llama-index-protocols-ag-ui [0.2.2]
+
+- improve how state snapshotting works in AG-UI ([#19934](https://github.com/run-llama/llama_index/pull/19934))
+
+### llama-index-readers-mongodb [0.5.0]
+
+- Use PyMongo Asynchronous API instead of Motor ([#19875](https://github.com/run-llama/llama_index/pull/19875))
+
+### llama-index-readers-paddle-ocr [0.1.0]
+
+- [New Package] Add PaddleOCR Reader for extracting text from images in PDFs ([#19827](https://github.com/run-llama/llama_index/pull/19827))
+
+### llama-index-readers-web [0.5.4]
+
+- feat(readers/web-firecrawl): migrate to Firecrawl v2 SDK ([#19773](https://github.com/run-llama/llama_index/pull/19773))
+
+### llama-index-storage-chat-store-mongo [0.3.0]
+
+- Use PyMongo Asynchronous API instead of Motor ([#19875](https://github.com/run-llama/llama_index/pull/19875))
+
+### llama-index-storage-kvstore-mongodb [0.5.0]
+
+- Use PyMongo Asynchronous API instead of Motor ([#19875](https://github.com/run-llama/llama_index/pull/19875))
+
+### llama-index-tools-valyu [0.5.0]
+
+- Add Valyu Extractor and Fast mode ([#19915](https://github.com/run-llama/llama_index/pull/19915))
+
+### llama-index-vector-stores-azureaisearch [0.4.2]
+
+- Fix/llama index vector stores azureaisearch fix ([#19800](https://github.com/run-llama/llama_index/pull/19800))
+
+### llama-index-vector-stores-azurepostgresql [0.1.0]
+
+- Add support for Azure PostgreSQL ([#19709](https://github.com/run-llama/llama_index/pull/19709))
+
+### llama-index-vector-stores-qdrant [0.8.5]
+
+- Add proper compat for old sparse vectors ([#19882](https://github.com/run-llama/llama_index/pull/19882))
+
+### llama-index-vector-stores-singlestoredb [0.4.2]
+
+- Fix SQLi Vulnerability in SingleStore Db ([#19914](https://github.com/run-llama/llama_index/pull/19914))
+
 ## [2025-09-15]
 
 ### `llama-index-core` [0.14.2]
