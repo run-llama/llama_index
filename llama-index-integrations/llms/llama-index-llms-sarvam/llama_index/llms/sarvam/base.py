@@ -11,39 +11,39 @@ from llama_index.core.base.llms.generic_utils import get_from_param_or_env
 from llama_index.llms.openai_like import OpenAILike
 
 DEFAULT_API_BASE = "https://api.sarvam.ai/v1"
-DEFAULT_MODEL = "servam-m"
+DEFAULT_MODEL = "sarvam-m"
 
 
-class Servam(OpenAILike):
+class Sarvam(OpenAILike):
     """
-    Servam LLM.
+    Sarvam LLM.
 
-    To instantiate the `Servam` class, you will need to provide an API key. You can set the API key either as an environment variable `SERVAM_API_KEY` or directly in the class
+    To instantiate the `Sarvam` class, you will need to provide an API key. You can set the API key either as an environment variable `SARVAM_API_KEY` or directly in the class
     constructor. If setting it in the class constructor, it would look like this:
 
-    If you haven't signed up for an API key yet, you can do so on the Servam website at (https://servam.ai). Once you have your API key, you can use the `Servam` class to interact
+    If you haven't signed up for an API key yet, you can do so on the Sarvam website at (https://sarvam.ai). Once you have your API key, you can use the `Sarvam` class to interact
     with the LLM for tasks like chatting, streaming, and completing prompts.
 
     Examples:
-        `pip install llama-index-llms-servam`
+        `pip install llama-index-llms-sarvam`
 
         ```python
-        from llama_index.llms.servam import Servam
+        from llama_index.llms.sarvam import Sarvam
 
-        llm = Servam(
+        llm = Sarvam(
             api_key="<your-api-key>",
             max_tokens=256,
             context_window=4096,
-            model="servam-m",
+            model="sarvam-m",
         )
 
         response = llm.complete("Hello World!")
-        print(str(response))
+        print(response)
         ```
 
     """
 
-    model: str = Field(description="The Servam model to use.")
+    model: str = Field(description="The Sarvam model to use.")
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
         description="The maximum number of context tokens for the model.",
@@ -67,8 +67,8 @@ class Servam(OpenAILike):
     ) -> None:
         additional_kwargs = additional_kwargs or {}
 
-        api_base = get_from_param_or_env("api_base", api_base, "SERVAM_API_BASE")
-        api_key = get_from_param_or_env("api_key", api_key, "SERVAM_API_KEY")
+        api_base = get_from_param_or_env("api_base", api_base, "SARVAM_API_BASE")
+        api_key = get_from_param_or_env("api_key", api_key, "SARVAM_API_KEY")
 
         super().__init__(
             model=model,
@@ -83,4 +83,4 @@ class Servam(OpenAILike):
 
     @classmethod
     def class_name(cls) -> str:
-        return "Servam_LLM"
+        return "Sarvam_LLM"
