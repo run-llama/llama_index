@@ -18,6 +18,7 @@ from llama_index.core.base.llms.types import (
     CachePoint,
     CacheControl,
     ThinkingBlock,
+    ToolCallBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.bridge.pydantic import ValidationError
@@ -473,3 +474,22 @@ def test_thinking_block():
     assert block.additional_information == {"total_thinking_tokens": 1000}
     assert block.content == "hello world"
     assert block.num_tokens == 100
+
+
+def test_tool_call_block():
+    default_block = ToolCallBlock(tool_name="hello_world")
+    assert default_block.block_type == "tool_call"
+    assert default_block.tool_call_id is None
+    assert default_block.tool_name == "hello_world"
+    assert default_block.tool_kwargs == {}
+    assert default_block.tool_result is None
+    custom_block = ToolCallBlock(
+        tool_name="hello_world",
+        tool_call_id="1",
+        tool_kwargs={"test": 1},
+        tool_result="Hello world: test 1!",
+    )
+    assert custom_block.tool_call_id == "1"
+    assert custom_block.tool_name == "hello_world"
+    assert custom_block.tool_kwargs == {"test": 1}
+    assert custom_block.tool_result == "Hello world: test 1!"
