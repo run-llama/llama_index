@@ -46,8 +46,10 @@ def update_pyproject_version(package_path: Path, new_version: str) -> None:
     with open(pyproject_path, "r") as f:
         content = f.read()
 
-    pattern = r'(\[project\][^\[]*?version\s*=\s*["\'])([^"\']+)(["\'])'
-    new_content = re.sub(pattern, rf"\g<1>{new_version}\g<3>", content, flags=re.DOTALL)
+    pattern = r'^version = "[^"]+"'
+    new_content = re.sub(
+        pattern, f'version = "{new_version}"', content, flags=re.MULTILINE
+    )
 
     # Write the updated content back
     with open(pyproject_path, "w") as f:
