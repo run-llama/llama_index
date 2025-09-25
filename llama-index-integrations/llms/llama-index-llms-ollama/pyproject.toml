@@ -35,7 +35,7 @@ readme = "README.md"
 license = "MIT"
 dependencies = [
     "ollama>=0.5.1",
-    "llama-index-core>=0.13.0,<0.15",
+    "llama-index-core>=0.14.3,<0.15",
 ]
 
 [tool.codespell]
