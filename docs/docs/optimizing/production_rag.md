@@ -26,7 +26,7 @@ Check out [this Tweet thread](https://twitter.com/jerryjliu0/status/169293102896
 
 A key technique for better retrieval is to decouple chunks used for retrieval with those that are used for synthesis.
 
-![](/python/framework/_static/production_rag/decouple_chunks.png)
+![](./../_static/production_rag/decouple_chunks.png)
 
 #### Motivation
 
@@ -58,7 +58,7 @@ Resources:
 
 ## Structured Retrieval for Larger Document Sets
 
-![](/python/framework/_static/production_rag/structured_retrieval.png)
+![](./../_static/production_rag/structured_retrieval.png)
 
 #### Motivation
 
@@ -91,7 +91,7 @@ Embed document summaries and map to chunks per document. Fetch at the document-l
 
 ## Dynamically Retrieve Chunks Depending on your Task
 
-![](/python/framework/_static/production_rag/joint_qa_summary.png)
+![](./../_static/production_rag/joint_qa_summary.png)
 
 #### Motivation
 

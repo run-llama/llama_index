@@ -150,7 +150,7 @@ llama_index.core.set_global_handler(
 
 - [LlamaCloud Agent with LlamaTrace](https://github.com/run-llama/llamacloud-demo/blob/main/examples/tracing/llamacloud_tracing_phoenix.ipynb)
 
-![](/python/framework/_static/integrations/arize_phoenix.png)
+![](./../../_static/integrations/arize_phoenix.png)
 
 ### Weights and Biases (W&B) Weave
 
@@ -182,7 +182,7 @@ response = llm.complete("William Shakespeare is ")
 print(response)
 ```
 
-![weave quickstart](/python/framework/_static/integrations/weave/weave_quickstart.png)
+![weave quickstart](./../../_static/integrations/weave/weave_quickstart.png)
 
 Traces include execution time, token usage, cost, inputs/outputs, errors, nested operations, and streaming data. If you are new to Weave tracing, learn more about how to navigate it [here](https://weave-docs.wandb.ai/guides/tracking/trace-tree).
 
@@ -216,7 +216,7 @@ import mlflow
 mlflow.llama_index.autolog()  # Enable mlflow tracing
 ```
 
-![](/python/framework/_static/integrations/mlflow/mlflow.gif)
+![](./../../_static/integrations/mlflow/mlflow.gif)
 
 #### Guides
 
@@ -248,7 +248,7 @@ Traceloop.init()
 
 - [OpenLLMetry](/python/examples/observability/openllmetry)
 
-![](/python/framework/_static/integrations/openllmetry.png)
+![](./../../_static/integrations/openllmetry.png)
 
 ### Arize Phoenix (local)
 
@@ -424,7 +424,7 @@ for question in questions:
 
 You will see the following traces in Opik:
 
-![Opik integration with LlamaIndex](/python/framework/_static/integrations/opik.png)
+![Opik integration with LlamaIndex](./../../_static/integrations/opik.png)
 
 #### Example Guides
 
@@ -463,7 +463,7 @@ root_dispatcher.add_event_handler(argilla_handler)
 - [Getting started with Argilla's LlamaIndex Integration](https://github.com/argilla-io/argilla-llama-index/blob/main/docs/tutorials/getting_started.ipynb)
 - [Other example tutorials](https://github.com/argilla-io/argilla-llama-index/tree/main/docs/tutorials)
 
-![Argilla integration with LlamaIndex](/python/framework/_static/integrations/argilla.png)
+![Argilla integration with LlamaIndex](./../../_static/integrations/argilla.png)
 
 ### Agenta
 
@@ -523,7 +523,7 @@ def document_search_app(user_query: str):
 
 Once this is set up, Agenta will automatically capture all execution steps. You can then view the traces in Agenta to debug your application, link them to specific configurations and prompts, evaluate their performance, query the data, and monitor key metrics.
 
-![Agenta integration with LlamaIndex](/python/framework/_static/integrations/agenta.png)
+![Agenta integration with LlamaIndex](./../../_static/integrations/agenta.png)
 
 #### Example Guides
 
@@ -730,7 +730,7 @@ tru_query_engine = TruLlama(query_engine)
 tru_query_engine.query("What did the author do growing up?")
 ```
 
-![](/python/framework/_static/integrations/trulens.png)
+![](./../../_static/integrations/trulens.png)
 
 #### Guides
 
@@ -768,8 +768,8 @@ from llama_index.core import Settings
 # Settings.callback_manager = CallbackManager([hh_tracer])
 ```
 
-![](/python/framework/_static/integrations/honeyhive.png)
-![](/python/framework/_static/integrations/perfetto.png)
+![](./../../_static/integrations/honeyhive.png)
+![](./../../_static/integrations/perfetto.png)
 _Use Perfetto to debug and analyze your HoneyHive traces_
 
 #### Guides

@@ -155,7 +155,7 @@ postprocessor = FixedRecencyPostprocessor(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-![](/python/framework/_static/node_postprocessors/recency.png)
+![](./../../../_static/node_postprocessors/recency.png)
 
 A full notebook guide is available [here](/python/examples/node_postprocessor/recencypostprocessordemo).
 
@@ -237,7 +237,7 @@ postprocessor = PrevNextNodePostprocessor(
 postprocessor.postprocess_nodes(nodes)
 ```
 
-![](/python/framework/_static/node_postprocessors/prev_next.png)
+![](./../../../_static/node_postprocessors/prev_next.png)
 
 ## (Beta) AutoPrevNextNodePostprocessor
 
