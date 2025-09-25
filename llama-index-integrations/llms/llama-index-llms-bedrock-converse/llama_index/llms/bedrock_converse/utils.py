@@ -9,9 +9,9 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
-    TypedDict,
     Literal,
 )
+from typing_extensions import TypedDict
 from tenacity import (
     before_sleep_log,
     retry,
