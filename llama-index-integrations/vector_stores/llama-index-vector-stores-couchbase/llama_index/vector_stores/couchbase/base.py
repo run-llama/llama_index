@@ -402,6 +402,27 @@ class CouchbaseVectorStoreBase(BasePydanticVectorStore):
         """
         return self._cluster
 
+    @property
+    def bucket(self) -> Any:
+        """
+        Property function to access the bucket attribute.
+        """
+        return self._bucket
+
+    @property
+    def scope(self) -> Any:
+        """
+        Property function to access the scope attribute.
+        """
+        return self._scope
+
+    @property
+    def collection(self) -> Any:
+        """
+        Property function to access the collection attribute.
+        """
+        return self._collection
+
     def _check_bucket_exists(self) -> bool:
         """
         Check if the bucket exists in the linked Couchbase cluster.
