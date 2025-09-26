@@ -31,6 +31,7 @@ jobs:
           python-version: "3.10"
 
       - name: Prepare
+        id: prepare
         shell: bash
         working-directory: llama-dev
         env:
@@ -38,6 +39,8 @@ jobs:
         run: |
           uv run -- llama-dev --repo-root .. release prepare --version-type ${{ github.event.inputs.version-type }}
           uv run -- llama-dev --repo-root .. release changelog
+          VERSION=$(uv run -- llama-dev --repo-root .. pkg info --json . | jq -r .version)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Create Release PR
         id: rpr
@@ -45,7 +48,7 @@ jobs:
         with:
           commit-message: Prepare release
           signoff: false
-          branch: pre-release
+          branch: ${{ secrets.RELEASE_BRANCH_NAME }}
           delete-branch: true
-          title: "Prepare release"
+          title: "Release ${{ steps.prepare.outputs.version }}"
           draft: false
