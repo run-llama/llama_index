@@ -1,3 +1,0 @@
-# Text to SQL
-
-TODO
