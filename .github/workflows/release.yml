@@ -53,7 +53,6 @@ jobs:
 
       - name: Build and publish llama-index-core
         working-directory: llama-index-core
-        id: build-publish-core
         run: |
           uv sync
           uv build
@@ -83,6 +82,13 @@ jobs:
         with:
           python-version: "3.9"
 
+      - name: Get version
+        id: get_version
+        working-directory: llama-dev
+        run: |
+          VERSION=$(uv run -- llama-dev --repo-root .. pkg info --json . | jq -r .version)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Install deps
         shell: bash
         run: uv sync
@@ -104,8 +110,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ github.ref }}
+          tag_name: v${{ steps.get_version.outputs.version }}
+          release_name: v${{ steps.get_version.outputs.version }}
           body_path: "RELEASE.md"
           draft: false
           prerelease: false
@@ -129,4 +135,8 @@ jobs:
 
       - name: Tag the released commit
         run: |
-          TODO
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          TAG_NAME="v${{ steps.get_version.outputs.version }}"
+          git tag "${TAG_NAME}" -m "${TAG_NAME}"
+          git push origin --tags
