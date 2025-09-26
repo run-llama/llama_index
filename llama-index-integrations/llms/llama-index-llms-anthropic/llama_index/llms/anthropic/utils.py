@@ -15,6 +15,7 @@ from llama_index.core.base.llms.types import (
     CitableBlock,
     CitationBlock,
     ThinkingBlock,
+    ToolCallBlock,
     ContentBlock,
 )
 
@@ -26,6 +27,7 @@ from anthropic.types import (
     ImageBlockParam,
     CacheControlEphemeralParam,
     Base64PDFSourceParam,
+    ToolUseBlock,
 )
 from anthropic.types import ContentBlockParam as AnthropicContentBlock
 from anthropic.types.beta import (
@@ -193,6 +195,19 @@ def _to_anthropic_document_block(block: DocumentBlock) -> DocumentBlockParam:
     )
 
 
+def _anthropic_tool_call_to_tool_call_block(tool_calls: list[ToolUseBlock]):
+    blocks = []
+    for tool_call in tool_calls:
+        blocks.append(
+            ToolCallBlock(
+                tool_call_id=tool_call.id,
+                tool_kwargs=tool_call.input,
+                tool_name=tool_call.name,
+            )
+        )
+    return blocks
+
+
 def blocks_to_anthropic_blocks(
     blocks: Sequence[ContentBlock], kwargs: dict[str, Any]
 ) -> List[AnthropicContentBlock]:
@@ -270,23 +285,17 @@ def blocks_to_anthropic_blocks(
         elif isinstance(block, CitationBlock):
             # No need to pass these back to Anthropic
             continue
+        elif isinstance(block, ToolCallBlock):
+            anthropic_blocks.append(
+                ToolUseBlockParam(
+                    id=block.tool_call_id or "",
+                    input=block.tool_kwargs,
+                    name=block.tool_name,
+                    type="tool_use",
+                )
+            )
         else:
             raise ValueError(f"Unsupported block type: {type(block)}")
-
-    tool_calls = kwargs.get("tool_calls", [])
-    for tool_call in tool_calls:
-        assert "id" in tool_call
-        assert "input" in tool_call
-        assert "name" in tool_call
-
-        anthropic_blocks.append(
-            ToolUseBlockParam(
-                id=tool_call["id"],
-                input=tool_call["input"],
-                name=tool_call["name"],
-                type="tool_use",
-            )
-        )
 
     return anthropic_blocks
 
