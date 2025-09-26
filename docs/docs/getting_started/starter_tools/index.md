@@ -18,19 +18,19 @@ Indexing and querying financial filings is a very common use-case for generative
 
 You can use the app yourself at [SECinsights.ai](https://www.secinsights.ai/) or check out the code on [GitHub](https://github.com/run-llama/sec-insights).
 
-![SEC Insights](/python/framework/getting_started/starter_tools/secinsights.png)
+![SEC Insights](./secinsights.png)
 
 ## Chat LlamaIndex: Full-stack chat application
 
 Chat LlamaIndex is another full-stack, open-source application that has a variety of interaction modes including streaming chat and multi-modal querying over images. It's a great way to see advanced chat application techniques. You can use it at [chat.llamaindex.ai](https://chat.llamaindex.ai/) or check out the code on [GitHub](https://github.com/run-llama/chat-llamaindex).
 
-![Chat LlamaIndex](/python/framework/getting_started/starter_tools/chatllamaindex.png)
+![Chat LlamaIndex](./chatllamaindex.png)
 
 ## LlamaBot: Slack and Discord apps
 
 LlamaBot is another open-source application, this time for building a Slack bot that listens to messages within your organization and answers questions about what's going on. You can check out the [full tutorial and code on GitHub](https://github.com/run-llama/llamabot). If you prefer Discord, there is a [Discord version contributed by the community](https://twitter.com/clusteredbytes/status/1754220009885163957).
 
-![LlamaBot](/python/framework/getting_started/starter_tools/llamabot.png)
+![LlamaBot](./llamabot.png)
 
 ## RAG CLI: quick command-line chat with any document
 

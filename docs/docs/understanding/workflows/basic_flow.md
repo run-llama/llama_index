@@ -107,7 +107,7 @@ draw_all_possible_flows(
 
 This will create a file called `basic_workflow.html` in the current directory. Open it in your browser to see an interactive, visual representation of the workflow. It will look something like this:
 
-![Basic workflow](/python/framework/understanding/workflows/basic_flow.png)
+![Basic workflow](./basic_flow.png)
 
 Of course, a flow with a single step is not very useful! Let's define a multi-step workflow.
 
@@ -187,6 +187,6 @@ from llama_index.utils.workflow import draw_all_possible_flows
 draw_all_possible_flows(MyWorkflow, filename="multi_step_workflow.html")
 ```
 
-![A simple multi-step workflow](/python/framework/understanding/workflows/multi_step.png)
+![A simple multi-step workflow](./multi_step.png)
 
 Of course there is still not much point to a workflow if you just run through it from beginning to end! Let's do some [branching and looping](/python/framework/understanding/workflows/branches_and_loops).

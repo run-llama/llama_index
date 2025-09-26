@@ -9,7 +9,7 @@ Tools can also be defined that get a human in the loop. This is useful for tasks
 
 As we'll see in our [Workflows tutorial](/python/framework/understanding/workflows), the way Workflows work under the hood of AgentWorkflow is by running steps which both emit and receive events. Here's a diagram of the steps (in blue) that make up an AgentWorkflow and the events (in green) that pass data between them. You'll recognize these events, they're the same ones we were handling in the output stream earlier.
 
-![Workflows diagram](/python/framework/understanding/agent/agentworkflow.jpg)
+![Workflows diagram](./agentworkflow.jpg)
 
 To get a human in the loop, we'll get our tool to emit an event that isn't received by any other step in the workflow. We'll then tell our tool to wait until it receives a specific "reply" event.
 
