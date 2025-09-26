@@ -23,7 +23,7 @@ In this visualization, you can see a moderately complex workflow designed to tak
 * Each of the query steps generates a `ResponseEvent`. A `ResponseEvent` triggers a step called `judge_response` which will wait until it has received all 3 responses.
 * `judge_response` will then pick the "best" response and return it to the user via a `StopEvent`.
 
-![A complex workflow](/python/framework/understanding/workflows/complex_flow.png)
+![A complex workflow](./complex_flow.png)
 
 ## Why workflows?
 

@@ -189,7 +189,7 @@ validate_api.upload_run(project_id, scores)
 
 Now you can see your results in the Tonic Validate UI!
 
-![Tonic Validate Graph](/python/framework/_static/integrations/tonicvalidate-graph.png)
+![Tonic Validate Graph](./../../_static/integrations/tonic-validate-graph.png)
 
 ### End to End Example
 

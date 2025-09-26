@@ -1,0 +1,155 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "ipython==8.10.0",
+    "jupyter>=1.0.0,<2",
+    "mypy==0.991",
+    "pre-commit==3.2.0",
+    "pylint==2.15.10",
+    "pytest==7.2.1",
+    "pytest-asyncio>=0.23.8",
+    "pytest-mock==3.11.1",
+    "ruff==0.11.11",
+    "types-Deprecated>=0.1.0",
+    "types-PyYAML>=6.0.12.12,<7",
+    "types-protobuf>=4.24.0.4,<5",
+    "types-redis==4.5.5.0",
+    "types-requests==2.28.11.8",
+    "types-setuptools==67.1.0.0",
+    "black[jupyter]<=23.9.1,>=23.7.0",
+    "codespell[toml]>=v2.2.6",
+    "diff-cover>=9.2.0",
+    "pytest-cov>=6.1.1",
+    "pip>=25.2",
+    "requests>=2.32.5",
+    "aiohttp>=3.12.15",
+    "pytest-docker>=3.2.3",
+]
+
+[project]
+name = "llama-index-vector-stores-solr"
+version = "0.1.0"
+description = "llama-index vector_stores Apache Solr integration"
+authors = [
+    {name = "Atharva Tendle", email = "atendle@bloomberg.net"},
+    {name = "Leon Zhou", email = "lzhou286@bloomberg.net"},
+    {name = "Steven Butler", email = "sbutler81@bloomberg.net"},
+    {name = "Vikramjeet Das", email = "vdas22@bloomberg.net"},
+    {name = "Xiaoyu Ouyang", email = "xouyang1@bloomberg.net"},
+    {name = "Yong Zhuang", email = "yzhuang52@bloomberg.net"},
+]
+requires-python = ">=3.9,<4.0"
+readme = "README.md"
+license = "MIT"
+dependencies = [
+    'aiosolr<5; python_version < "3.10"',
+    'aiosolr>=5.0.0; python_version >= "3.10"',
+    "llama-index-core>=0.14.0,<0.15",
+    "numpy>=2.0.2",
+    "pydantic>=2.11.7",
+    "pysolr>=3.10.0",
+    "typing-extensions>=4.15.0",
+]
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self\\.debug",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+    "assert_never\\(.*\\)",
+]
+ignore_errors = true
+
+[tool.coverage.run]
+omit = [
+    ".venv/*",
+    "tests/*",
+]
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.llamahub]
+contains_example = false
+import_path = "llama_index.vector_stores.solr"
+
+[tool.llamahub.class_authors]
+
+[tool.mypy]
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
+python_version = "3.9"
+ignore_missing_imports = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_unused_ignores = true
+warn_unused_configs = true
+no_implicit_optional = true
+namespace_packages = true
+explicit_package_bases = true
+warn_unreachable = true
+show_error_context = true
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+plugins = [
+    "pydantic.mypy",
+]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    'ignore:ast\.\w+ is deprecated:DeprecationWarning',
+]
+# see https://pytest-asyncio.readthedocs.io/en/latest/reference/configuration.html
+asyncio_mode = "auto"
+markers = [
+    "uses_docker: mark tests requiring Docker",
+]
+
+[tool.ruff]
+extend = "../../../pyproject.toml"
+target-version = "py39"
+
+[tool.ruff.lint]
+extend-select = [
+    "ASYNC",  # https://docs.astral.sh/ruff/rules/#flake8-async-async
+    "B",  # https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
+    "DTZ",  # https://docs.astral.sh/ruff/rules/#flake8-datetimez-dtz
+    "F",  # https://docs.astral.sh/ruff/rules/#pyflakes-f
+    "FURB",  # https://docs.astral.sh/ruff/rules/#refurb-furb
+    "G",  # https://docs.astral.sh/ruff/rules/#flake8-logging-format-g
+    "I",  # https://docs.astral.sh/ruff/rules/#isort-i
+    "ICN",  # https://docs.astral.sh/ruff/rules/#flake8-import-conventions-icn
+    "LOG",  # https://docs.astral.sh/ruff/rules/#flake8-logging-log
+    "PERF",  # https://docs.astral.sh/ruff/rules/#perflint-perf
+    "RUF",  # https://docs.astral.sh/ruff/rules/#ruff-specific-rules-ruf
+    "UP",  # https://docs.astral.sh/ruff/rules/#pyupgrade-up
+    "W",  # https://docs.astral.sh/ruff/rules/#warning-w
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = [
+    "DTZ",  # https://docs.astral.sh/ruff/rules/#flake8-datetimez-dtz
+    "PERF",  # https://docs.astral.sh/ruff/rules/#perflint-perf
+]
