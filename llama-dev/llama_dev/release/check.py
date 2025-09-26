@@ -35,41 +35,71 @@ def _get_version_from_pypi() -> str:
         )
 
 
-@click.command(
-    short_help="Check if all the pre-requisites for the release are satisfied"
+@click.command(short_help="Check if requisites for the release are satisfied")
+@click.option(
+    "--before-core",
+    is_flag=True,
+    help="Run the check during pre-release (before releasing llama-index-core)",
+    default=False,
 )
 @click.pass_obj
-def check(obj: dict):
+def check(obj: dict, before_core: bool):
     """
-    Check if all the pre-requisites for the release are satisfied.
+    Check if all the requisites for the release are satisfied.
 
-    Pre-requisites:
+    \b
+    Requisites before releasing llama-index-core (passing --before-core):
     - current branch is not `main`
     - llama-index-core/pyproject.toml is newer than the latest on PyPI
 
-    """
+    Requisite after llama-index-core was published (without passing --before-core):
+    - current branch is `main`
+    - version from llama-index-core/pyproject.toml is the latest on PyPI
+    """  # noqa
     console = obj["console"]
     repo_root = obj["repo_root"]
 
-    # Check current branch is not main
     current_branch = _get_current_branch_name()
-    if current_branch == "main":
-        console.print(
-            "❌ You are on the `main` branch. Please create a new branch to release.",
-            style="error",
-        )
-        exit(1)
-    console.print("✅ You are not on the `main` branch.")
+    if before_core:
+        # Check current branch is NOT main
+        if current_branch == "main":
+            console.print(
+                "❌ You are on the `main` branch. Please create a new branch to release.",
+                style="error",
+            )
+            exit(1)
+        console.print("✅ You are not on the `main` branch.")
+    else:
+        # Check current branch IS main
+        if current_branch != "main":
+            console.print(
+                "❌ To release 'llama-index' you have to checkout the `main` branch.",
+                style="error",
+            )
+            exit(1)
+        console.print("✅ You are on the `main` branch.")
 
-    # Check if llama-index-core version is newer than PyPI
-    pyproject_version = _get_version_from_pyproject(repo_root)
-    pypi_version = _get_version_from_pypi()
-    if not parse_version(pyproject_version) > parse_version(pypi_version):
+    if before_core:
+        # Check llama-index-core version is NEWER than PyPI
+        pyproject_version = _get_version_from_pyproject(repo_root)
+        pypi_version = _get_version_from_pypi()
+        if not parse_version(pyproject_version) > parse_version(pypi_version):
+            console.print(
+                f"❌ Version {pyproject_version} is not newer than the latest on PyPI ({pypi_version}).",
+                style="error",
+            )
+            exit(1)
         console.print(
-            f"❌ Version {pyproject_version} is not newer than the latest on PyPI ({pypi_version}).",
-            style="error",
+            f"✅ Version {pyproject_version} is newer than the latest on PyPI ({pypi_version})."
         )
-        exit(1)
-    console.print(
-        f"✅ Version {pyproject_version} is newer than the latest on PyPI ({pypi_version})."
-    )
+    else:
+        # Check llama-index-core version is SAME as PyPI
+        pyproject_version = _get_version_from_pyproject(repo_root)
+        pypi_version = _get_version_from_pypi()
+        if parse_version(pyproject_version) > parse_version(pypi_version):
+            console.print(
+                f"❌ Version {pyproject_version} is not available on PyPI.",
+                style="error",
+            )
+            exit(1)
+        console.print(f"✅ Version {pyproject_version} is the latest on PyPI.")

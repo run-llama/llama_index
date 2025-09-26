@@ -26,7 +26,7 @@ jobs:
         shell: bash
         working-directory: llama-dev
         run: |
-          uv run -- llama-dev --repo-root .. release check
+          uv run -- llama-dev --repo-root .. release check --before-core
 
       - name: Install core dependencies
         working-directory: llama-index-core
@@ -58,24 +58,21 @@ jobs:
           uv sync
           uv build
           uv publish --token ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}
-          VERSION=$(uv run -- llama-dev --repo-root .. pkg info --json . | jq -r .version)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-  core-published:
-    runs-on: ubuntu-latest
-    needs: publish-core
-    steps:
-      - name: Check PyPI
+      - name: Check PyPI is ready
+        working-directory: llama-dev
+        timeout-minutes: 5
         run: |
-          # TODO
-          # Check if the url on PyPI https://pypi.org/project/llama-index-core/${{ steps.prepare.outputs.version }} exists
-          # Sleep 10 seconds
-          # Timeout after 5 minutes
+          until uv run -- llama-dev --repo-root .. release check
+          do
+            echo "Check failed. Retrying in 10 seconds..."
+            sleep 10
+          done
 
   build-n-publish:
     name: Build and publish 'llama-index' to PyPI
-    if: github.repository == 'run-llama/llama_index'
     runs-on: ubuntu-latest
+    needs: publish-core
 
     steps:
       - name: Checkout code
