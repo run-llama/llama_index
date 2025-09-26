@@ -6,10 +6,14 @@ on:
       - closed
     branches:
       - main
+  # REMOVE THE FOLLOWING
+  push:
+    branches:
+      - massi/release
 
 jobs:
   publish-core:
-    if: github.repository == 'run-llama/llama_index' && github.event.pull_request.merged == true && github.event.pull_request.head.ref == ${{ secrets.RELEASE_BRANCH_NAME }}
+    if: github.repository == 'run-llama/llama_index' && github.event.pull_request.merged == true && github.event.pull_request.head.ref == secrets.RELEASE_BRANCH_NAME
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.build-publish-core.outputs.version }}
@@ -56,8 +60,7 @@ jobs:
         run: |
           uv sync
           uv build
-          uv publish --token ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}
-
+      # REMOVE THIS COMMENT          uv publish --token ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}
       - name: Check PyPI is ready
         working-directory: llama-dev
         timeout-minutes: 5
@@ -94,8 +97,10 @@ jobs:
         run: uv sync
 
       - name: Build and publish to pypi
-        run: uv build && uv publish --token ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}
-
+        run: |
+          uv sync
+          uv build
+      #          uv publish --token ${{ secrets.LLAMA_INDEX_PYPI_TOKEN }}
       - name: Generate Release Notes
         uses: CSchoel/release-notes-from-changelog@v1
         with:
@@ -104,17 +109,17 @@ jobs:
           end-pattern: "/^## \\[/"
           working-directory: "."
 
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ steps.get_version.outputs.version }}
-          release_name: v${{ steps.get_version.outputs.version }}
-          body_path: "RELEASE.md"
-          draft: false
-          prerelease: false
+      # - name: Create GitHub Release
+      #   id: create_release
+      #   uses: actions/create-release@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     tag_name: v${{ steps.get_version.outputs.version }}
+      #     release_name: v${{ steps.get_version.outputs.version }}
+      #     body_path: "RELEASE.md"
+      #     draft: false
+      #     prerelease: false
 
       - name: Get Asset name
         run: |
@@ -122,16 +127,16 @@ jobs:
           set -- $PKG
           echo "name=$1" >> $GITHUB_ENV
 
-      - name: Upload Release Asset (sdist) to GitHub
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist/${{ env.name }}
-          asset_name: ${{ env.name }}
-          asset_content_type: application/zip
+      # - name: Upload Release Asset (sdist) to GitHub
+      #   id: upload-release-asset
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #     asset_path: dist/${{ env.name }}
+      #     asset_name: ${{ env.name }}
+      #     asset_content_type: application/zip
 
       - name: Tag the released commit
         run: |
@@ -139,4 +144,4 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           TAG_NAME="v${{ steps.get_version.outputs.version }}"
           git tag "${TAG_NAME}" -m "${TAG_NAME}"
-          git push origin --tags
+      #    git push origin --tags
