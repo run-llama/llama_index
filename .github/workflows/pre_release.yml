@@ -48,7 +48,7 @@ jobs:
         with:
           commit-message: Prepare release
           signoff: false
-          branch: ${{ secrets.RELEASE_BRANCH_NAME }}
+          branch: ${{ vars.RELEASE_BRANCH_NAME }}
           delete-branch: true
           title: "Release ${{ steps.prepare.outputs.version }}"
           draft: false
