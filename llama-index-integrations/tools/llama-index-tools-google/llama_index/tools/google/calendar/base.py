@@ -23,8 +23,6 @@ from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
 
-PRIMARY_CALENDAR_ID = "primary"
-
 
 class GoogleCalendarToolSpec(BaseToolSpec):
     """
@@ -51,13 +49,13 @@ class GoogleCalendarToolSpec(BaseToolSpec):
 
         """
         self.creds = creds
-        self.allowed_calendar_ids = allowed_calendar_ids or [PRIMARY_CALENDAR_ID]
+        self.allowed_calendar_ids = allowed_calendar_ids or []
 
     def load_data(
         self,
         number_of_results: Optional[int] = 100,
         start_date: Optional[Union[str, datetime.date]] = None,
-        calendar_id: Optional[str] = PRIMARY_CALENDAR_ID,
+        calendar_id: Optional[str] = None,
     ) -> List[Document]:
         """
         Load data from user's calendar.
@@ -65,9 +63,12 @@ class GoogleCalendarToolSpec(BaseToolSpec):
         Args:
             number_of_results (Optional[int]): the number of events to return. Defaults to 100.
             start_date (Optional[Union[str, datetime.date]]): the start date to return events from in date isoformat. Defaults to today.
-            calendar_id (Optional[str]): the calendar ID to load events from. Defaults to PRIMARY_CALENDAR_ID.
+            calendar_id (Optional[str]): the calendar ID to load events from. Must be provided and in allowed_calendar_ids list.
 
         """
+        if calendar_id is None:
+            return {"error": "calendar_id is required"}
+
         validation_error = self._validate_calendar_id(calendar_id)
         if validation_error:
             return validation_error
@@ -177,7 +178,7 @@ class GoogleCalendarToolSpec(BaseToolSpec):
         start_datetime: Optional[Union[str, datetime.datetime]] = None,
         end_datetime: Optional[Union[str, datetime.datetime]] = None,
         attendees: Optional[List[str]] = None,
-        calendar_id: Optional[str] = PRIMARY_CALENDAR_ID,
+        calendar_id: Optional[str] = None,
     ) -> str:
         """
             Create an event on the users calendar.
@@ -189,9 +190,12 @@ class GoogleCalendarToolSpec(BaseToolSpec):
             start_datetime Optional[Union[str, datetime.datetime]]: The start datetime for the event
             end_datetime Optional[Union[str, datetime.datetime]]: The end datetime for the event
             attendees Optional[List[str]]: A list of email address to invite to the event
-            calendar_id (Optional[str]): The calendar ID to create the event in. Defaults to PRIMARY_CALENDAR_ID.
+            calendar_id (Optional[str]): The calendar ID to create the event in. Must be provided and in allowed_calendar_ids list.
 
         """
+        if calendar_id is None:
+            return "Error: calendar_id is required"
+
         validation_error = self._validate_calendar_id(calendar_id)
         if validation_error:
             return validation_error

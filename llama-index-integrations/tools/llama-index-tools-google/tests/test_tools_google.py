@@ -62,25 +62,25 @@ def test_google_calendar_tool_spec_get_credentials_oauth_flow(
 
 def test_google_calendar_tool_spec_init_with_allowed_calendar_ids():
     """Test GoogleCalendarToolSpec initialization with allowed calendar IDs."""
-    allowed_ids = ["primary", "test@example.com"]
+    allowed_ids = ["test@example.com", "secondary@example.com"]
     tool = GoogleCalendarToolSpec(allowed_calendar_ids=allowed_ids)
     assert tool.allowed_calendar_ids == allowed_ids
 
 
 def test_calendar_id_validation_error():
     """Test calendar ID validation returns structured error."""
-    allowed_ids = ["primary"]
+    allowed_ids = ["test@example.com"]
     tool = GoogleCalendarToolSpec(allowed_calendar_ids=allowed_ids)
 
     result = tool._validate_calendar_id("invalid@example.com")
-    expected = {"error": "Invalid calendar_id", "allowed_values": ["primary"]}
+    expected = {"error": "Invalid calendar_id", "allowed_values": ["test@example.com"]}
     assert result == expected
 
 
 def test_calendar_id_validation_success():
     """Test calendar ID validation returns None for valid ID."""
-    allowed_ids = ["primary", "test@example.com"]
+    allowed_ids = ["test@example.com", "secondary@example.com"]
     tool = GoogleCalendarToolSpec(allowed_calendar_ids=allowed_ids)
 
-    result = tool._validate_calendar_id("primary")
+    result = tool._validate_calendar_id("test@example.com")
     assert result is None
