@@ -81,6 +81,35 @@ class FunctionAgent(BaseWorkflowAgent):
                 if isinstance(last_chat_response.raw, BaseModel)
                 else last_chat_response.raw
             )
+            # Handle multiple streaming response structures for `thinking_delta`.
+            # Different providers (e.g., Groq, local Ollama) return the reasoning
+            # stream in different locations within the response payload.
+            thinking_delta = None
+
+            # Case 1: Dictionary-based access (for Groq and similar APIs)
+            if isinstance(raw, dict):
+                choices = raw.get("choices", [])
+                if choices and isinstance(choices, list) and len(choices) > 0:
+                    delta = choices[0].get("delta", {})
+                    if delta and isinstance(delta, dict):
+                        thinking_delta = delta.get("reasoning")
+
+            # Case 2: Attribute-based access (for local/Ollama, Pydantic models)
+            if thinking_delta is None:
+                if (
+                    hasattr(last_chat_response.raw, "choices")
+                    and last_chat_response.raw.choices
+                    and hasattr(last_chat_response.raw.choices[0], "delta")
+                    and hasattr(last_chat_response.raw.choices[0].delta, "reasoning")
+                ):
+                    thinking_delta = last_chat_response.raw.choices[0].delta.reasoning
+
+            # Case 3: Fallback to additional_kwargs
+            if thinking_delta is None:
+                thinking_delta = last_chat_response.additional_kwargs.get(
+                    "thinking_delta"
+                )
+
             ctx.write_event_to_stream(
                 AgentStream(
                     delta=last_chat_response.delta or "",
@@ -88,14 +117,12 @@ class FunctionAgent(BaseWorkflowAgent):
                     tool_calls=tool_calls or [],
                     raw=raw,
                     current_agent_name=self.name,
-                    thinking_delta=last_chat_response.additional_kwargs.get(
-                        "thinking_delta", None
-                    ),
+                    thinking_delta=thinking_delta,
                 )
             )
 
         return last_chat_response
-
+    
     async def take_step(
         self,
         ctx: Context,
