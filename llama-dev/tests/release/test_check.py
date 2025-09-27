@@ -117,12 +117,12 @@ def test_check_command(
         ctx.obj = {"console": mock_rich_console, "repo_root": ""}
 
         if should_pass:
-            ctx.invoke(check)
+            ctx.invoke(check, before_core=True)
             for msg in expected_message:
                 mock_rich_console.print.assert_any_call(msg)
         else:
             with pytest.raises(SystemExit) as e:
-                ctx.invoke(check)
+                ctx.invoke(check, before_core=True)
             assert e.type is SystemExit
             assert e.value.code == 1
             for msg in expected_message:
