@@ -106,6 +106,13 @@ class OpenAILike(OpenAI):
         default=False,
         description=LLMMetadata.model_fields["is_function_calling_model"].description,
     )
+    should_use_structured_outputs: bool = Field(
+        default=False,
+        # https://platform.openai.com/docs/guides/structured-outputs
+        description=(
+            "Set True if the model supports structured output through response_format."
+        ),
+    )
     tokenizer: Union[Tokenizer, str, None] = Field(
         default=None,
         description=(
@@ -134,6 +141,9 @@ class OpenAILike(OpenAI):
     @classmethod
     def class_name(cls) -> str:
         return "OpenAILike"
+
+    def _should_use_structure_outputs(self) -> bool:
+        return self.should_use_structured_outputs
 
     def complete(
         self, prompt: str, formatted: bool = False, **kwargs: Any
