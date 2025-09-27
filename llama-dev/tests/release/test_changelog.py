@@ -254,3 +254,15 @@ def test_update_changelog_file():
     handle.seek.assert_called_once_with(0)
     handle.truncate.assert_called_once()
     handle.write.assert_called_once_with(expected_content)
+
+
+def test_run_command_no_shell_and_args_list():
+    with mock.patch("subprocess.run") as mock_run:
+        mock_result = mock.MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = "ok"
+        mock_run.return_value = mock_result
+        _run_command("echo ok")
+        args, kwargs = mock_run.call_args
+        assert isinstance(args[0], list)
+        assert not kwargs.get("shell", False)
