@@ -1,7 +1,7 @@
 import asyncio
 import os
-import shlex
 import shutil
+import subprocess
 from argparse import ArgumentParser
 from glob import iglob
 from pathlib import Path
@@ -246,9 +246,10 @@ class RagCLI(BaseModel):
                                 "none",
                                 "--engine",
                                 "context",
-                                f"--files {shlex.quote(path)}",
+                                "--files",
+                                path,
                             ]
-                            os.system(" ".join(command_args))
+                            subprocess.run(command_args, check=True)
 
         if question is not None:
             await self.handle_question(question)
