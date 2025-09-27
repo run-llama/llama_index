@@ -301,3 +301,4 @@ class TestZeroGLLM:
         assert llm.max_tokens == 2048
         assert llm.temperature == 0.7
         assert llm.timeout == 120.0
+

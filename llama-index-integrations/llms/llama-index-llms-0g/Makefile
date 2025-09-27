@@ -17,3 +17,4 @@ watch-docs: ## Build and watch documentation.
 	sphinx-autobuild docs/ docs/_build/html --open-browser --reload-delay 1 --ignore .git --ignore docs/_build --ignore docs/examples --watch $(GIT_ROOT)/llama_index/
 
 .PHONY: help format lint test watch-docs
+
