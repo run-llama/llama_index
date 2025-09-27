@@ -5,12 +5,13 @@ from ollama import Client
 from typing import Annotated
 
 from llama_index.core.base.llms.base import BaseLLM
+from llama_index.core.base.llms.types import ToolCallBlock
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import ChatMessage
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.ollama import Ollama
 
-test_model = os.environ.get("OLLAMA_TEST_MODEL", "llama3.1:latest")
+test_model = os.environ.get("OLLAMA_TEST_MODEL", "qwen3:0.6b")
 thinking_test_model = os.environ.get("OLLAMA_THINKING_TEST_MODEL", "qwen3:0.6b")
 
 try:
@@ -247,7 +248,16 @@ def test_chat_with_tools_returns_empty_array_if_no_tools_were_called() -> None:
         ],
     )
 
-    assert response.message.additional_kwargs.get("tool_calls", []) == []
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        == 0
+    )
 
     tool_calls = llm.get_tool_calls_from_response(response, error_on_no_tool_call=False)
     assert len(tool_calls) == 0
@@ -275,4 +285,13 @@ async def test_async_chat_with_tools_returns_empty_array_if_no_tools_were_called
             ChatMessage(role="user", content="Hello, how are you?"),
         ],
     )
-    assert response.message.additional_kwargs.get("tool_calls", []) == []
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        == 0
+    )

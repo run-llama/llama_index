@@ -1,4 +1,3 @@
-import json
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -12,6 +11,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
 
 from llama_index.core.base.llms.types import (
@@ -814,7 +814,11 @@ class Anthropic(FunctionCallingLLM):
         **kwargs: Any,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
-        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+        tool_calls = [
+            block
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        ]
 
         if len(tool_calls) < 1:
             if error_on_no_tool_call:
@@ -826,25 +830,13 @@ class Anthropic(FunctionCallingLLM):
 
         tool_selections = []
         for tool_call in tool_calls:
-            if (
-                "input" not in tool_call
-                or "id" not in tool_call
-                or "name" not in tool_call
-            ):
-                raise ValueError("Invalid tool call.")
-            if tool_call["type"] != "tool_use":
-                raise ValueError("Invalid tool type. Unsupported by Anthropic")
-            argument_dict = (
-                json.loads(tool_call["input"])
-                if isinstance(tool_call["input"], str)
-                else tool_call["input"]
-            )
+            argument_dict = tool_call.tool_kwargs
 
             tool_selections.append(
                 ToolSelection(
-                    tool_id=tool_call["id"],
-                    tool_name=tool_call["name"],
-                    tool_kwargs=argument_dict,
+                    tool_id=tool_call.tool_call_id or "",
+                    tool_name=tool_call.tool_name,
+                    tool_kwargs=cast(Dict[str, Any], argument_dict),
                 )
             )
 

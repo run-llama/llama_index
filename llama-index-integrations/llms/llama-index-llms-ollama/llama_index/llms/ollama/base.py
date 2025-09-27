@@ -10,6 +10,7 @@ from typing import (
     Tuple,
     Type,
     Union,
+    cast,
 )
 
 from ollama import AsyncClient, Client
@@ -32,6 +33,7 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
     TextBlock,
+    ToolCallBlock,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -236,6 +238,17 @@ class Ollama(FunctionCallingLLM):
                     cur_ollama_message["images"].append(
                         block.resolve_image(as_base64=True).read().decode("utf-8")
                     )
+                elif isinstance(block, ToolCallBlock):
+                    if "tool_calls" not in cur_ollama_message:
+                        cur_ollama_message["tool_calls"] = []
+                    cur_ollama_message["tool_calls"].append(
+                        {
+                            "function": {
+                                "name": block.tool_name,
+                                "arguments": block.tool_kwargs,
+                            }
+                        }
+                    )
                 else:
                     raise ValueError(f"Unsupported block type: {type(block)}")
 
@@ -308,7 +321,11 @@ class Ollama(FunctionCallingLLM):
         error_on_no_tool_call: bool = True,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
-        tool_calls = response.message.additional_kwargs.get("tool_calls", []) or []
+        tool_calls = [
+            block
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        ]
         if len(tool_calls) < 1:
             if error_on_no_tool_call:
                 raise ValueError(
@@ -319,13 +336,13 @@ class Ollama(FunctionCallingLLM):
 
         tool_selections = []
         for tool_call in tool_calls:
-            argument_dict = tool_call["function"]["arguments"]
+            argument_dict = cast(Dict[str, Any], tool_call.tool_kwargs)
 
             tool_selections.append(
                 ToolSelection(
                     # tool ids not provided by Ollama
-                    tool_id=tool_call["function"]["name"],
-                    tool_name=tool_call["function"]["name"],
+                    tool_id=tool_call.tool_call_id or "",
+                    tool_name=tool_call.tool_name,
                     tool_kwargs=argument_dict,
                 )
             )
@@ -353,7 +370,16 @@ class Ollama(FunctionCallingLLM):
 
         response = dict(response)
 
+        blocks: list[TextBlock | ToolCallBlock] = []
         tool_calls = response["message"].get("tool_calls", []) or []
+        for tool_call in tool_calls:
+            blocks.append(
+                ToolCallBlock(
+                    tool_name=tool_call["function"]["name"],
+                    tool_kwargs=tool_call["function"]["arguments"],
+                )
+            )
+        blocks.append(TextBlock(text=response["message"].get("content", "")))
         thinking = response["message"].get("thinking", None)
         token_counts = self._get_response_token_counts(response)
         if token_counts:
@@ -361,9 +387,9 @@ class Ollama(FunctionCallingLLM):
 
         return ChatResponse(
             message=ChatMessage(
-                content=response["message"].get("content", ""),
+                blocks=blocks,
                 role=response["message"].get("role", MessageRole.ASSISTANT),
-                additional_kwargs={"tool_calls": tool_calls, "thinking": thinking},
+                additional_kwargs={"thinking": thinking},
             ),
             raw=response,
         )
@@ -392,8 +418,7 @@ class Ollama(FunctionCallingLLM):
 
             response_txt = ""
             thinking_txt = ""
-            seen_tool_calls = set()
-            all_tool_calls = []
+            blocks: List[TextBlock | ToolCallBlock] = []
 
             for r in response:
                 if r["message"]["content"] is None:
@@ -406,28 +431,22 @@ class Ollama(FunctionCallingLLM):
 
                 new_tool_calls = [dict(t) for t in r["message"].get("tool_calls") or []]
                 for tool_call in new_tool_calls:
-                    if (
-                        str(tool_call["function"]["name"]),
-                        str(tool_call["function"]["arguments"]),
-                    ) in seen_tool_calls:
-                        continue
-                    seen_tool_calls.add(
-                        (
-                            str(tool_call["function"]["name"]),
-                            str(tool_call["function"]["arguments"]),
+                    blocks.append(
+                        ToolCallBlock(
+                            tool_name=tool_call["function"]["name"],
+                            tool_kwargs=tool_call["function"]["arguments"],
                         )
                     )
-                    all_tool_calls.append(tool_call)
+                blocks.append(TextBlock(text=response_txt))
                 token_counts = self._get_response_token_counts(r)
                 if token_counts:
                     r["usage"] = token_counts
 
                 yield ChatResponse(
                     message=ChatMessage(
-                        content=response_txt,
+                        blocks=blocks,
                         role=r["message"].get("role", MessageRole.ASSISTANT),
                         additional_kwargs={
-                            "tool_calls": all_tool_calls,
                             "thinking": thinking_txt,
                         },
                     ),
@@ -464,8 +483,7 @@ class Ollama(FunctionCallingLLM):
 
             response_txt = ""
             thinking_txt = ""
-            seen_tool_calls = set()
-            all_tool_calls = []
+            blocks: List[TextBlock | ToolCallBlock] = []
 
             async for r in response:
                 if r["message"]["content"] is None:
@@ -478,28 +496,22 @@ class Ollama(FunctionCallingLLM):
 
                 new_tool_calls = [dict(t) for t in r["message"].get("tool_calls") or []]
                 for tool_call in new_tool_calls:
-                    if (
-                        str(tool_call["function"]["name"]),
-                        str(tool_call["function"]["arguments"]),
-                    ) in seen_tool_calls:
-                        continue
-                    seen_tool_calls.add(
-                        (
-                            str(tool_call["function"]["name"]),
-                            str(tool_call["function"]["arguments"]),
+                    blocks.append(
+                        ToolCallBlock(
+                            tool_name=tool_call["function"]["name"],
+                            tool_kwargs=tool_call["function"]["arguments"],
                         )
                     )
-                    all_tool_calls.append(tool_call)
+                blocks.append(TextBlock(text=response_txt))
                 token_counts = self._get_response_token_counts(r)
                 if token_counts:
                     r["usage"] = token_counts
 
                 yield ChatResponse(
                     message=ChatMessage(
-                        content=response_txt,
+                        blocks=blocks,
                         role=r["message"].get("role", MessageRole.ASSISTANT),
                         additional_kwargs={
-                            "tool_calls": all_tool_calls,
                             "thinking": thinking_txt,
                         },
                     ),
@@ -535,7 +547,16 @@ class Ollama(FunctionCallingLLM):
 
         response = dict(response)
 
+        blocks: list[TextBlock | ToolCallBlock] = []
         tool_calls = response["message"].get("tool_calls", []) or []
+        for tool_call in tool_calls:
+            blocks.append(
+                ToolCallBlock(
+                    tool_name=tool_call["function"]["name"],
+                    tool_kwargs=tool_call["function"]["arguments"],
+                )
+            )
+        blocks.append(TextBlock(text=response["message"].get("content", "")))
         thinking = response["message"].get("thinking", None)
         token_counts = self._get_response_token_counts(response)
         if token_counts:
@@ -543,9 +564,9 @@ class Ollama(FunctionCallingLLM):
 
         return ChatResponse(
             message=ChatMessage(
-                content=response["message"].get("content", ""),
+                blocks=blocks,
                 role=response["message"].get("role", MessageRole.ASSISTANT),
-                additional_kwargs={"tool_calls": tool_calls, "thinking": thinking},
+                additional_kwargs={"thinking": thinking},
             ),
             raw=response,
         )
