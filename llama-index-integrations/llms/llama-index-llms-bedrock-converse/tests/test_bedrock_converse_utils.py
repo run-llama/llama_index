@@ -13,6 +13,7 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     CacheControl,
     CachePoint,
+    ThinkingBlock,
 )
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.bedrock_converse.utils import (
@@ -69,6 +70,12 @@ def test_get_img_format_unsupported(caplog):
 def test_content_block_to_bedrock_format_text():
     text_block = TextBlock(text="Hello, world!")
     result = _content_block_to_bedrock_format(text_block, MessageRole.USER)
+    assert result == {"text": "Hello, world!"}
+
+
+def test_content_block_to_bedrock_format_thinking():
+    think_block = ThinkingBlock(content="Hello, world!")
+    result = _content_block_to_bedrock_format(think_block, MessageRole.USER)
     assert result == {"text": "Hello, world!"}
 
 

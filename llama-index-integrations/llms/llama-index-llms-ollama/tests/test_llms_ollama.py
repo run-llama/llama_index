@@ -4,6 +4,7 @@ import pytest
 from ollama import Client
 from typing import Annotated
 
+from llama_index.core.base.llms.types import ThinkingBlock, TextBlock
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.bridge.pydantic import BaseModel, Field
 from llama_index.core.llms import ChatMessage
@@ -209,9 +210,74 @@ def test_chat_with_think() -> None:
     )
     assert response is not None
     assert str(response).strip() != ""
-    think = response.message.additional_kwargs.get("thinking", None)
-    assert think is not None
-    assert str(think).strip() != ""
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ThinkingBlock)
+            ]
+        )
+        > 0
+    )
+    assert (
+        "".join(
+            [
+                block.content or ""
+                for block in response.message.blocks
+                if isinstance(block, ThinkingBlock)
+            ]
+        )
+        != ""
+    )
+
+
+@pytest.mark.skipif(
+    client is None, reason="Ollama client is not available or test model is missing"
+)
+def test_chat_with_thinking_input() -> None:
+    llm = Ollama(model=thinking_test_model, thinking=True, request_timeout=360)
+    response = llm.chat(
+        [
+            ChatMessage(role="user", content="Hello! What is 32 * 4?"),
+            ChatMessage(
+                role="assistant",
+                blocks=[
+                    ThinkingBlock(
+                        content="The user is asking me to multiply two numbers, so I should reply concisely"
+                    ),
+                    TextBlock(text="128"),
+                ],
+            ),
+            ChatMessage(
+                role="user",
+                content="Based on your previous reasoning, can you now tell me the result of 50*200?",
+            ),
+        ],
+        think=False,
+    )
+    assert response is not None
+    assert str(response).strip() != ""
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ThinkingBlock)
+            ]
+        )
+        > 0
+    )
+    assert (
+        "".join(
+            [
+                block.content or ""
+                for block in response.message.blocks
+                if isinstance(block, ThinkingBlock)
+            ]
+        )
+        != ""
+    )
 
 
 @pytest.mark.skipif(
@@ -225,9 +291,26 @@ async def test_async_chat_with_think() -> None:
     )
     assert response is not None
     assert str(response).strip() != ""
-    think = response.message.additional_kwargs.get("thinking", None)
-    assert think is not None
-    assert str(think).strip() != ""
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ThinkingBlock)
+            ]
+        )
+        > 0
+    )
+    assert (
+        "".join(
+            [
+                block.content or ""
+                for block in response.message.blocks
+                if isinstance(block, ThinkingBlock)
+            ]
+        )
+        != ""
+    )
 
 
 @pytest.mark.skipif(
