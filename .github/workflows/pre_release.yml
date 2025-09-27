@@ -42,6 +42,10 @@ jobs:
           VERSION=$(uv run -- llama-dev --repo-root .. pkg info --json . | jq -r .version)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
+      - name: Update root lockfile
+        run: |
+          uv lock
+
       - name: Create Release PR
         id: rpr
         uses: peter-evans/create-pull-request@v7
