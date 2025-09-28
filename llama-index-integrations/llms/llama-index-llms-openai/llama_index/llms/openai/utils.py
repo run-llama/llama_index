@@ -61,7 +61,6 @@ O1_MODELS: Dict[str, int] = {
     "gpt-5-mini-2025-08-07": 400000,
     "gpt-5-nano": 400000,
     "gpt-5-nano-2025-08-07": 400000,
-    "gpt-5-chat-latest": 400000,
 }
 
 O1_MODELS_WITHOUT_FUNCTION_CALLING = {
@@ -69,6 +68,7 @@ O1_MODELS_WITHOUT_FUNCTION_CALLING = {
     "o1-preview-2024-09-12",
     "o1-mini",
     "o1-mini-2024-09-12",
+    "gpt-5-chat-latest": 400000,
 }
 
 GPT4_MODELS: Dict[str, int] = {
