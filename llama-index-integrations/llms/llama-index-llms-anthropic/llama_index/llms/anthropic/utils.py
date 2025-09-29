@@ -101,7 +101,9 @@ ANTHROPIC_MODELS: Dict[str, int] = {
     "claude-sonnet-4-20250514": 1000000,
     "claude-4-sonnet-20250514": 1000000,
     "claude-opus-4-1-20250805": 200000,
+    "claude-opus-4-1": 200000,
     "claude-sonnet-4-5-20250929": 200000,
+    "claude-sonnet-4-5": 200000,
 }
 
 # All provider Anthropic identifiers
