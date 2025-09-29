@@ -379,7 +379,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
             **kwargs: Additional keyword arguments passed to ChromaDB query method.
                 For MMR mode, supports:
                 - mmr_threshold (Optional[float]): MMR threshold between 0 and 1
-                - mmr_prefetch_factor (Optional[float]): Factor to multiply similarity_top_k 
+                - mmr_prefetch_factor (Optional[float]): Factor to multiply similarity_top_k
                 for prefetching candidates (default: 4.0)
                 - mmr_prefetch_k (Optional[int]): Explicit number of candidates to prefetch
                 (cannot be used with mmr_prefetch_factor)
@@ -392,7 +392,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
             VectorStoreQueryResult: Query result containing matched nodes, similarities, and IDs.
 
         Raises:
-            ValueError: If MMR parameters are invalid or if both query.filters and 
+            ValueError: If MMR parameters are invalid or if both query.filters and
                     where kwargs are specified.
         """
         if query.filters is not None:
