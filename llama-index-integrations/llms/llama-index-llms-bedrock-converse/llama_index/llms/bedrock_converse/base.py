@@ -332,14 +332,14 @@ class BedrockConverse(FunctionCallingLLM):
 
     def _get_content_and_tool_calls(
         self, response: Optional[Dict[str, Any]] = None, content: Dict[str, Any] = None
-    ) -> Tuple[List[TextBlock | ToolCallBlock], List[str], List[str]]:
+    ) -> Tuple[List[Union[TextBlock, ToolCallBlock]], List[str], List[str]]:
         assert response is not None or content is not None, (
             f"Either response or content must be provided. Got response: {response}, content: {content}"
         )
         assert response is None or content is None, (
             f"Only one of response or content should be provided. Got response: {response}, content: {content}"
         )
-        blocks: List[TextBlock | ToolCallBlock] = []
+        blocks: List[Union[TextBlock, ToolCallBlock]] = []
         tool_call_ids = []
         status = []
         text_content = ""
