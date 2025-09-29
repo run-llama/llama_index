@@ -1,7 +1,7 @@
 import base64
 import json
 import logging
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
 from tenacity import (
     before_sleep_log,
     retry,
@@ -135,6 +135,18 @@ BEDROCK_INFERENCE_PROFILE_SUPPORTED_MODELS = (
     "meta.llama4-scout-17b-instruct-v1:0",
     "deepseek.r1-v1:0",
 )
+BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS = (
+    "anthropic.claude-3-5-sonnet-20241022-v2:0",
+    "anthropic.claude-3-5-haiku-20241022-v1:0",
+    "anthropic.claude-3-7-sonnet-20250219-v1:0",
+    "anthropic.claude-opus-4-20250514-v1:0",
+    "anthropic.claude-sonnet-4-20250514-v1:0",
+    "anthropic.claude-opus-4-1-20250805-v1:0",
+    "amazon.nova-premier-v1:0",
+    "amazon.nova-pro-v1:0",
+    "amazon.nova-lite-v1:0",
+    "amazon.nova-micro-v1:0",
+)
 
 
 def get_model_name(model_name: str) -> str:
@@ -161,6 +173,10 @@ def get_model_name(model_name: str) -> str:
 
 def is_bedrock_function_calling_model(model_name: str) -> bool:
     return get_model_name(model_name) in BEDROCK_FUNCTION_CALLING_MODELS
+
+
+def is_bedrock_prompt_caching_supported_model(model_name: str) -> bool:
+    return get_model_name(model_name) in BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS
 
 
 def bedrock_modelname_to_context_size(model_name: str) -> int:
@@ -258,12 +274,14 @@ def __get_img_format_from_image_mimetype(image_mimetype: str) -> str:
 
 def messages_to_converse_messages(
     messages: Sequence[ChatMessage],
-) -> Tuple[Sequence[Dict[str, Any]], str]:
+    model: Optional[str] = None,
+) -> Tuple[Sequence[Dict[str, Any]], Sequence[Dict[str, Any]]]:
     """
     Converts a list of generic ChatMessages to AWS Bedrock Converse messages.
 
     Args:
         messages: List of ChatMessages
+        model: optional  model name used to omit cache point if the model does not support it
 
     Returns:
         Tuple of:
@@ -272,10 +290,40 @@ def messages_to_converse_messages(
 
     """
     converse_messages = []
-    system_prompt = ""
+    system_prompt = []
+    current_system_prompt = ""
     for message in messages:
-        if message.role == MessageRole.SYSTEM and message.content:
-            system_prompt += (message.content) + "\n"
+        if message.role == MessageRole.SYSTEM:
+            # we iterate over blocks, if content was used, the blocks are added anyway
+            for block in message.blocks:
+                if isinstance(block, TextBlock):
+                    if block.text:  # Only add non-empty text
+                        current_system_prompt += block.text + "\n"
+
+                elif isinstance(block, CachePoint):
+                    # when we find a cache point we push the current system prompt as a message
+                    if current_system_prompt != "":
+                        system_prompt.append({"text": current_system_prompt.strip()})
+                        current_system_prompt = ""
+                    # we add the cache point
+                    if (
+                        model is None
+                        or model is not None
+                        and is_bedrock_prompt_caching_supported_model(model)
+                    ):
+                        if block.cache_control.type != "default":
+                            logger.warning(
+                                "The only allowed caching strategy for Bedrock Converse is 'default', falling back to that..."
+                            )
+                            block.cache_control.type = "default"
+                        system_prompt.append(
+                            {"cachePoint": {"type": block.cache_control.type}}
+                        )
+                    else:
+                        logger.warning(
+                            f"Model {model} does not support prompt caching, cache point will be ignored..."
+                        )
+
         elif message.role in [MessageRole.FUNCTION, MessageRole.TOOL]:
             # convert tool output to the AWS Bedrock Converse format
             content = {
@@ -343,8 +391,9 @@ def messages_to_converse_messages(
                     "content": content,
                 }
             )
-
-    return __merge_common_role_msgs(converse_messages), system_prompt.strip()
+    if current_system_prompt != "":
+        system_prompt.append({"text": current_system_prompt.strip()})
+    return __merge_common_role_msgs(converse_messages), system_prompt
 
 
 def tools_to_converse_tools(
@@ -445,7 +494,7 @@ def converse_with_retry(
     model: str,
     messages: Sequence[Dict[str, Any]],
     max_retries: int = 3,
-    system_prompt: Optional[str] = None,
+    system_prompt: Optional[Union[str, Sequence[Dict[str, Any]]]] = None,
     system_prompt_caching: bool = False,
     tool_caching: bool = False,
     max_tokens: int = 1000,
@@ -467,11 +516,19 @@ def converse_with_retry(
         },
     }
     if system_prompt:
-        system_messages: list[dict[str, Any]] = [{"text": system_prompt}]
-        if system_prompt_caching:
+        if isinstance(system_prompt, str):
+            # if the system prompt is a simple text (for retro compatibility)
+            system_messages: list[dict[str, Any]] = [{"text": system_prompt}]
+        else:
+            system_messages: list[dict[str, Any]] = system_prompt
+        if (
+            system_prompt_caching
+            and len(system_messages) > 0
+            and system_messages[-1].get("cachePoint", None) is None
+        ):
+            # "Adding cache point to system prompt if not present"
             system_messages.append({"cachePoint": {"type": "default"}})
         converse_kwargs["system"] = system_messages
-
     if tool_config := kwargs.get("tools"):
         converse_kwargs["toolConfig"] = tool_config
 
@@ -492,12 +549,13 @@ def converse_with_retry(
     )
 
     @retry_decorator
-    def _conversion_with_retry(**kwargs: Any) -> Any:
+    def _converse_with_retry(**kwargs: Any) -> Any:
         if stream:
             return client.converse_stream(**kwargs)
-        return client.converse(**kwargs)
+        else:
+            return client.converse(**kwargs)
 
-    return _conversion_with_retry(**converse_kwargs)
+    return _converse_with_retry(**converse_kwargs)
 
 
 async def converse_with_retry_async(
@@ -506,7 +564,7 @@ async def converse_with_retry_async(
     model: str,
     messages: Sequence[Dict[str, Any]],
     max_retries: int = 3,
-    system_prompt: Optional[str] = None,
+    system_prompt: Optional[Union[str, Sequence[Dict[str, Any]]]] = None,
     system_prompt_caching: bool = False,
     tool_caching: bool = False,
     max_tokens: int = 1000,
@@ -528,11 +586,22 @@ async def converse_with_retry_async(
             "temperature": temperature,
         },
     }
+
     if system_prompt:
-        system_messages: list[dict[str, Any]] = [{"text": system_prompt}]
-        if system_prompt_caching:
+        if isinstance(system_prompt, str):
+            # if the system prompt is a simple text (for retro compatibility)
+            system_messages: list[dict[str, Any]] = [{"text": system_prompt}]
+        else:
+            system_messages: list[dict[str, Any]] = system_prompt
+        if (
+            system_prompt_caching
+            and len(system_messages) > 0
+            and system_messages[-1].get("cachePoint", None) is None
+        ):
+            # "Adding cache point to system prompt if not present"
             system_messages.append({"cachePoint": {"type": "default"}})
         converse_kwargs["system"] = system_messages
+
     if tool_config := kwargs.get("tools"):
         converse_kwargs["toolConfig"] = tool_config
         if tool_caching and "tools" in converse_kwargs["toolConfig"]:

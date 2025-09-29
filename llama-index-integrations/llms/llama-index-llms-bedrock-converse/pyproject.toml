@@ -29,15 +29,15 @@ dev = [
 
 [project]
 name = "llama-index-llms-bedrock-converse"
-version = "0.9.3"
+version = "0.9.4"
 description = "llama-index llms bedrock converse integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "boto3>=1.34.122,<2",
-    "aioboto3>=13.1.1,<16",
+    "boto3>=1.38.27,<2",
+    "aioboto3>=15.0.0,<16",
     "llama-index-core>=0.13.0,<0.15",
 ]
 
