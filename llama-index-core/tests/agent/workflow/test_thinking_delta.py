@@ -331,3 +331,103 @@ async def test_agents_handle_missing_thinking_delta():
     agent_streams = [event for event in stream_events if isinstance(event, AgentStream)]
     assert len(agent_streams) == 1
     assert agent_streams[0].thinking_delta is None  # Should default to None
+
+
+@pytest.mark.asyncio
+async def test_function_agent_ollama_reasoning_extraction():
+    """Test FunctionAgent extracts thinking_delta from Ollama's raw.choices[0].delta.reasoning format."""
+    
+    class MockOllamaLLM(MockLLM):
+        @property
+        def metadata(self) -> LLMMetadata:
+            return LLMMetadata(is_function_calling_model=True)
+
+        async def astream_chat_with_tools(
+            self, tools: List[Any], chat_history: List[ChatMessage], **kwargs: Any
+        ) -> AsyncGenerator[ChatResponse, None]:
+            async def _gen():
+                # Simulate Ollama's response structure with object-based access
+                from unittest.mock import MagicMock
+                
+                mock_raw = MagicMock()
+                mock_raw.choices = [MagicMock()]
+                mock_raw.choices[0].delta = MagicMock()
+                mock_raw.choices[0].delta.reasoning = "Ollama thinking process..."
+                
+                yield ChatResponse(
+                    message=ChatMessage(role="assistant", content="Response"),
+                    delta="Response",
+                    additional_kwargs={},  # No thinking_delta in additional_kwargs
+                    raw=mock_raw,
+                )
+            return _gen()
+
+        def get_tool_calls_from_response(
+            self, response: ChatResponse, error_on_no_tool_call: bool = False
+        ):
+            return []
+
+    mock_llm = MockOllamaLLM()
+    agent = FunctionAgent(llm=mock_llm, streaming=True)
+    mock_context = AsyncMock(spec=Context)
+    stream_events = []
+    mock_context.write_event_to_stream.side_effect = lambda event: stream_events.append(event)
+
+    await agent._get_streaming_response(
+        mock_context, [ChatMessage(role="user", content="test")], []
+    )
+    
+    agent_streams = [event for event in stream_events if isinstance(event, AgentStream)]
+    assert len(agent_streams) == 1
+    assert agent_streams[0].thinking_delta == "Ollama thinking process..."
+
+
+@pytest.mark.asyncio
+async def test_function_agent_groq_reasoning_extraction():
+    """Test FunctionAgent extracts thinking_delta from Groq's dictionary-based raw['choices'][0]['delta']['reasoning'] format."""
+    
+    class MockGroqLLM(MockLLM):
+        @property
+        def metadata(self) -> LLMMetadata:
+            return LLMMetadata(is_function_calling_model=True)
+
+        async def astream_chat_with_tools(
+            self, tools: List[Any], chat_history: List[ChatMessage], **kwargs: Any
+        ) -> AsyncGenerator[ChatResponse, None]:
+            async def _gen():
+                # Simulate Groq's response structure with dictionary-based access
+                yield ChatResponse(
+                    message=ChatMessage(role="assistant", content="Response"),
+                    delta="Response",
+                    additional_kwargs={},  # No thinking_delta in additional_kwargs
+                    raw={
+                        "choices": [
+                            {
+                                "delta": {
+                                    "reasoning": "Groq thinking process...",
+                                    "content": "Response"
+                                }
+                            }
+                        ]
+                    },
+                )
+            return _gen()
+
+        def get_tool_calls_from_response(
+            self, response: ChatResponse, error_on_no_tool_call: bool = False
+        ):
+            return []
+
+    mock_llm = MockGroqLLM()
+    agent = FunctionAgent(llm=mock_llm, streaming=True)
+    mock_context = AsyncMock(spec=Context)
+    stream_events = []
+    mock_context.write_event_to_stream.side_effect = lambda event: stream_events.append(event)
+
+    await agent._get_streaming_response(
+        mock_context, [ChatMessage(role="user", content="test")], []
+    )
+    
+    agent_streams = [event for event in stream_events if isinstance(event, AgentStream)]
+    assert len(agent_streams) == 1
+    assert agent_streams[0].thinking_delta == "Groq thinking process..."
