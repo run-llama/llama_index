@@ -1,5 +1,6 @@
 import json
 import re
+import shlex
 import subprocess
 from datetime import date
 from pathlib import Path
@@ -13,7 +14,8 @@ CHANGELOG_PLACEHOLDER = "<!--- generated changelog --->"
 
 def _run_command(command: str) -> str:
     """Helper to run a shell command and return the output."""
-    result = subprocess.run(command, shell=True, capture_output=True, text=True)
+    args = shlex.split(command)
+    result = subprocess.run(args, capture_output=True, text=True)
     if result.returncode != 0:
         raise RuntimeError(f"Command failed: {command}\n{result.stderr}")
     return result.stdout.strip()
