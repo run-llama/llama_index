@@ -394,6 +394,7 @@ class ChromaVectorStore(BasePydanticVectorStore):
         Raises:
             ValueError: If MMR parameters are invalid or if both query.filters and
                     where kwargs are specified.
+
         """
         if query.filters is not None:
             if "where" in kwargs:
