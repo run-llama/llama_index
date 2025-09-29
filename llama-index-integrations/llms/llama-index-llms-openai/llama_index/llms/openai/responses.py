@@ -44,6 +44,7 @@ from typing import (
     Type,
     Union,
     runtime_checkable,
+    cast,
 )
 
 import llama_index.core.instrumentation as instrument
@@ -67,6 +68,7 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     ImageBlock,
     ThinkingBlock,
+    ToolCallBlock,
 )
 from llama_index.core.bridge.pydantic import (
     Field,
@@ -131,9 +133,15 @@ class Tokenizer(Protocol):
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
-    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    tool_calls = [
+        block for block in response.message.blocks if isinstance(block, ToolCallBlock)
+    ]
     if len(tool_calls) > 1:
-        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+        response.message.blocks = [
+            block
+            for block in response.message.blocks
+            if not isinstance(block, ToolCallBlock)
+        ] + [tool_calls[0]]
 
 
 class OpenAIResponses(FunctionCallingLLM):
@@ -453,7 +461,6 @@ class OpenAIResponses(FunctionCallingLLM):
     def _parse_response_output(self, output: List[ResponseOutputItem]) -> ChatResponse:
         message = ChatMessage(role=MessageRole.ASSISTANT, blocks=[])
         additional_kwargs = {"built_in_tool_calls": []}
-        tool_calls = []
         blocks: List[ContentBlock] = []
         for item in output:
             if isinstance(item, ResponseOutputMessage):
@@ -480,7 +487,13 @@ class OpenAIResponses(FunctionCallingLLM):
             elif isinstance(item, ResponseFileSearchToolCall):
                 additional_kwargs["built_in_tool_calls"].append(item)
             elif isinstance(item, ResponseFunctionToolCall):
-                tool_calls.append(item)
+                message.blocks.append(
+                    ToolCallBlock(
+                        tool_name=item.name,
+                        tool_call_id=item.call_id,
+                        tool_kwargs=item.arguments,
+                    )
+                )
             elif isinstance(item, ResponseFunctionWebSearch):
                 additional_kwargs["built_in_tool_calls"].append(item)
             elif isinstance(item, ResponseComputerToolCall):
@@ -502,9 +515,6 @@ class OpenAIResponses(FunctionCallingLLM):
                         ),
                     )
                 )
-
-        if tool_calls and message:
-            message.additional_kwargs["tool_calls"] = tool_calls
 
         return ChatResponse(message=message, additional_kwargs=additional_kwargs)
 
@@ -541,7 +551,6 @@ class OpenAIResponses(FunctionCallingLLM):
     @staticmethod
     def process_response_event(
         event: ResponseStreamEvent,
-        tool_calls: List[ResponseFunctionToolCall],
         built_in_tool_calls: List[Any],
         additional_kwargs: Dict[str, Any],
         current_tool_call: Optional[ResponseFunctionToolCall],
@@ -549,7 +558,6 @@ class OpenAIResponses(FunctionCallingLLM):
         previous_response_id: Optional[str] = None,
     ) -> Tuple[
         List[ContentBlock],
-        List[ResponseFunctionToolCall],
         List[Any],
         Dict[str, Any],
         Optional[ResponseFunctionToolCall],
@@ -610,9 +618,12 @@ class OpenAIResponses(FunctionCallingLLM):
                 current_tool_call.arguments = event.arguments
                 current_tool_call.status = "completed"
 
-                # append a copy of the tool call to the list
-                tool_calls.append(
-                    ResponseFunctionToolCall(**current_tool_call.model_dump())
+                blocks.append(
+                    ToolCallBlock(
+                        tool_name=current_tool_call.name,
+                        tool_kwargs=current_tool_call.arguments,
+                        tool_call_id=current_tool_call.call_id,
+                    )
                 )
 
                 # clear the current tool call
@@ -656,7 +667,6 @@ class OpenAIResponses(FunctionCallingLLM):
 
         return (
             blocks,
-            tool_calls,
             built_in_tool_calls,
             additional_kwargs,
             current_tool_call,
@@ -675,7 +685,6 @@ class OpenAIResponses(FunctionCallingLLM):
         )
 
         def gen() -> ChatResponseGen:
-            tool_calls = []
             built_in_tool_calls = []
             additional_kwargs = {"built_in_tool_calls": []}
             current_tool_call: Optional[ResponseFunctionToolCall] = None
@@ -689,7 +698,6 @@ class OpenAIResponses(FunctionCallingLLM):
                 # Process the event and update state
                 (
                     blocks,
-                    tool_calls,
                     built_in_tool_calls,
                     additional_kwargs,
                     current_tool_call,
@@ -697,7 +705,6 @@ class OpenAIResponses(FunctionCallingLLM):
                     delta,
                 ) = OpenAIResponses.process_response_event(
                     event=event,
-                    tool_calls=tool_calls,
                     built_in_tool_calls=built_in_tool_calls,
                     additional_kwargs=additional_kwargs,
                     current_tool_call=current_tool_call,
@@ -719,9 +726,6 @@ class OpenAIResponses(FunctionCallingLLM):
                     message=ChatMessage(
                         role=MessageRole.ASSISTANT,
                         blocks=blocks,
-                        additional_kwargs={"tool_calls": tool_calls}
-                        if tool_calls
-                        else {},
                     ),
                     delta=delta,
                     raw=event,
@@ -799,7 +803,6 @@ class OpenAIResponses(FunctionCallingLLM):
         )
 
         async def gen() -> ChatResponseAsyncGen:
-            tool_calls = []
             built_in_tool_calls = []
             additional_kwargs = {"built_in_tool_calls": []}
             current_tool_call: Optional[ResponseFunctionToolCall] = None
@@ -815,7 +818,6 @@ class OpenAIResponses(FunctionCallingLLM):
                 # Process the event and update state
                 (
                     blocks,
-                    tool_calls,
                     built_in_tool_calls,
                     additional_kwargs,
                     current_tool_call,
@@ -823,7 +825,6 @@ class OpenAIResponses(FunctionCallingLLM):
                     delta,
                 ) = OpenAIResponses.process_response_event(
                     event=event,
-                    tool_calls=tool_calls,
                     built_in_tool_calls=built_in_tool_calls,
                     additional_kwargs=additional_kwargs,
                     current_tool_call=current_tool_call,
@@ -845,9 +846,6 @@ class OpenAIResponses(FunctionCallingLLM):
                     message=ChatMessage(
                         role=MessageRole.ASSISTANT,
                         blocks=blocks,
-                        additional_kwargs={"tool_calls": tool_calls}
-                        if tool_calls
-                        else {},
                     ),
                     delta=delta,
                     raw=event,
@@ -913,9 +911,11 @@ class OpenAIResponses(FunctionCallingLLM):
         **kwargs: Any,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
-        tool_calls: List[ResponseFunctionToolCall] = (
-            response.message.additional_kwargs.get("tool_calls", [])
-        )
+        tool_calls: List[ToolCallBlock] = [
+            block
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        ]
 
         if len(tool_calls) < 1:
             if error_on_no_tool_call:
@@ -929,14 +929,14 @@ class OpenAIResponses(FunctionCallingLLM):
         for tool_call in tool_calls:
             # this should handle both complete and partial jsons
             try:
-                argument_dict = parse_partial_json(tool_call.arguments)
-            except ValueError:
+                argument_dict = parse_partial_json(cast(str, tool_call.tool_kwargs))
+            except Exception:
                 argument_dict = {}
 
             tool_selections.append(
                 ToolSelection(
-                    tool_id=tool_call.call_id,
-                    tool_name=tool_call.name,
+                    tool_id=tool_call.tool_call_id or "",
+                    tool_name=tool_call.tool_name,
                     tool_kwargs=argument_dict,
                 )
             )

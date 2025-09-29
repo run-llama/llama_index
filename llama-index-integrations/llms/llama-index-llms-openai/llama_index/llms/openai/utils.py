@@ -30,6 +30,7 @@ from llama_index.core.base.llms.types import (
     AudioBlock,
     DocumentBlock,
     ThinkingBlock,
+    ToolCallBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 
@@ -513,6 +514,14 @@ def to_openai_responses_message_dict(
             if block.content:
                 content.append({"type": "output_text", "text": block.content})
                 content_txt += block.content
+        elif isinstance(block, ToolCallBlock):
+            try:
+                content.append({"type": "output_text", "text": block.model_dump_json()})
+            except Exception:
+                logger.warning(
+                    f"It was not possible to convert ToolCallBlock with call id {block.tool_call_id or '`no call id`'} to a valid message, skipping..."
+                )
+                continue
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
