@@ -39,6 +39,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     ThinkingBlock,
     ToolCallBlock,
+    TextBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
@@ -391,7 +392,7 @@ class GoogleGenAI(FunctionCallingLLM):
                         content += content_delta
                 llama_resp = chat_from_gemini_response(r)
                 llama_resp.delta = content_delta
-                llama_resp.message.content = content
+                llama_resp.message.blocks = [TextBlock(text=content)]
                 llama_resp.message.blocks.append(ThinkingBlock(content=thoughts))
                 yield llama_resp
 
@@ -444,7 +445,7 @@ class GoogleGenAI(FunctionCallingLLM):
                                     content += content_delta
                             llama_resp = chat_from_gemini_response(r)
                             llama_resp.delta = content_delta
-                            llama_resp.message.content = content
+                            llama_resp.message.blocks = [TextBlock(text=content)]
                             llama_resp.message.blocks.append(
                                 ThinkingBlock(content=thoughts)
                             )
