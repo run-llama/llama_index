@@ -1,11 +1,26 @@
-.mkdocs.tmp.yml
+# build output
+dist/
+# generated types
+.astro/
 
-# external resources
-llama_deploy
-docs/api_reference/llama_deploy/*
-docs/module_guides/llama_deploy/*
+# dependencies
+node_modules/
 
-workflows-py
-docs/workflows/*
-!docs/workflows/.gitkeep
-docs/api_reference/workflow
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+
+# environment variables
+.env
+.env.production
+.env.local
+
+# macOS-specific files
+.DS_Store
+
+# built files
+.build
+.mkdocs

@@ -26,15 +26,15 @@ dev = [
 
 [project]
 name = "llama-index-llms-baseten"
-version = "0.1.4"
+version = "0.1.5"
 description = "llama-index llms baseten integration"
 authors = [{name = "alexker"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "llama-index-llms-openai>=0.5.0,<0.6",
-    "llama-index-core>=0.13.0,<0.15",
+    "llama-index-llms-openai>=0.6.0,<0.7",
+    "llama-index-core>=0.14.3,<0.15",
 ]
 
 [tool.codespell]

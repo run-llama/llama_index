@@ -1004,7 +1004,7 @@ class OpenAI(FunctionCallingLLM):
             del llm_kwargs["tool_choice"]
         return llm_kwargs
 
-    def _should_use_structure_outputs(self):
+    def _should_use_structure_outputs(self) -> bool:
         return (
             self.pydantic_program_mode == PydanticProgramMode.DEFAULT
             and is_json_schema_supported(self.model)
