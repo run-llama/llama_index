@@ -450,8 +450,8 @@ class ToolCallBlock(BaseModel):
     )
     tool_name: str = Field(description="Name of the called tool")
     tool_kwargs: dict[str, Any] | object | str = Field(
-        default_factory=dict,
-        description="Arguments provided to the tool, if available",  # type: ignore
+        default_factory=dict,  # type: ignore
+        description="Arguments provided to the tool, if available",
     )
 
 
