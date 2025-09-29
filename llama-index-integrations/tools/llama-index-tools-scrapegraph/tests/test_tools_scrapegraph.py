@@ -1,7 +1,6 @@
 """Unit tests for ScrapeGraphAI tool specification."""
 
 from unittest.mock import Mock, patch
-from typing import Dict, Any
 
 import pytest
 from pydantic import BaseModel, Field
@@ -120,8 +119,11 @@ class TestSmartScraper:
         )
 
         mock_client.smartscraper.assert_called_once_with(
-            website_url=url, user_prompt=prompt, output_schema=None,
-            timeout=30, custom_param="value"
+            website_url=url,
+            user_prompt=prompt,
+            output_schema=None,
+            timeout=30,
+            custom_param="value",
         )
         assert response == expected_response
 
@@ -226,9 +228,7 @@ class TestSearch:
 
         mock_client.search.return_value = expected_response
 
-        response = tool_spec.scrapegraph_search(
-            query=query, language="en", region="US"
-        )
+        response = tool_spec.scrapegraph_search(query=query, language="en", region="US")
 
         mock_client.search.assert_called_once_with(
             query=query, language="en", region="US"
@@ -256,7 +256,7 @@ class TestBasicScrape:
         url = "https://example.com"
         expected_response = {
             "html": "<html><body>Test content</body></html>",
-            "request_id": "test-123"
+            "request_id": "test-123",
         }
 
         mock_client.scrape.return_value = expected_response
@@ -316,7 +316,7 @@ class TestBasicScrape:
             render_heavy_js=True,
             headers=headers,
             timeout=30,
-            custom_option="value"
+            custom_option="value",
         )
 
         mock_client.scrape.assert_called_once_with(
@@ -324,7 +324,7 @@ class TestBasicScrape:
             render_heavy_js=True,
             headers=headers,
             timeout=30,
-            custom_option="value"
+            custom_option="value",
         )
         assert response == expected_response
 
@@ -391,10 +391,7 @@ class TestAgenticScraper:
         mock_client.agentic_scraper.return_value = expected_response
 
         response = tool_spec.scrapegraph_agentic_scraper(
-            prompt=prompt,
-            url=url,
-            max_depth=3,
-            follow_links=True
+            prompt=prompt, url=url, max_depth=3, follow_links=True
         )
 
         mock_client.agentic_scraper.assert_called_once_with(
@@ -402,7 +399,7 @@ class TestAgenticScraper:
             user_prompt=prompt,
             output_schema=None,
             max_depth=3,
-            follow_links=True
+            follow_links=True,
         )
         assert response == expected_response
 

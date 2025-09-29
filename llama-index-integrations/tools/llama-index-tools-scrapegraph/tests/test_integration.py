@@ -1,4 +1,5 @@
-"""Integration tests for ScrapeGraph tool specification.
+"""
+Integration tests for ScrapeGraph tool specification.
 
 These tests verify that the tool integrates properly with LlamaIndex
 and can be used in real-world scenarios.
@@ -48,14 +49,14 @@ class TestLlamaIndexIntegration:
 
         # Verify each tool has proper metadata
         for tool in tools:
-            assert hasattr(tool, 'metadata')
-            assert hasattr(tool.metadata, 'name')
-            assert hasattr(tool.metadata, 'description')
+            assert hasattr(tool, "metadata")
+            assert hasattr(tool.metadata, "name")
+            assert hasattr(tool.metadata, "description")
             assert tool.metadata.name in ScrapegraphToolSpec.spec_functions
 
         # Verify tools can be called
         for tool in tools:
-            assert hasattr(tool, 'call')
+            assert hasattr(tool, "call")
             assert callable(tool.call)
 
     def test_tool_metadata_and_descriptions(self, mock_tool_spec):
@@ -69,7 +70,7 @@ class TestLlamaIndexIntegration:
             "scrapegraph_markdownify": "Convert webpage content to markdown",
             "scrapegraph_search": "Perform a search query",
             "scrapegraph_scrape": "Perform basic HTML scraping",
-            "scrapegraph_agentic_scraper": "Perform agentic web scraping"
+            "scrapegraph_agentic_scraper": "Perform agentic web scraping",
         }
 
         for tool in tools:
@@ -78,9 +79,11 @@ class TestLlamaIndexIntegration:
             # Check that description contains expected keywords
             description_lower = tool.metadata.description.lower()
             expected_keywords = expected_descriptions[tool_name].lower()
-            assert any(keyword in description_lower for keyword in expected_keywords.split())
+            assert any(
+                keyword in description_lower for keyword in expected_keywords.split()
+            )
 
-    @patch.dict(os.environ, {'SGAI_API_KEY': 'test-key'})
+    @patch.dict(os.environ, {"SGAI_API_KEY": "test-key"})
     def test_environment_variable_initialization(self):
         """Test initialization using environment variables."""
         with patch("llama_index.tools.scrapegraph.base.Client") as mock_client_class:
@@ -147,21 +150,21 @@ class TestSchemaValidation:
         mock_response = {
             "title": "Test Page",
             "content": "Test content",
-            "links": ["https://example.com/link1", "https://example.com/link2"]
+            "links": ["https://example.com/link1", "https://example.com/link2"],
         }
         mock_client.smartscraper.return_value = mock_response
 
         result = tool_spec.scrapegraph_smartscraper(
             prompt="Extract page info",
             url="https://example.com",
-            schema=IntegrationTestSchema
+            schema=IntegrationTestSchema,
         )
 
         # Verify the schema was passed correctly
         mock_client.smartscraper.assert_called_once_with(
             website_url="https://example.com",
             user_prompt="Extract page info",
-            output_schema=IntegrationTestSchema
+            output_schema=IntegrationTestSchema,
         )
 
         assert result == mock_response
@@ -173,20 +176,20 @@ class TestSchemaValidation:
         mock_response = {
             "title": "Navigation Result",
             "content": "Found content through navigation",
-            "links": ["https://example.com/found"]
+            "links": ["https://example.com/found"],
         }
         mock_client.agentic_scraper.return_value = mock_response
 
         result = tool_spec.scrapegraph_agentic_scraper(
             prompt="Navigate and extract",
             url="https://example.com",
-            schema=IntegrationTestSchema
+            schema=IntegrationTestSchema,
         )
 
         mock_client.agentic_scraper.assert_called_once_with(
             website_url="https://example.com",
             user_prompt="Navigate and extract",
-            output_schema=IntegrationTestSchema
+            output_schema=IntegrationTestSchema,
         )
 
         assert result == mock_response
@@ -200,15 +203,13 @@ class TestSchemaValidation:
         mock_client.smartscraper.return_value = {"result": "list schema test"}
 
         tool_spec.scrapegraph_smartscraper(
-            prompt="test",
-            url="https://example.com",
-            schema=schema_list
+            prompt="test", url="https://example.com", schema=schema_list
         )
 
         mock_client.smartscraper.assert_called_with(
             website_url="https://example.com",
             user_prompt="test",
-            output_schema=schema_list
+            output_schema=schema_list,
         )
 
         # Test with dict schema
@@ -217,15 +218,13 @@ class TestSchemaValidation:
         mock_client.smartscraper.return_value = {"result": "dict schema test"}
 
         tool_spec.scrapegraph_smartscraper(
-            prompt="test",
-            url="https://example.com",
-            schema=dict_schema
+            prompt="test", url="https://example.com", schema=dict_schema
         )
 
         mock_client.smartscraper.assert_called_with(
             website_url="https://example.com",
             user_prompt="test",
-            output_schema=dict_schema
+            output_schema=dict_schema,
         )
 
 
@@ -254,7 +253,7 @@ class TestParameterValidation:
             "http://example.com",
             "https://example.com/path",
             "https://example.com/path?param=value",
-            "https://subdomain.example.com"
+            "https://subdomain.example.com",
         ]
 
         mock_client.scrape.return_value = {"html": "test"}
@@ -263,8 +262,7 @@ class TestParameterValidation:
             mock_client.scrape.reset_mock()
             tool_spec.scrapegraph_scrape(url=url)
             mock_client.scrape.assert_called_once_with(
-                website_url=url,
-                render_heavy_js=False
+                website_url=url, render_heavy_js=False
             )
 
     def test_headers_parameter_handling(self, mock_tool_spec):
@@ -275,20 +273,15 @@ class TestParameterValidation:
             "User-Agent": "Test Agent",
             "Accept": "text/html",
             "Authorization": "Bearer token",
-            "Custom-Header": "custom-value"
+            "Custom-Header": "custom-value",
         }
 
         mock_client.scrape.return_value = {"html": "test"}
 
-        tool_spec.scrapegraph_scrape(
-            url="https://example.com",
-            headers=headers
-        )
+        tool_spec.scrapegraph_scrape(url="https://example.com", headers=headers)
 
         mock_client.scrape.assert_called_once_with(
-            website_url="https://example.com",
-            render_heavy_js=False,
-            headers=headers
+            website_url="https://example.com", render_heavy_js=False, headers=headers
         )
 
     def test_boolean_parameter_handling(self, mock_tool_spec):
@@ -298,26 +291,18 @@ class TestParameterValidation:
         mock_client.scrape.return_value = {"html": "test"}
 
         # Test with render_heavy_js=True
-        tool_spec.scrapegraph_scrape(
-            url="https://example.com",
-            render_heavy_js=True
-        )
+        tool_spec.scrapegraph_scrape(url="https://example.com", render_heavy_js=True)
 
         mock_client.scrape.assert_called_with(
-            website_url="https://example.com",
-            render_heavy_js=True
+            website_url="https://example.com", render_heavy_js=True
         )
 
         # Test with render_heavy_js=False
         mock_client.scrape.reset_mock()
-        tool_spec.scrapegraph_scrape(
-            url="https://example.com",
-            render_heavy_js=False
-        )
+        tool_spec.scrapegraph_scrape(url="https://example.com", render_heavy_js=False)
 
         mock_client.scrape.assert_called_with(
-            website_url="https://example.com",
-            render_heavy_js=False
+            website_url="https://example.com", render_heavy_js=False
         )
 
     def test_kwargs_parameter_passing(self, mock_tool_spec):
@@ -332,7 +317,7 @@ class TestParameterValidation:
             url="https://example.com",
             timeout=30,
             retries=3,
-            custom_param="value"
+            custom_param="value",
         )
 
         mock_client.smartscraper.assert_called_once_with(
@@ -341,7 +326,7 @@ class TestParameterValidation:
             output_schema=None,
             timeout=30,
             retries=3,
-            custom_param="value"
+            custom_param="value",
         )
 
 
@@ -368,14 +353,14 @@ class TestRealWorldScenarios:
         mock_response = {
             "products": [
                 {"name": "Laptop", "price": "$999", "rating": "4.5/5"},
-                {"name": "Mouse", "price": "$29", "rating": "4.2/5"}
+                {"name": "Mouse", "price": "$29", "rating": "4.2/5"},
             ]
         }
         mock_client.smartscraper.return_value = mock_response
 
         result = tool_spec.scrapegraph_smartscraper(
             prompt="Extract product names, prices, and ratings from this e-commerce page",
-            url="https://shop.example.com/laptops"
+            url="https://shop.example.com/laptops",
         )
 
         assert result == mock_response
@@ -415,17 +400,15 @@ class TestRealWorldScenarios:
             "contact_info": {
                 "email": "contact@company.com",
                 "phone": "+1-555-0123",
-                "address": "123 Tech Street, Silicon Valley"
+                "address": "123 Tech Street, Silicon Valley",
             },
-            "navigation_path": [
-                "Home", "About", "Contact", "Support"
-            ]
+            "navigation_path": ["Home", "About", "Contact", "Support"],
         }
         mock_client.agentic_scraper.return_value = mock_response
 
         result = tool_spec.scrapegraph_agentic_scraper(
             prompt="Navigate through the website to find comprehensive contact information",
-            url="https://company.example.com"
+            url="https://company.example.com",
         )
 
         assert result == mock_response
@@ -440,14 +423,13 @@ class TestRealWorldScenarios:
         mock_client.search.return_value = "Found relevant pages about Python tutorials"
 
         search_result = tool_spec.scrapegraph_search(
-            query="Python programming tutorials beginner",
-            max_results=5
+            query="Python programming tutorials beginner", max_results=5
         )
 
         # Step 2: Scrape the found page
         mock_client.scrape.return_value = {
             "html": "<html><head><title>Python Tutorial</title></head><body>Learn Python...</body></html>",
-            "request_id": "req-123"
+            "request_id": "req-123",
         }
 
         scrape_result = tool_spec.scrapegraph_scrape(
@@ -455,7 +437,9 @@ class TestRealWorldScenarios:
         )
 
         # Step 3: Convert to markdown for analysis
-        mock_client.markdownify.return_value = "# Python Tutorial\n\nLearn Python programming..."
+        mock_client.markdownify.return_value = (
+            "# Python Tutorial\n\nLearn Python programming..."
+        )
 
         markdown_result = tool_spec.scrapegraph_markdownify(
             url="https://python-tutorial.example.com"

@@ -3,12 +3,14 @@
 from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel
+from scrapegraph_py import Client
 
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
 
 
 class ScrapegraphToolSpec(BaseToolSpec):
-    """ScrapeGraph tool specification for web scraping operations.
+    """
+    ScrapeGraph tool specification for web scraping operations.
 
     This tool provides access to ScrapeGraph AI's web scraping capabilities,
     including smart scraping, content conversion to markdown, search functionality,
@@ -24,14 +26,14 @@ class ScrapegraphToolSpec(BaseToolSpec):
     ]
 
     def __init__(self, api_key: Optional[str] = None) -> None:
-        """Initialize the ScrapeGraph tool specification.
+        """
+        Initialize the ScrapeGraph tool specification.
 
         Args:
             api_key (Optional[str]): ScrapeGraph API key. If not provided,
                                    will attempt to load from environment variable SGAI_API_KEY.
-        """
-        from scrapegraph_py import Client
 
+        """
         if api_key:
             self.client = Client(api_key=api_key)
         else:
@@ -42,7 +44,7 @@ class ScrapegraphToolSpec(BaseToolSpec):
         prompt: str,
         url: str,
         schema: Optional[Union[List[BaseModel], Dict[str, Any]]] = None,
-        **kwargs
+        **kwargs,
     ) -> Union[List[Dict], Dict]:
         """
         Perform intelligent web scraping using ScrapeGraph's SmartScraper.
@@ -58,15 +60,11 @@ class ScrapegraphToolSpec(BaseToolSpec):
 
         """
         try:
-            result = self.client.smartscraper(
-                website_url=url,
-                user_prompt=prompt,
-                output_schema=schema,
-                **kwargs
+            return self.client.smartscraper(
+                website_url=url, user_prompt=prompt, output_schema=schema, **kwargs
             )
-            return result
         except Exception as e:
-            return {"error": f"SmartScraper failed: {str(e)}"}
+            return {"error": f"SmartScraper failed: {e!s}"}
 
     def scrapegraph_markdownify(self, url: str, **kwargs) -> str:
         """
@@ -81,12 +79,13 @@ class ScrapegraphToolSpec(BaseToolSpec):
 
         """
         try:
-            result = self.client.markdownify(website_url=url, **kwargs)
-            return result
+            return self.client.markdownify(website_url=url, **kwargs)
         except Exception as e:
-            return f"Markdownify failed: {str(e)}"
+            return f"Markdownify failed: {e!s}"
 
-    def scrapegraph_search(self, query: str, max_results: Optional[int] = None, **kwargs) -> str:
+    def scrapegraph_search(
+        self, query: str, max_results: Optional[int] = None, **kwargs
+    ) -> str:
         """
         Perform a search query using ScrapeGraph's search functionality.
 
@@ -105,17 +104,16 @@ class ScrapegraphToolSpec(BaseToolSpec):
                 search_params["max_results"] = max_results
             search_params.update(kwargs)
 
-            result = self.client.search(**search_params)
-            return result
+            return self.client.search(**search_params)
         except Exception as e:
-            return f"Search failed: {str(e)}"
+            return f"Search failed: {e!s}"
 
     def scrapegraph_scrape(
         self,
         url: str,
         render_heavy_js: bool = False,
         headers: Optional[Dict[str, str]] = None,
-        **kwargs
+        **kwargs,
     ) -> Dict[str, Any]:
         """
         Perform basic HTML scraping using ScrapeGraph's scrape functionality.
@@ -131,25 +129,21 @@ class ScrapegraphToolSpec(BaseToolSpec):
 
         """
         try:
-            scrape_params = {
-                "website_url": url,
-                "render_heavy_js": render_heavy_js
-            }
+            scrape_params = {"website_url": url, "render_heavy_js": render_heavy_js}
             if headers:
                 scrape_params["headers"] = headers
             scrape_params.update(kwargs)
 
-            result = self.client.scrape(**scrape_params)
-            return result
+            return self.client.scrape(**scrape_params)
         except Exception as e:
-            return {"error": f"Scrape failed: {str(e)}"}
+            return {"error": f"Scrape failed: {e!s}"}
 
     def scrapegraph_agentic_scraper(
         self,
         prompt: str,
         url: str,
         schema: Optional[Union[List[BaseModel], Dict[str, Any]]] = None,
-        **kwargs
+        **kwargs,
     ) -> Union[List[Dict], Dict]:
         """
         Perform agentic web scraping that can navigate and interact with websites.
@@ -165,12 +159,8 @@ class ScrapegraphToolSpec(BaseToolSpec):
 
         """
         try:
-            result = self.client.agentic_scraper(
-                website_url=url,
-                user_prompt=prompt,
-                output_schema=schema,
-                **kwargs
+            return self.client.agentic_scraper(
+                website_url=url, user_prompt=prompt, output_schema=schema, **kwargs
             )
-            return result
         except Exception as e:
-            return {"error": f"Agentic scraper failed: {str(e)}"}
+            return {"error": f"Agentic scraper failed: {e!s}"}
