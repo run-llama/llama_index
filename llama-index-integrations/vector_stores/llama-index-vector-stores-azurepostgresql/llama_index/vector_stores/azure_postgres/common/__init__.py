@@ -1,7 +1,10 @@
 """Common utilities and models for Azure Database for PostgreSQL operations."""
 
 from ._base import (
+    AsyncBaseAzurePGVectorStore,
     BaseAzurePGVectorStore,
+    _table_row_to_node,
+    metadata_filters_to_sql,
 )
 from ._connection import (
     AzurePGConnectionPool,
@@ -51,7 +54,10 @@ __all__ = [
     "VectorOpClass",
     "VectorType",
     # Base classes
+    "AsyncBaseAzurePGVectorStore",
     "BaseAzurePGVectorStore",
+    "metadata_filters_to_sql",
+    "_table_row_to_node",
     # Synchronous connection constructs
     "AzurePGConnectionPool",
     "ConnectionInfo",
