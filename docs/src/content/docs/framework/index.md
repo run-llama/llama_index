@@ -24,7 +24,7 @@ LlamaIndex is the leading framework for building LLM-powered agents over your da
 
 - <span style="font-size: 200%">[LlamaCloud](https://docs.cloud.llamaindex.ai/)</span>
 
-  Managed services for LlamaIndex including [LlamaParse](https://docs.cloud.llamaindex.ai/llamaparse/overview), the world's best document parser.
+  Managed services for LlamaIndex including [LlamaParse](https://developers.llamaindex.ai/python/cloud/llamaparse/), the world's best document parser.
 
 - <span style="font-size: 200%">[Community](#community)</span>
 
