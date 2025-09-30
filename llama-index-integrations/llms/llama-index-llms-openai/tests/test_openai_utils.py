@@ -20,6 +20,7 @@ from llama_index.core.base.llms.types import (
     LogProb,
     MessageRole,
     TextBlock,
+    ToolCallBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.llms.openai import OpenAI
@@ -117,7 +118,14 @@ def azure_chat_messages_with_function_calling() -> List[ChatMessage]:
     return [
         ChatMessage(
             role=MessageRole.ASSISTANT,
-            content=None,
+            blocks=[
+                ToolCallBlock(
+                    block_type="tool_call",
+                    tool_call_id="0123",
+                    tool_name="search_hotels",
+                    tool_kwargs='{\n  "location": "San Diego",\n  "max_price": 300,\n  "features": "beachfront,free breakfast"\n}',
+                )
+            ],
             additional_kwargs={
                 "tool_calls": [
                     ChatCompletionMessageToolCall(

@@ -2,7 +2,7 @@
 Utility functions for the Anthropic SDK LLM integration.
 """
 
-from typing import Any, Dict, List, Sequence, Tuple, Optional
+from typing import Any, Dict, List, Sequence, Tuple, Optional, cast, Union
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -206,7 +206,7 @@ def _anthropic_tool_call_to_tool_call_block(tool_calls: list[ToolUseBlock]):
         blocks.append(
             ToolCallBlock(
                 tool_call_id=tool_call.id,
-                tool_kwargs=tool_call.input,
+                tool_kwargs=cast(Union[Dict[str, Any], str], tool_call.input),
                 tool_name=tool_call.name,
             )
         )

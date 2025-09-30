@@ -494,8 +494,8 @@ class BedrockConverse(FunctionCallingLLM):
                         message=ChatMessage(
                             role=role,
                             blocks=[
-                                *tool_calls,
                                 TextBlock(text=content.get("text", "")),
+                                *tool_calls,
                             ],
                             additional_kwargs={
                                 "tool_call_id": [
@@ -527,8 +527,8 @@ class BedrockConverse(FunctionCallingLLM):
                         message=ChatMessage(
                             role=role,
                             blocks=[
-                                *tool_calls,
                                 TextBlock(text=content.get("text", "")),
+                                *tool_calls,
                             ],
                             additional_kwargs={
                                 "tool_call_id": [tc.tool_call_id for tc in tool_calls],
@@ -548,9 +548,11 @@ class BedrockConverse(FunctionCallingLLM):
                         yield ChatResponse(
                             message=ChatMessage(
                                 role=role,
-                                content=content.get("text", ""),
+                                blocks=[
+                                    TextBlock(text=content.get("text", "")),
+                                    *tool_calls,
+                                ],
                                 additional_kwargs={
-                                    "tool_calls": tool_calls,
                                     "tool_call_id": [
                                         tc.get("toolUseId", "") for tc in tool_calls
                                     ],
@@ -702,8 +704,8 @@ class BedrockConverse(FunctionCallingLLM):
                         message=ChatMessage(
                             role=role,
                             blocks=[
-                                *tool_calls,
                                 TextBlock(text=content.get("text", "")),
+                                *tool_calls,
                             ],
                             additional_kwargs={
                                 "tool_call_id": [tc.tool_call_id for tc in tool_calls],
@@ -732,9 +734,11 @@ class BedrockConverse(FunctionCallingLLM):
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
-                            content=content.get("text", ""),
+                            blocks=[
+                                TextBlock(text=content.get("text", "")),
+                                *tool_calls,
+                            ],
                             additional_kwargs={
-                                "tool_calls": tool_calls,
                                 "tool_call_id": [
                                     tc.get("toolUseId", "") for tc in tool_calls
                                 ],
@@ -755,8 +759,8 @@ class BedrockConverse(FunctionCallingLLM):
                             message=ChatMessage(
                                 role=role,
                                 blocks=[
-                                    *tool_calls,
                                     TextBlock(text=content.get("text", "")),
+                                    *tool_calls,
                                 ],
                                 additional_kwargs={
                                     "tool_call_id": [

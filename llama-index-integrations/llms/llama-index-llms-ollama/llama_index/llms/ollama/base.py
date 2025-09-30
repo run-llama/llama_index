@@ -378,6 +378,7 @@ class Ollama(FunctionCallingLLM):
 
         blocks: list[TextBlock | ToolCallBlock] = []
         tool_calls = response["message"].get("tool_calls", []) or []
+        blocks.append(TextBlock(text=response["message"].get("content", "")))
         for tool_call in tool_calls:
             blocks.append(
                 ToolCallBlock(
@@ -385,7 +386,6 @@ class Ollama(FunctionCallingLLM):
                     tool_kwargs=tool_call["function"]["arguments"],
                 )
             )
-        blocks.append(TextBlock(text=response["message"].get("content", "")))
         thinking = response["message"].get("thinking", None)
         token_counts = self._get_response_token_counts(response)
         if token_counts:
@@ -436,6 +436,7 @@ class Ollama(FunctionCallingLLM):
                 thinking_txt += r["message"].get("thinking", "") or ""
 
                 new_tool_calls = [dict(t) for t in r["message"].get("tool_calls") or []]
+                blocks.append(TextBlock(text=response_txt))
                 for tool_call in new_tool_calls:
                     blocks.append(
                         ToolCallBlock(
@@ -443,7 +444,6 @@ class Ollama(FunctionCallingLLM):
                             tool_kwargs=tool_call["function"]["arguments"],
                         )
                     )
-                blocks.append(TextBlock(text=response_txt))
                 token_counts = self._get_response_token_counts(r)
                 if token_counts:
                     r["usage"] = token_counts
@@ -501,6 +501,7 @@ class Ollama(FunctionCallingLLM):
                 thinking_txt += r["message"].get("thinking", "") or ""
 
                 new_tool_calls = [dict(t) for t in r["message"].get("tool_calls") or []]
+                blocks.append(TextBlock(text=response_txt))
                 for tool_call in new_tool_calls:
                     blocks.append(
                         ToolCallBlock(
@@ -508,7 +509,6 @@ class Ollama(FunctionCallingLLM):
                             tool_kwargs=tool_call["function"]["arguments"],
                         )
                     )
-                blocks.append(TextBlock(text=response_txt))
                 token_counts = self._get_response_token_counts(r)
                 if token_counts:
                     r["usage"] = token_counts
@@ -555,6 +555,7 @@ class Ollama(FunctionCallingLLM):
 
         blocks: list[TextBlock | ToolCallBlock] = []
         tool_calls = response["message"].get("tool_calls", []) or []
+        blocks.append(TextBlock(text=response["message"].get("content", "")))
         for tool_call in tool_calls:
             blocks.append(
                 ToolCallBlock(
@@ -562,7 +563,6 @@ class Ollama(FunctionCallingLLM):
                     tool_kwargs=tool_call["function"]["arguments"],
                 )
             )
-        blocks.append(TextBlock(text=response["message"].get("content", "")))
         thinking = response["message"].get("thinking", None)
         token_counts = self._get_response_token_counts(response)
         if token_counts:
