@@ -89,6 +89,8 @@ def bedrock_converse_integration_thinking():
         max_tokens=12000,
         temperature=1,
         thinking={"budget_tokens": 10000, "type": "enabled"},
+    )
+
 
 def bedrock_converse_integration_no_system_prompt_caching_param():
     """Create a BedrockConverse instance for integration tests with proper credentials."""
@@ -907,6 +909,7 @@ async def test_bedrock_converse_thinking(bedrock_converse_integration_thinking):
                 if isinstance(block, ThinkingBlock)
             )  # test that the streamed chunks have more than 10 characters (reasonable limit)
     assert len(athink_blocks) > 0
+
 
 @pytest.mark.asyncio
 async def test_bedrock_converse_integration_system_prompt_cache_points(
