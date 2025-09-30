@@ -397,7 +397,9 @@ class BedrockConverse(FunctionCallingLLM):
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         # convert Llama Index messages to AWS Bedrock Converse messages
-        converse_messages, system_prompt = messages_to_converse_messages(messages)
+        converse_messages, system_prompt = messages_to_converse_messages(
+            messages, self.model
+        )
         all_kwargs = self._get_all_kwargs(**kwargs)
         if self.thinking is not None:
             all_kwargs["thinking"] = self.thinking
@@ -447,7 +449,9 @@ class BedrockConverse(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         # convert Llama Index messages to AWS Bedrock Converse messages
-        converse_messages, system_prompt = messages_to_converse_messages(messages)
+        converse_messages, system_prompt = messages_to_converse_messages(
+            messages, self.model
+        )
         all_kwargs = self._get_all_kwargs(**kwargs)
         if self.thinking is not None:
             all_kwargs["thinking"] = self.thinking
@@ -596,7 +600,9 @@ class BedrockConverse(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         # convert Llama Index messages to AWS Bedrock Converse messages
-        converse_messages, system_prompt = messages_to_converse_messages(messages)
+        converse_messages, system_prompt = messages_to_converse_messages(
+            messages, self.model
+        )
         all_kwargs = self._get_all_kwargs(**kwargs)
 
         # invoke LLM in AWS Bedrock Converse with retry
@@ -646,7 +652,9 @@ class BedrockConverse(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         # convert Llama Index messages to AWS Bedrock Converse messages
-        converse_messages, system_prompt = messages_to_converse_messages(messages)
+        converse_messages, system_prompt = messages_to_converse_messages(
+            messages, self.model
+        )
         all_kwargs = self._get_all_kwargs(**kwargs)
         if self.thinking is not None:
             all_kwargs["thinking"] = self.thinking
@@ -897,8 +905,11 @@ class BedrockConverse(FunctionCallingLLM):
             return {}
 
         # Convert Bedrock's token count format to match OpenAI's format
+        # Cache token formats respecting Anthropic format
         return {
             "prompt_tokens": usage.get("inputTokens", 0),
             "completion_tokens": usage.get("outputTokens", 0),
             "total_tokens": usage.get("totalTokens", 0),
+            "cache_read_input_tokens": usage.get("cacheReadInputTokens", 0),
+            "cache_creation_input_tokens": usage.get("cacheWriteInputTokens", 0),
         }

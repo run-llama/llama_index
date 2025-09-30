@@ -2,6 +2,8 @@ import pytest
 from llama_index.llms.bedrock_converse.utils import (
     get_model_name,
     tools_to_converse_tools,
+    messages_to_converse_messages,
+    converse_with_retry,
 )
 from io import BytesIO
 from unittest.mock import MagicMock, patch
@@ -14,6 +16,7 @@ from llama_index.core.base.llms.types import (
     CacheControl,
     CachePoint,
     ThinkingBlock,
+    ChatMessage,
 )
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.bedrock_converse.utils import (
@@ -208,3 +211,332 @@ def test_tools_to_converse_tools_with_cache_enabled():
     assert len(result["tools"]) == 2
     assert result["tools"][0]["toolSpec"]["name"] == "search_tool"
     assert result["tools"][1]["cachePoint"]["type"] == "default"
+
+
+# Tests for messages_to_converse_messages function
+def test_messages_to_converse_messages_simple_user_message():
+    """Test converting a simple user message."""
+    messages = [ChatMessage(role=MessageRole.USER, content="Hello, world!")]
+
+    converse_messages, system_prompt = messages_to_converse_messages(messages)
+
+    assert len(converse_messages) == 1
+    assert converse_messages[0]["role"] == "user"
+    assert converse_messages[0]["content"] == [{"text": "Hello, world!"}]
+    assert system_prompt == []
+
+
+def test_messages_to_converse_messages_with_system_prompt():
+    """Test converting messages with a system prompt."""
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content="You are a helpful assistant."),
+        ChatMessage(role=MessageRole.USER, content="Hello!"),
+    ]
+
+    converse_messages, system_prompt = messages_to_converse_messages(messages)
+
+    assert len(converse_messages) == 1
+    assert converse_messages[0]["role"] == "user"
+    assert converse_messages[0]["content"] == [{"text": "Hello!"}]
+    assert len(system_prompt) == 1
+    # System prompt should contain exactly the content we provided, no duplication
+    assert system_prompt[0]["text"] == "You are a helpful assistant."
+    # Ensure no duplication - content should not appear twice
+    system_text = system_prompt[0]["text"]
+    assert system_text.count("You are a helpful assistant.") == 1
+
+
+def test_messages_to_converse_messages_with_cache_point_supported_model():
+    """Test cache point handling with a model that supports caching."""
+    cache_control = CacheControl(type="default")
+    cache_point = CachePoint(cache_control=cache_control)
+
+    messages = [
+        ChatMessage(
+            role=MessageRole.SYSTEM,
+            blocks=[
+                TextBlock(text="System context part 1"),
+                cache_point,
+                TextBlock(text="System context part 2"),
+            ],
+        ),
+        ChatMessage(role=MessageRole.USER, content="Hello!"),
+    ]
+
+    # Use a model that supports caching
+    converse_messages, system_prompt = messages_to_converse_messages(
+        messages, model="anthropic.claude-3-5-sonnet-20241022-v2:0"
+    )
+
+    assert len(converse_messages) == 1
+    assert converse_messages[0]["role"] == "user"
+    # Should produce 3 parts: text + cache_point + text
+    assert len(system_prompt) == 3
+    assert "System context part 1" in system_prompt[0]["text"]
+    assert system_prompt[1]["cachePoint"]["type"] == "default"
+    assert "System context part 2" in system_prompt[2]["text"]
+
+    # Verify no duplication of content
+    assert system_prompt[0]["text"].count("System context part 1") == 1
+    assert system_prompt[2]["text"].count("System context part 2") == 1
+
+    # Verify total input vs output consistency
+    input_system_messages = [msg for msg in messages if msg.role == MessageRole.SYSTEM]
+    assert len(input_system_messages) == 1  # We provided 1 system message
+
+
+def test_messages_to_converse_messages_with_cache_point_unsupported_model(caplog):
+    """Test cache point handling with a model that doesn't support caching."""
+    cache_control = CacheControl(type="default")
+    cache_point = CachePoint(cache_control=cache_control)
+
+    messages = [
+        ChatMessage(
+            role=MessageRole.SYSTEM,
+            blocks=[
+                TextBlock(text="System context part 1"),
+                cache_point,
+                TextBlock(text="System context part 2"),
+            ],
+        ),
+        ChatMessage(role=MessageRole.USER, content="Hello!"),
+    ]
+
+    # Use a model that doesn't support caching
+    converse_messages, system_prompt = messages_to_converse_messages(
+        messages, model="meta.llama3-1-70b-instruct-v1:0"
+    )
+
+    assert len(converse_messages) == 1
+    assert len(system_prompt) == 2  # Cache point should be omitted
+    assert "System context part 1" in system_prompt[0]["text"]
+    assert "System context part 2" in system_prompt[1]["text"]
+    # Check that warning was logged
+    assert "does not support prompt caching" in caplog.text
+
+    # Verify no duplication of content
+    assert system_prompt[0]["text"].count("System context part 1") == 1
+    assert system_prompt[1]["text"].count("System context part 2") == 1
+
+    # Verify total input vs output consistency
+    input_system_messages = [msg for msg in messages if msg.role == MessageRole.SYSTEM]
+    assert len(input_system_messages) == 1  # We provided 1 system message
+
+
+def test_messages_to_converse_messages_with_cache_point_no_model():
+    """Test cache point handling when no model is specified (should include cache point)."""
+    cache_control = CacheControl(type="default")
+    cache_point = CachePoint(cache_control=cache_control)
+
+    messages = [
+        ChatMessage(
+            role=MessageRole.SYSTEM,
+            blocks=[
+                TextBlock(text="System context"),
+                cache_point,
+            ],
+        ),
+        ChatMessage(role=MessageRole.USER, content="Hello!"),
+    ]
+
+    # No model specified - should include cache point
+    converse_messages, system_prompt = messages_to_converse_messages(messages)
+
+    assert "System context" in system_prompt[0]["text"]
+    assert system_prompt[1]["cachePoint"]["type"] == "default"
+
+    # Verify no duplication of content
+    assert system_prompt[0]["text"].count("System context") == 1
+
+    # Verify total input vs output consistency
+    input_system_messages = [msg for msg in messages if msg.role == MessageRole.SYSTEM]
+    assert len(input_system_messages) == 1  # We provided 1 system message
+
+    # Should produce 2 parts: text + cache_point
+    assert len(system_prompt) == 2
+
+
+def test_messages_to_converse_messages_mixed_system_content():
+    """Test system messages with both string content and blocks."""
+    messages = [
+        ChatMessage(role=MessageRole.SYSTEM, content="String system prompt"),
+        ChatMessage(
+            role=MessageRole.SYSTEM, blocks=[TextBlock(text="Block system prompt")]
+        ),
+        ChatMessage(role=MessageRole.USER, content="Hello!"),
+    ]
+
+    converse_messages, system_prompt = messages_to_converse_messages(messages)
+
+    # Both system prompts should be merged into a single message
+    system_text = system_prompt[0]["text"]
+    assert "String system prompt" in system_text
+    assert "Block system prompt" in system_text
+    # Verify total number of input vs output messages
+    input_system_messages = [msg for msg in messages if msg.role == MessageRole.SYSTEM]
+    assert len(input_system_messages) == 2  # We provided 2 system messages
+    # But they should be combined into 1 system prompt
+    assert len(system_prompt) == 1
+    # Ensure no duplication - each piece of content appears only once
+    assert system_text.count("String system prompt") == 1
+    assert system_text.count("Block system prompt") == 1
+
+
+def test_messages_to_converse_messages_empty_text_blocks():
+    """Test handling of empty text blocks."""
+    messages = [
+        ChatMessage(
+            role=MessageRole.USER,
+            blocks=[
+                TextBlock(text=""),  # Empty text block
+                TextBlock(text="Hello!"),
+            ],
+        )
+    ]
+
+    converse_messages, system_prompt = messages_to_converse_messages(messages)
+
+    assert len(converse_messages) == 1
+    # Only non-empty text block should be included
+    assert len(converse_messages[0]["content"]) == 1
+    assert converse_messages[0]["content"][0]["text"] == "Hello!"
+
+
+def test_messages_to_converse_messages_tool_calls():
+    """Test handling of tool calls in messages."""
+    messages = [
+        ChatMessage(
+            role=MessageRole.ASSISTANT,
+            content="I'll search for that information.",
+            additional_kwargs={
+                "tool_calls": [
+                    {
+                        "toolUseId": "tool_123",
+                        "name": "search",
+                        "input": {"query": "test query"},
+                    }
+                ]
+            },
+        ),
+        ChatMessage(
+            role=MessageRole.TOOL,
+            content="Search results here",
+            additional_kwargs={"tool_call_id": "tool_123"},
+        ),
+    ]
+
+    converse_messages, system_prompt = messages_to_converse_messages(messages)
+
+    # Tool calls are combined with the assistant message content in current implementation
+    assert (
+        len(converse_messages) == 2
+    )  # assistant message (with both text and tool call), tool result
+
+    # Check assistant message (contains both text and tool call)
+    assert converse_messages[0]["role"] == "assistant"
+    assert len(converse_messages[0]["content"]) == 2  # text + tool call
+    assert (
+        converse_messages[0]["content"][0]["text"]
+        == "I'll search for that information."
+    )
+    assert "toolUse" in converse_messages[0]["content"][1]
+    assert converse_messages[0]["content"][1]["toolUse"]["toolUseId"] == "tool_123"
+    assert converse_messages[0]["content"][1]["toolUse"]["name"] == "search"
+
+    # Check tool result
+    assert (
+        converse_messages[1]["role"] == "user"
+    )  # Bedrock requires tool results as user role
+    assert "toolResult" in converse_messages[1]["content"][0]
+    assert converse_messages[1]["content"][0]["toolResult"]["toolUseId"] == "tool_123"
+
+
+# Tests for converse_with_retry function
+class MockClient:
+    def __init__(self):
+        self.exceptions = MagicMock()
+        self.exceptions.ThrottlingException = Exception
+
+    def converse(self, **kwargs):
+        return {"output": {"message": {"content": [{"text": "Test response"}]}}}
+
+    def converse_stream(self, **kwargs):
+        def stream_generator():
+            yield {
+                "contentBlockDelta": {
+                    "delta": {"text": "Test "},
+                    "contentBlockIndex": 0,
+                }
+            }
+            yield {
+                "contentBlockDelta": {
+                    "delta": {"text": "stream"},
+                    "contentBlockIndex": 0,
+                }
+            }
+
+        return {"stream": stream_generator()}
+
+
+def test_converse_with_retry_string_system_prompt():
+    """Test converse_with_retry with string system prompt."""
+    client = MockClient()
+    messages = [{"role": "user", "content": [{"text": "Hello"}]}]
+
+    # Mock the converse method to capture the kwargs
+    original_converse = client.converse
+    captured_kwargs = {}
+
+    def mock_converse(**kwargs):
+        captured_kwargs.update(kwargs)
+        return original_converse(**kwargs)
+
+    client.converse = mock_converse
+
+    response = converse_with_retry(
+        client=client,
+        model="anthropic.claude-3-sonnet-20240229-v1:0",
+        messages=messages,
+        system_prompt="You are a helpful assistant.",
+        max_retries=1,
+        stream=False,
+    )
+
+    assert response is not None
+    assert "system" in captured_kwargs
+    assert captured_kwargs["system"] == [{"text": "You are a helpful assistant."}]
+
+
+def test_converse_with_retry_list_system_prompt():
+    """Test converse_with_retry with list system prompt."""
+    client = MockClient()
+    messages = [{"role": "user", "content": [{"text": "Hello"}]}]
+
+    # Mock the converse method to capture the kwargs
+    original_converse = client.converse
+    captured_kwargs = {}
+
+    def mock_converse(**kwargs):
+        captured_kwargs.update(kwargs)
+        return original_converse(**kwargs)
+
+    client.converse = mock_converse
+
+    system_prompt = [
+        {"text": "You are a helpful assistant."},
+        {"cachePoint": {"type": "default"}},
+        {"text": "Additional context."},
+    ]
+
+    response = converse_with_retry(
+        client=client,
+        model="anthropic.claude-3-5-sonnet-20241022-v2:0",
+        messages=messages,
+        system_prompt=system_prompt,
+        max_retries=1,
+        stream=False,
+    )
+
+    assert response is not None
+    assert "system" in captured_kwargs
+    assert captured_kwargs["system"] == system_prompt
