@@ -871,6 +871,11 @@ async def test_bedrock_converse_thinking(bedrock_converse_integration_thinking):
                     if isinstance(block, ThinkingBlock)
                 ]
             )
+            assert all(
+                len((block.content or "")) > 10
+                for block in r.message.blocks
+                if isinstance(block, ThinkingBlock)
+            )  # test that the streamed chunks have more than 10 characters (reasonable limit)
     assert len(think_blocks) > 0
     res_astream_chat = bedrock_converse_integration_thinking.astream_chat(messages)
     athink_blocks = []
@@ -883,4 +888,9 @@ async def test_bedrock_converse_thinking(bedrock_converse_integration_thinking):
                     if isinstance(block, ThinkingBlock)
                 ]
             )
+            assert all(
+                len((block.content or "")) > 10
+                for block in r.message.blocks
+                if isinstance(block, ThinkingBlock)
+            )  # test that the streamed chunks have more than 10 characters (reasonable limit)
     assert len(athink_blocks) > 0

@@ -530,9 +530,7 @@ class BedrockConverse(FunctionCallingLLM):
                                 "status": [],  # Will be populated when tool results come in
                             },
                         ),
-                        delta=content_delta.get("text", None)
-                        or content_delta.get("thinking", None)
-                        or "",
+                        delta=content_delta.get("text", ""),
                         raw=chunk,
                         additional_kwargs=self._get_response_token_counts(dict(chunk)),
                     )
