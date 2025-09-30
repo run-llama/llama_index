@@ -237,7 +237,7 @@ class BaseIndex(Generic[IS], ABC):
             )
 
             self.insert_nodes(nodes, **insert_kwargs)
-            self.docstore.set_document_hash(document.get_doc_id(), document.hash)
+            self.docstore.set_document_hash(document.id_, document.hash)
 
     async def ainsert(self, document: Document, **insert_kwargs: Any) -> None:
         """Asynchronously insert a document."""
@@ -250,7 +250,7 @@ class BaseIndex(Generic[IS], ABC):
             )
 
             await self.ainsert_nodes(nodes, **insert_kwargs)
-            await self.docstore.aset_document_hash(document.get_doc_id(), document.hash)
+            await self.docstore.aset_document_hash(document.id_, document.hash)
 
     @abstractmethod
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
@@ -383,7 +383,7 @@ class BaseIndex(Generic[IS], ABC):
         """
         with self._callback_manager.as_trace("update_ref_doc"):
             self.delete_ref_doc(
-                document.get_doc_id(),
+                document.id_,
                 delete_from_docstore=True,
                 **update_kwargs.pop("delete_kwargs", {}),
             )
@@ -403,7 +403,7 @@ class BaseIndex(Generic[IS], ABC):
         """
         with self._callback_manager.as_trace("aupdate_ref_doc"):
             await self.adelete_ref_doc(
-                document.get_doc_id(),
+                document.id_,
                 delete_from_docstore=True,
                 **update_kwargs.pop("delete_kwargs", {}),
             )
@@ -440,7 +440,7 @@ class BaseIndex(Generic[IS], ABC):
             refreshed_documents = [False] * len(documents)
             for i, document in enumerate(documents):
                 existing_doc_hash = self._docstore.get_document_hash(
-                    document.get_doc_id()
+                    document.id_
                 )
                 if existing_doc_hash is None:
                     self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
@@ -467,7 +467,7 @@ class BaseIndex(Generic[IS], ABC):
             refreshed_documents = [False] * len(documents)
             for i, document in enumerate(documents):
                 existing_doc_hash = await self._docstore.aget_document_hash(
-                    document.get_doc_id()
+                    document.id_
                 )
                 if existing_doc_hash is None:
                     await self.ainsert(
