@@ -1,4 +1,6 @@
 import os
+import random
+import string
 from llama_index.core.base.llms.types import ImageBlock, TextBlock
 import pytest
 from llama_index.llms.bedrock_converse import BedrockConverse
@@ -10,6 +12,8 @@ from llama_index.core.base.llms.types import (
     ImageBlock,
     TextBlock,
     ToolCallBlock,
+    CachePoint,
+    CacheControl,
 )
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.tools import FunctionTool
@@ -71,6 +75,18 @@ def bedrock_converse_integration():
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
         max_tokens=EXP_MAX_TOKENS,
         system_prompt_caching=True,
+    )
+
+
+@pytest.fixture(scope="module")
+def bedrock_converse_integration_no_system_prompt_caching_param():
+    """Create a BedrockConverse instance for integration tests with proper credentials."""
+    return BedrockConverse(
+        model=EXP_MODEL,
+        region_name=os.getenv("AWS_REGION", "us-east-1"),
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        max_tokens=EXP_MAX_TOKENS,
     )
 
 
@@ -868,3 +884,166 @@ async def test_bedrock_converse_tool_calling(bedrock_converse_integration):
             if isinstance(block, ToolCallBlock)
         ]
     )
+
+async def test_bedrock_converse_integration_system_prompt_cache_points(
+    bedrock_converse_integration_no_system_prompt_caching_param,
+):
+    """
+    Test system prompt cache point functionality with BedrockConverse integration.
+
+    This test verifies:
+    1. Cache point creation on first call (cache write tokens > 0)
+    2. Cache point usage on second call (cache read tokens > 0)
+    3. Proper token accounting for cached vs non-cached content
+
+    Uses a system prompt with 1026+ tokens to exceed the 1024 token minimum for caching.
+    Each test run uses a unique random identifier to ensure fresh cache creation.
+    """
+    llm = bedrock_converse_integration_no_system_prompt_caching_param
+
+    # Generate a unique random string for this test run to ensure fresh cache
+    # Use fixed length to ensure consistent token counting
+    random_id = "".join(random.choices(string.ascii_letters + string.digits, k=8))
+    # Create a system prompt with enough tokens for caching
+    # Approximate token calculation: "You are a recruiting expert for session ABC12345! " ≈ 11-12 tokens
+    base_text = f"You are a recruiting expert for session {random_id}! "
+
+    # Calculate repetitions needed to exceed 1024 tokens (using conservative estimate of 10 tokens per repetition)
+    target_tokens = 1100  # Target slightly above minimum to ensure we exceed 1024
+    estimated_tokens_per_repetition = 10
+    repetitions = target_tokens // estimated_tokens_per_repetition
+
+    repeated_text = base_text * repetitions
+
+    # Additional uncached text to test partial caching
+    uncached_instructions = (
+        "Please focus on providing helpful responses to job seekers."
+    )
+
+    # First call - should establish cache
+    cache_test_messages_1 = [
+        ChatMessage(
+            role=MessageRole.SYSTEM,
+            blocks=[
+                TextBlock(text=repeated_text),
+                CachePoint(cache_control=CacheControl(type="default")),
+                TextBlock(text=uncached_instructions),
+            ],
+        ),
+        ChatMessage(
+            role=MessageRole.USER, content="Do you have data science jobs in Toronto?"
+        ),
+    ]
+
+    response_1 = await llm.achat(messages=cache_test_messages_1)
+    # Verify cache write tokens are present (first call should write to cache)
+    additional_kwargs_1 = getattr(response_1, "additional_kwargs", {})
+    assert "cache_creation_input_tokens" in additional_kwargs_1, (
+        "First call should show cache creation tokens"
+    )
+    cache_write_tokens_1 = additional_kwargs_1.get("cache_creation_input_tokens", 0)
+    assert cache_write_tokens_1 > 0, (
+        f"Expected cache write tokens > 0, got {cache_write_tokens_1}"
+    )
+
+    # Second call - should read from cache with different user message
+    cache_test_messages_2 = [
+        ChatMessage(
+            role=MessageRole.SYSTEM,
+            blocks=[
+                TextBlock(text=repeated_text),  # Same cached content
+                CachePoint(cache_control=CacheControl(type="default")),
+                TextBlock(text=uncached_instructions),  # Same uncached content
+            ],
+        ),
+        ChatMessage(
+            role=MessageRole.USER,
+            content="What are the environmental impacts of solar energy?",
+        ),
+    ]
+
+    response_2 = await llm.achat(messages=cache_test_messages_2)
+
+    # Verify cache read tokens are present (second call should read from cache)
+    additional_kwargs_2 = getattr(response_2, "additional_kwargs", {})
+    assert "cache_read_input_tokens" in additional_kwargs_2, (
+        "Second call should show cache read tokens"
+    )
+    cache_read_tokens_2 = additional_kwargs_2.get("cache_read_input_tokens", 0)
+    assert cache_read_tokens_2 > 0, (
+        f"Expected cache read tokens > 0, got {cache_read_tokens_2}"
+    )
+
+    # Verify cache efficiency - cache read tokens should be close to cache write tokens
+    # (since we're using the same cached content)
+    cache_efficiency_ratio = cache_read_tokens_2 / cache_write_tokens_1
+    assert 0.95 <= cache_efficiency_ratio <= 1.05, (
+        f"Cache efficiency seems off. Write: {cache_write_tokens_1}, "
+        f"Read: {cache_read_tokens_2}, Ratio: {cache_efficiency_ratio:.2f}"
+    )
+
+
+@needs_aws_creds
+@pytest.mark.asyncio
+async def test_bedrock_converse_integration_system_prompt_caching_auto_write(
+    bedrock_converse_integration,
+):
+    """
+    Test automatic system prompt cache writing when system_prompt_caching=True.
+
+    This test verifies:
+    1. Cache write tokens are properly recorded on first call
+
+
+    Uses the bedrock_converse_integration fixture which has system_prompt_caching=True.
+    Each test run uses a unique random identifier to ensure fresh cache creation.
+    """
+    llm = bedrock_converse_integration
+
+    # Generate a unique random string for this test run to ensure fresh cache
+    # Use fixed length to ensure consistent token counting
+    random_id = "".join(random.choices(string.ascii_letters + string.digits, k=8))
+
+    # Create a system prompt with enough tokens for automatic caching
+    # The system_prompt_caching=True should automatically cache system prompts >= 1024 tokens
+    base_text = (
+        f"You are an AI assistant specialized in {random_id} analysis and research. "
+    )
+
+    # Calculate repetitions needed to exceed 1024 tokens (using conservative estimate of 12 tokens per repetition)
+    target_tokens = 1100  # Target slightly above minimum to ensure we exceed 1024
+    estimated_tokens_per_repetition = 12
+    repetitions = target_tokens // estimated_tokens_per_repetition
+
+    # Create system prompt that will be automatically cached
+    large_system_prompt = base_text * repetitions + (
+        "Please provide detailed, helpful, and accurate responses. "
+        "Focus on delivering high-quality information with proper context and examples."
+    )
+
+    # First call - should trigger automatic cache write for system prompt
+    messages = [
+        ChatMessage(
+            role=MessageRole.SYSTEM,
+            content=large_system_prompt,
+        ),
+        ChatMessage(
+            role=MessageRole.USER,
+            content="What are the key benefits of renewable energy?",
+        ),
+    ]
+
+    response = await llm.achat(messages=messages)
+
+    # Verify cache write tokens are present (first call should write to cache automatically)
+    additional_kwargs = getattr(response, "additional_kwargs", {})
+    assert "cache_creation_input_tokens" in additional_kwargs, (
+        "First call should show cache creation tokens when system_prompt_caching=True"
+    )
+    cache_write_tokens = additional_kwargs.get("cache_creation_input_tokens", 0)
+    assert cache_write_tokens > 0, (
+        f"Expected cache write tokens > 0 with automatic caching, got {cache_write_tokens}"
+    )
+
+    # Verify response is meaningful
+    assert len(str(response.message.content)) > 50, "Response should be substantial"
