@@ -885,6 +885,7 @@ async def test_bedrock_converse_tool_calling(bedrock_converse_integration):
         ]
     )
 
+
 async def test_bedrock_converse_integration_system_prompt_cache_points(
     bedrock_converse_integration_no_system_prompt_caching_param,
 ):
