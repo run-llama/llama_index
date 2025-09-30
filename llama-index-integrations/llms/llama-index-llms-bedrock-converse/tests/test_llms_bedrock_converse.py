@@ -92,6 +92,7 @@ def bedrock_converse_integration_thinking():
     )
 
 
+@pytest.fixture(scope="module")
 def bedrock_converse_integration_no_system_prompt_caching_param():
     """Create a BedrockConverse instance for integration tests with proper credentials."""
     return BedrockConverse(
@@ -846,6 +847,7 @@ async def test_bedrock_converse_agent_with_void_tool_and_continued_conversation(
 
 
 @needs_aws_creds
+@pytest.mark.asyncio
 async def test_bedrock_converse_thinking(bedrock_converse_integration_thinking):
     messages = [
         ChatMessage(
@@ -911,6 +913,7 @@ async def test_bedrock_converse_thinking(bedrock_converse_integration_thinking):
     assert len(athink_blocks) > 0
 
 
+@needs_aws_creds
 @pytest.mark.asyncio
 async def test_bedrock_converse_integration_system_prompt_cache_points(
     bedrock_converse_integration_no_system_prompt_caching_param,
