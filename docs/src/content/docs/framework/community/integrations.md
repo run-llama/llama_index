@@ -19,6 +19,7 @@ The full set of data loaders are found on [LlamaHub](https://llamahub.ai/)
 The full set of agent tools are found on [LlamaHub](https://llamahub.ai/)
 
 - [MCP Toolbox](/python/examples/tools/mcp_toolbox)
+- [Roundtable MCP Server](/python/examples/tools/roundtable_mcp_server)
 
 ## LLMs
 
