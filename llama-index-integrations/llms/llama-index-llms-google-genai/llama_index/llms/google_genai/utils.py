@@ -28,6 +28,7 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     DocumentBlock,
     VideoBlock,
+    ThinkingBlock,
 )
 from llama_index.core.program.utils import _repair_incomplete_json
 from tenacity import (
@@ -86,6 +87,7 @@ def merge_neighboring_same_role_messages(
         current_message = messages[i].model_copy()
         # Initialize merged content with current message content
         merged_content = current_message.blocks
+        merged_kwargs = current_message.additional_kwargs
 
         # Check if the next message exists and has the same role
         while (
@@ -97,12 +99,13 @@ def merge_neighboring_same_role_messages(
             i += 1
             next_message = messages[i]
             merged_content.extend(next_message.blocks)
+            merged_kwargs.update(next_message.additional_kwargs)
 
         # Create a new ChatMessage or similar object with merged content
         merged_message = ChatMessage(
             role=ROLES_TO_GEMINI[current_message.role],
             blocks=merged_content,
-            additional_kwargs=current_message.additional_kwargs,
+            additional_kwargs=merged_kwargs,
         )
 
         merged_messages.append(merged_message)
@@ -147,8 +150,11 @@ def chat_from_gemini_response(
         **(top_candidate.model_dump()),
         **response_feedback,
     }
+    thought_tokens: Optional[int] = None
     if response.usage_metadata:
         raw["usage_metadata"] = response.usage_metadata.model_dump()
+        if response.usage_metadata.thoughts_token_count:
+            thought_tokens = response.usage_metadata.thoughts_token_count
 
     if hasattr(response, "cached_content") and response.cached_content:
         raw["cached_content"] = response.cached_content
@@ -164,9 +170,12 @@ def chat_from_gemini_response(
         for part in parts:
             if part.text:
                 if part.thought:
-                    if "thoughts" not in additional_kwargs:
-                        additional_kwargs["thoughts"] = ""
-                    additional_kwargs["thoughts"] += part.text
+                    content_blocks.append(
+                        ThinkingBlock(
+                            content=part.text,
+                            additional_information=part.model_dump(exclude={"text"}),
+                        )
+                    )
                 else:
                     content_blocks.append(TextBlock(text=part.text))
                 additional_kwargs["thought_signatures"].append(part.thought_signature)
@@ -189,6 +198,18 @@ def chat_from_gemini_response(
                         "thought_signature": part.thought_signature,
                     }
                 )
+    if thought_tokens:
+        thinking_blocks = [
+            i
+            for i, block in enumerate(content_blocks)
+            if isinstance(block, ThinkingBlock)
+        ]
+        if len(thinking_blocks) == 1:
+            content_blocks[thinking_blocks[0]].num_tokens = thought_tokens
+        elif len(thinking_blocks) > 1:
+            content_blocks[thinking_blocks[-1]].additional_information.update(
+                {"total_thinking_tokens": thought_tokens}
+            )
 
     role = ROLES_FROM_GEMINI[top_candidate.content.role]
     return ChatResponse(
@@ -203,7 +224,7 @@ def chat_from_gemini_response(
 async def create_file_part(
     file_bytes: bytes, mime_type: str, use_file_api: bool, client: Optional[Client]
 ) -> types.PartUnion:
-    """Create a part object for the given file."""
+    """Create a Part or File object for the given file depending on its size."""
     if (
         not use_file_api
         or len(file_bytes)
@@ -289,12 +310,22 @@ async def chat_message_to_gemini(
         elif isinstance(block, DocumentBlock):
             file_buffer = block.resolve_document()
             file_bytes = file_buffer.read()
-            mimetype = (
+            mime_type = (
                 block.document_mimetype
                 if block.document_mimetype is not None
                 else "application/pdf"
             )
-            part = types.Part.from_bytes(data=file_bytes, mime_type=mimetype)
+            part = await create_file_part(file_bytes, mime_type, use_file_api, client)
+
+            if isinstance(part, types.File):
+                return part  # Return the file as it is a message content and not a part
+        elif isinstance(block, ThinkingBlock):
+            if block.content:
+                part = types.Part.from_text(text=block.content)
+                part.thought = True
+                part.thought_signature = block.additional_information.get(
+                    "thought_signature", None
+                )
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)

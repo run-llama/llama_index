@@ -1,0 +1,54 @@
+name: Pre-release for llama-index
+
+on:
+  workflow_dispatch:
+    inputs:
+      version-type:
+        description: "The type of release to prepare"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  prepare-release:
+    if: github.repository == 'run-llama/llama_index'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Install uv and set python version
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.10"
+
+      - name: Prepare
+        id: prepare
+        shell: bash
+        working-directory: llama-dev
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          uv run -- llama-dev --repo-root .. release prepare --version-type ${{ github.event.inputs.version-type }}
+          uv run -- llama-dev --repo-root .. release changelog
+          VERSION=$(uv run -- llama-dev --repo-root .. pkg info --json . | jq -r .version)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Create Release PR
+        id: rpr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: Prepare release
+          signoff: false
+          branch: ${{ vars.RELEASE_BRANCH_NAME }}
+          delete-branch: true
+          title: "Release ${{ steps.prepare.outputs.version }}"
+          draft: false

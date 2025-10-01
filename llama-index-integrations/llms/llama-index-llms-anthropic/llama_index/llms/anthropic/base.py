@@ -25,6 +25,7 @@ from llama_index.core.base.llms.types import (
 )
 from llama_index.core.base.llms.types import TextBlock as LITextBlock
 from llama_index.core.base.llms.types import CitationBlock as LICitationBlock
+from llama_index.core.base.llms.types import ThinkingBlock as LIThinkingBlock
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_TEMPERATURE
@@ -204,6 +205,9 @@ class Anthropic(FunctionCallingLLM):
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
+        # set the temperature to 1 when thinking is enabled, as per: https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking#important-considerations-when-using-extended-thinking
+        if thinking_dict and thinking_dict.get("type") == "enabled":
+            temperature = 1
 
         super().__init__(
             temperature=temperature,
@@ -340,11 +344,8 @@ class Anthropic(FunctionCallingLLM):
 
     def _get_blocks_and_tool_calls_and_thinking(
         self, response: Any
-    ) -> Tuple[
-        List[ContentBlock], List[Dict[str, Any]], Dict[str, Any], List[Dict[str, Any]]
-    ]:
+    ) -> Tuple[List[ContentBlock], List[Dict[str, Any]], List[Dict[str, Any]]]:
         tool_calls = []
-        thinking = None
         blocks: List[ContentBlock] = []
         citations: List[TextCitation] = []
         tracked_citations: Set[str] = set()
@@ -375,11 +376,18 @@ class Anthropic(FunctionCallingLLM):
                     citations.extend(content_block.citations)
             # this assumes a single thinking block, which as of 2025-03-06, is always true
             elif isinstance(content_block, ThinkingBlock):
-                thinking = content_block.model_dump()
+                blocks.append(
+                    LIThinkingBlock(
+                        content=content_block.thinking,
+                        additional_information=content_block.model_dump(
+                            exclude={"thinking"}
+                        ),
+                    )
+                )
             elif isinstance(content_block, ToolUseBlock):
                 tool_calls.append(content_block.model_dump())
 
-        return blocks, tool_calls, thinking, [x.model_dump() for x in citations]
+        return blocks, tool_calls, [x.model_dump() for x in citations]
 
     @llm_chat_callback()
     def chat(
@@ -397,8 +405,8 @@ class Anthropic(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        blocks, tool_calls, thinking, citations = (
-            self._get_blocks_and_tool_calls_and_thinking(response)
+        blocks, tool_calls, citations = self._get_blocks_and_tool_calls_and_thinking(
+            response
         )
 
         return AnthropicChatResponse(
@@ -407,7 +415,6 @@ class Anthropic(FunctionCallingLLM):
                 blocks=blocks,
                 additional_kwargs={
                     "tool_calls": tool_calls,
-                    "thinking": thinking,
                 },
             ),
             citations=citations,
@@ -570,8 +577,8 @@ class Anthropic(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        blocks, tool_calls, thinking, citations = (
-            self._get_blocks_and_tool_calls_and_thinking(response)
+        blocks, tool_calls, citations = self._get_blocks_and_tool_calls_and_thinking(
+            response
         )
 
         return AnthropicChatResponse(
@@ -580,7 +587,6 @@ class Anthropic(FunctionCallingLLM):
                 blocks=blocks,
                 additional_kwargs={
                     "tool_calls": tool_calls,
-                    "thinking": thinking,
                 },
             ),
             citations=citations,

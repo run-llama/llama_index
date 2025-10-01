@@ -17,6 +17,7 @@ from llama_index.core.base.llms.types import (
     AudioBlock,
     CachePoint,
     CacheControl,
+    ThinkingBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 from llama_index.core.bridge.pydantic import ValidationError
@@ -455,3 +456,20 @@ def test_video_block_store_as_base64(mp4_bytes: bytes, mp4_base64: bytes):
     assert VideoBlock(video=mp4_bytes).video == mp4_base64
     # Store already encoded data
     assert VideoBlock(video=mp4_base64).video == mp4_base64
+
+
+def test_thinking_block():
+    block = ThinkingBlock()
+    assert block.block_type == "thinking"
+    assert block.additional_information == {}
+    assert block.content is None
+    assert block.num_tokens is None
+    block = ThinkingBlock(
+        content="hello world",
+        num_tokens=100,
+        additional_information={"total_thinking_tokens": 1000},
+    )
+    assert block.block_type == "thinking"
+    assert block.additional_information == {"total_thinking_tokens": 1000}
+    assert block.content == "hello world"
+    assert block.num_tokens == 100

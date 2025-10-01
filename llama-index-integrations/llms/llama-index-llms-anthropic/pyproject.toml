@@ -27,15 +27,15 @@ dev = [
 
 [project]
 name = "llama-index-llms-anthropic"
-version = "0.8.6"
+version = "0.9.3"
 description = "llama-index llms anthropic integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "anthropic[bedrock, vertex]>=0.62.0",
-    "llama-index-core>=0.13.0,<0.15",
+    "anthropic[bedrock, vertex]>=0.69.0",
+    "llama-index-core>=0.14.3,<0.15",
 ]
 
 [tool.codespell]

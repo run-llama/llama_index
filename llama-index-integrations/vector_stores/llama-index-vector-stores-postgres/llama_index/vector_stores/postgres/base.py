@@ -516,7 +516,7 @@ class PGVectorStore(BasePydanticVectorStore):
 
     def _create_tables_if_not_exists(self) -> None:
         with self._session() as session, session.begin():
-            self._base.metadata.create_all(session.connection())
+            self._table_class.__table__.create(session.connection(), checkfirst=True)
 
     def _create_extension(self) -> None:
         import sqlalchemy

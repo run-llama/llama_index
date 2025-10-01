@@ -36,6 +36,8 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
+    ThinkingBlock,
+    TextBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel, Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
@@ -392,8 +394,8 @@ class GoogleGenAI(FunctionCallingLLM):
                     llama_resp.message.additional_kwargs.get("tool_calls", [])
                 )
                 llama_resp.delta = content_delta
-                llama_resp.message.content = content
-                llama_resp.message.additional_kwargs["thoughts"] = thoughts
+                llama_resp.message.blocks = [TextBlock(text=content)]
+                llama_resp.message.blocks.append(ThinkingBlock(content=thoughts))
                 llama_resp.message.additional_kwargs["tool_calls"] = existing_tool_calls
                 yield llama_resp
 
@@ -452,8 +454,10 @@ class GoogleGenAI(FunctionCallingLLM):
                                 )
                             )
                             llama_resp.delta = content_delta
-                            llama_resp.message.content = content
-                            llama_resp.message.additional_kwargs["thoughts"] = thoughts
+                            llama_resp.message.blocks = [TextBlock(text=content)]
+                            llama_resp.message.blocks.append(
+                                ThinkingBlock(content=thoughts)
+                            )
                             llama_resp.message.additional_kwargs["tool_calls"] = (
                                 existing_tool_calls
                             )

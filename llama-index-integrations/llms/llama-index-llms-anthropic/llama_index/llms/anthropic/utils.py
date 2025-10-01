@@ -14,6 +14,7 @@ from llama_index.core.base.llms.types import (
     CachePoint,
     CitableBlock,
     CitationBlock,
+    ThinkingBlock,
     ContentBlock,
 )
 
@@ -26,7 +27,7 @@ from anthropic.types import (
     CacheControlEphemeralParam,
     Base64PDFSourceParam,
 )
-from anthropic.types import ContentBlock as AnthropicContentBlock
+from anthropic.types import ContentBlockParam as AnthropicContentBlock
 from anthropic.types.beta import (
     BetaSearchResultBlockParam,
     BetaTextBlockParam,
@@ -50,6 +51,7 @@ BEDROCK_INFERENCE_PROFILE_CLAUDE_MODELS: Dict[str, int] = {
     "anthropic.claude-opus-4-20250514-v1:0": 200000,
     "anthropic.claude-sonnet-4-20250514-v1:0": 1000000,
     "anthropic.claude-opus-4-1-20250805-v1:0": 200000,
+    "anthropic.claude-sonnet-4-5-20250929-v1:0": 200000,
 }
 BEDROCK_CLAUDE_MODELS: Dict[str, int] = {
     "anthropic.claude-instant-v1": 100000,
@@ -69,6 +71,7 @@ VERTEX_CLAUDE_MODELS: Dict[str, int] = {
     "claude-opus-4@20250514": 200000,
     "claude-sonnet-4@20250514": 200000,
     "claude-opus-4-1@20250805": 200000,
+    "claude-sonnet-4-5@20250929": 200000,
 }
 
 # Anthropic API/SDK identifiers
@@ -98,6 +101,9 @@ ANTHROPIC_MODELS: Dict[str, int] = {
     "claude-sonnet-4-20250514": 1000000,
     "claude-4-sonnet-20250514": 1000000,
     "claude-opus-4-1-20250805": 200000,
+    "claude-opus-4-1": 200000,
+    "claude-sonnet-4-5-20250929": 200000,
+    "claude-sonnet-4-5": 200000,
 }
 
 # All provider Anthropic identifiers
@@ -201,9 +207,6 @@ def blocks_to_anthropic_blocks(
     if kwargs.get("cache_control"):
         global_cache_control = CacheControlEphemeralParam(**kwargs["cache_control"])
 
-    if kwargs.get("thinking"):
-        anthropic_blocks.append(ThinkingBlockParam(**kwargs["thinking"]))
-
     for block in blocks:
         if isinstance(block, TextBlock):
             if block.text:
@@ -250,6 +253,17 @@ def blocks_to_anthropic_blocks(
             )
             if global_cache_control:
                 anthropic_blocks[-1]["cache_control"] = global_cache_control
+
+        elif isinstance(block, ThinkingBlock):
+            if block.content:
+                signature = block.additional_information.get("signature", "")
+                anthropic_blocks.append(
+                    ThinkingBlockParam(
+                        signature=signature, thinking=block.content, type="thinking"
+                    )
+                )
+                if global_cache_control:
+                    anthropic_blocks[-1]["cache_control"] = global_cache_control
 
         elif isinstance(block, CachePoint):
             if len(anthropic_blocks) > 0:
