@@ -336,7 +336,7 @@ async def test_agents_handle_missing_thinking_delta():
 @pytest.mark.asyncio
 async def test_function_agent_ollama_reasoning_extraction():
     """Test FunctionAgent extracts thinking_delta from Ollama's raw.choices[0].delta.reasoning format."""
-    
+
     class MockOllamaLLM(MockLLM):
         @property
         def metadata(self) -> LLMMetadata:
@@ -348,18 +348,19 @@ async def test_function_agent_ollama_reasoning_extraction():
             async def _gen():
                 # Simulate Ollama's response structure with object-based access
                 from unittest.mock import MagicMock
-                
+
                 mock_raw = MagicMock()
                 mock_raw.choices = [MagicMock()]
                 mock_raw.choices[0].delta = MagicMock()
                 mock_raw.choices[0].delta.reasoning = "Ollama thinking process..."
-                
+
                 yield ChatResponse(
                     message=ChatMessage(role="assistant", content="Response"),
                     delta="Response",
                     additional_kwargs={},  # No thinking_delta in additional_kwargs
                     raw=mock_raw,
                 )
+
             return _gen()
 
         def get_tool_calls_from_response(
@@ -371,12 +372,14 @@ async def test_function_agent_ollama_reasoning_extraction():
     agent = FunctionAgent(llm=mock_llm, streaming=True)
     mock_context = AsyncMock(spec=Context)
     stream_events = []
-    mock_context.write_event_to_stream.side_effect = lambda event: stream_events.append(event)
+    mock_context.write_event_to_stream.side_effect = lambda event: stream_events.append(
+        event
+    )
 
     await agent._get_streaming_response(
         mock_context, [ChatMessage(role="user", content="test")], []
     )
-    
+
     agent_streams = [event for event in stream_events if isinstance(event, AgentStream)]
     assert len(agent_streams) == 1
     assert agent_streams[0].thinking_delta == "Ollama thinking process..."
@@ -385,7 +388,7 @@ async def test_function_agent_ollama_reasoning_extraction():
 @pytest.mark.asyncio
 async def test_function_agent_groq_reasoning_extraction():
     """Test FunctionAgent extracts thinking_delta from Groq's dictionary-based raw['choices'][0]['delta']['reasoning'] format."""
-    
+
     class MockGroqLLM(MockLLM):
         @property
         def metadata(self) -> LLMMetadata:
@@ -405,12 +408,13 @@ async def test_function_agent_groq_reasoning_extraction():
                             {
                                 "delta": {
                                     "reasoning": "Groq thinking process...",
-                                    "content": "Response"
+                                    "content": "Response",
                                 }
                             }
                         ]
                     },
                 )
+
             return _gen()
 
         def get_tool_calls_from_response(
@@ -422,12 +426,14 @@ async def test_function_agent_groq_reasoning_extraction():
     agent = FunctionAgent(llm=mock_llm, streaming=True)
     mock_context = AsyncMock(spec=Context)
     stream_events = []
-    mock_context.write_event_to_stream.side_effect = lambda event: stream_events.append(event)
+    mock_context.write_event_to_stream.side_effect = lambda event: stream_events.append(
+        event
+    )
 
     await agent._get_streaming_response(
         mock_context, [ChatMessage(role="user", content="test")], []
     )
-    
+
     agent_streams = [event for event in stream_events if isinstance(event, AgentStream)]
     assert len(agent_streams) == 1
     assert agent_streams[0].thinking_delta == "Groq thinking process..."
