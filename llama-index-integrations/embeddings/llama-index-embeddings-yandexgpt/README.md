@@ -30,4 +30,4 @@ embeddings = YandexGPTEmbedding(
 
 ## Example
 
-See the [example notebook](../../../docs/docs/examples/embeddings/yandexgpt.ipynb) for a detailed walkthrough of using YandexGPT embeddings with LlamaIndex.
+See the [example notebook](../../../docs/examples/embeddings/yandexgpt.ipynb) for a detailed walkthrough of using YandexGPT embeddings with LlamaIndex.

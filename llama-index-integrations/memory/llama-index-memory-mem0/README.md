@@ -170,7 +170,7 @@ response = await agent.run("Hi, My name is Mayank", memory=memory)
 print(response)
 ```
 
-> Note: For more examples refer to: [Notebooks](https://github.com/run-llama/llama_index/tree/main/docs/docs/examples/memory)
+> Note: For more examples refer to: [Notebooks](https://github.com/run-llama/llama_index/tree/main/docs/examples/memory)
 
 ## References
 

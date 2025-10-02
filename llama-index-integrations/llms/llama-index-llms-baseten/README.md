@@ -135,4 +135,4 @@ For async operations, results are posted to your provided webhook endpoint. Your
 
 For more examples and detailed usage, check out the [Baseten Cookbook](https://docs.llamaindex.ai/en/stable/examples/llm/baseten/).
 
-<a href="https://colab.research.google.com/github/run-llama/llama_index/blob/main/docs/docs/examples/llm/baseten.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+<a href="https://colab.research.google.com/github/run-llama/llama_index/blob/main/docs/examples/llm/baseten.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
