@@ -70,7 +70,7 @@ To get started with LlamaIndex:
 1. **[Installation](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/getting_started/installation.mdx)**: Install LlamaIndex using pip or your preferred package manager
 2. **[Basic Agent Example](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/getting_started/starter_example.mdx)**: Create a simple agent that can perform basic tasks using tools
 3. **Adding RAG Capabilities**: Enhance your agent with the ability to search through documents
-4. **[Advanced Features](https://github.com/run-llama/llama_index/blob/main/docs/docs/understanding/index.md)**: Explore workflows, multi-agent systems, and production deployment
+4. **[Advanced Features](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/understanding/index.mdx)**: Explore workflows, multi-agent systems, and production deployment
 
 ## Documentation and Resources
 
@@ -90,10 +90,10 @@ To get started with LlamaIndex:
 - [Workflows](https://github.com/run-llama/llama_index/tree/main/docs/src/content/docs/framework/module_guides/workflow) - Event-driven orchestration and complex pipelines
 
 ### Agents and Workflows
-- [Building Agents](https://github.com/run-llama/llama_index/blob/main/docs/docs/understanding/agent/index.md) - Autonomous AI systems with tool use
-- [Agent Tools](https://github.com/run-llama/llama_index/blob/main/docs/docs/understanding/agent/tools.md) - Available tools and how to create custom ones
-- [Multi-Agent Systems](https://github.com/run-llama/llama_index/blob/main/docs/docs/understanding/agent/multi_agent.md) - Collaborative agent workflows
-- [Workflow Documentation](https://github.com/run-llama/llama_index/blob/main/docs/docs/understanding/workflows/index.md) - Event-driven application orchestration
-- [Human-in-the-Loop](https://github.com/run-llama/llama_index/blob/main/docs/docs/understanding/agent/human_in_the_loop.md) - Interactive agent workflows
+- [Building Agents](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/understanding/agent/index.mdx) - Autonomous AI systems with tool use
+- [Agent Tools](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/understanding/agent/tools.md) - Available tools and how to create custom ones
+- [Multi-Agent Systems](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/understanding/agent/multi_agent.md) - Collaborative agent workflows
+- [Workflow Documentation](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/understanding/workflows/index.md) - Event-driven application orchestration
+- [Human-in-the-Loop](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/understanding/agent/human_in_the_loop.md) - Interactive agent workflows
 
 LlamaIndex supports dozens of LLM providers including OpenAI, Anthropic, and local models, with hundreds of data connectors for ingesting diverse data sources.
