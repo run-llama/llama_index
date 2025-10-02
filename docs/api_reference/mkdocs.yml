@@ -1,3 +1,4 @@
+docs_dir: api_reference
 extra:
   analytics:
     property: G-BYVB1ZVE6J
@@ -16,7 +17,6 @@ markdown_extensions:
   - mkdocs-click
   - toc:
       permalink: "#"
-docs_dir: api_reference
 plugins:
   - search
   - include_dir_to_nav
@@ -727,6 +727,8 @@ plugins:
             - ../../llama-index-integrations/readers/llama-index-readers-solr
             - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-azurepostgresql
             - ../../llama-index-integrations/readers/llama-index-readers-paddle-ocr
+            - ../../llama-index-integrations/vector_stores/llama-index-vector-stores-solr
+            - ../../llama-index-integrations/memory/llama-index-memory-bedrock-agentcore
 site_name: LlamaIndex
 site_url: https://developers.llamaindex.ai/python/framework-api-reference/
 theme:
