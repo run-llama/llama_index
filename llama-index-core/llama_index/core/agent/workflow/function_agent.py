@@ -43,9 +43,7 @@ class FunctionAgent(BaseWorkflowAgent):
         ):
             chat_kwargs["tool_choice"] = self.initial_tool_choice
 
-        return await self.llm.achat_with_tools(  # type: ignore
-            **chat_kwargs
-        )
+        return await self.llm.achat_with_tools(**chat_kwargs)  # type: ignore
 
     async def _get_streaming_response(
         self,
@@ -66,9 +64,7 @@ class FunctionAgent(BaseWorkflowAgent):
         ):
             chat_kwargs["tool_choice"] = self.initial_tool_choice
 
-        response = await self.llm.astream_chat_with_tools(  # type: ignore
-            **chat_kwargs
-        )
+        response = await self.llm.astream_chat_with_tools(**chat_kwargs)  # type: ignore
         # last_chat_response will be used later, after the loop.
         # We initialize it so it's valid even when 'response' is empty
         last_chat_response = ChatResponse(message=ChatMessage())
@@ -81,9 +77,9 @@ class FunctionAgent(BaseWorkflowAgent):
                 if isinstance(last_chat_response.raw, BaseModel)
                 else last_chat_response.raw
             )
-            # Handle multiple streaming response structures for `thinking_delta`.
-            # Different providers (e.g., Groq, local Ollama) return the reasoning
-            # stream in different locations within the response payload.
+            # Handle multiple streaming response structures for thinking_delta.
+            # Different providers (e.g., Groq, local Ollama) return the
+            # reasoning stream in different locations within the response.
             thinking_delta = None
 
             # Case 1: Dictionary-based access (for Groq and similar APIs)
@@ -94,15 +90,16 @@ class FunctionAgent(BaseWorkflowAgent):
                     if delta and isinstance(delta, dict):
                         thinking_delta = delta.get("reasoning")
 
-            # Case 2: Attribute-based access (for local/Ollama, Pydantic models)
-            if thinking_delta is None:
+            # Case 2: Attribute-based access (for local/Ollama, Pydantic)
+            if thinking_delta is None and last_chat_response.raw is not None:
+                raw_obj = last_chat_response.raw
                 if (
-                    hasattr(last_chat_response.raw, "choices")
-                    and last_chat_response.raw.choices
-                    and hasattr(last_chat_response.raw.choices[0], "delta")
-                    and hasattr(last_chat_response.raw.choices[0].delta, "reasoning")
+                    hasattr(raw_obj, "choices")
+                    and raw_obj.choices
+                    and hasattr(raw_obj.choices[0], "delta")
+                    and hasattr(raw_obj.choices[0].delta, "reasoning")
                 ):
-                    thinking_delta = last_chat_response.raw.choices[0].delta.reasoning
+                    thinking_delta = raw_obj.choices[0].delta.reasoning
 
             # Case 3: Fallback to additional_kwargs
             if thinking_delta is None:
@@ -122,7 +119,7 @@ class FunctionAgent(BaseWorkflowAgent):
             )
 
         return last_chat_response
-    
+
     async def take_step(
         self,
         ctx: Context,
