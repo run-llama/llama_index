@@ -1,6 +1,6 @@
 """Tests for new ConfluenceReader features: callbacks, custom parsers, event system."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import Mock, MagicMock, patch
 import pytest
 import os
 
@@ -362,3 +362,122 @@ class TestLogging:
         assert hasattr(reader.logger, "info")
         assert hasattr(reader.logger, "error")
         assert hasattr(reader.logger, "warning")
+
+
+class TestChildPageFetching:
+    """
+    Tests the logic for fetching child pages, specifically handling the
+    difference between cloud and on-premise Confluence instances.
+    """
+
+    def test_on_prem_folder_call_is_never_made(self):
+        """
+        On-premise mode: Ensures the fix prevents calls for 'folder' children.
+        """
+        from llama_index.readers.confluence import ConfluenceReader
+        import requests
+
+        def side_effect(page_id, type, start=0, limit=50):
+            if type == "folder":
+                raise requests.exceptions.HTTPError(
+                    "No ContentTypeBinding found for type: folder"
+                )
+            if page_id == "root" and start == 0:
+                return ["p1"]
+            return []
+
+        with patch("atlassian.Confluence") as MockConfluence:
+            mock_inst = Mock()
+            mock_inst.get_child_id_list = Mock(side_effect=side_effect)
+            mock_inst.cloud = False
+            MockConfluence.return_value = mock_inst
+
+            reader = ConfluenceReader(
+                base_url="http://onprem", cloud=False, api_token="t"
+            )
+            res = reader._dfs_page_ids("root", type="page")
+            assert set(res) == {"root", "p1"}
+
+    def test_mixed_children_recursion_in_cloud(self):
+        """
+        Cloud mode: Verifies correct handling of pages and folders.
+        """
+        from llama_index.readers.confluence import ConfluenceReader
+
+        def side_effect(page_id, type, start=0, limit=50):
+            if start > 0:
+                return []
+            if page_id == "root" and type == "page":
+                return ["p1"]
+            if page_id == "root" and type == "folder":
+                return ["f1"]
+            if page_id == "f1" and type == "page":
+                return ["p2"]
+            return []
+
+        with patch("atlassian.Confluence") as MockConfluence:
+            mock_inst = Mock()
+            mock_inst.get_child_id_list = Mock(side_effect=side_effect)
+            mock_inst.cloud = True
+            MockConfluence.return_value = mock_inst
+
+            reader = ConfluenceReader(
+                base_url="https://cloud", cloud=True, api_token="t"
+            )
+            res = reader._dfs_page_ids("root", type="page")
+
+            expected_ids = {"root", "p1", "p2"}
+            assert set(res) == expected_ids
+            assert "f1" not in res
+
+    def test_max_num_results_is_respected(self):
+        """
+        Ensures the recursive search stops correctly when the limit is reached.
+        """
+        from llama_index.readers.confluence import ConfluenceReader
+
+        def side_effect(page_id, type, start=0, limit=50):
+            if page_id == "root" and start == 0 and type == "page":
+                return ["p1", "p2", "p3", "p4"]
+            return []
+
+        with patch("atlassian.Confluence") as MockConfluence:
+            mock_inst = Mock()
+            mock_inst.get_child_id_list = Mock(side_effect=side_effect)
+            mock_inst.cloud = False
+            MockConfluence.return_value = mock_inst
+
+            reader = ConfluenceReader(
+                base_url="http://onprem", cloud=False, api_token="t"
+            )
+            res = reader._dfs_page_ids("root", type="page", max_num_results=3)
+
+            assert len(res) == 3
+            assert set(res) == {"root", "p1", "p2"}
+
+    def test_paging_behavior_helper_function(self):
+        """
+        Tests that the _get_data_with_paging helper function works correctly.
+        """
+        from llama_index.readers.confluence import ConfluenceReader
+
+        def paged_side_effect(page_id, type, start=0, limit=50):
+            full_data = ["p1", "p2", "p3", "p4", "p5"]
+            return full_data[start : start + limit]
+
+        with patch("atlassian.Confluence") as MockConfluence:
+            mock_inst = Mock()
+            mock_inst.get_child_id_list = Mock(side_effect=paged_side_effect)
+            mock_inst.cloud = True
+            MockConfluence.return_value = mock_inst
+
+            reader = ConfluenceReader(
+                base_url="https://cloud", cloud=True, api_token="t"
+            )
+
+            all_ids = reader._get_data_with_paging(
+                paged_function=reader.confluence.get_child_id_list,
+                page_id="root",
+                type="page",
+            )
+            assert all_ids == ["p1", "p2", "p3", "p4", "p5"]
