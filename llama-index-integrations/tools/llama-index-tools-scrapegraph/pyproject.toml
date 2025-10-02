@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-tools-scrapegraphai"
-version = "0.2.1"
+version = "0.2.2"
 description = "llama-index tools integrating ScrapegraphAI"
 authors = [{name = "Marco Vinciguerra", email = "mvincig11@gmail.com"}]
 requires-python = ">=3.10,<4.0"
