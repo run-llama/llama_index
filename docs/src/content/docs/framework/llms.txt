@@ -67,19 +67,19 @@ There are five key stages within RAG:
 
 To get started with LlamaIndex:
 
-1. **[Installation](https://github.com/run-llama/llama_index/blob/main/docs/docs/getting_started/installation.md)**: Install LlamaIndex using pip or your preferred package manager
-2. **[Basic Agent Example](https://github.com/run-llama/llama_index/blob/main/docs/docs/getting_started/starter_example.md)**: Create a simple agent that can perform basic tasks using tools
+1. **[Installation](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/getting_started/installation.mdx)**: Install LlamaIndex using pip or your preferred package manager
+2. **[Basic Agent Example](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/getting_started/starter_example.mdx)**: Create a simple agent that can perform basic tasks using tools
 3. **Adding RAG Capabilities**: Enhance your agent with the ability to search through documents
 4. **[Advanced Features](https://github.com/run-llama/llama_index/blob/main/docs/docs/understanding/index.md)**: Explore workflows, multi-agent systems, and production deployment
 
 ## Documentation and Resources
 
 ### Getting Started
-- [Installation Guide](https://github.com/run-llama/llama_index/blob/main/docs/docs/getting_started/installation.md) - Setup and installation instructions
-- [Core Concepts](https://github.com/run-llama/llama_index/blob/main/docs/docs/getting_started/concepts.md) - Fundamental LlamaIndex concepts and architecture
-- [Starter Example](https://github.com/run-llama/llama_index/blob/main/docs/docs/getting_started/starter_example.md) - Basic agent implementation walkthrough
-- [Local Deployment Example](https://github.com/run-llama/llama_index/blob/main/docs/docs/getting_started/starter_example_local.md) - Running LlamaIndex locally with open-source models
-- [Customization Guide](https://github.com/run-llama/llama_index/blob/main/docs/docs/getting_started/customization.md) - Tailoring LlamaIndex to your needs
+- [Installation Guide](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/getting_started/installation.mdx) - Setup and installation instructions
+- [Core Concepts](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/getting_started/concepts.mdx) - Fundamental LlamaIndex concepts and architecture
+- [Starter Example](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/getting_started/starter_example.mdx) - Basic agent implementation walkthrough
+- [Local Deployment Example](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/getting_started/starter_example_local.mdx) - Running LlamaIndex locally with open-source models
+- [Customization Guide](https://github.com/run-llama/llama_index/blob/main/docs/src/content/docs/framework/getting_started/customization.mdx) - Tailoring LlamaIndex to your needs
 
 ### Core Module Guides
 - [Loading Data](https://github.com/run-llama/llama_index/tree/main/docs/src/content/docs/framework/module_guides/loading) - Data connectors and ingestion strategies
