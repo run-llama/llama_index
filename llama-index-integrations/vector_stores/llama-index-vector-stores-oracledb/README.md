@@ -1,6 +1,6 @@
 # LlamaIndex VectorStore Integration for Oracle
 
-This is a very basic example on how to use Oracle as a vector store with llamaindex. For a detailed guide look at https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/vector_stores/orallamavs.ipynb
+This is a very basic example on how to use Oracle as a vector store with llamaindex. For a detailed guide look at https://github.com/run-llama/llama_index/blob/main/docs/examples/vector_stores/orallamavs.ipynb
 
 `pip install llama-index-vector-stores-oracledb`
 
