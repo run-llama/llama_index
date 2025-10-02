@@ -439,9 +439,7 @@ class BaseIndex(Generic[IS], ABC):
         with self._callback_manager.as_trace("refresh_ref_docs"):
             refreshed_documents = [False] * len(documents)
             for i, document in enumerate(documents):
-                existing_doc_hash = self._docstore.get_document_hash(
-                    document.id_
-                )
+                existing_doc_hash = self._docstore.get_document_hash(document.id_)
                 if existing_doc_hash is None:
                     self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
                     refreshed_documents[i] = True
