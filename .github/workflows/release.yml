@@ -7,6 +7,11 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
 jobs:
   publish-core:
     if: github.repository == 'run-llama/llama_index' && github.event.pull_request.merged == true && github.event.pull_request.head.ref == vars.RELEASE_BRANCH_NAME
