@@ -201,6 +201,17 @@ def main():
     # copy over extra files
     os.system("cp ../CHANGELOG.md ./src/content/docs/framework/CHANGELOG.md")
 
+    # Ensure CHANGELOG had the proper astro header
+    changelog_contents = ""
+    with open("./src/content/docs/framework/CHANGELOG.md", "r") as f:
+        changelog_contents = f.read()
+
+    astro_header = "---\ntitle: ChangeLog\n---"
+    changelog_contents.replace("# ChangeLog\n")
+
+    with open("./src/content/docs/framework/CHANGELOG.md", "w") as f:
+        f.write(changelog_contents)
+
 
 if __name__ == "__main__":
     main()
