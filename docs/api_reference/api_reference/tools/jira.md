@@ -1,3 +1,4 @@
 ::: llama_index.tools.jira
-options:
-members: - JiraToolSpec
+    options:
+      members:
+        - JiraToolSpec
