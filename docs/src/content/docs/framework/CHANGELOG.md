@@ -1,4 +1,6 @@
-# ChangeLog
+---
+title: ChangeLog
+---
 
 <!--- generated changelog --->
 

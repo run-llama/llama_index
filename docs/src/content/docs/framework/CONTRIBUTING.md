@@ -1,4 +1,6 @@
-# 🚀 Contributing to LlamaIndex
+---
+title: Contributing to LlamaIndex
+---
 
 Welcome to **LlamaIndex**! We’re excited that you want to contribute and become part of our growing community. Whether
 you're interested in building integrations, fixing bugs, or adding exciting new features, we've made it easy for you to
