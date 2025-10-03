@@ -1,3 +1,4 @@
 ::: llama_index.embeddings.mistralai
-options:
-members: - MistralAIEmbedding
+    options:
+      members:
+        - MistralAIEmbedding

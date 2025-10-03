@@ -2,9 +2,7 @@
 title: ChangeLog
 ---
 
-<!--- generated changelog --->
-
-## [2025-10-02]
+## [2025-10-03]
 
 ### llama-index-core [0.14.4]
 
