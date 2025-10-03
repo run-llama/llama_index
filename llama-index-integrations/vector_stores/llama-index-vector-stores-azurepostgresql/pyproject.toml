@@ -8,7 +8,7 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
     "jupyterlab~=4.0",
-    "llama-index~=0.13.0",
+    "llama-index-core>=0.13,<0.15",
     "openai~=1.0",
 ]
 lint = ["ruff~=0.12.0"]
@@ -29,7 +29,7 @@ type = ["mypy~=1.0"]
 
 [project]
 name = "llama-index-vector-stores-azurepostgres"
-version = "0.1.0"
+version = "0.2.0"
 description = "AI framework integrations for Azure Database for PostgreSQL"
 readme = "README.md"
 license = {text = "MIT"}
