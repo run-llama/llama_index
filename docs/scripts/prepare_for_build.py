@@ -203,7 +203,9 @@ def main():
         changelog_contents = f.read()
 
     astro_header = "---\ntitle: ChangeLog\n---"
-    changelog_contents.replace("# ChangeLog\n")
+    changelog_contents = changelog_contents.replace(
+        "# ChangeLog\n", astro_header
+    )
 
     with open("./src/content/docs/framework/CHANGELOG.md", "w") as f:
         f.write(changelog_contents)
