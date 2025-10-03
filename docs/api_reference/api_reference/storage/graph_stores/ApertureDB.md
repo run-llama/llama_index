@@ -1,3 +1,4 @@
 ::: llama_index.graph_stores.ApertureDB
-options:
-members: - ApertureDBPropertyGraphStore
+    options:
+      members:
+        - ApertureDBPropertyGraphStore

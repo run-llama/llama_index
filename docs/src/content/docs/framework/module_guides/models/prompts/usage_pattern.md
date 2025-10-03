@@ -223,9 +223,9 @@ query_engine = RetrieverQueryEngine(retriever, response_synthesizer)
 The two approaches above are equivalent, where 1 is essentially syntactic sugar for 2 and hides away the underlying complexity. You might want to use 1 to quickly modify some common parameters, and use 2 to have more granular control.
 
 For more details on which classes use which prompts, please visit
-[Query class references](/python/framework/api_reference/response_synthesizers).
+[Query class references](/python/framework-api-reference/response_synthesizers).
 
-Check out the [reference documentation](/python/framework/api_reference/prompts) for a full set of all prompts and their methods/parameters.
+Check out the [reference documentation](/python/framework-api-reference/prompts) for a full set of all prompts and their methods/parameters.
 
 ## [Advanced] Advanced Prompt Capabilities
 

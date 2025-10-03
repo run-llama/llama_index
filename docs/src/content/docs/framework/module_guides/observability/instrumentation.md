@@ -84,7 +84,7 @@ class ExampleEventHandler(BaseEventHandler):
         print("-----------------------")
 ```
 
-See the [full guide](/python/examples/instrumentation/instrumentation_observability_rundown) on all events logged in LlamaIndex, or visit the [api reference](/python/framework/api_reference/instrumentation) for more details.
+See the [full guide](/python/examples/instrumentation/instrumentation_observability_rundown) on all events logged in LlamaIndex, or visit the [api reference](/python/framework-api-reference/instrumentation) for more details.
 
 ### Defining a custom `EventHandler`
 
@@ -305,4 +305,4 @@ project
 
 ## API Reference
 
-- [Instrumentation API Reference](/python/framework/api_reference/instrumentation)
+- [Instrumentation API Reference](/python/framework-api-reference/instrumentation)

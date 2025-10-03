@@ -446,15 +446,20 @@ class ConfluenceReader(BaseReader, DispatcherSpanMixin):
                 type="page",
                 max_num_results=max_num_remaining,
             )
-        ] + [
-            (child_id, "folder")
-            for child_id in self._get_data_with_paging(
-                self.confluence.get_child_id_list,
-                page_id=id,
-                type="folder",
-                max_num_results=max_num_remaining,
-            )
         ]
+
+        if self.confluence.cloud:
+            child_items.extend(
+                [
+                    (child_id, "folder")
+                    for child_id in self._get_data_with_paging(
+                        self.confluence.get_child_id_list,
+                        page_id=id,
+                        type="folder",
+                        max_num_results=max_num_remaining,
+                    )
+                ]
+            )
 
         for child_id, child_type in child_items:
             if max_num_remaining is not None and max_num_remaining <= 0:

@@ -29,8 +29,8 @@ pip install llama-index llama-index-graph-stores-neptune
 
 ### Property Graph Store
 
-Please checkout this [tutorial](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/property_graph/property_graph_neptune.ipynb) to learn how to use Amazon Neptune with LlamaIndex.
+Please checkout this [tutorial](https://github.com/run-llama/llama_index/blob/main/docs/examples/property_graph/property_graph_neptune.ipynb) to learn how to use Amazon Neptune with LlamaIndex.
 
 ### Knowledge Graph Store
 
-Checkout this [tutorial](https://github.com/run-llama/llama_index/blob/main/docs/docs/examples/index_structs/knowledge_graph/NeptuneDatabaseKGIndexDemo.ipynb) to learn how to use Amazon Neptune with LlamaIndex.
+Checkout this [tutorial](https://github.com/run-llama/llama_index/blob/main/docs/examples/index_structs/knowledge_graph/NeptuneDatabaseKGIndexDemo.ipynb) to learn how to use Amazon Neptune with LlamaIndex.

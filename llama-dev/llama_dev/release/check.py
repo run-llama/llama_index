@@ -49,7 +49,6 @@ def check(obj: dict, before_core: bool):
 
     \b
     Requisites before releasing llama-index-core (passing --before-core):
-    - current branch is not `main`
     - llama-index-core/pyproject.toml is newer than the latest on PyPI
 
     Requisite after llama-index-core was published (without passing --before-core):
@@ -60,24 +59,14 @@ def check(obj: dict, before_core: bool):
     repo_root = obj["repo_root"]
 
     current_branch = _get_current_branch_name()
-    if before_core:
-        # Check current branch is NOT main
-        if current_branch == "main":
-            console.print(
-                "❌ You are on the `main` branch. Please create a new branch to release.",
-                style="error",
-            )
-            exit(1)
-        console.print("✅ You are not on the `main` branch.")
-    else:
-        # Check current branch IS main
-        if current_branch != "main":
-            console.print(
-                "❌ To release 'llama-index' you have to checkout the `main` branch.",
-                style="error",
-            )
-            exit(1)
-        console.print("✅ You are on the `main` branch.")
+    # Check current branch IS main
+    if current_branch != "main":
+        console.print(
+            "❌ To release 'llama-index' you have to checkout the `main` branch.",
+            style="error",
+        )
+        exit(1)
+    console.print("✅ You are on the `main` branch.")
 
     if before_core:
         # Check llama-index-core version is NEWER than PyPI

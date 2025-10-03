@@ -3,13 +3,13 @@ title: Retriever Modules
 ---
 
 We are actively adding more tailored retrieval guides.
-In the meanwhile, please take a look at the [API References](/python/framework/api_reference/retrievers).
+In the meanwhile, please take a look at the [API References](/python/framework-api-reference/retrievers).
 
 ## Index Retrievers
 
 Please see [the retriever modes](/python/framework/module_guides/querying/retriever/retriever_modes) for more details on how to get a retriever from any given index.
 
-If you want to import the corresponding retrievers directly, please check out our [API reference](/python/framework/api_reference/retrievers).
+If you want to import the corresponding retrievers directly, please check out our [API reference](/python/framework-api-reference/retrievers).
 
 ## Comprehensive Retriever Guides
 
