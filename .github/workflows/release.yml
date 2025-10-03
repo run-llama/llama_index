@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   publish-core:
-    if: github.repository == 'run-llama/llama_index'
+    if: github.repository == 'run-llama/llama_index' && (github.event_name == 'workflow_dispatch' || (github.event.pull_request.merged == true && github.event.pull_request.head.ref == vars.RELEASE_BRANCH_NAME))
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.build-publish-core.outputs.version }}
