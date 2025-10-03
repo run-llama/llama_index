@@ -13,6 +13,7 @@ from unittest.mock import MagicMock
 
 from llama_index.core.vector_stores.types import BasePydanticVectorStore
 from llama_index.vector_stores.qdrant import QdrantVectorStore
+from llama_index.core.schema import TextNode
 from llama_index.core.vector_stores.types import (
     VectorStoreQuery,
     VectorStoreQueryMode,
@@ -818,3 +819,53 @@ async def test_async_query_initializes_with_async_client_only() -> None:
     assert result is not None
     assert len(result.nodes) == 1
     assert getattr(result.nodes[0], "text", None) == "hello"
+
+
+# --- Test async-only initialization with hybrid search enabled ---
+@pytest.mark.asyncio
+async def test_init_with_async_client_only_and_hybrid_succeeds(
+    async_only_hybrid_vector_store: QdrantVectorStore,
+) -> None:
+    """
+    Tests that QdrantVectorStore initializes without errors when only
+    an async client is provided and hybrid search is enabled.
+    """
+    # The test passes if the fixture is created successfully without raising an exception.
+    # We add a simple assertion to confirm the object is of the correct type.
+    assert isinstance(async_only_hybrid_vector_store, QdrantVectorStore)
+    assert async_only_hybrid_vector_store.enable_hybrid is True
+
+
+# --- Test for async-only legacy collection correction ---
+@pytest.mark.asyncio
+async def test_async_only_hybrid_legacy_collection() -> None:
+    """Test that async-only mode correctly handles legacy sparse vector format."""
+    collection_name = "test_legacy_async"
+    aclient = AsyncQdrantClient(":memory:")
+
+    # Create collection with OLD sparse vector name
+    await aclient.create_collection(
+        collection_name=collection_name,
+        vectors_config={
+            "text-dense": qmodels.VectorParams(size=2, distance=qmodels.Distance.COSINE)
+        },
+        sparse_vectors_config={"text-sparse": qmodels.SparseVectorParams()},  # OLD name
+    )
+
+    # Initialize with async client only
+    store = QdrantVectorStore(
+        collection_name=collection_name,
+        aclient=aclient,
+        enable_hybrid=True,
+        fastembed_sparse_model="Qdrant/bm25",
+    )
+
+    # Initially assumes new format
+    assert store.sparse_vector_name == "text-sparse-new"
+
+    # After first async operation, should detect and correct to old format
+    node = TextNode(text="test", embedding=[1.0, 0.0])
+    await store.async_add([node])
+
+    # Should now be corrected
+    assert store.sparse_vector_name == "text-sparse"
