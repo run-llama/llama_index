@@ -975,7 +975,7 @@ vector_store = MilvusVectorStore(
 )
 ```
 
-[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/docs/examples/vector_stores).
+[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/vector_stores).
 
 ## Loading Data from Vector Stores using Data Connector
 
@@ -1149,7 +1149,7 @@ documents = reader.load_data(
 )
 ```
 
-[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/docs/examples/data_connectors).
+[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/data_connectors).
 
 ## Vector Store Examples
 

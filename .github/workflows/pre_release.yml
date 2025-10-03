@@ -30,7 +30,13 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Prepare
+      - name: Run docs script
+        shell: bash
+        working-directory: docs
+        run: |
+          uv run python scripts/prepare_for_build.py
+
+      - name: Prepare Versions
         id: prepare
         shell: bash
         working-directory: llama-dev
