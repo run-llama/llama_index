@@ -34,7 +34,6 @@ jobs:
         shell: bash
         working-directory: docs
         run: |
-          uv pip install toml pyaml
           uv run python scripts/prepare_for_build.py
 
       - name: Prepare Versions
