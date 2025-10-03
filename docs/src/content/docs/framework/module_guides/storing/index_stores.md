@@ -4,7 +4,7 @@ title: Index Stores
 
 Index stores contains lightweight index metadata (i.e. additional state information created when building an index).
 
-See the [API Reference](/python/framework/api_reference/storage/index_store) for more details.
+See the [API Reference](/python/framework-api-reference/storage/index_store) for more details.
 
 ### Simple Index Store
 

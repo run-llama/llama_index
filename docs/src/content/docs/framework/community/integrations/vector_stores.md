@@ -58,7 +58,7 @@ as the storage backend for `VectorStoreIndex`.
 - Zep (`ZepVectorStore`). [Installation](https://docs.getzep.com/deployment/quickstart/). [Python Client](https://docs.getzep.com/sdk/).
 - Zilliz (`MilvusVectorStore`). [Quickstart](https://zilliz.com/doc/quick_start)
 
-A detailed API reference is [found here](/python/framework/api_reference/storage/vector_store).
+A detailed API reference is [found here](/python/framework-api-reference/storage/vector_store).
 
 Similar to any other index within LlamaIndex (tree, keyword table, list), `VectorStoreIndex` can be constructed upon any collection
 of documents. We use the vector store within the index to store embeddings for the input text chunks.
@@ -975,7 +975,7 @@ vector_store = MilvusVectorStore(
 )
 ```
 
-[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/docs/examples/vector_stores).
+[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/vector_stores).
 
 ## Loading Data from Vector Stores using Data Connector
 
@@ -1149,7 +1149,7 @@ documents = reader.load_data(
 )
 ```
 
-[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/docs/examples/data_connectors).
+[Example notebooks can be found here](https://github.com/jerryjliu/llama_index/tree/main/docs/examples/data_connectors).
 
 ## Vector Store Examples
 

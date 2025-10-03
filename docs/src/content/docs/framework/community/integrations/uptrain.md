@@ -24,7 +24,7 @@ There are two ways you can use UpTrain with LlamaIndex:
 
 2. **Using UpTrain's EvalLlamaIndex**: This method allows you to use UpTrain to perform evaluations on the generated responses. You can use the EvalLlamaIndex object to generate responses for the queries and then perform evaluations on the responses. You can find a detailed tutorial on how to do this below. This method offers more flexibility and control over the evaluations, but requires more effort to set up and use.
 
-# 1. Using the UpTrain Callback Handler <a href="https://colab.research.google.com/github/run-llama/llama_index/blob/main/docs/docs/examples/callbacks/UpTrainCallback.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+# 1. Using the UpTrain Callback Handler <a href="https://colab.research.google.com/github/run-llama/llama_index/blob/main/docs/examples/callbacks/UpTrainCallback.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 The following three demonstrations explain how you can use UpTrain Callback Handler to evaluate different components of your RAG pipelines.
 
@@ -160,7 +160,7 @@ Load documents from Paul Graham's essay "What I Worked On".
 ```python
 documents = SimpleWebPageReader().load_data(
     [
-        "https://raw.githubusercontent.com/run-llama/llama_index/main/docs/docs/examples/data/paul_graham/paul_graham_essay.txt"
+        "https://raw.githubusercontent.com/run-llama/llama_index/main/docs/examples/data/paul_graham/paul_graham_essay.txt"
     ]
 )
 ```
@@ -435,7 +435,7 @@ Here's a short GIF showcasing the dashboard and the insights that you can get fr
 
 ![output.gif](https://uptrain-assets.s3.ap-south-1.amazonaws.com/images/llamaindex/output.gif)
 
-# 2. Using UpTrain's EvalLlamaIndex <a href="https://colab.research.google.com/github/run-llama/llama_index/blob/main/docs/docs/examples/evaluation/UpTrain.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+# 2. Using UpTrain's EvalLlamaIndex <a href="https://colab.research.google.com/github/run-llama/llama_index/blob/main/docs/examples/evaluation/UpTrain.ipynb" target="_parent"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 ## Install UpTrain and LlamaIndex
 
@@ -641,7 +641,7 @@ You can filter failure cases and generate common topics among them. This can hel
 
 ## Learn More
 
-1. [Colab Notebook on UpTrainCallbackHandler](https://colab.research.google.com/github/run-llama/llama_index/blob/main/docs/docs/examples/callbacks/UpTrainCallback.ipynb)
-1. [Colab Notebook on UpTrain Integration with LlamaIndex](https://colab.research.google.com/github/run-llama/llama_index/blob/main/docs/docs/examples/evaluation/UpTrain.ipynb)
+1. [Colab Notebook on UpTrainCallbackHandler](https://colab.research.google.com/github/run-llama/llama_index/blob/main/docs/examples/callbacks/UpTrainCallback.ipynb)
+1. [Colab Notebook on UpTrain Integration with LlamaIndex](https://colab.research.google.com/github/run-llama/llama_index/blob/main/docs/examples/evaluation/UpTrain.ipynb)
 1. [UpTrain Github Repository](https://github.com/uptrain-ai/uptrain)
 1. [UpTrain Documentation](https://docs.uptrain.ai/)

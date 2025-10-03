@@ -56,15 +56,14 @@ def test_get_version_from_pypi_error():
     ),
     [
         (
-            "success",
+            "fail",
             "my-release-branch",
             "0.1.1",
             "0.1.1",
             "0.1.0",
-            True,
+            False,
             [
-                "✅ You are not on the `main` branch.",
-                "✅ Version 0.1.1 is newer than the latest on PyPI (0.1.0).",
+                "❌ To release 'llama-index' you have to checkout the `main` branch.",
             ],
         ),
         (
@@ -73,14 +72,15 @@ def test_get_version_from_pypi_error():
             "0.1.1",
             "0.1.1",
             "0.1.0",
-            False,
+            True,
             [
-                "❌ You are on the `main` branch. Please create a new branch to release.",
+                "✅ You are on the `main` branch.",
+                "✅ Version 0.1.1 is newer than the latest on PyPI (0.1.0).",
             ],
         ),
         (
             "not_newer",
-            "my-release-branch",
+            "main",
             "0.1.0",
             "0.1.0",
             "0.1.0",
@@ -118,6 +118,7 @@ def test_check_command(
 
         if should_pass:
             ctx.invoke(check, before_core=True)
+            # print messages from console
             for msg in expected_message:
                 mock_rich_console.print.assert_any_call(msg)
         else:
