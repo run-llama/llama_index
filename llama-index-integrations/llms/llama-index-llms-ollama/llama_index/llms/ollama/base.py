@@ -432,12 +432,13 @@ class Ollama(FunctionCallingLLM):
                 if token_counts:
                     r["usage"] = token_counts
 
+                output_blocks = [TextBlock(text=response_txt)]
+                if thinking_txt:
+                    output_blocks.insert(0, ThinkingBlock(content=thinking_txt))
+
                 yield ChatResponse(
                     message=ChatMessage(
-                        blocks=[
-                            ThinkingBlock(content=thinking_txt),
-                            TextBlock(text=response_txt),
-                        ],
+                        blocks=output_blocks,
                         role=r["message"].get("role", MessageRole.ASSISTANT),
                         additional_kwargs={
                             "tool_calls": all_tool_calls,
@@ -504,15 +505,17 @@ class Ollama(FunctionCallingLLM):
                 if token_counts:
                     r["usage"] = token_counts
 
+                output_blocks = [TextBlock(text=response_txt)]
+                if thinking_txt:
+                    output_blocks.insert(0, ThinkingBlock(content=thinking_txt))
+
                 yield ChatResponse(
                     message=ChatMessage(
-                        blocks=[
-                            ThinkingBlock(content=thinking_txt),
-                            TextBlock(text=response_txt),
-                        ],
+                        blocks=output_blocks,
                         role=r["message"].get("role", MessageRole.ASSISTANT),
                         additional_kwargs={
                             "tool_calls": all_tool_calls,
+                            "thinking_delta": r["message"].get("thinking", None),
                         },
                     ),
                     delta=r["message"].get("content", ""),
