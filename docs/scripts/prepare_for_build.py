@@ -1,13 +1,9 @@
-"""
-Prepare the docs folder for building the documentation.
-
-This file will:
-1. Update the mkdocs.yml file to include all example notebooks
-2. Create API reference pages for all integration folders
-3. Update the search paths for the mkdocstrings plugin
-4. Copy over the latest CHANGELOG.md/CONTRIBUTING.md/DOCS_README.md
-   to the docs/docs folder
-"""
+# /// script
+# dependencies = [
+#   "toml",
+#   "pyaml",
+# ]
+# ///
 
 import os
 
