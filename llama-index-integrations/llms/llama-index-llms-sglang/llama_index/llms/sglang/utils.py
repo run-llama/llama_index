@@ -7,7 +7,7 @@ import requests
 def get_response(response: requests.Response) -> List[str]:
     """Extract text from SGLang API response."""
     data = json.loads(response.content)
-    
+
     # Handle OpenAI-compatible format with choices array
     if isinstance(data, dict) and "choices" in data:
         choices = data["choices"]
@@ -17,14 +17,14 @@ def get_response(response: requests.Response) -> List[str]:
                 return [choice["text"] for choice in choices]
             elif "message" in choices[0] and "content" in choices[0]["message"]:
                 return [choice["message"]["content"] for choice in choices]
-    
+
     # Fallback for native API format
     if isinstance(data, dict) and "text" in data:
         text = data["text"]
         if isinstance(text, str):
             return [text]
         return text
-    
+
     return []
 
 
@@ -36,11 +36,11 @@ def post_http_request(
         "User-Agent": "LlamaIndex SGLang Client",
         "Content-Type": "application/json",
     }
-    
+
     # Add API key if provided
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
-    
+
     sampling_params["stream"] = stream
 
     return requests.post(
@@ -61,10 +61,10 @@ def get_streaming_response(response: requests.Response) -> Iterable[List[str]]:
             # Handle SSE format
             if chunk_str.startswith("data: "):
                 chunk_str = chunk_str[6:]
-            
+
             if chunk_str.strip() == "[DONE]":
                 break
-            
+
             try:
                 data = json.loads(chunk_str)
                 if "text" in data:

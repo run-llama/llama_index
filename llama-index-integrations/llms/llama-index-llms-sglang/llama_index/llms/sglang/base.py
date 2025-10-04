@@ -1,23 +1,28 @@
 import json
 from typing import Any, Callable, Dict, List, Optional, Sequence
 
-from llama_index.core.base.llms.generic_utils import \
-    completion_response_to_chat_response
-from llama_index.core.base.llms.generic_utils import \
-    messages_to_prompt as generic_messages_to_prompt
-from llama_index.core.base.llms.generic_utils import \
-    stream_completion_response_to_chat_response
-from llama_index.core.base.llms.types import (ChatMessage, ChatResponse,
-                                              ChatResponseAsyncGen,
-                                              ChatResponseGen,
-                                              CompletionResponse,
-                                              CompletionResponseAsyncGen,
-                                              CompletionResponseGen,
-                                              LLMMetadata)
+from llama_index.core.base.llms.generic_utils import (
+    completion_response_to_chat_response,
+)
+from llama_index.core.base.llms.generic_utils import (
+    messages_to_prompt as generic_messages_to_prompt,
+)
+from llama_index.core.base.llms.generic_utils import (
+    stream_completion_response_to_chat_response,
+)
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ChatResponse,
+    ChatResponseAsyncGen,
+    ChatResponseGen,
+    CompletionResponse,
+    CompletionResponseAsyncGen,
+    CompletionResponseGen,
+    LLMMetadata,
+)
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
-from llama_index.core.llms.callbacks import (llm_chat_callback,
-                                             llm_completion_callback)
+from llama_index.core.llms.callbacks import llm_chat_callback, llm_completion_callback
 from llama_index.core.llms.llm import LLM
 from llama_index.core.types import BaseOutputParser, PydanticProgramMode
 
@@ -56,6 +61,7 @@ class SGLang(LLM):
         response = llm.complete("What is a black hole?")
         print(response)
         ```
+
     """
 
     model: Optional[str] = Field(
@@ -241,10 +247,12 @@ class SGLang(LLM):
         # SGLang OpenAI-compatible API uses 'prompt' parameter
         sampling_params["prompt"] = prompt
         sampling_params["model"] = self.model
-        
+
         # Use OpenAI-compatible endpoint
         endpoint = f"{self.api_url}/v1/completions"
-        response = post_http_request(endpoint, sampling_params, stream=False, api_key=self.api_key)
+        response = post_http_request(
+            endpoint, sampling_params, stream=False, api_key=self.api_key
+        )
         output = get_response(response)
 
         return CompletionResponse(text=output[0])
@@ -266,10 +274,12 @@ class SGLang(LLM):
 
         sampling_params = dict(**params)
         sampling_params["text"] = prompt
-        
+
         # SGLang uses OpenAI-compatible API, so use /v1/completions for streaming
         endpoint = f"{self.api_url}/v1/completions"
-        response = post_http_request(endpoint, sampling_params, stream=True, api_key=self.api_key)
+        response = post_http_request(
+            endpoint, sampling_params, stream=True, api_key=self.api_key
+        )
 
         def gen() -> CompletionResponseGen:
             response_str = ""
@@ -281,10 +291,10 @@ class SGLang(LLM):
                     # Handle SSE format
                     if chunk_str.startswith("data: "):
                         chunk_str = chunk_str[6:]
-                    
+
                     if chunk_str.strip() == "[DONE]":
                         break
-                    
+
                     try:
                         data = json.loads(chunk_str)
                         # OpenAI format has choices array
