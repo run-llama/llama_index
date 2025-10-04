@@ -365,6 +365,7 @@ class BedrockConverse(FunctionCallingLLM):
             content_list = [content]
         else:
             content_list = response["output"]["message"]["content"]
+
         for content_block in content_list:
             if text := content_block.get("text", None):
                 blocks.append(TextBlock(text=text))
@@ -521,19 +522,20 @@ class BedrockConverse(FunctionCallingLLM):
                                 current_tool_call = join_two_dicts(
                                     current_tool_call, tool_use_delta
                                 )
-                                blocks: List[Union[TextBlock, ThinkingBlock]] = [
-                                    TextBlock(text=content.get("text", ""))
-                                ]
-                                if thinking != "":
-                                    blocks.insert(
-                                        0,
-                                        ThinkingBlock(
-                                            content=thinking,
-                                            additional_information={
-                                                "signature": thinking_signature
-                                            },
-                                        ),
-                                    )
+
+                    blocks: List[Union[TextBlock, ThinkingBlock]] = [
+                        TextBlock(text=content.get("text", ""))
+                    ]
+                    if thinking != "":
+                        blocks.insert(
+                            0,
+                            ThinkingBlock(
+                                content=thinking,
+                                additional_information={
+                                    "signature": thinking_signature
+                                },
+                            ),
+                        )
 
                     yield ChatResponse(
                         message=ChatMessage(
@@ -645,6 +647,8 @@ class BedrockConverse(FunctionCallingLLM):
             messages, self.model
         )
         all_kwargs = self._get_all_kwargs(**kwargs)
+        if self.thinking is not None:
+            all_kwargs["thinking"] = self.thinking
 
         # invoke LLM in AWS Bedrock Converse with retry
         response = await converse_with_retry_async(
