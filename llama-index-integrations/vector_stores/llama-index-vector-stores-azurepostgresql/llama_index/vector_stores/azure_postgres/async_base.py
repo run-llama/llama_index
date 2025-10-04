@@ -1,11 +1,13 @@
 """VectorStore integration for Azure Database for PostgreSQL using LlamaIndex."""
 
 import sys
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 from typing import Any, Optional
 
 import numpy as np
-from pgvector.psycopg import register_vector  # type: ignore[import-untyped]
-from psycopg import sql
+from pgvector.psycopg import register_vector_async  # type: ignore[import-untyped]
+from psycopg import AsyncConnection, sql
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
@@ -23,8 +25,8 @@ from llama_index.core.vector_stores.utils import (
 
 from .common import (
     Algorithm,
-    AzurePGConnectionPool,
-    BaseAzurePGVectorStore,
+    AsyncAzurePGConnectionPool,
+    AsyncBaseAzurePGVectorStore,
     _table_row_to_node,
     metadata_filters_to_sql,
 )
@@ -35,7 +37,7 @@ else:
     from typing import override
 
 
-class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
+class AsyncAzurePGVectorStore(BasePydanticVectorStore, AsyncBaseAzurePGVectorStore):
     """Azure PostgreSQL vector store for LlamaIndex."""
 
     stores_text: bool = True
@@ -51,17 +53,22 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
         """Return the client property (not used for AzurePGVectorStore)."""
         return
 
+    @asynccontextmanager
+    async def _connection(self) -> AsyncGenerator[AsyncConnection, None]:
+        async with self.connection_pool.connection() as conn:
+            yield conn
+
     @override
     @classmethod
     def from_params(
         cls,
-        connection_pool: AzurePGConnectionPool,
+        connection_pool: AsyncAzurePGConnectionPool,
         schema_name: str = "public",
         table_name: str = "llamaindex_vectors",
         embed_dim: int = 1536,
         embedding_index: Algorithm | None = None,
-    ) -> "AzurePGVectorStore":
-        """Create an AzurePGVectorStore from connection and configuration parameters."""
+    ) -> "AsyncAzurePGVectorStore":
+        """Create an AsyncAzurePGVectorStore from connection and configuration parameters."""
         return cls(
             connection_pool=connection_pool,
             schema_name=schema_name,
@@ -117,41 +124,33 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
         )
 
     @override
-    def add(self, nodes: list[BaseNode], **add_kwargs: Any) -> list[str]:
-        """Add a list of BaseNode objects to the vector store.
-
-        Args:
-            nodes: List of BaseNode objects to add.
-            **add_kwargs: Additional keyword arguments.
-
-        Returns:
-            List of node IDs added.
-        """
+    async def async_add(
+        self,
+        nodes: list[BaseNode],
+        **kwargs: Any,
+    ) -> list[str]:
+        """Asynchronously add nodes to vector store."""
+        on_conflict_update = bool(kwargs.pop("on_conflict_update", None))
         ids = []
-        on_conflict_update = bool(add_kwargs.pop("on_conflict_update", None))
-        with self.connection_pool.connection() as conn:
-            register_vector(conn)
-            with conn.cursor(row_factory=dict_row) as cursor:
+        async with self._connection() as conn:
+            await register_vector_async(conn)
+            async with conn.cursor(row_factory=dict_row) as cursor:
                 for node in nodes:
                     ids.append(node.node_id)
                     insert_sql, insert_dict = self._get_insert_sql_dict(
-                        node, on_conflict_update
+                        node, on_conflict_update=on_conflict_update
                     )
-                    cursor.execute(insert_sql, insert_dict)
+                    await cursor.execute(insert_sql, insert_dict)
         return ids
 
     @override
-    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
-        """Perform a similarity search using the provided query.
-
-        Args:
-            query: VectorStoreQuery object containing the query embedding and parameters.
-            **kwargs: Additional keyword arguments.
-
-        Returns:
-            VectorStoreQueryResult containing the search results.
-        """
-        results = self._similarity_search_by_vector_with_distance(
+    async def aquery(
+        self,
+        query: VectorStoreQuery,
+        **kwargs: Any,
+    ) -> VectorStoreQueryResult:
+        """Asynchronously query the vector store."""
+        results = await self._similarity_search_by_vector_with_distance(
             embedding=query.query_embedding,
             k=query.similarity_top_k,
             filter_expression=metadata_filters_to_sql(query.filters),
@@ -173,23 +172,23 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
         )
 
     @override
-    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+    async def adelete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """Delete a node from the vector store by reference document ID.
 
         Args:
             ref_doc_id: The reference document ID to delete.
             **delete_kwargs: Additional keyword arguments.
         """
-        with self.connection_pool.connection() as conn:
-            register_vector(conn)
-            with conn.cursor(row_factory=dict_row) as cursor:
+        async with self.connection_pool.connection() as conn:
+            await register_vector_async(conn)
+            async with conn.cursor(row_factory=dict_row) as cursor:
                 delete_sql = sql.SQL(
                     "DELETE FROM {table} WHERE metadata ->> 'doc_id' = %s"
                 ).format(table=sql.Identifier(self.schema_name, self.table_name))
-                cursor.execute(delete_sql, (ref_doc_id,))
+                await cursor.execute(delete_sql, (ref_doc_id,))
 
     @override
-    def delete_nodes(
+    async def adelete_nodes(
         self,
         node_ids: Optional[list[str]] = None,
         filters: Optional[MetadataFilters] = None,
@@ -205,25 +204,25 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
         if not node_ids:
             return
 
-        self._delete_rows_from_table(
+        await self._delete_rows_from_table(
             ids=node_ids, filters=metadata_filters_to_sql(filters), **delete_kwargs
         )
 
     @override
-    def clear(self) -> None:
+    async def aclear(self) -> None:
         """Clear all data from the vector store table."""
-        with self.connection_pool.connection() as conn:
-            register_vector(conn)
-            with conn.cursor(row_factory=dict_row) as cursor:
+        async with self.connection_pool.connection() as conn:
+            await register_vector_async(conn)
+            async with conn.cursor(row_factory=dict_row) as cursor:
                 stmt = sql.SQL("TRUNCATE TABLE {schema}.{table}").format(
                     schema=sql.Identifier(self.schema_name),
                     table=sql.Identifier(self.table_name),
                 )
-                cursor.execute(stmt)
-                conn.commit()
+                await cursor.execute(stmt)
+                await conn.commit()
 
     @override
-    def get_nodes(
+    async def aget_nodes(
         self,
         node_ids: Optional[list[str]] = None,
         filters: Optional[MetadataFilters] = None,
@@ -240,10 +239,66 @@ class AzurePGVectorStore(BasePydanticVectorStore, BaseAzurePGVectorStore):
             List of BaseNode objects matching the criteria.
         """
         # TODO: Implement filter handling
-        documents = self._get_by_ids(node_ids)
+        documents = await self._get_by_ids(node_ids)
         nodes = []
         for doc in documents:
-            node = _table_row_to_node(row=doc)
+            node = _table_row_to_node(doc)
             nodes.append(node)
 
         return nodes
+
+    @override
+    def add(
+        self,
+        nodes: list[BaseNode],
+        **kwargs: Any,
+    ) -> list[str]:
+        """Not implemented for AsyncAzurePGVectorStore; use AzurePGVectorStore instead."""
+        raise NotImplementedError(
+            "Add interface is not implemented for AsyncAzurePGVectorStore: use AzurePGVectorStore, instead."
+        )
+
+    @override
+    def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
+        """Not implemented for AsyncAzurePGVectorStore; use AzurePGVectorStore instead."""
+        raise NotImplementedError(
+            "Delete interface is not implemented for AsyncAzurePGVectorStore: use AzurePGVectorStore, instead."
+        )
+
+    @override
+    def query(self, query: VectorStoreQuery, **kwargs: Any) -> VectorStoreQueryResult:
+        """Not implemented for AsyncAzurePGVectorStore; use AzurePGVectorStore instead."""
+        raise NotImplementedError(
+            "Query interface is not implemented for AsyncAzurePGVectorStore: use AzurePGVectorStore, instead."
+        )
+
+    @override
+    def get_nodes(
+        self,
+        node_ids: Optional[list[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **kwargs: Any,
+    ) -> list[BaseNode]:
+        """Not implemented for AsyncAzurePGVectorStore; use AzurePGVectorStore instead."""
+        raise NotImplementedError(
+            "get_nodes interface is not implemented for AsyncAzurePGVectorStore: use AzurePGVectorStore, instead."
+        )
+
+    @override
+    def clear(self) -> None:
+        """Not implemented for AsyncAzurePGVectorStore; use AzurePGVectorStore instead."""
+        raise NotImplementedError(
+            "clear interface is not implemented for AsyncAzurePGVectorStore: use AzurePGVectorStore, instead."
+        )
+
+    @override
+    def delete_nodes(
+        self,
+        node_ids: Optional[list[str]] = None,
+        filters: Optional[MetadataFilters] = None,
+        **delete_kwargs: Any,
+    ) -> None:
+        """Not implemented for AsyncAzurePGVectorStore; use AzurePGVectorStore instead."""
+        raise NotImplementedError(
+            "delete_nodes interface is not implemented for AsyncAzurePGVectorStore: use AzurePGVectorStore, instead."
+        )
