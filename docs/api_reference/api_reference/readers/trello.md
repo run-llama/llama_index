@@ -1,4 +1,3 @@
 ::: llama_index.readers.trello
-    options:
-      members:
-        - TrelloReader
+options:
+members: - TrelloReader
