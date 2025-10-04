@@ -326,3 +326,21 @@ async def collection_initialized_payload_indexed_vector_store() -> AsyncGenerato
             client.close()
         except Exception:
             pass
+
+
+@pytest_asyncio.fixture
+async def async_only_hybrid_vector_store() -> QdrantVectorStore:
+    """
+    Fixture to test initialization with only an async client and hybrid search enabled.
+    This specifically reproduces the bug conditions.
+    """
+    # Note: Each in-memory client has its own isolated storage.
+    aclient = qdrant_client.AsyncQdrantClient(":memory:")
+
+    # The key part: initialize with *only* the aclient.
+    return QdrantVectorStore(
+        "test_async_only",
+        aclient=aclient,
+        enable_hybrid=True,
+        fastembed_sparse_model="Qdrant/bm25",
+    )
