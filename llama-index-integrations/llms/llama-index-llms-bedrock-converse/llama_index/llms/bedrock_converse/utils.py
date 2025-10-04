@@ -1,7 +1,18 @@
 import base64
 import json
 import logging
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Literal,
+    Union,
+)
+from typing_extensions import TypedDict
 from tenacity import (
     before_sleep_log,
     retry,
@@ -20,6 +31,7 @@ from llama_index.core.base.llms.types import (
     AudioBlock,
     DocumentBlock,
     CachePoint,
+    ThinkingBlock,
 )
 
 
@@ -151,6 +163,18 @@ BEDROCK_PROMPT_CACHING_SUPPORTED_MODELS = (
     "amazon.nova-micro-v1:0",
 )
 
+BEDROCK_REASONING_MODELS = (
+    "anthropic.claude-3-7-sonnet-20250219-v1:0",
+    "anthropic.claude-opus-4-20250514-v1:0",
+    "anthropic.claude-sonnet-4-20250514-v1:0",
+    "deepseek.r1-v1:0",
+)
+
+
+def is_reasoning(model_name: str) -> bool:
+    model_name = get_model_name(model_name)
+    return model_name in BEDROCK_REASONING_MODELS
+
 
 def get_model_name(model_name: str) -> str:
     """Extract base model name from region-prefixed model identifier."""
@@ -220,6 +244,22 @@ def _content_block_to_bedrock_format(
         return {
             "text": block.text,
         }
+    elif isinstance(block, ThinkingBlock):
+        if block.content:
+            thinking_data = {
+                "reasoningContent": {"reasoningText": {"text": block.content}}
+            }
+            if (
+                "signature" in block.additional_information
+                and block.additional_information["signature"]
+            ):
+                thinking_data["reasoningContent"]["reasoningText"]["signature"] = (
+                    block.additional_information["signature"]
+                )
+
+            return thinking_data
+        else:
+            return None
     elif isinstance(block, DocumentBlock):
         if not block.data:
             file_buffer = block.resolve_document()
@@ -518,6 +558,10 @@ def converse_with_retry(
             "temperature": temperature,
         },
     }
+    if "thinking" in kwargs:
+        converse_kwargs["additionalModelRequestFields"] = {
+            "thinking": kwargs["thinking"]
+        }
     if system_prompt:
         if isinstance(system_prompt, str):
             # if the system prompt is a simple text (for retro compatibility)
@@ -547,7 +591,14 @@ def converse_with_retry(
         {
             k: v
             for k, v in kwargs.items()
-            if k not in ["tools", "guardrail_identifier", "guardrail_version", "trace"]
+            if k
+            not in [
+                "tools",
+                "guardrail_identifier",
+                "guardrail_version",
+                "trace",
+                "thinking",
+            ]
         },
     )
 
@@ -589,6 +640,10 @@ async def converse_with_retry_async(
             "temperature": temperature,
         },
     }
+    if "thinking" in kwargs:
+        converse_kwargs["additionalModelRequestFields"] = {
+            "thinking": kwargs["thinking"]
+        }
 
     if system_prompt:
         if isinstance(system_prompt, str):
@@ -622,7 +677,14 @@ async def converse_with_retry_async(
         {
             k: v
             for k, v in kwargs.items()
-            if k not in ["tools", "guardrail_identifier", "guardrail_version", "trace"]
+            if k
+            not in [
+                "tools",
+                "guardrail_identifier",
+                "guardrail_version",
+                "trace",
+                "thinking",
+            ]
         },
     )
     _boto_client_kwargs = {}
@@ -688,3 +750,8 @@ def join_two_dicts(dict1: Dict[str, Any], dict2: Dict[str, Any]) -> Dict[str, An
             else:
                 new_dict[key] += value
     return new_dict
+
+
+class ThinkingDict(TypedDict):
+    type: Literal["enabled"]
+    budget_tokens: int
