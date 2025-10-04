@@ -443,6 +443,18 @@ class ThinkingBlock(BaseModel):
     )
 
 
+class ToolCallBlock(BaseModel):
+    block_type: Literal["tool_call"] = "tool_call"
+    tool_call_id: Optional[str] = Field(
+        default=None, description="ID of the tool call, if provided"
+    )
+    tool_name: str = Field(description="Name of the called tool")
+    tool_kwargs: dict[str, Any] | str = Field(
+        default_factory=dict,  # type: ignore
+        description="Arguments provided to the tool, if available",
+    )
+
+
 ContentBlock = Annotated[
     Union[
         TextBlock,
@@ -454,6 +466,7 @@ ContentBlock = Annotated[
         CitableBlock,
         CitationBlock,
         ThinkingBlock,
+        ToolCallBlock,
     ],
     Field(discriminator="block_type"),
 ]

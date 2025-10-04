@@ -17,7 +17,7 @@ from llama_index.core.llms import (
     CachePoint,
     CacheControl,
 )
-from llama_index.core.base.llms.types import ThinkingBlock
+from llama_index.core.base.llms.types import ThinkingBlock, ToolCallBlock
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.anthropic import Anthropic
 from llama_index.llms.anthropic.base import AnthropicChatResponse
@@ -253,8 +253,16 @@ def test_tool_required():
         tool_required=True,
     )
     assert isinstance(response, AnthropicChatResponse)
-    assert response.message.additional_kwargs["tool_calls"] is not None
-    assert len(response.message.additional_kwargs["tool_calls"]) > 0
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        > 0
+    )
 
     # Test with tool_required=False
     response = llm.chat_with_tools(
@@ -264,7 +272,16 @@ def test_tool_required():
     )
     assert isinstance(response, AnthropicChatResponse)
     # Should not use tools for a simple greeting
-    assert not response.message.additional_kwargs.get("tool_calls")
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        == 0
+    )
 
     # should not blow up with no tools (regression test)
     response = llm.chat_with_tools(
@@ -273,7 +290,16 @@ def test_tool_required():
         tool_required=False,
     )
     assert isinstance(response, AnthropicChatResponse)
-    assert not response.message.additional_kwargs.get("tool_calls")
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        == 0
+    )
 
 
 @pytest.mark.skipif(

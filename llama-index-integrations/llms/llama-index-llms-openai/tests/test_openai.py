@@ -369,7 +369,7 @@ def test_chat_model_streaming(MockSyncOpenAI: MagicMock) -> None:
         )
         chat_response_gen = llm.stream_chat([message])
         chat_responses = list(chat_response_gen)
-        assert chat_responses[-1].message.content == "\n\n2"
+        assert chat_responses[-1].message.blocks[-1].text == "\n\n2"
         assert chat_responses[-1].message.role == "assistant"
 
 

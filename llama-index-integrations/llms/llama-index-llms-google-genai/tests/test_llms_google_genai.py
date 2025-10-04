@@ -11,6 +11,7 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     VideoBlock,
     ThinkingBlock,
+    ToolCallBlock,
 )
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.program.function_program import get_function_tool
@@ -564,8 +565,17 @@ def test_tool_required_integration(llm: GoogleGenAI) -> None:
         tools=[search_tool],
         tool_required=True,
     )
-    assert response.message.additional_kwargs.get("tool_calls") is not None
-    assert len(response.message.additional_kwargs["tool_calls"]) > 0
+
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        > 0
+    )
 
     # Test with tool_required=False
     response = llm.chat_with_tools(
@@ -730,15 +740,13 @@ async def test_prepare_chat_params_more_than_2_tool_calls():
             ],
         ),
         ChatMessage(
-            content="Let me search for puppies.",
+            blocks=[
+                TextBlock(text="Let me search for puppies."),
+                ToolCallBlock(tool_name="tool_1"),
+                ToolCallBlock(tool_name="tool_2"),
+                ToolCallBlock(tool_name="tool_3"),
+            ],
             role=MessageRole.ASSISTANT,
-            additional_kwargs={
-                "tool_calls": [
-                    {"name": "tool_1"},
-                    {"name": "tool_2"},
-                    {"name": "tool_3"},
-                ]
-            },
         ),
         ChatMessage(
             content="Tool 1 Response",
@@ -778,9 +786,9 @@ async def test_prepare_chat_params_more_than_2_tool_calls():
                     thought=True,
                 ),
                 types.Part(text="Let me search for puppies."),
-                types.Part.from_function_call(name="tool_1", args=None),
-                types.Part.from_function_call(name="tool_2", args=None),
-                types.Part.from_function_call(name="tool_3", args=None),
+                types.Part.from_function_call(name="tool_1", args={}),
+                types.Part.from_function_call(name="tool_2", args={}),
+                types.Part.from_function_call(name="tool_3", args={}),
             ],
             role=MessageRole.MODEL,
         ),
@@ -872,6 +880,7 @@ def test_cached_content_in_response() -> None:
     mock_response.candidates[0].content.parts[0].text = "Test response"
     mock_response.candidates[0].content.parts[0].thought = False
     mock_response.candidates[0].content.parts[0].inline_data = None
+    mock_response.candidates[0].content.parts[0].function_call = None
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = None
     mock_response.function_calls = None
@@ -899,6 +908,7 @@ def test_cached_content_without_cached_content() -> None:
     mock_response.candidates[0].content.parts[0].text = "Test response"
     mock_response.candidates[0].content.parts[0].thought = False
     mock_response.candidates[0].content.parts[0].inline_data = None
+    mock_response.candidates[0].content.parts[0].function_call = None
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = None
     mock_response.function_calls = None
@@ -923,9 +933,11 @@ def test_thoughts_in_response() -> None:
     mock_response.candidates[0].content.parts[0].text = "This is a thought."
     mock_response.candidates[0].content.parts[0].inline_data = None
     mock_response.candidates[0].content.parts[0].thought = True
+    mock_response.candidates[0].content.parts[0].function_call = None
     mock_response.candidates[0].content.parts[1].text = "This is not a thought."
     mock_response.candidates[0].content.parts[1].inline_data = None
     mock_response.candidates[0].content.parts[1].thought = None
+    mock_response.candidates[0].content.parts[1].function_call = None
     mock_response.candidates[0].content.parts[0].model_dump = MagicMock(return_value={})
     mock_response.candidates[0].content.parts[1].model_dump = MagicMock(return_value={})
     mock_response.prompt_feedback = None
@@ -967,6 +979,7 @@ def test_thoughts_without_thought_response() -> None:
     mock_response.candidates[0].content.parts[0].text = "This is not a thought."
     mock_response.candidates[0].content.parts[0].inline_data = None
     mock_response.candidates[0].content.parts[0].thought = None
+    mock_response.candidates[0].content.parts[0].function_call = None
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = None
     mock_response.function_calls = None
@@ -1084,6 +1097,7 @@ def test_built_in_tool_in_response() -> None:
     ].text = "Test response with search results"
     mock_response.candidates[0].content.parts[0].inline_data = None
     mock_response.candidates[0].content.parts[0].thought = None
+    mock_response.candidates[0].content.parts[0].function_call = None
     mock_response.prompt_feedback = None
     mock_response.usage_metadata = MagicMock()
     mock_response.usage_metadata.model_dump.return_value = {
@@ -1523,6 +1537,7 @@ def test_code_execution_response_parts() -> None:
     )
     mock_text_part.inline_data = None
     mock_text_part.thought = None
+    mock_text_part.function_call = None
 
     mock_code_part = MagicMock()
     mock_code_part.text = None
@@ -1532,11 +1547,13 @@ def test_code_execution_response_parts() -> None:
         "code": "def is_prime(n):\n    if n < 2:\n        return False\n    for i in range(2, int(n**0.5) + 1):\n        if n % i == 0:\n            return False\n    return True\n\nprimes = []\nn = 2\nwhile len(primes) < 50:\n    if is_prime(n):\n        primes.append(n)\n    n += 1\n\nprint(f'Sum of first 50 primes: {sum(primes)}')",
         "language": types.Language.PYTHON,
     }
+    mock_code_part.function_call = None
 
     mock_result_part = MagicMock()
     mock_result_part.text = None
     mock_result_part.inline_data = None
     mock_result_part.thought = None
+    mock_result_part.function_call = None
     mock_result_part.code_execution_result = {
         "outcome": types.Outcome.OUTCOME_OK,
         "output": "Sum of first 50 primes: 5117",
@@ -1545,6 +1562,7 @@ def test_code_execution_response_parts() -> None:
     mock_final_text_part = MagicMock()
     mock_final_text_part.text = "The sum of the first 50 prime numbers is 5117."
     mock_final_text_part.inline_data = None
+    mock_final_text_part.function_call = None
     mock_final_text_part.thought = None
 
     mock_candidate.content.parts = [

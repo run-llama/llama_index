@@ -3,13 +3,14 @@ import httpx
 import base64
 from pathlib import Path
 from unittest.mock import patch
+from typing import cast, Any
 
 from mistralai import ToolCall, ImageURLChunk, TextChunk, ThinkChunk
 import pytest
 
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.llms import ChatMessage, ImageBlock, TextBlock
-from llama_index.core.base.llms.types import ThinkingBlock
+from llama_index.core.base.llms.types import ThinkingBlock, ToolCallBlock
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.mistralai import MistralAI
 from llama_index.llms.mistralai.base import to_mistral_chunks
@@ -40,14 +41,13 @@ def test_tool_required():
         user_msg="What is the capital of France?",
         tool_required=True,
     )
-    additional_kwargs = result.message.additional_kwargs
-    assert "tool_calls" in additional_kwargs
-    tool_calls = additional_kwargs["tool_calls"]
+    tool_calls = [
+        block for block in result.message.blocks if isinstance(block, ToolCallBlock)
+    ]
     assert len(tool_calls) == 1
     tool_call = tool_calls[0]
-    assert isinstance(tool_call, ToolCall)
-    assert tool_call.function.name == "search_tool"
-    assert "query" in tool_call.function.arguments
+    assert tool_call.tool_name == "search_tool"
+    assert "query" in cast(dict[str, Any], tool_call.tool_kwargs)
 
 
 @patch("mistralai.Mistral")
@@ -184,3 +184,19 @@ def test_to_mistral_chunks(tmp_path: Path, image_url: str) -> None:
     )
     assert isinstance(thinking_chunks[1], TextChunk)
     assert thinking_chunks[1].text == "This is some text"
+    tool_call_blocks = [
+        ToolCallBlock(
+            tool_call_id="1", tool_kwargs={"a": 1, "b": 2}, tool_name="sum_tool"
+        ),
+        TextBlock(text="The result of 1+2 is 3"),
+    ]
+    tool_call_chunks = to_mistral_chunks(tool_call_blocks)
+    assert len(tool_call_blocks) == 2
+    assert isinstance(tool_call_chunks[0], ToolCall)
+    assert (
+        tool_call_chunks[0].function.name == "sum_tool"
+        and tool_call_chunks[0].function.arguments == {"a": 1, "b": 2}
+        and tool_call_chunks[0].id == "1"
+    )
+    assert isinstance(tool_call_chunks[1], TextChunk)
+    assert tool_call_chunks[1].text == "The result of 1+2 is 3"
