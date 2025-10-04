@@ -246,9 +246,18 @@ def _content_block_to_bedrock_format(
         }
     elif isinstance(block, ThinkingBlock):
         if block.content:
-            return {
-                "text": block.content,
+            thinking_data = {
+                "reasoningContent": {"reasoningText": {"text": block.content}}
             }
+            if (
+                "signature" in block.additional_information
+                and block.additional_information["signature"]
+            ):
+                thinking_data["reasoningContent"]["reasoningText"]["signature"] = (
+                    block.additional_information["signature"]
+                )
+
+            return thinking_data
         else:
             return None
     elif isinstance(block, DocumentBlock):
@@ -631,6 +640,10 @@ async def converse_with_retry_async(
             "temperature": temperature,
         },
     }
+    if "thinking" in kwargs:
+        converse_kwargs["additionalModelRequestFields"] = {
+            "thinking": kwargs["thinking"]
+        }
 
     if system_prompt:
         if isinstance(system_prompt, str):
@@ -664,7 +677,14 @@ async def converse_with_retry_async(
         {
             k: v
             for k, v in kwargs.items()
-            if k not in ["tools", "guardrail_identifier", "guardrail_version", "trace"]
+            if k
+            not in [
+                "tools",
+                "guardrail_identifier",
+                "guardrail_version",
+                "trace",
+                "thinking",
+            ]
         },
     )
     _boto_client_kwargs = {}
