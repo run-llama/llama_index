@@ -141,6 +141,7 @@ class SGLang(LLM):
         self,
         model: str = "default",
         api_url: str = "http://localhost:30000",
+        api_key: Optional[str] = None,
         temperature: float = 1.0,
         max_new_tokens: int = 512,
         top_p: float = 1.0,
@@ -167,6 +168,7 @@ class SGLang(LLM):
         super().__init__(
             model=model,
             api_url=api_url,
+            api_key=api_key,
             temperature=temperature,
             max_new_tokens=max_new_tokens,
             top_p=top_p,
@@ -240,10 +242,11 @@ class SGLang(LLM):
         sampling_params = dict(**params)
         # SGLang OpenAI-compatible API uses 'prompt' parameter
         sampling_params["prompt"] = prompt
+        sampling_params["model"] = self.model
         
         # Use OpenAI-compatible endpoint
         endpoint = f"{self.api_url}/v1/completions"
-        response = post_http_request(endpoint, sampling_params, stream=False)
+        response = post_http_request(endpoint, sampling_params, stream=False, api_key=self.api_key)
         output = get_response(response)
 
         return CompletionResponse(text=output[0])
@@ -268,7 +271,7 @@ class SGLang(LLM):
         
         # SGLang uses OpenAI-compatible API, so use /v1/completions for streaming
         endpoint = f"{self.api_url}/v1/completions"
-        response = post_http_request(endpoint, sampling_params, stream=True)
+        response = post_http_request(endpoint, sampling_params, stream=True, api_key=self.api_key)
 
         def gen() -> CompletionResponseGen:
             response_str = ""
