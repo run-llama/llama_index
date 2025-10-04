@@ -41,12 +41,12 @@ prompt = "Test"
 # --- Integration Tests ---
 # These tests will call the actual AWS Bedrock API.
 # They will be skipped if AWS credentials are not found in the environment.
-needs_aws_creds = pytest.mark.skipif(False is True, reason="fake")
-# os.getenv("AWS_ACCESS_KEY_ID") is None
-# or os.getenv("AWS_SECRET_ACCESS_KEY") is None
-# or os.getenv("AWS_REGION") is None,
-# reason="AWS credentials not found in environment, skipping integration test",
-# )
+needs_aws_creds = pytest.mark.skipif(
+    os.getenv("AWS_ACCESS_KEY_ID") is None
+    or os.getenv("AWS_SECRET_ACCESS_KEY") is None
+    or os.getenv("AWS_REGION") is None,
+    reason="AWS credentials not found in environment, skipping integration test",
+)
 
 
 @pytest.fixture(scope="module")

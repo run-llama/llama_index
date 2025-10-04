@@ -1,4 +1,3 @@
 ::: llama_index.embeddings.llamafile
-    options:
-      members:
-        - LlamafileEmbedding
+options:
+members: - LlamafileEmbedding

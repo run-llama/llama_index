@@ -1,4 +1,3 @@
 ::: llama_index.vector_stores.timescalevector
-    options:
-      members:
-        - TimescaleVectorStore
+options:
+members: - TimescaleVectorStore
