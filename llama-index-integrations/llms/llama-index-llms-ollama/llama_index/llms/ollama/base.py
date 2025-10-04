@@ -442,11 +442,13 @@ class Ollama(FunctionCallingLLM):
                         role=r["message"].get("role", MessageRole.ASSISTANT),
                         additional_kwargs={
                             "tool_calls": all_tool_calls,
-                            "thinking_delta": r["message"].get("thinking", None),
                         },
                     ),
                     delta=r["message"].get("content", ""),
                     raw=r,
+                    additional_kwargs={
+                        "thinking_delta": r["message"].get("thinking", None),
+                    },
                 )
 
         return gen()
@@ -515,11 +517,13 @@ class Ollama(FunctionCallingLLM):
                         role=r["message"].get("role", MessageRole.ASSISTANT),
                         additional_kwargs={
                             "tool_calls": all_tool_calls,
-                            "thinking_delta": r["message"].get("thinking", None),
                         },
                     ),
                     delta=r["message"].get("content", ""),
                     raw=r,
+                    additional_kwargs={
+                        "thinking_delta": r["message"].get("thinking", None),
+                    },
                 )
 
         return gen()
