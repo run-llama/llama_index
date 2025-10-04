@@ -7,24 +7,40 @@ import requests
 def get_response(response: requests.Response) -> List[str]:
     """Extract text from SGLang API response."""
     data = json.loads(response.content)
-    # SGLang typically returns text in a 'text' field
+    
+    # Handle OpenAI-compatible format with choices array
+    if isinstance(data, dict) and "choices" in data:
+        choices = data["choices"]
+        if isinstance(choices, list) and len(choices) > 0:
+            # Handle both completion and chat completion formats
+            if "text" in choices[0]:
+                return [choice["text"] for choice in choices]
+            elif "message" in choices[0] and "content" in choices[0]["message"]:
+                return [choice["message"]["content"] for choice in choices]
+    
+    # Fallback for native API format
     if isinstance(data, dict) and "text" in data:
         text = data["text"]
-        # Handle both single string and list of strings
         if isinstance(text, str):
             return [text]
         return text
+    
     return []
 
 
 def post_http_request(
-    api_url: str, sampling_params: dict = {}, stream: bool = False
+    api_url: str, sampling_params: dict = {}, stream: bool = False, api_key: str = None
 ) -> requests.Response:
     """Post HTTP request to SGLang server."""
     headers = {
         "User-Agent": "LlamaIndex SGLang Client",
         "Content-Type": "application/json",
     }
+    
+    # Add API key if provided
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
+    
     sampling_params["stream"] = stream
 
     return requests.post(

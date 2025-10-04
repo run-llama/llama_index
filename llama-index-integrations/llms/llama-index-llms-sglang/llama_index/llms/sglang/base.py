@@ -70,6 +70,11 @@ class SGLang(LLM):
         description="The API URL for the SGLang server.",
     )
 
+    api_key: Optional[str] = Field(
+        default=None,
+        description="API key for authentication (if required by server).",
+    )
+
     temperature: float = Field(
         default=1.0,
         description="The temperature to use for sampling.",
@@ -233,10 +238,11 @@ class SGLang(LLM):
 
         # Build sampling parameters for SGLang
         sampling_params = dict(**params)
-        sampling_params["text"] = prompt
+        # SGLang OpenAI-compatible API uses 'prompt' parameter
+        sampling_params["prompt"] = prompt
         
-        # SGLang uses /generate endpoint
-        endpoint = f"{self.api_url}/generate"
+        # Use OpenAI-compatible endpoint
+        endpoint = f"{self.api_url}/v1/completions"
         response = post_http_request(endpoint, sampling_params, stream=False)
         output = get_response(response)
 
