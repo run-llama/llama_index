@@ -43,9 +43,7 @@ class FunctionAgent(BaseWorkflowAgent):
         ):
             chat_kwargs["tool_choice"] = self.initial_tool_choice
 
-        return await self.llm.achat_with_tools(  # type: ignore
-            **chat_kwargs
-        )
+        return await self.llm.achat_with_tools(**chat_kwargs)  # type: ignore
 
     async def _get_streaming_response(
         self,
@@ -66,9 +64,7 @@ class FunctionAgent(BaseWorkflowAgent):
         ):
             chat_kwargs["tool_choice"] = self.initial_tool_choice
 
-        response = await self.llm.astream_chat_with_tools(  # type: ignore
-            **chat_kwargs
-        )
+        response = await self.llm.astream_chat_with_tools(**chat_kwargs)  # type: ignore
         # last_chat_response will be used later, after the loop.
         # We initialize it so it's valid even when 'response' is empty
         last_chat_response = ChatResponse(message=ChatMessage())
@@ -81,6 +77,36 @@ class FunctionAgent(BaseWorkflowAgent):
                 if isinstance(last_chat_response.raw, BaseModel)
                 else last_chat_response.raw
             )
+            # Handle multiple streaming response structures for thinking_delta.
+            # Different providers (e.g., Groq, local Ollama) return the
+            # reasoning stream in different locations within the response.
+            thinking_delta = None
+
+            # Case 1: Dictionary-based access (for Groq and similar APIs)
+            if isinstance(raw, dict):
+                choices = raw.get("choices", [])
+                if choices and isinstance(choices, list) and len(choices) > 0:
+                    delta = choices[0].get("delta", {})
+                    if delta and isinstance(delta, dict):
+                        thinking_delta = delta.get("reasoning")
+
+            # Case 2: Attribute-based access (for local/Ollama, Pydantic)
+            if thinking_delta is None and last_chat_response.raw is not None:
+                raw_obj = last_chat_response.raw
+                if (
+                    hasattr(raw_obj, "choices")
+                    and raw_obj.choices
+                    and hasattr(raw_obj.choices[0], "delta")
+                    and hasattr(raw_obj.choices[0].delta, "reasoning")
+                ):
+                    thinking_delta = raw_obj.choices[0].delta.reasoning
+
+            # Case 3: Fallback to additional_kwargs
+            if thinking_delta is None:
+                thinking_delta = last_chat_response.additional_kwargs.get(
+                    "thinking_delta"
+                )
+
             ctx.write_event_to_stream(
                 AgentStream(
                     delta=last_chat_response.delta or "",
@@ -88,9 +114,7 @@ class FunctionAgent(BaseWorkflowAgent):
                     tool_calls=tool_calls or [],
                     raw=raw,
                     current_agent_name=self.name,
-                    thinking_delta=last_chat_response.additional_kwargs.get(
-                        "thinking_delta", None
-                    ),
+                    thinking_delta=thinking_delta,
                 )
             )
 
