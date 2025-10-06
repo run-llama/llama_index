@@ -21,3 +21,4 @@ Here are some additional relevant resources to build full-stack chatbot apps:
 ## External sources
 
 - [Building a chatbot with Streamlit](https://blog.streamlit.io/build-a-chatbot-with-custom-data-sources-powered-by-llamaindex/)
+- [Building a chatbot with CopilotKit](https://docs.copilotkit.ai/llamaindex/quickstart)
