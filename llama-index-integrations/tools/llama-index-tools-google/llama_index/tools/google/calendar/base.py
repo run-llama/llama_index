@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import datetime
 from zoneinfo import ZoneInfo
 import os
@@ -54,7 +53,7 @@ class GoogleCalendarToolSpec(BaseToolSpec):
 
         """
         self.creds = creds
-        self.allowed_calendar_ids = allowed_calendar_ids or []
+        self.allowed_calendar_ids = allowed_calendar_ids or all_calendars(self._get_credentials())
 
     def day_of_week_for_date(self,
                     date: Union[str, datetime.date]) -> str:
