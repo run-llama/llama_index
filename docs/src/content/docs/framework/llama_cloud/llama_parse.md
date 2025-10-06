@@ -8,6 +8,6 @@ Your LLM application performance is only as good as your data. The main goal of 
 
 ## Resources
 
-- [LlamaParse documentation](https://docs.cloud.llamaindex.ai/llamaparse/overview)
+- [LlamaParse documentation](https://docs.cloud.llamaindex.ai/llamaparse)
 - [Learn more about LlamaParse](https://www.llamaindex.ai/llamaparse)
 - [Sign up by signing up for LlamaCloud](https://cloud.llamaindex.ai/)
