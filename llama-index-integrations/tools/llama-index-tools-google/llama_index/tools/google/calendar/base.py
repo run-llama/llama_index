@@ -15,13 +15,18 @@
 # limitations under the License.
 
 import datetime
+from zoneinfo import ZoneInfo
 import os
 from typing import Any, List, Optional, Union
 
-from llama_index.core.schema import Document
 from llama_index.core.tools.tool_spec.base import BaseToolSpec
+from googleapiclient.discovery import build
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
+CALENDAR_DAYS_PADDING = 32
+DEFAULT_MONTHS_RANGE = 9
+# set to tzinfo "America/Los_Angeles"
+DEFAULT_TIME_ZONE = ZoneInfo("America/Los_Angeles")
 
 
 class GoogleCalendarToolSpec(BaseToolSpec):
@@ -33,9 +38,13 @@ class GoogleCalendarToolSpec(BaseToolSpec):
 
     """
 
-    spec_functions = ["load_data", "create_event", "get_date"]
+    spec_functions = ["list_events", "create_event", "get_current_date", "day_of_week_for_date"]
 
-    def __init__(self, creds: Optional[Any] = None):
+    def __init__(
+        self,
+        creds: Optional[Any] = None,
+        allowed_calendar_ids: Optional[List[str]] = None,
+    ):
         """
         Initialize the GoogleCalendarToolSpec.
 
@@ -45,40 +54,146 @@ class GoogleCalendarToolSpec(BaseToolSpec):
 
         """
         self.creds = creds
+        self.allowed_calendar_ids = allowed_calendar_ids or []
 
-    def load_data(
+    def day_of_week_for_date(self,
+                    date: Union[str, datetime.date]) -> str:
+        """
+        Get the day of the week for a given date.
+        """
+        if isinstance(date, str):
+            date = datetime.date.fromisoformat(date)
+        return date.strftime("%A")
+
+    def _convert_to_date(self, date: Optional[Union[str, datetime.date]]) -> datetime.date:
+        """
+        Convert a given date to a datetime.date object.
+        """
+        if date is None:
+            date = datetime.date.today()
+        elif isinstance(date, str):
+            date = datetime.date.fromisoformat(date)
+        return date
+
+    def _convert_to_timestamp_str(self, date: Optional[Union[str, datetime.date]], end_of_day = False, timezone = DEFAULT_TIME_ZONE) -> str:
+        """
+        Convert a given date to string format in the given timezone.
+
+        Args:
+            date (Optional[Union[str, datetime.date]]): The date to convert. If None, defaults to today.
+
+        Returns:
+            str: The UTC formatted string.
+        """
+        print(f"Converting to timestamp str for date: {date}, end_of_day: {end_of_day}, timezone: {timezone}")
+        date = self._convert_to_date(date)
+        print(f"Date converted to: {date}")
+        start_datetime = datetime.datetime.combine(date, datetime.time.max if end_of_day else datetime.time.min)
+        print(f"Start datetime combined: {start_datetime}")
+        start_datetime = start_datetime.replace(tzinfo=timezone)
+        print(f"Start datetime converted to: {start_datetime}")
+        print(f"Start datetime formatted: {start_datetime.strftime('%Y-%m-%dT%H:%M:%S%z')}")
+        return start_datetime.strftime("%Y-%m-%dT%H:%M:%S%z")
+
+    def is_room_available(self, start_date: Optional[Union[str, datetime.date]], calendar_id: Optional[str] = None) -> bool:
+        """
+        Check if the calendar is available on a particular date.
+        """
+        start_date = self._convert_to_date(start_date)
+        end_date = start_date + datetime.timedelta(days=1)
+
+        events = self.get_events(start_date=start_date, end_date=end_date, calendar_id=calendar_id)
+        return events is None or len(events) == 0
+
+    def list_events(
+        self,
+        start_date: Optional[Union[str, datetime.date]] = None,
+        end_date: Optional[Union[str, datetime.date]] = None,
+        calendar_id: Optional[str] = None,
+    ) -> List[dict]:
+        """
+        Get events from a google calendar.
+
+        Args:
+            start_date (Optional[Union[str, datetime.date]]): the start date to return events from in date isoformat. Defaults to today.
+            calendar_id (Optional[str]): the calendar ID to load events from. Must be provided and in allowed_calendar_ids list.
+
+        """
+        start_date = self._convert_to_date(start_date)
+        number_of_results=1000
+        months_range = DEFAULT_MONTHS_RANGE
+        if end_date:
+            end_date = self._convert_to_date(end_date)
+        else:
+            end_date = start_date + datetime.timedelta(days=months_range * 30)
+
+        # use all calendars if calendar_id is not provided
+        if calendar_id is None:
+            calendars = self.allowed_calendar_ids
+        else:
+            calendars = [calendar_id]
+
+        events = []
+        for calendar in calendars:
+            events_list = self.get_events(number_of_results=number_of_results, start_date=start_date, end_date=end_date, calendar_id=calendar)
+            events.extend(events_list)
+
+        if not events:
+            return []
+
+        events_by_date = {}
+        max_end_date = None
+        for event in events:
+            date_key = event["date"]
+            if date_key not in events_by_date:
+                events_by_date[date_key] = []
+            events_by_date[date_key].append(event)
+            max_end_date = event["end_date"] if max_end_date is None else max(max_end_date, event["end_date"])
+
+        start_datetime_str = self._convert_to_timestamp_str(start_date)
+
+        # if the number of events is less than requested, that means there are no more events on the calendar, so add some padding
+        # but don't go past the end date because there may be events after the end date
+        if len(events) < number_of_results:
+            until_date = max_end_date + datetime.timedelta(days=CALENDAR_DAYS_PADDING)
+            until_date = min(until_date, end_date)
+        else:
+            # otherwise, go until the max end date of the events
+            until_date = max_end_date
+
+        results = []
+        current_date = datetime.datetime.fromisoformat(start_datetime_str).date()
+        while current_date <= until_date:
+            result = {"date": current_date.strftime("%A, %B %d, %Y")}
+            result["events"] = events_by_date[result["date"]] if result["date"] in events_by_date else []
+            results.append(result)
+            current_date += datetime.timedelta(days=1)
+
+        return results
+
+    def get_events(
         self,
         number_of_results: Optional[int] = 100,
         start_date: Optional[Union[str, datetime.date]] = None,
-    ) -> List[Document]:
-        """
-        Load data from user's calendar.
-
-        Args:
-            number_of_results (Optional[int]): the number of events to return. Defaults to 100.
-            start_date (Optional[Union[str, datetime.date]]): the start date to return events from in date isoformat. Defaults to today.
-
-        """
-        from googleapiclient.discovery import build
+        end_date: Optional[Union[str, datetime.date]] = None,
+        calendar_id: Optional[str] = None,
+    ) -> List[dict]:
 
         credentials = self._get_credentials()
         service = build("calendar", "v3", credentials=credentials)
 
-        if start_date is None:
-            start_date = datetime.date.today()
-        elif isinstance(start_date, str):
-            start_date = datetime.date.fromisoformat(start_date)
-
-        start_datetime = datetime.datetime.combine(start_date, datetime.time.min)
-        start_datetime_utc = start_datetime.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        end_datetime_str = self._convert_to_timestamp_str(end_date, end_of_day=True) if end_date else None
+        start_datetime_str = self._convert_to_timestamp_str(start_date)
 
         events_result = (
             service.events()
             .list(
-                calendarId="primary",
-                timeMin=start_datetime_utc,
+                calendarId=calendar_id,
+                timeMin=start_datetime_str,
+                timeMax=end_datetime_str,
                 maxResults=number_of_results,
                 singleEvents=True,
+                timeZone=DEFAULT_TIME_ZONE,
                 orderBy="startTime",
             )
             .execute()
@@ -91,31 +206,20 @@ class GoogleCalendarToolSpec(BaseToolSpec):
 
         results = []
         for event in events:
-            if "dateTime" in event["start"]:
-                start_time = event["start"]["dateTime"]
-            else:
-                start_time = event["start"]["date"]
+            start_time = datetime.datetime.fromisoformat(event["start"]["dateTime"] if "dateTime" in event["start"] else event["start"]["date"])
+            end_time = datetime.datetime.fromisoformat(event["end"]["dateTime"] if "dateTime" in event["end"] else event["end"]["date"])
 
-            if "dateTime" in event["end"]:
-                end_time = event["end"]["dateTime"]
-            else:
-                end_time = event["end"]["date"]
-
-            event_string = f"Status: {event['status']}, "
-            event_string += f"Summary: {event['summary']}, "
-            event_string += f"Start time: {start_time}, "
-            event_string += f"End time: {end_time}, "
+            result = {
+                "status": event['status'], "summary": event['summary'],
+                "description": event.get('description', ''), "date": start_time.date().strftime("%A, %B %d, %Y"),
+                "start": start_time.strftime("%I:%M %p"), "end": end_time.strftime("%I:%M %p"),
+                "end_date": end_time.date()
+            }
 
             organizer = event.get("organizer", {})
             display_name = organizer.get("displayName", "N/A")
-            email = organizer.get("email", "N/A")
-            if display_name != "N/A":
-                event_string += f"Organizer: {display_name} ({email})"
-            else:
-                event_string += f"Organizer: {email}"
-
-            results.append(Document(text=event_string))
-
+            result["calendar_name"] = display_name
+            results.append(result)
         return results
 
     def _get_credentials(self) -> Any:
@@ -128,7 +232,6 @@ class GoogleCalendarToolSpec(BaseToolSpec):
 
         Returns:
             Credentials, the obtained credential.
-
         """
         if self.creds is not None:
             return self.creds
@@ -164,6 +267,7 @@ class GoogleCalendarToolSpec(BaseToolSpec):
         start_datetime: Optional[Union[str, datetime.datetime]] = None,
         end_datetime: Optional[Union[str, datetime.datetime]] = None,
         attendees: Optional[List[str]] = None,
+        calendar_id: Optional[str] = None,
     ) -> str:
         """
             Create an event on the users calendar.
@@ -175,9 +279,15 @@ class GoogleCalendarToolSpec(BaseToolSpec):
             start_datetime Optional[Union[str, datetime.datetime]]: The start datetime for the event
             end_datetime Optional[Union[str, datetime.datetime]]: The end datetime for the event
             attendees Optional[List[str]]: A list of email address to invite to the event
+            calendar_id (Optional[str]): The calendar ID to create the event in. Must be provided and in allowed_calendar_ids list.
 
         """
-        from googleapiclient.discovery import build
+        if calendar_id is None:
+            return "Error: calendar_id is required"
+
+        validation_error = self._validate_calendar_id(calendar_id)
+        if validation_error:
+            return validation_error
 
         credentials = self._get_credentials()
         service = build("calendar", "v3", credentials=credentials)
@@ -209,14 +319,37 @@ class GoogleCalendarToolSpec(BaseToolSpec):
             },
             "attendees": attendees_list,
         }
-        event = service.events().insert(calendarId="primary", body=event).execute()
+        event = service.events().insert(calendarId=calendar_id, body=event).execute()
+        if not event or "id" not in event:
+            return "Error creating event"
         return (
             "Your calendar event has been created successfully! You can move on to the"
             " next step."
         )
 
-    def get_date(self):
+    def _validate_calendar_id(self, calendar_id: str) -> dict:
+        if calendar_id not in self.allowed_calendar_ids:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.error(
+                f"Invalid calendar ID '{calendar_id}' attempted. Valid IDs: {self.allowed_calendar_ids}"
+            )
+            return {
+                "error": "Invalid calendar_id",
+                "allowed_values": list(self.allowed_calendar_ids),
+            }
+        return None
+
+    def get_current_date(self):
         """
-        A function to return todays date. Call this before any other functions if you are unaware of the date.
+        A function to return today's date.
         """
-        return datetime.date.today()
+        return datetime.date.today().strftime("%A, %B %d, %Y")
+
+
+def all_calendars(creds) -> List[str]:
+    """List all accessible calendar IDs for configuration purposes."""
+    service = build("calendar", "v3", credentials=creds)
+    calendar_list = service.calendarList().list().execute()
+    return [cal["id"] for cal in calendar_list.get("items", [])]
