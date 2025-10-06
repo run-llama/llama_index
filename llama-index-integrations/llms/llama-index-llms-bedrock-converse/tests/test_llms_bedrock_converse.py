@@ -1,6 +1,6 @@
-import os
 import random
 import string
+import os
 from llama_index.core.base.llms.types import ImageBlock, TextBlock
 import pytest
 from llama_index.llms.bedrock_converse import BedrockConverse
@@ -11,6 +11,7 @@ from llama_index.core.base.llms.types import (
     CompletionResponse,
     ImageBlock,
     TextBlock,
+    ThinkingBlock,
     CachePoint,
     CacheControl,
 )
@@ -74,6 +75,20 @@ def bedrock_converse_integration():
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
         max_tokens=EXP_MAX_TOKENS,
         system_prompt_caching=True,
+    )
+
+
+@pytest.fixture(scope="module")
+def bedrock_converse_integration_thinking():
+    """Create a BedrockConverse instance for integration tests with proper credentials."""
+    return BedrockConverse(
+        model="anthropic.claude-3-7-sonnet-20250219-v1:0",
+        region_name=os.getenv("AWS_REGION", "us-east-1"),
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        max_tokens=12000,
+        temperature=1,
+        thinking={"budget_tokens": 10000, "type": "enabled"},
     )
 
 
@@ -829,6 +844,66 @@ async def test_bedrock_converse_agent_with_void_tool_and_continued_conversation(
     assert response_5 is not None
     assert hasattr(response_5, "response")
     assert len(str(response_5)) > 0
+
+
+@needs_aws_creds
+@pytest.mark.asyncio
+async def test_bedrock_converse_thinking(bedrock_converse_integration_thinking):
+    messages = [
+        ChatMessage(
+            role="user",
+            content="Can you help me solve this equation for x? x^2+7x+12 = 0. Please think before answering",
+        )
+    ]
+    res_chat = bedrock_converse_integration_thinking.chat(messages)
+    assert (
+        len(
+            [
+                block
+                for block in res_chat.message.blocks
+                if isinstance(block, ThinkingBlock)
+            ]
+        )
+        > 0
+    )
+
+    res_achat = await bedrock_converse_integration_thinking.achat(messages)
+    assert (
+        len(
+            [
+                block
+                for block in res_achat.message.blocks
+                if isinstance(block, ThinkingBlock)
+            ]
+        )
+        > 0
+    )
+    res_stream_chat = bedrock_converse_integration_thinking.stream_chat(messages)
+
+    last_resp = None
+    for r in res_stream_chat:
+        last_resp = r
+
+    assert all(
+        len((block.content or "")) > 10
+        for block in last_resp.message.blocks
+        if isinstance(block, ThinkingBlock)
+    )
+    assert len(last_resp.message.blocks) > 0
+    res_astream_chat = await bedrock_converse_integration_thinking.astream_chat(
+        messages
+    )
+
+    last_resp = None
+    async for r in res_astream_chat:
+        last_resp = r
+
+    assert all(
+        len((block.content or "")) > 10
+        for block in last_resp.message.blocks
+        if isinstance(block, ThinkingBlock)
+    )
+    assert len(last_resp.message.blocks) > 0
 
 
 @needs_aws_creds
