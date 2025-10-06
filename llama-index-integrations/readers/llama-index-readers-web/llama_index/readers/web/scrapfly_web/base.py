@@ -39,7 +39,11 @@ class ScrapflyReader(BasePydanticReader):
                 "`scrapfly` package not found, please run `pip install scrapfly-sdk`"
             )
         scrapfly = ScrapflyClient(key=api_key)
-        super().__init__(api_key=api_key, ignore_scrape_failures=ignore_scrape_failures, scrapfly=scrapfly)
+        super().__init__(
+            api_key=api_key,
+            ignore_scrape_failures=ignore_scrape_failures,
+            scrapfly=scrapfly,
+        )
 
     @classmethod
     def class_name(cls) -> str:
