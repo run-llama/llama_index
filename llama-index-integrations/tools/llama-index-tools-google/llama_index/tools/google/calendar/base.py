@@ -214,7 +214,7 @@ class GoogleCalendarToolSpec(BaseToolSpec):
 
             result = {
                 "status": event['status'], "summary": event['summary'],
-                "description": event.get('description', ''), "date": start_time.date().strftime("%A, %B %d, %Y"),
+                "date": start_time.date().strftime("%A, %B %d, %Y"),
                 "start": start_time.strftime("%I:%M %p"), "end": end_time.strftime("%I:%M %p"),
                 "end_date": end_time.date()
             }
