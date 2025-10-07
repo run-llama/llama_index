@@ -53,7 +53,7 @@ class GoogleCalendarToolSpec(BaseToolSpec):
 
         """
         self.creds = creds
-        self.allowed_calendar_ids = allowed_calendar_ids or all_calendars(self._get_credentials())
+        self.allowed_calendar_ids = allowed_calendar_ids
 
     def day_of_week_for_date(self,
                     date: Union[str, datetime.date]) -> str:
@@ -118,6 +118,16 @@ class GoogleCalendarToolSpec(BaseToolSpec):
             calendar_id (Optional[str]): the calendar ID to load events from. Must be provided and in allowed_calendar_ids list.
 
         """
+        self.init_allowed_calendars()
+
+        if calendar_id:
+            validation_error = self._validate_calendar_id(calendar_id)
+            if validation_error:
+                return validation_error
+            calendars = [calendar_id]
+        else:
+            calendars = self.allowed_calendar_ids
+
         start_date = self._convert_to_date(start_date)
         number_of_results=1000
         months_range = DEFAULT_MONTHS_RANGE
@@ -125,12 +135,6 @@ class GoogleCalendarToolSpec(BaseToolSpec):
             end_date = self._convert_to_date(end_date)
         else:
             end_date = start_date + datetime.timedelta(days=months_range * 30)
-
-        # use all calendars if calendar_id is not provided
-        if calendar_id is None:
-            calendars = self.allowed_calendar_ids
-        else:
-            calendars = [calendar_id]
 
         events = []
         for calendar in calendars:
@@ -326,7 +330,13 @@ class GoogleCalendarToolSpec(BaseToolSpec):
             " next step."
         )
 
+    def init_allowed_calendars(self):
+        # TODO: Normally this would be in the init function but it causes problems with the tests
+        if self.allowed_calendar_ids is None:
+            self.allowed_calendar_ids = all_calendars(self._get_credentials())
+
     def _validate_calendar_id(self, calendar_id: str) -> dict:
+        self.init_allowed_calendars()
         if calendar_id not in self.allowed_calendar_ids:
             import logging
 
