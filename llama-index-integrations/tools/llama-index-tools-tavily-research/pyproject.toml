@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-tools-tavily-research"
-version = "0.4.1"
+version = "0.4.2"
 description = "llama-index tools tavily_research integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
