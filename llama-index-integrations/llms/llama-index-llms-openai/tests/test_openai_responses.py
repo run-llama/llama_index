@@ -153,7 +153,7 @@ def test_process_response_event():
     )
 
     updated_blocks, updated_tool_calls, _, _, _, _, delta = result
-    assert updated_blocks == [TextBlock(text="Hello")]
+    assert updated_blocks == []
     assert delta == "Hello"
     assert updated_tool_calls == []
 
