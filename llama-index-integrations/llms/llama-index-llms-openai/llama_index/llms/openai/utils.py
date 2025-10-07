@@ -199,9 +199,9 @@ JSON_SCHEMA_MODELS = [
     "o1-pro",
     "o3",
     "o3-mini",
-    "gpt-4.1",
     "gpt-4o",
     "gpt-4.1",
+    "gpt-5",
 ]
 
 
