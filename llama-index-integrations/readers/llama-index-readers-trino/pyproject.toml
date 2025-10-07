@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "llama-index-readers-trino"
+version = "0.1.0"
+description = "Trino Data Reader for LlamaIndex"
+authors = ["Your Name <youremail@example.com>"]
+readme = "README.md"
+packages = [{include = "llama_index"}]
+license = "MIT"
+
+[tool.poetry.dependencies]
+python = "^3.8"
+llama-index-core = "^0.10.0"
+trino-python-client = "^0.11.0" # Required for connecting to Trino
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0"
+mypy = "^1.0"
+ruff = "^0.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
