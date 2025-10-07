@@ -1592,6 +1592,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
         - new sparse vector field name vs old sparse vector field name
         """
         try:
+            old_sparse_name = self.sparse_vector_name  # Store state before detection
+
             collection_info = self._client.get_collection(collection_name)
             vectors_config = collection_info.config.params.vectors
             sparse_vectors = collection_info.config.params.sparse_vectors or {}
@@ -1613,6 +1615,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
                     pass
                 elif DEFAULT_SPARSE_VECTOR_NAME_OLD in sparse_vectors:
                     self.sparse_vector_name = DEFAULT_SPARSE_VECTOR_NAME_OLD
+
+            # If the name changed, our initial assumption was wrong. Correct it.
+            if self.enable_hybrid and old_sparse_name != self.sparse_vector_name:
+                self._reinitialize_sparse_encoders()
 
         except Exception as e:
             logger.warning(
