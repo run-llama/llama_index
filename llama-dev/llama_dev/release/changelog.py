@@ -124,7 +124,11 @@ def changelog(obj: dict, dry_run: bool) -> None:
         for pr_number in bar:
             try:
                 prs, versions = _extract_pr_data(repo_root, all_packages, pr_number)
-                package_prs |= prs
+                # Merge PR lists for each package instead of overwriting
+                for pkg_name, pr_list in prs.items():
+                    if pkg_name not in package_prs:
+                        package_prs[pkg_name] = []
+                    package_prs[pkg_name].extend(pr_list)
                 package_versions |= versions
 
             except Exception as e:

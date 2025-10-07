@@ -450,7 +450,8 @@ class OpenAIResponses(FunctionCallingLLM):
 
         return stream_complete_fn(prompt, **kwargs)
 
-    def _parse_response_output(self, output: List[ResponseOutputItem]) -> ChatResponse:
+    @staticmethod
+    def _parse_response_output(output: List[ResponseOutputItem]) -> ChatResponse:
         message = ChatMessage(role=MessageRole.ASSISTANT, blocks=[])
         additional_kwargs = {"built_in_tool_calls": []}
         tool_calls = []
@@ -526,7 +527,7 @@ class OpenAIResponses(FunctionCallingLLM):
         if self.track_previous_responses:
             self._previous_response_id = response.id
 
-        chat_response = self._parse_response_output(response.output)
+        chat_response = OpenAIResponses._parse_response_output(response.output)
         chat_response.raw = response
         chat_response.additional_kwargs["usage"] = response.usage
         if hasattr(response.usage.output_tokens_details, "reasoning_tokens"):
@@ -590,7 +591,6 @@ class OpenAIResponses(FunctionCallingLLM):
         elif isinstance(event, ResponseTextDeltaEvent):
             # Text content is being added
             delta = event.delta
-            blocks.append(TextBlock(text=delta))
         elif isinstance(event, ResponseImageGenCallPartialImageEvent):
             # Partial image
             if event.partial_image_b64:
@@ -653,6 +653,8 @@ class OpenAIResponses(FunctionCallingLLM):
             # Response is complete
             if hasattr(event, "response") and hasattr(event.response, "usage"):
                 additional_kwargs["usage"] = event.response.usage
+            resp = OpenAIResponses._parse_response_output(event.response.output)
+            blocks = resp.message.blocks
 
         return (
             blocks,
@@ -782,7 +784,7 @@ class OpenAIResponses(FunctionCallingLLM):
         if self.track_previous_responses:
             self._previous_response_id = response.id
 
-        chat_response = self._parse_response_output(response.output)
+        chat_response = OpenAIResponses._parse_response_output(response.output)
         chat_response.raw = response
         chat_response.additional_kwargs["usage"] = response.usage
 
