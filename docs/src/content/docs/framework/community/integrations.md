@@ -49,6 +49,7 @@ for full tracing integrations.
 
 - [Streamlit](https://blog.streamlit.io/build-a-chatbot-with-custom-data-sources-powered-by-llamaindex/)
 - [Chainlit](https://docs.chainlit.io/integrations/llama-index)
+- [CopilotKit](https://docs.copilotkit.ai/llamaindex/quickstart)
 
 ## Distributed Compute
 
