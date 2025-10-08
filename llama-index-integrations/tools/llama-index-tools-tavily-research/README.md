@@ -53,7 +53,7 @@ documents = tavily_tool.extract(
     include_images=True,
     include_favicon=True,
     extract_depth="advanced",  # "basic" or "advanced"
-    format="markdown"  # "markdown" or "text"
+    format="markdown",  # "markdown" or "text"
 )
 
 for doc in documents:
