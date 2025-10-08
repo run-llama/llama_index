@@ -20,6 +20,7 @@ from llama_index.core.storage.chat_store.base import BaseChatStore
 
 import json
 
+
 def safe_model_dump_json(model):
     """
     Safely dumps a Pydantic model to JSON, even if it contains
