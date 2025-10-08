@@ -18,20 +18,6 @@ from sqlalchemy.dialects.postgresql import JSON, ARRAY, JSONB, VARCHAR
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.storage.chat_store.base import BaseChatStore
 
-import json
-
-
-def safe_model_dump_json(model):
-    """
-    Safely dumps a Pydantic model to JSON, even if it contains
-    non-serializable objects like Google FunctionCall.
-    """
-    try:
-        return model.model_dump_json(exclude_none=True)
-    except Exception:
-        data = model.model_dump(exclude_none=True)
-        return json.dumps(data, default=lambda o: getattr(o, "__dict__", str(o)))
-
 
 def get_data_model(
     base: type,
@@ -206,7 +192,7 @@ class PostgresChatStore(BaseChatStore):
 
             params = {
                 "key": key,
-                "value": [safe_model_dump_json(message) for message in messages],
+                "value": [message.model_dump_json() for message in messages],
             }
 
             # Execute the bulk upsert
@@ -228,7 +214,7 @@ class PostgresChatStore(BaseChatStore):
 
             params = {
                 "key": key,
-                "value": [safe_model_dump_json(message) for message in messages],
+                "value": [message.model_dump_json() for message in messages],
             }
 
             # Execute the bulk upsert
@@ -271,7 +257,7 @@ class PostgresChatStore(BaseChatStore):
                     value = array_cat({self._table_class.__tablename__}.value, :value);
                 """
             )
-            params = {"key": key, "value": [safe_model_dump_json(message)]}
+            params = {"key": key, "value": [message.model_dump_json()]}
             session.execute(stmt, params)
             session.commit()
 
@@ -287,7 +273,7 @@ class PostgresChatStore(BaseChatStore):
                     value = array_cat({self._table_class.__tablename__}.value, :value);
                 """
             )
-            params = {"key": key, "value": [safe_model_dump_json(message)]}
+            params = {"key": key, "value": [message.model_dump_json()]}
             await session.execute(stmt, params)
             await session.commit()
 

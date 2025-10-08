@@ -35,6 +35,7 @@ from llama_index.core.bridge.pydantic import (
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
 from llama_index.core.schema import ImageDocument
 from llama_index.core.utils import resolve_binary
+from google.protobuf.json_format import MessageToDict
 
 
 class MessageRole(str, Enum):
@@ -561,6 +562,9 @@ class ChatMessage(BaseModel):
 
         if isinstance(value, bytes):
             return base64.b64encode(value).decode("utf-8")
+
+        if hasattr(value, "_pb") and hasattr(value._pb, "DESCRIPTOR"):
+            return MessageToDict(value, preserving_proto_field_name=True)
 
         return value
 
