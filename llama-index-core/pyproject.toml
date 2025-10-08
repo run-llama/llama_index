@@ -73,6 +73,7 @@ dependencies = [
     "PyYAML>=6.0.1",
     "wrapt",
     "pydantic>=2.8.0",
+    "protobuf>=3.20.3,<5.0.0",
     "filetype>=1.2.0,<2",
     "eval-type-backport>=0.2.0,<0.3 ; python_version < '3.10'",
     "banks>=2.2.0,<3",
