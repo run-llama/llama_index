@@ -73,7 +73,7 @@ dependencies = [
     "PyYAML>=6.0.1",
     "wrapt",
     "pydantic>=2.8.0",
-    "protobuf>=3.20.3,<5.0.0",
+    "protobuf>=3.20.3,<4.23.4",
     "grpcio>=1.53.0,<2.0.0",
     "grpcio-health-checking>=1.53.0,<2.0.0",
     "filetype>=1.2.0,<2",
