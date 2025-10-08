@@ -169,7 +169,7 @@ class GitLabIssuesReader(BaseReader):
             - state: State of the issues to retrieve.
             - updated_after: Filter issues updated after the specified date.
             - updated_before: Filter issues updated before the specified date.
-            - get_all: Get all the items whisout pagination (for a long lists).
+            - get_all: Get all the items without pagination (for a long lists).
 
 
         Returns:
