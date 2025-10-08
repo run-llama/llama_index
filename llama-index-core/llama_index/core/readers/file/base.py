@@ -10,7 +10,7 @@ import os
 import warnings
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
-from functools import reduce
+from functools import partial, reduce
 from itertools import repeat
 from pathlib import Path, PurePosixPath
 from typing import (
@@ -18,6 +18,7 @@ from typing import (
     Any,
     Callable,
     Generator,
+    Iterable,
     Type,
     cast,
     Union,
@@ -736,7 +737,16 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
         """
         documents = []
 
-        files_to_process = self.input_files
+        load_file_with_args = partial(
+            SimpleDirectoryReader.load_file,
+            file_metadata=self.file_metadata,
+            file_extractor=self.file_extractor,
+            filename_as_id=self.filename_as_id,
+            encoding=self.encoding,
+            errors=self.errors,
+            raise_on_error=self.raise_on_error,
+            fs=fs,
+        )
         fs = fs or self.fs
 
         if num_workers and num_workers > 1:
@@ -748,21 +758,18 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                 )
                 num_workers = num_cpus
 
-            with multiprocessing.get_context("spawn").Pool(num_workers) as p:
-                results = p.starmap(
-                    SimpleDirectoryReader.load_file,
-                    zip(
-                        files_to_process,
-                        repeat(self.file_metadata),
-                        repeat(self.file_extractor),
-                        repeat(self.filename_as_id),
-                        repeat(self.encoding),
-                        repeat(self.errors),
-                        repeat(self.raise_on_error),
-                        repeat(fs),
+            with multiprocessing.get_context("spawn").Pool(num_workers) as pool:
+                map_iterator = cast(
+                    Iterable[list[Document]],
+                    get_tqdm_iterable(
+                        pool.imap(load_file_with_args, self.input_files),
+                        show_progress=show_progress,
+                        desc="Loading files",
+                        total=len(self.input_files),
                     ),
                 )
-                documents = reduce(lambda x, y: x + y, results)
+                for result in map_iterator:
+                    documents.extend(result)
 
         else:
             files_to_process = cast(
@@ -774,18 +781,7 @@ class SimpleDirectoryReader(BaseReader, ResourcesReaderMixin, FileSystemReaderMi
                 ),
             )
             for input_file in files_to_process:
-                documents.extend(
-                    SimpleDirectoryReader.load_file(
-                        input_file=input_file,
-                        file_metadata=self.file_metadata,
-                        file_extractor=self.file_extractor,
-                        filename_as_id=self.filename_as_id,
-                        encoding=self.encoding,
-                        errors=self.errors,
-                        raise_on_error=self.raise_on_error,
-                        fs=fs,
-                    )
-                )
+                documents.extend(load_file_with_args(input_file))
 
         return self._exclude_metadata(documents)
 
