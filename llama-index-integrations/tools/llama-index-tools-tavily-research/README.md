@@ -34,6 +34,31 @@ agent = FunctionAgent(
 await agent.run("What happened in the latest Burning Man festival?")
 ```
 
-`search`: Search for relevant dynamic data based on a query. Returns a list of urls and their relevant content.
+## Available Functions
+
+`search`: Search for relevant dynamic data based on a query. Returns a list of Document objects with urls and their relevant content.
+
+`extract`: Extract raw content from specific URLs using Tavily Extract API. Returns a list of Document objects containing the extracted content and metadata.
+
+### Extract Function Example
+
+```python
+from llama_index.tools.tavily_research import TavilyToolSpec
+
+tavily_tool = TavilyToolSpec(api_key="your-key")
+
+# Extract content from specific URLs
+documents = tavily_tool.extract(
+    urls=["https://example.com/article1", "https://example.com/article2"],
+    include_images=True,
+    include_favicon=True,
+    extract_depth="advanced",  # "basic" or "advanced"
+    format="markdown",  # "markdown" or "text"
+)
+
+for doc in documents:
+    print(f"URL: {doc.extra_info['url']}")
+    print(f"Content: {doc.text[:200]}...")
+```
 
 This loader is designed to be used as a way to load data as a Tool in an Agent.
