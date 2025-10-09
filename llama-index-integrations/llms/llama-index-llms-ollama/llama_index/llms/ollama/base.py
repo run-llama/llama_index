@@ -34,6 +34,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     ToolCallBlock,
+    ThinkingBlock,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
@@ -255,6 +256,9 @@ class Ollama(FunctionCallingLLM):
                             }
                         }
                     )
+                elif isinstance(block, ThinkingBlock):
+                    if block.content:
+                        cur_ollama_message["thinking"] = block.content
                 else:
                     raise ValueError(f"Unsupported block type: {type(block)}")
 
@@ -376,7 +380,7 @@ class Ollama(FunctionCallingLLM):
 
         response = dict(response)
 
-        blocks: list[TextBlock | ToolCallBlock] = []
+        blocks: list[TextBlock | ToolCallBlock | ThinkingBlock] = []
         tool_calls = response["message"].get("tool_calls", []) or []
         blocks.append(TextBlock(text=response["message"].get("content", "")))
         for tool_call in tool_calls:
@@ -387,6 +391,10 @@ class Ollama(FunctionCallingLLM):
                 )
             )
         thinking = response["message"].get("thinking", None)
+        if thinking:
+            blocks.append(ThinkingBlock(content=thinking))
+        blocks.append(TextBlock(text=response["message"].get("content", "")))
+
         token_counts = self._get_response_token_counts(response)
         if token_counts:
             response["usage"] = token_counts
@@ -395,7 +403,6 @@ class Ollama(FunctionCallingLLM):
             message=ChatMessage(
                 blocks=blocks,
                 role=response["message"].get("role", MessageRole.ASSISTANT),
-                additional_kwargs={"thinking": thinking},
             ),
             raw=response,
         )
@@ -448,13 +455,13 @@ class Ollama(FunctionCallingLLM):
                 if token_counts:
                     r["usage"] = token_counts
 
+                if thinking_txt:
+                    blocks.insert(0, ThinkingBlock(content=thinking_txt))
+
                 yield ChatResponse(
                     message=ChatMessage(
                         blocks=blocks,
                         role=r["message"].get("role", MessageRole.ASSISTANT),
-                        additional_kwargs={
-                            "thinking": thinking_txt,
-                        },
                     ),
                     delta=r["message"].get("content", ""),
                     raw=r,
@@ -512,14 +519,14 @@ class Ollama(FunctionCallingLLM):
                 token_counts = self._get_response_token_counts(r)
                 if token_counts:
                     r["usage"] = token_counts
+                    
+                if thinking_txt:
+                    blocks.insert(0, ThinkingBlock(content=thinking_txt))
 
                 yield ChatResponse(
                     message=ChatMessage(
                         blocks=blocks,
                         role=r["message"].get("role", MessageRole.ASSISTANT),
-                        additional_kwargs={
-                            "thinking": thinking_txt,
-                        },
                     ),
                     delta=r["message"].get("content", ""),
                     raw=r,
@@ -553,7 +560,7 @@ class Ollama(FunctionCallingLLM):
 
         response = dict(response)
 
-        blocks: list[TextBlock | ToolCallBlock] = []
+        blocks: list[TextBlock | ToolCallBlock | ThinkingBlock] = []
         tool_calls = response["message"].get("tool_calls", []) or []
         blocks.append(TextBlock(text=response["message"].get("content", "")))
         for tool_call in tool_calls:
@@ -564,6 +571,9 @@ class Ollama(FunctionCallingLLM):
                 )
             )
         thinking = response["message"].get("thinking", None)
+        if thinking:
+            blocks.append(ThinkingBlock(content=thinking))
+        blocks.append(TextBlock(text=response["message"].get("content", "")))
         token_counts = self._get_response_token_counts(response)
         if token_counts:
             response["usage"] = token_counts
@@ -572,7 +582,6 @@ class Ollama(FunctionCallingLLM):
             message=ChatMessage(
                 blocks=blocks,
                 role=response["message"].get("role", MessageRole.ASSISTANT),
-                additional_kwargs={"thinking": thinking},
             ),
             raw=response,
         )

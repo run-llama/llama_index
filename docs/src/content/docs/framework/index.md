@@ -122,7 +122,7 @@ If you're an enterprise developer, check out [**LlamaCloud**](https://llamaindex
 
 You can also check out the [LlamaCloud documentation](https://docs.cloud.llamaindex.ai/) for more details.
 
-- **Document Parsing (LlamaParse)**: LlamaParse is the best-in-class document parsing solution. It's powered by VLMs and perfect for even the most complex documents (nested tables, embedded charts/images, and more). [Learn more](https://www.llamaindex.ai/llamaparse) or check out the [docs](https://docs.cloud.llamaindex.ai/llamaparse/overview).
+- **Document Parsing (LlamaParse)**: LlamaParse is the best-in-class document parsing solution. It's powered by VLMs and perfect for even the most complex documents (nested tables, embedded charts/images, and more). [Learn more](https://www.llamaindex.ai/llamaparse) or check out the [docs](https://docs.cloud.llamaindex.ai/llamaparse).
 - **Document Extraction (LlamaExtract)**: Given a human-defined or inferred schema, extract structured data from any document. [Learn more](https://www.llamaindex.ai/llamaextract) or check out the [docs](https://docs.cloud.llamaindex.ai/llamaextract/getting_started).
 - **Indexing/Retrieval**: Set up an e2e pipeline to index a collection of documents for retrieval. Connect your data source (e.g. Sharepoint, Google Drive, S3), your vector DB data sink, and we automatically handle the document processing and syncing. [Learn more](https://www.llamaindex.ai/enterprise) or check out the [docs](https://docs.cloud.llamaindex.ai/llamacloud/getting_started).
 

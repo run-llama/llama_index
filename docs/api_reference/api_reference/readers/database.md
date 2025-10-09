@@ -1,4 +1,3 @@
 ::: llama_index.readers.database
-    options:
-      members:
-        - DatabaseReader
+options:
+members: - DatabaseReader

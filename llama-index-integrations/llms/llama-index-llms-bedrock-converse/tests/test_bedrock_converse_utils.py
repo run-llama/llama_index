@@ -15,6 +15,7 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     CacheControl,
     CachePoint,
+    ThinkingBlock,
     ChatMessage,
 )
 from llama_index.core.tools import FunctionTool
@@ -73,6 +74,12 @@ def test_content_block_to_bedrock_format_text():
     text_block = TextBlock(text="Hello, world!")
     result = _content_block_to_bedrock_format(text_block, MessageRole.USER)
     assert result == {"text": "Hello, world!"}
+
+
+def test_content_block_to_bedrock_format_thinking():
+    think_block = ThinkingBlock(content="Hello, world!")
+    result = _content_block_to_bedrock_format(think_block, MessageRole.USER)
+    assert result == {"reasoningContent": {"reasoningText": {"text": "Hello, world!"}}}
 
 
 def test_cache_point_block():

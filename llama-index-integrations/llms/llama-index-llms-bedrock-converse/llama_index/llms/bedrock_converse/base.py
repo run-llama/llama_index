@@ -1,3 +1,4 @@
+import warnings
 from typing import (
     Any,
     Callable,
@@ -23,6 +24,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     ToolCallBlock,
+    ThinkingBlock,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
@@ -48,6 +50,8 @@ from llama_index.llms.bedrock_converse.utils import (
     join_two_dicts,
     messages_to_converse_messages,
     tools_to_converse_tools,
+    is_reasoning,
+    ThinkingDict,
 )
 
 if TYPE_CHECKING:
@@ -160,6 +164,10 @@ class BedrockConverse(FunctionCallingLLM):
     trace: Optional[str] = Field(
         description="Specifies whether to enable or disable the Bedrock trace. If enabled, you can see the full Bedrock trace."
     )
+    thinking: Optional[ThinkingDict] = Field(
+        description="Specifies the thinking configuration of a reasoning model. Only applicable to Anthropic and DeepSeek models",
+        default=None,
+    )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict,
         description="Additional kwargs for the bedrock invokeModel request.",
@@ -202,6 +210,7 @@ class BedrockConverse(FunctionCallingLLM):
         guardrail_version: Optional[str] = None,
         application_inference_profile_arn: Optional[str] = None,
         trace: Optional[str] = None,
+        thinking: Optional[ThinkingDict] = None,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
@@ -214,6 +223,13 @@ class BedrockConverse(FunctionCallingLLM):
             "aws_session_token": aws_session_token,
             "botocore_session": botocore_session,
         }
+
+        if not is_reasoning(model) and thinking is not None:
+            thinking = None
+            warnings.warn(
+                "You set thinking parameters for a non-reasoning models, they will be ignored",
+                UserWarning,
+            )
 
         super().__init__(
             temperature=temperature,
@@ -245,6 +261,7 @@ class BedrockConverse(FunctionCallingLLM):
             guardrail_version=guardrail_version,
             application_inference_profile_arn=application_inference_profile_arn,
             trace=trace,
+            thinking=thinking,
         )
 
         self._config = None
@@ -332,7 +349,7 @@ class BedrockConverse(FunctionCallingLLM):
 
     def _get_content_and_tool_calls(
         self, response: Optional[Dict[str, Any]] = None, content: Dict[str, Any] = None
-    ) -> Tuple[List[Union[TextBlock, ToolCallBlock]], List[str], List[str]]:
+    ) -> Tuple[List[Union[TextBlock, ToolCallBlock, ThinkingBlock]], List[str], List[str]]:
         assert response is not None or content is not None, (
             f"Either response or content must be provided. Got response: {response}, content: {content}"
         )
@@ -342,14 +359,26 @@ class BedrockConverse(FunctionCallingLLM):
         blocks: List[Union[TextBlock, ToolCallBlock]] = []
         tool_call_ids = []
         status = []
-        text_content = ""
+        blocks = []
         if content is not None:
             content_list = [content]
         else:
             content_list = response["output"]["message"]["content"]
+
         for content_block in content_list:
             if text := content_block.get("text", None):
-                text_content += text
+                blocks.append(TextBlock(text=text))
+            if thinking := content_block.get("reasoningContent", None):
+                blocks.append(
+                    ThinkingBlock(
+                        content=thinking.get("reasoningText", {}).get("text", None),
+                        additional_information={
+                            "signature": thinking.get("reasoningText", {}).get(
+                                "signature", None
+                            )
+                        },
+                    )
+                )
             if tool_usage := content_block.get("toolUse", None):
                 blocks.append(
                     ToolCallBlock(
@@ -376,6 +405,8 @@ class BedrockConverse(FunctionCallingLLM):
             messages, self.model
         )
         all_kwargs = self._get_all_kwargs(**kwargs)
+        if self.thinking is not None:
+            all_kwargs["thinking"] = self.thinking
 
         # invoke LLM in AWS Bedrock Converse with retry
         response = converse_with_retry(
@@ -423,6 +454,8 @@ class BedrockConverse(FunctionCallingLLM):
             messages, self.model
         )
         all_kwargs = self._get_all_kwargs(**kwargs)
+        if self.thinking is not None:
+            all_kwargs["thinking"] = self.thinking
 
         # invoke LLM in AWS Bedrock Converse with retry
         response = converse_with_retry(
@@ -444,11 +477,21 @@ class BedrockConverse(FunctionCallingLLM):
             tool_calls = []  # Track tool calls separately
             current_tool_call = None  # Track the current tool call being built
             role = MessageRole.ASSISTANT
+            thinking = ""
+            thinking_signature = ""
 
             for chunk in response["stream"]:
                 if content_block_delta := chunk.get("contentBlockDelta"):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
+
+                    if "reasoningContent" in content_delta:
+                        thinking += content_delta.get("reasoningContent", {}).get(
+                            "text", ""
+                        )
+                        thinking_signature += content_delta.get(
+                            "reasoningContent", {}
+                        ).get("signature", "")
 
                     # If this delta contains tool call info, update current tool call
                     if "toolUse" in content_delta:
@@ -490,11 +533,25 @@ class BedrockConverse(FunctionCallingLLM):
                             )
                         )
 
+                    blocks: List[Union[TextBlock, ThinkingBlock]] = [
+                        TextBlock(text=content.get("text", ""))
+                    ]
+                    if thinking != "":
+                        blocks.insert(
+                            0,
+                            ThinkingBlock(
+                                content=thinking,
+                                additional_information={
+                                    "signature": thinking_signature
+                                },
+                            ),
+                        )
+
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
                             blocks=[
-                                TextBlock(text=content.get("text", "")),
+                                *blocks,
                                 *tool_calls,
                             ],
                             additional_kwargs={
@@ -523,11 +580,25 @@ class BedrockConverse(FunctionCallingLLM):
                             )
                         )
 
+                    blocks: List[Union[TextBlock, ThinkingBlock]] = [
+                        TextBlock(text=content.get("text", ""))
+                    ]
+                    if thinking != "":
+                        blocks.insert(
+                            0,
+                            ThinkingBlock(
+                                content=thinking,
+                                additional_information={
+                                    "signature": thinking_signature
+                                },
+                            ),
+                        )
+
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
                             blocks=[
-                                TextBlock(text=content.get("text", "")),
+                                *blocks,
                                 *tool_calls,
                             ],
                             additional_kwargs={
@@ -545,11 +616,25 @@ class BedrockConverse(FunctionCallingLLM):
                     # Handle metadata event - this contains the final token usage
                     if usage := metadata.get("usage"):
                         # Yield a final response with correct token usage
+                        blocks: List[Union[TextBlock, ThinkingBlock]] = [
+                            TextBlock(text=content.get("text", ""))
+                        ]
+                        if thinking != "":
+                            blocks.insert(
+                                0,
+                                ThinkingBlock(
+                                    content=thinking,
+                                    additional_information={
+                                        "signature": thinking_signature
+                                    },
+                                ),
+                            )
+
                         yield ChatResponse(
                             message=ChatMessage(
                                 role=role,
                                 blocks=[
-                                    TextBlock(text=content.get("text", "")),
+                                    *blocks,
                                     *tool_calls,
                                 ],
                                 additional_kwargs={
@@ -582,6 +667,8 @@ class BedrockConverse(FunctionCallingLLM):
             messages, self.model
         )
         all_kwargs = self._get_all_kwargs(**kwargs)
+        if self.thinking is not None:
+            all_kwargs["thinking"] = self.thinking
 
         # invoke LLM in AWS Bedrock Converse with retry
         response = await converse_with_retry_async(
@@ -631,6 +718,8 @@ class BedrockConverse(FunctionCallingLLM):
             messages, self.model
         )
         all_kwargs = self._get_all_kwargs(**kwargs)
+        if self.thinking is not None:
+            all_kwargs["thinking"] = self.thinking
 
         # invoke LLM in AWS Bedrock Converse with retry
         response_gen = await converse_with_retry_async(
@@ -654,11 +743,21 @@ class BedrockConverse(FunctionCallingLLM):
             tool_calls = []  # Track tool calls separately
             current_tool_call = None  # Track the current tool call being built
             role = MessageRole.ASSISTANT
+            thinking = ""
+            thinking_signature = ""
 
             async for chunk in response_gen:
                 if content_block_delta := chunk.get("contentBlockDelta"):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
+
+                    if "reasoningContent" in content_delta:
+                        thinking += content_delta.get("reasoningContent", {}).get(
+                            "text", ""
+                        )
+                        thinking_signature += content_delta.get(
+                            "reasoningContent", {}
+                        ).get("signature", "")
 
                     # If this delta contains tool call info, update current tool call
                     if "toolUse" in content_delta:
@@ -699,12 +798,25 @@ class BedrockConverse(FunctionCallingLLM):
                                 tool_kwargs=current_tool_call.get("input", {}),
                             )
                         )
+                    blocks: List[Union[TextBlock, ThinkingBlock]] = [
+                        TextBlock(text=content.get("text", ""))
+                    ]
+                    if thinking != "":
+                        blocks.insert(
+                            0,
+                            ThinkingBlock(
+                                content=thinking,
+                                additional_information={
+                                    "signature": thinking_signature
+                                },
+                            ),
+                        )
 
                     yield ChatResponse(
                         message=ChatMessage(
-                            role=role,
+                            role=role,k
                             blocks=[
-                                TextBlock(text=content.get("text", "")),
+                                *blocks,
                                 *tool_calls,
                             ],
                             additional_kwargs={
@@ -731,11 +843,25 @@ class BedrockConverse(FunctionCallingLLM):
                             )
                         )
 
+                    blocks: List[Union[TextBlock, ThinkingBlock]] = [
+                        TextBlock(text=content.get("text", ""))
+                    ]
+                    if thinking != "":
+                        blocks.insert(
+                            0,
+                            ThinkingBlock(
+                                content=thinking,
+                                additional_information={
+                                    "signature": thinking_signature
+                                },
+                            ),
+                        )
+
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
                             blocks=[
-                                TextBlock(text=content.get("text", "")),
+                                *blocks,
                                 *tool_calls,
                             ],
                             additional_kwargs={
@@ -755,11 +881,25 @@ class BedrockConverse(FunctionCallingLLM):
                     # Handle metadata event - this contains the final token usage
                     if usage := metadata.get("usage"):
                         # Yield a final response with correct token usage
+                        blocks: List[Union[TextBlock, ThinkingBlock]] = [
+                            TextBlock(text=content.get("text", ""))
+                        ]
+                        if thinking != "":
+                            blocks.insert(
+                                0,
+                                ThinkingBlock(
+                                    content=thinking,
+                                    additional_information={
+                                        "signature": thinking_signature
+                                    },
+                                ),
+                            )
+
                         yield ChatResponse(
                             message=ChatMessage(
                                 role=role,
                                 blocks=[
-                                    TextBlock(text=content.get("text", "")),
+                                    *blocks,
                                     *tool_calls,
                                 ],
                                 additional_kwargs={

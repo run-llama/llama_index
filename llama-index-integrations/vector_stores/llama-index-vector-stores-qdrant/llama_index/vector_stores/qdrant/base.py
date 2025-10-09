@@ -219,6 +219,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
             dense_vector_name=dense_vector_name,
             sparse_vector_name=sparse_vector_name,
         )
+        # Track if the user provided their own sparse functions. This is to prevent
+        # them from being overwritten by the lazy-init correction for async clients.
+        self._user_provided_sparse_doc_fn = sparse_doc_fn is not None
+        self._user_provided_sparse_query_fn = sparse_query_fn is not None
 
         if (
             client is None
@@ -1545,12 +1549,13 @@ class QdrantVectorStore(BasePydanticVectorStore):
     ) -> SparseEncoderCallable:
         """
         Get the default sparse document encoder.
-        Use old format for backward compatibility if detected.
+        For async-only clients, assumes new format initially.
+        Will be auto-corrected on first async operation if collection uses old format.
         """
-        if self.use_old_sparse_encoder(collection_name):
-            # Update the sparse vector name to use the old format
-            self.sparse_vector_name = DEFAULT_SPARSE_VECTOR_NAME_OLD
-            return default_sparse_encoder("naver/efficient-splade-VI-BT-large-doc")
+        if self._client is not None:
+            if self.use_old_sparse_encoder(collection_name):
+                self.sparse_vector_name = DEFAULT_SPARSE_VECTOR_NAME_OLD
+                return default_sparse_encoder("naver/efficient-splade-VI-BT-large-doc")
 
         if fastembed_sparse_model is not None:
             return fastembed_sparse_encoder(model_name=fastembed_sparse_model)
@@ -1564,12 +1569,16 @@ class QdrantVectorStore(BasePydanticVectorStore):
     ) -> SparseEncoderCallable:
         """
         Get the default sparse query encoder.
-        Use old format for backward compatibility if detected.
+        For async-only clients, assumes new format initially.
+        Will be auto-corrected on first async operation if collection uses old format.
         """
-        if self.use_old_sparse_encoder(collection_name):
-            # Update the sparse vector name to use the old format
-            self.sparse_vector_name = DEFAULT_SPARSE_VECTOR_NAME_OLD
-            return default_sparse_encoder("naver/efficient-splade-VI-BT-large-query")
+        if self._client is not None:
+            if self.use_old_sparse_encoder(collection_name):
+                # Update the sparse vector name to use the old format
+                self.sparse_vector_name = DEFAULT_SPARSE_VECTOR_NAME_OLD
+                return default_sparse_encoder(
+                    "naver/efficient-splade-VI-BT-large-query"
+                )
 
         if fastembed_sparse_model is not None:
             return fastembed_sparse_encoder(model_name=fastembed_sparse_model)
@@ -1583,6 +1592,8 @@ class QdrantVectorStore(BasePydanticVectorStore):
         - new sparse vector field name vs old sparse vector field name
         """
         try:
+            old_sparse_name = self.sparse_vector_name  # Store state before detection
+
             collection_info = self._client.get_collection(collection_name)
             vectors_config = collection_info.config.params.vectors
             sparse_vectors = collection_info.config.params.sparse_vectors or {}
@@ -1605,6 +1616,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 elif DEFAULT_SPARSE_VECTOR_NAME_OLD in sparse_vectors:
                     self.sparse_vector_name = DEFAULT_SPARSE_VECTOR_NAME_OLD
 
+            # If the name changed, our initial assumption was wrong. Correct it.
+            if self.enable_hybrid and old_sparse_name != self.sparse_vector_name:
+                self._reinitialize_sparse_encoders()
+
         except Exception as e:
             logger.warning(
                 f"Could not detect vector format for collection {collection_name}: {e}"
@@ -1613,10 +1628,10 @@ class QdrantVectorStore(BasePydanticVectorStore):
     async def _adetect_vector_format(self, collection_name: str) -> None:
         """
         Asynchronous method to detect and handle old vector formats from existing collections.
-        - named vs non-named vectors
-        - new sparse vector field name vs old sparse vector field name
         """
         try:
+            old_sparse_name = self.sparse_vector_name  # Store state before detection
+
             collection_info = await self._aclient.get_collection(collection_name)
             vectors_config = collection_info.config.params.vectors
             sparse_vectors = collection_info.config.params.sparse_vectors or {}
@@ -1632,17 +1647,48 @@ class QdrantVectorStore(BasePydanticVectorStore):
                 self._legacy_vector_format = True
                 self.dense_vector_name = LEGACY_UNNAMED_VECTOR
 
-            # Detect sparse vector name if any sparse vectors configured
+            # Detect sparse vector name and correct if necessary
             if isinstance(sparse_vectors, dict) and len(sparse_vectors) > 0:
                 if self.sparse_vector_name in sparse_vectors:
                     pass
                 elif DEFAULT_SPARSE_VECTOR_NAME_OLD in sparse_vectors:
                     self.sparse_vector_name = DEFAULT_SPARSE_VECTOR_NAME_OLD
 
+            # If the name changed, our initial assumption was wrong. Correct it.
+            if self.enable_hybrid and old_sparse_name != self.sparse_vector_name:
+                self._reinitialize_sparse_encoders()
+
         except Exception as e:
             logger.warning(
                 f"Could not detect vector format for collection {collection_name}: {e}"
             )
+
+    def _reinitialize_sparse_encoders(self) -> None:
+        """Recreate default sparse encoders after vector format detection, respecting user-provided functions."""
+        if not self.enable_hybrid:
+            return
+
+        # Only override the doc function if the user did NOT provide one
+        if not self._user_provided_sparse_doc_fn:
+            if self.sparse_vector_name == DEFAULT_SPARSE_VECTOR_NAME_OLD:
+                self._sparse_doc_fn = default_sparse_encoder(
+                    "naver/efficient-splade-VI-BT-large-doc"
+                )
+            else:
+                self._sparse_doc_fn = fastembed_sparse_encoder(
+                    model_name=self.fastembed_sparse_model
+                )
+
+        # Only override the query function if the user did NOT provide one
+        if not self._user_provided_sparse_query_fn:
+            if self.sparse_vector_name == DEFAULT_SPARSE_VECTOR_NAME_OLD:
+                self._sparse_query_fn = default_sparse_encoder(
+                    "naver/efficient-splade-VI-BT-large-query"
+                )
+            else:
+                self._sparse_query_fn = fastembed_sparse_encoder(
+                    model_name=self.fastembed_sparse_model
+                )
 
     def _validate_custom_sharding(
         self,
