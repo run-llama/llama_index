@@ -36,6 +36,16 @@ from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPU
 from llama_index.core.schema import ImageDocument
 from llama_index.core.utils import resolve_binary
 
+GOOGLE_FUNCTION_CALL_AVAILABLE = False
+try:
+    from google.ai.generativelanguage_v1beta.types.content import FunctionCall
+
+    GOOGLE_FUNCTION_CALL_AVAILABLE = True
+except ImportError:
+
+    class FunctionCall:
+        pass
+
 
 class MessageRole(str, Enum):
     """Message role."""
@@ -548,6 +558,9 @@ class ChatMessage(BaseModel):
         return cls(role=role, blocks=[TextBlock(text=content)], **kwargs)
 
     def _recursive_serialization(self, value: Any) -> Any:
+        if GOOGLE_FUNCTION_CALL_AVAILABLE and isinstance(value, FunctionCall):
+            return value.to_dict()
+
         if isinstance(value, BaseModel):
             value.model_rebuild()  # ensures all fields are initialized and serializable
             return value.model_dump()  # type: ignore
