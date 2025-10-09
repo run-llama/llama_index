@@ -599,6 +599,7 @@ class OpenAIResponses(FunctionCallingLLM):
         elif isinstance(event, ResponseTextDeltaEvent):
             # Text content is being added
             delta = event.delta
+            blocks.append(TextBlock(text=delta))
         elif isinstance(event, ResponseImageGenCallPartialImageEvent):
             # Partial image
             if event.partial_image_b64:

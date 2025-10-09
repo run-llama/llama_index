@@ -431,7 +431,7 @@ class Ollama(FunctionCallingLLM):
 
             response_txt = ""
             thinking_txt = ""
-            blocks: List[TextBlock | ToolCallBlock] = []
+            blocks: List[TextBlock | ToolCallBlock | ThinkingBlock] = []
 
             for r in response:
                 if r["message"]["content"] is None:
@@ -496,7 +496,7 @@ class Ollama(FunctionCallingLLM):
 
             response_txt = ""
             thinking_txt = ""
-            blocks: List[TextBlock | ToolCallBlock] = []
+            blocks: List[TextBlock | ToolCallBlock | ThinkingBlock] = []
 
             async for r in response:
                 if r["message"]["content"] is None:
@@ -519,7 +519,7 @@ class Ollama(FunctionCallingLLM):
                 token_counts = self._get_response_token_counts(r)
                 if token_counts:
                     r["usage"] = token_counts
-                    
+
                 if thinking_txt:
                     blocks.insert(0, ThinkingBlock(content=thinking_txt))
 
@@ -572,7 +572,7 @@ class Ollama(FunctionCallingLLM):
             )
         thinking = response["message"].get("thinking", None)
         if thinking:
-            blocks.append(ThinkingBlock(content=thinking))
+            blocks.insert(0, ThinkingBlock(content=thinking))
         blocks.append(TextBlock(text=response["message"].get("content", "")))
         token_counts = self._get_response_token_counts(response)
         if token_counts:

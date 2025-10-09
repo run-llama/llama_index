@@ -349,14 +349,16 @@ class BedrockConverse(FunctionCallingLLM):
 
     def _get_content_and_tool_calls(
         self, response: Optional[Dict[str, Any]] = None, content: Dict[str, Any] = None
-    ) -> Tuple[List[Union[TextBlock, ToolCallBlock, ThinkingBlock]], List[str], List[str]]:
+    ) -> Tuple[
+        List[Union[TextBlock, ToolCallBlock, ThinkingBlock]], List[str], List[str]
+    ]:
         assert response is not None or content is not None, (
             f"Either response or content must be provided. Got response: {response}, content: {content}"
         )
         assert response is None or content is None, (
             f"Only one of response or content should be provided. Got response: {response}, content: {content}"
         )
-        blocks: List[Union[TextBlock, ToolCallBlock]] = []
+        blocks: List[Union[TextBlock, ToolCallBlock, ThinkingBlock]] = []
         tool_call_ids = []
         status = []
         blocks = []
@@ -392,10 +394,9 @@ class BedrockConverse(FunctionCallingLLM):
             if tool_result := content_block.get("toolResult", None):
                 for tool_result_content in tool_result["content"]:
                     if text := tool_result_content.get("text", None):
-                        text_content += text
+                        blocks.append(TextBlock(text=text))
                     tool_call_ids.append(tool_result_content.get("toolUseId", ""))
                 status.append(tool_result.get("status", ""))
-        blocks.append(TextBlock(text=text_content))
         return blocks, tool_call_ids, status
 
     @llm_chat_callback()
@@ -814,7 +815,7 @@ class BedrockConverse(FunctionCallingLLM):
 
                     yield ChatResponse(
                         message=ChatMessage(
-                            role=role,k
+                            role=role,
                             blocks=[
                                 *blocks,
                                 *tool_calls,
