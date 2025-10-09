@@ -18,7 +18,7 @@ jobs:
         uses: astral-sh/setup-uv@v7
 
       - name: Set up Python
-        run: uv python install
+        run: uv python install 3.12
 
       - name: Run Mypy
         working-directory: llama-index-core
