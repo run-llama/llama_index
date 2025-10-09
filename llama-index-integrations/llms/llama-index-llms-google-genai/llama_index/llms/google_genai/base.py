@@ -392,7 +392,7 @@ class GoogleGenAI(FunctionCallingLLM):
                         content += content_delta
                 llama_resp = chat_from_gemini_response(r)
                 llama_resp.delta = content_delta
-                llama_resp.message.blocks = [TextBlock(text=content)]
+                llama_resp.message.blocks += [TextBlock(text=content)]
                 llama_resp.message.blocks.append(ThinkingBlock(content=thoughts))
                 yield llama_resp
 
@@ -444,11 +444,11 @@ class GoogleGenAI(FunctionCallingLLM):
                                 else:
                                     content += content_delta
                             llama_resp = chat_from_gemini_response(r)
-                            llama_resp.delta = content_delta
-                            llama_resp.message.blocks = [TextBlock(text=content)]
+                            llama_resp.message.blocks += [TextBlock(text=content)]
                             llama_resp.message.blocks.append(
                                 ThinkingBlock(content=thoughts)
                             )
+                            llama_resp.delta = content_delta
                             yield llama_resp
 
             if self.use_file_api:
