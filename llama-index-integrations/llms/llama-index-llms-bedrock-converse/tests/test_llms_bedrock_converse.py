@@ -900,6 +900,7 @@ async def test_bedrock_converse_tool_calling(bedrock_converse_integration):
         ]
     )
 
+
 @needs_aws_creds
 @pytest.mark.asyncio
 async def test_bedrock_converse_thinking(bedrock_converse_integration_thinking):
