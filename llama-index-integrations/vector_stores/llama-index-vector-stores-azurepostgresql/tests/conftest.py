@@ -8,18 +8,21 @@ testing configurations.
 
 import logging
 import os
-from collections.abc import Generator
-from time import sleep
+from collections.abc import AsyncGenerator, Generator
 from typing import Any
 
 import pytest
 from azure.core.credentials import TokenCredential
+from azure.core.credentials_async import AsyncTokenCredential
 from azure.identity import DefaultAzureCredential
-from psycopg import Connection, sql
+from azure.identity.aio import DefaultAzureCredential as AsyncDefaultAzureCredential
+from psycopg import AsyncConnection, Connection, sql
 from psycopg.rows import dict_row
-from psycopg_pool import ConnectionPool, PoolTimeout
+from psycopg_pool import AsyncConnectionPool, ConnectionPool, PoolTimeout
 
 from llama_index.vector_stores.azure_postgres.common import (
+    AsyncAzurePGConnectionPool,
+    AsyncConnectionInfo,
     AzurePGConnectionPool,
     BasicAuth,
     ConnectionInfo,
@@ -89,6 +92,177 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 
 @pytest.fixture
+async def async_connection(
+    async_connection_pool: AsyncConnectionPool,
+) -> AsyncGenerator[AsyncConnection, Any]:
+    """Fixture to provide an asynchronous PostgreSQL connection.
+
+    :param async_connection_pool: The asynchronous connection pool (fixture) to use.
+    :type async_connection_pool: AsyncConnectionPool
+    :return: An asynchronous PostgreSQL connection.
+    :rtype: AsyncConnection
+    """
+    global postgres_not_available
+    if postgres_not_available:
+        pytest.skip("Could not reach the database")
+    try:
+        async with async_connection_pool.connection() as conn:
+            yield conn
+    except PoolTimeout as exc:
+        logger.warning("PoolTimeout %s", exc)
+        postgres_not_available = True
+        pytest.skip("Could not reach the database")
+
+
+@pytest.fixture(scope="session")
+async def async_connection_info(
+    async_credentials: BasicAuth | AsyncTokenCredential,
+    pytestconfig: pytest.Config,
+) -> AsyncConnectionInfo:
+    """Fixture to provide asynchronous connection information for PostgreSQL.
+
+    :param async_credentials: The asynchronous credentials (fixture) to use for authentication.
+    :type async_credentials: BasicAuth | AsyncTokenCredential
+    :param pytestconfig: The pytest configuration object.
+    :type pytestconfig: pytest.Config
+    :return: An asynchronous connection information object.
+    :rtype: AsyncConnectionInfo
+    """
+    return AsyncConnectionInfo(
+        application_name=pytestconfig.getoption("pg_appname"),
+        host=pytestconfig.getoption("pg_host"),
+        dbname=pytestconfig.getoption("pg_database"),
+        port=pytestconfig.getoption("pg_port"),
+        sslmode=SSLMode.prefer,
+        credentials=async_credentials,
+    )
+
+
+@pytest.fixture(scope="session")
+async def async_connection_pool(
+    async_connection_info: AsyncConnectionInfo,
+) -> AsyncGenerator[AsyncConnectionPool, Any]:
+    """Fixture to provide an asynchronous PostgreSQL connection pool.
+
+    :param async_connection_info: The asynchronous connection information (fixture) to use.
+    :type async_connection_info: AsyncConnectionInfo
+    :return: An asynchronous PostgreSQL connection pool.
+    :rtype: AsyncConnectionPool
+    """
+
+    # disable prepared statements during testing
+    async def disable_prepared_statements(async_conn: AsyncConnection) -> None:
+        async_conn.prepare_threshold = None
+
+    credentials, host = async_connection_info.credentials, async_connection_info.host
+    assert host is not None, "Host must be provided for connection pool"
+    if isinstance(credentials, AsyncTokenCredential) and host.find("azure.com") == -1:
+        pytest.skip(
+            reason="Azure AD authentication requires an Azure PostgreSQL instance"
+        )
+    async with AsyncAzurePGConnectionPool(
+        azure_conn_info=async_connection_info, configure=disable_prepared_statements
+    ) as pool:
+        yield pool
+
+
+@pytest.fixture(scope="session", params=["azure-ad", "basic-auth"])
+async def async_credentials(
+    pytestconfig: pytest.Config, request: pytest.FixtureRequest
+) -> BasicAuth | AsyncTokenCredential:
+    """Fixture to provide asynchronous credentials for PostgreSQL.
+
+    This fixture supports both Azure AD authentication ("azure-ad" in `request.param`)
+    and basic authentication ("basic-auth" in `request.param`). When/if Azure AD
+    authentication is requested, it uses the `AsyncDefaultAzureCredential` to obtain
+    a token. For basic authentication, it retrieves the username and password from
+    the pytest configuration options.
+
+    When/if Azure AD authentication is not available, it skips the test with a reason.
+
+    :param pytestconfig: The pytest configuration object.
+    :type pytestconfig: pytest.Config
+    :param request: The pytest fixture request object.
+    :type request: pytest.FixtureRequest
+    :raises ValueError: If the authentication type is unknown.
+    :return: The asynchronous credentials for PostgreSQL.
+    :rtype: BasicAuth | AsyncTokenCredential
+    """
+    if request.param == "azure-ad":
+        try:
+            async_credentials = AsyncDefaultAzureCredential()
+            _token = await async_credentials.get_token(TOKEN_CREDENTIAL_SCOPE)
+            return async_credentials
+        except Exception:
+            pytest.skip(reason="Azure AD authentication not available")
+    elif request.param == "basic-auth":
+        username = pytestconfig.getoption("pg_user")
+        password = pytestconfig.getoption("pg_password")
+        return BasicAuth(username=username, password=password)
+    else:
+        raise ValueError(f"Unknown auth type: {request.param}")
+
+
+@pytest.fixture(scope="session")
+async def async_schema(
+    async_connection_pool: AsyncConnectionPool,
+) -> AsyncGenerator[str, Any]:
+    """Fixture to create and drop a schema for testing purposes.
+
+    :param async_connection_pool: The asynchronous connection pool (fixture) to use.
+    :type async_connection_pool: AsyncConnectionPool
+    :return: The name of the created schema.
+    :rtype: str
+    """
+    global postgres_not_available
+    if postgres_not_available:
+        pytest.skip("Could not reach the database")
+
+    try:
+        async with (
+            async_connection_pool.connection() as conn,
+            conn.cursor(row_factory=dict_row) as cursor,
+        ):
+            await cursor.execute(
+                sql.SQL(
+                    """
+                    select  oid as schema_id, nspname as schema_name
+                    from  pg_namespace
+                    """
+                )
+            )
+            resultset = await cursor.fetchall()
+            schema_names = [row["schema_name"] for row in resultset]
+    except PoolTimeout as exc:
+        logger.warning("PoolTimeout %s", exc)
+        postgres_not_available = True
+        pytest.skip("Could not reach the database")
+
+    _schema: str | None = None
+    for idx in range(100_000):
+        _schema_name = f"pytest-{idx:05d}"
+        if _schema_name not in schema_names:
+            _schema = _schema_name
+            break
+    if _schema is None:
+        pytest.fail("Could not find a unique schema name for testing")
+
+    async with async_connection_pool.connection() as conn, conn.cursor() as cursor:
+        await cursor.execute(
+            sql.SQL("create schema {schema}").format(schema=sql.Identifier(_schema))
+        )
+
+    yield _schema
+
+    async with async_connection_pool.connection() as conn, conn.cursor() as cursor:
+        await cursor.execute(
+            sql.SQL("drop schema {schema} cascade").format(
+                schema=sql.Identifier(_schema)
+            )
+        )
+
+
+@pytest.fixture
 def connection(connection_pool: ConnectionPool) -> Generator[Connection, Any, None]:
     """Fixture to provide a PostgreSQL connection.
 
@@ -100,22 +274,13 @@ def connection(connection_pool: ConnectionPool) -> Generator[Connection, Any, No
     global postgres_not_available
     if postgres_not_available:
         pytest.skip("Could not reach the database")
-    max_retries = 3
-    backoff = 0.5
-    for attempt in range(1, max_retries + 1):
-        try:
-            with connection_pool.connection() as conn:
-                yield conn
-        except PoolTimeout as exc:
-            logger.warning(
-                "PoolTimeout on attempt %d/%d: %s", attempt, max_retries, exc
-            )
-            if attempt == max_retries:
-                logger.error("Exhausted retries acquiring DB connection")
-
-                postgres_not_available = True
-                pytest.skip("Could not reach the database")
-            sleep(backoff * attempt)
+    try:
+        with connection_pool.connection() as conn:
+            yield conn
+    except PoolTimeout as exc:
+        logger.warning("PoolTimeout %s", exc)
+        postgres_not_available = True
+        pytest.skip("Could not reach the database")
 
 
 @pytest.fixture(scope="session")
@@ -219,33 +384,26 @@ def schema(connection_pool: ConnectionPool) -> Generator[str, Any, None]:
     global postgres_not_available
     if postgres_not_available:
         pytest.skip("Could not reach the database")
-    max_retries = 3
-    backoff = 0.5
-    for attempt in range(1, max_retries + 1):
-        try:
-            with (
-                connection_pool.connection() as conn,
-                conn.cursor(row_factory=dict_row) as cursor,
-            ):
-                cursor.execute(
-                    sql.SQL(
-                        """
-                        select  oid as schema_id, nspname as schema_name
-                        from  pg_namespace
-                        """
-                    )
+
+    try:
+        with (
+            connection_pool.connection() as conn,
+            conn.cursor(row_factory=dict_row) as cursor,
+        ):
+            cursor.execute(
+                sql.SQL(
+                    """
+                    select oid as schema_id, nspname as schema_name
+                    from pg_namespace
+                    """
                 )
-                resultset = cursor.fetchall()
-                schema_names = [row["schema_name"] for row in resultset]
-        except PoolTimeout as exc:
-            logger.warning(
-                "PoolTimeout on attempt %d/%d: %s", attempt, max_retries, exc
             )
-            if attempt == max_retries:
-                logger.error("Exhausted retries acquiring DB connection")
-                postgres_not_available = True
-                pytest.skip("Could not reach the database")
-            sleep(backoff * attempt)
+            resultset = cursor.fetchall()
+            schema_names = [row["schema_name"] for row in resultset]
+    except PoolTimeout as exc:
+        logger.warning("PoolTimeout %s", exc)
+        postgres_not_available = True
+        pytest.skip("Could not reach the database")
 
     _schema: str | None = None
     for idx in range(100_000):
