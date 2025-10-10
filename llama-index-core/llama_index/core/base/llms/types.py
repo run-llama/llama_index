@@ -36,16 +36,6 @@ from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPU
 from llama_index.core.schema import ImageDocument
 from llama_index.core.utils import resolve_binary
 
-GOOGLE_FUNCTION_CALL_AVAILABLE = False
-try:
-    from google.ai.generativelanguage_v1beta.types.content import FunctionCall
-
-    GOOGLE_FUNCTION_CALL_AVAILABLE = True
-except ImportError:
-
-    class FunctionCall:
-        pass
-
 
 class MessageRole(str, Enum):
     """Message role."""
@@ -560,15 +550,12 @@ class ChatMessage(BaseModel):
     def _recursive_serialization(self, value: Any) -> Any:
         if isinstance(value, BaseModel):
             value.model_rebuild()  # ensures all fields are initialized and serializable
-            return value.model_dump()  # type: ignore
+            return value.model_dump()
         if isinstance(value, dict):
-            return {
-                key: self._recursive_serialization(value)
-                for key, value in value.items()
-            }
+            # CORRECTED LOGIC: Recursively call on the item's value (v), not the whole dict.
+            return {k: self._recursive_serialization(v) for k, v in value.items()}
         if isinstance(value, list):
             return [self._recursive_serialization(item) for item in value]
-
         if isinstance(value, bytes):
             return base64.b64encode(value).decode("utf-8")
 
@@ -576,23 +563,7 @@ class ChatMessage(BaseModel):
 
     @field_serializer("additional_kwargs", check_fields=False)
     def serialize_additional_kwargs(self, value: Any, _info: Any) -> Any:
-        if GOOGLE_FUNCTION_CALL_AVAILABLE and isinstance(value, dict):
-            original_tool_calls = value.get("tool_calls")
-            if isinstance(original_tool_calls, list):
-                # Create a new list that is guaranteed to be serializable
-                serializable_tool_calls = []
-                for tc in original_tool_calls:
-                    # If we find a FunctionCall object, convert it to a dict
-                    if isinstance(tc, FunctionCall):
-                        serializable_tool_calls.append(tc.to_dict())
-                    else:
-                        # Otherwise, append the item as is
-                        serializable_tool_calls.append(tc)
-
-                # Update the dictionary with the sanitized list of tool calls
-                value["tool_calls"] = serializable_tool_calls
-
-        # Now, safely serialize the entire dictionary
+        # With the helper fixed, this is all we need.
         return self._recursive_serialization(value)
 
 
