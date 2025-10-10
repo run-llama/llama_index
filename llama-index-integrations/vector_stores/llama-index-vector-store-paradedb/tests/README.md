@@ -1,5 +1,15 @@
 # Testing Setup
 
+## Installation
+
+First, install the package:
+
+```bash
+pip install llama-index-vector-stores-paradedb
+```
+
+## Database Setup
+
 You will need to start a postgres instance locally to run the tests for this integration. You can do this easily via docker cli:
 
 ```
