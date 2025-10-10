@@ -11,6 +11,7 @@ from llama_index.core.base.llms.types import (
     CompletionResponse,
     ImageBlock,
     TextBlock,
+    ToolCallBlock,
     ThinkingBlock,
     CachePoint,
     CacheControl,
@@ -254,7 +255,6 @@ def test_complete(bedrock_converse):
     assert response.text == EXP_RESPONSE
     assert response.additional_kwargs["status"] == []
     assert response.additional_kwargs["tool_call_id"] == []
-    assert response.additional_kwargs["tool_calls"] == []
 
 
 def test_stream_chat(bedrock_converse):
@@ -335,7 +335,6 @@ async def test_acomplete(bedrock_converse):
     assert response.text == EXP_RESPONSE
     assert response.additional_kwargs["status"] == []
     assert response.additional_kwargs["tool_call_id"] == []
-    assert response.additional_kwargs["tool_calls"] == []
 
 
 @pytest.mark.asyncio
@@ -844,6 +843,62 @@ async def test_bedrock_converse_agent_with_void_tool_and_continued_conversation(
     assert response_5 is not None
     assert hasattr(response_5, "response")
     assert len(str(response_5)) > 0
+
+
+@needs_aws_creds
+@pytest.mark.asyncio
+async def test_bedrock_converse_tool_calling(bedrock_converse_integration):
+    tool = FunctionTool.from_defaults(
+        fn=get_temperature,
+        name="get_temperature",
+        description="Get the temperature of a location (str) in Celsius degree",
+    )
+    response = bedrock_converse_integration.chat_with_tools(
+        tools=[tool],
+        user_msg="What is the temperature in San Francisco?",
+        tool_required=True,
+    )
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        >= 1
+    )
+    assert any(
+        block.tool_name == "get_temperature"
+        for block in [
+            block
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        ]
+    )
+    response = await bedrock_converse_integration.achat_with_tools(
+        tools=[tool],
+        user_msg="What is the temperature in San Francisco?",
+        tool_required=True,
+    )
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        >= 1
+    )
+    assert any(
+        block.tool_name == "get_temperature"
+        for block in [
+            block
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        ]
+    )
 
 
 @needs_aws_creds

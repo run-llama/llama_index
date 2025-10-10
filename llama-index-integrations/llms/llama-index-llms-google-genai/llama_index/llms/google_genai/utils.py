@@ -2,15 +2,7 @@ import asyncio
 import logging
 from collections.abc import Sequence
 from io import BytesIO
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Union,
-    Optional,
-    Type,
-    Tuple,
-)
+from typing import TYPE_CHECKING, Any, Dict, Union, Optional, Type, Tuple, cast
 import typing
 
 import google.genai.types as types
@@ -29,6 +21,7 @@ from llama_index.core.base.llms.types import (
     DocumentBlock,
     VideoBlock,
     ThinkingBlock,
+    ToolCallBlock,
 )
 from llama_index.core.program.utils import _repair_incomplete_json
 from tenacity import (
@@ -188,15 +181,12 @@ def chat_from_gemini_response(
                 )
                 additional_kwargs["thought_signatures"].append(part.thought_signature)
             if part.function_call:
-                if "tool_calls" not in additional_kwargs:
-                    additional_kwargs["tool_calls"] = []
-                additional_kwargs["tool_calls"].append(
-                    {
-                        "id": part.function_call.id if part.function_call.id else "",
-                        "name": part.function_call.name,
-                        "args": part.function_call.args,
-                        "thought_signature": part.thought_signature,
-                    }
+                content_blocks.append(
+                    ToolCallBlock(
+                        tool_call_id=part.function_call.id,
+                        tool_name=part.function_call.name or "",
+                        tool_kwargs=part.function_call.args,
+                    )
                 )
     if thought_tokens:
         thinking_blocks = [
@@ -326,6 +316,10 @@ async def chat_message_to_gemini(
                 part.thought_signature = block.additional_information.get(
                     "thought_signature", None
                 )
+        elif isinstance(block, ToolCallBlock):
+            part = types.Part.from_function_call(
+                name=block.tool_name or "", args=cast(Dict[str, Any], block.tool_kwargs)
+            )
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
@@ -341,22 +335,11 @@ async def chat_message_to_gemini(
                 )
             parts.append(part)
 
-    for tool_call in message.additional_kwargs.get("tool_calls", []):
-        if isinstance(tool_call, dict):
-            part = types.Part.from_function_call(
-                name=tool_call.get("name"), args=tool_call.get("args")
-            )
-            part.thought_signature = tool_call.get("thought_signature")
-        else:
-            part = types.Part.from_function_call(
-                name=tool_call.name, args=tool_call.args
-            )
-            part.thought_signature = tool_call.thought_signature
-        parts.append(part)
-
     # the tool call id is the name of the tool
     # the tool call response is the content of the message, overriding the existing content
     # (the only content before this should be the tool call)
+    # we do not use ToolCallBlock here because the message that gets returned
+    # with the result of the query already has the 'Tool' role
     if message.additional_kwargs.get("tool_call_id"):
         function_response_part = types.Part.from_function_response(
             name=message.additional_kwargs.get("tool_call_id"),

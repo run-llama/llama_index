@@ -4,6 +4,7 @@ from llama_index.core.tools import FunctionTool
 import pytest
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import resolve_tool_choice
+from llama_index.core.base.llms.types import ToolCallBlock
 
 
 def test_text_inference_embedding_class():
@@ -165,6 +166,16 @@ def test_tool_required():
     )
     print(repr(response))
     assert len(response.message.additional_kwargs["tool_calls"]) == 1
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        == 1
+    )
 
 
 @pytest.mark.skipif(

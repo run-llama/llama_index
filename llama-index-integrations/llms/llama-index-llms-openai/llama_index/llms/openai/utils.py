@@ -30,6 +30,8 @@ from llama_index.core.base.llms.types import (
     AudioBlock,
     DocumentBlock,
     ThinkingBlock,
+    ToolCallBlock,
+    ContentBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
 
@@ -398,6 +400,14 @@ def to_openai_message_dict(
                     },
                 }
             )
+        elif isinstance(block, ToolCallBlock):
+            try:
+                content.append({"type": "text", "text": block.model_dump_json()})
+            except Exception:
+                logger.warning(
+                    f"It was not possible to convert ToolCallBlock with call id {block.tool_call_id or '`no call id`'} to a valid message, skipping..."
+                )
+                continue
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
@@ -515,6 +525,14 @@ def to_openai_responses_message_dict(
             if block.content:
                 content.append({"type": "output_text", "text": block.content})
                 content_txt += block.content
+        elif isinstance(block, ToolCallBlock):
+            try:
+                content.append({"type": "output_text", "text": block.model_dump_json()})
+            except Exception:
+                logger.warning(
+                    f"It was not possible to convert ToolCallBlock with call id {block.tool_call_id or '`no call id`'} to a valid message, skipping..."
+                )
+                continue
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
@@ -553,13 +571,6 @@ def to_openai_responses_message_dict(
         }
 
         return message_dict
-    elif "tool_calls" in message.additional_kwargs:
-        message_dicts = [
-            tool_call if isinstance(tool_call, dict) else tool_call.model_dump()
-            for tool_call in message.additional_kwargs["tool_calls"]
-        ]
-
-        return message_dicts
 
     # there are some cases (like image generation or MCP tool call) that only support the string input
     # this is why, if context_txt is a non-empty string, all the blocks are TextBlocks and the role is user, we return directly context_txt
@@ -648,13 +659,22 @@ def from_openai_message(
     role = openai_message.role
     # NOTE: Azure OpenAI returns function calling messages without a content key
     if "text" in modalities and openai_message.content:
-        blocks = [TextBlock(text=openai_message.content or "")]
+        blocks: List[ContentBlock] = [TextBlock(text=openai_message.content or "")]
     else:
-        blocks = []
+        blocks: List[ContentBlock] = []
 
     additional_kwargs: Dict[str, Any] = {}
     if openai_message.tool_calls:
         tool_calls: List[ChatCompletionMessageToolCall] = openai_message.tool_calls
+        for tool_call in tool_calls:
+            if tool_call.function:
+                blocks.append(
+                    ToolCallBlock(
+                        tool_call_id=tool_call.id,
+                        tool_name=tool_call.function.name or "",
+                        tool_kwargs=tool_call.function.arguments or {},
+                    )
+                )
         additional_kwargs.update(tool_calls=tool_calls)
 
     if openai_message.audio and "audio" in modalities:
@@ -742,6 +762,14 @@ def from_openai_message_dict(message_dict: dict) -> ChatMessage:
                     blocks.append(ImageBlock(image=img, detail=detail))
                 else:
                     blocks.append(ImageBlock(url=img, detail=detail))
+            elif t == "function_call":
+                blocks.append(
+                    ToolCallBlock(
+                        tool_call_id=elem.get("call_id"),
+                        tool_name=elem.get("name", ""),
+                        tool_kwargs=elem.get("arguments", {}),
+                    )
+                )
             else:
                 msg = f"Unsupported message type: {t}"
                 raise ValueError(msg)

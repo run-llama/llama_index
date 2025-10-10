@@ -1,4 +1,3 @@
-import json
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -12,6 +11,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    cast,
 )
 
 from llama_index.core.base.llms.types import (
@@ -22,6 +22,7 @@ from llama_index.core.base.llms.types import (
     LLMMetadata,
     MessageRole,
     ContentBlock,
+    ToolCallBlock,
 )
 from llama_index.core.base.llms.types import TextBlock as LITextBlock
 from llama_index.core.base.llms.types import CitationBlock as LICitationBlock
@@ -42,6 +43,7 @@ from llama_index.llms.anthropic.utils import (
     force_single_tool_call,
     is_function_calling_model,
     messages_to_anthropic_messages,
+    _anthropic_tool_call_to_tool_call_block,
 )
 
 import anthropic
@@ -344,8 +346,7 @@ class Anthropic(FunctionCallingLLM):
 
     def _get_blocks_and_tool_calls_and_thinking(
         self, response: Any
-    ) -> Tuple[List[ContentBlock], List[Dict[str, Any]], List[Dict[str, Any]]]:
-        tool_calls = []
+    ) -> Tuple[List[ContentBlock], List[Dict[str, Any]]]:
         blocks: List[ContentBlock] = []
         citations: List[TextCitation] = []
         tracked_citations: Set[str] = set()
@@ -385,9 +386,15 @@ class Anthropic(FunctionCallingLLM):
                     )
                 )
             elif isinstance(content_block, ToolUseBlock):
-                tool_calls.append(content_block.model_dump())
+                blocks.append(
+                    ToolCallBlock(
+                        tool_call_id=content_block.id,
+                        tool_name=content_block.name,
+                        tool_kwargs=content_block.input,
+                    )
+                )
 
-        return blocks, tool_calls, [x.model_dump() for x in citations]
+        return blocks, [x.model_dump() for x in citations]
 
     @llm_chat_callback()
     def chat(
@@ -405,17 +412,12 @@ class Anthropic(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        blocks, tool_calls, citations = self._get_blocks_and_tool_calls_and_thinking(
-            response
-        )
+        blocks, citations = self._get_blocks_and_tool_calls_and_thinking(response)
 
         return AnthropicChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 blocks=blocks,
-                additional_kwargs={
-                    "tool_calls": tool_calls,
-                },
             ),
             citations=citations,
             raw=dict(response),
@@ -526,7 +528,12 @@ class Anthropic(FunctionCallingLLM):
                     yield AnthropicChatResponse(
                         message=ChatMessage(
                             role=role,
-                            blocks=content,
+                            blocks=[
+                                *content,
+                                *_anthropic_tool_call_to_tool_call_block(
+                                    cur_tool_calls
+                                ),
+                            ],
                             additional_kwargs={
                                 "tool_calls": [
                                     t.model_dump() for t in tool_calls_to_send
@@ -577,17 +584,12 @@ class Anthropic(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        blocks, tool_calls, citations = self._get_blocks_and_tool_calls_and_thinking(
-            response
-        )
+        blocks, citations = self._get_blocks_and_tool_calls_and_thinking(response)
 
         return AnthropicChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 blocks=blocks,
-                additional_kwargs={
-                    "tool_calls": tool_calls,
-                },
             ),
             citations=citations,
             raw=dict(response),
@@ -698,11 +700,12 @@ class Anthropic(FunctionCallingLLM):
                     yield AnthropicChatResponse(
                         message=ChatMessage(
                             role=role,
-                            blocks=content,
-                            additional_kwargs={
-                                "tool_calls": [t.dict() for t in tool_calls_to_send],
-                                "thinking": thinking.model_dump() if thinking else None,
-                            },
+                            blocks=[
+                                *content,
+                                *_anthropic_tool_call_to_tool_call_block(
+                                    cur_tool_calls
+                                ),
+                            ],
                         ),
                         citations=cur_citations,
                         delta=content_delta,
@@ -811,7 +814,11 @@ class Anthropic(FunctionCallingLLM):
         **kwargs: Any,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
-        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+        tool_calls = [
+            block
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        ]
 
         if len(tool_calls) < 1:
             if error_on_no_tool_call:
@@ -823,25 +830,13 @@ class Anthropic(FunctionCallingLLM):
 
         tool_selections = []
         for tool_call in tool_calls:
-            if (
-                "input" not in tool_call
-                or "id" not in tool_call
-                or "name" not in tool_call
-            ):
-                raise ValueError("Invalid tool call.")
-            if tool_call["type"] != "tool_use":
-                raise ValueError("Invalid tool type. Unsupported by Anthropic")
-            argument_dict = (
-                json.loads(tool_call["input"])
-                if isinstance(tool_call["input"], str)
-                else tool_call["input"]
-            )
+            argument_dict = tool_call.tool_kwargs
 
             tool_selections.append(
                 ToolSelection(
-                    tool_id=tool_call["id"],
-                    tool_name=tool_call["name"],
-                    tool_kwargs=argument_dict,
+                    tool_id=tool_call.tool_call_id or "",
+                    tool_name=tool_call.tool_name,
+                    tool_kwargs=cast(Dict[str, Any], argument_dict),
                 )
             )
 
