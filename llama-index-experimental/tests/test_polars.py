@@ -113,16 +113,16 @@ def test_default_output_processor_rce2() -> None:
 
     # Test various RCE attempts
     parser = PolarsInstructionParser(df=df)
-    
+
     # Test malicious code injection attempts
     malicious_codes = [
         "__import__('subprocess').call(['echo', 'pwned'])",
         "exec('import os; os.system(\"echo pwned\")')",
-        "eval('__import__(\"os\").system(\"echo pwned\")')",
+        'eval(\'__import__("os").system("echo pwned")\')',
         "open('/etc/passwd').read()",
         "__builtins__.__dict__['eval']('print(\"pwned\")')",
     ]
-    
+
     for malicious_code in malicious_codes:
         try:
             result = parser.parse(malicious_code)
@@ -140,7 +140,7 @@ def test_default_output_processor_e2e(tmp_path: Path) -> None:
         {
             "city": ["Toronto", "Tokyo", "Berlin"],
             "population": [2930000, 13960000, 3645000],
-            "country": ["Canada", "Japan", "Germany"]
+            "country": ["Canada", "Japan", "Germany"],
         }
     )
 
@@ -169,12 +169,14 @@ def test_default_output_processor_e2e(tmp_path: Path) -> None:
 
 def test_polars_query_engine_complex_operations() -> None:
     """Test PolarsQueryEngine with more complex operations."""
-    df = pl.DataFrame({
-        "name": ["Alice", "Bob", "Charlie", "Diana"],
-        "age": [25, 30, 35, 28],
-        "salary": [50000, 60000, 70000, 55000],
-        "department": ["Engineering", "Sales", "Engineering", "Sales"]
-    })
+    df = pl.DataFrame(
+        {
+            "name": ["Alice", "Bob", "Charlie", "Diana"],
+            "age": [25, 30, 35, 28],
+            "salary": [50000, 60000, 70000, 55000],
+            "department": ["Engineering", "Sales", "Engineering", "Sales"],
+        }
+    )
 
     # Mock LLM that returns complex Polars operations
     class ComplexMockLLM(MockLLM):
@@ -188,24 +190,24 @@ def test_polars_query_engine_complex_operations() -> None:
                 return "df.group_by('department').agg(pl.col('salary').mean())"
             else:
                 return "df.head()"
-    
+
     llm = ComplexMockLLM()
     query_engine = PolarsQueryEngine(df, llm=llm, verbose=True)
 
     # Test average salary query
     response = query_engine.query(QueryBundle("What is the average salary?"))
     if sys.version_info >= (3, 9):
-        expected = str(df.select(pl.col('salary').mean()))
+        expected = str(df.select(pl.col("salary").mean()))
         assert str(response) == expected
 
-    # Test filtering query  
+    # Test filtering query
     response = query_engine.query(QueryBundle("Show engineering employees"))
     if sys.version_info >= (3, 9):
-        expected = str(df.filter(pl.col('department') == 'Engineering'))
+        expected = str(df.filter(pl.col("department") == "Engineering"))
         assert str(response) == expected
 
     # Test groupby query
     response = query_engine.query(QueryBundle("Group by department"))
     if sys.version_info >= (3, 9):
-        expected = str(df.group_by('department').agg(pl.col('salary').mean()))
+        expected = str(df.group_by("department").agg(pl.col("salary").mean()))
         assert str(response) == expected

@@ -51,7 +51,7 @@ def default_output_processor(
         try:
             # Handle Polars DataFrame display options
             result = safe_eval(module_end_str, global_vars, local_vars)
-            
+
             # Set display options for Polars if provided
             if isinstance(result, pl.DataFrame):
                 # Polars doesn't have global display options like pandas,
@@ -63,8 +63,9 @@ def default_output_processor(
                         head_rows = max_rows // 2
                         tail_rows = max_rows - head_rows
                         result_str = (
-                            str(result.head(head_rows)) + "\n...\n" + 
-                            str(result.tail(tail_rows))
+                            str(result.head(head_rows))
+                            + "\n...\n"
+                            + str(result.tail(tail_rows))
                         )
                     else:
                         result_str = str(result)
@@ -72,7 +73,7 @@ def default_output_processor(
                     result_str = str(result)
             else:
                 result_str = str(result)
-                
+
             return result_str
 
         except Exception:

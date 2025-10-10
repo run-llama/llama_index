@@ -32,5 +32,6 @@ DEFAULT_POLARS_TMPL = (
 )
 
 DEFAULT_POLARS_PROMPT = PromptTemplate(
-    DEFAULT_POLARS_TMPL, prompt_type=PromptType.PANDAS  # Reusing PANDAS type as there's no POLARS type
+    DEFAULT_POLARS_TMPL,
+    prompt_type=PromptType.PANDAS,  # Reusing PANDAS type as there's no POLARS type
 )
