@@ -1692,11 +1692,7 @@ name = "llama-index-vector-stores-paradedb"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "asyncpg" },
-    { name = "llama-index-core" },
-    { name = "pgvector" },
-    { name = "psycopg2-binary" },
-    { name = "sqlalchemy", extra = ["asyncio"] },
+    { name = "llama-index-vector-stores-postgres" },
 ]
 
 [package.dev-dependencies]
@@ -1724,13 +1720,7 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "asyncpg", specifier = ">=0.29.0,<1.0.0" },
-    { name = "llama-index-core", specifier = ">=0.13.0,<0.15" },
-    { name = "pgvector", specifier = ">=0.3.6,<1.0.0" },
-    { name = "psycopg2-binary", specifier = ">=2.9.9,<3.0.0" },
-    { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=1.4.49,<2.1" },
-]
+requires-dist = [{ name = "llama-index-vector-stores-postgres", specifier = ">=0.7.0,<1.0.0" }]
 
 [package.metadata.requires-dev]
 dev = [
@@ -1753,6 +1743,22 @@ dev = [
     { name = "types-redis", specifier = "==4.5.5.0" },
     { name = "types-requests", specifier = "==2.28.11.8" },
     { name = "types-setuptools", specifier = "==67.1.0.0" },
+]
+
+[[package]]
+name = "llama-index-vector-stores-postgres"
+version = "0.7.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "asyncpg" },
+    { name = "llama-index-core" },
+    { name = "pgvector" },
+    { name = "psycopg2-binary" },
+    { name = "sqlalchemy", extra = ["asyncio"] },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9b/6a/72253fb16002bafa38c0f78d332fbb7ac430d57bc9721feba518354e3418/llama_index_vector_stores_postgres-0.7.0.tar.gz", hash = "sha256:c169f7cbf3446fbd4dda109c774ea2a1fedf6af2717151d99810af3f8510265f", size = 11668, upload-time = "2025-09-25T23:52:15.86Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/53/3b/06a856ab01c815b2578cb16df531f041e40d35df473598cc69a67db0eb15/llama_index_vector_stores_postgres-0.7.0-py3-none-any.whl", hash = "sha256:a31194352c20c33097077c5fb67f340b7b35e3263fb6ed8023c43617e678f595", size = 11339, upload-time = "2025-09-25T23:52:14.734Z" },
 ]
 
 [[package]]
