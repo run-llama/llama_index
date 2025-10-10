@@ -47,15 +47,13 @@ class BaseMem0(BaseMemory):
 
 
 class Mem0Context(BaseModel):
-    user_id: Optional[str] = None
-    agent_id: Optional[str] = None
-    run_id: Optional[str] = None
+    user_id: Optional[str] = Field(default=None, description="User ID")
+    agent_id: Optional[str] = Field(default=None, description="Agent ID")
+    run_id: Optional[str] = Field(default=None, description="Run ID")
 
-    @model_validator(mode="after")
+    @model_validator(mode="before")
     def check_at_least_one_assigned(cls, values):
-        if not any(
-            getattr(values, field) for field in ["user_id", "agent_id", "run_id"]
-        ):
+        if not any(values.get(field) for field in ["user_id", "agent_id", "run_id"]):
             raise ValueError(
                 "At least one of 'user_id', 'agent_id', or 'run_id' must be assigned."
             )
@@ -142,10 +140,7 @@ class Mem0Memory(BaseMem0):
     ):
         primary_memory = LlamaIndexMemory.from_defaults()
 
-        try:
-            context = Mem0Context(**context)
-        except Exception as e:
-            raise ValidationError(f"Context validation error: {e}")
+        context = Mem0Context(**context)
 
         client = Memory.from_config(config_dict=config)
         return cls(

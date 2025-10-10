@@ -47,6 +47,14 @@ dependencies = [
     "llama-index-readers-file>=0.5.0,<0.6",
     "llama-index-readers-llama-parse>=0.4.0",
     "nltk>3.8.1",
+    "markdownify (>=1.2.0,<2.0.0)",
+    "lxml[html-clean] (>=6.0.2,<7.0.0)",
+    "playwright (>=1.55.0,<2.0.0)",
+    "selenium (>=4.36.0,<5.0.0)",
+    "html2text (>=2025.4.15,<2026.0.0)",
+    "oxylabs (>=2.0.0,<3.0.0)",
+    "feedparser (>=6.0.12,<7.0.0)",
+    "mem0ai (>=0.1.118,<0.2.0)",
 ]
 description = "Interface between LLMs and your data"
 keywords = [

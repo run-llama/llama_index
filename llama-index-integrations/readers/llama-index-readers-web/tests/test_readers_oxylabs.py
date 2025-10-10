@@ -1,5 +1,4 @@
-from unittest.mock import MagicMock, AsyncMock
-
+from unittest.mock import MagicMock, AsyncMock, patch
 import pytest
 import sys
 
@@ -30,12 +29,15 @@ skip_if_py39_or_lower = sys.version_info < (3, 10)
     ("urls", "additional_params", "return_value", "expected_output"),
     [READER_TEST_PARAM],
 )
+@patch("llama_index.readers.web.oxylabs_web.base.version")
 def test_sync_oxylabs_reader(
+    mock_version: MagicMock,
     urls: list[str],
     additional_params: dict,
     return_value: dict,
     expected_output: str,
 ):
+    mock_version.return_value = "0.1.0"
     reader = OxylabsWebReader(
         username="OXYLABS_USERNAME",
         password="OXYLABS_PASSWORD",
@@ -57,12 +59,15 @@ def test_sync_oxylabs_reader(
     [READER_TEST_PARAM],
 )
 @pytest.mark.asyncio
+@patch("llama_index.readers.web.oxylabs_web.base.version")
 async def test_async_oxylabs_reader(
+    mock_version: MagicMock,
     urls: list[str],
     additional_params: dict,
     return_value: dict,
     expected_output: str,
 ):
+    mock_version.return_value = "0.1.0"
     reader = OxylabsWebReader(
         username="OXYLABS_USERNAME",
         password="OXYLABS_PASSWORD",

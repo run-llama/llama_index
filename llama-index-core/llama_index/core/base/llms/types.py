@@ -549,10 +549,9 @@ class ChatMessage(BaseModel):
 
     def _recursive_serialization(self, value: Any) -> Any:
         if isinstance(value, BaseModel):
-            value.model_rebuild()  # ensures all fields are initialized and serializable
+            value.model_rebuild()
             return value.model_dump()
         if isinstance(value, dict):
-            # CORRECTED LOGIC: Recursively call on the item's value (v), not the whole dict.
             return {k: self._recursive_serialization(v) for k, v in value.items()}
         if isinstance(value, list):
             return [self._recursive_serialization(item) for item in value]
@@ -563,7 +562,6 @@ class ChatMessage(BaseModel):
 
     @field_serializer("additional_kwargs", check_fields=False)
     def serialize_additional_kwargs(self, value: Any, _info: Any) -> Any:
-        # With the helper fixed, this is all we need.
         return self._recursive_serialization(value)
 
 
