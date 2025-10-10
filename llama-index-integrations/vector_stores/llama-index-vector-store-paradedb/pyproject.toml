@@ -34,11 +34,7 @@ requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "pgvector>=0.3.6,<1.0.0",
-    "psycopg2-binary>=2.9.9,<3.0.0",
-    "asyncpg>=0.29.0,<1.0.0",
-    "llama-index-core>=0.13.0,<0.15",
-    "sqlalchemy[asyncio]>=1.4.49,<2.1",
+    "llama-index-vector-stores-postgres>=0.7.0,<1.0.0",
 ]
 
 [tool.codespell]
