@@ -3,10 +3,17 @@
 This module adds full ParadeDB integration enabling hybrid search with BM25 and vector similarity (HNSW) in PostgreSQL.
 
 ---
+# Testing Setup
 
-## Quick Setup
+## Installation
 
----
+First, install the package:
+
+```bash
+pip install llama-index-vector-stores-paradedb
+```
+
+## Database Setup
 
 ### 1. **Setup example**
 
@@ -77,14 +84,19 @@ def get_vector_store(table_name: str = "pgvector") -> ParadeDBVectorStore:
 
 ---
 
-### Disclaimer
+### Results
 
-This integration was based on the Postgres Vector Store implementation:
+The following results demonstrate the difference between BM25 and TSVECTOR ranking methods:
 
-**version = "0.5.5"**
+| Method | Rank | Node ID | Score |
+|--------|------|---------|--------|
+| TSVECTOR | Top1 | ccc | 0.060793 |
+| TSVECTOR | Top2 | ddd | 0.060793 |
+| BM25 | Top1 | ddd | 0.678537 |
+| BM25 | Top2 | ccc | 0.507418 |
 
-
-However, **`customize_query_fn`** and other Postgres-specific query customization features are **not supported** in this ParadeDB version, as the focus here is on BM25 and hybrid retrieval.
-
-Feel free to contribute and extend this module further.
-
+**Key observations**:
+- BM25 produces higher similarity scores overall
+- BM25 shows more differentiation between results (0.678 vs 0.507)
+- TSVECTOR gives equal scores to both results (0.060793)
+- BM25 ranks 'ddd' higher than 'ccc', while TSVECTOR treats them equally
