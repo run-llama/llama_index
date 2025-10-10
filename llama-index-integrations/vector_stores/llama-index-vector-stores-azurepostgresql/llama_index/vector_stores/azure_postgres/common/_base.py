@@ -714,3 +714,105 @@ class BaseAzurePGVectorStore(BaseModel):
                 for result in resultset
             ]
             return documents
+
+    def _full_text_search(
+        self,
+        query_str: str,
+        k: int = 4,
+        language: str = "english",
+        **kwargs: Any,
+    ) -> list[tuple[dict, float, None]]:
+        """Run a Postgres full-text search using plainto_tsquery and return ranked results.
+
+        Args:
+            query_str: The free-text query string to search for.
+            k: Maximum number of results to return.
+            language: The text search configuration/language to use (e.g. 'english').
+            **kwargs: Reserved for future options; currently ignored.
+
+        Returns:
+            List of tuples (document_dict, rank, None). Document dict contains id, content, and metadata.
+        """
+        with (
+            self.connection_pool.connection() as conn,
+            conn.cursor(row_factory=dict_row) as cursor,
+        ):
+            # normalize metadata column(s)
+            metadata_columns: list[str]
+            if isinstance(self.metadata_column, list):
+                metadata_columns = [
+                    col if isinstance(col, str) else col[0]
+                    for col in self.metadata_column
+                ]
+            elif isinstance(self.metadata_column, str):
+                metadata_columns = [self.metadata_column]
+            else:
+                metadata_columns = []
+
+            sql_query = sql.SQL(
+                """
+                SELECT {id_col}, {content_col},
+                    rank() OVER (
+                        ORDER BY ts_rank_cd(
+                            to_tsvector({lang}, {content_col}),
+                            plainto_tsquery({lang}, %(q)s)
+                        ) DESC
+                    ) AS rank
+                    FROM {table}
+                    WHERE plainto_tsquery({lang}, %(q)s) @@ to_tsvector({lang}, {content_col})
+                ORDER BY rank
+                    LIMIT %(top_k)s
+                """
+            ).format(
+                id_col=sql.Identifier(self.id_column),
+                content_col=sql.Identifier(self.content_column),
+                lang=sql.Literal(language),
+                table=sql.Identifier(self.schema_name, self.table_name),
+            )
+
+            cursor.execute(sql_query, {"q": query_str, "top_k": k})
+            rows = cursor.fetchall()
+
+        results: list[tuple[dict, float, None]] = []
+        for row in rows:
+            doc = {
+                "id": row[self.id_column],
+                "content": row[self.content_column],
+                "metadata": (
+                    row[metadata_columns[0]]
+                    if isinstance(self.metadata_column, str)
+                    else {col: row[col] for col in metadata_columns}
+                ),
+            }
+            rank_val = float(row["rank"]) if row.get("rank") is not None else 0.0
+            results.append((doc, rank_val, None))
+
+        return results
+
+    def _dedup_results(
+        self, results: list[tuple[dict, float, Any]]
+    ) -> list[tuple[dict, float, Any]]:
+        """Deduplicate search results by document id, preserving order.
+
+        Accepts a list of tuples (document_dict, score, optional_embedding) where
+        document_dict contains at least the id column (self.id_column) or 'id'.
+        Returns a filtered list keeping the first occurrence of each id.
+        """
+        seen_ids: set = set()
+        deduped: list[tuple[dict, float, Any]] = []
+        for doc, score, emb in results:
+            # robustly get id value using configured id_column or fallback to 'id'
+            doc_id = doc.get(self.id_column) if isinstance(doc, dict) else None
+            if doc_id is None:
+                doc_id = doc.get("id") if isinstance(doc, dict) else None
+
+            # If there's no id, treat the row as unique and keep it
+            if doc_id is None:
+                deduped.append((doc, score, emb))
+                continue
+
+            if doc_id not in seen_ids:
+                deduped.append((doc, score, emb))
+                seen_ids.add(doc_id)
+
+        return deduped
