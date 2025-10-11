@@ -549,16 +549,12 @@ class ChatMessage(BaseModel):
 
     def _recursive_serialization(self, value: Any) -> Any:
         if isinstance(value, BaseModel):
-            value.model_rebuild()  # ensures all fields are initialized and serializable
-            return value.model_dump()  # type: ignore
+            value.model_rebuild()
+            return value.model_dump()
         if isinstance(value, dict):
-            return {
-                key: self._recursive_serialization(value)
-                for key, value in value.items()
-            }
+            return {k: self._recursive_serialization(v) for k, v in value.items()}
         if isinstance(value, list):
             return [self._recursive_serialization(item) for item in value]
-
         if isinstance(value, bytes):
             return base64.b64encode(value).decode("utf-8")
 
