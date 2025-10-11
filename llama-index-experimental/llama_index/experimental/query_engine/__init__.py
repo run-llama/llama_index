@@ -15,9 +15,9 @@ from llama_index.experimental.query_engine.jsonalyze.jsonalyze_query_engine impo
 )
 
 __all__ = [
-    "PandasQueryEngine", 
-    "PandasInstructionParser", 
+    "PandasQueryEngine",
+    "PandasInstructionParser",
     "PolarsQueryEngine",
     "PolarsInstructionParser",
-    "JSONalyzeQueryEngine"
+    "JSONalyzeQueryEngine",
 ]
