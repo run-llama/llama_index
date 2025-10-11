@@ -101,13 +101,16 @@ def resolve_llm(
 
     assert isinstance(llm, LLM)
 
-    llm.callback_manager = callback_manager or Settings.callback_manager
+    llm.callback_manager = (
+        callback_manager or llm.callback_manager or Settings.callback_manager
+    )
 
     return llm
 
 
 def parse_partial_json(s: str) -> Dict:
-    """Parse an incomplete JSON string into a valid python dictionary.
+    """
+    Parse an incomplete JSON string into a valid python dictionary.
 
     NOTE: This is adapted from
     https://github.com/OpenInterpreter/open-interpreter/blob/5b6080fae1f8c68938a1e4fa8667e3744084ee21/interpreter/utils/parse_partial_json.py
@@ -153,9 +156,19 @@ def parse_partial_json(s: str) -> Dict:
         # Append the processed character to the new string.
         new_s += char
 
-    # If we're still inside a string at the end of processing, we need to close the string.
-    if is_inside_string:
+    # If we're still inside a string at the end of processing and no colon was found after the opening quote,
+    # this is an incomplete key - remove it
+    if is_inside_string and '"' in new_s and ":" not in new_s[new_s.rindex('"') :]:
+        new_s = new_s[: new_s.rindex('"')]
+    elif is_inside_string:
         new_s += '"'
+
+    # Check if we have an incomplete key-value pair
+    new_s = new_s.rstrip()
+    if new_s.endswith(":"):
+        new_s += " null"  # Add a default value for incomplete value
+    elif new_s.endswith(","):
+        new_s = new_s[:-1]  # Remove the trailing comma
 
     # Close any remaining open structures in the reverse order that they were opened.
     for closing_char in reversed(stack):

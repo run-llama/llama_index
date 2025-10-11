@@ -44,7 +44,7 @@ import os
 from llama_index.core.llms import ChatMessage
 from llama_index.llms.cerebras import Cerebras
 
-llm = Cerebras(model="llama3.1-70b", api_key=os.environ["CEREBRAS_API_KEY"])
+llm = Cerebras(model="llama-3.3-70b", api_key=os.environ["CEREBRAS_API_KEY"])
 
 messages = [
     ChatMessage(
@@ -63,7 +63,7 @@ import os
 
 from llama_index.llms.cerebras import Cerebras
 
-llm = Cerebras(model="llama3.1-70b", api_key=os.environ["CEREBRAS_API_KEY"])
+llm = Cerebras(model="llama-3.3-70b", api_key=os.environ["CEREBRAS_API_KEY"])
 
 response = llm.stream_complete("What is Generative AI?")
 for r in response:

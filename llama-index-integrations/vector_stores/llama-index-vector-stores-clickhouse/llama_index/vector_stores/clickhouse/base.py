@@ -1,7 +1,8 @@
-"""ClickHouse vector store.
+"""
+ClickHouse vector store.
 
 An index that is built on top of an existing ClickHouse cluster.
-
+For current documentation, refer to : https://clickhouse.com/docs/engines/table-engines/mergetree-family/annindexes
 """
 
 import importlib
@@ -10,6 +11,7 @@ import logging
 import re
 from typing import Any, Dict, List, Optional, cast
 
+from llama_index.core import Settings
 from llama_index.core.bridge.pydantic import PrivateAttr
 from llama_index.core.schema import (
     BaseNode,
@@ -20,13 +22,11 @@ from llama_index.core.schema import (
 )
 from llama_index.core.utils import iter_batch
 from llama_index.core.vector_stores.types import (
+    BasePydanticVectorStore,
     VectorStoreQuery,
     VectorStoreQueryMode,
     VectorStoreQueryResult,
-    BasePydanticVectorStore,
 )
-from llama_index.core import Settings
-
 
 logger = logging.getLogger(__name__)
 
@@ -51,28 +51,29 @@ def escape_str(value: str) -> str:
 
 
 def format_list_to_string(lst: List) -> str:
-    return "[" + ",".join(str(item) for item in lst) + "]"
+    return "[" + ",".join(escape_str(str(item)) for item in lst) + "]"
 
 
 DISTANCE_MAPPING = {
     "l2": "L2Distance",
     "cosine": "cosineDistance",
-    "dot": "dotProduct",
 }
 
 
 class ClickHouseSettings:
-    """ClickHouse Client Configuration.
+    """
+    ClickHouse Client Configuration.
 
     Args:
         table (str): Table name to operate on.
         database (str): Database name to find the table.
         engine (str): Engine. Options are "MergeTree" and "Memory". Default is "MergeTree".
         index_type (str): Index type string.
-        metric (str): Metric type to compute distance e.g., cosine, l3, or dot.
+        metric (str): Metric type to compute distance e.g., cosine or l2
         batch_size (int): The size of documents to insert.
         index_params (dict, optional): Index build parameter.
         search_params (dict, optional): Index search parameters for ClickHouse query.
+
     """
 
     def __init__(
@@ -83,6 +84,7 @@ class ClickHouseSettings:
         index_type: str,
         metric: str,
         batch_size: int,
+        dimension: Optional[int] = None,
         index_params: Optional[dict] = None,
         search_params: Optional[dict] = None,
         **kwargs: Any,
@@ -93,6 +95,7 @@ class ClickHouseSettings:
         self.index_type = index_type
         self.metric = metric
         self.batch_size = batch_size
+        self.dimension = dimension
         self.index_params = index_params
         self.search_params = search_params
 
@@ -115,7 +118,8 @@ class ClickHouseSettings:
 
 
 class ClickHouseVectorStore(BasePydanticVectorStore):
-    """ClickHouse Vector Store.
+    """
+    ClickHouse Vector Store.
     In this vector store, embeddings and docs are stored within an existing
     ClickHouse cluster.
     During query time, the index uses ClickHouse to query for the top
@@ -129,12 +133,15 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
         database (str, optional): The name of the ClickHouse database
             where data will be stored. Defaults to "default".
         index_type (str, optional): The type of the ClickHouse vector index.
-            Defaults to "NONE", supported are ("NONE", "HNSW", "ANNOY")
+            Defaults to "HNSW", supported are ("NONE", "HNSW"). Use NONE for brute-force KNN search.
         metric (str, optional): The metric type of the ClickHouse vector index.
-            Defaults to "cosine".
+            Defaults to "cosine". Alternate metric type is "l2".
         batch_size (int, optional): the size of documents to insert. Defaults to 1000.
         index_params (dict, optional): The index parameters for ClickHouse.
-            Defaults to None.
+            Defaults to None. For HNSW, following parameters are supported :-
+            "quantization" : One of 'f64','f32', 'f16', 'bf16', 'i8', 'b1'. Default is 'bf16'.
+            "hnsw_max_connections_per_layer": Default is 32.
+            "hnsw_candidate_list_size_for_construction" : Default is 128.
         search_params (dict, optional): The search parameters for a ClickHouse query.
             Defaults to None.
 
@@ -155,6 +162,7 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
 
         vector_store = ClickHouseVectorStore(clickhouse_client=client)
         ```
+
     """
 
     stores_text: bool = True
@@ -177,9 +185,10 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
         table: str = "llama_index",
         database: str = "default",
         engine: str = "MergeTree",
-        index_type: str = "NONE",
+        index_type: str = "HNSW",
         metric: str = "cosine",
         batch_size: int = 1000,
+        dimension: Optional[int] = None,
         index_params: Optional[dict] = None,
         search_params: Optional[dict] = None,
         **kwargs: Any,
@@ -205,6 +214,7 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
             index_type=index_type,
             metric=metric,
             batch_size=batch_size,
+            dimension=dimension,
             index_params=index_params,
             search_params=search_params,
             **kwargs,
@@ -246,6 +256,7 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
             index_type=index_type,
             metric=metric,
             batch_size=batch_size,
+            dimension=dimension,
             index_params=index_params,
             search_params=search_params,
         )
@@ -254,7 +265,8 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
         self._column_config = column_config
         self._column_names = column_names
         self._column_type_names = column_type_names
-        dimension = len(Settings.embed_model.get_query_embedding("try this out"))
+        if dimension is None:
+            dimension = len(Settings.embed_model.get_query_embedding("try this out"))
         self.create_table(dimension)
 
     @property
@@ -264,27 +276,40 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
 
     def create_table(self, dimension: int) -> None:
         index = ""
-        settings = {"allow_experimental_object_type": "1"}
+        settings = {"allow_experimental_vector_similarity_index": "1"}
+        quantization = "bf16"
+        M = 32
+        ef_c = 128
+
         if self._config.index_type.lower() == "hnsw":
-            scalarKind = "f32"
-            if self._config.index_params and "ScalarKind" in self._config.index_params:
-                scalarKind = self._config.index_params["ScalarKind"]
-            index = f"INDEX hnsw_indx vector TYPE usearch('{DISTANCE_MAPPING[self._config.metric]}', '{scalarKind}')"
-            settings["allow_experimental_usearch_index"] = "1"
-        elif self._config.index_type.lower() == "annoy":
-            numTrees = 100
-            if self._config.index_params and "NumTrees" in self._config.index_params:
-                numTrees = self._config.index_params["NumTrees"]
-            index = f"INDEX annoy_indx vector TYPE annoy('{DISTANCE_MAPPING[self._config.metric]}', {numTrees})"
-            settings["allow_experimental_annoy_index"] = "1"
+            if (
+                self._config.index_params
+                and "quantization" in self._config.index_params
+            ):
+                quantization = self._config.index_params["quantization"]
+            if (
+                self._config.index_params
+                and "hnsw_max_connections_per_layer" in self._config.index_params
+            ):
+                M = self._config.index_params["hnsw_max_connections_per_layer"]
+            if (
+                self._config.index_params
+                and "hnsw_candidate_list_size_for_construction"
+                in self._config.index_params
+            ):
+                ef_c = self._config.index_params[
+                    "hnsw_candidate_list_size_for_construction"
+                ]
+            index = f"INDEX vector_index vector TYPE vector_similarity('hnsw', '{DISTANCE_MAPPING[self._config.metric]}', {dimension}, '{quantization}', {M}, {ef_c})"
         schema_ = f"""
             CREATE TABLE IF NOT EXISTS {self._config.database}.{self._config.table}(
-                {",".join([f'{k} {v["type"]}' for k, v in self._column_config.items()])},
+                {",".join([f"{k} {v['type']}" for k, v in self._column_config.items()])},
                 CONSTRAINT vector_length CHECK length(vector) = {dimension},
                 {index}
             ) ENGINE = MergeTree ORDER BY id
             """
         self._dim = dimension
+        self.drop()
         self._client.command(schema_, settings=settings)
         self._table_existed = True
 
@@ -310,59 +335,83 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
     def _build_text_search_statement(
         self, query_str: str, similarity_top_k: int
     ) -> str:
-        # TODO: We could make this overridable
-        tokens = _default_tokenizer(query_str)
-        terms_pattern = [f"\\b(?i){x}\\b" for x in tokens]
-        column_keys = self._column_config.keys()
+        safe_tokens = []
+        for token in _default_tokenizer(query_str):
+            # First escape regex special characters
+            regex_escaped = re.escape(token)
+            # Then escape for SQL string
+            sql_escaped = escape_str(regex_escaped)
+            safe_tokens.append(sql_escaped)
+
+        terms_pattern = [f"\\b(?i){token}\\b" for token in safe_tokens]
+        joined_tokens_pattern = escape_str("|".join(safe_tokens))
+        column_keys = [k for k in self._column_config if k != "vector"]
+        column_list = ",".join(column_keys)
         return (
-            f"SELECT {','.join(filter(lambda k: k != 'vector', column_keys))}, "
-            f"score FROM {self._config.database}.{self._config.table} WHERE score > 0 "
+            f"SELECT {column_list}, score "
+            f"FROM {self._config.database}.{self._config.table} WHERE score > 0 "
             f"ORDER BY length(multiMatchAllIndices(text, {terms_pattern})) "
             f"AS score DESC, "
-            f"log(1 + countMatches(text, '\\b(?i)({'|'.join(tokens)})\\b')) "
+            f"log(1 + countMatches(text, '\\b(?i)({joined_tokens_pattern})\\b')) "
             f"AS d2 DESC limit {similarity_top_k}"
         )
 
     def _build_hybrid_search_statement(
         self, stage_one_sql: str, query_str: str, similarity_top_k: int
     ) -> str:
-        # TODO: We could make this overridable
-        tokens = _default_tokenizer(query_str)
-        terms_pattern = [f"\\b(?i){x}\\b" for x in tokens]
-        column_keys = self._column_config.keys()
+        safe_tokens = []
+        for token in _default_tokenizer(query_str):
+            # First escape regex special characters
+            regex_escaped = re.escape(token)
+            # Then escape for SQL string
+            sql_escaped = escape_str(regex_escaped)
+            safe_tokens.append(sql_escaped)
+
+        terms_pattern = [f"\\b(?i){token}\\b" for token in safe_tokens]
+        joined_tokens_pattern = escape_str("|".join(safe_tokens))
+        column_keys = [k for k in self._column_config if k != "vector"]
+        column_list = ",".join(column_keys)
         return (
-            f"SELECT {','.join(filter(lambda k: k != 'vector', column_keys))}, "
-            f"score FROM ({stage_one_sql}) tempt "
+            f"SELECT {column_list}, score "
+            f"FROM ({stage_one_sql}) tempt "
             f"ORDER BY length(multiMatchAllIndices(text, {terms_pattern})) "
             f"AS d1 DESC, "
-            f"log(1 + countMatches(text, '\\\\b(?i)({'|'.join(tokens)})\\\\b')) "
+            f"log(1 + countMatches(text, '\\b(?i)({joined_tokens_pattern})\\b')) "
             f"AS d2 DESC limit {similarity_top_k}"
         )
 
     def _append_meta_filter_condition(
         self, where_str: Optional[str], exact_match_filter: list
     ) -> str:
-        filter_str = " AND ".join(
-            f"JSONExtractString("
-            f"{self.metadata_column}, '{filter_item.key}') "
-            f"= '{filter_item.value}'"
-            for filter_item in exact_match_filter
-        )
-        if where_str is None:
-            where_str = filter_str
-        else:
-            where_str = f"{where_str} AND " + filter_str
-        return where_str
+        if not exact_match_filter:
+            return where_str or ""
+
+        filter_conditions = []
+        for filter_item in exact_match_filter:
+            # Use JSONExtractString function with properly escaped keys and values
+            key = escape_str(filter_item.key)
+            value = escape_str(filter_item.value)
+            filter_conditions.append(
+                f"JSONExtractString({self.metadata_column}, '{key}') = '{value}'"
+            )
+
+        filter_str = " AND ".join(filter_conditions)
+
+        if not where_str:
+            return filter_str
+        return f"{where_str} AND {filter_str}"
 
     def add(
         self,
         nodes: List[BaseNode],
         **add_kwargs: Any,
     ) -> List[str]:
-        """Add nodes to index.
+        """
+        Add nodes to index.
 
         Args:
             nodes: List[BaseNode]: list of nodes with embeddings
+
         """
         if not nodes:
             return []
@@ -381,10 +430,10 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
 
         Args:
             ref_doc_id (str): The doc_id of the document to delete.
+
         """
-        self._client.command(
-            f"DELETE FROM {self._config.database}.{self._config.table} WHERE doc_id='{ref_doc_id}'"
-        )
+        query = f"DELETE FROM {self._config.database}.{self._config.table} WHERE doc_id = %(ref_doc_id)s"
+        self._client.command(query, parameters={"ref_doc_id": ref_doc_id})
 
     def drop(self) -> None:
         """Drop ClickHouse table."""
@@ -395,11 +444,13 @@ class ClickHouseVectorStore(BasePydanticVectorStore):
     def query(
         self, query: VectorStoreQuery, where: Optional[str] = None, **kwargs: Any
     ) -> VectorStoreQueryResult:
-        """Query index for top k most similar nodes.
+        """
+        Query index for top k most similar nodes.
 
         Args:
             query (VectorStoreQuery): query
             where (str): additional where filter
+
         """
         query_embedding = cast(List[float], query.query_embedding)
         where_str = where

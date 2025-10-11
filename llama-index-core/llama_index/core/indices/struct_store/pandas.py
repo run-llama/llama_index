@@ -1,4 +1,5 @@
-"""Pandas csv structured store.
+"""
+Pandas csv structured store.
 
 DEPRECATED: Please use :class:`PandasQueryEngine` in `llama-index-experimental` instead.
 """

@@ -291,9 +291,9 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         streaming: bool = False,
     ) -> Tuple[CompactAndRefine, ToolOutput, List[NodeWithScore]]:
         if chat_history is not None:
-            self._memory.set(chat_history)
+            await self._memory.aset(chat_history)
 
-        chat_history = self._memory.get(input=message)
+        chat_history = await self._memory.aget(input=message)
 
         # Condense conversation history and latest message to a standalone question
         condensed_question = await self._acondense_question(chat_history, message)  # type: ignore
@@ -347,6 +347,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         )
 
         response = synthesizer.synthesize(message, context_nodes)
+        assert isinstance(response, StreamingResponse)
 
         def wrapped_gen(response: StreamingResponse) -> ChatResponseGen:
             full_response = ""
@@ -405,6 +406,7 @@ class CondensePlusContextChatEngine(BaseChatEngine):
         )
 
         response = await synthesizer.asynthesize(message, context_nodes)
+        assert isinstance(response, AsyncStreamingResponse)
 
         async def wrapped_gen(response: AsyncStreamingResponse) -> ChatResponseAsyncGen:
             full_response = ""

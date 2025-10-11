@@ -83,6 +83,7 @@ def run_transformations(
 
     Returns:
         The transformed nodes.
+
     """
     if not in_place:
         nodes = list(nodes)
@@ -119,6 +120,7 @@ async def arun_transformations(
 
     Returns:
         The transformed nodes.
+
     """
     if not in_place:
         nodes = list(nodes)
@@ -178,6 +180,7 @@ class DocstoreStrategy(str, Enum):
             ('duplicates_only') Only handle duplicates. Checks if the hash of a document is already in the doc store. Only then it will add the document to the doc store and run the transformations
         UPSERTS_AND_DELETE:
             ('upserts_and_delete') Use upserts and delete to handle duplicates. Like the upsert strategy but it will also delete non-existing documents from the doc store
+
     """
 
     UPSERTS = "upserts"
@@ -232,6 +235,7 @@ class IngestionPipeline(BaseModel):
 
         nodes = pipeline.run(documents=documents)
         ```
+
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -331,7 +335,7 @@ class IngestionPipeline(BaseModel):
                 concat_dirs(persist_dir, cache_name), fs=fs
             )
             persist_docstore_path = concat_dirs(persist_dir, docstore_name)
-            if os.path.exists(persist_docstore_path):
+            if fs.exists(persist_docstore_path):
                 self.docstore = SimpleDocumentStore.from_persist_path(
                     concat_dirs(persist_dir, docstore_name), fs=fs
                 )
@@ -376,7 +380,6 @@ class IngestionPipeline(BaseModel):
     def _handle_duplicates(
         self,
         nodes: Sequence[BaseNode],
-        store_doc_text: bool = True,
     ) -> Sequence[BaseNode]:
         """Handle docstore duplicates by checking all hashes."""
         assert self.docstore is not None
@@ -390,14 +393,11 @@ class IngestionPipeline(BaseModel):
                 nodes_to_run.append(node)
                 current_hashes.append(node.hash)
 
-        self.docstore.add_documents(nodes_to_run, store_text=store_doc_text)
-
         return nodes_to_run
 
     def _handle_upserts(
         self,
         nodes: Sequence[BaseNode],
-        store_doc_text: bool = True,
     ) -> Sequence[BaseNode]:
         """Handle docstore upserts by checking hashes and ids."""
         assert self.docstore is not None
@@ -433,11 +433,7 @@ class IngestionPipeline(BaseModel):
                 if self.vector_store is not None:
                     self.vector_store.delete(ref_doc_id)
 
-        nodes_to_run = list(deduped_nodes_to_run.values())
-        self.docstore.set_document_hashes({n.id_: n.hash for n in nodes_to_run})
-        self.docstore.add_documents(nodes_to_run, store_text=store_doc_text)
-
-        return nodes_to_run
+        return list(deduped_nodes_to_run.values())
 
     @staticmethod
     def _node_batcher(
@@ -447,6 +443,23 @@ class IngestionPipeline(BaseModel):
         batch_size = max(1, int(len(nodes) / num_batches))
         for i in range(0, len(nodes), batch_size):
             yield nodes[i : i + batch_size]
+
+    def _update_docstore(
+        self, nodes: Sequence[BaseNode], store_doc_text: bool = True
+    ) -> None:
+        """Update the document store with the given nodes."""
+        assert self.docstore is not None
+
+        if self.docstore_strategy in (
+            DocstoreStrategy.UPSERTS,
+            DocstoreStrategy.UPSERTS_AND_DELETE,
+        ):
+            self.docstore.set_document_hashes({n.id_: n.hash for n in nodes})
+            self.docstore.add_documents(nodes, store_text=store_doc_text)
+        elif self.docstore_strategy == DocstoreStrategy.DUPLICATES_ONLY:
+            self.docstore.add_documents(nodes, store_text=store_doc_text)
+        else:
+            raise ValueError(f"Invalid docstore strategy: {self.docstore_strategy}")
 
     @dispatcher.span
     def run(
@@ -479,6 +492,7 @@ class IngestionPipeline(BaseModel):
 
         Returns:
             Sequence[BaseNode]: The set of transformed Nodes/Documents
+
         """
         input_nodes = self._prepare_inputs(documents, nodes)
 
@@ -488,13 +502,9 @@ class IngestionPipeline(BaseModel):
                 DocstoreStrategy.UPSERTS,
                 DocstoreStrategy.UPSERTS_AND_DELETE,
             ):
-                nodes_to_run = self._handle_upserts(
-                    input_nodes, store_doc_text=store_doc_text
-                )
+                nodes_to_run = self._handle_upserts(input_nodes)
             elif self.docstore_strategy == DocstoreStrategy.DUPLICATES_ONLY:
-                nodes_to_run = self._handle_duplicates(
-                    input_nodes, store_doc_text=store_doc_text
-                )
+                nodes_to_run = self._handle_duplicates(input_nodes)
             else:
                 raise ValueError(f"Invalid docstore strategy: {self.docstore_strategy}")
         elif self.docstore is not None and self.vector_store is None:
@@ -510,10 +520,7 @@ class IngestionPipeline(BaseModel):
                     "Switching to duplicates_only strategy."
                 )
                 self.docstore_strategy = DocstoreStrategy.DUPLICATES_ONLY
-            nodes_to_run = self._handle_duplicates(
-                input_nodes, store_doc_text=store_doc_text
-            )
-
+            nodes_to_run = self._handle_duplicates(input_nodes)
         else:
             nodes_to_run = input_nodes
 
@@ -559,9 +566,29 @@ class IngestionPipeline(BaseModel):
             if nodes_with_embeddings:
                 self.vector_store.add(nodes_with_embeddings)
 
+        if self.docstore is not None:
+            self._update_docstore(nodes_to_run, store_doc_text=store_doc_text)
+
         return nodes
 
     # ------ async methods ------
+    async def _aupdate_docstore(
+        self, nodes: Sequence[BaseNode], store_doc_text: bool = True
+    ) -> None:
+        """Update the document store with the given nodes."""
+        assert self.docstore is not None
+
+        if self.docstore_strategy in (
+            DocstoreStrategy.UPSERTS,
+            DocstoreStrategy.UPSERTS_AND_DELETE,
+        ):
+            await self.docstore.aset_document_hashes({n.id_: n.hash for n in nodes})
+            await self.docstore.async_add_documents(nodes, store_text=store_doc_text)
+        elif self.docstore_strategy == DocstoreStrategy.DUPLICATES_ONLY:
+            await self.docstore.async_add_documents(nodes, store_text=store_doc_text)
+        else:
+            raise ValueError(f"Invalid docstore strategy: {self.docstore_strategy}")
+
     async def _ahandle_duplicates(
         self,
         nodes: Sequence[BaseNode],
@@ -578,8 +605,6 @@ class IngestionPipeline(BaseModel):
                 await self.docstore.aset_document_hash(node.id_, node.hash)
                 nodes_to_run.append(node)
                 current_hashes.append(node.hash)
-
-        await self.docstore.async_add_documents(nodes_to_run, store_text=store_doc_text)
 
         return nodes_to_run
 
@@ -622,11 +647,7 @@ class IngestionPipeline(BaseModel):
                 if self.vector_store is not None:
                     await self.vector_store.adelete(ref_doc_id)
 
-        nodes_to_run = list(deduped_nodes_to_run.values())
-        await self.docstore.async_add_documents(nodes_to_run, store_text=store_doc_text)
-        await self.docstore.aset_document_hashes({n.id_: n.hash for n in nodes_to_run})
-
-        return nodes_to_run
+        return list(deduped_nodes_to_run.values())
 
     @dispatcher.span
     async def arun(
@@ -659,6 +680,7 @@ class IngestionPipeline(BaseModel):
 
         Returns:
             Sequence[BaseNode]: The set of transformed Nodes/Documents
+
         """
         input_nodes = self._prepare_inputs(documents, nodes)
 
@@ -745,5 +767,8 @@ class IngestionPipeline(BaseModel):
             nodes_with_embeddings = [n for n in nodes if n.embedding is not None]
             if nodes_with_embeddings:
                 await self.vector_store.async_add(nodes_with_embeddings)
+
+        if self.docstore is not None:
+            await self._aupdate_docstore(nodes_to_run, store_doc_text=store_doc_text)
 
         return nodes

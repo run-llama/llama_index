@@ -1,5 +1,4 @@
 from typing import Any, Callable, Dict, Optional, Sequence
-
 from llama_index.core.base.llms.types import ChatMessage, LLMMetadata
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_NUM_OUTPUTS, DEFAULT_TEMPERATURE
@@ -13,10 +12,12 @@ from llama_index.llms.openai import OpenAI
 
 DEFAULT_API_BASE = "https://api.fireworks.ai/inference/v1"
 DEFAULT_MODEL = "accounts/fireworks/models/llama-v3p1-8b-instruct"
+DEFAULT_CONTEXT_WINDOW = 8192
 
 
 class Fireworks(OpenAI):
-    """Fireworks LLM.
+    """
+    Fireworks LLM with support for custom models.
 
     Examples:
         `pip install llama-index-llms-fireworks`
@@ -24,16 +25,24 @@ class Fireworks(OpenAI):
         ```python
         from llama_index.llms.fireworks import Fireworks
 
-        # Create an instance of the Fireworks class
+        # Using predefined model
         llm = Fireworks(
             model="accounts/fireworks/models/mixtral-8x7b-instruct",
             api_key="YOUR_API_KEY"
         )
 
-        # Call the complete method with a prompt
         resp = llm.complete("Hello world!")
         print(resp)
+
+        # Using custom model with context window
+        llm = Fireworks(
+            model="accounts/fireworks/models/my-custom-model",
+            api_key="YOUR_API_KEY",
+            context_window=65536,
+            is_function_calling=True
+        )
         ```
+
     """
 
     def __init__(
@@ -52,6 +61,8 @@ class Fireworks(OpenAI):
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
         output_parser: Optional[BaseOutputParser] = None,
+        context_window: Optional[int] = None,
+        is_function_calling: Optional[bool] = None,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
@@ -76,20 +87,39 @@ class Fireworks(OpenAI):
             output_parser=output_parser,
         )
 
+        # Store custom model metadata
+        self._custom_context_window: int | None = context_window
+        self._custom_is_function_calling: bool | None = is_function_calling
+
     @classmethod
     def class_name(cls) -> str:
         return "Fireworks_LLM"
 
+    def _get_context_window(self) -> int:
+        """Get context window with fallback logic."""
+        if self._custom_context_window is not None:
+            return self._custom_context_window
+
+        try:
+            return fireworks_modelname_to_contextsize(self.model)
+        except ValueError:
+            return DEFAULT_CONTEXT_WINDOW
+
+    def _get_is_function_calling(self) -> bool:
+        """Get function calling status with fallback logic."""
+        if self._custom_is_function_calling is not None:
+            return self._custom_is_function_calling
+
+        return is_function_calling_model(model=self._get_model_name())
+
     @property
     def metadata(self) -> LLMMetadata:
         return LLMMetadata(
-            context_window=fireworks_modelname_to_contextsize(self.model),
+            context_window=self._get_context_window(),
             num_output=self.max_tokens,
             is_chat_model=True,
             model_name=self.model,
-            is_function_calling_model=is_function_calling_model(
-                model=self._get_model_name()
-            ),
+            is_function_calling_model=self._get_is_function_calling(),
         )
 
     @property

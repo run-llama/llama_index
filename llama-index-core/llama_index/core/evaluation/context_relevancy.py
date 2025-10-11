@@ -64,7 +64,8 @@ def _default_parser_function(output_str: str) -> Tuple[Optional[float], Optional
 
 
 class ContextRelevancyEvaluator(BaseEvaluator):
-    """Context relevancy evaluator.
+    """
+    Context relevancy evaluator.
 
     Evaluates the relevancy of retrieved contexts to a query.
     This evaluator considers the query string and retrieved contexts.
@@ -77,6 +78,7 @@ class ContextRelevancyEvaluator(BaseEvaluator):
             The template to use for evaluation.
         refine_template(Optional[Union[str, BasePromptTemplate]]):
             The template to use for refinement.
+
     """
 
     def __init__(

@@ -143,13 +143,13 @@ def test_delete_node(vespa_app, added_node_ids):
         similarity_top_k=1,
     )
     result = vespa_app.query(query)
-    assert (
-        len(result.nodes) == 0
-    ), f"Deleted node still present in the vector store: {result.nodes}"
+    assert len(result.nodes) == 0, (
+        f"Deleted node still present in the vector store: {result.nodes}"
+    )
 
 
 @pytest.mark.skipif(not docker_available, reason="Docker not available")
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_add_and_query(vespa_app, nodes):
     # Testing async add and query
     await asyncio.gather(*[vespa_app.async_add(nodes)])

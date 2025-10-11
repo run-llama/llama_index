@@ -20,8 +20,8 @@ class BGEM3Index(BaseIndex[IndexDict]):
     BGE-M3 is a multilingual embedding model with multi-functionality:
     Dense retrieval, Sparse retrieval and Multi-vector retrieval.
 
-    Parameters:
-
+    Parameters
+    ----------
     index_path: directory containing PLAID index files.
     model_name: BGE-M3 hugging face model name.
         Default: "BAAI/bge-m3".
@@ -99,7 +99,8 @@ class BGEM3Index(BaseIndex[IndexDict]):
     def _build_index_from_nodes(
         self, nodes: Sequence[BaseNode], **kwargs: Any
     ) -> IndexDict:
-        """Generate a PLAID index from the BGE-M3 checkpoint via its hugging face
+        """
+        Generate a PLAID index from the BGE-M3 checkpoint via its hugging face
         model_name.
         """
         index_struct = IndexDict()
@@ -128,10 +129,10 @@ class BGEM3Index(BaseIndex[IndexDict]):
 
         self._storage_context.persist(persist_dir=persist_dir)
         # Save _multi_embed_store
-        pickle.dump(
-            self._multi_embed_store,
-            open(Path(persist_dir) / "multi_embed_store.pkl", "wb"),
-        )
+        # Use pickle protocol 4 which supports large objects better
+        with open(Path(persist_dir) / "multi_embed_store.pkl", "wb") as f:
+            pickler = pickle.Pickler(f, protocol=pickle.HIGHEST_PROTOCOL)
+            pickler.dump(self._multi_embed_store)
 
     @classmethod
     def load_from_disk(

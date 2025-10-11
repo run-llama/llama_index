@@ -46,7 +46,7 @@ GLM_CHAT_MODELS = {
 
 
 def glm_model_to_context_size(model: str) -> Union[int, None]:
-    token_limit = GLM_CHAT_MODELS.get(model, None)
+    token_limit = GLM_CHAT_MODELS.get(model)
 
     if token_limit is None:
         raise ValueError(f"Model name {model} not found in {GLM_CHAT_MODELS.keys()}")
@@ -72,7 +72,8 @@ def async_llm_generate(item):
 
 
 class ZhipuAI(FunctionCallingLLM):
-    """ZhipuAI LLM.
+    """
+    ZhipuAI LLM.
 
     Visit https://open.bigmodel.cn to get more information about ZhipuAI.
 
@@ -87,6 +88,7 @@ class ZhipuAI(FunctionCallingLLM):
         response = llm.complete("who are you?")
         print(response)
         ```
+
     """
 
     model: str = Field(description="The ZhipuAI model to use.")
@@ -179,6 +181,7 @@ class ZhipuAI(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,  # unsupported, docs say for tool_choice, "currently only supports auto."
         **kwargs: Any,
     ) -> Dict[str, Any]:
         tool_specs = [
@@ -243,11 +246,47 @@ class ZhipuAI(FunctionCallingLLM):
             model=self.model,
             messages=messages_dict,
             stream=False,
-            tools=kwargs.get("tools", None),
-            tool_choice=kwargs.get("tool_choice", None),
+            tools=kwargs.get("tools"),
+            tool_choice=kwargs.get("tool_choice"),
+            stop=kwargs.get("stop"),
             timeout=self.timeout,
             extra_body=self.model_kwargs,
         )
+        tool_calls = raw_response.choices[0].message.tool_calls or []
+        return ChatResponse(
+            message=ChatMessage(
+                content=raw_response.choices[0].message.content,
+                role=raw_response.choices[0].message.role,
+                additional_kwargs={"tool_calls": tool_calls},
+            ),
+            raw=raw_response,
+        )
+
+    @llm_chat_callback()
+    async def achat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        messages_dict = self._convert_to_llm_messages(messages)
+        raw_response = self._client.chat.asyncCompletions.create(
+            model=self.model,
+            messages=messages_dict,
+            tools=kwargs.get("tools"),
+            tool_choice=kwargs.get("tool_choice"),
+            stop=kwargs.get("stop"),
+            timeout=self.timeout,
+            extra_body=self.model_kwargs,
+        )
+        task_id = raw_response.id
+        task_status = raw_response.task_status
+        get_count = 0
+        while task_status not in [SUCCESS, FAILED] and get_count < self.timeout:
+            task_result = self._client.chat.asyncCompletions.retrieve_completion_result(
+                task_id
+            )
+            raw_response = task_result
+            task_status = raw_response.task_status
+            get_count += 1
+            await asyncio.sleep(1)
         tool_calls = raw_response.choices[0].message.tool_calls or []
         return ChatResponse(
             message=ChatMessage(
@@ -269,8 +308,9 @@ class ZhipuAI(FunctionCallingLLM):
                 model=self.model,
                 messages=messages_dict,
                 stream=True,
-                tools=kwargs.get("tools", None),
-                tool_choice=kwargs.get("tool_choice", None),
+                tools=kwargs.get("tools"),
+                tool_choice=kwargs.get("tool_choice"),
+                stop=kwargs.get("stop"),
                 timeout=self.timeout,
                 extra_body=self.model_kwargs,
             )
@@ -305,8 +345,9 @@ class ZhipuAI(FunctionCallingLLM):
                 model=self.model,
                 messages=messages_dict,
                 stream=True,
-                tools=kwargs.get("tools", None),
-                tool_choice=kwargs.get("tool_choice", None),
+                tools=kwargs.get("tools"),
+                tool_choice=kwargs.get("tool_choice"),
+                stop=kwargs.get("stop"),
                 timeout=self.timeout,
                 extra_body=self.model_kwargs,
             )
@@ -330,40 +371,6 @@ class ZhipuAI(FunctionCallingLLM):
                 )
 
         return gen()
-
-    @llm_chat_callback()
-    async def achat(
-        self, messages: Sequence[ChatMessage], **kwargs: Any
-    ) -> ChatResponseAsyncGen:
-        messages_dict = self._convert_to_llm_messages(messages)
-        raw_response = self._client.chat.asyncCompletions.create(
-            model=self.model,
-            messages=messages_dict,
-            tools=kwargs.get("tools", None),
-            tool_choice=kwargs.get("tool_choice", None),
-            timeout=self.timeout,
-            extra_body=self.model_kwargs,
-        )
-        task_id = raw_response.id
-        task_status = raw_response.task_status
-        get_count = 0
-        while task_status not in [SUCCESS, FAILED] and get_count < 40:
-            task_result = self._client.chat.asyncCompletions.retrieve_completion_result(
-                task_id
-            )
-            raw_response = task_result
-            task_status = raw_response.task_status
-            get_count += 1
-            await asyncio.sleep(1)
-        tool_calls = raw_response.choices[0].message.tool_calls or []
-        return ChatResponse(
-            message=ChatMessage(
-                content=raw_response.choices[0].message.content,
-                role=raw_response.choices[0].message.role,
-                additional_kwargs={"tool_calls": tool_calls},
-            ),
-            raw=raw_response,
-        )
 
     @llm_completion_callback()
     def complete(

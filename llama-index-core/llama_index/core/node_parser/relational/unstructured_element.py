@@ -16,7 +16,8 @@ from llama_index.core.node_parser.relational.utils import html_to_df
 
 
 class UnstructuredElementNodeParser(BaseElementNodeParser):
-    """Unstructured element node parser.
+    """
+    Unstructured element node parser.
 
     Splits a document into Text Nodes and Index Nodes corresponding to embedded objects
     (e.g. tables).
@@ -104,7 +105,8 @@ class UnstructuredElementNodeParser(BaseElementNodeParser):
         from unstructured.partition.html import partition_html  # pants: no-infer-dep
 
         table_filters = table_filters or []
-        elements = partition_html(text=text, **self.partitioning_parameters)
+        partitioning_parameters = self.partitioning_parameters or {}
+        elements = partition_html(text=text, **partitioning_parameters)
         output_els = []
         for idx, element in enumerate(elements):
             if "unstructured.documents.elements.Table" in str(type(element)):

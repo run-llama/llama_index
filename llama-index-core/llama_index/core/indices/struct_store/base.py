@@ -14,7 +14,8 @@ BST = TypeVar("BST", bound=BaseStructTable)
 
 
 def default_output_parser(output: str) -> Optional[Dict[str, Any]]:
-    """Parse output of schema extraction.
+    """
+    Parse output of schema extraction.
 
     Attempt to parse the following format from the default prompt:
     field1: <value>, field2: <value>, ...

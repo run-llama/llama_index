@@ -1,6 +1,5 @@
 from typing import Dict, List, Optional, Union, Any
-from llama_index.core.memory.chat_memory_buffer import ChatMemoryBuffer
-from llama_index.core.memory.types import BaseMemory
+from llama_index.core.memory import BaseMemory, Memory as LlamaIndexMemory
 from llama_index.memory.mem0.utils import (
     convert_memory_to_system_message,
     convert_chat_history_to_dict,
@@ -14,6 +13,8 @@ from llama_index.core.bridge.pydantic import (
     model_validator,
     SerializeAsAny,
     PrivateAttr,
+    ConfigDict,
+    model_serializer,
 )
 from llama_index.core.base.llms.types import ChatMessage, MessageRole
 
@@ -35,6 +36,8 @@ class BaseMem0(BaseMemory):
     ) -> Optional[Dict[str, Any]]:
         if self._client is None:
             raise ValueError("Client is not initialized")
+        if not messages:
+            return None
         return self._client.add(messages=messages, **kwargs)
 
     def search(self, query: str, **kwargs) -> Optional[Dict[str, Any]]:
@@ -63,7 +66,8 @@ class Mem0Context(BaseModel):
 
 
 class Mem0Memory(BaseMem0):
-    primary_memory: SerializeAsAny[BaseMemory] = Field(
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    primary_memory: SerializeAsAny[LlamaIndexMemory] = Field(
         description="Primary memory source for chat agent."
     )
     context: Optional[Mem0Context] = None
@@ -76,6 +80,20 @@ class Mem0Memory(BaseMem0):
         super().__init__(**kwargs)
         if context is not None:
             self.context = context
+
+    @model_serializer
+    def serialize_memory(self) -> Dict[str, Any]:
+        # leaving out the two keys since they are causing serialization/deserialization problems
+        return {
+            "primary_memory": self.primary_memory.model_dump(
+                exclude={
+                    "memory_blocks_template",
+                    "insert_method",
+                }
+            ),
+            "search_msg_limit": self.search_msg_limit,
+            "context": self.context.model_dump(),
+        }
 
     @classmethod
     def class_name(cls) -> str:
@@ -92,12 +110,12 @@ class Mem0Memory(BaseMem0):
         context: Dict[str, Any],
         api_key: Optional[str] = None,
         host: Optional[str] = None,
-        organization: Optional[str] = None,
-        project: Optional[str] = None,
+        org_id: Optional[str] = None,
+        project_id: Optional[str] = None,
         search_msg_limit: int = 5,
         **kwargs: Any,
     ):
-        primary_memory = ChatMemoryBuffer.from_defaults()
+        primary_memory = LlamaIndexMemory.from_defaults()
 
         try:
             context = Mem0Context(**context)
@@ -105,7 +123,7 @@ class Mem0Memory(BaseMem0):
             raise ValidationError(f"Context validation error: {e}")
 
         client = MemoryClient(
-            api_key=api_key, host=host, organization=organization, project=project
+            api_key=api_key, host=host, org_id=org_id, project_id=project_id
         )
         return cls(
             primary_memory=primary_memory,
@@ -122,7 +140,7 @@ class Mem0Memory(BaseMem0):
         search_msg_limit: int = 5,
         **kwargs: Any,
     ):
-        primary_memory = ChatMemoryBuffer.from_defaults()
+        primary_memory = LlamaIndexMemory.from_defaults()
 
         try:
             context = Mem0Context(**context)
@@ -144,7 +162,7 @@ class Mem0Memory(BaseMem0):
 
         search_results = self.search(query=input, **self.context.get_context())
 
-        if isinstance(self._client, Memory) and self._client.version == "v1.1":
+        if isinstance(self._client, Memory) and self._client.api_version == "v1.1":
             search_results = search_results["results"]
 
         system_message = convert_memory_to_system_message(search_results)

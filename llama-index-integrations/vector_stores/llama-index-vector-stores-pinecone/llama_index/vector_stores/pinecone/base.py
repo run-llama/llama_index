@@ -26,10 +26,10 @@ from llama_index.core.vector_stores.utils import (
 )
 import pinecone
 from llama_index.vector_stores.pinecone.utils import (
-    _import_pinecone,
-    _is_pinecone_v3,
     DefaultPineconeSparseEmbedding,
 )
+import pinecone.db_data
+import pinecone.pinecone_asyncio
 
 ID_KEY = "id"
 VECTOR_KEY = "values"
@@ -159,6 +159,7 @@ class PineconeVectorStore(BasePydanticVectorStore):
             pinecone_index=pinecone_index,
         )
         ```
+
     """
 
     stores_text: bool = True
@@ -174,14 +175,12 @@ class PineconeVectorStore(BasePydanticVectorStore):
     batch_size: int
     remove_text_from_metadata: bool
 
-    _pinecone_index: pinecone.Index = PrivateAttr()
+    _pinecone_index: pinecone.db_data.index.Index = PrivateAttr()
     _sparse_embedding_model: Optional[BaseSparseEmbedding] = PrivateAttr()
 
     def __init__(
         self,
-        pinecone_index: Optional[
-            Any
-        ] = None,  # Dynamic import prevents specific type hinting here
+        pinecone_index: Optional[pinecone.db_data.index.Index] = None,
         api_key: Optional[str] = None,
         index_name: Optional[str] = None,
         environment: Optional[str] = None,
@@ -224,11 +223,9 @@ class PineconeVectorStore(BasePydanticVectorStore):
 
         self._sparse_embedding_model = sparse_embedding_model
 
-        # TODO: Make following instance check stronger -- check if pinecone_index is not pinecone.Index, else raise
-        #  ValueError
         if isinstance(pinecone_index, str):
             raise ValueError(
-                "`pinecone_index` cannot be of type `str`; should be an instance of pinecone.Index, "
+                "`pinecone_index` cannot be of type `str`; should be an instance of pinecone.data.index.Index"
             )
 
         self._pinecone_index = pinecone_index or self._initialize_pinecone_client(
@@ -244,29 +241,15 @@ class PineconeVectorStore(BasePydanticVectorStore):
         **kwargs: Any,
     ) -> Any:
         """
-        Initialize Pinecone client based on version.
-
-        If client version <3.0.0, use pods-based initialization; else, use serverless initialization.
+        Initialize Pinecone client.
         """
         if not index_name:
             raise ValueError(
                 "`index_name` is required for Pinecone client initialization"
             )
 
-        pinecone = _import_pinecone()
-
-        if (
-            not _is_pinecone_v3()
-        ):  # If old version of Pinecone client (version bifurcation temporary):
-            if not environment:
-                raise ValueError("environment is required for Pinecone client < 3.0.0")
-            pinecone.init(api_key=api_key, environment=environment)
-            return pinecone.Index(index_name)
-        else:  # If new version of Pinecone client (serverless):
-            pinecone_instance = pinecone.Pinecone(
-                api_key=api_key, source_tag="llamaindex"
-            )
-            return pinecone_instance.Index(index_name)
+        pinecone_instance = pinecone.Pinecone(api_key=api_key, source_tag="llamaindex")
+        return pinecone_instance.Index(index_name)
 
     @classmethod
     def from_params(
@@ -366,6 +349,44 @@ class PineconeVectorStore(BasePydanticVectorStore):
         )
         return ids
 
+    def get_nodes(
+        self,
+        node_ids: Optional[List[str]] = None,
+        filters: Optional[List[MetadataFilters]] = None,
+        limit: int = 100,
+        include_values: bool = False,
+    ) -> List[BaseNode]:
+        filter = None
+        if filters is not None:
+            filter = _to_pinecone_filter(filters)
+
+        if node_ids is not None:
+            raise ValueError(
+                "Getting nodes by node id not supported by Pinecone at the time of writing."
+            )
+
+        if node_ids is None and filters is None:
+            raise ValueError("Filters must be specified")
+
+        # Pinecone requires a query vector, so default to 0s if not provided
+        query_vector = [0.0] * self._pinecone_index.describe_index_stats()["dimension"]
+
+        response = self._pinecone_index.query(
+            top_k=limit,
+            vector=query_vector,
+            namespace=self.namespace,
+            filter=filter,
+            include_values=include_values,
+            include_metadata=True,
+        )
+
+        nodes = [metadata_dict_to_node(match.metadata) for match in response.matches]
+        if include_values:
+            for node, match in zip(nodes, response.matches):
+                node.embedding = match.values
+
+        return nodes
+
     def delete(self, ref_doc_id: str, **delete_kwargs: Any) -> None:
         """
         Delete nodes using with ref_doc_id.
@@ -388,9 +409,10 @@ class PineconeVectorStore(BasePydanticVectorStore):
                 prefix=ref_doc_id, namespace=self.namespace
             )
             ids_to_delete = list(id_gen)
-            self._pinecone_index.delete(
-                ids=ids_to_delete, namespace=self.namespace, **delete_kwargs
-            )
+            if ids_to_delete:
+                self._pinecone_index.delete(
+                    ids=ids_to_delete, namespace=self.namespace, **delete_kwargs
+                )
 
     def delete_nodes(
         self,
@@ -398,11 +420,13 @@ class PineconeVectorStore(BasePydanticVectorStore):
         filters: Optional[MetadataFilters] = None,
         **delete_kwargs: Any,
     ) -> None:
-        """Deletes nodes using their ids.
+        """
+        Deletes nodes using their ids.
 
         Args:
             node_ids (Optional[List[str]], optional): List of node IDs. Defaults to None.
             filters (Optional[MetadataFilters], optional): Metadata filters. Defaults to None.
+
         """
         node_ids = node_ids or []
 

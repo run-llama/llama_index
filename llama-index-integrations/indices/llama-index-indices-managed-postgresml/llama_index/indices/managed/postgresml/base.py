@@ -1,4 +1,5 @@
-"""Managed index.
+"""
+Managed index.
 
 A managed Index - where the index is accessible via some API that
 interfaces a managed service.
@@ -37,7 +38,8 @@ class PostgresMLIndexStruct(IndexDict):
 
 
 class PostgresMLIndex(BaseManagedIndex):
-    """PostgresML Index.
+    """
+    PostgresML Index.
 
     The PostgresML index implements a managed index that uses PostgresML as the backend.
     PostgresML performs a lot of the functions in traditional indexes in the backend:

@@ -1,4 +1,5 @@
-"""Joplin reader class.
+"""
+Joplin reader class.
 
 When Joplin is installed and running it will parse all markdown
 files into a List of Documents.
@@ -49,6 +50,7 @@ class JoplinReader(BaseReader):
             parse_markdown (bool): Whether to parse the markdown content of the notes using MarkdownReader. Default is True.
             port (int): The port on which Joplin's Web Clipper service is running. Default is 41184.
             host (str): The host on which Joplin's Web Clipper service is running. Default is "localhost".
+
         """
         self.parse_markdown = parse_markdown
         if parse_markdown:

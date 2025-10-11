@@ -1,4 +1,5 @@
-from typing import Any, Dict, Sequence
+from typing import Any, Dict, Sequence, Union, cast
+from deprecated import deprecated
 from typing_extensions import override
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -6,10 +7,13 @@ from llama_index.core.base.llms.types import (
     ChatResponseAsyncGen,
     CompletionResponse,
     CompletionResponseAsyncGen,
+    ImageBlock,
 )
+from llama_index.llms.huggingface import HuggingFaceLLM
+from llama_index.core.base.llms.generic_utils import image_node_to_image_block
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.core.multi_modal_llms import MultiModalLLM, MultiModalLLMMetadata
+from llama_index.core.multi_modal_llms import MultiModalLLMMetadata
 from llama_index.core.schema import ImageDocument, ImageNode
 import torch
 from PIL import Image
@@ -19,6 +23,7 @@ from transformers import (
     AutoConfig,
     Qwen2VLForConditionalGeneration,
     PaliGemmaForConditionalGeneration,
+    MllamaForConditionalGeneration,
 )
 from qwen_vl_utils import (
     process_vision_info,
@@ -35,7 +40,11 @@ SUPPORTED_VLMS = [
 ]
 
 
-class HuggingFaceMultiModal(MultiModalLLM):
+@deprecated(
+    reason="This package has been deprecated and will no longer be maintained. Please feel free to contribute to multi-modal support in llama-index-llms-huggingface instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
+    version="0.4.3",
+)
+class HuggingFaceMultiModal(HuggingFaceLLM):
     """
     This class provides a base implementation for interacting with HuggingFace multi-modal models.
     It handles model initialization, input preparation, and text/image-based interaction.
@@ -48,12 +57,17 @@ class HuggingFaceMultiModal(MultiModalLLM):
         default="cuda" if torch.cuda.is_available() else "cpu",
         description="The device to run the model on.",
     )
+    device_map: Union[Dict[str, Any], str] = Field(
+        default="auto",
+        description="Tell HF accelerate where to put each layer of the model. In auto mode, HF accelerate determines this on it's own",
+    )
     torch_dtype: Any = Field(
         default=torch.float16 if torch.cuda.is_available() else torch.float32,
         description="The torch dtype to use.",
     )
     trust_remote_code: bool = Field(
-        default=True, description="Whether to trust remote code when loading the model."
+        default=False,
+        description="Whether to trust remote code when loading the model.",
     )
     context_window: int = Field(
         default=DEFAULT_CONTEXT_WINDOW,
@@ -93,11 +107,13 @@ class HuggingFaceMultiModal(MultiModalLLM):
                 AutoModelClass = Qwen2VLForConditionalGeneration
             if "PaliGemmaForConditionalGeneration" in architecture:
                 AutoModelClass = PaliGemmaForConditionalGeneration
+            if "MllamaForConditionalGeneration" in architecture:
+                AutoModelClass = MllamaForConditionalGeneration
 
             # Load the model based on the architecture
             self._model = AutoModelClass.from_pretrained(
                 self.model_name,
-                device_map=self.device,
+                device_map=self.device_map,
                 torch_dtype=self.torch_dtype,
                 trust_remote_code=self.trust_remote_code,
                 **self.additional_kwargs,
@@ -179,15 +195,28 @@ class HuggingFaceMultiModal(MultiModalLLM):
             "HuggingFaceMultiModal does not support async streaming chat yet."
         )
 
+    async def stream_chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> ChatResponseAsyncGen:
+        raise NotImplementedError(
+            "HuggingFaceMultiModal does not support streaming chat yet."
+        )
+
     async def astream_complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponseAsyncGen:
         raise NotImplementedError(
             "HuggingFaceMultiModal does not support async streaming completion yet."
         )
 
     async def acomplete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponse:
         raise NotImplementedError(
             "HuggingFaceMultiModal does not support async completion yet."
@@ -201,7 +230,10 @@ class HuggingFaceMultiModal(MultiModalLLM):
         )
 
     async def stream_complete(
-        self, prompt: str, image_documents: Sequence[ImageNode], **kwargs: Any
+        self,
+        prompt: str,
+        image_documents: Sequence[Union[ImageNode, ImageBlock]],
+        **kwargs: Any,
     ) -> CompletionResponse:
         raise NotImplementedError(
             "HuggingFaceMultiModal does not support async completion yet."
@@ -232,6 +264,10 @@ class HuggingFaceMultiModal(MultiModalLLM):
             )
 
 
+@deprecated(
+    reason="This package has been deprecated and will no longer be maintained. Please feel free to contribute to multi-modal support in llama-index-llms-huggingface instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
+    version="0.4.3",
+)
 class Qwen2VisionMultiModal(HuggingFaceMultiModal):
     """
     A specific implementation for the Qwen2 multi-modal model.
@@ -245,9 +281,14 @@ class Qwen2VisionMultiModal(HuggingFaceMultiModal):
         Prepares the input messages and images for Qwen2 models. Images are appended in a custom format.
         """
         conversation = []
-        for img_doc in image_documents:
+        image_docs: Sequence[ImageBlock] = []
+        if all(isinstance(doc, ImageNode) for doc in image_documents):
+            image_docs = [image_node_to_image_block(doc) for doc in image_documents]
+        else:
+            image_docs = cast(Sequence[ImageBlock], image_documents)
+        for img_doc in image_docs:
             conversation.append(
-                {"type": "image", "image": img_doc.image_path}
+                {"type": "image", "image": img_doc.path}
             )  # Append images to conversation
         conversation.append(
             {"type": "text", "text": messages[0].content}
@@ -293,6 +334,10 @@ class Qwen2VisionMultiModal(HuggingFaceMultiModal):
         )
 
 
+@deprecated(
+    reason="This package has been deprecated and will no longer be maintained. Please feel free to contribute to multi-modal support in llama-index-llms-huggingface instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
+    version="0.4.3",
+)
 class Florence2MultiModal(HuggingFaceMultiModal):
     """
     A specific implementation for the Florence2 multi-modal model.
@@ -333,23 +378,26 @@ class Florence2MultiModal(HuggingFaceMultiModal):
     # TODO: Florence2 works with task_prompts, not user prompts
     # Task prompts are: '<CAPTION>', '<DETAILED_CAPTION>', '<MORE_DETAILED_CAPTION>'
     def _prepare_messages(
-        self, task: str, image_documents: ImageDocument
+        self, task: str, image_documents: Union[ImageDocument, ImageBlock, ImageNode]
     ) -> Dict[str, Any]:
         """
         Prepares the input messages and images for Qwen2 models. Images are appended in a custom format.
         """
         if isinstance(image_documents, list):
             print(
-                f"{self.model_name} can handleo only one image. Will continue with the first image."
+                f"{self.model_name} can handle only one image. Will continue with the first image."
             )
-            image_documents = image_documents[0]
+            if isinstance(image_documents[0], ImageBlock):
+                image_doc: ImageBlock = image_documents[0]
+            elif isinstance(image_documents[0], (ImageDocument, ImageNode)):
+                image_doc = image_node_to_image_block(image_documents[0])
         prompt = (
             task.upper()
             if task.upper()
             in ["<CAPTION>", "<DETAILED_CAPTION>", "<MORE_DETAILED_CAPTION>"]
             else "<DETAILED_CAPTION>"
         )
-        images = Image.open(image_documents.image_path)
+        images = Image.open(image_doc.path)
         inputs = self._processor(text=prompt, images=images, return_tensors="pt").to(
             self.device, self.torch_dtype
         )
@@ -393,6 +441,10 @@ class Florence2MultiModal(HuggingFaceMultiModal):
         )
 
 
+@deprecated(
+    reason="This package has been deprecated and will no longer be maintained. Please feel free to contribute to multi-modal support in llama-index-llms-huggingface instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
+    version="0.4.3",
+)
 class Phi35VisionMultiModal(HuggingFaceMultiModal):
     """
     A specific implementation for the Phi3.5 multi-modal model.
@@ -405,8 +457,14 @@ class Phi35VisionMultiModal(HuggingFaceMultiModal):
         """
         Prepares the input messages and images for Phi3.5 models. Images are appended in a custom format.
         """
-        images = [Image.open(img_doc.image_path) for img_doc in image_documents]
-        placeholder = "".join(f"<|image_{i+1}|>\n" for i in range(len(images)))
+        if all(isinstance(doc, ImageNode) for doc in image_documents):
+            image_docs: Sequence[ImageBlock] = [
+                image_node_to_image_block(doc) for doc in image_documents
+            ]
+        else:
+            image_docs = cast(Sequence[ImageBlock], image_documents)
+        images = [Image.open(img_doc.path) for img_doc in image_docs]
+        placeholder = "".join(f"<|image_{i + 1}|>\n" for i in range(len(images)))
 
         chat_messages = [{"role": message.role, "content": message.content}]
         if images:
@@ -441,6 +499,10 @@ class Phi35VisionMultiModal(HuggingFaceMultiModal):
         )
 
 
+@deprecated(
+    reason="This package has been deprecated and will no longer be maintained. Please feel free to contribute to multi-modal support in llama-index-llms-huggingface instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
+    version="0.4.3",
+)
 class PaliGemmaMultiModal(HuggingFaceMultiModal):
     """
     A specific implementation for the PaliGemma multi-modal model.
@@ -479,7 +541,9 @@ class PaliGemmaMultiModal(HuggingFaceMultiModal):
         )
 
     def _prepare_messages(
-        self, messages: ChatMessage, image_documents: ImageDocument
+        self,
+        messages: ChatMessage,
+        image_documents: Union[ImageDocument, ImageBlock, ImageNode],
     ) -> Dict[str, Any]:
         """
         Prepares the input messages and images for PaliGemma models. Images are appended in a custom format.
@@ -488,8 +552,11 @@ class PaliGemmaMultiModal(HuggingFaceMultiModal):
             print(
                 f"{self.model_name} can handleo only one image. Will continue with the first image."
             )
-            image_documents = image_documents[0]
-        images = Image.open(image_documents.image_path)
+            if isinstance(image_documents[0], ImageBlock):
+                image_doc: ImageBlock = image_documents[0]
+            elif isinstance(image_documents[0], (ImageDocument, ImageNode)):
+                image_doc = image_node_to_image_block(image_documents[0])
+        images = Image.open(image_doc.path)
         inputs = self._processor(text=messages, images=images, return_tensors="pt").to(
             self.device
         )
@@ -514,6 +581,10 @@ class PaliGemmaMultiModal(HuggingFaceMultiModal):
         )
 
 
+@deprecated(
+    reason="This package has been deprecated and will no longer be maintained. Please feel free to contribute to multi-modal support in llama-index-llms-huggingface instead. See Multi Modal LLMs documentation for a complete guide on migration: https://docs.llamaindex.ai/en/stable/understanding/using_llms/using_llms/#multi-modal-llms",
+    version="0.4.3",
+)
 class LlamaMultiModal(HuggingFaceMultiModal):
     """
     A specific implementation for the Llama3.2 multi-modal model.
@@ -526,24 +597,36 @@ class LlamaMultiModal(HuggingFaceMultiModal):
         """
         Prepares the input messages and images for Llama3.2 models. Images are appended in a custom format.
         """
+        prompt = messages[0].content
         messages = [
             {
                 "role": "user",
-                "content": [
-                    {"type": "image"},
-                    {"type": "text", "text": messages[0].content},
-                ],
+                "content": [],
             }
         ]
         images = []
 
-        for img_doc in image_documents:
-            images.append(Image.open(img_doc.image_path))
+        if isinstance(all(doc, ImageNode) for doc in image_documents):
+            image_docs: Sequence[ImageBlock] = [
+                image_node_to_image_block(doc) for doc in image_documents
+            ]
+        else:
+            image_docs = cast(Sequence[ImageBlock], image_documents)
+
+        for img_doc in image_docs:
+            messages[0]["content"].append({"type": "image"})
+            images.append(Image.open(img_doc.path))
+
+        messages[0]["content"].append({"type": "text", "text": prompt})
 
         # Apply a chat template to format the message with the processor
         input_text = self._processor.tokenizer.apply_chat_template(
-            messages, add_generation_prompt=True
+            messages, add_generation_prompt=True, tokenize=False
         )
+
+        # If no images are present then we should pass None to deactivate image processing in the processor
+        if len(images) == 0:
+            images = None
 
         # Prepare the model inputs (text + images) and convert to tensor
         inputs = self._processor(images, input_text, return_tensors="pt")

@@ -20,7 +20,7 @@ disambiguate the document or subsection from other similar documents or subsecti
 (similar with contrastive learning)
 """
 
-from typing import Any, Callable, Dict, List, Optional, Sequence, cast
+from typing import Any, Callable, Dict, Generic, List, Optional, Sequence, cast
 
 from llama_index.core.async_utils import DEFAULT_NUM_WORKERS, run_jobs
 from llama_index.core.bridge.pydantic import (
@@ -33,7 +33,7 @@ from llama_index.core.llms.llm import LLM
 from llama_index.core.prompts import PromptTemplate
 from llama_index.core.schema import BaseNode, TextNode
 from llama_index.core.settings import Settings
-from llama_index.core.types import BasePydanticProgram
+from llama_index.core.types import BasePydanticProgram, Model
 
 DEFAULT_TITLE_NODE_TEMPLATE = """\
 Context: {context_str}. Give a title that summarizes all of \
@@ -53,7 +53,8 @@ def add_class_name(value: Any, handler: Callable, info: Any) -> Dict[str, Any]:
 
 
 class TitleExtractor(BaseExtractor):
-    """Title extractor. Useful for long documents. Extracts `document_title`
+    """
+    Title extractor. Useful for long documents. Extracts `document_title`
     metadata field.
 
     Args:
@@ -62,6 +63,7 @@ class TitleExtractor(BaseExtractor):
         node_template (str): template for node-level title clues extraction
         combine_template (str): template for combining node-level clues into
             a document-level title
+
     """
 
     is_text_node_only: bool = False  # can work for mixture of text and non-text nodes
@@ -135,27 +137,38 @@ class TitleExtractor(BaseExtractor):
         return separated_items
 
     async def extract_titles(self, nodes_by_doc_id: Dict) -> Dict:
-        titles_by_doc_id = {}
-        for key, nodes in nodes_by_doc_id.items():
+        jobs = []
+        final_dict = {}
+
+        async def get_titles_by_doc(nodes: List[BaseNode], key: str) -> Dict:
+            titles_by_doc_id = {}
             title_candidates = await self.get_title_candidates(nodes)
             combined_titles = ", ".join(title_candidates)
             titles_by_doc_id[key] = await self.llm.apredict(
                 PromptTemplate(template=self.combine_template),
                 context_str=combined_titles,
             )
-        return titles_by_doc_id
+            return titles_by_doc_id
+
+        for key, nodes in nodes_by_doc_id.items():
+            jobs.append(get_titles_by_doc(nodes, key))
+        list_dict_titles: List[Dict] = await run_jobs(
+            jobs=jobs,
+            show_progress=self.show_progress,
+        )
+        for d in list_dict_titles:
+            for key, value in d.items():
+                final_dict.update({key: value})
+        return final_dict
 
     async def get_title_candidates(self, nodes: List[BaseNode]) -> List[str]:
-        title_jobs = [
-            self.llm.apredict(
+        return [
+            await self.llm.apredict(
                 PromptTemplate(template=self.node_template),
                 context_str=cast(TextNode, node).text,
             )
             for node in nodes
         ]
-        return await run_jobs(
-            title_jobs, show_progress=self.show_progress, workers=self.num_workers
-        )
 
 
 DEFAULT_KEYWORD_EXTRACT_TEMPLATE = """\
@@ -164,13 +177,15 @@ document. Format as comma separated. Keywords: """
 
 
 class KeywordExtractor(BaseExtractor):
-    """Keyword extractor. Node-level extractor. Extracts
+    """
+    Keyword extractor. Node-level extractor. Extracts
     `excerpt_keywords` metadata field.
 
     Args:
         llm (Optional[LLM]): LLM
         keywords (int): number of keywords to extract
         prompt_template (str): template for keyword extraction
+
     """
 
     llm: SerializeAsAny[LLM] = Field(description="The LLM to use for generation.")
@@ -260,6 +275,7 @@ class QuestionsAnsweredExtractor(BaseExtractor):
         questions (int): number of questions to extract
         prompt_template (str): template for question extraction,
         embedding_only (bool): whether to use embedding only
+
     """
 
     llm: SerializeAsAny[LLM] = Field(description="The LLM to use for generation.")
@@ -348,6 +364,7 @@ class SummaryExtractor(BaseExtractor):
         llm (Optional[LLM]): LLM
         summaries (List[str]): list of summaries to extract: 'self', 'prev', 'next'
         prompt_template (str): template for summary extraction
+
     """
 
     llm: SerializeAsAny[LLM] = Field(description="The LLM to use for generation.")
@@ -462,15 +479,16 @@ Given the contextual information, extract out a {class_name} object.\
 """
 
 
-class PydanticProgramExtractor(BaseExtractor):
-    """Pydantic program extractor.
+class PydanticProgramExtractor(BaseExtractor, Generic[Model]):
+    """
+    Pydantic program extractor.
 
     Uses an LLM to extract out a Pydantic object. Return attributes of that object
     in a dictionary.
 
     """
 
-    program: SerializeAsAny[BasePydanticProgram] = Field(
+    program: SerializeAsAny[BasePydanticProgram[Model]] = Field(
         ..., description="Pydantic program to extract."
     )
     input_key: str = Field(
@@ -500,7 +518,9 @@ class PydanticProgramExtractor(BaseExtractor):
         )
 
         ret_object = await self.program.acall(**{self.input_key: extract_str})
-        return ret_object.dict()
+        assert not isinstance(ret_object, list)
+
+        return ret_object.model_dump()
 
     async def aextract(self, nodes: Sequence[BaseNode]) -> List[Dict]:
         """Extract pydantic program."""

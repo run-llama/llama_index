@@ -1,6 +1,7 @@
 # Vectara RAG Pack
 
 This LlamaPack provides an end-to-end Retrieval Augmented Generation flow using Vectara.
+Please note that this guide is only relevant for versions >= 0.4.0
 
 To use the Vectara RAG Pack, you will need a Vectara account. If you don't have one already, you can [sign up](https://vectara.com/integrations/llamaindex)
 and follow our [Quick Start](https://docs.vectara.com/docs/quickstart) guide to create a corpus and an API key (make sure it has both indexing and query permissions).
@@ -8,8 +9,7 @@ and follow our [Quick Start](https://docs.vectara.com/docs/quickstart) guide to 
 You can then configure your environment or provide the following arguments directly when initializing your VectaraIndex:
 
 ```
-VECTARA_CUSTOMER_ID=your_customer_id
-VECTARA_CORPUS_ID=your_corpus_id
+VECTARA_CORPUS_KEY=your_corpus_key
 VECTARA_API_KEY=your-vectara-api-key
 ```
 
@@ -55,7 +55,7 @@ Additional optional arguments to VectaraRAG:
   determines the balance between pure neural search (0) and keyword matching (1).
 - `n_sentences_before` and `n_sentences_after`: determine the number of sentences before/after the
   matching fact to use with the summarization LLM. defaults to 2.
-- `reranker`: 'none', 'mmr', 'multilingual_reranker_v1', 'udf', or 'chain'
+- `reranker`: 'none', 'mmr', 'multilingual_reranker_v1', 'userfn', or 'chain'
   The reranker name 'slingshot' is the same as 'multilingual_reranker_v1' (backwards compatible)
 - `rerank_k`: the number of results to use for reranking, defaults to 50.
 - `mmr_diversity_bias`: when using the mmr reranker, determines the degree
@@ -69,8 +69,7 @@ Additional optional arguments to VectaraRAG:
   - `summary_response_lang`: language to use (ISO 639-2 code) for summary generation. defaults to "eng".
   - `summary_num_results`: number of results to use for summary generation. Defaults to 7.
   - `summary_prompt_name`: name of the prompt to use for summary generation.
-    Defaults to 'vectara-summary-ext-v1.2.0'.
-    Scale customers can use 'vectara-summary-ext-v1.3.0
+    Defaults to 'vectara-summary-ext-24-05-sml'.
 
 For example to use maximal diversity with MMR:
 

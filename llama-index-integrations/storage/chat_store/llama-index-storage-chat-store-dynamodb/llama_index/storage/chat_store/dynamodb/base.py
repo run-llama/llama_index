@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Any, Dict, List, Optional
 
 from llama_index.core.base.llms.types import ChatMessage
@@ -17,7 +18,7 @@ def _messages_to_dict(messages: List[ChatMessage]) -> List[dict]:
 
 # Convert a ChatMessage to a JSON object
 def _message_to_dict(message: ChatMessage) -> dict:
-    return message.dict()
+    return message.model_dump()
 
 
 # Convert a JSON object to a ChatMessage
@@ -26,7 +27,8 @@ def _dict_to_message(d: dict) -> ChatMessage:
 
 
 class DynamoDBChatStore(BaseChatStore):
-    """DynamoDB Chat Store.
+    """
+    DynamoDB Chat Store.
 
     Args:
         table_name (str): The name of the preexisting DynamoDB table.
@@ -44,9 +46,14 @@ class DynamoDBChatStore(BaseChatStore):
         timeout (float, optional): The timeout for API requests in seconds. Defaults to 60.0.
         session_kwargs (Dict[str, Any], optional): Additional kwargs for the `boto3.Session` object.
         resource_kwargs (Dict[str, Any], optional): Additional kwargs for the `boto3.Resource` object.
+        ttl_seconds (Optional[int], optional): Time-to-live in seconds for items in the table.
+            If set, items will expire after this many seconds. Defaults to None (no expiration).
+        ttl_attribute (str, optional): The name of the attribute to use for TTL.
+            Defaults to "TTL".
 
     Returns:
         DynamoDBChatStore: A DynamoDB chat store object.
+
     """
 
     table_name: str = Field(description="DynamoDB table")
@@ -92,6 +99,14 @@ class DynamoDBChatStore(BaseChatStore):
         default_factory=dict,
         description="Additional kwargs for the `boto3.Resource` object.",
     )
+    ttl_seconds: Optional[int] = Field(
+        default=None,
+        description="Time-to-live in seconds for items in the table. If set, items will expire after this many seconds.",
+    )
+    ttl_attribute: str = Field(
+        default="TTL",
+        description="The name of the attribute to use for TTL.",
+    )
 
     _client: ServiceResource = PrivateAttr()
     _table: Any = PrivateAttr()
@@ -113,6 +128,8 @@ class DynamoDBChatStore(BaseChatStore):
         timeout: float = 60.0,
         session_kwargs: Optional[Dict[str, Any]] = None,
         resource_kwargs: Optional[Dict[str, Any]] = None,
+        ttl_seconds: Optional[int] = None,
+        ttl_attribute: str = "TTL",
     ):
         session_kwargs = session_kwargs or {}
         resource_kwargs = resource_kwargs or {}
@@ -131,6 +148,8 @@ class DynamoDBChatStore(BaseChatStore):
             timeout=timeout,
             session_kwargs=session_kwargs,
             resource_kwargs=resource_kwargs,
+            ttl_seconds=ttl_seconds,
+            ttl_attribute=ttl_attribute,
         )
 
         session_kwargs = {
@@ -187,7 +206,8 @@ class DynamoDBChatStore(BaseChatStore):
         return "DynamoDBChatStore"
 
     def set_messages(self, key: str, messages: List[ChatMessage]) -> None:
-        """Assign all provided messages to the row with the given key.
+        """
+        Assign all provided messages to the row with the given key.
         Any pre-existing messages for that key will be overwritten.
 
         Args:
@@ -196,25 +216,37 @@ class DynamoDBChatStore(BaseChatStore):
 
         Returns:
             None
+
         """
-        self._table.put_item(
-            Item={self.primary_key: key, "History": _messages_to_dict(messages)}
-        )
+        item = {self.primary_key: key, "History": _messages_to_dict(messages)}
+
+        # Add TTL if configured
+        if self.ttl_seconds is not None:
+            item[self.ttl_attribute] = int(time.time()) + self.ttl_seconds
+
+        self._table.put_item(Item=item)
 
     async def aset_messages(self, key: str, messages: List[ChatMessage]) -> None:
         self.init_async_table()
-        await self._atable.put_item(
-            Item={self.primary_key: key, "History": _messages_to_dict(messages)}
-        )
+
+        item = {self.primary_key: key, "History": _messages_to_dict(messages)}
+
+        # Add TTL if configured
+        if self.ttl_seconds is not None:
+            item[self.ttl_attribute] = int(time.time()) + self.ttl_seconds
+
+        await self._atable.put_item(Item=item)
 
     def get_messages(self, key: str) -> List[ChatMessage]:
-        """Retrieve all messages for the given key.
+        """
+        Retrieve all messages for the given key.
 
         Args:
             key (str): The key specifying a row.
 
         Returns:
             List[ChatMessage]: The messages associated with the key.
+
         """
         response = self._table.get_item(Key={self.primary_key: key})
 
@@ -237,7 +269,8 @@ class DynamoDBChatStore(BaseChatStore):
         return [_dict_to_message(message) for message in message_history]
 
     def add_message(self, key: str, message: ChatMessage) -> None:
-        """Add a message to the end of the chat history for the given key.
+        """
+        Add a message to the end of the chat history for the given key.
         Creates a new row if the key does not exist.
 
         Args:
@@ -246,23 +279,35 @@ class DynamoDBChatStore(BaseChatStore):
 
         Returns:
             None
+
         """
         current_messages = _messages_to_dict(self.get_messages(key))
         current_messages.append(_message_to_dict(message))
 
-        self._table.put_item(Item={self.primary_key: key, "History": current_messages})
+        item = {self.primary_key: key, "History": current_messages}
+
+        # Add TTL if configured
+        if self.ttl_seconds is not None:
+            item[self.ttl_attribute] = int(time.time()) + self.ttl_seconds
+
+        self._table.put_item(Item=item)
 
     async def async_add_message(self, key: str, message: ChatMessage) -> None:
         self.init_async_table()
         current_messages = _messages_to_dict(await self.aget_messages(key))
         current_messages.append(_message_to_dict(message))
 
-        await self._atable.put_item(
-            Item={self.primary_key: key, "History": current_messages}
-        )
+        item = {self.primary_key: key, "History": current_messages}
+
+        # Add TTL if configured
+        if self.ttl_seconds is not None:
+            item[self.ttl_attribute] = int(time.time()) + self.ttl_seconds
+
+        await self._atable.put_item(Item=item)
 
     def delete_messages(self, key: str) -> Optional[List[ChatMessage]]:
-        """Deletes the entire chat history for the given key (i.e. the row).
+        """
+        Deletes the entire chat history for the given key (i.e. the row).
 
         Args:
             key (str): The key specifying a row.
@@ -270,6 +315,7 @@ class DynamoDBChatStore(BaseChatStore):
         Returns:
             Optional[List[ChatMessage]]: The messages that were deleted. None if the
                 deletion failed.
+
         """
         messages_to_delete = self.get_messages(key)
         self._table.delete_item(Key={self.primary_key: key})
@@ -282,7 +328,8 @@ class DynamoDBChatStore(BaseChatStore):
         return messages_to_delete
 
     def delete_message(self, key: str, idx: int) -> Optional[ChatMessage]:
-        """Deletes the message at the given index for the given key.
+        """
+        Deletes the message at the given index for the given key.
 
         Args:
             key (str): The key specifying a row.
@@ -291,6 +338,7 @@ class DynamoDBChatStore(BaseChatStore):
         Returns:
             Optional[ChatMessage]: The message that was deleted. None if the index
                 did not exist.
+
         """
         current_messages = self.get_messages(key)
         try:
@@ -319,7 +367,8 @@ class DynamoDBChatStore(BaseChatStore):
             return None
 
     def delete_last_message(self, key: str) -> Optional[ChatMessage]:
-        """Deletes the last message in the chat history for the given key.
+        """
+        Deletes the last message in the chat history for the given key.
 
         Args:
             key (str): The key specifying a row.
@@ -327,6 +376,7 @@ class DynamoDBChatStore(BaseChatStore):
         Returns:
             Optional[ChatMessage]: The message that was deleted. None if the chat history
                 was empty.
+
         """
         return self.delete_message(key, -1)
 
@@ -334,10 +384,12 @@ class DynamoDBChatStore(BaseChatStore):
         return self.adelete_message(key, -1)
 
     def get_keys(self) -> List[str]:
-        """Retrieve all keys in the table.
+        """
+        Retrieve all keys in the table.
 
         Returns:
             List[str]: The keys in the table.
+
         """
         response = self._table.scan(ProjectionExpression=self.primary_key)
         keys = [item[self.primary_key] for item in response["Items"]]

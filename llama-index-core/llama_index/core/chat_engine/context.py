@@ -217,7 +217,7 @@ class ContextChatEngine(BaseChatEngine):
         synthesizer = self._get_response_synthesizer(chat_history)
 
         response = synthesizer.synthesize(message, nodes)
-        user_message = ChatMessage(content=message, role=MessageRole.USER)
+        user_message = ChatMessage(content=str(message), role=MessageRole.USER)
         ai_message = ChatMessage(content=str(response), role=MessageRole.ASSISTANT)
 
         self._memory.put(user_message)
@@ -271,7 +271,7 @@ class ContextChatEngine(BaseChatEngine):
                     delta=token,
                 )
 
-            user_message = ChatMessage(content=message, role=MessageRole.USER)
+            user_message = ChatMessage(content=str(message), role=MessageRole.USER)
             ai_message = ChatMessage(content=full_response, role=MessageRole.ASSISTANT)
             self._memory.put(user_message)
             self._memory.put(ai_message)
@@ -298,7 +298,7 @@ class ContextChatEngine(BaseChatEngine):
         prev_chunks: Optional[List[NodeWithScore]] = None,
     ) -> AgentChatResponse:
         if chat_history is not None:
-            self._memory.set(chat_history)
+            await self._memory.aset(chat_history)
 
         # get nodes and postprocess them
         nodes = await self._aget_nodes(message)
@@ -306,13 +306,13 @@ class ContextChatEngine(BaseChatEngine):
             nodes = prev_chunks
 
         # Get the response synthesizer with dynamic prompts
-        chat_history = self._memory.get(
+        chat_history = await self._memory.aget(
             input=message,
         )
         synthesizer = self._get_response_synthesizer(chat_history)
 
         response = await synthesizer.asynthesize(message, nodes)
-        user_message = ChatMessage(content=message, role=MessageRole.USER)
+        user_message = ChatMessage(content=str(message), role=MessageRole.USER)
         ai_message = ChatMessage(content=str(response), role=MessageRole.ASSISTANT)
 
         await self._memory.aput(user_message)
@@ -339,14 +339,14 @@ class ContextChatEngine(BaseChatEngine):
         prev_chunks: Optional[List[NodeWithScore]] = None,
     ) -> StreamingAgentChatResponse:
         if chat_history is not None:
-            self._memory.set(chat_history)
+            await self._memory.aset(chat_history)
         # get nodes and postprocess them
         nodes = await self._aget_nodes(message)
         if len(nodes) == 0 and prev_chunks is not None:
             nodes = prev_chunks
 
         # Get the response synthesizer with dynamic prompts
-        chat_history = self._memory.get(
+        chat_history = await self._memory.aget(
             input=message,
         )
         synthesizer = self._get_response_synthesizer(chat_history, streaming=True)
@@ -365,7 +365,7 @@ class ContextChatEngine(BaseChatEngine):
                     delta=token,
                 )
 
-            user_message = ChatMessage(content=message, role=MessageRole.USER)
+            user_message = ChatMessage(content=str(message), role=MessageRole.USER)
             ai_message = ChatMessage(content=full_response, role=MessageRole.ASSISTANT)
             await self._memory.aput(user_message)
             await self._memory.aput(ai_message)

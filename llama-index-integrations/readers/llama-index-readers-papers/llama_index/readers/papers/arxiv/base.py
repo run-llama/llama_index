@@ -11,7 +11,8 @@ from llama_index.core.schema import Document
 
 
 class ArxivReader(BaseReader):
-    """Arxiv Reader.
+    """
+    Arxiv Reader.
 
     Gets a search query, return a list of Documents of the top corresponding scientific papers on Arxiv.
     """
@@ -31,7 +32,8 @@ class ArxivReader(BaseReader):
         papers_dir: Optional[str] = ".papers",
         max_results: Optional[int] = 10,
     ) -> List[Document]:
-        """Search for a topic on Arxiv, download the PDFs of the top results locally, then read them.
+        """
+        Search for a topic on Arxiv, download the PDFs of the top results locally, then read them.
 
         Args:
             search_query (str): A topic to search for (e.g. "Artificial Intelligence").
@@ -40,6 +42,7 @@ class ArxivReader(BaseReader):
 
         Returns:
             List[Document]: A list of Document objects.
+
         """
         import arxiv
 
@@ -58,7 +61,8 @@ class ArxivReader(BaseReader):
         paper_lookup = {}
         for paper in search_results:
             # Hash filename to avoid bad characters in file path
-            filename = f"{self._hacky_hash(paper.title)}.pdf"
+            hashed_name = self._hacky_hash(f"{paper.title}{paper.entry_id}")
+            filename = f"{hashed_name}.pdf"
             paper_lookup[filename] = {
                 "Title of this paper": paper.title,
                 "Authors": (", ").join([a.name for a in paper.authors]),
@@ -104,7 +108,8 @@ class ArxivReader(BaseReader):
         papers_dir: Optional[str] = ".papers",
         max_results: Optional[int] = 10,
     ) -> Tuple[List[Document], List[Document]]:
-        """Search for a topic on Arxiv, download the PDFs of the top results locally, then read them.
+        """
+        Search for a topic on Arxiv, download the PDFs of the top results locally, then read them.
 
         Args:
             search_query (str): A topic to search for (e.g. "Artificial Intelligence").
@@ -114,6 +119,7 @@ class ArxivReader(BaseReader):
         Returns:
             List[Document]: A list of Document objects representing the papers themselves
             List[Document]: A list of Document objects representing abstracts only
+
         """
         import arxiv
 
@@ -132,7 +138,8 @@ class ArxivReader(BaseReader):
         paper_lookup = {}
         for paper in search_results:
             # Hash filename to avoid bad characters in file path
-            filename = f"{self._hacky_hash(paper.title)}.pdf"
+            hashed_name = self._hacky_hash(f"{paper.title}{paper.entry_id}")
+            filename = f"{hashed_name}.pdf"
             paper_lookup[filename] = {
                 "Title of this paper": paper.title,
                 "Authors": (", ").join([a.name for a in paper.authors]),

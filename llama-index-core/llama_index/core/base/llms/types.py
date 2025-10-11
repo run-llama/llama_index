@@ -1,41 +1,47 @@
+from __future__ import annotations
+
 import base64
-import requests
+import filetype
+from binascii import Error as BinasciiError
 from enum import Enum
 from io import BytesIO
+from pathlib import Path
 from typing import (
+    Annotated,
     Any,
     AsyncGenerator,
     Dict,
     Generator,
+    List,
     Literal,
     Optional,
     Union,
-    List,
-    Any,
+    cast,
 )
+
+import filetype
+from typing_extensions import Self
 
 from llama_index.core.bridge.pydantic import (
+    AnyUrl,
     BaseModel,
-    Field,
     ConfigDict,
+    Field,
+    FilePath,
     field_serializer,
+    field_validator,
+    model_validator,
 )
 from llama_index.core.constants import DEFAULT_CONTEXT_WINDOW, DEFAULT_NUM_OUTPUTS
-from llama_index.core.schema import ImageType
-
-try:
-    from pydantic import BaseModel as V2BaseModel
-    from pydantic.v1 import BaseModel as V1BaseModel
-except ImportError:
-    from pydantic import BaseModel as V2BaseModel
-
-    V1BaseModel = V2BaseModel  # type: ignore
+from llama_index.core.schema import ImageDocument
+from llama_index.core.utils import resolve_binary
 
 
 class MessageRole(str, Enum):
     """Message role."""
 
     SYSTEM = "system"
+    DEVELOPER = "developer"
     USER = "user"
     ASSISTANT = "assistant"
     FUNCTION = "function"
@@ -44,46 +50,488 @@ class MessageRole(str, Enum):
     MODEL = "model"
 
 
-# ===== Generic Model Input - Chat =====
-class ContentBlockTypes(str, Enum):
-    TEXT = "text"
-    IMAGE = "image"
-
-
 class TextBlock(BaseModel):
-    type: Literal[ContentBlockTypes.TEXT] = ContentBlockTypes.TEXT
+    """A representation of text data to directly pass to/from the LLM."""
 
+    block_type: Literal["text"] = "text"
     text: str
 
 
 class ImageBlock(BaseModel):
-    type: Literal[ContentBlockTypes.IMAGE] = ContentBlockTypes.IMAGE
+    """A representation of image data to directly pass to/from the LLM."""
 
-    image: Optional[str] = None
-    image_path: Optional[str] = None
-    image_url: Optional[str] = None
-    image_mimetype: Optional[str] = None
+    block_type: Literal["image"] = "image"
+    image: bytes | None = None
+    path: FilePath | None = None
+    url: AnyUrl | str | None = None
+    image_mimetype: str | None = None
+    detail: str | None = None
 
-    def resolve_image(self) -> ImageType:
-        """Resolve an image such that PIL can read it."""
-        if self.image is not None:
-            return BytesIO(base64.b64decode(self.image))
-        elif self.image_path is not None:
-            return self.image_path
-        elif self.image_url is not None:
-            # load image from URL
-            response = requests.get(self.image_url)
-            return BytesIO(response.content)
-        else:
-            raise ValueError("No image found in the chat message!")
+    @field_validator("url", mode="after")
+    @classmethod
+    def urlstr_to_anyurl(cls, url: str | AnyUrl | None) -> AnyUrl | None:
+        """Store the url as Anyurl."""
+        if isinstance(url, AnyUrl):
+            return url
+        if url is None:
+            return None
+
+        return AnyUrl(url=url)
+
+    @model_validator(mode="after")
+    def image_to_base64(self) -> Self:
+        """
+        Store the image as base64 and guess the mimetype when possible.
+
+        In case the model was built passing image data but without a mimetype,
+        we try to guess it using the filetype library. To avoid resource-intense
+        operations, we won't load the path or the URL to guess the mimetype.
+        """
+        if not self.image:
+            if not self.image_mimetype:
+                path = self.path or self.url
+                if path:
+                    suffix = Path(str(path)).suffix.replace(".", "") or None
+                    mimetype = filetype.get_type(ext=suffix)
+                    if mimetype and str(mimetype.mime).startswith("image/"):
+                        self.image_mimetype = str(mimetype.mime)
+
+            return self
+
+        try:
+            # Check if self.image is already base64 encoded.
+            # b64decode() can succeed on random binary data, so we
+            # pass verify=True to make sure it's not a false positive
+            decoded_img = base64.b64decode(self.image, validate=True)
+        except BinasciiError:
+            decoded_img = self.image
+            self.image = base64.b64encode(self.image)
+
+        self._guess_mimetype(decoded_img)
+        return self
+
+    def _guess_mimetype(self, img_data: bytes) -> None:
+        if not self.image_mimetype:
+            guess = filetype.guess(img_data)
+            self.image_mimetype = guess.mime if guess else None
+
+    def resolve_image(self, as_base64: bool = False) -> BytesIO:
+        """
+        Resolve an image such that PIL can read it.
+
+        Args:
+            as_base64 (bool): whether the resolved image should be returned as base64-encoded bytes
+
+        """
+        data_buffer = resolve_binary(
+            raw_bytes=self.image,
+            path=self.path,
+            url=str(self.url) if self.url else None,
+            as_base64=as_base64,
+        )
+
+        # Check size by seeking to end and getting position
+        data_buffer.seek(0, 2)  # Seek to end
+        size = data_buffer.tell()
+        data_buffer.seek(0)  # Reset to beginning
+
+        if size == 0:
+            raise ValueError("resolve_image returned zero bytes")
+        return data_buffer
+
+
+class AudioBlock(BaseModel):
+    """A representation of audio data to directly pass to/from the LLM."""
+
+    block_type: Literal["audio"] = "audio"
+    audio: bytes | None = None
+    path: FilePath | None = None
+    url: AnyUrl | str | None = None
+    format: str | None = None
+
+    @field_validator("url", mode="after")
+    @classmethod
+    def urlstr_to_anyurl(cls, url: str | AnyUrl) -> AnyUrl:
+        """Store the url as Anyurl."""
+        if isinstance(url, AnyUrl):
+            return url
+        return AnyUrl(url=url)
+
+    @model_validator(mode="after")
+    def audio_to_base64(self) -> Self:
+        """
+        Store the audio as base64 and guess the mimetype when possible.
+
+        In case the model was built passing audio data but without a mimetype,
+        we try to guess it using the filetype library. To avoid resource-intense
+        operations, we won't load the path or the URL to guess the mimetype.
+        """
+        if not self.audio:
+            return self
+
+        try:
+            # Check if audio is already base64 encoded
+            decoded_audio = base64.b64decode(self.audio)
+        except Exception:
+            decoded_audio = self.audio
+            # Not base64 - encode it
+            self.audio = base64.b64encode(self.audio)
+
+        self._guess_format(decoded_audio)
+
+        return self
+
+    def _guess_format(self, audio_data: bytes) -> None:
+        if not self.format:
+            guess = filetype.guess(audio_data)
+            self.format = guess.extension if guess else None
+
+    def resolve_audio(self, as_base64: bool = False) -> BytesIO:
+        """
+        Resolve an audio such that PIL can read it.
+
+        Args:
+            as_base64 (bool): whether the resolved audio should be returned as base64-encoded bytes
+
+        """
+        data_buffer = resolve_binary(
+            raw_bytes=self.audio,
+            path=self.path,
+            url=str(self.url) if self.url else None,
+            as_base64=as_base64,
+        )
+        # Check size by seeking to end and getting position
+        data_buffer.seek(0, 2)  # Seek to end
+        size = data_buffer.tell()
+        data_buffer.seek(0)  # Reset to beginning
+
+        if size == 0:
+            raise ValueError("resolve_image returned zero bytes")
+        return data_buffer
+
+
+class VideoBlock(BaseModel):
+    """A representation of video data to directly pass to/from the LLM."""
+
+    block_type: Literal["video"] = "video"
+    video: bytes | None = None
+    path: FilePath | None = None
+    url: AnyUrl | str | None = None
+    video_mimetype: str | None = None
+    detail: str | None = None
+    fps: int | None = None
+
+    @field_validator("url", mode="after")
+    @classmethod
+    def urlstr_to_anyurl(cls, url: str | AnyUrl | None) -> AnyUrl | None:
+        """Store the url as AnyUrl."""
+        if isinstance(url, AnyUrl):
+            return url
+        if url is None:
+            return None
+        return AnyUrl(url=url)
+
+    @model_validator(mode="after")
+    def video_to_base64(self) -> "VideoBlock":
+        """
+        Store the video as base64 and guess the mimetype when possible.
+
+        If video data is passed but no mimetype is provided, try to infer it.
+        """
+        if not self.video:
+            if not self.video_mimetype:
+                path = self.path or self.url
+                if path:
+                    suffix = Path(str(path)).suffix.replace(".", "") or None
+                    mimetype = filetype.get_type(ext=suffix)
+                    if mimetype and str(mimetype.mime).startswith("video/"):
+                        self.video_mimetype = str(mimetype.mime)
+            return self
+
+        try:
+            decoded_vid = base64.b64decode(self.video, validate=True)
+        except BinasciiError:
+            decoded_vid = self.video
+            self.video = base64.b64encode(self.video)
+
+        self._guess_mimetype(decoded_vid)
+        return self
+
+    def _guess_mimetype(self, vid_data: bytes) -> None:
+        if not self.video_mimetype:
+            guess = filetype.guess(vid_data)
+            if guess and guess.mime.startswith("video/"):
+                self.video_mimetype = guess.mime
+
+    def resolve_video(self, as_base64: bool = False) -> BytesIO:
+        """
+        Resolve a video file to a BytesIO buffer.
+
+        Args:
+            as_base64 (bool): whether to return the video as base64-encoded bytes
+
+        """
+        data_buffer = resolve_binary(
+            raw_bytes=self.video,
+            path=self.path,
+            url=str(self.url) if self.url else None,
+            as_base64=as_base64,
+        )
+
+        # Check size by seeking to end and getting position
+        data_buffer.seek(0, 2)  # Seek to end
+        size = data_buffer.tell()
+        data_buffer.seek(0)  # Reset to beginning
+
+        if size == 0:
+            raise ValueError("resolve_video returned zero bytes")
+        return data_buffer
+
+
+class DocumentBlock(BaseModel):
+    """A representation of a document to directly pass to the LLM."""
+
+    block_type: Literal["document"] = "document"
+    data: Optional[bytes] = None
+    path: Optional[Union[FilePath | str]] = None
+    url: Optional[str] = None
+    title: Optional[str] = None
+    document_mimetype: Optional[str] = None
+
+    @model_validator(mode="after")
+    def document_validation(self) -> Self:
+        self.document_mimetype = self.document_mimetype or self._guess_mimetype()
+
+        if not self.title:
+            self.title = "input_document"
+
+        # skip data validation if it's not provided
+        if not self.data:
+            return self
+
+        try:
+            decoded_document = base64.b64decode(self.data, validate=True)
+        except BinasciiError:
+            self.data = base64.b64encode(self.data)
+
+        return self
+
+    def resolve_document(self) -> BytesIO:
+        """
+        Resolve a document such that it is represented by a BufferIO object.
+        """
+        data_buffer = resolve_binary(
+            raw_bytes=self.data,
+            path=self.path,
+            url=str(self.url) if self.url else None,
+            as_base64=False,
+        )
+        # Check size by seeking to end and getting position
+        data_buffer.seek(0, 2)  # Seek to end
+        size = data_buffer.tell()
+        data_buffer.seek(0)  # Reset to beginning
+
+        if size == 0:
+            raise ValueError("resolve_image returned zero bytes")
+        return data_buffer
+
+    def _get_b64_string(self, data_buffer: BytesIO) -> str:
+        """
+        Get base64-encoded string from a BytesIO buffer.
+        """
+        data = data_buffer.read()
+        return base64.b64encode(data).decode("utf-8")
+
+    def _get_b64_bytes(self, data_buffer: BytesIO) -> bytes:
+        """
+        Get base64-encoded bytes from a BytesIO buffer.
+        """
+        data = data_buffer.read()
+        return base64.b64encode(data)
+
+    def guess_format(self) -> str | None:
+        path = self.path or self.url
+        if not path:
+            return None
+
+        return Path(str(path)).suffix.replace(".", "")
+
+    def _guess_mimetype(self) -> str | None:
+        if self.data:
+            guess = filetype.guess(self.data)
+            return str(guess.mime) if guess else None
+
+        suffix = self.guess_format()
+        if not suffix:
+            return None
+
+        guess = filetype.get_type(ext=suffix)
+        return str(guess.mime) if guess else None
+
+
+class CacheControl(BaseModel):
+    type: str
+    ttl: str = Field(default="5m")
+
+
+class CachePoint(BaseModel):
+    """Used to set the point to cache up to, if the LLM supports caching."""
+
+    block_type: Literal["cache"] = "cache"
+    cache_control: CacheControl
+
+
+class CitableBlock(BaseModel):
+    """Supports providing citable content to LLMs that have built-in citation support."""
+
+    block_type: Literal["citable"] = "citable"
+    title: str
+    source: str
+    # TODO: We could maybe expand the types here,
+    # limiting for now to known use cases
+    content: List[
+        Annotated[
+            Union[TextBlock, ImageBlock, DocumentBlock],
+            Field(discriminator="block_type"),
+        ]
+    ]
+
+    @field_validator("content", mode="before")
+    @classmethod
+    def validate_content(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            return [TextBlock(text=v)]
+
+        return v
+
+
+class CitationBlock(BaseModel):
+    """A representation of cited content from past messages."""
+
+    block_type: Literal["citation"] = "citation"
+    cited_content: Annotated[
+        Union[TextBlock, ImageBlock], Field(discriminator="block_type")
+    ]
+    source: str
+    title: str
+    additional_location_info: Dict[str, int]
+
+    @field_validator("cited_content", mode="before")
+    @classmethod
+    def validate_cited_content(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            return TextBlock(text=v)
+
+        return v
+
+
+class ThinkingBlock(BaseModel):
+    """A representation of the content streamed from reasoning/thinking processes by LLMs"""
+
+    block_type: Literal["thinking"] = "thinking"
+    content: Optional[str] = Field(
+        description="Content of the reasoning/thinking process, if available",
+        default=None,
+    )
+    num_tokens: Optional[int] = Field(
+        description="Number of token used for reasoning/thinking, if available",
+        default=None,
+    )
+    additional_information: Dict[str, Any] = Field(
+        description="Additional information related to the thinking/reasoning process, if available",
+        default_factory=dict,
+    )
+
+
+ContentBlock = Annotated[
+    Union[
+        TextBlock,
+        ImageBlock,
+        AudioBlock,
+        VideoBlock,
+        DocumentBlock,
+        CachePoint,
+        CitableBlock,
+        CitationBlock,
+        ThinkingBlock,
+    ],
+    Field(discriminator="block_type"),
+]
 
 
 class ChatMessage(BaseModel):
     """Chat message."""
 
     role: MessageRole = MessageRole.USER
-    content: Optional[Any] = ""
-    additional_kwargs: dict = Field(default_factory=dict)
+    additional_kwargs: dict[str, Any] = Field(default_factory=dict)
+    blocks: list[ContentBlock] = Field(default_factory=list)
+
+    def __init__(self, /, content: Any | None = None, **data: Any) -> None:
+        """
+        Keeps backward compatibility with the old `content` field.
+
+        If content was passed and contained text, store a single TextBlock.
+        If content was passed and it was a list, assume it's a list of content blocks and store it.
+        """
+        if content is not None:
+            if isinstance(content, str):
+                data["blocks"] = [TextBlock(text=content)]
+            elif isinstance(content, list):
+                data["blocks"] = content
+
+        super().__init__(**data)
+
+    @model_validator(mode="after")
+    def legacy_additional_kwargs_image(self) -> Self:
+        """
+        Provided for backward compatibility.
+
+        If `additional_kwargs` contains an `images` key, assume the value is a list
+        of ImageDocument and convert them into image blocks.
+        """
+        if documents := self.additional_kwargs.get("images"):
+            documents = cast(list[ImageDocument], documents)
+            for doc in documents:
+                img_base64_bytes = doc.resolve_image(as_base64=True).read()
+                self.blocks.append(ImageBlock(image=img_base64_bytes))
+        return self
+
+    @property
+    def content(self) -> str | None:
+        """
+        Keeps backward compatibility with the old `content` field.
+
+        Returns:
+            The cumulative content of the TextBlock blocks, None if there are none.
+
+        """
+        content_strs = []
+        for block in self.blocks:
+            if isinstance(block, TextBlock):
+                content_strs.append(block.text)
+
+        ct = "\n".join(content_strs) or None
+        if ct is None and len(content_strs) == 1:
+            return ""
+        return ct
+
+    @content.setter
+    def content(self, content: str) -> None:
+        """
+        Keeps backward compatibility with the old `content` field.
+
+        Raises:
+            ValueError: if blocks contains more than a block, or a block that's not TextBlock.
+
+        """
+        if not self.blocks:
+            self.blocks = [TextBlock(text=content)]
+        elif len(self.blocks) == 1 and isinstance(self.blocks[0], TextBlock):
+            self.blocks = [TextBlock(text=content)]
+        else:
+            raise ValueError(
+                "ChatMessage contains multiple blocks, use 'ChatMessage.blocks' instead."
+            )
 
     def __str__(self) -> str:
         return f"{self.role.value}: {self.content}"
@@ -94,13 +542,13 @@ class ChatMessage(BaseModel):
         content: str,
         role: Union[MessageRole, str] = MessageRole.USER,
         **kwargs: Any,
-    ) -> "ChatMessage":
+    ) -> Self:
         if isinstance(role, str):
             role = MessageRole(role)
-        return cls(role=role, content=content, **kwargs)
+        return cls(role=role, blocks=[TextBlock(text=content)], **kwargs)
 
     def _recursive_serialization(self, value: Any) -> Any:
-        if isinstance(value, V2BaseModel):
+        if isinstance(value, BaseModel):
             value.model_rebuild()  # ensures all fields are initialized and serializable
             return value.model_dump()  # type: ignore
         if isinstance(value, dict):
@@ -110,14 +558,15 @@ class ChatMessage(BaseModel):
             }
         if isinstance(value, list):
             return [self._recursive_serialization(item) for item in value]
+
+        if isinstance(value, bytes):
+            return base64.b64encode(value).decode("utf-8")
+
         return value
 
     @field_serializer("additional_kwargs", check_fields=False)
     def serialize_additional_kwargs(self, value: Any, _info: Any) -> Any:
         return self._recursive_serialization(value)
-
-    def dict(self, **kwargs: Any) -> Dict[str, Any]:
-        return self.model_dump(**kwargs)
 
 
 class LogProb(BaseModel):

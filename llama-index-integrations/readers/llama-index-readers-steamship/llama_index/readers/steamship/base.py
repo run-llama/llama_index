@@ -1,4 +1,5 @@
 """Load Documents from a set of persistent Steamship Files."""
+
 from typing import List, Optional
 
 from llama_index.core.readers.base import BaseReader
@@ -6,7 +7,8 @@ from llama_index.core.schema import Document
 
 
 class SteamshipFileReader(BaseReader):
-    """Reads persistent Steamship Files and converts them to Documents.
+    """
+    Reads persistent Steamship Files and converts them to Documents.
 
     Args:
         api_key: Steamship API key. Defaults to STEAMSHIP_API_KEY value if not provided.
@@ -16,6 +18,7 @@ class SteamshipFileReader(BaseReader):
         To get a Steamship API Key, visit: https://steamship.com/account/api.
         Once you have an API Key, expose it via an environment variable named
         `STEAMSHIP_API_KEY` or pass it as an init argument (`api_key`).
+
     """
 
     def __init__(self, api_key: Optional[str] = None) -> None:
@@ -38,7 +41,8 @@ class SteamshipFileReader(BaseReader):
         collapse_blocks: bool = True,
         join_str: str = "\n\n",
     ) -> List[Document]:
-        """Load data from persistent Steamship Files into Documents.
+        """
+        Load data from persistent Steamship Files into Documents.
 
         Args:
             workspace: the handle for a Steamship workspace
@@ -57,6 +61,7 @@ class SteamshipFileReader(BaseReader):
             combined. There is no (current) support for deconflicting the collections
             (meaning that if a file appears both in the result set of the query and
             as a handle in file_handles, it will be loaded twice).
+
         """
         from steamship import File, Steamship
 

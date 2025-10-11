@@ -1,10 +1,10 @@
-from llama_index.core.exec_utils import _contains_protected_access
+from llama_index.experimental.exec_utils import _contains_protected_access
 
 
 def test_contains_protected_access() -> None:
-    assert not _contains_protected_access(
-        "def _a(b): pass"
-    ), "definition of dunder function"
+    assert not _contains_protected_access("def _a(b): pass"), (
+        "definition of dunder function"
+    )
     assert _contains_protected_access("a = _b(c)"), "call to protected function"
     assert not _contains_protected_access("a = b(c)"), "call to public function"
     assert _contains_protected_access("_b"), "access to protected name"

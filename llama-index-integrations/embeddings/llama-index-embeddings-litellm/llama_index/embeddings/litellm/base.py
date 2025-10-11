@@ -11,7 +11,7 @@ def get_embeddings(
     model_name: str,
     input: List[str],
     timeout: int = 60,
-    **kwargs: Any
+    **kwargs: Any,
 ) -> List[List[float]]:
     """
     Retrieve embeddings for a given list of input strings using the specified model.
@@ -26,6 +26,7 @@ def get_embeddings(
 
     Returns:
         List[List[float]]: A list of embeddings, where each embedding corresponds to an input string.
+
     """
     response = embedding(
         api_key=api_key,

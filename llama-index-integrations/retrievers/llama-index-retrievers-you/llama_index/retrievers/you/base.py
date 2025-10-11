@@ -29,6 +29,7 @@ class YouRetriever(BaseRetriever):
         search_lang: (News API) Language codes, ex: 'en' for English, see API reference for more info
         ui_lang: (News API) User interface language for the response, ex: 'en' for English, see API reference for more info
         spellcheck: (News API) Whether to spell check query or not, defaults to True
+
     """
 
     def __init__(

@@ -1,4 +1,5 @@
 """Feishu docs reader."""
+
 import json
 import os
 import time
@@ -24,7 +25,8 @@ from llama_index.core.schema import Document
 
 
 class FeishuDocsReader(BaseReader):
-    """Feishu Docs reader.
+    """
+    Feishu Docs reader.
 
     Reads a page from Google Docs
 
@@ -42,6 +44,7 @@ class FeishuDocsReader(BaseReader):
         Args:
             app_id: The unique identifier of the application is obtained after the application is created.
             app_secret: Application key, obtained after creating the application.
+
         """
         super().__init__()
         self.app_id = app_id
@@ -51,10 +54,12 @@ class FeishuDocsReader(BaseReader):
         self.expire = 0
 
     def load_data(self, document_ids: List[str]) -> List[Document]:
-        """Load data from the input directory.
+        """
+        Load data from the input directory.
 
         Args:
             document_ids (List[str]): a list of document ids.
+
         """
         if document_ids is None:
             raise ValueError('Must specify a "document_ids" in `load_kwargs`.')
@@ -66,13 +71,15 @@ class FeishuDocsReader(BaseReader):
         return results
 
     def _load_doc(self, document_id) -> str:
-        """Load a document from Feishu Docs.
+        """
+        Load a document from Feishu Docs.
 
         Args:
             document_id: the document id.
 
         Returns:
             The document text.
+
         """
         url = self.host + self.documents_raw_content_url_path.format(document_id)
         if self.tenant_access_token == "" or self.expire < time.time():

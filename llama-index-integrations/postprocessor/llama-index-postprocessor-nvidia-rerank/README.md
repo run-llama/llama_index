@@ -103,3 +103,20 @@ nodes = parser.get_nodes_from_documents(documents)
 # rerank
 rerank.postprocess_nodes(nodes, query_str=query)
 ```
+
+### Custom HTTP Client
+
+If you need more control over HTTP settings (e.g., timeouts, proxies, retries), you can pass your own `httpx.Client` instance to the `NVIDIARerank` initializer:
+
+```python
+import httpx
+from llama_index.postprocessor.nvidia_rerank import NVIDIARerank
+
+# Create a custom httpx client with a 10-second timeout
+custom_client = httpx.Client(timeout=10.0)
+
+# Pass the custom client to the reranker
+rerank = NVIDIARerank(
+    base_url="http://localhost:1976/v1", http_client=custom_client
+)
+```

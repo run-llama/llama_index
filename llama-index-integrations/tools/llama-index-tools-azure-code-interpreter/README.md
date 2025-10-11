@@ -12,7 +12,7 @@ In order to utilize the tool, you will need to have the Session Pool management 
 
 ## Usage
 
-A more detailed sample is located in a Jupyter notebook [here](https://github.com/run-llama/llama_index/tree/main/docs/docs/examples/tools/azure_code_interpreter.ipynb)
+A more detailed sample is located in a Jupyter notebook [here](https://github.com/run-llama/llama_index/tree/main/docs/examples/tools/azure_code_interpreter.ipynb)
 
 Here's an example usage of the `AzureCodeInterpreterToolSpec`.
 

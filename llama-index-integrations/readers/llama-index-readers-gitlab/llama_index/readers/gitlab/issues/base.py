@@ -1,13 +1,14 @@
-""" GitLab issues reader. """
+"""GitLab issues reader."""
 
-from datetime import datetime
 import enum
+from datetime import datetime
 from typing import Any, List, Optional, Union
+
+from llama_index.core import Document
+from llama_index.core.readers.base import BaseReader
 
 import gitlab
 from gitlab.v4.objects import Issue as GitLabIssue
-from llama_index.core import Document
-from llama_index.core.readers.base import BaseReader
 
 
 class GitLabIssuesReader(BaseReader):
@@ -25,6 +26,7 @@ class GitLabIssuesReader(BaseReader):
             - OPEN: Issues that are open.
             - CLOSED: Issues that are closed.
             - ALL: All issues, open and closed.
+
         """
 
         OPEN = "opened"
@@ -42,6 +44,7 @@ class GitLabIssuesReader(BaseReader):
             - INCIDENT: Incident.
             - TEST_CASE: Test case.
             - TASK: Task.
+
         """
 
         ISSUE = "issue"
@@ -59,6 +62,7 @@ class GitLabIssuesReader(BaseReader):
             - CREATED_BY_ME: Issues created by the authenticated user.
             - ASSIGNED_TO_ME: Issues assigned to the authenticated user.
             - ALL: All issues.
+
         """
 
         CREATED_BY_ME = "created_by_me"
@@ -130,6 +134,7 @@ class GitLabIssuesReader(BaseReader):
         state: Optional[IssueState] = IssueState.OPEN,
         updated_after: Optional[datetime] = None,
         updated_before: Optional[datetime] = None,
+        get_all: bool = False,
         **kwargs: Any,
     ) -> List[Document]:
         """
@@ -164,10 +169,12 @@ class GitLabIssuesReader(BaseReader):
             - state: State of the issues to retrieve.
             - updated_after: Filter issues updated after the specified date.
             - updated_before: Filter issues updated before the specified date.
+            - get_all: Get all the items without pagination (for a long lists).
 
 
         Returns:
             List[Document]: List of documents.
+
         """
         to_gitlab_datetime_format = self._to_gitlab_datetime_format
         params = {
@@ -184,6 +191,7 @@ class GitLabIssuesReader(BaseReader):
             "state": state.value if state else None,
             "updated_after": to_gitlab_datetime_format(updated_after),
             "updated_before": to_gitlab_datetime_format(updated_before),
+            "get_all": get_all,
         }
 
         if isinstance(assignee, str):

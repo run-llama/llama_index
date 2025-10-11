@@ -48,6 +48,7 @@ class BufferedAsyncIterator(ABC):
                 be retrieved from the async operation at once.
                 see _fill_buffer. Defaults to 2. Setting it to 1
                 will result in the same behavior as a synchronous iterator.
+
         """
         self._buffer_size = buffer_size
         self._buffer: List[Tuple[GitBlobResponseModel, str]] = []
@@ -70,6 +71,7 @@ class BufferedAsyncIterator(ABC):
 
         Raises:
             - `StopAsyncIteration`: If there are no more items.
+
         """
         if not self._buffer:
             await self._fill_buffer()
@@ -105,6 +107,8 @@ class BufferedGitBlobDataIterator(BufferedAsyncIterator):
         loop: asyncio.AbstractEventLoop,
         buffer_size: int,
         verbose: bool = False,
+        timeout: Optional[int] = 5,
+        retries: int = 0,
     ):
         """
         Initialize params.
@@ -116,7 +120,11 @@ class BufferedGitBlobDataIterator(BufferedAsyncIterator):
             - owner (str): Owner of the repository.
             - repo (str): Name of the repository.
             - loop (asyncio.AbstractEventLoop): Event loop.
+            - verbose (bool): Whether to print verbose messages.
             - buffer_size (int): Size of the buffer.
+            - timeout (int or None): Timeout for the requests to the Github API. Default is 5.
+            - retries (int): Number of retries for requests made to the Github API. Default is 0.
+
         """
         super().__init__(buffer_size)
         self._blobs_and_paths = blobs_and_paths
@@ -124,6 +132,8 @@ class BufferedGitBlobDataIterator(BufferedAsyncIterator):
         self._owner = owner
         self._repo = repo
         self._verbose = verbose
+        self._timeout = timeout
+        self._retries = retries
         if loop is None:
             loop = asyncio.get_event_loop()
             if loop is None:
@@ -148,7 +158,13 @@ class BufferedGitBlobDataIterator(BufferedAsyncIterator):
             start_t = time.time()
         results: List[Optional[GitBlobResponseModel]] = await asyncio.gather(
             *[
-                self._github_client.get_blob(self._owner, self._repo, blob.sha)
+                self._github_client.get_blob(
+                    self._owner,
+                    self._repo,
+                    blob.sha,
+                    timeout=self._timeout,
+                    retries=self._retries,
+                )
                 for blob, _ in self._blobs_and_paths[
                     start:end
                 ]  # TODO: use batch_size instead of buffer_size for concurrent requests

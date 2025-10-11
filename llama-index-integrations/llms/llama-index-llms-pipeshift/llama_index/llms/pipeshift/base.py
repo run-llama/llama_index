@@ -16,6 +16,7 @@ def validate_api_key_and_model(api_key: str, model: str) -> None:
 
     Raises:
         ValueError: If the API key or model name is invalid.
+
     """
     if not api_key:
         raise ValueError("Pipeshift API Key not found!")
@@ -29,7 +30,8 @@ def validate_api_key_and_model(api_key: str, model: str) -> None:
 
 
 class Pipeshift(OpenAILike):
-    """Pipeshift LLM.
+    """
+    Pipeshift LLM.
 
     Examples:
         `pip install llama-index-llms-pipeshift`
@@ -42,12 +44,13 @@ class Pipeshift(OpenAILike):
         # os.environ["PIPESHIFT_API_KEY"] = "your api key"
 
         llm = Pipeshift(
-            model="mistralai/Mistral-7B-Instruct-v0.3", api_key="your_api_key"
+            model="meta-llama/Meta-Llama-3.1-8B-Instruct", api_key="your_api_key"
         )
 
         resp = llm.complete("How fast is porsche gt3 rs?")
         print(resp)
         ```
+
     """
 
     def __init__(

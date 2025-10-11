@@ -8,12 +8,14 @@ from llama_index.core.schema import QueryBundle
 
 class CogniswitchQueryEngine(BaseQueryEngine):
     def __init__(self, cs_token: str, OAI_token: str, apiKey: str) -> None:
-        """The required fields.
+        """
+        The required fields.
 
         Args:
             cs_token (str): Cogniswitch token.
             OAI_token (str): OpenAI token.
             apiKey (str): Oauth token.
+
         """
         self.cs_token = cs_token
         self.OAI_token = OAI_token
@@ -36,6 +38,7 @@ class CogniswitchQueryEngine(BaseQueryEngine):
 
         Returns:
             dict: Response JSON from the Cogniswitch service.
+
         """
         data = {"query": query}
         response = requests.post(

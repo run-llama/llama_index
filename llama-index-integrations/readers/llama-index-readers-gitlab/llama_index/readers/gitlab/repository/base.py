@@ -1,10 +1,11 @@
-""" GitLab repository reader. """
+"""GitLab repository reader."""
 
 from typing import List, Optional
 
-import gitlab
 from llama_index.core import Document
 from llama_index.core.readers.base import BaseReader
+
+import gitlab
 
 
 class GitLabRepositoryReader(BaseReader):
@@ -52,6 +53,7 @@ class GitLabRepositoryReader(BaseReader):
         file_path: Optional[str] = None,
         path: Optional[str] = None,
         recursive: bool = False,
+        iterator: bool = False,
     ) -> List[Document]:
         """
         Load data from a GitLab repository.
@@ -61,9 +63,11 @@ class GitLabRepositoryReader(BaseReader):
             file_path: Path to the file to load.
             path: Path to the directory to load.
             recursive: Whether to load files recursively.
+            iterator: Return a generator handling API pagination automatically
 
         Returns:
             List[Document]: List of documents loaded from the repository
+
         """
         if file_path:
             return [self._load_single_file(file_path, ref)]
@@ -74,6 +78,7 @@ class GitLabRepositoryReader(BaseReader):
             "ref": ref,
             "path": path,
             "recursive": recursive,
+            "iterator": iterator,
         }
 
         filtered_params = {k: v for k, v in params.items() if v is not None}
@@ -84,9 +89,7 @@ class GitLabRepositoryReader(BaseReader):
 
         for item in repo_items:
             if item["type"] == "blob":
-                document = self._load_single_file(item["path"], ref)
-
-            documents.append(document)
+                documents.append(self._load_single_file(item["path"], ref))
 
         return documents
 

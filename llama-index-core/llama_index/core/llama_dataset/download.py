@@ -41,7 +41,8 @@ def download_llama_dataset(
     show_progress: bool = False,
     load_documents: bool = True,
 ) -> Tuple[BaseLlamaDataset, List[Document]]:
-    """Download dataset from datasets-LFS and llamahub.
+    """
+    Download dataset from datasets-LFS and llamahub.
 
     Args:
         dataset_class: The name of the llamadataset class you want to download,
@@ -64,6 +65,7 @@ def download_llama_dataset(
 
     Returns:
         a `BaseLlamaDataset` and a `List[Document]`
+
     """
     filenames: Tuple[str, str] = download(
         llama_dataset_class,

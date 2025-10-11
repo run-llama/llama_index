@@ -1,4 +1,5 @@
-"""Base Managed Service index.
+"""
+Base Managed Service index.
 
 An index that is built on top of a managed service.
 
@@ -17,7 +18,8 @@ from llama_index.core.storage.storage_context import StorageContext
 
 
 class BaseManagedIndex(BaseIndex[IndexDict], ABC):
-    """Managed Index.
+    """
+    Managed Index.
     The managed service can index documents into a managed service.
     How documents are structured into nodes is a detail for the managed service,
     and not exposed in this interface (although could be controlled by
@@ -25,6 +27,7 @@ class BaseManagedIndex(BaseIndex[IndexDict], ABC):
 
     Args:
         show_progress (bool): Whether to show tqdm progress bars. Defaults to False.
+
     """
 
     def __init__(

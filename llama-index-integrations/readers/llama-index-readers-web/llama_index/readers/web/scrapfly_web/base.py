@@ -1,15 +1,20 @@
 """Scrapfly Web Reader."""
+
 import logging
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, TYPE_CHECKING
 
 from llama_index.core.readers.base import BasePydanticReader
 from llama_index.core.schema import Document
+
+if TYPE_CHECKING:
+    from scrapfly import ScrapflyClient
 
 logger = logging.getLogger(__file__)
 
 
 class ScrapflyReader(BasePydanticReader):
-    """Turn a url to llm accessible markdown with `Scrapfly.io`.
+    """
+    Turn a url to llm accessible markdown with `Scrapfly.io`.
 
     Args:
     api_key: The Scrapfly API key.
@@ -18,22 +23,27 @@ class ScrapflyReader(BasePydanticReader):
     urls: List of urls to scrape.
     scrape_format: Scrape result format (markdown or text)
     For further details, visit: https://scrapfly.io/docs/sdk/python
+
     """
 
     api_key: str
     ignore_scrape_failures: bool = True
-    scrapfly: Optional["ScrapflyClient"] = None  # Declare the scrapfly attribute
+    scrapfly: "ScrapflyClient"
 
     def __init__(self, api_key: str, ignore_scrape_failures: bool = True) -> None:
         """Initialize client."""
-        super().__init__(api_key=api_key, ignore_scrape_failures=ignore_scrape_failures)
         try:
             from scrapfly import ScrapflyClient
         except ImportError:
             raise ImportError(
                 "`scrapfly` package not found, please run `pip install scrapfly-sdk`"
             )
-        self.scrapfly = ScrapflyClient(key=api_key)
+        scrapfly = ScrapflyClient(key=api_key)
+        super().__init__(
+            api_key=api_key,
+            ignore_scrape_failures=ignore_scrape_failures,
+            scrapfly=scrapfly,
+        )
 
     @classmethod
     def class_name(cls) -> str:
@@ -45,7 +55,8 @@ class ScrapflyReader(BasePydanticReader):
         scrape_format: Literal["markdown", "text"] = "markdown",
         scrape_config: Optional[dict] = None,
     ) -> List[Document]:
-        """Load data from the urls.
+        """
+        Load data from the urls.
 
         Args:
             urls: List[str]): List of URLs to scrape.
@@ -56,6 +67,7 @@ class ScrapflyReader(BasePydanticReader):
 
         Raises:
             ValueError: If URLs aren't provided.
+
         """
         from scrapfly import ScrapeApiResponse, ScrapeConfig
 
