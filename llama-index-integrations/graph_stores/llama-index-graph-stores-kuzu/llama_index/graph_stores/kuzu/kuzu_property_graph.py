@@ -182,30 +182,29 @@ class KuzuPropertyGraphStore(PropertyGraphStore):
         if not self.use_vector_index or table_name != "Chunk":
             return
 
-        # Check if chunk_embedding_index already exists
         existing_indexes_result = self.connection.execute(
             "CALL SHOW_INDEXES() RETURN *"
         )
         for row in existing_indexes_result:
-            if len(row) > 1 and row[1] == "chunk_embedding_index":
+            if "embedding" in str(row):
                 return
 
-        # Check if table has any data - Kuzu requires data before creating vector index
         count_result = self.connection.execute(
             f"MATCH (n:{table_name}) RETURN COUNT(n)"
         )
         if not any(int(row[0]) > 0 for row in count_result):
             return
 
-        # Create vector index for Chunk table
         self.connection.execute("""
-        CALL CREATE_VECTOR_INDEX(
-            'Chunk',
-            'chunk_embedding_index',
-            'embedding',
-            metric := 'cosine'
-        )
-        """)
+            CALL CREATE_VECTOR_INDEX(
+                'Chunk',
+                'embedding',
+                USING {
+                    metric_type: 'COSINE',
+                    index_type: 'HNSW'
+                }
+            )
+            """)
 
     def _ensure_vector_indexes(self) -> None:
         """Ensure vector indexes are created for Chunk table only."""
