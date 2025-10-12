@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-readers-gitlab"
-version = "0.4.1"
+version = "0.5.1"
 description = "llama-index readers gitlab integration"
 authors = [{name = "Jiacheng Zhang", email = "jiachengzz@outlook.com"}]
 requires-python = ">=3.9,<4.0"
