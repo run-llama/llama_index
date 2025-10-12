@@ -380,7 +380,9 @@ def concat_dirs(dirname: str, basename: str) -> str:
     return os.path.join(dirname, basename)
 
 
-def get_tqdm_iterable(items: Iterable, show_progress: bool, desc: str) -> Iterable:
+def get_tqdm_iterable(
+    items: Iterable, show_progress: bool, desc: str, total: Optional[int] = None
+) -> Iterable:
     """
     Optionally get a tqdm iterable. Ensures tqdm.auto is used.
     """
@@ -389,7 +391,7 @@ def get_tqdm_iterable(items: Iterable, show_progress: bool, desc: str) -> Iterab
         try:
             from tqdm.auto import tqdm
 
-            return tqdm(items, desc=desc)
+            return tqdm(items, desc=desc, total=total)
         except ImportError:
             pass
     return _iterator
