@@ -86,6 +86,7 @@ class NodeParser(TransformComponent, ABC):
     ) -> List[BaseNode]:
         # Track search position per document to handle duplicate text correctly
         # Nodes are assumed to be in document order from _parse_nodes
+        # We track the START position (not end) to allow for overlapping chunks
         doc_search_positions: Dict[str, int] = {}
         
         for i, node in enumerate(nodes):
@@ -112,8 +113,9 @@ class NodeParser(TransformComponent, ABC):
                 if start_char_idx >= 0 and isinstance(node, TextNode):
                     node.start_char_idx = start_char_idx
                     node.end_char_idx = start_char_idx + len(node_content)
-                    # Update search position to start after this node for next search
-                    doc_search_positions[doc_id] = start_char_idx + len(node_content)
+                    # Update search position to start from next character after this node's START
+                    # This allows overlapping chunks to be found correctly
+                    doc_search_positions[doc_id] = start_char_idx + 1
 
                 # update metadata
                 if self.include_metadata:
