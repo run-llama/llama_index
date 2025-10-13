@@ -75,7 +75,7 @@ def test_embedding_class_context_model():
     emb = VoyageEmbedding(
         model_name="voyage-context-3",
         voyage_api_key="NOT_A_VALID_KEY",
-        output_dimension=1024
+        output_dimension=1024,
     )
     assert isinstance(emb, BaseEmbedding)
     assert emb.embed_batch_size == 2048
@@ -90,7 +90,7 @@ def test_embedding_class_context_model_with_params():
         voyage_api_key="NOT_A_VALID_KEY",
         truncation=True,
         output_dtype="float",
-        output_dimension=512
+        output_dimension=512,
     )
     assert isinstance(emb, BaseEmbedding)
     assert emb.embed_batch_size == 2048
@@ -251,7 +251,7 @@ def test_build_batches_mixed_token_sizes():
     token_counts = [
         [[1] * 100],  # text1: 100 tokens
         [[1] * 200],  # text2: 200 tokens
-        [[1] * 50],   # text3: 50 tokens
+        [[1] * 50],  # text3: 50 tokens
         [[1] * 150],  # text4: 150 tokens
     ]
     mock_tokenize = Mock(side_effect=token_counts)
@@ -384,4 +384,6 @@ def test_automatic_batching_due_to_token_limits():
     # With 100k tokens per text and 320k limit:
     # Batch 1: text1, text2, text3 (300k tokens)
     # Batch 2: text4, text5 (200k tokens)
-    assert mock_embed.call_count >= 2, f"Expected at least 2 API calls, got {mock_embed.call_count}"
+    assert mock_embed.call_count >= 2, (
+        f"Expected at least 2 API calls, got {mock_embed.call_count}"
+    )

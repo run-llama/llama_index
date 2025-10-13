@@ -149,7 +149,8 @@ def test_batching_with_varying_text_lengths(model: str):
     texts = [
         "Short.",
         "This is a medium length text with some more content.",
-        "This is a much longer text that contains significantly more words and should consume more tokens than the previous texts. " * 3,
+        "This is a much longer text that contains significantly more words and should consume more tokens than the previous texts. "
+        * 3,
         "Another short one.",
         "Yet another long text with lots of repeated content. " * 5,
     ]
@@ -235,7 +236,9 @@ def test_automatic_batching_with_long_texts(model: str):
     print(f"\nModel: {model}, Texts: {num_texts}, Batches: {batch_count}")
 
     # Verify multiple batches were created due to token limits
-    assert batch_count >= 2, f"Expected at least 2 batches, got {batch_count}. Model: {model}"
+    assert batch_count >= 2, (
+        f"Expected at least 2 batches, got {batch_count}. Model: {model}"
+    )
 
     # Now actually embed them (this will take a while)
     result = emb._get_text_embeddings(texts)
