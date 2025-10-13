@@ -37,20 +37,6 @@ EXPECTED_SIGNNOW_KEYS = {
 }
 
 
-def _only_relevant(env: Dict[str, str]) -> Dict[str, str]:
-    """
-    Return ONLY expected SignNow-related variables from the provided env.
-    No system variables are preserved here by design.
-    """
-    filtered: Dict[str, str] = {}
-    for k, v in env.items():
-        if v is None:
-            continue
-        if k in EXPECTED_SIGNNOW_KEYS:
-            filtered[k] = v
-    return filtered
-
-
 def _validate_auth(env: Mapping[str, str]) -> None:
     """Require either SIGNNOW_TOKEN or (SIGNNOW_USER_EMAIL + SIGNNOW_PASSWORD + SIGNNOW_API_BASIC_TOKEN)."""
     have_token = bool(env.get("SIGNNOW_TOKEN"))
@@ -134,9 +120,9 @@ class SignNowMCPToolSpec(BaseToolSpec):
         """
         # Build env and filter to expected keys
         env_all = _merge_env(env_overrides)
-        full_env = _only_relevant(env_all)
+        filtered = {k: v for k, v in env_all.items() if k in EXPECTED_SIGNNOW_KEYS}
 
-        _validate_auth({k: env_all.get(k, "") for k in EXPECTED_SIGNNOW_KEYS})
+        _validate_auth(filtered)
 
         # Resolve binary to absolute if possible
         resolved_bin = _resolve_sn_mcp_bin(bin, require_in_path=require_in_path)
@@ -145,7 +131,7 @@ class SignNowMCPToolSpec(BaseToolSpec):
         if args:
             cmd_args.extend(args)
 
-        client = BasicMCPClient(resolved_bin, args=cmd_args, env=full_env)
+        client = BasicMCPClient(resolved_bin, args=cmd_args, env=filtered)
         return cls(
             client=client,
             allowed_tools=list(allowed_tools) if allowed_tools else None,

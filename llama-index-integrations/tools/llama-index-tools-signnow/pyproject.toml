@@ -27,13 +27,13 @@ dev = [
 
 [project]
 name = "llama-index-tools-signnow"
-version = "0.4.1"
+version = "0.1.0"
 description = "SignNow MCP tools for LlamaIndex agents (expose SignNow MCP server tools as FunctionTool)."
 authors = [{name = "mihasicehcek", email = "lebedev.mikhail@pdffiller.team"}]
 requires-python = ">=3.10,<4.0"
 readme = "README.md"
 license = "MIT"
-maintainers = [{name = "mikhail"}]
+maintainers = [{name = "mihasicehcek"}]
 keywords = [
     "mcp",
     "tools",

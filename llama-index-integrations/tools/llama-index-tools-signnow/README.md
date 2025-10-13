@@ -19,9 +19,6 @@
 ```bash
 # Core LlamaIndex + MCP client + SignNow ToolSpec
 pip install -U llama-index llama-index-tools-mcp llama-index-tools-signnow
-
-# Required: install the SignNow MCP server CLI ("sn-mcp")
-pip install -U signnow-mcp-server
 ```
 
 ## Quick start
