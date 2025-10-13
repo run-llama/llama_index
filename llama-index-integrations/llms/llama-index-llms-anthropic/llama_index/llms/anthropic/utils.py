@@ -354,3 +354,68 @@ def force_single_tool_call(response: ChatResponse) -> None:
     tool_calls = response.message.additional_kwargs.get("tool_calls", [])
     if len(tool_calls) > 1:
         response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+
+
+# Anthropic models that support prompt caching
+# Based on: https://docs.claude.com/en/docs/build-with-claude/prompt-caching
+ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS: Tuple[str, ...] = (
+    # Claude 4.1 Opus
+    "claude-opus-4-1-20250805",
+    "claude-opus-4-1",
+    # Claude 4 Opus
+    "claude-opus-4-20250514",
+    "claude-opus-4-0",
+    "claude-4-opus-20250514",
+    # Claude 4.5 Sonnet
+    "claude-sonnet-4-5-20250929",
+    "claude-sonnet-4-5",
+    # Claude 4 Sonnet
+    "claude-sonnet-4-20250514",
+    "claude-sonnet-4-0",
+    "claude-4-sonnet-20250514",
+    # Claude 3.7 Sonnet
+    "claude-3-7-sonnet-20250219",
+    "claude-3-7-sonnet-latest",
+    # Claude 3.5 Sonnet
+    "claude-3-5-sonnet-20241022",
+    "claude-3-5-sonnet-20240620",
+    "claude-3-5-sonnet-latest",
+    # Claude 3.5 Haiku
+    "claude-3-5-haiku-20241022",
+    "claude-3-5-haiku-latest",
+    # Claude 3 Haiku
+    "claude-3-haiku-20240307",
+    "claude-3-haiku-latest",
+    # Claude 3 Opus (deprecated)
+    "claude-3-opus-20240229",
+    "claude-3-opus-latest",
+)
+
+
+def is_anthropic_prompt_caching_supported_model(model: str) -> bool:
+    """
+    Check if the given Anthropic model supports prompt caching.
+
+    Prompt caching allows you to cache frequently used context (like system prompts,
+    long documents, or tool definitions) to reduce costs by up to 90% and latency
+    by up to 85% for supported models.
+
+    For more information, see:
+    https://docs.claude.com/en/docs/build-with-claude/prompt-caching
+
+    Args:
+        model: The Anthropic model identifier (e.g., 'claude-sonnet-4-20250514')
+
+    Returns:
+        bool: True if the model supports prompt caching, False otherwise
+
+    Examples:
+        >>> is_anthropic_prompt_caching_supported_model('claude-sonnet-4-20250514')
+        True
+        >>> is_anthropic_prompt_caching_supported_model('claude-2.1')
+        False
+        >>> is_anthropic_prompt_caching_supported_model('claude-3-5-haiku-20241022')
+        True
+
+    """
+    return model in ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS
