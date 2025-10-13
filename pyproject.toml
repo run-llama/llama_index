@@ -47,7 +47,6 @@ dependencies = [
     "llama-index-readers-file>=0.5.0,<0.6",
     "llama-index-readers-llama-parse>=0.4.0",
     "nltk>3.8.1",
-    "opensearch-py (>=3.0.0,<4.0.0)",
 ]
 description = "Interface between LLMs and your data"
 keywords = [
