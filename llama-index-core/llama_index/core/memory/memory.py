@@ -29,6 +29,7 @@ from llama_index.core.base.llms.types import (
     CitableBlock,
     CitationBlock,
     ThinkingBlock,
+    ToolCallBlock,
 )
 from llama_index.core.bridge.pydantic import (
     BaseModel,
@@ -349,7 +350,7 @@ class Memory(BaseMemory):
             ] = []
 
             for block in message_or_blocks.blocks:
-                if not isinstance(block, CachePoint):
+                if not isinstance(block, (CachePoint, ToolCallBlock)):
                     blocks.append(block)
 
             # Estimate the token count for the additional kwargs
