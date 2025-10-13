@@ -368,7 +368,7 @@ class Memory(BaseMemory):
                 blocks = []
                 for msg in messages:
                     for block in msg.blocks:
-                        if not isinstance(block, CachePoint):
+                        if not isinstance(block, (CachePoint, ToolCallBlock)):
                             blocks.append(block)
 
                 # Estimate the token count for the additional kwargs
