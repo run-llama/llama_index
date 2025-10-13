@@ -15,7 +15,7 @@ dev = [
     "pytest==7.2.1",
     "pytest-cov>=5.0.0",
     "pytest-mock==3.11.1",
-    "ruff==0.0.292",
+    "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-protobuf>=4.24.0.4,<5",
@@ -26,13 +26,13 @@ dev = [
 
 [project]
 name = "llama-index-retrievers-galaxia"
-version = "0.1.0"
+version = "0.2.1"
 description = "llama-index retrievers galaxia integration"
 authors = [{name = "Robert Rozanski"}]
 requires-python = ">=3.8.1,<4.0"
 readme = "README.md"
 license = "MIT"
-dependencies = ["llama-index-core>=0.10.0,<0.11"]
+dependencies = ["llama-index-core>=0.10.0,<0.13"]
 
 [tool.codespell]
 check-filenames = true

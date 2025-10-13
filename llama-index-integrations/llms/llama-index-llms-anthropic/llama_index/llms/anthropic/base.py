@@ -9,6 +9,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Set,
     Tuple,
     Union,
 )
@@ -20,7 +21,11 @@ from llama_index.core.base.llms.types import (
     CompletionResponse,
     LLMMetadata,
     MessageRole,
+    ContentBlock,
 )
+from llama_index.core.base.llms.types import TextBlock as LITextBlock
+from llama_index.core.base.llms.types import CitationBlock as LICitationBlock
+from llama_index.core.base.llms.types import ThinkingBlock as LIThinkingBlock
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.constants import DEFAULT_TEMPERATURE
@@ -45,6 +50,7 @@ from anthropic.types import (
     ContentBlockDeltaEvent,
     ContentBlockStartEvent,
     ContentBlockStopEvent,
+    CitationsSearchResultLocation,
     InputJSONDelta,
     TextBlock,
     TextDelta,
@@ -153,6 +159,13 @@ class Anthropic(FunctionCallingLLM):
             "For example: tools=[{'type': 'web_search_20250305', 'name': 'web_search', 'max_uses': 3}]"
         ),
     )
+    mcp_servers: Optional[List[dict]] = Field(
+        default=None,
+        description=(
+            "List of MCP servers to use for the model. "
+            "For example: mcp_servers=[{'type': 'url', 'url': 'https://mcp.example.com/sse', 'name': 'example-mcp', 'authorization_token': 'YOUR_TOKEN'}]"
+        ),
+    )
 
     _client: Union[
         anthropic.Anthropic, anthropic.AnthropicVertex, anthropic.AnthropicBedrock
@@ -183,12 +196,18 @@ class Anthropic(FunctionCallingLLM):
         region: Optional[str] = None,
         project_id: Optional[str] = None,
         aws_region: Optional[str] = None,
+        aws_access_key_id: Optional[str] = None,
+        aws_secret_access_key: Optional[str] = None,
         cache_idx: Optional[int] = None,
         thinking_dict: Optional[Dict[str, Any]] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
+        mcp_servers: Optional[List[dict]] = None,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
+        # set the temperature to 1 when thinking is enabled, as per: https://docs.anthropic.com/en/docs/build-with-claude/extended-thinking#important-considerations-when-using-extended-thinking
+        if thinking_dict and thinking_dict.get("type") == "enabled":
+            temperature = 1
 
         super().__init__(
             temperature=temperature,
@@ -207,6 +226,7 @@ class Anthropic(FunctionCallingLLM):
             cache_idx=cache_idx,
             thinking_dict=thinking_dict,
             tools=tools,
+            mcp_servers=mcp_servers,
         )
 
         if region and project_id and not aws_region:
@@ -226,12 +246,21 @@ class Anthropic(FunctionCallingLLM):
                 default_headers=default_headers,
             )
         elif aws_region:
-            # Note: this assumes you have AWS credentials configured.
             self._client = anthropic.AnthropicBedrock(
                 aws_region=aws_region,
+                aws_access_key=aws_access_key_id,
+                aws_secret_key=aws_secret_access_key,
+                max_retries=max_retries,
+                default_headers=default_headers,
+                timeout=timeout,
             )
             self._aclient = anthropic.AsyncAnthropicBedrock(
                 aws_region=aws_region,
+                aws_access_key=aws_access_key_id,
+                aws_secret_key=aws_secret_access_key,
+                max_retries=max_retries,
+                default_headers=default_headers,
+                timeout=timeout,
             )
         else:
             self._client = anthropic.Anthropic(
@@ -293,9 +322,18 @@ class Anthropic(FunctionCallingLLM):
         elif self.tools and "tools" in kwargs:
             kwargs["tools"] = [*self.tools, *kwargs["tools"]]
 
+        if self.mcp_servers and "mcp_servers" not in kwargs:
+            kwargs["mcp_servers"] = self.mcp_servers
+            kwargs["betas"] = ["mcp-client-2025-04-04"]
+        elif self.mcp_servers and "mcp_servers" in kwargs:
+            kwargs["mcp_servers"] = [*self.mcp_servers, *kwargs["mcp_servers"]]
+            kwargs["betas"] = ["mcp-client-2025-04-04"]
+
         return kwargs
 
-    def _completion_response_from_chat_response(self, chat_response: AnthropicChatResponse) -> AnthropicCompletionResponse:
+    def _completion_response_from_chat_response(
+        self, chat_response: AnthropicChatResponse
+    ) -> AnthropicCompletionResponse:
         return AnthropicCompletionResponse(
             text=chat_response.message.content,
             delta=chat_response.delta,
@@ -304,30 +342,57 @@ class Anthropic(FunctionCallingLLM):
             citations=chat_response.citations,
         )
 
-    def _get_content_and_tool_calls_and_thinking(
+    def _get_blocks_and_tool_calls_and_thinking(
         self, response: Any
-    ) -> Tuple[str, List[Dict[str, Any]], Dict[str, Any], List[Dict[str, Any]]]:
+    ) -> Tuple[List[ContentBlock], List[Dict[str, Any]], List[Dict[str, Any]]]:
         tool_calls = []
-        thinking = None
-        content = ""
+        blocks: List[ContentBlock] = []
         citations: List[TextCitation] = []
+        tracked_citations: Set[str] = set()
 
         for content_block in response.content:
             if isinstance(content_block, TextBlock):
-                content += content_block.text
+                blocks.append(LITextBlock(text=content_block.text))
                 # Check for citations in this text block
                 if hasattr(content_block, "citations") and content_block.citations:
+                    for citation in content_block.citations:
+                        if (
+                            isinstance(citation, CitationsSearchResultLocation)
+                            and str(citation) not in tracked_citations
+                        ):
+                            tracked_citations.add(str(citation))
+                            blocks.append(
+                                LICitationBlock(
+                                    cited_content=LITextBlock(text=citation.cited_text),
+                                    source=citation.source,
+                                    title=citation.title,
+                                    additional_location_info={
+                                        "start_block_index": citation.start_block_index,
+                                        "end_block_index": citation.end_block_index,
+                                        "search_result_index": citation.search_result_index,
+                                    },
+                                )
+                            )
                     citations.extend(content_block.citations)
             # this assumes a single thinking block, which as of 2025-03-06, is always true
             elif isinstance(content_block, ThinkingBlock):
-                thinking = content_block.model_dump()
+                blocks.append(
+                    LIThinkingBlock(
+                        content=content_block.thinking,
+                        additional_information=content_block.model_dump(
+                            exclude={"thinking"}
+                        ),
+                    )
+                )
             elif isinstance(content_block, ToolUseBlock):
                 tool_calls.append(content_block.model_dump())
 
-        return content, tool_calls, thinking, [x.model_dump() for x in citations]
+        return blocks, tool_calls, [x.model_dump() for x in citations]
 
     @llm_chat_callback()
-    def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> AnthropicChatResponse:
+    def chat(
+        self, messages: Sequence[ChatMessage], **kwargs: Any
+    ) -> AnthropicChatResponse:
         anthropic_messages, system_prompt = messages_to_anthropic_messages(
             messages, self.cache_idx
         )
@@ -340,17 +405,16 @@ class Anthropic(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        content, tool_calls, thinking, citations = self._get_content_and_tool_calls_and_thinking(
+        blocks, tool_calls, citations = self._get_blocks_and_tool_calls_and_thinking(
             response
         )
 
         return AnthropicChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
-                content=content,
+                blocks=blocks,
                 additional_kwargs={
                     "tool_calls": tool_calls,
-                    "thinking": thinking,
                 },
             ),
             citations=citations,
@@ -379,19 +443,42 @@ class Anthropic(FunctionCallingLLM):
         )
 
         def gen() -> Generator[AnthropicChatResponse, None, None]:
-            content = ""
+            content = [LITextBlock(text="")]
             content_delta = ""
             thinking = None
             cur_tool_calls: List[ToolUseBlock] = []
             cur_tool_call: Optional[ToolUseBlock] = None
             cur_tool_json: str = ""
             cur_citations: List[Dict[str, Any]] = []
+            tracked_citations: Set[str] = set()
             role = MessageRole.ASSISTANT
             for r in response:
                 if isinstance(r, ContentBlockDeltaEvent):
                     if isinstance(r.delta, TextDelta):
-                        content_delta = r.delta.text
-                        content += content_delta
+                        content_delta = r.delta.text or ""
+                        if not isinstance(content[-1], LITextBlock):
+                            content.append(LITextBlock(text=content_delta))
+                        else:
+                            content[-1].text += content_delta
+
+                    elif isinstance(r.delta, CitationsDelta) and isinstance(
+                        r.delta.citation, CitationsSearchResultLocation
+                    ):
+                        citation = r.delta.citation
+                        if str(citation) not in tracked_citations:
+                            tracked_citations.add(str(citation))
+                            content.append(
+                                LICitationBlock(
+                                    cited_content=LITextBlock(text=citation.cited_text),
+                                    source=citation.source,
+                                    title=citation.title,
+                                    additional_location_info={
+                                        "start_block_index": citation.start_block_index,
+                                        "end_block_index": citation.end_block_index,
+                                        "search_result_index": citation.search_result_index,
+                                    },
+                                )
+                            )
                     elif isinstance(r.delta, SignatureDelta):
                         if thinking is None:
                             thinking = ThinkingBlock(
@@ -413,12 +500,17 @@ class Anthropic(FunctionCallingLLM):
                     elif isinstance(r.delta, CitationsDelta):
                         # TODO: handle citation deltas
                         cur_citations.append(r.delta.citation.model_dump())
-                    elif isinstance(r.delta, InputJSONDelta) and not isinstance(cur_tool_call, ToolUseBlock):
+                    elif isinstance(r.delta, InputJSONDelta) and not isinstance(
+                        cur_tool_call, ToolUseBlock
+                    ):
                         # TODO: handle server-side tool calls
                         pass
                     else:
                         if not isinstance(cur_tool_call, ToolUseBlock):
-                            raise ValueError("Tool call not started, but got block type " + str(type(r.delta)))
+                            raise ValueError(
+                                "Tool call not started, but got block type "
+                                + str(type(r.delta))
+                            )
                         content_delta = r.delta.partial_json
                         cur_tool_json += content_delta
                         try:
@@ -431,13 +523,14 @@ class Anthropic(FunctionCallingLLM):
                         tool_calls_to_send = [*cur_tool_calls, cur_tool_call]
                     else:
                         tool_calls_to_send = cur_tool_calls
-
                     yield AnthropicChatResponse(
                         message=ChatMessage(
                             role=role,
-                            content=content,
+                            blocks=content,
                             additional_kwargs={
-                                "tool_calls": [t.dict() for t in tool_calls_to_send],
+                                "tool_calls": [
+                                    t.model_dump() for t in tool_calls_to_send
+                                ],
                                 "thinking": thinking.model_dump() if thinking else None,
                             },
                         ),
@@ -468,7 +561,6 @@ class Anthropic(FunctionCallingLLM):
 
         return gen()
 
-
     @llm_chat_callback()
     async def achat(
         self, messages: Sequence[ChatMessage], **kwargs: Any
@@ -485,17 +577,16 @@ class Anthropic(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        content, tool_calls, thinking, citations = self._get_content_and_tool_calls_and_thinking(
+        blocks, tool_calls, citations = self._get_blocks_and_tool_calls_and_thinking(
             response
         )
 
         return AnthropicChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
-                content=content,
+                blocks=blocks,
                 additional_kwargs={
                     "tool_calls": tool_calls,
-                    "thinking": thinking,
                 },
             ),
             citations=citations,
@@ -524,19 +615,42 @@ class Anthropic(FunctionCallingLLM):
         )
 
         async def gen() -> ChatResponseAsyncGen:
-            content = ""
+            content = [LITextBlock(text="")]
             content_delta = ""
             thinking = None
             cur_tool_calls: List[ToolUseBlock] = []
             cur_tool_call: Optional[ToolUseBlock] = None
             cur_tool_json: str = ""
             cur_citations: List[Dict[str, Any]] = []
+            tracked_citations: Set[str] = set()
             role = MessageRole.ASSISTANT
             async for r in response:
                 if isinstance(r, ContentBlockDeltaEvent):
                     if isinstance(r.delta, TextDelta):
-                        content_delta = r.delta.text
-                        content += content_delta
+                        content_delta = r.delta.text or ""
+                        if not isinstance(content[-1], LITextBlock):
+                            content.append(LITextBlock(text=content_delta))
+                        else:
+                            content[-1].text += content_delta
+
+                    elif isinstance(r.delta, CitationsDelta) and isinstance(
+                        r.delta.citation, CitationsSearchResultLocation
+                    ):
+                        citation = r.delta.citation
+                        if str(citation) not in tracked_citations:
+                            tracked_citations.add(str(citation))
+                            content.append(
+                                LICitationBlock(
+                                    cited_content=LITextBlock(text=citation.cited_text),
+                                    source=citation.source,
+                                    title=citation.title,
+                                    additional_location_info={
+                                        "start_block_index": citation.start_block_index,
+                                        "end_block_index": citation.end_block_index,
+                                        "search_result_index": citation.search_result_index,
+                                    },
+                                )
+                            )
                     elif isinstance(r.delta, SignatureDelta):
                         if thinking is None:
                             thinking = ThinkingBlock(
@@ -558,12 +672,17 @@ class Anthropic(FunctionCallingLLM):
                     elif isinstance(r.delta, CitationsDelta):
                         # TODO: handle citation deltas
                         cur_citations.append(r.delta.citation.model_dump())
-                    elif isinstance(r.delta, InputJSONDelta) and not isinstance(cur_tool_call, ToolUseBlock):
+                    elif isinstance(r.delta, InputJSONDelta) and not isinstance(
+                        cur_tool_call, ToolUseBlock
+                    ):
                         # TODO: handle server-side tool calls
                         pass
                     else:
                         if not isinstance(cur_tool_call, ToolUseBlock):
-                            raise ValueError("Tool call not started, but got block type " + str(type(r.delta)))
+                            raise ValueError(
+                                "Tool call not started, but got block type "
+                                + str(type(r.delta))
+                            )
                         content_delta = r.delta.partial_json
                         cur_tool_json += content_delta
                         try:
@@ -579,7 +698,7 @@ class Anthropic(FunctionCallingLLM):
                     yield AnthropicChatResponse(
                         message=ChatMessage(
                             role=role,
-                            content=content,
+                            blocks=content,
                             additional_kwargs={
                                 "tool_calls": [t.dict() for t in tool_calls_to_send],
                                 "thinking": thinking.model_dump() if thinking else None,
@@ -612,6 +731,17 @@ class Anthropic(FunctionCallingLLM):
 
         return gen()
 
+    def _map_tool_choice_to_anthropic(
+        self, tool_required: bool, allow_parallel_tool_calls: bool
+    ) -> dict:
+        is_thinking_enabled = (
+            self.thinking_dict and self.thinking_dict.get("type") == "enabled"
+        )
+        return {
+            "disable_parallel_tool_use": not allow_parallel_tool_calls,
+            "type": "any" if tool_required and not is_thinking_enabled else "auto",
+        }
+
     def _prepare_chat_with_tools(
         self,
         tools: List["BaseTool"],
@@ -619,6 +749,7 @@ class Anthropic(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Prepare the chat with tools."""
@@ -643,7 +774,23 @@ class Anthropic(FunctionCallingLLM):
             ):
                 tool_dicts[-1]["cache_control"] = {"type": "ephemeral"}
 
-        return {"messages": chat_history, "tools": tool_dicts, **kwargs}
+        # anthropic doesn't like you specifying a tool choice if you don't have any tools
+        tool_choice_dict = (
+            {}
+            if not tools and not tool_required
+            else {
+                "tool_choice": self._map_tool_choice_to_anthropic(
+                    tool_required, allow_parallel_tool_calls
+                )
+            }
+        )
+
+        return {
+            "messages": chat_history,
+            "tools": tool_dicts,
+            **tool_choice_dict,
+            **kwargs,
+        }
 
     def _validate_chat_with_tools_response(
         self,

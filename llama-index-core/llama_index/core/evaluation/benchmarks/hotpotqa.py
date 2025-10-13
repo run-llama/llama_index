@@ -85,9 +85,9 @@ class HotpotQAEvaluator:
         )
         query_objects = query_objects[:queries_to_load]
 
-        assert isinstance(
-            query_engine, RetrieverQueryEngine
-        ), "query_engine must be a RetrieverQueryEngine for this evaluation"
+        assert isinstance(query_engine, RetrieverQueryEngine), (
+            "query_engine must be a RetrieverQueryEngine for this evaluation"
+        )
         retriever = HotpotQARetriever(query_objects)
         # Mock the query engine with a retriever
         query_engine = query_engine.with_retriever(retriever=retriever)

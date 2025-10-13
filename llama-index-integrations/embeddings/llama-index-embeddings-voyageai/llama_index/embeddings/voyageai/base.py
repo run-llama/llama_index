@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_BATCH_SIZE = 2048
 MAX_BATCH_SIZE = 1000
+
 MULTIMODAL_MODELS = ["voyage-multimodal-3"]
 CONTEXT_MODELS = ["voyage-context-3"]
 

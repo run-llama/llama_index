@@ -1,7 +1,9 @@
 import base64
 import filetype
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
-from llama_index.core.schema import ImageDocument
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+from llama_index.core.schema import ImageDocument, ImageNode
+from llama_index.core.llms import ImageBlock
+from llama_index.core.base.llms.generic_utils import image_node_to_image_block
 import json
 import os
 import re
@@ -36,13 +38,49 @@ NVIDIA_MULTI_MODAL_MODELS = {
         "endpoint": f"{BASE_URL}microsoft/microsoft/phi-3_5-vision-instruct",
         "type": "nv-vlm",
     },
+    "microsoft/phi-4-multimodal-instruct": {
+        "endpoint": f"{BASE_URL}microsoft/phi-4-multimodal-instruct",
+        "type": "vlm",
+    },
     "nvidia/vila": {"endpoint": f"{BASE_URL}vlm/nvidia/vila", "type": "nv-vlm"},
+    "nvidia/nvclip": {
+        "endpoint": f"{BASE_URL}nvidia/nvclip",
+        "type": "vlm",
+    },
     "meta/llama-3.2-11b-vision-instruct": {
         "endpoint": f"{BASE_URL}gr/meta/llama-3.2-11b-vision-instruct/chat/completions",
         "type": "vlm",
     },
     "meta/llama-3.2-90b-vision-instruct": {
-        "endpoint": f"{BASE_URL}/gr/meta/llama-3.2-90b-vision-instruct/chat/completions",
+        "endpoint": f"{BASE_URL}gr/meta/llama-3.2-90b-vision-instruct/chat/completions",
+        "type": "vlm",
+    },
+    "meta/llama-4-maverick-17b-128e-instruct": {
+        "endpoint": f"{BASE_URL}meta/llama-4-maverick-17b-128e-instruct",
+        "type": "vlm",
+    },
+    "meta/llama-4-scout-17b-16e-instruct": {
+        "endpoint": f"{BASE_URL}meta/llama-4-scout-17b-16e-instruct",
+        "type": "vlm",
+    },
+    "google/gemma-3n-e2b-it": {
+        "endpoint": f"{BASE_URL}google/gemma-3n-e2b-it",
+        "type": "vlm",
+    },
+    "google/gemma-3n-e4b-it": {
+        "endpoint": f"{BASE_URL}google/gemma-3n-e4b-it",
+        "type": "vlm",
+    },
+    "mistralai/mistral-medium-3-instruct": {
+        "endpoint": f"{BASE_URL}mistralai/mistral-medium-3-instruct",
+        "type": "vlm",
+    },
+    "mistralai/mistral-small-3.1-24b-instruct-2503": {
+        "endpoint": f"{BASE_URL}mistralai/mistral-small-3.1-24b-instruct-2503",
+        "type": "vlm",
+    },
+    "nvidia/llama-3.1-nemotron-nano-vl-8b-v1": {
+        "endpoint": f"{BASE_URL}nvidia/llama-3.1-nemotron-nano-vl-8b-v1",
         "type": "vlm",
     },
 }
@@ -80,14 +118,14 @@ def encode_image(image_path: str) -> str:
         return base64.b64encode(image_file.read()).decode("utf-8")
 
 
-def create_image_content(image_document) -> Optional[Dict[str, Any]]:
+def create_image_content(image_document: ImageBlock) -> Optional[Dict[str, Any]]:
     """
     Create the image content based on the provided image document.
     """
     if image_document.image:
         mimetype = (
-            image_document.mimetype
-            if image_document.mimetype
+            image_document.image_mimetype
+            if image_document.image_mimetype
             else infer_image_mimetype_from_base64(image_document.image)
         )
         return {
@@ -95,28 +133,19 @@ def create_image_content(image_document) -> Optional[Dict[str, Any]]:
             "text": f'<img src="data:image/{mimetype};base64,{image_document.image}" />',
         }, ""
 
-    elif "asset_id" in image_document.metadata:
-        asset_id = image_document.metadata["asset_id"]
-        mimetype = image_document.mimetype if image_document.mimetype else "jpeg"
-        return {
-            "type": "text",
-            "text": f'<img src="data:image/{mimetype};asset_id,{asset_id}" />',
-        }, asset_id
-
-    elif image_document.image_url and image_document.image_url != "":
-        mimetype = infer_image_mimetype_from_file_path(image_document.image_url)
+    elif image_document.url and image_document.image_url != "":
+        mimetype = image_document.image_mimetype or infer_image_mimetype_from_file_path(
+            str(image_document.url)
+        )
         return {
             "type": "image_url",
-            "image_url": image_document.image_url,
+            "image_url": image_document.url,
         }, ""
-    elif (
-        "file_path" in image_document.metadata
-        and image_document.metadata["file_path"] != ""
-    ):
-        mimetype = infer_image_mimetype_from_file_path(
-            image_document.metadata["file_path"]
+    elif image_document.path:
+        mimetype = image_document.image_mimetype or infer_image_mimetype_from_file_path(
+            str(image_document.path)
         )
-        base64_image = encode_image(image_document.metadata["file_path"])
+        base64_image = image_document.resolve_image().read().decode("utf-8")
         return {
             "type": "text",
             "text": f'<img src="data:image/{mimetype};base64,{base64_image}" />',
@@ -141,8 +170,14 @@ def generate_nvidia_multi_modal_chat_message(
         if input.content:
             asset_ids.extend(_nv_vlm_get_asset_ids(input.content))
 
+    if all(isinstance(doc, ImageNode) for doc in image_documents):
+        image_docs: Sequence[ImageBlock] = [
+            image_node_to_image_block(doc) for doc in image_document
+        ]
+    else:
+        image_docs = cast(Sequence[ImageBlock], image_documents)
     # Process each image document
-    for image_document in image_documents:
+    for image_document in image_docs:
         image_content, asset_id = create_image_content(image_document)
         if image_content:
             completion_content.append(image_content)

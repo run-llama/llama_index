@@ -110,7 +110,7 @@ class BaseIndex(Generic[IS], ABC):
 
         with callback_manager.as_trace("index_construction"):
             for doc in documents:
-                docstore.set_document_hash(doc.get_doc_id(), doc.hash)
+                docstore.set_document_hash(doc.id_, doc.hash)
 
             nodes = run_transformations(
                 documents,  # type: ignore
@@ -207,7 +207,9 @@ class BaseIndex(Generic[IS], ABC):
             self._insert(nodes, **insert_kwargs)
             self._storage_context.index_store.add_index_struct(self._index_struct)
 
-    async def ainsert_nodes(self, nodes: Sequence[BaseNode], **insert_kwargs: Any) -> None:
+    async def ainsert_nodes(
+        self, nodes: Sequence[BaseNode], **insert_kwargs: Any
+    ) -> None:
         """Asynchronously insert nodes."""
         for node in nodes:
             if isinstance(node, IndexNode):
@@ -220,7 +222,9 @@ class BaseIndex(Generic[IS], ABC):
         with self._callback_manager.as_trace("ainsert_nodes"):
             await self.docstore.async_add_documents(nodes, allow_update=True)
             self._insert(nodes=nodes)
-            await self._storage_context.index_store.async_add_index_struct(self._index_struct)
+            await self._storage_context.index_store.async_add_index_struct(
+                self._index_struct
+            )
 
     def insert(self, document: Document, **insert_kwargs: Any) -> None:
         """Insert a document."""
@@ -233,7 +237,7 @@ class BaseIndex(Generic[IS], ABC):
             )
 
             self.insert_nodes(nodes, **insert_kwargs)
-            self.docstore.set_document_hash(document.get_doc_id(), document.hash)
+            self.docstore.set_document_hash(document.id_, document.hash)
 
     async def ainsert(self, document: Document, **insert_kwargs: Any) -> None:
         """Asynchronously insert a document."""
@@ -246,7 +250,7 @@ class BaseIndex(Generic[IS], ABC):
             )
 
             await self.ainsert_nodes(nodes, **insert_kwargs)
-            await self.docstore.aset_document_hash(document.get_doc_id(), document.hash)
+            await self.docstore.aset_document_hash(document.id_, document.hash)
 
     @abstractmethod
     def _delete_node(self, node_id: str, **delete_kwargs: Any) -> None:
@@ -290,7 +294,9 @@ class BaseIndex(Generic[IS], ABC):
             if delete_from_docstore:
                 await self.docstore.adelete_document(node_id, raise_error=False)
 
-        await self._storage_context.index_store.async_add_index_struct(self._index_struct)
+        await self._storage_context.index_store.async_add_index_struct(
+            self._index_struct
+        )
 
     def delete(self, doc_id: str, **delete_kwargs: Any) -> None:
         """
@@ -377,7 +383,7 @@ class BaseIndex(Generic[IS], ABC):
         """
         with self._callback_manager.as_trace("update_ref_doc"):
             self.delete_ref_doc(
-                document.get_doc_id(),
+                document.id_,
                 delete_from_docstore=True,
                 **update_kwargs.pop("delete_kwargs", {}),
             )
@@ -397,7 +403,7 @@ class BaseIndex(Generic[IS], ABC):
         """
         with self._callback_manager.as_trace("aupdate_ref_doc"):
             await self.adelete_ref_doc(
-                document.get_doc_id(),
+                document.id_,
                 delete_from_docstore=True,
                 **update_kwargs.pop("delete_kwargs", {}),
             )
@@ -433,9 +439,7 @@ class BaseIndex(Generic[IS], ABC):
         with self._callback_manager.as_trace("refresh_ref_docs"):
             refreshed_documents = [False] * len(documents)
             for i, document in enumerate(documents):
-                existing_doc_hash = self._docstore.get_document_hash(
-                    document.get_doc_id()
-                )
+                existing_doc_hash = self._docstore.get_document_hash(document.id_)
                 if existing_doc_hash is None:
                     self.insert(document, **update_kwargs.pop("insert_kwargs", {}))
                     refreshed_documents[i] = True
@@ -461,10 +465,12 @@ class BaseIndex(Generic[IS], ABC):
             refreshed_documents = [False] * len(documents)
             for i, document in enumerate(documents):
                 existing_doc_hash = await self._docstore.aget_document_hash(
-                    document.get_doc_id()
+                    document.id_
                 )
                 if existing_doc_hash is None:
-                    await self.ainsert(document, **update_kwargs.pop("insert_kwargs", {}))
+                    await self.ainsert(
+                        document, **update_kwargs.pop("insert_kwargs", {})
+                    )
                     refreshed_documents[i] = True
                 elif existing_doc_hash != document.hash:
                     await self.aupdate_ref_doc(
@@ -480,8 +486,7 @@ class BaseIndex(Generic[IS], ABC):
         ...
 
     @abstractmethod
-    def as_retriever(self, **kwargs: Any) -> BaseRetriever:
-        ...
+    def as_retriever(self, **kwargs: Any) -> BaseRetriever: ...
 
     def as_query_engine(
         self, llm: Optional[LLMType] = None, **kwargs: Any
@@ -540,19 +545,11 @@ class BaseIndex(Generic[IS], ABC):
         query_engine = self.as_query_engine(llm=llm, **kwargs)
 
         # resolve chat mode
-        if chat_mode in [ChatMode.REACT, ChatMode.OPENAI, ChatMode.BEST]:
-            # use an agent with query engine tool in these chat modes
-            # NOTE: lazy import
-            from llama_index.core.agent import AgentRunner
-            from llama_index.core.tools.query_engine import QueryEngineTool
-
-            # convert query engine to tool
-            query_engine_tool = QueryEngineTool.from_defaults(query_engine=query_engine)
-
-            return AgentRunner.from_llm(
-                tools=[query_engine_tool],
-                llm=llm,
-                **kwargs,
+        if chat_mode in [ChatMode.REACT, ChatMode.OPENAI]:
+            raise ValueError(
+                "ChatMode.REACT and ChatMode.OPENAI are now deprecated and removed. "
+                "Please use the ReActAgent or FunctionAgent classes from llama_index.core.agent.workflow "
+                "to create an agent with a query engine tool."
             )
 
         if chat_mode == ChatMode.CONDENSE_QUESTION:
@@ -564,6 +561,7 @@ class BaseIndex(Generic[IS], ABC):
                 llm=llm,
                 **kwargs,
             )
+
         elif chat_mode == ChatMode.CONTEXT:
             from llama_index.core.chat_engine import ContextChatEngine
 
@@ -573,7 +571,7 @@ class BaseIndex(Generic[IS], ABC):
                 **kwargs,
             )
 
-        elif chat_mode == ChatMode.CONDENSE_PLUS_CONTEXT:
+        elif chat_mode in [ChatMode.CONDENSE_PLUS_CONTEXT, ChatMode.BEST]:
             from llama_index.core.chat_engine import CondensePlusContextChatEngine
 
             return CondensePlusContextChatEngine.from_defaults(

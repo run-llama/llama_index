@@ -10,6 +10,7 @@ from typing import (
     Annotated,
     Any,
     AsyncGenerator,
+    Dict,
     Generator,
     List,
     Literal,
@@ -50,11 +51,15 @@ class MessageRole(str, Enum):
 
 
 class TextBlock(BaseModel):
+    """A representation of text data to directly pass to/from the LLM."""
+
     block_type: Literal["text"] = "text"
     text: str
 
 
 class ImageBlock(BaseModel):
+    """A representation of image data to directly pass to/from the LLM."""
+
     block_type: Literal["image"] = "image"
     image: bytes | None = None
     path: FilePath | None = None
@@ -118,15 +123,26 @@ class ImageBlock(BaseModel):
             as_base64 (bool): whether the resolved image should be returned as base64-encoded bytes
 
         """
-        return resolve_binary(
+        data_buffer = resolve_binary(
             raw_bytes=self.image,
             path=self.path,
             url=str(self.url) if self.url else None,
             as_base64=as_base64,
         )
 
+        # Check size by seeking to end and getting position
+        data_buffer.seek(0, 2)  # Seek to end
+        size = data_buffer.tell()
+        data_buffer.seek(0)  # Reset to beginning
+
+        if size == 0:
+            raise ValueError("resolve_image returned zero bytes")
+        return data_buffer
+
 
 class AudioBlock(BaseModel):
+    """A representation of audio data to directly pass to/from the LLM."""
+
     block_type: Literal["audio"] = "audio"
     audio: bytes | None = None
     path: FilePath | None = None
@@ -178,14 +194,103 @@ class AudioBlock(BaseModel):
             as_base64 (bool): whether the resolved audio should be returned as base64-encoded bytes
 
         """
-        return resolve_binary(
+        data_buffer = resolve_binary(
             raw_bytes=self.audio,
             path=self.path,
             url=str(self.url) if self.url else None,
             as_base64=as_base64,
         )
+        # Check size by seeking to end and getting position
+        data_buffer.seek(0, 2)  # Seek to end
+        size = data_buffer.tell()
+        data_buffer.seek(0)  # Reset to beginning
+
+        if size == 0:
+            raise ValueError("resolve_image returned zero bytes")
+        return data_buffer
+
+
+class VideoBlock(BaseModel):
+    """A representation of video data to directly pass to/from the LLM."""
+
+    block_type: Literal["video"] = "video"
+    video: bytes | None = None
+    path: FilePath | None = None
+    url: AnyUrl | str | None = None
+    video_mimetype: str | None = None
+    detail: str | None = None
+    fps: int | None = None
+
+    @field_validator("url", mode="after")
+    @classmethod
+    def urlstr_to_anyurl(cls, url: str | AnyUrl | None) -> AnyUrl | None:
+        """Store the url as AnyUrl."""
+        if isinstance(url, AnyUrl):
+            return url
+        if url is None:
+            return None
+        return AnyUrl(url=url)
+
+    @model_validator(mode="after")
+    def video_to_base64(self) -> "VideoBlock":
+        """
+        Store the video as base64 and guess the mimetype when possible.
+
+        If video data is passed but no mimetype is provided, try to infer it.
+        """
+        if not self.video:
+            if not self.video_mimetype:
+                path = self.path or self.url
+                if path:
+                    suffix = Path(str(path)).suffix.replace(".", "") or None
+                    mimetype = filetype.get_type(ext=suffix)
+                    if mimetype and str(mimetype.mime).startswith("video/"):
+                        self.video_mimetype = str(mimetype.mime)
+            return self
+
+        try:
+            decoded_vid = base64.b64decode(self.video, validate=True)
+        except BinasciiError:
+            decoded_vid = self.video
+            self.video = base64.b64encode(self.video)
+
+        self._guess_mimetype(decoded_vid)
+        return self
+
+    def _guess_mimetype(self, vid_data: bytes) -> None:
+        if not self.video_mimetype:
+            guess = filetype.guess(vid_data)
+            if guess and guess.mime.startswith("video/"):
+                self.video_mimetype = guess.mime
+
+    def resolve_video(self, as_base64: bool = False) -> BytesIO:
+        """
+        Resolve a video file to a BytesIO buffer.
+
+        Args:
+            as_base64 (bool): whether to return the video as base64-encoded bytes
+
+        """
+        data_buffer = resolve_binary(
+            raw_bytes=self.video,
+            path=self.path,
+            url=str(self.url) if self.url else None,
+            as_base64=as_base64,
+        )
+
+        # Check size by seeking to end and getting position
+        data_buffer.seek(0, 2)  # Seek to end
+        size = data_buffer.tell()
+        data_buffer.seek(0)  # Reset to beginning
+
+        if size == 0:
+            raise ValueError("resolve_video returned zero bytes")
+        return data_buffer
+
 
 class DocumentBlock(BaseModel):
+    """A representation of a document to directly pass to the LLM."""
+
     block_type: Literal["document"] = "document"
     data: Optional[bytes] = None
     path: Optional[Union[FilePath | str]] = None
@@ -215,12 +320,20 @@ class DocumentBlock(BaseModel):
         """
         Resolve a document such that it is represented by a BufferIO object.
         """
-        return resolve_binary(
+        data_buffer = resolve_binary(
             raw_bytes=self.data,
             path=self.path,
             url=str(self.url) if self.url else None,
             as_base64=False,
         )
+        # Check size by seeking to end and getting position
+        data_buffer.seek(0, 2)  # Seek to end
+        size = data_buffer.tell()
+        data_buffer.seek(0)  # Reset to beginning
+
+        if size == 0:
+            raise ValueError("resolve_image returned zero bytes")
+        return data_buffer
 
     def _get_b64_string(self, data_buffer: BytesIO) -> str:
         """
@@ -255,9 +368,96 @@ class DocumentBlock(BaseModel):
         guess = filetype.get_type(ext=suffix)
         return str(guess.mime) if guess else None
 
+
+class CacheControl(BaseModel):
+    type: str
+    ttl: str = Field(default="5m")
+
+
+class CachePoint(BaseModel):
+    """Used to set the point to cache up to, if the LLM supports caching."""
+
+    block_type: Literal["cache"] = "cache"
+    cache_control: CacheControl
+
+
+class CitableBlock(BaseModel):
+    """Supports providing citable content to LLMs that have built-in citation support."""
+
+    block_type: Literal["citable"] = "citable"
+    title: str
+    source: str
+    # TODO: We could maybe expand the types here,
+    # limiting for now to known use cases
+    content: List[
+        Annotated[
+            Union[TextBlock, ImageBlock, DocumentBlock],
+            Field(discriminator="block_type"),
+        ]
+    ]
+
+    @field_validator("content", mode="before")
+    @classmethod
+    def validate_content(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            return [TextBlock(text=v)]
+
+        return v
+
+
+class CitationBlock(BaseModel):
+    """A representation of cited content from past messages."""
+
+    block_type: Literal["citation"] = "citation"
+    cited_content: Annotated[
+        Union[TextBlock, ImageBlock], Field(discriminator="block_type")
+    ]
+    source: str
+    title: str
+    additional_location_info: Dict[str, int]
+
+    @field_validator("cited_content", mode="before")
+    @classmethod
+    def validate_cited_content(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            return TextBlock(text=v)
+
+        return v
+
+
+class ThinkingBlock(BaseModel):
+    """A representation of the content streamed from reasoning/thinking processes by LLMs"""
+
+    block_type: Literal["thinking"] = "thinking"
+    content: Optional[str] = Field(
+        description="Content of the reasoning/thinking process, if available",
+        default=None,
+    )
+    num_tokens: Optional[int] = Field(
+        description="Number of token used for reasoning/thinking, if available",
+        default=None,
+    )
+    additional_information: Dict[str, Any] = Field(
+        description="Additional information related to the thinking/reasoning process, if available",
+        default_factory=dict,
+    )
+
+
 ContentBlock = Annotated[
-    Union[TextBlock, ImageBlock, AudioBlock, DocumentBlock], Field(discriminator="block_type")
+    Union[
+        TextBlock,
+        ImageBlock,
+        AudioBlock,
+        VideoBlock,
+        DocumentBlock,
+        CachePoint,
+        CitableBlock,
+        CitationBlock,
+        ThinkingBlock,
+    ],
+    Field(discriminator="block_type"),
 ]
+
 
 class ChatMessage(BaseModel):
     """Chat message."""
@@ -310,7 +510,10 @@ class ChatMessage(BaseModel):
             if isinstance(block, TextBlock):
                 content_strs.append(block.text)
 
-        return "\n".join(content_strs) or None
+        ct = "\n".join(content_strs) or None
+        if ct is None and len(content_strs) == 1:
+            return ""
+        return ct
 
     @content.setter
     def content(self, content: str) -> None:
@@ -355,6 +558,10 @@ class ChatMessage(BaseModel):
             }
         if isinstance(value, list):
             return [self._recursive_serialization(item) for item in value]
+
+        if isinstance(value, bytes):
+            return base64.b64encode(value).decode("utf-8")
+
         return value
 
     @field_serializer("additional_kwargs", check_fields=False)

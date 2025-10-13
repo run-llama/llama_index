@@ -1,7 +1,10 @@
 """Test file reader."""
 
+import json
+import sys
 from tempfile import TemporaryDirectory
 
+import pytest
 from llama_index.core.readers.json import JSONReader
 
 
@@ -93,3 +96,32 @@ def test_clean_json() -> None:
         reader1 = JSONReader(clean_json=True)
         data1 = reader1.load_data(file_name)
         assert data1[0].get_content() == '"a": {\n"b": "c"'
+
+
+def test_max_recursion_attack(tmp_path):
+    original_limit = sys.getrecursionlimit()
+    try:
+        nested_dict = {}
+        current_level = nested_dict
+        sys.setrecursionlimit(5000)
+
+        for i in range(1, 2001):  # Create 2000 levels of nesting
+            if i == 2000:
+                current_level[f"level{i}"] = "final_value"
+            else:
+                current_level[f"level{i}"] = {}
+                current_level = current_level[f"level{i}"]
+
+        file_name = tmp_path / "test_nested.json"
+        with open(file_name, "w") as f:
+            f.write(json.dumps(nested_dict))
+
+        # Force a recursion error
+        sys.setrecursionlimit(500)
+        reader = JSONReader(levels_back=1)
+        with pytest.warns(UserWarning):
+            data = reader.load_data(file_name)
+            assert data == []
+
+    finally:
+        sys.setrecursionlimit(original_limit)

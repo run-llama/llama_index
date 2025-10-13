@@ -11,7 +11,7 @@ dev = [
     "pylint==2.15.10",
     "pytest==7.2.1",
     "pytest-mock==3.11.1",
-    "ruff==0.0.292",
+    "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-protobuf>=4.24.0.4,<5",
@@ -26,13 +26,13 @@ dev = [
 
 [project]
 name = "llama-index-llms-deepseek"
-version = "0.1.1"
+version = "0.2.2"
 description = "llama-index llms deepseek integration"
 authors = [{name = "Logan Markewich", email = "logan@runllama.ai"}]
 requires-python = ">=3.9,<4.0"
 readme = "README.md"
 license = "MIT"
-dependencies = ["llama-index-llms-openai-like>=0.3.3,<0.4"]
+dependencies = ["llama-index-llms-openai-like>=0.5.0,<0.6"]
 
 [tool.codespell]
 check-filenames = true

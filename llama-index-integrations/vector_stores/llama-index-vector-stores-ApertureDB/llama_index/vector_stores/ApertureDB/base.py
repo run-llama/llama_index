@@ -82,7 +82,7 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
         ```python
             # Get the data for running the example
             # mkdir -p 'data/paul_graham/'
-            # wget 'https://raw.githubusercontent.com/run-llama/llama_index/main/docs/docs/examples/data/paul_graham/paul_graham_essay.txt' -O 'data/paul_graham/paul_graham_essay.txt'
+            # wget 'https://raw.githubusercontent.com/run-llama/llama_index/main/docs/examples/data/paul_graham/paul_graham_essay.txt' -O 'data/paul_graham/paul_graham_essay.txt'
 
             from llama_index.core import VectorStoreIndex, SimpleDirectoryReader
             from llama_index.core import StorageContext
@@ -245,9 +245,9 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
             if self._metric is None:
                 self._metric = METRIC
             if self._dimensions is None:
-                assert (
-                    self._embedding_function is not None
-                ), "Dimensions or embedding function must be provided"
+                assert self._embedding_function is not None, (
+                    "Dimensions or embedding function must be provided"
+                )
                 self._dimensions = len(
                     self._embedding_function.get_text_embedding("test")
                 )
@@ -431,9 +431,9 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
 
         result, _ = self._utils.execute(query)
         assert len(result) == 1, f"Failed to delete descriptor {result=}"
-        assert (
-            result[0]["DeleteDescriptor"]["status"] == 0
-        ), f"Failed to delete descriptor {result=}"
+        assert result[0]["DeleteDescriptor"]["status"] == 0, (
+            f"Failed to delete descriptor {result=}"
+        )
 
     def clear(self) -> None:
         """
@@ -449,9 +449,9 @@ class ApertureDBVectorStore(BasePydanticVectorStore):
 
         result, _ = self._utils.execute(query)
         assert len(result) == 1, f"Failed to delete descriptor {result=}"
-        assert (
-            result[0]["DeleteDescriptor"]["status"] == 0
-        ), f"Failed to delete descriptor {result=}"
+        assert result[0]["DeleteDescriptor"]["status"] == 0, (
+            f"Failed to delete descriptor {result=}"
+        )
 
     def delete_nodes(
         self,

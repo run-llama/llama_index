@@ -16,7 +16,7 @@ dev = [
     "pytest-asyncio==0.23.7",
     "pytest-cov>=6.1.1",
     "pytest-mock==3.11.1",
-    "ruff==0.0.292",
+    "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-protobuf>=4.24.0.4,<5",
@@ -27,16 +27,16 @@ dev = [
 
 [project]
 name = "llama-index-postprocessor-ibm"
-version = "0.1.0"
+version = "0.3.1"
 description = "llama-index postprocessor IBM watsonx.ai integration"
 authors = [{name = "IBM"}]
 requires-python = ">=3.10,<3.13"
 readme = "README.md"
 license = "MIT"
 dependencies = [
-    "ibm-watsonx-ai>=1.1.16",
+    "ibm-watsonx-ai>=1.3.36",
     "pyarrow",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.15",
 ]
 
 [tool.codespell]

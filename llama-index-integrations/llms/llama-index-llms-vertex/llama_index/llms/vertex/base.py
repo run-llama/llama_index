@@ -42,6 +42,7 @@ from llama_index.llms.vertex.utils import (
     force_single_tool_call,
 )
 from vertexai.generative_models._generative_models import SafetySettingsType
+from vertexai.generative_models import ToolConfig
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
@@ -434,7 +435,7 @@ class Vertex(FunctionCallingLLM):
             is_gemini=self._is_gemini,
             **params,
         )
-        return CompletionResponse(text=completion.text)
+        return CompletionResponse(text=completion.text, raw=completion.__dict__)
 
     @llm_chat_callback()
     async def astream_chat(
@@ -454,7 +455,8 @@ class Vertex(FunctionCallingLLM):
         user_msg: Optional[Union[str, ChatMessage]] = None,
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
-        allow_parallel_tool_calls: bool = False,
+        allow_parallel_tool_calls: bool = False,  # theoretically supported, but not implemented
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Prepare the arguments needed to let the LLM chat with tools."""
@@ -474,11 +476,29 @@ class Vertex(FunctionCallingLLM):
                 }
             )
 
+        tool_config = (
+            {"tool_config": self._to_function_calling_config(tool_required)}
+            if self._is_gemini
+            else {}
+        )
+
+        print("tool_config", tool_config)
         return {
             "messages": chat_history,
             "tools": tool_dicts or None,
+            **tool_config,
             **kwargs,
         }
+
+    def _to_function_calling_config(self, tool_required: bool) -> ToolConfig:
+        return ToolConfig(
+            function_calling_config=ToolConfig.FunctionCallingConfig(
+                mode=ToolConfig.FunctionCallingConfig.Mode.ANY
+                if tool_required
+                else ToolConfig.FunctionCallingConfig.Mode.AUTO,
+                allowed_function_names=None,
+            )
+        )
 
     def _validate_chat_with_tools_response(
         self,

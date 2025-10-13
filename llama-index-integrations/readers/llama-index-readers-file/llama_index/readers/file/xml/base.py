@@ -1,7 +1,8 @@
 """JSON Reader."""
 
 import re
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET  # safe XML parsing
+import xml.etree.ElementTree as _XmlET  # for type annotations only
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -9,7 +10,9 @@ from llama_index.core.readers.base import BaseReader
 from llama_index.core.schema import Document
 
 
-def _get_leaf_nodes_up_to_level(root: ET.Element, level: int) -> List[ET.Element]:
+def _get_leaf_nodes_up_to_level(
+    root: _XmlET.Element, level: int
+) -> List[_XmlET.Element]:
     """
     Get collection of nodes up to certain level including leaf nodes.
 
@@ -54,7 +57,7 @@ class XMLReader(BaseReader):
         self.tree_level_split = tree_level_split
 
     def _parse_xmlelt_to_document(
-        self, root: ET.Element, extra_info: Optional[Dict] = None
+        self, root: _XmlET.Element, extra_info: Optional[Dict] = None
     ) -> List[Document]:
         """
         Parse the xml object into a list of Documents.

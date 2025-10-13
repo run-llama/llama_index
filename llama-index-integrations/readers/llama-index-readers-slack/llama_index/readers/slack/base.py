@@ -1,4 +1,5 @@
 """Slack reader."""
+
 import logging
 import os
 import re

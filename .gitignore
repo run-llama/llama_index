@@ -7,6 +7,7 @@ migration_scripts/
 .idea
 .vscode
 .zed
+*.code-workspace
 
 # Local development
 venv/
@@ -27,3 +28,11 @@ token.json
 *.sqlite3
 *.db
 llama-index-core/llama_index/core/_static
+
+**/.coverage
+**/coverage.xml
+**/*.egg-info/
+
+**/*.egg-info/
+**/.coverage
+**/coverage.xml

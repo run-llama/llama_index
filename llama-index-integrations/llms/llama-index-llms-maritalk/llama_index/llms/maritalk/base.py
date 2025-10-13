@@ -113,7 +113,7 @@ class Maritalk(LLM):
     max_tokens: int = Field(
         default=512,
         gt=0,
-        description="The maximum number of tokens to" "generate in the reply.",
+        description="The maximum number of tokens togenerate in the reply.",
     )
 
     do_sample: bool = Field(

@@ -104,8 +104,11 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
 
         if not self.model.startswith("nvdev/"):
             self._validate_model(self.model)  ## validate model
-        self.is_chat_model = self._is_chat_model()
-        self.is_function_calling_model = self._is_function_calling_model()
+
+        self.is_chat_model = self._is_chat_model() or self.is_chat_model
+        self.is_function_calling_model = (
+            self._is_function_calling_model() or self.is_function_calling_model
+        )
 
     def __get_default_model(self):
         """Set default model."""
@@ -169,8 +172,7 @@ class NVIDIA(OpenAILike, FunctionCallingLLM):
                         model = Model(id=model_name)
                     else:
                         raise ValueError(
-                            f"Model {model_name} is unknown, "
-                            "check `available_models`"
+                            f"Model {model_name} is unknown, check `available_models`"
                         )
         else:
             if model_name not in [model.id for model in self.available_models]:

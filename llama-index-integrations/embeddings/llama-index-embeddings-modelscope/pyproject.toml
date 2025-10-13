@@ -12,7 +12,7 @@ dev = [
     "pytest==7.2.1",
     "pytest-asyncio==0.21.0",
     "pytest-mock==3.11.1",
-    "ruff==0.0.292",
+    "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-protobuf>=4.24.0.4,<5",
@@ -23,11 +23,12 @@ dev = [
     "codespell[toml]>=v2.2.6",
     "diff-cover>=9.2.0",
     "pytest-cov>=6.1.1",
+    "pip>=25.1.1",
 ]
 
 [project]
 name = "llama-index-embeddings-modelscope"
-version = "0.4.0"
+version = "0.5.1"
 description = "llama-index embeddings modelscope integration"
 authors = [{name = "ModelScope", email = "modelscope@list.alibaba-inc.com"}]
 requires-python = ">=3.9,<3.12"
@@ -36,7 +37,7 @@ license = "MIT"
 dependencies = [
     "modelscope[framework]>=1.12.0",
     "torch>=2.1.2,<3",
-    "llama-index-core>=0.12.0,<0.13",
+    "llama-index-core>=0.13.0,<0.15",
     "sentencepiece",
     "ms-swift",
     "transformers[torch]>=4.37.0,<5",

@@ -182,6 +182,7 @@ class Bedrock(LLM):
                     retries={"max_attempts": max_retries, "mode": "standard"},
                     connect_timeout=timeout,
                     read_timeout=timeout,
+                    user_agent_extra="x-client-framework:llama_index",
                 )
                 if botocore_config is None
                 else botocore_config
@@ -189,7 +190,7 @@ class Bedrock(LLM):
             session = boto3.Session(**session_kwargs)
         except ImportError:
             raise ImportError(
-                "boto3 package not found, install with" "'pip install boto3'"
+                "boto3 package not found, install with'pip install boto3'"
             )
 
         additional_kwargs = additional_kwargs or {}

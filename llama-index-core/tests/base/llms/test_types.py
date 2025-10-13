@@ -13,10 +13,21 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     DocumentBlock,
+    VideoBlock,
+    AudioBlock,
+    CachePoint,
+    CacheControl,
+    ThinkingBlock,
 )
 from llama_index.core.bridge.pydantic import BaseModel
+from llama_index.core.bridge.pydantic import ValidationError
 from llama_index.core.schema import ImageDocument
 from pydantic import AnyUrl
+
+
+@pytest.fixture()
+def empty_bytes() -> bytes:
+    return b""
 
 
 @pytest.fixture()
@@ -28,9 +39,11 @@ def png_1px_b64() -> bytes:
 def png_1px(png_1px_b64) -> bytes:
     return base64.b64decode(png_1px_b64)
 
+
 @pytest.fixture()
 def pdf_url() -> str:
     return "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+
 
 @pytest.fixture()
 def mock_pdf_bytes(pdf_url) -> bytes:
@@ -39,9 +52,22 @@ def mock_pdf_bytes(pdf_url) -> bytes:
     """
     return httpx.get(pdf_url).content
 
+
 @pytest.fixture()
 def pdf_base64(mock_pdf_bytes) -> bytes:
     return base64.b64encode(mock_pdf_bytes)
+
+
+@pytest.fixture()
+def mp4_bytes() -> bytes:
+    # Minimal fake MP4 header bytes (ftyp box)
+    return b"\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom"
+
+
+@pytest.fixture()
+def mp4_base64(mp4_bytes: bytes) -> bytes:
+    return base64.b64encode(mp4_bytes)
+
 
 def test_chat_message_from_str():
     m = ChatMessage.from_str(content="test content")
@@ -176,6 +202,46 @@ def test_image_block_resolve_image_url(png_1px_b64: bytes, png_1px: bytes):
         assert img.read() == png_1px_b64
 
 
+def test_image_block_resolve_image_data_url_base64(png_1px_b64: bytes, png_1px: bytes):
+    # Test data URL with base64 encoding
+    data_url = f"data:image/png;base64,{png_1px_b64.decode('utf-8')}"
+    b = ImageBlock(url=AnyUrl(url=data_url))
+
+    img = b.resolve_image()
+    assert isinstance(img, BytesIO)
+    assert img.read() == png_1px
+
+    img = b.resolve_image(as_base64=True)
+    assert isinstance(img, BytesIO)
+    assert img.read() == png_1px_b64
+
+
+def test_image_block_resolve_image_data_url_plain_text():
+    # Test data URL with plain text (no base64)
+    test_text = "Hello, World!"
+    data_url = f"data:text/plain,{test_text}"
+    b = ImageBlock(url=AnyUrl(url=data_url))
+
+    img = b.resolve_image()
+    assert isinstance(img, BytesIO)
+    assert img.read() == test_text.encode("utf-8")
+
+    img = b.resolve_image(as_base64=True)
+    assert isinstance(img, BytesIO)
+    assert img.read() == base64.b64encode(test_text.encode("utf-8"))
+
+
+def test_image_block_resolve_image_data_url_invalid():
+    # Test invalid data URL format (missing comma)
+    invalid_data_url = "data:image/png;base64"
+    b = ImageBlock(url=AnyUrl(url=invalid_data_url))
+
+    with pytest.raises(
+        ValueError, match="Invalid data URL format: missing comma separator"
+    ):
+        b.resolve_image()
+
+
 def test_image_block_resolve_error():
     with pytest.raises(
         ValueError, match="No valid source provided to resolve binary data!"
@@ -221,10 +287,12 @@ def test_document_block_from_bytes(mock_pdf_bytes: bytes, pdf_base64: bytes):
     assert document.document_mimetype == "application/pdf"
     assert pdf_base64 == document.data
 
+
 def test_document_block_from_b64(pdf_base64: bytes):
     document = DocumentBlock(data=pdf_base64)
     assert document.title == "input_document"
     assert pdf_base64 == document.data
+
 
 def test_document_block_from_path(tmp_path: Path, pdf_url: str):
     pdf_path = tmp_path / "test.pdf"
@@ -254,6 +322,7 @@ def test_document_block_from_path(tmp_path: Path, pdf_url: str):
     assert bytes_base64_encoded
     assert document.title == "input_document"
 
+
 def test_document_block_from_url(pdf_url: str):
     document = DocumentBlock(url=pdf_url, title="dummy_pdf")
     file_buffer = document.resolve_document()
@@ -278,3 +347,129 @@ def test_document_block_from_url(pdf_url: str):
         bytes_base64_encoded = False
     assert bytes_base64_encoded
     assert document.title == "dummy_pdf"
+
+
+def test_empty_bytes(empty_bytes: bytes, png_1px: bytes):
+    errors = []
+    try:
+        DocumentBlock(data=empty_bytes).resolve_document()
+        errors.append(0)
+    except ValueError:
+        errors.append(1)
+    try:
+        AudioBlock(audio=empty_bytes).resolve_audio()
+        errors.append(0)
+    except ValueError:
+        errors.append(1)
+    try:
+        ImageBlock(image=empty_bytes).resolve_image()
+        errors.append(0)
+    except ValueError:
+        errors.append(1)
+    try:
+        ImageBlock(image=png_1px).resolve_image()
+        errors.append(0)
+    except ValueError:
+        errors.append(1)
+    assert sum(errors) == 3
+
+
+def test_cache_control() -> None:
+    cp = CachePoint(cache_control=CacheControl(type="ephemeral"))
+    assert isinstance(cp.model_dump()["cache_control"], dict)
+    assert cp.model_dump()["cache_control"]["type"] == "ephemeral"
+    with pytest.raises(ValidationError):
+        CachePoint.model_validate({"cache_control": "default"})
+
+
+def test_video_block_resolve_video_bytes(mp4_bytes: bytes, mp4_base64: bytes):
+    b = VideoBlock(video=mp4_bytes)
+
+    vid = b.resolve_video()
+    assert isinstance(vid, BytesIO)
+    assert vid.read() == mp4_bytes
+
+    vid = b.resolve_video(as_base64=True)
+    assert isinstance(vid, BytesIO)
+    assert vid.read() == mp4_base64
+
+
+def test_video_block_resolve_video_path(
+    tmp_path: Path, mp4_bytes: bytes, mp4_base64: bytes
+):
+    mp4_path = tmp_path / "test.mp4"
+    mp4_path.write_bytes(mp4_bytes)
+
+    b = VideoBlock(path=mp4_path)
+    vid = b.resolve_video()
+    assert isinstance(vid, BytesIO)
+    assert vid.read() == mp4_bytes
+
+    vid = b.resolve_video(as_base64=True)
+    assert isinstance(vid, BytesIO)
+    assert vid.read() == mp4_base64
+
+
+def test_video_block_resolve_video_url(mp4_bytes: bytes, mp4_base64: bytes):
+    with mock.patch("llama_index.core.utils.requests") as mocked_req:
+        url_str = "http://example.com/video.mp4"
+        mocked_req.get.return_value = mock.MagicMock(content=mp4_bytes)
+        b = VideoBlock(url=AnyUrl(url=url_str))
+        vid = b.resolve_video()
+        assert isinstance(vid, BytesIO)
+        assert vid.read() == mp4_bytes
+
+        vid = b.resolve_video(as_base64=True)
+        assert isinstance(vid, BytesIO)
+        assert vid.read() == mp4_base64
+
+
+def test_video_block_resolve_video_data_url_base64(mp4_bytes: bytes, mp4_base64: bytes):
+    # Test data URL with base64 encoding
+    data_url = f"data:video/mp4;base64,{mp4_base64.decode('utf-8')}"
+    b = VideoBlock(url=AnyUrl(url=data_url))
+
+    vid = b.resolve_video()
+    assert isinstance(vid, BytesIO)
+    assert vid.read() == mp4_bytes
+
+    vid = b.resolve_video(as_base64=True)
+    assert isinstance(vid, BytesIO)
+    assert vid.read() == mp4_base64
+
+
+def test_video_block_resolve_error():
+    b = VideoBlock()
+    with pytest.raises(ValueError, match="No valid source provided"):
+        b.resolve_video()
+
+
+def test_video_block_store_as_anyurl():
+    url_str = "http://example.com/video.mp4"
+    b = VideoBlock(url=url_str)
+    assert isinstance(b.url, AnyUrl)
+    assert str(b.url) == url_str
+
+
+def test_video_block_store_as_base64(mp4_bytes: bytes, mp4_base64: bytes):
+    # Store regular bytes
+    assert VideoBlock(video=mp4_bytes).video == mp4_base64
+    # Store already encoded data
+    assert VideoBlock(video=mp4_base64).video == mp4_base64
+
+
+def test_thinking_block():
+    block = ThinkingBlock()
+    assert block.block_type == "thinking"
+    assert block.additional_information == {}
+    assert block.content is None
+    assert block.num_tokens is None
+    block = ThinkingBlock(
+        content="hello world",
+        num_tokens=100,
+        additional_information={"total_thinking_tokens": 1000},
+    )
+    assert block.block_type == "thinking"
+    assert block.additional_information == {"total_thinking_tokens": 1000}
+    assert block.content == "hello world"
+    assert block.num_tokens == 100

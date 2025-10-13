@@ -1,3 +1,4 @@
+import warnings
 from typing import (
     Any,
     Callable,
@@ -20,6 +21,8 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     LLMMetadata,
     MessageRole,
+    TextBlock,
+    ThinkingBlock,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
@@ -46,6 +49,8 @@ from llama_index.llms.bedrock_converse.utils import (
     join_two_dicts,
     messages_to_converse_messages,
     tools_to_converse_tools,
+    is_reasoning,
+    ThinkingDict,
 )
 
 if TYPE_CHECKING:
@@ -138,6 +143,14 @@ class BedrockConverse(FunctionCallingLLM):
         default=60.0,
         description="The timeout for the Bedrock API request in seconds. It will be used for both connect and read timeouts.",
     )
+    system_prompt_caching: bool = Field(
+        default=False,
+        description="Whether to cache the system prompt. If you are using a system prompt, you should set this to True.",
+    )
+    tool_caching: bool = Field(
+        default=False,
+        description="Whether to cache the tools. If you are using tools, you should set this to True.",
+    )
     guardrail_identifier: Optional[str] = Field(
         description="The unique identifier of the guardrail that you want to use. If you don't provide a value, no guardrail is applied to the invocation."
     )
@@ -149,6 +162,10 @@ class BedrockConverse(FunctionCallingLLM):
     )
     trace: Optional[str] = Field(
         description="Specifies whether to enable or disable the Bedrock trace. If enabled, you can see the full Bedrock trace."
+    )
+    thinking: Optional[ThinkingDict] = Field(
+        description="Specifies the thinking configuration of a reasoning model. Only applicable to Anthropic and DeepSeek models",
+        default=None,
     )
     additional_kwargs: Dict[str, Any] = Field(
         default_factory=dict,
@@ -182,6 +199,8 @@ class BedrockConverse(FunctionCallingLLM):
         additional_kwargs: Optional[Dict[str, Any]] = None,
         callback_manager: Optional[CallbackManager] = None,
         system_prompt: Optional[str] = None,
+        system_prompt_caching: Optional[bool] = False,
+        tool_caching: Optional[bool] = False,
         messages_to_prompt: Optional[Callable[[Sequence[ChatMessage]], str]] = None,
         completion_to_prompt: Optional[Callable[[str], str]] = None,
         pydantic_program_mode: PydanticProgramMode = PydanticProgramMode.DEFAULT,
@@ -190,6 +209,7 @@ class BedrockConverse(FunctionCallingLLM):
         guardrail_version: Optional[str] = None,
         application_inference_profile_arn: Optional[str] = None,
         trace: Optional[str] = None,
+        thinking: Optional[ThinkingDict] = None,
     ) -> None:
         additional_kwargs = additional_kwargs or {}
         callback_manager = callback_manager or CallbackManager([])
@@ -203,6 +223,13 @@ class BedrockConverse(FunctionCallingLLM):
             "botocore_session": botocore_session,
         }
 
+        if not is_reasoning(model) and thinking is not None:
+            thinking = None
+            warnings.warn(
+                "You set thinking parameters for a non-reasoning models, they will be ignored",
+                UserWarning,
+            )
+
         super().__init__(
             temperature=temperature,
             max_tokens=max_tokens,
@@ -212,6 +239,8 @@ class BedrockConverse(FunctionCallingLLM):
             model=model,
             callback_manager=callback_manager,
             system_prompt=system_prompt,
+            system_prompt_caching=system_prompt_caching,
+            tool_caching=tool_caching,
             messages_to_prompt=messages_to_prompt,
             completion_to_prompt=completion_to_prompt,
             pydantic_program_mode=pydantic_program_mode,
@@ -231,6 +260,7 @@ class BedrockConverse(FunctionCallingLLM):
             guardrail_version=guardrail_version,
             application_inference_profile_arn=application_inference_profile_arn,
             trace=trace,
+            thinking=thinking,
         )
 
         self._config = None
@@ -252,6 +282,7 @@ class BedrockConverse(FunctionCallingLLM):
                     retries={"max_attempts": max_retries, "mode": "standard"},
                     connect_timeout=timeout,
                     read_timeout=timeout,
+                    user_agent_extra="x-client-framework:llama_index",
                 )
                 if botocore_config is None
                 else botocore_config
@@ -317,24 +348,38 @@ class BedrockConverse(FunctionCallingLLM):
 
     def _get_content_and_tool_calls(
         self, response: Optional[Dict[str, Any]] = None, content: Dict[str, Any] = None
-    ) -> Tuple[str, Dict[str, Any], List[str], List[str]]:
-        assert (
-            response is not None or content is not None
-        ), f"Either response or content must be provided. Got response: {response}, content: {content}"
-        assert (
-            response is None or content is None
-        ), f"Only one of response or content should be provided. Got response: {response}, content: {content}"
+    ) -> Tuple[
+        List[Union[TextBlock, ThinkingBlock]], Dict[str, Any], List[str], List[str]
+    ]:
+        assert response is not None or content is not None, (
+            f"Either response or content must be provided. Got response: {response}, content: {content}"
+        )
+        assert response is None or content is None, (
+            f"Only one of response or content should be provided. Got response: {response}, content: {content}"
+        )
         tool_calls = []
         tool_call_ids = []
         status = []
-        text_content = ""
+        blocks = []
         if content is not None:
             content_list = [content]
         else:
             content_list = response["output"]["message"]["content"]
+
         for content_block in content_list:
             if text := content_block.get("text", None):
-                text_content += text
+                blocks.append(TextBlock(text=text))
+            if thinking := content_block.get("reasoningContent", None):
+                blocks.append(
+                    ThinkingBlock(
+                        content=thinking.get("reasoningText", {}).get("text", None),
+                        additional_information={
+                            "signature": thinking.get("reasoningText", {}).get(
+                                "signature", None
+                            )
+                        },
+                    )
+                )
             if tool_usage := content_block.get("toolUse", None):
                 if "toolUseId" not in tool_usage:
                     tool_usage["toolUseId"] = content_block["toolUseId"]
@@ -348,19 +393,25 @@ class BedrockConverse(FunctionCallingLLM):
                 tool_call_ids.append(tool_result_content.get("toolUseId", ""))
                 status.append(tool_result.get("status", ""))
 
-        return text_content, tool_calls, tool_call_ids, status
+        return blocks, tool_calls, tool_call_ids, status
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
         # convert Llama Index messages to AWS Bedrock Converse messages
-        converse_messages, system_prompt = messages_to_converse_messages(messages)
+        converse_messages, system_prompt = messages_to_converse_messages(
+            messages, self.model
+        )
         all_kwargs = self._get_all_kwargs(**kwargs)
+        if self.thinking is not None:
+            all_kwargs["thinking"] = self.thinking
 
         # invoke LLM in AWS Bedrock Converse with retry
         response = converse_with_retry(
             client=self._client,
             messages=converse_messages,
             system_prompt=system_prompt,
+            system_prompt_caching=self.system_prompt_caching,
+            tool_caching=self.tool_caching,
             max_retries=self.max_retries,
             stream=False,
             guardrail_identifier=self.guardrail_identifier,
@@ -369,14 +420,14 @@ class BedrockConverse(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        content, tool_calls, tool_call_ids, status = self._get_content_and_tool_calls(
+        blocks, tool_calls, tool_call_ids, status = self._get_content_and_tool_calls(
             response
         )
 
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
-                content=content,
+                blocks=blocks,
                 additional_kwargs={
                     "tool_calls": tool_calls,
                     "tool_call_id": tool_call_ids,
@@ -399,14 +450,20 @@ class BedrockConverse(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseGen:
         # convert Llama Index messages to AWS Bedrock Converse messages
-        converse_messages, system_prompt = messages_to_converse_messages(messages)
+        converse_messages, system_prompt = messages_to_converse_messages(
+            messages, self.model
+        )
         all_kwargs = self._get_all_kwargs(**kwargs)
+        if self.thinking is not None:
+            all_kwargs["thinking"] = self.thinking
 
         # invoke LLM in AWS Bedrock Converse with retry
         response = converse_with_retry(
             client=self._client,
             messages=converse_messages,
             system_prompt=system_prompt,
+            system_prompt_caching=self.system_prompt_caching,
+            tool_caching=self.tool_caching,
             max_retries=self.max_retries,
             stream=True,
             guardrail_identifier=self.guardrail_identifier,
@@ -420,10 +477,21 @@ class BedrockConverse(FunctionCallingLLM):
             tool_calls = []  # Track tool calls separately
             current_tool_call = None  # Track the current tool call being built
             role = MessageRole.ASSISTANT
+            thinking = ""
+            thinking_signature = ""
+
             for chunk in response["stream"]:
                 if content_block_delta := chunk.get("contentBlockDelta"):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
+
+                    if "reasoningContent" in content_delta:
+                        thinking += content_delta.get("reasoningContent", {}).get(
+                            "text", ""
+                        )
+                        thinking_signature += content_delta.get(
+                            "reasoningContent", {}
+                        ).get("signature", "")
 
                     # If this delta contains tool call info, update current tool call
                     if "toolUse" in content_delta:
@@ -433,25 +501,51 @@ class BedrockConverse(FunctionCallingLLM):
                             # Handle the input field specially - concatenate partial JSON strings
                             if "input" in tool_use_delta:
                                 if "input" in current_tool_call:
-                                    current_tool_call["input"] += tool_use_delta["input"]
+                                    current_tool_call["input"] += tool_use_delta[
+                                        "input"
+                                    ]
                                 else:
                                     current_tool_call["input"] = tool_use_delta["input"]
 
                                 # Remove input from the delta to prevent it from being processed again
-                                tool_use_without_input = {k: v for k, v in tool_use_delta.items() if k != "input"}
+                                tool_use_without_input = {
+                                    k: v
+                                    for k, v in tool_use_delta.items()
+                                    if k != "input"
+                                }
                                 if tool_use_without_input:
-                                    current_tool_call = join_two_dicts(current_tool_call, tool_use_without_input)
+                                    current_tool_call = join_two_dicts(
+                                        current_tool_call, tool_use_without_input
+                                    )
                             else:
                                 # For other fields, use the normal joining
-                                current_tool_call = join_two_dicts(current_tool_call, tool_use_delta)
+                                current_tool_call = join_two_dicts(
+                                    current_tool_call, tool_use_delta
+                                )
+
+                    blocks: List[Union[TextBlock, ThinkingBlock]] = [
+                        TextBlock(text=content.get("text", ""))
+                    ]
+                    if thinking != "":
+                        blocks.insert(
+                            0,
+                            ThinkingBlock(
+                                content=thinking,
+                                additional_information={
+                                    "signature": thinking_signature
+                                },
+                            ),
+                        )
 
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
-                            content=content.get("text", ""),
+                            blocks=blocks,
                             additional_kwargs={
                                 "tool_calls": tool_calls,
-                                "tool_call_id": [tc.get("toolUseId", "") for tc in tool_calls],
+                                "tool_call_id": [
+                                    tc.get("toolUseId", "") for tc in tool_calls
+                                ],
                                 "status": [],  # Will be populated when tool results come in
                             },
                         ),
@@ -468,18 +562,72 @@ class BedrockConverse(FunctionCallingLLM):
                         # Add to our list of tool calls
                         tool_calls.append(current_tool_call)
 
+                    blocks: List[Union[TextBlock, ThinkingBlock]] = [
+                        TextBlock(text=content.get("text", ""))
+                    ]
+                    if thinking != "":
+                        blocks.insert(
+                            0,
+                            ThinkingBlock(
+                                content=thinking,
+                                additional_information={
+                                    "signature": thinking_signature
+                                },
+                            ),
+                        )
+
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
-                            content=content.get("text", ""),
+                            blocks=blocks,
                             additional_kwargs={
                                 "tool_calls": tool_calls,
-                                "tool_call_id": [tc.get("toolUseId", "") for tc in tool_calls],
+                                "tool_call_id": [
+                                    tc.get("toolUseId", "") for tc in tool_calls
+                                ],
                                 "status": [],  # Will be populated when tool results come in
                             },
                         ),
                         raw=chunk,
                     )
+                elif message_stop := chunk.get("messageStop"):
+                    # Handle messageStop event - this contains the stop reason
+                    # We don't yield here, just track the event
+                    pass
+                elif metadata := chunk.get("metadata"):
+                    # Handle metadata event - this contains the final token usage
+                    if usage := metadata.get("usage"):
+                        # Yield a final response with correct token usage
+                        blocks: List[Union[TextBlock, ThinkingBlock]] = [
+                            TextBlock(text=content.get("text", ""))
+                        ]
+                        if thinking != "":
+                            blocks.insert(
+                                0,
+                                ThinkingBlock(
+                                    content=thinking,
+                                    additional_information={
+                                        "signature": thinking_signature
+                                    },
+                                ),
+                            )
+
+                        yield ChatResponse(
+                            message=ChatMessage(
+                                role=role,
+                                blocks=blocks,
+                                additional_kwargs={
+                                    "tool_calls": tool_calls,
+                                    "tool_call_id": [
+                                        tc.get("toolUseId", "") for tc in tool_calls
+                                    ],
+                                    "status": [],
+                                },
+                            ),
+                            delta="",
+                            raw=chunk,
+                            additional_kwargs=self._get_response_token_counts(metadata),
+                        )
 
         return gen()
 
@@ -495,8 +643,12 @@ class BedrockConverse(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponse:
         # convert Llama Index messages to AWS Bedrock Converse messages
-        converse_messages, system_prompt = messages_to_converse_messages(messages)
+        converse_messages, system_prompt = messages_to_converse_messages(
+            messages, self.model
+        )
         all_kwargs = self._get_all_kwargs(**kwargs)
+        if self.thinking is not None:
+            all_kwargs["thinking"] = self.thinking
 
         # invoke LLM in AWS Bedrock Converse with retry
         response = await converse_with_retry_async(
@@ -504,6 +656,8 @@ class BedrockConverse(FunctionCallingLLM):
             config=self._config,
             messages=converse_messages,
             system_prompt=system_prompt,
+            system_prompt_caching=self.system_prompt_caching,
+            tool_caching=self.tool_caching,
             max_retries=self.max_retries,
             stream=False,
             guardrail_identifier=self.guardrail_identifier,
@@ -513,14 +667,14 @@ class BedrockConverse(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        content, tool_calls, tool_call_ids, status = self._get_content_and_tool_calls(
+        blocks, tool_calls, tool_call_ids, status = self._get_content_and_tool_calls(
             response
         )
 
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
-                content=content,
+                blocks=blocks,
                 additional_kwargs={
                     "tool_calls": tool_calls,
                     "tool_call_id": tool_call_ids,
@@ -543,8 +697,12 @@ class BedrockConverse(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> ChatResponseAsyncGen:
         # convert Llama Index messages to AWS Bedrock Converse messages
-        converse_messages, system_prompt = messages_to_converse_messages(messages)
+        converse_messages, system_prompt = messages_to_converse_messages(
+            messages, self.model
+        )
         all_kwargs = self._get_all_kwargs(**kwargs)
+        if self.thinking is not None:
+            all_kwargs["thinking"] = self.thinking
 
         # invoke LLM in AWS Bedrock Converse with retry
         response_gen = await converse_with_retry_async(
@@ -552,6 +710,8 @@ class BedrockConverse(FunctionCallingLLM):
             config=self._config,
             messages=converse_messages,
             system_prompt=system_prompt,
+            system_prompt_caching=self.system_prompt_caching,
+            tool_caching=self.tool_caching,
             max_retries=self.max_retries,
             stream=True,
             guardrail_identifier=self.guardrail_identifier,
@@ -566,10 +726,21 @@ class BedrockConverse(FunctionCallingLLM):
             tool_calls = []  # Track tool calls separately
             current_tool_call = None  # Track the current tool call being built
             role = MessageRole.ASSISTANT
+            thinking = ""
+            thinking_signature = ""
+
             async for chunk in response_gen:
                 if content_block_delta := chunk.get("contentBlockDelta"):
                     content_delta = content_block_delta["delta"]
                     content = join_two_dicts(content, content_delta)
+
+                    if "reasoningContent" in content_delta:
+                        thinking += content_delta.get("reasoningContent", {}).get(
+                            "text", ""
+                        )
+                        thinking_signature += content_delta.get(
+                            "reasoningContent", {}
+                        ).get("signature", "")
 
                     # If this delta contains tool call info, update current tool call
                     if "toolUse" in content_delta:
@@ -579,25 +750,50 @@ class BedrockConverse(FunctionCallingLLM):
                             # Handle the input field specially - concatenate partial JSON strings
                             if "input" in tool_use_delta:
                                 if "input" in current_tool_call:
-                                    current_tool_call["input"] += tool_use_delta["input"]
+                                    current_tool_call["input"] += tool_use_delta[
+                                        "input"
+                                    ]
                                 else:
                                     current_tool_call["input"] = tool_use_delta["input"]
 
                                 # Remove input from the delta to prevent it from being processed again
-                                tool_use_without_input = {k: v for k, v in tool_use_delta.items() if k != "input"}
+                                tool_use_without_input = {
+                                    k: v
+                                    for k, v in tool_use_delta.items()
+                                    if k != "input"
+                                }
                                 if tool_use_without_input:
-                                    current_tool_call = join_two_dicts(current_tool_call, tool_use_without_input)
+                                    current_tool_call = join_two_dicts(
+                                        current_tool_call, tool_use_without_input
+                                    )
                             else:
                                 # For other fields, use the normal joining
-                                current_tool_call = join_two_dicts(current_tool_call, tool_use_delta)
+                                current_tool_call = join_two_dicts(
+                                    current_tool_call, tool_use_delta
+                                )
+                    blocks: List[Union[TextBlock, ThinkingBlock]] = [
+                        TextBlock(text=content.get("text", ""))
+                    ]
+                    if thinking != "":
+                        blocks.insert(
+                            0,
+                            ThinkingBlock(
+                                content=thinking,
+                                additional_information={
+                                    "signature": thinking_signature
+                                },
+                            ),
+                        )
 
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
-                            content=content.get("text", ""),
+                            blocks=blocks,
                             additional_kwargs={
                                 "tool_calls": tool_calls,
-                                "tool_call_id": [tc.get("toolUseId", "") for tc in tool_calls],
+                                "tool_call_id": [
+                                    tc.get("toolUseId", "") for tc in tool_calls
+                                ],
                                 "status": [],  # Will be populated when tool results come in
                             },
                         ),
@@ -614,18 +810,72 @@ class BedrockConverse(FunctionCallingLLM):
                         # Add to our list of tool calls
                         tool_calls.append(current_tool_call)
 
+                    blocks: List[Union[TextBlock, ThinkingBlock]] = [
+                        TextBlock(text=content.get("text", ""))
+                    ]
+                    if thinking != "":
+                        blocks.insert(
+                            0,
+                            ThinkingBlock(
+                                content=thinking,
+                                additional_information={
+                                    "signature": thinking_signature
+                                },
+                            ),
+                        )
+
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
-                            content=content.get("text", ""),
+                            blocks=blocks,
                             additional_kwargs={
                                 "tool_calls": tool_calls,
-                                "tool_call_id": [tc.get("toolUseId", "") for tc in tool_calls],
+                                "tool_call_id": [
+                                    tc.get("toolUseId", "") for tc in tool_calls
+                                ],
                                 "status": [],  # Will be populated when tool results come in
                             },
                         ),
                         raw=chunk,
                     )
+                elif chunk.get("messageStop"):
+                    # Handle messageStop event - this contains the stop reason
+                    # We don't yield here, just track the event
+                    pass
+                elif metadata := chunk.get("metadata"):
+                    # Handle metadata event - this contains the final token usage
+                    if usage := metadata.get("usage"):
+                        # Yield a final response with correct token usage
+                        blocks: List[Union[TextBlock, ThinkingBlock]] = [
+                            TextBlock(text=content.get("text", ""))
+                        ]
+                        if thinking != "":
+                            blocks.insert(
+                                0,
+                                ThinkingBlock(
+                                    content=thinking,
+                                    additional_information={
+                                        "signature": thinking_signature
+                                    },
+                                ),
+                            )
+
+                        yield ChatResponse(
+                            message=ChatMessage(
+                                role=role,
+                                blocks=blocks,
+                                additional_kwargs={
+                                    "tool_calls": tool_calls,
+                                    "tool_call_id": [
+                                        tc.get("toolUseId", "") for tc in tool_calls
+                                    ],
+                                    "status": [],
+                                },
+                            ),
+                            delta="",
+                            raw=chunk,
+                            additional_kwargs=self._get_response_token_counts(metadata),
+                        )
 
         return gen()
 
@@ -643,6 +893,8 @@ class BedrockConverse(FunctionCallingLLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
+        tool_caching: bool = False,
         tool_choice: Optional[dict] = None,
         **kwargs: Any,
     ) -> Dict[str, Any]:
@@ -656,11 +908,12 @@ class BedrockConverse(FunctionCallingLLM):
             chat_history.append(user_msg)
 
         # convert Llama Index tools to AWS Bedrock Converse tools
-        tool_config = tools_to_converse_tools(tools)
-        if tool_choice:
-            # https://docs.aws.amazon.com/bedrock/latest/APIReference/API_runtime_ToolChoice.html
-            # e.g. { "auto": {} }
-            tool_config["toolChoice"] = tool_choice
+        tool_config = tools_to_converse_tools(
+            tools,
+            tool_choice=tool_choice,
+            tool_required=tool_required,
+            tool_caching=tool_caching,
+        )
 
         return {
             "messages": chat_history,
@@ -700,10 +953,7 @@ class BedrockConverse(FunctionCallingLLM):
 
         tool_selections = []
         for tool_call in tool_calls:
-            if (
-                "toolUseId" not in tool_call
-                or "name" not in tool_call
-            ):
+            if "toolUseId" not in tool_call or "name" not in tool_call:
                 raise ValueError("Invalid tool call.")
 
             # handle empty inputs
@@ -741,8 +991,11 @@ class BedrockConverse(FunctionCallingLLM):
             return {}
 
         # Convert Bedrock's token count format to match OpenAI's format
+        # Cache token formats respecting Anthropic format
         return {
             "prompt_tokens": usage.get("inputTokens", 0),
             "completion_tokens": usage.get("outputTokens", 0),
             "total_tokens": usage.get("totalTokens", 0),
+            "cache_read_input_tokens": usage.get("cacheReadInputTokens", 0),
+            "cache_creation_input_tokens": usage.get("cacheWriteInputTokens", 0),
         }

@@ -1,4 +1,7 @@
+import asyncio
+import logging
 from collections.abc import Sequence
+from io import BytesIO
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -12,7 +15,9 @@ import typing
 
 import google.genai.types as types
 import google.genai
-from google.genai import _transformers
+import httpx
+from google.genai import _transformers, Client
+from google.genai import errors
 
 from llama_index.core.bridge.pydantic import BaseModel, ValidationError
 from llama_index.core.base.llms.types import (
@@ -22,12 +27,26 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     DocumentBlock,
+    VideoBlock,
+    ThinkingBlock,
 )
 from llama_index.core.program.utils import _repair_incomplete_json
+from tenacity import (
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    retry_if_exception,
+    stop_after_attempt,
+    stop_after_delay,
+    wait_exponential,
+    wait_random_exponential,
+)
+from tenacity.stop import stop_base
 
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
 
+logger = logging.getLogger(__name__)
 
 ROLES_TO_GEMINI: dict[MessageRole, MessageRole] = {
     MessageRole.USER: MessageRole.USER,
@@ -68,6 +87,7 @@ def merge_neighboring_same_role_messages(
         current_message = messages[i].model_copy()
         # Initialize merged content with current message content
         merged_content = current_message.blocks
+        merged_kwargs = current_message.additional_kwargs
 
         # Check if the next message exists and has the same role
         while (
@@ -79,12 +99,13 @@ def merge_neighboring_same_role_messages(
             i += 1
             next_message = messages[i]
             merged_content.extend(next_message.blocks)
+            merged_kwargs.update(next_message.additional_kwargs)
 
         # Create a new ChatMessage or similar object with merged content
         merged_message = ChatMessage(
             role=ROLES_TO_GEMINI[current_message.role],
             blocks=merged_content,
-            additional_kwargs=current_message.additional_kwargs,
+            additional_kwargs=merged_kwargs,
         )
 
         merged_messages.append(merged_message)
@@ -129,9 +150,16 @@ def chat_from_gemini_response(
         **(top_candidate.model_dump()),
         **response_feedback,
     }
+    thought_tokens: Optional[int] = None
     if response.usage_metadata:
         raw["usage_metadata"] = response.usage_metadata.model_dump()
+        if response.usage_metadata.thoughts_token_count:
+            thought_tokens = response.usage_metadata.thoughts_token_count
 
+    if hasattr(response, "cached_content") and response.cached_content:
+        raw["cached_content"] = response.cached_content
+
+    additional_kwargs: Dict[str, Any] = {"thought_signatures": []}
     content_blocks = []
     if (
         len(response.candidates) > 0
@@ -141,7 +169,16 @@ def chat_from_gemini_response(
         parts = response.candidates[0].content.parts
         for part in parts:
             if part.text:
-                content_blocks.append(TextBlock(text=part.text))
+                if part.thought:
+                    content_blocks.append(
+                        ThinkingBlock(
+                            content=part.text,
+                            additional_information=part.model_dump(exclude={"text"}),
+                        )
+                    )
+                else:
+                    content_blocks.append(TextBlock(text=part.text))
+                additional_kwargs["thought_signatures"].append(part.thought_signature)
             if part.inline_data:
                 content_blocks.append(
                     ImageBlock(
@@ -149,13 +186,30 @@ def chat_from_gemini_response(
                         image_mimetype=part.inline_data.mime_type,
                     )
                 )
-
-    additional_kwargs: Dict[str, Any] = {}
-    if response.function_calls:
-        for fn in response.function_calls:
-            if "tool_calls" not in additional_kwargs:
-                additional_kwargs["tool_calls"] = []
-            additional_kwargs["tool_calls"].append(fn)
+                additional_kwargs["thought_signatures"].append(part.thought_signature)
+            if part.function_call:
+                if "tool_calls" not in additional_kwargs:
+                    additional_kwargs["tool_calls"] = []
+                additional_kwargs["tool_calls"].append(
+                    {
+                        "id": part.function_call.id if part.function_call.id else "",
+                        "name": part.function_call.name,
+                        "args": part.function_call.args,
+                        "thought_signature": part.thought_signature,
+                    }
+                )
+    if thought_tokens:
+        thinking_blocks = [
+            i
+            for i, block in enumerate(content_blocks)
+            if isinstance(block, ThinkingBlock)
+        ]
+        if len(thinking_blocks) == 1:
+            content_blocks[thinking_blocks[0]].num_tokens = thought_tokens
+        elif len(thinking_blocks) > 1:
+            content_blocks[thinking_blocks[-1]].additional_information.update(
+                {"total_thinking_tokens": thought_tokens}
+            )
 
     role = ROLES_FROM_GEMINI[top_candidate.content.role]
     return ChatResponse(
@@ -167,50 +221,138 @@ def chat_from_gemini_response(
     )
 
 
-def chat_message_to_gemini(message: ChatMessage) -> types.Content:
+async def create_file_part(
+    file_bytes: bytes, mime_type: str, use_file_api: bool, client: Optional[Client]
+) -> types.PartUnion:
+    """Create a Part or File object for the given file depending on its size."""
+    if (
+        not use_file_api
+        or len(file_bytes)
+        < 20 * 1024 * 1024  # 20MB is the Gemini inline data size limit
+    ):
+        return types.Part.from_bytes(
+            data=file_bytes,
+            mime_type=mime_type,
+        )
+
+    if client is None:
+        raise ValueError("A Google GenAI client must be provided for use with FileAPI.")
+
+    buffer = BytesIO(file_bytes)
+    file = await client.aio.files.upload(
+        file=buffer, config=types.UploadFileConfig(mime_type=mime_type)
+    )
+
+    # Wait for file processing
+    while file.state.name == "PROCESSING":
+        await asyncio.sleep(2)
+        file = client.files.get(name=file.name)
+
+    if file.state.name == "FAILED":
+        raise ValueError("Failed to upload the file with FileAPI")
+
+    return file
+
+
+async def delete_uploaded_files(
+    contents: list[Union[types.Content, types.File]], client: Client
+) -> None:
+    """Delete files uploaded with File API."""
+    await asyncio.gather(
+        *[
+            client.aio.files.delete(name=content.name)
+            for content in contents
+            if isinstance(content, types.File)
+        ]
+    )
+
+
+async def chat_message_to_gemini(
+    message: ChatMessage, use_file_api: bool = False, client: Optional[Client] = None
+) -> Union[types.Content, types.File]:
     """Convert ChatMessages to Gemini-specific history, including ImageDocuments."""
     parts = []
-    for block in message.blocks:
+    part = None
+    for index, block in enumerate(message.blocks):
         if isinstance(block, TextBlock):
             if block.text:
-                parts.append(types.Part.from_text(text=block.text))
+                part = types.Part.from_text(text=block.text)
         elif isinstance(block, ImageBlock):
-            base64_bytes = block.resolve_image(as_base64=False).read()
-            if not block.image_mimetype:
-                # TODO: fail ?
-                block.image_mimetype = "image/png"
+            file_bytes = block.resolve_image(as_base64=False).read()
 
-            parts.append(
-                types.Part.from_bytes(
-                    data=base64_bytes,
-                    mime_type=block.image_mimetype,
-                )
+            mime_type = (
+                block.image_mimetype
+                if block.image_mimetype is not None
+                else "image/jpeg"  # TODO: Fail?
             )
+
+            part = await create_file_part(file_bytes, mime_type, use_file_api, client)
+
+            if isinstance(part, types.File):
+                return part  # Return the file as it is a message content and not a part
+        elif isinstance(block, VideoBlock):
+            file_buffer = block.resolve_video(as_base64=False)
+            file_bytes = file_buffer.read()
+
+            mime_type = (
+                block.video_mimetype
+                if block.video_mimetype is not None
+                else "video/mp4"  # TODO: Fail?
+            )
+
+            part = await create_file_part(file_bytes, mime_type, use_file_api, client)
+
+            if isinstance(part, types.File):
+                return part  # Return the file as it is a message content and not a part
+
+            part.video_metadata = types.VideoMetadata(fps=block.fps)
+
         elif isinstance(block, DocumentBlock):
             file_buffer = block.resolve_document()
             file_bytes = file_buffer.read()
-            mimetype = block.document_mimetype if block.document_mimetype is not None else "application/pdf"
-            parts.append(
-                types.Part.from_bytes(
-                    data=file_bytes,
-                    mime_type=mimetype
-                )
+            mime_type = (
+                block.document_mimetype
+                if block.document_mimetype is not None
+                else "application/pdf"
             )
+            part = await create_file_part(file_bytes, mime_type, use_file_api, client)
+
+            if isinstance(part, types.File):
+                return part  # Return the file as it is a message content and not a part
+        elif isinstance(block, ThinkingBlock):
+            if block.content:
+                part = types.Part.from_text(text=block.content)
+                part.thought = True
+                part.thought_signature = block.additional_information.get(
+                    "thought_signature", None
+                )
         else:
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
+        if part is not None:
+            if message.role == MessageRole.MODEL:
+                thought_signatures = message.additional_kwargs.get(
+                    "thought_signatures", []
+                )
+                part.thought_signature = (
+                    thought_signatures[index]
+                    if index < len(thought_signatures)
+                    else None
+                )
+            parts.append(part)
 
     for tool_call in message.additional_kwargs.get("tool_calls", []):
         if isinstance(tool_call, dict):
-            parts.append(
-                types.Part.from_function_call(
-                    name=tool_call.get("name"), args=tool_call.get("args")
-                )
+            part = types.Part.from_function_call(
+                name=tool_call.get("name"), args=tool_call.get("args")
             )
+            part.thought_signature = tool_call.get("thought_signature")
         else:
-            parts.append(
-                types.Part.from_function_call(name=tool_call.name, args=tool_call.args)
+            part = types.Part.from_function_call(
+                name=tool_call.name, args=tool_call.args
             )
+            part.thought_signature = tool_call.thought_signature
+        parts.append(part)
 
     # the tool call id is the name of the tool
     # the tool call response is the content of the message, overriding the existing content
@@ -261,14 +403,20 @@ class ChatParams(typing.TypedDict):
     config: types.GenerateContentConfig
 
 
-def prepare_chat_params(
-    model: str, messages: Sequence[ChatMessage], **kwargs: Any
-) -> tuple[types.Content, ChatParams]:
+async def prepare_chat_params(
+    model: str,
+    messages: Sequence[ChatMessage],
+    use_file_api: bool = False,
+    client: Optional[Client] = None,
+    **kwargs: Any,
+) -> tuple[Union[types.Content, types.File], ChatParams]:
     """
     Prepare common parameters for chat creation.
 
     Args:
         messages: Sequence of chat messages
+        use_file_api: Whether to use File API or not for large files.
+        client: Google Genai client used for uploading large files.
         **kwargs: Additional keyword arguments
 
     Returns:
@@ -277,8 +425,21 @@ def prepare_chat_params(
         - chat_kwargs: processed keyword arguments for chat creation
 
     """
+    # Extract system message if present
+    system_message: str | None = None
+    if messages and messages[0].role == MessageRole.SYSTEM:
+        sys_msg = messages.pop(0)
+        system_message = sys_msg.content
+    # Now messages contains the rest of the chat history
+
+    # Merge messages with the same role
     merged_messages = merge_neighboring_same_role_messages(messages)
-    initial_history = list(map(chat_message_to_gemini, merged_messages))
+    initial_history = await asyncio.gather(
+        *[
+            chat_message_to_gemini(message, use_file_api, client)
+            for message in merged_messages
+        ]
+    )
 
     # merge tool messages into a single tool message
     # while maintaining the tool names
@@ -325,6 +486,10 @@ def prepare_chat_params(
     if not isinstance(config, dict):
         config = config.model_dump()
 
+    # Add system message as system_instruction if present
+    if system_message:
+        config["system_instruction"] = system_message
+
     chat_kwargs: ChatParams = {"model": model, "history": history}
 
     if tools:
@@ -343,6 +508,7 @@ def prepare_chat_params(
 
     return next_msg, chat_kwargs
 
+
 def handle_streaming_flexible_model(
     current_json: str,
     candidate: types.Candidate,
@@ -357,8 +523,48 @@ def handle_streaming_flexible_model(
             return output_cls.model_validate_json(current_json), current_json
         except ValidationError:
             try:
-                return flexible_model.model_validate_json(_repair_incomplete_json(current_json)), current_json
+                return flexible_model.model_validate_json(
+                    _repair_incomplete_json(current_json)
+                ), current_json
             except ValidationError:
                 return None, current_json
 
     return None, current_json
+
+
+def _should_retry(exception: BaseException):
+    if isinstance(exception, errors.ClientError):
+        if exception.status in (429, 408):
+            return True
+    return False
+
+
+def create_retry_decorator(
+    max_retries: int,
+    random_exponential: bool = False,
+    stop_after_delay_seconds: Optional[float] = None,
+    min_seconds: float = 4,
+    max_seconds: float = 60,
+) -> typing.Callable[[Any], Any]:
+    wait_strategy = (
+        wait_random_exponential(min=min_seconds, max=max_seconds)
+        if random_exponential
+        else wait_exponential(multiplier=1, min=min_seconds, max=max_seconds)
+    )
+
+    stop_strategy: stop_base = stop_after_attempt(max_retries)
+    if stop_after_delay_seconds is not None:
+        stop_strategy = stop_strategy | stop_after_delay(stop_after_delay_seconds)
+
+    return retry(
+        reraise=True,
+        stop=stop_strategy,
+        wait=wait_strategy,
+        retry=(
+            retry_if_exception_type(
+                (errors.ServerError, httpx.ConnectError, httpx.ConnectTimeout)
+            )
+            | retry_if_exception(_should_retry)
+        ),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+    )

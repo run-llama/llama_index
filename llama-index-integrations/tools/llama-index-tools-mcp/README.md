@@ -23,6 +23,8 @@ mcp_tool_spec = McpToolSpec(
     client=mcp_client,
     # Optional: Filter the tools by name
     # allowed_tools=["tool1", "tool2"],
+    # Optional: Include resources in the tool list
+    # include_resources=True,
 )
 
 # sync
@@ -112,6 +114,116 @@ tools = get_tools_from_mcp_url("http://127.0.0.1:8000/sse")
 
 # async
 tools = await get_tools_from_mcp_url("http://127.0.0.1:8000/sse")
+```
+
+## MCP Client Usage
+
+The `BasicMCPClient` provides comprehensive access to MCP server capabilities beyond just tools.
+
+### Basic Client Operations
+
+```python
+from llama_index.tools.mcp import BasicMCPClient
+
+# Connect to an MCP server using different transports
+http_client = BasicMCPClient("https://example.com/mcp")  # Streamable HTTP
+sse_client = BasicMCPClient("https://example.com/sse")  # Server-Sent Events
+local_client = BasicMCPClient("python", args=["server.py"])  # stdio
+
+# List available tools
+tools = await http_client.list_tools()
+
+# Call a tool
+result = await http_client.call_tool("calculate", {"x": 5, "y": 10})
+
+# List available resources
+resources = await http_client.list_resources()
+
+# Read a resource
+content, mime_type = await http_client.read_resource("config://app")
+
+# List available prompts
+prompts = await http_client.list_prompts()
+
+# Get a prompt
+prompt_result = await http_client.get_prompt("greet", {"name": "World"})
+```
+
+### OAuth Authentication
+
+The client supports OAuth 2.0 authentication for connecting to protected MCP servers:
+
+```python
+from llama_index.tools.mcp import BasicMCPClient
+
+# Simple authentication with in-memory token storage
+client = BasicMCPClient.with_oauth(
+    "https://api.example.com/mcp",
+    client_name="My App",
+    redirect_uris=["http://localhost:3000/callback"],
+    # Function to handle the redirect URL (e.g., open a browser)
+    redirect_handler=lambda url: print(f"Please visit: {url}"),
+    # Function to get the authorization code from the user
+    callback_handler=lambda: (input("Enter the code: "), None),
+)
+
+# Use the authenticated client
+tools = await client.list_tools()
+```
+
+For production use, you can implement a custom token storage:
+
+```python
+from llama_index.tools.mcp import BasicMCPClient
+from mcp.client.auth import TokenStorage
+from mcp.shared.auth import OAuthToken, OAuthClientInformationFull
+import json
+import os
+
+
+class FileTokenStorage(TokenStorage):
+    """Store OAuth tokens in a file."""
+
+    def __init__(self, file_path: str):
+        self.file_path = file_path
+        self._client_info: Optional[OAuthClientInformationFull] = None
+
+    async def get_tokens(self):
+        if not os.path.exists(self.file_path):
+            return None
+        with open(self.file_path, "r") as f:
+            data = json.load(f)
+            return OAuthToken(**data.get("tokens", {}))
+
+    async def set_tokens(self, tokens):
+        data = {}
+        if os.path.exists(self.file_path):
+            with open(self.file_path, "r") as f:
+                data = json.load(f)
+        data["tokens"] = tokens.__dict__
+        with open(self.file_path, "w") as f:
+            json.dump(data, f)
+
+    async def get_client_info(self) -> Optional[OAuthClientInformationFull]:
+        """Get the stored client information."""
+        return self._client_info
+
+    async def set_client_info(
+        self, client_info: OAuthClientInformationFull
+    ) -> None:
+        """Store client information."""
+        self._client_info = client_info
+
+
+# Use custom storage
+client = BasicMCPClient.with_oauth(
+    "https://api.example.com/mcp",
+    client_name="My App",
+    redirect_uris=["http://localhost:3000/callback"],
+    redirect_handler=lambda url: print(f"Please visit: {url}"),
+    callback_handler=lambda: (input("Enter the code: "), None),
+    token_storage=FileTokenStorage("tokens.json"),
+)
 ```
 
 ## Notebook Example

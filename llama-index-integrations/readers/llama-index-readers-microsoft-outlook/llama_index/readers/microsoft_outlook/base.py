@@ -95,7 +95,7 @@ class OutlookLocalCalendarReader(BaseReader):
                 eventstring = ""
                 for attribute in attributes:
                     if hasattr(event, attribute):
-                        eventstring += f"{attribute}: {getattr(event,attribute)}, "
+                        eventstring += f"{attribute}: {getattr(event, attribute)}, "
                 results.append(Document(text=eventstring))
             if numberReturned >= number_of_results:
                 break

@@ -1,4 +1,5 @@
 """Simple reader that reads tweets of a twitter handle."""
+
 from typing import Any, List, Optional
 
 from llama_index.core.readers.base import BasePydanticReader
@@ -45,7 +46,7 @@ class TwitterTweetReader(BasePydanticReader):
         self,
         twitterhandles: List[str],
         num_tweets: Optional[int] = None,
-        **load_kwargs: Any
+        **load_kwargs: Any,
     ) -> List[Document]:
         """
         Load tweets of twitter handles.

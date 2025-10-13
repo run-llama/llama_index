@@ -5,6 +5,7 @@ from llama_index.core.schema import (
     ImageDocument,
     ImageNode,
     IndexNode,
+    Node,
     NodeRelationship,
     RelatedNodeInfo,
     TextNode,
@@ -31,12 +32,16 @@ def json_to_doc(doc_dict: dict) -> BaseNode:
                 doc = ImageDocument.from_dict(data_dict)
             else:
                 doc = Document.from_dict(data_dict)
+        elif doc_type == Node.get_type():
+            doc = Node.from_dict(data_dict)
         elif doc_type == TextNode.get_type():
             doc = TextNode.from_dict(data_dict)
         elif doc_type == ImageNode.get_type():
             doc = ImageNode.from_dict(data_dict)
         elif doc_type == IndexNode.get_type():
             doc = IndexNode.from_dict(data_dict)
+        elif doc_type == Node.get_type():
+            doc = Node.from_dict(data_dict)
         else:
             raise ValueError(f"Unknown doc type: {doc_type}")
 

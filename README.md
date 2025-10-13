@@ -1,6 +1,7 @@
 # 🗂️ LlamaIndex 🦙
 
 [![PyPI - Downloads](https://img.shields.io/pypi/dm/llama-index)](https://pypi.org/project/llama-index/)
+[![Build](https://github.com/run-llama/llama_index/actions/workflows/build_package.yml/badge.svg)](https://github.com/run-llama/llama_index/actions/workflows/build_package.yml)
 [![GitHub contributors](https://img.shields.io/github/contributors/jerryjliu/llama_index)](https://github.com/jerryjliu/llama_index/graphs/contributors)
 [![Discord](https://img.shields.io/discord/1059199217496772688)](https://discord.gg/dGcwcsnxhU)
 [![Twitter](https://img.shields.io/twitter/follow/llama_index)](https://x.com/llama_index)
@@ -185,6 +186,25 @@ file in each of the package's folders.
 cd <desired-package-folder>
 pip install poetry
 poetry install --with dev
+```
+
+## A note on Verification of Build Assets
+
+By default, `llama-index-core` includes a `_static` folder that contains the nltk and tiktoken cache that is included with the package installation. This ensures that you can easily run `llama-index` in environments with restrictive disk access permissions at runtime.
+
+To verify that these files are safe and valid, we use the github `attest-build-provenance` action. This action will verify that the files in the `_static` folder are the same as the files in the `llama-index-core/llama_index/core/_static` folder.
+
+To verify this, you can run the following script (pointing to your installed package):
+
+```bash
+#!/bin/bash
+STATIC_DIR="venv/lib/python3.13/site-packages/llama_index/core/_static"
+REPO="run-llama/llama_index"
+
+find "$STATIC_DIR" -type f | while read -r file; do
+    echo "Verifying: $file"
+    gh attestation verify "$file" -R "$REPO" || echo "Failed to verify: $file"
+done
 ```
 
 ## 📖 Citation

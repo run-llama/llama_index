@@ -1,13 +1,14 @@
 from typing import Any, Dict, List, Optional, Tuple
 from copy import deepcopy
 
-from presidio_anonymizer.operators import Operator, OperatorType
+from llama_index.core.bridge.pydantic import Field
 from llama_index.core.postprocessor.types import BaseNodePostprocessor
 from llama_index.core.schema import MetadataMode, NodeWithScore, QueryBundle
 
 from presidio_analyzer import AnalyzerEngine
 from presidio_anonymizer import AnonymizerEngine
 from presidio_anonymizer.entities import OperatorConfig
+from presidio_anonymizer.operators import Operator, OperatorType
 
 
 class EntityTypeCountAnonymizer(Operator):
@@ -61,8 +62,9 @@ class PresidioPIINodePostprocessor(BaseNodePostprocessor):
     """
 
     pii_node_info_key: str = "__pii_node_info__"
-    entity_mapping: Dict[str, Dict] = {}
-    mapping: Dict[str, str] = {}
+    entity_mapping: Dict[str, Dict] = Field(default_factory=dict)
+    mapping: Dict[str, str] = Field(default_factory=dict)
+    presidio_entities: List = Field(default_factory=list)
 
     @classmethod
     def class_name(cls) -> str:
@@ -70,7 +72,9 @@ class PresidioPIINodePostprocessor(BaseNodePostprocessor):
 
     def mask_pii(self, text: str) -> Tuple[str, Dict]:
         analyzer = AnalyzerEngine()
-        results = analyzer.analyze(text=text, language="en")
+        results = analyzer.analyze(
+            text=text, language="en", entities=self.presidio_entities
+        )
         engine = AnonymizerEngine()
         engine.add_anonymizer(EntityTypeCountAnonymizer)
 

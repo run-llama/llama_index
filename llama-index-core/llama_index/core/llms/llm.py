@@ -9,13 +9,13 @@ from typing import (
     Protocol,
     Sequence,
     Union,
-    get_args,
     runtime_checkable,
     TYPE_CHECKING,
     Type,
 )
 from typing_extensions import Annotated
 
+from llama_index.core.async_utils import asyncio_run
 from llama_index.core.base.llms.types import (
     ChatMessage,
     ChatResponseAsyncGen,
@@ -24,29 +24,18 @@ from llama_index.core.base.llms.types import (
     CompletionResponseGen,
     MessageRole,
 )
-from llama_index.core.base.query_pipeline.query import (
-    InputKeys,
-    OutputKeys,
-    QueryComponent,
-    StringableInput,
-    validate_and_convert_stringable,
-)
 from llama_index.core.bridge.pydantic import (
     BaseModel,
     WithJsonSchema,
     Field,
     field_validator,
     model_validator,
-    ConfigDict,
     ValidationError,
 )
 from llama_index.core.callbacks import CBEventType, EventPayload
 from llama_index.core.base.llms.base import BaseLLM
 from llama_index.core.base.llms.generic_utils import (
     messages_to_prompt as generic_messages_to_prompt,
-)
-from llama_index.core.base.llms.generic_utils import (
-    prompt_to_messages,
 )
 from llama_index.core.prompts import BasePromptTemplate, PromptTemplate
 from llama_index.core.types import (
@@ -312,13 +301,6 @@ class LLM(BaseLLM):
             ]
         return messages
 
-    def _as_query_component(self, **kwargs: Any) -> QueryComponent:
-        """Return query component."""
-        if self.metadata.is_chat_model:
-            return LLMChatComponent(llm=self, **kwargs)
-        else:
-            return LLMCompleteComponent(llm=self, **kwargs)
-
     # -- Structured outputs --
 
     @dispatcher.span
@@ -442,6 +424,25 @@ class LLM(BaseLLM):
         dispatcher.event(LLMStructuredPredictEndEvent(output=result))
         return result
 
+    def _structured_stream_call(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> Generator[
+        Union[Model, List[Model], "FlexibleModel", List["FlexibleModel"]], None, None
+    ]:
+        from llama_index.core.program.utils import get_program_for_llm
+
+        program = get_program_for_llm(
+            output_cls,
+            prompt,
+            self,
+            pydantic_program_mode=self.pydantic_program_mode,
+        )
+        return program.stream_call(llm_kwargs=llm_kwargs, **prompt_args)
+
     @dispatcher.span
     def stream_structured_predict(
         self,
@@ -484,13 +485,33 @@ class LLM(BaseLLM):
             ```
 
         """
-        from llama_index.core.program.utils import get_program_for_llm
-
         dispatcher.event(
             LLMStructuredPredictStartEvent(
                 output_cls=output_cls, template=prompt, template_args=prompt_args
             )
         )
+
+        result = self._structured_stream_call(
+            output_cls, prompt, llm_kwargs, **prompt_args
+        )
+        for r in result:
+            dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
+            assert not isinstance(r, list)
+            yield r
+
+        dispatcher.event(LLMStructuredPredictEndEvent(output=r))
+
+    async def _structured_astream_call(
+        self,
+        output_cls: Type[Model],
+        prompt: PromptTemplate,
+        llm_kwargs: Optional[Dict[str, Any]] = None,
+        **prompt_args: Any,
+    ) -> AsyncGenerator[
+        Union[Model, List[Model], "FlexibleModel", List["FlexibleModel"]], None
+    ]:
+        from llama_index.core.program.utils import get_program_for_llm
+
         program = get_program_for_llm(
             output_cls,
             prompt,
@@ -498,13 +519,7 @@ class LLM(BaseLLM):
             pydantic_program_mode=self.pydantic_program_mode,
         )
 
-        result = program.stream_call(llm_kwargs=llm_kwargs, **prompt_args)
-        for r in result:
-            dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
-            assert not isinstance(r, list)
-            yield r
-
-        dispatcher.event(LLMStructuredPredictEndEvent(output=r))
+        return await program.astream_call(llm_kwargs=llm_kwargs, **prompt_args)
 
     @dispatcher.span
     async def astream_structured_predict(
@@ -550,23 +565,15 @@ class LLM(BaseLLM):
         """
 
         async def gen() -> AsyncGenerator[Union[Model, "FlexibleModel"], None]:
-            from llama_index.core.program.utils import (
-                get_program_for_llm,
-            )
-
             dispatcher.event(
                 LLMStructuredPredictStartEvent(
                     output_cls=output_cls, template=prompt, template_args=prompt_args
                 )
             )
-            program = get_program_for_llm(
-                output_cls,
-                prompt,
-                self,
-                pydantic_program_mode=self.pydantic_program_mode,
-            )
 
-            result = await program.astream_call(llm_kwargs=llm_kwargs, **prompt_args)
+            result = await self._structured_astream_call(
+                output_cls, prompt, llm_kwargs, **prompt_args
+            )
             async for r in result:
                 dispatcher.event(LLMStructuredPredictInProgressEvent(output=r))
                 assert not isinstance(r, list)
@@ -646,7 +653,7 @@ class LLM(BaseLLM):
             from llama_index.core.prompts import PromptTemplate
 
             prompt = PromptTemplate("Please write a random name related to {topic}.")
-            gen = llm.stream_predict(prompt, topic="cats")
+            gen = llm.stream(prompt, topic="cats")
             for token in gen:
                 print(token, end="", flush=True)
             ```
@@ -740,7 +747,7 @@ class LLM(BaseLLM):
             from llama_index.core.prompts import PromptTemplate
 
             prompt = PromptTemplate("Please write a random name related to {topic}.")
-            gen = await llm.astream_predict(prompt, topic="cats")
+            gen = await llm.astream(prompt, topic="cats")
             async for token in gen:
                 print(token, end="", flush=True)
             ```
@@ -783,51 +790,58 @@ class LLM(BaseLLM):
         but function calling LLMs will implement this differently.
 
         """
-        from llama_index.core.agent.react import ReActAgentWorker
-        from llama_index.core.agent.types import Task
+        from llama_index.core.agent.workflow import ReActAgent
         from llama_index.core.chat_engine.types import AgentChatResponse
-        from llama_index.core.memory import ChatMemoryBuffer
+        from llama_index.core.memory import Memory
+        from llama_index.core.tools.calling import call_tool_with_selection
+        from llama_index.core.workflow import Context
+        from workflows.context.state_store import DictState
 
-        worker = ReActAgentWorker(
-            tools,
+        agent = ReActAgent(
+            tools=tools,
             llm=self,
-            callback_manager=self.callback_manager,
             verbose=verbose,
-            max_iterations=kwargs.get("max_iterations", 10),
-            react_chat_formatter=kwargs.get("react_chat_formatter"),
+            formatter=kwargs.get("react_chat_formatter"),
             output_parser=kwargs.get("output_parser"),
             tool_retriever=kwargs.get("tool_retriever"),
-            handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn"),
         )
+
+        memory = kwargs.get("memory", Memory.from_defaults())
 
         if isinstance(user_msg, ChatMessage) and isinstance(user_msg.content, str):
-            user_msg = user_msg.content
-        elif isinstance(user_msg, str):
             pass
-        elif (
-            not user_msg
-            and chat_history is not None
-            and len(chat_history) > 0
-            and isinstance(chat_history[-1].content, str)
-        ):
-            user_msg = chat_history[-1].content
-        else:
-            raise ValueError("No user message provided or found in chat history.")
+        elif isinstance(user_msg, str):
+            user_msg = ChatMessage(content=user_msg, role=MessageRole.USER)
 
-        task = Task(
-            input=user_msg,
-            memory=ChatMemoryBuffer.from_defaults(chat_history=chat_history),
-            extra_state={},
-            callback_manager=self.callback_manager,
-        )
-        step = worker.initialize_step(task)
+        llm_input = []
+        if chat_history:
+            llm_input.extend(chat_history)
+        if user_msg:
+            llm_input.append(user_msg)
+
+        ctx: Context[DictState] = Context(agent)
 
         try:
-            output = worker.run_step(step, task).output
-
-            # react agent worker inserts a "Observation: " prefix to the response
-            if output.response and output.response.startswith("Observation: "):
-                output.response = output.response.replace("Observation: ", "")
+            resp = asyncio_run(
+                agent.take_step(
+                    ctx=ctx, llm_input=llm_input, tools=tools or [], memory=memory
+                )
+            )
+            tool_outputs = []
+            for tool_call in resp.tool_calls:
+                tool_output = call_tool_with_selection(
+                    tool_call=tool_call,
+                    tools=tools or [],
+                    verbose=verbose,
+                )
+                tool_outputs.append(tool_output)
+            output_text = "\n\n".join(
+                [tool_output.content for tool_output in tool_outputs]
+            )
+            return AgentChatResponse(
+                response=output_text,
+                sources=tool_outputs,
+            )
         except Exception as e:
             output = AgentChatResponse(
                 response="An error occurred while running the tool: " + str(e),
@@ -846,51 +860,57 @@ class LLM(BaseLLM):
         **kwargs: Any,
     ) -> "AgentChatResponse":
         """Predict and call the tool."""
-        from llama_index.core.agent.react import ReActAgentWorker
-        from llama_index.core.agent.types import Task
+        from llama_index.core.agent.workflow import ReActAgent
         from llama_index.core.chat_engine.types import AgentChatResponse
-        from llama_index.core.memory import ChatMemoryBuffer
+        from llama_index.core.memory import Memory
+        from llama_index.core.tools.calling import acall_tool_with_selection
+        from llama_index.core.workflow import Context
+        from workflows.context.state_store import DictState
 
-        worker = ReActAgentWorker(
-            tools,
+        agent = ReActAgent(
+            tools=tools,
             llm=self,
-            callback_manager=self.callback_manager,
             verbose=verbose,
-            max_iterations=kwargs.get("max_iterations", 10),
-            react_chat_formatter=kwargs.get("react_chat_formatter"),
+            formatter=kwargs.get("react_chat_formatter"),
             output_parser=kwargs.get("output_parser"),
             tool_retriever=kwargs.get("tool_retriever"),
-            handle_reasoning_failure_fn=kwargs.get("handle_reasoning_failure_fn"),
         )
+
+        memory = kwargs.get("memory", Memory.from_defaults())
 
         if isinstance(user_msg, ChatMessage) and isinstance(user_msg.content, str):
-            user_msg = user_msg.content
-        elif isinstance(user_msg, str):
             pass
-        elif (
-            not user_msg
-            and chat_history is not None
-            and len(chat_history) > 0
-            and isinstance(chat_history[-1].content, str)
-        ):
-            user_msg = chat_history[-1].content
-        else:
-            raise ValueError("No user message provided or found in chat history.")
+        elif isinstance(user_msg, str):
+            user_msg = ChatMessage(content=user_msg, role=MessageRole.USER)
 
-        task = Task(
-            input=user_msg,
-            memory=ChatMemoryBuffer.from_defaults(chat_history=chat_history),
-            extra_state={},
-            callback_manager=self.callback_manager,
-        )
-        step = worker.initialize_step(task)
+        llm_input = []
+        if chat_history:
+            llm_input.extend(chat_history)
+        if user_msg:
+            llm_input.append(user_msg)
+
+        ctx: Context[DictState] = Context(agent)
 
         try:
-            output = (await worker.arun_step(step, task)).output
+            resp = await agent.take_step(
+                ctx=ctx, llm_input=llm_input, tools=tools or [], memory=memory
+            )
+            tool_outputs = []
+            for tool_call in resp.tool_calls:
+                tool_output = await acall_tool_with_selection(
+                    tool_call=tool_call,
+                    tools=tools or [],
+                    verbose=verbose,
+                )
+                tool_outputs.append(tool_output)
 
-            # react agent worker inserts a "Observation: " prefix to the response
-            if output.response and output.response.startswith("Observation: "):
-                output.response = output.response.replace("Observation: ", "")
+            output_text = "\n\n".join(
+                [tool_output.content for tool_output in tool_outputs]
+            )
+            return AgentChatResponse(
+                response=output_text,
+                sources=tool_outputs,
+            )
         except Exception as e:
             output = AgentChatResponse(
                 response="An error occurred while running the tool: " + str(e),
@@ -908,126 +928,3 @@ class LLM(BaseLLM):
         from llama_index.core.llms.structured_llm import StructuredLLM
 
         return StructuredLLM(llm=self, output_cls=output_cls, **kwargs)
-
-
-class BaseLLMComponent(QueryComponent):
-    """Base LLM component."""
-
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-    llm: LLM = Field(..., description="LLM")
-    streaming: bool = Field(default=False, description="Streaming mode")
-
-    def set_callback_manager(self, callback_manager: Any) -> None:
-        """Set callback manager."""
-        self.llm.callback_manager = callback_manager
-
-
-class LLMCompleteComponent(BaseLLMComponent):
-    """LLM completion component."""
-
-    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate component inputs during run_component."""
-        if "prompt" not in input:
-            raise ValueError("Prompt must be in input dict.")
-
-        # do special check to see if prompt is a list of chat messages
-        if isinstance(input["prompt"], get_args(List[ChatMessage])):
-            if self.llm.messages_to_prompt:
-                input["prompt"] = self.llm.messages_to_prompt(input["prompt"])
-            input["prompt"] = validate_and_convert_stringable(input["prompt"])
-        else:
-            input["prompt"] = validate_and_convert_stringable(input["prompt"])
-            if self.llm.completion_to_prompt:
-                input["prompt"] = self.llm.completion_to_prompt(input["prompt"])
-
-        return input
-
-    def _run_component(self, **kwargs: Any) -> Any:
-        """Run component."""
-        # TODO: support only complete for now
-        # non-trivial to figure how to support chat/complete/etc.
-        prompt = kwargs["prompt"]
-        # ignore all other kwargs for now
-
-        response: Any
-        if self.streaming:
-            response = self.llm.stream_complete(prompt, formatted=True)
-        else:
-            response = self.llm.complete(prompt, formatted=True)
-        return {"output": response}
-
-    async def _arun_component(self, **kwargs: Any) -> Any:
-        """Run component."""
-        # TODO: support only complete for now
-        # non-trivial to figure how to support chat/complete/etc.
-        prompt = kwargs["prompt"]
-        # ignore all other kwargs for now
-        response = await self.llm.acomplete(prompt, formatted=True)
-        return {"output": response}
-
-    @property
-    def input_keys(self) -> InputKeys:
-        """Input keys."""
-        # TODO: support only complete for now
-        return InputKeys.from_keys({"prompt"})
-
-    @property
-    def output_keys(self) -> OutputKeys:
-        """Output keys."""
-        return OutputKeys.from_keys({"output"})
-
-
-class LLMChatComponent(BaseLLMComponent):
-    """LLM chat component."""
-
-    def _validate_component_inputs(self, input: Dict[str, Any]) -> Dict[str, Any]:
-        """Validate component inputs during run_component."""
-        if "messages" not in input:
-            raise ValueError("Messages must be in input dict.")
-
-        # if `messages` is a string, convert to a list of chat message
-        if isinstance(input["messages"], get_args(StringableInput)):
-            input["messages"] = validate_and_convert_stringable(input["messages"])
-            input["messages"] = prompt_to_messages(str(input["messages"]))
-
-        for message in input["messages"]:
-            if not isinstance(message, ChatMessage):
-                raise ValueError("Messages must be a list of ChatMessage")
-        return input
-
-    def _run_component(self, **kwargs: Any) -> Any:
-        """Run component."""
-        # TODO: support only complete for now
-        # non-trivial to figure how to support chat/complete/etc.
-        messages = kwargs["messages"]
-
-        response: Any
-        if self.streaming:
-            response = self.llm.stream_chat(messages)
-        else:
-            response = self.llm.chat(messages)
-        return {"output": response}
-
-    async def _arun_component(self, **kwargs: Any) -> Any:
-        """Run component."""
-        # TODO: support only complete for now
-        # non-trivial to figure how to support chat/complete/etc.
-        messages = kwargs["messages"]
-
-        response: Any
-        if self.streaming:
-            response = await self.llm.astream_chat(messages)
-        else:
-            response = await self.llm.achat(messages)
-        return {"output": response}
-
-    @property
-    def input_keys(self) -> InputKeys:
-        """Input keys."""
-        # TODO: support only complete for now
-        return InputKeys.from_keys({"messages"})
-
-    @property
-    def output_keys(self) -> OutputKeys:
-        """Output keys."""
-        return OutputKeys.from_keys({"output"})

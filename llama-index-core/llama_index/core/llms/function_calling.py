@@ -1,6 +1,8 @@
 import asyncio
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union
+import functools
+import inspect
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Type, Union
 
 from llama_index.core.base.llms.types import (
     ChatMessage,
@@ -9,6 +11,10 @@ from llama_index.core.base.llms.types import (
     ChatResponseGen,
 )
 from llama_index.core.llms.llm import LLM, ToolSelection
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from llama_index.core.chat_engine.types import AgentChatResponse
@@ -33,15 +39,17 @@ class FunctionCallingLLM(LLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,  # if required, LLM should only call tools, and not return a response
         **kwargs: Any,
     ) -> ChatResponse:
         """Chat with function calling."""
-        chat_kwargs = self._prepare_chat_with_tools(
+        chat_kwargs = self._prepare_chat_with_tools_compat(
             tools,
             user_msg=user_msg,
             chat_history=chat_history,
             verbose=verbose,
             allow_parallel_tool_calls=allow_parallel_tool_calls,
+            tool_required=tool_required,
             **kwargs,
         )
         response = self.chat(**chat_kwargs)
@@ -59,15 +67,17 @@ class FunctionCallingLLM(LLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> ChatResponse:
         """Async chat with function calling."""
-        chat_kwargs = self._prepare_chat_with_tools(
+        chat_kwargs = self._prepare_chat_with_tools_compat(
             tools,
             user_msg=user_msg,
             chat_history=chat_history,
             verbose=verbose,
             allow_parallel_tool_calls=allow_parallel_tool_calls,
+            tool_required=tool_required,
             **kwargs,
         )
         response = await self.achat(**chat_kwargs)
@@ -85,15 +95,17 @@ class FunctionCallingLLM(LLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> ChatResponseGen:
         """Stream chat with function calling."""
-        chat_kwargs = self._prepare_chat_with_tools(
+        chat_kwargs = self._prepare_chat_with_tools_compat(
             tools,
             user_msg=user_msg,
             chat_history=chat_history,
             verbose=verbose,
             allow_parallel_tool_calls=allow_parallel_tool_calls,
+            tool_required=tool_required,
             **kwargs,
         )
         # TODO: no validation for streaming outputs
@@ -106,19 +118,52 @@ class FunctionCallingLLM(LLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,
         **kwargs: Any,
     ) -> ChatResponseAsyncGen:
         """Async stream chat with function calling."""
-        chat_kwargs = self._prepare_chat_with_tools(
+        chat_kwargs = self._prepare_chat_with_tools_compat(
             tools,
             user_msg=user_msg,
             chat_history=chat_history,
             verbose=verbose,
             allow_parallel_tool_calls=allow_parallel_tool_calls,
+            tool_required=tool_required,
             **kwargs,
         )
         # TODO: no validation for streaming outputs
         return await self.astream_chat(**chat_kwargs)
+
+    def _prepare_chat_with_tools_compat(
+        self,
+        tools: Sequence["BaseTool"],
+        user_msg: Optional[Union[str, ChatMessage]] = None,
+        chat_history: Optional[List[ChatMessage]] = None,
+        verbose: bool = False,
+        allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,  # if required, LLM should only call tools, and not return a response
+        **kwargs: Any,
+    ) -> Dict[str, Any]:
+        """Prepare the arguments needed to let the LLM chat with tools."""
+        # for compatibility with older llm integrations code, check whether the tool_required argument is supported yet
+        if not _supports_tool_required(self.__class__, tool_required):
+            return self._prepare_chat_with_tools(
+                tools=tools,
+                user_msg=user_msg,
+                chat_history=chat_history,
+                verbose=verbose,
+                allow_parallel_tool_calls=allow_parallel_tool_calls,
+                **kwargs,
+            )
+        return self._prepare_chat_with_tools(
+            tools=tools,
+            user_msg=user_msg,
+            chat_history=chat_history,
+            verbose=verbose,
+            allow_parallel_tool_calls=allow_parallel_tool_calls,
+            tool_required=tool_required,
+            **kwargs,
+        )
 
     @abstractmethod
     def _prepare_chat_with_tools(
@@ -128,6 +173,7 @@ class FunctionCallingLLM(LLM):
         chat_history: Optional[List[ChatMessage]] = None,
         verbose: bool = False,
         allow_parallel_tool_calls: bool = False,
+        tool_required: bool = False,  # if required, LLM should only call tools, and not return a response
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Prepare the arguments needed to let the LLM chat with tools."""
@@ -286,3 +332,15 @@ class FunctionCallingLLM(LLM):
             return AgentChatResponse(
                 response=tool_outputs[0].content, sources=tool_outputs
             )
+
+
+@functools.lru_cache(maxsize=1000)
+def _supports_tool_required(cls: Type[FunctionCallingLLM], tool_required: bool) -> bool:
+    supported = (
+        "tool_required" in inspect.signature(cls._prepare_chat_with_tools).parameters
+    )
+    if not supported and tool_required:
+        logger.warning(
+            f"tool_required is not supported by this version of {cls.__name__}. Upgrade it to the latest version."
+        )
+    return supported

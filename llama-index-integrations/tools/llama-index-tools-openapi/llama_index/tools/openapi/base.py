@@ -1,4 +1,5 @@
 """OpenAPI Tool."""
+
 import json
 from collections import OrderedDict
 from typing import List, Optional, Callable

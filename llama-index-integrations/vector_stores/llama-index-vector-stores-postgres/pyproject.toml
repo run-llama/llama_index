@@ -12,7 +12,7 @@ dev = [
     "pytest==7.2.1",
     "pytest-asyncio==0.21.0",
     "pytest-mock==3.11.1",
-    "ruff==0.0.292",
+    "ruff==0.11.11",
     "types-Deprecated>=0.1.0",
     "types-PyYAML>=6.0.12.12,<7",
     "types-protobuf>=4.24.0.4,<5",
@@ -27,7 +27,7 @@ dev = [
 
 [project]
 name = "llama-index-vector-stores-postgres"
-version = "0.5.3"
+version = "0.7.0"
 description = "llama-index vector_stores postgres integration"
 authors = [{name = "Your Name", email = "you@example.com"}]
 requires-python = ">=3.9,<4.0"
@@ -37,7 +37,7 @@ dependencies = [
     "pgvector>=0.3.6,<1.0.0",
     "psycopg2-binary>=2.9.9,<3.0.0",
     "asyncpg>=0.29.0,<1.0.0",
-    "llama-index-core>=0.12.6,<0.13",
+    "llama-index-core>=0.13.0,<0.15",
     "sqlalchemy[asyncio]>=1.4.49,<2.1",
 ]
 

@@ -1,4 +1,5 @@
 """Init file."""
+
 from llama_index.readers.web.agentql_web.base import (
     AgentQLWebReader,
 )
@@ -18,6 +19,7 @@ from llama_index.readers.web.main_content_extractor.base import (
     MainContentExtractorReader,
 )
 from llama_index.readers.web.news.base import NewsArticleReader
+from llama_index.readers.web.olostep_web.base import OlostepWebReader
 from llama_index.readers.web.oxylabs_web.base import OxylabsWebReader
 from llama_index.readers.web.readability_web.base import (
     ReadabilityWebPageReader,
@@ -52,6 +54,7 @@ from llama_index.readers.web.whole_site.base import (
 from llama_index.readers.web.zyte_web.base import (
     ZyteWebReader,
 )
+from llama_index.readers.web.zenrows_web.base import ZenRowsWebReader
 
 
 __all__ = [
@@ -64,6 +67,7 @@ __all__ = [
     "KnowledgeBaseWebReader",
     "MainContentExtractorReader",
     "NewsArticleReader",
+    "OlostepWebReader",
     "OxylabsWebReader",
     "ReadabilityWebPageReader",
     "RssReader",
@@ -75,5 +79,6 @@ __all__ = [
     "TrafilaturaWebReader",
     "UnstructuredURLLoader",
     "WholeSiteReader",
+    "ZenRowsWebReader",
     "ZyteWebReader",
 ]

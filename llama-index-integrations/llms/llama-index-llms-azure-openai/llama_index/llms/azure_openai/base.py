@@ -180,7 +180,7 @@ class AzureOpenAI(OpenAI):
         )
 
         # reset api_base to None if it is the default
-        if self.api_base == DEFAULT_OPENAI_API_BASE:
+        if self.api_base == DEFAULT_OPENAI_API_BASE or self.azure_endpoint:
             self.api_base = None
 
     @model_validator(mode="before")
