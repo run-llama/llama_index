@@ -193,7 +193,39 @@ class PolarsQueryEngine(BaseQueryEngine):
         return Response(response=response_str, metadata=response_metadata)
 
     async def _aquery(self, query_bundle: QueryBundle) -> Response:
-        return self._query(query_bundle)
+        """Answer a query asynchronously."""
+        context = self._get_table_context()
+
+        polars_response_str = await self._llm.apredict(
+            self._polars_prompt,
+            df_str=context,
+            query_str=query_bundle.query_str,
+            instruction_str=self._instruction_str,
+        )
+
+        if self._verbose:
+            print_text(f"> Polars Instructions:\n```\n{polars_response_str}\n```\n")
+        polars_output = self._instruction_parser.parse(polars_response_str)
+        if self._verbose:
+            print_text(f"> Polars Output: {polars_output}\n")
+
+        response_metadata = {
+            "polars_instruction_str": polars_response_str,
+            "raw_polars_output": polars_output,
+        }
+        if self._synthesize_response:
+            response_str = str(
+                await self._llm.apredict(
+                    self._response_synthesis_prompt,
+                    query_str=query_bundle.query_str,
+                    polars_instructions=polars_response_str,
+                    polars_output=polars_output,
+                )
+            )
+        else:
+            response_str = str(polars_output)
+
+        return Response(response=response_str, metadata=response_metadata)
 
 
 # legacy

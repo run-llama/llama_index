@@ -1,13 +1,16 @@
 """Polars output parser."""
 
+import ast
 import logging
+import sys
+import traceback
 from typing import Any, Dict, Optional
 
 import numpy as np
 import polars as pl
-from llama_index.experimental.exec_utils import safe_eval, safe_exec
 from llama_index.core.output_parsers import BaseOutputParser
 from llama_index.core.output_parsers.utils import parse_code_markdown
+from llama_index.experimental.exec_utils import safe_eval, safe_exec
 
 logger = logging.getLogger(__name__)
 
@@ -16,10 +19,6 @@ def default_output_processor(
     output: str, df: pl.DataFrame, **output_kwargs: Any
 ) -> str:
     """Process outputs in a default manner."""
-    import ast
-    import sys
-    import traceback
-
     if sys.version_info < (3, 9):
         logger.warning(
             "Python version must be >= 3.9 in order to use "

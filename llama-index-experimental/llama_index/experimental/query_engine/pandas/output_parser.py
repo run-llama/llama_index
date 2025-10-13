@@ -1,6 +1,9 @@
 """Pandas output parser."""
 
+import ast
 import logging
+import sys
+import traceback
 from typing import Any, Dict, Optional
 
 import numpy as np
@@ -16,10 +19,6 @@ def default_output_processor(
     output: str, df: pd.DataFrame, **output_kwargs: Any
 ) -> str:
     """Process outputs in a default manner."""
-    import ast
-    import sys
-    import traceback
-
     if sys.version_info < (3, 9):
         logger.warning(
             "Python version must be >= 3.9 in order to use "
