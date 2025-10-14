@@ -541,7 +541,14 @@ def to_openai_responses_message_dict(
             msg = f"Unsupported content block type: {type(block).__name__}"
             raise ValueError(msg)
 
-    if tool_calls:
+    if "tool_calls" in message.additional_kwargs:
+        message_dicts = [
+            tool_call if isinstance(tool_call, dict) else tool_call.model_dump()
+            for tool_call in message.additional_kwargs["tool_calls"]
+        ]
+
+        return message_dicts
+    elif tool_calls:
         return tool_calls
 
     # NOTE: Sending a null value (None) for Tool Message to OpenAI will cause error
