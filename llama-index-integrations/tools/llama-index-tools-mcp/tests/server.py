@@ -12,7 +12,7 @@ from PIL import Image as PILImage
 import numpy as np
 import io
 
-from tests.schemas import TestName, TestMethod, TestList
+from tests.schemas import TestName, TestMethod, TestList, StrictSchema
 
 
 @asynccontextmanager
@@ -146,6 +146,12 @@ def update_weather(temperature: float, condition: str) -> Dict:
 def test_pydantic(name: TestName, method: TestMethod, lst: TestList) -> str:
     """Test tool with Pydantic models."""
     return f"Name: {name.name}, Method: {method.method}, List: {lst.lst}"
+
+
+@mcp.tool(description="Test tool with strict schema (additionalProperties: false)")
+def test_strict_schema(data: StrictSchema) -> str:
+    """Test tool with strict schema that forbids additional properties."""
+    return f"Required: {data.required_field}, Optional: {data.optional_field}"
 
 
 # --- Static Resources ---

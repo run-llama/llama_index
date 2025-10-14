@@ -127,3 +127,37 @@ def test_schema_structure_exact_match(client: BasicMCPClient):
 
     assert json_schema["type"] == "object"
     assert set(json_schema["required"]) == {"name", "method", "lst"}
+
+
+def test_strict_schema_additional_properties_false(client: BasicMCPClient):
+    """Test parsing schema with additionalProperties: false (Bug #1 fix)."""
+    tool_spec = McpToolSpec(client, allowed_tools=["test_strict_schema"])
+    tools = tool_spec.to_tool_list()
+
+    assert len(tools) == 1
+    assert tools[0].metadata.name == "test_strict_schema"
+
+    json_schema = tools[0].metadata.fn_schema.model_json_schema()
+    assert "data" in json_schema["properties"]
+
+    data_ref = json_schema["properties"]["data"]["$ref"]
+    ref_name = data_ref.split("/")[-1]
+    assert ref_name in json_schema["$defs"]
+
+    strict_schema = json_schema["$defs"][ref_name]
+    assert strict_schema.get("additionalProperties") is False
+
+
+@pytest.mark.asyncio
+async def test_strict_schema_tool_execution(client: BasicMCPClient):
+    """Test that strict schema tool can be executed correctly."""
+    tool_spec = McpToolSpec(client, allowed_tools=["test_strict_schema"])
+    tools = await tool_spec.to_tool_list_async()
+
+    tool = tools[0]
+    result = await tool.async_fn(
+        data={"required_field": "test_value", "optional_field": 42}
+    )
+
+    assert "Required: test_value" in result.content[0].text
+    assert "Optional: 42" in result.content[0].text
