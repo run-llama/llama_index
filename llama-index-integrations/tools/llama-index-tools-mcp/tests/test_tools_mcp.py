@@ -130,7 +130,7 @@ def test_schema_structure_exact_match(client: BasicMCPClient):
 
 
 def test_additional_properties_false_parsing(client: BasicMCPClient):
-    """Test that schemas with additionalProperties: false are parsed correctly (Bug #1 fix)."""
+    """Test that schemas with additionalProperties: false are parsed correctly."""
     from typing import Dict, Any
 
     tool_spec = McpToolSpec(client)
