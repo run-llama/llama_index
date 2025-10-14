@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -40,6 +41,7 @@ from llama_index.core.utils import Tokenizer
 from llama_index.llms.anthropic.utils import (
     anthropic_modelname_to_contextsize,
     force_single_tool_call,
+    is_anthropic_prompt_caching_supported_model,
     is_function_calling_model,
     messages_to_anthropic_messages,
 )
@@ -67,6 +69,8 @@ from anthropic.types import (
 if TYPE_CHECKING:
     from llama_index.core.tools.types import BaseTool
 
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_ANTHROPIC_MODEL = "claude-2.1"
 DEFAULT_ANTHROPIC_MAX_TOKENS = 512
@@ -397,7 +401,7 @@ class Anthropic(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> AnthropicChatResponse:
         anthropic_messages, system_prompt = messages_to_anthropic_messages(
-            messages, self.cache_idx
+            messages, self.cache_idx, self.model
         )
         all_kwargs = self._get_all_kwargs(**kwargs)
 
@@ -437,7 +441,7 @@ class Anthropic(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> Generator[AnthropicChatResponse, None, None]:
         anthropic_messages, system_prompt = messages_to_anthropic_messages(
-            messages, self.cache_idx
+            messages, self.cache_idx, self.model
         )
         all_kwargs = self._get_all_kwargs(**kwargs)
 
@@ -585,7 +589,7 @@ class Anthropic(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> AnthropicChatResponse:
         anthropic_messages, system_prompt = messages_to_anthropic_messages(
-            messages, self.cache_idx
+            messages, self.cache_idx, self.model
         )
         all_kwargs = self._get_all_kwargs(**kwargs)
 
@@ -625,7 +629,7 @@ class Anthropic(FunctionCallingLLM):
         self, messages: Sequence[ChatMessage], **kwargs: Any
     ) -> AsyncGenerator[AnthropicChatResponse, None]:
         anthropic_messages, system_prompt = messages_to_anthropic_messages(
-            messages, self.cache_idx
+            messages, self.cache_idx, self.model
         )
         all_kwargs = self._get_all_kwargs(**kwargs)
 
@@ -809,7 +813,14 @@ class Anthropic(FunctionCallingLLM):
             if "prompt-caching" in kwargs.get("extra_headers", {}).get(
                 "anthropic-beta", ""
             ):
-                tool_dicts[-1]["cache_control"] = {"type": "ephemeral"}
+                if is_anthropic_prompt_caching_supported_model(self.model):
+                    tool_dicts[-1]["cache_control"] = {"type": "ephemeral"}
+                else:
+                    logger.warning(
+                        f"Model '{self.model}' does not support prompt caching. "
+                        "Cache control will be ignored. "
+                        "See: https://docs.claude.com/en/docs/build-with-claude/prompt-caching"
+                    )
 
         # anthropic doesn't like you specifying a tool choice if you don't have any tools
         tool_choice_dict = (
