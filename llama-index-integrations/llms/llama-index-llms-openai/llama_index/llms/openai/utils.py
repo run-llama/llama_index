@@ -457,10 +457,11 @@ def to_openai_message_dict(
         if message_dict["role"] == "system":
             message_dict["role"] = "developer"
 
-    # NOTE: openai messages have additional arguments:
-    # - function messages have `name`
-    # - assistant messages have optional `function_call`
-    message_dict.update(message.additional_kwargs)
+    already_has_tool_calls = any(
+        isinstance(block, ToolCallBlock) for block in message.blocks
+    )
+    if "tool_calls" in message_dict and not already_has_tool_calls:
+        message_dict.update(message.additional_kwargs)
 
     null_keys = [key for key, value in message_dict.items() if value is None]
     # if drop_none is True, remove keys with None values
