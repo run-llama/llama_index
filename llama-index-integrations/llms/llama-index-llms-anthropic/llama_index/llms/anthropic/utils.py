@@ -407,5 +407,6 @@ def is_anthropic_prompt_caching_supported_model(model: str) -> bool:
         True if the model supports prompt caching, False otherwise.
 
     See: https://docs.claude.com/en/docs/build-with-claude/prompt-caching
+
     """
     return model in ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS
