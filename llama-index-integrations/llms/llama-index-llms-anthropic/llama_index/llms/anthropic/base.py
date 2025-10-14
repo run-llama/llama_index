@@ -52,6 +52,9 @@ from anthropic.types import (
     ContentBlockStopEvent,
     CitationsSearchResultLocation,
     InputJSONDelta,
+    RawContentBlockDeltaEvent,
+    RawContentBlockStartEvent,
+    RawContentBlockStopEvent,
     TextBlock,
     TextDelta,
     ThinkingBlock,
@@ -443,7 +446,8 @@ class Anthropic(FunctionCallingLLM):
         )
 
         def gen() -> Generator[AnthropicChatResponse, None, None]:
-            content = [LITextBlock(text="")]
+            content = []
+            cur_block = None
             content_delta = ""
             thinking = None
             cur_tool_calls: List[ToolUseBlock] = []
@@ -453,13 +457,13 @@ class Anthropic(FunctionCallingLLM):
             tracked_citations: Set[str] = set()
             role = MessageRole.ASSISTANT
             for r in response:
-                if isinstance(r, ContentBlockDeltaEvent):
+                if isinstance(r, (ContentBlockDeltaEvent, RawContentBlockDeltaEvent)):
                     if isinstance(r.delta, TextDelta):
                         content_delta = r.delta.text or ""
-                        if not isinstance(content[-1], LITextBlock):
-                            content.append(LITextBlock(text=content_delta))
+                        if not isinstance(cur_block, LITextBlock):
+                            cur_block = LITextBlock(text=content_delta)
                         else:
-                            content[-1].text += content_delta
+                            cur_block.text += content_delta
 
                     elif isinstance(r.delta, CitationsDelta) and isinstance(
                         r.delta.citation, CitationsSearchResultLocation
@@ -480,23 +484,23 @@ class Anthropic(FunctionCallingLLM):
                                 )
                             )
                     elif isinstance(r.delta, SignatureDelta):
-                        if thinking is None:
-                            thinking = ThinkingBlock(
-                                signature=r.delta.signature,
-                                thinking="",
-                                type="thinking",
+                        if not isinstance(cur_block, LIThinkingBlock):
+                            cur_block = LIThinkingBlock(
+                                content="",
+                                additional_information={"signature": r.delta.signature},
                             )
                         else:
-                            thinking.signature += r.delta.signature
+                            cur_block.additional_information["signature"] += (
+                                r.delta.signature
+                            )
                     elif isinstance(r.delta, ThinkingDelta):
-                        if thinking is None:
-                            thinking = ThinkingBlock(
-                                signature="",
-                                thinking=r.delta.thinking,
-                                type="thinking",
+                        if cur_block is None:
+                            cur_block = LIThinkingBlock(
+                                content=r.delta.thinking or "",
+                                additional_information={"signature": ""},
                             )
                         else:
-                            thinking.thinking += r.delta.thinking
+                            cur_block.content += r.delta.thinking
                     elif isinstance(r.delta, CitationsDelta):
                         # TODO: handle citation deltas
                         cur_citations.append(r.delta.citation.model_dump())
@@ -523,28 +527,43 @@ class Anthropic(FunctionCallingLLM):
                         tool_calls_to_send = [*cur_tool_calls, cur_tool_call]
                     else:
                         tool_calls_to_send = cur_tool_calls
+
                     yield AnthropicChatResponse(
                         message=ChatMessage(
                             role=role,
                             blocks=content,
                             additional_kwargs={
-                                "tool_calls": [
-                                    t.model_dump() for t in tool_calls_to_send
-                                ],
-                                "thinking": thinking.model_dump() if thinking else None,
+                                "tool_calls": [t.dict() for t in tool_calls_to_send]
                             },
                         ),
                         citations=cur_citations,
                         delta=content_delta,
                         raw=dict(r),
                     )
-                elif isinstance(r, ContentBlockStartEvent):
+                elif isinstance(r, (ContentBlockStartEvent, RawContentBlockStartEvent)):
                     if isinstance(r.content_block, ToolUseBlock):
                         cur_tool_call = r.content_block
                         cur_tool_json = ""
-                elif isinstance(r, ContentBlockStopEvent):
+                elif isinstance(r, (ContentBlockStopEvent, RawContentBlockStopEvent)):
                     if isinstance(cur_tool_call, ToolUseBlock):
                         cur_tool_calls.append(cur_tool_call)
+
+                    if cur_block is not None:
+                        content.append(cur_block)
+                        cur_block = None
+
+                    yield AnthropicChatResponse(
+                        message=ChatMessage(
+                            role=role,
+                            blocks=content,
+                            additional_kwargs={
+                                "tool_calls": [t.dict() for t in tool_calls_to_send]
+                            },
+                        ),
+                        citations=cur_citations,
+                        delta=content_delta,
+                        raw=dict(r),
+                    )
 
         return gen()
 
@@ -615,7 +634,8 @@ class Anthropic(FunctionCallingLLM):
         )
 
         async def gen() -> ChatResponseAsyncGen:
-            content = [LITextBlock(text="")]
+            content = []
+            cur_block = None
             content_delta = ""
             thinking = None
             cur_tool_calls: List[ToolUseBlock] = []
@@ -625,13 +645,13 @@ class Anthropic(FunctionCallingLLM):
             tracked_citations: Set[str] = set()
             role = MessageRole.ASSISTANT
             async for r in response:
-                if isinstance(r, ContentBlockDeltaEvent):
+                if isinstance(r, (ContentBlockDeltaEvent, RawContentBlockDeltaEvent)):
                     if isinstance(r.delta, TextDelta):
                         content_delta = r.delta.text or ""
-                        if not isinstance(content[-1], LITextBlock):
-                            content.append(LITextBlock(text=content_delta))
+                        if not isinstance(cur_block, LITextBlock):
+                            cur_block = LITextBlock(text=content_delta)
                         else:
-                            content[-1].text += content_delta
+                            cur_block.text += content_delta
 
                     elif isinstance(r.delta, CitationsDelta) and isinstance(
                         r.delta.citation, CitationsSearchResultLocation
@@ -652,23 +672,23 @@ class Anthropic(FunctionCallingLLM):
                                 )
                             )
                     elif isinstance(r.delta, SignatureDelta):
-                        if thinking is None:
-                            thinking = ThinkingBlock(
-                                signature=r.delta.signature,
-                                thinking="",
-                                type="thinking",
+                        if not isinstance(cur_block, LIThinkingBlock):
+                            cur_block = LIThinkingBlock(
+                                content="",
+                                additional_information={"signature": r.delta.signature},
                             )
                         else:
-                            thinking.signature += r.delta.signature
+                            cur_block.additional_information["signature"] += (
+                                r.delta.signature
+                            )
                     elif isinstance(r.delta, ThinkingDelta):
-                        if thinking is None:
-                            thinking = ThinkingBlock(
-                                signature="",
-                                thinking=r.delta.thinking,
-                                type="thinking",
+                        if cur_block is None:
+                            cur_block = LIThinkingBlock(
+                                content=r.delta.thinking or "",
+                                additional_information={"signature": ""},
                             )
                         else:
-                            thinking.thinking += r.delta.thinking
+                            cur_block.content += r.delta.thinking
                     elif isinstance(r.delta, CitationsDelta):
                         # TODO: handle citation deltas
                         cur_citations.append(r.delta.citation.model_dump())
@@ -695,26 +715,43 @@ class Anthropic(FunctionCallingLLM):
                         tool_calls_to_send = [*cur_tool_calls, cur_tool_call]
                     else:
                         tool_calls_to_send = cur_tool_calls
+
                     yield AnthropicChatResponse(
                         message=ChatMessage(
                             role=role,
                             blocks=content,
                             additional_kwargs={
-                                "tool_calls": [t.dict() for t in tool_calls_to_send],
-                                "thinking": thinking.model_dump() if thinking else None,
+                                "tool_calls": [t.dict() for t in tool_calls_to_send]
                             },
                         ),
                         citations=cur_citations,
                         delta=content_delta,
                         raw=dict(r),
                     )
-                elif isinstance(r, ContentBlockStartEvent):
+                elif isinstance(r, (ContentBlockStartEvent, RawContentBlockStartEvent)):
                     if isinstance(r.content_block, ToolUseBlock):
                         cur_tool_call = r.content_block
                         cur_tool_json = ""
-                elif isinstance(r, ContentBlockStopEvent):
+                elif isinstance(r, (ContentBlockStopEvent, RawContentBlockStopEvent)):
                     if isinstance(cur_tool_call, ToolUseBlock):
                         cur_tool_calls.append(cur_tool_call)
+
+                    if cur_block is not None:
+                        content.append(cur_block)
+                        cur_block = None
+
+                    yield AnthropicChatResponse(
+                        message=ChatMessage(
+                            role=role,
+                            blocks=content,
+                            additional_kwargs={
+                                "tool_calls": [t.dict() for t in tool_calls_to_send]
+                            },
+                        ),
+                        citations=cur_citations,
+                        delta=content_delta,
+                        raw=dict(r),
+                    )
 
         return gen()
 
