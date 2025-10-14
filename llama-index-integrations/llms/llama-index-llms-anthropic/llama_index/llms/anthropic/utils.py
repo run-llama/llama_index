@@ -299,12 +299,15 @@ def blocks_to_anthropic_blocks(
 def messages_to_anthropic_messages(
     messages: Sequence[ChatMessage],
     cache_idx: Optional[int] = None,
+    model: Optional[str] = None,
 ) -> Tuple[Sequence[MessageParam], str]:
     """
     Converts a list of generic ChatMessages to anthropic messages.
 
     Args:
         messages: List of ChatMessages
+        cache_idx: Optional index to enable caching up to
+        model: Optional model name used to validate prompt caching support
 
     Returns:
         Tuple of:
@@ -317,7 +320,8 @@ def messages_to_anthropic_messages(
     for idx, message in enumerate(messages):
         # inject cache_control for all messages up to and including the cache_idx
         if cache_idx is not None and (idx <= cache_idx or cache_idx == -1):
-            message.additional_kwargs["cache_control"] = {"type": "ephemeral"}
+            if model is None or is_anthropic_prompt_caching_supported_model(model):
+                message.additional_kwargs["cache_control"] = {"type": "ephemeral"}
 
         if message.role == MessageRole.SYSTEM:
             system_prompt.extend(
@@ -396,26 +400,12 @@ def is_anthropic_prompt_caching_supported_model(model: str) -> bool:
     """
     Check if the given Anthropic model supports prompt caching.
 
-    Prompt caching allows you to cache frequently used context (like system prompts,
-    long documents, or tool definitions) to reduce costs by up to 90% and latency
-    by up to 85% for supported models.
-
-    For more information, see:
-    https://docs.claude.com/en/docs/build-with-claude/prompt-caching
-
     Args:
         model: The Anthropic model identifier (e.g., 'claude-sonnet-4-20250514')
 
     Returns:
-        bool: True if the model supports prompt caching, False otherwise
+        True if the model supports prompt caching, False otherwise.
 
-    Examples:
-        >>> is_anthropic_prompt_caching_supported_model('claude-sonnet-4-20250514')
-        True
-        >>> is_anthropic_prompt_caching_supported_model('claude-2.1')
-        False
-        >>> is_anthropic_prompt_caching_supported_model('claude-3-5-haiku-20241022')
-        True
-
+    See: https://docs.claude.com/en/docs/build-with-claude/prompt-caching
     """
     return model in ANTHROPIC_PROMPT_CACHING_SUPPORTED_MODELS
