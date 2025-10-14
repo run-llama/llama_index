@@ -17,7 +17,10 @@ from llama_index.core.vector_stores.types import (
     MetadataFilters,
     VectorStoreQuery,
 )
-from llama_index.vector_stores.azure_postgres import AzurePGVectorStore
+from llama_index.vector_stores.azure_postgres import (
+    AsyncAzurePGVectorStore,
+    AzurePGVectorStore,
+)
 from llama_index.vector_stores.azure_postgres.common import DiskANN
 
 from .conftest import Table
@@ -373,6 +376,278 @@ class TestAzurePGVectorStore:
                 f"Expected 'dogs' to be in retrieved documents' contents for query: {query}"
             )
 
+        assert all("plants" not in c for c in contents), (
+            f"Expected 'plants' not to be in retrieved documents' contents for query: {query}"
+        )
+
+
+class TestAsyncAzurePGVectorStore:
+    """Async integration tests for AsyncAzurePGVectorStore implementation."""
+
+    @pytest.mark.asyncio
+    async def test_table_creation_success(self, async_vectorstore, async_table):
+        """Verify the database table is created with the correct columns and types (async)."""
+        async with (
+            async_vectorstore.connection_pool.connection() as conn,
+            conn.cursor(row_factory=dict_row) as cursor,
+        ):
+            await cursor.execute(
+                _GET_TABLE_COLUMNS_AND_TYPES,
+                {
+                    "schema_name": async_table.schema_name,
+                    "table_name": async_table.table_name,
+                },
+            )
+            resultset = await cursor.fetchall()
+        verify_table_created(async_table, resultset)
+
+    @pytest.mark.asyncio
+    async def test_vectorstore_initialization_from_params(
+        self,
+        async_connection_pool,
+        async_schema: str,
+    ):
+        """Create a store using class factory `from_params` and assert type (async)."""
+        table_name = "vs_init_from_params_async"
+        embedding_dimension = 3
+
+        diskann = DiskANN(
+            op_class="vector_cosine_ops",
+            max_neighbors=32,
+            l_value_ib=100,
+            l_value_is=100,
+        )
+
+        vectorstore = AsyncAzurePGVectorStore.from_params(
+            connection_pool=async_connection_pool,
+            schema_name=async_schema,
+            table_name=table_name,
+            embed_dim=embedding_dimension,
+            embedding_index=diskann,
+        )
+        assert isinstance(vectorstore, AsyncAzurePGVectorStore)
+
+    @pytest.mark.asyncio
+    async def test_aget_nodes(
+        self,
+        async_vectorstore,
+    ):
+        """Retrieve all nodes and assert expected seeded node count (async)."""
+        in_nodes = await async_vectorstore.aget_nodes()
+        assert len(in_nodes) == 4, "Retrieved node count does not match expected"
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ["node_tuple", "expected"],
+        [
+            ("node-success", nullcontext(AsyncAzurePGVectorStore)),
+            ("node-not-found", pytest.raises(IndexError)),
+        ],
+        indirect=["node_tuple"],
+        ids=[
+            "success",
+            "not-found",
+        ],
+    )
+    async def test_aget_nodes_with_ids(
+        self,
+        async_vectorstore,
+        node_tuple,
+        expected,
+    ):
+        """Retrieve nodes by ID and validate returned node matches expected (async)."""
+        node, expected_node_id = node_tuple
+        in_nodes = await async_vectorstore.aget_nodes([node.node_id])
+        with expected:
+            assert expected_node_id == in_nodes[0].node_id, (
+                "Retrieved node ID does not match expected"
+            )
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ["node_tuple", "expected"],
+        [
+            ("node-success", nullcontext(AsyncAzurePGVectorStore)),
+        ],
+        indirect=["node_tuple"],
+        ids=[
+            "success",
+        ],
+    )
+    async def test_async_add(
+        self,
+        async_vectorstore,
+        node_tuple,
+        expected,
+    ):
+        """Add a node to the store and assert the returned ID matches (async)."""
+        node, expected_node_id = node_tuple
+        with expected:
+            assert node.node_id is not None, "Node ID must be provided for this test"
+            returned_ids = await async_vectorstore.async_add([node])
+            assert returned_ids[0] == expected_node_id, "Inserted text IDs do not match"
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ["doc_id"],
+        [
+            ("1",),
+            ("10",),
+        ],
+        ids=["existing", "non-existing"],
+    )
+    async def test_adelete(
+        self,
+        async_vectorstore,
+        doc_id,
+    ):
+        """Delete a node by reference doc id and assert it was removed (async)."""
+        await async_vectorstore.adelete(doc_id)
+        async with (
+            async_vectorstore.connection_pool.connection() as conn,
+            conn.cursor(row_factory=dict_row) as cursor,
+        ):
+            await cursor.execute(
+                sql.SQL(
+                    """
+                    select  {metadata} ->> 'doc_id' as doc_id
+                        from  {table_name}
+                    """
+                ).format(
+                    metadata=sql.Identifier(async_vectorstore.metadata_columns),
+                    table_name=sql.Identifier(
+                        async_vectorstore.schema_name, async_vectorstore.table_name
+                    ),
+                )
+            )
+            resultset = await cursor.fetchall()
+        remaining_set = set(str(r["doc_id"]) for r in resultset)
+        assert doc_id not in remaining_set, (
+            "Deleted document IDs should not exist in the remaining set"
+        )
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ["node_tuple"],
+        [
+            ("node-success",),
+            ("node-not-found",),
+        ],
+        indirect=["node_tuple"],
+        ids=[
+            "success",
+            "not-found",
+        ],
+    )
+    async def test_adelete_nodes(
+        self,
+        async_vectorstore,
+        node_tuple,
+    ):
+        """Delete a list of node IDs and assert they are removed from the table (async)."""
+        node, expected_node_id = node_tuple
+        await async_vectorstore.adelete_nodes([node.node_id])
+        async with (
+            async_vectorstore.connection_pool.connection() as conn,
+            conn.cursor(row_factory=dict_row) as cursor,
+        ):
+            await cursor.execute(
+                sql.SQL(
+                    """
+                    select  {id_column} as node_id
+                        from  {table_name}
+                    """
+                ).format(
+                    id_column=sql.Identifier(async_vectorstore.id_column),
+                    table_name=sql.Identifier(
+                        async_vectorstore.schema_name, async_vectorstore.table_name
+                    ),
+                )
+            )
+            resultset = await cursor.fetchall()
+        remaining_set = set(str(r["node_id"]) for r in resultset)
+        assert expected_node_id not in remaining_set, (
+            "Deleted document IDs should not exist in the remaining set"
+        )
+
+    @pytest.mark.asyncio
+    async def test_aclear(
+        self,
+        async_vectorstore,
+    ):
+        """Clear all nodes from the underlying table and verify none remain (async)."""
+        await async_vectorstore.aclear()
+        async with (
+            async_vectorstore.connection_pool.connection() as conn,
+            conn.cursor(row_factory=dict_row) as cursor,
+        ):
+            await cursor.execute(
+                sql.SQL(
+                    """
+                    select  {id_column} as node_id
+                        from  {table_name}
+                    """
+                ).format(
+                    id_column=sql.Identifier(async_vectorstore.id_column),
+                    table_name=sql.Identifier(
+                        async_vectorstore.schema_name, async_vectorstore.table_name
+                    ),
+                )
+            )
+            resultset = await cursor.fetchall()
+        remaining_set = set(str(r["node_id"]) for r in resultset)
+        assert not remaining_set, "All document IDs should have been deleted"
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ["query", "embedding", "k", "filters"],
+        [
+            ("query about cats", [0.99] * 1536, 2, None),
+            ("query about animals", [0.5] * 1536, 3, None),
+            ("query about cats", [0.99] * 1536, 2, "filter1"),
+            ("query about cats", [0.99] * 1536, 2, "filter2"),
+        ],
+        indirect=["filters"],
+        ids=[
+            "search-cats",
+            "search-animals",
+            "search-cats-filtered",
+            "search-cats-multifiltered",
+        ],
+    )
+    async def test_aquery(
+        self,
+        async_vectorstore,
+        query,
+        embedding,
+        k,
+        filters,
+    ):
+        """Run a similarity query and assert returned documents match expectations (async)."""
+        vsquery = VectorStoreQuery(
+            query_str=query,
+            query_embedding=embedding,
+            similarity_top_k=k,
+            filters=filters,
+        )
+        results = await async_vectorstore.aquery(query=vsquery)
+        results = results.nodes
+        contents = [row.get_content() for row in results]
+        if ("cats" in query) or ("animals" in query):
+            assert len(results) == k, f"Expected {k} results"
+            assert any("cats" in c for c in contents) or any(
+                "tigers" in c for c in contents
+            ), (
+                f"Expected 'cats' or 'tigers' in retrieved documents' contents for query: {query}"
+            )
+        if "cats" in query:
+            assert all("dogs" not in c for c in contents), (
+                f"Expected 'dogs' not to be in retrieved documents' contents for query: {query}"
+            )
+        elif "animals" in query:
+            assert any("dogs" in c for c in contents), (
+                f"Expected 'dogs' to be in retrieved documents' contents for query: {query}"
+            )
         assert all("plants" not in c for c in contents), (
             f"Expected 'plants' not to be in retrieved documents' contents for query: {query}"
         )
