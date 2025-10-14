@@ -1374,7 +1374,7 @@ class MilvusVectorStore(BasePydanticVectorStore):
                         field_name=field_name,
                         datatype=field_type,
                         max_length=max_length,
-                        **self.sparse_embedding_field.get_field_kwargs(),
+                        **self.sparse_embedding_function.get_field_kwargs(),
                     )
                 else:
                     schema.add_field(
