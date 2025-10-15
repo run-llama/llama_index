@@ -1,4 +1,3 @@
 ::: llama_index.readers.gpt_repo
-    options:
-      members:
-        - GPTRepoReader
+options:
+members: - GPTRepoReader
