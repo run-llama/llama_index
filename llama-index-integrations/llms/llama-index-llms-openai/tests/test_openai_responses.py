@@ -641,14 +641,15 @@ def test_messages_to_openai_responses_messages():
             role=MessageRole.ASSISTANT,
             blocks=[
                 ThinkingBlock(
-                    content="The user is asking a simple question related to the capital of Germany, I should answer it concisely"
+                    content="The user is asking a simple question related to the capital of Germany, I should answer it concisely",
+                    additional_information={"id": "123456789"},
                 ),
                 TextBlock(text="Berlin"),
             ],
         ),
     ]
     openai_messages = to_openai_message_dicts(messages, is_responses_api=True)
-    assert len(openai_messages) == 7
+    assert len(openai_messages) == 8
     assert openai_messages[0]["role"] == "developer"
     assert openai_messages[0]["content"] == "You are a helpful assistant."
     assert openai_messages[1]["role"] == "user"
@@ -669,10 +670,16 @@ def test_messages_to_openai_responses_messages():
         "call_id": "2",
         "name": "get_capital_city_by_state",
     }
-    assert openai_messages[6]["role"] == "assistant"
-    assert len(openai_messages[6]["content"]) == 2
-    assert openai_messages[6]["content"][0]["text"] == messages[6].blocks[0].content
-    assert openai_messages[6]["content"][1]["text"] == messages[6].blocks[1].text
+
+    assert openai_messages[6]["type"] == "reasoning"
+    assert (
+        openai_messages[6]["id"] == messages[6].blocks[0].additional_information["id"]
+    )
+    assert openai_messages[6]["summary"][0]["text"] == messages[6].blocks[0].content
+
+    assert openai_messages[7]["role"] == "assistant"
+    assert len(openai_messages[7]["content"]) == 1
+    assert openai_messages[7]["content"][0]["text"] == messages[6].blocks[1].text
 
 
 @pytest.fixture()

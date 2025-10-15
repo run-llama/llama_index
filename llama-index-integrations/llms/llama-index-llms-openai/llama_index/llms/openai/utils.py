@@ -484,7 +484,10 @@ def to_openai_message_dict(
         if message_dict["role"] == "system":
             message_dict["role"] = "developer"
 
-    if "tool_calls" in message_dict and not already_has_tool_calls:
+    if (
+        "tool_calls" in message.additional_kwargs
+        or "function_call" in message.additional_kwargs
+    ) and not already_has_tool_calls:
         message_dict.update(message.additional_kwargs)
 
     if "tool_call_id" in message.additional_kwargs:
