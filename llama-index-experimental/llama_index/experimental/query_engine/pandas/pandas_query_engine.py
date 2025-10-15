@@ -167,6 +167,11 @@ class PandasQueryEngine(BaseQueryEngine):
 
     def _get_table_context(self) -> str:
         """Get table context."""
+        pd.set_option("display.max_colwidth", None)
+        pd.set_option("display.max_columns", None)
+        # since head() is only used.
+        pd.set_option("display.max_rows", self._head)
+        pd.set_option("display.width", None)
         return str(self._df.head(self._head))
 
     def _query(self, query_bundle: QueryBundle) -> Response:
