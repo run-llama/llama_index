@@ -26,7 +26,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install uv and set python version
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
         with:
           python-version: "3.10"
 
@@ -42,8 +42,9 @@ jobs:
         working-directory: llama-dev
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION_TYPE: ${{ github.event.inputs.version-type }}
         run: |
-          uv run -- llama-dev --repo-root .. release prepare --version-type ${{ github.event.inputs.version-type }}
+          uv run -- llama-dev --repo-root .. release prepare --version-type "$VERSION_TYPE"
           uv run -- llama-dev --repo-root .. release changelog
           VERSION=$(uv run -- llama-dev --repo-root .. pkg info --json . | jq -r .version)
           echo "version=$VERSION" >> $GITHUB_OUTPUT

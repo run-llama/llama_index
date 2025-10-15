@@ -32,6 +32,13 @@ def test_get_model_name_translates_us():
     )
 
 
+def test_get_model_name_translates_global():
+    assert (
+        get_model_name("global.anthropic.claude-sonnet-4-5-20250929-v1:0")
+        == "anthropic.claude-sonnet-4-5-20250929-v1:0"
+    )
+
+
 def test_get_model_name_does_nottranslate_cn():
     assert (
         get_model_name("cn.meta.llama3-2-3b-instruct-v1:0")

@@ -31,6 +31,7 @@ for full tracing integrations.
 
 ## Experiment Tracking
 
+- [Kiln](https://github.com/Kiln-AI/Kiln/tree/main/libs/core#taking-kiln-rag-to-production)
 - [MLflow](/python/examples/observability/mlflow)
 
 ## Structured Outputs
@@ -49,6 +50,7 @@ for full tracing integrations.
 
 - [Streamlit](https://blog.streamlit.io/build-a-chatbot-with-custom-data-sources-powered-by-llamaindex/)
 - [Chainlit](https://docs.chainlit.io/integrations/llama-index)
+- [CopilotKit](https://docs.copilotkit.ai/llamaindex/quickstart)
 
 ## Distributed Compute
 
