@@ -26,7 +26,7 @@ dev = [
 
 [project]
 name = "llama-index-llms-oci-genai"
-version = "0.6.2"
+version = "0.6.3"
 description = "llama-index llms OCI GenAI integration"
 authors = [
     {name = "Arthur Cheng", email = "arthur.cheng@oracle.com"},
