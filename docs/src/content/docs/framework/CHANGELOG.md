@@ -1,12 +1,13 @@
 ---
 title: ChangeLog
 ---
+<!--- generated changelog --->
 
 ## [2025-10-03]
 
 ### llama-index-core [0.14.4]
 
-- Update core/indices/base.py to remove depreciation warning ([#19990](https://github.com/run-llama/llama_index/pull/19990))
+- fix pre-release installs ([#20010](https://github.com/run-llama/llama_index/pull/20010))
 
 ### llama-index-embeddings-anyscale [0.4.2]
 

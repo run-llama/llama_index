@@ -2,6 +2,82 @@
 
 <!--- generated changelog --->
 
+## [2025-10-15]
+
+### llama-index-core [0.14.5]
+- Remove debug print ([#20000](https://github.com/run-llama/llama_index/pull/20000))
+- safely initialize RefDocInfo in Docstore ([#20031](https://github.com/run-llama/llama_index/pull/20031))
+- Add progress bar for multiprocess loading ([#20048](https://github.com/run-llama/llama_index/pull/20048))
+- Fix duplicate node positions when identical text appears multiple times in document ([#20050](https://github.com/run-llama/llama_index/pull/20050))
+- chore: tool call block - part 1 ([#20074](https://github.com/run-llama/llama_index/pull/20074))
+
+### llama-index-instrumentation [0.4.2]
+- update instrumentation package metadata ([#20079](https://github.com/run-llama/llama_index/pull/20079))
+
+### llama-index-llms-anthropic [0.9.5]
+- ✨ feat(anthropic): add prompt caching model validation utilities ([#20069](https://github.com/run-llama/llama_index/pull/20069))
+- fix streaming thinking/tool calling with anthropic ([#20077](https://github.com/run-llama/llama_index/pull/20077))
+- Add haiku 4.5 support ([#20092](https://github.com/run-llama/llama_index/pull/20092))
+
+### llama-index-llms-baseten [0.1.6]
+- Baseten provider Kimi K2 0711, Llama 4 Maverick and Llama 4 Scout Model APIs deprecation ([#20042](https://github.com/run-llama/llama_index/pull/20042))
+
+### llama-index-llms-bedrock-converse [0.10.5]
+- feat: List Claude Sonnet 4.5 as a reasoning model ([#20022](https://github.com/run-llama/llama_index/pull/20022))
+- feat: Support global cross-region inference profile prefix ([#20064](https://github.com/run-llama/llama_index/pull/20064))
+- Update utils.py ([#20076](https://github.com/run-llama/llama_index/pull/20076))
+- 4.1 opus bedrockconverse missing in funcitoncalling models ([#20084](https://github.com/run-llama/llama_index/pull/20084))
+- Add haiku 4.5 support ([#20092](https://github.com/run-llama/llama_index/pull/20092))
+
+### llama-index-llms-fireworks [0.4.4]
+- Add Support for Custom Models in Fireworks LLM ([#20023](https://github.com/run-llama/llama_index/pull/20023))
+- fix(llms/fireworks): Cannot use Fireworks Deepseek V3.1-20006 issue ([#20028](https://github.com/run-llama/llama_index/pull/20028))
+
+### llama-index-llms-oci-genai [0.6.3]
+- Add support for xAI models in OCI GenAI ([#20089](https://github.com/run-llama/llama_index/pull/20089))
+
+### llama-index-llms-openai [0.6.4]
+- Gpt 5 pro addition  ([#20029](https://github.com/run-llama/llama_index/pull/20029))
+- fix collecting final response with openai responses streaming ([#20037](https://github.com/run-llama/llama_index/pull/20037))
+- Add support for GPT-5 models in utils.py (JSON_SCHEMA_MODELS) ([#20045](https://github.com/run-llama/llama_index/pull/20045))
+- chore: tool call block - part 1 ([#20074](https://github.com/run-llama/llama_index/pull/20074))
+
+### llama-index-llms-sglang [0.1.0]
+- Added Sglang llm integration  ([#20020](https://github.com/run-llama/llama_index/pull/20020))
+
+### llama-index-readers-gitlab [0.5.1]
+- feat(gitlab): add pagination params for repository tree and issues ([#20052](https://github.com/run-llama/llama_index/pull/20052))
+
+### llama-index-readers-json [0.4.2]
+- vbump the JSON reader ([#20039](https://github.com/run-llama/llama_index/pull/20039))
+
+### llama-index-readers-web [0.5.5]
+- fix: ScrapflyReader Pydantic validation error ([#19999](https://github.com/run-llama/llama_index/pull/19999))
+
+### llama-index-storage-chat-store-dynamodb [0.4.2]
+- bump dynamodb chat store deps ([#20078](https://github.com/run-llama/llama_index/pull/20078))
+
+### llama-index-tools-mcp [0.4.2]
+- 🐛 fix(tools/mcp): Fix dict type handling and reference resolution in … ([#20082](https://github.com/run-llama/llama_index/pull/20082))
+
+### llama-index-tools-signnow [0.1.0]
+- feat(signnow): SignNow mcp tools integration ([#20057](https://github.com/run-llama/llama_index/pull/20057))
+
+### llama-index-tools-tavily-research [0.4.2]
+- feat: Add Tavily extract function for URL content extraction ([#20038](https://github.com/run-llama/llama_index/pull/20038))
+
+### llama-index-vector-stores-azurepostgresql [0.2.0]
+- Add hybrid search to Azure PostgreSQL integration ([#20027](https://github.com/run-llama/llama_index/pull/20027))
+
+### llama-index-vector-stores-milvus [0.9.3]
+- fix: Milvus get_field_kwargs() ([#20086](https://github.com/run-llama/llama_index/pull/20086))
+
+### llama-index-vector-stores-opensearch [0.6.2]
+- fix(opensearch): Correct version check for efficient filtering ([#20067](https://github.com/run-llama/llama_index/pull/20067))
+
+### llama-index-vector-stores-qdrant [0.8.6]
+- fix(qdrant): Allow async-only initialization with hybrid search ([#20005](https://github.com/run-llama/llama_index/pull/20005))
+
 ## [2025-10-03]
 
 ### llama-index-core [0.14.4]

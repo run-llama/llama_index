@@ -1,3 +1,4 @@
 ::: llama_index.readers.bagel
-options:
-members: - BagelReader
+    options:
+      members:
+        - BagelReader
