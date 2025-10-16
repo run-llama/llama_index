@@ -39,7 +39,7 @@ keywords = [
     "reviews",
 ]
 dependencies = [
-    "selenium==4.8.3",
+    "selenium>=4.15.1,<5",
     "webdriver-manager==4.0.1",
     "imdbpy==2022.7.9",
     "pandas",
