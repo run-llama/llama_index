@@ -1,4 +1,4 @@
-"""Pandas output parser."""
+"""Polars output parser."""
 
 import ast
 import logging
@@ -7,16 +7,16 @@ import traceback
 from typing import Any, Dict, Optional
 
 import numpy as np
-import pandas as pd
-from llama_index.experimental.exec_utils import safe_eval, safe_exec
+import polars as pl
 from llama_index.core.output_parsers import BaseOutputParser
 from llama_index.core.output_parsers.utils import parse_code_markdown
+from llama_index.experimental.exec_utils import safe_eval, safe_exec
 
 logger = logging.getLogger(__name__)
 
 
 def default_output_processor(
-    output: str, df: pd.DataFrame, **output_kwargs: Any
+    output: str, df: pl.DataFrame, **output_kwargs: Any
 ) -> str:
     """Process outputs in a default manner."""
     if sys.version_info < (3, 9):
@@ -28,7 +28,7 @@ def default_output_processor(
         )
         return output
 
-    local_vars = {"df": df, "pd": pd}
+    local_vars = {"df": df, "pl": pl}
     global_vars = {"np": np}
 
     output = parse_code_markdown(output, only_last=True)
@@ -48,22 +48,32 @@ def default_output_processor(
             # string to get the actual expression
             module_end_str = safe_eval(module_end_str, global_vars, local_vars)
         try:
-            # str(pd.dataframe) will truncate output by display.max_colwidth
-            # set width temporarily to extract more text
-            current_max_colwidth = pd.get_option("display.max_colwidth")
-            current_max_rows = pd.get_option("display.max_rows")
-            current_max_columns = pd.get_option("display.max_columns")
-            if "max_colwidth" in output_kwargs:
-                pd.set_option("display.max_colwidth", output_kwargs["max_colwidth"])
-            if "max_rows" in output_kwargs:
-                pd.set_option("display.max_rows", output_kwargs["max_rows"])
-            if "max_columns" in output_kwargs:
-                pd.set_option("display.max_columns", output_kwargs["max_columns"])
-            output_str = str(safe_eval(module_end_str, global_vars, local_vars))
-            pd.set_option("display.max_colwidth", current_max_colwidth)
-            pd.set_option("display.max_rows", current_max_rows)
-            pd.set_option("display.max_columns", current_max_columns)
-            return output_str
+            # Handle Polars DataFrame display options
+            result = safe_eval(module_end_str, global_vars, local_vars)
+
+            # Set display options for Polars if provided
+            if isinstance(result, pl.DataFrame):
+                # Polars doesn't have global display options like pandas,
+                # but we can control the output format
+                if "max_rows" in output_kwargs:
+                    max_rows = output_kwargs["max_rows"]
+                    if len(result) > max_rows:
+                        # Show head and tail with indication of truncation
+                        head_rows = max_rows // 2
+                        tail_rows = max_rows - head_rows
+                        result_str = (
+                            str(result.head(head_rows))
+                            + "\n...\n"
+                            + str(result.tail(tail_rows))
+                        )
+                    else:
+                        result_str = str(result)
+                else:
+                    result_str = str(result)
+            else:
+                result_str = str(result)
+
+            return result_str
 
         except Exception:
             raise
@@ -75,17 +85,17 @@ def default_output_processor(
         return err_string
 
 
-class PandasInstructionParser(BaseOutputParser):
+class PolarsInstructionParser(BaseOutputParser):
     """
-    Pandas instruction parser.
+    Polars instruction parser.
 
-    This 'output parser' takes in pandas instructions (in Python code) and
+    This 'output parser' takes in polars instructions (in Python code) and
     executes them to return an output.
 
     """
 
     def __init__(
-        self, df: pd.DataFrame, output_kwargs: Optional[Dict[str, Any]] = None
+        self, df: pl.DataFrame, output_kwargs: Optional[Dict[str, Any]] = None
     ) -> None:
         """Initialize params."""
         self.df = df
