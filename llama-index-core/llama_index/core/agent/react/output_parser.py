@@ -96,7 +96,7 @@ class ReActOutputParser(BaseOutputParser):
             )
 
         # An "Action" should take priority over an "Answer"
-        if "Action:" in output:
+        if "Action:" in output and "Answer:" not in output:
             return parse_action_reasoning_step(output)
 
         if "Answer:" in output:
