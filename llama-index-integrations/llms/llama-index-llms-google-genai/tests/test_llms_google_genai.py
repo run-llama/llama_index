@@ -11,7 +11,7 @@ from llama_index.core.base.llms.types import (
     TextBlock,
     VideoBlock,
     ThinkingBlock,
-    ToolCallBlock
+    ToolCallBlock,
 )
 from llama_index.core.llms.llm import ToolSelection
 from llama_index.core.program.function_program import get_function_tool
@@ -565,7 +565,16 @@ def test_tool_required_integration(llm: GoogleGenAI) -> None:
         tools=[search_tool],
         tool_required=True,
     )
-    assert len([block for block in response.message.blocks if isinstance(block, ToolCallBlock)]) > 0
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        > 0
+    )
 
     # Test with tool_required=False
     response = llm.chat_with_tools(
