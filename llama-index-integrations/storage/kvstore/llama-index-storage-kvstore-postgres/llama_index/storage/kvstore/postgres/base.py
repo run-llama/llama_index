@@ -6,6 +6,8 @@ from llama_index.core.bridge.pydantic import PrivateAttr
 try:
     import sqlalchemy
     import sqlalchemy.ext.asyncio  # noqa
+    from sqlalchemy import Column, Index, Integer, UniqueConstraint
+    from sqlalchemy.schema import CreateSchema
 except ImportError:
     raise ImportError("`sqlalchemy[asyncio]` package should be pre installed")
 
@@ -27,7 +29,6 @@ def get_data_model(
     """
     This part create a dynamic sqlalchemy model with a new table.
     """
-    from sqlalchemy import Column, Index, Integer, UniqueConstraint
     from sqlalchemy.dialects.postgresql import JSON, JSONB, VARCHAR
 
     tablename = "data_%s" % index_name  # dynamic table name
@@ -216,21 +217,7 @@ class PostgresKVStore(BaseKVStore):
 
     def _create_schema_if_not_exists(self) -> None:
         with self._session() as session, session.begin():
-            from sqlalchemy import text
-
-            # Check if the specified schema exists with "CREATE" statement
-            check_schema_statement = text(
-                f"SELECT schema_name FROM information_schema.schemata WHERE schema_name = '{self.schema_name}'"
-            )
-            result = session.execute(check_schema_statement).fetchone()
-
-            # If the schema does not exist, then create it
-            if not result:
-                create_schema_statement = text(
-                    f"CREATE SCHEMA IF NOT EXISTS {self.schema_name}"
-                )
-                session.execute(create_schema_statement)
-
+            session.execute(CreateSchema(self.schema_name, if_not_exists=True))
             session.commit()
 
     def _create_tables_if_not_exists(self) -> None:
@@ -285,40 +272,29 @@ class PostgresKVStore(BaseKVStore):
         collection: str = DEFAULT_COLLECTION,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
-        from sqlalchemy import text
+        from sqlalchemy.dialects.postgresql import insert
 
         self._initialize()
         with self._session() as session:
             for i in range(0, len(kv_pairs), batch_size):
                 batch = kv_pairs[i : i + batch_size]
 
-                # Prepare the VALUES part of the SQL statement
-                values_clause = ", ".join(
-                    f"(:key_{i}, :namespace_{i}, :value_{i})"
-                    for i, _ in enumerate(batch)
+                values_to_insert = [
+                    {
+                        "key": key,
+                        "namespace": collection,
+                        "value": json.dumps(value),
+                    }
+                    for key, value in batch
+                ]
+
+                stmt = insert(self._table_class).values(values_to_insert)
+                stmt = stmt.on_conflict_do_update(
+                    index_elements=["key", "namespace"],
+                    set_={"value": stmt.excluded.value},
                 )
 
-                # Prepare the raw SQL for bulk upsert
-                # Note: This SQL is PostgreSQL-specific. Adjust for other databases.
-                stmt = text(
-                    f"""
-                INSERT INTO {self.schema_name}.{self._table_class.__tablename__} (key, namespace, value)
-                VALUES {values_clause}
-                ON CONFLICT (key, namespace)
-                DO UPDATE SET
-                value = EXCLUDED.value;
-                """
-                )
-
-                # Flatten the list of tuples for execute parameters
-                params = {}
-                for i, (key, value) in enumerate(batch):
-                    params[f"key_{i}"] = key
-                    params[f"namespace_{i}"] = collection
-                    params[f"value_{i}"] = json.dumps(value)
-
-                # Execute the bulk upsert
-                session.execute(stmt, params)
+                session.execute(stmt)
                 session.commit()
 
     async def aput_all(
@@ -327,40 +303,29 @@ class PostgresKVStore(BaseKVStore):
         collection: str = DEFAULT_COLLECTION,
         batch_size: int = DEFAULT_BATCH_SIZE,
     ) -> None:
-        from sqlalchemy import text
+        from sqlalchemy.dialects.postgresql import insert
 
         self._initialize()
         async with self._async_session() as session:
             for i in range(0, len(kv_pairs), batch_size):
                 batch = kv_pairs[i : i + batch_size]
 
-                # Prepare the VALUES part of the SQL statement
-                values_clause = ", ".join(
-                    f"(:key_{i}, :namespace_{i}, :value_{i})"
-                    for i, _ in enumerate(batch)
+                values_to_insert = [
+                    {
+                        "key": key,
+                        "namespace": collection,
+                        "value": json.dumps(value),
+                    }
+                    for key, value in batch
+                ]
+
+                stmt = insert(self._table_class).values(values_to_insert)
+                stmt = stmt.on_conflict_do_update(
+                    index_elements=["key", "namespace"],
+                    set_={"value": stmt.excluded.value},
                 )
 
-                # Prepare the raw SQL for bulk upsert
-                # Note: This SQL is PostgreSQL-specific. Adjust for other databases.
-                stmt = text(
-                    f"""
-                INSERT INTO {self.schema_name}.{self._table_class.__tablename__} (key, namespace, value)
-                VALUES {values_clause}
-                ON CONFLICT (key, namespace)
-                DO UPDATE SET
-                value = EXCLUDED.value;
-                """
-                )
-
-                # Flatten the list of tuples for execute parameters
-                params = {}
-                for i, (key, value) in enumerate(batch):
-                    params[f"key_{i}"] = key
-                    params[f"namespace_{i}"] = collection
-                    params[f"value_{i}"] = json.dumps(value)
-
-                # Execute the bulk upsert
-                await session.execute(stmt, params)
+                await session.execute(stmt)
                 await session.commit()
 
     def get(self, key: str, collection: str = DEFAULT_COLLECTION) -> Optional[dict]:
