@@ -1,4 +1,3 @@
-import json
 from typing import Any, Dict, List, Optional, Tuple, Type
 from urllib.parse import urlparse
 from llama_index.core.bridge.pydantic import PrivateAttr
@@ -283,7 +282,7 @@ class PostgresKVStore(BaseKVStore):
                     {
                         "key": key,
                         "namespace": collection,
-                        "value": json.dumps(value),
+                        "value": value,
                     }
                     for key, value in batch
                 ]
@@ -314,7 +313,7 @@ class PostgresKVStore(BaseKVStore):
                     {
                         "key": key,
                         "namespace": collection,
-                        "value": json.dumps(value),
+                        "value": value,
                     }
                     for key, value in batch
                 ]
