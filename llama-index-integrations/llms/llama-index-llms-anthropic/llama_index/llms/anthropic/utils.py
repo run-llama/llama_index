@@ -16,6 +16,7 @@ from llama_index.core.base.llms.types import (
     CitationBlock,
     ThinkingBlock,
     ContentBlock,
+    ToolCallBlock,
 )
 
 from anthropic.types import (
@@ -24,6 +25,7 @@ from anthropic.types import (
     DocumentBlockParam,
     ThinkingBlockParam,
     ImageBlockParam,
+    ToolUseBlockParam,
     CacheControlEphemeralParam,
     Base64PDFSourceParam,
 )
@@ -269,6 +271,18 @@ def blocks_to_anthropic_blocks(
                 if global_cache_control:
                     anthropic_blocks[-1]["cache_control"] = global_cache_control
 
+        elif isinstance(block, ToolCallBlock):
+            anthropic_blocks.append(
+                ToolUseBlockParam(
+                    id=block.tool_call_id or "",
+                    input=block.tool_kwargs,
+                    name=block.tool_name,
+                    type="tool_use",
+                )
+            )
+            if global_cache_control:
+                anthropic_blocks[-1]["cache_control"] = global_cache_control
+
         elif isinstance(block, CachePoint):
             if len(anthropic_blocks) > 0:
                 anthropic_blocks[-1]["cache_control"] = CacheControlEphemeralParam(
@@ -282,6 +296,7 @@ def blocks_to_anthropic_blocks(
         else:
             raise ValueError(f"Unsupported block type: {type(block)}")
 
+    # keep this code for compatibility with older chat histories
     tool_calls = kwargs.get("tool_calls", [])
     for tool_call in tool_calls:
         assert "id" in tool_call
@@ -359,9 +374,15 @@ def messages_to_anthropic_messages(
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
-    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    tool_calls = [
+        block for block in response.message.blocks if isinstance(block, ToolCallBlock)
+    ]
     if len(tool_calls) > 1:
-        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+        response.message.blocks = [
+            block
+            for block in response.message.blocks
+            if not isinstance(block, ToolCallBlock)
+        ] + [tool_calls[0]]
 
 
 # Anthropic models that support prompt caching
