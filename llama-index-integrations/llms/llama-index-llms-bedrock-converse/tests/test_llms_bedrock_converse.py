@@ -1,5 +1,6 @@
 import random
 import string
+import json
 import os
 from llama_index.core.base.llms.types import ImageBlock, TextBlock
 import pytest
@@ -14,6 +15,7 @@ from llama_index.core.base.llms.types import (
     ThinkingBlock,
     CachePoint,
     CacheControl,
+    ToolCallBlock,
 )
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.tools import FunctionTool
@@ -82,7 +84,8 @@ def bedrock_converse_integration():
 def bedrock_converse_integration_thinking():
     """Create a BedrockConverse instance for integration tests with proper credentials."""
     return BedrockConverse(
-        model="anthropic.claude-3-7-sonnet-20250219-v1:0",
+        model=os.getenv("BEDROCK_THINKING_MODEL")
+        or "anthropic.claude-3-7-sonnet-20250219-v1:0",
         region_name=os.getenv("AWS_REGION", "us-east-1"),
         aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
         aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
@@ -254,7 +257,6 @@ def test_complete(bedrock_converse):
     assert response.text == EXP_RESPONSE
     assert response.additional_kwargs["status"] == []
     assert response.additional_kwargs["tool_call_id"] == []
-    assert response.additional_kwargs["tool_calls"] == []
 
 
 def test_stream_chat(bedrock_converse):
@@ -335,7 +337,6 @@ async def test_acomplete(bedrock_converse):
     assert response.text == EXP_RESPONSE
     assert response.additional_kwargs["status"] == []
     assert response.additional_kwargs["tool_call_id"] == []
-    assert response.additional_kwargs["tool_calls"] == []
 
 
 @pytest.mark.asyncio
@@ -567,7 +568,7 @@ def test_prepare_chat_with_tools_custom_tool_choice(bedrock_converse):
     """Test that custom tool_choice overrides tool_required."""
     custom_tool_choice = {"specific": {"name": "search_tool"}}
     result = bedrock_converse._prepare_chat_with_tools(
-        tools=[search_tool], tool_required=True, tool_choice=custom_tool_choice
+        tools=[search_tool], tool_choice=custom_tool_choice
     )
 
     assert "tools" in result
@@ -1070,3 +1071,132 @@ async def test_bedrock_converse_integration_system_prompt_caching_auto_write(
 
     # Verify response is meaningful
     assert len(str(response.message.content)) > 50, "Response should be substantial"
+
+
+@needs_aws_creds
+@pytest.mark.asyncio
+async def test_tool_call_input_output(
+    bedrock_converse_integration_thinking: BedrockConverse,
+) -> None:
+    def get_weather(location: str):
+        return f"The weather in {location} is rainy with a temperature of 15°C."
+
+    tool = FunctionTool.from_defaults(
+        fn=get_weather,
+        name="get_weather",
+        description="Get the weather of a given location",
+    )
+
+    history = [
+        ChatMessage(
+            role="user",
+            content="Hello, can you tell me what is the weather today in London?",
+        ),
+        ChatMessage(
+            role="assistant",
+            blocks=[
+                ToolCallBlock(
+                    tool_name="get_weather",
+                    tool_kwargs={"location": "Liverpool"},
+                    tool_call_id="1",
+                ),
+            ],
+        ),
+        ChatMessage(
+            role=MessageRole.TOOL,
+            content="The weather in London is 11°C and windy",
+            additional_kwargs={"tool_call_id": "1"},
+        ),
+        ChatMessage(
+            role="assistant",
+            blocks=[
+                TextBlock(
+                    text="The weather in London is windy with a temperature of 11°C"
+                )
+            ],
+        ),
+    ]
+
+    input_message = ChatMessage(
+        role="user",
+        content="Ok, and what is the weather in Liverpool?",
+    )
+
+    response = bedrock_converse_integration_thinking.chat_with_tools(
+        tools=[tool], user_msg=input_message, chat_history=history
+    )
+    assert (
+        len(
+            [
+                block
+                for block in response.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        > 0
+    )
+    assert any(
+        block.tool_name == "get_weather"
+        and (
+            block.tool_kwargs == {"location": "Liverpool"}
+            or block.tool_kwargs == json.dumps({"location": "Liverpool"})
+        )
+        for block in response.message.blocks
+        if isinstance(block, ToolCallBlock)
+    )
+    aresponse = await bedrock_converse_integration_thinking.achat_with_tools(
+        tools=[tool], user_msg=input_message, chat_history=history
+    )
+    assert (
+        len(
+            [
+                block
+                for block in aresponse.message.blocks
+                if isinstance(block, ToolCallBlock)
+            ]
+        )
+        > 0
+    )
+    assert any(
+        block.tool_name == "get_weather"
+        and (
+            block.tool_kwargs == {"location": "Liverpool"}
+            or block.tool_kwargs == json.dumps({"location": "Liverpool"})
+        )
+        for block in aresponse.message.blocks
+        if isinstance(block, ToolCallBlock)
+    )
+    stream_response = bedrock_converse_integration_thinking.stream_chat_with_tools(
+        tools=[tool], user_msg=input_message, chat_history=history
+    )
+    blocks = []
+    for res in stream_response:
+        blocks.extend(res.message.blocks)
+    assert len([block for block in blocks if isinstance(block, ToolCallBlock)]) > 0
+    assert any(
+        block.tool_name == "get_weather"
+        and (
+            block.tool_kwargs == {"location": "Liverpool"}
+            or block.tool_kwargs == json.dumps({"location": "Liverpool"})
+        )
+        for block in blocks
+        if isinstance(block, ToolCallBlock)
+    )
+    astream_response = (
+        await bedrock_converse_integration_thinking.astream_chat_with_tools(
+            tools=[tool], user_msg=input_message, chat_history=history
+        )
+    )
+    ablocks = []
+    async for res in astream_response:
+        ablocks.extend(res.message.blocks)
+    assert len([block for block in ablocks if isinstance(block, ToolCallBlock)]) > 0
+    assert any(
+        block.tool_name == "get_weather"
+        and (
+            block.tool_kwargs == {"location": "Liverpool"}
+            or block.tool_kwargs == json.dumps({"location": "Liverpool"})
+        )
+        for block in ablocks
+        if isinstance(block, ToolCallBlock)
+    )

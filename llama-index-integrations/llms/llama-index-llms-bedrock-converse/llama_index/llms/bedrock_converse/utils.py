@@ -32,6 +32,7 @@ from llama_index.core.base.llms.types import (
     DocumentBlock,
     CachePoint,
     ThinkingBlock,
+    ToolCallBlock,
 )
 
 
@@ -303,6 +304,23 @@ def _content_block_to_bedrock_format(
     elif isinstance(block, AudioBlock):
         logger.warning("Audio blocks are not supported in Bedrock Converse API.")
         return None
+    elif isinstance(block, ToolCallBlock):
+        if isinstance(block.tool_kwargs, str):
+            try:
+                tool_input = json.loads(block.tool_kwargs or "{}")
+            except json.JSONDecodeError:
+                tool_input = {}
+        else:
+            tool_input = block.tool_kwargs
+
+        return {
+            "toolUse": {
+                "input": tool_input,
+                "toolUseId": block.tool_call_id or "",
+                "name": block.tool_name,
+            }
+        }
+
     else:
         logger.warning(f"Unsupported block type: {type(block)}")
         return None
@@ -411,6 +429,7 @@ def messages_to_converse_messages(
                     }
                 )
 
+        # keep this code here for compatibility with older chat histories
         # convert tool calls to the AWS Bedrock Converse format
         # NOTE tool calls might show up within any message,
         # e.g. within assistant message or in consecutive tool calls,
@@ -491,9 +510,15 @@ def tools_to_converse_tools(
 
 
 def force_single_tool_call(response: ChatResponse) -> None:
-    tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+    tool_calls = [
+        block for block in response.message.blocks if isinstance(block, ToolCallBlock)
+    ]
     if len(tool_calls) > 1:
-        response.message.additional_kwargs["tool_calls"] = [tool_calls[0]]
+        response.message.blocks = [
+            block
+            for block in response.message.blocks
+            if not isinstance(block, ToolCallBlock)
+        ] + [tool_calls[0]]
 
 
 def _create_retry_decorator(client: Any, max_retries: int) -> Callable[[Any], Any]:

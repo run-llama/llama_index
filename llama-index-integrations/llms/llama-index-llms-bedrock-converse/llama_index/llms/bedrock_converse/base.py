@@ -23,6 +23,7 @@ from llama_index.core.base.llms.types import (
     MessageRole,
     TextBlock,
     ThinkingBlock,
+    ToolCallBlock,
 )
 from llama_index.core.bridge.pydantic import Field, PrivateAttr
 from llama_index.core.callbacks import CallbackManager
@@ -349,7 +350,7 @@ class BedrockConverse(FunctionCallingLLM):
     def _get_content_and_tool_calls(
         self, response: Optional[Dict[str, Any]] = None, content: Dict[str, Any] = None
     ) -> Tuple[
-        List[Union[TextBlock, ThinkingBlock]], Dict[str, Any], List[str], List[str]
+        List[Union[TextBlock, ThinkingBlock, ToolCallBlock]], List[str], List[str]
     ]:
         assert response is not None or content is not None, (
             f"Either response or content must be provided. Got response: {response}, content: {content}"
@@ -357,10 +358,9 @@ class BedrockConverse(FunctionCallingLLM):
         assert response is None or content is None, (
             f"Only one of response or content should be provided. Got response: {response}, content: {content}"
         )
-        tool_calls = []
         tool_call_ids = []
         status = []
-        blocks = []
+        blocks: List[TextBlock | ThinkingBlock | ToolCallBlock] = []
         if content is not None:
             content_list = [content]
         else:
@@ -385,7 +385,13 @@ class BedrockConverse(FunctionCallingLLM):
                     tool_usage["toolUseId"] = content_block["toolUseId"]
                 if "name" not in tool_usage:
                     tool_usage["name"] = content_block["name"]
-                tool_calls.append(tool_usage)
+                blocks.append(
+                    ToolCallBlock(
+                        tool_name=tool_usage.get("name", ""),
+                        tool_call_id=tool_usage.get("toolUseId"),
+                        tool_kwargs=tool_usage.get("input", {}),
+                    )
+                )
             if tool_result := content_block.get("toolResult", None):
                 for tool_result_content in tool_result["content"]:
                     if text := tool_result_content.get("text", None):
@@ -393,7 +399,7 @@ class BedrockConverse(FunctionCallingLLM):
                 tool_call_ids.append(tool_result_content.get("toolUseId", ""))
                 status.append(tool_result.get("status", ""))
 
-        return blocks, tool_calls, tool_call_ids, status
+        return blocks, tool_call_ids, status
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -420,16 +426,13 @@ class BedrockConverse(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        blocks, tool_calls, tool_call_ids, status = self._get_content_and_tool_calls(
-            response
-        )
+        blocks, tool_call_ids, status = self._get_content_and_tool_calls(response)
 
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 blocks=blocks,
                 additional_kwargs={
-                    "tool_calls": tool_calls,
                     "tool_call_id": tool_call_ids,
                     "status": status,
                 },
@@ -523,7 +526,7 @@ class BedrockConverse(FunctionCallingLLM):
                                     current_tool_call, tool_use_delta
                                 )
 
-                    blocks: List[Union[TextBlock, ThinkingBlock]] = [
+                    blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
                         TextBlock(text=content.get("text", ""))
                     ]
                     if thinking != "":
@@ -536,13 +539,21 @@ class BedrockConverse(FunctionCallingLLM):
                                 },
                             ),
                         )
+                    if tool_calls:
+                        for tool_call in tool_calls:
+                            blocks.append(
+                                ToolCallBlock(
+                                    tool_kwargs=tool_call.get("input", {}),
+                                    tool_name=tool_call.get("name", ""),
+                                    tool_call_id=tool_call.get("toolUseId"),
+                                )
+                            )
 
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
                             blocks=blocks,
                             additional_kwargs={
-                                "tool_calls": tool_calls,
                                 "tool_call_id": [
                                     tc.get("toolUseId", "") for tc in tool_calls
                                 ],
@@ -562,7 +573,7 @@ class BedrockConverse(FunctionCallingLLM):
                         # Add to our list of tool calls
                         tool_calls.append(current_tool_call)
 
-                    blocks: List[Union[TextBlock, ThinkingBlock]] = [
+                    blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
                         TextBlock(text=content.get("text", ""))
                     ]
                     if thinking != "":
@@ -576,12 +587,21 @@ class BedrockConverse(FunctionCallingLLM):
                             ),
                         )
 
+                    if tool_calls:
+                        for tool_call in tool_calls:
+                            blocks.append(
+                                ToolCallBlock(
+                                    tool_kwargs=tool_call.get("input", {}),
+                                    tool_name=tool_call.get("name", ""),
+                                    tool_call_id=tool_call.get("toolUseId"),
+                                )
+                            )
+
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
                             blocks=blocks,
                             additional_kwargs={
-                                "tool_calls": tool_calls,
                                 "tool_call_id": [
                                     tc.get("toolUseId", "") for tc in tool_calls
                                 ],
@@ -598,7 +618,7 @@ class BedrockConverse(FunctionCallingLLM):
                     # Handle metadata event - this contains the final token usage
                     if usage := metadata.get("usage"):
                         # Yield a final response with correct token usage
-                        blocks: List[Union[TextBlock, ThinkingBlock]] = [
+                        blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
                             TextBlock(text=content.get("text", ""))
                         ]
                         if thinking != "":
@@ -611,13 +631,21 @@ class BedrockConverse(FunctionCallingLLM):
                                     },
                                 ),
                             )
+                        if tool_calls:
+                            for tool_call in tool_calls:
+                                blocks.append(
+                                    ToolCallBlock(
+                                        tool_kwargs=tool_call.get("input", {}),
+                                        tool_name=tool_call.get("name", ""),
+                                        tool_call_id=tool_call.get("toolUseId"),
+                                    )
+                                )
 
                         yield ChatResponse(
                             message=ChatMessage(
                                 role=role,
                                 blocks=blocks,
                                 additional_kwargs={
-                                    "tool_calls": tool_calls,
                                     "tool_call_id": [
                                         tc.get("toolUseId", "") for tc in tool_calls
                                     ],
@@ -667,16 +695,13 @@ class BedrockConverse(FunctionCallingLLM):
             **all_kwargs,
         )
 
-        blocks, tool_calls, tool_call_ids, status = self._get_content_and_tool_calls(
-            response
-        )
+        blocks, tool_call_ids, status = self._get_content_and_tool_calls(response)
 
         return ChatResponse(
             message=ChatMessage(
                 role=MessageRole.ASSISTANT,
                 blocks=blocks,
                 additional_kwargs={
-                    "tool_calls": tool_calls,
                     "tool_call_id": tool_call_ids,
                     "status": status,
                 },
@@ -771,7 +796,7 @@ class BedrockConverse(FunctionCallingLLM):
                                 current_tool_call = join_two_dicts(
                                     current_tool_call, tool_use_delta
                                 )
-                    blocks: List[Union[TextBlock, ThinkingBlock]] = [
+                    blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
                         TextBlock(text=content.get("text", ""))
                     ]
                     if thinking != "":
@@ -785,12 +810,21 @@ class BedrockConverse(FunctionCallingLLM):
                             ),
                         )
 
+                    if tool_calls:
+                        for tool_call in tool_calls:
+                            blocks.append(
+                                ToolCallBlock(
+                                    tool_kwargs=tool_call.get("input", {}),
+                                    tool_name=tool_call.get("name", ""),
+                                    tool_call_id=tool_call.get("toolUseId"),
+                                )
+                            )
+
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
                             blocks=blocks,
                             additional_kwargs={
-                                "tool_calls": tool_calls,
                                 "tool_call_id": [
                                     tc.get("toolUseId", "") for tc in tool_calls
                                 ],
@@ -810,7 +844,7 @@ class BedrockConverse(FunctionCallingLLM):
                         # Add to our list of tool calls
                         tool_calls.append(current_tool_call)
 
-                    blocks: List[Union[TextBlock, ThinkingBlock]] = [
+                    blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
                         TextBlock(text=content.get("text", ""))
                     ]
                     if thinking != "":
@@ -824,12 +858,21 @@ class BedrockConverse(FunctionCallingLLM):
                             ),
                         )
 
+                    if tool_calls:
+                        for tool_call in tool_calls:
+                            blocks.append(
+                                ToolCallBlock(
+                                    tool_kwargs=tool_call.get("input", {}),
+                                    tool_name=tool_call.get("name", ""),
+                                    tool_call_id=tool_call.get("toolUseId"),
+                                )
+                            )
+
                     yield ChatResponse(
                         message=ChatMessage(
                             role=role,
                             blocks=blocks,
                             additional_kwargs={
-                                "tool_calls": tool_calls,
                                 "tool_call_id": [
                                     tc.get("toolUseId", "") for tc in tool_calls
                                 ],
@@ -846,7 +889,7 @@ class BedrockConverse(FunctionCallingLLM):
                     # Handle metadata event - this contains the final token usage
                     if usage := metadata.get("usage"):
                         # Yield a final response with correct token usage
-                        blocks: List[Union[TextBlock, ThinkingBlock]] = [
+                        blocks: List[Union[TextBlock, ThinkingBlock, ToolCallBlock]] = [
                             TextBlock(text=content.get("text", ""))
                         ]
                         if thinking != "":
@@ -860,12 +903,21 @@ class BedrockConverse(FunctionCallingLLM):
                                 ),
                             )
 
+                        if tool_calls:
+                            for tool_call in tool_calls:
+                                blocks.append(
+                                    ToolCallBlock(
+                                        tool_kwargs=tool_call.get("input", {}),
+                                        tool_name=tool_call.get("name", ""),
+                                        tool_call_id=tool_call.get("toolUseId"),
+                                    )
+                                )
+
                         yield ChatResponse(
                             message=ChatMessage(
                                 role=role,
                                 blocks=blocks,
                                 additional_kwargs={
-                                    "tool_calls": tool_calls,
                                     "tool_call_id": [
                                         tc.get("toolUseId", "") for tc in tool_calls
                                     ],
@@ -941,7 +993,11 @@ class BedrockConverse(FunctionCallingLLM):
         **kwargs: Any,
     ) -> List[ToolSelection]:
         """Predict and call the tool."""
-        tool_calls = response.message.additional_kwargs.get("tool_calls", [])
+        tool_calls = [
+            block
+            for block in response.message.blocks
+            if isinstance(block, ToolCallBlock)
+        ]
 
         if len(tool_calls) < 1:
             if error_on_no_tool_call:
@@ -953,26 +1009,23 @@ class BedrockConverse(FunctionCallingLLM):
 
         tool_selections = []
         for tool_call in tool_calls:
-            if "toolUseId" not in tool_call or "name" not in tool_call:
-                raise ValueError("Invalid tool call.")
-
             # handle empty inputs
             argument_dict = {}
-            if "input" in tool_call and isinstance(tool_call["input"], str):
+            if isinstance(tool_call.tool_kwargs, str):
                 # TODO parse_partial_json is not perfect
                 try:
-                    argument_dict = parse_partial_json(tool_call["input"])
+                    argument_dict = parse_partial_json(tool_call.tool_kwargs)
                 except ValueError:
                     argument_dict = {}
-            elif "input" in tool_call and isinstance(tool_call["input"], dict):
-                argument_dict = tool_call["input"]
+            elif isinstance(tool_call.tool_kwargs, dict):
+                argument_dict = tool_call.tool_kwargs
             else:
                 continue
 
             tool_selections.append(
                 ToolSelection(
-                    tool_id=tool_call["toolUseId"],
-                    tool_name=tool_call["name"],
+                    tool_id=tool_call.tool_call_id or "",
+                    tool_name=tool_call.tool_name,
                     tool_kwargs=argument_dict,
                 )
             )
