@@ -103,6 +103,8 @@ def to_mistral_chunks(content_blocks: Sequence[ContentBlock]) -> Sequence[Conten
                         image_url=f"data:{image_mimetype};base64,{base_64_str}"
                     )
                 )
+        elif isinstance(content_block, ToolCallBlock):
+            pass
         else:
             raise ValueError(f"Unsupported content block type {type(content_block)}")
     return content_chunks
@@ -319,17 +321,29 @@ class MistralAI(FunctionCallingLLM):
             **kwargs,
         }
 
-    def _separate_thinking(self, response: str) -> Tuple[str, str]:
+    def _separate_thinking(
+        self, response: Union[str, List[ContentChunk]]
+    ) -> Tuple[str, str]:
         """Separate the thinking from the response."""
-        match = THINKING_REGEX.search(response)
-        if match:
-            return match.group(1), response.replace(match.group(0), "")
+        content = ""
+        if isinstance(response, str):
+            content = response
+        else:
+            for chunk in response:
+                if isinstance(chunk, ThinkChunk):
+                    for c in chunk.thinking:
+                        if isinstance(c, TextChunk):
+                            content += c.text + "\n"
 
-        match = THINKING_START_REGEX.search(response)
+        match = THINKING_REGEX.search(content)
+        if match:
+            return match.group(1), content.replace(match.group(0), "")
+
+        match = THINKING_START_REGEX.search(content)
         if match:
             return match.group(0), ""
 
-        return "", response
+        return "", content
 
     @llm_chat_callback()
     def chat(self, messages: Sequence[ChatMessage], **kwargs: Any) -> ChatResponse:
@@ -341,16 +355,28 @@ class MistralAI(FunctionCallingLLM):
         blocks: List[TextBlock | ThinkingBlock | ToolCallBlock] = []
 
         if self.model in MISTRAL_AI_REASONING_MODELS:
+            print(response.choices[0].message.content)
             thinking_txt, response_txt = self._separate_thinking(
-                response.choices[0].message.content
+                response.choices[0].message.content or []
             )
             if thinking_txt:
                 blocks.append(ThinkingBlock(content=thinking_txt))
 
+            response_txt_think_show = ""
+            if response.choices[0].message.content:
+                if isinstance(response.choices[0].message.content, str):
+                    response_txt_think_show = response.choices[0].message.content
+                else:
+                    for chunk in response.choices[0].message.content:
+                        if isinstance(chunk, TextBlock):
+                            response_txt_think_show += chunk.text + "\n"
+                        if isinstance(chunk, ThinkChunk):
+                            for c in chunk.thinking:
+                                if isinstance(c, TextChunk):
+                                    response_txt_think_show += c.text + "\n"
+
             response_txt = (
-                response_txt
-                if not self.show_thinking
-                else response.choices[0].message.content
+                response_txt if not self.show_thinking else response_txt_think_show
             )
         else:
             response_txt = response.choices[0].message.content
@@ -414,7 +440,21 @@ class MistralAI(FunctionCallingLLM):
                             )
 
                 content_delta = delta.content or ""
-                content += content_delta
+                content_delta_str = ""
+                if isinstance(content_delta, str):
+                    content_delta_str = content_delta
+                else:
+                    for chunk in content_delta:
+                        if isinstance(chunk, TextChunk):
+                            content_delta_str += chunk.text + "\n"
+                        elif isinstance(chunk, ThinkChunk):
+                            for c in chunk.thinking:
+                                if isinstance(c, TextChunk):
+                                    content_delta_str += c.text + "\n"
+                        else:
+                            continue
+
+                content += content_delta_str
 
                 # decide whether to include thinking in deltas/responses
                 if self.model in MISTRAL_AI_REASONING_MODELS:
@@ -435,7 +475,7 @@ class MistralAI(FunctionCallingLLM):
                         role=role,
                         blocks=blocks,
                     ),
-                    delta=content_delta,
+                    delta=content_delta_str,
                     raw=chunk,
                 )
 
@@ -463,16 +503,28 @@ class MistralAI(FunctionCallingLLM):
         blocks: List[TextBlock | ThinkingBlock | ToolCallBlock] = []
         additional_kwargs = {}
         if self.model in MISTRAL_AI_REASONING_MODELS:
+            print(response.choices[0].message.content)
             thinking_txt, response_txt = self._separate_thinking(
-                response.choices[0].message.content
+                response.choices[0].message.content or []
             )
             if thinking_txt:
                 blocks.append(ThinkingBlock(content=thinking_txt))
 
+            response_txt_think_show = ""
+            if response.choices[0].message.content:
+                if isinstance(response.choices[0].message.content, str):
+                    response_txt_think_show = response.choices[0].message.content
+                else:
+                    for chunk in response.choices[0].message.content:
+                        if isinstance(chunk, TextBlock):
+                            response_txt_think_show += chunk.text + "\n"
+                        if isinstance(chunk, ThinkChunk):
+                            for c in chunk.thinking:
+                                if isinstance(c, TextChunk):
+                                    response_txt_think_show += c.text + "\n"
+
             response_txt = (
-                response_txt
-                if not self.show_thinking
-                else response.choices[0].message.content
+                response_txt if not self.show_thinking else response_txt_think_show
             )
         else:
             response_txt = response.choices[0].message.content
@@ -547,7 +599,21 @@ class MistralAI(FunctionCallingLLM):
                             )
 
                 content_delta = delta.content or ""
-                content += content_delta
+                content_delta_str = ""
+                if isinstance(content_delta, str):
+                    content_delta_str = content_delta
+                else:
+                    for chunk in content_delta:
+                        if isinstance(chunk, TextChunk):
+                            content_delta_str += chunk.text + "\n"
+                        elif isinstance(chunk, ThinkChunk):
+                            for c in chunk.thinking:
+                                if isinstance(c, TextChunk):
+                                    content_delta_str += c.text + "\n"
+                        else:
+                            continue
+
+                content += content_delta_str
 
                 # decide whether to include thinking in deltas/responses
                 if self.model in MISTRAL_AI_REASONING_MODELS:
@@ -568,7 +634,7 @@ class MistralAI(FunctionCallingLLM):
                         role=role,
                         blocks=blocks,
                     ),
-                    delta=content_delta,
+                    delta=content_delta_str,
                     raw=chunk,
                 )
 
@@ -645,9 +711,6 @@ class MistralAI(FunctionCallingLLM):
 
         tool_selections = []
         for tool_call in tool_calls:
-            if not isinstance(tool_call, ToolCall):
-                raise ValueError("Invalid tool_call object")
-
             if isinstance(tool_call.tool_kwargs, str):
                 argument_dict = json.loads(tool_call.tool_kwargs)
             else:
