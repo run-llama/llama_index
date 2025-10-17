@@ -565,7 +565,7 @@ class Anthropic(FunctionCallingLLM):
                             },
                         ),
                         citations=cur_citations,
-                        delta=content_delta,
+                        delta="",
                         raw=dict(r),
                     )
 
@@ -753,7 +753,7 @@ class Anthropic(FunctionCallingLLM):
                             },
                         ),
                         citations=cur_citations,
-                        delta=content_delta,
+                        delta="",
                         raw=dict(r),
                     )
 
