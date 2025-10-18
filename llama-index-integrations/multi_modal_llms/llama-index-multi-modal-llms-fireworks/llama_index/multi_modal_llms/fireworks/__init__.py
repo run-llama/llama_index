@@ -1,3 +1,4 @@
-from llama_index.multi_modal_llms.fireworks.base import FireworksAIMultiModal
+from llama_index.multi_modal_llms.fireworks.base import FireworksMultiModal
 
-__all__ = ["FireworksAIMultiModal"]
+__all__ = ["FireworksMultiModal"]
+
