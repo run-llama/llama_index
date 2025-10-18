@@ -8,10 +8,15 @@ It is used by the Github readers to retrieve the data from Github.
 import os
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Protocol
+from typing import Any, Dict, List, Optional, Protocol, Union
 
 from dataclasses_json import DataClassJsonMixin, config
 from httpx import HTTPError
+
+try:
+    from llama_index.readers.github.github_app_auth import GitHubAppAuth
+except ImportError:
+    GitHubAppAuth = None  # type: ignore
 
 
 @dataclass
@@ -204,13 +209,25 @@ class GithubClient:
 
     This client is used for making API requests to Github.
     It provides methods for accessing the Github API endpoints.
-    The client requires a Github token for authentication,
-    which can be passed as an argument or set as an environment variable.
-    If no Github token is provided, the client will raise a ValueError.
+    The client supports two authentication methods:
+    1. Personal Access Token (PAT) - passed as github_token or via GITHUB_TOKEN env var
+    2. GitHub App - passed as github_app_auth parameter
 
     Examples:
+        >>> # Using Personal Access Token
         >>> client = GithubClient("my_github_token")
         >>> branch_info = client.get_branch("owner", "repo", "branch")
+        >>>
+        >>> # Using GitHub App
+        >>> from llama_index.readers.github.github_app_auth import GitHubAppAuth
+        >>> with open("private-key.pem", "r") as f:
+        ...     private_key = f.read()
+        >>> app_auth = GitHubAppAuth(
+        ...     app_id="123456",
+        ...     private_key=private_key,
+        ...     installation_id="789012"
+        ... )
+        >>> client = GithubClient(github_app_auth=app_auth)
 
     """
 
@@ -220,6 +237,7 @@ class GithubClient:
     def __init__(
         self,
         github_token: Optional[str] = None,
+        github_app_auth: Optional[Union["GitHubAppAuth", Any]] = None,
         base_url: str = DEFAULT_BASE_URL,
         api_version: str = DEFAULT_API_VERSION,
         verbose: bool = False,
@@ -229,9 +247,11 @@ class GithubClient:
         Initialize the GithubClient.
 
         Args:
-            - github_token (str): Github token for authentication.
+            - github_token (str, optional): Github token for authentication.
                 If not provided, the client will try to get it from
-                the GITHUB_TOKEN environment variable.
+                the GITHUB_TOKEN environment variable. Mutually exclusive with github_app_auth.
+            - github_app_auth (GitHubAppAuth, optional): GitHub App authentication handler.
+                Mutually exclusive with github_token.
             - base_url (str): Base URL for the Github API
                 (defaults to "https://api.github.com").
             - api_version (str): Github API version (defaults to "2022-11-28").
@@ -239,22 +259,41 @@ class GithubClient:
             - fail_on_http_error (bool): Whether to raise an exception on HTTP errors (defaults to True).
 
         Raises:
-            ValueError: If no Github token is provided.
+            ValueError: If neither github_token nor github_app_auth is provided,
+                       or if both are provided.
 
         """
-        if github_token is None:
-            github_token = os.getenv("GITHUB_TOKEN")
-            if github_token is None:
-                raise ValueError(
-                    "Please provide a Github token. "
-                    + "You can do so by passing it as an argument to the GithubReader,"
-                    + "or by setting the GITHUB_TOKEN environment variable."
-                )
+        # Validate authentication parameters
+        if github_token is not None and github_app_auth is not None:
+            raise ValueError(
+                "Cannot provide both github_token and github_app_auth. "
+                "Please use only one authentication method."
+            )
 
         self._base_url = base_url
         self._api_version = api_version
         self._verbose = verbose
         self._fail_on_http_error = fail_on_http_error
+        self._github_app_auth = github_app_auth
+        self._github_token = None
+
+        # Set up authentication
+        if github_app_auth is not None:
+            # Using GitHub App authentication
+            self._use_github_app = True
+        else:
+            # Using PAT authentication
+            self._use_github_app = False
+            if github_token is None:
+                github_token = os.getenv("GITHUB_TOKEN")
+                if github_token is None:
+                    raise ValueError(
+                        "Please provide a Github token or GitHub App authentication. "
+                        + "You can pass github_token as an argument, "
+                        + "set the GITHUB_TOKEN environment variable, "
+                        + "or pass github_app_auth for GitHub App authentication."
+                    )
+            self._github_token = github_token
 
         self._endpoints = {
             "getTree": "/repos/{owner}/{repo}/git/trees/{tree_sha}",
@@ -263,15 +302,47 @@ class GithubClient:
             "getCommit": "/repos/{owner}/{repo}/commits/{commit_sha}",
         }
 
-        self._headers = {
+        # Base headers (Authorization header will be added per-request)
+        self._base_headers = {
             "Accept": "application/vnd.github+json",
-            "Authorization": f"Bearer {github_token}",
             "X-GitHub-Api-Version": f"{self._api_version}",
         }
+
+        # For backward compatibility, keep _headers with PAT token
+        if not self._use_github_app:
+            self._headers = {
+                **self._base_headers,
+                "Authorization": f"Bearer {self._github_token}",
+            }
+        else:
+            # Headers will be generated per-request for GitHub App
+            self._headers = self._base_headers.copy()
 
     def get_all_endpoints(self) -> Dict[str, str]:
         """Get all available endpoints."""
         return {**self._endpoints}
+
+    async def _get_auth_headers(self) -> Dict[str, str]:
+        """
+        Get authentication headers.
+
+        For PAT authentication, returns cached headers.
+        For GitHub App authentication, fetches a fresh installation token if needed.
+
+        Returns:
+            Dictionary containing authentication headers.
+
+        """
+        if self._use_github_app:
+            # Get fresh token from GitHub App auth
+            token = await self._github_app_auth.get_installation_token()
+            return {
+                **self._base_headers,
+                "Authorization": f"Bearer {token}",
+            }
+        else:
+            # Return cached headers with PAT
+            return self._headers
 
     async def request(
         self,
@@ -317,7 +388,9 @@ class GithubClient:
                 "You can do so by running `pip install httpx`."
             )
 
-        _headers = {**self._headers, **headers}
+        # Get authentication headers (may fetch fresh token for GitHub App)
+        auth_headers = await self._get_auth_headers()
+        _headers = {**auth_headers, **headers}
 
         _client: httpx.AsyncClient
         async with httpx.AsyncClient(

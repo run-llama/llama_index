@@ -8,7 +8,62 @@ The github readers package consists of three separate readers:
 2. Issues Reader
 3. Collaborators Reader
 
-All three readers will require a personal access token (which you can generate under your account settings).
+## Authentication
+
+The readers support two authentication methods:
+
+### 1. Personal Access Token (PAT)
+
+Generate a token under your account settings at https://github.com/settings/tokens
+
+```python
+from llama_index.readers.github import GithubClient
+
+# Direct token
+client = GithubClient(github_token="ghp_your_token_here")
+
+# Or via environment variable
+import os
+
+os.environ["GITHUB_TOKEN"] = "ghp_your_token_here"
+client = GithubClient()  # Automatically uses GITHUB_TOKEN
+```
+
+### 2. GitHub App Authentication
+
+For better security, rate limits, and organization-level access, use GitHub App authentication:
+
+```python
+from llama_index.readers.github import GithubClient, GitHubAppAuth
+
+# Load your GitHub App private key
+with open("path/to/private-key.pem", "r") as f:
+    private_key = f.read()
+
+# Create GitHub App auth handler
+app_auth = GitHubAppAuth(
+    app_id="123456",  # Your GitHub App ID
+    private_key=private_key,  # Private key content (PEM format)
+    installation_id="789012",  # Installation ID for the target org/repo
+)
+
+# Use with any client
+client = GithubClient(github_app_auth=app_auth)
+```
+
+**Installation for GitHub App support:**
+
+```bash
+pip install llama-index-readers-github[github-app]
+```
+
+**Benefits of GitHub App authentication:**
+
+- **Higher rate limits**: 5,000 requests/hour per installation (vs 5,000/hour for PAT)
+- **Fine-grained permissions**: Repository-specific access control
+- **Better security**: Tokens auto-expire after 1 hour
+- **Organization-level**: Can be installed across multiple repositories
+- **Auditability**: Actions attributed to the app, not individual users
 
 ## Repository Reader
 
@@ -273,4 +328,109 @@ reader = GitHubRepositoryCollaboratorsReader(
 )
 
 documents = reader.load_data()
+```
+
+## GitHub App Setup Guide
+
+To create and configure a GitHub App for authentication:
+
+### 1. Create a GitHub App
+
+1. Go to your GitHub account settings → Developer settings → GitHub Apps → **New GitHub App**
+2. Fill in the required information:
+   - **GitHub App name**: Choose a unique name (e.g., "My LlamaIndex Reader")
+   - **Homepage URL**: Your application or organization URL
+   - **Webhook**: Uncheck "Active" (not needed for this use case)
+
+### 2. Set Permissions
+
+Under **Repository permissions**, set:
+
+- **Contents**: Read-only (to read repository files)
+- **Metadata**: Read-only (required automatically)
+- **Issues**: Read-only (if using Issues reader)
+- **Pull requests**: Read-only (issues endpoint includes PRs)
+
+### 3. Install the App
+
+1. After creating the app, note your **App ID** (shown at the top)
+2. Generate a **private key**:
+   - Scroll down to "Private keys"
+   - Click "Generate a private key"
+   - Save the downloaded `.pem` file securely
+3. Install the app:
+   - Click "Install App" in the left sidebar
+   - Choose the account/organization
+   - Select **specific repositories** or **all repositories**
+   - Complete installation
+
+### 4. Get Installation ID
+
+After installation, you'll be redirected to a URL like:
+
+```
+https://github.com/settings/installations/12345678
+```
+
+The number `12345678` is your **installation ID**. You can also find it via the API:
+
+```bash
+curl -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+     https://api.github.com/app/installations
+```
+
+### 5. Use in Code
+
+```python
+from llama_index.readers.github import GithubClient, GitHubAppAuth
+
+# Load private key
+with open("path/to/your-app-private-key.pem", "r") as f:
+    private_key = f.read()
+
+# Create auth handler
+app_auth = GitHubAppAuth(
+    app_id="YOUR_APP_ID",
+    private_key=private_key,
+    installation_id="YOUR_INSTALLATION_ID",
+)
+
+# Use with any client
+client = GithubClient(github_app_auth=app_auth)
+```
+
+### Token Management
+
+The `GitHubAppAuth` class automatically:
+
+- Generates JWTs for app authentication
+- Obtains installation access tokens
+- Caches tokens (valid for 1 hour)
+- Refreshes tokens automatically when they expire or are within 5 minutes of expiry
+
+You can manually invalidate a token if needed:
+
+```python
+app_auth.invalidate_token()  # Forces refresh on next request
+```
+
+### Troubleshooting
+
+**"Failed to get installation token: 401"**
+
+- Verify your App ID is correct
+- Ensure the private key matches your GitHub App
+- Check that the app is installed for the target repository
+
+**"Failed to get installation token: 404"**
+
+- Verify the installation ID is correct
+- Ensure the app installation wasn't uninstalled
+
+**"Import PyJWT failed"**
+
+- Install GitHub App support: `pip install llama-index-readers-github[github-app]`
+
+```
+
 ```
