@@ -32,7 +32,7 @@ class FireworksMultiModal(Fireworks):
 
     @classmethod
     def class_name(cls) -> str:
-        return "fireworks_multi_modal_llm"
+        return "fireworks_multi_modal_llms"
 
     def _get_multi_modal_chat_message(
         self,
