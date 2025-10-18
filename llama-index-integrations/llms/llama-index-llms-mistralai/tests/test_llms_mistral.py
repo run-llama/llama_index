@@ -4,11 +4,16 @@ import base64
 from pathlib import Path
 from unittest.mock import patch
 
-from mistralai import ToolCall, ImageURLChunk, TextChunk, ThinkChunk
+from mistralai import ImageURLChunk, TextChunk, ThinkChunk
 import pytest
 
 from llama_index.core.base.llms.base import BaseLLM
-from llama_index.core.llms import ChatMessage, ImageBlock, TextBlock
+from llama_index.core.base.llms.types import (
+    ChatMessage,
+    ImageBlock,
+    TextBlock,
+    ToolCallBlock,
+)
 from llama_index.core.base.llms.types import ThinkingBlock
 from llama_index.core.tools import FunctionTool
 from llama_index.llms.mistralai import MistralAI
@@ -40,14 +45,13 @@ def test_tool_required():
         user_msg="What is the capital of France?",
         tool_required=True,
     )
-    additional_kwargs = result.message.additional_kwargs
-    assert "tool_calls" in additional_kwargs
-    tool_calls = additional_kwargs["tool_calls"]
+    tool_calls = [
+        block for block in result.message.blocks if isinstance(block, ToolCallBlock)
+    ]
     assert len(tool_calls) == 1
     tool_call = tool_calls[0]
-    assert isinstance(tool_call, ToolCall)
-    assert tool_call.function.name == "search_tool"
-    assert "query" in tool_call.function.arguments
+    assert tool_call.tool_name == "search_tool"
+    assert "query" in tool_call.tool_kwargs
 
 
 @patch("mistralai.Mistral")
@@ -184,3 +188,8 @@ def test_to_mistral_chunks(tmp_path: Path, image_url: str) -> None:
     )
     assert isinstance(thinking_chunks[1], TextChunk)
     assert thinking_chunks[1].text == "This is some text"
+    tool_blocks = [
+        ToolCallBlock(tool_call_id="1", tool_name="hello_world", tool_kwargs={})
+    ]
+    tool_chunks = to_mistral_chunks(tool_blocks)
+    assert len(tool_chunks) == 0
