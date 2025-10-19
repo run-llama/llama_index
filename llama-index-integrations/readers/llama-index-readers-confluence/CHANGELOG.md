@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## [Unreleased]
+
+### Changed
+
+- **BREAKING**: Made SVG processing optional to avoid installation issues with pycairo dependency
+- SVG support (`svglib`) moved to optional dependencies. Install with `pip install llama-index-readers-confluence[svg]`
+- SVG attachments will be skipped with a warning if optional dependencies are not installed
+- Pinned svglib to <1.6.0 to avoid breaking changes in newer versions
+
+### Fixed
+
+- Fixed installation failures on Debian/Ubuntu systems due to pycairo compilation issues
+
 ## [0.1.8] - 2024-08-20
 
 - Added observability events for ConfluenceReader
