@@ -1,22 +1,76 @@
-[tool.poetry]
-name = "llama-index-readers-trino"
-version = "0.1.0"
-description = "Trino Data Reader for LlamaIndex"
-authors = ["Your Name <youremail@example.com>"]
-readme = "README.md"
-packages = [{include = "llama_index"}]
-license = "MIT"
-
-[tool.poetry.dependencies]
-python = "^3.8"
-llama-index-core = "^0.10.0"
-trino-python-client = "^0.11.0" # Required for connecting to Trino
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^7.0"
-mypy = "^1.0"
-ruff = "^0.1.0"
-
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "ipython==8.10.0",
+    "jupyter>=1.0.0,<2",
+    "mypy==0.991",
+    "pre-commit==3.2.0",
+    "pylint==2.15.10",
+    "pytest==7.2.1",
+    "pytest-mock==3.11.1",
+    "ruff==0.11.11",
+    "types-Deprecated>=0.1.0",
+    "types-PyYAML>=6.0.12.12,<7",
+    "types-protobuf>=4.24.0.4,<5",
+    "types-redis==4.5.5.0",
+    "types-requests==2.28.11.8",
+    "types-setuptools==67.1.0.0",
+    "black[jupyter]<=23.9.1,>=23.7.0",
+    "codespell[toml]>=v2.2.6",
+    "diff-cover>=9.2.0",
+    "pytest-cov>=6.1.1",
+    # Specific requirement for testing your Trino code:
+    "trino>=0.316.0", 
+    "pandas>=2.0.0"
+]
+
+[project]
+name = "llama-index-readers-trino"
+version = "0.1.0" # Starting version for a new integration
+description = "LlamaIndex Data Loader for Trino distributed SQL query engine."
+authors = [{name = "Joshua Fordyce", email = "jfordyce1@fordham.edu"}]
+requires-python = ">=3.9,<4.0"
+readme = "README.md"
+license = "MIT"
+maintainers = [{name = "Joshua Fordyce"}]
+keywords = [
+    "trino",
+    "distributed query",
+    "data lakehouse",
+    "data federation",
+    "sql"
+]
+# CRITICAL: Add the native Trino Python client as a dependency
+# Note: We use the llama-index-core version from the source template
+dependencies = ["llama-index-core>=0.13.0,<0.15", "trino>=0.316.0"]
+
+[tool.codespell]
+check-filenames = true
+check-hidden = true
+skip = "*.csv,*.html,*.json,*.jsonl,*.pdf,*.txt,*.ipynb"
+
+[tool.hatch.build.targets.sdist]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.hatch.build.targets.wheel]
+include = ["llama_index/"]
+exclude = ["**/BUILD"]
+
+[tool.llamahub]
+# This path needs to reflect the final location of your Trino reader module
+contains_example = false
+import_path = "llama_index.readers.trino" 
+
+[tool.llamahub.class_authors]
+# Your new class name
+TrinoReader = "Joshua Fordyce" 
+
+[tool.mypy]
+disallow_untyped_defs = true
+exclude = ["_static", "build", "examples", "notebooks", "venv"]
+ignore_missing_imports = true
+python_version = "3.9" # Updated to align with your project's min Python version
