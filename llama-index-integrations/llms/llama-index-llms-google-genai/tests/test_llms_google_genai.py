@@ -1844,10 +1844,69 @@ async def test_thoughts_with_async_chat() -> None:
     )
 
 
-@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
-def test_additional_properties_removed_from_schema(llm: GoogleGenAI) -> None:
+def test_remove_additional_properties_from_schema() -> None:
     """
-    Test that additionalProperties is removed from schemas for Gemini compatibility.
+    Test the _remove_additional_properties_from_schema helper function.
+
+    This test validates schema cleaning without requiring API access.
+    See: https://github.com/googleapis/python-genai/issues/70
+    """
+    from llama_index.llms.google_genai.utils import (
+        _remove_additional_properties_from_schema,
+    )
+
+    schema_with_additional_props = {
+        "type": "object",
+        "properties": {
+            "name": {"type": "string"},
+            "nested": {
+                "type": "object",
+                "properties": {"value": {"type": "number"}},
+                "additionalProperties": True,
+            },
+        },
+        "additionalProperties": False,
+        "$defs": {
+            "SubModel": {
+                "type": "object",
+                "properties": {"field": {"type": "string"}},
+                "additionalProperties": {"type": "string"},
+            }
+        },
+    }
+
+    cleaned = _remove_additional_properties_from_schema(schema_with_additional_props)
+
+    assert "additionalProperties" not in cleaned
+    assert "additionalProperties" not in cleaned["properties"]["nested"]
+    assert "additionalProperties" not in cleaned["$defs"]["SubModel"]
+
+    assert cleaned["properties"]["name"]["type"] == "string"
+    assert cleaned["properties"]["nested"]["properties"]["value"]["type"] == "number"
+    assert cleaned["$defs"]["SubModel"]["properties"]["field"]["type"] == "string"
+
+    non_dict_input = "not a dict"
+    result = _remove_additional_properties_from_schema(non_dict_input)
+    assert result == "not a dict"
+
+    schema_with_list = {
+        "type": "object",
+        "items": [
+            {"type": "object", "additionalProperties": True},
+            {"type": "string"},
+        ],
+    }
+    cleaned_list = _remove_additional_properties_from_schema(schema_with_list)
+    assert "additionalProperties" not in cleaned_list["items"][0]
+    assert cleaned_list["items"][1] == {"type": "string"}
+
+
+@pytest.mark.skipif(SKIP_GEMINI, reason="GOOGLE_API_KEY not set")
+def test_additional_properties_removed_from_schema_integration(
+    llm: GoogleGenAI,
+) -> None:
+    """
+    Integration test for additionalProperties removal with real client.
 
     See: https://github.com/googleapis/python-genai/issues/70
     """
