@@ -8,24 +8,33 @@ logger = logging.getLogger(__name__)
 # You will use the trino-python-client here
 # import trino  # or whatever alias you use
 
+
 class TrinoReader(BaseReader):
     """
-    
+
     Trino database reader.
 
     Loads data from a Trino cluster into Document used by LlamaIndex.
 
     Args:
-        host (str): server thats running Trino
+        host (str): server that's running Trino
         schema (str): reside within a catalog and serve as a wa to organize tables and other database objects
         port (int): network port number used for communication with a Trino cluster
-        catalog (str): A catalog in trino specifies a connector 
-    
-    
-    
+        catalog (str): A catalog in trino specifies a connector
+
+
+
     """
-    
-    def __init__(self, user: str, schema: str,  host: str, port: int = 8080, catalog: str = "hive", **kwargs: Any) -> None:
+
+    def __init__(
+        self,
+        user: str,
+        schema: str,
+        host: str,
+        port: int = 8080,
+        catalog: str = "hive",
+        **kwargs: Any,
+    ) -> None:
         """Initialize with Trino connection parameters."""
         # Store connection parameters (self.host, self.port, etc.)
         # self.conn_params = {...}
@@ -39,13 +48,17 @@ class TrinoReader(BaseReader):
         self._cursor = None
 
         self._conn_paramse = {
-            "host": host, "port": port, "catalog": catalog, "user": user, "schema": schema
+            "host": host,
+            "port": port,
+            "catalog": catalog,
+            "user": user,
+            "schema": schema,
         }
 
     def configureConnection(self) -> Tuple[trino.dbapi.Connection, trino.dbapi.Cursor]:
         """
         Configure Connection for Trino Datawarehouse
-        """ 
+        """
         if self._conn is None or self._conn.closed:
             try:
                 self._conn = trino.dbapi.connect(
@@ -53,16 +66,18 @@ class TrinoReader(BaseReader):
                     port=self.port,
                     catalog=self.catalog,
                     user=self.user,
-                    schema=self.schema
+                    schema=self.schema,
                 )
 
                 self._cursor = self._conn.cursor()
             except trino.dbapi.DatabaseError as e:
                 print(f"Trino connection failed:{e}")
-                raise e
+                raise
         return self._conn, self._cursor
-    
-    def execute_query(self, query: str, conn: trino.dbapi.Connection, cur: trino.dbapi.Cursor):
+
+    def execute_query(
+        self, query: str, conn: trino.dbapi.Connection, cur: trino.dbapi.Cursor
+    ):
         """
         Executes Query againg Trino instance
 
@@ -70,33 +85,27 @@ class TrinoReader(BaseReader):
             query (str): The SQL++ query to execute.
             conn (trino.dbapi.Connection) The trino connection used to build the cursor
             cursor (trino.dbapi.Cursor) an Object used to execute SQL queries against Trino
-        
+
         """
-        
         try:
             cur.execute(query)
-            
+
             rows = cur.fetchall()
             return [rows, cur.description]
         except trino.dbapi.DatabaseError as e:
             print(f"Trino connection failed: {e}")
-            raise e
-        
-            
-   
-    
-    
-
+            raise
 
     def load_data(self, query: str) -> List[Document]:
         """
         Loads data from Trino by executing a single SQL query.
-        
+
         Args:
             query: The SQL query to execute against the Trino cluster.
+
         """
         all_documents = []
-        
+
         conn = None
         cur = None
         try:
@@ -104,41 +113,42 @@ class TrinoReader(BaseReader):
             if not conn or not cur:
                 logger.warning("Could not establish connection; returning empty list")
                 return []
-        # 1. Connect to Trino using self.conn_params
-        
-            results = self.execute_query(query,conn,cur)
-            
+            # 1. Connect to Trino using self.conn_params
+
+            results = self.execute_query(query, conn, cur)
 
             column_names = [desc[0] for desc in results[1]]
 
             if results[0] is None:
                 return []
 
-            #3 Document Transformation
+            # 3 Document Transformation
             for row_index, row in enumerate(results[0]):
-                #Ensure all elements in row are cast to str before joining for content
-                content = ", ".join(f"{name}: {value}" for name, value in zip(column_names, row))
+                # Ensure all elements in row are cast to str before joining for content
+                content = ", ".join(
+                    f"{name}: {value}" for name, value in zip(column_names, row)
+                )
 
                 # Metadata must be a mapping (Dict[str, Any])
-                metadata: Dict[str, Any]= dict(zip(column_names, row))
-                metadata.update({
-                    'source':'raw_data',
-                    'catalog': self.catalog,
-                    'schema': self.schema,
-                    'row_id': row_index,
-                })
+                metadata: Dict[str, Any] = dict(zip(column_names, row))
+                metadata.update(
+                    {
+                        "source": "raw_data",
+                        "catalog": self.catalog,
+                        "schema": self.schema,
+                        "row_id": row_index,
+                    }
+                )
 
                 all_documents.append(Document(text=content, metadata=metadata))
-            
-            return all_documents
-        
-        except Exception as e:
 
+            return all_documents
+
+        except Exception as e:
             logger.error(f"FATAL ERROR during data loading: {e}")
-            raise e
+            raise
         finally:
             if cur:
                 cur.close()
             if conn:
                 conn.close()
-       

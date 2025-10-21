@@ -23,13 +23,13 @@ dev = [
     "diff-cover>=9.2.0",
     "pytest-cov>=6.1.1",
     # Specific requirement for testing your Trino code:
-    "trino>=0.316.0", 
-    "pandas>=2.0.0"
+    "trino>=0.316.0",
+    "pandas>=2.0.0",
 ]
 
 [project]
 name = "llama-index-readers-trino"
-version = "0.1.0" # Starting version for a new integration
+version = "0.1.0"  # Starting version for a new integration
 description = "LlamaIndex Data Loader for Trino distributed SQL query engine."
 authors = [{name = "Joshua Fordyce", email = "jfordyce1@fordham.edu"}]
 requires-python = ">=3.9,<4.0"
@@ -41,7 +41,7 @@ keywords = [
     "distributed query",
     "data lakehouse",
     "data federation",
-    "sql"
+    "sql",
 ]
 # CRITICAL: Add the native Trino Python client as a dependency
 # Note: We use the llama-index-core version from the source template
@@ -63,14 +63,14 @@ exclude = ["**/BUILD"]
 [tool.llamahub]
 # This path needs to reflect the final location of your Trino reader module
 contains_example = false
-import_path = "llama_index.readers.trino" 
+import_path = "llama_index.readers.trino"
 
 [tool.llamahub.class_authors]
 # Your new class name
-TrinoReader = "Joshua Fordyce" 
+TrinoReader = "Joshua Fordyce"
 
 [tool.mypy]
 disallow_untyped_defs = true
 exclude = ["_static", "build", "examples", "notebooks", "venv"]
 ignore_missing_imports = true
-python_version = "3.9" # Updated to align with your project's min Python version
+python_version = "3.9"  # Updated to align with your project's min Python version
