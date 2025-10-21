@@ -9,7 +9,21 @@ logger = logging.getLogger(__name__)
 # import trino  # or whatever alias you use
 
 class TrinoReader(BaseReader):
-    """Trino database reader."""
+    """
+    
+    Trino database reader.
+
+    Loads data from a Trino cluster into Document used by LlamaIndex.
+
+    Args:
+        host (str): server thats running Trino
+        schema (str): reside within a catalog and serve as a wa to organize tables and other database objects
+        port (int): network port number used for communication with a Trino cluster
+        catalog (str): A catalog in trino specifies a connector 
+    
+    
+    
+    """
     
     def __init__(self, user: str, schema: str,  host: str, port: int = 8080, catalog: str = "hive", **kwargs: Any) -> None:
         """Initialize with Trino connection parameters."""
@@ -28,7 +42,10 @@ class TrinoReader(BaseReader):
             "host": host, "port": port, "catalog": catalog, "user": user, "schema": schema
         }
 
-    def configureConnection(self) -> Tuple[trino.dbapi.Connection, trino.dbapi.Cursor]: 
+    def configureConnection(self) -> Tuple[trino.dbapi.Connection, trino.dbapi.Cursor]:
+        """
+        Configure Connection for Trino Datawarehouse
+        """ 
         if self._conn is None or self._conn.closed:
             try:
                 self._conn = trino.dbapi.connect(
@@ -46,7 +63,16 @@ class TrinoReader(BaseReader):
         return self._conn, self._cursor
     
     def execute_query(self, query: str, conn: trino.dbapi.Connection, cur: trino.dbapi.Cursor):
-       
+        """
+        Executes Query againg Trino instance
+
+        Args:
+            query (str): The SQL++ query to execute.
+            conn (trino.dbapi.Connection) The trino connection used to build the cursor
+            cursor (trino.dbapi.Cursor) an Object used to execute SQL queries against Trino
+        
+        """
+        
         try:
             cur.execute(query)
             
@@ -115,9 +141,4 @@ class TrinoReader(BaseReader):
                 cur.close()
             if conn:
                 conn.close()
-        # 2. Execute the 'query'
-        # 3. Fetch results (rows and column names)
-        # 4. Transform results into a List[Document]
-        #    - Text: A concise string representation of the row.
-        #    - Metadata: The column data as key/value pairs.
-        #return all_documents # Return a list of Document objects
+       
